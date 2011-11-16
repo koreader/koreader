@@ -40,7 +40,7 @@ longopts = {
 	device = "d",
 	help = "h"
 }
-optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:", longopts)
+optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:d:", longopts)
 if optarg["h"] or ARGV[optind] == nil then
 	print("usage: ./reader.lua [OPTION] ... DOCUMENT.PDF")
 	print("Read PDFs on your E-Ink reader")
