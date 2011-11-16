@@ -57,7 +57,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("-G, --gamma=GAMMA         set gamma correction")
 	print("                          (floating point notation, e.g. \"1.5\")")
 	print("-d, --device=DEVICE       set device specific configuration,")
-	print("                          \"kdxg\" (default), \"k3\", \"emu\"")
+	print("                          currently one of \"kdxg\" (default), \"k3\"")
 	print("-h, --help                show this usage help")
 	print("")
 	print("This software is licensed under the GPLv3.")
@@ -195,6 +195,7 @@ function show(no)
 		rcount = rcount + 1
 		fb:refresh(1)
 	end
+	slot_visible = slot;
 end
 
 function goto(no)
@@ -207,6 +208,21 @@ function goto(no)
 		-- always pre-cache next page
 		draworcache(no+1)
 	end
+end
+
+function modify_gamma(offset)
+	local slot = slot_visible
+	local gamma = cache[slot].dc:getGamma();
+	if gamma == -1 then
+		gamma = 1
+	end
+	print("modify_gamma slot="..slot.." gamma="..gamma.." offset="..offset)
+	gamma = gamma + offset;
+	cache[slot].dc:setGamma( gamma );
+	optarg["G"] = gamma; -- for next page
+	cache[slot].page:draw(cache[slot].dc, cache[slot].bb, 0, 0)
+	fb:blitFullFrom(cache[slot].bb)
+	fb:refresh(0)
 end
 
 function mainloop()
@@ -224,6 +240,10 @@ function mainloop()
 				print(cache)
 			elseif ev.code == KEY_BACK then
 				return
+			elseif ev.code == KEY_UP then
+				modify_gamma( 0.2 )
+			elseif ev.code == KEY_DOWN then
+				modify_gamma( -0.2 )
 			end
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
