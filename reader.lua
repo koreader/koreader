@@ -57,7 +57,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("-G, --gamma=GAMMA         set gamma correction")
 	print("                          (floating point notation, e.g. \"1.5\")")
 	print("-d, --device=DEVICE       set device specific configuration,")
-	print("                          currently one of \"kdxg\" (default), \"k3\"")
+	print("                          \"kdxg\" (default), \"k3\", \"emu\"")
 	print("-h, --help                show this usage help")
 	print("")
 	print("This software is licensed under the GPLv3.")
