@@ -40,5 +40,22 @@ start.
 So you might just call that script. Note that the script and the kpdfview
 binary currently must be in the same directory.
 You would then just call reader.lua, giving the document file path as its first
-argument.
+argument. Run reader.lua without arguments to see usage notes.
 
+
+Device emulation
+================
+
+The code also features a device emulation. You need SDL headers and library
+for this. It allows to develop on a standard PC and saves precious development
+time. It might also compose the most unfriendly desktop PDF reader, depending
+on your view.
+
+To build in "emulation mode", you need to run make like this:
+	make clean cleanthirdparty
+	EMULATE_READER=1 make thirdparty kpdfview
+
+The reader.lua script needs a device argument in order to cope with some
+slight differences between actual readers and the emulation. Run it like
+this:
+	./reader.lua -d emu /PATH/TO/PDF.pdf
