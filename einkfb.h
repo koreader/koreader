@@ -25,7 +25,7 @@
 //#define EMULATE_EINKFB_H 1200
 //#define EMULATE_EINKFB_FILE "/tmp/displayfifo"
 #else
-#include <linux/einkfb.h>
+#include "include/einkfb.h"
 #endif
 
 #include <lua.h>
