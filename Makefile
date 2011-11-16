@@ -33,7 +33,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 
 # enable tracing output:
 
-KPDFREADER_CFLAGS+= -DMUPDF_TRACE
+#KPDFREADER_CFLAGS+= -DMUPDF_TRACE
 
 # for now, all dependencies except for the libc are compiled into the final binary:
 
