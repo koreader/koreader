@@ -19,23 +19,29 @@
 
 require "alt_getopt"
 
-KEY_PAGE_UP = 109
-KEY_PAGE_DOWN = 124
-
-KEY_BACK = 91
+KEY_PAGEUP = 109 -- nonstandard
+KEY_PAGEDOWN = 124 -- nonstandard
+KEY_BACK = 91 -- nonstandard
 KEY_MENU = 139
 
 -- DPad:
-KEY_UP = 122
-KEY_DOWN = 123
+KEY_UP = 122 -- nonstandard
+KEY_DOWN = 123 -- nonstandard
 KEY_LEFT = 105
 KEY_RIGHT = 106
-KEY_BTN = 92
+KEY_BTN = 92 -- nonstandard
+
+-- constants from <linux/input.h>
+EV_KEY = 1
+
+-- event values
+EVENT_VALUE_KEY_PRESS = 1
+EVENT_VALUE_KEY_REPEAT = 2
+EVENT_VALUE_KEY_RELEASE = 0
 
 -- option parsing:
 longopts = {
 	password = "p",
-	goto = "g",
 	gamma = "G",
 	device = "d",
 	help = "h"
@@ -68,6 +74,18 @@ if optarg["d"] == "k3" then
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
+elseif optarg["d"] == "emu" then
+	input.open("")
+	-- SDL key codes
+	KEY_PAGEDOWN = 112
+	KEY_PAGEUP = 117
+	KEY_BACK = 22 -- backspace
+	KEY_MENU = 67 -- F1
+	KEY_UP = 111
+	KEY_DOWN = 116
+	KEY_LEFT = 113
+	KEY_RIGHT = 114
+	KEY_BTN = 36 -- enter for now
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
@@ -192,25 +210,23 @@ end
 
 function mainloop()
 	while 1 do
-		local events = input.waitForEvent()
-		for _, ev in ipairs(events) do
-			if ev.type == 1 and (ev.value == 1 or ev.value == 2) then
-				local secs, usecs = util.gettime()
-				if ev.code == KEY_PAGE_DOWN then
-					print(cache)
-					goto(pageno + 1)
-					print(cache)
-				elseif ev.code == KEY_PAGE_UP then
-					print(cache)
-					goto(pageno - 1)
-					print(cache)
-				elseif ev.code == KEY_BACK then
-					return
-				end
-				local nsecs, nusecs = util.gettime()
-				local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-				print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+		local ev = input.waitForEvent()
+		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			local secs, usecs = util.gettime()
+			if ev.code == KEY_PAGEUP then
+				print(cache)
+				goto(pageno + 1)
+				print(cache)
+			elseif ev.code == KEY_PAGEDOWN then
+				print(cache)
+				goto(pageno - 1)
+				print(cache)
+			elseif ev.code == KEY_BACK then
+				return
 			end
+			local nsecs, nusecs = util.gettime()
+			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		end
 	end
 end
