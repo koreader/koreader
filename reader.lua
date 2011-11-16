@@ -17,8 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]--
 
-input.open("/dev/input/event0")
-input.open("/dev/input/event1")
+require "alt_getopt"
 
 KEY_PAGE_UP = 109
 KEY_PAGE_DOWN = 124
@@ -33,11 +32,28 @@ KEY_LEFT = 105
 KEY_RIGHT = 106
 KEY_BTN = 92
 
-if ARGV[1] == nil then
-	print("needs PDF filename as first argument.")
-end
-if ARGV[2] == nil then
-	ARGV[2] = ""
+-- option parsing:
+longopts = {
+	password = "p",
+	gamma = "G",
+	device = "d",
+	help = "h"
+}
+optarg, optind = alt_getopt.get_opts(ARGV, "p:G:h", longopts)
+if optarg["h"] or ARGV[optind] == nil then
+	print("usage: ./reader.lua [OPTION] ... DOCUMENT.PDF")
+	print("Read PDFs on your E-Ink reader")
+	print("")
+	print("-p, --password=PASSWORD   set password for reading PDF document")
+	print("-G, --gamma=GAMMA         set gamma correction")
+	print("                          (floating point notation, e.g. \"1.5\")")
+	print("-d, --device=DEVICE       set device specific configuration,")
+	print("                          currently one of \"kdxg\" (default), \"k3\"")
+	print("-h, --help                show this usage help")
+	print("")
+	print("This software is licensed under the GPLv3.")
+	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
+	return
 end
 
 rcount = 5
@@ -45,7 +61,17 @@ rcountmax = 5
 
 globalzoom = -1
 
-doc = pdf.openDocument(ARGV[1], ARGV[2])
+if optarg["d"] == "k3" then
+	-- for now, the only difference is the additional input device
+	input.open("/dev/input/event0")
+	input.open("/dev/input/event1")
+	input.open("/dev/input/event2")
+else
+	input.open("/dev/input/event0")
+	input.open("/dev/input/event1")
+end
+
+doc = pdf.openDocument(ARGV[optind], optarg["p"] or "")
 
 print("pdf has "..doc:getPages().." pages.")
 
@@ -128,6 +154,18 @@ function setzoom(cacheslot)
 
 	cache[cacheslot].dc:setZoom(zoom)
 	cache[cacheslot].dc:setOffset(offset_x, offset_y)
+
+	-- set gamma here, we don't have any other good place for this right now:
+	if optarg["G"] then
+		print("gamma correction: "..optarg["G"])
+		cache[cacheslot].dc:setGamma(optarg["G"])
+	else
+		-- there's still a bug in the DC initialization in C code,
+		-- so we disable gamma correction here explicitly
+		-- (it should be disabled by default)
+		-- TODO: correct bug in C API
+		cache[cacheslot].dc:setGamma(-1.0)
+	end
 end
 
 function show(no)

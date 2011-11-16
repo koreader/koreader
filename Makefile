@@ -91,7 +91,7 @@ thirdparty: $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 
 install:
 	# install to kindle using USB networking
-	scp kpdfview reader.lua root@192.168.2.2:/mnt/us/test/
+	scp kpdfview reader.lua alt_getopt.lua root@192.168.2.2:/mnt/us/test/
 
 display:
 	# run mplayer on a FIFO, fed by using the framebuffer emulation
