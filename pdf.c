@@ -86,6 +86,7 @@ static int newDrawContext(lua_State *L) {
 	dc->zoom = zoom;
 	dc->offset_x = offset_x;
 	dc->offset_y = offset_y;
+	dc->gamma = gamma;
 
 	luaL_getmetatable(L, "drawcontext");
 	lua_setmetatable(L, -2);

@@ -159,12 +159,6 @@ function setzoom(cacheslot)
 	if optarg["G"] then
 		print("gamma correction: "..optarg["G"])
 		cache[cacheslot].dc:setGamma(optarg["G"])
-	else
-		-- there's still a bug in the DC initialization in C code,
-		-- so we disable gamma correction here explicitly
-		-- (it should be disabled by default)
-		-- TODO: correct bug in C API
-		cache[cacheslot].dc:setGamma(-1.0)
 	end
 end
 
