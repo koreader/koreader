@@ -130,7 +130,6 @@ static int blitFullToFrameBuffer(lua_State *L) {
 	uint32_t *bbptr = (uint32_t*)bb->data;
 
 	int c = fb->vinfo.xres * fb->vinfo.yres / 2;
-	fprintf(stderr, "c=%d, fbptr=%x\n", c, fbptr);
 
 	while(c--) {
 		*fbptr = (((*bbptr & 0x00F00000) >> 20) | (*bbptr & 0x000000F0)) ^ 0xFF;
