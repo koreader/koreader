@@ -10,7 +10,7 @@ MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 CC:=arm-unknown-linux-gnueabi-gcc
 HOSTCC:=gcc
 
-CFLAGS:=-O2
+CFLAGS:=-O0 -g
 
 # you can configure an emulation for the (eink) framebuffer here.
 # the application won't use the framebuffer (and the special e-ink ioctls)
@@ -33,11 +33,21 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 
 # enable tracing output:
 
-#KPDFREADER_CFLAGS+= -DMUPDF_TRACE
+KPDFREADER_CFLAGS+= -DMUPDF_TRACE
 
 # for now, all dependencies except for the libc are compiled into the final binary:
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o
+MUPDFLIBS := $(MUPDFLIBDIR)/libmupdf.a \
+		$(MUPDFLIBDIR)/libfitz.a
+THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
+	       	$(MUPDFLIBDIR)/libjpeg.a \
+	       	$(MUPDFLIBDIR)/libopenjpeg.a \
+	       	$(MUPDFLIBDIR)/libjbig2dec.a \
+	       	$(MUPDFLIBDIR)/libz.a
+
+LUALIB := $(LUADIR)/src/liblua.a
+
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
 	$(CC) -lm -ldl $(EMU_LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
@@ -45,14 +55,10 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o
 		blitbuffer.o \
 		input.o \
 		util.o \
-		$(MUPDFLIBDIR)/libmupdf.a \
-		$(MUPDFLIBDIR)/libfitz.a \
-	       	$(MUPDFLIBDIR)/libfreetype.a \
-	       	$(MUPDFLIBDIR)/libjpeg.a \
-	       	$(MUPDFLIBDIR)/libopenjpeg.a \
-	       	$(MUPDFLIBDIR)/libjbig2dec.a \
-	       	$(MUPDFLIBDIR)/libz.a \
-		$(LUADIR)/src/liblua.a -o kpdfview
+		$(MUPDFLIBS) \
+		$(THIRDPARTYLIBS) \
+		$(LUALIB) \
+		-o kpdfview
 
 einkfb.o input.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
@@ -86,10 +92,14 @@ $(MUPDFDIR)/cmapdump.host:
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	make -C mupdf clean
 
-thirdparty: $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
+$(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
 	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
+
+$(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
+
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS)
 
 install:
 	# install to kindle using USB networking
