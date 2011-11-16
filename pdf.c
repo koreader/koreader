@@ -39,6 +39,7 @@ typedef struct PdfPage {
 typedef struct DrawContext {
 	int rotate;
 	double zoom;
+	double gamma;
 	int offset_x;
 	int offset_y;
 } DrawContext;
@@ -78,6 +79,7 @@ static int newDrawContext(lua_State *L) {
 	double zoom = luaL_optnumber(L, 2, (double) 1.0);
 	int offset_x = luaL_optint(L, 3, 0);
 	int offset_y = luaL_optint(L, 4, 0);
+	double gamma = luaL_optnumber(L, 5, (double) -1.0);
 
 	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
 	dc->rotate = rotate;
@@ -126,6 +128,18 @@ static int dcGetRotate(lua_State *L) {
 static int dcGetZoom(lua_State *L) {
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
 	lua_pushnumber(L, dc->zoom);
+	return 1;
+}
+
+static int dcSetGamma(lua_State *L) {
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
+	dc->gamma = luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int dcGetGamma(lua_State *L) {
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
+	lua_pushnumber(L, dc->gamma);
 	return 1;
 }
 
@@ -233,6 +247,9 @@ static int drawPage(lua_State *L) {
 #else
 	pdf_run_page(page->doc->xref, page->page, dev, ctm);
 #endif
+	if(dc->gamma >= 0.0) {
+		fz_gamma_pixmap(pix, dc->gamma);
+	}
 	
 	fz_free_device(dev);
 	fz_drop_pixmap(pix);
@@ -266,6 +283,8 @@ static const struct luaL_reg drawcontext_meth[] = {
 	{"getZoom", dcGetZoom},
 	{"setOffset", dcSetOffset},
 	{"getOffset", dcGetOffset},
+	{"setGamma", dcSetGamma},
+	{"getGamma", dcGetGamma},
 	{NULL, NULL}
 };
 
