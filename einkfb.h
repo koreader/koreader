@@ -19,11 +19,8 @@
 #define _PDF_EINKFB_H
 
 #include <linux/fb.h>
-#ifdef EMULATE_EINKFB
-#include <stdlib.h>
-//#define EMULATE_EINKFB_W 824
-//#define EMULATE_EINKFB_H 1200
-//#define EMULATE_EINKFB_FILE "/tmp/displayfifo"
+#ifdef EMULATE_READER
+#include <SDL.h>
 #else
 #include "include/einkfb.h"
 #endif
@@ -37,6 +34,9 @@ typedef struct FBInfo {
 	void *data;
 	struct fb_fix_screeninfo finfo;
 	struct fb_var_screeninfo vinfo;
+#ifdef EMULATE_READER
+	SDL_Surface *screen;
+#endif
 } FBInfo;
 
 int luaopen_einkfb(lua_State *L);

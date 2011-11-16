@@ -31,18 +31,7 @@ static int openFrameBuffer(lua_State *L) {
 	luaL_getmetatable(L, "einkfb");
 	lua_setmetatable(L, -2);
 
-#ifdef EMULATE_EINKFB
-	fb->finfo.type = FB_TYPE_PACKED_PIXELS;
-	fb->finfo.smem_len = EMULATE_EINKFB_W * EMULATE_EINKFB_H;
-	fb->finfo.line_length = EMULATE_EINKFB_W;
-	fb->vinfo.xres = EMULATE_EINKFB_W;
-	fb->vinfo.yres = EMULATE_EINKFB_H;
-	fb->data = malloc(fb->finfo.smem_len);
-	if(fb->data == NULL) {
-		return luaL_error(L, "cannot claim memory for emulated framebuffer data");
-	}
-	fb->fd = open(EMULATE_EINKFB_FILE, O_WRONLY|O_APPEND);
-#else
+#ifndef EMULATE_READER
 	/* open framebuffer */
 	fb->fd = open(fb_device, O_RDWR);
 	if (fb->fd == -1) {
@@ -88,6 +77,24 @@ static int openFrameBuffer(lua_State *L) {
 	if(fb->data == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
+#else
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		return luaL_error(L, "cannot initialize SDL.");
+	}
+	if(!(fb->screen = SDL_SetVideoMode(EMULATE_READER_W, EMULATE_READER_H, 32, SDL_HWSURFACE))) {
+		return luaL_error(L, "can't get video surface %dx%d for 32bpp.",
+				EMULATE_READER_W, EMULATE_READER_H);
+	}
+	memset(&fb->finfo, 0, sizeof(fb->finfo));
+	memset(&fb->vinfo, 0, sizeof(fb->vinfo));
+	fb->vinfo.xres = EMULATE_READER_W;
+	fb->vinfo.yres = EMULATE_READER_H;
+	fb->vinfo.grayscale = 1;
+	fb->vinfo.bits_per_pixel = 4;
+	fb->finfo.smem_len = EMULATE_READER_W * EMULATE_READER_H / 2;
+	fb->finfo.line_length = EMULATE_READER_W / 2;
+	fb->finfo.type = FB_TYPE_PACKED_PIXELS;
+	fb->data = malloc(fb->finfo.smem_len);
 #endif
 
 	return 1;
@@ -102,8 +109,12 @@ static int getSize(lua_State *L) {
 
 static int closeFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+#ifndef EMULATE_READER
 	munmap(fb->data, fb->finfo.smem_len);
 	close(fb->fd);
+#else
+	free(fb->data);
+#endif
 	return 0;
 }
 
@@ -115,25 +126,15 @@ static int blitFullToFrameBuffer(lua_State *L) {
 		return luaL_error(L, "blitbuffer size must be framebuffer size!");
 	}
 	
-#ifndef EMULATE_EINKFB
 	uint8_t *fbptr = (uint8_t*)fb->data;
-#else
-	uint8_t *fbptr = (uint8_t*)fb->data;
-#endif
 	uint32_t *bbptr = (uint32_t*)bb->data;
 
 	int c = fb->vinfo.xres * fb->vinfo.yres / 2;
+	fprintf(stderr, "c=%d, fbptr=%x\n", c, fbptr);
 
 	while(c--) {
-#ifndef EMULATE_EINKFB
 		*fbptr = (((*bbptr & 0x00F00000) >> 20) | (*bbptr & 0x000000F0)) ^ 0xFF;
 		fbptr++;
-#else
-		*fbptr = *bbptr & 0x000000F0;
-		fbptr++;
-		*fbptr = (*bbptr & 0x00F00000) >> 16;
-		fbptr++;
-#endif
 		bbptr++;
 	}
 	return 0;
@@ -174,27 +175,16 @@ static int blitToFrameBuffer(lua_State *L) {
 
 	w = (w+1) / 2; // we'll always do two pixels at once for now
 
-#ifndef EMULATE_EINKFB
 	uint8_t *fbptr = (uint8_t*)(fb->data + 
 			ydest * fb->finfo.line_length + 
 			xdest / 2);
-#else
-	uint8_t *fbptr = (uint8_t*)(fb->data + 
-			ydest * fb->finfo.line_length + 
-			xdest);
-#endif
 	uint32_t *bbptr = (uint32_t*)(bb->data +
 			yoffs * bb->w * BLITBUFFER_BYTESPP +
 			xoffs * BLITBUFFER_BYTESPP);
 
 	for(y = 0; y < h; y++) {
 		for(x = 0; x < w; x++) {
-#ifndef EMULATE_EINKFB
 			fbptr[x] = (((bbptr[x] & 0x00F00000) >> 20) | (bbptr[x] & 0x000000F0)) ^ 0xFF;
-#else
-			fbptr[x*2] = bbptr[x] & 0x000000F0;
-			fbptr[x*2+1] = (bbptr[x] & 0x00F00000) >> 16;
-#endif
 		}
 		fbptr += fb->finfo.line_length;
 		bbptr += (bb->w / 2);
@@ -206,7 +196,7 @@ static int einkUpdate(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 	// for Kindle e-ink display
 	int fxtype = luaL_optint(L, 2, 0);
-#ifndef EMULATE_EINKFB
+#ifndef EMULATE_READER
 	update_area_t myarea;
 	myarea.x1 = luaL_optint(L, 3, 0);
 	myarea.y1 = luaL_optint(L, 4, 0);
@@ -216,9 +206,30 @@ static int einkUpdate(lua_State *L) {
 	myarea.which_fx = fxtype ? fx_update_partial : fx_update_full;
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
 #else
-	if(fb->fd != -1) {
-		write(fb->fd, fb->data, fb->finfo.smem_len);
+	// for now, we only do fullscreen blits in emulation mode
+	if(SDL_MUSTLOCK(fb->screen) && (SDL_LockSurface(fb->screen) < 0)) {
+		return luaL_error(L, "can't lock surface.");
 	}
+	uint32_t *sfptr = (uint32_t*)fb->screen->pixels;
+	uint8_t *fbptr = (uint8_t*)fb->data;
+
+	int c = fb->finfo.smem_len;
+
+	while(c--) {
+		*sfptr = SDL_MapRGB(fb->screen->format,
+				255 - (*fbptr & 0xF0),
+				255 - (*fbptr & 0xF0),
+				255 - (*fbptr & 0xF0));
+		sfptr++;
+		*sfptr = SDL_MapRGB(fb->screen->format,
+				255 - ((*fbptr & 0x0F) << 4),
+				255 - ((*fbptr & 0x0F) << 4),
+				255 - ((*fbptr & 0x0F) << 4));
+		sfptr++;
+		fbptr++;
+	}
+	if(SDL_MUSTLOCK(fb->screen)) SDL_UnlockSurface(fb->screen);
+	SDL_Flip(fb->screen);
 #endif
 	return 0;
 }

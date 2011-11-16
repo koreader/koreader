@@ -18,6 +18,10 @@
 #ifndef _PDF_INPUT_H
 #define _PDF_INPUT_H
 
+#ifdef EMULATE_READER
+#include <SDL.h>
+#endif
+
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>

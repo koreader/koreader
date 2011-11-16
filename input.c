@@ -25,6 +25,7 @@
 int inputfds[3] = { -1, -1, -1 };
 
 static int openInputDevice(lua_State *L) {
+#ifndef EMULATE_READER
 	int i;
 	const char* inputdevice = luaL_checkstring(L, 1);
 
@@ -32,16 +33,20 @@ static int openInputDevice(lua_State *L) {
 		if(inputfds[i] == -1) {
 			inputfds[i] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
 			if(inputfds[i] != -1) {
-#ifndef EMULATE_EINKFB
 				ioctl(inputfds[i], EVIOCGRAB, 1);
-#endif
 				return 0;
 			} else {
-				luaL_error(L, "error opening input device <%s>: %d", inputdevice, errno);
+				return luaL_error(L, "error opening input device <%s>: %d", inputdevice, errno);
 			}
 		}
 	}
 	return luaL_error(L, "no free slot for new input device <%s>", inputdevice);
+#else
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		return luaL_error(L, "cannot initialize SDL.");
+	}
+	return 0;
+#endif
 }
 
 static int closeInputDevices(lua_State *L) {
@@ -56,9 +61,10 @@ static int closeInputDevices(lua_State *L) {
 }
 
 static int waitForInput(lua_State *L) {
+#ifndef EMULATE_READER
 	fd_set fds;
 	struct timeval timeout;
-	int i, j, num, nfds;
+	int i, num, nfds;
 	int usecs = luaL_optint(L, 1, 0x7FFFFFFF);
 
 	timeout.tv_sec = (usecs/1000000);
@@ -79,9 +85,6 @@ static int waitForInput(lua_State *L) {
 		return luaL_error(L, "Waiting for input failed: %d\n", errno);
 	}
 
-	lua_newtable(L);
-	j=1;
-
 	for(i=0; i<NUM_FDS; i++) {
 		if(inputfds[i] != -1 && FD_ISSET(inputfds[i], &fds)) {
 			struct input_event input;
@@ -99,13 +102,45 @@ static int waitForInput(lua_State *L) {
 				lua_pushstring(L, "value");
 				lua_pushinteger(L, (int) input.value);
 				lua_settable(L, -3);
-				lua_rawseti(L, -2, j);
-				j++;
+				return 1;
 			}
 		}
 	}
-
-	return 1;
+	return 0;
+#else
+	SDL_Event event;
+	while(SDL_WaitEvent(&event)) {
+		switch(event.type) {
+			case SDL_KEYDOWN:
+				lua_newtable(L);
+				lua_pushstring(L, "type");
+				lua_pushinteger(L, EV_KEY);
+				lua_settable(L, -3);
+				lua_pushstring(L, "code");
+				lua_pushinteger(L, event.key.keysym.scancode);
+				lua_settable(L, -3);
+				lua_pushstring(L, "value");
+				lua_pushinteger(L, 1);
+				lua_settable(L, -3);
+				return 1;
+			case SDL_KEYUP:
+				lua_newtable(L);
+				lua_pushstring(L, "type");
+				lua_pushinteger(L, EV_KEY);
+				lua_settable(L, -3);
+				lua_pushstring(L, "code");
+				lua_pushinteger(L, event.key.keysym.scancode);
+				lua_settable(L, -3);
+				lua_pushstring(L, "value");
+				lua_pushinteger(L, 0);
+				lua_settable(L, -3);
+				return 1;
+			case SDL_QUIT:
+				return luaL_error(L, "application forced to quit");
+		}
+	}
+	return luaL_error(L, "error waiting for SDL event.");
+#endif
 }
 
 static const struct luaL_reg input_func[] = {
