@@ -42,6 +42,7 @@ EVENT_VALUE_KEY_RELEASE = 0
 -- option parsing:
 longopts = {
 	password = "p",
+	goto = "g",
 	gamma = "G",
 	device = "d",
 	help = "h"
