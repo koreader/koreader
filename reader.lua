@@ -117,7 +117,7 @@ function freecache()
 end
 function checkcache(no)
 	for i = 1, #cache do
-		if cache[i].no == no then
+		if cache[i].no == no and cache[i].page ~= nil then
 			print("cache hit: slot="..i.." page="..no)
 			return i
 		end
@@ -216,13 +216,12 @@ function modify_gamma(offset)
 	if gamma == -1 then
 		gamma = 1
 	end
-	print("modify_gamma slot="..slot.." gamma="..gamma.." offset="..offset)
+	local no = cache[slot].no
+	print("modify_gamma "..no.." slot="..slot.." gamma="..gamma.." offset="..offset)
 	gamma = gamma + offset;
-	cache[slot].dc:setGamma( gamma );
 	optarg["G"] = gamma; -- for next page
-	cache[slot].page:draw(cache[slot].dc, cache[slot].bb, 0, 0)
-	fb:blitFullFrom(cache[slot].bb)
-	fb:refresh(0)
+	freecache()
+	goto(no)
 end
 
 function mainloop()
