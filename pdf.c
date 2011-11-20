@@ -201,6 +201,29 @@ static int getPageSize(lua_State *L) {
 	return 2;
 }
 
+static int getUsedBBox(lua_State *L) {
+	fz_bbox result;
+	fz_matrix ctm;
+	fz_device *dev;
+	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
+
+	ctm = fz_translate(0, -page->page->mediabox.y1);
+	/* returned BBox is in centi-point (n * 0.01 pt) */
+	ctm = fz_concat(ctm, fz_scale(100, -100));
+	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
+
+	dev = fz_new_bbox_device(&result);
+	pdf_run_page(page->doc->xref, page->page, dev, ctm);
+	fz_free_device(dev);
+
+       	lua_pushnumber(L, ((double)result.x0)/100);
+	lua_pushnumber(L, ((double)result.y0)/100);
+       	lua_pushnumber(L, ((double)result.x1)/100);
+	lua_pushnumber(L, ((double)result.y1)/100);
+
+	return 4;
+}
+
 static int closePage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 #ifdef USE_DISPLAY_LIST
@@ -290,6 +313,7 @@ static const struct luaL_reg pdfdocument_meth[] = {
 
 static const struct luaL_reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
+	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"draw", drawPage},
 	{NULL, NULL}
