@@ -72,7 +72,7 @@ fetchthirdparty:
 	-rmdir lua
 	-rm lua
 	git clone git://git.ghostscript.com/mupdf.git
-	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
+	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip; patch -p1 < ../mupdf-64M-memory-limit.diff )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
