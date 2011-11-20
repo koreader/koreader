@@ -28,7 +28,6 @@ typedef struct BlitBuffer {
 	int h;
 	uint8_t data[1];
 } BlitBuffer;
-#define BLITBUFFER_BYTESPP 2
 
 int luaopen_blitbuffer(lua_State *L);
 

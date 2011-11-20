@@ -227,7 +227,7 @@ static int drawPage(lua_State *L) {
 	rect.y0 = luaL_checkint(L, 5);
 	rect.x1 = rect.x0 + bb->w;
 	rect.y1 = rect.y0 + bb->h;
-	pix = fz_new_pixmap_with_rect_and_data(fz_device_gray, rect, bb->data);
+	pix = fz_new_pixmap_with_rect(fz_device_gray, rect);
 	fz_clear_pixmap_with_color(pix, 0xff);
 
 	ctm = fz_translate(-page->page->mediabox.x0, -page->page->mediabox.y1);
@@ -235,10 +235,10 @@ static int drawPage(lua_State *L) {
 	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));
-	bbox = fz_round_rect(fz_transform_rect(ctm, page->page->mediabox));
 	dev = fz_new_draw_device(page->doc->glyphcache, pix);
 #ifdef USE_DISPLAY_LIST
 #ifdef MUPDF_TRACE
+	bbox = fz_round_rect(fz_transform_rect(ctm, page->page->mediabox));
 	fz_device *tdev;
 	tdev = fz_new_trace_device();
 	fz_execute_display_list(page->list, tdev, ctm, bbox);
@@ -246,6 +246,12 @@ static int drawPage(lua_State *L) {
 #endif
 	fz_execute_display_list(page->list, dev, ctm, bbox);
 #else
+#ifdef MUPDF_TRACE
+	fz_device *tdev;
+	tdev = fz_new_trace_device();
+	pdf_run_page(page->doc->xref, page->page, tdev, ctm);
+	fz_free_device(tdev);
+#endif
 	pdf_run_page(page->doc->xref, page->page, dev, ctm);
 #endif
 	if(dc->gamma >= 0.0) {
@@ -253,6 +259,18 @@ static int drawPage(lua_State *L) {
 	}
 	
 	fz_free_device(dev);
+
+	uint8_t *bbptr = (uint8_t*)bb->data;
+	uint32_t *pmptr = (uint32_t*)pix->samples;
+
+	int c = bb->w * bb->h / 2;
+
+	while(c--) {
+		*bbptr = (((*pmptr & 0x00F00000) >> 20) | (*pmptr & 0x000000F0)) ^ 0xFF;
+		bbptr++;
+		pmptr++;
+	}
+
 	fz_drop_pixmap(pix);
 
 	return 0;

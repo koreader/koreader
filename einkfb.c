@@ -126,16 +126,8 @@ static int blitFullToFrameBuffer(lua_State *L) {
 		return luaL_error(L, "blitbuffer size must be framebuffer size!");
 	}
 	
-	uint8_t *fbptr = (uint8_t*)fb->data;
-	uint32_t *bbptr = (uint32_t*)bb->data;
+	memcpy(fb->data, bb->data, bb->w * bb->h / 2);
 
-	int c = fb->vinfo.xres * fb->vinfo.yres / 2;
-
-	while(c--) {
-		*fbptr = (((*bbptr & 0x00F00000) >> 20) | (*bbptr & 0x000000F0)) ^ 0xFF;
-		fbptr++;
-		bbptr++;
-	}
 	return 0;
 }
 
@@ -177,14 +169,12 @@ static int blitToFrameBuffer(lua_State *L) {
 	uint8_t *fbptr = (uint8_t*)(fb->data + 
 			ydest * fb->finfo.line_length + 
 			xdest / 2);
-	uint32_t *bbptr = (uint32_t*)(bb->data +
-			yoffs * bb->w * BLITBUFFER_BYTESPP +
-			xoffs * BLITBUFFER_BYTESPP);
+	uint8_t *bbptr = (uint32_t*)(bb->data +
+			yoffs * bb->w / 2 +
+			xoffs / 2 );
 
 	for(y = 0; y < h; y++) {
-		for(x = 0; x < w; x++) {
-			fbptr[x] = (((bbptr[x] & 0x00F00000) >> 20) | (bbptr[x] & 0x000000F0)) ^ 0xFF;
-		}
+		memcpy(fbptr, bbptr, w);
 		fbptr += fb->finfo.line_length;
 		bbptr += (bb->w / 2);
 	}

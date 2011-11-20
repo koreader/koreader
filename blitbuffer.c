@@ -21,7 +21,7 @@
 static int newBlitBuffer(lua_State *L) {
 	int w = luaL_checkint(L, 1);
 	int h = luaL_checkint(L, 2);
-	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer) + (w * h * BLITBUFFER_BYTESPP) - 1);
+	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer) + (w * h / 2) - 1);
 	luaL_getmetatable(L, "blitbuffer");
 	lua_setmetatable(L, -2);
 
