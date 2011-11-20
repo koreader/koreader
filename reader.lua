@@ -51,6 +51,7 @@ rcount = 5
 rcountmax = 5
 
 globalzoom = -1
+globalgamma = -1.0
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
@@ -66,6 +67,10 @@ else
 	input.open("/dev/input/event1")
 end
 
+if optarg["G"] ~= nil then
+	globalgamma = optarg["G"]
+end
+
 doc = pdf.openDocument(ARGV[optind], optarg["p"] or "")
 
 print("pdf has "..doc:getPages().." pages.")
@@ -73,12 +78,11 @@ print("pdf has "..doc:getPages().." pages.")
 fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 
-init_tilecache()
-
 nulldc = pdf.newDC()
 
-function setzoom(cacheslot)
-	local pwidth, pheight = cache[cacheslot].page:getSize(nulldc)
+function setzoom(page, cacheslot)
+	local dc = pdf.newDC()
+	local pwidth, pheight = page:getSize(nulldc)
 
 	-- default zoom: fit to page
 	local zoom = width / pwidth
@@ -90,18 +94,19 @@ function setzoom(cacheslot)
 		offset_y = 0
 	end
 
-	cache[cacheslot].dc:setZoom(zoom)
-	cache[cacheslot].dc:setOffset(offset_x, offset_y)
+	dc:setZoom(zoom)
+	dc:setOffset(offset_x, offset_y)
 
 	-- set gamma here, we don't have any other good place for this right now:
-	if optarg["G"] then
-		print("gamma correction: "..optarg["G"])
-		cache[cacheslot].dc:setGamma(optarg["G"])
+	if globalgamma ~= -1.0 then
+		print("gamma correction: "..globalgamma)
+		dc:setGamma(globalgamma)
 	end
+	return dc
 end
 
 function show(no)
-	local slot = draworcache(no)
+	local slot = draworcache(no,globalzoom,0,0,width,height,globalgamma)
 	fb:blitFullFrom(cache[slot].bb)
 	if rcount == rcountmax then
 		print("full refresh")
@@ -123,22 +128,18 @@ function goto(no)
 	show(no)
 	if no < doc:getPages() then
 		-- always pre-cache next page
-		draworcache(no+1)
+		draworcache(no+1,globalzoom,0,0,width,height,globalgamma)
 	end
 end
 
 function modify_gamma(offset)
-	local slot = slot_visible
-	local gamma = cache[slot].dc:getGamma();
-	if gamma == -1 then
-		gamma = 1
+	if globalgamma == -1 then
+		globalgamma = 1
 	end
-	local no = cache[slot].no
-	print("modify_gamma "..no.." slot="..slot.." gamma="..gamma.." offset="..offset)
-	gamma = gamma + offset;
-	optarg["G"] = gamma; -- for next page
-	freecache()
-	goto(no)
+	print("modify_gamma, gamma="..globalgamma.." offset="..offset)
+	globalgamma = globalgamma + offset;
+	clearcache()
+	goto(pageno)
 end
 
 function mainloop()
@@ -147,13 +148,9 @@ function mainloop()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_PAGEUP then
-				print(cache)
 				goto(pageno + 1)
-				print(cache)
 			elseif ev.code == KEY_PAGEDOWN then
-				print(cache)
 				goto(pageno - 1)
-				print(cache)
 			elseif ev.code == KEY_BACK then
 				return
 			elseif ev.code == KEY_UP then

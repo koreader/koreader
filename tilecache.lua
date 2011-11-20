@@ -1,64 +1,51 @@
 --[[
 a cache for rendered tiles
 ]]--
-
-function init_tilecache()
-	cache = {
-		{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil },
-		{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil },
-		{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil }
-	}
-end
-function freecache()
-	for i = 1, #cache do
-		if cache[i].page ~= nil then
-			print("freeing slot="..i.." oldpage="..cache[i].no)
-			cache[i].page:close()
-			cache[i].page = nil
-		end
+cache_max_memsize = 1024*1024*5 -- 5MB tile cache
+cache_current_memsize = 0
+cache = {}
+cache_max_age = 20
+function cacheclaim(size)
+	if(size > cache_max_memsize) then
+		error("too much memory claimed")
+		return false
 	end
-end
-function checkcache(no)
-	for i = 1, #cache do
-		if cache[i].no == no and cache[i].page ~= nil then
-			print("cache hit: slot="..i.." page="..no)
-			return i
-		end
-	end
-	print("cache miss")
-	return nil
-end
-function cacheslot()
-	freeslot = nil
-	while freeslot == nil do
-		for i = 1, #cache do
-			if cache[i].age > 0 then
-				print("aging slot="..i)
-				cache[i].age = cache[i].age - 1
+	repeat
+		for k, v in pairs(cache) do
+			if v.age > 0 then
+				print("aging slot="..k)
+				v.age = v.age - 1
 			else
-				if cache[i].page ~= nil then
-					print("freeing slot="..i.." oldpage="..cache[i].no)
-					cache[i].page:close()
-					cache[i].page = nil
-				end
-				freeslot = i
+				cache_current_memsize = cache_current_memsize - v.size
+				cache[k] = nil
+				break -- out of for loop
 			end
 		end
-	end
-	print("returning free slot="..freeslot)
-	return freeslot
+	until cache_current_memsize + size <= cache_max_memsize
+	cache_current_memsize = cache_current_memsize + size
+	print("cleaned cache to fit new tile (size="..size..")")
+	return true
 end
-
-function draworcache(no)
-	local slot = checkcache(no)
-	if slot == nil then
-		slot = cacheslot()
-		cache[slot].no = no
-		cache[slot].age = #cache
-		cache[slot].page = doc:openPage(no)
-		setzoom(slot)
-		print("drawing page="..no.." to slot="..slot)
-		cache[slot].page:draw(cache[slot].dc, cache[slot].bb, 0, 0)
+function draworcache(no, zoom, offset_x, offset_y, width, height, gamma)
+	local hash = cachehash(no, zoom, offset_x, offset_y, width, height, gamma)
+	if cache[hash] == nil then
+		cacheclaim(width * height / 2);
+		cache[hash] = {
+			age = cache_max_age,
+			size = width * height / 2,
+			bb = blitbuffer.new(width, height)
+		}
+		print("drawing page="..no.." to slot="..hash)
+		local page = doc:openPage(no)
+		local dc = setzoom(page, hash)
+		page:draw(dc, cache[hash].bb, 0, 0)
+		page:close()
 	end
-	return slot
+	return hash
+end
+function cachehash(no, zoom, offset_x, offset_y, width, height, gamma)
+	return no..'_'..zoom..'_'..offset_x..','..offset_y..'-'..width..'x'..height..'_'..gamma;
+end
+function clearcache()
+	cache = {}
 end
