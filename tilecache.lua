@@ -11,12 +11,12 @@ function cacheclaim(size)
 		return false
 	end
 	repeat
-		for k, v in pairs(cache) do
-			if v.age > 0 then
+		for k, _ in pairs(cache) do
+			if cache[k].age > 0 then
 				print("aging slot="..k)
-				v.age = v.age - 1
+				cache[k].age = cache[k].age - 1
 			else
-				cache_current_memsize = cache_current_memsize - v.size
+				cache_current_memsize = cache_current_memsize - cache[k].size
 				cache[k] = nil
 				break -- out of for loop
 			end

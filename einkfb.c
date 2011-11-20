@@ -169,7 +169,7 @@ static int blitToFrameBuffer(lua_State *L) {
 	uint8_t *fbptr = (uint8_t*)(fb->data + 
 			ydest * fb->finfo.line_length + 
 			xdest / 2);
-	uint8_t *bbptr = (uint32_t*)(bb->data +
+	uint8_t *bbptr = (uint8_t*)(bb->data +
 			yoffs * bb->w / 2 +
 			xoffs / 2 );
 
