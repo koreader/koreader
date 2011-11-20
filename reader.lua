@@ -18,26 +18,8 @@
 ]]--
 
 require "alt_getopt"
-
-KEY_PAGEUP = 109 -- nonstandard
-KEY_PAGEDOWN = 124 -- nonstandard
-KEY_BACK = 91 -- nonstandard
-KEY_MENU = 139
-
--- DPad:
-KEY_UP = 122 -- nonstandard
-KEY_DOWN = 123 -- nonstandard
-KEY_LEFT = 105
-KEY_RIGHT = 106
-KEY_BTN = 92 -- nonstandard
-
--- constants from <linux/input.h>
-EV_KEY = 1
-
--- event values
-EVENT_VALUE_KEY_PRESS = 1
-EVENT_VALUE_KEY_REPEAT = 2
-EVENT_VALUE_KEY_RELEASE = 0
+require "keys"
+require "tilecache"
 
 -- option parsing:
 longopts = {
@@ -78,15 +60,7 @@ if optarg["d"] == "k3" then
 elseif optarg["d"] == "emu" then
 	input.open("")
 	-- SDL key codes
-	KEY_PAGEDOWN = 112
-	KEY_PAGEUP = 117
-	KEY_BACK = 22 -- backspace
-	KEY_MENU = 67 -- F1
-	KEY_UP = 111
-	KEY_DOWN = 116
-	KEY_LEFT = 113
-	KEY_RIGHT = 114
-	KEY_BTN = 36 -- enter for now
+	set_emu_keycodes()
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
@@ -99,66 +73,9 @@ print("pdf has "..doc:getPages().." pages.")
 fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 
+init_tilecache()
+
 nulldc = pdf.newDC()
-
-cache = {
-	{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil },
-	{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil },
-	{ age = 0, no = 0, bb = blitbuffer.new(width, height), dc = pdf.newDC(), page = nil }
-}
-function freecache()
-	for i = 1, #cache do
-		if cache[i].page ~= nil then
-			print("freeing slot="..i.." oldpage="..cache[i].no)
-			cache[i].page:close()
-			cache[i].page = nil
-		end
-	end
-end
-function checkcache(no)
-	for i = 1, #cache do
-		if cache[i].no == no and cache[i].page ~= nil then
-			print("cache hit: slot="..i.." page="..no)
-			return i
-		end
-	end
-	print("cache miss")
-	return nil
-end
-function cacheslot()
-	freeslot = nil
-	while freeslot == nil do
-		for i = 1, #cache do
-			if cache[i].age > 0 then
-				print("aging slot="..i)
-				cache[i].age = cache[i].age - 1
-			else
-				if cache[i].page ~= nil then
-					print("freeing slot="..i.." oldpage="..cache[i].no)
-					cache[i].page:close()
-					cache[i].page = nil
-				end
-				freeslot = i
-			end
-		end
-	end
-	print("returning free slot="..freeslot)
-	return freeslot
-end
-
-function draworcache(no)
-	local slot = checkcache(no)
-	if slot == nil then
-		slot = cacheslot()
-		cache[slot].no = no
-		cache[slot].age = #cache
-		cache[slot].page = doc:openPage(no)
-		setzoom(slot)
-		print("drawing page="..no.." to slot="..slot)
-		cache[slot].page:draw(cache[slot].dc, cache[slot].bb, 0, 0)
-	end
-	return slot
-end
 
 function setzoom(cacheslot)
 	local pwidth, pheight = cache[cacheslot].page:getSize(nulldc)
