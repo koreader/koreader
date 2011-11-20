@@ -18,7 +18,6 @@ function cacheclaim(size)
 			else
 				cache_current_memsize = cache_current_memsize - cache[k].size
 				cache[k] = nil
-				break -- out of for loop
 			end
 		end
 	until cache_current_memsize + size <= cache_max_memsize
