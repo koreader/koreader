@@ -229,9 +229,9 @@ function mainloop()
 				end
 			elseif ev.code == KEY_BACK then
 				return
-			elseif ev.code == KEY_FW_UP then
+			elseif ev.code == KEY_VPLUS then
 				modify_gamma( 1.25 )
-			elseif ev.code == KEY_FW_DOWN then
+			elseif ev.code == KEY_VMINUS then
 				modify_gamma( 0.8 )
 			elseif ev.code == KEY_A then
 				if shiftmode then
