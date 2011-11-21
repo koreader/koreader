@@ -29,7 +29,7 @@ ZOOM_FIT_TO_CONTENT = -4
 ZOOM_FIT_TO_CONTENT_WIDTH = -5
 ZOOM_FIT_TO_CONTENT_HEIGHT = -6
 
-GAMMA_NO_GAMMA = -1.0
+GAMMA_NO_GAMMA = 1.0
 
 -- option parsing:
 longopts = {
@@ -66,6 +66,8 @@ globalgamma = GAMMA_NO_GAMMA
 
 fullwidth = 0
 fullheight = 0
+offset_x = 0
+offset_y = 0
 
 shiftmode = false
 
@@ -100,8 +102,6 @@ nulldc = pdf.newDC()
 function setzoom(page, cacheslot)
 	local dc = pdf.newDC()
 	local pwidth, pheight = page:getSize(nulldc)
-	local offset_x = 0
-	local offset_y = 0
 
 	if globalzoommode == ZOOM_FIT_TO_PAGE then
 		globalzoom = width / pwidth
@@ -189,12 +189,9 @@ function goto(no)
 	end
 end
 
-function modify_gamma(offset)
-	if globalgamma == -1 then
-		globalgamma = 1
-	end
-	print("modify_gamma, gamma="..globalgamma.." offset="..offset)
-	globalgamma = globalgamma + offset;
+function modify_gamma(factor)
+	print("modify_gamma, gamma="..globalgamma.." factor="..factor)
+	globalgamma = globalgamma * factor;
 	goto(pageno)
 end
 function setglobalzoommode(newzoommode)
@@ -233,9 +230,9 @@ function mainloop()
 			elseif ev.code == KEY_BACK then
 				return
 			elseif ev.code == KEY_FW_UP then
-				modify_gamma( 0.2 )
+				modify_gamma( 1.25 )
 			elseif ev.code == KEY_FW_DOWN then
-				modify_gamma( -0.2 )
+				modify_gamma( 0.8 )
 			elseif ev.code == KEY_A then
 				if shiftmode then
 					setglobalzoommode(ZOOM_FIT_TO_CONTENT)
