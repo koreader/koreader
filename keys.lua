@@ -119,4 +119,6 @@ function set_emu_keycodes()
 	KEY_S = 39
 	KEY_D = 40
 	KEY_SHIFT = 50
+	KEY_VPLUS = 95  -- F11
+	KEY_VMINUS = 96 -- F12
 end
