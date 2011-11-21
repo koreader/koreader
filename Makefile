@@ -103,4 +103,4 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS)
 
 install:
 	# install to kindle using USB networking
-	scp kpdfview reader.lua alt_getopt.lua root@192.168.2.2:/mnt/us/test/
+	scp kpdfview reader.lua alt_getopt.lua keys.lua tilecache.lua root@192.168.2.2:/mnt/us/test/
