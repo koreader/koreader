@@ -21,6 +21,16 @@ require "alt_getopt"
 require "keys"
 require "tilecache"
 
+ZOOM_BY_VALUE = 0
+ZOOM_FIT_TO_PAGE = -1
+ZOOM_FIT_TO_PAGE_WIDTH = -2
+ZOOM_FIT_TO_PAGE_HEIGHT = -3
+ZOOM_FIT_TO_CONTENT = -4
+ZOOM_FIT_TO_CONTENT_WIDTH = -5
+ZOOM_FIT_TO_CONTENT_HEIGHT = -6
+
+GAMMA_NO_GAMMA = -1.0
+
 -- option parsing:
 longopts = {
 	password = "p",
@@ -50,14 +60,21 @@ end
 rcount = 5
 rcountmax = 5
 
-globalzoom = -1
-globalgamma = -1.0
+globalzoom = 1.0
+globalzoommode = ZOOM_FIT_TO_PAGE
+globalgamma = GAMMA_NO_GAMMA
+
+fullwidth = 0
+fullheight = 0
+
+shiftmode = false
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
+	set_k3_keycodes()
 elseif optarg["d"] == "emu" then
 	input.open("")
 	-- SDL key codes
@@ -83,22 +100,53 @@ nulldc = pdf.newDC()
 function setzoom(page, cacheslot)
 	local dc = pdf.newDC()
 	local pwidth, pheight = page:getSize(nulldc)
-
-	-- default zoom: fit to page
-	local zoom = width / pwidth
 	local offset_x = 0
-	local offset_y = (height - (zoom * pheight)) / 2
-	if height / pheight < zoom then
-		zoom = height / pheight
-		offset_x = (width - (zoom * pwidth)) / 2
-		offset_y = 0
-	end
+	local offset_y = 0
 
-	dc:setZoom(zoom)
+	if globalzoommode == ZOOM_FIT_TO_PAGE then
+		globalzoom = width / pwidth
+		offset_x = 0
+		offset_y = (height - (globalzoom * pheight)) / 2
+		if height / pheight < globalzoom then
+			globalzoom = height / pheight
+			offset_x = (width - (globalzoom * pwidth)) / 2
+			offset_y = 0
+		end
+	elseif globalzoommode == ZOOM_FIT_TO_PAGE_WIDTH then
+		globalzoom = width / pwidth
+		offset_x = 0
+		offset_y = (height - (globalzoom * pheight)) / 2
+	elseif globalzoommode == ZOOM_FIT_TO_PAGE_HEIGHT then
+		globalzoom = height / pheight
+		offset_x = (width - (globalzoom * pwidth)) / 2
+		offset_y = 0
+	elseif globalzoommode == ZOOM_FIT_TO_CONTENT then
+		local x0, y0, x1, y1 = page:getUsedBBox()
+		globalzoom = width / (x1 - x0)
+		offset_x = -1 * x0 * globalzoom
+		offset_y = -1 * y0 * globalzoom + (height - (globalzoom * (y1 - y0))) / 2
+		if height / (y1 - y0) < globalzoom then
+			globalzoom = height / (y1 - y0)
+			offset_x = -1 * x0 * globalzoom + (width - (globalzoom * (x1 - x0))) / 2
+			offset_y = -1 * y0 * globalzoom
+		end
+	elseif globalzoommode == ZOOM_FIT_TO_CONTENT_WIDTH then
+		local x0, y0, x1, y1 = page:getUsedBBox()
+		globalzoom = width / (x1 - x0)
+		offset_x = -1 * x0 * globalzoom
+		offset_y = -1 * y0 * globalzoom + (height - (globalzoom * (y1 - y0))) / 2
+	elseif globalzoommode == ZOOM_FIT_TO_CONTENT_HEIGHT then
+		local x0, y0, x1, y1 = page:getUsedBBox()
+		globalzoom = height / (y1 - y0)
+		offset_x = -1 * x0 * globalzoom + (width - (globalzoom * (x1 - x0))) / 2
+		offset_y = -1 * y0 * globalzoom
+	end
+	dc:setZoom(globalzoom)
 	dc:setOffset(offset_x, offset_y)
+	fullwidth, fullheight = page:getSize(dc)
 
 	-- set gamma here, we don't have any other good place for this right now:
-	if globalgamma ~= -1.0 then
+	if globalgamma ~= GAMMA_NO_GAMMA then
 		print("gamma correction: "..globalgamma)
 		dc:setGamma(globalgamma)
 	end
@@ -106,7 +154,12 @@ function setzoom(page, cacheslot)
 end
 
 function show(no)
-	local slot = draworcache(no,globalzoom,0,0,width,height,globalgamma)
+	local slot
+	if globalzoommode ~= ZOOM_BY_VALUE then
+		slot = draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+	else
+		slot = draworcache(no,globalzoom,0,0,width,height,globalgamma)
+	end
 	fb:blitFullFrom(cache[slot].bb)
 	if rcount == rcountmax then
 		print("full refresh")
@@ -128,7 +181,11 @@ function goto(no)
 	show(no)
 	if no < doc:getPages() then
 		-- always pre-cache next page
-		draworcache(no+1,globalzoom,0,0,width,height,globalgamma)
+		if globalzoommode ~= ZOOM_BY_VALUE then
+			draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+		else
+			draworcache(no,globalzoom,0,0,width,height,globalgamma)
+		end
 	end
 end
 
@@ -138,8 +195,20 @@ function modify_gamma(offset)
 	end
 	print("modify_gamma, gamma="..globalgamma.." offset="..offset)
 	globalgamma = globalgamma + offset;
-	clearcache()
 	goto(pageno)
+end
+function setglobalzoommode(newzoommode)
+	if globalzoommode ~= newzoommode then
+		globalzoommode = newzoommode
+		goto(pageno)
+	end
+end
+function setglobalzoom(zoom)
+	if globalzoom ~= zoom then
+		globalzoommode = ZOOM_BY_VALUE
+		globalzoom = zoom
+		goto(pageno)
+	end
 end
 
 function mainloop()
@@ -147,20 +216,50 @@ function mainloop()
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
-			if ev.code == KEY_PAGEUP then
-				goto(pageno + 1)
-			elseif ev.code == KEY_PAGEDOWN then
-				goto(pageno - 1)
+			if ev.code == KEY_SHIFT then
+				shiftmode = true
+			elseif ev.code == KEY_PGFWD then
+				if not shiftmode then
+					goto(pageno + 1)
+				else
+					setglobalzoom(globalzoom*1.25)
+				end
+			elseif ev.code == KEY_PGBCK then
+				if not shiftmode then
+					goto(pageno - 1)
+				else
+					setglobalzoom(globalzoom*0.8)
+				end
 			elseif ev.code == KEY_BACK then
 				return
-			elseif ev.code == KEY_UP then
+			elseif ev.code == KEY_FW_UP then
 				modify_gamma( 0.2 )
-			elseif ev.code == KEY_DOWN then
+			elseif ev.code == KEY_FW_DOWN then
 				modify_gamma( -0.2 )
+			elseif ev.code == KEY_A then
+				if shiftmode then
+					setglobalzoommode(ZOOM_FIT_TO_CONTENT)
+				else
+					setglobalzoommode(ZOOM_FIT_TO_PAGE)
+				end
+			elseif ev.code == KEY_S then
+				if shiftmode then
+					setglobalzoommode(ZOOM_FIT_TO_CONTENT_WIDTH)
+				else
+					setglobalzoommode(ZOOM_FIT_TO_PAGE_WIDTH)
+				end
+			elseif ev.code == KEY_D then
+				if shiftmode then
+					setglobalzoommode(ZOOM_FIT_TO_CONTENT_HEIGHT)
+				else
+					setglobalzoommode(ZOOM_FIT_TO_PAGE_HEIGHT)
+				end
 			end
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
+			shiftmode = false
 		end
 	end
 end
