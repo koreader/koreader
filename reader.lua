@@ -291,10 +291,10 @@ function mainloop()
 					offset_x = offset_x - x
 					goto(pageno)
 				elseif ev.code == KEY_FW_UP then
-					offset_y = offset_y - y
+					offset_y = offset_y + y
 					goto(pageno)
 				elseif ev.code == KEY_FW_DOWN then
-					offset_y = offset_y + y
+					offset_y = offset_y - y
 					goto(pageno)
 				elseif ev.code == KEY_FW_PRESS then
 					if shiftmode then
