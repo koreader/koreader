@@ -71,9 +71,10 @@ offset_y = 0
 
 shift_x = 100
 shift_y = 50
-shift_step = 1 -- using shift_[xy] or width/height
+pan_by_page = false -- using shift_[xy] or width/height
 
 shiftmode = false
+altmode = false
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
@@ -219,17 +220,23 @@ function mainloop()
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_SHIFT then
 				shiftmode = true
+			elseif ev.code == KEY_ALT then
+				altmode = true
 			elseif ev.code == KEY_PGFWD then
-				if not shiftmode then
-					goto(pageno + 1)
+				if shiftmode then
+					setglobalzoom(globalzoom*1.2)
+				elseif altmode then
+					setglobalzoom(globalzoom*1.1)
 				else
-					setglobalzoom(globalzoom*1.25)
+					goto(pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK then
-				if not shiftmode then
-					goto(pageno - 1)
-				else
+				if shiftmode then
 					setglobalzoom(globalzoom*0.8)
+				elseif altmode then
+					setglobalzoom(globalzoom*0.9)
+				else
+					goto(pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
 				return
@@ -262,14 +269,17 @@ function mainloop()
 				local y
 
 				if shiftmode then -- shift always moves in small steps
-					x = shift_x / 3
-					y = shift_y / 3
-				elseif shift_step then
-					x = shift_x
-					y = shift_y
-				else
+					x = shift_x / 2
+					y = shift_y / 2
+				elseif altmode then
+					x = shift_x / 5
+					y = shift_y / 5
+				elseif pan_by_page then
 					x = width  - 5; -- small overlap when moving by page
 					y = height - 5;
+				else
+					x = shift_x
+					y = shift_y
 				end
 
 				print("offset "..offset_x.."*"..offset_x.." shift "..x.."*"..y.." globalzoom="..globalzoom)
@@ -292,7 +302,7 @@ function mainloop()
 						offset_y = 0
 						goto(pageno)
 					else
-						shift_step = not shift_step
+						pan_by_page = not pan_by_page
 					end
 				end
 			end
@@ -302,6 +312,8 @@ function mainloop()
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
 			shiftmode = false
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
+			altmode = false
 		end
 	end
 end
