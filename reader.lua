@@ -69,6 +69,10 @@ fullheight = 0
 offset_x = 0
 offset_y = 0
 
+shift_x = 100
+shift_y = 50
+shift_step = 1 -- using shift_[xy] or width/height
+
 shiftmode = false
 
 if optarg["d"] == "k3" then
@@ -156,9 +160,9 @@ end
 function show(no)
 	local slot
 	if globalzoommode ~= ZOOM_BY_VALUE then
-		slot = draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+		slot = draworcache(no,globalzoommode,offset_x,offset_y,width,height,globalgamma)
 	else
-		slot = draworcache(no,globalzoom,0,0,width,height,globalgamma)
+		slot = draworcache(no,globalzoom,offset_x,offset_y,width,height,globalgamma)
 	end
 	fb:blitFullFrom(cache[slot].bb)
 	if rcount == rcountmax then
@@ -182,9 +186,9 @@ function goto(no)
 	if no < doc:getPages() then
 		-- always pre-cache next page
 		if globalzoommode ~= ZOOM_BY_VALUE then
-			draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+			draworcache(no,globalzoommode,offset_x,offset_y,width,height,globalgamma)
 		else
-			draworcache(no,globalzoom,0,0,width,height,globalgamma)
+			draworcache(no,globalzoom,offset_x,offset_y,width,height,globalgamma)
 		end
 	end
 end
@@ -252,6 +256,47 @@ function mainloop()
 					setglobalzoommode(ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
 			end
+
+			if globalzoommode == ZOOM_BY_VALUE then
+				local x
+				local y
+
+				if shiftmode then -- shift always moves in small steps
+					x = shift_x / 3
+					y = shift_y / 3
+				elseif shift_step then
+					x = shift_x
+					y = shift_y
+				else
+					x = width  - 5; -- small overlap when moving by page
+					y = height - 5;
+				end
+
+				print("offset "..offset_x.."*"..offset_x.." shift "..x.."*"..y.." globalzoom="..globalzoom)
+
+				if ev.code == KEY_FW_LEFT then
+					offset_x = offset_x + x
+					goto(pageno)
+				elseif ev.code == KEY_FW_RIGHT then
+					offset_x = offset_x - x
+					goto(pageno)
+				elseif ev.code == KEY_FW_UP then
+					offset_y = offset_y - y
+					goto(pageno)
+				elseif ev.code == KEY_FW_DOWN then
+					offset_y = offset_y + y
+					goto(pageno)
+				elseif ev.code == KEY_FW_PRESS then
+					if shiftmode then
+						offset_x = 0
+						offset_y = 0
+						goto(pageno)
+					else
+						shift_step = not shift_step
+					end
+				end
+			end
+
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
