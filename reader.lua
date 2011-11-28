@@ -69,7 +69,12 @@ fullheight = 0
 offset_x = 0
 offset_y = 0
 
+shift_x = 100
+shift_y = 50
+pan_by_page = false -- using shift_[xy] or width/height
+
 shiftmode = false
+altmode = false
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
@@ -156,9 +161,9 @@ end
 function show(no)
 	local slot
 	if globalzoommode ~= ZOOM_BY_VALUE then
-		slot = draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+		slot = draworcache(no,globalzoommode,offset_x,offset_y,width,height,globalgamma)
 	else
-		slot = draworcache(no,globalzoom,0,0,width,height,globalgamma)
+		slot = draworcache(no,globalzoom,offset_x,offset_y,width,height,globalgamma)
 	end
 	fb:blitFullFrom(cache[slot].bb)
 	if rcount == rcountmax then
@@ -182,9 +187,9 @@ function goto(no)
 	if no < doc:getPages() then
 		-- always pre-cache next page
 		if globalzoommode ~= ZOOM_BY_VALUE then
-			draworcache(no,globalzoommode,0,0,width,height,globalgamma)
+			draworcache(no,globalzoommode,offset_x,offset_y,width,height,globalgamma)
 		else
-			draworcache(no,globalzoom,0,0,width,height,globalgamma)
+			draworcache(no,globalzoom,offset_x,offset_y,width,height,globalgamma)
 		end
 	end
 end
@@ -215,17 +220,23 @@ function mainloop()
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_SHIFT then
 				shiftmode = true
+			elseif ev.code == KEY_ALT then
+				altmode = true
 			elseif ev.code == KEY_PGFWD then
-				if not shiftmode then
-					goto(pageno + 1)
+				if shiftmode then
+					setglobalzoom(globalzoom*1.2)
+				elseif altmode then
+					setglobalzoom(globalzoom*1.1)
 				else
-					setglobalzoom(globalzoom*1.25)
+					goto(pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK then
-				if not shiftmode then
-					goto(pageno - 1)
-				else
+				if shiftmode then
 					setglobalzoom(globalzoom*0.8)
+				elseif altmode then
+					setglobalzoom(globalzoom*0.9)
+				else
+					goto(pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
 				return
@@ -252,11 +263,57 @@ function mainloop()
 					setglobalzoommode(ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
 			end
+
+			if globalzoommode == ZOOM_BY_VALUE then
+				local x
+				local y
+
+				if shiftmode then -- shift always moves in small steps
+					x = shift_x / 2
+					y = shift_y / 2
+				elseif altmode then
+					x = shift_x / 5
+					y = shift_y / 5
+				elseif pan_by_page then
+					x = width  - 5; -- small overlap when moving by page
+					y = height - 5;
+				else
+					x = shift_x
+					y = shift_y
+				end
+
+				print("offset "..offset_x.."*"..offset_x.." shift "..x.."*"..y.." globalzoom="..globalzoom)
+
+				if ev.code == KEY_FW_LEFT then
+					offset_x = offset_x + x
+					goto(pageno)
+				elseif ev.code == KEY_FW_RIGHT then
+					offset_x = offset_x - x
+					goto(pageno)
+				elseif ev.code == KEY_FW_UP then
+					offset_y = offset_y + y
+					goto(pageno)
+				elseif ev.code == KEY_FW_DOWN then
+					offset_y = offset_y - y
+					goto(pageno)
+				elseif ev.code == KEY_FW_PRESS then
+					if shiftmode then
+						offset_x = 0
+						offset_y = 0
+						goto(pageno)
+					else
+						pan_by_page = not pan_by_page
+					end
+				end
+			end
+
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
 			shiftmode = false
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
+			altmode = false
 		end
 	end
 end
