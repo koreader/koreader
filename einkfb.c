@@ -182,19 +182,20 @@ static int blitToFrameBuffer(lua_State *L) {
 				*fbptr &= 0xF0;
 				*fbptr |= *bbptr & 0x0F;
 				fbptr += fb->finfo.line_length;
+				bbptr += (bb->w / 2);
 			}
 		} else {
 			for(y = 0; y < h; y++) {
 				*fbptr &= 0xF0;
-				*fbptr |= (*bbptr & 0xF0) >> 4;
+				*fbptr |= *bbptr >> 4;
 				fbptr += fb->finfo.line_length;
+				bbptr += (bb->w / 2);
 			}
 		}
 		xdest++;
 		xoffs++;
 		w--;
 	}
-	w = (w+1) / 2; // we'll always do two pixels at once for now
 
 	fbptr = (uint8_t*)(fb->data + 
 			ydest * fb->finfo.line_length + 
@@ -205,15 +206,23 @@ static int blitToFrameBuffer(lua_State *L) {
 
 	if(xoffs & 1) {
 		for(y = 0; y < h; y++) {
-			for(x = 0; x < w; x++) {
-				fbptr[x] = (bbptr[x-1] << 4) | ((bbptr[x] & 0xF0) >> 4);
+			for(x = 0; x < (w / 2); x++) {
+				fbptr[x] = (bbptr[x] << 4) | (bbptr[x+1] >> 4);
+			}
+			if(w & 1) {
+				fbptr[x] &= 0x0F;
+				fbptr[x] |= bbptr[x] << 4;
 			}
 			fbptr += fb->finfo.line_length;
 			bbptr += (bb->w / 2);
 		}
 	} else {
 		for(y = 0; y < h; y++) {
-			memcpy(fbptr, bbptr, w);
+			memcpy(fbptr, bbptr, w / 2);
+			if(w & 1) {
+				fbptr[w/2 + 1] &= 0x0F;
+				fbptr[w/2 + 1] |= bbptr[w/2 + 1] << 4;
+			}
 			fbptr += fb->finfo.line_length;
 			bbptr += (bb->w / 2);
 		}

@@ -33,6 +33,8 @@ function getglyph(face, facehash, charcode)
 			size = size,
 			g = glyph
 		}
+	else
+		glyphcache[hash].age = glyphcache_max_age
 	end
 	return glyphcache[hash].g
 end
@@ -48,6 +50,7 @@ function renderUtf8Text(x, y, face, facehash, text)
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		local glyph = getglyph(face, facehash, util.utf8charcode(uchar))
 		fb:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+		print(uchar, x + pen_x + glyph.l, y - glyph.t, glyph.bb:getWidth(), glyph.bb:getHeight())
 		pen_x = pen_x + glyph.ax
 	end
 end

@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <string.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdint.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
