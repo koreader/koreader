@@ -23,10 +23,8 @@ end
 function getglyph(face, facehash, charcode)
 	local hash = glyphcachehash(facehash, charcode)
 	if glyphcache[hash] == nil then
-		print("render glyph")
 		local glyph = face:renderGlyph(charcode)
 		local size = glyph.bb:getWidth() * glyph.bb:getHeight() / 2 + 32
-		print("cache claim")
 		glyphcacheclaim(size);
 		glyphcache[hash] = {
 			age = glyphcache_max_age,
@@ -45,13 +43,23 @@ function clearglyphcache()
 	glyphcache = {}
 end
 
-function renderUtf8Text(x, y, face, facehash, text)
+function renderUtf8Text(x, y, face, facehash, text, kerning)
+	-- may still need more adaptive pen placement when kerning,
+	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
+	local prevcharcode = 0
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-		local glyph = getglyph(face, facehash, util.utf8charcode(uchar))
-		fb:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
-		print(uchar, x + pen_x + glyph.l, y - glyph.t, glyph.bb:getWidth(), glyph.bb:getHeight())
+		local charcode = util.utf8charcode(uchar)
+		local glyph = getglyph(face, facehash, charcode)
+		if kerning and prevcharcode then
+			local kern = face:getKerning(prevcharcode, charcode)
+			pen_x = pen_x + kern
+			fb:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+		else
+			fb:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+		end
 		pen_x = pen_x + glyph.ax
+		prevcharcode = charcode
 	end
 end
 

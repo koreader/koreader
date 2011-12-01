@@ -167,7 +167,6 @@ static int blitToFrameBuffer(lua_State *L) {
 
 	uint8_t *fbptr;
 	uint8_t *bbptr;
-	uint8_t smask;
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
@@ -222,6 +221,109 @@ static int blitToFrameBuffer(lua_State *L) {
 			if(w & 1) {
 				fbptr[w/2 + 1] &= 0x0F;
 				fbptr[w/2 + 1] |= bbptr[w/2 + 1] << 4;
+			}
+			fbptr += fb->finfo.line_length;
+			bbptr += (bb->w / 2);
+		}
+	}
+	return 0;
+}
+
+static int addblitToFrameBuffer(lua_State *L) {
+	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
+	int xdest = luaL_checkint(L, 3);
+	int ydest = luaL_checkint(L, 4);
+	int xoffs = luaL_checkint(L, 5);
+	int yoffs = luaL_checkint(L, 6);
+	int w = luaL_checkint(L, 7);
+	int h = luaL_checkint(L, 8);
+	int x, y;
+
+	// check bounds
+	if(yoffs >= bb->h) {
+		return 0;
+	} else if(yoffs + h > bb->h) {
+		h = bb->h - yoffs;
+	}
+	if(ydest >= fb->vinfo.yres) {
+		return 0;
+	} else if(ydest + h > fb->vinfo.yres) {
+		h = fb->vinfo.yres - ydest;
+	}
+	if(xoffs >= bb->w) {
+		return 0;
+	} else if(xoffs + w > bb->w) {
+		w = bb->w - xoffs;
+	}
+	if(xdest >= fb->vinfo.xres) {
+		return 0;
+	} else if(xdest + w > fb->vinfo.xres) {
+		w = fb->vinfo.xres - xdest;
+	}
+
+	uint8_t *fbptr;
+	uint8_t *bbptr;
+
+	if(xdest & 1) {
+		/* this will render the leftmost column */
+		fbptr = (uint8_t*)(fb->data + 
+				ydest * fb->finfo.line_length + 
+				xdest / 2);
+		bbptr = (uint8_t*)(bb->data +
+				yoffs * bb->w / 2 +
+				xoffs / 2 );
+		if(xoffs & 1) {
+			for(y = 0; y < h; y++) {
+				uint8_t v = (*fbptr & 0x0F) + (*bbptr & 0x0F);
+				*fbptr = (*fbptr & 0xF0) | (v < 0x0F ? v : 0x0F);
+				fbptr += fb->finfo.line_length;
+				bbptr += (bb->w / 2);
+			}
+		} else {
+			for(y = 0; y < h; y++) {
+				uint8_t v = (*fbptr & 0x0F) + (*bbptr >> 4);
+				*fbptr = (*fbptr & 0xF0) | (v < 0x0F ? v : 0x0F);
+				fbptr += fb->finfo.line_length;
+				bbptr += (bb->w / 2);
+			}
+		}
+		xdest++;
+		xoffs++;
+		w--;
+	}
+
+	fbptr = (uint8_t*)(fb->data + 
+			ydest * fb->finfo.line_length + 
+			xdest / 2);
+	bbptr = (uint8_t*)(bb->data +
+			yoffs * bb->w / 2 +
+			xoffs / 2 );
+
+	if(xoffs & 1) {
+		for(y = 0; y < h; y++) {
+			for(x = 0; x < (w / 2); x++) {
+				uint16_t v1 = (fbptr[x] & 0xF0) + ((bbptr[x] & 0x0F) << 4);
+				uint8_t v2 = (fbptr[x] & 0x0F) + (bbptr[x+1] >> 4);
+				fbptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
+			}
+			if(w & 1) {
+				uint16_t v1 = (fbptr[x] & 0xF0) + ((bbptr[x] & 0x0F) << 4);
+				fbptr[x] = (fbptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
+			}
+			fbptr += fb->finfo.line_length;
+			bbptr += (bb->w / 2);
+		}
+	} else {
+		for(y = 0; y < h; y++) {
+			for(x = 0; x < (w / 2); x++) {
+				uint16_t v1 = (fbptr[x] & 0xF0) + (bbptr[x] & 0xF0);
+				uint8_t v2 = (fbptr[x] & 0x0F) + (bbptr[x] & 0x0F);
+				fbptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
+			}
+			if(w & 1) {
+				uint16_t v1 = (fbptr[x] & 0xF0) + (bbptr[x] & 0xF0);
+				fbptr[x] = (fbptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
 			fbptr += fb->finfo.line_length;
 			bbptr += (bb->w / 2);
@@ -286,6 +388,7 @@ static const struct luaL_reg einkfb_meth[] = {
 	{"refresh", einkUpdate},
 	{"getSize", getSize},
 	{"blitFrom", blitToFrameBuffer},
+	{"addblitFrom", addblitToFrameBuffer},
 	{"blitFullFrom", blitFullToFrameBuffer},
 	{NULL, NULL}
 };

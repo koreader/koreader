@@ -138,6 +138,29 @@ static int renderGlyph(lua_State *L) {
 	return 1;
 }
 
+static int hasKerning(lua_State *L) {
+	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
+	if(FT_HAS_KERNING((*face))) {
+		lua_pushinteger(L, 1);
+	} else {
+		lua_pushinteger(L, 0);
+	}
+	return 1;
+}
+
+static int getKerning(lua_State *L) {
+	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
+	int left = FT_Get_Char_Index(*face, luaL_checkint(L, 2));
+	int right = FT_Get_Char_Index(*face, luaL_checkint(L, 3));
+	FT_Vector kerning;
+	FT_Error error = FT_Get_Kerning(*face, left, right, FT_KERNING_DEFAULT, &kerning);
+	if(error) {
+		return luaL_error(L, "freetype error when getting kerning (l=%d, r=%d)", left, right);
+	}
+	lua_pushinteger(L, kerning.x >> 6);
+	return 1;
+}
+
 static int doneFace(lua_State *L) {
 	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
 	if(*face != NULL) {
@@ -152,6 +175,8 @@ static int doneFace(lua_State *L) {
 
 static const struct luaL_reg ft_face_meth[] = {
 	{"renderGlyph", renderGlyph},
+	{"hasKerning", hasKerning},
+	{"getKerning", getKerning},
 	{"done", doneFace},
 	{"__gc", doneFace},
 	{NULL, NULL}
