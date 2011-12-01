@@ -59,9 +59,19 @@ static int newFace(lua_State *L) {
 static int newBuiltinFace(lua_State *L) {
 	const char *fontname = luaL_checkstring(L, 1);
 	int pxsize = luaL_optint(L, 2, 16*64);
+	char *fontdata = NULL;
 
 	unsigned int size;
-	const char *fontdata = pdf_find_builtin_font(fontname, &size);
+	/* we use compiled-in font data from mupdf build */
+	if(!strcmp("mono", fontname)) {
+		fontdata = pdf_find_substitute_font(1, 0, 0, 0, &size);
+	} else if(!strcmp("sans", fontname)) {
+		fontdata = pdf_find_substitute_font(0, 0, 0, 0, &size);
+	} else if(!strcmp("cjk", fontname)) {
+		fontdata = pdf_find_substitute_cjk_font(0, 0, &size);
+	} else {
+		fontdata = pdf_find_builtin_font(fontname, &size);
+	}
 	if(fontdata == NULL) {
 		return luaL_error(L, "no such built-in font");
 	}
