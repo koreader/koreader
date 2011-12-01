@@ -231,9 +231,12 @@ static int closePage(lua_State *L) {
 #endif
 	//fz_free_glyph_cache(page->doc->glyphcache);
 	//page->doc->glyphcache = fz_new_glyph_cache();
-	pdf_free_page(page->page);
+	if(page->page != NULL) {
+		pdf_free_page(page->page);
 
-	pdf_age_store(page->doc->xref->store, 2);
+		pdf_age_store(page->doc->xref->store, 2);
+		page->page = NULL;
+	}
 }
 
 static int drawPage(lua_State *L) {
@@ -315,6 +318,7 @@ static const struct luaL_reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
+	{"__gc", closePage},
 	{"draw", drawPage},
 	{NULL, NULL}
 };

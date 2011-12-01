@@ -140,9 +140,12 @@ static int renderGlyph(lua_State *L) {
 
 static int doneFace(lua_State *L) {
 	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
-	FT_Error error = FT_Done_Face(*face);
-	if(error) {
-		return luaL_error(L, "freetype error when freeing face");
+	if(*face != NULL) {
+		FT_Error error = FT_Done_Face(*face);
+		if(error) {
+			return luaL_error(L, "freetype error when freeing face");
+		}
+		*face = NULL;
 	}
 	return 0;
 }
@@ -150,6 +153,7 @@ static int doneFace(lua_State *L) {
 static const struct luaL_reg ft_face_meth[] = {
 	{"renderGlyph", renderGlyph},
 	{"done", doneFace},
+	{"__gc", doneFace},
 	{NULL, NULL}
 };
 
