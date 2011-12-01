@@ -96,6 +96,7 @@ static int openFrameBuffer(lua_State *L) {
 	fb->finfo.type = FB_TYPE_PACKED_PIXELS;
 	fb->data = malloc(fb->finfo.smem_len);
 #endif
+	memset(fb->data, 0, fb->finfo.smem_len);
 
 	return 1;
 }
@@ -134,9 +135,9 @@ static int blitFullToFrameBuffer(lua_State *L) {
 static int blitToFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
-	int xdest = luaL_checkint(L, 3) & 0x7FFFFFFE;
+	int xdest = luaL_checkint(L, 3);
 	int ydest = luaL_checkint(L, 4);
-	int xoffs = luaL_checkint(L, 5) & 0x7FFFFFFE;
+	int xoffs = luaL_checkint(L, 5);
 	int yoffs = luaL_checkint(L, 6);
 	int w = luaL_checkint(L, 7);
 	int h = luaL_checkint(L, 8);
@@ -145,7 +146,7 @@ static int blitToFrameBuffer(lua_State *L) {
 	// check bounds
 	if(yoffs >= bb->h) {
 		return 0;
-	} else if(yoffs + h > bb->w) {
+	} else if(yoffs + h > bb->h) {
 		h = bb->h - yoffs;
 	}
 	if(ydest >= fb->vinfo.yres) {
@@ -164,21 +165,64 @@ static int blitToFrameBuffer(lua_State *L) {
 		w = fb->vinfo.xres - xdest;
 	}
 
+	uint8_t *fbptr;
+	uint8_t *bbptr;
+	uint8_t smask;
+
+	if(xdest & 1) {
+		/* this will render the leftmost column */
+		fbptr = (uint8_t*)(fb->data + 
+				ydest * fb->finfo.line_length + 
+				xdest / 2);
+		bbptr = (uint8_t*)(bb->data +
+				yoffs * bb->w / 2 +
+				xoffs / 2 );
+		if(xoffs & 1) {
+			for(y = 0; y < h; y++) {
+				*fbptr &= 0xF0;
+				*fbptr |= *bbptr & 0x0F;
+				fbptr += fb->finfo.line_length;
+			}
+		} else {
+			for(y = 0; y < h; y++) {
+				*fbptr &= 0xF0;
+				*fbptr |= (*bbptr & 0xF0) >> 4;
+				fbptr += fb->finfo.line_length;
+			}
+		}
+		xdest++;
+		xoffs++;
+		w--;
+	}
 	w = (w+1) / 2; // we'll always do two pixels at once for now
 
-	uint8_t *fbptr = (uint8_t*)(fb->data + 
+	fbptr = (uint8_t*)(fb->data + 
 			ydest * fb->finfo.line_length + 
 			xdest / 2);
-	uint8_t *bbptr = (uint8_t*)(bb->data +
+	bbptr = (uint8_t*)(bb->data +
 			yoffs * bb->w / 2 +
 			xoffs / 2 );
 
-	for(y = 0; y < h; y++) {
-		memcpy(fbptr, bbptr, w);
-		fbptr += fb->finfo.line_length;
-		bbptr += (bb->w / 2);
+	if(xoffs & 1) {
+		for(y = 0; y < h; y++) {
+			for(x = 0; x < w; x++) {
+				fbptr[x] = (bbptr[x-1] << 4) | ((bbptr[x] & 0xF0) >> 4);
+			}
+			fbptr += fb->finfo.line_length;
+			bbptr += (bb->w / 2);
+		}
+	} else {
+		for(y = 0; y < h; y++) {
+			memcpy(fbptr, bbptr, w);
+			fbptr += fb->finfo.line_length;
+			bbptr += (bb->w / 2);
+		}
 	}
 	return 0;
+}
+
+static int paintRect(lua_State *L) {
+	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 }
 
 static int einkUpdate(lua_State *L) {

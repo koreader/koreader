@@ -28,8 +28,27 @@ static int gettime(lua_State *L) {
 	return 2;
 }
 
+static int utf8charcode(lua_State *L) {
+	size_t len;
+	const char* utf8char = luaL_checklstring(L, 1, &len);
+	int c;
+	if(len == 1) {
+		c = utf8char[0] & 0x7F; /* should not be needed */
+	} else if(len == 2) {
+		c = ((utf8char[0] & 0x1F) << 6) | (utf8char[1] & 0x3F);
+	} else if(len == 3) {
+		c = ((utf8char[0] & 0x0F) << 12) | ((utf8char[1] & 0x3F) << 6) | (utf8char[2] & 0x3F);
+	} else {
+		// 4, 5, 6 byte cases still missing
+		return 0;
+	}
+	lua_pushinteger(L, c);
+	return 1;
+}
+
 static const struct luaL_reg util_func[] = {
 	{"gettime", gettime},
+	{"utf8charcode", utf8charcode},
 	{NULL, NULL}
 };
 

@@ -7,6 +7,7 @@ MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 
 SQLITE3DIR=sqlite-amalgamation-3070900
 LSQLITE3DIR=lsqlite3_svn08
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.4
 
 # set this to your ARM cross compiler:
 
@@ -54,7 +55,7 @@ SQLITE3LDFLAGS := -lpthread
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o $(SQLITE3OBJS) $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
 	$(CC) -lm -ldl $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
@@ -62,6 +63,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o $(SQLITE3OBJS) $
 		blitbuffer.o \
 		input.o \
 		util.o \
+		ft.o \
 		$(SQLITE3OBJS) \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
@@ -70,6 +72,9 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o $(SQLITE3OBJS) $
 
 einkfb.o input.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
+
+ft.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
 
 kpdfview.o pdf.o blitbuffer.o util.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $< -o $@

@@ -27,6 +27,7 @@
 #include "pdf.h"
 #include "einkfb.h"
 #include "input.h"
+#include "ft.h"
 
 /* forward declaration for luasqlite3: */
 LUALIB_API int luaopen_lsqlite3(lua_State *L);
@@ -51,6 +52,7 @@ int main(int argc, char **argv) {
 		luaopen_pdf(L);
 		luaopen_input(L);
 		luaopen_util(L);
+		luaopen_ft(L);
 
 		luaopen_lsqlite3(L);
 

@@ -30,6 +30,18 @@ static int newBlitBuffer(lua_State *L) {
 	return 1;
 }
 
+static int getWidth(lua_State *L) {
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	lua_pushinteger(L, bb->w);
+	return 1;
+}
+
+static int getHeight(lua_State *L) {
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	lua_pushinteger(L, bb->h);
+	return 1;
+}
+
 static int freeBlitBuffer(lua_State *L) {
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
 
@@ -43,6 +55,8 @@ static const struct luaL_reg blitbuffer_func[] = {
 };
 
 static const struct luaL_reg blitbuffer_meth[] = {
+	{"getWidth", getWidth},
+	{"getHeight", getHeight},
 	{"free", freeBlitBuffer},
 	{NULL, NULL}
 };
