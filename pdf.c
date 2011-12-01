@@ -287,14 +287,18 @@ static int drawPage(lua_State *L) {
 	fz_free_device(dev);
 
 	uint8_t *bbptr = (uint8_t*)bb->data;
-	uint32_t *pmptr = (uint32_t*)pix->samples;
+	uint16_t *pmptr = (uint16_t*)pix->samples;
+	int x, y;
 
-	int c = bb->w * bb->h / 2;
-
-	while(c--) {
-		*bbptr = (((*pmptr & 0x00F00000) >> 20) | (*pmptr & 0x000000F0)) ^ 0xFF;
-		bbptr++;
-		pmptr++;
+	for(y = 0; y < bb->h; y++) {
+		for(x = 0; x < bb->w; x+=2) {
+			bbptr[x / 2] = (((pmptr[x+1] & 0xF0) >> 4) | (pmptr[x] & 0xF0)) ^ 0xFF;
+		}
+		if(bb->w & 1) {
+			bbptr[x / 2] = pmptr[x-1] & 0xF0;
+		}
+		bbptr += bb->pitch;
+		pmptr += bb->w;
 	}
 
 	fz_drop_pixmap(pix);
