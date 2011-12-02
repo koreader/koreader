@@ -78,9 +78,9 @@ static int openFrameBuffer(lua_State *L) {
 	}
 
 	/* mmap the framebuffer */
-	fb->buf.data = mmap(0, fb->finfo.smem_len,
+	fb->buf->data = mmap(0, fb->finfo.smem_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, fb->fd, 0);
-	if(fb->buf.data == MAP_FAILED) {
+	if(fb->buf->data == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
 #else
