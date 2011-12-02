@@ -312,6 +312,7 @@ static int paintRect(lua_State *L) {
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		memset(dstptr, c | (c << 4), w / 2);
+		dstptr += dst->pitch;
 	}
 	if(w & 1) {
 		dstptr = (uint8_t*)(dst->data + 

@@ -13,6 +13,8 @@ if face:hasKerning() then
 	print("has kerning")
 end
 
+fb.bb:paintRect(1,1,599,300,7);
+
 renderUtf8Text(fb.bb, 100, 100, face, "h", "AV T.T: gxyt!", true)
 renderUtf8Text(fb.bb, 100, 200, face, "h", "AV T.T: gxyt!", false)
 
