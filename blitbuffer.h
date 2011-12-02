@@ -26,7 +26,9 @@
 typedef struct BlitBuffer {
 	int w;
 	int h;
-	uint8_t data[1];
+	int pitch;
+	uint8_t *data;
+	uint8_t allocated;
 } BlitBuffer;
 
 int luaopen_blitbuffer(lua_State *L);

@@ -107,14 +107,23 @@ static int renderGlyph(lua_State *L) {
 		return luaL_error(L, "freetype error");
 	}
 
-	int w = ((*face)->glyph->bitmap.width + 1) & -2; // 2px steps
+	int w = (*face)->glyph->bitmap.width; // 2px steps
 	int h = (*face)->glyph->bitmap.rows;
 
 	lua_newtable(L);
 
-	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer) + (w * h / 2) - 1);
+	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
 	luaL_getmetatable(L, "blitbuffer");
 	lua_setmetatable(L, -2);
+
+	bb->w = w;
+	bb->pitch = (w + 1) / 2;
+	bb->h = h;
+	bb->data = malloc(bb->pitch * h);
+	if(bb->data == NULL) {
+		return luaL_error(L, "cannot allocate memory for blitbuffer");
+	}
+	bb->allocated = 1;
 
 	lua_setfield(L, -2, "bb");
 
@@ -128,13 +137,12 @@ static int renderGlyph(lua_State *L) {
 	for(y = 0; y < h; y++) {
 		uint8_t *src = (*face)->glyph->bitmap.buffer + y * (*face)->glyph->bitmap.pitch;
 		for(x = 0; x < w; x+=2) {
-			*dst = *src & 0xF0;
-			src++;
-			if(x+1 < w) {
-				*dst |= (*src & 0xF0) >> 4;
-				src++;
-			}
+			*dst = (src[0] & 0xF0) | (src[1] >> 4);
+			src+=2;
 			dst++;
+		}
+		if(w & 1) {
+			*dst = (*src & 0xF0) >> 4;
 		}
 	}
 

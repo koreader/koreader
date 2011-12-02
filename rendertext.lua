@@ -43,7 +43,7 @@ function clearglyphcache()
 	glyphcache = {}
 end
 
-function renderUtf8Text(x, y, face, facehash, text, kerning)
+function renderUtf8Text(buffer, x, y, face, facehash, text, kerning)
 	-- may still need more adaptive pen placement when kerning,
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
@@ -54,9 +54,9 @@ function renderUtf8Text(x, y, face, facehash, text, kerning)
 		if kerning and prevcharcode then
 			local kern = face:getKerning(prevcharcode, charcode)
 			pen_x = pen_x + kern
-			fb:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 		else
-			fb:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 		end
 		pen_x = pen_x + glyph.ax
 		prevcharcode = charcode

@@ -5,16 +5,16 @@ width, height = fb:getSize()
 
 print("open")
 
--- face = freetype.newBuiltinFace("Helvetica", 64)
-face = freetype.newFace("test.ttf", 64)
+face = freetype.newBuiltinFace("sans", 64)
+--face = freetype.newFace("test.ttf", 64)
 print("got face")
 
 if face:hasKerning() then
 	print("has kerning")
 end
 
-renderUtf8Text(100,100,face,"h","AV T.T: gxyt!",true)
-renderUtf8Text(100,200,face,"h","AV T.T: gxyt!",false)
+renderUtf8Text(fb.bb, 100, 100, face, "h", "AV T.T: gxyt!", true)
+renderUtf8Text(fb.bb, 100, 200, face, "h", "AV T.T: gxyt!", false)
 
 fb:refresh()
 

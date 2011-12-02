@@ -192,7 +192,7 @@ function show(no)
 	else
 		slot = draworcache(no,globalzoom,offset_x,offset_y,width,height,globalgamma)
 	end
-	fb:blitFullFrom(cache[slot].bb)
+	fb.bb:blitFullFrom(cache[slot].bb)
 	if rcount == rcountmax then
 		print("full refresh")
 		rcount = 1

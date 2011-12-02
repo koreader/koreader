@@ -29,9 +29,11 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "blitbuffer.h"
+
 typedef struct FBInfo {
 	int fd;
-	void *data;
+	BlitBuffer *buf;
 	struct fb_fix_screeninfo finfo;
 	struct fb_var_screeninfo vinfo;
 #ifdef EMULATE_READER

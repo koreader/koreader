@@ -20,7 +20,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 //#include <stdio.h>
-#include "blitbuffer.h"
 
 #include "einkfb.h"
 
@@ -29,6 +28,13 @@ static int openFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) lua_newuserdata(L, sizeof(FBInfo));
 
 	luaL_getmetatable(L, "einkfb");
+
+	fb->buf = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
+
+	luaL_getmetatable(L, "blitbuffer");
+	lua_setmetatable(L, -2);
+
+	lua_setfield(L, -2, "bb");
 	lua_setmetatable(L, -2);
 
 #ifndef EMULATE_READER
@@ -72,9 +78,9 @@ static int openFrameBuffer(lua_State *L) {
 	}
 
 	/* mmap the framebuffer */
-	fb->data = mmap(0, fb->finfo.smem_len,
+	fb->buf.data = mmap(0, fb->finfo.smem_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, fb->fd, 0);
-	if(fb->data == MAP_FAILED) {
+	if(fb->buf.data == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
 #else
@@ -91,12 +97,19 @@ static int openFrameBuffer(lua_State *L) {
 	fb->vinfo.yres = EMULATE_READER_H;
 	fb->vinfo.grayscale = 1;
 	fb->vinfo.bits_per_pixel = 4;
-	fb->finfo.smem_len = EMULATE_READER_W * EMULATE_READER_H / 2;
-	fb->finfo.line_length = EMULATE_READER_W / 2;
+	fb->finfo.smem_len = ((EMULATE_READER_W + 1) / 2) * EMULATE_READER_H;
+	fb->finfo.line_length = (EMULATE_READER_W + 1) / 2;
 	fb->finfo.type = FB_TYPE_PACKED_PIXELS;
-	fb->data = malloc(fb->finfo.smem_len);
+	fb->buf->data = malloc(fb->finfo.smem_len);
+	if(fb->buf->data == NULL) {
+		return luaL_error(L, "cannot get framebuffer emu memory");
+	}
 #endif
-	memset(fb->data, 0, fb->finfo.smem_len);
+	memset(fb->buf->data, 0, fb->finfo.smem_len);
+	fb->buf->w = fb->vinfo.xres;
+	fb->buf->h = fb->vinfo.yres;
+	fb->buf->pitch = fb->finfo.line_length;
+	fb->buf->allocated = 0;
 
 	return 1;
 }
@@ -110,230 +123,16 @@ static int getSize(lua_State *L) {
 
 static int closeFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+	if(fb->buf != NULL && fb->buf->data != NULL) {
 #ifndef EMULATE_READER
-	munmap(fb->data, fb->finfo.smem_len);
-	close(fb->fd);
+		munmap(fb->buf->data, fb->finfo.smem_len);
+		close(fb->fd);
 #else
-	free(fb->data);
+		free(fb->buf->data);
 #endif
-	return 0;
-}
-
-static int blitFullToFrameBuffer(lua_State *L) {
-	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
-	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
-
-	if(bb->w != fb->vinfo.xres || bb->h != fb->vinfo.yres) {
-		return luaL_error(L, "blitbuffer size must be framebuffer size!");
-	}
-	
-	memcpy(fb->data, bb->data, bb->w * bb->h / 2);
-
-	return 0;
-}
-
-static int blitToFrameBuffer(lua_State *L) {
-	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
-	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
-	int xdest = luaL_checkint(L, 3);
-	int ydest = luaL_checkint(L, 4);
-	int xoffs = luaL_checkint(L, 5);
-	int yoffs = luaL_checkint(L, 6);
-	int w = luaL_checkint(L, 7);
-	int h = luaL_checkint(L, 8);
-	int x, y;
-
-	// check bounds
-	if(yoffs >= bb->h) {
-		return 0;
-	} else if(yoffs + h > bb->h) {
-		h = bb->h - yoffs;
-	}
-	if(ydest >= fb->vinfo.yres) {
-		return 0;
-	} else if(ydest + h > fb->vinfo.yres) {
-		h = fb->vinfo.yres - ydest;
-	}
-	if(xoffs >= bb->w) {
-		return 0;
-	} else if(xoffs + w > bb->w) {
-		w = bb->w - xoffs;
-	}
-	if(xdest >= fb->vinfo.xres) {
-		return 0;
-	} else if(xdest + w > fb->vinfo.xres) {
-		w = fb->vinfo.xres - xdest;
-	}
-
-	uint8_t *fbptr;
-	uint8_t *bbptr;
-
-	if(xdest & 1) {
-		/* this will render the leftmost column */
-		fbptr = (uint8_t*)(fb->data + 
-				ydest * fb->finfo.line_length + 
-				xdest / 2);
-		bbptr = (uint8_t*)(bb->data +
-				yoffs * bb->w / 2 +
-				xoffs / 2 );
-		if(xoffs & 1) {
-			for(y = 0; y < h; y++) {
-				*fbptr &= 0xF0;
-				*fbptr |= *bbptr & 0x0F;
-				fbptr += fb->finfo.line_length;
-				bbptr += (bb->w / 2);
-			}
-		} else {
-			for(y = 0; y < h; y++) {
-				*fbptr &= 0xF0;
-				*fbptr |= *bbptr >> 4;
-				fbptr += fb->finfo.line_length;
-				bbptr += (bb->w / 2);
-			}
-		}
-		xdest++;
-		xoffs++;
-		w--;
-	}
-
-	fbptr = (uint8_t*)(fb->data + 
-			ydest * fb->finfo.line_length + 
-			xdest / 2);
-	bbptr = (uint8_t*)(bb->data +
-			yoffs * bb->w / 2 +
-			xoffs / 2 );
-
-	if(xoffs & 1) {
-		for(y = 0; y < h; y++) {
-			for(x = 0; x < (w / 2); x++) {
-				fbptr[x] = (bbptr[x] << 4) | (bbptr[x+1] >> 4);
-			}
-			if(w & 1) {
-				fbptr[x] &= 0x0F;
-				fbptr[x] |= bbptr[x] << 4;
-			}
-			fbptr += fb->finfo.line_length;
-			bbptr += (bb->w / 2);
-		}
-	} else {
-		for(y = 0; y < h; y++) {
-			memcpy(fbptr, bbptr, w / 2);
-			if(w & 1) {
-				fbptr[w/2 + 1] &= 0x0F;
-				fbptr[w/2 + 1] |= bbptr[w/2 + 1] << 4;
-			}
-			fbptr += fb->finfo.line_length;
-			bbptr += (bb->w / 2);
-		}
+		fb->buf->data = NULL;
 	}
 	return 0;
-}
-
-static int addblitToFrameBuffer(lua_State *L) {
-	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
-	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
-	int xdest = luaL_checkint(L, 3);
-	int ydest = luaL_checkint(L, 4);
-	int xoffs = luaL_checkint(L, 5);
-	int yoffs = luaL_checkint(L, 6);
-	int w = luaL_checkint(L, 7);
-	int h = luaL_checkint(L, 8);
-	int x, y;
-
-	// check bounds
-	if(yoffs >= bb->h) {
-		return 0;
-	} else if(yoffs + h > bb->h) {
-		h = bb->h - yoffs;
-	}
-	if(ydest >= fb->vinfo.yres) {
-		return 0;
-	} else if(ydest + h > fb->vinfo.yres) {
-		h = fb->vinfo.yres - ydest;
-	}
-	if(xoffs >= bb->w) {
-		return 0;
-	} else if(xoffs + w > bb->w) {
-		w = bb->w - xoffs;
-	}
-	if(xdest >= fb->vinfo.xres) {
-		return 0;
-	} else if(xdest + w > fb->vinfo.xres) {
-		w = fb->vinfo.xres - xdest;
-	}
-
-	uint8_t *fbptr;
-	uint8_t *bbptr;
-
-	if(xdest & 1) {
-		/* this will render the leftmost column */
-		fbptr = (uint8_t*)(fb->data + 
-				ydest * fb->finfo.line_length + 
-				xdest / 2);
-		bbptr = (uint8_t*)(bb->data +
-				yoffs * bb->w / 2 +
-				xoffs / 2 );
-		if(xoffs & 1) {
-			for(y = 0; y < h; y++) {
-				uint8_t v = (*fbptr & 0x0F) + (*bbptr & 0x0F);
-				*fbptr = (*fbptr & 0xF0) | (v < 0x0F ? v : 0x0F);
-				fbptr += fb->finfo.line_length;
-				bbptr += (bb->w / 2);
-			}
-		} else {
-			for(y = 0; y < h; y++) {
-				uint8_t v = (*fbptr & 0x0F) + (*bbptr >> 4);
-				*fbptr = (*fbptr & 0xF0) | (v < 0x0F ? v : 0x0F);
-				fbptr += fb->finfo.line_length;
-				bbptr += (bb->w / 2);
-			}
-		}
-		xdest++;
-		xoffs++;
-		w--;
-	}
-
-	fbptr = (uint8_t*)(fb->data + 
-			ydest * fb->finfo.line_length + 
-			xdest / 2);
-	bbptr = (uint8_t*)(bb->data +
-			yoffs * bb->w / 2 +
-			xoffs / 2 );
-
-	if(xoffs & 1) {
-		for(y = 0; y < h; y++) {
-			for(x = 0; x < (w / 2); x++) {
-				uint16_t v1 = (fbptr[x] & 0xF0) + ((bbptr[x] & 0x0F) << 4);
-				uint8_t v2 = (fbptr[x] & 0x0F) + (bbptr[x+1] >> 4);
-				fbptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
-			}
-			if(w & 1) {
-				uint16_t v1 = (fbptr[x] & 0xF0) + ((bbptr[x] & 0x0F) << 4);
-				fbptr[x] = (fbptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
-			}
-			fbptr += fb->finfo.line_length;
-			bbptr += (bb->w / 2);
-		}
-	} else {
-		for(y = 0; y < h; y++) {
-			for(x = 0; x < (w / 2); x++) {
-				uint16_t v1 = (fbptr[x] & 0xF0) + (bbptr[x] & 0xF0);
-				uint8_t v2 = (fbptr[x] & 0x0F) + (bbptr[x] & 0x0F);
-				fbptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
-			}
-			if(w & 1) {
-				uint16_t v1 = (fbptr[x] & 0xF0) + (bbptr[x] & 0xF0);
-				fbptr[x] = (fbptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
-			}
-			fbptr += fb->finfo.line_length;
-			bbptr += (bb->w / 2);
-		}
-	}
-	return 0;
-}
-
-static int paintRect(lua_State *L) {
-	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 }
 
 static int einkUpdate(lua_State *L) {
@@ -355,7 +154,7 @@ static int einkUpdate(lua_State *L) {
 		return luaL_error(L, "can't lock surface.");
 	}
 	uint32_t *sfptr = (uint32_t*)fb->screen->pixels;
-	uint8_t *fbptr = (uint8_t*)fb->data;
+	uint8_t *fbptr = (uint8_t*)fb->buf->data;
 
 	int c = fb->finfo.smem_len;
 
@@ -385,11 +184,9 @@ static const struct luaL_reg einkfb_func[] = {
 
 static const struct luaL_reg einkfb_meth[] = {
 	{"close", closeFrameBuffer},
+	{"__gc", closeFrameBuffer},
 	{"refresh", einkUpdate},
 	{"getSize", getSize},
-	{"blitFrom", blitToFrameBuffer},
-	{"addblitFrom", addblitToFrameBuffer},
-	{"blitFullFrom", blitFullToFrameBuffer},
 	{NULL, NULL}
 };
 
