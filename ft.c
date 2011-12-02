@@ -112,18 +112,11 @@ static int renderGlyph(lua_State *L) {
 
 	lua_newtable(L);
 
-	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
-	luaL_getmetatable(L, "blitbuffer");
-	lua_setmetatable(L, -2);
-
-	bb->w = w;
-	bb->pitch = (w + 1) / 2;
-	bb->h = h;
-	bb->data = malloc(bb->pitch * h);
-	if(bb->data == NULL) {
-		return luaL_error(L, "cannot allocate memory for blitbuffer");
+	BlitBuffer *bb;
+	int result = newBlitBufferNative(L, w, h, &bb);
+	if(result != 1) {
+		return result;
 	}
-	bb->allocated = 1;
 
 	lua_setfield(L, -2, "bb");
 

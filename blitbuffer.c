@@ -20,9 +20,7 @@
 #include <string.h>
 #include "blitbuffer.h"
 
-static int newBlitBuffer(lua_State *L) {
-	int w = luaL_checkint(L, 1);
-	int h = luaL_checkint(L, 2);
+int newBlitBufferNative(lua_State *L, int w, int h, BlitBuffer **newBuffer) {
 	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
 	luaL_getmetatable(L, "blitbuffer");
 	lua_setmetatable(L, -2);
@@ -36,7 +34,16 @@ static int newBlitBuffer(lua_State *L) {
 	}
 	memset(bb->data, 0, bb->pitch * h);
 	bb->allocated = 1;
+	if(newBuffer != NULL) {
+		*newBuffer = bb;
+	}
 	return 1;
+}
+
+static int newBlitBuffer(lua_State *L) {
+	int w = luaL_checkint(L, 1);
+	int h = luaL_checkint(L, 2);
+	return newBlitBufferNative(L, w, h, NULL);
 }
 
 static int getWidth(lua_State *L) {
