@@ -29,6 +29,8 @@
 #include "input.h"
 #include "ft.h"
 
+#include "lfs.h"
+
 /* forward declaration for luasqlite3: */
 LUALIB_API int luaopen_lsqlite3(lua_State *L);
 
@@ -55,6 +57,7 @@ int main(int argc, char **argv) {
 		luaopen_ft(L);
 
 		luaopen_lsqlite3(L);
+		luaopen_lfs(L);
 
 		lua_newtable(L);
 		for(i=2; i < argc; i++) {
