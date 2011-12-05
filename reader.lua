@@ -20,6 +20,7 @@
 require "alt_getopt"
 require "keys"
 require "tilecache"
+require "settings"
 
 ZOOM_BY_VALUE = 0
 ZOOM_FIT_TO_PAGE = -1
@@ -96,14 +97,7 @@ if optarg["G"] ~= nil then
 end
 
 doc = pdf.openDocument(ARGV[optind], optarg["p"] or "")
-docdb, errno, errstr = sqlite3.open(ARGV[optind]..".kpdfview")
-if docdb == nil then
-	print(errstr)
-else
-	docdb:exec("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);")
-	stmt_readsetting = docdb:prepare("SELECT value FROM settings WHERE key = ?;")
-	stmt_savesetting = docdb:prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?);")
-end
+settings = DocSettings:open(ARGV[optind])
 
 print("pdf has "..doc:getPages().." pages.")
 
@@ -111,25 +105,6 @@ fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 
 nulldc = pdf.newDC()
-
-function readsetting(key)
-	if docdb ~= nil then
-		stmt_readsetting:reset()
-		stmt_readsetting:bind_values(key)
-		result = stmt_readsetting:step()
-		if result == sqlite3.ROW then
-			return stmt_readsetting:get_value(0)
-		end
-	end
-end
-
-function savesetting(key, value)
-	if docdb ~= nil then
-		stmt_savesetting:reset()
-		stmt_savesetting:bind_values(key, value)
-		stmt_savesetting:step()
-	end
-end
 
 function setzoom(page, cacheslot)
 	local dc = pdf.newDC()
@@ -266,10 +241,8 @@ function mainloop()
 					goto(pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				if docdb ~= nil then
-					savesetting("last_page", pageno)
-					docdb:close()
-				end
+				settings.savesetting("last_page", pageno)
+				settings:close()
 				return
 			elseif ev.code == KEY_VPLUS then
 				modify_gamma( 1.25 )
@@ -349,6 +322,6 @@ function mainloop()
 	end
 end
 
-goto(tonumber(optarg["g"]) or tonumber(readsetting("last_page") or 1))
+goto(tonumber(optarg["g"]) or tonumber(settings:readsetting("last_page") or 1))
 
 mainloop()
