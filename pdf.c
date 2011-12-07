@@ -237,6 +237,7 @@ static int closePage(lua_State *L) {
 		pdf_age_store(page->doc->xref->store, 2);
 		page->page = NULL;
 	}
+	return 0;
 }
 
 static int drawPage(lua_State *L) {
@@ -291,11 +292,11 @@ static int drawPage(lua_State *L) {
 	int x, y;
 
 	for(y = 0; y < bb->h; y++) {
-		for(x = 0; x < bb->w; x+=2) {
-			bbptr[x / 2] = (((pmptr[x+1] & 0xF0) >> 4) | (pmptr[x] & 0xF0)) ^ 0xFF;
+		for(x = 0; x < (bb->w / 2); x++) {
+			bbptr[x] = (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0)) ^ 0xFF;
 		}
 		if(bb->w & 1) {
-			bbptr[x / 2] = pmptr[x-1] & 0xF0;
+			bbptr[x] = pmptr[x*2] & 0xF0;
 		}
 		bbptr += bb->pitch;
 		pmptr += bb->w;
