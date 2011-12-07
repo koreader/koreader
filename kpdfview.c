@@ -28,6 +28,7 @@
 #include "einkfb.h"
 #include "input.h"
 #include "ft.h"
+#include "util.h"
 
 #include "lfs.h"
 
