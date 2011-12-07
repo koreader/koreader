@@ -143,8 +143,8 @@ static int einkUpdate(lua_State *L) {
 	update_area_t myarea;
 	myarea.x1 = luaL_optint(L, 3, 0);
 	myarea.y1 = luaL_optint(L, 4, 0);
-	myarea.x2 = luaL_optint(L, 5, fb->vinfo.xres);
-	myarea.y2 = luaL_optint(L, 6, fb->vinfo.yres);
+	myarea.x2 = myarea.x1 + luaL_optint(L, 5, fb->vinfo.xres);
+	myarea.y2 = myarea.y1 + luaL_optint(L, 6, fb->vinfo.yres);
 	myarea.buffer = NULL;
 	myarea.which_fx = fxtype ? fx_update_partial : fx_update_full;
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
