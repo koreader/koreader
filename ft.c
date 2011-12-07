@@ -107,7 +107,7 @@ static int renderGlyph(lua_State *L) {
 		return luaL_error(L, "freetype error");
 	}
 
-	int w = (*face)->glyph->bitmap.width; // 2px steps
+	int w = (*face)->glyph->bitmap.width;
 	int h = (*face)->glyph->bitmap.rows;
 
 	lua_newtable(L);
@@ -120,22 +120,19 @@ static int renderGlyph(lua_State *L) {
 
 	lua_setfield(L, -2, "bb");
 
-	bb->w = w;
-	bb->h = h;
-
 	uint8_t *dst = bb->data;
 	int y;
 	int x;
-	w = (*face)->glyph->bitmap.width;
 	for(y = 0; y < h; y++) {
 		uint8_t *src = (*face)->glyph->bitmap.buffer + y * (*face)->glyph->bitmap.pitch;
-		for(x = 0; x < w; x+=2) {
+		for(x = 0; x < (w/2); x++) {
 			*dst = (src[0] & 0xF0) | (src[1] >> 4);
 			src+=2;
 			dst++;
 		}
 		if(w & 1) {
-			*dst = (*src & 0xF0) >> 4;
+			*dst = *src & 0xF0;
+			dst++;
 		}
 	}
 
