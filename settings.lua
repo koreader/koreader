@@ -1,5 +1,4 @@
 DocSettings = {}
-DocSettings_mt = { __index = DocSettings }
 
 function DocSettings:open(docfile)
 	local new = {}
@@ -9,7 +8,7 @@ function DocSettings:open(docfile)
 		new.stmt_readsetting = new.docdb:prepare("SELECT value FROM settings WHERE key = ?;")
 		new.stmt_savesetting = new.docdb:prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?);")
 	end
-	return setmetatable(new, DocSettings_mt)
+	return setmetatable(new, { __index = DocSettings})
 end
 
 function DocSettings:readsetting(key)

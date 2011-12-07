@@ -357,6 +357,8 @@ int luaopen_blitbuffer(lua_State *L) {
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 	luaL_register(L, NULL, blitbuffer_meth);
-	luaL_register(L, "blitbuffer", blitbuffer_func);
+	lua_setglobal(L, "blitbuffer");
+	luaL_register(L, "Blitbuffer", blitbuffer_func);
+
 	return 1;
 }

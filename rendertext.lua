@@ -49,17 +49,19 @@ function renderUtf8Text(buffer, x, y, face, facehash, text, kerning)
 	local pen_x = 0
 	local prevcharcode = 0
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-		local charcode = util.utf8charcode(uchar)
-		local glyph = getglyph(face, facehash, charcode)
-		if kerning and prevcharcode then
-			local kern = face:getKerning(prevcharcode, charcode)
-			pen_x = pen_x + kern
-			buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
-		else
-			buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+		if pen_x < buffer:getWidth() then
+			local charcode = util.utf8charcode(uchar)
+			local glyph = getglyph(face, facehash, charcode)
+			if kerning and prevcharcode then
+				local kern = face:getKerning(prevcharcode, charcode)
+				pen_x = pen_x + kern
+				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			else
+				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			end
+			pen_x = pen_x + glyph.ax
+			prevcharcode = charcode
 		end
-		pen_x = pen_x + glyph.ax
-		prevcharcode = charcode
 	end
 end
 
