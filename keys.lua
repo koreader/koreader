@@ -115,6 +115,9 @@ function set_emu_keycodes()
 	KEY_FW_LEFT = 113
 	KEY_FW_RIGHT = 114
 	KEY_FW_PRESS = 36 -- enter for now
+
+	KEY_ENTER = 36
+
 	KEY_A = 38
 	KEY_S = 39
 	KEY_D = 40
