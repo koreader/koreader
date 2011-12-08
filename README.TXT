@@ -41,6 +41,8 @@ So you might just call that script. Note that the script and the kpdfview
 binary currently must be in the same directory.
 You would then just call reader.lua, giving the document file path as its first
 argument. Run reader.lua without arguments to see usage notes.
+The reader.lua script can also show a file chooser: it will do this when you
+call it with a directory (instead of a file) as first argument.
 
 
 Device emulation
