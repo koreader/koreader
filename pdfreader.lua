@@ -148,7 +148,7 @@ function PDFReader:setzoom(page)
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
-		self.offset_y = (height - (globalzoom * pheight)) / 2
+		self.offset_y = (height - (self.globalzoom * pheight)) / 2
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
@@ -156,7 +156,7 @@ function PDFReader:setzoom(page)
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
 		local x0, y0, x1, y1 = page:getUsedBBox()
 		self.globalzoom = width / (x1 - x0)
-		self.offset_x = -1 * x0 * globalzoom
+		self.offset_x = -1 * x0 * self.globalzoom
 		self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
 		if height / (y1 - y0) < self.globalzoom then
 			self.globalzoom = height / (y1 - y0)
