@@ -68,6 +68,12 @@ static int openDocument(lua_State *L) {
 	return 1;
 }
 
+static int closeDocument(lua_State *L) {
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	fz_free_glyph_cache(doc->glyphcache);
+	pdf_free_xref(doc->xref);
+}
+
 static int getNumberOfPages(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
 	lua_pushinteger(L, doc->pages);
@@ -316,6 +322,8 @@ static const struct luaL_reg pdf_func[] = {
 static const struct luaL_reg pdfdocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
+	{"close", closeDocument},
+	{"__gc", closeDocument},
 	{NULL, NULL}
 };
 
