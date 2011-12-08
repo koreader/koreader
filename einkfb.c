@@ -153,23 +153,26 @@ static int einkUpdate(lua_State *L) {
 	if(SDL_MUSTLOCK(fb->screen) && (SDL_LockSurface(fb->screen) < 0)) {
 		return luaL_error(L, "can't lock surface.");
 	}
-	uint32_t *sfptr = (uint32_t*)fb->screen->pixels;
-	uint8_t *fbptr = (uint8_t*)fb->buf->data;
+	int x1 = luaL_optint(L, 3, 0);
+	int y1 = luaL_optint(L, 4, 0);
+	int w = luaL_optint(L, 5, fb->vinfo.xres);
+	int h = luaL_optint(L, 6, fb->vinfo.yres);
 
-	int c = fb->finfo.smem_len;
+	int x, y;
 
-	while(c--) {
-		*sfptr = SDL_MapRGB(fb->screen->format,
-				255 - (*fbptr & 0xF0),
-				255 - (*fbptr & 0xF0),
-				255 - (*fbptr & 0xF0));
-		sfptr++;
-		*sfptr = SDL_MapRGB(fb->screen->format,
-				255 - ((*fbptr & 0x0F) << 4),
-				255 - ((*fbptr & 0x0F) << 4),
-				255 - ((*fbptr & 0x0F) << 4));
-		sfptr++;
-		fbptr++;
+	for(y = y1; y < y1+h; y++) {
+		uint32_t *sfptr = (uint32_t*)(fb->screen->pixels + y*fb->screen->pitch);
+		for(x = x1; x < x1+w; x+=2) {
+			uint8_t value = fb->buf->data[y*fb->buf->pitch + x/2];
+			sfptr[x] = SDL_MapRGB(fb->screen->format,
+					255 - (value & 0xF0),
+					255 - (value & 0xF0),
+					255 - (value & 0xF0));
+			sfptr[x+1] = SDL_MapRGB(fb->screen->format,
+					255 - ((value & 0x0F) << 4),
+					255 - ((value & 0x0F) << 4),
+					255 - ((value & 0x0F) << 4));
+		}
 	}
 	if(SDL_MUSTLOCK(fb->screen)) SDL_UnlockSurface(fb->screen);
 	SDL_Flip(fb->screen);
