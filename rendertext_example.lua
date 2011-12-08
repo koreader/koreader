@@ -1,3 +1,4 @@
+#!./kpdfview
 require "rendertext"
 require "graphics"
 
