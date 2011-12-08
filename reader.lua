@@ -74,8 +74,9 @@ width, height = fb:getSize()
 
 if lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
+	FileChooser:setPath(ARGV[optind])
 	while running do
-		local pdffile = FileChooser:choose(ARGV[optind],0,height)
+		local pdffile = FileChooser:choose(0,height)
 		if pdffile ~= nil then
 			PDFReader:open(pdffile,"") -- TODO: query for password
 			PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
