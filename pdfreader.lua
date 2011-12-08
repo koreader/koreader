@@ -120,6 +120,10 @@ function PDFReader:open(filename, password)
 	self.doc = pdf.openDocument(filename, password or "")
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
+		local gamma = self.settings:readsetting("gamma")
+		if gamma then
+			self.globalgamma = gamma
+		end
 		return true
 	end
 	return false
@@ -275,6 +279,7 @@ function PDFReader:inputloop()
 				end
 				if self.settings ~= nil then
 					self.settings:savesetting("last_page", self.pageno)
+					self.settings:savesetting("gamma", self.globalgamma)
 					self.settings:close()
 				end
 				return
