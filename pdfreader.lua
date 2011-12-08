@@ -226,8 +226,8 @@ end
 
 -- adjust global gamma setting
 function PDFReader:modify_gamma(factor)
-	print("modify_gamma, gamma="..self.globalgamma.." factor="..self.factor)
-	self.globalgamma = self.globalgamma * self.factor;
+	print("modify_gamma, gamma="..self.globalgamma.." factor="..factor)
+	self.globalgamma = self.globalgamma * factor;
 	self:goto(self.pageno)
 end
 
