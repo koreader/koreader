@@ -95,7 +95,7 @@ function FileChooser:choose(ypos, height)
 			if ev.code == KEY_FW_UP then
 				if self.current == 1 then
 					if self.page > 1 then
-						self.current = self.perpage
+						self.current = perpage
 						self.page = self.page - 1
 						pagedirty = true
 					end
@@ -107,7 +107,7 @@ function FileChooser:choose(ypos, height)
 				if self.current == perpage then
 					if self.page < (self.items / perpage) then
 						self.current = 1
-						self.page = page + 1
+						self.page = self.page + 1
 						pagedirty = true
 					end
 				else
