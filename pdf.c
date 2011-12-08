@@ -70,8 +70,14 @@ static int openDocument(lua_State *L) {
 
 static int closeDocument(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	fz_free_glyph_cache(doc->glyphcache);
-	pdf_free_xref(doc->xref);
+	if(doc->xref != NULL) {
+		pdf_free_xref(doc->xref);
+		doc->xref = NULL;
+	}
+	if(doc->glyphcache != NULL) {
+		fz_free_glyph_cache(doc->glyphcache);
+		doc->glyphcache = NULL;
+	}
 }
 
 static int getNumberOfPages(lua_State *L) {
