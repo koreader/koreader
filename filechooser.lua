@@ -136,7 +136,7 @@ function FileChooser:choose(ypos, height)
 					self.current = 1
 					markerdirty = true
 				end
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FWPRESS then
+			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				local newdir = self.dirs[perpage*(self.page-1)+self.current]
 				if newdir == ".." then
 					local path = string.gsub(self.path, "(.*)/[^/]+/?$", "%1")
