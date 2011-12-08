@@ -117,18 +117,12 @@ end
 
 -- open a PDF file and its settings store
 function PDFReader:open(filename, password)
-	if self.doc ~= nil then
-		self.doc:close()
-	end
-	if self.settings ~= nil then
-		self.settings:close()
-	end
-
 	self.doc = pdf.openDocument(filename, password or "")
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
-		self:clearcache()
+		return true
 	end
+	return false
 end
 
 -- set viewer state according to zoom state
@@ -275,8 +269,14 @@ function PDFReader:inputloop()
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				self.settings:savesetting("last_page", self.pageno)
-				self.settings:close()
+				self:clearcache()
+				if self.doc ~= nil then
+					self.doc:close()
+				end
+				if self.settings ~= nil then
+					self.settings:savesetting("last_page", self.pageno)
+					self.settings:close()
+				end
 				return
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )
