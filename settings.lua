@@ -33,5 +33,6 @@ end
 function DocSettings:close()
 	if self.docdb ~= nil then
 		self.docdb:close()
+		self.docdb = nil
 	end
 end
