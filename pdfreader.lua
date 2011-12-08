@@ -275,8 +275,8 @@ function PDFReader:inputloop()
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				settings.savesetting("last_page", self.pageno)
-				settings:close()
+				self.settings:savesetting("last_page", self.pageno)
+				self.settings:close()
 				return
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )

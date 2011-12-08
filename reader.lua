@@ -19,6 +19,7 @@
 
 require "alt_getopt"
 require "pdfreader"
+require "filechooser"
 
 -- option parsing:
 longopts = {
@@ -40,6 +41,9 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("-d, --device=DEVICE       set device specific configuration,")
 	print("                          currently one of \"kdxg\" (default), \"k3\"")
 	print("-h, --help                show this usage help")
+	print("")
+	print("If you give the name of a directory instead of a path, a file")
+	print("chooser will show up and let you select a PDF file")
 	print("")
 	print("This software is licensed under the GPLv3.")
 	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
@@ -68,7 +72,20 @@ end
 fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 
-PDFReader:open(ARGV[optind], optarg["p"])
-PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
-PDFReader:inputloop()
-
+if lfs.attributes(ARGV[optind], "mode") == "directory" then
+	local running = true
+	while running do
+		local pdffile = FileChooser:choose(ARGV[optind],0,height)
+		if pdffile ~= nil then
+			PDFReader:open(pdffile,"") -- TODO: query for password
+			PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
+			PDFReader:inputloop()
+		else
+			running = false
+		end
+	end
+else
+	PDFReader:open(ARGV[optind], optarg["p"])
+	PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
+	PDFReader:inputloop()
+end
