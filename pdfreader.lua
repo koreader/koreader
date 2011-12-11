@@ -29,6 +29,8 @@ PDFReader = {
 	fullheight = 0,
 	offset_x = 0,
 	offset_y = 0,
+	min_offset_x = 0,
+	min_offset_y = 0,
 
 	-- set panning distance
 	shift_x = 100,
@@ -186,6 +188,14 @@ function PDFReader:setzoom(page)
 	dc:setZoom(self.globalzoom)
 	dc:setOffset(self.offset_x, self.offset_y)
 	self.fullwidth, self.fullheight = page:getSize(dc)
+	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
+	self.min_offset_y = fb.bb:getHeight() - self.fullheight
+	if(self.min_offset_x > 0) then
+		self.min_offset_x = 0
+	end
+	if(self.min_offset_y > 0) then
+		self.min_offset_y = 0
+	end
 
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
@@ -337,27 +347,40 @@ function PDFReader:inputloop()
 				end
 
 				print("offset "..self.offset_x.."*"..self.offset_x.." shift "..x.."*"..y.." globalzoom="..self.globalzoom)
+				local old_offset_x = self.offset_x
+				local old_offset_y = self.offset_y
 
 				if ev.code == KEY_FW_LEFT then
 					self.offset_x = self.offset_x + x
-					self:goto(self.pageno)
+					if self.offset_x > 0 then
+						self.offset_x = 0
+					end
 				elseif ev.code == KEY_FW_RIGHT then
 					self.offset_x = self.offset_x - x
-					self:goto(self.pageno)
+					if self.offset_x < self.min_offset_x then
+						self.offset_x = self.min_offset_x
+					end
 				elseif ev.code == KEY_FW_UP then
 					self.offset_y = self.offset_y + y
-					self:goto(self.pageno)
+					if self.offset_y > 0 then
+						self.offset_y = 0
+					end
 				elseif ev.code == KEY_FW_DOWN then
 					self.offset_y = self.offset_y - y
-					self:goto(self.pageno)
+					if self.offset_y < self.min_offset_y then
+						self.offset_y = self.min_offset_y
+					end
 				elseif ev.code == KEY_FW_PRESS then
 					if self.shiftmode then
 						self.offset_x = 0
 						self.offset_y = 0
-						self:goto(pageno)
 					else
 						self.pan_by_page = not self.pan_by_page
 					end
+				end
+				if old_offset_x ~= self.offset_x
+				or old_offset_y ~= self.offset_y then
+						self:goto(self.pageno)
 				end
 			end
 
