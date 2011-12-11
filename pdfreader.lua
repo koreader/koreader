@@ -113,6 +113,7 @@ end
 -- blank the cache
 function PDFReader:clearcache()
 	self.cache = {}
+	self.cache_current_memsize = 0
 end
 
 -- open a PDF file and its settings store
