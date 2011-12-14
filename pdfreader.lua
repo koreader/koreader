@@ -21,6 +21,8 @@ PDFReader = {
 	globalzoom = 1.0,
 	globalzoommode = -1, -- ZOOM_FIT_TO_PAGE
 
+	globalrotate = 0,
+
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
@@ -82,9 +84,9 @@ function PDFReader:cacheclaim(size)
 	return true
 end
 
-function PDFReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamma)
+function PDFReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	-- hash draw state
-	local hash = self:cachehash(no, zoom, offset_x, offset_y, width, height, gamma)
+	local hash = self:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	if self.cache[hash] == nil then
 		-- not in cache, so prepare cache slot...
 		self:cacheclaim(width * height / 2);
@@ -107,9 +109,9 @@ function PDFReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamm
 end
 
 -- calculate a hash for our current state
-function PDFReader:cachehash(no, zoom, offset_x, offset_y, width, height, gamma)
+function PDFReader:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	-- TODO (?): make this a "real" hash...
-	return no..'_'..zoom..'_'..offset_x..','..offset_y..'-'..width..'x'..height..'_'..gamma;
+	return no..'_'..zoom..'_'..offset_x..','..offset_y..'-'..width..'x'..height..'_'..gamma..'_'..rotate
 end
 
 -- blank the cache
@@ -186,6 +188,7 @@ function PDFReader:setzoom(page)
 		end
 	end
 	dc:setZoom(self.globalzoom)
+	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
 	self.fullwidth, self.fullheight = page:getSize(dc)
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
@@ -209,9 +212,9 @@ end
 function PDFReader:show(no)
 	local slot
 	if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-		slot = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma)
+		slot = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 	else
-		slot = self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma)
+		slot = self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 	end
 	fb.bb:blitFullFrom(self.cache[slot].bb)
 	if self.rcount == self.rcountmax then
@@ -236,9 +239,9 @@ function PDFReader:goto(no)
 	if no < self.doc:getPages() then
 		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
 			-- pre-cache next page
-			self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma)
+			self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 		else
-			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma)
+			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 		end
 	end
 end
@@ -265,6 +268,11 @@ function PDFReader:setglobalzoom(zoom)
 		self.globalzoom = zoom
 		self:goto(self.pageno)
 	end
+end
+
+function PDFReader:setrotate(rotate)
+	self.globalrotate = rotate
+	self:goto(self.pageno)
 end
 
 -- wait for input and handle it
@@ -326,6 +334,11 @@ function PDFReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
+
+			elseif ev.code == KEY_J then
+				self:setrotate( self.globalrotate + 10 )
+			elseif ev.code == KEY_K then
+				self:setrotate( self.globalrotate - 10 )
 			end
 
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
