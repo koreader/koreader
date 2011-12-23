@@ -63,6 +63,15 @@ elseif optarg["d"] == "emu" then
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
+
+	-- check if we are running on Kindle 3 (additional volume input)
+	local f=lfs.attributes("/dev/input/event2")
+	print(f)
+	if f then
+		print("Auto-detected Kindle 3")
+		set_k3_keycodes()
+	end
+
 end
 
 if optarg["G"] ~= nil then
