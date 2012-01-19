@@ -40,6 +40,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("                          (floating point notation, e.g. \"1.5\")")
 	print("-d, --device=DEVICE       set device specific configuration,")
 	print("                          currently one of \"kdxg\" (default), \"k3\"")
+	print("                          \"emu\" (DXG emulation)")
 	print("-h, --help                show this usage help")
 	print("")
 	print("If you give the name of a directory instead of a path, a file")
