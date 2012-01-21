@@ -127,8 +127,19 @@ $(LUALIB):
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS)
 
+INSTALL_DIR=kindlepdfviewer
+
 install:
 	# install to kindle using USB networking
-	scp kpdfview *.lua root@192.168.2.2:/mnt/us/test/
+	scp kpdfview *.lua root@192.168.2.2:/mnt/us/$(INSTALL_DIR)/
 	scp launchpad/* root@192.168.2.2:/mnt/us/launchpad/
 
+VERSION?=$(shell git rev-parse --short HEAD)
+customupdate: kpdfview
+	# ensure that build binary is for ARM
+	file kpdfview | grep ARM || exit 1
+	mkdir $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
+	rm -Rf $(INSTALL_DIR)
+	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

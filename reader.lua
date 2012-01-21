@@ -40,6 +40,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("                          (floating point notation, e.g. \"1.5\")")
 	print("-d, --device=DEVICE       set device specific configuration,")
 	print("                          currently one of \"kdxg\" (default), \"k3\"")
+	print("                          \"emu\" (DXG emulation)")
 	print("-h, --help                show this usage help")
 	print("")
 	print("If you give the name of a directory instead of a path, a file")
@@ -63,6 +64,15 @@ elseif optarg["d"] == "emu" then
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
+
+	-- check if we are running on Kindle 3 (additional volume input)
+	local f=lfs.attributes("/dev/input/event2")
+	print(f)
+	if f then
+		print("Auto-detected Kindle 3")
+		set_k3_keycodes()
+	end
+
 end
 
 if optarg["G"] ~= nil then
