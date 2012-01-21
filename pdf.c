@@ -22,8 +22,8 @@
 #include "pdf.h"
 
 typedef struct PdfDocument {
-	fz_glyph_cache *glyphcache;
 	pdf_xref *xref;
+	fz_context *context;
 	int pages;
 } PdfDocument;
 
@@ -45,7 +45,6 @@ typedef struct DrawContext {
 } DrawContext;
 
 static int openDocument(lua_State *L) {
-	fz_error error;
 	const char *filename = luaL_checkstring(L, 1);
 	const char *password = luaL_checkstring(L, 2);
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
@@ -53,16 +52,20 @@ static int openDocument(lua_State *L) {
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	fz_accelerate();
-	doc->glyphcache = fz_new_glyph_cache();
+	doc->context = fz_new_context(NULL, 64 << 20); // 64MB limit
 
-	error = pdf_open_xref(&doc->xref, filename, password);
-	if(error) {
+	fz_accelerate();
+
+	fz_try(doc->context) {
+		doc->xref = pdf_open_xref(doc->context, filename);
+	}
+	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open PDF file <%s>", filename);
 	}
-	error = pdf_load_page_tree(doc->xref);
-	if(error) {
-		return luaL_error(L, "cannot load page tree in file <%s>", filename);
+
+	if(pdf_needs_password(doc->xref)) {
+		if (!pdf_authenticate_password(doc->xref, password))
+			return luaL_error(L, "cannot authenticate");
 	}
 	doc->pages = pdf_count_pages(doc->xref);
 	return 1;
@@ -74,9 +77,9 @@ static int closeDocument(lua_State *L) {
 		pdf_free_xref(doc->xref);
 		doc->xref = NULL;
 	}
-	if(doc->glyphcache != NULL) {
-		fz_free_glyph_cache(doc->glyphcache);
-		doc->glyphcache = NULL;
+	if(doc->context != NULL) {
+		fz_free_context(doc->context);
+		doc->context = NULL;
 	}
 }
 
@@ -157,7 +160,6 @@ static int dcGetGamma(lua_State *L) {
 }
 
 static int openPage(lua_State *L) {
-	fz_error error;
 	fz_device *dev;
 
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
@@ -173,24 +175,14 @@ static int openPage(lua_State *L) {
 	luaL_getmetatable(L, "pdfpage");
 	lua_setmetatable(L, -2);
 
-	error = pdf_load_page(&page->page, doc->xref, pageno - 1);
-	if(error) {
-		return luaL_error(L, "cannot open page #%d, errval=%x", pageno, error);
+	fz_try(doc->context) {
+		page->page = pdf_load_page(doc->xref, pageno - 1);
+	}
+	fz_catch(doc->context) {
+		return luaL_error(L, "cannot open page #%d", pageno);
 	}
 
 	page->doc = doc;
-
-#ifdef USE_DISPLAY_LIST
-	page->list = fz_new_display_list();
-	dev = fz_new_list_device(page->list);
-	error = pdf_run_page(doc->xref, page->page, dev, fz_identity);
-	pdf_free_page(page->page);
-	fz_free_device(dev);
-	if (error) {
-		fz_free_display_list(page->list);
-		return luaL_error(L, "cannot make displaylist for page %d, errval=%x", pageno, error);
-	}
-#endif
 
 	return 1;
 }
@@ -219,14 +211,20 @@ static int getUsedBBox(lua_State *L) {
 	fz_device *dev;
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 
-	ctm = fz_translate(0, -page->page->mediabox.y1);
 	/* returned BBox is in centi-point (n * 0.01 pt) */
-	ctm = fz_concat(ctm, fz_scale(100, -100));
+	ctm = fz_scale(100, 100);
 	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 
-	dev = fz_new_bbox_device(&result);
-	pdf_run_page(page->doc->xref, page->page, dev, ctm);
-	fz_free_device(dev);
+	fz_try(page->doc->context) {
+		dev = fz_new_bbox_device(page->doc->context, &result);
+		pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	}
+	fz_always(page->doc->context) {
+		fz_free_device(dev);
+	}
+	fz_catch(page->doc->context) {
+		return luaL_error(L, "cannot calculate bbox for page");
+	}
 
        	lua_pushnumber(L, ((double)result.x0)/100);
 	lua_pushnumber(L, ((double)result.y0)/100);
@@ -238,15 +236,8 @@ static int getUsedBBox(lua_State *L) {
 
 static int closePage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
-#ifdef USE_DISPLAY_LIST
-	fz_free_display_list(page->list);
-#endif
-	//fz_free_glyph_cache(page->doc->glyphcache);
-	//page->doc->glyphcache = fz_new_glyph_cache();
 	if(page->page != NULL) {
-		pdf_free_page(page->page);
-
-		pdf_age_store(page->doc->xref->store, 2);
+		pdf_free_page(page->doc->context, page->page);
 		page->page = NULL;
 	}
 	return 0;
@@ -266,38 +257,30 @@ static int drawPage(lua_State *L) {
 	rect.y0 = luaL_checkint(L, 5);
 	rect.x1 = rect.x0 + bb->w;
 	rect.y1 = rect.y0 + bb->h;
-	pix = fz_new_pixmap_with_rect(fz_device_gray, rect);
+	pix = fz_new_pixmap_with_rect(page->doc->context, fz_device_gray, rect);
 	fz_clear_pixmap_with_color(pix, 0xff);
 
-	ctm = fz_translate(-page->page->mediabox.x0, -page->page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(dc->zoom, -dc->zoom));
+	ctm = fz_scale(dc->zoom, dc->zoom);
 	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));
-	dev = fz_new_draw_device(page->doc->glyphcache, pix);
-#ifdef USE_DISPLAY_LIST
-#ifdef MUPDF_TRACE
-	bbox = fz_round_rect(fz_transform_rect(ctm, page->page->mediabox));
-	fz_device *tdev;
-	tdev = fz_new_trace_device();
-	fz_execute_display_list(page->list, tdev, ctm, bbox);
-	fz_free_device(tdev);
-#endif
-	fz_execute_display_list(page->list, dev, ctm, bbox);
-#else
+	dev = fz_new_draw_device(page->doc->context, pix);
 #ifdef MUPDF_TRACE
 	fz_device *tdev;
-	tdev = fz_new_trace_device();
-	pdf_run_page(page->doc->xref, page->page, tdev, ctm);
-	fz_free_device(tdev);
+	fz_try(page->doc->context) {
+		tdev = fz_new_trace_device(page->doc->context);
+		pdf_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+	}
+	fz_always(page->doc->context) {
+		fz_free_device(tdev);
+	}
 #endif
-	pdf_run_page(page->doc->xref, page->page, dev, ctm);
-#endif
+	pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_free_device(dev);
+
 	if(dc->gamma >= 0.0) {
 		fz_gamma_pixmap(pix, dc->gamma);
 	}
-	
-	fz_free_device(dev);
 
 	uint8_t *bbptr = (uint8_t*)bb->data;
 	uint16_t *pmptr = (uint16_t*)pix->samples;
@@ -314,7 +297,7 @@ static int drawPage(lua_State *L) {
 		pmptr += bb->w;
 	}
 
-	fz_drop_pixmap(pix);
+	fz_drop_pixmap(page->doc->context, pix);
 
 	return 0;
 }

@@ -95,7 +95,7 @@ fetchthirdparty:
 	-rmdir lua
 	-rm lua
 	git clone git://git.ghostscript.com/mupdf.git
-	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip; patch -p1 < ../mupdf-64M-memory-limit.diff )
+	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 	wget "http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8" && unzip "lsqlite3_svn08.zip?uuid=svn_8"
 	wget "http://sqlite.org/sqlite-amalgamation-3070900.zip" && unzip sqlite-amalgamation-3070900.zip
@@ -105,8 +105,10 @@ clean:
 	-rm -f *.o kpdfview
 
 cleanthirdparty:
-	make -C lua clean
-	make -C mupdf clean
+	make -C $(LUADIR) clean
+	make -C $(MUPDFDIR) clean
+	-rm $(MUPDFDIR)/fontdump.host
+	-rm $(MUPDFDIR)/cmapdump.host
 
 $(MUPDFDIR)/fontdump.host:
 	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
