@@ -1,0 +1,9 @@
+*.swp
+lua
+lua-*
+lsqlite3*
+sqlite-amalgamation*
+mupdf/
+luafilesystem/
+
+
