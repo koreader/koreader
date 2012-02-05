@@ -50,10 +50,66 @@ function FileChooser:setPath(newPath)
 	return true
 end
 
+function FileChooser:rotationMode()
+	--[[
+	return code for four kinds of rotation mode:
+
+  0 for no rotation, 
+	1 for landscape with bottom on the right side of screen, etc.
+
+	        2
+	    ---------
+	   |         |
+	   |         |
+	   |         |
+	 3 |         | 1
+	   |         |
+	   |         |
+	   |         |
+	    ---------
+	        0
+	--]]
+
+	orie_fd = io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r")
+	updown_fd = io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r")
+	mode = orie_fd:read() + (updown_fd:read() * 2)
+	return mode
+end
+
 function FileChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 1
 	local pagedirty = true
 	local markerdirty = false
+
+	prevItem = function ()
+		if self.current == 1 then
+			if self.page > 1 then
+				self.current = perpage
+				self.page = self.page - 1
+				pagedirty = true
+			end
+		else
+			self.current = self.current - 1
+			markerdirty = true
+		end
+	end
+
+	nextItem = function ()
+		if self.current == perpage then
+			if self.page < (self.items / perpage) then
+				self.current = 1
+				self.page = self.page + 1
+				pagedirty = true
+			end
+		else
+			if self.page ~= math.floor(self.items / perpage) + 1
+				or self.current + (self.page-1)*perpage < self.items then
+				self.current = self.current + 1
+				markerdirty = true
+			end
+		end
+	end
+
 	while true do
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
@@ -93,29 +149,28 @@ function FileChooser:choose(ypos, height)
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_UP then
-				if self.current == 1 then
-					if self.page > 1 then
-						self.current = perpage
-						self.page = self.page - 1
-						pagedirty = true
-					end
-				else
-					self.current = self.current - 1
-					markerdirty = true
+				if self:rotationMode() == 0 then
+					prevItem()
+				elseif self:rotationMode() == 2 then
+					nextItem()
 				end
 			elseif ev.code == KEY_FW_DOWN then
-				if self.current == perpage then
-					if self.page < (self.items / perpage) then
-						self.current = 1
-						self.page = self.page + 1
-						pagedirty = true
-					end
-				else
-					if self.page ~= math.floor(self.items / perpage) + 1
-						or self.current + (self.page-1)*perpage < self.items then
-						self.current = self.current + 1
-						markerdirty = true
-					end
+				if self:rotationMode() == 0 then
+					nextItem()
+				elseif self:rotationMode() == 2 then
+					prevItem()
+				end
+			elseif ev.code == KEY_FW_LEFT then
+				if self:rotationMode() == 1 then
+					prevItem()
+				elseif self:rotationMode() == 3 then
+					nextItem()
+				end
+			elseif ev.code == KEY_FW_RIGHT then
+				if self:rotationMode() == 1 then
+					nextItem()
+				elseif self:rotationMode() == 3 then
+					prevItem()
 				end
 			elseif ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then
