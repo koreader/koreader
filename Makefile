@@ -42,8 +42,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 
 # for now, all dependencies except for the libc are compiled into the final binary:
 
-MUPDFLIBS := $(MUPDFLIBDIR)/libmupdf.a \
-		$(MUPDFLIBDIR)/libfitz.a
+MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 	       	$(MUPDFLIBDIR)/libjpeg.a \
 	       	$(MUPDFLIBDIR)/libopenjpeg.a \
