@@ -22,7 +22,7 @@
 #include "pdf.h"
 
 typedef struct PdfDocument {
-	pdf_xref *xref;
+	pdf_document *xref;
 	fz_context *context;
 	int pages;
 } PdfDocument;
@@ -52,12 +52,10 @@ static int openDocument(lua_State *L) {
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(NULL, 64 << 20); // 64MB limit
-
-	fz_accelerate();
+	doc->context = fz_new_context(NULL, NULL, 64 << 20); // 64MB limit
 
 	fz_try(doc->context) {
-		doc->xref = pdf_open_xref(doc->context, filename);
+		doc->xref = pdf_open_document(doc->context, filename);
 	}
 	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open PDF file <%s>", filename);
@@ -74,7 +72,7 @@ static int openDocument(lua_State *L) {
 static int closeDocument(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
 	if(doc->xref != NULL) {
-		pdf_free_xref(doc->xref);
+		pdf_close_document(doc->xref);
 		doc->xref = NULL;
 	}
 	if(doc->context != NULL) {
@@ -237,7 +235,7 @@ static int getUsedBBox(lua_State *L) {
 static int closePage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	if(page->page != NULL) {
-		pdf_free_page(page->doc->context, page->page);
+		pdf_free_page(page->doc->xref, page->page);
 		page->page = NULL;
 	}
 	return 0;
@@ -258,7 +256,7 @@ static int drawPage(lua_State *L) {
 	rect.x1 = rect.x0 + bb->w;
 	rect.y1 = rect.y0 + bb->h;
 	pix = fz_new_pixmap_with_rect(page->doc->context, fz_device_gray, rect);
-	fz_clear_pixmap_with_color(pix, 0xff);
+	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);
 	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
@@ -279,7 +277,7 @@ static int drawPage(lua_State *L) {
 	fz_free_device(dev);
 
 	if(dc->gamma >= 0.0) {
-		fz_gamma_pixmap(pix, dc->gamma);
+		fz_gamma_pixmap(page->doc->context, pix, dc->gamma);
 	}
 
 	uint8_t *bbptr = (uint8_t*)bb->data;
