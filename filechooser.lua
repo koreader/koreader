@@ -69,9 +69,11 @@ function FileChooser:rotationMode()
 	    ---------
 	        0
 	--]]
-
-	orie_fd = io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r")
-	updown_fd = io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r")
+	if KEY_FW_DOWN == 116 then
+		return 0
+	end
+	orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
+	updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
 	mode = orie_fd:read() + (updown_fd:read() * 2)
 	return mode
 end
