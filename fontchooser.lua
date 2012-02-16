@@ -12,8 +12,12 @@ FontChooser = {
 	-- font for paging display
 	sface = freetype.newBuiltinFace("sans", 16),
 	sfhash = "s16",
+	-- title height
+	title_H = 45,
 	-- spacing between lines
 	spacing = 40,
+	-- foot height
+	foot_H = 27,
 
 	-- state buffer
 	fonts = {"sans", "cjk", "mono", 
@@ -33,12 +37,12 @@ end
 
 
 function FontChooser:choose(ypos, height)
-	local perpage = math.floor(height / self.spacing) - 1
+	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
 
 	local prevItem = function ()
-		if self.current == 2 then
+		if self.current == 1 then
 			if self.page > 1 then
 				self.current = perpage
 				self.page = self.page - 1
@@ -66,39 +70,52 @@ function FontChooser:choose(ypos, height)
 		end
 	end
 
+	-- draw menu title
+	fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
+	renderUtf8Text(fb.bb, 30, ypos + self.spacing, self.tface, self.tfhash, "[ Fonts Menu ]", true)
+	fb:refresh(0, 0, ypos, fb.bb:getWidth(), self.title_H)
+
 	while true do
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-			renderUtf8Text(fb.bb, 30, ypos + self.spacing, self.tface, self.tfhash, "[ Fonts Menu ]", true)
+			--renderUtf8Text(fb.bb, 30, ypos + self.spacing, self.tface, self.tfhash, "[ Fonts Menu ]", true)
 			local c
-			for c = 2, perpage do
+			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c 
 				if i <= self.items then
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, self.face, self.fhash, self.fonts[i], true)
+					y = ypos + self.title_H + (self.spacing * c)
+					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, self.fonts[i], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 39, ypos + self.spacing * perpage + 32, self.sface, self.sfhash,
+			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
+			x = (fb.bb:getWidth() / 2) - 50
+			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			markerdirty = true
 		end
+
 		if markerdirty then
 			if not pagedirty then
 				if self.oldcurrent > 0 then
-					fb.bb:paintRect(30, ypos + self.spacing*self.oldcurrent + 10, fb.bb:getWidth() - 60, 3, 0)
-						fb:refresh(1, 30, ypos + self.spacing*self.oldcurrent + 10, fb.bb:getWidth() - 60, 3)
+					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 10
+					fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 0)
+					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
 				end
 			end
-			fb.bb:paintRect(30, ypos + self.spacing*self.current + 10, fb.bb:getWidth() - 60, 3, 15)
+			y = ypos + self.title_H + (self.spacing * self.current) + 10
+			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
 			if not pagedirty then
-				fb:refresh(1, 30, ypos + self.spacing*self.current + 10, fb.bb:getWidth() - 60, 3)
+				fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
 			end
 			self.oldcurrent = self.current
 			markerdirty = false
 		end
+
 		if pagedirty then
-			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
+			fb:refresh(0, 0, ypos + self.title_H, fb.bb:getWidth(), height - self.title_H)
 			pagedirty = false
 		end
+
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_UP then
