@@ -70,15 +70,15 @@ function FontChooser:choose(ypos, height)
 		end
 	end
 
-	-- draw menu title
-	fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-	renderUtf8Text(fb.bb, 30, ypos + self.spacing, self.tface, self.tfhash, "[ Fonts Menu ]", true)
-	fb:refresh(0, 0, ypos, fb.bb:getWidth(), self.title_H)
 
 	while true do
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-			--renderUtf8Text(fb.bb, 30, ypos + self.spacing, self.tface, self.tfhash, "[ Fonts Menu ]", true)
+
+			-- draw menu title
+			renderUtf8Text(fb.bb, 30, ypos + self.title_H, self.tface, self.tfhash,
+				"[ Fonts Menu ]", true)
+
 			local c
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c 
@@ -102,6 +102,7 @@ function FontChooser:choose(ypos, height)
 					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
 				end
 			end
+			-- draw new marker line
 			y = ypos + self.title_H + (self.spacing * self.current) + 10
 			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
 			if not pagedirty then
@@ -112,7 +113,7 @@ function FontChooser:choose(ypos, height)
 		end
 
 		if pagedirty then
-			fb:refresh(0, 0, ypos + self.title_H, fb.bb:getWidth(), height - self.title_H)
+			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
 			pagedirty = false
 		end
 
@@ -138,7 +139,7 @@ function FontChooser:choose(ypos, height)
 					self.page = self.page - 1
 					pagedirty = true
 				else
-					self.current = 2
+					self.current = 1
 					markerdirty = true
 				end
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
