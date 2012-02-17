@@ -131,3 +131,75 @@ function set_emu_keycodes()
 	KEY_VPLUS = 95  -- F11
 	KEY_VMINUS = 96 -- F12
 end
+
+function getRotationMode()
+	--[[
+	return code for four kinds of rotation mode:
+
+  0 for no rotation, 
+	1 for landscape with bottom on the right side of screen, etc.
+
+	         2
+	    -----------
+	   |  -------  |
+	   | |       | |
+	   | |       | |
+	   | |       | |  
+	 3 | |       | | 1
+	   | |       | |
+	   | |       | |
+	   |  -------  |
+	   |           |
+	    -----------
+	         0
+	--]]
+	if KEY_FW_DOWN == 116 then -- in EMU mode always return 0
+		return 0
+	end
+	orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
+	updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
+	mode = orie_fd:read() + (updown_fd:read() * 2)
+	return mode
+end
+
+function adjustFWKey(code)
+	if getRotationMode() == 0 then
+		return code
+	elseif getRotationMode() == 1 then
+		if code == KEY_FW_UP then
+			return KEY_FW_RIGHT
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_DOWN
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_UP
+		else
+			return code
+		end
+	elseif getRotationMode() == 2 then
+		if code == KEY_FW_UP then
+			return KEY_FW_DOWN
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_UP
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_RIGHT
+		else
+			return code
+		end
+	elseif getRotationMode() == 3 then
+		if code == KEY_FW_UP then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_UP
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_RIGHT
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_DOWN
+		else
+			return code
+		end
+	end
+end
