@@ -7,8 +7,8 @@ FontChooser = {
 	face = freetype.newBuiltinFace("sans", 25),
 	fhash = "s25",
 	-- font for page title
-	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 32),
-	tfhash = "hbo32",
+	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 30),
+	tfhash = "hbo30",
 	-- font for paging display
 	sface = freetype.newBuiltinFace("sans", 16),
 	sfhash = "s16",
@@ -26,8 +26,8 @@ FontChooser = {
 		"Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",},
 	items = 14,
 	page = 1,
-	current = 2,
-	oldcurrent = 1,
+	current = 1,
+	oldcurrent = 0,
 }
 
 function FontChooser:init()
@@ -73,12 +73,14 @@ function FontChooser:choose(ypos, height)
 
 	while true do
 		if pagedirty then
-			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-
 			-- draw menu title
-			renderUtf8Text(fb.bb, 30, ypos + self.title_H, self.tface, self.tfhash,
-				"[ Fonts Menu ]", true)
+			fb.bb:paintRect(30, ypos + 10, fb.bb:getWidth() - 60, self.title_H, 5)
+			x = fb.bb:getWidth() - 220 -- move text to the right
+			y = ypos + self.title_H
+			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
+				"Fonts Menu", true)
 
+			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
 			local c
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c 
@@ -87,6 +89,7 @@ function FontChooser:choose(ypos, height)
 					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, self.fonts[i], true)
 				end
 			end
+			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
 			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
