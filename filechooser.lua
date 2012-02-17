@@ -2,6 +2,7 @@ require "rendertext"
 require "keys"
 require "graphics"
 require "fontchooser"
+require "fileseacher"
 
 FileChooser = {
 	-- Class vars:
@@ -35,6 +36,7 @@ function FileChooser:readdir()
 			table.insert(self.files, f)
 		end
 	end
+	--@TODO make sure .. is sortted to the first item  16.02 2012
 	table.sort(self.dirs)
 	table.sort(self.files)
 end
@@ -151,6 +153,7 @@ function FileChooser:choose(ypos, height)
 		end
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			print("key code:"..ev.code)
 			if ev.code == KEY_FW_UP then
 				if self:rotationMode() == 0 then
 					prevItem()
@@ -182,6 +185,10 @@ function FileChooser:choose(ypos, height)
 					self.face = freetype.newBuiltinFace(newfont, 25)
 					clearglyphcache()
 				end
+				pagedirty = true
+			elseif ev.code == KEY_S then
+				FileSeacher:init()
+				FileSeacher:choose(0, height)
 				pagedirty = true
 			elseif ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then
