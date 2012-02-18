@@ -118,13 +118,34 @@ function set_emu_keycodes()
 
 	KEY_ENTER = 36
 
+	KEY_Q = 24
+	KEY_W = 25
+	KEY_E = 26
+	KEY_R = 27
+	KEY_T = 28
+	KEY_Y = 29
+	KEY_U = 30
+	KEY_I = 31
+	KEY_O = 32
+	KEY_P = 33
+
 	KEY_A = 38
 	KEY_S = 39
 	KEY_D = 40
 	KEY_F = 41
-
+	KEY_G = 42
+	KEY_H = 43
 	KEY_J = 44
 	KEY_K = 45
+	KEY_L = 46
+
+	KEY_Z = 52
+	KEY_X = 53
+	KEY_C = 54
+	KEY_V = 55
+	KEY_B = 56
+	KEY_N = 57
+	KEY_M = 58
 
 	KEY_SHIFT = 50 -- left shift
 	KEY_ALT = 64   -- left alt

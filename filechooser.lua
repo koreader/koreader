@@ -3,6 +3,7 @@ require "keys"
 require "graphics"
 require "fontchooser"
 require "fileseacher"
+require "inputbox"
 
 FileChooser = {
 	-- Class vars:
@@ -187,8 +188,9 @@ function FileChooser:choose(ypos, height)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_S then
-				FileSeacher:init()
-				FileSeacher:choose(0, height)
+				InputBox:input(height-100, 100)
+				--FileSeacher:init()
+				--FileSeacher:choose(0, height)
 				pagedirty = true
 			elseif ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then
