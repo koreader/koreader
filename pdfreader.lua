@@ -285,7 +285,7 @@ function PDFReader:inputloop()
 				self.shiftmode = true
 			elseif ev.code == KEY_ALT then
 				self.altmode = true
-			elseif ev.code == KEY_PGFWD then
+			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if self.shiftmode then
 					self:setglobalzoom(self.globalzoom*1.2)
 				elseif self.altmode then
@@ -293,7 +293,7 @@ function PDFReader:inputloop()
 				else
 					self:goto(self.pageno + 1)
 				end
-			elseif ev.code == KEY_PGBCK then
+			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if self.shiftmode then
 					self:setglobalzoom(self.globalzoom*0.8)
 				elseif self.altmode then
