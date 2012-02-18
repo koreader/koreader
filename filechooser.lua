@@ -2,7 +2,7 @@ require "rendertext"
 require "keys"
 require "graphics"
 require "fontchooser"
-require "fileseacher"
+require "filesearcher"
 require "inputbox"
 
 FileChooser = {
@@ -188,7 +188,8 @@ function FileChooser:choose(ypos, height)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_S then
-				InputBox:input(height-100, 100)
+				input = InputBox:input(height-100, 100)
+				print(input)
 				--FileSeacher:init()
 				--FileSeacher:choose(0, height)
 				pagedirty = true

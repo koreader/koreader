@@ -21,6 +21,7 @@ InputBox = {
 
 	input_bg = 1,
 
+	input_string = "",
 	-- state buffer
 	dirs = nil,
 	files = nil,
@@ -48,6 +49,7 @@ function InputBox:addChar(text)
 								self.face, self.fhash, text, true)
 	fb:refresh(1, self.input_cur_x, self.input_start_y-19, 16, self.fheight)
 	self.input_cur_x = self.input_cur_x + 16
+	self.input_string = self.input_string .. text
 end
 
 function InputBox:delChar()
@@ -58,6 +60,7 @@ function InputBox:delChar()
 	--fill last character with blank rectangle
 	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19, 16, self.fheight, self.input_bg)
 	fb:refresh(1, self.input_cur_x, self.input_start_y-19, 16, self.fheight)
+	self.input_string = self.input_string:sub(0,-2)
 end
 
 function InputBox:input(ypos, height)
@@ -79,7 +82,7 @@ function InputBox:input(ypos, height)
 		end
 
 		if pagedirty then
-			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
+			fb:refresh(1, 20, ypos, w, h)
 			pagedirty = false
 		end
 
@@ -141,12 +144,16 @@ function InputBox:input(ypos, height)
 				self:addChar("y")
 			elseif ev.code == KEY_Z then
 				self:addChar("z")
+			elseif ev.code == KEY_SPACE then
+				self:addChar(" ")
 			elseif ev.code == KEY_PGFWD then
 			elseif ev.code == KEY_PGBCK then
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				pagedirty = true
-			elseif ev.code == KEY_BACK then
+				return self.input_string
+			elseif ev.code == KEY_DEL then
 				self:delChar()
+			elseif ev.code == KEY_BACK then
+				return ""
 			end
 		end
 	end
