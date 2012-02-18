@@ -121,6 +121,7 @@ function set_emu_keycodes()
 	KEY_A = 38
 	KEY_S = 39
 	KEY_D = 40
+	KEY_F = 41
 
 	KEY_J = 44
 	KEY_K = 45

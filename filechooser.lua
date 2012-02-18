@@ -1,6 +1,7 @@
 require "rendertext"
 require "keys"
 require "graphics"
+require "fontchooser"
 
 FileChooser = {
 	-- Class vars:
@@ -83,7 +84,7 @@ function FileChooser:choose(ypos, height)
 	local pagedirty = true
 	local markerdirty = false
 
-	prevItem = function ()
+	local prevItem = function ()
 		if self.current == 1 then
 			if self.page > 1 then
 				self.current = perpage
@@ -96,7 +97,7 @@ function FileChooser:choose(ypos, height)
 		end
 	end
 
-	nextItem = function ()
+	local nextItem = function ()
 		if self.current == perpage then
 			if self.page < (self.items / perpage) then
 				self.current = 1
@@ -174,6 +175,14 @@ function FileChooser:choose(ypos, height)
 				elseif self:rotationMode() == 3 then
 					prevItem()
 				end
+			elseif ev.code == KEY_F then
+				FontChooser:init()
+				newfont = FontChooser:choose(0, height)
+				if newfont ~= nil then
+					self.face = freetype.newBuiltinFace(newfont, 25)
+					clearglyphcache()
+				end
+				pagedirty = true
 			elseif ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then
 					if self.current + self.page*perpage > self.items then
