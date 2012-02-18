@@ -109,6 +109,7 @@ function set_emu_keycodes()
 	KEY_PGFWD = 117
 	KEY_PGBCK = 112
 	KEY_BACK = 22 -- backspace
+	KEY_DEL = 119 -- Delete
 	KEY_MENU = 67 -- F1
 	KEY_FW_UP = 111
 	KEY_FW_DOWN = 116
