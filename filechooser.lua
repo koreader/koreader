@@ -188,10 +188,15 @@ function FileChooser:choose(ypos, height)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_S then
-				input = InputBox:input(height-100, 100)
-				print(input)
-				--FileSeacher:init()
-				--FileSeacher:choose(0, height)
+				keywords = InputBox:input(height-100, 100, "Search:")
+				if keywords then
+					-- display search result according to keywords
+					FileSearcher:init()
+					file = FileSearcher:choose(ypos, height, keywords)
+					if file then
+						return file
+					end
+				end
 				pagedirty = true
 			elseif ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then

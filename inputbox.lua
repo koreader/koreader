@@ -63,7 +63,7 @@ function InputBox:delChar()
 	self.input_string = self.input_string:sub(0,-2)
 end
 
-function InputBox:input(ypos, height)
+function InputBox:input(ypos, height, title)
 	local pagedirty = true
 	self.input_start_y = ypos + 35
 	self.input_cur_x = self.input_start_x
@@ -77,7 +77,7 @@ function InputBox:input(ypos, height)
 			-- draw input slot
 			fb.bb:paintRect(140, ypos + 10, w - 130, h - 20, self.input_bg)
 			renderUtf8Text(fb.bb, 35, self.input_start_y, self.face, self.fhash,
-				"Search:", true)
+				title, true)
 			markerdirty = true
 		end
 
@@ -149,11 +149,15 @@ function InputBox:input(ypos, height)
 			elseif ev.code == KEY_PGFWD then
 			elseif ev.code == KEY_PGBCK then
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				return self.input_string
+				if self.input_string == "" then
+					return nil
+				else
+					return self.input_string
+				end
 			elseif ev.code == KEY_DEL then
 				self:delChar()
 			elseif ev.code == KEY_BACK then
-				return ""
+				return nil
 			end
 		end
 	end
