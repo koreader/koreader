@@ -188,6 +188,7 @@ function FileChooser:choose(ypos, height)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_S then
+				-- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
 				if keywords then
 					-- display search result according to keywords

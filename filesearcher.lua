@@ -19,7 +19,11 @@ FileSearcher = {
 	-- foot height
 	foot_H = 27,
 
+	x_input = 50,
 	-- state buffer
+	dirs = {},
+	files = {},
+	result = {},
 	fonts = {"sans", "cjk", "mono", 
 		"Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
 		"Helvetica", "Helvetica-Oblique", "Helvetica-BoldOblique",
@@ -30,9 +34,53 @@ FileSearcher = {
 	oldcurrent = 1,
 }
 
-function FileSearcher:init()
-	self.items = #self.fonts
-	table.sort(self.fonts)
+function FileSearcher:readdir()
+	self.dirs = {self.path}
+	self.files = {}
+	while #self.dirs ~= 0 do
+		new_dirs = {}
+		-- handle each dir
+		for __, d in pairs(self.dirs) do
+			-- handle files in d
+			for f in lfs.dir(d) do
+				if lfs.attributes(self.path.."/"..f, "mode") == "directory"
+				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
+					table.insert(new_dirs, d.."/"..f)
+				elseif string.match(f, ".+%.[pP][dD][fF]$") then
+					file_entry = {dir=d, name=f,}
+					table.insert(self.files, file_entry)
+					--print("file:"..d.."/"..f)
+				end
+			end
+		end
+		self.dirs = new_dirs
+	end
+end
+
+function FileSearcher:setPath(newPath)
+	self.path = newPath
+	self:readdir()
+	self.items = #self.files
+	--@TODO check none found  19.02 2012
+	if self.items == 0 then
+		return nil
+	end
+	self.page = 1
+	self.current = 1
+	return true
+end
+
+function FileSearcher:setSearchResult(keywords)
+	self.result = self.files
+	self.items = #self.result
+	self.page = 1
+	self.current = 1
+end
+
+function FileSearcher:init(keywords)
+	self:setPath("/home/dave/documents/kindle/backup/documents")
+	self:setSearchResult(keywords)
+	--@TODO check this  17.02 2012
 end
 
 
@@ -77,20 +125,25 @@ function FileSearcher:choose(ypos, height, keywords)
 
 			-- draw menu title
 			renderUtf8Text(fb.bb, 30, ypos + self.title_H, self.tface, self.tfhash,
-				"Search Result for "..keywords, true)
+				"Search Result for"..keywords, true)
 
+			-- draw results
 			local c
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c 
 				if i <= self.items then
 					y = ypos + self.title_H + (self.spacing * c)
-					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, self.fonts[i], true)
+					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, 
+						self.result[i].name, true)
 				end
 			end
+
+			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
+			all_page = (math.floor(self.items / perpage)+1)
 			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
-				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
+				"Page "..self.page.." of "..all_page, true)
 			markerdirty = true
 		end
 
@@ -142,9 +195,12 @@ function FileSearcher:choose(ypos, height, keywords)
 					self.current = 1
 					markerdirty = true
 				end
+			elseif ev.code == KEY_S then
+				input = InputBox:input(height-100, 100)
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				local newface = self.fonts[perpage*(self.page-1)+self.current]
-				return newface
+				-- return full file path
+				file_entry = self.files[perpage*(self.page-1)+self.current]
+				return file_entry.dir .. "/" .. file_entry.name
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
