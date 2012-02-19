@@ -4,84 +4,92 @@ require "graphics"
 
 InputBox = {
 	-- Class vars:
-	
-	-- font for displaying input content
-	face = freetype.newBuiltinFace("mono", 25),
-	fhash = "m25",
-	fheight = 25,
-	-- font for input title display
-	tface = freetype.newBuiltinFace("sans", 28),
-	tfhash = "s28",
-	-- spacing between lines
-	spacing = 40,
-
 	input_start_x = 145,
 	input_start_y = nil,
-	input_cur_x = nil,
+	input_cur_x = nil, -- points to the start of next input pos
 
 	input_bg = 1,
 
 	input_string = "",
-	-- state buffer
-	dirs = nil,
-	files = nil,
-	items = 0,
-	path = "",
-	page = 1,
-	current = 1,
-	oldcurrent = 0,
+
+	-- font for displaying input content
+	face = freetype.newBuiltinFace("mono", 25),
+	fhash = "m25",
+	fheight = 25,
+	fwidth = 16,
 }
 
-function InputBox:setPath(newPath)
-	self.path = newPath
-	self:readdir()
-	self.items = #self.dirs + #self.files
-	if self.items == 0 then
-		return nil
-	end
-	self.page = 1
-	self.current = 1
-	return true
+function InputBox:setDefaultInput(text)
+	self.input_string = ""
+	self:addString(text)
+	--renderUtf8Text(fb.bb, self.input_start_x, self.input_start_y,
+								--self.face, self.fhash, text, true)
+	--self.input_cur_x = self.input_start_x + (string.len(text) * self.fwidth)
+	--self.input_string = text
 end
 
-function InputBox:addChar(text)
-	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y,
-								self.face, self.fhash, text, true)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-19, 16, self.fheight)
-	self.input_cur_x = self.input_cur_x + 16
-	self.input_string = self.input_string .. text
+function InputBox:addString(str)
+	for i = 1, #str do
+		self:addChar(str:sub(i,i))
+	end
+end
+
+function InputBox:addChar(char)
+	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y, self.face, self.fhash,
+								char, true)
+	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
+	self.input_cur_x = self.input_cur_x + self.fwidth
+	self.input_string = self.input_string .. char
 end
 
 function InputBox:delChar()
 	if self.input_start_x == self.input_cur_x then
 		return
 	end
-	self.input_cur_x = self.input_cur_x - 16
+	self.input_cur_x = self.input_cur_x - self.fwidth
 	--fill last character with blank rectangle
-	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19, 16, self.fheight, self.input_bg)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-19, 16, self.fheight)
+	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19, 
+									self.fwidth, self.fheight, self.input_bg)
+	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
 	self.input_string = self.input_string:sub(0,-2)
 end
 
-function InputBox:input(ypos, height, title)
+function InputBox:drawBox(ypos, w, h, title)
+	-- draw input border
+	fb.bb:paintRect(20, ypos, w, h, 5)
+	-- draw input slot
+	fb.bb:paintRect(140, ypos + 10, w - 130, h - 20, self.input_bg)
+	-- draw input title
+	renderUtf8Text(fb.bb, 35, self.input_start_y, self.face, self.fhash,
+		title, true)
+end
+
+
+--[[
+	|| d_text default to nil (used to set default text in input slot)
+--]]
+function InputBox:input(ypos, height, title, d_text)
 	local pagedirty = true
+	-- do some initilization
 	self.input_start_y = ypos + 35
 	self.input_cur_x = self.input_start_x
+
+	if d_text then -- if specified default text, draw it
+		w = fb.bb:getWidth() - 40
+		h = height - 45
+		self:drawBox(ypos, w, h, title)
+		self:setDefaultInput(d_text)
+		fb:refresh(1, 20, ypos, w, h)
+		pagedirty = false
+	else -- otherwise, leave the draw task to the main loop
+		self.input_string = ""
+	end
 
 	while true do
 		if pagedirty then
 			w = fb.bb:getWidth() - 40
 			h = height - 45
-			-- draw input border
-			fb.bb:paintRect(20, ypos, w, h, 5)
-			-- draw input slot
-			fb.bb:paintRect(140, ypos + 10, w - 130, h - 20, self.input_bg)
-			renderUtf8Text(fb.bb, 35, self.input_start_y, self.face, self.fhash,
-				title, true)
-			markerdirty = true
-		end
-
-		if pagedirty then
+			self:drawBox(ypos, w, h, title)
 			fb:refresh(1, 20, ypos, w, h)
 			pagedirty = false
 		end

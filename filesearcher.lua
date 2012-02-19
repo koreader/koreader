@@ -19,18 +19,13 @@ FileSearcher = {
 	-- foot height
 	foot_H = 27,
 
-	x_input = 50,
 	-- state buffer
 	dirs = {},
 	files = {},
 	result = {},
-	fonts = {"sans", "cjk", "mono", 
-		"Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
-		"Helvetica", "Helvetica-Oblique", "Helvetica-BoldOblique",
-		"Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",},
-	items = 14,
-	page = 1,
-	current = 2,
+	items = 0,
+	page = 0,
+	current = 1,
 	oldcurrent = 1,
 }
 
@@ -71,16 +66,27 @@ function FileSearcher:setPath(newPath)
 end
 
 function FileSearcher:setSearchResult(keywords)
-	self.result = self.files
+	self.result = {}
+	if keywords == " " then -- one space to show all files
+		self.result = self.files
+	else
+		for __,f in pairs(self.files) do
+			if string.find(string.lower(f.name), keywords) then
+				table.insert(self.result, f)
+			end
+		end
+	end
 	self.items = #self.result
 	self.page = 1
 	self.current = 1
 end
 
-function FileSearcher:init(keywords)
-	self:setPath("/home/dave/documents/kindle/backup/documents")
-	self:setSearchResult(keywords)
-	--@TODO check this  17.02 2012
+function FileSearcher:init(search_path)
+	if search_path then
+		self:setPath(search_path)
+	else
+		self:setPath("/mnt/us/documents")
+	end
 end
 
 
@@ -118,23 +124,34 @@ function FileSearcher:choose(ypos, height, keywords)
 		end
 	end
 
+	self:setSearchResult(keywords)
 
 	while true do
 		if pagedirty then
+			markerdirty = true
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 
 			-- draw menu title
 			renderUtf8Text(fb.bb, 30, ypos + self.title_H, self.tface, self.tfhash,
-				"Search Result for"..keywords, true)
+				"Search Result for: "..keywords, true)
 
 			-- draw results
 			local c
-			for c = 1, perpage do
-				local i = (self.page - 1) * perpage + c 
-				if i <= self.items then
-					y = ypos + self.title_H + (self.spacing * c)
-					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, 
-						self.result[i].name, true)
+			if self.items == 0 then -- nothing found
+				y = ypos + self.title_H + self.spacing * 2
+				renderUtf8Text(fb.bb, 20, y, self.face, self.fhash, 
+					"Sorry, your keyword did not match any documents.", true) 
+				renderUtf8Text(fb.bb, 20, y + self.spacing, self.face, self.fhash, 
+					"Please try a different keyword.", true)
+				markerdirty = false
+			else -- found something, draw it
+				for c = 1, perpage do
+					local i = (self.page - 1) * perpage + c 
+					if i <= self.items then
+						y = ypos + self.title_H + (self.spacing * c)
+						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, 
+							self.result[i].name, true)
+					end
 				end
 			end
 
@@ -144,7 +161,6 @@ function FileSearcher:choose(ypos, height, keywords)
 			all_page = (math.floor(self.items / perpage)+1)
 			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
 				"Page "..self.page.." of "..all_page, true)
-			markerdirty = true
 		end
 
 		if markerdirty then
@@ -196,7 +212,14 @@ function FileSearcher:choose(ypos, height, keywords)
 					markerdirty = true
 				end
 			elseif ev.code == KEY_S then
-				input = InputBox:input(height-100, 100)
+				old_keywords = keywords
+				keywords = InputBox:input(height-100, 100, "Search:", old_keywords)
+				if keywords then
+					self:setSearchResult(keywords)
+				else
+					keywords = old_keywords
+				end
+				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				-- return full file path
 				file_entry = self.files[perpage*(self.page-1)+self.current]
