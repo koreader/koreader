@@ -124,7 +124,11 @@ function FileSearcher:choose(ypos, height, keywords)
 		end
 	end
 
-	self:setSearchResult(keywords)
+	-- if given keywords, set new result according to keywords. 
+	-- Otherwise, display the previous search result.
+	if keywords then 
+		self:setSearchResult(keywords)
+	end
 
 	while true do
 		if pagedirty then
@@ -222,9 +226,15 @@ function FileSearcher:choose(ypos, height, keywords)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				-- return full file path
 				file_entry = self.result[perpage*(self.page-1)+self.current]
-				return file_entry.dir .. "/" .. file_entry.name
+				file_path = file_entry.dir .. "/" .. file_entry.name
+
+				if PDFReader:open(file_path,"") then -- TODO: query for password
+					PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
+					PDFReader:inputloop()
+				end
+
+				pagedirty = true
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
