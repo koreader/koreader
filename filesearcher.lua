@@ -223,7 +223,7 @@ function FileSearcher:choose(ypos, height, keywords)
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				-- return full file path
-				file_entry = self.files[perpage*(self.page-1)+self.current]
+				file_entry = self.result[perpage*(self.page-1)+self.current]
 				return file_entry.dir .. "/" .. file_entry.name
 			elseif ev.code == KEY_BACK then
 				return nil
