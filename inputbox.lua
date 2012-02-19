@@ -12,6 +12,9 @@ InputBox = {
 
 	input_string = "",
 
+	shiftmode = false,
+	altmode = false,
+
 	-- font for displaying input content
 	face = freetype.newBuiltinFace("mono", 25),
 	fhash = "m25",
@@ -96,9 +99,13 @@ function InputBox:input(ypos, height, title, d_text)
 
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--print("key code:"..ev.code)
 			ev.code = adjustFWKey(ev.code)
-			if ev.code == KEY_FW_UP then
+			--local secs, usecs = util.gettime()
+			if ev.code == KEY_SHIFT then
+				self.shiftmode = true
+			elseif ev.code == KEY_ALT then
+				self.altmode = true
+			elseif ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
 				self:addChar("a")
@@ -152,6 +159,26 @@ function InputBox:input(ypos, height, title, d_text)
 				self:addChar("y")
 			elseif ev.code == KEY_Z then
 				self:addChar("z")
+			elseif ev.code == KEY_1 then
+				self:addChar("1")
+			elseif ev.code == KEY_2 then
+				self:addChar("2")
+			elseif ev.code == KEY_3 then
+				self:addChar("3")
+			elseif ev.code == KEY_4 then
+				self:addChar("4")
+			elseif ev.code == KEY_5 then
+				self:addChar("5")
+			elseif ev.code == KEY_6 then
+				self:addChar("6")
+			elseif ev.code == KEY_7 then
+				self:addChar("7")
+			elseif ev.code == KEY_8 then
+				self:addChar("8")
+			elseif ev.code == KEY_9 then
+				self:addChar("9")
+			elseif ev.code == KEY_0 then
+				self:addChar("0")
 			elseif ev.code == KEY_SPACE then
 				self:addChar(" ")
 			elseif ev.code == KEY_PGFWD then
@@ -167,6 +194,16 @@ function InputBox:input(ypos, height, title, d_text)
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
+
+			--local nsecs, nusecs = util.gettime()
+			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
+		and ev.code == KEY_SHIFT then
+			self.shiftmode = false
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
+		and ev.code == KEY_ALT then
+			self.altmode = false
 		end
 	end
 end
