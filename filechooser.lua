@@ -2,6 +2,8 @@ require "rendertext"
 require "keys"
 require "graphics"
 require "fontchooser"
+require "filesearcher"
+require "inputbox"
 
 FileChooser = {
 	-- Class vars:
@@ -35,6 +37,7 @@ function FileChooser:readdir()
 			table.insert(self.files, f)
 		end
 	end
+	--@TODO make sure .. is sortted to the first item  16.02 2012
 	table.sort(self.dirs)
 	table.sort(self.files)
 end
@@ -151,6 +154,7 @@ function FileChooser:choose(ypos, height)
 		end
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			print("key code:"..ev.code)
 			if ev.code == KEY_FW_UP then
 				if self:rotationMode() == 0 then
 					prevItem()
@@ -181,6 +185,24 @@ function FileChooser:choose(ypos, height)
 				if newfont ~= nil then
 					self.face = freetype.newBuiltinFace(newfont, 25)
 					clearglyphcache()
+				end
+				pagedirty = true
+			elseif ev.code == KEY_S then
+				-- invoke search input
+				keywords = InputBox:input(height-100, 100, "Search:")
+				if keywords then -- display search result according to keywords
+					--[[
+						----------------------------------------------------------------
+						|| uncomment following line and set the correct path if you want
+						|| to test search feature in EMU mode
+						----------------------------------------------------------------
+					--]]
+					--FileSearcher:init("/home/dave/documents/kindle/backup/documents")
+					FileSearcher:init()
+					file = FileSearcher:choose(ypos, height, keywords)
+					if file then
+						return file
+					end
 				end
 				pagedirty = true
 			elseif ev.code == KEY_PGFWD then
