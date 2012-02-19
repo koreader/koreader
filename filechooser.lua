@@ -54,33 +54,6 @@ function FileChooser:setPath(newPath)
 	return true
 end
 
-function FileChooser:rotationMode()
-	--[[
-	return code for four kinds of rotation mode:
-
-  0 for no rotation, 
-	1 for landscape with bottom on the right side of screen, etc.
-
-	        2
-	    ---------
-	   |         |
-	   |         |
-	   |         |
-	 3 |         | 1
-	   |         |
-	   |         |
-	   |         |
-	    ---------
-	        0
-	--]]
-	if KEY_FW_DOWN == 116 then
-		return 0
-	end
-	orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
-	updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
-	mode = orie_fd:read() + (updown_fd:read() * 2)
-	return mode
-end
 
 function FileChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 1
@@ -154,32 +127,13 @@ function FileChooser:choose(ypos, height)
 		end
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			print("key code:"..ev.code)
+			--print("key code:"..ev.code)
+			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
-				if self:rotationMode() == 0 then
-					prevItem()
-				elseif self:rotationMode() == 2 then
-					nextItem()
-				end
+				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
-				if self:rotationMode() == 0 then
-					nextItem()
-				elseif self:rotationMode() == 2 then
-					prevItem()
-				end
-			elseif ev.code == KEY_FW_LEFT then
-				if self:rotationMode() == 1 then
-					prevItem()
-				elseif self:rotationMode() == 3 then
-					nextItem()
-				end
-			elseif ev.code == KEY_FW_RIGHT then
-				if self:rotationMode() == 1 then
-					nextItem()
-				elseif self:rotationMode() == 3 then
-					prevItem()
-				end
-			elseif ev.code == KEY_F then
+				nextItem()
+			elseif ev.code == KEY_F then -- invoke fontchooser menu
 				FontChooser:init()
 				newfont = FontChooser:choose(0, height)
 				if newfont ~= nil then
@@ -187,8 +141,7 @@ function FileChooser:choose(ypos, height)
 					clearglyphcache()
 				end
 				pagedirty = true
-			elseif ev.code == KEY_S then
-				-- invoke search input
+			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
 				if keywords then -- display search result according to keywords
 					--[[

@@ -31,8 +31,8 @@ FontChooser = {
 }
 
 function FontChooser:init()
+	clearglyphcache()
 	self.items = #self.fonts
-	table.sort(self.fonts)
 end
 
 
@@ -80,6 +80,7 @@ function FontChooser:choose(ypos, height)
 			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
 				"Fonts Menu", true)
 
+			-- draw font items
 			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
 			local c
 			for c = 1, perpage do
@@ -89,6 +90,7 @@ function FontChooser:choose(ypos, height)
 					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, self.fonts[i], true)
 				end
 			end
+
 			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
@@ -122,6 +124,7 @@ function FontChooser:choose(ypos, height)
 
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then

@@ -96,8 +96,8 @@ function InputBox:input(ypos, height, title, d_text)
 
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			print("key code:"..ev.code)
-			--ev.code = adjustFWKey(ev.code)
+			--print("key code:"..ev.code)
+			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
