@@ -1,5 +1,6 @@
 require "keys"
 require "settings"
+require "tocmenu"
 
 PDFReader = {
 	-- "constants":
@@ -333,6 +334,18 @@ function PDFReader:inputloop()
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HEIGHT)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
+				end
+
+			elseif ev.code == KEY_T then
+				-- show table of content menu
+				toc = self.doc:getTOC()
+				toc_menu = TOCMenu:new(toc)
+				--toc_menu:dump()
+				no = toc_menu:choose(0, fb.bb:getHeight())
+				if no then
+					self:goto(no)
+				else
+					self:goto(self.pageno)
 				end
 
 			elseif ev.code == KEY_J then
