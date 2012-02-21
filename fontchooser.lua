@@ -74,6 +74,7 @@ function FontChooser:choose(ypos, height)
 	while true do
 		if pagedirty then
 			-- draw menu title
+			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
 			fb.bb:paintRect(30, ypos + 10, fb.bb:getWidth() - 60, self.title_H, 5)
 			x = fb.bb:getWidth() - 220 -- move text to the right
 			y = ypos + self.title_H
