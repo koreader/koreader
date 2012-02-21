@@ -82,6 +82,7 @@ function TOCMenu:choose(ypos, height)
 
 	while true do
 		if pagedirty then
+			markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
 			fb.bb:paintRect(30, ypos + 10, fb.bb:getWidth() - 60, self.title_H, 5)
@@ -90,36 +91,45 @@ function TOCMenu:choose(ypos, height)
 			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
 				"Table of Contents", true)
 
-			-- draw font items
+			-- draw toc items
 			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
-			local c
-			for c = 1, perpage do
-				local i = (self.page - 1) * perpage + c 
-				if i <= self.items then
-					y = ypos + self.title_H + (self.spacing * c)
-					renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
-						("      "):rep(self.toc[i]["depth"]-1)..self.toc[i]["title"], true)
+			if self.items == 0 then
+				y = ypos + self.title_H + (self.spacing * 2)
+				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+					"Oops...  Bad news for you:", true)
+				y = y + self.spacing
+				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+					"This document does not have a Table of Conent.", true)
+				markerdirty = false
+			else
+				local c
+				for c = 1, perpage do
+					local i = (self.page - 1) * perpage + c 
+					if i <= self.items then
+						y = ypos + self.title_H + (self.spacing * c)
+						renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+							("      "):rep(self.toc[i]["depth"]-1)..self.toc[i]["title"], true)
+					end
 				end
 			end
 
 			-- draw footer
-			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
+			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H + 5
 			x = (fb.bb:getWidth() / 2) - 50
 			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
-			markerdirty = true
 		end
 
 		if markerdirty then
 			if not pagedirty then
 				if self.oldcurrent > 0 then
-					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 10
+					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 8
 					fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 0)
 					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
 				end
 			end
 			-- draw new marker line
-			y = ypos + self.title_H + (self.spacing * self.current) + 10
+			y = ypos + self.title_H + (self.spacing * self.current) + 8
 			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
 			if not pagedirty then
 				fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
