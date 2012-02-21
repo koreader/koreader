@@ -88,28 +88,20 @@ static int getNumberOfPages(lua_State *L) {
 }
 
 /*
- * Return a table with (title,page) pair as entry:
- * {"chapter1"=12, "chapter2"=20}
+ * helper function for getTableOfContent()
  */
-static int getTableOfContent(lua_State *L) {
-	fz_outline *ol;
-	int i;
-
-	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	ol = pdf_load_outline(doc->xref);
-
-	lua_newtable(L);
-	i = 1;
+static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int depth) {
+	depth++;
 	while(ol) {
-		lua_pushnumber(L, i);
+		lua_pushnumber(L, *count);
 
 		/* set subtable */
 		lua_newtable(L);
 		lua_pushstring(L, "page");
 		lua_pushnumber(L, ol->dest.ld.gotor.page + 1);
 		lua_settable(L, -3);
-		lua_pushstring(L, "level");
-		lua_pushnumber(L, 1); // level 1
+		lua_pushstring(L, "depth");
+		lua_pushnumber(L, depth); 
 		lua_settable(L, -3);
 		lua_pushstring(L, "title");
 		lua_pushstring(L, ol->title);
@@ -117,9 +109,28 @@ static int getTableOfContent(lua_State *L) {
 
 		lua_settable(L, -3);
 
-		i++;
+		(*count)++;
+		if (ol->down) {
+			walkTableOfContent(L, ol->down, count, depth);
+		}
 		ol = ol->next;
 	}
+	return 0;
+}
+
+/*
+ * Return a table with (title,page) pair as entry:
+ * {"chapter1"=12, "chapter2"=20}
+ */
+static int getTableOfContent(lua_State *L) {
+	fz_outline *ol;
+	int count = 1;
+
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	ol = pdf_load_outline(doc->xref);
+
+	lua_newtable(L);
+	walkTableOfContent(L, ol, &count, 0);
 	return 1;
 }
 

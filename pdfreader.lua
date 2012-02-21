@@ -344,6 +344,8 @@ function PDFReader:inputloop()
 				no = toc_menu:choose(0, fb.bb:getHeight())
 				if no then
 					self:goto(no)
+				else
+					self:goto(self.pageno)
 				end
 
 			elseif ev.code == KEY_J then

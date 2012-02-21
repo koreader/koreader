@@ -4,8 +4,8 @@ require "graphics"
 
 TOCMenu = {
 	-- font for displaying file/dir names
-	face = freetype.newBuiltinFace("cjk", 25),
-	fhash = "s25",
+	face = freetype.newBuiltinFace("cjk", 22),
+	fhash = "s22",
 	-- font for page title
 	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 25),
 	tfhash = "hbo25",
@@ -15,7 +15,7 @@ TOCMenu = {
 	-- title height
 	title_H = 40,
 	-- spacing between lines
-	spacing = 40,
+	spacing = 36,
 	-- foot height
 	foot_H = 27,
 
@@ -97,8 +97,8 @@ function TOCMenu:choose(ypos, height)
 				local i = (self.page - 1) * perpage + c 
 				if i <= self.items then
 					y = ypos + self.title_H + (self.spacing * c)
-					renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
-						self.toc[i]["title"], true)
+					renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+						("      "):rep(self.toc[i]["depth"]-1)..self.toc[i]["title"], true)
 				end
 			end
 
