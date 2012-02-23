@@ -167,7 +167,7 @@ function FileSearcher:choose(ypos, height, keywords)
 			if self.items == 0 then -- nothing found
 				y = ypos + self.title_H + self.spacing * 2
 				renderUtf8Text(fb.bb, 20, y, self.face, self.fhash, 
-					"Sorry, your keyword did not match any documents.", true) 
+					"Sorry, no match found.", true) 
 				renderUtf8Text(fb.bb, 20, y + self.spacing, self.face, self.fhash, 
 					"Please try a different keyword.", true)
 				markerdirty = false
