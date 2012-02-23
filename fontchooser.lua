@@ -3,15 +3,27 @@ require "keys"
 require "graphics"
 
 FontChooser = {
+	-- font name for content
+	cfont = "sans",
 	-- font for displaying file/dir names
-	face = freetype.newBuiltinFace("sans", 25),
-	fhash = "s25",
+	fsize = 25,
+	face = nil,
+	fhash = nil,
+
+	-- font name for title
+	tfont = "Helvetica-BoldOblique",
 	-- font for page title
-	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 30),
-	tfhash = "hbo30",
-	-- font for paging display
-	sface = freetype.newBuiltinFace("sans", 16),
-	sfhash = "s16",
+	tfsize = 30,
+	tface = nil,
+	tfhash = nil,
+
+	-- font name for footer
+	ffont = "sans",
+	-- font for page footer display
+	ffsize = 16,
+	fface = nil,
+	ffhash = nil,
+
 	-- title height
 	title_H = 45,
 	-- spacing between lines
@@ -35,11 +47,28 @@ function FontChooser:init()
 	self.items = #self.fonts
 end
 
+function FontChooser:updateFont()
+	if self.fhash ~= FontChooser.cfont..self.fsize then
+		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
+		self.fhash = FontChooser.cfont..self.fsize
+	end
+
+	if self.tfhash ~= FontChooser.tfont..self.tfsize then
+		self.tface = freetype.newBuiltinFace(FontChooser.tfont, self.tfsize)
+		self.tfhash = FontChooser.tfont..self.tfsize
+	end
+
+	if self.ffhash ~= FontChooser.ffont..self.ffsize then
+		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
+		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
 
 function FontChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
+	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -95,7 +124,7 @@ function FontChooser:choose(ypos, height)
 			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
+			renderUtf8Text(fb.bb, x, y, self.fface, self.ffhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			markerdirty = true
 		end
@@ -150,8 +179,9 @@ function FontChooser:choose(ypos, height)
 					markerdirty = true
 				end
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				local newface = self.fonts[perpage*(self.page-1)+self.current]
-				return newface
+				self.cfont = self.fonts[perpage*(self.page-1)+self.current]
+				clearglyphcache()
+				return nil
 			elseif ev.code == KEY_BACK then
 				return nil
 			end

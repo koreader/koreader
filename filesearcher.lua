@@ -1,17 +1,22 @@
 require "rendertext"
 require "keys"
 require "graphics"
+require "fontchooser"
 
 FileSearcher = {
-	-- font for displaying file/dir names
-	face = freetype.newBuiltinFace("sans", 25),
-	fhash = "s25",
+	-- font for displaying toc item names
+	fsize = 25,
+	face = nil,
+	fhash = nil,
 	-- font for page title
-	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 32),
-	tfhash = "hbo32",
+	tfsize = 30,
+	tface = nil,
+	tfhash = nil,
 	-- font for paging display
-	sface = freetype.newBuiltinFace("sans", 16),
-	sfhash = "s16",
+	ffsize = 16,
+	fface = nil,
+	ffhash = nil,
+
 	-- title height
 	title_H = 45,
 	-- spacing between lines
@@ -65,6 +70,23 @@ function FileSearcher:setPath(newPath)
 	return true
 end
 
+function FileSearcher:updateFont()
+	if self.fhash ~= FontChooser.cfont..self.fsize then
+		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
+		self.fhash = FontChooser.cfont..self.fsize
+	end
+
+	if self.tfhash ~= FontChooser.tfont..self.tfsize then
+		self.tface = freetype.newBuiltinFace(FontChooser.tfont, self.tfsize)
+		self.tfhash = FontChooser.tfont..self.tfsize
+	end
+
+	if self.ffhash ~= FontChooser.ffont..self.ffsize then
+		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
+		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
+
 function FileSearcher:setSearchResult(keywords)
 	self.result = {}
 	if keywords == " " then -- one space to show all files
@@ -94,6 +116,7 @@ function FileSearcher:choose(ypos, height, keywords)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
+	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -163,7 +186,7 @@ function FileSearcher:choose(ypos, height, keywords)
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
 			all_page = (math.floor(self.items / perpage)+1)
-			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
+			renderUtf8Text(fb.bb, x, y, self.fface, self.ffhash,
 				"Page "..self.page.." of "..all_page, true)
 		end
 

@@ -1,17 +1,22 @@
 require "rendertext"
 require "keys"
 require "graphics"
+require "fontchooser"
 
 TOCMenu = {
-	-- font for displaying file/dir names
-	face = freetype.newBuiltinFace("cjk", 22),
-	fhash = "s22",
+	-- font for displaying toc item names
+	fsize = 22,
+	face = nil,
+	fhash = nil,
 	-- font for page title
-	tface = freetype.newBuiltinFace("Helvetica-BoldOblique", 25),
-	tfhash = "hbo25",
+	tfsize = 25,
+	tface = nil,
+	tfhash = nil,
 	-- font for paging display
-	sface = freetype.newBuiltinFace("sans", 16),
-	sfhash = "s16",
+	ffsize = 16,
+	fface = nil,
+	ffhash = nil,
+
 	-- title height
 	title_H = 40,
 	-- spacing between lines
@@ -28,8 +33,6 @@ TOCMenu = {
 }
 
 function TOCMenu:new(toc)
-	--@TODO set font here in the future  21.02 2012
-	--clearglyphcache()
 	instance = self
 	instance.toc = toc
 	instance.items = #toc
@@ -45,10 +48,28 @@ function TOCMenu:dump()
 	end
 end
 
+function TOCMenu:updateFont()
+	if self.fhash ~= FontChooser.cfont..self.fsize then
+		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
+		self.fhash = FontChooser.cfont..self.fsize
+	end
+
+	if self.tfhash ~= FontChooser.tfont..self.tfsize then
+		self.tface = freetype.newBuiltinFace(FontChooser.tfont, self.tfsize)
+		self.tfhash = FontChooser.tfont..self.tfsize
+	end
+
+	if self.ffhash ~= FontChooser.ffont..self.ffsize then
+		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
+		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
+
 function TOCMenu:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
+	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -99,7 +120,7 @@ function TOCMenu:choose(ypos, height)
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
 				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
-					"This document does not have a Table of Conent.", true)
+					"This document doesn't have a TOC.", true)
 				markerdirty = false
 			else
 				local c
@@ -116,7 +137,7 @@ function TOCMenu:choose(ypos, height)
 			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H + 5
 			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, self.sface, self.sfhash,
+			renderUtf8Text(fb.bb, x, y, self.fface, self.ffhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 		end
 

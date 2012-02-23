@@ -7,13 +7,20 @@ require "inputbox"
 
 FileChooser = {
 	-- Class vars:
-	
-	-- font for displaying file/dir names
-	face = freetype.newBuiltinFace("sans", 25),
-	fhash = "s25",
+	-- font for displaying toc item names
+	fsize = 25,
+	face = nil,
+	fhash = nil,
+	--face = freetype.newBuiltinFace("sans", 25),
+	--fhash = "s25",
+
 	-- font for paging display
-	sface = freetype.newBuiltinFace("sans", 16),
-	sfhash = "s16",
+	ffsize = 16,
+	fface = nil,
+	ffhash = nil,
+	--sface = freetype.newBuiltinFace("sans", 16),
+	--sfhash = "s16",
+	
 	-- spacing between lines
 	spacing = 40,
 
@@ -54,11 +61,23 @@ function FileChooser:setPath(newPath)
 	return true
 end
 
+function FileChooser:updateFont()
+	if self.fhash ~= FontChooser.cfont..self.fsize then
+		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
+		self.fhash = FontChooser.cfont..self.fsize
+	end
+
+	if self.ffhash ~= FontChooser.ffont..self.ffsize then
+		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
+		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
 
 function FileChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 1
 	local pagedirty = true
 	local markerdirty = false
+	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -103,7 +122,7 @@ function FileChooser:choose(ypos, height)
 					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, self.face, self.fhash, self.files[i-#self.dirs], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 39, ypos + self.spacing * perpage + 32, self.sface, self.sfhash,
+			renderUtf8Text(fb.bb, 39, ypos + self.spacing * perpage + 32, self.fface, self.ffhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			markerdirty = true
 		end
@@ -134,12 +153,9 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				FontChooser:init()
-				newfont = FontChooser:choose(0, height)
-				if newfont ~= nil then
-					self.face = freetype.newBuiltinFace(newfont, 25)
-					clearglyphcache()
-				end
+				--FontChooser:init()
+				FontChooser:choose(0, height)
+				self:updateFont()
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
@@ -150,8 +166,8 @@ function FileChooser:choose(ypos, height)
 						|| to test search feature in EMU mode
 						----------------------------------------------------------------
 					--]]
-					--FileSearcher:init("/home/dave/documents/kindle/backup/documents")
-					FileSearcher:init()
+					FileSearcher:init("/home/dave/documents/kindle/backup/documents")
+					--FileSearcher:init()
 					file = FileSearcher:choose(ypos, height, keywords)
 					if file then
 						return file
