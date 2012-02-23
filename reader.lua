@@ -101,3 +101,6 @@ else
 	PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
 	PDFReader:inputloop()
 end
+
+input.closeAll()
+os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
