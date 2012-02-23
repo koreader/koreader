@@ -166,8 +166,8 @@ function FileChooser:choose(ypos, height)
 						|| to test search feature in EMU mode
 						----------------------------------------------------------------
 					--]]
-					FileSearcher:init("/home/dave/documents/kindle/backup/documents")
-					--FileSearcher:init()
+					--FileSearcher:init("/home/dave/documents/kindle/backup/documents")
+					FileSearcher:init()
 					file = FileSearcher:choose(ypos, height, keywords)
 					if file then
 						return file
