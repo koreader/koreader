@@ -7,7 +7,7 @@ MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 
 SQLITE3DIR=sqlite-amalgamation-3070900
 LSQLITE3DIR=lsqlite3_svn08
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.4
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
 
 # set this to your ARM cross compiler:
