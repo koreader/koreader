@@ -382,7 +382,7 @@ function PDFReader:inputloop()
 						self:goto(self.jump_stack[1].page)
 					end
 				else
-					-- not altmode, exit pdfreader
+					-- not shiftmode, exit pdfreader
 					self:clearcache()
 					if self.doc ~= nil then
 						self.doc:close()
@@ -417,11 +417,9 @@ function PDFReader:inputloop()
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
 			elseif ev.code == KEY_T then
-				if self.altmode then
-					self:showJumpStack()
-				else
-					self:showTOC()
-				end
+				self:showTOC()
+			elseif ev.code == KEY_B then
+				self:showJumpStack()
 			elseif ev.code == KEY_J then
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then
@@ -488,6 +486,7 @@ function PDFReader:inputloop()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
+			print "shift haha"
 			self.shiftmode = false
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
 			self.altmode = false

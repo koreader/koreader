@@ -8,7 +8,7 @@ InputBox = {
 	input_start_y = nil,
 	input_cur_x = nil, -- points to the start of next input pos
 
-	input_bg = 1,
+	input_bg = 0,
 
 	input_string = "",
 
