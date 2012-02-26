@@ -1,6 +1,6 @@
 require "keys"
 require "settings"
-require "tocmenu"
+--require "tocmenu"
 require "selectmenu"
 
 PDFReader = {
@@ -243,6 +243,7 @@ function PDFReader:goto(no)
 		local jump_item = nil
 		-- add current page to jump_stack if no in
 		for _t,_v in ipairs(self.jump_stack) do
+			--print(_v)
 			if _v.page == self.pageno then
 				jump_item = _v
 				table.remove(self.jump_stack, _t)
@@ -308,6 +309,51 @@ function PDFReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+function PDFReader:showTOC()
+	toc = self.doc:getTOC()
+	local menu_items = {}
+	-- build menu items
+	for _k,_v in ipairs(toc) do
+		table.insert(menu_items,
+		("        "):rep(_v.depth-1).._v.title)
+	end
+	toc_menu = SelectMenu:new{
+		menu_title = "Table of Contents",
+		item_array = menu_items,
+		no_item_msg = 
+			"This document does not have a Table of Contents.",
+	}
+	item_no = toc_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		self:goto(toc[item_no].page)
+	else
+		self:goto(self.pageno)
+	end
+end
+
+function PDFReader:showJumpStack()
+	local menu_items = {}
+	for _k,_v in ipairs(self.jump_stack) do
+		--print(_v.datetime.." -> Page ".._v.page)
+		table.insert(menu_items, 
+			_v.datetime.." -> Page ".._v.page)
+	end
+	jump_menu = SelectMenu:new{
+		menu_title = 
+			"Jump Keeper, Current page: "..self.pageno, 
+		item_array = menu_items,
+		no_item_msg = "No jump history.",
+	}
+	item_no = jump_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		local jump_item = self.jump_stack[item_no]
+		self:goto(jump_item.page)
+	else
+		self:goto(self.pageno)
+	end
+end
+
+
 -- wait for input and handle it
 function PDFReader:inputloop()
 	while 1 do
@@ -335,16 +381,24 @@ function PDFReader:inputloop()
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				self:clearcache()
-				if self.doc ~= nil then
-					self.doc:close()
+				if self.altmode then
+					-- in altmode, back to last jump
+					if #self.jump_stack ~= 0 then
+						self:goto(self.jump_stack[1].page)
+					end
+				else
+					-- not altmode, exit pdfreader
+					self:clearcache()
+					if self.doc ~= nil then
+						self.doc:close()
+					end
+					if self.settings ~= nil then
+						self.settings:savesetting("last_page", self.pageno)
+						self.settings:savesetting("gamma", self.globalgamma)
+						self.settings:close()
+					end
+					return
 				end
-				if self.settings ~= nil then
-					self.settings:savesetting("last_page", self.pageno)
-					self.settings:savesetting("gamma", self.globalgamma)
-					self.settings:close()
-				end
-				return
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )
 			elseif ev.code == KEY_VMINUS then
@@ -367,38 +421,12 @@ function PDFReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
-
 			elseif ev.code == KEY_T then
 				if self.altmode then
-					-- show jump_stack
-					local menu_items = {}
-					for _k,_v in ipairs(self.jump_stack) do
-						table.insert(menu_items, 
-							_v.datetime.." -> Page ".._v.page)
-					end
-					jump_menu = SelectMenu:new(
-						"Jump Keeper, Current page: "..self.pageno, menu_items)
-					jump_re = jump_menu:choose(0, fb.bb:getHeight())
-					jump_menu = nil
-					if jump_re then
-						local jump_item = self.jump_stack[jump_re]
-						self:goto(jump_item.page)
-					else
-						self:goto(self.pageno)
-					end
+					self:showJumpStack()
 				else
-					-- show table of content menu
-					toc = self.doc:getTOC()
-					toc_menu = TOCMenu:new(toc)
-					--toc_menu:dump()
-					no = toc_menu:choose(0, fb.bb:getHeight())
-					if no then
-						self:goto(no)
-					else
-						self:goto(self.pageno)
-					end
+					self:showTOC()
 				end
-
 			elseif ev.code == KEY_J then
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then

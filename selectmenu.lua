@@ -24,23 +24,26 @@ SelectMenu = {
 	-- foot height
 	foot_H = 27,
 
-	-- state buffer
-	menu_title = "None Title",
+	menu_title = "None Titled",
+	no_item_msg = "No items found.",
 	item_array = {},
 	items = 14,
+
+	-- state buffer
 	page = 1,
 	current = 1,
 	oldcurrent = 0,
 }
 
-function SelectMenu:new(menu_title, item_array)
-	instance = self
-	instance.item_array = item_array
-	instance.menu_title = menu_title
-	instance.items = #item_array
-	instance.current = 1
-	instance.oldcurrent = 0
-	return instance
+function SelectMenu:new(o)
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	o.items = #o.item_array
+	o.page = 1
+	o.current = 1
+	o.oldcurrent = 0
+	return o
 end
 
 function SelectMenu:updateFont()
@@ -119,7 +122,7 @@ function SelectMenu:choose(ypos, height)
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
 				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
-					"No items found.", true)
+					self.no_item_msg, true)
 				markerdirty = false
 			else
 				local c
