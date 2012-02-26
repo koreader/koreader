@@ -243,7 +243,6 @@ function PDFReader:goto(no)
 		local jump_item = nil
 		-- add current page to jump_stack if no in
 		for _t,_v in ipairs(self.jump_stack) do
-			--print(_v)
 			if _v.page == self.pageno then
 				jump_item = _v
 				table.remove(self.jump_stack, _t)
@@ -265,7 +264,6 @@ function PDFReader:goto(no)
 			-- remove the last element to keep the size less than 10
 			table.remove(self.jump_stack)
 		end
-		print('@add: '..jump_item.page..", current: "..self.pageno)
 	end
 
 	self.pageno = no
@@ -320,8 +318,7 @@ function PDFReader:showTOC()
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
 		item_array = menu_items,
-		no_item_msg = 
-			"This document does not have a Table of Contents.",
+		no_item_msg = "This document does not have a Table of Contents.",
 	}
 	item_no = toc_menu:choose(0, fb.bb:getHeight())
 	if item_no then
@@ -334,13 +331,11 @@ end
 function PDFReader:showJumpStack()
 	local menu_items = {}
 	for _k,_v in ipairs(self.jump_stack) do
-		--print(_v.datetime.." -> Page ".._v.page)
 		table.insert(menu_items, 
 			_v.datetime.." -> Page ".._v.page)
 	end
 	jump_menu = SelectMenu:new{
-		menu_title = 
-			"Jump Keeper, Current page: "..self.pageno, 
+		menu_title = "Jump Keeper      (current page: "..self.pageno..")", 
 		item_array = menu_items,
 		no_item_msg = "No jump history.",
 	}

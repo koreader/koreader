@@ -4,6 +4,7 @@ require "graphics"
 require "fontchooser"
 require "filesearcher"
 require "inputbox"
+require "selectmenu"
 
 FileChooser = {
 	-- Class vars:
@@ -66,7 +67,6 @@ function FileChooser:updateFont()
 		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
 		self.fhash = FontChooser.cfont..self.fsize
 	end
-
 	if self.ffhash ~= FontChooser.ffont..self.ffsize then
 		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
 		self.ffhash = FontChooser.ffont..self.ffsize
@@ -77,7 +77,6 @@ function FileChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 1
 	local pagedirty = true
 	local markerdirty = false
-	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -109,6 +108,7 @@ function FileChooser:choose(ypos, height)
 	end
 
 	while true do
+		self:updateFont()
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			local c
@@ -153,9 +153,12 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				--FontChooser:init()
-				FontChooser:choose(0, height)
-				self:updateFont()
+				FontChooser:init()
+				fonts_menu = SelectMenu:new{
+					menu_title = "Fonts Menu",
+					item_array = FontChooser.fonts,
+				}
+				FontChooser.cfont = FontChooser.fonts[fonts_menu:choose(0, height)]
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
