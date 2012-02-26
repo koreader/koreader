@@ -1,6 +1,7 @@
 require "keys"
 require "settings"
 require "tocmenu"
+require "selectmenu"
 
 PDFReader = {
 	-- "constants":
@@ -59,6 +60,7 @@ PDFReader = {
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+	jump_stack = {},
 }
 
 -- guarantee that we have enough memory in cache
@@ -235,6 +237,36 @@ function PDFReader:goto(no)
 	if no < 1 or no > self.doc:getPages() then
 		return
 	end
+
+	-- for jump_stack
+	if self.pageno and math.abs(self.pageno - no) > 1 then
+		local jump_item = nil
+		-- add current page to jump_stack if no in
+		for _t,_v in ipairs(self.jump_stack) do
+			if _v.page == self.pageno then
+				jump_item = _v
+				table.remove(self.jump_stack, _t)
+			elseif _v.page == no then
+				-- the page we jumped to should not be show in stack
+				table.remove(self.jump_stack, _t)
+			end
+		end
+		-- create a new one if not found
+		if not jump_item then
+			jump_item = {
+				page = self.pageno,
+				datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			}
+		end
+		-- insert at the start
+		table.insert(self.jump_stack, 1, jump_item)
+		if #self.jump_stack > 10 then
+			-- remove the last element to keep the size less than 10
+			table.remove(self.jump_stack)
+		end
+		print('@add: '..jump_item.page..", current: "..self.pageno)
+	end
+
 	self.pageno = no
 	self:show(no)
 	if no < self.doc:getPages() then
@@ -337,15 +369,34 @@ function PDFReader:inputloop()
 				end
 
 			elseif ev.code == KEY_T then
-				-- show table of content menu
-				toc = self.doc:getTOC()
-				toc_menu = TOCMenu:new(toc)
-				--toc_menu:dump()
-				no = toc_menu:choose(0, fb.bb:getHeight())
-				if no then
-					self:goto(no)
+				if self.altmode then
+					-- show jump_stack
+					local menu_items = {}
+					for _k,_v in ipairs(self.jump_stack) do
+						table.insert(menu_items, 
+							_v.datetime.." -> Page ".._v.page)
+					end
+					jump_menu = SelectMenu:new(
+						"Jump Keeper, Current page: "..self.pageno, menu_items)
+					jump_re = jump_menu:choose(0, fb.bb:getHeight())
+					jump_menu = nil
+					if jump_re then
+						local jump_item = self.jump_stack[jump_re]
+						self:goto(jump_item.page)
+					else
+						self:goto(self.pageno)
+					end
 				else
-					self:goto(self.pageno)
+					-- show table of content menu
+					toc = self.doc:getTOC()
+					toc_menu = TOCMenu:new(toc)
+					--toc_menu:dump()
+					no = toc_menu:choose(0, fb.bb:getHeight())
+					if no then
+						self:goto(no)
+					else
+						self:goto(self.pageno)
+					end
 				end
 
 			elseif ev.code == KEY_J then
