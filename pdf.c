@@ -119,8 +119,11 @@ static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int dept
 }
 
 /*
- * Return a table with (title,page) pair as entry:
- * {"chapter1"=12, "chapter2"=20}
+ * Return a table like this:
+ * {
+ *		{page=12, depth=1, title="chapter1"},
+ *		{page=54, depth=1, title="chapter2"},
+ * }
  */
 static int getTableOfContent(lua_State *L) {
 	fz_outline *ol;
