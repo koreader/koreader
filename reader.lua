@@ -71,6 +71,7 @@ else
 	print(f)
 	if f then
 		print("Auto-detected Kindle 3")
+		input.open("/dev/input/event2")
 		set_k3_keycodes()
 	end
 
