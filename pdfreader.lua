@@ -1,5 +1,7 @@
 require "keys"
 require "settings"
+--require "tocmenu"
+require "selectmenu"
 
 PDFReader = {
 	-- "constants":
@@ -58,6 +60,7 @@ PDFReader = {
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+	jump_stack = {},
 }
 
 -- guarantee that we have enough memory in cache
@@ -234,6 +237,35 @@ function PDFReader:goto(no)
 	if no < 1 or no > self.doc:getPages() then
 		return
 	end
+
+	-- for jump_stack
+	if self.pageno and math.abs(self.pageno - no) > 1 then
+		local jump_item = nil
+		-- add current page to jump_stack if no in
+		for _t,_v in ipairs(self.jump_stack) do
+			if _v.page == self.pageno then
+				jump_item = _v
+				table.remove(self.jump_stack, _t)
+			elseif _v.page == no then
+				-- the page we jumped to should not be show in stack
+				table.remove(self.jump_stack, _t)
+			end
+		end
+		-- create a new one if not found
+		if not jump_item then
+			jump_item = {
+				page = self.pageno,
+				datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			}
+		end
+		-- insert at the start
+		table.insert(self.jump_stack, 1, jump_item)
+		if #self.jump_stack > 10 then
+			-- remove the last element to keep the size less than 10
+			table.remove(self.jump_stack)
+		end
+	end
+
 	self.pageno = no
 	self:show(no)
 	if no < self.doc:getPages() then
@@ -275,6 +307,48 @@ function PDFReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+function PDFReader:showTOC()
+	toc = self.doc:getTOC()
+	local menu_items = {}
+	-- build menu items
+	for _k,_v in ipairs(toc) do
+		table.insert(menu_items,
+		("        "):rep(_v.depth-1).._v.title)
+	end
+	toc_menu = SelectMenu:new{
+		menu_title = "Table of Contents",
+		item_array = menu_items,
+		no_item_msg = "This document does not have a Table of Contents.",
+	}
+	item_no = toc_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		self:goto(toc[item_no].page)
+	else
+		self:goto(self.pageno)
+	end
+end
+
+function PDFReader:showJumpStack()
+	local menu_items = {}
+	for _k,_v in ipairs(self.jump_stack) do
+		table.insert(menu_items, 
+			_v.datetime.." -> Page ".._v.page)
+	end
+	jump_menu = SelectMenu:new{
+		menu_title = "Jump Keeper      (current page: "..self.pageno..")", 
+		item_array = menu_items,
+		no_item_msg = "No jump history.",
+	}
+	item_no = jump_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		local jump_item = self.jump_stack[item_no]
+		self:goto(jump_item.page)
+	else
+		self:goto(self.pageno)
+	end
+end
+
+
 -- wait for input and handle it
 function PDFReader:inputloop()
 	while 1 do
@@ -302,16 +376,24 @@ function PDFReader:inputloop()
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				self:clearcache()
-				if self.doc ~= nil then
-					self.doc:close()
+				if self.altmode then
+					-- in altmode, back to last jump
+					if #self.jump_stack ~= 0 then
+						self:goto(self.jump_stack[1].page)
+					end
+				else
+					-- not shiftmode, exit pdfreader
+					self:clearcache()
+					if self.doc ~= nil then
+						self.doc:close()
+					end
+					if self.settings ~= nil then
+						self.settings:savesetting("last_page", self.pageno)
+						self.settings:savesetting("gamma", self.globalgamma)
+						self.settings:close()
+					end
+					return
 				end
-				if self.settings ~= nil then
-					self.settings:savesetting("last_page", self.pageno)
-					self.settings:savesetting("gamma", self.globalgamma)
-					self.settings:close()
-				end
-				return
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )
 			elseif ev.code == KEY_VMINUS then
@@ -334,7 +416,10 @@ function PDFReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
-
+			elseif ev.code == KEY_T then
+				self:showTOC()
+			elseif ev.code == KEY_B then
+				self:showJumpStack()
 			elseif ev.code == KEY_J then
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then
@@ -401,6 +486,7 @@ function PDFReader:inputloop()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
+			print "shift haha"
 			self.shiftmode = false
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
 			self.altmode = false

@@ -20,6 +20,7 @@
 require "alt_getopt"
 require "pdfreader"
 require "filechooser"
+require "settings"
 
 -- option parsing:
 longopts = {
@@ -82,6 +83,14 @@ end
 fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 
+-- set up reader's setting: font
+reader_settings = DocSettings:open(".reader")
+r_cfont = reader_settings:readsetting("cfont")
+if r_cfont ~=nil then
+	FontChooser.cfont = r_cfont
+end
+
+
 if lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
@@ -101,3 +110,10 @@ else
 	PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
 	PDFReader:inputloop()
 end
+
+-- save reader settings
+reader_settings:savesetting("cfont", FontChooser.cfont)
+reader_settings:close()
+
+input.closeAll()
+os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')

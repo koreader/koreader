@@ -109,25 +109,120 @@ function set_emu_keycodes()
 	KEY_PGFWD = 117
 	KEY_PGBCK = 112
 	KEY_BACK = 22 -- backspace
+	KEY_DEL = 119 -- Delete
 	KEY_MENU = 67 -- F1
 	KEY_FW_UP = 111
 	KEY_FW_DOWN = 116
 	KEY_FW_LEFT = 113
 	KEY_FW_RIGHT = 114
 	KEY_FW_PRESS = 36 -- enter for now
+	KEY_SPACE = 65
 
 	KEY_ENTER = 36
+
+	KEY_Q = 24
+	KEY_W = 25
+	KEY_E = 26
+	KEY_R = 27
+	KEY_T = 28
+	KEY_Y = 29
+	KEY_U = 30
+	KEY_I = 31
+	KEY_O = 32
+	KEY_P = 33
 
 	KEY_A = 38
 	KEY_S = 39
 	KEY_D = 40
 	KEY_F = 41
-
+	KEY_G = 42
+	KEY_H = 43
 	KEY_J = 44
 	KEY_K = 45
+	KEY_L = 46
+
+	KEY_Z = 52
+	KEY_X = 53
+	KEY_C = 54
+	KEY_V = 55
+	KEY_B = 56
+	KEY_N = 57
+	KEY_M = 58
 
 	KEY_SHIFT = 50 -- left shift
 	KEY_ALT = 64   -- left alt
 	KEY_VPLUS = 95  -- F11
 	KEY_VMINUS = 96 -- F12
+end
+
+function getRotationMode()
+	--[[
+	return code for four kinds of rotation mode:
+
+  0 for no rotation, 
+	1 for landscape with bottom on the right side of screen, etc.
+
+	         2
+	    -----------
+	   |  -------  |
+	   | |       | |
+	   | |       | |
+	   | |       | |  
+	 3 | |       | | 1
+	   | |       | |
+	   | |       | |
+	   |  -------  |
+	   |           |
+	    -----------
+	         0
+	--]]
+	if KEY_FW_DOWN == 116 then -- in EMU mode always return 0
+		return 0
+	end
+	orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
+	updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
+	mode = orie_fd:read() + (updown_fd:read() * 2)
+	return mode
+end
+
+function adjustFWKey(code)
+	if getRotationMode() == 0 then
+		return code
+	elseif getRotationMode() == 1 then
+		if code == KEY_FW_UP then
+			return KEY_FW_RIGHT
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_DOWN
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_UP
+		else
+			return code
+		end
+	elseif getRotationMode() == 2 then
+		if code == KEY_FW_UP then
+			return KEY_FW_DOWN
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_UP
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_RIGHT
+		else
+			return code
+		end
+	elseif getRotationMode() == 3 then
+		if code == KEY_FW_UP then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_UP
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_RIGHT
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_DOWN
+		else
+			return code
+		end
+	end
 end

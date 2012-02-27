@@ -87,6 +87,56 @@ static int getNumberOfPages(lua_State *L) {
 	return 1;
 }
 
+/*
+ * helper function for getTableOfContent()
+ */
+static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int depth) {
+	depth++;
+	while(ol) {
+		lua_pushnumber(L, *count);
+
+		/* set subtable */
+		lua_newtable(L);
+		lua_pushstring(L, "page");
+		lua_pushnumber(L, ol->dest.ld.gotor.page + 1);
+		lua_settable(L, -3);
+		lua_pushstring(L, "depth");
+		lua_pushnumber(L, depth); 
+		lua_settable(L, -3);
+		lua_pushstring(L, "title");
+		lua_pushstring(L, ol->title);
+		lua_settable(L, -3);
+
+		lua_settable(L, -3);
+
+		(*count)++;
+		if (ol->down) {
+			walkTableOfContent(L, ol->down, count, depth);
+		}
+		ol = ol->next;
+	}
+	return 0;
+}
+
+/*
+ * Return a table like this:
+ * {
+ *		{page=12, depth=1, title="chapter1"},
+ *		{page=54, depth=1, title="chapter2"},
+ * }
+ */
+static int getTableOfContent(lua_State *L) {
+	fz_outline *ol;
+	int count = 1;
+
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	ol = pdf_load_outline(doc->xref);
+
+	lua_newtable(L);
+	walkTableOfContent(L, ol, &count, 0);
+	return 1;
+}
+
 static int newDrawContext(lua_State *L) {
 	int rotate = luaL_optint(L, 1, 0);
 	double zoom = luaL_optnumber(L, 2, (double) 1.0);
@@ -309,6 +359,7 @@ static const struct luaL_reg pdf_func[] = {
 static const struct luaL_reg pdfdocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
+	{"getTOC", getTableOfContent},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
