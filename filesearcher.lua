@@ -116,7 +116,6 @@ function FileSearcher:choose(ypos, height, keywords)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
-	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -154,6 +153,7 @@ function FileSearcher:choose(ypos, height, keywords)
 	end
 
 	while true do
+		self:updateFont()
 		if pagedirty then
 			markerdirty = true
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
@@ -249,12 +249,15 @@ function FileSearcher:choose(ypos, height, keywords)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				FontChooser:init()
 				fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
 					item_array = FontChooser.fonts,
 				}
-				FontChooser.cfont = FontChooser.fonts[fonts_menu:choose(0, height)]
+				local re = fonts_menu:choose(0, height)
+				if re then
+					FontChooser.cfont = FontChooser.fonts[re]
+					FontChooser:init()
+				end
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				file_entry = self.result[perpage*(self.page-1)+self.current]
