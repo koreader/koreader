@@ -377,12 +377,7 @@ function PDFReader:inputloop()
 				end
 			elseif ev.code == KEY_BACK then
 				if self.altmode then
-					-- in altmode, back to last jump
-					if #self.jump_stack ~= 0 then
-						self:goto(self.jump_stack[1].page)
-					end
-				else
-					-- not shiftmode, exit pdfreader
+					-- altmode, exit pdfreader
 					self:clearcache()
 					if self.doc ~= nil then
 						self.doc:close()
@@ -393,6 +388,11 @@ function PDFReader:inputloop()
 						self.settings:close()
 					end
 					return
+				else
+					-- not altmode, back to last jump
+					if #self.jump_stack ~= 0 then
+						self:goto(self.jump_stack[1].page)
+					end
 				end
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )
