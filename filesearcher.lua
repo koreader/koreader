@@ -248,6 +248,14 @@ function FileSearcher:choose(ypos, height, keywords)
 					keywords = old_keywords
 				end
 				pagedirty = true
+			elseif ev.code == KEY_F then -- invoke fontchooser menu
+				FontChooser:init()
+				fonts_menu = SelectMenu:new{
+					menu_title = "Fonts Menu",
+					item_array = FontChooser.fonts,
+				}
+				FontChooser.cfont = FontChooser.fonts[fonts_menu:choose(0, height)]
+				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				file_entry = self.result[perpage*(self.page-1)+self.current]
 				file_path = file_entry.dir .. "/" .. file_entry.name
