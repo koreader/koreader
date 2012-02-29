@@ -437,8 +437,8 @@ function PDFReader:inputloop()
 					x = self.shift_x / 5
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
-					x = self.width  - 5; -- small overlap when moving by page
-					y = self.height - 5;
+					x = width  - 5; -- small overlap when moving by page
+					y = height - 5;
 				else
 					x = self.shift_x
 					y = self.shift_y
