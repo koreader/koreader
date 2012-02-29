@@ -153,12 +153,15 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				FontChooser:init()
 				fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
 					item_array = FontChooser.fonts,
 				}
-				FontChooser.cfont = FontChooser.fonts[fonts_menu:choose(0, height)]
+				local re = fonts_menu:choose(0, height)
+				if re then
+					FontChooser.cfont = FontChooser.fonts[re]
+					FontChooser:init()
+				end
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
