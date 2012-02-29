@@ -40,6 +40,8 @@ PDFReader = {
 	shift_x = 100,
 	shift_y = 50,
 	pan_by_page = false, -- using shift_[xy] or width/height
+	pan_x = 0, -- top-left offset of page when pan activated
+	pan_y = 0,
 
 	-- keep track of input state:
 	shiftmode = false, -- shift pressed
@@ -366,8 +368,8 @@ function PDFReader:inputloop()
 					self:setglobalzoom(self.globalzoom+0.1)
 				else
 					if self.pan_by_page then
-						self.offset_x = 0
-						self.offset_y = 0
+						self.offset_x = self.pan_x
+						self.offset_y = self.pan_y
 					end
 					self:goto(self.pageno + 1)
 				end
@@ -378,8 +380,8 @@ function PDFReader:inputloop()
 					self:setglobalzoom(self.globalzoom-0.1)
 				else
 					if self.pan_by_page then
-						self.offset_x = 0
-						self.offset_y = 0
+						self.offset_x = self.pan_x
+						self.offset_y = self.pan_y
 					end
 					self:goto(self.pageno - 1)
 				end
@@ -462,7 +464,7 @@ function PDFReader:inputloop()
 						self.offset_x = 0
 					end
 					if self.pan_by_page then
-						self.offset_y = 0
+						self.offset_y = self.pan_y
 					end
 				elseif ev.code == KEY_FW_RIGHT then
 					self.offset_x = self.offset_x - x
@@ -470,7 +472,7 @@ function PDFReader:inputloop()
 						self.offset_x = self.min_offset_x
 					end
 					if self.pan_by_page then
-						self.offset_y = 0
+						self.offset_y = self.pan_y
 					end
 				elseif ev.code == KEY_FW_UP then
 					self.offset_y = self.offset_y + y
@@ -484,10 +486,19 @@ function PDFReader:inputloop()
 					end
 				elseif ev.code == KEY_FW_PRESS then
 					if self.shiftmode then
-						self.offset_x = 0
-						self.offset_y = 0
+						if self.pan_by_page then
+							self.offset_x = self.pan_x
+							self.offset_y = self.pan_y
+						else
+							self.offset_x = 0
+							self.offset_y = 0
+						end
 					else
 						self.pan_by_page = not self.pan_by_page
+						if self.pan_by_page then
+							self.pan_x = self.offset_x
+							self.pan_y = self.offset_y
+						end
 					end
 				end
 				if old_offset_x ~= self.offset_x
