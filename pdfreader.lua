@@ -480,12 +480,12 @@ function PDFReader:inputloop()
 						self.offset_x = 0
 						if self.pan_by_page and self.pageno > 1 then
 							self.offset_x = self.pan_x
-							self.offset_y = self.pan_y
+							self.offset_y = self.min_offset_y -- bottom
 							self:goto(self.pageno - 1)
 						end
 					end
 					if self.pan_by_page then
-						self.offset_y = self.pan_y
+						self.offset_y = self.min_offset_y
 					end
 				elseif ev.code == KEY_FW_RIGHT then
 					self.offset_x = self.offset_x - x
