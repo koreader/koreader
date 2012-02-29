@@ -107,9 +107,12 @@ if lfs.attributes(ARGV[optind], "mode") == "directory" then
 		end
 	end
 else
-	PDFReader:open(ARGV[optind], optarg["p"])
-	PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
-	PDFReader:inputloop()
+	--PDFReader:open(ARGV[optind], optarg["p"])
+	--PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
+	--PDFReader:inputloop()
+	DJVUReader:open("/home/dave/documents/code/kindle/djvu/test-djvu/test.djvu")
+	DJVUReader:goto(1)
+	DJVUReader:inputloop()
 end
 
 -- save reader settings
