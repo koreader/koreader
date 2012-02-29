@@ -198,7 +198,7 @@ function PDFReader:setzoom(page)
 		self.globalzoom = width / (x1 - x0 + self.pan_margin)
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + self.pan_margin
 		self.globalzoom = height / (y1 - y0)
-		self.offset_y = -1 * y0 * self.globalzoom * 2
+		self.offset_y = -1 * y0 * self.globalzoom * 2 + self.pan_margin
 		self.globalzoom = width / (x1 - x0 + self.pan_margin) * 2
 		print("column mode offset:"..self.offset_x.."*"..self.offset_y.." zoom:"..self.globalzoom);
 		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
@@ -463,8 +463,8 @@ function PDFReader:inputloop()
 					x = self.shift_x / 5
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
-					x = width  - 5; -- small overlap when moving by page
-					y = height - 5;
+					x = width;
+					y = height - self.pan_margin; -- overlap for lines which didn't fit
 				else
 					x = self.shift_x
 					y = self.shift_y
