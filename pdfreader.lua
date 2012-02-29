@@ -365,6 +365,10 @@ function PDFReader:inputloop()
 				elseif self.altmode then
 					self:setglobalzoom(self.globalzoom+0.1)
 				else
+					if self.pan_by_page then
+						self.offset_x = 0
+						self.offset_y = 0
+					end
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
@@ -373,6 +377,10 @@ function PDFReader:inputloop()
 				elseif self.altmode then
 					self:setglobalzoom(self.globalzoom-0.1)
 				else
+					if self.pan_by_page then
+						self.offset_x = 0
+						self.offset_y = 0
+					end
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
