@@ -12,6 +12,7 @@ PDFReader = {
 	ZOOM_FIT_TO_CONTENT = -4,
 	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
 	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -7,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -42,6 +43,7 @@ PDFReader = {
 	pan_by_page = false, -- using shift_[xy] or width/height
 	pan_x = 0, -- top-left offset of page when pan activated
 	pan_y = 0,
+	pan_margin = 20,
 
 	-- keep track of input state:
 	shiftmode = false, -- shift pressed
@@ -191,6 +193,18 @@ function PDFReader:setzoom(page)
 			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
 			self.offset_y = -1 * y0 * self.globalzoom
 		end
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then
+		local x0, y0, x1, y1 = page:getUsedBBox()
+		self.globalzoom = width / (x1 - x0 + self.pan_margin)
+		self.offset_x = -1 * x0 * self.globalzoom * 2 + self.pan_margin
+		self.globalzoom = height / (y1 - y0)
+		self.offset_y = -1 * y0 * self.globalzoom * 2
+		self.globalzoom = width / (x1 - x0 + self.pan_margin) * 2
+		print("column mode offset:"..self.offset_x.."*"..self.offset_y.." zoom:"..self.globalzoom);
+		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
+		self.pan_x = self.offset_x
+		self.pan_y = self.offset_y
+		self.pan_by_page = true
 	end
 	dc:setZoom(self.globalzoom)
 	dc:setRotate(self.globalrotate);
@@ -426,6 +440,8 @@ function PDFReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
+			elseif ev.code == KEY_F then
+				self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
