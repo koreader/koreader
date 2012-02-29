@@ -478,6 +478,11 @@ function PDFReader:inputloop()
 					self.offset_x = self.offset_x + x
 					if self.offset_x > 0 then
 						self.offset_x = 0
+						if self.pan_by_page and self.pageno > 1 then
+							self.offset_x = self.pan_x
+							self.offset_y = self.pan_y
+							self:goto(self.pageno - 1)
+						end
 					end
 					if self.pan_by_page then
 						self.offset_y = self.pan_y
@@ -486,6 +491,11 @@ function PDFReader:inputloop()
 					self.offset_x = self.offset_x - x
 					if self.offset_x < self.min_offset_x then
 						self.offset_x = self.min_offset_x
+						if self.pan_by_page and self.pageno < self.doc:getPages() then
+							self.offset_x = self.pan_x
+							self.offset_y = self.pan_y
+							self:goto(self.pageno + 1)
+						end
 					end
 					if self.pan_by_page then
 						self.offset_y = self.pan_y
