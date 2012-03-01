@@ -12,6 +12,7 @@ PDFReader = {
 	ZOOM_FIT_TO_CONTENT = -4,
 	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
 	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -7,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -40,6 +41,9 @@ PDFReader = {
 	shift_x = 100,
 	shift_y = 50,
 	pan_by_page = false, -- using shift_[xy] or width/height
+	pan_x = 0, -- top-left offset of page when pan activated
+	pan_y = 0,
+	pan_margin = 20,
 
 	-- keep track of input state:
 	shiftmode = false, -- shift pressed
@@ -189,6 +193,18 @@ function PDFReader:setzoom(page)
 			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
 			self.offset_y = -1 * y0 * self.globalzoom
 		end
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then
+		local x0, y0, x1, y1 = page:getUsedBBox()
+		self.globalzoom = width / (x1 - x0 + self.pan_margin)
+		self.offset_x = -1 * x0 * self.globalzoom * 2 + self.pan_margin
+		self.globalzoom = height / (y1 - y0)
+		self.offset_y = -1 * y0 * self.globalzoom * 2 + self.pan_margin
+		self.globalzoom = width / (x1 - x0 + self.pan_margin) * 2
+		print("column mode offset:"..self.offset_x.."*"..self.offset_y.." zoom:"..self.globalzoom);
+		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
+		self.pan_x = self.offset_x
+		self.pan_y = self.offset_y
+		self.pan_by_page = true
 	end
 	dc:setZoom(self.globalzoom)
 	dc:setRotate(self.globalrotate);
@@ -354,6 +370,7 @@ function PDFReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			ev.code = adjustFWKey(ev.code)
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_SHIFT then
 				self.shiftmode = true
@@ -366,8 +383,8 @@ function PDFReader:inputloop()
 					self:setglobalzoom(self.globalzoom+0.1)
 				else
 					if self.pan_by_page then
-						self.offset_x = 0
-						self.offset_y = 0
+						self.offset_x = self.pan_x
+						self.offset_y = self.pan_y
 					end
 					self:goto(self.pageno + 1)
 				end
@@ -378,8 +395,8 @@ function PDFReader:inputloop()
 					self:setglobalzoom(self.globalzoom-0.1)
 				else
 					if self.pan_by_page then
-						self.offset_x = 0
-						self.offset_y = 0
+						self.offset_x = self.pan_x
+						self.offset_y = self.pan_y
 					end
 					self:goto(self.pageno - 1)
 				end
@@ -424,6 +441,8 @@ function PDFReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
+			elseif ev.code == KEY_F then
+				self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
@@ -445,8 +464,8 @@ function PDFReader:inputloop()
 					x = self.shift_x / 5
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
-					x = width  - 5; -- small overlap when moving by page
-					y = height - 5;
+					x = width;
+					y = height - self.pan_margin; -- overlap for lines which didn't fit
 				else
 					x = self.shift_x
 					y = self.shift_y
@@ -460,17 +479,27 @@ function PDFReader:inputloop()
 					self.offset_x = self.offset_x + x
 					if self.offset_x > 0 then
 						self.offset_x = 0
+						if self.pan_by_page and self.pageno > 1 then
+							self.offset_x = self.pan_x
+							self.offset_y = self.min_offset_y -- bottom
+							self:goto(self.pageno - 1)
+						end
 					end
 					if self.pan_by_page then
-						self.offset_y = 0
+						self.offset_y = self.min_offset_y
 					end
 				elseif ev.code == KEY_FW_RIGHT then
 					self.offset_x = self.offset_x - x
 					if self.offset_x < self.min_offset_x then
 						self.offset_x = self.min_offset_x
+						if self.pan_by_page and self.pageno < self.doc:getPages() then
+							self.offset_x = self.pan_x
+							self.offset_y = self.pan_y
+							self:goto(self.pageno + 1)
+						end
 					end
 					if self.pan_by_page then
-						self.offset_y = 0
+						self.offset_y = self.pan_y
 					end
 				elseif ev.code == KEY_FW_UP then
 					self.offset_y = self.offset_y + y
@@ -484,10 +513,19 @@ function PDFReader:inputloop()
 					end
 				elseif ev.code == KEY_FW_PRESS then
 					if self.shiftmode then
-						self.offset_x = 0
-						self.offset_y = 0
+						if self.pan_by_page then
+							self.offset_x = self.pan_x
+							self.offset_y = self.pan_y
+						else
+							self.offset_x = 0
+							self.offset_y = 0
+						end
 					else
 						self.pan_by_page = not self.pan_by_page
+						if self.pan_by_page then
+							self.pan_x = self.offset_x
+							self.pan_y = self.offset_y
+						end
 					end
 				end
 				if old_offset_x ~= self.offset_x
