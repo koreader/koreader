@@ -370,6 +370,7 @@ function PDFReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			ev.code = adjustFWKey(ev.code)
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_SHIFT then
 				self.shiftmode = true
