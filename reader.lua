@@ -19,6 +19,7 @@
 
 require "alt_getopt"
 require "pdfreader"
+require "djvureader"
 require "filechooser"
 require "settings"
 
@@ -51,6 +52,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
 	return
 end
+
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
@@ -91,33 +93,34 @@ if r_cfont ~=nil then
 	FontChooser.cfont = r_cfont
 end
 
+DJVUReader:open("/home/dave/documents/code/kindle/djvu/test-djvu/test.djvu")
+DJVUReader:goto(1)
+DJVUReader:inputloop()
 
-if lfs.attributes(ARGV[optind], "mode") == "directory" then
-	local running = true
-	FileChooser:setPath(ARGV[optind])
-	while running do
-		local pdffile = FileChooser:choose(0,height)
-		if pdffile ~= nil then
-			if PDFReader:open(pdffile,"") then -- TODO: query for password
-				PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
-				PDFReader:inputloop()
-			end
-		else
-			running = false
-		end
-	end
-else
-	--PDFReader:open(ARGV[optind], optarg["p"])
-	--PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
-	--PDFReader:inputloop()
-	DJVUReader:open("/home/dave/documents/code/kindle/djvu/test-djvu/test.djvu")
-	DJVUReader:goto(1)
-	DJVUReader:inputloop()
-end
 
--- save reader settings
-reader_settings:savesetting("cfont", FontChooser.cfont)
-reader_settings:close()
+--[[if lfs.attributes(ARGV[optind], "mode") == "directory" then]]
+	--local running = true
+	--FileChooser:setPath(ARGV[optind])
+	--while running do
+		--local pdffile = FileChooser:choose(0,height)
+		--if pdffile ~= nil then
+			--if PDFReader:open(pdffile,"") then -- TODO: query for password
+				--PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
+				--PDFReader:inputloop()
+			--end
+		--else
+			--running = false
+		--end
+	--end
+--else
+	----PDFReader:open(ARGV[optind], optarg["p"])
+	----PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
+	----PDFReader:inputloop()
+--end
 
-input.closeAll()
-os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
+---- save reader settings
+--reader_settings:savesetting("cfont", FontChooser.cfont)
+--reader_settings:close()
+
+--input.closeAll()
+--[[os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')]]

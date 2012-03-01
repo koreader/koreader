@@ -2,6 +2,7 @@
 
 LUADIR=lua
 MUPDFDIR=mupdf
+DJVUDIR=djvulibre-3.5.24
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 
@@ -43,6 +44,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
+DJVULIBS := $(DJVUDIR)/libdjvulibre.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 	       	$(MUPDFLIBDIR)/libjpeg.a \
 	       	$(MUPDFLIBDIR)/libopenjpeg.a \
@@ -55,11 +57,12 @@ SQLITE3LDFLAGS := -lpthread
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
-	$(CC) -lm -ldl $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
+kpdfview: kpdfview.o einkfb.o pdf.o djvu.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
+	$(CC) -lm -ldl -ldjvulibre $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
+		djvu.o \
 		blitbuffer.o \
 		input.o \
 		util.o \
@@ -79,6 +82,9 @@ ft.o: %.o: %.c
 
 kpdfview.o pdf.o blitbuffer.o util.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
+
+djvu.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 sqlite3.o: $(SQLITE3DIR)/sqlite3.c
 	$(CC) -c $(CFLAGS) $(SQLITE3DIR)/sqlite3.c -o $@
@@ -122,6 +128,10 @@ $(MUPDFDIR)/cmapdump.host:
 $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
 	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
+
+$(DJVULIBS):
+	#cd $(DJVUDIR) && ./configure --enable-desktopfiles=no
+	#make -c $()
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a

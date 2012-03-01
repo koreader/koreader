@@ -2,7 +2,7 @@ require "keys"
 require "settings"
 require "selectmenu"
 
-PDFReader = {
+DJVUReader = {
 	-- "constants":
 	ZOOM_BY_VALUE = 0,
 	ZOOM_FIT_TO_PAGE = -1,
@@ -44,13 +44,13 @@ PDFReader = {
 	shiftmode = false, -- shift pressed
 	altmode = false,   -- alt pressed
 
-	-- the pdf document:
+	-- the djvu document:
 	doc = nil,
 	-- the document's setting store:
 	settings = nil,
 
 	-- we will use this one often, so keep it "static":
-	nulldc = pdf.newDC(),
+	nulldc = djvu.newDC(),
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -63,7 +63,7 @@ PDFReader = {
 }
 
 -- guarantee that we have enough memory in cache
-function PDFReader:cacheclaim(size)
+function DJVUReader:cacheclaim(size)
 	if(size > self.cache_max_memsize) then
 		-- we're not allowed to claim this much at all
 		error("too much memory claimed")
@@ -86,7 +86,7 @@ function PDFReader:cacheclaim(size)
 	return true
 end
 
-function PDFReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
+function DJVUReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	-- hash draw state
 	local hash = self:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	if self.cache[hash] == nil then
@@ -111,34 +111,34 @@ function PDFReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamm
 end
 
 -- calculate a hash for our current state
-function PDFReader:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
+function DJVUReader:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
 	-- TODO (?): make this a "real" hash...
 	return no..'_'..zoom..'_'..offset_x..','..offset_y..'-'..width..'x'..height..'_'..gamma..'_'..rotate
 end
 
 -- blank the cache
-function PDFReader:clearcache()
+function DJVUReader:clearcache()
 	self.cache = {}
 	self.cache_current_memsize = 0
 end
 
--- open a PDF file and its settings store
-function PDFReader:open(filename, password)
-	self.doc = pdf.openDocument(filename, password or "")
+-- open a DJVU file and its settings store
+function DJVUReader:open(filename, password)
+	self.doc = djvu.openDocument(filename, password or "")
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename)
-		local gamma = self.settings:readsetting("gamma")
-		if gamma then
-			self.globalgamma = gamma
-		end
+		--self.settings = DocSettings:open(filename)
+		--local gamma = self.settings:readsetting("gamma")
+		--if gamma then
+			--self.globalgamma = gamma
+		--end
 		return true
 	end
 	return false
 end
 
 -- set viewer state according to zoom state
-function PDFReader:setzoom(page)
-	local dc = pdf.newDC()
+function DJVUReader:setzoom(page)
+	local dc = djvu.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 
 	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
@@ -211,7 +211,7 @@ function PDFReader:setzoom(page)
 end
 
 -- render and blit a page
-function PDFReader:show(no)
+function DJVUReader:show(no)
 	local slot
 	if self.globalzoommode ~= self.ZOOM_BY_VALUE then
 		slot = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
@@ -232,60 +232,60 @@ function PDFReader:show(no)
 end
 
 -- change current page and cache next page after rendering
-function PDFReader:goto(no)
+function DJVUReader:goto(no)
 	if no < 1 or no > self.doc:getPages() then
 		return
 	end
 
-	-- for jump_stack
-	if self.pageno and math.abs(self.pageno - no) > 1 then
-		local jump_item = nil
-		-- add current page to jump_stack if no in
-		for _t,_v in ipairs(self.jump_stack) do
-			if _v.page == self.pageno then
-				jump_item = _v
-				table.remove(self.jump_stack, _t)
-			elseif _v.page == no then
-				-- the page we jumped to should not be show in stack
-				table.remove(self.jump_stack, _t)
-			end
-		end
-		-- create a new one if not found
-		if not jump_item then
-			jump_item = {
-				page = self.pageno,
-				datetime = os.date("%Y-%m-%d %H:%M:%S"),
-			}
-		end
-		-- insert at the start
-		table.insert(self.jump_stack, 1, jump_item)
-		if #self.jump_stack > 10 then
-			-- remove the last element to keep the size less than 10
-			table.remove(self.jump_stack)
-		end
-	end
+   --[[ -- for jump_stack]]
+	--if self.pageno and math.abs(self.pageno - no) > 1 then
+		--local jump_item = nil
+		---- add current page to jump_stack if no in
+		--for _t,_v in ipairs(self.jump_stack) do
+			--if _v.page == self.pageno then
+				--jump_item = _v
+				--table.remove(self.jump_stack, _t)
+			--elseif _v.page == no then
+				---- the page we jumped to should not be show in stack
+				--table.remove(self.jump_stack, _t)
+			--end
+		--end
+		---- create a new one if not found
+		--if not jump_item then
+			--jump_item = {
+				--page = self.pageno,
+				--datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			--}
+		--end
+		---- insert at the start
+		--table.insert(self.jump_stack, 1, jump_item)
+		--if #self.jump_stack > 10 then
+			---- remove the last element to keep the size less than 10
+			--table.remove(self.jump_stack)
+		--end
+	--[[end]]
 
 	self.pageno = no
 	self:show(no)
-	if no < self.doc:getPages() then
-		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-			-- pre-cache next page
-			self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-		else
-			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-		end
-	end
+   --[[ if no < self.doc:getPages() then]]
+		--if self.globalzoommode ~= self.ZOOM_BY_VALUE then
+			---- pre-cache next page
+			--self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		--else
+			--self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		--end
+	--[[end]]
 end
 
 -- adjust global gamma setting
-function PDFReader:modify_gamma(factor)
+function DJVUReader:modify_gamma(factor)
 	print("modify_gamma, gamma="..self.globalgamma.." factor="..factor)
 	self.globalgamma = self.globalgamma * factor;
 	self:goto(self.pageno)
 end
 
 -- adjust zoom state and trigger re-rendering
-function PDFReader:setglobalzoommode(newzoommode)
+function DJVUReader:setglobalzoommode(newzoommode)
 	if self.globalzoommode ~= newzoommode then
 		self.globalzoommode = newzoommode
 		self:goto(self.pageno)
@@ -293,7 +293,7 @@ function PDFReader:setglobalzoommode(newzoommode)
 end
 
 -- adjust zoom state and trigger re-rendering
-function PDFReader:setglobalzoom(zoom)
+function DJVUReader:setglobalzoom(zoom)
 	if self.globalzoom ~= zoom then
 		self.globalzoommode = self.ZOOM_BY_VALUE
 		self.globalzoom = zoom
@@ -301,12 +301,12 @@ function PDFReader:setglobalzoom(zoom)
 	end
 end
 
-function PDFReader:setrotate(rotate)
+function DJVUReader:setrotate(rotate)
 	self.globalrotate = rotate
 	self:goto(self.pageno)
 end
 
-function PDFReader:showTOC()
+function DJVUReader:showTOC()
 	toc = self.doc:getTOC()
 	local menu_items = {}
 	-- build menu items
@@ -327,7 +327,7 @@ function PDFReader:showTOC()
 	end
 end
 
-function PDFReader:showJumpStack()
+function DJVUReader:showJumpStack()
 	local menu_items = {}
 	for _k,_v in ipairs(self.jump_stack) do
 		table.insert(menu_items, 
@@ -349,7 +349,7 @@ end
 
 
 -- wait for input and handle it
-function PDFReader:inputloop()
+function DJVUReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
@@ -376,7 +376,7 @@ function PDFReader:inputloop()
 				end
 			elseif ev.code == KEY_BACK then
 				if self.altmode then
-					-- altmode, exit pdfreader
+					-- altmode, exit djvureader
 					self:clearcache()
 					if self.doc ~= nil then
 						self.doc:close()
