@@ -201,7 +201,23 @@ function getRotationMode()
 	return mode
 end
 
-function adjustFWKey(code)
+function adjustKeyEvents(ev)
+	if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.code == KEY_SHIFT then
+			Keys.shiftmode = true
+		elseif ev.code == KEY_ALT then
+			Keys.altmode = true
+		end
+	elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE then
+		if ev.code == KEY_SHIFT then
+			Keys.shiftmode = false
+		elseif ev.code == KEY_ALT then
+			Keys.altmode = false
+		end
+	end
+
+	-- adjust five way key according to rotation mode
+	local code = ev.code
 	if getRotationMode() == 0 then
 		return code
 	elseif getRotationMode() == 1 then

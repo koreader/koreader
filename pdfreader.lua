@@ -45,10 +45,6 @@ PDFReader = {
 	pan_y = 0,
 	pan_margin = 20,
 
-	-- keep track of input state:
-	shiftmode = false, -- shift pressed
-	altmode = false,   -- alt pressed
-
 	-- the pdf document:
 	doc = nil,
 	-- the document's setting store:
@@ -369,17 +365,13 @@ end
 function PDFReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			ev.code = adjustFWKey(ev.code)
 			local secs, usecs = util.gettime()
-			if ev.code == KEY_SHIFT then
-				Keys.shiftmode = true
-			elseif ev.code == KEY_ALT then
-				Keys.altmode = true
-			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if self.shiftmode then
+			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom+0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom+0.1)
 				else
 					if self.pan_by_page then
@@ -389,9 +381,9 @@ function PDFReader:inputloop()
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom-0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom-0.1)
 				else
 					if self.pan_by_page then
@@ -512,7 +504,7 @@ function PDFReader:inputloop()
 						self.offset_y = self.min_offset_y
 					end
 				elseif ev.code == KEY_FW_PRESS then
-					if self.shiftmode then
+					if Keys.shiftmode then
 						if self.pan_by_page then
 							self.offset_x = self.pan_x
 							self.offset_y = self.pan_y
@@ -537,11 +529,6 @@ function PDFReader:inputloop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
-			print "shift haha"
-			Keys.shiftmode = false
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
-			Keys.altmode = false
 		end
 	end
 end
