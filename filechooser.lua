@@ -146,9 +146,13 @@ function FileChooser:choose(ypos, height)
 		end
 		local ev = input.waitForEvent()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--print("key code:"..ev.code)
+			print("key code:"..ev.code)
 			ev.code = adjustFWKey(ev.code)
-			if ev.code == KEY_FW_UP then
+			if ev.code == KEY_SHIFT then
+				Keys.shiftmode = true
+			elseif ev.code == KEY_ALT then
+				Keys.altmode = true
+			elseif ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
@@ -214,6 +218,12 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
+		and ev.code == KEY_SHIFT then
+			Keys.shiftmode = false
+		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
+		and ev.code == KEY_ALT then
+			Keys.altmode = false
 		end
 	end
 end

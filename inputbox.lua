@@ -102,9 +102,9 @@ function InputBox:input(ypos, height, title, d_text)
 			ev.code = adjustFWKey(ev.code)
 			--local secs, usecs = util.gettime()
 			if ev.code == KEY_SHIFT then
-				self.shiftmode = true
+				Keys.shiftmode = true
 			elseif ev.code == KEY_ALT then
-				self.altmode = true
+				Keys.altmode = true
 			elseif ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
@@ -200,10 +200,10 @@ function InputBox:input(ypos, height, title, d_text)
 			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
 		and ev.code == KEY_SHIFT then
-			self.shiftmode = false
+			Keys.shiftmode = false
 		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
 		and ev.code == KEY_ALT then
-			self.altmode = false
+			Keys.altmode = false
 		end
 	end
 end
