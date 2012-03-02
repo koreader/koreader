@@ -43,7 +43,7 @@ function FileSearcher:readdir()
 		for __, d in pairs(self.dirs) do
 			-- handle files in d
 			for f in lfs.dir(d) do
-				if lfs.attributes(self.path.."/"..f, "mode") == "directory"
+				if lfs.attributes(d.."/"..f, "mode") == "directory"
 				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
 					table.insert(new_dirs, d.."/"..f)
 				elseif string.match(f, ".+%.[pP][dD][fF]$") then
