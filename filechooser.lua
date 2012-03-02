@@ -170,14 +170,7 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
 				if keywords then -- display search result according to keywords
-					--[[
-						----------------------------------------------------------------
-						|| uncomment following line and set the correct path if you want
-						|| to test search feature in EMU mode
-						----------------------------------------------------------------
-					--]]
-					--FileSearcher:init("/home/dave/documents/kindle/backup/documents")
-					FileSearcher:init()
+					FileSearcher:init( self.path )
 					file = FileSearcher:choose(ypos, height, keywords)
 					if file then
 						return file
