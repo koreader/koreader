@@ -8,9 +8,6 @@ DJVUReader = {
 	ZOOM_FIT_TO_PAGE = -1,
 	ZOOM_FIT_TO_PAGE_WIDTH = -2,
 	ZOOM_FIT_TO_PAGE_HEIGHT = -3,
-	ZOOM_FIT_TO_CONTENT = -4,
-	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
-	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -146,7 +143,6 @@ function DJVUReader:setzoom(page)
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
 		if height / pheight < self.globalzoom then
 			self.globalzoom = height / pheight
-			print "adf"
 			print(width, (self.globalzoom * pwidth))
 			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 			self.offset_y = 0
