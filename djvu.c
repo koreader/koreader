@@ -17,6 +17,7 @@
 */
 #include <libdjvu/ddjvuapi.h>
 
+#include "string.h"
 #include "blitbuffer.h"
 #include "djvu.h"
 
@@ -107,6 +108,13 @@ static int closeDocument(lua_State *L) {
 	}
 	if(doc->context != NULL) {
 		ddjvu_context_release(doc->context);
+
+		/*@TODO fix this!  03.03 2012
+		 * it works fine in EMU mode, but if I don't
+		 * add this printf after context_release, kpfview 
+		 * simply exit after this function call! */
+		printf("remeber to fix this bug!\n");
+
 		doc->context = NULL;
 	}
 }
@@ -276,7 +284,7 @@ static int drawPage(lua_State *L) {
 
 	imagebuffer = malloc((bb->w)*(bb->h)+1);
 	/* fill pixel map with white color */
-	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
+	memset((void *)imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
 
 	pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
 	ddjvu_format_set_row_order(pixelformat, 1);

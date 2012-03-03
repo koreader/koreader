@@ -337,8 +337,7 @@ function DJVUReader:inputloop()
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom - 0.2)
+				if Keys.shiftmode then self:setglobalzoom(self.globalzoom - 0.2)
 				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom - 0.1)
 				else
@@ -386,7 +385,7 @@ function DJVUReader:inputloop()
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
 			elseif ev.code == KEY_T then
-				self:showTOC()
+				--self:showTOC()
 			elseif ev.code == KEY_B then
 				self:showJumpStack()
 			end

@@ -46,7 +46,7 @@ function FileSearcher:readdir()
 				if lfs.attributes(d.."/"..f, "mode") == "directory"
 				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
 					table.insert(new_dirs, d.."/"..f)
-				elseif string.match(f, ".+%.[pP][dD][fF]$") then
+				elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$") then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--print("file:"..d.."/"..f)
@@ -261,12 +261,8 @@ function FileSearcher:choose(ypos, height, keywords)
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				file_entry = self.result[perpage*(self.page-1)+self.current]
-				file_path = file_entry.dir .. "/" .. file_entry.name
-
-				if PDFReader:open(file_path,"") then -- TODO: query for password
-					PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
-					PDFReader:inputloop()
-				end
+				file_full_path = file_entry.dir .. "/" .. file_entry.name
+				openFile(file_full_path)
 
 				pagedirty = true
 			elseif ev.code == KEY_BACK then

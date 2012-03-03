@@ -36,12 +36,14 @@ function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.(.+)"))
 	if file_type == "djvu" then
 		if DJVUReader:open(filename) then
-			DJVUReader:goto(tonumber(DJVUReader.settings:readsetting("last_page")) or 1)
+			page_num = DJVUReader.settings:readsetting("last_page") or 1
+			DJVUReader:goto(tonumber(page_num))
 			DJVUReader:inputloop()
 		end
 	elseif file_type == "pdf" then
 		if PDFReader:open(filename,"") then -- TODO: query for password
-			PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
+			page_num = PDFReader.settings:readsetting("last_page") or 1
+			PDFReader:goto(tonumber(page_num))
 			PDFReader:inputloop()
 		end
 	end
