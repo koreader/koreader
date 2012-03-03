@@ -14,7 +14,9 @@ LFSDIR=luafilesystem
 # set this to your ARM cross compiler:
 
 CC:=arm-unknown-linux-gnueabi-gcc
+CXX:=arm-unknown-linux-gnueabi-g++
 HOSTCC:=gcc
+HOSTCXX:=g++
 
 CFLAGS:=-O0 -g
 
@@ -24,6 +26,7 @@ CFLAGS:=-O0 -g
 
 ifdef EMULATE_READER
 CC:=$(HOSTCC)
+CXX:=$(HOSTCXX)
 EMULATE_READER_W?=824
 EMULATE_READER_H?=1200
 EMU_CFLAGS?=$(shell sdl-config --cflags)
@@ -44,7 +47,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
-DJVULIBS := $(DJVUDIR)/libdjvulibre.a
+DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 	       	$(MUPDFLIBDIR)/libjpeg.a \
 	       	$(MUPDFLIBDIR)/libopenjpeg.a \
@@ -57,8 +60,8 @@ SQLITE3LDFLAGS := -lpthread
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o djvu.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
-	$(CC) -lm -ldl -ldjvulibre $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
+kpdfview: kpdfview.o einkfb.o pdf.o djvu.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(DJVULIBS) $(THIRDPARTYLIBS) $(LUALIB)
+	$(CC) -lm -ldl -lstdc++ $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -70,6 +73,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o djvu.o blitbuffer.o input.o util.o ft.o $(SQ
 		$(SQLITE3OBJS) \
 		lfs.o \
 		$(MUPDFLIBS) \
+		$(DJVULIBS) \
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
 		-o kpdfview
@@ -101,12 +105,15 @@ fetchthirdparty:
 	-rm -Rf lsqlite3_svn08*
 	-rm -Rf sqlite-amalgamation-3070900*
 	-rm -Rf luafilesystem*
+	-rm -Rf djvulibre.tar.gz
+	-rm -Rf $(DJVUDIR)
 	git clone git://git.ghostscript.com/mupdf.git
 	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 	wget "http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8" && unzip "lsqlite3_svn08.zip?uuid=svn_8"
 	wget "http://sqlite.org/sqlite-amalgamation-3070900.zip" && unzip sqlite-amalgamation-3070900.zip
 	git clone https://github.com/keplerproject/luafilesystem.git
+	wget http://sourceforge.net/projects/djvu/files/latest/download\?source\=files -O djvulibre.tar.gz && tar xvzf djvulibre.tar.gz
 
 clean:
 	-rm -f *.o kpdfview
@@ -114,6 +121,7 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
+	-rm -rf $(DJVUDIR)/build
 	-rm $(MUPDFDIR)/fontdump.host
 	-rm $(MUPDFDIR)/cmapdump.host
 
@@ -132,13 +140,23 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
 
 $(DJVULIBS):
-	#cd $(DJVUDIR) && ./configure --enable-desktopfiles=no
-	#make -c $()
+	-mkdir $(DJVUDIR)/build 
+ifdef EMULATE_READER
+	cd $(DJVUDIR)/build && ../configure --enable-desktopfiles=no
+else
+	cd $(DJVUDIR)/build && ../configure --enable-desktopfiles=no --host=arm
+endif
+	make -C $(DJVUDIR)/build CXX="$(CXX)"
+ifdef EMULATE_READER
+	cd $(DJVUDIR)/build/libdjvu/.libs && ar -cvq libdjvulibre.a *.o
+else
+	cd $(DJVUDIR)/build/libdjvu/ && ar -cvq libdjvulibre.a *.o
+endif
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS) $(DJVULIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
