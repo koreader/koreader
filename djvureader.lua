@@ -20,6 +20,7 @@ DJVUReader = {
 
 	-- zoom state:
 	globalzoom = 1.0,
+	globalzoom_orig = 1.0,
 	globalzoommode = -1, -- ZOOM_FIT_TO_PAGE
 
 	globalrotate = 0,
@@ -139,35 +140,30 @@ function DJVUReader:setzoom(page)
 	local dc = djvu.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
-		local x0, y0, x1, y1 = page:getUsedBBox()
-		if (x1 - x0) < pwidth then
-			self.globalzoom = width / (x1 - x0)
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
-			if height / (y1 - y0) < self.globalzoom then
-				self.globalzoom = height / (y1 - y0)
-				self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
-				self.offset_y = -1 * y0 * self.globalzoom
-			end
+	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
+	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
+		self.globalzoom = width / pwidth
+		self.offset_x = 0
+		self.offset_y = (height - (self.globalzoom * pheight)) / 2
+		if height / pheight < self.globalzoom then
+			self.globalzoom = height / pheight
+			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
+			self.offset_y = 0
 		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
-		local x0, y0, x1, y1 = page:getUsedBBox()
-		if (x1 - x0) < pwidth then
-			self.globalzoom = width / (x1 - x0)
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
-		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
-		local x0, y0, x1, y1 = page:getUsedBBox()
-		if (y1 - y0) < pheight then
-			self.globalzoom = height / (y1 - y0)
-			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
-			self.offset_y = -1 * y0 * self.globalzoom
-		end
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
+	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
+		self.globalzoom = width / pwidth
+		self.offset_x = 0
+		self.offset_y = (height - (self.globalzoom * pheight)) / 2
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
+	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
+		self.globalzoom = height / pheight
+		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
+		self.offset_y = 0
 	end
 
 	dc:setZoom(self.globalzoom)
+	self.globalzoom_orig = self.globalzoom
 	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
 	--self.fullwidth, self.fullheight = page:getSize(dc)
@@ -330,16 +326,16 @@ function DJVUReader:inputloop()
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom + 0.2)
+					self:setglobalzoom(self.globalzoom + self.globalzoom_orig*0.2)
 				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom + 0.1)
+					self:setglobalzoom(self.globalzoom + self.globalzoom_orig*0.1)
 				else
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if Keys.shiftmode then self:setglobalzoom(self.globalzoom - 0.2)
+				if Keys.shiftmode then self:setglobalzoom(self.globalzoom - self.globalzoom_orig*0.2)
 				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom - 0.1)
+					self:setglobalzoom(self.globalzoom - self.globalzoom_orig*0.1)
 				else
 					self:goto(self.pageno - 1)
 				end
