@@ -442,7 +442,7 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:add_jump(self.pageno)
 				else
 					self:showJumpStack()
