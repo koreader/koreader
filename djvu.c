@@ -224,13 +224,12 @@ static int openPage(lua_State *L) {
 	return 1;
 }
 
-/* this returns the original page size, seldom used. */
 static int getPageSize(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	lua_pushnumber(L, ddjvu_page_get_width(page->page_ref) * dc->zoom);
-	lua_pushnumber(L, ddjvu_page_get_height(page->page_ref) * dc->zoom);
+	lua_pushnumber(L, page->info.width);
+	lua_pushnumber(L, page->info.height);
 
 	return 2;
 }
@@ -284,7 +283,7 @@ static int drawPage(lua_State *L) {
 
 	imagebuffer = malloc((bb->w)*(bb->h)+1);
 	/* fill pixel map with white color */
-	memset((void *)imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
+	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
 
 	pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
 	ddjvu_format_set_row_order(pixelformat, 1);
@@ -292,14 +291,17 @@ static int drawPage(lua_State *L) {
 	ddjvu_format_set_gamma(pixelformat, dc->gamma);
 	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
+	/*printf("@page %d, @@zoom:%f\n", page->num, dc->zoom);*/
+
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
 	/*pagerect.y = luaL_checkint(L, 5);*/
 	pagerect.x = 0;
 	pagerect.y = 0;
-	pagerect.w = bb->w * dc->zoom;
-	pagerect.h = bb->h * dc->zoom;
-	/*printf("@@@zoom:%f::: %d, y: %d, w: %d, h: %d.\n", 0, 0, dc->zoom, pagerect.w, pagerect.h);*/
+	pagerect.w = page->info.width * dc->zoom;
+	pagerect.h = page->info.height * dc->zoom;
+
+	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
 
 	/* copy pixels area from pagerect specified by renderrect */
 	/* ddjvulibre does not support negative offset, 
@@ -309,11 +311,10 @@ static int drawPage(lua_State *L) {
 	renderrect.y = MAX(-dc->offset_y, 0);
 	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
 	renderrect.h = MIN(pagerect.h - renderrect.y, bb->h);
+
 	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
-	/*ctm = fz_concat(ctm, fz_rotate(page->page->rotate));*/
-	/*ctm = fz_concat(ctm, fz_rotate(dc->rotate));*/
-	/*ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));*/
+	/*@TODO handle rotate  04.03 2012*/
 
 	ddjvu_page_render(page->page_ref,
 			DDJVU_RENDER_COLOR,
@@ -327,11 +328,13 @@ static int drawPage(lua_State *L) {
 	uint8_t *pmptr = (uint8_t*)imagebuffer;
 	int x, y;
 	/* if offset is positive, we are moving towards up and left. */
-	int y_offset = MAX(0, MAX(0, dc->offset_y));
-	int x_offset = MAX(0, MAX(0, dc->offset_x));
+	int x_offset = MAX(0, dc->offset_x);
+	int y_offset = MAX(0, dc->offset_y);
 
+	bbptr += bb->pitch * y_offset;
 	for(y = y_offset; y < bb->h; y++) {
 		for(x = x_offset; x < (bb->w / 2); x++) {
+			/*printf("   ---  y: %d, x: %d\n", y, x);*/
 			bbptr[x] = 255 - (((pmptr[x*2 + 1 - x_offset] & 0xF0) >> 4) | 
 								(pmptr[x*2 - x_offset] & 0xF0));
 		}
@@ -339,8 +342,8 @@ static int drawPage(lua_State *L) {
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
 		}
 		/* go to next line */
-		bbptr += bb->pitch + y_offset;
-		pmptr += bb->w + y_offset;
+		bbptr += bb->pitch;
+		pmptr += bb->w;
 	}
 
 	free(imagebuffer);
