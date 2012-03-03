@@ -224,12 +224,13 @@ static int openPage(lua_State *L) {
 	return 1;
 }
 
+/* get page size after zoomed */
 static int getPageSize(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	lua_pushnumber(L, page->info.width);
-	lua_pushnumber(L, page->info.height);
+	lua_pushnumber(L, dc->zoom * page->info.width);
+	lua_pushnumber(L, dc->zoom * page->info.height);
 
 	return 2;
 }
@@ -291,7 +292,7 @@ static int drawPage(lua_State *L) {
 	ddjvu_format_set_gamma(pixelformat, dc->gamma);
 	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
-	/*printf("@page %d, @@zoom:%f\n", page->num, dc->zoom);*/
+	printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -301,7 +302,7 @@ static int drawPage(lua_State *L) {
 	pagerect.w = page->info.width * dc->zoom;
 	pagerect.h = page->info.height * dc->zoom;
 
-	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
+	printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);
 
 	/* copy pixels area from pagerect specified by renderrect */
 	/* ddjvulibre does not support negative offset, 
@@ -312,7 +313,7 @@ static int drawPage(lua_State *L) {
 	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
 	renderrect.h = MIN(pagerect.h - renderrect.y, bb->h);
 
-	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
+	printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);
 
 	/*@TODO handle rotate  04.03 2012*/
 
@@ -333,7 +334,8 @@ static int drawPage(lua_State *L) {
 
 	bbptr += bb->pitch * y_offset;
 	for(y = y_offset; y < bb->h; y++) {
-		for(x = x_offset; x < (bb->w / 2); x++) {
+		/* bbptr's width is half of pmptr's */
+		for(x = x_offset/2; x < (bb->w / 2); x++) {
 			/*printf("   ---  y: %d, x: %d\n", y, x);*/
 			bbptr[x] = 255 - (((pmptr[x*2 + 1 - x_offset] & 0xF0) >> 4) | 
 								(pmptr[x*2 - x_offset] & 0xF0));

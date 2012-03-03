@@ -147,6 +147,8 @@ function DJVUReader:setzoom(page)
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
 		if height / pheight < self.globalzoom then
 			self.globalzoom = height / pheight
+			print "adf"
+			print(width, (self.globalzoom * pwidth))
 			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 			self.offset_y = 0
 		end
@@ -166,9 +168,9 @@ function DJVUReader:setzoom(page)
 	self.globalzoom_orig = self.globalzoom
 	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
-	--self.fullwidth, self.fullheight = page:getSize(dc)
-	self.min_offset_x = fb.bb:getWidth() * (1 - self.globalzoom)
-	self.min_offset_y = fb.bb:getHeight() * (1 - self.globalzoom)
+	self.fullwidth, self.fullheight = page:getSize(dc)
+	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
+	self.min_offset_y = fb.bb:getHeight() - self.fullheight
 	if(self.min_offset_x > 0) then
 		self.min_offset_x = 0
 	end
