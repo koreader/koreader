@@ -28,7 +28,7 @@ typedef struct DjvuDocument {
 
 typedef struct DjvuPage {
 	int num;
-	ddjvu_page_t *page;
+	ddjvu_page_t *page_ref;
 	ddjvu_pageinfo_t info;
 	DjvuDocument *doc;
 } DjvuPage;
@@ -119,7 +119,6 @@ static int newDrawContext(lua_State *L) {
 	int offset_x = luaL_optint(L, 3, 0);
 	int offset_y = luaL_optint(L, 4, 0);
 	double gamma = luaL_optnumber(L, 5, (double) -1.0);
-	unsigned int format_mask[4];
 
 	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
 	dc->rotate = rotate;
@@ -128,11 +127,8 @@ static int newDrawContext(lua_State *L) {
 	/*dc->offset_y = offset_y;*/
 	dc->gamma = gamma;
 
-	format_mask[0] = 0x00ff0000;
-	format_mask[1] = 0x0000ff00;
-	format_mask[2] = 0x000000ff;
-	format_mask[3] = 0xff000000;
-	dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_RGBMASK32, 4, format_mask);
+	/*dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_RGBMASK32, 4, format_mask);*/
+	dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
 	ddjvu_format_set_row_order(dc->pixelformat, 1);
 	ddjvu_format_set_y_direction(dc->pixelformat, 1);
 	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
@@ -205,14 +201,15 @@ static int openPage(lua_State *L) {
 	luaL_getmetatable(L, "djvupage");
 	lua_setmetatable(L, -2);
 
-	page->page = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
-	while (! ddjvu_page_decoding_done(page->page))
+	page->page_ref = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
+	while (! ddjvu_page_decoding_done(page->page_ref))
 		handle(L, doc->context, TRUE);
-	if(! page->page) {
+	if(! page->page_ref) {
 		return luaL_error(L, "cannot open page #%d", pageno);
 	}
 
 	page->doc = doc;
+	page->num = pageno;
 
 	/* @TODO:handle failure here */
 	ddjvu_document_get_pageinfo(doc->doc_ref, pageno, &(page->info));
@@ -238,8 +235,8 @@ static int getPageSize(lua_State *L) {
 	/*lua_pushnumber(L, page->info.width);*/
 	/*lua_pushnumber(L, page->info.height);*/
 
-	lua_pushnumber(L, ddjvu_page_get_width(page));
-	lua_pushnumber(L, ddjvu_page_get_height(page));
+	lua_pushnumber(L, ddjvu_page_get_width(page->page_ref) * dc->zoom);
+	lua_pushnumber(L, ddjvu_page_get_height(page->page_ref) * dc->zoom);
 
 	return 2;
 }
@@ -288,8 +285,8 @@ static int drawPage(lua_State *L) {
 	/*fz_matrix ctm;*/
 	/*fz_bbox bbox;*/
 	ddjvu_rect_t pagerect, renderrect;
-	char imagebuffer[600*800*4+1];
-	memset(imagebuffer, 0, 600*800*4+1);
+	char imagebuffer[600*800+1];
+	memset(imagebuffer, 0, 600*800+1);
 
 
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
@@ -321,12 +318,12 @@ static int drawPage(lua_State *L) {
 	/*dev = fz_new_draw_device(page->doc->context, pix);*/
 
 	printf("%d, %d\n", bb->w, bb->h);
-	ddjvu_page_render(page->page,
-			DDJVU_FORMAT_RGBMASK32,
+	ddjvu_page_render(page->page_ref,
+			DDJVU_RENDER_COLOR,
 			&pagerect,
 			&renderrect,
 			dc->pixelformat,
-			(bb->w)*4,
+			bb->w,
 			imagebuffer);
 
 	/*if(dc->gamma >= 0.0) {*/
@@ -334,16 +331,18 @@ static int drawPage(lua_State *L) {
 	/*}*/
 
 	uint8_t *bbptr = (uint8_t*)bb->data;
-	uint16_t *pmptr = (uint16_t*)imagebuffer;
+	uint8_t *pmptr = (uint8_t*)imagebuffer;
 	int x, y;
 
 	for(y = 0; y < bb->h; y++) {
+		/* render every line */
 		for(x = 0; x < (bb->w / 2); x++) {
-			bbptr[x] = (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0)) ^ 0xFF;
+			bbptr[x] = 255 - (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0));
 		}
 		if(bb->w & 1) {
-			bbptr[x] = pmptr[x*2] & 0xF0;
+			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
 		}
+		/* go to next line */
 		bbptr += bb->pitch;
 		pmptr += bb->w;
 	}

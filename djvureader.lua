@@ -100,7 +100,9 @@ function DJVUReader:draworcache(no, zoom, offset_x, offset_y, width, height, gam
 		-- and draw the page
 		local page = self.doc:openPage(no)
 		local dc = self:setzoom(page, hash)
+		--print("--drawing page : "..no)
 		page:draw(dc, self.cache[hash].bb, 0, 0)
+		--print("--page draught: "..no)
 		page:close()
 	else
 		-- we have the page in our cache,
