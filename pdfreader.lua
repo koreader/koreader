@@ -244,6 +244,33 @@ function PDFReader:show(no)
 	self.slot_visible = slot;
 end
 
+function PDFReader:add_jump(pageno)
+	local jump_item = nil
+	-- add current page to jump_stack if no in
+	for _t,_v in ipairs(self.jump_stack) do
+		if _v.page == pageno then
+			jump_item = _v
+			table.remove(self.jump_stack, _t)
+		elseif _v.page == no then
+			-- the page we jumped to should not be show in stack
+			table.remove(self.jump_stack, _t)
+		end
+	end
+	-- create a new one if not found
+	if not jump_item then
+		jump_item = {
+			page = pageno,
+			datetime = os.date("%Y-%m-%d %H:%M:%S"),
+		}
+	end
+	-- insert at the start
+	table.insert(self.jump_stack, 1, jump_item)
+	if #self.jump_stack > 10 then
+		-- remove the last element to keep the size less than 10
+		table.remove(self.jump_stack)
+	end
+end
+
 -- change current page and cache next page after rendering
 function PDFReader:goto(no)
 	if no < 1 or no > self.doc:getPages() then
@@ -252,30 +279,7 @@ function PDFReader:goto(no)
 
 	-- for jump_stack
 	if self.pageno and math.abs(self.pageno - no) > 1 then
-		local jump_item = nil
-		-- add current page to jump_stack if no in
-		for _t,_v in ipairs(self.jump_stack) do
-			if _v.page == self.pageno then
-				jump_item = _v
-				table.remove(self.jump_stack, _t)
-			elseif _v.page == no then
-				-- the page we jumped to should not be show in stack
-				table.remove(self.jump_stack, _t)
-			end
-		end
-		-- create a new one if not found
-		if not jump_item then
-			jump_item = {
-				page = self.pageno,
-				datetime = os.date("%Y-%m-%d %H:%M:%S"),
-			}
-		end
-		-- insert at the start
-		table.insert(self.jump_stack, 1, jump_item)
-		if #self.jump_stack > 10 then
-			-- remove the last element to keep the size less than 10
-			table.remove(self.jump_stack)
-		end
+		self:add_jump(self.pageno)
 	end
 
 	self.pageno = no
@@ -438,7 +442,11 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
-				self:showJumpStack()
+				if self.shiftmode then
+					self:add_jump(self.pageno)
+				else
+					self:showJumpStack()
+				end
 			elseif ev.code == KEY_J then
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then
