@@ -20,6 +20,11 @@
 #include "blitbuffer.h"
 #include "djvu.h"
 
+#define MIN(a, b)      ((a) < (b) ? (a) : (b))
+#define MAX(a, b)      ((a) > (b) ? (a) : (b))
+
+/*@TODO check all the close method, ensure memories are freed  03.03 2012*/
+
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
 	ddjvu_document_t *doc_ref;
@@ -217,23 +222,10 @@ static int openPage(lua_State *L) {
 	return 1;
 }
 
+/* this returns the original page size, seldom used. */
 static int getPageSize(lua_State *L) {
-	/*fz_matrix ctm;*/
-	/*fz_rect bbox;*/
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
-
-	/*ctm = fz_translate(0, -page->page->mediabox.y1);*/
-	/*ctm = fz_concat(ctm, fz_scale(dc->zoom, -dc->zoom));*/
-	/*ctm = fz_concat(ctm, fz_rotate(page->page->rotate));*/
-	/*ctm = fz_concat(ctm, fz_rotate(dc->rotate));*/
-	/*bbox = fz_transform_rect(ctm, page->page->mediabox);*/
-	
-	/*lua_pushnumber(L, bbox.x1-bbox.x0);*/
-	/*lua_pushnumber(L, bbox.y1-bbox.y0);*/
-
-	/*lua_pushnumber(L, page->info.width);*/
-	/*lua_pushnumber(L, page->info.height);*/
 
 	lua_pushnumber(L, ddjvu_page_get_width(page->page_ref) * dc->zoom);
 	lua_pushnumber(L, ddjvu_page_get_height(page->page_ref) * dc->zoom);
@@ -284,38 +276,39 @@ static int drawPage(lua_State *L) {
 	/*fz_device *dev;*/
 	/*fz_matrix ctm;*/
 	/*fz_bbox bbox;*/
-	ddjvu_rect_t pagerect, renderrect;
-	char imagebuffer[600*800+1];
-	memset(imagebuffer, 0, 600*800+1);
-
-
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	/*rect.x0 = luaL_checkint(L, 4);*/
-	/*rect.y0 = luaL_checkint(L, 5);*/
-	/*rect.x1 = rect.x0 + bb->w;*/
-	/*rect.y1 = rect.y0 + bb->h;*/
 
-	/* render page into rectangle specified by pagerect */
-	pagerect.x = luaL_checkint(L, 4);
-	pagerect.y = luaL_checkint(L, 5);
-	pagerect.w = bb->w - pagerect.x;
-	pagerect.h = bb->h - pagerect.y;
+	ddjvu_rect_t pagerect, renderrect;
+	uint8_t *imagebuffer = NULL;
+
+	imagebuffer = malloc((bb->w)*(bb->h)+1);
+	/* fill pixel map with white color */
+	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
+
+	/* render full page into rectangle specified by pagerect */
+	/*pagerect.x = luaL_checkint(L, 4);*/
+	/*pagerect.y = luaL_checkint(L, 5);*/
+	pagerect.x = 0;
+	pagerect.y = 0;
+	pagerect.w = bb->w * dc->zoom;
+	pagerect.h = bb->h * dc->zoom;
+	/*printf("@@@zoom:%f::: %d, y: %d, w: %d, h: %d.\n", 0, 0, dc->zoom, pagerect.w, pagerect.h);*/
 
 	/* copy pixels area from pagerect specified by renderrect */
-	renderrect.x = dc->offset_x;
-	renderrect.y = dc->offset_y;
-	renderrect.w = bb->w - renderrect.x;
-	renderrect.h = bb->h - renderrect.y;
+	/* ddjvulibre does not support negative offset, 
+	 * we need to handle negative offset manually when copying buffer. 
+	 * if offset is negative, we are moving towards down and right*/
+	renderrect.x = MAX(-dc->offset_x, 0);
+	renderrect.y = MAX(-dc->offset_y, 0);
+	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
+	renderrect.h = MIN(pagerect.h - renderrect.y, bb->h);
+	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
-	/*fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);*/
-
-	/*ctm = fz_scale(dc->zoom, dc->zoom);*/
 	/*ctm = fz_concat(ctm, fz_rotate(page->page->rotate));*/
 	/*ctm = fz_concat(ctm, fz_rotate(dc->rotate));*/
 	/*ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));*/
-	/*dev = fz_new_draw_device(page->doc->context, pix);*/
 
 	printf("%d, %d\n", bb->w, bb->h);
 	ddjvu_page_render(page->page_ref,
@@ -333,19 +326,25 @@ static int drawPage(lua_State *L) {
 	uint8_t *bbptr = (uint8_t*)bb->data;
 	uint8_t *pmptr = (uint8_t*)imagebuffer;
 	int x, y;
+	/* if offset is positive, we are moving towards up and left. */
+	int y_offset = MAX(0, MAX(0, dc->offset_y));
+	int x_offset = MAX(0, MAX(0, dc->offset_x));
 
-	for(y = 0; y < bb->h; y++) {
-		/* render every line */
-		for(x = 0; x < (bb->w / 2); x++) {
-			bbptr[x] = 255 - (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0));
+	for(y = y_offset; y < bb->h; y++) {
+		for(x = x_offset; x < (bb->w / 2); x++) {
+			bbptr[x] = 255 - (((pmptr[x*2 + 1 - x_offset] & 0xF0) >> 4) | 
+								(pmptr[x*2 - x_offset] & 0xF0));
 		}
 		if(bb->w & 1) {
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
 		}
 		/* go to next line */
-		bbptr += bb->pitch;
-		pmptr += bb->w;
+		bbptr += bb->pitch + y_offset;
+		pmptr += bb->w + y_offset;
 	}
+
+	free(imagebuffer);
+	pmptr = imagebuffer = NULL;
 
 	return 0;
 }

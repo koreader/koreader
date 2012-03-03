@@ -143,27 +143,6 @@ function DJVUReader:setzoom(page)
 	local dc = djvu.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
-		self.globalzoom = width / pwidth
-		self.offset_x = 0
-		self.offset_y = (height - (self.globalzoom * pheight)) / 2
-		if height / pheight < self.globalzoom then
-			self.globalzoom = height / pheight
-			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
-			self.offset_y = 0
-		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
-		self.globalzoom = width / pwidth
-		self.offset_x = 0
-		self.offset_y = (height - (self.globalzoom * pheight)) / 2
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
-		self.globalzoom = height / pheight
-		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
-		self.offset_y = 0
-	end
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
 		local x0, y0, x1, y1 = page:getUsedBBox()
 		if (x1 - x0) < pwidth then
@@ -191,12 +170,13 @@ function DJVUReader:setzoom(page)
 			self.offset_y = -1 * y0 * self.globalzoom
 		end
 	end
+
 	dc:setZoom(self.globalzoom)
 	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
-	self.fullwidth, self.fullheight = page:getSize(dc)
-	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
-	self.min_offset_y = fb.bb:getHeight() - self.fullheight
+	--self.fullwidth, self.fullheight = page:getSize(dc)
+	self.min_offset_x = fb.bb:getWidth() * (1 - self.globalzoom)
+	self.min_offset_y = fb.bb:getHeight() * (1 - self.globalzoom)
 	if(self.min_offset_x > 0) then
 		self.min_offset_x = 0
 	end
@@ -362,17 +342,17 @@ function DJVUReader:inputloop()
 				self.altmode = true
 			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if self.shiftmode then
-					self:setglobalzoom(self.globalzoom*1.2)
+					self:setglobalzoom(self.globalzoom + 0.2)
 				elseif self.altmode then
-					self:setglobalzoom(self.globalzoom*1.1)
+					self:setglobalzoom(self.globalzoom + 0.1)
 				else
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if self.shiftmode then
-					self:setglobalzoom(self.globalzoom*0.8)
+					self:setglobalzoom(self.globalzoom - 0.2)
 				elseif self.altmode then
-					self:setglobalzoom(self.globalzoom*0.9)
+					self:setglobalzoom(self.globalzoom - 0.1)
 				else
 					self:goto(self.pageno - 1)
 				end
