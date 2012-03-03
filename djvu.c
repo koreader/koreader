@@ -292,7 +292,7 @@ static int drawPage(lua_State *L) {
 	ddjvu_format_set_gamma(pixelformat, dc->gamma);
 	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
-	printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);
+	/*printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);*/
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -302,7 +302,7 @@ static int drawPage(lua_State *L) {
 	pagerect.w = page->info.width * dc->zoom;
 	pagerect.h = page->info.height * dc->zoom;
 
-	printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);
+	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
 
 	/* copy pixels area from pagerect specified by renderrect */
 	/* ddjvulibre does not support negative offset, 
@@ -313,7 +313,7 @@ static int drawPage(lua_State *L) {
 	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
 	renderrect.h = MIN(pagerect.h - renderrect.y, bb->h);
 
-	printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);
+	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
 	/*@TODO handle rotate  04.03 2012*/
 
