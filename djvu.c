@@ -128,8 +128,8 @@ static int newDrawContext(lua_State *L) {
 	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
 	dc->rotate = rotate;
 	dc->zoom = zoom;
-	/*dc->offset_x = offset_x;*/
-	/*dc->offset_y = offset_y;*/
+	dc->offset_x = offset_x;
+	dc->offset_y = offset_y;
 	dc->gamma = gamma;
 
 	/*dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_RGBMASK32, 4, format_mask);*/
@@ -185,6 +185,7 @@ static int dcGetZoom(lua_State *L) {
 static int dcSetGamma(lua_State *L) {
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
 	dc->gamma = luaL_checknumber(L, 2);
+	ddjvu_format_set_gamma(dc->pixelformat, dc->gamma);
 	return 0;
 }
 
@@ -272,10 +273,6 @@ static int closePage(lua_State *L) {
 }
 
 static int drawPage(lua_State *L) {
-	/*fz_pixmap *pix;*/
-	/*fz_device *dev;*/
-	/*fz_matrix ctm;*/
-	/*fz_bbox bbox;*/
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
