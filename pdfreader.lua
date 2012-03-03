@@ -219,6 +219,8 @@ function PDFReader:setzoom(page)
 		self.min_offset_y = 0
 	end
 
+	print("globalzoom:"..self.globalzoom.." globalrotate:"..self.globalrotate.." offset:"..self.offset_x.."*"..self.offset_y.." pagesize:"..self.fullwidth.."*"..self.fullheight.." min_offset:"..self.min_offset_x.."*"..self.min_offset_y)
+
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
 		print("gamma correction: "..self.globalgamma)
