@@ -43,7 +43,7 @@ function FileSearcher:readdir()
 		for __, d in pairs(self.dirs) do
 			-- handle files in d
 			for f in lfs.dir(d) do
-				if lfs.attributes(self.path.."/"..f, "mode") == "directory"
+				if lfs.attributes(d.."/"..f, "mode") == "directory"
 				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
 					table.insert(new_dirs, d.."/"..f)
 				elseif string.match(f, ".+%.[pP][dD][fF]$") then
@@ -214,8 +214,8 @@ function FileSearcher:choose(ypos, height, keywords)
 		end
 
 		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then

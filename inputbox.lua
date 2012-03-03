@@ -98,14 +98,10 @@ function InputBox:input(ypos, height, title, d_text)
 		end
 
 		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			ev.code = adjustFWKey(ev.code)
 			--local secs, usecs = util.gettime()
-			if ev.code == KEY_SHIFT then
-				self.shiftmode = true
-			elseif ev.code == KEY_ALT then
-				self.altmode = true
-			elseif ev.code == KEY_FW_UP then
+			if ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
 				self:addChar("a")
@@ -198,12 +194,6 @@ function InputBox:input(ypos, height, title, d_text)
 			--local nsecs, nusecs = util.gettime()
 			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
-		and ev.code == KEY_SHIFT then
-			self.shiftmode = false
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE
-		and ev.code == KEY_ALT then
-			self.altmode = false
 		end
 	end
 end

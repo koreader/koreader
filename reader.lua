@@ -123,4 +123,8 @@ DJVUReader:inputloop()
 --reader_settings:close()
 
 --input.closeAll()
---[[os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')]]
+input.closeAll()
+--os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
+if optarg["d"] ~= "emu" then
+	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
+end

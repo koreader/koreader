@@ -144,10 +144,11 @@ function FileChooser:choose(ypos, height)
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
 			pagedirty = false
 		end
+
 		local ev = input.waitForEvent()
+		print("key code:"..ev.code)
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--print("key code:"..ev.code)
-			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
@@ -166,14 +167,7 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
 				if keywords then -- display search result according to keywords
-					--[[
-						----------------------------------------------------------------
-						|| uncomment following line and set the correct path if you want
-						|| to test search feature in EMU mode
-						----------------------------------------------------------------
-					--]]
-					--FileSearcher:init("/home/dave/documents/kindle/backup/documents")
-					FileSearcher:init()
+					FileSearcher:init( self.path )
 					file = FileSearcher:choose(ypos, height, keywords)
 					if file then
 						return file

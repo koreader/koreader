@@ -96,9 +96,11 @@ lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rmdir mupdf
-	-rmdir lua
-	-rm lua
+	-rm -Rf mupdf
+	-rm -Rf lua lua-5.1.4*
+	-rm -Rf lsqlite3_svn08*
+	-rm -Rf sqlite-amalgamation-3070900*
+	-rm -Rf luafilesystem*
 	git clone git://git.ghostscript.com/mupdf.git
 	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
