@@ -140,8 +140,7 @@ function DJVUReader:setzoom(page)
 	local dc = djvu.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
+	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
@@ -152,13 +151,11 @@ function DJVUReader:setzoom(page)
 			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 			self.offset_y = 0
 		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
