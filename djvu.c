@@ -44,7 +44,6 @@ typedef struct DrawContext {
 	double gamma;
 	int offset_x;
 	int offset_y;
-	ddjvu_format_t *pixelformat;
 } DrawContext;
 
 
@@ -132,11 +131,6 @@ static int newDrawContext(lua_State *L) {
 	dc->offset_y = offset_y;
 	dc->gamma = gamma;
 
-	/*dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_RGBMASK32, 4, format_mask);*/
-	dc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
-	ddjvu_format_set_row_order(dc->pixelformat, 1);
-	ddjvu_format_set_y_direction(dc->pixelformat, 1);
-	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
 	luaL_getmetatable(L, "drawcontext");
 	lua_setmetatable(L, -2);
@@ -185,7 +179,6 @@ static int dcGetZoom(lua_State *L) {
 static int dcSetGamma(lua_State *L) {
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
 	dc->gamma = luaL_checknumber(L, 2);
-	ddjvu_format_set_gamma(dc->pixelformat, dc->gamma);
 	return 0;
 }
 
@@ -277,12 +270,19 @@ static int drawPage(lua_State *L) {
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
 
+	ddjvu_format_t *pixelformat;
 	ddjvu_rect_t pagerect, renderrect;
 	uint8_t *imagebuffer = NULL;
 
 	imagebuffer = malloc((bb->w)*(bb->h)+1);
 	/* fill pixel map with white color */
 	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
+
+	pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
+	ddjvu_format_set_row_order(pixelformat, 1);
+	ddjvu_format_set_y_direction(pixelformat, 1);
+	ddjvu_format_set_gamma(pixelformat, dc->gamma);
+	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -307,18 +307,13 @@ static int drawPage(lua_State *L) {
 	/*ctm = fz_concat(ctm, fz_rotate(dc->rotate));*/
 	/*ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));*/
 
-	printf("%d, %d\n", bb->w, bb->h);
 	ddjvu_page_render(page->page_ref,
 			DDJVU_RENDER_COLOR,
 			&pagerect,
 			&renderrect,
-			dc->pixelformat,
+			pixelformat,
 			bb->w,
 			imagebuffer);
-
-	/*if(dc->gamma >= 0.0) {*/
-		/*fz_gamma_pixmap(page->doc->context, pix, dc->gamma);*/
-	/*}*/
 
 	uint8_t *bbptr = (uint8_t*)bb->data;
 	uint8_t *pmptr = (uint8_t*)imagebuffer;
@@ -342,6 +337,7 @@ static int drawPage(lua_State *L) {
 
 	free(imagebuffer);
 	pmptr = imagebuffer = NULL;
+	ddjvu_format_release(pixelformat);
 
 	return 0;
 }

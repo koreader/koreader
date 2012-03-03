@@ -40,10 +40,6 @@ DJVUReader = {
 	shift_y = 50,
 	pan_by_page = false, -- using shift_[xy] or width/height
 
-	-- keep track of input state:
-	shiftmode = false, -- shift pressed
-	altmode = false,   -- alt pressed
-
 	-- the djvu document:
 	doc = nil,
 	-- the document's setting store:
@@ -101,7 +97,7 @@ function DJVUReader:draworcache(no, zoom, offset_x, offset_y, width, height, gam
 		local page = self.doc:openPage(no)
 		local dc = self:setzoom(page, hash)
 		--print("--drawing page : "..no)
-		page:draw(dc, self.cache[hash].bb, 0, 0)
+		page:draw(dc, self.cache[hash].bb)
 		--print("--page draught: "..no)
 		page:close()
 	else
@@ -125,14 +121,14 @@ function DJVUReader:clearcache()
 end
 
 -- open a DJVU file and its settings store
-function DJVUReader:open(filename, password)
-	self.doc = djvu.openDocument(filename, password or "")
+function DJVUReader:open(filename)
+	self.doc = djvu.openDocument(filename)
 	if self.doc ~= nil then
-		--self.settings = DocSettings:open(filename)
-		--local gamma = self.settings:readsetting("gamma")
-		--if gamma then
-			--self.globalgamma = gamma
-		--end
+		self.settings = DocSettings:open(filename)
+		local gamma = self.settings:readsetting("gamma")
+		if gamma then
+			self.globalgamma = gamma
+		end
 		return true
 	end
 	return false
@@ -219,44 +215,44 @@ function DJVUReader:goto(no)
 		return
 	end
 
-   --[[ -- for jump_stack]]
-	--if self.pageno and math.abs(self.pageno - no) > 1 then
-		--local jump_item = nil
-		---- add current page to jump_stack if no in
-		--for _t,_v in ipairs(self.jump_stack) do
-			--if _v.page == self.pageno then
-				--jump_item = _v
-				--table.remove(self.jump_stack, _t)
-			--elseif _v.page == no then
-				---- the page we jumped to should not be show in stack
-				--table.remove(self.jump_stack, _t)
-			--end
-		--end
-		---- create a new one if not found
-		--if not jump_item then
-			--jump_item = {
-				--page = self.pageno,
-				--datetime = os.date("%Y-%m-%d %H:%M:%S"),
-			--}
-		--end
-		---- insert at the start
-		--table.insert(self.jump_stack, 1, jump_item)
-		--if #self.jump_stack > 10 then
-			---- remove the last element to keep the size less than 10
-			--table.remove(self.jump_stack)
-		--end
-	--[[end]]
+	-- for jump_stack
+	if self.pageno and math.abs(self.pageno - no) > 1 then
+		local jump_item = nil
+		-- add current page to jump_stack if no in
+		for _t,_v in ipairs(self.jump_stack) do
+			if _v.page == self.pageno then
+				jump_item = _v
+				table.remove(self.jump_stack, _t)
+			elseif _v.page == no then
+				-- the page we jumped to should not be show in stack
+				table.remove(self.jump_stack, _t)
+			end
+		end
+		-- create a new one if not found
+		if not jump_item then
+			jump_item = {
+				page = self.pageno,
+				datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			}
+		end
+		-- insert at the start
+		table.insert(self.jump_stack, 1, jump_item)
+		if #self.jump_stack > 10 then
+			-- remove the last element to keep the size less than 10
+			table.remove(self.jump_stack)
+		end
+	end
 
 	self.pageno = no
 	self:show(no)
-   --[[ if no < self.doc:getPages() then]]
-		--if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-			---- pre-cache next page
-			--self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-		--else
-			--self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-		--end
-	--[[end]]
+	if no < self.doc:getPages() then
+		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
+			-- pre-cache next page
+			self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		else
+			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		end
+	end
 end
 
 -- adjust global gamma setting
@@ -281,11 +277,6 @@ function DJVUReader:setglobalzoom(zoom)
 		self.globalzoom = zoom
 		self:goto(self.pageno)
 	end
-end
-
-function DJVUReader:setrotate(rotate)
-	self.globalrotate = rotate
-	self:goto(self.pageno)
 end
 
 function DJVUReader:showTOC()
@@ -398,10 +389,6 @@ function DJVUReader:inputloop()
 				self:showTOC()
 			elseif ev.code == KEY_B then
 				self:showJumpStack()
-			elseif ev.code == KEY_J then
-				self:setrotate( self.globalrotate + 10 )
-			elseif ev.code == KEY_K then
-				self:setrotate( self.globalrotate - 10 )
 			end
 
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
