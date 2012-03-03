@@ -93,9 +93,25 @@ if r_cfont ~=nil then
 	FontChooser.cfont = r_cfont
 end
 
-DJVUReader:open("/home/dave/documents/code/kindle/djvu/test-djvu/test.djvu")
-DJVUReader:goto(1)
-DJVUReader:inputloop()
+if lfs.attributes(ARGV[optind], "mode") == "directory" then
+	local running = true
+	FileChooser:setPath(ARGV[optind])
+	while running do
+		local pdffile = FileChooser:choose(0,height)
+		if pdffile ~= nil then
+			if DJVUReader:open(pdffile,"") then
+				DJVUReader:goto(1)
+				DJVUReader:inputloop()
+			end
+		else
+			running = false
+		end
+	end
+else
+	DJVUReader:open(ARGV[optind], optarg["p"])
+	DJVUReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
+	DJVUReader:inputloop()
+end
 
 
 --[[if lfs.attributes(ARGV[optind], "mode") == "directory" then]]
@@ -122,7 +138,6 @@ DJVUReader:inputloop()
 --reader_settings:savesetting("cfont", FontChooser.cfont)
 --reader_settings:close()
 
---input.closeAll()
 input.closeAll()
 --os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
 if optarg["d"] ~= "emu" then

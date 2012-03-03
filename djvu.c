@@ -265,10 +265,10 @@ static int getPageSize(lua_State *L) {
 
 static int closePage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-	/*if(page->page != NULL) {*/
-		/*pdf_free_page(page->doc->xref, page->page);*/
-		/*page->page = NULL;*/
-	/*}*/
+	if(page->page_ref != NULL) {
+		ddjvu_page_release(page->page_ref);
+		page->page_ref = NULL;
+	}
 	return 0;
 }
 

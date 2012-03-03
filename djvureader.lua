@@ -334,30 +334,27 @@ end
 function DJVUReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
-			if ev.code == KEY_SHIFT then
-				self.shiftmode = true
-			elseif ev.code == KEY_ALT then
-				self.altmode = true
-			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if self.shiftmode then
+			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom + 0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom + 0.1)
 				else
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom - 0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom - 0.1)
 				else
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				if self.altmode then
+				if Keys.altmode then
 					-- altmode, exit djvureader
 					self:clearcache()
 					if self.doc ~= nil then
@@ -380,19 +377,19 @@ function DJVUReader:inputloop()
 			elseif ev.code == KEY_VMINUS then
 				self:modify_gamma( 0.8 )
 			elseif ev.code == KEY_A then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE)
 				end
 			elseif ev.code == KEY_S then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_WIDTH)
 				end
 			elseif ev.code == KEY_D then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HEIGHT)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
@@ -411,10 +408,10 @@ function DJVUReader:inputloop()
 				local x
 				local y
 
-				if self.shiftmode then -- shift always moves in small steps
+				if Keys.shiftmode then -- shift always moves in small steps
 					x = self.shift_x / 2
 					y = self.shift_y / 2
-				elseif self.altmode then
+				elseif Keys.altmode then
 					x = self.shift_x / 5
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
@@ -450,7 +447,7 @@ function DJVUReader:inputloop()
 						self.offset_y = self.min_offset_y
 					end
 				elseif ev.code == KEY_FW_PRESS then
-					if self.shiftmode then
+					if Keys.shiftmode then
 						self.offset_x = 0
 						self.offset_y = 0
 					else
@@ -466,11 +463,6 @@ function DJVUReader:inputloop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
-			print "shift haha"
-			self.shiftmode = false
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
-			self.altmode = false
 		end
 	end
 end
