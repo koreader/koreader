@@ -144,10 +144,11 @@ function FileChooser:choose(ypos, height)
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
 			pagedirty = false
 		end
+
 		local ev = input.waitForEvent()
+		print("key code:"..ev.code)
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--print("key code:"..ev.code)
-			ev.code = adjustFWKey(ev.code)
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then

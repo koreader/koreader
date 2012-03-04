@@ -45,10 +45,6 @@ PDFReader = {
 	pan_y = 0,
 	pan_margin = 20,
 
-	-- keep track of input state:
-	shiftmode = false, -- shift pressed
-	altmode = false,   -- alt pressed
-
 	-- the pdf document:
 	doc = nil,
 	-- the document's setting store:
@@ -375,17 +371,13 @@ end
 function PDFReader:inputloop()
 	while 1 do
 		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			ev.code = adjustFWKey(ev.code)
 			local secs, usecs = util.gettime()
-			if ev.code == KEY_SHIFT then
-				self.shiftmode = true
-			elseif ev.code == KEY_ALT then
-				self.altmode = true
-			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if self.shiftmode then
+			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom+0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom+0.1)
 				else
 					if self.pan_by_page then
@@ -395,9 +387,9 @@ function PDFReader:inputloop()
 					self:goto(self.pageno + 1)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom-0.2)
-				elseif self.altmode then
+				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom-0.1)
 				else
 					if self.pan_by_page then
@@ -407,7 +399,7 @@ function PDFReader:inputloop()
 					self:goto(self.pageno - 1)
 				end
 			elseif ev.code == KEY_BACK then
-				if self.altmode then
+				if Keys.altmode then
 					-- altmode, exit pdfreader
 					self:clearcache()
 					if self.doc ~= nil then
@@ -430,19 +422,19 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_VMINUS then
 				self:modify_gamma( 0.8 )
 			elseif ev.code == KEY_A then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE)
 				end
 			elseif ev.code == KEY_S then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_WIDTH)
 				end
 			elseif ev.code == KEY_D then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HEIGHT)
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
@@ -452,7 +444,7 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
-				if self.shiftmode then
+				if Keys.shiftmode then
 					self:add_jump(self.pageno)
 				else
 					self:showJumpStack()
@@ -467,10 +459,10 @@ function PDFReader:inputloop()
 				local x
 				local y
 
-				if self.shiftmode then -- shift always moves in small steps
+				if Keys.shiftmode then -- shift always moves in small steps
 					x = self.shift_x / 2
 					y = self.shift_y / 2
-				elseif self.altmode then
+				elseif Keys.altmode then
 					x = self.shift_x / 5
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
@@ -522,7 +514,7 @@ function PDFReader:inputloop()
 						self.offset_y = self.min_offset_y
 					end
 				elseif ev.code == KEY_FW_PRESS then
-					if self.shiftmode then
+					if Keys.shiftmode then
 						if self.pan_by_page then
 							self.offset_x = self.pan_x
 							self.offset_y = self.pan_y
@@ -547,11 +539,6 @@ function PDFReader:inputloop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_SHIFT then
-			print "shift haha"
-			self.shiftmode = false
-		elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE and ev.code == KEY_ALT then
-			self.altmode = false
 		end
 	end
 end

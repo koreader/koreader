@@ -24,6 +24,11 @@
     and was licensed under the GPLv2
 ]]--
 
+Keys = {
+	altmode = false,
+	shiftmode = false,
+}
+
 KEY_1 = 2
 KEY_2 = 3
 KEY_3 = 4
@@ -120,6 +125,17 @@ function set_emu_keycodes()
 
 	KEY_ENTER = 36
 
+	KEY_1 = 10
+	KEY_2 = 11
+	KEY_3 = 12
+	KEY_4 = 13
+	KEY_5 = 14
+	KEY_6 = 15
+	KEY_7 = 16
+	KEY_8 = 17
+	KEY_9 = 18
+	KEY_0 = 19
+
 	KEY_Q = 24
 	KEY_W = 25
 	KEY_E = 26
@@ -163,17 +179,17 @@ function getRotationMode()
 	1 for landscape with bottom on the right side of screen, etc.
 
 	         2
-	    -----------
-	   |  -------  |
+	   +-----------+
+	   | +-------+ |
 	   | |       | |
 	   | |       | |
 	   | |       | |  
 	 3 | |       | | 1
 	   | |       | |
 	   | |       | |
-	   |  -------  |
+	   | +-------+ |
 	   |           |
-	    -----------
+	   +-----------+
 	         0
 	--]]
 	if KEY_FW_DOWN == 116 then -- in EMU mode always return 0
@@ -185,7 +201,23 @@ function getRotationMode()
 	return mode
 end
 
-function adjustFWKey(code)
+function adjustKeyEvents(ev)
+	if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.code == KEY_SHIFT then
+			Keys.shiftmode = true
+		elseif ev.code == KEY_ALT then
+			Keys.altmode = true
+		end
+	elseif ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_RELEASE then
+		if ev.code == KEY_SHIFT then
+			Keys.shiftmode = false
+		elseif ev.code == KEY_ALT then
+			Keys.altmode = false
+		end
+	end
+
+	-- adjust five way key according to rotation mode
+	local code = ev.code
 	if getRotationMode() == 0 then
 		return code
 	elseif getRotationMode() == 1 then
