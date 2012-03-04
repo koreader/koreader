@@ -149,6 +149,12 @@ function PDFReader:setzoom(page)
 		x1 = pwidth
 		y1 = pheight
 	end
+	-- clamp to page BBox
+	if x0 < 0 then x0 = 0 end
+	if x1 > pwidth then x1 = pwidth end
+	if y0 < 0 then y0 = 0 end
+	if y1 > pheight then y1 = pheight end
+
 	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 
 	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
