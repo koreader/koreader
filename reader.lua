@@ -111,6 +111,10 @@ if r_cfont ~=nil then
 	FontChooser.cfont = r_cfont
 end
 
+-- initialize specific readers
+PDFReader:init()
+DJVUReader:init()
+
 -- display directory or open file
 if lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
