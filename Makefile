@@ -15,7 +15,8 @@ LFSDIR=luafilesystem
 CC:=arm-unknown-linux-gnueabi-gcc
 HOSTCC:=gcc
 
-CFLAGS:=-O3 -march=armv6
+CFLAGS:=-O3
+ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
@@ -33,6 +34,8 @@ EMU_CFLAGS+= -DEMULATE_READER \
 	     -DEMULATE_READER_H=$(EMULATE_READER_H) \
 	
 EMU_LDFLAGS?=$(shell sdl-config --libs)
+else
+CFLAGS+= $(ARM_CFLAGS)
 endif
 
 # standard includes
