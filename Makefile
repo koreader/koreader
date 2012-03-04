@@ -5,8 +5,6 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 
-SQLITE3DIR=sqlite-amalgamation-3070900
-LSQLITE3DIR=lsqlite3_svn08
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
 
@@ -54,14 +52,10 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 	       	$(MUPDFLIBDIR)/libjbig2dec.a \
 	       	$(MUPDFLIBDIR)/libz.a
 
-# comment this out to build without sqlite3
-SQLITE3OBJS := lsqlite3.o sqlite3.o
-SQLITE3LDFLAGS := -lpthread
-
 LUALIB := $(LUADIR)/src/liblua.a
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
-	$(CC) -lm -ldl $(EMU_LDFLAGS) $(SQLITE3LDFLAGS) \
+	$(CC) -lm -ldl $(EMU_LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -69,7 +63,6 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OB
 		input.o \
 		util.o \
 		ft.o \
-		$(SQLITE3OBJS) \
 		lfs.o \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
@@ -85,26 +78,16 @@ ft.o: %.o: %.c
 kpdfview.o pdf.o blitbuffer.o util.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
-sqlite3.o: $(SQLITE3DIR)/sqlite3.c
-	$(CC) -c $(CFLAGS) $(SQLITE3DIR)/sqlite3.c -o $@
-
-lsqlite3.o: $(LSQLITE3DIR)/lsqlite3.c
-	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(SQLITE3DIR) $(LSQLITE3DIR)/lsqlite3.c -o $@
-
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
 	-rm -Rf mupdf
 	-rm -Rf lua lua-5.1.4*
-	-rm -Rf lsqlite3_svn08*
-	-rm -Rf sqlite-amalgamation-3070900*
 	-rm -Rf luafilesystem*
 	git clone git://git.ghostscript.com/mupdf.git
 	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
-	wget "http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8" && unzip "lsqlite3_svn08.zip?uuid=svn_8"
-	wget "http://sqlite.org/sqlite-amalgamation-3070900.zip" && unzip sqlite-amalgamation-3070900.zip
 	git clone https://github.com/keplerproject/luafilesystem.git
 
 clean:
