@@ -453,6 +453,8 @@ function PDFReader:inputloop()
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then
 				self:setrotate( self.globalrotate - 10 )
+			elseif ev.code == KEY_HOME then
+				os.exit(0);
 			end
 
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
