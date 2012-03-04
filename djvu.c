@@ -307,10 +307,17 @@ static int drawPage(lua_State *L) {
 
 	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
 
-	/* copy pixels area from pagerect specified by renderrect */
-	/* ddjvulibre does not support negative offset, 
-	 * we need to handle negative offset manually when copying buffer. 
-	 * if offset is negative, we are moving towards down and right*/
+
+	/* copy pixels area from pagerect specified by renderrect.
+
+	 * ddjvulibre library does not support negative offset, positive offset 
+	 * means moving towards right and down.
+	 *
+	 * However, djvureader.lua handles offset differently. It use negative 
+	 * offset to move right and down while positive offset to move left 
+	 * and up. So we need to handle positive offset manually when copying 
+	 * imagebuffer to blitbuffer (framebuffer). 
+	 */
 	renderrect.x = MAX(-dc->offset_x, 0);
 	renderrect.y = MAX(-dc->offset_y, 0);
 	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
@@ -318,7 +325,7 @@ static int drawPage(lua_State *L) {
 
 	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
-	/*@TODO handle rotate  04.03 2012*/
+	/*@TODO handle rotate here 04.03 2012*/
 
 	ddjvu_page_render(page->page_ref,
 			DDJVU_RENDER_COLOR,
@@ -337,9 +344,8 @@ static int drawPage(lua_State *L) {
 
 	bbptr += bb->pitch * y_offset;
 	for(y = y_offset; y < bb->h; y++) {
-		/* bbptr's width is half of pmptr's */
+		/* bbptr's line width is half of pmptr's */
 		for(x = x_offset/2; x < (bb->w / 2); x++) {
-			/*printf("   ---  y: %d, x: %d\n", y, x);*/
 			bbptr[x] = 255 - (((pmptr[x*2 + 1 - x_offset] & 0xF0) >> 4) | 
 								(pmptr[x*2 - x_offset] & 0xF0));
 		}
