@@ -238,34 +238,17 @@ static int getPageSize(lua_State *L) {
 	return 2;
 }
 
-/*static int getUsedBBox(lua_State *L) {*/
-	/*fz_bbox result;*/
-	/*fz_matrix ctm;*/
-	/*fz_device *dev;*/
-	/*DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");*/
+/* unsupported so fake it */
+static int getUsedBBox(lua_State *L) {
+	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 
-	/*[> returned BBox is in centi-point (n * 0.01 pt) <]*/
-	/*ctm = fz_scale(100, 100);*/
-	/*ctm = fz_concat(ctm, fz_rotate(page->page->rotate));*/
+	lua_pushnumber(L, (double)0.01);
+	lua_pushnumber(L, (double)0.01);
+	lua_pushnumber(L, (double)-0.01);
+	lua_pushnumber(L, (double)-0.01);
 
-	/*fz_try(page->doc->context) {*/
-		/*dev = fz_new_bbox_device(page->doc->context, &result);*/
-		/*pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);*/
-	/*}*/
-	/*fz_always(page->doc->context) {*/
-		/*fz_free_device(dev);*/
-	/*}*/
-	/*fz_catch(page->doc->context) {*/
-		/*return luaL_error(L, "cannot calculate bbox for page");*/
-	/*}*/
-
-           /*lua_pushnumber(L, ((double)result.x0)/100);*/
-	/*lua_pushnumber(L, ((double)result.y0)/100);*/
-           /*lua_pushnumber(L, ((double)result.x1)/100);*/
-	/*lua_pushnumber(L, ((double)result.y1)/100);*/
-
-	/*return 4;*/
-/*}*/
+	return 4;
+}
 
 static int closePage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
@@ -384,7 +367,7 @@ static const struct luaL_reg djvudocument_meth[] = {
 
 static const struct luaL_reg djvupage_meth[] = {
 	{"getSize", getPageSize},
-	/*{"getUsedBBox", getUsedBBox},*/
+	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},
