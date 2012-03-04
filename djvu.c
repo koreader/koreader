@@ -325,7 +325,10 @@ static int drawPage(lua_State *L) {
 
 	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
-	/*@TODO handle rotate here 04.03 2012*/
+	/* ddjvulibre library only supports rotation of 0, 90, 180 and 270 degrees. 
+	 * This four kinds of rotations can already be achieved by native system.
+	 * So we don't set rotation here.
+	 */
 
 	ddjvu_page_render(page->page_ref,
 			DDJVU_RENDER_COLOR,
