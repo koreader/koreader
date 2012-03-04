@@ -197,6 +197,7 @@ static int dcGetGamma(lua_State *L) {
 }
 
 static int openPage(lua_State *L) {
+	ddjvu_status_t r;
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 
@@ -218,8 +219,10 @@ static int openPage(lua_State *L) {
 	page->doc = doc;
 	page->num = pageno;
 
-	/* @TODO:handle failure here */
-	ddjvu_document_get_pageinfo(doc->doc_ref, pageno, &(page->info));
+	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno, &(page->info)))<DDJVU_JOB_OK)
+		handle(L, doc->context, TRUE);
+	if (r>=DDJVU_JOB_FAILED)
+		return luaL_error(L, "cannot get page #%d information", pageno);
 
 	return 1;
 }
