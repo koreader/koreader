@@ -141,16 +141,11 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	-mkdir $(DJVUDIR)/build 
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && ../configure --enable-desktopfiles=no
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
 else
-	cd $(DJVUDIR)/build && ../configure --enable-desktopfiles=no --host=arm
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=arm-kindle-linux-gnueabi
 endif
-	make -C $(DJVUDIR)/build CXX="$(CXX)"
-ifdef EMULATE_READER
-	cd $(DJVUDIR)/build/libdjvu/.libs && ar -cvq libdjvulibre.a *.o
-else
-	cd $(DJVUDIR)/build/libdjvu/ && ar -cvq libdjvulibre.a *.o
-endif
+	make -C $(DJVUDIR)/build
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
