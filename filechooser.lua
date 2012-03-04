@@ -33,13 +33,37 @@ FileChooser = {
 	page = 1,
 	current = 1,
 	oldcurrent = 0,
+	exception_message = nil
 }
+
+function getAbsolutePath(aPath)
+	local abs_path
+	if not aPath then
+		abs_path = aPath
+	elseif aPath:match('^//') then
+		abs_path = aPath:sub(2)
+	elseif aPath:match('^/') then
+		abs_path = aPath
+	elseif #aPath == 0 then
+		abs_path = '/'
+	else
+		local curr_dir = lfs.currentdir()
+		abs_path = aPath
+		if lfs.chdir(aPath) then
+			abs_path = lfs.currentdir()
+			lfs.chdir(curr_dir)
+		end
+		--print("rel: '"..aPath.."' abs:'"..abs_path.."'")
+	end
+	return abs_path
+end
 
 function FileChooser:readdir()
 	self.dirs = {}
 	self.files = {}
 	for f in lfs.dir(self.path) do
-		if lfs.attributes(self.path.."/"..f, "mode") == "directory" and f ~= "." and not string.match(f, "^%.[^.]") then
+		if lfs.attributes(self.path.."/"..f, "mode") == "directory" and f ~= "." and not (f==".." and self.path=="/") and not string.match(f, "^%.[^.]") then
+			--print(self.path.." -> adding: '"..f.."'")
 			table.insert(self.dirs, f)
 		elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$")then
 			table.insert(self.files, f)
@@ -51,15 +75,22 @@ function FileChooser:readdir()
 end
 
 function FileChooser:setPath(newPath)
-	self.path = newPath
-	self:readdir()
-	self.items = #self.dirs + #self.files
-	if self.items == 0 then
-		return nil
+	local curr_path = self.path
+	self.path = getAbsolutePath(newPath)
+	local readdir_ok, exc = pcall(self.readdir,self)
+	if(not readdir_ok) then
+		print("readdir error: "..tostring(exc))
+		self.exception_message = exc
+		return self:setPath(curr_path)
+	else
+		self.items = #self.dirs + #self.files
+		if self.items == 0 then
+			return nil
+		end
+		self.page = 1
+		self.current = 1
+		return true
 	end
-	self.page = 1
-	self.current = 1
-	return true
 end
 
 function FileChooser:updateFont()
@@ -74,7 +105,7 @@ function FileChooser:updateFont()
 end
 
 function FileChooser:choose(ypos, height)
-	local perpage = math.floor(height / self.spacing) - 1
+	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
 
@@ -122,8 +153,11 @@ function FileChooser:choose(ypos, height)
 					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, self.face, self.fhash, self.files[i-#self.dirs], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 39, ypos + self.spacing * perpage + 32, self.fface, self.ffhash,
-				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, self.fface, self.ffhash,
+				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)		
+			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
+			self.exception_message = nil
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, self.fface, self.ffhash, msg, true)			
 			markerdirty = true
 		end
 		if markerdirty then
@@ -146,7 +180,7 @@ function FileChooser:choose(ypos, height)
 		end
 
 		local ev = input.waitForEvent()
-		print("key code:"..ev.code)
+		--print("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_UP then
