@@ -15,7 +15,9 @@ LFSDIR=luafilesystem
 CC:=arm-unknown-linux-gnueabi-gcc
 HOSTCC:=gcc
 
-CFLAGS:=-O0 -g
+CFLAGS:=-O3 -march=armv6
+# use this for debugging:
+#CFLAGS:=-O0 -g
 
 # you can configure an emulation for the (eink) framebuffer here.
 # the application won't use the framebuffer (and the special e-ink ioctls)
