@@ -2,7 +2,7 @@
 
 LUADIR=lua
 MUPDFDIR=mupdf
-DJVUDIR=djvulibre-3.5.24
+DJVUDIR=djvulibre
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 
@@ -105,7 +105,6 @@ fetchthirdparty:
 	-rm -Rf lsqlite3_svn08*
 	-rm -Rf sqlite-amalgamation-3070900*
 	-rm -Rf luafilesystem*
-	-rm -Rf djvulibre.tar.gz
 	-rm -Rf $(DJVUDIR)
 	git clone git://git.ghostscript.com/mupdf.git
 	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
@@ -113,7 +112,7 @@ fetchthirdparty:
 	wget "http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8" && unzip "lsqlite3_svn08.zip?uuid=svn_8"
 	wget "http://sqlite.org/sqlite-amalgamation-3070900.zip" && unzip sqlite-amalgamation-3070900.zip
 	git clone https://github.com/keplerproject/luafilesystem.git
-	wget http://sourceforge.net/projects/djvu/files/latest/download\?source\=files -O djvulibre.tar.gz && tar xvzf djvulibre.tar.gz
+	git clone git://djvu.git.sourceforge.net/gitroot/djvu/djvulibre.git
 
 clean:
 	-rm -f *.o kpdfview
