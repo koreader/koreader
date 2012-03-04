@@ -380,6 +380,7 @@ end
 
 -- wait for input and handle it
 function PDFReader:inputloop()
+	local keep_running = true
 	while 1 do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -412,16 +413,7 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_BACK then
 				if Keys.altmode then
 					-- altmode, exit pdfreader
-					self:clearcache()
-					if self.doc ~= nil then
-						self.doc:close()
-					end
-					if self.settings ~= nil then
-						self.settings:savesetting("last_page", self.pageno)
-						self.settings:savesetting("gamma", self.globalgamma)
-						self.settings:close()
-					end
-					return
+					break
 				else
 					-- not altmode, back to last jump
 					if #self.jump_stack ~= 0 then
@@ -465,7 +457,9 @@ function PDFReader:inputloop()
 			elseif ev.code == KEY_K then
 				self:setrotate( self.globalrotate - 10 )
 			elseif ev.code == KEY_HOME then
-				os.exit(0);
+				-- signal quit
+				keep_running = false
+				break
 			end
 
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
@@ -555,6 +549,18 @@ function PDFReader:inputloop()
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		end
 	end
+
+	self:clearcache()
+	if self.doc ~= nil then
+		self.doc:close()
+	end
+	if self.settings ~= nil then
+		self.settings:savesetting("last_page", self.pageno)
+		self.settings:savesetting("gamma", self.globalgamma)
+		self.settings:close()
+	end
+
+	return keep_running
 end
 
 

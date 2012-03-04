@@ -100,7 +100,7 @@ if lfs.attributes(ARGV[optind], "mode") == "directory" then
 		if pdffile ~= nil then
 			if PDFReader:open(pdffile,"") then -- TODO: query for password
 				PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
-				PDFReader:inputloop()
+				running = PDFReader:inputloop()
 			end
 		else
 			running = false
