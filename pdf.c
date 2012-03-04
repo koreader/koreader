@@ -105,16 +105,6 @@ static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int dept
 		lua_settable(L, -3);
 		lua_pushstring(L, "title");
 
-		/* workaround for misplaced carriage ret in toc entry */
-		int i = 0;
-		while (ol->title[i]) {
-			if (ol->title[i] == 0x0d) {
-				ol->title[i] = ' ';
-			}
-			/*printf("%x|", ol->title[i]);*/
-			i++;
-		}
-
 		lua_pushstring(L, ol->title);
 		lua_settable(L, -3);
 
