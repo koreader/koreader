@@ -141,6 +141,15 @@ end
 function PDFReader:setzoom(page)
 	local dc = pdf.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
+	print("# page::getSize "..pwidth.."*"..pheight);
+	local x0, y0, x1, y1 = page:getUsedBBox()
+	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
+		x0 = 0
+		y0 = 0
+		x1 = pwidth
+		y2 = pheight
+	end
+	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 
 	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
 	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
@@ -164,7 +173,6 @@ function PDFReader:setzoom(page)
 		self.offset_y = 0
 	end
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
-		local x0, y0, x1, y1 = page:getUsedBBox()
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
 			self.offset_x = -1 * x0 * self.globalzoom
@@ -176,21 +184,18 @@ function PDFReader:setzoom(page)
 			end
 		end
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
-		local x0, y0, x1, y1 = page:getUsedBBox()
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
 			self.offset_x = -1 * x0 * self.globalzoom
 			self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
 		end
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
-		local x0, y0, x1, y1 = page:getUsedBBox()
 		if (y1 - y0) < pheight then
 			self.globalzoom = height / (y1 - y0)
 			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
 			self.offset_y = -1 * y0 * self.globalzoom
 		end
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then
-		local x0, y0, x1, y1 = page:getUsedBBox()
 		self.globalzoom = width / (x1 - x0 + self.pan_margin)
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + self.pan_margin
 		self.globalzoom = height / (y1 - y0)
@@ -214,6 +219,8 @@ function PDFReader:setzoom(page)
 	if(self.min_offset_y > 0) then
 		self.min_offset_y = 0
 	end
+
+	print("# PDFReader:setzoom globalzoom:"..self.globalzoom.." globalrotate:"..self.globalrotate.." offset:"..self.offset_x.."*"..self.offset_y.." pagesize:"..self.fullwidth.."*"..self.fullheight.." min_offset:"..self.min_offset_x.."*"..self.min_offset_y)
 
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
@@ -451,6 +458,8 @@ function PDFReader:inputloop()
 				self:setrotate( self.globalrotate + 10 )
 			elseif ev.code == KEY_K then
 				self:setrotate( self.globalrotate - 10 )
+			elseif ev.code == KEY_HOME then
+				os.exit(0);
 			end
 
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
