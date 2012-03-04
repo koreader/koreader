@@ -147,7 +147,7 @@ function PDFReader:setzoom(page)
 		x0 = 0
 		y0 = 0
 		x1 = pwidth
-		y2 = pheight
+		y1 = pheight
 	end
 	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 
