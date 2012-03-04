@@ -21,6 +21,7 @@ UniReader = {
 
 	-- zoom state:
 	globalzoom = 1.0,
+	globalzoom_orig = 1.0,
 	globalzoommode = -1, -- ZOOM_FIT_TO_PAGE
 
 	globalrotate = 0,
@@ -295,9 +296,9 @@ function UniReader:inputloop()
 			local secs, usecs = util.gettime()
 			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom+0.2)
+					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.2)
 				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom+0.1)
+					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.1)
 				else
 					if self.pan_by_page then
 						self.offset_x = self.pan_x
@@ -307,9 +308,9 @@ function UniReader:inputloop()
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom-0.2)
+					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.2)
 				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom-0.1)
+					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.1)
 				else
 					if self.pan_by_page then
 						self.offset_x = self.pan_x

@@ -46,7 +46,9 @@ function DJVUReader:setzoom(page)
 	end
 
 	dc:setZoom(self.globalzoom)
+	-- record globalzoom for manual zoom in/out
 	self.globalzoom_orig = self.globalzoom
+
 	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
 	self.fullwidth, self.fullheight = page:getSize(dc)
