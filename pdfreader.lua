@@ -336,7 +336,7 @@ function PDFReader:showTOC()
 	-- build menu items
 	for _k,_v in ipairs(toc) do
 		table.insert(menu_items,
-		("        "):rep(_v.depth-1).._v.title)
+		("        "):rep(_v.depth-1) .. _v.title:gsub("\13", ""))
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
