@@ -197,17 +197,21 @@ function UniReader:setzoom(page)
 			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 			self.offset_y = 0
 		end
+		self.pan_by_page = false
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
 	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
+		self.pan_by_page = false
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
 	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
+		self.pan_by_page = false
 	end
+
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
