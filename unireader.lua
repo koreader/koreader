@@ -63,6 +63,7 @@ UniReader = {
 	cache_current_memsize = 0,
 	cache = {},
 	jump_stack = {},
+	toc = nil,
 }
 
 function UniReader:new(o)
@@ -98,10 +99,15 @@ end
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
+
 		local gamma = self.settings:readsetting("gamma")
 		if gamma then
 			self.globalgamma = gamma
 		end
+
+		local jumpstack = self.settings:readsetting("jumpstack")
+		self.jump_stack = jumpstack or {}
+
 		return true
 	end
 	return false
@@ -197,17 +203,21 @@ function UniReader:setzoom(page)
 			self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 			self.offset_y = 0
 		end
+		self.pan_by_page = false
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
 	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
+		self.pan_by_page = false
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
 	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
+		self.pan_by_page = false
 	end
+
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
@@ -243,7 +253,10 @@ function UniReader:setzoom(page)
 		self.pan_y = self.offset_y
 		self.pan_by_page = true
 	end
+
 	dc:setZoom(self.globalzoom)
+	self.globalzoom_orig = self.globalzoom
+
 	dc:setRotate(self.globalrotate);
 	dc:setOffset(self.offset_x, self.offset_y)
 	self.fullwidth, self.fullheight = page:getSize(dc)
@@ -287,30 +300,57 @@ function UniReader:show(no)
 	self.slot_visible = slot;
 end
 
-function UniReader:add_jump(pageno)
+--[[
+	@ pageno is the page you want to add to jump_stack
+--]]
+function UniReader:add_jump(pageno, notes)
 	local jump_item = nil
-	-- add current page to jump_stack if no in
+	local notes_to_add = notes 
+	if not notes_to_add then
+		-- no notes given, auto generate from TOC entry
+		notes_to_add = self:getTOCTitleByPage(self.pageno)
+		if notes_to_add ~= "" then
+			notes_to_add = "in "..notes_to_add
+		end
+	end
+	-- move pageno page to jump_stack top if already in
 	for _t,_v in ipairs(self.jump_stack) do
 		if _v.page == pageno then
 			jump_item = _v
 			table.remove(self.jump_stack, _t)
-		elseif _v.page == no then
-			-- the page we jumped to should not be show in stack
-			table.remove(self.jump_stack, _t)
+			-- if original notes is not empty, probably defined by users,
+			-- we use the original notes to overwrite auto generated notes
+			-- from TOC entry
+			if jump_item.notes ~= "" then
+				notes_to_add = jump_item.notes
+			end
+			jump_item.notes = notes or notes_to_add
+			break
 		end
 	end
-	-- create a new one if not found
+	-- create a new one if page not found in stack
 	if not jump_item then
 		jump_item = {
 			page = pageno,
 			datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			notes = notes_to_add,
 		}
 	end
-	-- insert at the start
+
+	-- insert item at the start
 	table.insert(self.jump_stack, 1, jump_item)
+
 	if #self.jump_stack > 10 then
 		-- remove the last element to keep the size less than 10
 		table.remove(self.jump_stack)
+	end
+end
+
+function UniReader:del_jump(pageno)
+	for _t,_v in ipairs(self.jump_stack) do
+		if _v.page == pageno then
+			table.remove(self.jump_stack, _t)
+		end
 	end
 end
 
@@ -320,13 +360,14 @@ function UniReader:goto(no)
 		return
 	end
 
-	-- for jump_stack
+	-- for jump_stack, distinguish jump from normal page turn
 	if self.pageno and math.abs(self.pageno - no) > 1 then
 		self:add_jump(self.pageno)
 	end
 
 	self.pageno = no
 	self:show(no)
+
 	if no < self.doc:getPages() then
 		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
 			-- pre-cache next page
@@ -366,13 +407,38 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+function UniReader:cleanUpTOCTitle(title)
+	return title:gsub("\13", "")
+end
+
+function UniReader:fillTOC()
+	self.toc = self.doc:getTOC()
+end
+
+function UniReader:getTOCTitleByPage(pageno)
+	if not self.toc then
+		-- build toc when needed.
+		self:fillTOC()
+	end
+	
+	for _k,_v in ipairs(self.toc) do
+		if _v.page >= pageno then
+			return self:cleanUpTOCTitle(_v.title)
+		end
+	end
+	return ""
+end
+
 function UniReader:showTOC()
-	toc = self.doc:getTOC()
+	if not self.toc then
+		-- build toc when needed.
+		self:fillTOC()
+	end
 	local menu_items = {}
 	-- build menu items
-	for _k,_v in ipairs(toc) do
+	for _k,_v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(_v.depth-1).._v.title)
+		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
@@ -381,7 +447,7 @@ function UniReader:showTOC()
 	}
 	item_no = toc_menu:choose(0, fb.bb:getHeight())
 	if item_no then
-		self:goto(toc[item_no].page)
+		self:goto(self.toc[item_no].page)
 	else
 		self:goto(self.pageno)
 	end
@@ -391,7 +457,7 @@ function UniReader:showJumpStack()
 	local menu_items = {}
 	for _k,_v in ipairs(self.jump_stack) do
 		table.insert(menu_items, 
-			_v.datetime.." -> Page ".._v.page)
+			_v.datetime.." -> Page ".._v.page.." ".._v.notes)
 	end
 	jump_menu = SelectMenu:new{
 		menu_title = "Jump Keeper      (current page: "..self.pageno..")", 
@@ -580,13 +646,16 @@ function UniReader:inputloop()
 		end
 	end
 
+	-- do clean up stuff
 	self:clearcache()
+	self.toc = nil
 	if self.doc ~= nil then
 		self.doc:close()
 	end
 	if self.settings ~= nil then
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
+		self.settings:savesetting("jumpstack", self.jump_stack)
 		self.settings:close()
 	end
 
