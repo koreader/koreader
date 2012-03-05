@@ -1,5 +1,5 @@
 /*
-    KindlePDFViewer: MuPDF abstraction for Lua
+    KindlePDFViewer: DjvuLibre abstraction for Lua
     Copyright (C) 2011 Hans-Werner Hilse <hilse@web.de>
 
     This program is free software: you can redistribute it and/or modify
