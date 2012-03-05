@@ -38,15 +38,15 @@ function openFile(filename)
 		if DJVUReader:open(filename) then
 			page_num = DJVUReader.settings:readsetting("last_page") or 1
 			DJVUReader:goto(tonumber(page_num))
-			DJVUReader:inputloop()
 			reader_settings:savesetting("lastfile", filename)
+			return DJVUReader:inputloop()
 		end
 	elseif file_type == "pdf" then
 		if PDFReader:open(filename,"") then -- TODO: query for password
 			page_num = PDFReader.settings:readsetting("last_page") or 1
 			PDFReader:goto(tonumber(page_num))
-			PDFReader:inputloop()
 			reader_settings:savesetting("lastfile", filename)
+			return PDFReader:inputloop()
 		end
 	end
 end
@@ -124,19 +124,19 @@ PDFReader:init()
 DJVUReader:init()
 
 -- display directory or open file
-local patharg = ARGV[optind] or reader_settings:readsetting("lastfile")
-if patharg and lfs.attributes(patharg, "mode") == "directory" then
+local patharg = reader_settings:readsetting("lastfile")
+if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
-	FileChooser:setPath(patharg)
+	FileChooser:setPath(ARGV[optind])
 	while running do
 		local file = FileChooser:choose(0,height)
 		if file ~= nil then
-			openFile(file)
+			running = openFile(file)
 		else
 			running = false
 		end
 	end
-elseif patharg then
+elseif patharg and lfs.attributes(patharg, "mode") == "file" then
 	openFile(patharg, optarg["p"])
 else
 	return showusage()

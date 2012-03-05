@@ -1,5 +1,5 @@
 /*
-    KindlePDFViewer: MuPDF abstraction for Lua
+    KindlePDFViewer: DjvuLibre abstraction for Lua
     Copyright (C) 2011 Hans-Werner Hilse <hilse@web.de>
 
     This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-int luaopen_pdf(lua_State *L);
+int luaopen_djvu(lua_State *L);
 
 #define True 1
 #endif

@@ -65,7 +65,7 @@ function FileChooser:readdir()
 		if lfs.attributes(self.path.."/"..f, "mode") == "directory" and f ~= "." and not (f==".." and self.path=="/") and not string.match(f, "^%.[^.]") then
 			--print(self.path.." -> adding: '"..f.."'")
 			table.insert(self.dirs, f)
-		elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$")then
+		elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$") then
 			table.insert(self.files, f)
 		end
 	end
