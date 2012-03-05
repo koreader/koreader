@@ -407,6 +407,10 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+function UniReader:cleanUpTOCTitle(title)
+	return title:gsub("\13", "")
+end
+
 function UniReader:fillTOC()
 	self.toc = self.doc:getTOC()
 end
@@ -419,8 +423,7 @@ function UniReader:getTOCTitleByPage(pageno)
 	
 	for _k,_v in ipairs(self.toc) do
 		if _v.page >= pageno then
-			--@TODO clean up special characters in title  05.03 2012
-			return _v.title
+			return self:cleanUpTOCTitle(_v.title)
 		end
 	end
 	return ""
@@ -435,7 +438,7 @@ function UniReader:showTOC()
 	-- build menu items
 	for _k,_v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(_v.depth-1).._v.title)
+		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
