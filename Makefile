@@ -59,7 +59,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
 	$(CC) -lm -ldl $(EMU_LDFLAGS) -lstdc++ \
 		kpdfview.o \
 		einkfb.o \
