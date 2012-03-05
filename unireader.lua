@@ -98,10 +98,15 @@ end
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
+
 		local gamma = self.settings:readsetting("gamma")
 		if gamma then
 			self.globalgamma = gamma
 		end
+
+		local jumpstack = self.settings:readsetting("jumpstack")
+		self.jump_stack = jumpstack or {}
+
 		return true
 	end
 	return false
@@ -594,6 +599,7 @@ function UniReader:inputloop()
 	if self.settings ~= nil then
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
+		self.settings:savesetting("jumpstack", self.jump_stack)
 		self.settings:close()
 	end
 

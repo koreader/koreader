@@ -35,7 +35,6 @@ longopts = {
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.(.+)"))
 	if file_type == "djvu" then
-		print "haha"
 		if DJVUReader:open(filename) then
 			page_num = DJVUReader.settings:readsetting("last_page") or 1
 			DJVUReader:goto(tonumber(page_num))
