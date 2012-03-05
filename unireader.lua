@@ -72,8 +72,39 @@ function UniReader:new(o)
 	return o
 end
 
+--[[ 
+	For a new specific reader,
+	you must always overwrite following two methods:
+
+	* self:init()
+	* self:open()
+
+	overwrite other methods if needed.
+--]]
 function UniReader:init()
 	print("empty initialization method!")
+end
+
+-- open a file and its settings store
+-- tips: you can use self:loadSettings in open() method.
+function UniReader:open(filename, password)
+	return false
+end
+
+
+
+--[ following are default methods ]--
+
+function UniReader:loadSettings(filename)
+	if self.doc ~= nil then
+		self.settings = DocSettings:open(filename)
+		local gamma = self.settings:readsetting("gamma")
+		if gamma then
+			self.globalgamma = gamma
+		end
+		return true
+	end
+	return false
 end
 
 -- guarantee that we have enough memory in cache
@@ -134,11 +165,6 @@ end
 function UniReader:clearcache()
 	self.cache = {}
 	self.cache_current_memsize = 0
-end
-
--- open a file and its settings store
-function UniReader:open(filename, password)
-	return false
 end
 
 -- set viewer state according to zoom state
