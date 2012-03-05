@@ -13,6 +13,10 @@ LFSDIR=luafilesystem
 
 CC:=arm-unknown-linux-gnueabi-gcc
 CXX:=arm-unknown-linux-gnueabi-g++
+ifdef SBOX_UNAME_MACHINE
+	CC:=gcc
+	CXX:=g++
+endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
@@ -26,18 +30,17 @@ ARM_CFLAGS:=-march=armv6
 # in that case.
 
 ifdef EMULATE_READER
-CC:=$(HOSTCC)
-CXX:=$(HOSTCXX)
-EMULATE_READER_W?=824
-EMULATE_READER_H?=1200
-EMU_CFLAGS?=$(shell sdl-config --cflags)
-EMU_CFLAGS+= -DEMULATE_READER \
-	     -DEMULATE_READER_W=$(EMULATE_READER_W) \
-	     -DEMULATE_READER_H=$(EMULATE_READER_H) \
-	
-EMU_LDFLAGS?=$(shell sdl-config --libs)
+	CC:=$(HOSTCC)
+	CXX:=$(HOSTCXX)
+	EMULATE_READER_W?=824
+	EMULATE_READER_H?=1200
+	EMU_CFLAGS?=$(shell sdl-config --cflags)
+	EMU_CFLAGS+= -DEMULATE_READER \
+		     -DEMULATE_READER_W=$(EMULATE_READER_W) \
+		     -DEMULATE_READER_H=$(EMULATE_READER_H) \	
+	EMU_LDFLAGS?=$(shell sdl-config --libs)
 else
-CFLAGS+= $(ARM_CFLAGS)
+	CFLAGS+= $(ARM_CFLAGS)
 endif
 
 # standard includes
@@ -138,7 +141,7 @@ endif
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS) $(DJVULIBS)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS)
 
 INSTALL_DIR=kindlepdfviewer
 

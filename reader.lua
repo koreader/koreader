@@ -38,21 +38,22 @@ function openFile(filename)
 		if DJVUReader:open(filename) then
 			page_num = DJVUReader.settings:readsetting("last_page") or 1
 			DJVUReader:goto(tonumber(page_num))
+			reader_settings:savesetting("lastfile", filename)
 			return DJVUReader:inputloop()
 		end
 	elseif file_type == "pdf" then
 		if PDFReader:open(filename,"") then -- TODO: query for password
 			page_num = PDFReader.settings:readsetting("last_page") or 1
 			PDFReader:goto(tonumber(page_num))
+			reader_settings:savesetting("lastfile", filename)
 			return PDFReader:inputloop()
 		end
 	end
 end
 
-optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:d:", longopts)
-if optarg["h"] or ARGV[optind] == nil then
-	print("usage: ./reader.lua [OPTION] ... DOCUMENT.PDF")
-	print("Read PDFs on your E-Ink reader")
+function showusage()
+	print("usage: ./reader.lua [OPTION] ... path")
+	print("Read PDFs and DJVUs on your E-Ink reader")
 	print("")
 	print("-p, --password=PASSWORD   set password for reading PDF document")
 	print("-g, --goto=page           start reading on page")
@@ -63,12 +64,19 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("                          \"emu\" (DXG emulation)")
 	print("-h, --help                show this usage help")
 	print("")
-	print("If you give the name of a directory instead of a path, a file")
-	print("chooser will show up and let you select a PDF file")
+	print("If you give the name of a directory instead of a file path, a file")
+	print("chooser will show up and let you select a PDF|DJVU file")
+	print("")
+	print("If you don't pass any path, the last viewed document will be opened")
 	print("")
 	print("This software is licensed under the GPLv3.")
 	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
 	return
+end
+
+optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:d:", longopts)
+if optarg["h"] then
+	return showusage()
 end
 
 
@@ -116,7 +124,8 @@ PDFReader:init()
 DJVUReader:init()
 
 -- display directory or open file
-if lfs.attributes(ARGV[optind], "mode") == "directory" then
+local patharg = reader_settings:readsetting("lastfile")
+if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
@@ -127,8 +136,10 @@ if lfs.attributes(ARGV[optind], "mode") == "directory" then
 			running = false
 		end
 	end
+elseif patharg and lfs.attributes(patharg, "mode") == "file" then
+	openFile(patharg, optarg["p"])
 else
-	openFile(ARGV[optind], optarg["p"])
+	return showusage()
 end
 
 
