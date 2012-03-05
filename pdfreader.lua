@@ -51,7 +51,8 @@ PDFReader = {
 	settings = nil,
 
 	-- we will use this one often, so keep it "static":
-	nulldc = pdf.newDC(),
+	nulldc = nil,
+	newDC = nil,
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -125,7 +126,22 @@ end
 
 -- open a PDF file and its settings store
 function PDFReader:open(filename, password)
-	self.doc = pdf.openDocument(filename, password or "")
+	if string.match(filename, ".+%.[dD][jJ][vV][uU]$") then
+		self.doc = djvu.openDocument(filename)
+		self.newDC = function()
+			print("djvu.newDC")
+			return djvu.newDC()
+		end
+	else
+		self.doc = pdf.openDocument(filename, password or "")
+		self.newDC = function()
+			print("pdf.newDC")
+		 	return pdf.newDC()
+		end
+	end
+
+	self.nulldc = self.newDC();
+
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
 		local gamma = self.settings:readsetting("gamma")
@@ -139,7 +155,7 @@ end
 
 -- set viewer state according to zoom state
 function PDFReader:setzoom(page)
-	local dc = pdf.newDC()
+	local dc = self.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()

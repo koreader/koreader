@@ -4,6 +4,7 @@ LUADIR=lua
 MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
+DJVUDIR=djvulibre
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
@@ -11,7 +12,9 @@ LFSDIR=luafilesystem
 # set this to your ARM cross compiler:
 
 CC:=arm-unknown-linux-gnueabi-gcc
+CXX:=arm-unknown-linux-gnueabi-g++
 HOSTCC:=gcc
+HOSTCXX:=g++
 
 CFLAGS:=-O3
 ARM_CFLAGS:=-march=armv6
@@ -24,6 +27,7 @@ ARM_CFLAGS:=-march=armv6
 
 ifdef EMULATE_READER
 CC:=$(HOSTCC)
+CXX:=$(HOSTCXX)
 EMULATE_READER_W?=824
 EMULATE_READER_H?=1200
 EMU_CFLAGS?=$(shell sdl-config --cflags)
@@ -46,6 +50,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
+DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 	       	$(MUPDFLIBDIR)/libjpeg.a \
 	       	$(MUPDFLIBDIR)/libopenjpeg.a \
@@ -54,8 +59,8 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB)
-	$(CC) -lm -ldl $(EMU_LDFLAGS) \
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OBJS) lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
+	$(CC) -lm -ldl $(EMU_LDFLAGS) -lstdc++ \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -67,6 +72,8 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o $(SQLITE3OB
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
+		djvu.o \
+		$(DJVULIBS) \
 		-o kpdfview
 
 einkfb.o input.o: %.o: %.c
@@ -78,6 +85,9 @@ ft.o: %.o: %.c
 kpdfview.o pdf.o blitbuffer.o util.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
+djvu.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
+
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
@@ -85,10 +95,12 @@ fetchthirdparty:
 	-rm -Rf mupdf
 	-rm -Rf lua lua-5.1.4*
 	-rm -Rf luafilesystem*
+	-rm -Rf $(DJVUDIR)
 	git clone git://git.ghostscript.com/mupdf.git
 	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
 	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 	git clone https://github.com/keplerproject/luafilesystem.git
+	git clone git://djvu.git.sourceforge.net/gitroot/djvu/djvulibre.git
 
 clean:
 	-rm -f *.o kpdfview
@@ -96,6 +108,7 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
+	-rm -rf $(DJVUDIR)/build
 	-rm $(MUPDFDIR)/fontdump.host
 	-rm $(MUPDFDIR)/cmapdump.host
 
@@ -113,10 +126,19 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
 	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
 
+$(DJVULIBS):
+	-mkdir $(DJVUDIR)/build 
+ifdef EMULATE_READER
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
+else
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=arm-kindle-linux-gnueabi
+endif
+	make -C $(DJVUDIR)/build
+
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIBS) $(DJVULIBS)
 
 INSTALL_DIR=kindlepdfviewer
 

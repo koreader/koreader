@@ -46,7 +46,7 @@ function FileSearcher:readdir()
 				if lfs.attributes(d.."/"..f, "mode") == "directory"
 				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
 					table.insert(new_dirs, d.."/"..f)
-				elseif string.match(f, ".+%.[pP][dD][fF]$") then
+				elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$") then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--print("file:"..d.."/"..f)
