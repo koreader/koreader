@@ -11,7 +11,8 @@ UniReader = {
 	ZOOM_FIT_TO_CONTENT = -4,
 	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
 	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
-	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -7,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -7,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -8,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -43,7 +44,8 @@ UniReader = {
 	pan_by_page = false, -- using shift_[xy] or width/height
 	pan_x = 0, -- top-left offset of page when pan activated
 	pan_y = 0,
-	pan_margin = 20,
+	pan_margin = 20, -- horizontal margin for two-column zoom
+	pan_overlap_vertical = 30,
 
 	-- the document:
 	doc = nil,
@@ -241,12 +243,15 @@ function UniReader:setzoom(page)
 			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
 			self.offset_y = -1 * y0 * self.globalzoom
 		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then
-		self.globalzoom = width / (x1 - x0 + self.pan_margin)
-		self.offset_x = -1 * x0 * self.globalzoom * 2 + self.pan_margin
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH
+		or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
+		local margin = self.pan_margin
+		if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
+		self.globalzoom = width / (x1 - x0 + margin)
+		self.offset_x = -1 * x0 * self.globalzoom * 2 + margin
 		self.globalzoom = height / (y1 - y0)
-		self.offset_y = -1 * y0 * self.globalzoom * 2 + self.pan_margin
-		self.globalzoom = width / (x1 - x0 + self.pan_margin) * 2
+		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
+		self.globalzoom = width / (x1 - x0 + margin) * 2
 		print("column mode offset:"..self.offset_x.."*"..self.offset_y.." zoom:"..self.globalzoom);
 		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
@@ -539,7 +544,11 @@ function UniReader:inputloop()
 					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
 				end
 			elseif ev.code == KEY_F then
-				self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
+				if Keys.shiftmode then
+					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
+				else
+					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+				end
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
@@ -570,7 +579,7 @@ function UniReader:inputloop()
 					y = self.shift_y / 5
 				elseif self.pan_by_page then
 					x = width;
-					y = height - self.pan_margin; -- overlap for lines which didn't fit
+					y = height - self.pan_overlap_vertical; -- overlap for lines which didn't fit
 				else
 					x = self.shift_x
 					y = self.shift_y
