@@ -125,6 +125,18 @@ static int getNumberOfPages(lua_State *L) {
 	return 1;
 }
 
+/* not supported yet, so return empty table */
+static int getTableOfContent(lua_State *L) {
+	/*int count = 1;*/
+
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	/*ol = djvu_load_outline(doc->doc_ref);*/
+
+	lua_newtable(L);
+	/*walkTableOfContent(L, ol, &count, 0);*/
+	return 1;
+}
+
 static int newDrawContext(lua_State *L) {
 	int rotate = luaL_optint(L, 1, 0);
 	double zoom = luaL_optnumber(L, 2, (double) 1.0);
@@ -359,7 +371,7 @@ static const struct luaL_reg djvu_func[] = {
 static const struct luaL_reg djvudocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
-	/*{"getTOC", getTableOfContent},*/
+	{"getTOC", getTableOfContent},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
