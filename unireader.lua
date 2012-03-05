@@ -299,30 +299,41 @@ function UniReader:show(no)
 	self.slot_visible = slot;
 end
 
+--[[
+	@ pageno is the page you want to add to jump_stack
+--]]
 function UniReader:add_jump(pageno)
 	local jump_item = nil
-	-- add current page to jump_stack if no in
+	-- move pageno page to jump_stack to jump_stack top if already in
 	for _t,_v in ipairs(self.jump_stack) do
 		if _v.page == pageno then
 			jump_item = _v
 			table.remove(self.jump_stack, _t)
-		elseif _v.page == no then
-			-- the page we jumped to should not be show in stack
-			table.remove(self.jump_stack, _t)
+			break
 		end
 	end
-	-- create a new one if not found
+	-- create a new one if page not found in stack
 	if not jump_item then
 		jump_item = {
 			page = pageno,
 			datetime = os.date("%Y-%m-%d %H:%M:%S"),
 		}
 	end
-	-- insert at the start
+
+	-- insert item at the start
 	table.insert(self.jump_stack, 1, jump_item)
+
 	if #self.jump_stack > 10 then
 		-- remove the last element to keep the size less than 10
 		table.remove(self.jump_stack)
+	end
+end
+
+function UniReader:del_jump(pageno)
+	for _t,_v in ipairs(self.jump_stack) do
+		if _v.page == pageno then
+			table.remove(self.jump_stack, _t)
+		end
 	end
 end
 
@@ -332,13 +343,16 @@ function UniReader:goto(no)
 		return
 	end
 
-	-- for jump_stack
+	-- for jump_stack, distinguish jump from normal page turn
 	if self.pageno and math.abs(self.pageno - no) > 1 then
+		-- the page we jumped to should not be shown in stack, remove it
+		self:del_jump(no)
 		self:add_jump(self.pageno)
 	end
 
 	self.pageno = no
 	self:show(no)
+
 	if no < self.doc:getPages() then
 		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
 			-- pre-cache next page
