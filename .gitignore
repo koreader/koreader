@@ -4,7 +4,9 @@ lua-*
 lsqlite3*
 sqlite-amalgamation*
 mupdf/
+djvulibre/
 luafilesystem/
+.reader.kpdfview.lua
 kpdfview
 
 
