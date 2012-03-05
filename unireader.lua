@@ -63,6 +63,7 @@ UniReader = {
 	cache_current_memsize = 0,
 	cache = {},
 	jump_stack = {},
+	toc = nil,
 }
 
 function UniReader:new(o)
@@ -302,13 +303,28 @@ end
 --[[
 	@ pageno is the page you want to add to jump_stack
 --]]
-function UniReader:add_jump(pageno)
+function UniReader:add_jump(pageno, notes)
 	local jump_item = nil
-	-- move pageno page to jump_stack to jump_stack top if already in
+	local notes_to_add = notes 
+	if not notes_to_add then
+		-- no notes given, auto generate from TOC entry
+		notes_to_add = self:getTOCTitleByPage(self.pageno)
+		if notes_to_add ~= "" then
+			notes_to_add = "in "..notes_to_add
+		end
+	end
+	-- move pageno page to jump_stack top if already in
 	for _t,_v in ipairs(self.jump_stack) do
 		if _v.page == pageno then
 			jump_item = _v
 			table.remove(self.jump_stack, _t)
+			-- if original notes is not empty, probably defined by users,
+			-- we use the original notes to overwrite auto generated notes
+			-- from TOC entry
+			if jump_item.notes ~= "" then
+				notes_to_add = jump_item.notes
+			end
+			jump_item.notes = notes or notes_to_add
 			break
 		end
 	end
@@ -317,6 +333,7 @@ function UniReader:add_jump(pageno)
 		jump_item = {
 			page = pageno,
 			datetime = os.date("%Y-%m-%d %H:%M:%S"),
+			notes = notes_to_add,
 		}
 	end
 
@@ -345,8 +362,6 @@ function UniReader:goto(no)
 
 	-- for jump_stack, distinguish jump from normal page turn
 	if self.pageno and math.abs(self.pageno - no) > 1 then
-		-- the page we jumped to should not be shown in stack, remove it
-		self:del_jump(no)
 		self:add_jump(self.pageno)
 	end
 
@@ -392,11 +407,33 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+function UniReader:fillTOC()
+	self.toc = self.doc:getTOC()
+end
+
+function UniReader:getTOCTitleByPage(pageno)
+	if not self.toc then
+		-- build toc when needed.
+		self:fillTOC()
+	end
+	
+	for _k,_v in ipairs(self.toc) do
+		if _v.page >= pageno then
+			--@TODO clean up special characters in title  05.03 2012
+			return _v.title
+		end
+	end
+	return ""
+end
+
 function UniReader:showTOC()
-	toc = self.doc:getTOC()
+	if not self.toc then
+		-- build toc when needed.
+		self:fillTOC()
+	end
 	local menu_items = {}
 	-- build menu items
-	for _k,_v in ipairs(toc) do
+	for _k,_v in ipairs(self.toc) do
 		table.insert(menu_items,
 		("        "):rep(_v.depth-1).._v.title)
 	end
@@ -407,7 +444,7 @@ function UniReader:showTOC()
 	}
 	item_no = toc_menu:choose(0, fb.bb:getHeight())
 	if item_no then
-		self:goto(toc[item_no].page)
+		self:goto(self.toc[item_no].page)
 	else
 		self:goto(self.pageno)
 	end
@@ -417,7 +454,7 @@ function UniReader:showJumpStack()
 	local menu_items = {}
 	for _k,_v in ipairs(self.jump_stack) do
 		table.insert(menu_items, 
-			_v.datetime.." -> Page ".._v.page)
+			_v.datetime.." -> Page ".._v.page.." ".._v.notes)
 	end
 	jump_menu = SelectMenu:new{
 		menu_title = "Jump Keeper      (current page: "..self.pageno..")", 
@@ -606,7 +643,9 @@ function UniReader:inputloop()
 		end
 	end
 
+	-- do clean up stuff
 	self:clearcache()
+	self.toc = nil
 	if self.doc ~= nil then
 		self.doc:close()
 	end
