@@ -568,8 +568,10 @@ function UniReader:inputloop()
 			elseif ev.code == KEY_K then
 				self:setrotate( self.globalrotate - 10 )
 			elseif ev.code == KEY_HOME then
-				-- signal quit
-				keep_running = false
+				if Keys.shiftmode or Keys.altmode then
+					-- signal quit
+					keep_running = false
+				end
 				break
 			end
 
