@@ -117,6 +117,7 @@ static int closeDocument(lua_State *L) {
 
 		doc->context = NULL;
 	}
+	return 0;
 }
 
 static int getNumberOfPages(lua_State *L) {
