@@ -19,6 +19,7 @@
 
 require "alt_getopt"
 require "pdfreader"
+require "djvureader"
 require "filechooser"
 require "settings"
 
@@ -30,6 +31,25 @@ longopts = {
 	device = "d",
 	help = "h"
 }
+
+function openFile(filename)
+	local file_type = string.lower(string.match(filename, ".+%.(.+)"))
+	if file_type == "djvu" then
+		print "haha"
+		if DJVUReader:open(filename) then
+			page_num = DJVUReader.settings:readsetting("last_page") or 1
+			DJVUReader:goto(tonumber(page_num))
+			DJVUReader:inputloop()
+		end
+	elseif file_type == "pdf" then
+		if PDFReader:open(filename,"") then -- TODO: query for password
+			page_num = PDFReader.settings:readsetting("last_page") or 1
+			PDFReader:goto(tonumber(page_num))
+			PDFReader:inputloop()
+		end
+	end
+end
+
 optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:d:", longopts)
 if optarg["h"] or ARGV[optind] == nil then
 	print("usage: ./reader.lua [OPTION] ... DOCUMENT.PDF")
@@ -51,6 +71,7 @@ if optarg["h"] or ARGV[optind] == nil then
 	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
 	return
 end
+
 
 if optarg["d"] == "k3" then
 	-- for now, the only difference is the additional input device
@@ -91,26 +112,26 @@ if r_cfont ~=nil then
 	FontChooser.cfont = r_cfont
 end
 
+-- initialize specific readers
+PDFReader:init()
+DJVUReader:init()
 
+-- display directory or open file
 if lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
-		local pdffile = FileChooser:choose(0,height)
-		if pdffile ~= nil then
-			if PDFReader:open(pdffile,"") then -- TODO: query for password
-				PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
-				running = PDFReader:inputloop()
-			end
+		local file = FileChooser:choose(0,height)
+		if file ~= nil then
+			openFile(file)
 		else
 			running = false
 		end
 	end
 else
-	PDFReader:open(ARGV[optind], optarg["p"])
-	PDFReader:goto(tonumber(optarg["g"]) or tonumber(PDFReader.settings:readsetting("last_page") or 1))
-	PDFReader:inputloop()
+	openFile(ARGV[optind], optarg["p"])
 end
+
 
 -- save reader settings
 reader_settings:savesetting("cfont", FontChooser.cfont)

@@ -261,12 +261,8 @@ function FileSearcher:choose(ypos, height, keywords)
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				file_entry = self.result[perpage*(self.page-1)+self.current]
-				file_path = file_entry.dir .. "/" .. file_entry.name
-
-				if PDFReader:open(file_path,"") then -- TODO: query for password
-					PDFReader:goto(tonumber(PDFReader.settings:readsetting("last_page") or 1))
-					PDFReader:inputloop()
-				end
+				file_full_path = file_entry.dir .. "/" .. file_entry.name
+				openFile(file_full_path)
 
 				pagedirty = true
 			elseif ev.code == KEY_BACK then
