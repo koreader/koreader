@@ -581,31 +581,32 @@ function UniReader:inputloop()
 				local old_offset_y = self.offset_y
 
 				if ev.code == KEY_FW_LEFT then
+					print("# KEY_FW_LEFT "..self.offset_x.." + "..x.." > 0");
 					self.offset_x = self.offset_x + x
-					if self.offset_x > 0 then
-						self.offset_x = 0
-						if self.pan_by_page and self.pageno > 1 then
+					if self.pan_by_page then
+						if self.offset_x > 0 and self.pageno > 1 then
 							self.offset_x = self.pan_x
 							self.offset_y = self.min_offset_y -- bottom
 							self:goto(self.pageno - 1)
+						else
+							self.offset_y = self.min_offset_y
 						end
-					end
-					if self.pan_by_page then
-						self.offset_y = self.min_offset_y
+					elseif self.offset_x > 0 then
+						self.offset_x = 0
 					end
 				elseif ev.code == KEY_FW_RIGHT then
-					print("# FW RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x);
+					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x);
 					self.offset_x = self.offset_x - x
-					if self.offset_x < self.min_offset_x then
-						self.offset_x = self.min_offset_x
-						if self.pan_by_page and self.pageno < self.doc:getPages() then
+					if self.pan_by_page then
+						if self.offset_x < self.min_offset_x - self.pan_margin and self.pageno < self.doc:getPages() then
 							self.offset_x = self.pan_x
 							self.offset_y = self.pan_y
 							self:goto(self.pageno + 1)
+						else
+							self.offset_y = self.pan_y
 						end
-					end
-					if self.pan_by_page then
-						self.offset_y = self.pan_y
+					elseif self.offset_x < self.min_offset_x then
+						self.offset_x = self.min_offset_x
 					end
 				elseif ev.code == KEY_FW_UP then
 					self.offset_y = self.offset_y + y
