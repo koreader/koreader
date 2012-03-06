@@ -66,6 +66,8 @@ UniReader = {
 	cache = {},
 	jump_stack = {},
 	toc = nil,
+
+	bbox = nil, -- override getUsedBBox
 }
 
 function UniReader:new(o)
@@ -192,6 +194,14 @@ function UniReader:setzoom(page)
 	if x1 > pwidth then x1 = pwidth end
 	if y0 < 0 then y0 = 0 end
 	if y1 > pheight then y1 = pheight end
+
+	if self.bbox then
+		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
+		x0 = self.bbox["x0"]
+		y0 = self.bbox["y0"]
+		x1 = self.bbox["x1"]
+		y1 = self.bbox["y1"]
+	end
 
 	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 
@@ -573,6 +583,14 @@ function UniReader:inputloop()
 					keep_running = false
 				end
 				break
+			elseif ev.code == KEY_Z then
+				local bbox = {}
+				bbox["x0"] = - self.offset_x / self.globalzoom
+				bbox["y0"] = - self.offset_y / self.globalzoom
+				bbox["x1"] = bbox["x0"] + width / self.globalzoom
+				bbox["y1"] = bbox["y0"] + height / self.globalzoom
+				self.bbox = bbox
+				print("# bbox " .. dump(self.bbox)) 
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
