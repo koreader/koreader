@@ -16,6 +16,9 @@ SelectMenu = {
 	ffsize = 16,
 	fface = nil,
 	ffhash = nil,
+	-- font for item shortcut
+	sface = freetype.newBuiltinFace("mono", 22),
+	sfhash = "mono22",
 
 	-- title height
 	title_H = 40,
@@ -29,6 +32,11 @@ SelectMenu = {
 	item_array = {},
 	items = 14,
 
+	item_shortcut = {
+		"C", "V", "B", "N", "M",
+		"D", "F", "G", "H", "J", "K", "L",
+		"E", "R", "T", "Y", "U", "I", "O", "P",
+		},
 	-- state buffer
 	page = 1,
 	current = 1,
@@ -60,6 +68,14 @@ function SelectMenu:updateFont()
 	if self.ffhash ~= FontChooser.ffont..self.ffsize then
 		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
 		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
+
+function SelectMenu:getItemIndexByShortCut(c, perpage)
+	for _k,_v in ipairs(self.item_shortcut) do
+		if _v == c then
+			return (perpage * (self.page - 1) + _k)
+		end
 	end
 end
 
@@ -107,9 +123,9 @@ function SelectMenu:choose(ypos, height)
 			markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
-			fb.bb:paintRect(30, ypos + 10, fb.bb:getWidth() - 60, self.title_H, 5)
+			fb.bb:paintRect(5, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
 			--x = fb.bb:getWidth() - 260 -- move text to the right
-			x = 40
+			x = 20
 			y = ypos + self.title_H
 			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
 				self.menu_title, true)
@@ -130,7 +146,10 @@ function SelectMenu:choose(ypos, height)
 					local i = (self.page - 1) * perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+						blitbuffer.paintBorder(fb.bb, 5, y - 22, 29, 29, 2, 15)
+						renderUtf8Text(fb.bb, 13, y, self.sface, self.fhash,
+							self.item_shortcut[c], true)
+						renderUtf8Text(fb.bb, 45, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
 				end
@@ -147,15 +166,15 @@ function SelectMenu:choose(ypos, height)
 			if not pagedirty then
 				if self.oldcurrent > 0 then
 					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 8
-					fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 0)
-					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+					fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 0)
+					fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
 				end
 			end
 			-- draw new marker line
 			y = ypos + self.title_H + (self.spacing * self.current) + 8
-			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
+			fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 15)
 			if not pagedirty then
-				fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+				fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
 			end
 			self.oldcurrent = self.current
 			markerdirty = false
@@ -198,6 +217,46 @@ function SelectMenu:choose(ypos, height)
 				else
 					return (perpage*(self.page-1) + self.current)
 				end
+			elseif ev.code == KEY_B then
+				return self:getItemIndexByShortCut("B", perpage)
+			elseif ev.code == KEY_C then
+				return self:getItemIndexByShortCut("C", perpage)
+			elseif ev.code == KEY_D then
+				return self:getItemIndexByShortCut("D", perpage)
+			elseif ev.code == KEY_E then
+				return self:getItemIndexByShortCut("E", perpage)
+			elseif ev.code == KEY_F then
+				return self:getItemIndexByShortCut("F", perpage)
+			elseif ev.code == KEY_G then
+				return self:getItemIndexByShortCut("G", perpage)
+			elseif ev.code == KEY_H then
+				return self:getItemIndexByShortCut("H", perpage)
+			elseif ev.code == KEY_I then
+				return self:getItemIndexByShortCut("I", perpage)
+			elseif ev.code == KEY_J then
+				return self:getItemIndexByShortCut("J", perpage)
+			elseif ev.code == KEY_K then
+				return self:getItemIndexByShortCut("K", perpage)
+			elseif ev.code == KEY_L then
+				return self:getItemIndexByShortCut("L", perpage)
+			elseif ev.code == KEY_M then
+				return self:getItemIndexByShortCut("M", perpage)
+			elseif ev.code == KEY_N then
+				return self:getItemIndexByShortCut("N", perpage)
+			elseif ev.code == KEY_O then
+				return self:getItemIndexByShortCut("O", perpage)
+			elseif ev.code == KEY_P then
+				return self:getItemIndexByShortCut("P", perpage)
+			elseif ev.code == KEY_R then
+				return self:getItemIndexByShortCut("R", perpage)
+			elseif ev.code == KEY_T then
+				return self:getItemIndexByShortCut("T", perpage)
+			elseif ev.code == KEY_U then
+				return self:getItemIndexByShortCut("U", perpage)
+			elseif ev.code == KEY_V then
+				return self:getItemIndexByShortCut("V", perpage)
+			elseif ev.code == KEY_Y then
+				return self:getItemIndexByShortCut("Y", perpage)
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
