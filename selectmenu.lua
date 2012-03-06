@@ -16,6 +16,9 @@ SelectMenu = {
 	ffsize = 16,
 	fface = nil,
 	ffhash = nil,
+	-- font for item shortcut
+	sface = freetype.newBuiltinFace("mono", 22),
+	sfhash = "mono22",
 
 	-- title height
 	title_H = 40,
@@ -27,8 +30,14 @@ SelectMenu = {
 	menu_title = "None Titled",
 	no_item_msg = "No items found.",
 	item_array = {},
-	items = 14,
+	items = 0,
 
+	item_shortcuts = {
+		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
+		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
+		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Ent",
+		},
+	last_shortcut = 0,
 	-- state buffer
 	page = 1,
 	current = 1,
@@ -43,6 +52,10 @@ function SelectMenu:new(o)
 	o.page = 1
 	o.current = 1
 	o.oldcurrent = 0
+	-- increase spacing for DXG so we don't have more than 30 shortcuts
+	if fb.bb:getHeight() == 1200 then
+		o.spacing = 37
+	end
 	return o
 end
 
@@ -60,6 +73,15 @@ function SelectMenu:updateFont()
 	if self.ffhash ~= FontChooser.ffont..self.ffsize then
 		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
 		self.ffhash = FontChooser.ffont..self.ffsize
+	end
+end
+
+function SelectMenu:getItemIndexByShortCut(c, perpage)
+	if c == nil then return end -- unused key
+	for _k,_v in ipairs(self.item_shortcuts) do
+		if _v == c and _k <= self.last_shortcut then
+			return (perpage * (self.page - 1) + _k)
+		end
 	end
 end
 
@@ -101,15 +123,16 @@ function SelectMenu:choose(ypos, height)
 		end
 	end
 
+	self.last_shortcut = 0
 
 	while true do
 		if pagedirty then
 			markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
-			fb.bb:paintRect(30, ypos + 10, fb.bb:getWidth() - 60, self.title_H, 5)
-			--x = fb.bb:getWidth() - 260 -- move text to the right
-			x = 40
+			fb.bb:paintRect(10, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
+
+			x = 20
 			y = ypos + self.title_H
 			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
 				self.menu_title, true)
@@ -130,7 +153,24 @@ function SelectMenu:choose(ypos, height)
 					local i = (self.page - 1) * perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+
+						-- paint shortcut indications
+						if c <= 10 or c > 20 then
+							blitbuffer.paintBorder(fb.bb, 10, y-22, 29, 29, 2, 15)
+						else
+							fb.bb:paintRect(10, y-22, 29, 29, 3)
+						end
+						if self.item_shortcuts[c] ~= nil and string.len(self.item_shortcuts[c]) == 3 then
+							renderUtf8Text(fb.bb, 13, y, self.fface, self.ffhash,
+								self.item_shortcuts[c], true)
+						else
+							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
+								self.item_shortcuts[c], true)
+						end
+
+						self.last_shortcut = c
+
+						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
 				end
@@ -147,15 +187,15 @@ function SelectMenu:choose(ypos, height)
 			if not pagedirty then
 				if self.oldcurrent > 0 then
 					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 8
-					fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 0)
-					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+					fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 0)
+					fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
 				end
 			end
 			-- draw new marker line
 			y = ypos + self.title_H + (self.spacing * self.current) + 8
-			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
+			fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 15)
 			if not pagedirty then
-				fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+				fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
 			end
 			self.oldcurrent = self.current
 			markerdirty = false
@@ -169,6 +209,7 @@ function SelectMenu:choose(ypos, height)
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			local selected = nil
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
@@ -192,14 +233,32 @@ function SelectMenu:choose(ypos, height)
 					self.current = 1
 					markerdirty = true
 				end
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
+			elseif ev.code == KEY_FW_PRESS or ev.code == KEY_ENTER and self.last_shortcut < 30 then
 				if self.items == 0 then
 					return nil
 				else
 					return (perpage*(self.page-1) + self.current)
 				end
+			elseif ev.code >= KEY_Q and ev.code <= KEY_P then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Q + 1 ], perpage)
+			elseif ev.code >= KEY_A and ev.code <= KEY_L then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_A + 11], perpage)
+			elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Z + 21], perpage)
+			elseif ev.code == KEY_DEL then
+				selected = self:getItemIndexByShortCut("Del", perpage)
+			elseif ev.code == KEY_DOT then
+				selected = self:getItemIndexByShortCut(".", perpage)
+			elseif ev.code == KEY_SYM or ev.code == KEY_SLASH then -- DXG has slash after dot
+				selected = self:getItemIndexByShortCut("Sym", perpage)
+			elseif ev.code == KEY_ENTER then
+				selected = self:getItemIndexByShortCut("Ent", perpage)
 			elseif ev.code == KEY_BACK then
 				return nil
+			end
+			if selected ~= nil then
+				print("# selected "..selected)
+				return selected
 			end
 		end
 	end

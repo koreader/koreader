@@ -575,6 +575,15 @@ function UniReader:inputloop()
 				break
 			end
 
+			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
+			if ev.code == KEY_FW_LEFT
+			or ev.code == KEY_FW_RIGHT
+			or ev.code == KEY_FW_UP
+			or ev.code == KEY_FW_DOWN
+			then
+				self.globalzoommode = self.ZOOM_BY_VALUE
+			end
+
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
 				local x
 				local y

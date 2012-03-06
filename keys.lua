@@ -166,6 +166,12 @@ function set_emu_keycodes()
 	KEY_N = 57
 	KEY_M = 58
 
+	KEY_DOT = 60
+	KEY_SLASH = 61
+
+	KEY_AA = 105 -- right alt
+	KEY_SYM = 62 -- right shift
+
 	KEY_SHIFT = 50 -- left shift
 	KEY_ALT = 64   -- left alt
 	KEY_VPLUS = 95  -- F11
