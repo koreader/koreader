@@ -33,9 +33,8 @@ SelectMenu = {
 	items = 14,
 
 	item_shortcuts = {
-		"C", "V", "B", "N", "M",
-		"D", "F", "G", "H", "J", "K", "L",
-		"E", "R", "T", "Y", "U", "I", "O", "P",
+		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
+		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
 		},
 	-- state buffer
 	page = 1,
@@ -146,9 +145,21 @@ function SelectMenu:choose(ypos, height)
 					local i = (self.page - 1) * perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						blitbuffer.paintBorder(fb.bb, 10, y - 22, 29, 29, 2, 15)
-						renderUtf8Text(fb.bb, 18, y, self.sface, self.fhash,
-							self.item_shortcuts[c], true)
+
+						-- paint shortcut indications
+						if c <= 10 then
+							blitbuffer.paintBorder(fb.bb, 10, y-22, 29, 29, 2, 15)
+						else
+							fb.bb:paintRect(10, y-22, 29, 29, 3)
+						end
+						if self.item_shortcuts[c] == "Del" then
+							renderUtf8Text(fb.bb, 13, y, self.fface, self.ffhash,
+								self.item_shortcuts[c], true)
+						else
+							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
+								self.item_shortcuts[c], true)
+						end
+
 						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
@@ -217,10 +228,10 @@ function SelectMenu:choose(ypos, height)
 				else
 					return (perpage*(self.page-1) + self.current)
 				end
-			elseif ev.code == KEY_B then
-				return self:getItemIndexByShortCut("B", perpage)
-			elseif ev.code == KEY_C then
-				return self:getItemIndexByShortCut("C", perpage)
+			elseif ev.code == KEY_Q then
+				return self:getItemIndexByShortCut("Q", perpage)
+			elseif ev.code == KEY_W then
+				return self:getItemIndexByShortCut("W", perpage)
 			elseif ev.code == KEY_D then
 				return self:getItemIndexByShortCut("D", perpage)
 			elseif ev.code == KEY_E then
@@ -239,10 +250,10 @@ function SelectMenu:choose(ypos, height)
 				return self:getItemIndexByShortCut("K", perpage)
 			elseif ev.code == KEY_L then
 				return self:getItemIndexByShortCut("L", perpage)
-			elseif ev.code == KEY_M then
-				return self:getItemIndexByShortCut("M", perpage)
-			elseif ev.code == KEY_N then
-				return self:getItemIndexByShortCut("N", perpage)
+			elseif ev.code == KEY_A then
+				return self:getItemIndexByShortCut("A", perpage)
+			elseif ev.code == KEY_S then
+				return self:getItemIndexByShortCut("S", perpage)
 			elseif ev.code == KEY_O then
 				return self:getItemIndexByShortCut("O", perpage)
 			elseif ev.code == KEY_P then
@@ -253,10 +264,10 @@ function SelectMenu:choose(ypos, height)
 				return self:getItemIndexByShortCut("T", perpage)
 			elseif ev.code == KEY_U then
 				return self:getItemIndexByShortCut("U", perpage)
-			elseif ev.code == KEY_V then
-				return self:getItemIndexByShortCut("V", perpage)
 			elseif ev.code == KEY_Y then
 				return self:getItemIndexByShortCut("Y", perpage)
+			elseif ev.code == KEY_DEL then
+				return self:getItemIndexByShortCut("Del", perpage)
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
