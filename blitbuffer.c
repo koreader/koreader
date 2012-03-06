@@ -302,7 +302,9 @@ static int paintRect(lua_State *L) {
 	}
 
 	if(x & 1) {
-		/* this will render the leftmost column */
+		/* This will render the leftmost column
+		 * in the case when x is odd. After this,
+		 * x will become even. */
 		dstptr = (uint8_t*)(dst->data + 
 				y * dst->pitch + 
 				x / 2);
@@ -322,9 +324,12 @@ static int paintRect(lua_State *L) {
 		dstptr += dst->pitch;
 	}
 	if(w & 1) {
+		/* This will render the rightmost column 
+		 * in the case when (w & 1) && !(x & 1) or
+		 * !(w & 1) && (x & 1). */
 		dstptr = (uint8_t*)(dst->data + 
 				y * dst->pitch + 
-				(x + w + 1) / 2);
+				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
 			*dstptr &= 0x0F;
 			*dstptr |= (c << 4);
