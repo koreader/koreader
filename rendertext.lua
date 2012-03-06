@@ -44,6 +44,10 @@ function clearglyphcache()
 end
 
 function renderUtf8Text(buffer, x, y, face, facehash, text, kerning)
+	if text == nil then
+		print("# renderUtf8Text called without text");
+		return
+	end
 	-- may still need more adaptive pen placement when kerning,
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
