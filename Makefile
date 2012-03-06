@@ -37,7 +37,7 @@ ifdef EMULATE_READER
 	EMU_CFLAGS?=$(shell sdl-config --cflags)
 	EMU_CFLAGS+= -DEMULATE_READER \
 		     -DEMULATE_READER_W=$(EMULATE_READER_W) \
-		     -DEMULATE_READER_H=$(EMULATE_READER_H) \	
+		     -DEMULATE_READER_H=$(EMULATE_READER_H) 
 	EMU_LDFLAGS?=$(shell sdl-config --libs)
 else
 	CFLAGS+= $(ARM_CFLAGS)
