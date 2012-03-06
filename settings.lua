@@ -17,6 +17,12 @@ function DocSettings:savesetting(key, value)
 	self.data[key] = value
 end
 
+function dump(data)
+	local out = {}
+	DocSettings:_serialize(data, out, 0)
+	return table.concat(out)
+end
+
 -- simple serialization function, won't do uservalues, functions, loops
 function DocSettings:_serialize(what, outt, indent)
 	if type(what) == "table" then
