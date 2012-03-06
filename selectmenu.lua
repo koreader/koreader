@@ -30,11 +30,12 @@ SelectMenu = {
 	menu_title = "None Titled",
 	no_item_msg = "No items found.",
 	item_array = {},
-	items = 14,
+	items = 0,
 
 	item_shortcuts = {
 		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
+		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Ent",
 		},
 	-- state buffer
 	page = 1,
@@ -50,6 +51,10 @@ function SelectMenu:new(o)
 	o.page = 1
 	o.current = 1
 	o.oldcurrent = 0
+	-- increase spacing for DXG so we don't have more than 30 shortcuts
+	if fb.bb:getHeight() == 1200 then
+		o.spacing = 37
+	end
 	return o
 end
 
@@ -147,12 +152,12 @@ function SelectMenu:choose(ypos, height)
 						y = ypos + self.title_H + (self.spacing * c)
 
 						-- paint shortcut indications
-						if c <= 10 then
+						if c <= 10 or c > 20 then
 							blitbuffer.paintBorder(fb.bb, 10, y-22, 29, 29, 2, 15)
 						else
 							fb.bb:paintRect(10, y-22, 29, 29, 3)
 						end
-						if self.item_shortcuts[c] == "Del" then
+						if self.item_shortcuts[c] ~= nil and string.len(self.item_shortcuts[c]) == 3 then
 							renderUtf8Text(fb.bb, 13, y, self.fface, self.ffhash,
 								self.item_shortcuts[c], true)
 						else
@@ -222,7 +227,7 @@ function SelectMenu:choose(ypos, height)
 					self.current = 1
 					markerdirty = true
 				end
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
+			elseif ev.code == KEY_FW_PRESS then
 				if self.items == 0 then
 					return nil
 				else
@@ -268,6 +273,26 @@ function SelectMenu:choose(ypos, height)
 				return self:getItemIndexByShortCut("Y", perpage)
 			elseif ev.code == KEY_DEL then
 				return self:getItemIndexByShortCut("Del", perpage)
+			elseif ev.code == KEY_Z then
+				return self:getItemIndexByShortCut("Z", perpage)
+			elseif ev.code == KEY_X then
+				return self:getItemIndexByShortCut("X", perpage)
+			elseif ev.code == KEY_C then
+				return self:getItemIndexByShortCut("C", perpage)
+			elseif ev.code == KEY_V then
+				return self:getItemIndexByShortCut("V", perpage)
+			elseif ev.code == KEY_B then
+				return self:getItemIndexByShortCut("B", perpage)
+			elseif ev.code == KEY_N then
+				return self:geTitemIndexByShortCut("N", perpage)
+			elseif ev.code == KEY_M then
+				return self:getItemIndexByShortCut("M", perpage)
+			elseif ev.code == KEY_DOT then
+				return self:getItemIndexByShortCut(".", perpage)
+			elseif ev.code == KEY_SYM or ev.code == KEY_SLASH then -- DXG has slash after dot
+				return self:getItemIndexByShortCut("Sym", perpage)
+			elseif ev.code == KEY_ENTER then
+				return self:getItemIndexByShortCut("Ent", perpage)
 			elseif ev.code == KEY_BACK then
 				return nil
 			end
