@@ -37,6 +37,7 @@ SelectMenu = {
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Ent",
 		},
+	last_shortcut = 0,
 	-- state buffer
 	page = 1,
 	current = 1,
@@ -76,8 +77,9 @@ function SelectMenu:updateFont()
 end
 
 function SelectMenu:getItemIndexByShortCut(c, perpage)
+	if c == nil then return end -- unused key
 	for _k,_v in ipairs(self.item_shortcuts) do
-		if _v == c then
+		if _v == c and _k <= self.last_shortcut then
 			return (perpage * (self.page - 1) + _k)
 		end
 	end
@@ -121,6 +123,7 @@ function SelectMenu:choose(ypos, height)
 		end
 	end
 
+	self.last_shortcut = 0
 
 	while true do
 		if pagedirty then
@@ -165,6 +168,8 @@ function SelectMenu:choose(ypos, height)
 								self.item_shortcuts[c], true)
 						end
 
+						self.last_shortcut = c
+
 						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
@@ -204,6 +209,7 @@ function SelectMenu:choose(ypos, height)
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			local selected = nil
 			if ev.code == KEY_FW_UP then
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
@@ -227,74 +233,32 @@ function SelectMenu:choose(ypos, height)
 					self.current = 1
 					markerdirty = true
 				end
-			elseif ev.code == KEY_FW_PRESS then
+			elseif ev.code == KEY_FW_PRESS or ev.code == KEY_ENTER and self.last_shortcut < 30 then
 				if self.items == 0 then
 					return nil
 				else
 					return (perpage*(self.page-1) + self.current)
 				end
-			elseif ev.code == KEY_Q then
-				return self:getItemIndexByShortCut("Q", perpage)
-			elseif ev.code == KEY_W then
-				return self:getItemIndexByShortCut("W", perpage)
-			elseif ev.code == KEY_D then
-				return self:getItemIndexByShortCut("D", perpage)
-			elseif ev.code == KEY_E then
-				return self:getItemIndexByShortCut("E", perpage)
-			elseif ev.code == KEY_F then
-				return self:getItemIndexByShortCut("F", perpage)
-			elseif ev.code == KEY_G then
-				return self:getItemIndexByShortCut("G", perpage)
-			elseif ev.code == KEY_H then
-				return self:getItemIndexByShortCut("H", perpage)
-			elseif ev.code == KEY_I then
-				return self:getItemIndexByShortCut("I", perpage)
-			elseif ev.code == KEY_J then
-				return self:getItemIndexByShortCut("J", perpage)
-			elseif ev.code == KEY_K then
-				return self:getItemIndexByShortCut("K", perpage)
-			elseif ev.code == KEY_L then
-				return self:getItemIndexByShortCut("L", perpage)
-			elseif ev.code == KEY_A then
-				return self:getItemIndexByShortCut("A", perpage)
-			elseif ev.code == KEY_S then
-				return self:getItemIndexByShortCut("S", perpage)
-			elseif ev.code == KEY_O then
-				return self:getItemIndexByShortCut("O", perpage)
-			elseif ev.code == KEY_P then
-				return self:getItemIndexByShortCut("P", perpage)
-			elseif ev.code == KEY_R then
-				return self:getItemIndexByShortCut("R", perpage)
-			elseif ev.code == KEY_T then
-				return self:getItemIndexByShortCut("T", perpage)
-			elseif ev.code == KEY_U then
-				return self:getItemIndexByShortCut("U", perpage)
-			elseif ev.code == KEY_Y then
-				return self:getItemIndexByShortCut("Y", perpage)
+			elseif ev.code >= KEY_Q and ev.code <= KEY_P then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Q + 1 ], perpage)
+			elseif ev.code >= KEY_A and ev.code <= KEY_L then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_A + 11], perpage)
+			elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Z + 21], perpage)
 			elseif ev.code == KEY_DEL then
-				return self:getItemIndexByShortCut("Del", perpage)
-			elseif ev.code == KEY_Z then
-				return self:getItemIndexByShortCut("Z", perpage)
-			elseif ev.code == KEY_X then
-				return self:getItemIndexByShortCut("X", perpage)
-			elseif ev.code == KEY_C then
-				return self:getItemIndexByShortCut("C", perpage)
-			elseif ev.code == KEY_V then
-				return self:getItemIndexByShortCut("V", perpage)
-			elseif ev.code == KEY_B then
-				return self:getItemIndexByShortCut("B", perpage)
-			elseif ev.code == KEY_N then
-				return self:geTitemIndexByShortCut("N", perpage)
-			elseif ev.code == KEY_M then
-				return self:getItemIndexByShortCut("M", perpage)
+				selected = self:getItemIndexByShortCut("Del", perpage)
 			elseif ev.code == KEY_DOT then
-				return self:getItemIndexByShortCut(".", perpage)
+				selected = self:getItemIndexByShortCut(".", perpage)
 			elseif ev.code == KEY_SYM or ev.code == KEY_SLASH then -- DXG has slash after dot
-				return self:getItemIndexByShortCut("Sym", perpage)
+				selected = self:getItemIndexByShortCut("Sym", perpage)
 			elseif ev.code == KEY_ENTER then
-				return self:getItemIndexByShortCut("Ent", perpage)
+				selected = self:getItemIndexByShortCut("Ent", perpage)
 			elseif ev.code == KEY_BACK then
 				return nil
+			end
+			if selected ~= nil then
+				print("# selected "..selected)
+				return selected
 			end
 		end
 	end
