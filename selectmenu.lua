@@ -123,8 +123,8 @@ function SelectMenu:choose(ypos, height)
 			markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
-			fb.bb:paintRect(5, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
-			--x = fb.bb:getWidth() - 260 -- move text to the right
+			fb.bb:paintRect(10, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
+
 			x = 20
 			y = ypos + self.title_H
 			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
@@ -146,10 +146,10 @@ function SelectMenu:choose(ypos, height)
 					local i = (self.page - 1) * perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						blitbuffer.paintBorder(fb.bb, 5, y - 22, 29, 29, 2, 15)
-						renderUtf8Text(fb.bb, 13, y, self.sface, self.fhash,
+						blitbuffer.paintBorder(fb.bb, 10, y - 22, 29, 29, 2, 15)
+						renderUtf8Text(fb.bb, 18, y, self.sface, self.fhash,
 							self.item_shortcuts[c], true)
-						renderUtf8Text(fb.bb, 45, y, self.face, self.fhash,
+						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
 				end
