@@ -32,7 +32,7 @@ SelectMenu = {
 	item_array = {},
 	items = 14,
 
-	item_shortcut = {
+	item_shortcuts = {
 		"C", "V", "B", "N", "M",
 		"D", "F", "G", "H", "J", "K", "L",
 		"E", "R", "T", "Y", "U", "I", "O", "P",
@@ -72,7 +72,7 @@ function SelectMenu:updateFont()
 end
 
 function SelectMenu:getItemIndexByShortCut(c, perpage)
-	for _k,_v in ipairs(self.item_shortcut) do
+	for _k,_v in ipairs(self.item_shortcuts) do
 		if _v == c then
 			return (perpage * (self.page - 1) + _k)
 		end
@@ -148,7 +148,7 @@ function SelectMenu:choose(ypos, height)
 						y = ypos + self.title_H + (self.spacing * c)
 						blitbuffer.paintBorder(fb.bb, 5, y - 22, 29, 29, 2, 15)
 						renderUtf8Text(fb.bb, 13, y, self.sface, self.fhash,
-							self.item_shortcut[c], true)
+							self.item_shortcuts[c], true)
 						renderUtf8Text(fb.bb, 45, y, self.face, self.fhash,
 							self.item_array[i], true)
 					end
