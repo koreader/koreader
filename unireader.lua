@@ -67,7 +67,7 @@ UniReader = {
 	jump_stack = {},
 	toc = nil,
 
-	bbox = nil, -- override getUsedBBox
+	bbox = {}, -- override getUsedBBox
 }
 
 function UniReader:new(o)
@@ -197,10 +197,22 @@ function UniReader:setzoom(page)
 
 	if self.bbox then
 		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
-		x0 = self.bbox["x0"]
-		y0 = self.bbox["y0"]
-		x1 = self.bbox["x1"]
-		y1 = self.bbox["y1"]
+		local bbox = self.bbox[self.pageno] -- exact
+		if bbox == nil then
+			bbox = self.bbox[self:odd_even(self.pageno)] -- odd/even
+		end
+		if bbox == nil then -- last used up to this page
+			for i = 0,self.pageno do
+				bbox = self.bbox[ self.pageno - i ]
+				if bbox ~= nil then break end
+			end
+		end
+		if bbox ~= nil then
+			x0 = bbox["x0"]
+			y0 = bbox["y0"]
+			x1 = bbox["x1"]
+			y1 = bbox["y1"]
+		end
 	end
 
 	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
@@ -494,10 +506,19 @@ function UniReader:showJumpStack()
 	end
 end
 
+function UniReader:odd_even(number)
+	print("## odd_even "..number)
+	if number % 2 == 1 then
+		return "odd"
+	else
+		return "even"
+	end
+end
 
 -- wait for input and handle it
 function UniReader:inputloop()
 	local keep_running = true
+	self.bbox = {}
 	while 1 do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -589,8 +610,10 @@ function UniReader:inputloop()
 				bbox["y0"] = - self.offset_y / self.globalzoom
 				bbox["x1"] = bbox["x0"] + width / self.globalzoom
 				bbox["y1"] = bbox["y0"] + height / self.globalzoom
-				self.bbox = bbox
-				print("# bbox " .. dump(self.bbox)) 
+				self.bbox[self.pageno] = bbox
+				self.bbox[self:odd_even(self.pageno)] = bbox
+				print("# bbox " .. self.pageno .. dump(self.bbox)) 
+				self.globalzoommode = self.ZOOM_FIT_TO_CONTENT -- use bbox
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
