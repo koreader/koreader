@@ -136,6 +136,8 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 			running = false
 		end
 	end
+elseif ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "file" then
+	openFile(ARGV[optind], optarg["p"])
 elseif patharg and lfs.attributes(patharg, "mode") == "file" then
 	openFile(patharg, optarg["p"])
 else
