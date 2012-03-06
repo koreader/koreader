@@ -239,7 +239,7 @@ function FileChooser:choose(ypos, height)
 					return self.path.."/"..self.files[perpage*(self.page-1)+self.current - #self.dirs]
 				end
 				pagedirty = true
-			elseif ev.code == KEY_BACK then
+			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
 				return nil
 			end
 		end
