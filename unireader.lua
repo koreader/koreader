@@ -198,13 +198,22 @@ function UniReader:setzoom(page)
 	if self.bbox then
 		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 		local bbox = self.bbox[self.pageno] -- exact
-		if bbox == nil then
-			bbox = self.bbox[self:odd_even(self.pageno)] -- odd/even
+
+		local odd_even = self:odd_even(self.pageno)
+		if bbox ~= nil then
+			print("## bbox from "..self.pageno)
+		else
+			bbox = self.bbox[odd_even] -- odd/even
 		end
-		if bbox == nil then -- last used up to this page
+		if bbox ~= nil then -- last used up to this page
+			print("## bbox from "..odd_even)
+		else
 			for i = 0,self.pageno do
 				bbox = self.bbox[ self.pageno - i ]
-				if bbox ~= nil then break end
+				if bbox ~= nil then
+					print("## bbox from "..self.pageno - i)
+					break
+				end
 			end
 		end
 		if bbox ~= nil then
