@@ -209,7 +209,7 @@ function UniReader:setzoom(page)
 	if y0 < 0 then y0 = 0 end
 	if y1 > pheight then y1 = pheight end
 
-	if self.bbox then
+	if self.bbox.enabled then
 		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 		local bbox = self.bbox[self.pageno] -- exact
 
@@ -433,7 +433,7 @@ function UniReader:goto(no)
 
 	if no < self.doc:getPages() then
 		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-			if #self.bbox == 0 then
+			if #self.bbox == 0 or not self.bbox.enabled then
 				-- pre-cache next page, but if we will modify bbox don't!
 				self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 			end
@@ -702,11 +702,15 @@ function UniReader:inputloop()
 				bbox["y1"] = bbox["y0"] + height / self.globalzoom
 				self.bbox[self.pageno] = bbox
 				self.bbox[self:odd_even(self.pageno)] = bbox
+				self.bbox.enabled = true
 				print("# bbox " .. self.pageno .. dump(self.bbox)) 
 				self.globalzoommode = self.ZOOM_FIT_TO_CONTENT -- use bbox
 			elseif ev.code == KEY_Z and Keys.shiftmode then
 				self.bbox[self.pageno] = nil;
 				print("# bbox remove "..self.pageno .. dump(self.bbox));
+			elseif ev.code == KEY_Z and Keys.altmode then
+				self.bbox.enabled = not self.bbox.enabled;
+				print("# bbox override "..self.bbox.enabled);
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
