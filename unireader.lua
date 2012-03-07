@@ -541,22 +541,8 @@ function UniReader:inputloop()
 				self:modify_gamma( 0.8 )
 			elseif ev.code == KEY_1 then
 				self:goto(1)
-			elseif ev.code == KEY_2 then
-				self:goto(math.floor(self.doc:getPages()/90*10))
-			elseif ev.code == KEY_3 then
-				self:goto(math.floor(self.doc:getPages()/90*20))
-			elseif ev.code == KEY_4 then
-				self:goto(math.floor(self.doc:getPages()/90*30))
-			elseif ev.code == KEY_5 then
-				self:goto(math.floor(self.doc:getPages()/90*40))
-			elseif ev.code == KEY_6 then
-				self:goto(math.floor(self.doc:getPages()/90*50))
-			elseif ev.code == KEY_7 then
-				self:goto(math.floor(self.doc:getPages()/90*60))
-			elseif ev.code == KEY_8 then
-				self:goto(math.floor(self.doc:getPages()/90*70))
-			elseif ev.code == KEY_9 then
-				self:goto(math.floor(self.doc:getPages()/90*80))
+			elseif ev.code >= KEY_2 and ev.code <= KEY_9 then
+				self:goto(math.floor(self.doc:getPages()/90*(ev.code-KEY_1)*10))
 			elseif ev.code == KEY_0 then
 				self:goto(self.doc:getPages())						
 			elseif ev.code == KEY_A then
