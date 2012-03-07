@@ -236,21 +236,21 @@ function UniReader:setzoom(page)
 			if height / (y1 - y0) < self.globalzoom then
 				self.globalzoom = height / (y1 - y0)
 			end
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom
 		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom
 		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		if (y1 - y0) < pheight then
 			self.globalzoom = height / (y1 - y0)
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom
 		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH
 		or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
