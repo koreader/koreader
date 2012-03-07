@@ -117,6 +117,13 @@ function UniReader:loadSettings(filename)
 	return false
 end
 
+function UniReader:initGlobalSettings(settings)
+	local pan_overlap_vertical = settings:readsetting("pan_overlap_vertical")
+	if pan_overlap_vertical then
+		self.pan_overlap_vertical = pan_overlap_vertical
+	end
+end
+
 -- guarantee that we have enough memory in cache
 function UniReader:cacheclaim(size)
 	if(size > self.cache_max_memsize) then
