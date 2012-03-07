@@ -115,6 +115,10 @@ function UniReader:loadSettings(filename)
 		local jumpstack = self.settings:readsetting("jumpstack")
 		self.jump_stack = jumpstack or {}
 
+		local bbox = self.settings:readsetting("bbox")
+		print("# bbox loaded "..dump(bbox))
+		self.bbox = bbox
+
 		return true
 	end
 	return false
@@ -124,10 +128,6 @@ function UniReader:initGlobalSettings(settings)
 	local pan_overlap_vertical = settings:readsetting("pan_overlap_vertical")
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
-	end
-	local bbox = settings:readsetting("bbox")
-	if bbox then
-		self.bbox = bbox
 	end
 end
 
@@ -607,7 +607,6 @@ end
 -- wait for input and handle it
 function UniReader:inputloop()
 	local keep_running = true
-	self.bbox = {}
 	while 1 do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -695,7 +694,7 @@ function UniReader:inputloop()
 					keep_running = false
 				end
 				break
-			elseif ev.code == KEY_Z then
+			elseif ev.code == KEY_Z and not Keys.shiftmode then
 				local bbox = {}
 				bbox["x0"] = - self.offset_x / self.globalzoom
 				bbox["y0"] = - self.offset_y / self.globalzoom
@@ -705,6 +704,9 @@ function UniReader:inputloop()
 				self.bbox[self:odd_even(self.pageno)] = bbox
 				print("# bbox " .. self.pageno .. dump(self.bbox)) 
 				self.globalzoommode = self.ZOOM_FIT_TO_CONTENT -- use bbox
+			elseif ev.code == KEY_Z and Keys.shiftmode then
+				self.bbox[self.pageno] = nil;
+				print("# bbox remove "..self.pageno .. dump(self.bbox));
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
