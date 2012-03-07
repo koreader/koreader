@@ -119,6 +119,8 @@ if r_cfont ~=nil then
 	FontChooser.cfont = r_cfont
 end
 
+-- initialize global settings shared among all readers
+UniReader:initGlobalSettings(reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
