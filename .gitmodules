@@ -1,0 +1,9 @@
+[submodule "mupdf"]
+	path = mupdf
+	url = git://git.ghostscript.com/mupdf.git
+[submodule "luafilesystem"]
+	path = luafilesystem
+	url = git://github.com/keplerproject/luafilesystem.git
+[submodule "djvulibre"]
+	path = djvulibre
+	url = git://djvu.git.sourceforge.net/gitroot/djvu/djvulibre.git

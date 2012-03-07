@@ -89,7 +89,7 @@ static int openDocument(lua_State *L) {
 		return luaL_error(L, "cannot create context.");
 	}
 
-	doc->doc_ref = ddjvu_document_create_by_filename(doc->context, filename, TRUE);
+	doc->doc_ref = ddjvu_document_create_by_filename_utf8(doc->context, filename, TRUE);
 	while (! ddjvu_document_decoding_done(doc->doc_ref))
 		handle(L, doc->context, True);
 	if (! doc->doc_ref) {

@@ -11,8 +11,10 @@ UniReader = {
 	ZOOM_FIT_TO_CONTENT = -4,
 	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
 	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
-	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -7,
-	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -8,
+	ZOOM_FIT_TO_CONTENT_WIDTH_PAN = -7,
+	--ZOOM_FIT_TO_CONTENT_HEIGHT_PAN = -8,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -9,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -10,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -37,6 +39,7 @@ UniReader = {
 	offset_y = 0,
 	min_offset_x = 0,
 	min_offset_y = 0,
+	content_top = 0, -- for ZOOM_FIT_TO_CONTENT_WIDTH_PAN (prevView)
 
 	-- set panning distance
 	shift_x = 100,
@@ -115,6 +118,13 @@ function UniReader:loadSettings(filename)
 		return true
 	end
 	return false
+end
+
+function UniReader:initGlobalSettings(settings)
+	local pan_overlap_vertical = settings:readsetting("pan_overlap_vertical")
+	if pan_overlap_vertical then
+		self.pan_overlap_vertical = pan_overlap_vertical
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -254,26 +264,39 @@ function UniReader:setzoom(page)
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
-			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
 			if height / (y1 - y0) < self.globalzoom then
 				self.globalzoom = height / (y1 - y0)
-				self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
-				self.offset_y = -1 * y0 * self.globalzoom
 			end
 		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
+		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
+		self.content_top = self.offset_y
+		-- enable pan mode in ZOOM_FIT_TO_CONTENT_WIDTH
+		self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.content_top == -2012 then
+			-- We must handle previous page turn as a special cases,
+			-- because we want to arrive at the bottom of previous page.
+			-- Since this a real page turn, we need to recalcunate stuff.
+			if (x1 - x0) < pwidth then
+				self.globalzoom = width / (x1 - x0)
+			end
 			self.offset_x = -1 * x0 * self.globalzoom
-			self.offset_y = -1 * y0 * self.globalzoom + (height - (self.globalzoom * (y1 - y0))) / 2
+			self.content_top = -1 * y0 * self.globalzoom
+			self.offset_y = fb.bb:getHeight() - self.fullheight
 		end
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		if (y1 - y0) < pheight then
 			self.globalzoom = height / (y1 - y0)
-			self.offset_x = -1 * x0 * self.globalzoom + (width - (self.globalzoom * (x1 - x0))) / 2
-			self.offset_y = -1 * y0 * self.globalzoom
 		end
+		self.offset_x = -1 * x0 * self.globalzoom
+		self.offset_y = -1 * y0 * self.globalzoom
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH
 		or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
@@ -416,6 +439,57 @@ function UniReader:goto(no)
 	end
 end
 
+function UniReader:nextView()
+	local pageno = self.pageno
+
+	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.offset_y <= self.min_offset_y then
+			-- hit content bottom, turn to next page
+			self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+			pageno = pageno + 1
+		else
+			-- goto next view of current page
+			self.offset_y = self.offset_y - height + self.pan_overlap_vertical
+		end
+	else
+		-- not in fit to content width pan mode, just do a page turn
+		pageno = pageno + 1
+		if self.pan_by_page then
+			-- we are in two column mode
+			self.offset_x = self.pan_x
+			self.offset_y = self.pan_y
+		end
+	end
+
+	return pageno
+end
+
+function UniReader:prevView()
+	local pageno = self.pageno
+
+	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.offset_y >= self.content_top then
+			-- hit content top, turn to previous page
+			-- set self.content_top with magic num to signal self:setzoom 
+			self.content_top = -2012
+			pageno = pageno - 1
+		else
+			-- goto previous view of current page
+			self.offset_y = self.offset_y + height - self.pan_overlap_vertical
+		end
+	else
+		-- not in fit to content width pan mode, just do a page turn
+		pageno = pageno - 1
+		if self.pan_by_page then
+			-- we are in two column mode
+			self.offset_x = self.pan_x
+			self.offset_y = self.pan_y
+		end
+	end
+
+	return pageno
+end
+
 -- adjust global gamma setting
 function UniReader:modify_gamma(factor)
 	print("modify_gamma, gamma="..self.globalgamma.." factor="..factor)
@@ -541,11 +615,9 @@ function UniReader:inputloop()
 				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.1)
 				else
-					if self.pan_by_page then
-						self.offset_x = self.pan_x
-						self.offset_y = self.pan_y
-					end
-					self:goto(self.pageno + 1)
+					-- turn page forward
+					local pageno = self:nextView()
+					self:goto(pageno)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if Keys.shiftmode then
@@ -553,11 +625,9 @@ function UniReader:inputloop()
 				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.1)
 				else
-					if self.pan_by_page then
-						self.offset_x = self.pan_x
-						self.offset_y = self.pan_y
-					end
-					self:goto(self.pageno - 1)
+					-- turn page back
+					local pageno = self:prevView()
+					self:goto(pageno)
 				end
 			elseif ev.code == KEY_BACK then
 				if Keys.altmode then
@@ -575,22 +645,8 @@ function UniReader:inputloop()
 				self:modify_gamma( 0.8 )
 			elseif ev.code == KEY_1 then
 				self:goto(1)
-			elseif ev.code == KEY_2 then
-				self:goto(self.doc:getPages()/90*10)
-			elseif ev.code == KEY_3 then
-				self:goto(self.doc:getPages()/90*20)
-			elseif ev.code == KEY_4 then
-				self:goto(self.doc:getPages()/90*30)
-			elseif ev.code == KEY_5 then
-				self:goto(self.doc:getPages()/90*40)
-			elseif ev.code == KEY_6 then
-				self:goto(self.doc:getPages()/90*50)
-			elseif ev.code == KEY_7 then
-				self:goto(self.doc:getPages()/90*60)
-			elseif ev.code == KEY_8 then
-				self:goto(self.doc:getPages()/90*70)
-			elseif ev.code == KEY_9 then
-				self:goto(self.doc:getPages()/90*80)
+			elseif ev.code >= KEY_2 and ev.code <= KEY_9 then
+				self:goto(math.floor(self.doc:getPages()/90*(ev.code-KEY_1)*10))
 			elseif ev.code == KEY_0 then
 				self:goto(self.doc:getPages())						
 			elseif ev.code == KEY_A then
