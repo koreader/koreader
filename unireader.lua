@@ -11,8 +11,10 @@ UniReader = {
 	ZOOM_FIT_TO_CONTENT = -4,
 	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
 	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
-	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -7,
-	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -8,
+	ZOOM_FIT_TO_CONTENT_WIDTH_PAN = -7,
+	--ZOOM_FIT_TO_CONTENT_HEIGHT_PAN = -8,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -9,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -10,
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -37,6 +39,7 @@ UniReader = {
 	offset_y = 0,
 	min_offset_x = 0,
 	min_offset_y = 0,
+	content_top = 0, -- for ZOOM_FIT_TO_CONTENT_WIDTH_PAN (prevView)
 
 	-- set panning distance
 	shift_x = 100,
@@ -252,6 +255,21 @@ function UniReader:setzoom(page)
 		end
 		self.offset_x = -1 * x0 * self.globalzoom
 		self.offset_y = -1 * y0 * self.globalzoom
+		self.content_top = self.offset_y
+		-- enable pan mode in ZOOM_FIT_TO_CONTENT_WIDTH
+		self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.content_top == -2012 then
+			-- We must handle previous page turn as a special cases,
+			-- because we want to arrive at the bottom of previous page.
+			-- Since this a real page turn, we need to recalcunate stuff.
+			if (x1 - x0) < pwidth then
+				self.globalzoom = width / (x1 - x0)
+			end
+			self.offset_x = -1 * x0 * self.globalzoom
+			self.content_top = -1 * y0 * self.globalzoom
+			self.offset_y = fb.bb:getHeight() - self.fullheight
+		end
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		if (y1 - y0) < pheight then
 			self.globalzoom = height / (y1 - y0)
@@ -398,6 +416,57 @@ function UniReader:goto(no)
 	end
 end
 
+function UniReader:nextView()
+	local pageno = self.pageno
+
+	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.offset_y <= self.min_offset_y then
+			-- hit content bottom, turn to next page
+			self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+			pageno = pageno + 1
+		else
+			-- goto next view of current page
+			self.offset_y = self.offset_y - height + self.pan_overlap_vertical
+		end
+	else
+		-- not in fit to content width pan mode, just do a page turn
+		pageno = pageno + 1
+		if self.pan_by_page then
+			-- we are in two column mode
+			self.offset_x = self.pan_x
+			self.offset_y = self.pan_y
+		end
+	end
+
+	return pageno
+end
+
+function UniReader:prevView()
+	local pageno = self.pageno
+
+	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		if self.offset_y >= self.content_top then
+			-- hit content top, turn to previous page
+			-- set self.content_top with magic num to signal self:setzoom 
+			self.content_top = -2012
+			pageno = pageno - 1
+		else
+			-- goto previous view of current page
+			self.offset_y = self.offset_y + height - self.pan_overlap_vertical
+		end
+	else
+		-- not in fit to content width pan mode, just do a page turn
+		pageno = pageno - 1
+		if self.pan_by_page then
+			-- we are in two column mode
+			self.offset_x = self.pan_x
+			self.offset_y = self.pan_y
+		end
+	end
+
+	return pageno
+end
+
 -- adjust global gamma setting
 function UniReader:modify_gamma(factor)
 	print("modify_gamma, gamma="..self.globalgamma.." factor="..factor)
@@ -514,11 +583,9 @@ function UniReader:inputloop()
 				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.1)
 				else
-					if self.pan_by_page then
-						self.offset_x = self.pan_x
-						self.offset_y = self.pan_y
-					end
-					self:goto(self.pageno + 1)
+					-- turn page forward
+					local pageno = self:nextView()
+					self:goto(pageno)
 				end
 			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if Keys.shiftmode then
@@ -526,11 +593,9 @@ function UniReader:inputloop()
 				elseif Keys.altmode then
 					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.1)
 				else
-					if self.pan_by_page then
-						self.offset_x = self.pan_x
-						self.offset_y = self.pan_y
-					end
-					self:goto(self.pageno - 1)
+					-- turn page back
+					local pageno = self:prevView()
+					self:goto(pageno)
 				end
 			elseif ev.code == KEY_BACK then
 				if Keys.altmode then
