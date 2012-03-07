@@ -125,6 +125,10 @@ function UniReader:initGlobalSettings(settings)
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
+	local bbox = settings:readsetting("bbox")
+	if bbox then
+		self.bbox = bbox
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -820,6 +824,8 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
+		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
+		self.settings:savesetting("bbox", self.bbox)
 		self.settings:close()
 	end
 
