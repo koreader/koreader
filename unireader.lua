@@ -697,7 +697,7 @@ function UniReader:inputloop()
 					keep_running = false
 				end
 				break
-			elseif ev.code == KEY_Z and not Keys.shiftmode then
+			elseif ev.code == KEY_Z and not (Keys.shiftmode or Keys.altmode) then
 				local bbox = {}
 				bbox["x0"] = - self.offset_x / self.globalzoom
 				bbox["y0"] = - self.offset_y / self.globalzoom
@@ -715,7 +715,7 @@ function UniReader:inputloop()
 				print("# bbox remove "..self.pageno .. dump(self.bbox));
 			elseif ev.code == KEY_Z and Keys.altmode then
 				self.bbox.enabled = not self.bbox.enabled;
-				print("# bbox override "..self.bbox.enabled);
+				print("# bbox override: ", self.bbox.enabled);
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move

@@ -265,7 +265,7 @@ function FileSearcher:choose(ypos, height, keywords)
 				openFile(file_full_path)
 
 				pagedirty = true
-			elseif ev.code == KEY_BACK then
+			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
 				return nil
 			end
 		end
