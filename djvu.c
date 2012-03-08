@@ -215,6 +215,7 @@ static int openPage(lua_State *L) {
 	luaL_getmetatable(L, "djvupage");
 	lua_setmetatable(L, -2);
 
+	/* djvulibre counts page starts form 0 */
 	page->page_ref = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
 	while (! ddjvu_page_decoding_done(page->page_ref))
 		handle(L, doc->context, TRUE);
@@ -225,7 +226,9 @@ static int openPage(lua_State *L) {
 	page->doc = doc;
 	page->num = pageno;
 
-	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno, &(page->info)))<DDJVU_JOB_OK)
+	/* djvulibre counts page starts form 0 */
+	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno - 1, 
+										&(page->info)))<DDJVU_JOB_OK)
 		handle(L, doc->context, TRUE);
 	if (r>=DDJVU_JOB_FAILED)
 		return luaL_error(L, "cannot get page #%d information", pageno);
