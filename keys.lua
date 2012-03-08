@@ -178,26 +178,32 @@ function set_emu_keycodes()
 	KEY_VMINUS = 96 -- F12
 end
 
+--@TODO rotation does not fit in key module, we should move it 
+-- to some other module in the future.  08.03 2012
+rotation_mode = {"Up","Right","Down","Left"}
+
 function getRotationMode()
 	--[[
 	return code for four kinds of rotation mode:
 
-  0 for no rotation, 
+	0 for no rotation, 
 	1 for landscape with bottom on the right side of screen, etc.
 
-	         2
-	   +-----------+
-	   | +-------+ |
-	   | |       | |
-	   | |       | |
-	   | |       | |  
-	 3 | |       | | 1
-	   | |       | |
-	   | |       | |
-	   | +-------+ |
-	   |           |
-	   +-----------+
-	         0
+	          2
+	   +--------------+
+	   | +----------+ |
+	   | |          | |
+	   | | Freedom! | |
+	   | |          | |  
+	   | |          | |  
+	 3 | |          | | 1
+	   | |          | |
+	   | |          | |
+	   | +----------+ |
+	   |              |
+	   |              |
+	   +--------------+
+	          0
 	--]]
 	if KEY_FW_DOWN == 116 then -- in EMU mode always return 0
 		return 0

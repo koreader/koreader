@@ -200,11 +200,19 @@ function FileChooser:choose(ypos, height)
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
-				if keywords then -- display search result according to keywords
-					FileSearcher:init( self.path )
-					file = FileSearcher:choose(ypos, height, keywords)
-					if file then
-						return file
+				if keywords then 
+					-- call FileSearcher
+					--[[
+					This might looks a little bit dirty for using callback.
+					But I cannot come up with a better solution for renewing
+					the height arguemtn according to screen rotation mode.
+
+					The callback might also be useful for calling system 
+					settings menu in the future.
+					--]]
+					return nil, function()
+						FileSearcher:init( self.path )
+						FileSearcher:choose(ypos, height, keywords)
 					end
 				end
 				pagedirty = true

@@ -131,11 +131,15 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
-		local file = FileChooser:choose(0,height)
-		if file ~= nil then
-			running = openFile(file)
+		local file, callback = FileChooser:choose(0,height)
+		if callback then
+			callback()
 		else
-			running = false
+			if file ~= nil then
+				running = openFile(file)
+			else
+				running = false
+			end
 		end
 	end
 elseif ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "file" then

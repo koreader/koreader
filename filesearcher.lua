@@ -262,7 +262,19 @@ function FileSearcher:choose(ypos, height, keywords)
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				file_entry = self.result[perpage*(self.page-1)+self.current]
 				file_full_path = file_entry.dir .. "/" .. file_entry.name
+
+				-- rotation mode might be changed while reading, so 
+				-- record height_percent here
+				local height_percent = height/fb.bb:getHeight()
 				openFile(file_full_path)
+
+				--reset height and item index if screen has been rotated
+				local old_perpage = perpage
+				height = math.floor(fb.bb:getHeight()*height_percent)
+				perpage = math.floor(height / self.spacing) - 2
+				self.current = (old_perpage * (self.page - 1) +
+								self.current) % perpage
+				self.page = math.floor(self.items / perpage) + 1
 
 				pagedirty = true
 			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then

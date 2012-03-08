@@ -526,6 +526,28 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+-- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
+function UniReader:screenRotate(orien)
+	if orien == "clockwise" then
+		orien = 1
+	elseif orien == "anticlockwise" then
+		orien = -1
+	else
+		return
+	end
+
+	fb:close()
+	local mode = rotation_mode[(getRotationMode()+1*orien)%4 + 1]
+	os.execute("lipc-send-event -r 3 com.lab126.hal orientation"..mode)
+	fb = einkfb.open("/dev/fb0")
+	width, height = fb:getSize()
+
+	self:clearcache()
+	--@TODO write a sleep in util module to replace it 08.03 2012
+	os.execute("sleep 2")
+	self:goto(self.pageno)
+end
+
 function UniReader:cleanUpTOCTitle(title)
 	return title:gsub("\13", "")
 end
@@ -688,9 +710,17 @@ function UniReader:inputloop()
 					self:showJumpStack()
 				end
 			elseif ev.code == KEY_J then
-				self:setrotate( self.globalrotate + 10 )
+				if Keys.shiftmode then
+					self:screenRotate("anticlockwise")
+				else
+					self:setrotate( self.globalrotate + 10 )
+				end
 			elseif ev.code == KEY_K then
-				self:setrotate( self.globalrotate - 10 )
+				if Keys.shiftmode then
+					self:screenRotate("clockwise")
+				else
+					self:setrotate( self.globalrotate - 10 )
+				end
 			elseif ev.code == KEY_HOME then
 				if Keys.shiftmode or Keys.altmode then
 					-- signal quit
