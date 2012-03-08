@@ -119,6 +119,9 @@ function UniReader:loadSettings(filename)
 		print("# bbox loaded "..dump(bbox))
 		self.bbox = bbox
 
+		self.globalzoom = self.settings:readsetting("globalzoom") or 1.0
+		self.globalzoommode = self.settings:readsetting("globalzoommode") or -1
+
 		return true
 	end
 	return false
@@ -700,6 +703,8 @@ function UniReader:inputloop()
 				bbox["y0"] = - self.offset_y / self.globalzoom
 				bbox["x1"] = bbox["x0"] + width / self.globalzoom
 				bbox["y1"] = bbox["y0"] + height / self.globalzoom
+				bbox.pan_x = self.pan_x
+				bbox.pan_y = self.pan_y
 				self.bbox[self.pageno] = bbox
 				self.bbox[self:odd_even(self.pageno)] = bbox
 				self.bbox.enabled = true
@@ -832,6 +837,8 @@ function UniReader:inputloop()
 		self.settings:savesetting("jumpstack", self.jump_stack)
 		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
 		self.settings:savesetting("bbox", self.bbox)
+		self.settings:savesetting("globalzoom", self.globalzoom)
+		self.settings:savesetting("globalzoommode", self.globalzoommode)
 		self.settings:close()
 	end
 
