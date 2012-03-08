@@ -70,7 +70,7 @@ UniReader = {
 	jump_stack = {},
 	toc = nil,
 
-	bbox = nil, -- override getUsedBBox
+	bbox = {}, -- override getUsedBBox
 }
 
 function UniReader:new(o)
@@ -114,6 +114,13 @@ function UniReader:loadSettings(filename)
 
 		local jumpstack = self.settings:readsetting("jumpstack")
 		self.jump_stack = jumpstack or {}
+
+		local bbox = self.settings:readsetting("bbox")
+		print("# bbox loaded "..dump(bbox))
+		self.bbox = bbox
+
+		self.globalzoom = self.settings:readsetting("globalzoom") or 1.0
+		self.globalzoommode = self.settings:readsetting("globalzoommode") or -1
 
 		return true
 	end
@@ -205,12 +212,33 @@ function UniReader:setzoom(page)
 	if y0 < 0 then y0 = 0 end
 	if y1 > pheight then y1 = pheight end
 
-	if self.bbox then
+	if self.bbox.enabled then
 		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
-		x0 = self.bbox["x0"]
-		y0 = self.bbox["y0"]
-		x1 = self.bbox["x1"]
-		y1 = self.bbox["y1"]
+		local bbox = self.bbox[self.pageno] -- exact
+
+		local odd_even = self:odd_even(self.pageno)
+		if bbox ~= nil then
+			print("## bbox from "..self.pageno)
+		else
+			bbox = self.bbox[odd_even] -- odd/even
+		end
+		if bbox ~= nil then -- last used up to this page
+			print("## bbox from "..odd_even)
+		else
+			for i = 0,self.pageno do
+				bbox = self.bbox[ self.pageno - i ]
+				if bbox ~= nil then
+					print("## bbox from "..self.pageno - i)
+					break
+				end
+			end
+		end
+		if bbox ~= nil then
+			x0 = bbox["x0"]
+			y0 = bbox["y0"]
+			x1 = bbox["x1"]
+			y1 = bbox["y1"]
+		end
 	end
 
 	print("# page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
@@ -408,8 +436,10 @@ function UniReader:goto(no)
 
 	if no < self.doc:getPages() then
 		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-			-- pre-cache next page
-			self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+			if #self.bbox == 0 or not self.bbox.enabled then
+				-- pre-cache next page, but if we will modify bbox don't!
+				self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+			end
 		else
 			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 		end
@@ -568,6 +598,14 @@ function UniReader:showJumpStack()
 	end
 end
 
+function UniReader:odd_even(number)
+	print("## odd_even "..number)
+	if number % 2 == 1 then
+		return "odd"
+	else
+		return "even"
+	end
+end
 
 -- wait for input and handle it
 function UniReader:inputloop()
@@ -659,14 +697,25 @@ function UniReader:inputloop()
 					keep_running = false
 				end
 				break
-			elseif ev.code == KEY_Z then
+			elseif ev.code == KEY_Z and not Keys.shiftmode then
 				local bbox = {}
 				bbox["x0"] = - self.offset_x / self.globalzoom
 				bbox["y0"] = - self.offset_y / self.globalzoom
 				bbox["x1"] = bbox["x0"] + width / self.globalzoom
 				bbox["y1"] = bbox["y0"] + height / self.globalzoom
-				self.bbox = bbox
-				print("# bbox " .. dump(self.bbox)) 
+				bbox.pan_x = self.pan_x
+				bbox.pan_y = self.pan_y
+				self.bbox[self.pageno] = bbox
+				self.bbox[self:odd_even(self.pageno)] = bbox
+				self.bbox.enabled = true
+				print("# bbox " .. self.pageno .. dump(self.bbox)) 
+				self.globalzoommode = self.ZOOM_FIT_TO_CONTENT -- use bbox
+			elseif ev.code == KEY_Z and Keys.shiftmode then
+				self.bbox[self.pageno] = nil;
+				print("# bbox remove "..self.pageno .. dump(self.bbox));
+			elseif ev.code == KEY_Z and Keys.altmode then
+				self.bbox.enabled = not self.bbox.enabled;
+				print("# bbox override "..self.bbox.enabled);
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
@@ -786,6 +835,10 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
+		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
+		self.settings:savesetting("bbox", self.bbox)
+		self.settings:savesetting("globalzoom", self.globalzoom)
+		self.settings:savesetting("globalzoommode", self.globalzoommode)
 		self.settings:close()
 	end
 
