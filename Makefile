@@ -96,9 +96,13 @@ lfs.o: $(LFSDIR)/src/lfs.c
 
 fetchthirdparty:
 	-rm -Rf lua lua-5.1.4*
+	-rm -Rf mupdf/thirdparty
+	git submodule init
 	git submodule update
-	( cd mupdf ; wget http://www.mupdf.com/download/mupdf-thirdparty.zip && unzip mupdf-thirdparty.zip )
-	wget http://www.lua.org/ftp/lua-5.1.4.tar.gz && tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
+	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
+	unzip mupdf-thirdparty.zip -d mupdf
+	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
+	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
 	-rm -f *.o kpdfview
@@ -107,8 +111,8 @@ cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
 	-rm -rf $(DJVUDIR)/build
-	-rm $(MUPDFDIR)/fontdump.host
-	-rm $(MUPDFDIR)/cmapdump.host
+	-rm -f $(MUPDFDIR)/fontdump.host
+	-rm -f $(MUPDFDIR)/cmapdump.host
 
 $(MUPDFDIR)/fontdump.host:
 	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
