@@ -1,5 +1,5 @@
 #!/bin/sh
-export LC_ALL=en_US.UTF-8 
+export LC_ALL="en_US.UTF-8"
 
 echo unlock > /proc/keypad
 echo unlock > /proc/fiveway
