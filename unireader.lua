@@ -132,6 +132,16 @@ function UniReader:initGlobalSettings(settings)
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
+
+	local cache_max_memsize = settings:readsetting("cache_max_memsize")
+	if cache_max_memsize then
+		self.cache_max_memsize = cache_max_memsize
+	end
+
+	local cache_max_ttl = settings:readsetting("cache_max_ttl")
+	if cache_max_ttl then
+		self.cache_max_ttl = cache_max_ttl
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -858,7 +868,6 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
-		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
