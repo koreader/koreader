@@ -114,6 +114,7 @@ fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
+origin_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
@@ -157,6 +158,10 @@ end
 -- save reader settings
 reader_settings:savesetting("cfont", FontChooser.cfont)
 reader_settings:close()
+
+-- @TODO dirty workaround, find a way to force native system poll
+-- screen orientation and upside down mode 09.03 2012
+fb:setOrientation(origin_rotation_mode)
 
 input.closeAll()
 --os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')

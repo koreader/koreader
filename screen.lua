@@ -21,53 +21,54 @@ Codes for rotation modes:
 1 for no rotation, 
 2 for landscape with bottom on the right side of screen, etc.
 
-		  3
+		  2
    +--------------+
    | +----------+ |
    | |          | |
    | | Freedom! | |
    | |          | |  
    | |          | |  
- 4 | |          | | 2
+ 3 | |          | | 1
    | |          | |
    | |          | |
    | +----------+ |
    |              |
    |              |
    +--------------+
-		  1
+		  0
 --]]
 
 
 Screen = {
-	rotation_modes = {"Up","Right","Down","Left"},
-	cur_rotation_mode = 1,
+	cur_rotation_mode = 0,
 }
 
 -- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
 function Screen:screenRotate(orien)
 	if orien == "clockwise" then
-		orien = 1
-	elseif orien == "anticlockwise" then
 		orien = -1
+	elseif orien == "anticlockwise" then
+		orien = 1
 	else
 		return
 	end
 
+	self.cur_rotation_mode = (self.cur_rotation_mode + orien) % 4
+	fb:setOrientation(self.cur_rotation_mode)
 	fb:close()
-	self.cur_rotation_mode = (self.cur_rotation_mode-1 + 1*orien)%4 + 1
-	local mode = self.rotation_modes[self.cur_rotation_mode]
-	os.execute("lipc-send-event -r 3 com.lab126.hal orientation"..mode)
+	--local mode = self.rotation_modes[self.cur_rotation_mode]
+	--self.cur_rotation_mode = (self.cur_rotation_mode-1 + 1*orien)%4 + 1
+	--os.execute("lipc-send-event -r 3 com.lab126.hal orientation"..mode)
 	fb = einkfb.open("/dev/fb0")
 end
 
 function Screen:updateRotationMode()
-	if KEY_FW_DOWN == 116 then -- in EMU mode always set to 1
-		self.cur_rotation_mode = 1
+	if KEY_FW_DOWN == 116 then -- in EMU mode always set to 0
+		self.cur_rotation_mode = 0
 	else
 		orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
 		updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
-		self.cur_rotation_mode = orie_fd:read() + (updown_fd:read() * 2) + 1
+		self.cur_rotation_mode = orie_fd:read() + (updown_fd:read() * 2)
 	end
 end
 

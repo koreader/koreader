@@ -196,9 +196,9 @@ function adjustKeyEvents(ev)
 
 	-- adjust five way key according to rotation mode
 	local code = ev.code
-	if Screen.cur_rotation_mode == 1 then
+	if Screen.cur_rotation_mode == 0 then
 		return code
-	elseif Screen.cur_rotation_mode == 2 then
+	elseif Screen.cur_rotation_mode == 1 then
 		if code == KEY_FW_UP then
 			return KEY_FW_RIGHT
 		elseif code == KEY_FW_RIGHT then
@@ -207,22 +207,22 @@ function adjustKeyEvents(ev)
 			return KEY_FW_LEFT
 		elseif code == KEY_FW_LEFT then
 			return KEY_FW_UP
+		else
+			return code
+		end
+	elseif Screen.cur_rotation_mode == 2 then
+		if code == KEY_FW_UP then
+			return KEY_FW_DOWN
+		elseif code == KEY_FW_RIGHT then
+			return KEY_FW_LEFT
+		elseif code == KEY_FW_DOWN then
+			return KEY_FW_UP
+		elseif code == KEY_FW_LEFT then
+			return KEY_FW_RIGHT
 		else
 			return code
 		end
 	elseif Screen.cur_rotation_mode == 3 then
-		if code == KEY_FW_UP then
-			return KEY_FW_DOWN
-		elseif code == KEY_FW_RIGHT then
-			return KEY_FW_LEFT
-		elseif code == KEY_FW_DOWN then
-			return KEY_FW_UP
-		elseif code == KEY_FW_LEFT then
-			return KEY_FW_RIGHT
-		else
-			return code
-		end
-	elseif Screen.cur_rotation_mode == 4 then
 		if code == KEY_FW_UP then
 			return KEY_FW_LEFT
 		elseif code == KEY_FW_RIGHT then
@@ -235,4 +235,7 @@ function adjustKeyEvents(ev)
 			return code
 		end
 	end
+	-- This should not happen.
+	print("# Unrecognizable rotation mode "..Screen.cur_rotation_mode.."!")
+	return nil
 end

@@ -180,6 +180,29 @@ static int einkUpdate(lua_State *L) {
 	return 0;
 }
 
+/* NOTICE!!! You must close and reopen framebuffer after called this method.
+ * Otherwise, screen resolution will not be updated! */
+static int einkSetOrientation(lua_State *L) {
+#ifndef EMULATE_READER
+	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+	int mode = luaL_optint(L, 2, 0);
+
+	if (mode < 0 || mode > 3) {
+		return luaL_error(L, "Wrong rotation mode %d given!", mode);
+	}
+
+	/* ioctl has a different definition for rotation mode. */
+	if (mode == 1) 
+		mode = 2;
+	else if (mode == 2)
+		mode = 1;
+
+	ioctl(fb->fd, FBIO_EINK_SET_DISPLAY_ORIENTATION, mode);
+#endif
+	return 0;
+}
+
+
 static const struct luaL_reg einkfb_func[] = {
 	{"open", openFrameBuffer},
 	{NULL, NULL}
@@ -189,6 +212,7 @@ static const struct luaL_reg einkfb_meth[] = {
 	{"close", closeFrameBuffer},
 	{"__gc", closeFrameBuffer},
 	{"refresh", einkUpdate},
+	{"setOrientation", einkSetOrientation},
 	{"getSize", getSize},
 	{NULL, NULL}
 };

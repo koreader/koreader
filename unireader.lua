@@ -544,10 +544,7 @@ end
 function UniReader:screenRotate(orien)
 	Screen:screenRotate(orien)
 	width, height = fb:getSize()
-
 	self:clearcache()
-	--@TODO write a sleep in util module to replace it 08.03 2012
-	os.execute("sleep 2")
 	self:goto(self.pageno)
 end
 
@@ -714,13 +711,13 @@ function UniReader:inputloop()
 				end
 			elseif ev.code == KEY_J then
 				if Keys.shiftmode then
-					self:screenRotate("anticlockwise")
+					self:screenRotate("clockwise")
 				else
 					self:setrotate( self.globalrotate + 10 )
 				end
 			elseif ev.code == KEY_K then
 				if Keys.shiftmode then
-					self:screenRotate("clockwise")
+					self:screenRotate("anticlockwise")
 				else
 					self:setrotate( self.globalrotate - 10 )
 				end
