@@ -22,6 +22,7 @@ require "pdfreader"
 require "djvureader"
 require "filechooser"
 require "settings"
+require "screen"
 
 -- option parsing:
 longopts = {
@@ -111,6 +112,8 @@ end
 
 fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
+-- read current rotation mode
+Screen:updateRotationMode()
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")

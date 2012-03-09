@@ -528,18 +528,7 @@ end
 
 -- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
 function UniReader:screenRotate(orien)
-	if orien == "clockwise" then
-		orien = 1
-	elseif orien == "anticlockwise" then
-		orien = -1
-	else
-		return
-	end
-
-	fb:close()
-	local mode = rotation_mode[(getRotationMode()+1*orien)%4 + 1]
-	os.execute("lipc-send-event -r 3 com.lab126.hal orientation"..mode)
-	fb = einkfb.open("/dev/fb0")
+	Screen:screenRotate(orien)
 	width, height = fb:getSize()
 
 	self:clearcache()
