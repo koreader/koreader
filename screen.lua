@@ -21,7 +21,7 @@ Codes for rotation modes:
 1 for no rotation, 
 2 for landscape with bottom on the right side of screen, etc.
 
-		  2
+           2
    +--------------+
    | +----------+ |
    | |          | |
@@ -35,7 +35,7 @@ Codes for rotation modes:
    |              |
    |              |
    +--------------+
-		  0
+          0
 --]]
 
 
@@ -54,6 +54,7 @@ function Screen:screenRotate(orien)
 	end
 
 	self.cur_rotation_mode = (self.cur_rotation_mode + orien) % 4
+	-- you have to reopen framebuffer after rotate
 	fb:setOrientation(self.cur_rotation_mode)
 	fb:close()
 	--local mode = self.rotation_modes[self.cur_rotation_mode]
