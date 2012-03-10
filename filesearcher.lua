@@ -1,22 +1,9 @@
 require "rendertext"
 require "keys"
 require "graphics"
-require "fontchooser"
+require "font"
 
 FileSearcher = {
-	-- font for displaying toc item names
-	fsize = 25,
-	face = nil,
-	fhash = nil,
-	-- font for page title
-	tfsize = 30,
-	tface = nil,
-	tfhash = nil,
-	-- font for paging display
-	ffsize = 16,
-	fface = nil,
-	ffhash = nil,
-
 	-- title height
 	title_H = 45,
 	-- spacing between lines
@@ -68,23 +55,6 @@ function FileSearcher:setPath(newPath)
 	self.page = 1
 	self.current = 1
 	return true
-end
-
-function FileSearcher:updateFont()
-	if self.fhash ~= FontChooser.cfont..self.fsize then
-		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
-		self.fhash = FontChooser.cfont..self.fsize
-	end
-
-	if self.tfhash ~= FontChooser.tfont..self.tfsize then
-		self.tface = freetype.newBuiltinFace(FontChooser.tfont, self.tfsize)
-		self.tfhash = FontChooser.tfont..self.tfsize
-	end
-
-	if self.ffhash ~= FontChooser.ffont..self.ffsize then
-		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
-		self.ffhash = FontChooser.ffont..self.ffsize
-	end
 end
 
 function FileSearcher:setSearchResult(keywords)
@@ -153,22 +123,25 @@ function FileSearcher:choose(ypos, height, keywords)
 	end
 
 	while true do
-		self:updateFont()
+		local cface, cfhash = Font:getFaceAndHash(22)
+		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
+		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+
 		if pagedirty then
 			markerdirty = true
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 
 			-- draw menu title
-			renderUtf8Text(fb.bb, 30, ypos + self.title_H, self.tface, self.tfhash,
+			renderUtf8Text(fb.bb, 30, ypos + self.title_H, tface, tfhash,
 				"Search Result for: "..keywords, true)
 
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found
 				y = ypos + self.title_H + self.spacing * 2
-				renderUtf8Text(fb.bb, 20, y, self.face, self.fhash, 
+				renderUtf8Text(fb.bb, 20, y, cface, cfhash, 
 					"Sorry, no match found.", true) 
-				renderUtf8Text(fb.bb, 20, y + self.spacing, self.face, self.fhash, 
+				renderUtf8Text(fb.bb, 20, y + self.spacing, cface, cfhash, 
 					"Please try a different keyword.", true)
 				markerdirty = false
 			else -- found something, draw it
@@ -176,7 +149,7 @@ function FileSearcher:choose(ypos, height, keywords)
 					local i = (self.page - 1) * perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash, 
+						renderUtf8Text(fb.bb, 50, y, cface, cfhash, 
 							self.result[i].name, true)
 					end
 				end
@@ -186,7 +159,7 @@ function FileSearcher:choose(ypos, height, keywords)
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
 			x = (fb.bb:getWidth() / 2) - 50
 			all_page = (math.floor(self.items / perpage)+1)
-			renderUtf8Text(fb.bb, x, y, self.fface, self.ffhash,
+			renderUtf8Text(fb.bb, x, y, fface, ffhash,
 				"Page "..self.page.." of "..all_page, true)
 		end
 
@@ -251,12 +224,12 @@ function FileSearcher:choose(ypos, height, keywords)
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
 				fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
-					item_array = FontChooser.fonts,
+					item_array = Font.fonts,
 				}
 				local re = fonts_menu:choose(0, height)
 				if re then
-					FontChooser.cfont = FontChooser.fonts[re]
-					FontChooser:init()
+					Font.cfont = Font.fonts[re]
+					Font:update()
 				end
 				pagedirty = true
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then

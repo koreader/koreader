@@ -43,7 +43,8 @@ Screen = {
 	cur_rotation_mode = 0,
 }
 
--- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
+-- @orien: 1 for clockwise rotate, -1 for anti-clockwise
+-- Remember to reread screen resolution after this function call
 function Screen:screenRotate(orien)
 	if orien == "clockwise" then
 		orien = -1
@@ -57,9 +58,6 @@ function Screen:screenRotate(orien)
 	-- you have to reopen framebuffer after rotate
 	fb:setOrientation(self.cur_rotation_mode)
 	fb:close()
-	--local mode = self.rotation_modes[self.cur_rotation_mode]
-	--self.cur_rotation_mode = (self.cur_rotation_mode-1 + 1*orien)%4 + 1
-	--os.execute("lipc-send-event -r 3 com.lab126.hal orientation"..mode)
 	fb = einkfb.open("/dev/fb0")
 end
 
