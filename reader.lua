@@ -22,6 +22,8 @@ require "pdfreader"
 require "djvureader"
 require "filechooser"
 require "settings"
+require "keys"
+require "commands"
 
 -- option parsing:
 longopts = {
@@ -102,7 +104,6 @@ else
 		input.open("/dev/input/event2")
 		set_k3_keycodes()
 	end
-
 end
 
 if optarg["G"] ~= nil then

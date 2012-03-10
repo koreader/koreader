@@ -94,6 +94,14 @@ EV_KEY = 1
 EVENT_VALUE_KEY_PRESS = 1
 EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
+
+-- modifiers
+MOD_SHIFT = "SHIFT"
+MOD_ALT = "ALT" 
+
+function get_modifier()
+	return Keys.altmode and MOD_ALT or Keys.shiftmode and MOD_SHIFT
+end
  
 function set_k3_keycodes()
 	KEY_AA = 190

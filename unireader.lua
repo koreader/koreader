@@ -1,6 +1,7 @@
 require "keys"
 require "settings"
 require "selectmenu"
+require "commands"
 
 UniReader = {
 	-- "constants":
@@ -54,6 +55,8 @@ UniReader = {
 	doc = nil,
 	-- the document's setting store:
 	settings = nil,
+	-- list of available commands:
+	commands = Commands:new(), 
 
 	-- you have to initialize newDC, nulldc in specific reader
 	newDC = function() return nil end,
@@ -132,6 +135,8 @@ function UniReader:initGlobalSettings(settings)
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
+	-- initialize commands
+	self:add_all_commands()
 end
 
 -- guarantee that we have enough memory in cache
@@ -615,6 +620,19 @@ function UniReader:inputloop()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
+			keydef = Keydef.new(ev.code, get_modifier())
+			print("key pressed: "..keydef)
+			command = self.commands:get_by_keydef(keydef)
+			if command ~= nil then
+				print(command)				
+				ret_code = command.func(self,keydef)
+				if ret_code == "break" then
+					break;
+				end
+			else
+				print("command not found")
+			end
+--[[			
 			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if Keys.shiftmode then
 					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.2)
@@ -644,7 +662,7 @@ function UniReader:inputloop()
 					if #self.jump_stack ~= 0 then
 						self:goto(self.jump_stack[1].page)
 					end
-				end
+				end			
 			elseif ev.code == KEY_VPLUS then
 				self:modify_gamma( 1.25 )
 			elseif ev.code == KEY_VMINUS then
@@ -726,7 +744,7 @@ function UniReader:inputloop()
 			then
 				self.globalzoommode = self.ZOOM_BY_VALUE
 			end
-
+]]
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
 			if ev.code == KEY_FW_LEFT
 			or ev.code == KEY_FW_RIGHT
@@ -816,9 +834,9 @@ function UniReader:inputloop()
 				if old_offset_x ~= self.offset_x
 				or old_offset_y ~= self.offset_y then
 						self:goto(self.pageno)
-				end
+				end			
 			end
-
+	
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
@@ -843,4 +861,98 @@ function UniReader:inputloop()
 	end
 
 	return keep_running
+end
+
+-- command definitions
+function UniReader:add_all_commands()
+	local noop = function() end
+	self.commands:add(KEY_PGFWD,MOD_SHIFT,">","zoom in 20%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
+		end)
+	self.commands:add(KEY_PGBCK,MOD_SHIFT,"<","zoom out 20%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
+		end)
+	self.commands:add(KEY_PGFWD,MOD_ALT,">","zoom in 10%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
+		end)
+	self.commands:add(KEY_PGBCK,MOD_ALT,">","zoom out 10%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
+		end)
+	self.commands:add(KEY_PGFWD,nil,">","next page",
+		function(unireader)
+			unireader:goto(unireader:nextView())
+		end)
+	self.commands:add(KEY_PGBCK,nil,"<","previous page",
+		function(unireader)
+			unireader:goto(unireader:prevView())
+		end)
+	self.commands:add(KEY_BACK,MOD_ALT,"<-","stop reading",
+		function(unireader)
+			return "break"
+		end)
+	self.commands:add(KEY_BACK,nil,"<-","back to last jump",
+		function(unireader)
+			if #unireader.jump_stack ~= 0 then
+				unireader:goto(unireader.jump_stack[1].page)
+			end
+		end)
+	self.commands:add(KEY_VPLUS,nil,"vol+","increase gamma 25%",
+		function(unireader)
+			unireader:modify_gamma( 1.25 )
+		end)
+	self.commands:add(KEY_VPLUS,nil,"vol-","decrease gamma 25%",
+		function(unireader)
+			unireader:modify_gamma( 0.80 )
+		end)
+	--numeric key group
+	local numeric_keydefs = {}
+	for i=1,10 do numeric_keydefs[i]=Keydef.new(KEY_1+i-1,nil,tostring(i%10)) end
+	self.commands:add_group("numeric keys",numeric_keydefs,"jump to <key>*10% of document",
+		function(unireader,keydef)
+			print('jump to page: '..math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1)..'/'..unireader.doc:getPages())
+			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
+		end)	
+	--
+	self.commands:add(KEY_A,MOD_SHIFT,"A","zoom fit to content",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT)
+		end)	
+	self.commands:add(KEY_A,nil,"A","zoom fit to page",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE)
+		end)	
+	self.commands:add(KEY_S,MOD_SHIFT,"S","zoom fit to content width",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
+		end)	
+	self.commands:add(KEY_S,nil,"S","zoom fit to page width",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
+		end)
+	self.commands:add(KEY_D,MOD_SHIFT,"D","zoom fit to content height",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
+		end)	
+	self.commands:add(KEY_D,nil,"D","zoom fit to page height",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
+		end)
+	self.commands:add(KEY_F,MOD_SHIFT,"F","zoom fit to content 2-column mode",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
+		end)	
+	self.commands:add(KEY_F,nil,"F","zoom fit to margin 2-column mode",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+		end)		
+	self.commands:add(KEY_T,nil,"T","show table of content",
+		function(unireader)
+			unireader:showTOC()
+		end)			
+	--print commands
+	for k,v in pairs(self.commands.map) do print(v) end	
 end
