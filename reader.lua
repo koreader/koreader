@@ -103,7 +103,6 @@ else
 		input.open("/dev/input/event2")
 		set_k3_keycodes()
 	end
-
 end
 
 if optarg["G"] ~= nil then
@@ -120,7 +119,7 @@ origin_rotation_mode = Screen.cur_rotation_mode
 reader_settings = DocSettings:open(".reader")
 r_cfont = reader_settings:readsetting("cfont")
 if r_cfont ~=nil then
-	FontChooser.cfont = r_cfont
+	Font.cfont = r_cfont
 end
 
 -- initialize global settings shared among all readers
@@ -156,7 +155,7 @@ end
 
 
 -- save reader settings
-reader_settings:savesetting("cfont", FontChooser.cfont)
+reader_settings:savesetting("cfont", Font.cfont)
 reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll

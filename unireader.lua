@@ -620,6 +620,37 @@ function UniReader:showJumpStack()
 	end
 end
 
+function UniReader:showMenu()
+	local ypos = height - 50
+	local load_percent = (self.pageno / self.doc:getPages())
+
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+
+	ypos = ypos + 15
+	local face, fhash = Font:getFaceAndHash(22)
+	local cur_section = self:getTOCTitleByPage(self.pageno)
+	if cur_section ~= "" then
+		cur_section = "Section: "..cur_section
+	end
+	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
+		"Page: "..self.pageno.."/"..self.doc:getPages()..
+		"    "..cur_section, true)
+
+	ypos = ypos + 15
+	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15, 
+							5, 4, load_percent, 8)
+	fb:refresh(1)
+	while 1 do
+		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
+		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			if ev.code == KEY_BACK or ev.code == KEY_MENU then
+				return
+			end
+		end
+	end
+end
+
 function UniReader:odd_even(number)
 	print("## odd_even "..number)
 	if number % 2 == 1 then
@@ -746,6 +777,9 @@ function UniReader:inputloop()
 			elseif ev.code == KEY_Z and Keys.altmode then
 				self.bbox.enabled = not self.bbox.enabled;
 				print("# bbox override: ", self.bbox.enabled);
+			elseif ev.code == KEY_MENU then
+				self:showMenu()
+				self:goto(self.pageno)
 			end
 
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move

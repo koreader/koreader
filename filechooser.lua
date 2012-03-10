@@ -1,26 +1,13 @@
 require "rendertext"
 require "keys"
 require "graphics"
-require "fontchooser"
+require "font"
 require "filesearcher"
 require "inputbox"
 require "selectmenu"
 
 FileChooser = {
 	-- Class vars:
-	-- font for displaying toc item names
-	fsize = 25,
-	face = nil,
-	fhash = nil,
-	--face = freetype.newBuiltinFace("sans", 25),
-	--fhash = "s25",
-
-	-- font for paging display
-	ffsize = 16,
-	fface = nil,
-	ffhash = nil,
-	--sface = freetype.newBuiltinFace("sans", 16),
-	--sfhash = "s16",
 	
 	-- spacing between lines
 	spacing = 40,
@@ -93,17 +80,6 @@ function FileChooser:setPath(newPath)
 	end
 end
 
-function FileChooser:updateFont()
-	if self.fhash ~= FontChooser.cfont..self.fsize then
-		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
-		self.fhash = FontChooser.cfont..self.fsize
-	end
-	if self.ffhash ~= FontChooser.ffont..self.ffsize then
-		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
-		self.ffhash = FontChooser.ffont..self.ffsize
-	end
-end
-
 function FileChooser:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
@@ -139,7 +115,9 @@ function FileChooser:choose(ypos, height)
 	end
 
 	while true do
-		self:updateFont()
+		local cface, cfhash= Font:getFaceAndHash(25)
+		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			local c
@@ -147,17 +125,17 @@ function FileChooser:choose(ypos, height)
 				local i = (self.page - 1) * perpage + c
 				if i <= #self.dirs then
 					-- resembles display in midnight commander: adds "/" prefix for directories
-					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, self.face, self.fhash, "/", true)
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, self.face, self.fhash, self.dirs[i], true)
+					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, cface, cfhash, "/", true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.dirs[i], true)
 				elseif i <= self.items then
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, self.face, self.fhash, self.files[i-#self.dirs], true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.files[i-#self.dirs], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, self.fface, self.ffhash,
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface, ffhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)		
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
 			self.exception_message = nil
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, self.fface, self.ffhash, msg, true)			
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, ffhash, msg, true)			
 			markerdirty = true
 		end
 		if markerdirty then
@@ -190,12 +168,12 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
 				fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
-					item_array = FontChooser.fonts,
+					item_array = Font.fonts,
 				}
 				local re = fonts_menu:choose(0, height)
 				if re then
-					FontChooser.cfont = FontChooser.fonts[re]
-					FontChooser:init()
+					Font.cfont = Font.fonts[re]
+					Font:update()
 				end
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
