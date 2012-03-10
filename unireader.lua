@@ -132,6 +132,16 @@ function UniReader:initGlobalSettings(settings)
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
+
+	local cache_max_memsize = settings:readsetting("cache_max_memsize")
+	if cache_max_memsize then
+		self.cache_max_memsize = cache_max_memsize
+	end
+
+	local cache_max_ttl = settings:readsetting("cache_max_ttl")
+	if cache_max_ttl then
+		self.cache_max_ttl = cache_max_ttl
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -199,13 +209,17 @@ function UniReader:setzoom(page)
 	local dc = self.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
-	local x0, y0, x1, y1 = page:getUsedBBox()
-	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
-		x0 = 0
-		y0 = 0
-		x1 = pwidth
-		y1 = pheight
+	local x0, y0, x1, y1 = 0, 0, pwidth, pheight
+
+	-- only get usedBBox in fit to content mode
+	if self.globalzoommode <= self.ZOOM_FIT_TO_CONTENT and
+	self.globalzoommode >= self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then 
+		x0, y0, x1, y1 = page:getUsedBBox()
+		if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
+			x0, y0, x1, y1 = 0, 0, pwidth, pheight
+		end
 	end
+
 	-- clamp to page BBox
 	if x0 < 0 then x0 = 0 end
 	if x1 > pwidth then x1 = pwidth end
@@ -526,6 +540,14 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+-- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
+function UniReader:screenRotate(orien)
+	Screen:screenRotate(orien)
+	width, height = fb:getSize()
+	self:clearcache()
+	self:goto(self.pageno)
+end
+
 function UniReader:cleanUpTOCTitle(title)
 	return title:gsub("\13", "")
 end
@@ -688,9 +710,17 @@ function UniReader:inputloop()
 					self:showJumpStack()
 				end
 			elseif ev.code == KEY_J then
-				self:setrotate( self.globalrotate + 10 )
+				if Keys.shiftmode then
+					self:screenRotate("clockwise")
+				else
+					self:setrotate( self.globalrotate + 10 )
+				end
 			elseif ev.code == KEY_K then
-				self:setrotate( self.globalrotate - 10 )
+				if Keys.shiftmode then
+					self:screenRotate("anticlockwise")
+				else
+					self:setrotate( self.globalrotate - 10 )
+				end
 			elseif ev.code == KEY_HOME then
 				if Keys.shiftmode or Keys.altmode then
 					-- signal quit
@@ -835,7 +865,6 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
-		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)

@@ -178,35 +178,6 @@ function set_emu_keycodes()
 	KEY_VMINUS = 96 -- F12
 end
 
-function getRotationMode()
-	--[[
-	return code for four kinds of rotation mode:
-
-  0 for no rotation, 
-	1 for landscape with bottom on the right side of screen, etc.
-
-	         2
-	   +-----------+
-	   | +-------+ |
-	   | |       | |
-	   | |       | |
-	   | |       | |  
-	 3 | |       | | 1
-	   | |       | |
-	   | |       | |
-	   | +-------+ |
-	   |           |
-	   +-----------+
-	         0
-	--]]
-	if KEY_FW_DOWN == 116 then -- in EMU mode always return 0
-		return 0
-	end
-	orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
-	updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
-	mode = orie_fd:read() + (updown_fd:read() * 2)
-	return mode
-end
 
 function adjustKeyEvents(ev)
 	if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
@@ -225,9 +196,9 @@ function adjustKeyEvents(ev)
 
 	-- adjust five way key according to rotation mode
 	local code = ev.code
-	if getRotationMode() == 0 then
+	if Screen.cur_rotation_mode == 0 then
 		return code
-	elseif getRotationMode() == 1 then
+	elseif Screen.cur_rotation_mode == 1 then
 		if code == KEY_FW_UP then
 			return KEY_FW_RIGHT
 		elseif code == KEY_FW_RIGHT then
@@ -239,7 +210,7 @@ function adjustKeyEvents(ev)
 		else
 			return code
 		end
-	elseif getRotationMode() == 2 then
+	elseif Screen.cur_rotation_mode == 2 then
 		if code == KEY_FW_UP then
 			return KEY_FW_DOWN
 		elseif code == KEY_FW_RIGHT then
@@ -251,7 +222,7 @@ function adjustKeyEvents(ev)
 		else
 			return code
 		end
-	elseif getRotationMode() == 3 then
+	elseif Screen.cur_rotation_mode == 3 then
 		if code == KEY_FW_UP then
 			return KEY_FW_LEFT
 		elseif code == KEY_FW_RIGHT then
@@ -264,4 +235,7 @@ function adjustKeyEvents(ev)
 			return code
 		end
 	end
+	-- This should not happen.
+	print("# Unrecognizable rotation mode "..Screen.cur_rotation_mode.."!")
+	return nil
 end
