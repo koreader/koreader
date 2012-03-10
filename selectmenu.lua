@@ -142,7 +142,7 @@ function SelectMenu:choose(ypos, height)
 						if self.item_shortcuts[c] ~= nil and 
 							string.len(self.item_shortcuts[c]) == 3 then
 							-- print "Del", "Sym and "Ent"
-							renderUtf9Text(fb.bb, 13, y, fface, ffhash,
+							renderUtf8Text(fb.bb, 13, y, fface, ffhash,
 								self.item_shortcuts[c], true)
 						else
 							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
