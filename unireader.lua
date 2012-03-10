@@ -561,13 +561,20 @@ function UniReader:getTOCTitleByPage(pageno)
 		-- build toc when needed.
 		self:fillTOC()
 	end
-	
-	for _k,_v in ipairs(self.toc) do
-		if _v.page >= pageno then
-			return self:cleanUpTOCTitle(_v.title)
-		end
+
+	-- no table of content
+	if #self.toc == 0 then
+		return ""
 	end
-	return ""
+	
+	local pre_entry = self.toc[1]
+	for _k,_v in ipairs(self.toc) do
+		if _v.page > pageno then
+			break
+		end
+		pre_entry = _v
+	end
+	return self:cleanUpTOCTitle(pre_entry.title)
 end
 
 function UniReader:showTOC()
