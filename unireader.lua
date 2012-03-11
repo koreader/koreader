@@ -798,15 +798,6 @@ function UniReader:inputloop()
 				self.globalzoommode = self.ZOOM_BY_VALUE
 			end
 
-			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
-			if ev.code == KEY_FW_LEFT
-			or ev.code == KEY_FW_RIGHT
-			or ev.code == KEY_FW_UP
-			or ev.code == KEY_FW_DOWN
-			then
-				self.globalzoommode = self.ZOOM_BY_VALUE
-			end
-
 			if self.globalzoommode == self.ZOOM_BY_VALUE then
 				local x
 				local y
@@ -844,7 +835,7 @@ function UniReader:inputloop()
 						self.offset_x = 0
 					end
 				elseif ev.code == KEY_FW_RIGHT then
-					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x);
+					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x.." - "..self.pan_margin);
 					self.offset_x = self.offset_x - x
 					if self.pan_by_page then
 						if self.offset_x < self.min_offset_x - self.pan_margin and self.pageno < self.doc:getPages() then
