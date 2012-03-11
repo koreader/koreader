@@ -132,47 +132,40 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 	while(counter < length-1) {
 		lua_pushnumber(L, *count);
 		lua_newtable(L);
+
 		lua_pushstring(L, "page");
-
 		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
-
-		page_number[0]= '0'; //page numbers appear as #11, set # to 0 so strtol works
-
-//		printf("string: %i:\n",  strtol(page_number,NULL, 10));
-
-		lua_pushnumber(L, strtol(page_number,NULL, 10));
+		/* page numbers appear as #11, set # to 0 so strtol works */
+		page_number[0]= '0'; 
+		lua_pushnumber(L, strtol(page_number, NULL, 10)+1);
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
 		lua_pushnumber(L, depth); 
 		lua_settable(L, -3);
+
 		lua_pushstring(L, "title");
-
 		lua_pushstring(L, miniexp_to_str(miniexp_car(miniexp_nth(counter, lista))));
-
 		lua_settable(L, -3);
 
 		lua_settable(L, -3);
-
 
 		(*count)++;
 
 		if (miniexp_length(miniexp_cdr(miniexp_nth(counter, lista))) > 1) {
-			walkTableOfContent(L, miniexp_cdr(miniexp_nth(counter,lista)), count, depth);
+			walkTableOfContent(L, miniexp_cdr(miniexp_nth(counter, lista)), count, depth);
 		}
 		counter++;
-
 	}
 	return 0;
 }
 
 
 static int getTableOfContent(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	miniexp_t r;
 	int count = 1;
 
-	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
-	/*ol = djvu_load_outline(doc->doc_ref);*/
-	miniexp_t r;
 	while ((r=ddjvu_document_get_outline(doc->doc_ref))==miniexp_dummy)
 		handle(L, doc->context, True);
 
