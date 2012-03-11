@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
 #include "string.h"
@@ -119,15 +120,67 @@ static int getNumberOfPages(lua_State *L) {
 	return 1;
 }
 
-/* not supported yet, so return empty table */
+static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) {
+	depth++;
+
+	miniexp_t lista = miniexp_cdr(r); // go inside bookmars in the list
+
+	int length = miniexp_length(r);
+	int counter = 0;
+	char page_number[6];
+
+	while(counter < length-1) {
+		lua_pushnumber(L, *count);
+		lua_newtable(L);
+		lua_pushstring(L, "page");
+
+		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
+
+		page_number[0]= '0'; //page numbers appear as #11, set # to 0 so strtol works
+
+//		printf("string: %i:\n",  strtol(page_number,NULL, 10));
+
+		lua_pushnumber(L, strtol(page_number,NULL, 10));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "depth");
+		lua_pushnumber(L, depth); 
+		lua_settable(L, -3);
+		lua_pushstring(L, "title");
+
+		lua_pushstring(L, miniexp_to_str(miniexp_car(miniexp_nth(counter, lista))));
+
+		lua_settable(L, -3);
+
+		lua_settable(L, -3);
+
+
+		(*count)++;
+
+		if (miniexp_length(miniexp_cdr(miniexp_nth(counter, lista))) > 1) {
+			walkTableOfContent(L, miniexp_cdr(miniexp_nth(counter,lista)), count, depth);
+		}
+		counter++;
+
+	}
+	return 0;
+}
+
+
 static int getTableOfContent(lua_State *L) {
-	/*int count = 1;*/
+	int count = 1;
 
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	/*ol = djvu_load_outline(doc->doc_ref);*/
+	miniexp_t r;
+	while ((r=ddjvu_document_get_outline(doc->doc_ref))==miniexp_dummy)
+		handle(L, doc->context, True);
+
+	//printf("lista: %s\n", miniexp_to_str(miniexp_car(miniexp_nth(1, miniexp_cdr(r)))));
 
 	lua_newtable(L);
-	/*walkTableOfContent(L, ol, &count, 0);*/
+	walkTableOfContent(L, r, &count, 0);
+
 	return 1;
 }
 
