@@ -209,13 +209,17 @@ function UniReader:setzoom(page)
 	local dc = self.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
-	local x0, y0, x1, y1 = page:getUsedBBox()
-	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
-		x0 = 0
-		y0 = 0
-		x1 = pwidth
-		y1 = pheight
+	local x0, y0, x1, y1 = 0, 0, pwidth, pheight
+
+	-- only get usedBBox in fit to content mode
+	if self.globalzoommode <= self.ZOOM_FIT_TO_CONTENT and
+	self.globalzoommode >= self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then 
+		x0, y0, x1, y1 = page:getUsedBBox()
+		if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
+			x0, y0, x1, y1 = 0, 0, pwidth, pheight
+		end
 	end
+
 	-- clamp to page BBox
 	if x0 < 0 then x0 = 0 end
 	if x1 > pwidth then x1 = pwidth end
@@ -735,6 +739,17 @@ function UniReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 				end
+			elseif ev.code == KEY_G then
+				local page = InputBox:input(height-100, 100, "Page:")
+				-- convert string to number
+				if not pcall(function () page = page + 0 end) then
+					page = self.pageno
+				else
+					if page < 1 or page > self.doc:getPages() then
+						page = self.pageno
+					end
+				end
+				self:goto(page)
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
