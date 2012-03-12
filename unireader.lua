@@ -209,17 +209,13 @@ function UniReader:setzoom(page)
 	local dc = self.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
-	local x0, y0, x1, y1 = 0, 0, pwidth, pheight
-
-	-- only get usedBBox in fit to content mode
-	if self.globalzoommode <= self.ZOOM_FIT_TO_CONTENT and
-	self.globalzoommode >= self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then 
-		x0, y0, x1, y1 = page:getUsedBBox()
-		if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
-			x0, y0, x1, y1 = 0, 0, pwidth, pheight
-		end
+	local x0, y0, x1, y1 = page:getUsedBBox()
+	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
+		x0 = 0
+		y0 = 0
+		x1 = pwidth
+		y1 = pheight
 	end
-
 	-- clamp to page BBox
 	if x0 < 0 then x0 = 0 end
 	if x1 > pwidth then x1 = pwidth end
