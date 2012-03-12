@@ -189,7 +189,7 @@ function UniReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamm
 		-- so give it more ttl.
 		self.cache[hash].ttl = self.cache_max_ttl
 	end
-	return hash
+	return hash, 0, 0
 end
 
 -- calculate a hash for our current state
@@ -358,12 +358,14 @@ end
 -- render and blit a page
 function UniReader:show(no)
 	local slot
+	local offset_x -- resulting display offset
+	local offset_y
 	if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-		slot = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		slot, offset_x, offset_y = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 	else
-		slot = self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		slot, offset_x, offset_y = self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
 	end
-	fb.bb:blitFullFrom(self.cache[slot].bb)
+	fb.bb:blitFrom(self.cache[slot].bb, 0, 0, offset_x, offset_y, width, height)
 	if self.rcount == self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
