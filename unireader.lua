@@ -188,8 +188,10 @@ function UniReader:draworcache(no, preCache)
 		-- we have something in cache, check if it contains the requested part
 		if self.cache[pagehash].x <= (-self.offset_x)
 			and self.cache[pagehash].y <= (-self.offset_y)
-			and self.cache[pagehash].x + self.cache[pagehash].w >= (-self.offset_x) + width
-			and self.cache[pagehash].y + self.cache[pagehash].h >= (-self.offset_y) + height
+			and ( self.cache[pagehash].x + self.cache[pagehash].w >= (-self.offset_x) + width
+				or self.cache[pagehash].w >= self.fullwidth - 1)
+			and ( self.cache[pagehash].y + self.cache[pagehash].h >= (-self.offset_y) + height
+				or self.cache[pagehash].h >= self.fullheight - 1)
 		then
 			-- requested part is within cached tile
 			-- ...so properly clean page
