@@ -189,7 +189,7 @@ function UniReader:draworcache(no, preCache)
 	local offset_x_in_page = -self.offset_x
 	local offset_y_in_page = -self.offset_y
 	if offset_x_in_page < 0 then offset_x_in_page = 0 end
-	if offset_x_in_page < 0 then offset_y_in_page = 0 end
+	if offset_y_in_page < 0 then offset_y_in_page = 0 end
 
 	-- check if we have relevant cache contents
 	local pagehash = no..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
@@ -272,6 +272,9 @@ function UniReader:draworcache(no, preCache)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0)
 	page:close()
 
+	print("offset_x_in_page", offset_x_in_page)
+	print("offset_y_in_page", offset_y_in_page)
+	-- return hash and offset within blitbuffer
 	return pagehash,
 		offset_x_in_page - tile.x,
 		offset_y_in_page - tile.y
@@ -441,16 +444,27 @@ function UniReader:show(no)
 	local dest_x = 0
 	local dest_y = 0
 	if bb:getWidth() - offset_x < width then
-		-- we can't fill the whole output width
+		-- we can't fill the whole output width, center the content
 		dest_x = (width - (bb:getWidth() - offset_x)) / 2
 	end
-	if bb:getHeight() - offset_y < height then
-		-- we can't fill the whole output heigth
+	if bb:getHeight() - offset_y < height and 
+	self.globalzoommode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		-- we can't fill the whole output height and not in 
+		-- ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode, center the content
 		dest_y = (height - (bb:getHeight() - offset_y)) / 2
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
+	self.offset_y > 0 then
+		-- if we are in ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode and turning to
+		-- the top of the page, we might leave an empty space between the 
+		-- page top and screen top.
+		dest_y = self.offset_y
 	end
 	if dest_x or dest_y then
 		fb.bb:paintRect(0, 0, width, height, 8)
 	end
+	print("# blitFrom dest_off:("..dest_x..", "..dest_y..
+		"), src_off:("..offset_x..", "..offset_y.."), "..
+		"width:"..width..", height:"..height)
 	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
 	if self.rcount == self.rcountmax then
 		print("full refresh")
