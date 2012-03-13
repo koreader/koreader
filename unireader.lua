@@ -272,8 +272,6 @@ function UniReader:draworcache(no, preCache)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0)
 	page:close()
 
-	print("offset_x_in_page", offset_x_in_page)
-	print("offset_y_in_page", offset_y_in_page)
 	-- return hash and offset within blitbuffer
 	return pagehash,
 		offset_x_in_page - tile.x,
