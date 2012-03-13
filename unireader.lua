@@ -182,15 +182,24 @@ function UniReader:draworcache(no, preCache)
 	local page = self.doc:openPage(no)
 	local dc = self:setzoom(page)
 
+	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
+	-- they are always positive. 
+	-- you can see self.offset_x_& self.offset_y as the offset within 
+	-- draw space, which includes the page. So it can be negative and positive.
+	local offset_x_in_page = -self.offset_x
+	local offset_y_in_page = -self.offset_y
+	if offset_x_in_page < 0 then offset_x_in_page = 0 end
+	if offset_x_in_page < 0 then offset_y_in_page = 0 end
+
 	-- check if we have relevant cache contents
 	local pagehash = no..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache, check if it contains the requested part
-		if self.cache[pagehash].x <= (-self.offset_x)
-			and self.cache[pagehash].y <= (-self.offset_y)
-			and ( self.cache[pagehash].x + self.cache[pagehash].w >= (-self.offset_x) + width
+		if self.cache[pagehash].x <= offset_x_in_page
+			and self.cache[pagehash].y <= offset_y_in_page
+			and ( self.cache[pagehash].x + self.cache[pagehash].w >= offset_x_in_page + width
 				or self.cache[pagehash].w >= self.fullwidth - 1)
-			and ( self.cache[pagehash].y + self.cache[pagehash].h >= (-self.offset_y) + height
+			and ( self.cache[pagehash].y + self.cache[pagehash].h >= offset_y_in_page + height
 				or self.cache[pagehash].h >= self.fullheight - 1)
 		then
 			-- requested part is within cached tile
@@ -202,14 +211,15 @@ function UniReader:draworcache(no, preCache)
 			end
 			-- ...and return blitbuffer plus offset into it
 			return pagehash,
-				(-self.offset_x) - self.cache[pagehash].x,
-				(-self.offset_y) - self.cache[pagehash].y
+				offset_x_in_page - self.cache[pagehash].x,
+				offset_y_in_page - self.cache[pagehash].y
 		end
 	end
 	-- okay, we do not have it in cache yet.
 	-- so render now.
 	-- start off with the requested area
-	local tile = { x = (-self.offset_x), y = (-self.offset_y), w = width, h = heigth }
+	local tile = { x = offset_x_in_page, y = offset_y_in_page, 
+					w = width, h = heigth }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
 	if preCache then
@@ -256,14 +266,15 @@ function UniReader:draworcache(no, preCache)
 		size = tile.w * tile.h / 2,
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
+	--print ("# new biltbuffer:"..dump(self.cache[pagehash]))
 	dc:setOffset(-tile.x, -tile.y)
 	print("# rendering: page="..no)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0)
 	page:close()
 
 	return pagehash,
-		(-self.offset_x) - tile.x,
-		(-self.offset_y) - tile.y
+		offset_x_in_page - tile.x,
+		offset_y_in_page - tile.y
 end
 
 -- blank the cache
