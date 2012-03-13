@@ -219,7 +219,7 @@ function UniReader:draworcache(no, preCache)
 	-- so render now.
 	-- start off with the requested area
 	local tile = { x = offset_x_in_page, y = offset_y_in_page, 
-					w = width, h = heigth }
+					w = width, h = height }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
 	if preCache then
