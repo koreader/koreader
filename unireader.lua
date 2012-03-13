@@ -2,6 +2,7 @@ require "keys"
 require "settings"
 require "selectmenu"
 require "commands"
+require "helppage"
 
 UniReader = {
 	-- "constants":
@@ -56,7 +57,7 @@ UniReader = {
 	-- the document's setting store:
 	settings = nil,
 	-- list of available commands:
-	commands = Commands:new(), 
+	commands = nil, 
 
 	-- you have to initialize newDC, nulldc in specific reader
 	newDC = function() return nil end,
@@ -774,234 +775,17 @@ function UniReader:inputloop()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
-			keydef = Keydef.new(ev.code, get_modifier())
-			print("key pressed: "..keydef)
+			keydef = Keydef:new(ev.code, get_modifier())
+			print("key pressed: "..tostring(keydef))
 			command = self.commands:get_by_keydef(keydef)
 			if command ~= nil then
-				print(command)				
+				print("command to execute: "..tostring(command))		
 				ret_code = command.func(self,keydef)
 				if ret_code == "break" then
 					break;
 				end
 			else
-				print("command not found")
-			end
---[[			
-			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.2)
-				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom+self.globalzoom_orig*0.1)
-				else
-					-- turn page forward
-					local pageno = self:nextView()
-					self:goto(pageno)
-				end
-			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if Keys.shiftmode then
-					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.2)
-				elseif Keys.altmode then
-					self:setglobalzoom(self.globalzoom-self.globalzoom_orig*0.1)
-				else
-					-- turn page back
-					local pageno = self:prevView()
-					self:goto(pageno)
-				end
-			elseif ev.code == KEY_BACK then
-				if Keys.altmode then
-					-- altmode, exit reader
-					break
-				else
-					-- not altmode, back to last jump
-					if #self.jump_stack ~= 0 then
-						self:goto(self.jump_stack[1].page)
-					end
-				end			
-			elseif ev.code == KEY_VPLUS then
-				self:modify_gamma( 1.25 )
-			elseif ev.code == KEY_VMINUS then
-				self:modify_gamma( 0.8 )
-			elseif ev.code == KEY_1 then
-				self:goto(1)
-			elseif ev.code >= KEY_2 and ev.code <= KEY_9 then
-				self:goto(math.floor(self.doc:getPages()/90*(ev.code-KEY_1)*10))
-			elseif ev.code == KEY_0 then
-				self:goto(self.doc:getPages())						
-			elseif ev.code == KEY_A then
-				if Keys.shiftmode then
-					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT)
-				else
-					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE)
-				end
-			elseif ev.code == KEY_S then
-				if Keys.shiftmode then
-					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
-				else
-					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_WIDTH)
-				end
-			elseif ev.code == KEY_D then
-				if Keys.shiftmode then
-					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HEIGHT)
-				else
-					self:setglobalzoommode(self.ZOOM_FIT_TO_PAGE_HEIGHT)
-				end
-			elseif ev.code == KEY_F then
-				if Keys.shiftmode then
-					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
-				else
-					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
-				end
-			elseif ev.code == KEY_G then
-				local page = InputBox:input(height-100, 100, "Page:")
-				-- convert string to number
-				if not pcall(function () page = page + 0 end) then
-					page = self.pageno
-				else
-					if page < 1 or page > self.doc:getPages() then
-						page = self.pageno
-					end
-				end
-				self:goto(page)
-			elseif ev.code == KEY_T then
-				self:showTOC()
-			elseif ev.code == KEY_B then
-				if Keys.shiftmode then
-					self:add_jump(self.pageno)
-				else
-					self:showJumpStack()
-				end
-			elseif ev.code == KEY_J then
-				if Keys.shiftmode then
-					self:screenRotate("clockwise")
-				else
-					self:setrotate( self.globalrotate + 10 )
-				end
-			elseif ev.code == KEY_K then
-				if Keys.shiftmode then
-					self:screenRotate("anticlockwise")
-				else
-					self:setrotate( self.globalrotate - 10 )
-				end
-			elseif ev.code == KEY_HOME then
-				if Keys.shiftmode or Keys.altmode then
-					-- signal quit
-					keep_running = false
-				end
-				break
-			elseif ev.code == KEY_Z and not (Keys.shiftmode or Keys.altmode) then
-				local bbox = {}
-				bbox["x0"] = - self.offset_x / self.globalzoom
-				bbox["y0"] = - self.offset_y / self.globalzoom
-				bbox["x1"] = bbox["x0"] + width / self.globalzoom
-				bbox["y1"] = bbox["y0"] + height / self.globalzoom
-				bbox.pan_x = self.pan_x
-				bbox.pan_y = self.pan_y
-				self.bbox[self.pageno] = bbox
-				self.bbox[self:odd_even(self.pageno)] = bbox
-				self.bbox.enabled = true
-				print("# bbox " .. self.pageno .. dump(self.bbox)) 
-				self.globalzoommode = self.ZOOM_FIT_TO_CONTENT -- use bbox
-			elseif ev.code == KEY_Z and Keys.shiftmode then
-				self.bbox[self.pageno] = nil;
-				print("# bbox remove "..self.pageno .. dump(self.bbox));
-			elseif ev.code == KEY_Z and Keys.altmode then
-				self.bbox.enabled = not self.bbox.enabled;
-				print("# bbox override: ", self.bbox.enabled);
-			elseif ev.code == KEY_MENU then
-				self:showMenu()
-				self:goto(self.pageno)
-			end
-]]
-			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
-			if ev.code == KEY_FW_LEFT
-			or ev.code == KEY_FW_RIGHT
-			or ev.code == KEY_FW_UP
-			or ev.code == KEY_FW_DOWN
-			then
-				self.globalzoommode = self.ZOOM_BY_VALUE
-			end
-
-			if self.globalzoommode == self.ZOOM_BY_VALUE then
-				local x
-				local y
-
-				if Keys.shiftmode then -- shift always moves in small steps
-					x = self.shift_x / 2
-					y = self.shift_y / 2
-				elseif Keys.altmode then
-					x = self.shift_x / 5
-					y = self.shift_y / 5
-				elseif self.pan_by_page then
-					x = width;
-					y = height - self.pan_overlap_vertical; -- overlap for lines which didn't fit
-				else
-					x = self.shift_x
-					y = self.shift_y
-				end
-
-				print("offset "..self.offset_x.."*"..self.offset_x.." shift "..x.."*"..y.." globalzoom="..self.globalzoom)
-				local old_offset_x = self.offset_x
-				local old_offset_y = self.offset_y
-
-				if ev.code == KEY_FW_LEFT then
-					print("# KEY_FW_LEFT "..self.offset_x.." + "..x.." > 0");
-					self.offset_x = self.offset_x + x
-					if self.pan_by_page then
-						if self.offset_x > 0 and self.pageno > 1 then
-							self.offset_x = self.pan_x
-							self.offset_y = self.min_offset_y -- bottom
-							self:goto(self.pageno - 1)
-						else
-							self.offset_y = self.min_offset_y
-						end
-					elseif self.offset_x > 0 then
-						self.offset_x = 0
-					end
-				elseif ev.code == KEY_FW_RIGHT then
-					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x.." - "..self.pan_margin);
-					self.offset_x = self.offset_x - x
-					if self.pan_by_page then
-						if self.offset_x < self.min_offset_x - self.pan_margin and self.pageno < self.doc:getPages() then
-							self.offset_x = self.pan_x
-							self.offset_y = self.pan_y
-							self:goto(self.pageno + 1)
-						else
-							self.offset_y = self.pan_y
-						end
-					elseif self.offset_x < self.min_offset_x then
-						self.offset_x = self.min_offset_x
-					end
-				elseif ev.code == KEY_FW_UP then
-					self.offset_y = self.offset_y + y
-					if self.offset_y > 0 then
-						self.offset_y = 0
-					end
-				elseif ev.code == KEY_FW_DOWN then
-					self.offset_y = self.offset_y - y
-					if self.offset_y < self.min_offset_y then
-						self.offset_y = self.min_offset_y
-					end
-				elseif ev.code == KEY_FW_PRESS then
-					if Keys.shiftmode then
-						if self.pan_by_page then
-							self.offset_x = self.pan_x
-							self.offset_y = self.pan_y
-						else
-							self.offset_x = 0
-							self.offset_y = 0
-						end
-					else
-						self.pan_by_page = not self.pan_by_page
-						if self.pan_by_page then
-							self.pan_x = self.offset_x
-							self.pan_y = self.offset_y
-						end
-					end
-				end
-				if old_offset_x ~= self.offset_x
-				or old_offset_y ~= self.offset_y then
-						self:goto(self.pageno)
-				end			
+				print("command not found: "..tostring(command))
 			end
 	
 			local nsecs, nusecs = util.gettime()
@@ -1031,94 +815,296 @@ end
 
 -- command definitions
 function UniReader:add_all_commands()
-	local noop = function() end
-	self.commands:add(KEY_PGFWD,MOD_SHIFT,">","zoom in 20%",
-		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
-		end)
-	self.commands:add(KEY_PGBCK,MOD_SHIFT,"<","zoom out 20%",
-		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
-		end)
-	self.commands:add(KEY_PGFWD,MOD_ALT,">","zoom in 10%",
-		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
-		end)
-	self.commands:add(KEY_PGBCK,MOD_ALT,">","zoom out 10%",
-		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
-		end)
-	self.commands:add(KEY_PGFWD,nil,">","next page",
+	self.commands = Commands:new()
+	self.commands:add(KEY_PGFWD,nil,">",
+		"next page",
 		function(unireader)
 			unireader:goto(unireader:nextView())
 		end)
-	self.commands:add(KEY_PGBCK,nil,"<","previous page",
+	self.commands:add(KEY_PGBCK,nil,"<",
+		"previous page",
 		function(unireader)
 			unireader:goto(unireader:prevView())
 		end)
-	self.commands:add(KEY_BACK,MOD_ALT,"<-","stop reading",
+	self.commands:add(KEY_PGFWD,MOD_ALT,">",
+		"zoom in 10%",
 		function(unireader)
-			return "break"
+			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
 		end)
-	self.commands:add(KEY_BACK,nil,"<-","back to last jump",
+	self.commands:add(KEY_PGBCK,MOD_ALT,"<",
+		"zoom out 10%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
+		end)		
+	self.commands:add(KEY_PGFWD,MOD_SHIFT,">",
+		"zoom in 20%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
+		end)
+	self.commands:add(KEY_PGBCK,MOD_SHIFT,"<",
+		"zoom out 20%",
+		function(unireader)
+			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
+		end)
+	self.commands:add(KEY_BACK,nil,"back",
+		"back to last jump",
 		function(unireader)
 			if #unireader.jump_stack ~= 0 then
 				unireader:goto(unireader.jump_stack[1].page)
 			end
+		end)		
+	self.commands:add(KEY_BACK,MOD_ALT,"back",
+		"close document",
+		function(unireader)
+			return "break"
 		end)
-	self.commands:add(KEY_VPLUS,nil,"vol+","increase gamma 25%",
+	self.commands:add(KEY_VPLUS,nil,"vol+",
+		"increase gamma 25%",
 		function(unireader)
 			unireader:modify_gamma( 1.25 )
 		end)
-	self.commands:add(KEY_VPLUS,nil,"vol-","decrease gamma 25%",
+	self.commands:add(KEY_VMINUS,nil,"vol-",
+		"decrease gamma 25%",
 		function(unireader)
 			unireader:modify_gamma( 0.80 )
 		end)
 	--numeric key group
 	local numeric_keydefs = {}
-	for i=1,10 do numeric_keydefs[i]=Keydef.new(KEY_1+i-1,nil,tostring(i%10)) end
-	self.commands:add_group("numeric keys",numeric_keydefs,"jump to <key>*10% of document",
+	for i=1,10 do numeric_keydefs[i]=Keydef:new(KEY_1+i-1,nil,tostring(i%10)) end
+	self.commands:add_group("[1..0]",numeric_keydefs,
+		"jump to <key>*10% of document",
 		function(unireader,keydef)
 			print('jump to page: '..math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1)..'/'..unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)	
-	--
-	self.commands:add(KEY_A,MOD_SHIFT,"A","zoom fit to content",
-		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT)
-		end)	
-	self.commands:add(KEY_A,nil,"A","zoom fit to page",
+	-- end numeric keys
+	self.commands:add(KEY_A,nil,"A",
+		"zoom to fit page",
 		function(unireader)
 			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE)
 		end)	
-	self.commands:add(KEY_S,MOD_SHIFT,"S","zoom fit to content width",
+	self.commands:add(KEY_A,MOD_SHIFT,"A",
+		"zoom to fit content",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)	
-	self.commands:add(KEY_S,nil,"S","zoom fit to page width",
+	self.commands:add(KEY_S,nil,"S",
+		"zoom to fit page width",
 		function(unireader)
 			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
 		end)
-	self.commands:add(KEY_D,MOD_SHIFT,"D","zoom fit to content height",
+	self.commands:add(KEY_S,MOD_SHIFT,"S",
+		"zoom to fit content width",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
 		end)	
-	self.commands:add(KEY_D,nil,"D","zoom fit to page height",
+	self.commands:add(KEY_D,nil,"D",
+		"zoom to fit page height",
 		function(unireader)
 			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
 		end)
-	self.commands:add(KEY_F,MOD_SHIFT,"F","zoom fit to content 2-column mode",
+	self.commands:add(KEY_D,MOD_SHIFT,"D",
+		"zoom to fit content height",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
+		end)	
+	self.commands:add(KEY_F,nil,"F",
+		"zoom to fit margin 2-column mode",
+		function(unireader)
+			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+		end)
+	self.commands:add(KEY_F,MOD_SHIFT,"F",
+		"zoom to fit content 2-column mode",
 		function(unireader)
 			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)	
-	self.commands:add(KEY_F,nil,"F","zoom fit to margin 2-column mode",
+	self.commands:add(KEY_G,MOD_SHIFT,"G",
+		"goto page",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+			local page = InputBox:input(height-100, 100, "Page:")
+			-- convert string to number
+			if not pcall(function () page = page + 0 end) then
+				page = unireader.pageno
+			else
+				if page < 1 or page > unireader.doc:getPages() then
+					page = unireader.pageno
+				end
+			end
+			unireader:goto(page)
 		end)		
-	self.commands:add(KEY_T,nil,"T","show table of content",
+	self.commands:add(KEY_H,nil,"H",
+		"show help page",
+		function(unireader)
+			HelpPage:show(0,height,unireader.commands)
+			unireader:goto(unireader.pageno)
+		end)				
+	self.commands:add(KEY_T,nil,"T",
+		"show table of content",
 		function(unireader)
 			unireader:showTOC()
+		end)
+	self.commands:add(KEY_B,nil,"B",
+		"show jump stack",
+		function(unireader)
+			unireader:showJumpStack()
+		end)
+	self.commands:add(KEY_B,MOD_SHIFT,"B",
+		"add jump",
+		function(unireader)
+			unireader:add_jump(unireader.pageno)
 		end)			
-	--print commands
-	for k,v in pairs(self.commands.map) do print(v) end	
+	self.commands:add(KEY_J,nil,"J",
+		"rotate 10° clockwise",
+		function(unireader)
+			unireader:setrotate( unireader.globalrotate + 10 )
+		end)
+	self.commands:add(KEY_J,MOD_SHIFT,"J",
+		"rotate screen 90° clockwise",
+		function(unireader)
+			unireader:screenRotate("clockwise")
+		end)		
+	self.commands:add(KEY_K,nil,"K",
+		"rotate 10° counterclockwise",
+		function(unireader)
+			unireader:setrotate( unireader.globalrotate - 10 )
+		end)
+	self.commands:add(KEY_K,MOD_SHIFT,"K",
+		"rotate screen 90° counterclockwise",
+		function(unireader)
+			unireader:screenRotate("anticlockwise")
+		end)			
+	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
+		"exit application",
+		function(unireader)
+			keep_running = false
+			return "break"
+		end)
+	self.commands:add(KEY_Z,nil,"Z",
+		"set crop mode",
+		function(unireader)
+			local bbox = {}
+			bbox["x0"] = - unireader.offset_x / unireader.globalzoom
+			bbox["y0"] = - unireader.offset_y / unireader.globalzoom
+			bbox["x1"] = bbox["x0"] + width / unireader.globalzoom
+			bbox["y1"] = bbox["y0"] + height / unireader.globalzoom
+			bbox.pan_x = unireader.pan_x
+			bbox.pan_y = unireader.pan_y
+			unireader.bbox[unireader.pageno] = bbox
+			unireader.bbox[unireader:odd_even(unireader.pageno)] = bbox
+			unireader.bbox.enabled = true
+			print("# bbox " .. unireader.pageno .. dump(unireader.bbox)) 
+			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox			
+		end)
+	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
+		"reset crop",
+		function(unireader)
+			unireader.bbox[unireader.pageno] = nil;
+			print("# bbox remove "..unireader.pageno .. dump(unireader.bbox));
+		end)
+	self.commands:add(KEY_Z,MOD_ALT,"Z",
+		"toggle crop mode",
+		function(unireader)
+			unireader.bbox.enabled = not unireader.bbox.enabled;
+			print("# bbox override: ", unireader.bbox.enabled);
+		end)
+	self.commands:add(KEY_MENU,nil,"Menu",
+		"set crop mode",
+		function(unireader)
+			self:showMenu()
+			self:goto(self.pageno)		
+		end)		
+	-- panning
+	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}
+	self.commands:add_group("[joypad]",panning_keys,
+		"pan the active view; use Shift or Alt for smaller steps",
+		function(unireader,keydef)
+			if keydef.keycode ~= KEY_FW_PRESS then
+				unireader.globalzoommode = unireader.ZOOM_BY_VALUE
+			end
+			if unireader.globalzoommode == unireader.ZOOM_BY_VALUE then
+				local x
+				local y
+				if keydef.modifier==MOD_SHIFT then -- shift always moves in small steps
+					x = unireader.shift_x / 2
+					y = unireader.shift_y / 2
+				elseif keydef.modifier==MOD_ALT then
+					x = unireader.shift_x / 5
+					y = unireader.shift_y / 5
+				elseif unireader.pan_by_page then
+					x = width;
+					y = height - unireader.pan_overlap_vertical; -- overlap for lines which didn't fit
+				else
+					x = unireader.shift_x
+					y = unireader.shift_y
+				end
+
+				print("offset "..unireader.offset_x.."*"..unireader.offset_x.." shift "..x.."*"..y.." globalzoom="..unireader.globalzoom)
+				local old_offset_x = unireader.offset_x
+				local old_offset_y = unireader.offset_y
+
+				if keydef.keycode == KEY_FW_LEFT then
+					print("# KEY_FW_LEFT "..unireader.offset_x.." + "..x.." > 0");
+					unireader.offset_x = unireader.offset_x + x
+					if unireader.pan_by_page then
+						if unireader.offset_x > 0 and unireader.pageno > 1 then
+							unireader.offset_x = unireader.pan_x
+							unireader.offset_y = unireader.min_offset_y -- bottom
+							unireader:goto(unireader.pageno - 1)
+						else
+							unireader.offset_y = unireader.min_offset_y
+						end
+					elseif unireader.offset_x > 0 then
+						unireader.offset_x = 0
+					end
+				elseif keydef.keycode == KEY_FW_RIGHT then
+					print("# KEY_FW_RIGHT "..unireader.offset_x.." - "..x.." < "..unireader.min_offset_x.." - "..unireader.pan_margin);
+					unireader.offset_x = unireader.offset_x - x
+					if unireader.pan_by_page then
+						if unireader.offset_x < unireader.min_offset_x - unireader.pan_margin and unireader.pageno < unireader.doc:getPages() then
+							unireader.offset_x = unireader.pan_x
+							unireader.offset_y = unireader.pan_y
+							unireader:goto(unireader.pageno + 1)
+						else
+							unireader.offset_y = unireader.pan_y
+						end
+					elseif unireader.offset_x < unireader.min_offset_x then
+						unireader.offset_x = unireader.min_offset_x
+					end
+				elseif keydef.keycode == KEY_FW_UP then
+					unireader.offset_y = unireader.offset_y + y
+					if unireader.offset_y > 0 then
+						unireader.offset_y = 0
+					end
+				elseif keydef.keycode == KEY_FW_DOWN then
+					unireader.offset_y = unireader.offset_y - y
+					if unireader.offset_y < unireader.min_offset_y then
+						unireader.offset_y = unireader.min_offset_y
+					end
+				elseif keydef.keycode == KEY_FW_PRESS then
+					if keydef.modifier==MOD_SHIFT then
+						if unireader.pan_by_page then
+							unireader.offset_x = unireader.pan_x
+							unireader.offset_y = unireader.pan_y
+						else
+							unireader.offset_x = 0
+							unireader.offset_y = 0
+						end
+					else
+						unireader.pan_by_page = not unireader.pan_by_page
+						if unireader.pan_by_page then
+							unireader.pan_x = unireader.offset_x
+							unireader.pan_y = unireader.offset_y
+						end
+					end
+				end
+				if old_offset_x ~= unireader.offset_x
+				or old_offset_y ~= unireader.offset_y then
+						unireader:goto(unireader.pageno)
+				end					
+			end	
+		end)
+	-- end panning	
+	--print defined commands
+	--for k,v in pairs(self.commands.map) do print(v) end	
 end
+

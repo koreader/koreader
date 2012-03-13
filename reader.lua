@@ -23,6 +23,8 @@ require "djvureader"
 require "filechooser"
 require "settings"
 require "screen"
+require "keys"
+require "commands"
 
 -- option parsing:
 longopts = {

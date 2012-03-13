@@ -96,8 +96,10 @@ EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
 
 -- modifiers
-MOD_SHIFT = "SHIFT"
-MOD_ALT = "ALT" 
+MOD_SHIFT = "Shift"
+MOD_ALT = "Alt" 
+MOD_SHIFT_OR_ALT = "ShiftAlt"
+MOD_ANY = "Any"
 
 function get_modifier()
 	return Keys.altmode and MOD_ALT or Keys.shiftmode and MOD_SHIFT

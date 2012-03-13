@@ -67,5 +67,6 @@ function renderUtf8Text(buffer, x, y, face, facehash, text, kerning)
 			prevcharcode = charcode
 		end
 	end
+	return pen_x
 end
 
