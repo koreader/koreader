@@ -67,8 +67,8 @@ function HelpPage:show(ypos, height,commands)
 					renderUtf8Text(fb.bb, max_x + 20, ypos + self.spacing*c, self.hface, self.hfhash, self.commands[i].help, true)
 				end
 			end			
-			renderUtf8Text(fb.bb, 5, height - self.ffsize, self.fface, self.ffhash,
-				"Page "..self.page.." of "..math.ceil(self.items / perpage), true)					
+			renderUtf8Text(fb.bb, 5, height - math.floor(self.ffsize * 0.4), self.fface, self.ffhash,
+				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)					
 			markerdirty = true
 		end
 		if pagedirty then

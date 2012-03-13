@@ -918,7 +918,7 @@ function UniReader:add_all_commands()
 		function(unireader)
 			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)	
-	self.commands:add(KEY_G,MOD_SHIFT,"G",
+	self.commands:add(KEY_G,nil,"G",
 		"goto page",
 		function(unireader)
 			local page = InputBox:input(height-100, 100, "Page:")
@@ -1008,10 +1008,10 @@ function UniReader:add_all_commands()
 			print("# bbox override: ", unireader.bbox.enabled);
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
-		"set crop mode",
+		"open menu",
 		function(unireader)
-			self:showMenu()
-			self:goto(self.pageno)		
+			unireader:showMenu()
+			unireader:goto(unireader.pageno)		
 		end)		
 	-- panning
 	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}
