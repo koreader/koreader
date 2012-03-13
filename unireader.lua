@@ -70,6 +70,9 @@ UniReader = {
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+
+	pagehash = nil,
+
 	jump_stack = {},
 	toc = nil,
 
@@ -137,6 +140,16 @@ function UniReader:initGlobalSettings(settings)
 	end
 	-- initialize commands
 	self:add_all_commands()
+
+	local cache_max_memsize = settings:readsetting("cache_max_memsize")
+	if cache_max_memsize then
+		self.cache_max_memsize = cache_max_memsize
+	end
+
+	local cache_max_ttl = settings:readsetting("cache_max_ttl")
+	if cache_max_ttl then
+		self.cache_max_ttl = cache_max_ttl
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -163,34 +176,111 @@ function UniReader:cacheclaim(size)
 	return true
 end
 
-function UniReader:draworcache(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
-	-- hash draw state
-	local hash = self:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
-	if self.cache[hash] == nil then
-		-- not in cache, so prepare cache slot...
-		self:cacheclaim(width * height / 2);
-		self.cache[hash] = {
-			ttl = self.cache_max_ttl,
-			size = width * height / 2,
-			bb = Blitbuffer.new(width, height)
-		}
-		-- and draw the page
-		local page = self.doc:openPage(no)
-		local dc = self:setzoom(page, hash)
-		page:draw(dc, self.cache[hash].bb, 0, 0)
-		page:close()
-	else
-		-- we have the page in our cache,
-		-- so give it more ttl.
-		self.cache[hash].ttl = self.cache_max_ttl
-	end
-	return hash
-end
+function UniReader:draworcache(no, preCache)
+	-- our general caching strategy is as follows:
+	-- #1 goal: we must render the needed area.
+	-- #2 goal: we render as much of the requested page as we can
+	-- #3 goal: we render the full page
+	-- #4 goal: we render next page, too. (TODO)
 
--- calculate a hash for our current state
-function UniReader:cachehash(no, zoom, offset_x, offset_y, width, height, gamma, rotate)
-	-- TODO (?): make this a "real" hash...
-	return no..'_'..zoom..'_'..offset_x..','..offset_y..'-'..width..'x'..height..'_'..gamma..'_'..rotate
+	-- ideally, this should be factored out and only be called when needed (TODO)
+	local page = self.doc:openPage(no)
+	local dc = self:setzoom(page)
+
+	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
+	-- they are always positive. 
+	-- you can see self.offset_x_& self.offset_y as the offset within 
+	-- draw space, which includes the page. So it can be negative and positive.
+	local offset_x_in_page = -self.offset_x
+	local offset_y_in_page = -self.offset_y
+	if offset_x_in_page < 0 then offset_x_in_page = 0 end
+	if offset_y_in_page < 0 then offset_y_in_page = 0 end
+
+	-- check if we have relevant cache contents
+	local pagehash = no..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
+	if self.cache[pagehash] ~= nil then
+		-- we have something in cache, check if it contains the requested part
+		if self.cache[pagehash].x <= offset_x_in_page
+			and self.cache[pagehash].y <= offset_y_in_page
+			and ( self.cache[pagehash].x + self.cache[pagehash].w >= offset_x_in_page + width
+				or self.cache[pagehash].w >= self.fullwidth - 1)
+			and ( self.cache[pagehash].y + self.cache[pagehash].h >= offset_y_in_page + height
+				or self.cache[pagehash].h >= self.fullheight - 1)
+		then
+			-- requested part is within cached tile
+			-- ...so properly clean page
+			page:close()
+			-- ...and give it more time to live (ttl), except if we're precaching
+			if not preCache then
+				self.cache[pagehash].ttl = self.cache_max_ttl
+			end
+			-- ...and return blitbuffer plus offset into it
+			return pagehash,
+				offset_x_in_page - self.cache[pagehash].x,
+				offset_y_in_page - self.cache[pagehash].y
+		end
+	end
+	-- okay, we do not have it in cache yet.
+	-- so render now.
+	-- start off with the requested area
+	local tile = { x = offset_x_in_page, y = offset_y_in_page, 
+					w = width, h = height }
+	-- can we cache the full page?
+	local max_cache = self.cache_max_memsize
+	if preCache then
+		max_cache = max_cache - self.cache[self.pagehash].size
+	end
+	if (self.fullwidth * self.fullheight / 2) <= max_cache then
+		-- yes we can, so do this with offset 0, 0
+		tile.x = 0
+		tile.y = 0
+		tile.w = self.fullwidth
+		tile.h = self.fullheight
+	elseif (tile.w*tile.h / 2) > max_cache then
+		-- no, we can't. so generate a tile as big as we can go
+		-- grow area in steps of 10px
+		while ((tile.w+10) * (tile.h+10) / 2) < max_cache do
+			if tile.x > 0 then
+				tile.x = tile.x - 5
+				tile.w = tile.w + 5
+			end
+			if tile.x + tile.w < self.fullwidth then
+				tile.w = tile.w + 5
+			end
+			if tile.y > 0 then
+				tile.y = tile.y - 5
+				tile.h = tile.h + 5
+			end
+			if tile.y + tile.h < self.fullheigth then
+				tile.h = tile.h + 5
+			end
+		end
+	else
+		if not preCache then
+			print("E: not enough memory in cache left, probably a bug.")
+		end
+		return nil
+	end
+	self:cacheclaim(tile.w * tile.h / 2);
+	self.cache[pagehash] = {
+		x = tile.x,
+		y = tile.y,
+		w = tile.w,
+		h = tile.h,
+		ttl = self.cache_max_ttl,
+		size = tile.w * tile.h / 2,
+		bb = Blitbuffer.new(tile.w, tile.h)
+	}
+	--print ("# new biltbuffer:"..dump(self.cache[pagehash]))
+	dc:setOffset(-tile.x, -tile.y)
+	print("# rendering: page="..no)
+	page:draw(dc, self.cache[pagehash].bb, 0, 0)
+	page:close()
+
+	-- return hash and offset within blitbuffer
+	return pagehash,
+		offset_x_in_page - tile.x,
+		offset_y_in_page - tile.y
 end
 
 -- blank the cache
@@ -329,7 +419,6 @@ function UniReader:setzoom(page)
 	self.globalzoom_orig = self.globalzoom
 
 	dc:setRotate(self.globalrotate);
-	dc:setOffset(self.offset_x, self.offset_y)
 	self.fullwidth, self.fullheight = page:getSize(dc)
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
 	self.min_offset_y = fb.bb:getHeight() - self.fullheight
@@ -352,13 +441,34 @@ end
 
 -- render and blit a page
 function UniReader:show(no)
-	local slot
-	if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-		slot = self:draworcache(no,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-	else
-		slot = self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+	local pagehash, offset_x, offset_y = self:draworcache(no)
+	self.pagehash = pagehash
+	local bb = self.cache[pagehash].bb
+	local dest_x = 0
+	local dest_y = 0
+	if bb:getWidth() - offset_x < width then
+		-- we can't fill the whole output width, center the content
+		dest_x = (width - (bb:getWidth() - offset_x)) / 2
 	end
-	fb.bb:blitFullFrom(self.cache[slot].bb)
+	if bb:getHeight() - offset_y < height and 
+	self.globalzoommode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		-- we can't fill the whole output height and not in 
+		-- ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode, center the content
+		dest_y = (height - (bb:getHeight() - offset_y)) / 2
+	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
+	self.offset_y > 0 then
+		-- if we are in ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode and turning to
+		-- the top of the page, we might leave an empty space between the 
+		-- page top and screen top.
+		dest_y = self.offset_y
+	end
+	if dest_x or dest_y then
+		fb.bb:paintRect(0, 0, width, height, 8)
+	end
+	print("# blitFrom dest_off:("..dest_x..", "..dest_y..
+		"), src_off:("..offset_x..", "..offset_y.."), "..
+		"width:"..width..", height:"..height)
+	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
 	if self.rcount == self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
@@ -439,14 +549,12 @@ function UniReader:goto(no)
 	self.pageno = no
 	self:show(no)
 
+	-- TODO: move the following to a more appropriate place
+	-- into the caching section
 	if no < self.doc:getPages() then
-		if self.globalzoommode ~= self.ZOOM_BY_VALUE then
-			if #self.bbox == 0 or not self.bbox.enabled then
-				-- pre-cache next page, but if we will modify bbox don't!
-				self:draworcache(no+1,self.globalzoommode,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
-			end
-		else
-			self:draworcache(no,self.globalzoom,self.offset_x,self.offset_y,width,height,self.globalgamma,self.globalrotate)
+		if #self.bbox == 0 or not self.bbox.enabled then
+			-- pre-cache next page, but if we will modify bbox don't!
+			self:draworcache(no+1, true)
 		end
 	end
 end
@@ -531,6 +639,14 @@ function UniReader:setrotate(rotate)
 	self:goto(self.pageno)
 end
 
+-- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
+function UniReader:screenRotate(orien)
+	Screen:screenRotate(orien)
+	width, height = fb:getSize()
+	self:clearcache()
+	self:goto(self.pageno)
+end
+
 function UniReader:cleanUpTOCTitle(title)
 	return title:gsub("\13", "")
 end
@@ -544,13 +660,20 @@ function UniReader:getTOCTitleByPage(pageno)
 		-- build toc when needed.
 		self:fillTOC()
 	end
-	
-	for _k,_v in ipairs(self.toc) do
-		if _v.page >= pageno then
-			return self:cleanUpTOCTitle(_v.title)
-		end
+
+	-- no table of content
+	if #self.toc == 0 then
+		return ""
 	end
-	return ""
+	
+	local pre_entry = self.toc[1]
+	for _k,_v in ipairs(self.toc) do
+		if _v.page > pageno then
+			break
+		end
+		pre_entry = _v
+	end
+	return self:cleanUpTOCTitle(pre_entry.title)
 end
 
 function UniReader:showTOC()
@@ -600,6 +723,37 @@ function UniReader:showJumpStack()
 		self:goto(jump_item.page)
 	else
 		self:goto(self.pageno)
+	end
+end
+
+function UniReader:showMenu()
+	local ypos = height - 50
+	local load_percent = (self.pageno / self.doc:getPages())
+
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+
+	ypos = ypos + 15
+	local face, fhash = Font:getFaceAndHash(22)
+	local cur_section = self:getTOCTitleByPage(self.pageno)
+	if cur_section ~= "" then
+		cur_section = "Section: "..cur_section
+	end
+	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
+		"Page: "..self.pageno.."/"..self.doc:getPages()..
+		"    "..cur_section, true)
+
+	ypos = ypos + 15
+	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15, 
+							5, 4, load_percent, 8)
+	fb:refresh(1)
+	while 1 do
+		local ev = input.waitForEvent()
+		ev.code = adjustKeyEvents(ev)
+		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			if ev.code == KEY_BACK or ev.code == KEY_MENU then
+				return
+			end
+		end
 	end
 end
 
@@ -697,6 +851,17 @@ function UniReader:inputloop()
 				else
 					self:setglobalzoommode(self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 				end
+			elseif ev.code == KEY_G then
+				local page = InputBox:input(height-100, 100, "Page:")
+				-- convert string to number
+				if not pcall(function () page = page + 0 end) then
+					page = self.pageno
+				else
+					if page < 1 or page > self.doc:getPages() then
+						page = self.pageno
+					end
+				end
+				self:goto(page)
 			elseif ev.code == KEY_T then
 				self:showTOC()
 			elseif ev.code == KEY_B then
@@ -706,9 +871,17 @@ function UniReader:inputloop()
 					self:showJumpStack()
 				end
 			elseif ev.code == KEY_J then
-				self:setrotate( self.globalrotate + 10 )
+				if Keys.shiftmode then
+					self:screenRotate("clockwise")
+				else
+					self:setrotate( self.globalrotate + 10 )
+				end
 			elseif ev.code == KEY_K then
-				self:setrotate( self.globalrotate - 10 )
+				if Keys.shiftmode then
+					self:screenRotate("anticlockwise")
+				else
+					self:setrotate( self.globalrotate - 10 )
+				end
 			elseif ev.code == KEY_HOME then
 				if Keys.shiftmode or Keys.altmode then
 					-- signal quit
@@ -734,15 +907,9 @@ function UniReader:inputloop()
 			elseif ev.code == KEY_Z and Keys.altmode then
 				self.bbox.enabled = not self.bbox.enabled;
 				print("# bbox override: ", self.bbox.enabled);
-			end
-
-			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
-			if ev.code == KEY_FW_LEFT
-			or ev.code == KEY_FW_RIGHT
-			or ev.code == KEY_FW_UP
-			or ev.code == KEY_FW_DOWN
-			then
-				self.globalzoommode = self.ZOOM_BY_VALUE
+			elseif ev.code == KEY_MENU then
+				self:showMenu()
+				self:goto(self.pageno)
 			end
 ]]
 			-- switch to ZOOM_BY_VALUE to enable panning on fiveway move
@@ -791,7 +958,7 @@ function UniReader:inputloop()
 						self.offset_x = 0
 					end
 				elseif ev.code == KEY_FW_RIGHT then
-					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x);
+					print("# KEY_FW_RIGHT "..self.offset_x.." - "..x.." < "..self.min_offset_x.." - "..self.pan_margin);
 					self.offset_x = self.offset_x - x
 					if self.pan_by_page then
 						if self.offset_x < self.min_offset_x - self.pan_margin and self.pageno < self.doc:getPages() then
@@ -853,7 +1020,6 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
-		--self.settings:savesetting("pan_overlap_vertical", self.pan_overlap_vertical)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)

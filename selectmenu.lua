@@ -1,21 +1,15 @@
 require "rendertext"
 require "keys"
 require "graphics"
-require "fontchooser"
+require "font"
 
 SelectMenu = {
 	-- font for displaying item names
 	fsize = 22,
-	face = nil,
-	fhash = nil,
 	-- font for page title
 	tfsize = 25,
-	tface = nil,
-	tfhash = nil,
 	-- font for paging display
 	ffsize = 16,
-	fface = nil,
-	ffhash = nil,
 	-- font for item shortcut
 	sface = freetype.newBuiltinFace("mono", 22),
 	sfhash = "mono22",
@@ -59,23 +53,6 @@ function SelectMenu:new(o)
 	return o
 end
 
-function SelectMenu:updateFont()
-	if self.fhash ~= FontChooser.cfont..self.fsize then
-		self.face = freetype.newBuiltinFace(FontChooser.cfont, self.fsize)
-		self.fhash = FontChooser.cfont..self.fsize
-	end
-
-	if self.tfhash ~= FontChooser.tfont..self.tfsize then
-		self.tface = freetype.newBuiltinFace(FontChooser.tfont, self.tfsize)
-		self.tfhash = FontChooser.tfont..self.tfsize
-	end
-
-	if self.ffhash ~= FontChooser.ffont..self.ffsize then
-		self.fface = freetype.newBuiltinFace(FontChooser.ffont, self.ffsize)
-		self.ffhash = FontChooser.ffont..self.ffsize
-	end
-end
-
 function SelectMenu:getItemIndexByShortCut(c, perpage)
 	if c == nil then return end -- unused key
 	for _k,_v in ipairs(self.item_shortcuts) do
@@ -92,7 +69,6 @@ function SelectMenu:choose(ypos, height)
 	local perpage = math.floor(height / self.spacing) - 2
 	local pagedirty = true
 	local markerdirty = false
-	self:updateFont()
 
 	local prevItem = function ()
 		if self.current == 1 then
@@ -126,25 +102,28 @@ function SelectMenu:choose(ypos, height)
 	self.last_shortcut = 0
 
 	while true do
+		local cface, cfhash = Font:getFaceAndHash(22)
+		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
+		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+
 		if pagedirty then
 			markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
 			fb.bb:paintRect(10, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
 
-			x = 20
-			y = ypos + self.title_H
-			renderUtf8Text(fb.bb, x, y, self.tface, self.tfhash,
-				self.menu_title, true)
+			local x = 20
+			local y = ypos + self.title_H
+			renderUtf8Text(fb.bb, x, y, tface, tfhash, self.menu_title, true)
 
 			-- draw items
 			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
 			if self.items == 0 then
 				y = ypos + self.title_H + (self.spacing * 2)
-				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
-				renderUtf8Text(fb.bb, 30, y, self.face, self.fhash,
+				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
 					self.no_item_msg, true)
 				markerdirty = false
 			else
@@ -160,8 +139,10 @@ function SelectMenu:choose(ypos, height)
 						else
 							fb.bb:paintRect(10, y-22, 29, 29, 3)
 						end
-						if self.item_shortcuts[c] ~= nil and string.len(self.item_shortcuts[c]) == 3 then
-							renderUtf8Text(fb.bb, 13, y, self.fface, self.ffhash,
+						if self.item_shortcuts[c] ~= nil and 
+							string.len(self.item_shortcuts[c]) == 3 then
+							-- print "Del", "Sym and "Ent"
+							renderUtf8Text(fb.bb, 13, y, fface, ffhash,
 								self.item_shortcuts[c], true)
 						else
 							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
@@ -170,7 +151,7 @@ function SelectMenu:choose(ypos, height)
 
 						self.last_shortcut = c
 
-						renderUtf8Text(fb.bb, 50, y, self.face, self.fhash,
+						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
 							self.item_array[i], true)
 					end
 				end
@@ -179,7 +160,7 @@ function SelectMenu:choose(ypos, height)
 			-- draw footer
 			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H + 5
 			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, self.fface, self.ffhash,
+			renderUtf8Text(fb.bb, x, y, fface, ffhash,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 		end
 

@@ -25,8 +25,6 @@ InputBox = {
 function InputBox:setDefaultInput(text)
 	self.input_string = ""
 	self:addString(text)
-	--renderUtf8Text(fb.bb, self.input_start_x, self.input_start_y,
-								--self.face, self.fhash, text, true)
 	--self.input_cur_x = self.input_start_x + (string.len(text) * self.fwidth)
 	--self.input_string = text
 end
@@ -181,19 +179,21 @@ function InputBox:input(ypos, height, title, d_text)
 			elseif ev.code == KEY_PGBCK then
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				if self.input_string == "" then
-					return nil
-				else
-					return self.input_string
+					self.input_string = nil
 				end
+				break
 			elseif ev.code == KEY_DEL then
 				self:delChar()
 			elseif ev.code == KEY_BACK then
-				return nil
+				self.input_string = nil
+				break
 			end
 
 			--local nsecs, nusecs = util.gettime()
 			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
-		end
-	end
+		end -- if
+	end -- while
+
+	return self.input_string
 end
