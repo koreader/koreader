@@ -4,6 +4,7 @@ require "graphics"
 
 InputBox = {
 	-- Class vars:
+	h = 100,
 	input_start_x = 145,
 	input_start_y = nil,
 	input_cur_x = nil, -- points to the start of next input pos
@@ -15,19 +16,14 @@ InputBox = {
 	shiftmode = false,
 	altmode = false,
 
+	cursor = nil,
+
 	-- font for displaying input content
 	face = freetype.newBuiltinFace("mono", 25),
 	fhash = "m25",
 	fheight = 25,
 	fwidth = 16,
 }
-
-function InputBox:setDefaultInput(text)
-	self.input_string = ""
-	self:addString(text)
-	--self.input_cur_x = self.input_start_x + (string.len(text) * self.fwidth)
-	--self.input_string = text
-end
 
 function InputBox:addString(str)
 	for i = 1, #str do
@@ -36,9 +32,13 @@ function InputBox:addString(str)
 end
 
 function InputBox:addChar(char)
-	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y, self.face, self.fhash,
-								char, true)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
+	self.cursor:moveHorizontal(self.fwidth)
+	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y,
+		self.face, self.fhash,
+		char, true)
+	fb:refresh(1, self.input_cur_x - self.cursor.w - self.fwidth, 
+				self.input_start_y-25, 
+				self.fwidth*2 + self.cursor.w*2, self.h-25)
 	self.input_cur_x = self.input_cur_x + self.fwidth
 	self.input_string = self.input_string .. char
 end
@@ -50,8 +50,10 @@ function InputBox:delChar()
 	self.input_cur_x = self.input_cur_x - self.fwidth
 	--fill last character with blank rectangle
 	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19, 
-									self.fwidth, self.fheight, self.input_bg)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
+					self.fwidth, self.fheight, self.input_bg)
+	self.cursor:moveHorizontal(-self.fwidth)
+	fb:refresh(1, self.input_cur_x, self.input_start_y-25,
+				self.fwidth + self.cursor.w, self.h-25)
 	self.input_string = self.input_string:sub(0,-2)
 end
 
@@ -66,35 +68,36 @@ function InputBox:drawBox(ypos, w, h, title)
 end
 
 
---[[
-	|| d_text default to nil (used to set default text in input slot)
---]]
+----------------------------------------------------------------------
+-- InputBox:input()
+--
+-- @title: input prompt for the box
+-- @d_text: default to nil (used to set default text in input slot)
+----------------------------------------------------------------------
 function InputBox:input(ypos, height, title, d_text)
-	local pagedirty = true
 	-- do some initilization
+	self.h = height
 	self.input_start_y = ypos + 35
 	self.input_cur_x = self.input_start_x
+	self.cursor = Cursor:new {
+		x_pos = 140,
+		y_pos = ypos + 13,
+		h = 30,
+	}
 
-	if d_text then -- if specified default text, draw it
-		w = fb.bb:getWidth() - 40
-		h = height - 45
-		self:drawBox(ypos, w, h, title)
-		self:setDefaultInput(d_text)
-		fb:refresh(1, 20, ypos, w, h)
-		pagedirty = false
-	else -- otherwise, leave the draw task to the main loop
-		self.input_string = ""
+	if d_text then
+		self.input_string = d_text
 	end
 
-	while true do
-		if pagedirty then
-			w = fb.bb:getWidth() - 40
-			h = height - 45
-			self:drawBox(ypos, w, h, title)
-			fb:refresh(1, 20, ypos, w, h)
-			pagedirty = false
-		end
+	-- draw box and content
+	w = fb.bb:getWidth() - 40
+	h = height - 45
+	self:drawBox(ypos, w, h, title)
+	self.cursor:draw()
+	self:addString(self.input_string)
+	fb:refresh(1, 20, ypos, w, h)
 
+	while true do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
