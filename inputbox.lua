@@ -5,6 +5,7 @@ require "graphics"
 InputBox = {
 	-- Class vars:
 	h = 100,
+	input_slot_w = nil,
 	input_start_x = 145,
 	input_start_y = nil,
 	input_cur_x = nil, -- points to the start of next input pos
@@ -19,10 +20,11 @@ InputBox = {
 	cursor = nil,
 
 	-- font for displaying input content
+	-- we have to use mono here for better distance controlling
 	face = freetype.newBuiltinFace("mono", 25),
 	fhash = "m25",
 	fheight = 25,
-	fwidth = 16,
+	fwidth = 15,
 }
 
 function InputBox:addString(str)
@@ -31,30 +33,65 @@ function InputBox:addString(str)
 	end
 end
 
+function InputBox:refreshText()
+	-- clear previous painted text
+	fb.bb:paintRect(140, self.input_start_y-19, 
+					self.input_slot_w, self.fheight, self.input_bg)
+	-- paint new text
+	renderUtf8Text(fb.bb, self.input_start_x, self.input_start_y,
+					self.face, self.fhash,
+					self.input_string, 0)
+end
+
 function InputBox:addChar(char)
-	self.cursor:moveHorizontal(self.fwidth)
-	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y,
-		self.face, self.fhash,
-		char, true)
-	fb:refresh(1, self.input_cur_x - self.cursor.w - self.fwidth, 
-				self.input_start_y-25, 
-				self.fwidth*2 + self.cursor.w*2, self.h-25)
+	self.cursor:clear()
+
+	-- draw new text
+	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
+						/ self.fwidth
+	self.input_string = self.input_string:sub(0,cur_index)..char..
+						self.input_string:sub(cur_index+1)
+	self:refreshText()
 	self.input_cur_x = self.input_cur_x + self.fwidth
-	self.input_string = self.input_string .. char
+	-- draw new cursor
+	self.cursor:moveHorizontal(self.fwidth)
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
 end
 
 function InputBox:delChar()
 	if self.input_start_x == self.input_cur_x then
 		return
 	end
+
+	self.cursor:clear()
+
+	-- draw new text
+	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
+						/ self.fwidth
+	self.input_string = self.input_string:sub(0,cur_index-1)..
+						self.input_string:sub(cur_index+1, -1)
+	self:refreshText()
 	self.input_cur_x = self.input_cur_x - self.fwidth
-	--fill last character with blank rectangle
-	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19, 
-					self.fwidth, self.fheight, self.input_bg)
+	-- draw new cursor
 	self.cursor:moveHorizontal(-self.fwidth)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-25,
-				self.fwidth + self.cursor.w, self.h-25)
-	self.input_string = self.input_string:sub(0,-2)
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
+end
+
+function InputBox:clearText()
+	self.cursor:clear()
+	self.input_string = ""
+	self:refreshText()
+	self.cursor.x_pos = self.input_start_x - 3
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
 end
 
 function InputBox:drawBox(ypos, w, h, title)
@@ -79,29 +116,31 @@ function InputBox:input(ypos, height, title, d_text)
 	self.h = height
 	self.input_start_y = ypos + 35
 	self.input_cur_x = self.input_start_x
+	self.input_slot_w = fb.bb:getWidth() - 170
+
 	self.cursor = Cursor:new {
-		x_pos = 140,
+		x_pos = self.input_start_x - 3,
 		y_pos = ypos + 13,
 		h = 30,
 	}
 
-	if d_text then
-		self.input_string = d_text
-	end
 
 	-- draw box and content
 	w = fb.bb:getWidth() - 40
 	h = height - 45
 	self:drawBox(ypos, w, h, title)
 	self.cursor:draw()
-	self:addString(self.input_string)
+	if d_text then
+		self.input_string = d_text
+		self:addString(self.input_string)
+	end
 	fb:refresh(1, 20, ypos, w, h)
 
 	while true do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--local secs, usecs = util.gettime()
+			local secs, usecs = util.gettime()
 			if ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
@@ -180,21 +219,37 @@ function InputBox:input(ypos, height, title, d_text)
 				self:addChar(" ")
 			elseif ev.code == KEY_PGFWD then
 			elseif ev.code == KEY_PGBCK then
+			elseif ev.code == KEY_FW_LEFT then
+				if (self.cursor.x_pos + 3) > self.input_start_x then
+					self.cursor:moveHorizontalAndDraw(-self.fwidth)
+					fb:refresh(1, self.input_start_x-5, ypos,
+								self.input_slot_w, h)
+				end
+			elseif ev.code == KEY_FW_RIGHT then
+				if (self.cursor.x_pos + 3) < self.input_cur_x then
+					self.cursor:moveHorizontalAndDraw(self.fwidth)
+					fb:refresh(1,self.input_start_x-5, ypos,
+								self.input_slot_w, h)
+				end
 			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
 				if self.input_string == "" then
 					self.input_string = nil
 				end
 				break
 			elseif ev.code == KEY_DEL then
-				self:delChar()
+				if Keys.shiftmode then
+					self:clearText()
+				else
+					self:delChar()
+				end
 			elseif ev.code == KEY_BACK then
 				self.input_string = nil
 				break
 			end
 
-			--local nsecs, nusecs = util.gettime()
-			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+			local nsecs, nusecs = util.gettime()
+			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		end -- if
 	end -- while
 

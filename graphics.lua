@@ -50,7 +50,7 @@ function Cursor:new(o)
 	o.y_pos = o.y_pos or self.y_pos 
 	o.h = o.h or self.h
 
-	o.w = o.h / 2
+	o.w = o.h / 3
 	o.line_w = math.floor(o.h / 10)
 
 	setmetatable(o, self)
@@ -60,11 +60,13 @@ end
 
 function Cursor:_draw(x, y)
 	local body_h = self.h - self.line_w
-	blitbuffer.invertRect(fb.bb, x, y, self.w, self.line_w)
-	--print("self.w: "..self.w..", self.line_w: "..self.line_w)
-	blitbuffer.invertRect(fb.bb, x+(self.w/2)-(self.line_w/2), y+self.line_w, 
-							self.line_w, body_h-self.line_w)
-	blitbuffer.invertRect(fb.bb, x, y+body_h, self.w, self.line_w)
+	-- paint upper horizontal line
+	fb.bb:invertRect(x, y, self.w, self.line_w/2)
+	-- paint middle vertical line
+	fb.bb:invertRect(x+(self.w/2)-(self.line_w/2), y+self.line_w/2, 
+							self.line_w, body_h)
+	-- paint lower horizontal line
+	fb.bb:invertRect(x, y+body_h+self.line_w/2, self.w, self.line_w/2)
 end
 
 function Cursor:draw()
@@ -76,21 +78,33 @@ function Cursor:clear()
 end
 
 function Cursor:move(x_off, y_off)
-	self:clear()
 	self.x_pos = self.x_pos + x_off
 	self.y_pos = self.y_pos + y_off
-	self:draw()
 end
 
 function Cursor:moveHorizontal(x_off)
-	self:clear()
 	self.x_pos = self.x_pos + x_off
+end
+
+function Cursor:moveVertical(x_off)
+	self.y_pos = self.y_pos + y_off
+end
+
+function Cursor:moveAndDraw(x_off, y_off)
+	self:clear()
+	self:move(x_off, y_off)
 	self:draw()
 end
 
-function Cursor:moveVertical(y_off)
+function Cursor:moveHorizontalAndDraw(x_off)
 	self:clear()
-	self.y_pos = self.y_pos + y_off
+	self:move(x_off, 0)
+	self:draw()
+end
+
+function Cursor:moveVerticalAndDraw(y_off)
+	self:clear()
+	self:move(0, y_off)
 	self:draw()
 end
 
