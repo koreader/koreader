@@ -27,12 +27,6 @@ InputBox = {
 	fwidth = 15,
 }
 
-function InputBox:addString(str)
-	for i = 1, #str do
-		self:addChar(str:sub(i,i))
-	end
-end
-
 function InputBox:refreshText()
 	-- clear previous painted text
 	fb.bb:paintRect(140, self.input_start_y-19, 
@@ -129,11 +123,13 @@ function InputBox:input(ypos, height, title, d_text)
 	w = fb.bb:getWidth() - 40
 	h = height - 45
 	self:drawBox(ypos, w, h, title)
-	self.cursor:draw()
 	if d_text then
 		self.input_string = d_text
-		self:addString(self.input_string)
+		self.input_cur_x = self.input_cur_x + (self.fwidth * d_text:len())
+		self.cursor.x_pos = self.cursor.x_pos + (self.fwidth * d_text:len())
+		self:refreshText()
 	end
+	self.cursor:draw()
 	fb:refresh(1, 20, ypos, w, h)
 
 	while true do
@@ -242,7 +238,7 @@ function InputBox:input(ypos, height, title, d_text)
 				else
 					self:delChar()
 				end
-			elseif ev.code == KEY_BACK then
+			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
 				self.input_string = nil
 				break
 			end
