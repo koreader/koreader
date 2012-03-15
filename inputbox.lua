@@ -136,7 +136,7 @@ function InputBox:input(ypos, height, title, d_text)
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			local secs, usecs = util.gettime()
+			--local secs, usecs = util.gettime()
 			if ev.code == KEY_FW_UP then
 			elseif ev.code == KEY_FW_DOWN then
 			elseif ev.code == KEY_A then
@@ -243,9 +243,9 @@ function InputBox:input(ypos, height, title, d_text)
 				break
 			end
 
-			local nsecs, nusecs = util.gettime()
-			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+			--local nsecs, nusecs = util.gettime()
+			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
 		end -- if
 	end -- while
 
