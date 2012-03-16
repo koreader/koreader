@@ -249,5 +249,7 @@ function InputBox:input(ypos, height, title, d_text)
 		end -- if
 	end -- while
 
-	return self.input_string
+	local return_str = self.input_string
+	self.input_string = ""
+	return return_str
 end
