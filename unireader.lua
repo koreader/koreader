@@ -678,15 +678,11 @@ function UniReader:showTOC()
 	end
 	local menu_items = {}
 	local filtered_toc = {}
-	local curr_page = -1
 	-- build menu items
 	for _k,_v in ipairs(self.toc) do
-		if(_v.page >= curr_page) then
-			table.insert(menu_items,
-			("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
-			table.insert(filtered_toc,_v.page)
-			curr_page = _v.page
-		end
+		table.insert(menu_items,
+		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
+		table.insert(filtered_toc,_v.page)
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",

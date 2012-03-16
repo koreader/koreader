@@ -101,16 +101,17 @@ static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int dept
 		lua_pushstring(L, "page");
 		lua_pushnumber(L, ol->dest.ld.gotor.page + 1);
 		lua_settable(L, -3);
+
 		lua_pushstring(L, "depth");
 		lua_pushnumber(L, depth); 
 		lua_settable(L, -3);
-		lua_pushstring(L, "title");
 
+		lua_pushstring(L, "title");
 		lua_pushstring(L, ol->title);
 		lua_settable(L, -3);
 
-		lua_settable(L, -3);
 
+		lua_settable(L, -3);
 		(*count)++;
 		if (ol->down) {
 			walkTableOfContent(L, ol->down, count, depth);
