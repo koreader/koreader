@@ -305,6 +305,129 @@ static int getUsedBBox(lua_State *L) {
 	return 4;
 }
 
+
+/*
+ * Return a table like following:
+ * {
+ *    {  -- a line entry
+ *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
+ *       {
+ *          {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *          {word="is", x0=377, y0=4857, x1=2427, y1=5089},
+ *          {word="Word", x0=377, y0=4857, x1=2427, y1=5089},
+ *          {word="List", x0=377, y0=4857, x1=2427, y1=5089},
+ *       },
+ *    },
+ *
+ *    {  -- an other line entry
+ *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
+ *       {
+ *          {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *          {word="is", x0=377, y0=4857, x1=2427, y1=5089},
+ *       },
+ *    },
+ *
+ * }
+ */
+static int getPageText(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	int pageno = luaL_checkint(L, 2);
+
+	miniexp_t sexp, se_line, se_word;
+	int i = 1, j = 1,
+		nr_line = 0, nr_word = 0;
+	const char *word = NULL;
+	
+	while ((sexp = ddjvu_document_get_pagetext(doc->doc_ref, pageno-1, "word"))
+				== miniexp_dummy) {
+		handle(L, doc->context, True);
+	}
+
+
+	/* throuw page info and obtain lines info, after this, sexp's entries
+	 * are lines. */
+	sexp = miniexp_cdr(sexp);
+	/* get number of lines in a page */
+	nr_line = miniexp_length(sexp);
+	/* table that contains all the lines */
+	lua_newtable(L);
+
+	for(i = 1; i <= nr_line; i++) {
+		/* retrive one line entry */
+		se_line = miniexp_nth(i, sexp);
+		nr_word = miniexp_length(se_line);
+		if(nr_word == 0) {
+			continue;
+		}
+
+		/* subtable that contains words in a line */
+		lua_pushnumber(L, i);
+		lua_newtable(L);
+
+		/* set line position */
+		lua_pushstring(L, "x0");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "y0");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "x1");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "y1");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_line)));
+		lua_settable(L, -3);
+
+		/* now loop through each word in the line */
+		for(j = 1; j <= nr_word; j++) {
+			/* retrive one word entry */
+			se_word = miniexp_nth(j, se_line);
+			/* check to see whether the entry is empty */
+			word = miniexp_to_str(miniexp_nth(5, se_word));
+			if (!word) {
+				continue;
+			}
+
+			/* create table that contains info for a word */
+			lua_pushnumber(L, j);
+			lua_newtable(L);
+
+			/* set word info */
+			lua_pushstring(L, "x0");
+			lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_word)));
+			lua_settable(L, -3);
+
+			lua_pushstring(L, "y0");
+			lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_word)));
+			lua_settable(L, -3);
+
+			lua_pushstring(L, "x1");
+			lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_word)));
+			lua_settable(L, -3);
+
+			lua_pushstring(L, "y1");
+			lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_word)));
+			lua_settable(L, -3);
+
+			lua_pushstring(L, "word");
+			lua_pushstring(L, word);
+			lua_settable(L, -3);
+
+
+			/* set word entry to table */
+			lua_settable(L, -3);
+		} /* end of for (j) */
+
+		/* set line entry to table */
+		lua_settable(L, -3);
+	} /* end of for (i) */
+
+	return 1;
+}
+
 static int closePage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	if(page->page_ref != NULL) {
@@ -415,6 +538,7 @@ static const struct luaL_reg djvudocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
+	{"getPageText", getPageText},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
