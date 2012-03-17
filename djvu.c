@@ -310,23 +310,22 @@ static int getUsedBBox(lua_State *L) {
  * Return a table like following:
  * {
  *    {  -- a line entry
- *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
- *       {
+ *       words = {
  *          {word="This", x0=377, y0=4857, x1=2427, y1=5089},
  *          {word="is", x0=377, y0=4857, x1=2427, y1=5089},
  *          {word="Word", x0=377, y0=4857, x1=2427, y1=5089},
  *          {word="List", x0=377, y0=4857, x1=2427, y1=5089},
  *       },
+ *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
  *    },
  *
  *    {  -- an other line entry
- *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
- *       {
+ *       words = {
  *          {word="This", x0=377, y0=4857, x1=2427, y1=5089},
  *          {word="is", x0=377, y0=4857, x1=2427, y1=5089},
  *       },
+ *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
  *    },
- *
  * }
  */
 static int getPageText(lua_State *L) {
@@ -334,7 +333,7 @@ static int getPageText(lua_State *L) {
 	int pageno = luaL_checkint(L, 2);
 
 	miniexp_t sexp, se_line, se_word;
-	int i = 1, j = 1,
+	int i = 1, j = 1, counter = 1,
 		nr_line = 0, nr_word = 0;
 	const char *word = NULL;
 	
@@ -342,7 +341,6 @@ static int getPageText(lua_State *L) {
 				== miniexp_dummy) {
 		handle(L, doc->context, True);
 	}
-
 
 	/* throuw page info and obtain lines info, after this, sexp's entries
 	 * are lines. */
@@ -381,7 +379,10 @@ static int getPageText(lua_State *L) {
 		lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_line)));
 		lua_settable(L, -3);
 
+		lua_pushstring(L, "words");
+		lua_newtable(L);
 		/* now loop through each word in the line */
+		counter = 1;
 		for(j = 1; j <= nr_word; j++) {
 			/* retrive one word entry */
 			se_word = miniexp_nth(j, se_line);
@@ -392,8 +393,9 @@ static int getPageText(lua_State *L) {
 			}
 
 			/* create table that contains info for a word */
-			lua_pushnumber(L, j);
+			lua_pushnumber(L, counter);
 			lua_newtable(L);
+			counter++;
 
 			/* set word info */
 			lua_pushstring(L, "x0");
@@ -416,12 +418,14 @@ static int getPageText(lua_State *L) {
 			lua_pushstring(L, word);
 			lua_settable(L, -3);
 
-
-			/* set word entry to table */
+			/* set word entry to "words" table */
 			lua_settable(L, -3);
 		} /* end of for (j) */
 
-		/* set line entry to table */
+		/* set "words" table to line entry table */
+		lua_settable(L, -3);
+
+		/* set line entry to page text table */
 		lua_settable(L, -3);
 	} /* end of for (i) */
 
