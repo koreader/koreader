@@ -32,9 +32,12 @@ UniReader = {
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
-	-- size of current page for current zoom level in pixels
+	-- cached tile size
 	fullwidth = 0,
 	fullheight = 0,
+	-- size of current page for current zoom level in pixels
+	cur_full_width = 0,
+	cur_full_height = 0,
 	offset_x = 0,
 	offset_y = 0,
 	min_offset_x = 0,
@@ -180,7 +183,7 @@ function UniReader:draworcache(no, preCache)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
 	local page = self.doc:openPage(no)
-	local dc = self:setzoom(page)
+	local dc = self:setzoom(page, preCache)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive. 
@@ -285,7 +288,7 @@ function UniReader:clearcache()
 end
 
 -- set viewer state according to zoom state
-function UniReader:setzoom(page)
+function UniReader:setzoom(page, preCache)
 	local dc = self.newDC()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
@@ -415,6 +418,10 @@ function UniReader:setzoom(page)
 
 	dc:setRotate(self.globalrotate);
 	self.fullwidth, self.fullheight = page:getSize(dc)
+	if not preCache then -- save current page fullsize
+		self.cur_full_width = self.fullwidth
+		self.cur_full_height = self.fullheight
+	end
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
 	self.min_offset_y = fb.bb:getHeight() - self.fullheight
 	if(self.min_offset_x > 0) then
@@ -717,6 +724,31 @@ function UniReader:showJumpStack()
 	end
 end
 
+function UniReader:highLightText()
+	local t = self.doc:getPageText(self.pageno)
+
+	local function isInScreenRange(v)
+		return	(self.cur_full_height-(v.y0*self.globalzoom) <= 
+					-self.offset_y + width) and
+				(self.cur_full_height-(v.y1*self.globalzoom) >=
+					-self.offset_y)
+	end
+
+	for k1,v1 in ipairs(t) do
+		local words = v1.words
+		for k,v in ipairs(words) do
+			if isInScreenRange(v) then
+				fb.bb:paintRect(
+					v.x0*self.globalzoom,
+					self.offset_y+self.cur_full_height-(v.y1*self.globalzoom),
+					(v.x1-v.x0)*self.globalzoom,
+					(v.y1-v.y0)*self.globalzoom, 15)
+			end -- EOF if isInScreenRange
+		end -- EOF for words
+	end -- EOF for lines
+	fb:refresh(0)
+end
+
 function UniReader:showMenu()
 	local ypos = height - 50
 	local load_percent = (self.pageno / self.doc:getPages())
@@ -860,6 +892,8 @@ function UniReader:inputloop()
 				else
 					self:setrotate( self.globalrotate - 10 )
 				end
+			elseif ev.code == KEY_N then
+				self:highLightText()	
 			elseif ev.code == KEY_HOME then
 				if Keys.shiftmode or Keys.altmode then
 					-- signal quit

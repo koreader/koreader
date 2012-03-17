@@ -286,7 +286,7 @@ static int openPage(lua_State *L) {
 static int getPageSize(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
-
+	
 	lua_pushnumber(L, dc->zoom * page->info.width);
 	lua_pushnumber(L, dc->zoom * page->info.height);
 
@@ -333,7 +333,7 @@ static int getPageText(lua_State *L) {
 	int pageno = luaL_checkint(L, 2);
 
 	miniexp_t sexp, se_line, se_word;
-	int i = 1, j = 1, counter = 1,
+	int i = 1, j = 1, counter_l = 1, counter_w=1,
 		nr_line = 0, nr_word = 0;
 	const char *word = NULL;
 	
@@ -350,6 +350,7 @@ static int getPageText(lua_State *L) {
 	/* table that contains all the lines */
 	lua_newtable(L);
 
+	counter_l = 1;
 	for(i = 1; i <= nr_line; i++) {
 		/* retrive one line entry */
 		se_line = miniexp_nth(i, sexp);
@@ -359,8 +360,9 @@ static int getPageText(lua_State *L) {
 		}
 
 		/* subtable that contains words in a line */
-		lua_pushnumber(L, i);
+		lua_pushnumber(L, counter_l);
 		lua_newtable(L);
+		counter_l++;
 
 		/* set line position */
 		lua_pushstring(L, "x0");
@@ -382,7 +384,7 @@ static int getPageText(lua_State *L) {
 		lua_pushstring(L, "words");
 		lua_newtable(L);
 		/* now loop through each word in the line */
-		counter = 1;
+		counter_w = 1;
 		for(j = 1; j <= nr_word; j++) {
 			/* retrive one word entry */
 			se_word = miniexp_nth(j, se_line);
@@ -393,9 +395,9 @@ static int getPageText(lua_State *L) {
 			}
 
 			/* create table that contains info for a word */
-			lua_pushnumber(L, counter);
+			lua_pushnumber(L, counter_w);
 			lua_newtable(L);
-			counter++;
+			counter_w++;
 
 			/* set word info */
 			lua_pushstring(L, "x0");
