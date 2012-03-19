@@ -725,28 +725,7 @@ function UniReader:showJumpStack()
 end
 
 function UniReader:highLightText()
-	local t = self.doc:getPageText(self.pageno)
-
-	local function isInScreenRange(v)
-		return	(self.cur_full_height-(v.y0*self.globalzoom) <= 
-					-self.offset_y + width) and
-				(self.cur_full_height-(v.y1*self.globalzoom) >=
-					-self.offset_y)
-	end
-
-	for k1,v1 in ipairs(t) do
-		local words = v1.words
-		for k,v in ipairs(words) do
-			if isInScreenRange(v) then
-				fb.bb:paintRect(
-					v.x0*self.globalzoom,
-					self.offset_y+self.cur_full_height-(v.y1*self.globalzoom),
-					(v.x1-v.x0)*self.globalzoom,
-					(v.y1-v.y0)*self.globalzoom, 15)
-			end -- EOF if isInScreenRange
-		end -- EOF for words
-	end -- EOF for lines
-	fb:refresh(0)
+	return
 end
 
 function UniReader:showMenu()
@@ -893,7 +872,7 @@ function UniReader:inputloop()
 					self:setrotate( self.globalrotate - 10 )
 				end
 			elseif ev.code == KEY_N then
-				self:highLightText()	
+				self:startHighLightMode()
 			elseif ev.code == KEY_HOME then
 				if Keys.shiftmode or Keys.altmode then
 					-- signal quit
