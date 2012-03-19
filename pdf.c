@@ -39,12 +39,14 @@ typedef struct PdfPage {
 static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
 	char *password = strdup(luaL_checkstring(L, 2));
+	int cachesize = luaL_optint(L, 3, 64 << 20); // 64 MB limit default
+
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(NULL, NULL, 64 << 20); // 64MB limit
+	doc->context = fz_new_context(NULL, NULL, cachesize);
 
 	fz_try(doc->context) {
 		doc->xref = fz_open_document(doc->context, filename);
