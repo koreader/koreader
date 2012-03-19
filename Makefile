@@ -63,12 +63,13 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
 		blitbuffer.o \
+		drawcontext.o \
 		input.o \
 		util.o \
 		ft.o \
@@ -86,7 +87,7 @@ einkfb.o input.o: %.o: %.c
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o: %.o: %.c
+kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 djvu.o: %.o: %.c
