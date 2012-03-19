@@ -60,11 +60,13 @@ function InputBox:delChar()
 		return
 	end
 
+	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
+						/ self.fwidth
+	if cur_index == 0 then return end
+
 	self.cursor:clear()
 
 	-- draw new text
-	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
-						/ self.fwidth
 	self.input_string = self.input_string:sub(0,cur_index-1)..
 						self.input_string:sub(cur_index+1, -1)
 	self:refreshText()
