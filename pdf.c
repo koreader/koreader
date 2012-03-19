@@ -274,12 +274,12 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg pdf_func[] = {
+static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfdocument_meth[] = {
+static const struct luaL_Reg pdfdocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
@@ -288,7 +288,7 @@ static const struct luaL_reg pdfdocument_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfpage_meth[] = {
+static const struct luaL_Reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},

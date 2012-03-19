@@ -88,7 +88,7 @@ static int dcGetGamma(lua_State *L) {
 	return 1;
 }
 
-static const struct luaL_reg drawcontext_meth[] = {
+static const struct luaL_Reg drawcontext_meth[] = {
 	{"setRotate", dcSetRotate},
 	{"getRotate", dcGetRotate},
 	{"setZoom", dcSetZoom},
@@ -100,7 +100,7 @@ static const struct luaL_reg drawcontext_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg drawcontext_func[] = {
+static const struct luaL_Reg drawcontext_func[] = {
 	{"new", newDrawContext},
 	{NULL, NULL}
 };

@@ -327,12 +327,12 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg djvu_func[] = {
+static const struct luaL_Reg djvu_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg djvudocument_meth[] = {
+static const struct luaL_Reg djvudocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
@@ -341,7 +341,7 @@ static const struct luaL_reg djvudocument_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg djvupage_meth[] = {
+static const struct luaL_Reg djvupage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},

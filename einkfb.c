@@ -203,12 +203,12 @@ static int einkSetOrientation(lua_State *L) {
 }
 
 
-static const struct luaL_reg einkfb_func[] = {
+static const struct luaL_Reg einkfb_func[] = {
 	{"open", openFrameBuffer},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg einkfb_meth[] = {
+static const struct luaL_Reg einkfb_meth[] = {
 	{"close", closeFrameBuffer},
 	{"__gc", closeFrameBuffer},
 	{"refresh", einkUpdate},
