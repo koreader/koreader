@@ -144,7 +144,7 @@ static int waitForInput(lua_State *L) {
 #endif
 }
 
-static const struct luaL_reg input_func[] = {
+static const struct luaL_Reg input_func[] = {
 	{"open", openInputDevice},
 	{"closeAll", closeInputDevices},
 	{"waitForEvent", waitForInput},

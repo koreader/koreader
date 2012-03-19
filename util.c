@@ -46,7 +46,7 @@ static int utf8charcode(lua_State *L) {
 	return 1;
 }
 
-static const struct luaL_reg util_func[] = {
+static const struct luaL_Reg util_func[] = {
 	{"gettime", gettime},
 	{"utf8charcode", utf8charcode},
 	{NULL, NULL}

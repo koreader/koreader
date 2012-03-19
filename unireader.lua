@@ -59,10 +59,8 @@ UniReader = {
 	-- list of available commands:
 	commands = nil, 
 
-	-- you have to initialize newDC, nulldc in specific reader
-	newDC = function() return nil end,
 	-- we will use this one often, so keep it "static":
-	nulldc = nil, 
+	nulldc = DrawContext.new(), 
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -91,13 +89,11 @@ end
 	For a new specific reader,
 	you must always overwrite following two methods:
 
-	* self:init()
 	* self:open()
 
 	overwrite other methods if needed.
 --]]
 function UniReader:init()
-	print("empty initialization method!")
 end
 
 -- open a file and its settings store
@@ -292,7 +288,7 @@ end
 
 -- set viewer state according to zoom state
 function UniReader:setzoom(page)
-	local dc = self.newDC()
+	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()
@@ -684,15 +680,11 @@ function UniReader:showTOC()
 	end
 	local menu_items = {}
 	local filtered_toc = {}
-	local curr_page = -1
 	-- build menu items
 	for _k,_v in ipairs(self.toc) do
-		if(_v.page >= curr_page) then
-			table.insert(menu_items,
-			("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
-			table.insert(filtered_toc,_v.page)
-			curr_page = _v.page
-		end
+		table.insert(menu_items,
+		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
+		table.insert(filtered_toc,_v.page)
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",

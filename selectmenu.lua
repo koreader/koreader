@@ -195,7 +195,7 @@ function SelectMenu:choose(ypos, height)
 				prevItem()
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
-			elseif ev.code == KEY_PGFWD then
+			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if self.page < (self.items / perpage) then
 					if self.current + self.page*perpage > self.items then
 						self.current = self.items - self.page*perpage
@@ -206,7 +206,7 @@ function SelectMenu:choose(ypos, height)
 					self.current = self.items - (self.page-1)*perpage
 					markerdirty = true
 				end
-			elseif ev.code == KEY_PGBCK then
+			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if self.page > 1 then
 					self.page = self.page - 1
 					pagedirty = true

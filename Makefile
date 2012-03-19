@@ -13,6 +13,7 @@ LFSDIR=luafilesystem
 
 CC:=arm-unknown-linux-gnueabi-gcc
 CXX:=arm-unknown-linux-gnueabi-g++
+HOST:=arm-unknown-linux-gnueabi
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
@@ -133,7 +134,7 @@ $(DJVULIBS):
 ifdef EMULATE_READER
 	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=arm-kindle-linux-gnueabi
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST)
 endif
 	make -C $(DJVUDIR)/build
 

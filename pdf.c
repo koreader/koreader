@@ -19,6 +19,7 @@
 #include <pdf/mupdf.h>
 
 #include "blitbuffer.h"
+#include "drawcontext.h"
 #include "pdf.h"
 
 typedef struct PdfDocument {
@@ -35,14 +36,6 @@ typedef struct PdfPage {
 	pdf_page *page;
 	PdfDocument *doc;
 } PdfPage;
-
-typedef struct DrawContext {
-	int rotate;
-	double zoom;
-	double gamma;
-	int offset_x;
-	int offset_y;
-} DrawContext;
 
 static int openDocument(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
@@ -101,16 +94,17 @@ static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int dept
 		lua_pushstring(L, "page");
 		lua_pushnumber(L, ol->dest.ld.gotor.page + 1);
 		lua_settable(L, -3);
+
 		lua_pushstring(L, "depth");
 		lua_pushnumber(L, depth); 
 		lua_settable(L, -3);
-		lua_pushstring(L, "title");
 
+		lua_pushstring(L, "title");
 		lua_pushstring(L, ol->title);
 		lua_settable(L, -3);
 
-		lua_settable(L, -3);
 
+		lua_settable(L, -3);
 		(*count)++;
 		if (ol->down) {
 			walkTableOfContent(L, ol->down, count, depth);
@@ -136,76 +130,6 @@ static int getTableOfContent(lua_State *L) {
 
 	lua_newtable(L);
 	walkTableOfContent(L, ol, &count, 0);
-	return 1;
-}
-
-static int newDrawContext(lua_State *L) {
-	int rotate = luaL_optint(L, 1, 0);
-	double zoom = luaL_optnumber(L, 2, (double) 1.0);
-	int offset_x = luaL_optint(L, 3, 0);
-	int offset_y = luaL_optint(L, 4, 0);
-	double gamma = luaL_optnumber(L, 5, (double) -1.0);
-
-	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
-	dc->rotate = rotate;
-	dc->zoom = zoom;
-	dc->offset_x = offset_x;
-	dc->offset_y = offset_y;
-	dc->gamma = gamma;
-
-	luaL_getmetatable(L, "drawcontext");
-	lua_setmetatable(L, -2);
-
-	return 1;
-}
-
-static int dcSetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->offset_x = luaL_checkint(L, 2);
-	dc->offset_y = luaL_checkint(L, 3);
-	return 0;
-}
-
-static int dcGetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->offset_x);
-	lua_pushinteger(L, dc->offset_y);
-	return 2;
-}
-
-static int dcSetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->rotate = luaL_checkint(L, 2);
-	return 0;
-}
-
-static int dcSetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->zoom = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->rotate);
-	return 1;
-}
-
-static int dcGetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->zoom);
-	return 1;
-}
-
-static int dcSetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->gamma = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->gamma);
 	return 1;
 }
 
@@ -239,15 +163,15 @@ static int openPage(lua_State *L) {
 
 static int getPageSize(lua_State *L) {
 	fz_matrix ctm;
+	fz_rect bounds;
 	fz_rect bbox;
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	ctm = fz_translate(0, -page->page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(dc->zoom, -dc->zoom));
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
+	bounds = fz_bound_page(page->doc->xref, page->page);
+	ctm = fz_scale(dc->zoom, dc->zoom) ;
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
-	bbox = fz_transform_rect(ctm, page->page->mediabox);
+	bbox = fz_transform_rect(ctm, bounds);
 	
        	lua_pushnumber(L, bbox.x1-bbox.x0);
 	lua_pushnumber(L, bbox.y1-bbox.y0);
@@ -263,7 +187,6 @@ static int getUsedBBox(lua_State *L) {
 
 	/* returned BBox is in centi-point (n * 0.01 pt) */
 	ctm = fz_scale(100, 100);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 
 	fz_try(page->doc->context) {
 		dev = fz_new_bbox_device(page->doc->context, &result);
@@ -311,7 +234,6 @@ static int drawPage(lua_State *L) {
 	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));
 	dev = fz_new_draw_device(page->doc->context, pix);
@@ -352,13 +274,12 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg pdf_func[] = {
+static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
-	{"newDC", newDrawContext},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfdocument_meth[] = {
+static const struct luaL_Reg pdfdocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
@@ -367,24 +288,12 @@ static const struct luaL_reg pdfdocument_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfpage_meth[] = {
+static const struct luaL_Reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},
-	{NULL, NULL}
-};
-
-static const struct luaL_reg drawcontext_meth[] = {
-	{"setRotate", dcSetRotate},
-	{"getRotate", dcGetRotate},
-	{"setZoom", dcSetZoom},
-	{"getZoom", dcGetZoom},
-	{"setOffset", dcSetOffset},
-	{"getOffset", dcGetOffset},
-	{"setGamma", dcSetGamma},
-	{"getGamma", dcGetGamma},
 	{NULL, NULL}
 };
 
@@ -400,12 +309,6 @@ int luaopen_pdf(lua_State *L) {
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 	luaL_register(L, NULL, pdfpage_meth);
-	lua_pop(L, 1);
-	luaL_newmetatable(L, "drawcontext");
-	lua_pushstring(L, "__index");
-	lua_pushvalue(L, -2);
-	lua_settable(L, -3);
-	luaL_register(L, NULL, drawcontext_meth);
 	lua_pop(L, 1);
 	luaL_register(L, "pdf", pdf_func);
 	return 1;
