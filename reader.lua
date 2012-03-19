@@ -140,6 +140,7 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 		else
 			if file ~= nil then
 				running = openFile(file)
+				print(file)
 			else
 				running = false
 			end
