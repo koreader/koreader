@@ -35,21 +35,25 @@ longopts = {
 
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	local reader = nil
 	if file_type == "djvu" then
-		if DJVUReader:open(filename) then
-			page_num = DJVUReader.settings:readsetting("last_page") or 1
-			DJVUReader:goto(tonumber(page_num))
-			reader_settings:savesetting("lastfile", filename)
-			return DJVUReader:inputloop()
-		end
+		reader = DJVUReader
 	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
-		if PDFReader:open(filename,"") then -- TODO: query for password
-			page_num = PDFReader.settings:readsetting("last_page") or 1
-			PDFReader:goto(tonumber(page_num))
+		reader = PDFReader
+	end
+	if reader then
+		local ok, err = reader:open(filename)
+		if ok then
+			reader:loadSettings(filename)
+			page_num = reader.settings:readsetting("last_page") or 1
+			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
-			return PDFReader:inputloop()
+			return reader:inputloop()
+		else
+			-- TODO: error handling
 		end
 	end
+	return true -- on failed attempts, we signal to keep running
 end
 
 function showusage()
