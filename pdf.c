@@ -240,15 +240,15 @@ static int openPage(lua_State *L) {
 
 static int getPageSize(lua_State *L) {
 	fz_matrix ctm;
+	fz_rect bounds;
 	fz_rect bbox;
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	ctm = fz_translate(0, -page->page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(dc->zoom, -dc->zoom));
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
+	bounds = fz_bound_page(page->doc->xref, page->page);
+	ctm = fz_scale(dc->zoom, dc->zoom) ;
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
-	bbox = fz_transform_rect(ctm, page->page->mediabox);
+	bbox = fz_transform_rect(ctm, bounds);
 	
        	lua_pushnumber(L, bbox.x1-bbox.x0);
 	lua_pushnumber(L, bbox.y1-bbox.y0);
@@ -264,7 +264,6 @@ static int getUsedBBox(lua_State *L) {
 
 	/* returned BBox is in centi-point (n * 0.01 pt) */
 	ctm = fz_scale(100, 100);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 
 	fz_try(page->doc->context) {
 		dev = fz_new_bbox_device(page->doc->context, &result);
@@ -312,7 +311,6 @@ static int drawPage(lua_State *L) {
 	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));
 	dev = fz_new_draw_device(page->doc->context, pix);
