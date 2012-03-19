@@ -269,7 +269,7 @@ static int drawPage(lua_State *L) {
 			bbptr[x] = (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0)) ^ 0xFF;
 		}
 		if(bb->w & 1) {
-			bbptr[x] = pmptr[x*2] & 0xF0;
+			bbptr[x] = (pmptr[x*2] & 0xF0) ^ 0xF0;
 		}
 		bbptr += bb->pitch;
 		pmptr += bb->w;
