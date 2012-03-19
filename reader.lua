@@ -36,7 +36,7 @@ longopts = {
 }
 
 function openFile(filename)
-	local file_type = string.lower(string.match(filename, ".+%.(.+)"))
+	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	if file_type == "djvu" then
 		if DJVUReader:open(filename) then
 			page_num = DJVUReader.settings:readsetting("last_page") or 1
@@ -44,7 +44,7 @@ function openFile(filename)
 			reader_settings:savesetting("lastfile", filename)
 			return DJVUReader:inputloop()
 		end
-	elseif file_type == "pdf" then
+	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
 		if PDFReader:open(filename,"") then -- TODO: query for password
 			page_num = PDFReader.settings:readsetting("last_page") or 1
 			PDFReader:goto(tonumber(page_num))

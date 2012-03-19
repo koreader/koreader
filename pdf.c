@@ -16,14 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <fitz/fitz.h>
-#include <pdf/mupdf.h>
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pdf.h"
 
 typedef struct PdfDocument {
-	pdf_document *xref;
+	fz_document *xref;
 	fz_context *context;
 	int pages;
 } PdfDocument;
@@ -33,39 +32,48 @@ typedef struct PdfPage {
 #ifdef USE_DISPLAY_LIST
 	fz_display_list *list;
 #endif
-	pdf_page *page;
+	fz_page *page;
 	PdfDocument *doc;
 } PdfPage;
 
 static int openDocument(lua_State *L) {
-	const char *filename = luaL_checkstring(L, 1);
-	const char *password = luaL_checkstring(L, 2);
+	char *filename = strdup(luaL_checkstring(L, 1));
+	char *password = strdup(luaL_checkstring(L, 2));
+	int cachesize = luaL_optint(L, 3, 64 << 20); // 64 MB limit default
+
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(NULL, NULL, 64 << 20); // 64MB limit
+	doc->context = fz_new_context(NULL, NULL, cachesize);
 
 	fz_try(doc->context) {
-		doc->xref = pdf_open_document(doc->context, filename);
+		doc->xref = fz_open_document(doc->context, filename);
 	}
 	fz_catch(doc->context) {
+		free(filename);
+		free(password);
 		return luaL_error(L, "cannot open PDF file <%s>", filename);
 	}
 
-	if(pdf_needs_password(doc->xref)) {
-		if (!pdf_authenticate_password(doc->xref, password))
+	if(fz_needs_password(doc->xref)) {
+		if (!fz_authenticate_password(doc->xref, password)) {
+			free(filename);
+			free(password);
 			return luaL_error(L, "cannot authenticate");
+		}
 	}
-	doc->pages = pdf_count_pages(doc->xref);
+	doc->pages = fz_count_pages(doc->xref);
+	free(filename);
+	free(password);
 	return 1;
 }
 
 static int closeDocument(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
 	if(doc->xref != NULL) {
-		pdf_close_document(doc->xref);
+		fz_close_document(doc->xref);
 		doc->xref = NULL;
 	}
 	if(doc->context != NULL) {
@@ -126,7 +134,7 @@ static int getTableOfContent(lua_State *L) {
 	int count = 1;
 
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	ol = pdf_load_outline(doc->xref);
+	ol = fz_load_outline(doc->xref);
 
 	lua_newtable(L);
 	walkTableOfContent(L, ol, &count, 0);
@@ -150,7 +158,7 @@ static int openPage(lua_State *L) {
 	lua_setmetatable(L, -2);
 
 	fz_try(doc->context) {
-		page->page = pdf_load_page(doc->xref, pageno - 1);
+		page->page = fz_load_page(doc->xref, pageno - 1);
 	}
 	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open page #%d", pageno);
@@ -190,7 +198,7 @@ static int getUsedBBox(lua_State *L) {
 
 	fz_try(page->doc->context) {
 		dev = fz_new_bbox_device(page->doc->context, &result);
-		pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+		fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	}
 	fz_always(page->doc->context) {
 		fz_free_device(dev);
@@ -210,7 +218,7 @@ static int getUsedBBox(lua_State *L) {
 static int closePage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	if(page->page != NULL) {
-		pdf_free_page(page->doc->xref, page->page);
+		fz_free_page(page->doc->xref, page->page);
 		page->page = NULL;
 	}
 	return 0;
@@ -241,13 +249,13 @@ static int drawPage(lua_State *L) {
 	fz_device *tdev;
 	fz_try(page->doc->context) {
 		tdev = fz_new_trace_device(page->doc->context);
-		pdf_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+		fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
 	}
 	fz_always(page->doc->context) {
 		fz_free_device(tdev);
 	}
 #endif
-	pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	fz_free_device(dev);
 
 	if(dc->gamma >= 0.0) {
@@ -263,7 +271,7 @@ static int drawPage(lua_State *L) {
 			bbptr[x] = (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0)) ^ 0xFF;
 		}
 		if(bb->w & 1) {
-			bbptr[x] = pmptr[x*2] & 0xF0;
+			bbptr[x] = (pmptr[x*2] & 0xF0) ^ 0xF0;
 		}
 		bbptr += bb->pitch;
 		pmptr += bb->w;
