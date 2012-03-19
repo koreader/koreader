@@ -55,10 +55,8 @@ UniReader = {
 	-- the document's setting store:
 	settings = nil,
 
-	-- you have to initialize newDC, nulldc in specific reader
-	newDC = function() return nil end,
 	-- we will use this one often, so keep it "static":
-	nulldc = nil, 
+	nulldc = DrawContext.new(), 
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -87,13 +85,11 @@ end
 	For a new specific reader,
 	you must always overwrite following two methods:
 
-	* self:init()
 	* self:open()
 
 	overwrite other methods if needed.
 --]]
 function UniReader:init()
-	print("empty initialization method!")
 end
 
 -- open a file and its settings store
@@ -286,7 +282,7 @@ end
 
 -- set viewer state according to zoom state
 function UniReader:setzoom(page)
-	local dc = self.newDC()
+	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()
