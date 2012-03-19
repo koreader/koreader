@@ -52,8 +52,11 @@ function FileChooser:readdir()
 		if lfs.attributes(self.path.."/"..f, "mode") == "directory" and f ~= "." and not (f==".." and self.path=="/") and not string.match(f, "^%.[^.]") then
 			--print(self.path.." -> adding: '"..f.."'")
 			table.insert(self.dirs, f)
-		elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$") then
-			table.insert(self.files, f)
+		else
+			local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
+			if file_type == "djvu" or file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
+				table.insert(self.files, f)
+			end
 		end
 	end
 	--@TODO make sure .. is sortted to the first item  16.02 2012
