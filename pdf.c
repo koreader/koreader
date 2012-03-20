@@ -16,15 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <fitz/fitz.h>
-#include <pdf/mupdf.h>
 
 #include "blitbuffer.h"
+#include "drawcontext.h"
 #include "pdf.h"
 
 typedef struct PdfDocument {
-	pdf_document *xref;
+	fz_document *xref;
 	fz_context *context;
-	int pages;
 } PdfDocument;
 
 typedef struct PdfPage {
@@ -32,47 +31,56 @@ typedef struct PdfPage {
 #ifdef USE_DISPLAY_LIST
 	fz_display_list *list;
 #endif
-	pdf_page *page;
+	fz_page *page;
 	PdfDocument *doc;
 } PdfPage;
 
-typedef struct DrawContext {
-	int rotate;
-	double zoom;
-	double gamma;
-	int offset_x;
-	int offset_y;
-} DrawContext;
-
 static int openDocument(lua_State *L) {
-	const char *filename = luaL_checkstring(L, 1);
-	const char *password = luaL_checkstring(L, 2);
+	char *filename = strdup(luaL_checkstring(L, 1));
+	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
+
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(NULL, NULL, 64 << 20); // 64MB limit
+	doc->context = fz_new_context(NULL, NULL, cachesize);
 
 	fz_try(doc->context) {
-		doc->xref = pdf_open_document(doc->context, filename);
+		doc->xref = fz_open_document(doc->context, filename);
 	}
 	fz_catch(doc->context) {
-		return luaL_error(L, "cannot open PDF file <%s>", filename);
+		free(filename);
+		return luaL_error(L, "cannot open PDF file");
 	}
 
-	if(pdf_needs_password(doc->xref)) {
-		if (!pdf_authenticate_password(doc->xref, password))
-			return luaL_error(L, "cannot authenticate");
+	free(filename);
+	return 1;
+}
+
+static int needsPassword(lua_State *L) {
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	lua_pushboolean(L, fz_needs_password(doc->xref));
+	return 1;
+}
+
+static int authenticatePassword(lua_State *L) {
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	char *password = strdup(luaL_checkstring(L, 2));
+
+	if (!fz_authenticate_password(doc->xref, password)) {
+		lua_pushboolean(L, 0);
+	} else {
+		lua_pushboolean(L, 1);
 	}
-	doc->pages = pdf_count_pages(doc->xref);
+	free(password);
 	return 1;
 }
 
 static int closeDocument(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
 	if(doc->xref != NULL) {
-		pdf_close_document(doc->xref);
+		fz_close_document(doc->xref);
 		doc->xref = NULL;
 	}
 	if(doc->context != NULL) {
@@ -84,7 +92,12 @@ static int closeDocument(lua_State *L) {
 
 static int getNumberOfPages(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	lua_pushinteger(L, doc->pages);
+	fz_try(doc->context) {
+		lua_pushinteger(L, fz_count_pages(doc->xref));
+	}
+	fz_catch(doc->context) {
+		return luaL_error(L, "cannot access page tree");
+	}
 	return 1;
 }
 
@@ -133,80 +146,10 @@ static int getTableOfContent(lua_State *L) {
 	int count = 1;
 
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	ol = pdf_load_outline(doc->xref);
+	ol = fz_load_outline(doc->xref);
 
 	lua_newtable(L);
 	walkTableOfContent(L, ol, &count, 0);
-	return 1;
-}
-
-static int newDrawContext(lua_State *L) {
-	int rotate = luaL_optint(L, 1, 0);
-	double zoom = luaL_optnumber(L, 2, (double) 1.0);
-	int offset_x = luaL_optint(L, 3, 0);
-	int offset_y = luaL_optint(L, 4, 0);
-	double gamma = luaL_optnumber(L, 5, (double) -1.0);
-
-	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
-	dc->rotate = rotate;
-	dc->zoom = zoom;
-	dc->offset_x = offset_x;
-	dc->offset_y = offset_y;
-	dc->gamma = gamma;
-
-	luaL_getmetatable(L, "drawcontext");
-	lua_setmetatable(L, -2);
-
-	return 1;
-}
-
-static int dcSetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->offset_x = luaL_checkint(L, 2);
-	dc->offset_y = luaL_checkint(L, 3);
-	return 0;
-}
-
-static int dcGetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->offset_x);
-	lua_pushinteger(L, dc->offset_y);
-	return 2;
-}
-
-static int dcSetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->rotate = luaL_checkint(L, 2);
-	return 0;
-}
-
-static int dcSetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->zoom = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->rotate);
-	return 1;
-}
-
-static int dcGetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->zoom);
-	return 1;
-}
-
-static int dcSetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->gamma = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->gamma);
 	return 1;
 }
 
@@ -217,38 +160,38 @@ static int openPage(lua_State *L) {
 
 	int pageno = luaL_checkint(L, 2);
 
-	if(pageno < 1 || pageno > doc->pages) {
-		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, doc->pages);
-	}
-
-	PdfPage *page = (PdfPage*) lua_newuserdata(L, sizeof(PdfPage));
-
-	luaL_getmetatable(L, "pdfpage");
-	lua_setmetatable(L, -2);
-
 	fz_try(doc->context) {
-		page->page = pdf_load_page(doc->xref, pageno - 1);
+		if(pageno < 1 || pageno > fz_count_pages(doc->xref)) {
+			return luaL_error(L, "cannot open page #%d, out of range (1-%d)",
+					pageno, fz_count_pages(doc->xref));
+		}
+
+		PdfPage *page = (PdfPage*) lua_newuserdata(L, sizeof(PdfPage));
+
+		luaL_getmetatable(L, "pdfpage");
+		lua_setmetatable(L, -2);
+
+		page->page = fz_load_page(doc->xref, pageno - 1);
+
+		page->doc = doc;
 	}
 	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open page #%d", pageno);
 	}
-
-	page->doc = doc;
-
 	return 1;
 }
 
 static int getPageSize(lua_State *L) {
 	fz_matrix ctm;
+	fz_rect bounds;
 	fz_rect bbox;
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	ctm = fz_translate(0, -page->page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(dc->zoom, -dc->zoom));
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
+	bounds = fz_bound_page(page->doc->xref, page->page);
+	ctm = fz_scale(dc->zoom, dc->zoom) ;
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
-	bbox = fz_transform_rect(ctm, page->page->mediabox);
+	bbox = fz_transform_rect(ctm, bounds);
 	
        	lua_pushnumber(L, bbox.x1-bbox.x0);
 	lua_pushnumber(L, bbox.y1-bbox.y0);
@@ -264,11 +207,10 @@ static int getUsedBBox(lua_State *L) {
 
 	/* returned BBox is in centi-point (n * 0.01 pt) */
 	ctm = fz_scale(100, 100);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 
 	fz_try(page->doc->context) {
 		dev = fz_new_bbox_device(page->doc->context, &result);
-		pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+		fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	}
 	fz_always(page->doc->context) {
 		fz_free_device(dev);
@@ -288,7 +230,7 @@ static int getUsedBBox(lua_State *L) {
 static int closePage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	if(page->page != NULL) {
-		pdf_free_page(page->doc->xref, page->page);
+		fz_free_page(page->doc->xref, page->page);
 		page->page = NULL;
 	}
 	return 0;
@@ -312,7 +254,6 @@ static int drawPage(lua_State *L) {
 	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);
-	ctm = fz_concat(ctm, fz_rotate(page->page->rotate));
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	ctm = fz_concat(ctm, fz_translate(dc->offset_x, dc->offset_y));
 	dev = fz_new_draw_device(page->doc->context, pix);
@@ -320,13 +261,13 @@ static int drawPage(lua_State *L) {
 	fz_device *tdev;
 	fz_try(page->doc->context) {
 		tdev = fz_new_trace_device(page->doc->context);
-		pdf_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+		fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
 	}
 	fz_always(page->doc->context) {
 		fz_free_device(tdev);
 	}
 #endif
-	pdf_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	fz_free_device(dev);
 
 	if(dc->gamma >= 0.0) {
@@ -342,7 +283,7 @@ static int drawPage(lua_State *L) {
 			bbptr[x] = (((pmptr[x*2 + 1] & 0xF0) >> 4) | (pmptr[x*2] & 0xF0)) ^ 0xFF;
 		}
 		if(bb->w & 1) {
-			bbptr[x] = pmptr[x*2] & 0xF0;
+			bbptr[x] = (pmptr[x*2] & 0xF0) ^ 0xF0;
 		}
 		bbptr += bb->pitch;
 		pmptr += bb->w;
@@ -353,13 +294,14 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg pdf_func[] = {
+static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
-	{"newDC", newDrawContext},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfdocument_meth[] = {
+static const struct luaL_Reg pdfdocument_meth[] = {
+	{"needsPassword", needsPassword},
+	{"authenticatePassword", authenticatePassword},
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
@@ -368,24 +310,12 @@ static const struct luaL_reg pdfdocument_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg pdfpage_meth[] = {
+static const struct luaL_Reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},
-	{NULL, NULL}
-};
-
-static const struct luaL_reg drawcontext_meth[] = {
-	{"setRotate", dcSetRotate},
-	{"getRotate", dcGetRotate},
-	{"setZoom", dcSetZoom},
-	{"getZoom", dcGetZoom},
-	{"setOffset", dcSetOffset},
-	{"getOffset", dcGetOffset},
-	{"setGamma", dcSetGamma},
-	{"getGamma", dcGetGamma},
 	{NULL, NULL}
 };
 
@@ -401,12 +331,6 @@ int luaopen_pdf(lua_State *L) {
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 	luaL_register(L, NULL, pdfpage_meth);
-	lua_pop(L, 1);
-	luaL_newmetatable(L, "drawcontext");
-	lua_pushstring(L, "__index");
-	lua_pushvalue(L, -2);
-	lua_settable(L, -3);
-	luaL_register(L, NULL, drawcontext_meth);
 	lua_pop(L, 1);
 	luaL_register(L, "pdf", pdf_func);
 	return 1;

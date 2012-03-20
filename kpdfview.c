@@ -24,6 +24,7 @@
 #include <lauxlib.h>
 
 #include "blitbuffer.h"
+#include "drawcontext.h"
 #include "pdf.h"
 #include "einkfb.h"
 #include "input.h"
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
 		luaL_openlibs(L);
 
 		luaopen_blitbuffer(L);
+		luaopen_drawcontext(L);
 		luaopen_einkfb(L);
 		luaopen_pdf(L);
 		luaopen_djvu(L);

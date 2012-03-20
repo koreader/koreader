@@ -58,10 +58,8 @@ UniReader = {
 	-- the document's setting store:
 	settings = nil,
 
-	-- you have to initialize newDC, nulldc in specific reader
-	newDC = function() return nil end,
 	-- we will use this one often, so keep it "static":
-	nulldc = nil, 
+	nulldc = DrawContext.new(), 
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -90,13 +88,11 @@ end
 	For a new specific reader,
 	you must always overwrite following two methods:
 
-	* self:init()
 	* self:open()
 
 	overwrite other methods if needed.
 --]]
 function UniReader:init()
-	print("empty initialization method!")
 end
 
 -- open a file and its settings store
@@ -182,8 +178,12 @@ function UniReader:draworcache(no, preCache)
 	-- #4 goal: we render next page, too. (TODO)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
-	local page = self.doc:openPage(no)
-	local dc = self:setzoom(page, preCache)
+	local ok, page = pcall(self.doc.openPage, self.doc, no)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
+	local dc = self:setzoom(page)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive. 
@@ -289,7 +289,7 @@ end
 
 -- set viewer state according to zoom state
 function UniReader:setzoom(page, preCache)
-	local dc = self.newDC()
+	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()
@@ -444,6 +444,9 @@ end
 -- render and blit a page
 function UniReader:show(no)
 	local pagehash, offset_x, offset_y = self:draworcache(no)
+	if not pagehash then
+		return
+	end
 	self.pagehash = pagehash
 	local bb = self.cache[pagehash].bb
 	local dest_x = 0

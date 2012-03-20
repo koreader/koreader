@@ -20,6 +20,7 @@
 
 #include "string.h"
 #include "blitbuffer.h"
+#include "drawcontext.h"
 #include "djvu.h"
 
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))
@@ -30,7 +31,6 @@
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
 	ddjvu_document_t *doc_ref;
-	int pages;
 } DjvuDocument;
 
 typedef struct DjvuPage {
@@ -39,14 +39,6 @@ typedef struct DjvuPage {
 	ddjvu_pageinfo_t info;
 	DjvuDocument *doc;
 } DjvuPage;
-
-typedef struct DrawContext {
-	int rotate;
-	double zoom;
-	double gamma;
-	int offset_x;
-	int offset_y;
-} DrawContext;
 
 
 static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
@@ -97,7 +89,6 @@ static int openDocument(lua_State *L) {
 		return luaL_error(L, "cannot open DJVU file <%s>", filename);
 	}
 
-	doc->pages = ddjvu_document_get_pagenum(doc->doc_ref);
 	return 1;
 }
 
@@ -116,7 +107,7 @@ static int closeDocument(lua_State *L) {
 
 static int getNumberOfPages(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
-	lua_pushinteger(L, doc->pages);
+	lua_pushinteger(L, ddjvu_document_get_pagenum(doc->doc_ref));
 	return 1;
 }
 
@@ -177,84 +168,13 @@ static int getTableOfContent(lua_State *L) {
 	return 1;
 }
 
-static int newDrawContext(lua_State *L) {
-	int rotate = luaL_optint(L, 1, 0);
-	double zoom = luaL_optnumber(L, 2, (double) 1.0);
-	int offset_x = luaL_optint(L, 3, 0);
-	int offset_y = luaL_optint(L, 4, 0);
-	double gamma = luaL_optnumber(L, 5, (double) -1.0);
-
-	DrawContext *dc = (DrawContext*) lua_newuserdata(L, sizeof(DrawContext));
-	dc->rotate = rotate;
-	dc->zoom = zoom;
-	dc->offset_x = offset_x;
-	dc->offset_y = offset_y;
-	dc->gamma = gamma;
-
-
-	luaL_getmetatable(L, "drawcontext");
-	lua_setmetatable(L, -2);
-
-	return 1;
-}
-
-static int dcSetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->offset_x = luaL_checkint(L, 2);
-	dc->offset_y = luaL_checkint(L, 3);
-	return 0;
-}
-
-static int dcGetOffset(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->offset_x);
-	lua_pushinteger(L, dc->offset_y);
-	return 2;
-}
-
-static int dcSetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->rotate = luaL_checkint(L, 2);
-	return 0;
-}
-
-static int dcSetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->zoom = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetRotate(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushinteger(L, dc->rotate);
-	return 1;
-}
-
-static int dcGetZoom(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->zoom);
-	return 1;
-}
-
-static int dcSetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	dc->gamma = luaL_checknumber(L, 2);
-	return 0;
-}
-
-static int dcGetGamma(lua_State *L) {
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 1, "drawcontext");
-	lua_pushnumber(L, dc->gamma);
-	return 1;
-}
-
 static int openPage(lua_State *L) {
 	ddjvu_status_t r;
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 
-	if(pageno < 1 || pageno > doc->pages) {
-		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, doc->pages);
+	if(pageno < 1 || pageno > ddjvu_document_get_pagenum(doc->doc_ref)) {
+		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, ddjvu_document_get_pagenum(doc->doc_ref));
 	}
 
 	DjvuPage *page = (DjvuPage*) lua_newuserdata(L, sizeof(DjvuPage));
@@ -534,13 +454,12 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg djvu_func[] = {
+static const struct luaL_Reg djvu_func[] = {
 	{"openDocument", openDocument},
-	{"newDC", newDrawContext},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg djvudocument_meth[] = {
+static const struct luaL_Reg djvudocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
@@ -550,24 +469,12 @@ static const struct luaL_reg djvudocument_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg djvupage_meth[] = {
+static const struct luaL_Reg djvupage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},
-	{NULL, NULL}
-};
-
-static const struct luaL_reg drawcontext_meth[] = {
-	{"setRotate", dcSetRotate},
-	{"getRotate", dcGetRotate},
-	{"setZoom", dcSetZoom},
-	{"getZoom", dcGetZoom},
-	{"setOffset", dcSetOffset},
-	{"getOffset", dcGetOffset},
-	{"setGamma", dcSetGamma},
-	{"getGamma", dcGetGamma},
 	{NULL, NULL}
 };
 
@@ -584,13 +491,6 @@ int luaopen_djvu(lua_State *L) {
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 	luaL_register(L, NULL, djvupage_meth);
-	lua_pop(L, 1);
-
-	luaL_newmetatable(L, "drawcontext");
-	lua_pushstring(L, "__index");
-	lua_pushvalue(L, -2);
-	lua_settable(L, -3);
-	luaL_register(L, NULL, drawcontext_meth);
 	lua_pop(L, 1);
 
 	luaL_register(L, "djvu", djvu_func);
