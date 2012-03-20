@@ -22,6 +22,18 @@ function DJVUReader:_isWordInScreenRange(w)
 				-self.offset_y ))
 end
 
+function DJVUReader:_toggleWordHighLightByEnds(t, end1, end2)
+	if end1 > end2 then
+		end1, end2 = end2, end1
+	end
+
+	for i=end1, end2, 1 do
+		if self:_isWordInScreenRange(t[i]) then
+			self:_toggleWordHighLight(t[i])
+		end
+	end
+end
+
 function DJVUReader:_isLastWordInPage(t, l, w)
 	return (l == #t) and (w == #(t[l].words))
 end
@@ -79,184 +91,273 @@ function DJVUReader:_genTextIter(text, l0, w0, l1, w1)
 	return function() count = count + 1 return word_items[count] end
 end
 
-function DJVUReader:_drawTextHighLight(text_iter)
-	for i in text_iter do
-		fb.bb:invertRect(
-			i.x0*self.globalzoom,
-			self.offset_y+self.cur_full_height-(i.y1*self.globalzoom),
-			(i.x1-i.x0)*self.globalzoom,
-			(i.y1-i.y0)*self.globalzoom, 15)
-	end -- EOF for 
+function DJVUReader:getScreenPosByPagePos()
+end
+
+function DJVUReader:_toggleWordHighLight(w)
+	fb.bb:invertRect(
+		w.x0*self.globalzoom,
+		self.offset_y+self.cur_full_height-(w.y1*self.globalzoom),
+		(w.x1-w.x0)*self.globalzoom,
+		(w.y1-w.y0)*self.globalzoom, 15)
 end
 
 function DJVUReader:startHighLightMode()
 	local t = self.doc:getPageText(self.pageno)
 
-	local function _posToNextWord(t, cur_l, cur_w) 
-		local new_l = cur_l
-		local new_w = cur_w
+	--print(dump(t))
 
-		if new_w >= #(t[new_l].words) then
-			if new_l == #t then
-				-- word to mark is the last word in last line
-				return new_l, #(t[new_l].words)+1
-			else
-				-- word to mark is not the last word in last line, 
-				-- goto next line
-				new_l = new_l + 1
-				new_w = 1
+	local function _getLineByWord(t, cur_w)
+		for k,l in ipairs(t.lines) do
+			if l.last >= cur_w then
+				return k
 			end
-		else
-			-- simply move to next word in the same line
-			new_w = new_w + 1
 		end
-
-		return new_l, new_w
 	end
 
-	local function _posToPrevWord(t, cur_l, cur_w)
-		local new_l = cur_l
-		local new_w = cur_w
-
-		if new_w == 1 then
-			-- already the first word, goto previous line
-			new_l = new_l - 1
-			if new_l == 0 or #(t[new_l].words) == 0 then
-				return cur_l, cur_w
+	local function _findFirstWordInView(t)
+		for k,v in ipairs(t) do
+			if self:_isWordInScreenRange(v) then
+				return k
 			end
-			new_w = #(t[new_l].words)
+		end
+		return nil
+	end
+
+	local function _wordInNextLine(t, cur_w)
+		local cur_l = _getLineByWord(t, cur_w)
+		if cur_l == #t.lines then
+			-- already in last line, return the last word
+			return t.lines[cur_l].last
 		else
-			-- simply move to previous word in the same line
-			new_w = new_w - 1
-		end
+			local next_l_start = t.lines[cur_l].last + 1
+			local cur_l_start = 1
+			if cur_l ~= 1 then
+				cur_l_start = t.lines[cur_l-1].last + 1
+			end
 
-		return new_l, new_w
+			cur_w = next_l_start + (cur_w - cur_l_start)
+			if cur_w > t.lines[cur_l+1].last then
+				cur_w = t.lines[cur_l+1].last
+			end
+			return cur_w
+		end
 	end
 
-	local function _posToNextLine(t, cur_l, cur_w)
-		local new_l = cur_l
-		local new_w = cur_w
+	local function _wordInPrevLine(t, cur_w)
+		local cur_l = _getLineByWord(t, cur_w)
+		if cur_l == 1 then
+			-- already in first line, return 0
+			return 0
+		else
+			local prev_l_start = 1
+			if cur_l > 2 then
+				-- previous line is not the first line
+				prev_l_start = t.lines[cur_l-2].last + 1
+			end
+			local cur_l_start = t.lines[cur_l-1].last + 1
 
-		if new_l >= #t then
-			-- already last line, jump to line end instead
-			return new_l, #(t[new_l].words)+1
+			cur_w = prev_l_start + (cur_w - cur_l_start)
+			if cur_w > t.lines[cur_l-1].last then
+				cur_w = t.lines[cur_l-1].last
+			end
+			return cur_w
 		end
-
-		new_l = new_l + 1
-		new_w = math.min(new_w, #t[new_l].words)
-
-		return new_l, new_w
-	end
-
-	local function _posToPrevLine(t, cur_l, cur_w)
-		local new_l = cur_l
-		local new_w = cur_w
-
-		if new_l == 1 then
-			return cur_l, cur_w
-		end
-
-		new_l = new_l - 1
-		new_w = math.min(new_w, #t[new_l].words)
-
-		return new_l, new_w
 	end
 
 
-	local start_l = 1
-	local start_w = 1
-	-- next to be marked word position
-	local cur_l = 1
-	--local cur_w = #(t[1].words)
-	local cur_w = 1
-	local new_l = 1
+	local start_w = _findFirstWordInView(t)
+	if not start_w then
+		print("# no text in current view!")
+		return
+	end
+
+	local cur_w = start_w
 	local new_w = 1
-	local iter
-	local meet_page_end = false
-	local meet_page_start = false
+	local is_hightlight_mode = false
+
+	self.cursor = Cursor:new {
+		x_pos = t[cur_w].x1*self.globalzoom,
+		y_pos = self.offset_y + (self.cur_full_height
+				- (t[cur_w].y1 * self.globalzoom)),
+		h = (t[cur_w].y1-t[cur_w].y0)*self.globalzoom,
+	}
+
+	self.cursor:draw()
+	fb:refresh(0)
 
 	while true do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_LEFT then
-				if self:_isFirstWordInPage(t, cur_l, cur_w) then
-					iter = function() return nil end
-				else
-					new_l, new_w = _posToPrevWord(t, cur_l, cur_w)
-					if not self:_isWordInScreenRange(t[new_l].words[new_w]) then
-						-- goto next view of current page
+				if cur_w >= 1 then
+					new_w = cur_w - 1
+
+					if new_w ~= 0 and 
+					not self:_isWordInScreenRange(t[new_w]) then
+						-- word is in previous view
 						local pageno = self:prevView()
 						self:goto(pageno)
-						cur_l = start_l
-						cur_w = start_w
+					else
+						self.cursor:clear()
 					end
-					iter = self:_genTextIter(t, new_l, new_w, cur_l, cur_w)
-					meet_page_end = false
+
+					-- update cursor
+					if new_w == 0 then
+						-- meet top end, must be handled as special case
+						self.cursor:setHeight((t[1].y1 - t[1].y0)
+												* self.globalzoom)
+						self.cursor:moveTo(
+							t[1].x0*self.globalzoom - self.cursor.w, 
+							self.offset_y + self.cur_full_height
+								- t[1].y1 * self.globalzoom)
+					else
+						self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
+												* self.globalzoom)
+						self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
+										self.offset_y + self.cur_full_height
+										- (t[new_w].y1*self.globalzoom))
+					end
+					self.cursor:draw()
+
+					if is_hightlight_mode then
+						-- update highlight
+						if new_w ~= 0 and 
+						not self:_isWordInScreenRange(t[new_w]) then
+							self:_toggleWordHighLightByEnds(t, start_w, new_w)
+						else
+							self:_toggleWordHighLight(t[new_w+1])
+						end
+					end
+
+					cur_w = new_w
 				end
 			elseif ev.code == KEY_FW_RIGHT then
-				if meet_page_end then
-					iter = function() return nil end
-				else
-					new_l, new_w = _posToNextWord(t, cur_l, cur_w)
-					if not self:_isWordInScreenRange(t[new_l].words[new_w]) then
-						if self:_isLastWordInPage(t, new_l, new_w-1) then
-							-- meet the end of page, mark it
-							meet_page_end = true
-						else
-							-- goto next view of current page
+				-- only highlight word in current page
+				if cur_w < #t then
+					new_w = cur_w + 1
+
+					if not self:_isWordInScreenRange(t[new_w]) then
 							local pageno = self:nextView()
 							self:goto(pageno)
-							cur_l = start_l
-							cur_w = start_w
+					else
+						self.cursor:clear()
+					end
+
+					-- update cursor
+					self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
+											* self.globalzoom)
+					self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
+									self.offset_y + self.cur_full_height
+									- (t[new_w].y1 * self.globalzoom))
+					self.cursor:draw()
+
+					if is_hightlight_mode then
+						-- update highlight
+						if not self:_isWordInScreenRange(t[new_w]) then
+							-- word to highlight is in next view
+							self:_toggleWordHighLightByEnds(t, start_w, new_w)
+						else
+							self:_toggleWordHighLight(t[new_w])
 						end
 					end
-					iter = self:_genTextIter(t, cur_l, cur_w, new_l, new_w)
-					meet_page_start = false
+
+					cur_w = new_w
 				end
 			elseif ev.code == KEY_FW_UP then
-				if self:_isFirstWordInPage(t, cur_l, cur_w) then
-					iter = function() return nil end
-				else
-					new_l, new_w = _posToPrevLine(t, cur_l, cur_w)
-					if not self:_isWordInScreenRange(t[new_l].words[new_w]) then
+					new_w = _wordInPrevLine(t, cur_w)
+
+					if new_w ~= 0 and 
+					not self:_isWordInScreenRange(t[new_w]) then
 						-- goto next view of current page
 						local pageno = self:prevView()
 						self:goto(pageno)
-						cur_l = start_l
-						cur_w = start_w
+					else
+						-- no need to jump to next view, clear previous cursor
+						self.cursor:clear()
 					end
-					iter = self:_genTextIter(t, new_l, new_w, cur_l, cur_w)
-					meet_page_end = false
-				end
-			elseif ev.code == KEY_FW_DOWN then
-				if meet_page_end then
-					-- already at the end of page, we don't do a pageturn
-					-- so do noting here
-					iter = function() return nil end
-				else
-					new_l, new_w = _posToNextLine(t, cur_l, cur_w)
-					if not self:_isWordInScreenRange(t[new_l].words[new_w]) then
-						if self:_isLastWordInPage(t, new_l, new_w-1) then
-							-- meet the end of page, mark it
-							meet_page_end = true
+
+					if new_w == 0 then
+						-- meet top end, must be handled as special case
+						self.cursor:setHeight((t[1].y1 - t[1].y0)
+												* self.globalzoom)
+						self.cursor:moveTo(
+							t[1].x0*self.globalzoom - self.cursor.w, 
+							self.offset_y + self.cur_full_height
+								- t[1].y1 * self.globalzoom)
+					else
+						self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
+												* self.globalzoom)
+						self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
+										self.offset_y + self.cur_full_height
+										- (t[new_w].y1*self.globalzoom))
+					end
+					self.cursor:draw()
+
+					if is_hightlight_mode then
+						-- update highlight
+						if new_w ~= 0 and 
+						not self:_isWordInScreenRange(t[new_w]) then
+							-- word is in previous view
+							self:_toggleWordHighLightByEnds(t, start_w, new_w)
 						else
-							-- goto next view of current page
-							local pageno = self:nextView()
-							self:goto(pageno)
-							cur_l = start_l
-							cur_w = start_w
+							for i=new_w+1, cur_w, 1 do
+								self:_toggleWordHighLight(t[i])
+							end
 						end
 					end
-					iter = self:_genTextIter(t, cur_l, cur_w, new_l, new_w)
-					meet_page_start = false
+
+					cur_w = new_w
+			elseif ev.code == KEY_FW_DOWN then
+				new_w = _wordInNextLine(t, cur_w)
+
+				if not self:_isWordInScreenRange(t[new_w]) then
+					-- goto next view of current page
+					local pageno = self:nextView()
+					self:goto(pageno)
+				else
+					-- no need to jump to next view, clear previous cursor
+					self.cursor:clear()
+				end
+
+				-- update cursor
+				self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
+										* self.globalzoom)
+				self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
+								self.offset_y + self.cur_full_height
+								- (t[new_w].y1*self.globalzoom))
+				self.cursor:draw()
+
+				if is_hightlight_mode then
+					-- update highlight
+					if not self:_isWordInScreenRange(t[new_w]) then
+						-- redraw from start because of page refresh
+						self:_toggleWordHighLightByEnds(t, start_w, new_w)
+					else
+						-- word in next is in current view, just highlight it
+						for i=cur_w+1, new_w, 1 do
+							self:_toggleWordHighLight(t[i])
+						end
+					end
+				end
+
+				cur_w = new_w
+			elseif ev.code == KEY_FW_PRESS then
+				if not is_hightlight_mode then
+					is_hightlight_mode = true
+					start_w = cur_w
+				else -- pressed in highlight mode, record selected text
+					if start_w < cur_w then
+						self:_toggleWordHighLightByEnds(t, start_w+1, cur_w)
+					else
+						self:_toggleWordHighLightByEnds(t, cur_w+1, start_w)
+					end
+					is_hightlight_mode = false
 				end
 			end -- EOF if keyevent
-
-			self:_drawTextHighLight(iter)
 			fb:refresh(0)
-			cur_l, cur_w = new_l, new_w
-		end
+		end -- EOF while
 	end
 end
 

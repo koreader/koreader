@@ -183,7 +183,7 @@ function UniReader:draworcache(no, preCache)
 		-- TODO: error handling
 		return nil
 	end
-	local dc = self:setzoom(page)
+	local dc = self:setzoom(page, preCache)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive. 

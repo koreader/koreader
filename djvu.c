@@ -247,6 +247,19 @@ static int getUsedBBox(lua_State *L) {
  *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
  *    },
  * }
+ * 
+ * 5 words in two lines
+ * {
+ *    1 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *    2 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *    3 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *    4 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *    5 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
+ *    lines = {
+ *      1 = {last = 2, x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089},
+ *      2 = {last = 5, x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089},
+ *    }
+ * }
  */
 static int getPageText(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
@@ -267,10 +280,16 @@ static int getPageText(lua_State *L) {
 	sexp = miniexp_cdr(sexp);
 	/* get number of lines in a page */
 	nr_line = miniexp_length(sexp);
-	/* table that contains all the lines */
+	/* the outer table */
 	lua_newtable(L);
 
+	/* create lines subtable */
+	lua_pushstring(L, "lines");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
 	counter_l = 1;
+	counter_w = 1;
 	for(i = 1; i <= nr_line; i++) {
 		/* retrive one line entry */
 		se_line = miniexp_nth(i, sexp);
@@ -279,32 +298,7 @@ static int getPageText(lua_State *L) {
 			continue;
 		}
 
-		/* subtable that contains words in a line */
-		lua_pushnumber(L, counter_l);
-		lua_newtable(L);
-		counter_l++;
-
-		/* set line position */
-		lua_pushstring(L, "x0");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_line)));
-		lua_settable(L, -3);
-
-		lua_pushstring(L, "y0");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_line)));
-		lua_settable(L, -3);
-
-		lua_pushstring(L, "x1");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_line)));
-		lua_settable(L, -3);
-
-		lua_pushstring(L, "y1");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_line)));
-		lua_settable(L, -3);
-
-		lua_pushstring(L, "words");
-		lua_newtable(L);
 		/* now loop through each word in the line */
-		counter_w = 1;
 		for(j = 1; j <= nr_word; j++) {
 			/* retrive one word entry */
 			se_word = miniexp_nth(j, se_line);
@@ -340,14 +334,44 @@ static int getPageText(lua_State *L) {
 			lua_pushstring(L, word);
 			lua_settable(L, -3);
 
-			/* set word entry to "words" table */
+			/* set word entry to outer table */
 			lua_settable(L, -3);
 		} /* end of for (j) */
 
-		/* set "words" table to line entry table */
+		/* get lines table from outer table */
+		lua_pushstring(L, "lines");
+		lua_getfield(L, -2, "lines");
+
+		/* subtable that contains info for a line */
+		lua_pushnumber(L, counter_l);
+		lua_newtable(L);
+		counter_l++;
+
+		/* set line position */
+		lua_pushstring(L, "x0");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_line)));
 		lua_settable(L, -3);
 
-		/* set line entry to page text table */
+		lua_pushstring(L, "y0");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "x1");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "y1");
+		lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_line)));
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "last");
+		lua_pushnumber(L, counter_w-1);
+		lua_settable(L, -3);
+
+		/* set line entry to lines subtable */
+		lua_settable(L, -3);
+
+		/* set lines subtable back to outer table */
 		lua_settable(L, -3);
 	} /* end of for (i) */
 

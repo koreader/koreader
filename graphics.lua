@@ -48,14 +48,18 @@ function Cursor:new(o)
 	o = o or {}
 	o.x_pos = o.x_pos or self.x_pos 
 	o.y_pos = o.y_pos or self.y_pos 
-	o.h = o.h or self.h
-
-	o.w = o.h / 3
-	o.line_w = math.floor(o.h / 10)
 
 	setmetatable(o, self)
 	self.__index = self
+
+	o:setHeight(o.h or self.h)
 	return o
+end
+
+function Cursor:setHeight(h)
+	self.h = h
+	self.w = self.h / 3
+	self.line_w = math.floor(self.h / 10)
 end
 
 function Cursor:_draw(x, y)
@@ -93,6 +97,18 @@ end
 function Cursor:moveAndDraw(x_off, y_off)
 	self:clear()
 	self:move(x_off, y_off)
+	self:draw()
+end
+
+function Cursor:moveTo(x_pos, y_pos)
+	self.x_pos = x_pos
+	self.y_pos = y_pos
+end
+
+function Cursor:moveToAndDraw(x_pos, y_pos)
+	self:clear()
+	self.x_pos = x_pos
+	self.y_pos = y_pos
 	self:draw()
 end
 
