@@ -47,10 +47,10 @@ function openFile(filename)
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
-			page_num = reader.settings:readsetting("last_page") or 1
+			page_num = reader.settings:readSetting("last_page") or 1
 			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
-			return reader:inputloop()
+			return reader:inputLoop()
 		else
 			-- TODO: error handling
 		end
@@ -92,11 +92,11 @@ if optarg["d"] == "k3" then
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
-	set_k3_keycodes()
+	setK3Keycodes()
 elseif optarg["d"] == "emu" then
 	input.open("")
 	-- SDL key codes
-	set_emu_keycodes()
+	setEmuKeycodes()
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
@@ -107,7 +107,7 @@ else
 	if f then
 		print("Auto-detected Kindle 3")
 		input.open("/dev/input/event2")
-		set_k3_keycodes()
+		setK3Keycodes()
 	end
 end
 
@@ -123,7 +123,7 @@ origin_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
-r_cfont = reader_settings:readsetting("cfont")
+r_cfont = reader_settings:readSetting("cfont")
 if r_cfont ~=nil then
 	Font.cfont = r_cfont
 end
@@ -135,7 +135,7 @@ PDFReader:init()
 DJVUReader:init()
 
 -- display directory or open file
-local patharg = reader_settings:readsetting("lastfile")
+local patharg = reader_settings:readSetting("lastfile")
 if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])

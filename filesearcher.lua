@@ -21,7 +21,7 @@ FileSearcher = {
 	oldcurrent = 1,
 }
 
-function FileSearcher:readdir()
+function FileSearcher:readDir()
 	self.dirs = {self.path}
 	self.files = {}
 	while #self.dirs ~= 0 do
@@ -46,7 +46,7 @@ end
 
 function FileSearcher:setPath(newPath)
 	self.path = newPath
-	self:readdir()
+	self:readDir()
 	self.items = #self.files
 	--@TODO check none found  19.02 2012
 	if self.items == 0 then
@@ -116,9 +116,9 @@ function FileSearcher:choose(ypos, height, keywords)
 		end
 	end
 
-	-- if given keywords, set new result according to keywords. 
+	-- if given keywords, set new result according to keywords.
 	-- Otherwise, display the previous search result.
-	if keywords then 
+	if keywords then
 		self:setSearchResult(keywords)
 	end
 
@@ -139,17 +139,17 @@ function FileSearcher:choose(ypos, height, keywords)
 			local c
 			if self.items == 0 then -- nothing found
 				y = ypos + self.title_H + self.spacing * 2
-				renderUtf8Text(fb.bb, 20, y, cface, cfhash, 
-					"Sorry, no match found.", true) 
-				renderUtf8Text(fb.bb, 20, y + self.spacing, cface, cfhash, 
+				renderUtf8Text(fb.bb, 20, y, cface, cfhash,
+					"Sorry, no match found.", true)
+				renderUtf8Text(fb.bb, 20, y + self.spacing, cface, cfhash,
 					"Please try a different keyword.", true)
 				markerdirty = false
 			else -- found something, draw it
 				for c = 1, perpage do
-					local i = (self.page - 1) * perpage + c 
+					local i = (self.page - 1) * perpage + c
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
-						renderUtf8Text(fb.bb, 50, y, cface, cfhash, 
+						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
 							self.result[i].name, true)
 					end
 				end
@@ -236,7 +236,7 @@ function FileSearcher:choose(ypos, height, keywords)
 				file_entry = self.result[perpage*(self.page-1)+self.current]
 				file_full_path = file_entry.dir .. "/" .. file_entry.name
 
-				-- rotation mode might be changed while reading, so 
+				-- rotation mode might be changed while reading, so
 				-- record height_percent here
 				local height_percent = height/fb.bb:getHeight()
 				openFile(file_full_path)

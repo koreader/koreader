@@ -8,7 +8,7 @@ Font = {
 	ffont = "sans",
 
 	-- built in fonts
-	fonts = {"sans", "cjk", "mono", 
+	fonts = {"sans", "cjk", "mono",
 		"Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
 		"Helvetica", "Helvetica-Oblique", "Helvetica-BoldOblique",
 		"Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",},
@@ -42,6 +42,5 @@ end
 
 function Font:update()
 	self.faces = {}
-	clearglyphcache()
+	clearGlyphCache()
 end
-
