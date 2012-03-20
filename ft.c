@@ -171,7 +171,7 @@ static int getKerning(lua_State *L) {
 	return 1;
 }
 
-static int getHeight(lua_State *L) {
+static int getHeightAndAscender(lua_State *L) {
 	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
 
 	double pixels_height,pixels_ascender;
@@ -206,7 +206,7 @@ static const struct luaL_Reg ft_face_meth[] = {
 	{"renderGlyph", renderGlyph},
 	{"hasKerning", hasKerning},
 	{"getKerning", getKerning},
-	{"getHeight", getHeight},
+	{"getHeightAndAscender", getHeightAndAscender},
 	{"done", doneFace},
 	{"__gc", doneFace},
 	{NULL, NULL}

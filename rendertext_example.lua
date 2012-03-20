@@ -18,7 +18,7 @@ end
 width, height = fb:getSize()
 fb.bb:paintRect(5,5,width-5,height-5,4);
 
-faceHeight, faceAscender = face:getHeight();
+faceHeight, faceAscender = face:getHeightAndAscender();
 print("face height:"..tostring(faceHeight).." - ascender:"..faceAscender)
 faceHeight = math.ceil(faceHeight)
 faceAscender = math.ceil(faceAscender)
