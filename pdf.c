@@ -24,7 +24,6 @@
 typedef struct PdfDocument {
 	fz_document *xref;
 	fz_context *context;
-	int pages;
 } PdfDocument;
 
 typedef struct PdfPage {
@@ -38,8 +37,7 @@ typedef struct PdfPage {
 
 static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
-	char *password = strdup(luaL_checkstring(L, 2));
-	int cachesize = luaL_optint(L, 3, 64 << 20); // 64 MB limit default
+	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
@@ -53,19 +51,28 @@ static int openDocument(lua_State *L) {
 	}
 	fz_catch(doc->context) {
 		free(filename);
-		free(password);
-		return luaL_error(L, "cannot open PDF file <%s>", filename);
+		return luaL_error(L, "cannot open PDF file");
 	}
 
-	if(fz_needs_password(doc->xref)) {
-		if (!fz_authenticate_password(doc->xref, password)) {
-			free(filename);
-			free(password);
-			return luaL_error(L, "cannot authenticate");
-		}
-	}
-	doc->pages = fz_count_pages(doc->xref);
 	free(filename);
+	return 1;
+}
+
+static int needsPassword(lua_State *L) {
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	lua_pushboolean(L, fz_needs_password(doc->xref));
+	return 1;
+}
+
+static int authenticatePassword(lua_State *L) {
+	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+	char *password = strdup(luaL_checkstring(L, 2));
+
+	if (!fz_authenticate_password(doc->xref, password)) {
+		lua_pushboolean(L, 0);
+	} else {
+		lua_pushboolean(L, 1);
+	}
 	free(password);
 	return 1;
 }
@@ -85,7 +92,12 @@ static int closeDocument(lua_State *L) {
 
 static int getNumberOfPages(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
-	lua_pushinteger(L, doc->pages);
+	fz_try(doc->context) {
+		lua_pushinteger(L, fz_count_pages(doc->xref));
+	}
+	fz_catch(doc->context) {
+		return luaL_error(L, "cannot access page tree");
+	}
 	return 1;
 }
 
@@ -148,24 +160,24 @@ static int openPage(lua_State *L) {
 
 	int pageno = luaL_checkint(L, 2);
 
-	if(pageno < 1 || pageno > doc->pages) {
-		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, doc->pages);
-	}
-
-	PdfPage *page = (PdfPage*) lua_newuserdata(L, sizeof(PdfPage));
-
-	luaL_getmetatable(L, "pdfpage");
-	lua_setmetatable(L, -2);
-
 	fz_try(doc->context) {
+		if(pageno < 1 || pageno > fz_count_pages(doc->xref)) {
+			return luaL_error(L, "cannot open page #%d, out of range (1-%d)",
+					pageno, fz_count_pages(doc->xref));
+		}
+
+		PdfPage *page = (PdfPage*) lua_newuserdata(L, sizeof(PdfPage));
+
+		luaL_getmetatable(L, "pdfpage");
+		lua_setmetatable(L, -2);
+
 		page->page = fz_load_page(doc->xref, pageno - 1);
+
+		page->doc = doc;
 	}
 	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open page #%d", pageno);
 	}
-
-	page->doc = doc;
-
 	return 1;
 }
 
@@ -288,6 +300,8 @@ static const struct luaL_Reg pdf_func[] = {
 };
 
 static const struct luaL_Reg pdfdocument_meth[] = {
+	{"needsPassword", needsPassword},
+	{"authenticatePassword", authenticatePassword},
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},

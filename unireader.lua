@@ -181,7 +181,11 @@ function UniReader:draworcache(no, preCache)
 	-- #4 goal: we render next page, too. (TODO)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
-	local page = self.doc:openPage(no)
+	local ok, page = pcall(self.doc.openPage, self.doc, no)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
 	local dc = self:setzoom(page)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
@@ -439,6 +443,9 @@ end
 -- render and blit a page
 function UniReader:show(no)
 	local pagehash, offset_x, offset_y = self:draworcache(no)
+	if not pagehash then
+		return
+	end
 	self.pagehash = pagehash
 	local bb = self.cache[pagehash].bb
 	local dest_x = 0

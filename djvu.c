@@ -31,7 +31,6 @@
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
 	ddjvu_document_t *doc_ref;
-	int pages;
 } DjvuDocument;
 
 typedef struct DjvuPage {
@@ -90,7 +89,6 @@ static int openDocument(lua_State *L) {
 		return luaL_error(L, "cannot open DJVU file <%s>", filename);
 	}
 
-	doc->pages = ddjvu_document_get_pagenum(doc->doc_ref);
 	return 1;
 }
 
@@ -109,7 +107,7 @@ static int closeDocument(lua_State *L) {
 
 static int getNumberOfPages(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
-	lua_pushinteger(L, doc->pages);
+	lua_pushinteger(L, ddjvu_document_get_pagenum(doc->doc_ref));
 	return 1;
 }
 
@@ -175,8 +173,8 @@ static int openPage(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 
-	if(pageno < 1 || pageno > doc->pages) {
-		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, doc->pages);
+	if(pageno < 1 || pageno > ddjvu_document_get_pagenum(doc->doc_ref)) {
+		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, ddjvu_document_get_pagenum(doc->doc_ref));
 	}
 
 	DjvuPage *page = (DjvuPage*) lua_newuserdata(L, sizeof(DjvuPage));
