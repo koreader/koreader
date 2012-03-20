@@ -366,12 +366,12 @@ static int paintRect(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg blitbuffer_func[] = {
+static const struct luaL_Reg blitbuffer_func[] = {
 	{"new", newBlitBuffer},
 	{NULL, NULL}
 };
 
-static const struct luaL_reg blitbuffer_meth[] = {
+static const struct luaL_Reg blitbuffer_meth[] = {
 	{"getWidth", getWidth},
 	{"getHeight", getHeight},
 	{"blitFrom", blitToBuffer},

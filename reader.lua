@@ -36,22 +36,26 @@ longopts = {
 }
 
 function openFile(filename)
-	local file_type = string.lower(string.match(filename, ".+%.(.+)"))
+	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	local reader = nil
 	if file_type == "djvu" then
-		if DJVUReader:open(filename) then
-			page_num = DJVUReader.settings:readsetting("last_page") or 1
-			DJVUReader:goto(tonumber(page_num))
+		reader = DJVUReader
+	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
+		reader = PDFReader
+	end
+	if reader then
+		local ok, err = reader:open(filename)
+		if ok then
+			reader:loadSettings(filename)
+			page_num = reader.settings:readSetting("last_page") or 1
+			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
-			return DJVUReader:inputloop()
-		end
-	elseif file_type == "pdf" then
-		if PDFReader:open(filename,"") then -- TODO: query for password
-			page_num = PDFReader.settings:readsetting("last_page") or 1
-			PDFReader:goto(tonumber(page_num))
-			reader_settings:savesetting("lastfile", filename)
-			return PDFReader:inputloop()
+			return reader:inputLoop()
+		else
+			-- TODO: error handling
 		end
 	end
+	return true -- on failed attempts, we signal to keep running
 end
 
 function showusage()
@@ -88,11 +92,11 @@ if optarg["d"] == "k3" then
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
-	set_k3_keycodes()
+	setK3Keycodes()
 elseif optarg["d"] == "emu" then
 	input.open("")
 	-- SDL key codes
-	set_emu_keycodes()
+	setEmuKeycodes()
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
@@ -103,7 +107,7 @@ else
 	if f then
 		print("Auto-detected Kindle 3")
 		input.open("/dev/input/event2")
-		set_k3_keycodes()
+		setK3Keycodes()
 	end
 end
 
@@ -119,7 +123,7 @@ origin_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
-r_cfont = reader_settings:readsetting("cfont")
+r_cfont = reader_settings:readSetting("cfont")
 if r_cfont ~=nil then
 	Font.cfont = r_cfont
 end
@@ -131,7 +135,7 @@ PDFReader:init()
 DJVUReader:init()
 
 -- display directory or open file
-local patharg = reader_settings:readsetting("lastfile")
+local patharg = reader_settings:readSetting("lastfile")
 if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])

@@ -7,21 +7,7 @@ require "selectmenu"
 require "commands"
 
 HelpPage = {
-	-- Class vars:
-	-- font for displaying keys
-	fsize = 20,
-	face = freetype.newBuiltinFace("mono", 20),
-	fhash = "mono20",
-	
-	-- font for displaying help messages
-	hfsize = 20,
-	hface = freetype.newBuiltinFace("sans", 20),
-	hfhash = "sans20",	
-
-	-- font for paging display
-	ffsize = 15,
-	fface = freetype.newBuiltinFace("sans", 15),
-	ffhash = "sans15",
+	-- Other Class vars:
 
 	-- spacing between lines
 	spacing = 25,
@@ -31,6 +17,18 @@ HelpPage = {
 	items = 0,
 	page = 1
 }
+
+-- Other Class vars:
+
+-- font for displaying keys
+HelpPage.fsize = 20
+HelpPage.face, HelpPage.fhash = Font:getFaceAndHash(HelpPage.fsize, "mono")
+-- font for displaying help messages
+HelpPage.hfsize = 20
+HelpPage.hface, HelpPage.hfhash = Font:getFaceAndHash(HelpPage.hfsize, "sans")
+-- font for paging display
+HelpPage.ffsize = 15
+HelpPage.fface, HelpPage.ffhash = Font:getFaceAndHash(HelpPage.ffsize, "sans")
 
 function HelpPage:show(ypos, height,commands)
 	self.commands = {}
@@ -66,9 +64,9 @@ function HelpPage:show(ypos, height,commands)
 				if i <= self.items then
 					renderUtf8Text(fb.bb, max_x + 20, ypos + self.spacing*c, self.hface, self.hfhash, self.commands[i].help, true)
 				end
-			end			
+			end
 			renderUtf8Text(fb.bb, 5, height - math.floor(self.ffsize * 0.4), self.fface, self.ffhash,
-				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)					
+				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
 			markerdirty = true
 		end
 		if pagedirty then

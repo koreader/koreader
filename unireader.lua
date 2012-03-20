@@ -57,12 +57,10 @@ UniReader = {
 	-- the document's setting store:
 	settings = nil,
 	-- list of available commands:
-	commands = nil, 
+	commands = nil,
 
-	-- you have to initialize newDC, nulldc in specific reader
-	newDC = function() return nil end,
 	-- we will use this one often, so keep it "static":
-	nulldc = nil, 
+	nulldc = DrawContext.new(),
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
@@ -87,17 +85,15 @@ function UniReader:new(o)
 	return o
 end
 
---[[ 
+--[[
 	For a new specific reader,
 	you must always overwrite following two methods:
 
-	* self:init()
 	* self:open()
 
 	overwrite other methods if needed.
 --]]
 function UniReader:init()
-	print("empty initialization method!")
 end
 
 -- open a file and its settings store
@@ -114,20 +110,20 @@ function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename)
 
-		local gamma = self.settings:readsetting("gamma")
+		local gamma = self.settings:readSetting("gamma")
 		if gamma then
 			self.globalgamma = gamma
 		end
 
-		local jumpstack = self.settings:readsetting("jumpstack")
+		local jumpstack = self.settings:readSetting("jumpstack")
 		self.jump_stack = jumpstack or {}
 
-		local bbox = self.settings:readsetting("bbox")
+		local bbox = self.settings:readSetting("bbox")
 		print("# bbox loaded "..dump(bbox))
 		self.bbox = bbox
 
-		self.globalzoom = self.settings:readsetting("globalzoom") or 1.0
-		self.globalzoommode = self.settings:readsetting("globalzoommode") or -1
+		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
+		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
 
 		return true
 	end
@@ -135,26 +131,26 @@ function UniReader:loadSettings(filename)
 end
 
 function UniReader:initGlobalSettings(settings)
-	local pan_overlap_vertical = settings:readsetting("pan_overlap_vertical")
+	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
 	-- initialize commands
-	self:add_all_commands()
+	self:addAllCommands()
 
-	local cache_max_memsize = settings:readsetting("cache_max_memsize")
+	local cache_max_memsize = settings:readSetting("cache_max_memsize")
 	if cache_max_memsize then
 		self.cache_max_memsize = cache_max_memsize
 	end
 
-	local cache_max_ttl = settings:readsetting("cache_max_ttl")
+	local cache_max_ttl = settings:readSetting("cache_max_ttl")
 	if cache_max_ttl then
 		self.cache_max_ttl = cache_max_ttl
 	end
 end
 
 -- guarantee that we have enough memory in cache
-function UniReader:cacheclaim(size)
+function UniReader:cacheClaim(size)
 	if(size > self.cache_max_memsize) then
 		-- we're not allowed to claim this much at all
 		error("too much memory claimed")
@@ -177,7 +173,7 @@ function UniReader:cacheclaim(size)
 	return true
 end
 
-function UniReader:draworcache(no, preCache)
+function UniReader:drawOrCache(no, preCache)
 	-- our general caching strategy is as follows:
 	-- #1 goal: we must render the needed area.
 	-- #2 goal: we render as much of the requested page as we can
@@ -185,12 +181,16 @@ function UniReader:draworcache(no, preCache)
 	-- #4 goal: we render next page, too. (TODO)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
-	local page = self.doc:openPage(no)
-	local dc = self:setzoom(page)
+	local ok, page = pcall(self.doc.openPage, self.doc, no)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
+	local dc = self:setZoom(page)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
-	-- they are always positive. 
-	-- you can see self.offset_x_& self.offset_y as the offset within 
+	-- they are always positive.
+	-- you can see self.offset_x_& self.offset_y as the offset within
 	-- draw space, which includes the page. So it can be negative and positive.
 	local offset_x_in_page = -self.offset_x
 	local offset_y_in_page = -self.offset_y
@@ -224,7 +224,7 @@ function UniReader:draworcache(no, preCache)
 	-- okay, we do not have it in cache yet.
 	-- so render now.
 	-- start off with the requested area
-	local tile = { x = offset_x_in_page, y = offset_y_in_page, 
+	local tile = { x = offset_x_in_page, y = offset_y_in_page,
 					w = width, h = height }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
@@ -262,7 +262,7 @@ function UniReader:draworcache(no, preCache)
 		end
 		return nil
 	end
-	self:cacheclaim(tile.w * tile.h / 2);
+	self:cacheClaim(tile.w * tile.h / 2);
 	self.cache[pagehash] = {
 		x = tile.x,
 		y = tile.y,
@@ -285,14 +285,14 @@ function UniReader:draworcache(no, preCache)
 end
 
 -- blank the cache
-function UniReader:clearcache()
+function UniReader:clearCache()
 	self.cache = {}
 	self.cache_current_memsize = 0
 end
 
 -- set viewer state according to zoom state
-function UniReader:setzoom(page)
-	local dc = self.newDC()
+function UniReader:setZoom(page)
+	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()
@@ -312,14 +312,14 @@ function UniReader:setzoom(page)
 		print("# ORIGINAL page::getUsedBBox "..x0.."*"..y0.." "..x1.."*"..y1);
 		local bbox = self.bbox[self.pageno] -- exact
 
-		local odd_even = self:odd_even(self.pageno)
+		local oddEven = self:oddEven(self.pageno)
 		if bbox ~= nil then
 			print("## bbox from "..self.pageno)
 		else
-			bbox = self.bbox[odd_even] -- odd/even
+			bbox = self.bbox[oddEven] -- odd/even
 		end
 		if bbox ~= nil then -- last used up to this page
-			print("## bbox from "..odd_even)
+			print("## bbox from "..oddEven)
 		else
 			for i = 0,self.pageno do
 				bbox = self.bbox[ self.pageno - i ]
@@ -430,7 +430,7 @@ function UniReader:setzoom(page)
 		self.min_offset_y = 0
 	end
 
-	print("# Reader:setzoom globalzoom:"..self.globalzoom.." globalrotate:"..self.globalrotate.." offset:"..self.offset_x.."*"..self.offset_y.." pagesize:"..self.fullwidth.."*"..self.fullheight.." min_offset:"..self.min_offset_x.."*"..self.min_offset_y)
+	print("# Reader:setZoom globalzoom:"..self.globalzoom.." globalrotate:"..self.globalrotate.." offset:"..self.offset_x.."*"..self.offset_y.." pagesize:"..self.fullwidth.."*"..self.fullheight.." min_offset:"..self.min_offset_x.."*"..self.min_offset_y)
 
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
@@ -442,7 +442,10 @@ end
 
 -- render and blit a page
 function UniReader:show(no)
-	local pagehash, offset_x, offset_y = self:draworcache(no)
+	local pagehash, offset_x, offset_y = self:drawOrCache(no)
+	if not pagehash then
+		return
+	end
 	self.pagehash = pagehash
 	local bb = self.cache[pagehash].bb
 	local dest_x = 0
@@ -451,15 +454,15 @@ function UniReader:show(no)
 		-- we can't fill the whole output width, center the content
 		dest_x = (width - (bb:getWidth() - offset_x)) / 2
 	end
-	if bb:getHeight() - offset_y < height and 
+	if bb:getHeight() - offset_y < height and
 	self.globalzoommode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
-		-- we can't fill the whole output height and not in 
+		-- we can't fill the whole output height and not in
 		-- ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode, center the content
 		dest_y = (height - (bb:getHeight() - offset_y)) / 2
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
 	self.offset_y > 0 then
 		-- if we are in ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode and turning to
-		-- the top of the page, we might leave an empty space between the 
+		-- the top of the page, we might leave an empty space between the
 		-- page top and screen top.
 		dest_y = self.offset_y
 	end
@@ -485,9 +488,9 @@ end
 --[[
 	@ pageno is the page you want to add to jump_stack
 --]]
-function UniReader:add_jump(pageno, notes)
+function UniReader:addJump(pageno, notes)
 	local jump_item = nil
-	local notes_to_add = notes 
+	local notes_to_add = notes
 	if not notes_to_add then
 		-- no notes given, auto generate from TOC entry
 		notes_to_add = self:getTOCTitleByPage(self.pageno)
@@ -528,7 +531,7 @@ function UniReader:add_jump(pageno, notes)
 	end
 end
 
-function UniReader:del_jump(pageno)
+function UniReader:delJump(pageno)
 	for _t,_v in ipairs(self.jump_stack) do
 		if _v.page == pageno then
 			table.remove(self.jump_stack, _t)
@@ -544,7 +547,7 @@ function UniReader:goto(no)
 
 	-- for jump_stack, distinguish jump from normal page turn
 	if self.pageno and math.abs(self.pageno - no) > 1 then
-		self:add_jump(self.pageno)
+		self:addJump(self.pageno)
 	end
 
 	self.pageno = no
@@ -555,7 +558,7 @@ function UniReader:goto(no)
 	if no < self.doc:getPages() then
 		if #self.bbox == 0 or not self.bbox.enabled then
 			-- pre-cache next page, but if we will modify bbox don't!
-			self:draworcache(no+1, true)
+			self:drawOrCache(no+1, true)
 		end
 	end
 end
@@ -591,7 +594,7 @@ function UniReader:prevView()
 	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y >= self.content_top then
 			-- hit content top, turn to previous page
-			-- set self.content_top with magic num to signal self:setzoom 
+			-- set self.content_top with magic num to signal self:setZoom
 			self.content_top = -2012
 			pageno = pageno - 1
 		else
@@ -612,14 +615,14 @@ function UniReader:prevView()
 end
 
 -- adjust global gamma setting
-function UniReader:modify_gamma(factor)
-	print("modify_gamma, gamma="..self.globalgamma.." factor="..factor)
+function UniReader:modifyGamma(factor)
+	print("modifyGamma, gamma="..self.globalgamma.." factor="..factor)
 	self.globalgamma = self.globalgamma * factor;
 	self:goto(self.pageno)
 end
 
 -- adjust zoom state and trigger re-rendering
-function UniReader:setglobalzoommode(newzoommode)
+function UniReader:setGlobalZoomMode(newzoommode)
 	if self.globalzoommode ~= newzoommode then
 		self.globalzoommode = newzoommode
 		self:goto(self.pageno)
@@ -627,7 +630,7 @@ function UniReader:setglobalzoommode(newzoommode)
 end
 
 -- adjust zoom state and trigger re-rendering
-function UniReader:setglobalzoom(zoom)
+function UniReader:setGlobalZoom(zoom)
 	if self.globalzoom ~= zoom then
 		self.globalzoommode = self.ZOOM_BY_VALUE
 		self.globalzoom = zoom
@@ -635,7 +638,7 @@ function UniReader:setglobalzoom(zoom)
 	end
 end
 
-function UniReader:setrotate(rotate)
+function UniReader:setRotate(rotate)
 	self.globalrotate = rotate
 	self:goto(self.pageno)
 end
@@ -644,7 +647,7 @@ end
 function UniReader:screenRotate(orien)
 	Screen:screenRotate(orien)
 	width, height = fb:getSize()
-	self:clearcache()
+	self:clearCache()
 	self:goto(self.pageno)
 end
 
@@ -666,7 +669,7 @@ function UniReader:getTOCTitleByPage(pageno)
 	if #self.toc == 0 then
 		return ""
 	end
-	
+
 	local pre_entry = self.toc[1]
 	for _k,_v in ipairs(self.toc) do
 		if _v.page > pageno then
@@ -684,15 +687,11 @@ function UniReader:showTOC()
 	end
 	local menu_items = {}
 	local filtered_toc = {}
-	local curr_page = -1
 	-- build menu items
 	for _k,_v in ipairs(self.toc) do
-		if(_v.page >= curr_page) then
-			table.insert(menu_items,
-			("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
-			table.insert(filtered_toc,_v.page)
-			curr_page = _v.page
-		end
+		table.insert(menu_items,
+		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
+		table.insert(filtered_toc,_v.page)
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
@@ -710,11 +709,11 @@ end
 function UniReader:showJumpStack()
 	local menu_items = {}
 	for _k,_v in ipairs(self.jump_stack) do
-		table.insert(menu_items, 
+		table.insert(menu_items,
 			_v.datetime.." -> Page ".._v.page.." ".._v.notes)
 	end
 	jump_menu = SelectMenu:new{
-		menu_title = "Jump Keeper      (current page: "..self.pageno..")", 
+		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
 		item_array = menu_items,
 		no_item_msg = "No jump history.",
 	}
@@ -744,7 +743,7 @@ function UniReader:showMenu()
 		"    "..cur_section, true)
 
 	ypos = ypos + 15
-	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15, 
+	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
 	fb:refresh(1)
 	while 1 do
@@ -758,8 +757,8 @@ function UniReader:showMenu()
 	end
 end
 
-function UniReader:odd_even(number)
-	print("## odd_even "..number)
+function UniReader:oddEven(number)
+	print("## oddEven "..number)
 	if number % 2 == 1 then
 		return "odd"
 	else
@@ -768,18 +767,18 @@ function UniReader:odd_even(number)
 end
 
 -- wait for input and handle it
-function UniReader:inputloop()
+function UniReader:inputLoop()
 	local keep_running = true
 	while 1 do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
-			keydef = Keydef:new(ev.code, get_modifier())
+			keydef = Keydef:new(ev.code, getKeyModifier())
 			print("key pressed: "..tostring(keydef))
-			command = self.commands:get_by_keydef(keydef)
+			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				print("command to execute: "..tostring(command))		
+				print("command to execute: "..tostring(command))
 				ret_code = command.func(self,keydef)
 				if ret_code == "break" then
 					break;
@@ -787,7 +786,7 @@ function UniReader:inputloop()
 			else
 				print("command not found: "..tostring(command))
 			end
-	
+
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
@@ -795,7 +794,7 @@ function UniReader:inputloop()
 	end
 
 	-- do clean up stuff
-	self:clearcache()
+	self:clearCache()
 	self.toc = nil
 	if self.doc ~= nil then
 		self.doc:close()
@@ -814,7 +813,7 @@ function UniReader:inputloop()
 end
 
 -- command definitions
-function UniReader:add_all_commands()
+function UniReader:addAllCommands()
 	self.commands = Commands:new()
 	self.commands:add(KEY_PGFWD,nil,">",
 		"next page",
@@ -829,22 +828,22 @@ function UniReader:add_all_commands()
 	self.commands:add(KEY_PGFWD,MOD_ALT,">",
 		"zoom in 10%",
 		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
+			unireader:setGlobalZoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
 		end)
 	self.commands:add(KEY_PGBCK,MOD_ALT,"<",
 		"zoom out 10%",
 		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
-		end)		
+			unireader:setGlobalZoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
+		end)
 	self.commands:add(KEY_PGFWD,MOD_SHIFT,">",
 		"zoom in 20%",
 		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
+			unireader:setGlobalZoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
 		end)
 	self.commands:add(KEY_PGBCK,MOD_SHIFT,"<",
 		"zoom out 20%",
 		function(unireader)
-			unireader:setglobalzoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
+			unireader:setGlobalZoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
 		end)
 	self.commands:add(KEY_BACK,nil,"back",
 		"back to last jump",
@@ -852,7 +851,7 @@ function UniReader:add_all_commands()
 			if #unireader.jump_stack ~= 0 then
 				unireader:goto(unireader.jump_stack[1].page)
 			end
-		end)		
+		end)
 	self.commands:add(KEY_BACK,MOD_ALT,"back",
 		"close document",
 		function(unireader)
@@ -861,63 +860,63 @@ function UniReader:add_all_commands()
 	self.commands:add(KEY_VPLUS,nil,"vol+",
 		"increase gamma 25%",
 		function(unireader)
-			unireader:modify_gamma( 1.25 )
+			unireader:modifyGamma( 1.25 )
 		end)
 	self.commands:add(KEY_VMINUS,nil,"vol-",
 		"decrease gamma 25%",
 		function(unireader)
-			unireader:modify_gamma( 0.80 )
+			unireader:modifyGamma( 0.80 )
 		end)
 	--numeric key group
 	local numeric_keydefs = {}
 	for i=1,10 do numeric_keydefs[i]=Keydef:new(KEY_1+i-1,nil,tostring(i%10)) end
-	self.commands:add_group("[1..0]",numeric_keydefs,
+	self.commands:addGroup("[1..0]",numeric_keydefs,
 		"jump to <key>*10% of document",
 		function(unireader,keydef)
 			print('jump to page: '..math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1)..'/'..unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
-		end)	
+		end)
 	-- end numeric keys
 	self.commands:add(KEY_A,nil,"A",
 		"zoom to fit page",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE)
-		end)	
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE)
+		end)
 	self.commands:add(KEY_A,MOD_SHIFT,"A",
 		"zoom to fit content",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT)
-		end)	
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT)
+		end)
 	self.commands:add(KEY_S,nil,"S",
 		"zoom to fit page width",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
 		end)
 	self.commands:add(KEY_S,MOD_SHIFT,"S",
 		"zoom to fit content width",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
-		end)	
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
+		end)
 	self.commands:add(KEY_D,nil,"D",
 		"zoom to fit page height",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
 		end)
 	self.commands:add(KEY_D,MOD_SHIFT,"D",
 		"zoom to fit content height",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
-		end)	
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
+		end)
 	self.commands:add(KEY_F,nil,"F",
 		"zoom to fit margin 2-column mode",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 		end)
 	self.commands:add(KEY_F,MOD_SHIFT,"F",
 		"zoom to fit content 2-column mode",
 		function(unireader)
-			unireader:setglobalzoommode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
-		end)	
+			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
+		end)
 	self.commands:add(KEY_G,nil,"G",
 		"goto page",
 		function(unireader)
@@ -931,13 +930,13 @@ function UniReader:add_all_commands()
 				end
 			end
 			unireader:goto(page)
-		end)		
+		end)
 	self.commands:add(KEY_H,nil,"H",
 		"show help page",
 		function(unireader)
 			HelpPage:show(0,height,unireader.commands)
 			unireader:goto(unireader.pageno)
-		end)				
+		end)
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content",
 		function(unireader)
@@ -951,28 +950,28 @@ function UniReader:add_all_commands()
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
 		"add jump",
 		function(unireader)
-			unireader:add_jump(unireader.pageno)
-		end)			
+			unireader:addJump(unireader.pageno)
+		end)
 	self.commands:add(KEY_J,nil,"J",
 		"rotate 10° clockwise",
 		function(unireader)
-			unireader:setrotate( unireader.globalrotate + 10 )
+			unireader:setRotate( unireader.globalrotate + 10 )
 		end)
 	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate screen 90° clockwise",
 		function(unireader)
 			unireader:screenRotate("clockwise")
-		end)		
+		end)
 	self.commands:add(KEY_K,nil,"K",
 		"rotate 10° counterclockwise",
 		function(unireader)
-			unireader:setrotate( unireader.globalrotate - 10 )
+			unireader:setRotate( unireader.globalrotate - 10 )
 		end)
 	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
-		end)			
+		end)
 	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
 		"exit application",
 		function(unireader)
@@ -990,10 +989,10 @@ function UniReader:add_all_commands()
 			bbox.pan_x = unireader.pan_x
 			bbox.pan_y = unireader.pan_y
 			unireader.bbox[unireader.pageno] = bbox
-			unireader.bbox[unireader:odd_even(unireader.pageno)] = bbox
+			unireader.bbox[unireader:oddEven(unireader.pageno)] = bbox
 			unireader.bbox.enabled = true
-			print("# bbox " .. unireader.pageno .. dump(unireader.bbox)) 
-			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox			
+			print("# bbox " .. unireader.pageno .. dump(unireader.bbox))
+			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
 		end)
 	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
 		"reset crop",
@@ -1011,11 +1010,11 @@ function UniReader:add_all_commands()
 		"open menu",
 		function(unireader)
 			unireader:showMenu()
-			unireader:goto(unireader.pageno)		
-		end)		
+			unireader:goto(unireader.pageno)
+		end)
 	-- panning
 	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}
-	self.commands:add_group("[joypad]",panning_keys,
+	self.commands:addGroup("[joypad]",panning_keys,
 		"pan the active view; use Shift or Alt for smaller steps",
 		function(unireader,keydef)
 			if keydef.keycode ~= KEY_FW_PRESS then
@@ -1100,11 +1099,10 @@ function UniReader:add_all_commands()
 				if old_offset_x ~= unireader.offset_x
 				or old_offset_y ~= unireader.offset_y then
 						unireader:goto(unireader.pageno)
-				end					
-			end	
+				end
+			end
 		end)
-	-- end panning	
+	-- end panning
 	--print defined commands
-	--for k,v in pairs(self.commands.map) do print(v) end	
+	--for k,v in pairs(self.commands.map) do print(v) end
 end
-

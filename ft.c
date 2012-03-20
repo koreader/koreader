@@ -202,7 +202,7 @@ static int doneFace(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_reg ft_face_meth[] = {
+static const struct luaL_Reg ft_face_meth[] = {
 	{"renderGlyph", renderGlyph},
 	{"hasKerning", hasKerning},
 	{"getKerning", getKerning},
@@ -212,7 +212,7 @@ static const struct luaL_reg ft_face_meth[] = {
 	{NULL, NULL}
 };
 
-static const struct luaL_reg ft_func[] = {
+static const struct luaL_Reg ft_func[] = {
 	{"newFace", newFace},
 	{"newBuiltinFace", newBuiltinFace},
 	{NULL, NULL}

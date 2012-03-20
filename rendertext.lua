@@ -2,7 +2,7 @@ glyphcache_max_memsize = 256*1024 -- 256kB glyphcache
 glyphcache_current_memsize = 0
 glyphcache = {}
 glyphcache_max_age = 4096
-function glyphcacheclaim(size)
+function glyphCacheClaim(size)
 	if(size > glyphcache_max_memsize) then
 		error("too much memory claimed")
 		return false
@@ -20,12 +20,12 @@ function glyphcacheclaim(size)
 	glyphcache_current_memsize = glyphcache_current_memsize + size
 	return true
 end
-function getglyph(face, facehash, charcode)
-	local hash = glyphcachehash(facehash, charcode)
+function getGlyph(face, facehash, charcode)
+	local hash = glyphCacheHash(facehash, charcode)
 	if glyphcache[hash] == nil then
 		local glyph = face:renderGlyph(charcode)
 		local size = glyph.bb:getWidth() * glyph.bb:getHeight() / 2 + 32
-		glyphcacheclaim(size);
+		glyphCacheClaim(size);
 		glyphcache[hash] = {
 			age = glyphcache_max_age,
 			size = size,
@@ -36,10 +36,10 @@ function getglyph(face, facehash, charcode)
 	end
 	return glyphcache[hash].g
 end
-function glyphcachehash(face, charcode)
+function glyphCacheHash(face, charcode)
 	return face..'_'..charcode;
 end
-function clearglyphcache()
+function clearGlyphCache()
 	glyphcache = {}
 end
 
@@ -84,7 +84,7 @@ function renderUtf8Text(buffer, x, y, face, facehash, text, kerning)
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < buffer:getWidth() then
 			local charcode = util.utf8charcode(uchar)
-			local glyph = getglyph(face, facehash, charcode)
+			local glyph = getGlyph(face, facehash, charcode)
 			if kerning and prevcharcode then
 				local kern = face:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern

@@ -9,7 +9,7 @@ function DocSettings:open(docfile)
 	return setmetatable(new, { __index = DocSettings})
 end
 
-function DocSettings:readsetting(key)
+function DocSettings:readSetting(key)
 	return self.data[key]
 end
 
