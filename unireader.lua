@@ -122,6 +122,9 @@ function UniReader:loadSettings(filename)
 		local jumpstack = self.settings:readSetting("jumpstack")
 		self.jump_stack = jumpstack or {}
 
+		local highlight = self.settings:readSetting("highlight")
+		self.highlight = highlight or {}
+
 		local bbox = self.settings:readSetting("bbox")
 		print("# bbox loaded "..dump(bbox))
 		self.bbox = bbox
@@ -831,6 +834,7 @@ function UniReader:inputLoop()
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
+		self.settings:savesetting("highlight", self.highlight)
 		self.settings:close()
 	end
 
@@ -996,6 +1000,11 @@ function UniReader:addAllCommands()
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
+		end)
+	self.commands:add(KEY_N, nil, "N",
+		"start highlight mode",
+		function(unireader)
+			unireader:startHighLightMode()
 		end)
 	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
 		"exit application",
