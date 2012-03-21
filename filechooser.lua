@@ -8,7 +8,7 @@ require "selectmenu"
 
 FileChooser = {
 	-- Class vars:
-	
+
 	-- spacing between lines
 	spacing = 40,
 
@@ -45,7 +45,7 @@ function getAbsolutePath(aPath)
 	return abs_path
 end
 
-function FileChooser:readdir()
+function FileChooser:readDir()
 	self.dirs = {}
 	self.files = {}
 	for f in lfs.dir(self.path) do
@@ -67,9 +67,9 @@ end
 function FileChooser:setPath(newPath)
 	local curr_path = self.path
 	self.path = getAbsolutePath(newPath)
-	local readdir_ok, exc = pcall(self.readdir,self)
+	local readdir_ok, exc = pcall(self.readDir,self)
 	if(not readdir_ok) then
-		print("readdir error: "..tostring(exc))
+		print("readDir error: "..tostring(exc))
 		self.exception_message = exc
 		return self:setPath(curr_path)
 	else
@@ -135,10 +135,10 @@ function FileChooser:choose(ypos, height)
 				end
 			end
 			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface, ffhash,
-				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)		
+				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
 			self.exception_message = nil
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, ffhash, msg, true)			
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, ffhash, msg, true)
 			markerdirty = true
 		end
 		if markerdirty then
@@ -181,14 +181,14 @@ function FileChooser:choose(ypos, height)
 				pagedirty = true
 			elseif ev.code == KEY_S then -- invoke search input
 				keywords = InputBox:input(height-100, 100, "Search:")
-				if keywords then 
+				if keywords then
 					-- call FileSearcher
 					--[[
 					This might looks a little bit dirty for using callback.
 					But I cannot come up with a better solution for renewing
 					the height arguemtn according to screen rotation mode.
 
-					The callback might also be useful for calling system 
+					The callback might also be useful for calling system
 					settings menu in the future.
 					--]]
 					return nil, function()

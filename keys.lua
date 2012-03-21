@@ -94,8 +94,18 @@ EV_KEY = 1
 EVENT_VALUE_KEY_PRESS = 1
 EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
- 
-function set_k3_keycodes()
+
+-- modifiers
+MOD_SHIFT = "Shift"
+MOD_ALT = "Alt"
+MOD_SHIFT_OR_ALT = "ShiftAlt"
+MOD_ANY = "Any"
+
+function getKeyModifier()
+	return Keys.altmode and MOD_ALT or Keys.shiftmode and MOD_SHIFT
+end
+
+function setK3Keycodes()
 	KEY_AA = 190
 	KEY_SYM = 126
 	KEY_HOME = 102
@@ -110,7 +120,7 @@ function set_k3_keycodes()
 	KEY_FW_PRESS = 194
 end
 
-function set_emu_keycodes()
+function setEmuKeycodes()
 	KEY_PGFWD = 117
 	KEY_PGBCK = 112
 	KEY_HOME = 110 -- home
