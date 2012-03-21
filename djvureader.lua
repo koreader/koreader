@@ -22,7 +22,11 @@ function DJVUReader:_isWordInScreenRange(w)
 				-self.offset_y ))
 end
 
-function DJVUReader:_toggleWordHighLightByEnds(t, end1, end2)
+function DJVUReader:toggleTextHighLight(word_list)
+	self:_toggleTextHighLightByEnds(word_list, 1, #word_list)
+end
+
+function DJVUReader:_toggleTextHighLightByEnds(t, end1, end2)
 	if end1 > end2 then
 		end1, end2 = end2, end1
 	end
@@ -34,78 +38,26 @@ function DJVUReader:_toggleWordHighLightByEnds(t, end1, end2)
 	end
 end
 
-function DJVUReader:_isLastWordInPage(t, l, w)
-	return (l == #t) and (w == #(t[l].words))
-end
-
-function DJVUReader:_isFirstWordInPage(t, l, w)
-	return (l == 1) and (w == 1)
-end
-------------------------------------------------
--- @text text object returned from doc:getPageText()
--- @l0 start line
--- @w0 start word
--- @l1 end line
--- @w1 end word
---
--- get words from the w0th word in l0th line
--- to w1th word in l1th line (not included).
-------------------------------------------------
-function DJVUReader:_genTextIter(text, l0, w0, l1, w1)
-	local word_items = {}
-	local count = 0
-	local l = l0
-	local w = w0
-	local tmp_w1 = 0
-
-	print(l0, w0, l1, w1)
-
-	if l0 < 1 or w0 < 1 or l0 > l1 then
-		return function() return nil end
-	end
-
-	-- build item table
-	while l <= l1 do
-		local words = text[l].words
-
-		if l == l1 then 
-			tmp_w1 = w1 - 1
-			if tmp_w1 == 0 then
-				break
-			end
-		else
-			tmp_w1 = #words
-		end
-
-		while w <= tmp_w1 do
-			if self:_isWordInScreenRange(words[w]) then
-				table.insert(word_items, words[w])
-			end -- EOF if isInScreenRange
-			w = w + 1
-		end -- EOF while words
-		-- goto next line, reset j
-		w = 1
-		l = l + 1
-	end -- EOF for while
-
-	return function() count = count + 1 return word_items[count] end
-end
-
-function DJVUReader:getScreenPosByPagePos()
-end
-
 function DJVUReader:_toggleWordHighLight(w)
+	local width = (w.x1-w.x0)*self.globalzoom
+	local height = (w.y1-w.y0)*self.globalzoom
 	fb.bb:invertRect(
-		w.x0*self.globalzoom,
-		self.offset_y+self.cur_full_height-(w.y1*self.globalzoom),
-		(w.x1-w.x0)*self.globalzoom,
-		(w.y1-w.y0)*self.globalzoom, 15)
+		w.x0*self.globalzoom-width*0.05,
+		self.offset_y+self.cur_full_height-(w.y1*self.globalzoom)-height*0.05,
+		width*1.1,
+		height*1.1)
+end
+
+-- remember to clear cursor before calling this
+function DJVUReader:drawCursorAfterWord(w)
+	self.cursor:setHeight((w.y1 - w.y0) * self.globalzoom)
+	self.cursor:moveTo(w.x1 * self.globalzoom, 
+				self.offset_y + self.cur_full_height - (w.y1 * self.globalzoom))
+	self.cursor:draw()
 end
 
 function DJVUReader:startHighLightMode()
 	local t = self.doc:getPageText(self.pageno)
-
-	--print(dump(t))
 
 	local function _getLineByWord(t, cur_w)
 		for k,l in ipairs(t.lines) do
@@ -175,23 +127,25 @@ function DJVUReader:startHighLightMode()
 	local cur_w = start_w
 	local new_w = 1
 	local is_hightlight_mode = false
+	local running = true
 
 	self.cursor = Cursor:new {
 		x_pos = t[cur_w].x1*self.globalzoom,
 		y_pos = self.offset_y + (self.cur_full_height
 				- (t[cur_w].y1 * self.globalzoom)),
-		h = (t[cur_w].y1-t[cur_w].y0)*self.globalzoom,
+		h = (t[cur_w].y1 - t[cur_w].y0) * self.globalzoom,
+		line_width_factor = 4,
 	}
-
 	self.cursor:draw()
 	fb:refresh(0)
 
-	while true do
+	while running do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_LEFT then
 				if cur_w >= 1 then
+					local is_next_view = false
 					new_w = cur_w - 1
 
 					if new_w ~= 0 and 
@@ -199,6 +153,7 @@ function DJVUReader:startHighLightMode()
 						-- word is in previous view
 						local pageno = self:prevView()
 						self:goto(pageno)
+						is_next_view = true
 					else
 						self.cursor:clear()
 					end
@@ -212,60 +167,48 @@ function DJVUReader:startHighLightMode()
 							t[1].x0*self.globalzoom - self.cursor.w, 
 							self.offset_y + self.cur_full_height
 								- t[1].y1 * self.globalzoom)
+						self.cursor:draw()
 					else
-						self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
-												* self.globalzoom)
-						self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
-										self.offset_y + self.cur_full_height
-										- (t[new_w].y1*self.globalzoom))
+						self:drawCursorAfterWord(t[new_w])
 					end
-					self.cursor:draw()
 
 					if is_hightlight_mode then
 						-- update highlight
-						if new_w ~= 0 and 
-						not self:_isWordInScreenRange(t[new_w]) then
-							self:_toggleWordHighLightByEnds(t, start_w, new_w)
+						if new_w ~= 0 and is_next_view then
+							self:_toggleTextHighLightByEnds(t, start_w, new_w)
 						else
 							self:_toggleWordHighLight(t[new_w+1])
 						end
 					end
-
-					cur_w = new_w
 				end
 			elseif ev.code == KEY_FW_RIGHT then
 				-- only highlight word in current page
 				if cur_w < #t then
+					local is_next_view = false
 					new_w = cur_w + 1
 
 					if not self:_isWordInScreenRange(t[new_w]) then
 							local pageno = self:nextView()
 							self:goto(pageno)
+							is_next_view = true
 					else
 						self.cursor:clear()
 					end
 
 					-- update cursor
-					self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
-											* self.globalzoom)
-					self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
-									self.offset_y + self.cur_full_height
-									- (t[new_w].y1 * self.globalzoom))
-					self.cursor:draw()
+					self:drawCursorAfterWord(t[new_w])
 
 					if is_hightlight_mode then
 						-- update highlight
-						if not self:_isWordInScreenRange(t[new_w]) then
-							-- word to highlight is in next view
-							self:_toggleWordHighLightByEnds(t, start_w, new_w)
+						if is_next_view then
+							self:_toggleTextHighLightByEnds(t, start_w, new_w)
 						else
 							self:_toggleWordHighLight(t[new_w])
 						end
 					end
-
-					cur_w = new_w
 				end
 			elseif ev.code == KEY_FW_UP then
+					local is_next_view = false
 					new_w = _wordInPrevLine(t, cur_w)
 
 					if new_w ~= 0 and 
@@ -273,67 +216,58 @@ function DJVUReader:startHighLightMode()
 						-- goto next view of current page
 						local pageno = self:prevView()
 						self:goto(pageno)
+						is_next_view = true
 					else
 						-- no need to jump to next view, clear previous cursor
 						self.cursor:clear()
 					end
 
 					if new_w == 0 then
-						-- meet top end, must be handled as special case
+						-- meet top left end, must be handled as special case
 						self.cursor:setHeight((t[1].y1 - t[1].y0)
 												* self.globalzoom)
 						self.cursor:moveTo(
 							t[1].x0*self.globalzoom - self.cursor.w, 
 							self.offset_y + self.cur_full_height
 								- t[1].y1 * self.globalzoom)
+						self.cursor:draw()
 					else
-						self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
-												* self.globalzoom)
-						self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
-										self.offset_y + self.cur_full_height
-										- (t[new_w].y1*self.globalzoom))
+						self:drawCursorAfterWord(t[new_w])
 					end
-					self.cursor:draw()
 
 					if is_hightlight_mode then
 						-- update highlight
-						if new_w ~= 0 and 
-						not self:_isWordInScreenRange(t[new_w]) then
+						if new_w ~= 0 and is_next_view then
 							-- word is in previous view
-							self:_toggleWordHighLightByEnds(t, start_w, new_w)
+							self:_toggleTextHighLightByEnds(t, start_w, new_w)
 						else
 							for i=new_w+1, cur_w, 1 do
 								self:_toggleWordHighLight(t[i])
 							end
 						end
 					end
-
-					cur_w = new_w
 			elseif ev.code == KEY_FW_DOWN then
+				local is_next_view = false
 				new_w = _wordInNextLine(t, cur_w)
 
 				if not self:_isWordInScreenRange(t[new_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
 					self:goto(pageno)
+					is_next_view = true
 				else
 					-- no need to jump to next view, clear previous cursor
 					self.cursor:clear()
 				end
 
 				-- update cursor
-				self.cursor:setHeight((t[new_w].y1 - t[new_w].y0)
-										* self.globalzoom)
-				self.cursor:moveTo(t[new_w].x1*self.globalzoom, 
-								self.offset_y + self.cur_full_height
-								- (t[new_w].y1*self.globalzoom))
-				self.cursor:draw()
+				self:drawCursorAfterWord(t[new_w])
 
 				if is_hightlight_mode then
 					-- update highlight
-					if not self:_isWordInScreenRange(t[new_w]) then
+					if is_next_view then
 						-- redraw from start because of page refresh
-						self:_toggleWordHighLightByEnds(t, start_w, new_w)
+						self:_toggleTextHighLightByEnds(t, start_w, new_w)
 					else
 						-- word in next is in current view, just highlight it
 						for i=cur_w+1, new_w, 1 do
@@ -341,21 +275,36 @@ function DJVUReader:startHighLightMode()
 						end
 					end
 				end
-
-				cur_w = new_w
 			elseif ev.code == KEY_FW_PRESS then
 				if not is_hightlight_mode then
 					is_hightlight_mode = true
 					start_w = cur_w
 				else -- pressed in highlight mode, record selected text
+					local first, last = 0
 					if start_w < cur_w then
-						self:_toggleWordHighLightByEnds(t, start_w+1, cur_w)
+						first = start_w + 1
+						last = cur_w
 					else
-						self:_toggleWordHighLightByEnds(t, cur_w+1, start_w)
+						first = cur_w + 1
+						last = start_w
 					end
+					--self:_toggleTextHighLightByEnds(t, first, last)
+
+					local hl_item = {}
+					for i=first,last,1 do
+						table.insert(hl_item, t[i])
+					end
+					if not self.highlight[self.pageno] then
+						self.highlight[self.pageno] = {}
+					end
+					table.insert(self.highlight[self.pageno], hl_item)
+
 					is_hightlight_mode = false
+					running = false
+					self.cursor:clear()
 				end
 			end -- EOF if keyevent
+			cur_w = new_w
 			fb:refresh(0)
 		end -- EOF while
 	end

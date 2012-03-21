@@ -72,6 +72,7 @@ UniReader = {
 	pagehash = nil,
 
 	jump_stack = {},
+	highlight = {},
 	toc = nil,
 
 	bbox = {}, -- override getUsedBBox
@@ -474,6 +475,14 @@ function UniReader:show(no)
 		"), src_off:("..offset_x..", "..offset_y.."), "..
 		"width:"..width..", height:"..height)
 	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
+
+	-- add highlights
+	if self.highlight[no] then
+		for k,v in ipairs(self.highlight[no]) do
+			self:toggleTextHighLight(v)
+		end
+	end
+
 	if self.rcount == self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
@@ -728,6 +737,11 @@ function UniReader:showJumpStack()
 end
 
 function UniReader:highLightText()
+	return
+end
+
+
+function UniReader:toggleTextHighLight(word_list)
 	return
 end
 
@@ -1014,6 +1028,7 @@ function UniReader:inputloop()
 		self.settings:savesetting("last_page", self.pageno)
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
+		self.settings:savesetting("highlight", self.highlight)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)

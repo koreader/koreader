@@ -48,6 +48,7 @@ function Cursor:new(o)
 	o = o or {}
 	o.x_pos = o.x_pos or self.x_pos 
 	o.y_pos = o.y_pos or self.y_pos 
+	o.line_width_factor = o.line_width_factor or 10
 
 	setmetatable(o, self)
 	self.__index = self
@@ -59,18 +60,19 @@ end
 function Cursor:setHeight(h)
 	self.h = h
 	self.w = self.h / 3
-	self.line_w = math.floor(self.h / 10)
+	self.line_w = math.floor(self.h / self.line_width_factor)
 end
 
 function Cursor:_draw(x, y)
-	local body_h = self.h - self.line_w
+	local up_down_width = math.floor(self.line_w / 2)
+	local body_h = self.h - (up_down_width * 2)
 	-- paint upper horizontal line
-	fb.bb:invertRect(x, y, self.w, self.line_w/2)
+	fb.bb:invertRect(x, y, self.w, up_down_width)
 	-- paint middle vertical line
-	fb.bb:invertRect(x+(self.w/2)-(self.line_w/2), y+self.line_w/2, 
+	fb.bb:invertRect(x + (self.w / 2) - up_down_width, y + up_down_width, 
 							self.line_w, body_h)
 	-- paint lower horizontal line
-	fb.bb:invertRect(x, y+body_h+self.line_w/2, self.w, self.line_w/2)
+	fb.bb:invertRect(x, y + body_h + up_down_width, self.w, up_down_width)
 end
 
 function Cursor:draw()
