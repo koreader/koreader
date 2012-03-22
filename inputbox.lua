@@ -43,7 +43,7 @@ function InputBox:addChar(char)
 	-- draw new text
 	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
 						/ self.fwidth
-	self.input_string = self.input_string:sub(0,cur_index)..char..
+	self.input_string = self.input_string:sub(1,cur_index)..char..
 						self.input_string:sub(cur_index+1)
 	self:refreshText()
 	self.input_cur_x = self.input_cur_x + self.fwidth

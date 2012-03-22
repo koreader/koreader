@@ -1005,6 +1005,7 @@ function UniReader:addAllCommands()
 		"start highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
+			unireader:goto(unireader.pageno)
 		end)
 	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
 		"exit application",
