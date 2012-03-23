@@ -89,14 +89,17 @@ function UniReader:new(o)
 	return o
 end
 
---[[
-	For a new specific reader,
-	you must always overwrite following two methods:
-
-	* self:open()
-
-	overwrite other methods if needed.
---]]
+----------------------------------------------------
+-- !!!!!!!!!!!!!!!!!!!!!!!!!
+--
+-- For a new specific reader,
+-- you must always overwrite following two methods:
+--
+-- * self:open()
+-- * self:init()
+--
+-- overwrite other methods if needed.
+----------------------------------------------------
 function UniReader:init()
 end
 
@@ -106,6 +109,17 @@ function UniReader:open(filename, password)
 	return false
 end
 
+----------------------------------------------------
+-- You need to overwrite following two methods if your
+-- reader supports highlight feature.
+----------------------------------------------------
+function UniReader:highLightText()
+	return
+end
+
+function UniReader:toggleTextHighLight(word_list)
+	return
+end
 
 
 --[ following are default methods ]--
@@ -485,11 +499,9 @@ function UniReader:show(no)
 		"width:"..width..", height:"..height)
 	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
 
-	-- add highlights
+	-- render highlights to page
 	if self.highlight[no] then
-		for k,v in ipairs(self.highlight[no]) do
-			self:toggleTextHighLight(v)
-		end
+		self:toggleTextHighLight(self.highlight[no])
 	end
 
 	if self.rcount == self.rcountmax then
@@ -743,15 +755,6 @@ function UniReader:showJumpStack()
 	else
 		self:goto(self.pageno)
 	end
-end
-
-function UniReader:highLightText()
-	return
-end
-
-
-function UniReader:toggleTextHighLight(word_list)
-	return
 end
 
 function UniReader:showMenu()

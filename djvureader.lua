@@ -23,12 +23,84 @@ function DJVUReader:_isWordInScreenRange(w)
 end
 
 function DJVUReader:toggleTextHighLight(word_list)
-	self:_toggleTextHighLight(word_list, 1, 1, 
-							#word_list, #(word_list[#word_list]))
+	for _,text_item in ipairs(word_list) do
+		for _,line_item in ipairs(text_item) do
+			-- make sure that line is in screen range
+			if self:_isWordInScreenRange(line_item) then
+				local x, y, w, h = self:_rectCoordTransform(
+										line_item.x0, line_item.y0,
+										line_item.x1, line_item.y1)
+				-- slightly enlarge the highlight height 
+				-- for better viewing experience
+				x = x
+				y = y - h * 0.1
+				w = w
+				h = h * 1.2
+
+				fb.bb:invertRect(x, y, w, h)
+			end -- EOF if isWordInScreenRange
+		end -- EOF for line_item
+	end -- EOF for text_item
+end
+
+function DJVUReader:_wordIterFromRange(t, l0, w0, l1, w1)
+	local i = l0
+	local j = w0 - 1
+	return function()
+		if i <= l1 then
+			-- if in line range, loop through lines
+			if i == l1 then
+				-- in last line
+				if j < w1 then
+					j = j + 1
+				else
+					-- out of range return nil
+					return nil, nil
+				end
+			else
+				if j < #t[i] then
+					j = j + 1
+				else
+					-- goto next line
+					i = i + 1
+					j = 1
+				end
+			end
+			return i, j
+		end
+	end -- EOF closure
+end
+
+----------------------------------------------------
+-- Given coordinates of four conners and return
+-- coordinate of upper left conner with with and height
+--
+-- In djvulibre library, some coordinates starts from
+-- down left conner, i.e. y is upside down. This method
+-- only transform these coordinates.
+----------------------------------------------------
+function DJVUReader:_rectCoordTransform(x0, y0, x1, y1)
+	return 
+		x0 * self.globalzoom,
+		self.offset_y + self.cur_full_height - (y1 * self.globalzoom),
+		(x1 - x0) * self.globalzoom,
+		(y1 - y0) * self.globalzoom
+end
+
+function DJVUReader:_toggleWordHighLight(t, l, w)
+	x, y, w, h = self:_rectCoordTransform(t[l][w].x0, t[l].y0, 
+										t[l][w].x1, t[l].y1)
+	-- slightly enlarge the highlight range for better viewing experience
+	x = x - w * 0.05
+	y = y - h * 0.05
+	w = w * 1.1
+	h = h * 1.1
+	
+	fb.bb:invertRect(x, y, w, h)
 end
 
 function DJVUReader:_toggleTextHighLight(t, l0, w0, l1, w1)
-	print("haha", l0, w0, l1, w1)
+	--print("# toggle range", l0, w0, l1, w1)
 	-- make sure (l0, w0) is smaller than (l1, w1)
 	if l0 > l1 then
 		l0, l1 = l1, l0
@@ -37,56 +109,12 @@ function DJVUReader:_toggleTextHighLight(t, l0, w0, l1, w1)
 		w0, w1 = w1, w0
 	end
 
-	if l0 == l1 then
-		-- in the same line
-		for i=w0, w1, 1 do
-			if self:_isWordInScreenRange(t[l0][i]) then
-				self:_toggleWordHighLight(t, l0, i)
-			end
+	for _l, _w in self:_wordIterFromRange(t, l0, w0, l1, w1) do
+		if self:_isWordInScreenRange(t[_l][_w]) then
+			self:_toggleWordHighLight(t, _l, _w)
 		end
-	else
-		-- highlight word in first line as special case
-		for i=w0, #(t[l0]), 1 do
-			if self:_isWordInScreenRange(t[l0][i]) then
-				self:_toggleWordHighLight(t, l0, i)
-			end
-		end
-
-		for i=l0+1, l1-1, 1 do
-			for j=1, #t[i], 1 do
-				if self:_isWordInScreenRange(t[i][j]) then
-					self:_toggleWordHighLight(t, i, j)
-				end
-			end
-		end
-
-		-- highlight word in last line as special case
-		for i=1, w1, 1 do
-			if self:_isWordInScreenRange(t[l1][i]) then
-				self:_toggleWordHighLight(t, l1, i)
-			end
-		end
-	end -- EOF if l0==l1
+	end
 end
-
-function DJVUReader:_toggleWordHighLight(t, l, w)
-	local width = (t[l][w].x1 - t[l][w].x0) * self.globalzoom
-	local height = (t[l].y1 - t[l].y0) * self.globalzoom
-	fb.bb:invertRect(
-		t[l][w].x0*self.globalzoom-width*0.05,
-		self.offset_y+self.cur_full_height-(t[l].y1*self.globalzoom)-height*0.05,
-		width*1.1, height*1.1)
-end
-
---function DJVUReader:_toggleWordHighLight(w)
-	--local width = (w.x1-w.x0)*self.globalzoom
-	--local height = (w.y1-w.y0)*self.globalzoom
-	--fb.bb:invertRect(
-		--w.x0*self.globalzoom-width*0.05,
-		--self.offset_y+self.cur_full_height-(w.y1*self.globalzoom)-height*0.05,
-		--width*1.1,
-		--height*1.1)
---end
 
 -- remember to clear cursor before calling this
 function DJVUReader:drawCursorAfterWord(t, l, w)
@@ -111,12 +139,9 @@ function DJVUReader:startHighLightMode()
 	local t = self.doc:getPageText(self.pageno)
 
 	local function _findFirstWordInView(t)
-		-- @TODO maybe we can just check line by line here  22.03 2012 (houqp)
 		for i=1, #t, 1 do
-			for j=1, #t[i], 1 do
-				if self:_isWordInScreenRange(t[i][j]) then
-					return i, j
-				end
+			if self:_isWordInScreenRange(t[i][1]) then
+				return i, 1
 			end
 		end
 
@@ -180,18 +205,13 @@ function DJVUReader:startHighLightMode()
 	end
 
 	local function _isMovingForward(l, w)
-		return l.cur > l.start or (l.cur == l.start and w.cur >= w.start)
-	end
-
-	local function _isMovingBackward(l, w)
-		return not _isMovingForward(l, w)
+		return l.cur > l.start or (l.cur == l.start and w.cur > w.start)
 	end
 
 	local l = {}
 	local w = {}
 
 	l.start, w.start = _findFirstWordInView(t)
-	--local l.start, w.start = _findFirstWordInView(t)
 	if not l.start then
 		print("# no text in current view!")
 		return
@@ -199,7 +219,6 @@ function DJVUReader:startHighLightMode()
 
 	l.cur, w.cur = l.start, w.start
 	l.new, w.new = l.cur, w.cur
-	local is_hightlight_mode = false
 	local is_meet_start = false
 	local is_meet_end = false
 	local running = true
@@ -214,6 +233,7 @@ function DJVUReader:startHighLightMode()
 	self.cursor:draw()
 	fb:refresh(0)
 
+	-- first use cursor to place start pos for highlight
 	while running do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -338,9 +358,12 @@ function DJVUReader:startHighLightMode()
 			elseif ev.code == KEY_FW_PRESS then
 				if w.cur == 0 then
 					w.cur = 1
+					l.cur, w.cur = _prevWord(t, l.cur, w.cur)
 				end
+				l.new, w.new = l.cur, w.cur
 				l.start, w.start = l.cur, w.cur
 				running = false
+				self.cursor:clear()
 			elseif ev.code == KEY_BACK then
 				running = false
 				return
@@ -349,12 +372,74 @@ function DJVUReader:startHighLightMode()
 			fb:refresh(0)
 		end
 	end -- EOF while
+	--print("start", l.cur, w.cur, l.start, w.start)
+
+	-- two helper functions for highlight
+	local function _togglePrevWordHighLight(t, l, w)
+		l.new, w.new = _prevWord(t, l.cur, w.cur)
+
+		if l.cur == 1 and w.cur == 1 then
+			is_meet_start = true
+			-- left end of first line must be handled as special case
+			w.new = 0
+		end
+
+		if w.new ~= 0 and 
+		not self:_isWordInScreenRange(t[l.new][w.new]) then
+			-- word is in previous view
+			local pageno = self:prevView()
+			self:goto(pageno)
+
+			local l0 = l.start
+			local w0 = w.start
+			local l1 = l.cur
+			local w1 = w.cur
+			if _isMovingForward(l, w) then
+				l0, w0 = _nextWord(t, l0, w0)
+				l1, w1 = l.new, w.new
+			end
+			self:_toggleTextHighLight(t, l0, w0, 
+										l1, w1)
+		else
+			self:_toggleWordHighLight(t, l.cur, w.cur)
+		end
+
+		l.cur, w.cur = l.new, w.new
+		return l, w, (is_meet_start or false)
+	end
+
+	local function _toggleNextWordHighLight(t, l, w)
+		if w.cur == 0 then
+			w.new = 1
+		else
+			l.new, w.new = _nextWord(t, l.cur, w.cur)
+		end
+		if l.new == #t and w.new == #t[#t] then
+			is_meet_end = true
+		end
+
+		if not self:_isWordInScreenRange(t[l.new][w.new]) then
+			local pageno = self:nextView()
+			self:goto(pageno)
+
+			local tmp_l = l.start
+			local tmp_w = w.start
+			if _isMovingForward(l, w) then
+				tmp_l, tmp_w = _nextWord(t, tmp_l, tmp_w)
+			end
+			self:_toggleTextHighLight(t, tmp_l, tmp_w, 
+										l.new, w.new)
+		else
+			self:_toggleWordHighLight(t, l.new, w.new)
+		end
+
+		l.cur, w.cur = l.new, w.new
+		return l, w, (is_meet_end or false)
+	end
 
 
-	print("!!!!cccccccc", l.start, w.start)
+	-- go into highlight mode
 	running = true
-
-	-- in highlight mode
 	while running do
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -362,145 +447,91 @@ function DJVUReader:startHighLightMode()
 			if ev.code == KEY_FW_LEFT then
 				is_meet_end = false
 				if not is_meet_start then
-					local is_next_view = false
-					l.new, w.new = _prevWord(t, l.cur, w.cur)
-
-					if l.new == l.cur and w.new == w.cur then
-						is_meet_start = true
-					end
-
-					if l.new ~= 0 and w.new ~= 0 and 
-					not self:_isWordInScreenRange(t[l.new][w.new]) then
-						-- word is in previous view
-						local pageno = self:prevView()
-						self:goto(pageno)
-						is_next_view = true
-					end
-
-					if is_hightlight_mode then
-						-- update highlight
-						if w.new ~= 0 and is_next_view then
-							self:_toggleTextHighLight(t, l.start, w.start, 
-														l.new, w.new)
-						else
-							self:_toggleWordHighLight(t, l.cur, w.cur)
-						end
-					end
+					l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
 				end
 			elseif ev.code == KEY_FW_RIGHT then
 				is_meet_start = false
 				if not is_meet_end then
-					local is_next_view = false
-					l.new, w.new = _nextWord(t, l.cur, w.cur)
-					if l.new == l.cur and w.new == w.cur then
-						is_meet_end = true
-					end
-
-					if not self:_isWordInScreenRange(t[l.new][w.new]) then
-							local pageno = self:nextView()
-							self:goto(pageno)
-							is_next_view = true
-					end
-
-					-- update highlight
-					if is_next_view then
-						self:_toggleTextHighLight(t, l.start, w.start, 
-													l.new, w.new)
-					else
-						self:_toggleWordHighLight(t, l.new, w.new)
-					end
+					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
 				end -- EOF if is not is_meet_end
 			elseif ev.code == KEY_FW_UP then
-				is_meet_end = false
-				if not is_meet_start then
-					local is_next_view = false
-					l.new, w.new = _wordInPrevLine(t, l.cur, w.cur)
-
-					if l.new ~= 0 and w.new ~= 0 and
-					not self:_isWordInScreenRange(t[l.new][w.new]) then
-						-- goto next view of current page
-						local pageno = self:prevView()
-						self:goto(pageno)
-						is_next_view = true
-					end
-
-					-- update highlight
-					if l.new ~=0 and w.new ~= 0 and is_next_view then
-						-- word is in previous view
-						self:_toggleTextHighLight(t, l.start, w.start, 
-													l.new, w.new)
-					else
-						local tmp_l, tmp_w
-						if _isMovingForward(l, w) then
-							tmp_l, tmp_w = _nextWord(t, l.new, w.new)
-							self:_toggleTextHighLight(t, tmp_l, tmp_w,
-														l.cur, w.cur)
-						else
-							l.new, w.new = _nextWord(t, l.new, w.new)
-							self:_toggleTextHighLight(t, l.new, w.new,
-														l.cur, w.cur)
-							l.new, w.new = _prevWord(t, l.new, w.new)
-						end -- EOF if is moving forward
-					end -- EOF if is previous view
-				end -- EOF if is not is_meet_start
+				if l.cur == 1 then
+					-- handle left end of first line as special case
+					tmp_l = 1
+					tmp_w = 0
+				else
+					tmp_l, tmp_w = _wordInPrevLine(t, l.cur, w.cur)
+				end
+				while not (tmp_l == l.cur and tmp_w == w.cur) do
+					l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
+				end
 			elseif ev.code == KEY_FW_DOWN then
-				local is_next_view = false
-				l.new, w.new = _wordInNextLine(t, l.cur, w.cur)
-
-				if not self:_isWordInScreenRange(t[l.new][w.new]) then
-					-- goto next view of current page
-					local pageno = self:nextView()
-					self:goto(pageno)
-					is_next_view = true
-				end
-
-				-- update highlight
-				if is_next_view then
-					-- redraw from start because of page refresh
-					self:_toggleTextHighLight(t, l.start, w.start,
-												l.new, w.new)
+				if w.cur == 0 then
+					-- handle left end of first line as special case
+					tmp_l = math.min(tmp_l + 1, #t)
+					tmp_w = 1
 				else
-					-- word in next is in current view, just highlight it
-					if _isMovingForward(l, w) then
-						l.cur, w.cur = _nextWord(t, l.cur, w.cur)
-						self:_toggleTextHighLight(t, l.cur, w.cur,
-													l.new, w.new)
-					else
-						l.cur, w.cur = _nextWord(t, l.cur, w.cur)
-						self:_toggleTextHighLight(t, l.cur, w.cur,
-													l.new, w.new)
-					end -- EOF if moving forward
-				end -- EOF if next view
+					tmp_l, tmp_w = _wordInNextLine(t, l.new, w.new)
+				end
+				while not (tmp_l == l.cur and tmp_w == w.cur) do
+					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
+				end
 			elseif ev.code == KEY_FW_PRESS then
-				local first, last = 0
-				if w.start < w.cur then
-					first = w.start + 1
-					last = w.cur
-				else
-					first = w.cur + 1
-					last = w.start
-				end
-				--self:_toggleTextHighLightByEnds(t, first, last)
+				local l0, w0, l1, w1
 
-				local hl_item = {}
-				for i=first,last,1 do
-					table.insert(hl_item, t[i])
+				-- find start and end of highlight text
+				if _isMovingForward(l, w) then
+					l0, w0 = _nextWord(t, l.start, w.start)
+					l1, w1 = l.cur, w.cur
+				else
+					l0, w0 = _nextWord(t, l.cur, w.cur)
+					l1, w1 = l.start, w.start
 				end
+				-- remove selection area
+				self:_toggleTextHighLight(t, l0, w0, l1, w1)
+
+				-- put text into highlight table of current page
+				local hl_item = {}
+				local s = ""
+				local prev_l = l0
+				local prev_w = w0
+				local l_item = {
+					x0 = t[l0][w0].x0,
+					y0 = t[l0].y0,
+					y1 = t[l0].y1,
+				}
+				for _l,_w in self:_wordIterFromRange(t, l0, w0, l1, w1) do
+					local word_item = t[_l][_w]
+					if _l > prev_l then
+						-- in next line, add previous line to highlight item
+						l_item.x1 = t[prev_l][prev_w].x1
+						table.insert(hl_item, l_item)
+						-- re initialize l_item for new line
+						l_item = {
+							x0 = word_item.x0, 
+							y0 = t[_l].y0,
+							y1 = t[_l].y1,
+						}
+					end
+					s = s .. word_item.word .. " "
+					prev_l, prev_w = _l, _w
+				end
+				-- insert last line of text in line item
+				l_item.x1 = t[prev_l][prev_w].x1
+				table.insert(hl_item, l_item)
+				hl_item.text = s
+
 				if not self.highlight[self.pageno] then
 					self.highlight[self.pageno] = {}
 				end
 				table.insert(self.highlight[self.pageno], hl_item)
 
-				is_hightlight_mode = false
 				running = false
-				self.cursor:clear()
 			elseif ev.code == KEY_BACK then
 				running = false
 			end -- EOF if key event
-			l.cur, w.cur = l.new, w.new
 			fb:refresh(0)
 		end
 	end -- EOF while
-
 end
 
