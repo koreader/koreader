@@ -231,7 +231,7 @@ function DJVUReader:startHighLightMode()
 		line_width_factor = 4,
 	}
 	self.cursor:draw()
-	fb:refresh(0)
+	fb:refresh(1)
 
 	-- first use cursor to place start pos for highlight
 	while running do
@@ -355,6 +355,23 @@ function DJVUReader:startHighLightMode()
 				else
 					self:drawCursorAfterWord(t, l.new, w.new)
 				end
+			elseif ev.code == KEY_DEL then
+				if self.highlight[self.pageno] then
+					for k, text_item in ipairs(self.highlight[self.pageno]) do
+						for _, line_item in ipairs(text_item) do
+							if t[l.cur][w.cur].y0 >= line_item.y0
+							and t[l.cur][w.cur].y1 <= line_item.y1
+							and t[l.cur][w.cur].x0 >= line_item.x0
+							and t[l.cur][w.cur].x1 <= line_item.x1 then
+								self.highlight[self.pageno][k] = nil
+							end
+						end -- EOF for line_item
+					end -- EOF for text_item
+				end -- EOF if not highlight table
+				if #self.highlight[self.pageno] == 0 then
+					self.highlight[self.pageno] = nil
+				end
+				return
 			elseif ev.code == KEY_FW_PRESS then
 				if w.cur == 0 then
 					w.cur = 1
@@ -369,7 +386,7 @@ function DJVUReader:startHighLightMode()
 				return
 			end -- EOF if key event
 			l.cur, w.cur = l.new, w.new
-			fb:refresh(0)
+			fb:refresh(1)
 		end
 	end -- EOF while
 	--print("start", l.cur, w.cur, l.start, w.start)
@@ -530,7 +547,7 @@ function DJVUReader:startHighLightMode()
 			elseif ev.code == KEY_BACK then
 				running = false
 			end -- EOF if key event
-			fb:refresh(0)
+			fb:refresh(1)
 		end
 	end -- EOF while
 end
