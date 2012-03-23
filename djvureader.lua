@@ -13,6 +13,27 @@ function DJVUReader:open(filename)
 	return ok
 end
 
+
+
+-----------[ highlight support ]----------
+
+----------------------------------------------------
+-- Given coordinates of four conners and return
+-- coordinate of upper left conner with with and height
+--
+-- In djvulibre library, some coordinates starts from
+-- down left conner, i.e. y is upside down. This method
+-- only transform these coordinates.
+----------------------------------------------------
+function DJVUReader:_rectCoordTransform(x0, y0, x1, y1)
+	return 
+		self.offset_x + x0 * self.globalzoom,
+		self.offset_y + self.cur_full_height - (y1 * self.globalzoom),
+		(x1 - x0) * self.globalzoom,
+		(y1 - y0) * self.globalzoom
+end
+
+
 function DJVUReader:_isWordInScreenRange(w)
 	-- y axel in djvulibre starts from bottom
 	return	(w ~= nil) and (
@@ -37,7 +58,16 @@ function DJVUReader:toggleTextHighLight(word_list)
 				w = w
 				h = h * 1.2
 
-				fb.bb:invertRect(x, y, w, h)
+				self.highlight.drawer = self.highlight.drawer or "underscore"
+				if self.highlight.drawer == "underscore" then
+					self.highlight.line_width = self.highlight.line_width or 2
+					self.highlight.line_color = self.highlight.line_color or 5
+					fb.bb:paintRect(x, y+h-1, w,
+						self.highlight.line_width,
+						self.highlight.line_color)
+				elseif self.highlight.drawer == "marker" then
+					fb.bb:invertRect(x, y, w, h)
+				end
 			end -- EOF if isWordInScreenRange
 		end -- EOF for line_item
 	end -- EOF for text_item
@@ -69,22 +99,6 @@ function DJVUReader:_wordIterFromRange(t, l0, w0, l1, w1)
 			return i, j
 		end
 	end -- EOF closure
-end
-
-----------------------------------------------------
--- Given coordinates of four conners and return
--- coordinate of upper left conner with with and height
---
--- In djvulibre library, some coordinates starts from
--- down left conner, i.e. y is upside down. This method
--- only transform these coordinates.
-----------------------------------------------------
-function DJVUReader:_rectCoordTransform(x0, y0, x1, y1)
-	return 
-		x0 * self.globalzoom,
-		self.offset_y + self.cur_full_height - (y1 * self.globalzoom),
-		(x1 - x0) * self.globalzoom,
-		(y1 - y0) * self.globalzoom
 end
 
 function DJVUReader:_toggleWordHighLight(t, l, w)
