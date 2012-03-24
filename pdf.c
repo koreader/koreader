@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <fitz/fitz.h>
+#include <fitz/fitz-internal.h>
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
@@ -371,16 +371,15 @@ static int drawPage(lua_State *L) {
 	fz_device *dev;
 	fz_matrix ctm;
 	fz_bbox bbox;
-	fz_bbox rect;
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	rect.x0 = luaL_checkint(L, 4);
-	rect.y0 = luaL_checkint(L, 5);
-	rect.x1 = rect.x0 + bb->w;
-	rect.y1 = rect.y0 + bb->h;
-	pix = fz_new_pixmap_with_rect(page->doc->context, fz_device_gray, rect);
+	bbox.x0 = luaL_checkint(L, 4);
+	bbox.y0 = luaL_checkint(L, 5);
+	bbox.x1 = bbox.x0 + bb->w;
+	bbox.y1 = bbox.y0 + bb->h;
+	pix = fz_new_pixmap_with_bbox(page->doc->context, fz_device_gray, bbox);
 	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);

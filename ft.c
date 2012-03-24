@@ -23,8 +23,7 @@
 #include "blitbuffer.h"
 
 /* for font access: */
-#include <fitz/fitz.h>
-#include <pdf/mupdf.h>
+#include <pdf/mupdf-internal.h>
 
 #include "ft.h"
 
@@ -64,13 +63,13 @@ static int newBuiltinFace(lua_State *L) {
 	unsigned int size;
 	/* we use compiled-in font data from mupdf build */
 	if(!strcmp("mono", fontname)) {
-		fontdata = pdf_find_substitute_font(1, 0, 0, 0, &size);
+		fontdata = pdf_lookup_substitute_font(1, 0, 0, 0, &size);
 	} else if(!strcmp("sans", fontname)) {
-		fontdata = pdf_find_substitute_font(0, 0, 0, 0, &size);
+		fontdata = pdf_lookup_substitute_font(0, 0, 0, 0, &size);
 	} else if(!strcmp("cjk", fontname)) {
-		fontdata = pdf_find_substitute_cjk_font(0, 0, &size);
+		fontdata = pdf_lookup_substitute_cjk_font(0, 0, &size);
 	} else {
-		fontdata = pdf_find_builtin_font(fontname, &size);
+		fontdata = pdf_lookup_builtin_font(fontname, &size);
 	}
 	if(fontdata == NULL) {
 		return luaL_error(L, "no such built-in font");

@@ -85,7 +85,7 @@ einkfb.o input.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
 
 ft.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
