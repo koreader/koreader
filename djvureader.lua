@@ -263,7 +263,6 @@ function DJVUReader:startHighLightMode()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_LEFT then
-				local is_next_view = false
 				if w.cur == 1 then
 					w.cur = 0
 					w.new = 0
@@ -278,13 +277,12 @@ function DJVUReader:startHighLightMode()
 				end
 
 				self.cursor:clear()
-				if w.new ~= 0 and 
-				not self:_isWordInScreenHeightRange(t[l.new][w.new])
+				if w.new ~= 0
+				and not self:_isWordInScreenHeightRange(t[l.new][w.new])
 				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
 					-- word is in previous view
 					local pageno = self:prevView()
 					self:goto(pageno)
-					is_next_view = true
 				end
 
 				-- update cursor
@@ -299,7 +297,6 @@ function DJVUReader:startHighLightMode()
 					end
 				end
 			elseif ev.code == KEY_FW_RIGHT then
-				local is_next_view = false
 				if w.cur == 0 then
 					w.cur = 1
 					w.new = 1
@@ -319,7 +316,6 @@ function DJVUReader:startHighLightMode()
 				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
-					is_next_view = true
 				end
 
 				if w.cur == 0 then
@@ -333,7 +329,6 @@ function DJVUReader:startHighLightMode()
 					end
 				end
 			elseif ev.code == KEY_FW_UP then
-				local is_next_view = false
 				if w.cur == 0 then
 					-- goto left end of last line
 					l.new = math.max(l.cur - 1, 1)
@@ -348,11 +343,11 @@ function DJVUReader:startHighLightMode()
 				if w.new ~= 0 
 				and not self:_isWordInScreenHeightRange(t[l.new][w.new])
 				and self:_isWordInScreenWidthRange(t[l.new][w.new])
-				or w.new == 0 and not self:_isWordInScreenHeightRange(t[l.new][1]) then
+				or w.new == 0 
+				and not self:_isWordInScreenHeightRange(t[l.new][1]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
 					self:goto(pageno)
-					is_next_view = true
 				end
 
 				if w.new == 0 then
@@ -365,7 +360,6 @@ function DJVUReader:startHighLightMode()
 					end
 				end
 			elseif ev.code == KEY_FW_DOWN then
-				local is_next_view = false
 				if w.cur == 0 then
 					-- on the left end of current line, 
 					-- goto left end of next line
@@ -383,7 +377,6 @@ function DJVUReader:startHighLightMode()
 					-- goto next view of current page
 					local pageno = self:nextView()
 					self:goto(pageno)
-					is_next_view = true
 				end
 
 				if w.cur == 0 then
