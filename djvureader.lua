@@ -303,17 +303,21 @@ function DJVUReader:startHighLightMode()
 				else
 					l.new, w.new = _nextWord(t, l.cur, w.cur)
 					if w.new == 1 then
-						-- Must be come from the right end of previous line, so
-						-- goto the left end of current line.
+						-- Must be come from the right end of previous line,
+						-- so goto the left end of current line.
 						w.cur = 0
 						w.new = 0
 					end
 				end
 
 				self.cursor:clear()
-				if w.new ~= 0 and
-				not self:_isWordInScreenHeightRange(t[l.new][w.new]) 
-				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+
+				local tmp_w = w.new
+				if w.cur == 0 then
+					tmp_w = 1
+				end
+				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
 				end
@@ -340,11 +344,13 @@ function DJVUReader:startHighLightMode()
 				end
 
 				self.cursor:clear()
-				if w.new ~= 0 
-				and not self:_isWordInScreenHeightRange(t[l.new][w.new])
-				and self:_isWordInScreenWidthRange(t[l.new][w.new])
-				or w.new == 0 
-				and not self:_isWordInScreenHeightRange(t[l.new][1]) then
+
+				local tmp_w = w.new
+				if w.cur == 0 then
+					tmp_w = 1
+				end
+				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
 					self:goto(pageno)
@@ -369,11 +375,13 @@ function DJVUReader:startHighLightMode()
 				end
 
 				self.cursor:clear()
-				if w.cur ~= 0 and
-				not self:_isWordInScreenHeightRange(t[l.new][w.new]) 
-				and self:_isWordInScreenWidthRange(t[l.new][w.new])
-				or w.cur == 0 
-				and not self:_isWordInScreenHeightRange(t[l.new][1]) then
+
+				local tmp_w = w.new
+				if w.cur == 0 then
+					tmp_w = 1
+				end
+				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
 					self:goto(pageno)
