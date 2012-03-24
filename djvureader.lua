@@ -436,9 +436,13 @@ function DJVUReader:startHighLightMode()
 
 		if w.new ~= 0 and 
 		not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
-			-- word is in previous view
-			local pageno = self:prevView()
-			self:goto(pageno)
+			-- word out of left and right sides of current view should
+			-- not trigger pan by page
+			if self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+				-- word is in previous view
+				local pageno = self:prevView()
+				self:goto(pageno)
+			end
 
 			local l0 = l.start
 			local w0 = w.start
@@ -469,8 +473,10 @@ function DJVUReader:startHighLightMode()
 		end
 
 		if not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
-			local pageno = self:nextView()
-			self:goto(pageno)
+			if self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+				local pageno = self:nextView()
+				self:goto(pageno)
+			end
 
 			local tmp_l = l.start
 			local tmp_w = w.start
@@ -505,26 +511,32 @@ function DJVUReader:startHighLightMode()
 					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
 				end -- EOF if is not is_meet_end
 			elseif ev.code == KEY_FW_UP then
-				if l.cur == 1 then
-					-- handle left end of first line as special case
-					tmp_l = 1
-					tmp_w = 0
-				else
-					tmp_l, tmp_w = _wordInPrevLine(t, l.cur, w.cur)
-				end
-				while not (tmp_l == l.cur and tmp_w == w.cur) do
-					l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
+				is_meet_end = false
+				if not is_meet_start then
+					if l.cur == 1 then
+						-- handle left end of first line as special case
+						tmp_l = 1
+						tmp_w = 0
+					else
+						tmp_l, tmp_w = _wordInPrevLine(t, l.cur, w.cur)
+					end
+					while not (tmp_l == l.cur and tmp_w == w.cur) do
+						l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
+					end
 				end
 			elseif ev.code == KEY_FW_DOWN then
-				if w.cur == 0 then
-					-- handle left end of first line as special case
-					tmp_l = math.min(tmp_l + 1, #t)
-					tmp_w = 1
-				else
-					tmp_l, tmp_w = _wordInNextLine(t, l.new, w.new)
-				end
-				while not (tmp_l == l.cur and tmp_w == w.cur) do
-					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
+				is_meet_start = false
+				if not is_meet_end then
+					if w.cur == 0 then
+						-- handle left end of first line as special case
+						tmp_l = math.min(tmp_l + 1, #t)
+						tmp_w = 1
+					else
+						tmp_l, tmp_w = _wordInNextLine(t, l.new, w.new)
+					end
+					while not (tmp_l == l.cur and tmp_w == w.cur) do
+						l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
+					end
 				end
 			elseif ev.code == KEY_FW_PRESS then
 				local l0, w0, l1, w1
