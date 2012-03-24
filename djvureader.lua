@@ -277,15 +277,14 @@ function DJVUReader:startHighLightMode()
 					l.new, w.new = _prevWord(t, l.cur, w.cur)
 				end
 
+				self.cursor:clear()
 				if w.new ~= 0 and 
-				not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
+				not self:_isWordInScreenHeightRange(t[l.new][w.new])
+				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
 					-- word is in previous view
 					local pageno = self:prevView()
 					self:goto(pageno)
 					is_next_view = true
-				else
-					-- no need to goto next view, clear previous cursor manually
-					self.cursor:clear()
 				end
 
 				-- update cursor
@@ -314,13 +313,13 @@ function DJVUReader:startHighLightMode()
 					end
 				end
 
+				self.cursor:clear()
 				if w.new ~= 0 and
-				not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
+				not self:_isWordInScreenHeightRange(t[l.new][w.new]) 
+				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
 					is_next_view = true
-				else
-					self.cursor:clear()
 				end
 
 				if w.cur == 0 then
@@ -345,15 +344,15 @@ function DJVUReader:startHighLightMode()
 					l.new, w.new = _wordInPrevLine(t, l.cur, w.cur)
 				end
 
-				if w.new ~= 0 and
-				not self:_isWordInScreenHeightRange(t[l.new][w.new])
+				self.cursor:clear()
+				if w.new ~= 0 
+				and not self:_isWordInScreenHeightRange(t[l.new][w.new])
+				and self:_isWordInScreenWidthRange(t[l.new][w.new])
 				or w.new == 0 and not self:_isWordInScreenHeightRange(t[l.new][1]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
 					self:goto(pageno)
 					is_next_view = true
-				else
-					self.cursor:clear()
 				end
 
 				if w.new == 0 then
@@ -375,15 +374,16 @@ function DJVUReader:startHighLightMode()
 					l.new, w.new = _wordInNextLine(t, l.cur, w.cur)
 				end
 
+				self.cursor:clear()
 				if w.cur ~= 0 and
 				not self:_isWordInScreenHeightRange(t[l.new][w.new]) 
-				or w.cur == 0 and not self:_isWordInScreenHeightRange(t[l.new][1]) then
+				and self:_isWordInScreenWidthRange(t[l.new][w.new])
+				or w.cur == 0 
+				and not self:_isWordInScreenHeightRange(t[l.new][1]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
 					self:goto(pageno)
 					is_next_view = true
-				else
-					self.cursor:clear()
 				end
 
 				if w.cur == 0 then

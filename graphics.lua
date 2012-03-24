@@ -42,6 +42,7 @@ Cursor = {
 	h = 10,
 	w = nil,
 	line_w = nil,
+	is_cleared = true,
 }
 
 function Cursor:new(o)
@@ -76,11 +77,17 @@ function Cursor:_draw(x, y)
 end
 
 function Cursor:draw()
-	self:_draw(self.x_pos, self.y_pos)
+	if self.is_cleared then
+		self.is_cleared = false
+		self:_draw(self.x_pos, self.y_pos)
+	end
 end
 
 function Cursor:clear()
-	self:_draw(self.x_pos, self.y_pos)
+	if not self.is_cleared then
+		self.is_cleared = true
+		self:_draw(self.x_pos, self.y_pos)
+	end
 end
 
 function Cursor:move(x_off, y_off)
