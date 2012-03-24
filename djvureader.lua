@@ -164,7 +164,7 @@ function DJVUReader:startHighLightMode()
 
 	local function _findFirstWordInView(t)
 		for i=1, #t, 1 do
-			if self:_isWordInScreenHeightRange(t[i][1]) then
+			if self:_isWordInScreenRange(t[i][1]) then
 				return i, 1
 			end
 		end
