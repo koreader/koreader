@@ -113,6 +113,11 @@ end
 -- You need to overwrite following two methods if your
 -- reader supports highlight feature.
 ----------------------------------------------------
+
+function UniReader:startHighLightMode()
+	return
+end
+
 function UniReader:highLightText()
 	return
 end
