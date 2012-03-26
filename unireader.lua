@@ -1044,7 +1044,7 @@ function UniReader:addAllCommands()
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
 		end)
-	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
+	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
 		function(unireader)
 			keep_running = false
