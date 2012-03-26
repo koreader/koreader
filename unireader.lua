@@ -724,10 +724,10 @@ function UniReader:showTOC()
 	local menu_items = {}
 	local filtered_toc = {}
 	-- build menu items
-	for _k,_v in ipairs(self.toc) do
+	for k,v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
-		table.insert(filtered_toc,_v.page)
+		("        "):rep(v.depth-1)..self:cleanUpTOCTitle(v.title))
+		table.insert(filtered_toc,v.page)
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
@@ -744,9 +744,9 @@ end
 
 function UniReader:showJumpStack()
 	local menu_items = {}
-	for _k,_v in ipairs(self.jump_stack) do
+	for k,v in ipairs(self.jump_stack) do
 		table.insert(menu_items,
-			_v.datetime.." -> Page ".._v.page.." ".._v.notes)
+			v.datetime.." -> Page "..v.page.." "..v.notes)
 	end
 	jump_menu = SelectMenu:new{
 		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
@@ -759,6 +759,29 @@ function UniReader:showJumpStack()
 		self:goto(jump_item.page)
 	else
 		self:goto(self.pageno)
+	end
+end
+
+function UniReader:showHighLight()
+	local menu_items = {}
+	local highlight_dict = {}
+	-- build menu items
+	for k,v in pairs(self.highlight) do
+		if type(k) == "number" then
+			for k1,v1 in ipairs(v) do
+				table.insert(menu_items, v1.text)
+				table.insert(highlight_dict, {page=k, start=v1[1]})
+			end
+		end
+	end
+	toc_menu = SelectMenu:new{
+		menu_title = "HighLights",
+		item_array = menu_items,
+		no_item_msg = "No HighLight found.",
+	}
+	item_no = toc_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		self:goto(highlight_dict[item_no].page)
 	end
 end
 
@@ -1013,6 +1036,12 @@ function UniReader:addAllCommands()
 		"start highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
+			unireader:goto(unireader.pageno)
+		end)
+	self.commands:add(KEY_N, MOD_SHIFT, "N",
+		"display all highlights",
+		function(unireader)
+			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
 		end)
 	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
