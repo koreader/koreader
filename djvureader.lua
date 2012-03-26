@@ -33,14 +33,14 @@ function DJVUReader:_rectCoordTransform(x0, y0, x1, y1)
 		(y1 - y0) * self.globalzoom
 end
 
-
-function DJVUReader:_isWordInScreenRange(w)
-	return self:_isWordInScreenHeightRange(w) and
-			self:_isWordInScreenWidthRange(w)
+-- make sure the whole word can be seen in screen
+function DJVUReader:_isEntireWordInScreenRange(w)
+	return self:_isEntireWordInScreenHeightRange(w) and
+			self:_isEntireWordInScreenWidthRange(w)
 end
 
 -- y axel in djvulibre starts from bottom
-function DJVUReader:_isWordInScreenHeightRange(w)
+function DJVUReader:_isEntireWordInScreenHeightRange(w)
 	return	(w ~= nil) and
 			(self.cur_full_height - (w.y1 * self.globalzoom) >=
 				-self.offset_y) and
@@ -48,17 +48,28 @@ function DJVUReader:_isWordInScreenHeightRange(w)
 				-self.offset_y + height)
 end
 
-function DJVUReader:_isWordInScreenWidthRange(w)
+function DJVUReader:_isEntireWordInScreenWidthRange(w)
 	return	(w ~= nil) and
 			(w.x0 * self.globalzoom >= -self.offset_x) and
 			(w.x1 * self.globalzoom <= -self.offset_x + width)
+end
+
+-- make sure at least part of the word can be seen in screen
+function DJVUReader:_isWordInScreenRange(w)
+	return	(w ~= nil) and
+			(self.cur_full_height - (w.y0 * self.globalzoom) >=
+				-self.offset_y) and
+			(self.cur_full_height - (w.y1 * self.globalzoom) <= 
+				-self.offset_y + height) and
+			(w.x1 * self.globalzoom >= -self.offset_x) and
+			(w.x0 * self.globalzoom <= -self.offset_x + width)
 end
 
 function DJVUReader:toggleTextHighLight(word_list)
 	for _,text_item in ipairs(word_list) do
 		for _,line_item in ipairs(text_item) do
 			-- make sure that line is in screen range
-			if self:_isWordInScreenHeightRange(line_item) then
+			if self:_isEntireWordInScreenHeightRange(line_item) then
 				local x, y, w, h = self:_rectCoordTransform(
 										line_item.x0, line_item.y0,
 										line_item.x1, line_item.y1)
@@ -79,7 +90,7 @@ function DJVUReader:toggleTextHighLight(word_list)
 				elseif self.highlight.drawer == "marker" then
 					fb.bb:invertRect(x, y, w, h)
 				end
-			end -- EOF if isWordInScreenHeightRange
+			end -- EOF if isEntireWordInScreenHeightRange
 		end -- EOF for line_item
 	end -- EOF for text_item
 end
@@ -135,7 +146,8 @@ function DJVUReader:_toggleTextHighLight(t, l0, w0, l1, w1)
 	end
 
 	for _l, _w in self:_wordIterFromRange(t, l0, w0, l1, w1) do
-		if self:_isWordInScreenHeightRange(t[_l][_w]) then
+		if self:_isWordInScreenRange(t[_l][_w]) then
+			-- blitbuffer module will take care of the out of screen range part.
 			self:_toggleWordHighLight(t, _l, _w)
 		end
 	end
@@ -164,7 +176,7 @@ function DJVUReader:startHighLightMode()
 
 	local function _findFirstWordInView(t)
 		for i=1, #t, 1 do
-			if self:_isWordInScreenRange(t[i][1]) then
+			if self:_isEntireWordInScreenRange(t[i][1]) then
 				return i, 1
 			end
 		end
@@ -278,8 +290,8 @@ function DJVUReader:startHighLightMode()
 
 				self.cursor:clear()
 				if w.new ~= 0
-				and not self:_isWordInScreenHeightRange(t[l.new][w.new])
-				and self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+				and not self:_isEntireWordInScreenHeightRange(t[l.new][w.new])
+				and self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 					-- word is in previous view
 					local pageno = self:prevView()
 					self:goto(pageno)
@@ -288,11 +300,11 @@ function DJVUReader:startHighLightMode()
 				-- update cursor
 				if w.cur == 0 then
 					-- meet line left end, must be handled as special case
-					if self:_isWordInScreenRange(t[l.cur][1]) then
+					if self:_isEntireWordInScreenRange(t[l.cur][1]) then
 						self:drawCursorBeforeWord(t, l.cur, 1)
 					end
 				else
-					if self:_isWordInScreenRange(t[l.new][w.new]) then
+					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
@@ -316,19 +328,19 @@ function DJVUReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
-				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
+				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
 				end
 
 				if w.cur == 0 then
 					-- meet line left end, must be handled as special case
-					if self:_isWordInScreenRange(t[l.new][1]) then
+					if self:_isEntireWordInScreenRange(t[l.new][1]) then
 						self:drawCursorBeforeWord(t, l.new, 1)
 					end
 				else
-					if self:_isWordInScreenRange(t[l.new][w.new]) then
+					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
@@ -349,19 +361,19 @@ function DJVUReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
-				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
+				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
 					self:goto(pageno)
 				end
 
 				if w.new == 0 then
-					if self:_isWordInScreenRange(t[l.new][1]) then
+					if self:_isEntireWordInScreenRange(t[l.new][1]) then
 						self:drawCursorBeforeWord(t, l.new, 1)
 					end
 				else
-					if self:_isWordInScreenRange(t[l.new][w.new]) then
+					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
@@ -380,19 +392,19 @@ function DJVUReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if not self:_isWordInScreenHeightRange(t[l.new][tmp_w]) 
-				and self:_isWordInScreenWidthRange(t[l.new][tmp_w]) then
+				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
+				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
 					self:goto(pageno)
 				end
 
 				if w.cur == 0 then
-					if self:_isWordInScreenRange(t[l.new][1]) then
+					if self:_isEntireWordInScreenRange(t[l.new][1]) then
 						self:drawCursorBeforeWord(t, l.new, 1)
 					end
 				else
-					if self:_isWordInScreenRange(t[l.new][w.new]) then
+					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
@@ -443,10 +455,10 @@ function DJVUReader:startHighLightMode()
 		end
 
 		if w.new ~= 0 and 
-		not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
+		not self:_isEntireWordInScreenHeightRange(t[l.new][w.new]) then
 			-- word out of left and right sides of current view should
 			-- not trigger pan by page
-			if self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 				-- word is in previous view
 				local pageno = self:prevView()
 				self:goto(pageno)
@@ -480,8 +492,8 @@ function DJVUReader:startHighLightMode()
 			is_meet_end = true
 		end
 
-		if not self:_isWordInScreenHeightRange(t[l.new][w.new]) then
-			if self:_isWordInScreenWidthRange(t[l.new][w.new]) then
+		if not self:_isEntireWordInScreenHeightRange(t[l.new][w.new]) then
+			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 				local pageno = self:nextView()
 				self:goto(pageno)
 			end
