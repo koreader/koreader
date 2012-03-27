@@ -1175,6 +1175,5 @@ function UniReader:addAllCommands()
 			end
 		end)
 	-- end panning
-	--print defined commands
-	--for k,v in pairs(self.commands.map) do print(v) end
+	print("## defined commands "..dump(self.commands.map))
 end
