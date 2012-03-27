@@ -7,3 +7,6 @@
 [submodule "djvulibre"]
 	path = djvulibre
 	url = git://djvu.git.sourceforge.net/gitroot/djvu/djvulibre.git
+[submodule "crengine"]
+	path = crengine
+	url = git://crengine.git.sourceforge.net/gitroot/crengine/crengine
