@@ -875,12 +875,12 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:add(KEY_PGFWD,nil,">",
+	self.commands:add({KEY_PGFWD,KEY_LPGFWD},nil,">",
 		"next page",
 		function(unireader)
 			unireader:goto(unireader:nextView())
 		end)
-	self.commands:add(KEY_PGBCK,nil,"<",
+	self.commands:add({KEY_PGBCK,KEY_LPGBCK},nil,"<",
 		"previous page",
 		function(unireader)
 			unireader:goto(unireader:prevView())
