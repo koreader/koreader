@@ -20,6 +20,10 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pdf.h"
+#include <stdio.h>
+#include <math.h>
+#include <stddef.h>
+
 
 typedef struct PdfDocument {
 	fz_document *xref;
@@ -35,16 +39,141 @@ typedef struct PdfPage {
 	PdfDocument *doc;
 } PdfPage;
 
+
+static double LOG_TRESHOLD_PERC = 0.05; // 5%
+
+enum {
+    MAGIC = 0x3795d42b,
+};
+
+typedef struct header {
+    int magic;
+    size_t sz;
+} header;
+
+static size_t msize=0;
+static size_t msize_prev;
+static size_t msize_max;
+static size_t msize_min;
+static size_t msize_iniz;
+static int is_realloc=0;
+
+char* readable_fs(double size/*in bytes*/, char *buf) {
+    int i = 0;
+    const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    while (size > 1024) {
+        size /= 1024;
+        i++;
+    }
+    sprintf(buf, "%.*f %s", i, size, units[i]);
+    return buf;
+}
+
+static void resetMsize(){
+	msize_iniz = msize;
+	msize_prev = 0;
+	msize_max = 0;
+	msize_min = (size_t)-1;
+}
+
+static void showMsize(){
+	char buf[15],buf2[15],buf3[15],buf4[15];
+	printf("§§§ now: %s was: %s - min: %s - max: %s\n",readable_fs(msize,buf),readable_fs(msize_iniz,buf2),readable_fs(msize_min,buf3),readable_fs(msize_max,buf4));
+	resetMsize();
+}
+
+static void log_size(char *funcName){
+	if(msize_max < msize)
+		msize_max = msize;
+	if(msize_min > msize)
+		msize_min = msize;
+	if(1==0 && abs(msize-msize_prev)>msize_prev*LOG_TRESHOLD_PERC){
+		char buf[15],buf2[15];
+		printf("§§§ %s - total: %s (was %s)\n",funcName, readable_fs(msize,buf),readable_fs(msize_prev,buf2));
+		msize_prev = msize;
+	}
+}
+
+static void *
+my_malloc_default(void *opaque, unsigned int size)
+{
+    struct header * h = malloc(size + sizeof(header));
+    if (h == NULL)
+         return NULL;
+
+    h -> magic = MAGIC;
+    h -> sz = size;
+    msize += size + sizeof(struct header);
+    if(is_realloc!=1)
+	    log_size("alloc");
+    return (void *)(h + 1);
+}
+
+static void
+my_free_default(void *opaque, void *ptr)
+{
+   if (ptr != NULL) {
+        struct header * h = ((struct header *)ptr) - 1;
+        if (h -> magic != MAGIC) { /* Not allocated by us */
+        } else {
+            msize -= h -> sz + sizeof(struct header);
+            free(h);
+        }
+   }
+   if(is_realloc!=1)
+	   log_size("free");
+}
+
+static void *
+my_realloc_default(void *opaque, void *old, unsigned int size)
+{
+	void * newp;
+    if (old==NULL) { //practically, it's a malloc
+    	newp = my_malloc_default(opaque, size);
+    } else {
+    	struct header * h = ((struct header *)old) - 1;
+		if (h -> magic != MAGIC) { // Not allocated by my_malloc_default
+			printf("§§§ warn: not allocated by my_malloc_default, new size: %i\n",size);
+			newp = realloc(old,size);
+		} else { // malloc + free
+			is_realloc = 1;
+			size_t oldsize = h -> sz;
+			//printf("realloc %i -> %i\n",oldsize,size);
+			newp = my_malloc_default(opaque, size);
+			if (NULL != newp) {
+				memcpy(newp, old, oldsize<size?oldsize:size);
+				my_free_default(opaque, old);
+			}
+			log_size("realloc");
+			is_realloc = 0;
+		}
+	}
+
+	return(newp);
+}
+
+fz_alloc_context my_alloc_default =
+{
+	NULL,
+	my_malloc_default,
+	my_realloc_default,
+	my_free_default
+};
+
+
+
 static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
 	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
+	char buf[15];
+	printf("cachesize: %s\n",readable_fs(cachesize,buf));
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(NULL, NULL, cachesize);
+	doc->context = fz_new_context(&my_alloc_default, NULL, cachesize);
 
 	fz_try(doc->context) {
 		doc->xref = fz_open_document(doc->context, filename);
@@ -116,7 +245,7 @@ static int walkTableOfContent(lua_State *L, fz_outline* ol, int *count, int dept
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
-		lua_pushnumber(L, depth); 
+		lua_pushnumber(L, depth);
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "title");
@@ -178,6 +307,7 @@ static int openPage(lua_State *L) {
 	fz_catch(doc->context) {
 		return luaL_error(L, "cannot open page #%d", pageno);
 	}
+	showMsize();
 	return 1;
 }
 
@@ -192,8 +322,8 @@ static int getPageSize(lua_State *L) {
 	ctm = fz_scale(dc->zoom, dc->zoom) ;
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	bbox = fz_transform_rect(ctm, bounds);
-	
-       	lua_pushnumber(L, bbox.x1-bbox.x0);
+
+    lua_pushnumber(L, bbox.x1-bbox.x0);
 	lua_pushnumber(L, bbox.y1-bbox.y0);
 
 	return 2;
