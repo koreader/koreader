@@ -875,12 +875,12 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:add(KEY_PGFWD,nil,">",
+	self.commands:add({KEY_PGFWD,KEY_LPGFWD},nil,">",
 		"next page",
 		function(unireader)
 			unireader:goto(unireader:nextView())
 		end)
-	self.commands:add(KEY_PGBCK,nil,"<",
+	self.commands:add({KEY_PGBCK,KEY_LPGBCK},nil,"<",
 		"previous page",
 		function(unireader)
 			unireader:goto(unireader:prevView())
@@ -1175,6 +1175,5 @@ function UniReader:addAllCommands()
 			end
 		end)
 	-- end panning
-	--print defined commands
-	--for k,v in pairs(self.commands.map) do print(v) end
+	print("## defined commands "..dump(self.commands.map))
 end
