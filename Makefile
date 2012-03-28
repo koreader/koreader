@@ -158,12 +158,12 @@ endif
 
 $(CRENGINELIBS):
 	cd $(CRENGINEDIR) && cmake -D CR3_PNG=1 -D CR3_JPEG=1 .
-	cd $(CRENGINEDIR)/crengine && make 
 	cd $(CRENGINEDIR)/thirdparty/libjpeg && make
 	cd $(CRENGINEDIR)/thirdparty/chmlib && make
 	cd $(CRENGINEDIR)/thirdparty/antiword && make
 	cd $(CRENGINEDIR)/thirdparty/libpng && make
 	cd $(CRENGINEDIR)/thirdparty/zlib && make
+	cd $(CRENGINEDIR)/crengine && make
 	'cp' -ru $(CRENGINELIBS)/cr3gui/data ./
 
 $(LUALIB):
