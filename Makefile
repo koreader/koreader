@@ -164,6 +164,7 @@ $(CRENGINELIBS):
 	cd $(CRENGINEDIR)/thirdparty/antiword && make
 	cd $(CRENGINEDIR)/thirdparty/libpng && make
 	cd $(CRENGINEDIR)/thirdparty/zlib && make
+	'cp' -ru $(CRENGINELIBS)/cr3gui/data ./
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
