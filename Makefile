@@ -113,10 +113,12 @@ lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rm -Rf lua lua-5.1.4*
+	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
 	git submodule init
 	git submodule update
+	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h
+	test -f $(CRENGINEDIR)/thirdparty/zlib/qconfig.h || touch $(CRENGINEDIR)/thirdparty/zlib/qconfig.h
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
@@ -164,7 +166,6 @@ $(CRENGINELIBS):
 	cd $(CRENGINEDIR)/thirdparty/libpng && make
 	cd $(CRENGINEDIR)/thirdparty/zlib && make
 	cd $(CRENGINEDIR)/crengine && make
-	'cp' -ru $(CRENGINELIBS)/cr3gui/data ./
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
