@@ -493,7 +493,7 @@ function UniReader:addJump(pageno, notes)
 	local notes_to_add = notes
 	if not notes_to_add then
 		-- no notes given, auto generate from TOC entry
-		notes_to_add = self:getTOCTitleByPage(self.pageno)
+		notes_to_add = self:getTocTitleByPage(self.pageno)
 		if notes_to_add ~= "" then
 			notes_to_add = "in "..notes_to_add
 		end
@@ -561,6 +561,10 @@ function UniReader:goto(no)
 			self:drawOrCache(no+1, true)
 		end
 	end
+end
+
+function UniReader:redrawCurrentPage()
+	self:goto(self.pageno)
 end
 
 function UniReader:nextView()
@@ -659,7 +663,7 @@ function UniReader:fillTOC()
 	self.toc = self.doc:getTOC()
 end
 
-function UniReader:getTOCTitleByPage(pageno)
+function UniReader:getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
 		self:fillTOC()
@@ -734,7 +738,7 @@ function UniReader:showMenu()
 
 	ypos = ypos + 15
 	local face, fhash = Font:getFaceAndHash(22)
-	local cur_section = self:getTOCTitleByPage(self.pageno)
+	local cur_section = self:getTocTitleByPage(self.pageno)
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end
@@ -1010,7 +1014,7 @@ function UniReader:addAllCommands()
 		"open menu",
 		function(unireader)
 			unireader:showMenu()
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	-- panning
 	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}

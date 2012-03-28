@@ -5,6 +5,7 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
+CRENGINEDIR=crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
@@ -55,16 +56,26 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
+CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
+			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
+			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
+			$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
+			$(CRENGINEDIR)/thirdparty/zlib/libz.a \
+			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
-	       	$(MUPDFLIBDIR)/libjpeg.a \
-	       	$(MUPDFLIBDIR)/libopenjpeg.a \
-	       	$(MUPDFLIBDIR)/libjbig2dec.a \
-	       	$(MUPDFLIBDIR)/libz.a
+			$(MUPDFLIBDIR)/libopenjpeg.a \
+			$(MUPDFLIBDIR)/libjbig2dec.a \
+			$(MUPDFLIBDIR)/libz.a
+
+# @TODO the libjpeg used by mupdf is too new for crengine and will cause
+# a segment fault when decoding jpeg images in crengine, we need to fix 
+# this. 28.03 2012 (houqp)
+			#$(MUPDFLIBDIR)/libjpeg.a
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++  \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -79,6 +90,8 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(LUALIB) \
 		djvu.o \
 		$(DJVULIBS) \
+		cre.o \
+		$(CRENGINELIBS) \
 		-o kpdfview
 
 einkfb.o input.o: %.o: %.c
@@ -92,6 +105,9 @@ kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
+
+cre.o: %.o: %.cpp
+	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ $< -o $@ -lstdc++
 
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
@@ -112,6 +128,7 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
+	make -C $(CRENGINEDIR) clean
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -139,10 +156,19 @@ else
 endif
 	make -C $(DJVUDIR)/build
 
+$(CRENGINELIBS):
+	cd $(CRENGINEDIR) && cmake -D CR3_PNG=1 -D CR3_JPEG=1 .
+	cd $(CRENGINEDIR)/crengine && make 
+	cd $(CRENGINEDIR)/thirdparty/libjpeg && make
+	cd $(CRENGINEDIR)/thirdparty/chmlib && make
+	cd $(CRENGINEDIR)/thirdparty/antiword && make
+	cd $(CRENGINEDIR)/thirdparty/libpng && make
+	cd $(CRENGINEDIR)/thirdparty/zlib && make
+
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
