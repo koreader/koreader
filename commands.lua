@@ -62,8 +62,15 @@ Commands = {
 	size = 0
 }
 function Commands:add(keycode,modifier,keydescr,help,func)
-	local keydef = Keydef:new(keycode,modifier,keydescr)
-	self:_addImpl(keydef,help,func)
+	if type(keycode) == "table" then
+		for i=1,#keycode,1 do
+			local keydef = Keydef:new(keycode[i],modifier,keydescr)
+			self:_addImpl(keydef,help,func)
+		end
+	else
+		local keydef = Keydef:new(keycode,modifier,keydescr)
+		self:_addImpl(keydef,help,func)
+	end
 end
 function Commands:addGroup(keygroup,keys,help,func)
 	for _k,keydef in pairs(keys) do

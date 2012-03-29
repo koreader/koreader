@@ -32,14 +32,14 @@ ARM_CFLAGS:=-march=armv6
 # in that case.
 
 ifdef EMULATE_READER
-	CC:=$(HOSTCC)
+	CC:=$(HOSTCC) -g
 	CXX:=$(HOSTCXX)
 	EMULATE_READER_W?=824
 	EMULATE_READER_H?=1200
 	EMU_CFLAGS?=$(shell sdl-config --cflags)
 	EMU_CFLAGS+= -DEMULATE_READER \
 		     -DEMULATE_READER_W=$(EMULATE_READER_W) \
-		     -DEMULATE_READER_H=$(EMULATE_READER_H) 
+		     -DEMULATE_READER_H=$(EMULATE_READER_H)
 	EMU_LDFLAGS?=$(shell sdl-config --libs)
 else
 	CFLAGS+= $(ARM_CFLAGS)
@@ -150,7 +150,7 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
 
 $(DJVULIBS):
-	-mkdir $(DJVUDIR)/build 
+	-mkdir $(DJVUDIR)/build
 ifdef EMULATE_READER
 	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
 else
