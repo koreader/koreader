@@ -3,10 +3,13 @@ lua
 lua-*
 .reader.kpdfview.lua
 mupdf-thirdparty.zip
+djvulibre*
 kpdfview
 *.o
 
+kindlepdfviewer-*.zip
 
 /.cproject
 /.project
 /.reader.kpdfview
+

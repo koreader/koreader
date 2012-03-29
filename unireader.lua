@@ -34,9 +34,12 @@ UniReader = {
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
-	-- size of current page for current zoom level in pixels
+	-- cached tile size
 	fullwidth = 0,
 	fullheight = 0,
+	-- size of current page for current zoom level in pixels
+	cur_full_width = 0,
+	cur_full_height = 0,
 	offset_x = 0,
 	offset_y = 0,
 	min_offset_x = 0,
@@ -73,6 +76,7 @@ UniReader = {
 	pagehash = nil,
 
 	jump_stack = {},
+	highlight = {},
 	toc = nil,
 
 	bbox = {}, -- override getUsedBBox
@@ -85,14 +89,17 @@ function UniReader:new(o)
 	return o
 end
 
---[[
-	For a new specific reader,
-	you must always overwrite following two methods:
-
-	* self:open()
-
-	overwrite other methods if needed.
---]]
+----------------------------------------------------
+-- !!!!!!!!!!!!!!!!!!!!!!!!!
+--
+-- For a new specific reader,
+-- you must always overwrite following two methods:
+--
+-- * self:open()
+-- * self:init()
+--
+-- overwrite other methods if needed.
+----------------------------------------------------
 function UniReader:init()
 end
 
@@ -102,6 +109,22 @@ function UniReader:open(filename, password)
 	return false
 end
 
+----------------------------------------------------
+-- You need to overwrite following two methods if your
+-- reader supports highlight feature.
+----------------------------------------------------
+
+function UniReader:startHighLightMode()
+	return
+end
+
+function UniReader:highLightText()
+	return
+end
+
+function UniReader:toggleTextHighLight(word_list)
+	return
+end
 
 
 --[ following are default methods ]--
@@ -117,6 +140,9 @@ function UniReader:loadSettings(filename)
 
 		local jumpstack = self.settings:readSetting("jumpstack")
 		self.jump_stack = jumpstack or {}
+
+		local highlight = self.settings:readSetting("highlight")
+		self.highlight = highlight or {}
 
 		local bbox = self.settings:readSetting("bbox")
 		print("# bbox loaded "..dump(bbox))
@@ -186,7 +212,7 @@ function UniReader:drawOrCache(no, preCache)
 		-- TODO: error handling
 		return nil
 	end
-	local dc = self:setZoom(page)
+	local dc = self:setzoom(page, preCache)
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive.
@@ -291,7 +317,7 @@ function UniReader:clearCache()
 end
 
 -- set viewer state according to zoom state
-function UniReader:setZoom(page)
+function UniReader:setzoom(page, preCache)
 	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	print("# page::getSize "..pwidth.."*"..pheight);
@@ -421,6 +447,10 @@ function UniReader:setZoom(page)
 
 	dc:setRotate(self.globalrotate);
 	self.fullwidth, self.fullheight = page:getSize(dc)
+	if not preCache then -- save current page fullsize
+		self.cur_full_width = self.fullwidth
+		self.cur_full_height = self.fullheight
+	end
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
 	self.min_offset_y = fb.bb:getHeight() - self.fullheight
 	if(self.min_offset_x > 0) then
@@ -473,6 +503,12 @@ function UniReader:show(no)
 		"), src_off:("..offset_x..", "..offset_y.."), "..
 		"width:"..width..", height:"..height)
 	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
+
+	-- render highlights to page
+	if self.highlight[no] then
+		self:toggleTextHighLight(self.highlight[no])
+	end
+
 	if self.rcount == self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
@@ -692,10 +728,10 @@ function UniReader:showTOC()
 	local menu_items = {}
 	local filtered_toc = {}
 	-- build menu items
-	for _k,_v in ipairs(self.toc) do
+	for k,v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(_v.depth-1)..self:cleanUpTOCTitle(_v.title))
-		table.insert(filtered_toc,_v.page)
+		("        "):rep(v.depth-1)..self:cleanUpTOCTitle(v.title))
+		table.insert(filtered_toc,v.page)
 	end
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
@@ -712,9 +748,9 @@ end
 
 function UniReader:showJumpStack()
 	local menu_items = {}
-	for _k,_v in ipairs(self.jump_stack) do
+	for k,v in ipairs(self.jump_stack) do
 		table.insert(menu_items,
-			_v.datetime.." -> Page ".._v.page.." ".._v.notes)
+			v.datetime.." -> Page "..v.page.." "..v.notes)
 	end
 	jump_menu = SelectMenu:new{
 		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
@@ -727,6 +763,29 @@ function UniReader:showJumpStack()
 		self:goto(jump_item.page)
 	else
 		self:goto(self.pageno)
+	end
+end
+
+function UniReader:showHighLight()
+	local menu_items = {}
+	local highlight_dict = {}
+	-- build menu items
+	for k,v in pairs(self.highlight) do
+		if type(k) == "number" then
+			for k1,v1 in ipairs(v) do
+				table.insert(menu_items, v1.text)
+				table.insert(highlight_dict, {page=k, start=v1[1]})
+			end
+		end
+	end
+	toc_menu = SelectMenu:new{
+		menu_title = "HighLights",
+		item_array = menu_items,
+		no_item_msg = "No HighLight found.",
+	}
+	item_no = toc_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		self:goto(highlight_dict[item_no].page)
 	end
 end
 
@@ -810,6 +869,7 @@ function UniReader:inputLoop()
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
+		self.settings:savesetting("highlight", self.highlight)
 		self.settings:close()
 	end
 
@@ -976,7 +1036,19 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
 		end)
-	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
+	self.commands:add(KEY_N, nil, "N",
+		"start highlight mode",
+		function(unireader)
+			unireader:startHighLightMode()
+			unireader:goto(unireader.pageno)
+		end)
+	self.commands:add(KEY_N, MOD_SHIFT, "N",
+		"display all highlights",
+		function(unireader)
+			unireader:showHighLight()
+			unireader:goto(unireader.pageno)
+		end)
+	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
 		function(unireader)
 			keep_running = false
