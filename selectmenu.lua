@@ -210,6 +210,16 @@ function SelectMenu:addAllCommands()
 		end)
 end
 
+function SelectMenu:clearCommands()
+	self.commands = Commands:new{}
+
+	self.commands:add(KEY_BACK, nil, "",
+		"Exit menu",
+		function(sm)
+			return "break"
+		end)
+end
+
 ------------------------------------------------
 -- return the index of selected item
 ------------------------------------------------
@@ -244,6 +254,7 @@ function SelectMenu:choose(ypos, height)
 				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
 					self.no_item_msg, true)
 				self.markerdirty = false
+				self:clearCommands()
 			else
 				local c
 				for c = 1, self.perpage do
