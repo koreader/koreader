@@ -27,6 +27,12 @@ end
 function CREReader:goto(pos)
 	local pos = math.min(pos, self.doc:GetFullHeight())
 	pos = math.max(pos, 0)
+
+	-- add to jump_stack, distinguish jump from normal page turn
+	if self.pos and math.abs(self.pos - pos) > height then
+		self:addJump(self.pos)
+	end
+
 	self.doc:gotoPos(pos)
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
