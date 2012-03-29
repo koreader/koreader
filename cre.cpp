@@ -110,6 +110,66 @@ static int getFullHeight(lua_State *L) {
 	return 1;
 }
 
+/*
+ * helper function for getTableOfContent()
+ */
+static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
+	LVTocItem *toc_tmp = NULL;
+	int i = 0,
+		nr_child = toc->getChildCount();
+
+	for(i = 0; i < nr_child; i++)  {
+		toc_tmp = toc->getChild(i);
+		lua_pushnumber(L, (*count)++);
+
+		/* set subtable, Toc entry */
+		lua_newtable(L);
+		lua_pushstring(L, "page");
+		lua_pushnumber(L, toc_tmp->getY());
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "depth");
+		lua_pushnumber(L, toc_tmp->getLevel()); 
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "title");
+		lua_pushstring(L, UnicodeToLocal(toc_tmp->getName()).c_str());
+		lua_settable(L, -3);
+
+
+		/* set Toc entry to Toc table */
+		lua_settable(L, -3);
+
+		if (toc_tmp->getChildCount() > 0) {
+			walkTableOfContent(L, toc_tmp, count);
+		}
+	}
+	return 0;
+}
+
+/*
+ * Return a table like this:
+ * {
+ *		{page=12, depth=1, title="chapter1"},
+ *		{page=54, depth=1, title="chapter2"},
+ * }
+ *
+ * Warnning: not like pdf or djvu support, page here refers to the
+ * position(height) within the document, not the real page number.
+ *
+ */
+static int getTableOfContent(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	
+	LVTocItem * toc = doc->text_view->getToc();
+	int count = 0;
+
+	lua_newtable(L);
+	walkTableOfContent(L, toc, &count);
+
+	return 1;
+}
+
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -153,10 +213,10 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getCurrentPage", getCurrentPage},
 	{"getPos", getPos},
 	{"GetFullHeight", getFullHeight},
+	{"getTOC", getTableOfContent},
 	{"gotoPos", gotoPos},
 	{"gotoPage", gotoPage},
 	{"drawCurrentPage", drawCurrentPage},
-	//{"getTOC", getTableOfContent},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
