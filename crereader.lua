@@ -20,6 +20,10 @@ function CREReader:open(filename)
 	return true
 end
 
+function CREReader:setzoom(page, preCache)
+	return
+end
+
 function CREReader:goto(pos)
 	local pos = math.min(pos, self.doc:GetFullHeight())
 	pos = math.max(pos, 0)
@@ -44,8 +48,26 @@ function CREReader:redrawCurrentPage()
 	self:goto(self.pos)
 end
 
-function CREReader:getTocTitleByPage(page)
-	return ""
+-- used in UniReader:showMenu()
+function UniReader:_drawReadingInfo()
+	local ypos = height - 50
+	local load_percent = (self.pos / self.doc:GetFullHeight())
+
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+
+	ypos = ypos + 15
+	local face, fhash = Font:getFaceAndHash(22)
+	local cur_section = self:getTocTitleByPage(self.pos)
+	if cur_section ~= "" then
+		cur_section = "Section: "..cur_section
+	end
+	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
+		"Position: "..math.floor((load_percent*100)).."%"..
+		"    "..cur_section, true)
+
+	ypos = ypos + 15
+	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
+							5, 4, load_percent, 8)
 end
 
 function CREReader:nextView()

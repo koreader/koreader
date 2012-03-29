@@ -213,7 +213,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getCurrentPage", getCurrentPage},
 	{"getPos", getPos},
 	{"GetFullHeight", getFullHeight},
-	{"getTOC", getTableOfContent},
+	{"getToc", getTableOfContent},
 	{"gotoPos", gotoPos},
 	{"gotoPage", gotoPage},
 	{"drawCurrentPage", drawCurrentPage},

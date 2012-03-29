@@ -528,7 +528,7 @@ function UniReader:addJump(pageno, notes)
 	local jump_item = nil
 	local notes_to_add = notes
 	if not notes_to_add then
-		-- no notes given, auto generate from TOC entry
+		-- no notes given, auto generate from Toc entry
 		notes_to_add = self:getTocTitleByPage(self.pageno)
 		if notes_to_add ~= "" then
 			notes_to_add = "in "..notes_to_add
@@ -541,7 +541,7 @@ function UniReader:addJump(pageno, notes)
 			table.remove(self.jump_stack, _t)
 			-- if original notes is not empty, probably defined by users,
 			-- we use the original notes to overwrite auto generated notes
-			-- from TOC entry
+			-- from Toc entry
 			if jump_item.notes ~= "" then
 				notes_to_add = jump_item.notes
 			end
@@ -691,18 +691,18 @@ function UniReader:screenRotate(orien)
 	self:goto(self.pageno)
 end
 
-function UniReader:cleanUpTOCTitle(title)
+function UniReader:cleanUpTocTitle(title)
 	return title:gsub("\13", "")
 end
 
-function UniReader:fillTOC()
-	self.toc = self.doc:getTOC()
+function UniReader:fillToc()
+	self.toc = self.doc:getToc()
 end
 
 function UniReader:getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
-		self:fillTOC()
+		self:fillToc()
 	end
 
 	-- no table of content
@@ -717,20 +717,20 @@ function UniReader:getTocTitleByPage(pageno)
 		end
 		pre_entry = _v
 	end
-	return self:cleanUpTOCTitle(pre_entry.title)
+	return self:cleanUpTocTitle(pre_entry.title)
 end
 
-function UniReader:showTOC()
+function UniReader:showToc()
 	if not self.toc then
 		-- build toc when needed.
-		self:fillTOC()
+		self:fillToc()
 	end
 	local menu_items = {}
 	local filtered_toc = {}
 	-- build menu items
 	for k,v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(v.depth-1)..self:cleanUpTOCTitle(v.title))
+		("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
 		table.insert(filtered_toc,v.page)
 	end
 	toc_menu = SelectMenu:new{
@@ -789,7 +789,8 @@ function UniReader:showHighLight()
 	end
 end
 
-function UniReader:showMenu()
+-- used in UniReader:showMenu()
+function UniReader:_drawReadingInfo()
 	local ypos = height - 50
 	local load_percent = (self.pageno / self.doc:getPages())
 
@@ -808,6 +809,11 @@ function UniReader:showMenu()
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
+end
+
+function UniReader:showMenu()
+	self:_drawReadingInfo()
+
 	fb:refresh(1)
 	while 1 do
 		local ev = input.waitForEvent()
@@ -1004,7 +1010,7 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content",
 		function(unireader)
-			unireader:showTOC()
+			unireader:showToc()
 		end)
 	self.commands:add(KEY_B,nil,"B",
 		"show jump stack",
