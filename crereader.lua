@@ -58,8 +58,8 @@ function CREReader:redrawCurrentPage()
 	self:goto(self.pos)
 end
 
--- used in UniReader:showMenu()
-function UniReader:_drawReadingInfo()
+-- used in CREReader:showMenu()
+function CREReader:_drawReadingInfo()
 	local ypos = height - 50
 	local load_percent = (self.pos / self.doc:GetFullHeight())
 
