@@ -124,4 +124,17 @@ function CREReader:adjustCreReaderCommands()
 			cr:redrawCurrentPage()
 		end
 	)
+	local numeric_keydefs = {}
+	for i=1,10 do 
+		numeric_keydefs[i]=Keydef:new(KEY_1+i-1, nil, tostring(i%10)) 
+	end
+	self.commands:addGroup("[1..0]", numeric_keydefs,
+		"jump to <key>*10% of document",
+		function(cr, keydef)
+			print('jump to position: '..
+				math.floor(cr.doc:GetFullHeight()*(keydef.keycode-KEY_1)/9)..
+				'/'..cr.doc:GetFullHeight())
+			cr:goto(math.floor(cr.doc:GetFullHeight()*(keydef.keycode-KEY_1)/9))
+		end
+	)
 end
