@@ -6,6 +6,10 @@ CREReader = UniReader:new{
 	pan_overlap_vertical = 0,
 }
 
+function CREReader:init()
+	self:adjustCreReaderCommands()
+end
+
 -- open a CREngine supported file and its settings store
 function CREReader:open(filename)
 	local ok
@@ -82,4 +86,25 @@ end
 
 function CREReader:prevView()
 	return self.pos - height + self.pan_overlap_vertical
+end
+
+function CREReader:adjustCreReaderCommands()
+	self.commands:del(KEY_G, nil, "G")
+	self.commands:del(KEY_J, nil, "J")
+	self.commands:del(KEY_K, nil, "K")
+	self.commands:del(KEY_Z, nil, "Z")
+	self.commands:del(KEY_Z, MOD_SHIFT, "Z")
+	self.commands:del(KEY_Z, MOD_ALT, "Z")
+	self.commands:del(KEY_A, nil, "A")
+	self.commands:del(KEY_A, MOD_SHIFT, "A")
+	self.commands:del(KEY_A, MOD_ALT, "A")
+	self.commands:del(KEY_S, nil, "S")
+	self.commands:del(KEY_S, MOD_SHIFT, "S")
+	self.commands:del(KEY_S, MOD_ALT, "S")
+	self.commands:del(KEY_D, nil, "D")
+	self.commands:del(KEY_D, MOD_SHIFT, "D")
+	self.commands:del(KEY_D, MOD_ALT, "D")
+	self.commands:del(KEY_F, nil, "F")
+	self.commands:del(KEY_F, MOD_SHIFT, "F")
+	self.commands:del(KEY_F, MOD_ALT, "F")
 end
