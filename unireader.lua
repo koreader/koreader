@@ -101,6 +101,8 @@ end
 -- overwrite other methods if needed.
 ----------------------------------------------------
 function UniReader:init()
+	-- initialize commands
+	self:addAllCommands()
 end
 
 -- open a file and its settings store
@@ -133,8 +135,6 @@ function UniReader:initGlobalSettings(settings)
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
 	end
-	-- initialize commands
-	self:addAllCommands()
 
 	local cache_max_memsize = settings:readSetting("cache_max_memsize")
 	if cache_max_memsize then

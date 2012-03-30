@@ -7,6 +7,7 @@ CREReader = UniReader:new{
 }
 
 function CREReader:init()
+	self:addAllCommands()
 	self:adjustCreReaderCommands()
 end
 
