@@ -88,6 +88,24 @@ function Commands:addGroup(keygroup,keys,help,func)
 	end
 end
 
+function Commands:del(keycode, modifier, keydescr)
+	local keydef = nil
+
+	if not keydescr then
+		for k,v in pairs(self.map) do
+			if v.keydef.keycode == keycode 
+			and v.keydef.modifier == modifier then
+				keydef = k
+				break
+			end
+		end -- EOF for
+	else
+		keydef = Keydef:new(keycode, modifier, keydescr)
+	end -- EOF if
+
+	self.map[keydef] = nil
+end
+
 function Commands:_addImpl(keydef,help,func,keygroup)
 	if keydef.modifier==MOD_ANY then
 		self:addGroup(keygroup or keydef.descr,{Keydef:new(keydef.keycode,nil), Keydef:new(keydef.keycode,MOD_SHIFT), Keydef:new(keydef.keycode,MOD_ALT)},help,func)
