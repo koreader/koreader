@@ -128,6 +128,24 @@ end
 
 
 --[ following are default methods ]--
+function UniReader:initGlobalSettings(settings)
+	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
+	if pan_overlap_vertical then
+		self.pan_overlap_vertical = pan_overlap_vertical
+	end
+	-- initialize commands
+	self:addAllCommands()
+
+	local cache_max_memsize = settings:readSetting("cache_max_memsize")
+	if cache_max_memsize then
+		self.cache_max_memsize = cache_max_memsize
+	end
+
+	local cache_max_ttl = settings:readSetting("cache_max_ttl")
+	if cache_max_ttl then
+		self.cache_max_ttl = cache_max_ttl
+	end
+end
 
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
@@ -156,23 +174,12 @@ function UniReader:loadSettings(filename)
 	return false
 end
 
-function UniReader:initGlobalSettings(settings)
-	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
-	if pan_overlap_vertical then
-		self.pan_overlap_vertical = pan_overlap_vertical
-	end
-	-- initialize commands
-	self:addAllCommands()
+function UniReader:getLastPageOrPos()
+	return self.settings:readSetting("last_page") or 1
+end
 
-	local cache_max_memsize = settings:readSetting("cache_max_memsize")
-	if cache_max_memsize then
-		self.cache_max_memsize = cache_max_memsize
-	end
-
-	local cache_max_ttl = settings:readSetting("cache_max_ttl")
-	if cache_max_ttl then
-		self.cache_max_ttl = cache_max_ttl
-	end
+function UniReader:saveLastPageOrPos()
+	self.settings:savesetting("last_page", self.pageno)
 end
 
 -- guarantee that we have enough memory in cache
@@ -869,7 +876,7 @@ function UniReader:inputLoop()
 		self.doc:close()
 	end
 	if self.settings ~= nil then
-		self.settings:savesetting("last_page", self.pageno)
+		self:saveLastPageOrPos()
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
 		self.settings:savesetting("bbox", self.bbox)
