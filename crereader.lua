@@ -25,8 +25,19 @@ function CREReader:open(filename)
 	return true
 end
 
+function CREReader:getLastPageOrPos()
+	return self.settings:readSetting("last_pos") or 0
+end
+
+function CREReader:saveLastPageOrPos()
+	self.settings:savesetting("last_pos", self.pos)
+end
+
 function CREReader:setzoom(page, preCache)
 	return
+end
+
+function CREReader:addJump(pos, notes)
 end
 
 function CREReader:goto(pos)
