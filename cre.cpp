@@ -60,24 +60,6 @@ static int closeDocument(lua_State *L) {
 	return 0;
 }
 
-static int gotoPage(lua_State *L) {
-	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	int pageno = luaL_checkint(L, 2);
-
-	doc->text_view->goToPage(pageno);
-
-	return 0;
-}
-
-static int gotoPos(lua_State *L) {
-	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	int pos = luaL_checkint(L, 2);
-
-	doc->text_view->SetPos(pos);
-
-	return 0;
-}
-
 static int getNumberOfPages(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
@@ -170,6 +152,35 @@ static int getTableOfContent(lua_State *L) {
 	return 1;
 }
 
+static int gotoPage(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int pageno = luaL_checkint(L, 2);
+
+	doc->text_view->goToPage(pageno);
+
+	return 0;
+}
+
+static int gotoPos(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int pos = luaL_checkint(L, 2);
+
+	doc->text_view->SetPos(pos);
+
+	return 0;
+}
+
+/* zoom font by given delta and return zoomed font size */
+static int zoomFont(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int delta = luaL_checkint(L, 2);
+
+	doc->text_view->ZoomFont(delta);
+
+	lua_pushnumber(L, doc->text_view->getFontSize());
+	return 1;
+}
+
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -214,8 +225,9 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPos", getPos},
 	{"GetFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
-	{"gotoPos", gotoPos},
 	{"gotoPage", gotoPage},
+	{"gotoPos", gotoPos},
+	{"zoomFont", zoomFont},
 	{"drawCurrentPage", drawCurrentPage},
 	{"close", closeDocument},
 	{"__gc", closeDocument},

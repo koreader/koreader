@@ -89,6 +89,7 @@ function CREReader:prevView()
 end
 
 function CREReader:adjustCreReaderCommands()
+	-- delete commands
 	self.commands:del(KEY_G, nil, "G")
 	self.commands:del(KEY_J, nil, "J")
 	self.commands:del(KEY_K, nil, "K")
@@ -107,4 +108,20 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_F, nil, "F")
 	self.commands:del(KEY_F, MOD_SHIFT, "F")
 	self.commands:del(KEY_F, MOD_ALT, "F")
+
+	-- overwrite commands
+	self.commands:add(KEY_PGFWD, MOD_SHIFT_OR_ALT, ">",
+		"increase font size",
+		function(cr)
+			cr.doc:zoomFont(1)
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_PGBCK, MOD_SHIFT_OR_ALT, "<",
+		"decrease font size",
+		function(cr)
+			cr.doc:zoomFont(-1)
+			cr:redrawCurrentPage()
+		end
+	)
 end
