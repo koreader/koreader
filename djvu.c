@@ -71,7 +71,7 @@ static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
 
 static int openDocument(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
-	/*const char *password = luaL_checkstring(L, 2);*/
+	int cache_size = luaL_checkint(L, 2);
 
 	DjvuDocument *doc = (DjvuDocument*) lua_newuserdata(L, sizeof(DjvuDocument));
 	luaL_getmetatable(L, "djvudocument");
@@ -81,6 +81,9 @@ static int openDocument(lua_State *L) {
 	if (! doc->context) {
 		return luaL_error(L, "cannot create context.");
 	}
+
+	printf("## cache_size = %d\n", cache_size);
+	ddjvu_cache_set_size(doc->context, cache_size);
 
 	doc->doc_ref = ddjvu_document_create_by_filename_utf8(doc->context, filename, TRUE);
 	while (! ddjvu_document_decoding_done(doc->doc_ref))
@@ -455,14 +458,6 @@ static int getCacheSize(lua_State *L) {
 	return 1;
 }
 
-static int setCacheSize(lua_State *L) {
-	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
-	int size = luaL_checkint(L, 2);
-	printf("## ddjvu_cache_set_size = %d\n", size);
-	ddjvu_cache_set_size(doc->context, size);
-	return 0;
-}
-
 static int cleanCache(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	printf("## ddjvu_cache_clear\n");
@@ -482,7 +477,6 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"getPageText", getPageText},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
-	{"setCacheSize", setCacheSize},
 	{"cleanCache", cleanCache},
 	{"__gc", closeDocument},
 	{NULL, NULL}
