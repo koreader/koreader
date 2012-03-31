@@ -817,15 +817,20 @@ function UniReader:showMenu()
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
 		"Page: "..self.pageno.."/"..self.doc:getPages()..
-		"    "..cur_section..
-		" Memory: "..
-		math.ceil( self.cache_current_memsize / 1024 ).."/"..( self.cache_max_memsize / 1024 )..
-		" "..( self.cache_item_max_pixels / 1024 ).." "..( self.doc:getCacheSize() / 1024 ).." k",
-	true)
+		"    "..cur_section, true)
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
+
+	-- display memory on top of page
+	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
+		"Memory: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..( self.cache_max_memsize / 1024 )..
+		" "..( self.cache_item_max_pixels / 1024 ).." "..( self.cache_document_size / 1024 ).." k",
+	true)
+
 	fb:refresh(1)
 	while 1 do
 		local ev = input.waitForEvent()
