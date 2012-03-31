@@ -150,6 +150,16 @@ static int einkUpdate(lua_State *L) {
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
 #else
 	// for now, we only do fullscreen blits in emulation mode
+	if (fxtype == 0) {
+		// simmulate a full screen update in eink screen
+		if(SDL_MUSTLOCK(fb->screen) && (SDL_LockSurface(fb->screen) < 0)) {
+			return luaL_error(L, "can't lock surface.");
+		}
+		SDL_FillRect(fb->screen, NULL, 0x000000);
+		if(SDL_MUSTLOCK(fb->screen)) SDL_UnlockSurface(fb->screen);
+		SDL_Flip(fb->screen);
+	}
+
 	if(SDL_MUSTLOCK(fb->screen) && (SDL_LockSurface(fb->screen) < 0)) {
 		return luaL_error(L, "can't lock surface.");
 	}
