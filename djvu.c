@@ -71,7 +71,7 @@ static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
 
 static int openDocument(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
-	int cache_size = luaL_checkint(L, 2);
+	int cache_size = luaL_optint(L, 2, 10 << 20);
 
 	DjvuDocument *doc = (DjvuDocument*) lua_newuserdata(L, sizeof(DjvuDocument));
 	luaL_getmetatable(L, "djvudocument");
@@ -83,7 +83,7 @@ static int openDocument(lua_State *L) {
 	}
 
 	printf("## cache_size = %d\n", cache_size);
-	ddjvu_cache_set_size(doc->context, cache_size);
+	ddjvu_cache_set_size(doc->context, (unsigned long)cache_size);
 
 	doc->doc_ref = ddjvu_document_create_by_filename_utf8(doc->context, filename, TRUE);
 	while (! ddjvu_document_decoding_done(doc->doc_ref))
