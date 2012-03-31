@@ -424,6 +424,17 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
+static int getCacheSize(lua_State *L) {
+	printf("## mupdf getCacheSize = %d\n", msize);
+	lua_pushnumber(L, msize);
+	return 1;
+}
+
+static int cleanCache(lua_State *L) {
+	printf("## mupdf cleanCache NOP\n");
+	return 0;
+}
+
 static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
@@ -436,6 +447,8 @@ static const struct luaL_Reg pdfdocument_meth[] = {
 	{"getPages", getNumberOfPages},
 	{"getTOC", getTableOfContent},
 	{"close", closeDocument},
+	{"getCacheSize", getCacheSize},
+	{"cleanCache", cleanCache},
 	{"__gc", closeDocument},
 	{NULL, NULL}
 };

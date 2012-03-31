@@ -823,8 +823,9 @@ function UniReader:showMenu()
 	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
 		"Memory: "..
-		math.ceil( self.cache_current_memsize / 1024 ).."/"..( self.cache_max_memsize / 1024 )..
-		" "..( self.cache_item_max_pixels / 1024 ).." "..( self.cache_document_size / 1024 ).." k",
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
+		" "..math.ceil( self.cache_item_max_pixels / 1024 ).." "..
+		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
 	true)
 
 	fb:refresh(1)
