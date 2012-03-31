@@ -447,6 +447,14 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
+static int getCacheSize(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	unsigned long size = ddjvu_cache_get_size(doc->context);
+	printf("ddjvu_cache_get_size = %d\n", size);
+	lua_pushnumber(L, size);
+	return 1;
+}
+
 static const struct luaL_Reg djvu_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
@@ -458,6 +466,7 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"getTOC", getTableOfContent},
 	{"getPageText", getPageText},
 	{"close", closeDocument},
+	{"getCacheSize", getCacheSize},
 	{"__gc", closeDocument},
 	{NULL, NULL}
 };
