@@ -3,6 +3,7 @@ require "inputbox"
 
 CREReader = UniReader:new{
 	pos = 0,
+	percent = 0,
 	pan_overlap_vertical = 0,
 }
 
@@ -26,11 +27,16 @@ function CREReader:open(filename)
 end
 
 function CREReader:getLastPageOrPos()
-	return self.settings:readSetting("last_pos") or 0
+	local last_percent = self.settings:readSetting("last_percent") 
+	if last_percent then
+		return (last_percent * self.doc:getFullHeight()) / 10000 
+	else
+		return 0
+	end
 end
 
 function CREReader:saveLastPageOrPos()
-	self.settings:savesetting("last_pos", self.pos)
+	self.settings:savesetting("last_percent", self.percent)
 end
 
 function CREReader:setzoom(page, preCache)
@@ -41,12 +47,12 @@ function CREReader:addJump(pos, notes)
 end
 
 function CREReader:goto(pos)
-	local pos = math.min(pos, self.doc:GetFullHeight())
+	local pos = math.min(pos, self.doc:getFullHeight())
 	pos = math.max(pos, 0)
 
 	-- add to jump_stack, distinguish jump from normal page turn
 	if self.pos and math.abs(self.pos - pos) > height then
-		self:addJump(self.pos)
+		self:addJump(self.percent)
 	end
 
 	self.doc:gotoPos(pos)
@@ -64,6 +70,7 @@ function CREReader:goto(pos)
 
 	self.pos = pos
 	self.pageno = self.doc:getCurrentPage()
+	self.percent = self.doc:getPosPercent()
 end
 
 function CREReader:redrawCurrentPage()
@@ -73,7 +80,7 @@ end
 -- used in CREReader:showMenu()
 function CREReader:_drawReadingInfo()
 	local ypos = height - 50
-	local load_percent = (self.pos / self.doc:GetFullHeight())
+	local load_percent = self.percent/100
 
 	fb.bb:paintRect(0, ypos, width, 50, 0)
 
@@ -84,8 +91,7 @@ function CREReader:_drawReadingInfo()
 		cur_section = "Section: "..cur_section
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
-		"Position: "..math.floor((load_percent*100)).."%"..
-		"    "..cur_section, true)
+		"Position: "..load_percent.."%".."    "..cur_section, true)
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
@@ -144,9 +150,9 @@ function CREReader:adjustCreReaderCommands()
 		"jump to <key>*10% of document",
 		function(cr, keydef)
 			print('jump to position: '..
-				math.floor(cr.doc:GetFullHeight()*(keydef.keycode-KEY_1)/9)..
-				'/'..cr.doc:GetFullHeight())
-			cr:goto(math.floor(cr.doc:GetFullHeight()*(keydef.keycode-KEY_1)/9))
+				math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
+				'/'..cr.doc:getFullHeight())
+			cr:goto(math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
 		end
 	)
 end

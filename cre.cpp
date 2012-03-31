@@ -84,6 +84,14 @@ static int getPos(lua_State *L) {
 	return 1;
 }
 
+static int getPosPercent(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_pushinteger(L, doc->text_view->getPosPercent());
+
+	return 1;
+}
+
 static int getFullHeight(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
@@ -161,6 +169,15 @@ static int gotoPage(lua_State *L) {
 	return 0;
 }
 
+static int gotoPercent(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int percent = luaL_checkint(L, 2);
+
+	doc->text_view->SetPos(percent * doc->text_view->GetFullHeight() / 10000);
+
+	return 0;
+}
+
 static int gotoPos(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	int pos = luaL_checkint(L, 2);
@@ -223,9 +240,11 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPages", getNumberOfPages},
 	{"getCurrentPage", getCurrentPage},
 	{"getPos", getPos},
-	{"GetFullHeight", getFullHeight},
+	{"getPosPercent", getPosPercent},
+	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
 	{"gotoPage", gotoPage},
+	{"gotoPercent", gotoPercent},
 	{"gotoPos", gotoPos},
 	{"zoomFont", zoomFont},
 	{"drawCurrentPage", drawCurrentPage},
