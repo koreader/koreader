@@ -135,7 +135,7 @@ $(DJVULIBS):
 ifdef EMULATE_READER
 	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST)
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST) --disable-xmltools --disable-desktopfiles
 endif
 	make -C $(DJVUDIR)/build
 
