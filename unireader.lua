@@ -72,6 +72,8 @@ UniReader = {
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+	-- renderer cache size
+	cache_document_size = 1024*1024*8, -- FIXME random, needs testing
 
 	pagehash = nil,
 
@@ -134,6 +136,11 @@ function UniReader:getCacheSize()
 	return -1
 end
 
+function UniReader:setCacheSize(size)
+	return
+end
+
+
 --[ following are default methods ]--
 
 function UniReader:loadSettings(filename)
@@ -157,6 +164,8 @@ function UniReader:loadSettings(filename)
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
+
+		self.doc:setCacheSize( self.cache_document_size )
 
 		return true
 	end

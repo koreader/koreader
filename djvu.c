@@ -455,6 +455,14 @@ static int getCacheSize(lua_State *L) {
 	return 1;
 }
 
+static int setCacheSize(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	int size = luaL_checkint(L, 2);
+	printf("ddjvu_cache_set_size = %d\n", size);
+	ddjvu_cache_set_size(doc->context, size);
+	return 0;
+}
+
 static const struct luaL_Reg djvu_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
@@ -467,6 +475,7 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"getPageText", getPageText},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
+	{"setCacheSize", setCacheSize},
 	{"__gc", closeDocument},
 	{NULL, NULL}
 };
