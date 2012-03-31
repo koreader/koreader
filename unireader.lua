@@ -67,7 +67,6 @@ UniReader = {
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
-	cache_item_max_pixels = 1024*1024*2, -- max. size of rendered tiles
 	cache_max_ttl = 20, -- time to live
 	-- tile cache state:
 	cache_current_memsize = 0,
@@ -814,7 +813,6 @@ function UniReader:showMenu()
 	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
 		"Memory: "..
 		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
-		" "..math.ceil( self.cache_item_max_pixels / 1024 ).." "..
 		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
 	true)
 
