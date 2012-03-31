@@ -450,7 +450,7 @@ static int drawPage(lua_State *L) {
 static int getCacheSize(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	unsigned long size = ddjvu_cache_get_size(doc->context);
-	printf("ddjvu_cache_get_size = %d\n", size);
+	printf("## ddjvu_cache_get_size = %d\n", size);
 	lua_pushnumber(L, size);
 	return 1;
 }
@@ -458,8 +458,15 @@ static int getCacheSize(lua_State *L) {
 static int setCacheSize(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int size = luaL_checkint(L, 2);
-	printf("ddjvu_cache_set_size = %d\n", size);
+	printf("## ddjvu_cache_set_size = %d\n", size);
 	ddjvu_cache_set_size(doc->context, size);
+	return 0;
+}
+
+static int cleanCache(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	printf("## ddjvu_cache_clear\n");
+	ddjvu_cache_clear(doc->context);
 	return 0;
 }
 
@@ -476,6 +483,7 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
 	{"setCacheSize", setCacheSize},
+	{"cleanCache", cleanCache},
 	{"__gc", closeDocument},
 	{NULL, NULL}
 };

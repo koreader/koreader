@@ -140,6 +140,10 @@ function UniReader:setCacheSize(size)
 	return
 end
 
+function UniReader:cleanCache()
+	return
+end
+
 
 --[ following are default methods ]--
 
@@ -827,6 +831,8 @@ function UniReader:showMenu()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_BACK or ev.code == KEY_MENU then
 				return
+			elseif ev.code == KEY_C then
+				self.doc:cleanCache()
 			end
 		end
 	end
