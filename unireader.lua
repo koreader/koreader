@@ -819,7 +819,11 @@ function UniReader:showMenu()
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
 		"Page: "..self.pageno.."/"..self.doc:getPages()..
-		"    "..cur_section.." Memory: "..( self.cache_max_memsize / 1024 ).." "..( self.cache_item_max_pixels / 1024 ).." "..( self.doc:getCacheSize() / 1024 ).." k", true)
+		"    "..cur_section..
+		" Memory: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..( self.cache_max_memsize / 1024 )..
+		" "..( self.cache_item_max_pixels / 1024 ).." "..( self.doc:getCacheSize() / 1024 ).." k",
+	true)
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
