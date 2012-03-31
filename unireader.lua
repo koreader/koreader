@@ -72,6 +72,8 @@ UniReader = {
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+	-- renderer cache size
+	cache_document_size = 1024*1024*8, -- FIXME random, needs testing
 
 	pagehash = nil,
 
@@ -105,7 +107,7 @@ end
 
 -- open a file and its settings store
 -- tips: you can use self:loadSettings in open() method.
-function UniReader:open(filename, password)
+function UniReader:open(filename, cache_size)
 	return false
 end
 
@@ -126,12 +128,24 @@ function UniReader:toggleTextHighLight(word_list)
 	return
 end
 
+----------------------------------------------------
+-- renderer memory
+----------------------------------------------------
+
+function UniReader:getCacheSize()
+	return -1
+end
+
+function UniReader:cleanCache()
+	return
+end
+
 
 --[ following are default methods ]--
 
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename)
+		self.settings = DocSettings:open(filename,self.cache_document_size)
 
 		local gamma = self.settings:readSetting("gamma")
 		if gamma then
@@ -804,6 +818,15 @@ function UniReader:showMenu()
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
+
+	-- display memory on top of page
+	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
+		"Memory: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..( self.cache_max_memsize / 1024 )..
+		" "..( self.cache_item_max_pixels / 1024 ).." "..( self.cache_document_size / 1024 ).." k",
+	true)
+
 	fb:refresh(1)
 	while 1 do
 		local ev = input.waitForEvent()
@@ -811,6 +834,8 @@ function UniReader:showMenu()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_BACK or ev.code == KEY_MENU then
 				return
+			elseif ev.code == KEY_C then
+				self.doc:cleanCache()
 			end
 		end
 	end

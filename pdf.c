@@ -164,16 +164,16 @@ fz_alloc_context my_alloc_default =
 
 static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
-	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
+	int cache_size = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
 	char buf[15];
-	printf("cachesize: %s\n",readable_fs(cachesize,buf));
+	printf("## cache_size: %s\n",readable_fs(cache_size,buf));
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(&my_alloc_default, NULL, cachesize);
+	doc->context = fz_new_context(&my_alloc_default, NULL, cache_size);
 
 	fz_try(doc->context) {
 		doc->xref = fz_open_document(doc->context, filename);

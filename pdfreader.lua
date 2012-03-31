@@ -8,7 +8,7 @@ function PDFReader:open(filename)
 	-- muPDF manages its own cache, set second parameter
 	-- to the maximum size you want it to grow
 	local ok
-	ok, self.doc = pcall(pdf.openDocument, filename, 64*1024*1024)
+	ok, self.doc = pcall(pdf.openDocument, filename, self.cache_document_size)
 	if not ok then
 		return false, self.doc -- will contain error message
 	end
