@@ -136,10 +136,6 @@ function UniReader:getCacheSize()
 	return -1
 end
 
-function UniReader:setCacheSize(size)
-	return
-end
-
 function UniReader:cleanCache()
 	return
 end
