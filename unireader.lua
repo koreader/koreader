@@ -173,6 +173,11 @@ function UniReader:initGlobalSettings(settings)
 	if cache_max_ttl then
 		self.cache_max_ttl = cache_max_ttl
 	end
+
+	local rcountmax = settings:readSetting("partial_refresh_count")
+	if rcountmax then
+		self.rcountmax = rcountmax
+	end
 end
 
 -- guarantee that we have enough memory in cache
@@ -509,7 +514,7 @@ function UniReader:show(no)
 		self:toggleTextHighLight(self.highlight[no])
 	end
 
-	if self.rcount == self.rcountmax then
+	if self.rcount >= self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
 		fb:refresh(0)
