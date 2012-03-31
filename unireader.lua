@@ -1049,6 +1049,12 @@ function UniReader:addAllCommands()
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
 		end)
+	self.commands:add(KEY_R, MOD_SHIFT, "R",
+		"manual full screen refresh",
+		function(unireader)
+			unireader.rcount = 1
+			fb:refresh(0)
+		end)
 	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
 		function(unireader)
