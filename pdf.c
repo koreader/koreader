@@ -166,7 +166,7 @@ static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
 	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
 	char buf[15];
-	printf("cachesize: %s\n",readable_fs(cachesize,buf));
+	printf("## cachesize: %s\n",readable_fs(cachesize,buf));
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 

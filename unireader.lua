@@ -107,7 +107,7 @@ end
 
 -- open a file and its settings store
 -- tips: you can use self:loadSettings in open() method.
-function UniReader:open(filename, password)
+function UniReader:open(filename, cache_size)
 	return false
 end
 
@@ -149,7 +149,7 @@ end
 
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename)
+		self.settings = DocSettings:open(filename,self.cache_document_size)
 
 		local gamma = self.settings:readSetting("gamma")
 		if gamma then
@@ -168,8 +168,6 @@ function UniReader:loadSettings(filename)
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
-
-		self.doc:setCacheSize( self.cache_document_size )
 
 		return true
 	end
