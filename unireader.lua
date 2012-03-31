@@ -210,6 +210,7 @@ function UniReader:cacheClaim(size)
 			else
 				-- cache slot is at end of life, so kick it out
 				self.cache_current_memsize = self.cache_current_memsize - self.cache[k].size
+				self.cache[k].bb:free()
 				self.cache[k] = nil
 			end
 		end
@@ -805,13 +806,22 @@ function UniReader:showHighLight()
 end
 
 function UniReader:showMenu()
-	local ypos = height - 50
 	local load_percent = (self.pageno / self.doc:getPages())
-
-	fb.bb:paintRect(0, ypos, width, 50, 0)
-
-	ypos = ypos + 15
 	local face, fhash = Font:getFaceAndHash(22)
+
+	-- display memory on top of page
+	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
+		"Memory: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
+		" "..math.ceil( self.cache_item_max_pixels / 1024 ).." "..
+		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
+	true)
+
+	-- display reading progress on bottom of page
+	local ypos = height - 50
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+	ypos = ypos + 15
 	local cur_section = self:getTOCTitleByPage(self.pageno)
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
@@ -823,15 +833,6 @@ function UniReader:showMenu()
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
-
-	-- display memory on top of page
-	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
-	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
-		"Memory: "..
-		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
-		" "..math.ceil( self.cache_item_max_pixels / 1024 ).." "..
-		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
-	true)
 
 	fb:refresh(1)
 	while 1 do
