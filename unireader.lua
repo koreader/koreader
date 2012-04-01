@@ -67,11 +67,12 @@ UniReader = {
 
 	-- tile cache configuration:
 	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
-	cache_item_max_pixels = 1024*1024*2, -- max. size of rendered tiles
 	cache_max_ttl = 20, -- time to live
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
+	-- renderer cache size
+	cache_document_size = 1024*1024*8, -- FIXME random, needs testing
 
 	pagehash = nil,
 
@@ -107,7 +108,7 @@ end
 
 -- open a file and its settings store
 -- tips: you can use self:loadSettings in open() method.
-function UniReader:open(filename, password)
+function UniReader:open(filename, cache_size)
 	return false
 end
 
@@ -128,6 +129,18 @@ function UniReader:toggleTextHighLight(word_list)
 	return
 end
 
+----------------------------------------------------
+-- renderer memory
+----------------------------------------------------
+
+function UniReader:getCacheSize()
+	return -1
+end
+
+function UniReader:cleanCache()
+	return
+end
+
 
 --[ following are default methods ]--
 function UniReader:initGlobalSettings(settings)
@@ -145,11 +158,16 @@ function UniReader:initGlobalSettings(settings)
 	if cache_max_ttl then
 		self.cache_max_ttl = cache_max_ttl
 	end
+
+	local rcountmax = settings:readSetting("partial_refresh_count")
+	if rcountmax then
+		self.rcountmax = rcountmax
+	end
 end
 
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename)
+		self.settings = DocSettings:open(filename,self.cache_document_size)
 
 		local gamma = self.settings:readSetting("gamma")
 		if gamma then
@@ -198,6 +216,7 @@ function UniReader:cacheClaim(size)
 			else
 				-- cache slot is at end of life, so kick it out
 				self.cache_current_memsize = self.cache_current_memsize - self.cache[k].size
+				self.cache[k].bb:free()
 				self.cache[k] = nil
 			end
 		end
@@ -516,7 +535,7 @@ function UniReader:show(no)
 		self:toggleTextHighLight(self.highlight[no])
 	end
 
-	if self.rcount == self.rcountmax then
+	if self.rcount >= self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
 		fb:refresh(0)
@@ -800,11 +819,20 @@ end
 function UniReader:_drawReadingInfo()
 	local ypos = height - 50
 	local load_percent = (self.pageno / self.doc:getPages())
-
-	fb.bb:paintRect(0, ypos, width, 50, 0)
-
-	ypos = ypos + 15
 	local face, fhash = Font:getFaceAndHash(22)
+
+	-- display memory on top of page
+	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face, fhash,
+		"Memory: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
+		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
+	true)
+
+	-- display reading progress on bottom of page
+	local ypos = height - 50
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+	ypos = ypos + 15
 	local cur_section = self:getTocTitleByPage(self.pageno)
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
@@ -828,6 +856,8 @@ function UniReader:showMenu()
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_BACK or ev.code == KEY_MENU then
 				return
+			elseif ev.code == KEY_C then
+				self.doc:cleanCache()
 			end
 		end
 	end
@@ -1060,6 +1090,12 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
+		end)
+	self.commands:add(KEY_R, MOD_SHIFT, "R",
+		"manual full screen refresh",
+		function(unireader)
+			unireader.rcount = 1
+			fb:refresh(0)
 		end)
 	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",

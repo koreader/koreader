@@ -6,7 +6,7 @@ DJVUReader = UniReader:new{}
 -- DJVU does not support password yet
 function DJVUReader:open(filename)
 	local ok
-	ok, self.doc = pcall(djvu.openDocument, filename)
+	ok, self.doc = pcall(djvu.openDocument, filename, self.cache_document_size)
 	if not ok then
 		return ok, self.doc -- this will be the error message instead
 	end
