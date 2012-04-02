@@ -5,7 +5,8 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
-CRENGINEDIR=crengine
+KPVCRLIGDIR=kpvcrlib
+CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
@@ -59,18 +60,12 @@ DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
-			$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
-			$(CRENGINEDIR)/thirdparty/zlib/libz.a \
 			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libopenjpeg.a \
 			$(MUPDFLIBDIR)/libjbig2dec.a \
+			$(MUPDFLIBDIR)/libjpeg.a \
 			$(MUPDFLIBDIR)/libz.a
-
-# @TODO the libjpeg used by mupdf is too new for crengine and will cause
-# a segment fault when decoding jpeg images in crengine, we need to fix 
-# this. 28.03 2012 (houqp)
-			#$(MUPDFLIBDIR)/libjpeg.a
 
 LUALIB := $(LUADIR)/src/liblua.a
 
@@ -117,8 +112,6 @@ fetchthirdparty:
 	-rm -Rf mupdf/thirdparty
 	git submodule init
 	git submodule update
-	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h
-	test -f $(CRENGINEDIR)/thirdparty/zlib/qconfig.h || touch $(CRENGINEDIR)/thirdparty/zlib/qconfig.h
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
@@ -130,7 +123,10 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
-	make -C $(CRENGINEDIR) clean
+	make -C $(CRENGINEDIR)/thirdparty/antiword clean
+	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
+	make -C $(CRENGINEDIR)/thirdparty/libpng clean
+	make -C $(CRENGINEDIR)/crengine clean
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -159,13 +155,7 @@ endif
 	make -C $(DJVUDIR)/build
 
 $(CRENGINELIBS):
-	cd $(CRENGINEDIR) && cmake -D CR3_PNG=1 -D CR3_JPEG=1 .
-	cd $(CRENGINEDIR)/thirdparty/libjpeg && make
-	cd $(CRENGINEDIR)/thirdparty/chmlib && make
-	cd $(CRENGINEDIR)/thirdparty/antiword && make
-	cd $(CRENGINEDIR)/thirdparty/libpng && make
-	cd $(CRENGINEDIR)/thirdparty/zlib && make
-	cd $(CRENGINEDIR)/crengine && make
+	cd $(KPVCRLIGDIR) && CC="$(CC)" CXX="$(CXX)" cmake . && make
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
