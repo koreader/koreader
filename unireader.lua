@@ -282,7 +282,7 @@ function UniReader:drawOrCache(no, preCache)
 		tile.y = 0
 		tile.w = self.fullwidth
 		tile.h = self.fullheight
-	elseif (tile.w*tile.h / 2) > max_cache then
+	elseif (tile.w*tile.h / 2) < max_cache then
 		-- no, we can't. so generate a tile as big as we can go
 		-- grow area in steps of 10px
 		while ((tile.w+10) * (tile.h+10) / 2) < max_cache do
@@ -297,7 +297,7 @@ function UniReader:drawOrCache(no, preCache)
 				tile.y = tile.y - 5
 				tile.h = tile.h + 5
 			end
-			if tile.y + tile.h < self.fullheigth then
+			if tile.y + tile.h < self.fullheight then
 				tile.h = tile.h + 5
 			end
 		end
