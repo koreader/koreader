@@ -67,6 +67,10 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libjpeg.a \
 			$(MUPDFLIBDIR)/libz.a
 
+#@TODO patch crengine to use the latest libjpeg  04.04 2012 (houqp)
+			#$(MUPDFLIBDIR)/libjpeg.a 
+			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a
+
 LUALIB := $(LUADIR)/src/liblua.a
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
@@ -112,8 +116,12 @@ fetchthirdparty:
 	-rm -Rf mupdf/thirdparty
 	git submodule init
 	git submodule update
+	ln -s kpvcrlib/crengine/cr3gui/data data
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
+	cd mupdf/thirdparty/jpeg-*/ && \
+		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
+		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
 	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
@@ -155,7 +163,9 @@ endif
 	make -C $(DJVUDIR)/build
 
 $(CRENGINELIBS):
-	cd $(KPVCRLIGDIR) && CC="$(CC)" CXX="$(CXX)" cmake . && make
+	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
+		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		make
 
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a

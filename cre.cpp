@@ -45,6 +45,7 @@ static int openDocument(lua_State *L) {
 
 	doc->text_view = new LVDocView();
 	doc->text_view->setStyleSheet(lString8(style_sheet));
+	doc->text_view->setBackgroundColor(0x000000);
 	doc->text_view->LoadDocument(file_name);
 	doc->text_view->setViewMode(DVM_SCROLL, -1);
 	doc->text_view->Resize(width, height);
@@ -209,7 +210,6 @@ static int drawCurrentPage(lua_State *L) {
 
 	doc->text_view->Resize(w, h);
 	doc->text_view->Render();
-	drawBuf.Clear(0xFFFFFF);
 	doc->text_view->Draw(drawBuf);
 	
 
