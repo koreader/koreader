@@ -135,6 +135,7 @@ cleanthirdparty:
 	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
 	make -C $(CRENGINEDIR)/thirdparty/libpng clean
 	make -C $(CRENGINEDIR)/crengine clean
+	make -C $(KPVCRLIGDIR) clean
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -164,7 +165,7 @@ endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		CC="$(CC)" CXX="$(CXX)" cmake . && \
 		make
 
 $(LUALIB):
@@ -185,6 +186,8 @@ customupdate: kpdfview
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
 	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -rpL data $(INSTALL_DIR)
+	cp -rp fonts $(INSTALL_DIR)
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
