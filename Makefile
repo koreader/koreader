@@ -165,7 +165,7 @@ endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CC="$(CC)" CXX="$(CXX)" cmake . && \
+		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
 		make
 
 $(LUALIB):
