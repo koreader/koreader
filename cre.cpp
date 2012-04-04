@@ -36,19 +36,26 @@ typedef struct CreDocument {
 static int openDocument(lua_State *L) {
 	const char *file_name = luaL_checkstring(L, 1);
 	const char *style_sheet = luaL_checkstring(L, 2);
+
 	int width = luaL_checkint(L, 3);
 	int height = luaL_checkint(L, 4);
+	lString8 css;
 
 	CreDocument *doc = (CreDocument*) lua_newuserdata(L, sizeof(CreDocument));
 	luaL_getmetatable(L, "credocument");
 	lua_setmetatable(L, -2);
 
 	doc->text_view = new LVDocView();
-	doc->text_view->setStyleSheet(lString8(style_sheet));
 	doc->text_view->setBackgroundColor(0x000000);
-	doc->text_view->LoadDocument(file_name);
+	if (LVLoadStylesheetFile(lString16(style_sheet), css)){
+		if (!css.empty()){
+			doc->text_view->setStyleSheet(css);
+		}
+	}
 	doc->text_view->setViewMode(DVM_SCROLL, -1);
 	doc->text_view->Resize(width, height);
+
+	doc->text_view->LoadDocument(file_name);
 	doc->text_view->Render();
 
 	return 1;
