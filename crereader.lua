@@ -95,7 +95,7 @@ function CREReader:_drawReadingInfo()
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
-							5, 4, load_percent, 8)
+							5, 4, load_percent/100, 8)
 end
 
 function CREReader:nextView()
