@@ -16,6 +16,9 @@ end
 function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	if file_type == "html" then
+		file_type = "htm"
+	end
 	local style_sheet = "./data/"..file_type..".css"
 	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, 
 						width, height)
