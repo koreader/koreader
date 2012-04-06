@@ -1211,5 +1211,21 @@ function UniReader:addAllCommands()
 			end
 		end)
 	-- end panning
+	self.commands:add(KEY_INTO_SCREEN_SAVER,nil,"slider",
+		"toggle screen saver",
+		function(unireader)
+			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+			fb:setOrientation(Screen.native_rotation_mode)
+			os.execute("killall -cont cvm")
+			print("resumed")
+		end)
+	self.commands:add(KEY_OUTOF_SCREEN_SAVER,nil,"slider",
+		"toggle screen saver",
+		function(unireader)
+			os.execute("sleep 1")
+			os.execute("killall -stop cvm")
+			fb:setOrientation(Screen.kpv_rotation_mode)
+			unireader:goto(unireader.pageno)
+		end)
 	print("## defined commands "..dump(self.commands.map))
 end
