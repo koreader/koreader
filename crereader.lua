@@ -4,7 +4,6 @@ require "inputbox"
 CREReader = UniReader:new{
 	pos = 0,
 	percent = 0,
-	pan_overlap_vertical = 0,
 }
 
 function CREReader:init()
