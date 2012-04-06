@@ -5,6 +5,8 @@ require "selectmenu"
 CREReader = UniReader:new{
 	pos = 0,
 	percent = 0,
+
+	font_face = nil,
 }
 
 function CREReader:init()
@@ -28,6 +30,16 @@ function CREReader:open(filename)
 	end
 
 	return true
+end
+
+function CREReader:loadSpecialSettings()
+	local font_face = self.settings:readSetting("font_face")
+	self.font_face = font_face or "FreeSerif"
+	self.doc:setFontFace(self.font_face)
+end
+
+function CREReader:saveSpecialSettings()
+	self.settings:savesetting("font_face", self.font_face)
 end
 
 function CREReader:getLastPageOrPos()
@@ -172,6 +184,7 @@ function CREReader:adjustCreReaderCommands()
 			print(face_list[item_no])
 			if item_no then
 				cr.doc:setFontFace(face_list[item_no])
+				self.font_face = face_list[item_no]
 			end
 			cr:redrawCurrentPage()
 		end

@@ -94,22 +94,21 @@ end
 -- !!!!!!!!!!!!!!!!!!!!!!!!!
 --
 -- For a new specific reader,
--- you must always overwrite following two methods:
+-- you must always overwrite following method:
 --
 -- * self:open()
--- * self:init()
 --
 -- overwrite other methods if needed.
 ----------------------------------------------------
+
+-- open a file
+function UniReader:open(filename, cache_size)
+	return false
+end
+
 function UniReader:init()
 	-- initialize commands
 	self:addAllCommands()
-end
-
--- open a file and its settings store
--- tips: you can use self:loadSettings in open() method.
-function UniReader:open(filename, cache_size)
-	return false
 end
 
 ----------------------------------------------------
@@ -130,7 +129,7 @@ function UniReader:toggleTextHighLight(word_list)
 end
 
 ----------------------------------------------------
--- renderer memory
+-- Renderer memory
 ----------------------------------------------------
 
 function UniReader:getCacheSize()
@@ -141,8 +140,23 @@ function UniReader:cleanCache()
 	return
 end
 
+----------------------------------------------------
+-- Setting related methods
+----------------------------------------------------
+
+-- load special settings for specific reader
+function UniReader:loadSpecialSettings()
+	return
+end
+
+-- save special settings for specific reader
+function UniReader:saveSpecialSettings()
+end
+
+
 
 --[ following are default methods ]--
+
 function UniReader:initGlobalSettings(settings)
 	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
 	if pan_overlap_vertical then
@@ -165,6 +179,7 @@ function UniReader:initGlobalSettings(settings)
 	end
 end
 
+-- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename,self.cache_document_size)
@@ -187,6 +202,7 @@ function UniReader:loadSettings(filename)
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
 
+		self:loadSpecialSettings()
 		return true
 	end
 	return false
@@ -913,6 +929,7 @@ function UniReader:inputLoop()
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
 		self.settings:savesetting("highlight", self.highlight)
+		self:saveSpecialSettings()
 		self.settings:close()
 	end
 
@@ -1228,5 +1245,5 @@ function UniReader:addAllCommands()
 			end
 		end)
 	-- end panning
-	print("## defined commands "..dump(self.commands.map))
+	--print("## defined commands "..dump(self.commands.map))
 end
