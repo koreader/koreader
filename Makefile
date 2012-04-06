@@ -161,7 +161,7 @@ customupdate: kpdfview
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
