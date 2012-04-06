@@ -6,6 +6,7 @@ CREReader = UniReader:new{
 	pos = 0,
 	percent = 0,
 
+	gamma_index = 15,
 	font_face = nil,
 }
 
@@ -36,10 +37,15 @@ function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
 	self.font_face = font_face or "FreeSerif"
 	self.doc:setFontFace(self.font_face)
+
+	local gamma_index = self.settings:readSetting("gamma_index")
+	self.gamma_index = gamma_index or self.gamma_index
+	cre.setGammaIndex(self.gamma_index)
 end
 
 function CREReader:saveSpecialSettings()
 	self.settings:savesetting("font_face", self.font_face)
+	self.settings:savesetting("gamma_index", self.gamma_index)
 end
 
 function CREReader:getLastPageOrPos()
@@ -60,6 +66,7 @@ function CREReader:setzoom(page, preCache)
 end
 
 function CREReader:addJump(pos, notes)
+	return
 end
 
 function CREReader:goto(pos)
@@ -193,6 +200,22 @@ function CREReader:adjustCreReaderCommands()
 		"Toggle font bolder attribute",
 		function(cr)
 			cr.doc:toggleFontBolder()
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_VPLUS, nil, "vol+",
+		"increase gamma",
+		function(cr)
+			cre.setGammaIndex(self.gamma_index + 1)
+			self.gamma_index = cre.getGammaIndex()
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_VMINUS, nil, "vol-",
+		"decrease gamma",
+		function(cr)
+			cre.setGammaIndex(self.gamma_index - 1)
+			self.gamma_index = cre.getGammaIndex()
 			cr:redrawCurrentPage()
 		end
 	)

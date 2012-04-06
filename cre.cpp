@@ -57,7 +57,23 @@ static int openDocument(lua_State *L) {
 	doc->text_view->LoadDocument(file_name);
 	doc->text_view->Render();
 
+	printf("gamma: %d\n", fontMan->GetGammaIndex());
+
 	return 1;
+}
+
+static int getGammaIndex(lua_State *L) {
+	lua_pushinteger(L, fontMan->GetGammaIndex());
+
+	return 1;
+}
+
+static int setGammaIndex(lua_State *L) {
+	int index = luaL_checkint(L, 1);
+
+	fontMan->SetGammaIndex(index);
+
+	return 0;
 }
 
 static int closeDocument(lua_State *L) {
@@ -284,6 +300,8 @@ static int drawCurrentPage(lua_State *L) {
 static const struct luaL_Reg cre_func[] = {
 	{"openDocument", openDocument},
 	{"getFontFaces", getFontFaces},
+	{"getGammaIndex", getGammaIndex},
+	{"setGammaIndex", setGammaIndex},
 	{NULL, NULL}
 };
 
