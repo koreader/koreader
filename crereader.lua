@@ -1,5 +1,6 @@
 require "unireader"
 require "inputbox"
+require "selectmenu"
 
 CREReader = UniReader:new{
 	pos = 0,
@@ -15,6 +16,7 @@ end
 function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	-- these two format use the same css file
 	if file_type == "html" then
 		file_type = "htm"
 	end
@@ -125,7 +127,6 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_D, nil, "D")
 	self.commands:del(KEY_D, MOD_SHIFT, "D")
 	self.commands:del(KEY_D, MOD_ALT, "D")
-	self.commands:del(KEY_F, nil, "F")
 	self.commands:del(KEY_F, MOD_SHIFT, "F")
 	self.commands:del(KEY_F, MOD_ALT, "F")
 
@@ -155,6 +156,31 @@ function CREReader:adjustCreReaderCommands()
 				math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
 				'/'..cr.doc:getFullHeight())
 			cr:goto(math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
+		end
+	)
+	self.commands:add(KEY_F, nil, "F",
+		"invoke font menu",
+		function(cr)
+			local face_list = cre.getFontFaces()
+
+			local fonts_menu = SelectMenu:new{
+				menu_title = "Fonts Menu",
+				item_array = face_list,
+			}
+
+			local item_no = fonts_menu:choose(0, height)
+			print(face_list[item_no])
+			if item_no then
+				cr.doc:setFontFace(face_list[item_no])
+			end
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_F, MOD_ALT, "F",
+		"Toggle font bolder attribute",
+		function(cr)
+			cr.doc:toggleFontBolder()
+			cr:redrawCurrentPage()
 		end
 	)
 end

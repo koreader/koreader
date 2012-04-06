@@ -54,7 +54,6 @@ static int openDocument(lua_State *L) {
 	}
 	doc->text_view->setViewMode(DVM_SCROLL, -1);
 	doc->text_view->Resize(width, height);
-
 	doc->text_view->LoadDocument(file_name);
 	doc->text_view->Render();
 
@@ -153,7 +152,8 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
  * }
  *
  * Warnning: not like pdf or djvu support, page here refers to the
- * position(height) within the document, not the real page number.
+ * percent of height within the document, not the real page number.
+ * We use page here just to keep consistent with other readers.
  *
  */
 static int getTableOfContent(lua_State *L) {
@@ -166,6 +166,41 @@ static int getTableOfContent(lua_State *L) {
 	walkTableOfContent(L, toc, &count);
 
 	return 1;
+}
+
+/*
+ * Return a table like this:
+ * {
+ *		"FreeMono",
+ *		"FreeSans",
+ *		"FreeSerif",
+ * }
+ *
+ */
+static int getFontFaces(lua_State *L) {
+	int i = 0;
+	lString16Collection face_list;
+
+	fontMan->getFaceList(face_list);
+
+	lua_newtable(L);
+	for (i = 0; i < face_list.length(); i++)
+	{
+		lua_pushnumber(L, i+1);
+		lua_pushstring(L, UnicodeToLocal(face_list[i]).c_str());
+		lua_settable(L, -3);
+	}
+
+	return 1;
+}
+
+static int setFontFace(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *face = luaL_checkstring(L, 2);
+
+	doc->text_view->setDefaultFontFace(lString8(face));
+
+	return 0;
 }
 
 static int gotoPage(lua_State *L) {
@@ -206,6 +241,14 @@ static int zoomFont(lua_State *L) {
 	return 1;
 }
 
+static int toggleFontBolder(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	doc->text_view->doCommand(DCMD_TOGGLE_BOLD);
+
+	return 0;
+}
+
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -240,20 +283,26 @@ static int drawCurrentPage(lua_State *L) {
 
 static const struct luaL_Reg cre_func[] = {
 	{"openDocument", openDocument},
+	{"getFontFaces", getFontFaces},
 	{NULL, NULL}
 };
 
 static const struct luaL_Reg credocument_meth[] = {
+	/* get methods */
 	{"getPages", getNumberOfPages},
 	{"getCurrentPage", getCurrentPage},
 	{"getPos", getPos},
 	{"getPosPercent", getPosPercent},
 	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
+	/* set methods */
+	{"setFontFace", setFontFace},
+	/* control methods */
 	{"gotoPage", gotoPage},
 	{"gotoPercent", gotoPercent},
 	{"gotoPos", gotoPos},
 	{"zoomFont", zoomFont},
+	{"toggleFontBolder", toggleFontBolder},
 	{"drawCurrentPage", drawCurrentPage},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
