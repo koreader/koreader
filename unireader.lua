@@ -347,6 +347,8 @@ function UniReader:setzoom(page, preCache)
 		x1 = pwidth
 		y1 = pheight
 	end
+	if x1 == 0 then x1 = pwidth end
+	if y1 == 0 then y1 = pheight end
 	-- clamp to page BBox
 	if x0 < 0 then x0 = 0 end
 	if x1 > pwidth then x1 = pwidth end
