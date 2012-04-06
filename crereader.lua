@@ -131,6 +131,7 @@ end
 
 function CREReader:adjustCreReaderCommands()
 	-- delete commands
+	self.commands:delGroup("[joypad]")
 	self.commands:del(KEY_G, nil, "G")
 	self.commands:del(KEY_J, nil, "J")
 	self.commands:del(KEY_K, nil, "K")

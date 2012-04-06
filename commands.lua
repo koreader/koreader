@@ -88,6 +88,7 @@ function Commands:addGroup(keygroup,keys,help,func)
 	end
 end
 
+--@TODO handle MOD_ANY  06.04 2012 (houqp)
 function Commands:del(keycode, modifier, keydescr)
 	local keydef = nil
 
@@ -104,6 +105,16 @@ function Commands:del(keycode, modifier, keydescr)
 	end -- EOF if
 
 	self.map[keydef] = nil
+end
+
+function Commands:delGroup(keygroup)
+	if keygroup then
+		for k,v in pairs(self.map) do
+			if v.keygroup == keygroup then
+				self.map[k] = nil
+			end
+		end -- EOF for
+	end
 end
 
 function Commands:_addImpl(keydef,help,func,keygroup)
