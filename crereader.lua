@@ -43,11 +43,6 @@ function CREReader:loadSpecialSettings()
 	cre.setGammaIndex(self.gamma_index)
 end
 
-function CREReader:saveSpecialSettings()
-	self.settings:savesetting("font_face", self.font_face)
-	self.settings:savesetting("gamma_index", self.gamma_index)
-end
-
 function CREReader:getLastPageOrPos()
 	local last_percent = self.settings:readSetting("last_percent") 
 	if last_percent then
@@ -55,6 +50,11 @@ function CREReader:getLastPageOrPos()
 	else
 		return 0
 	end
+end
+
+function CREReader:saveSpecialSettings()
+	self.settings:savesetting("font_face", self.font_face)
+	self.settings:savesetting("gamma_index", self.gamma_index)
 end
 
 function CREReader:saveLastPageOrPos()
@@ -218,6 +218,18 @@ function CREReader:adjustCreReaderCommands()
 			cre.setGammaIndex(self.gamma_index - 1)
 			self.gamma_index = cre.getGammaIndex()
 			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_FW_UP, nil, "joypad up",
+		"pan "..self.shift_y.." pixels upwards",
+		function(cr)
+			cr:goto(cr.pos - cr.shift_y)
+		end
+	)
+	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
+		"pan "..self.shift_y.." pixels downwards",
+		function(cr)
+			cr:goto(cr.pos + cr.shift_y)
 		end
 	)
 end
