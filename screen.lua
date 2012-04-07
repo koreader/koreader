@@ -41,6 +41,9 @@ Codes for rotation modes:
 
 Screen = {
 	cur_rotation_mode = 0,
+	-- these two variabls are used to help switching from framework to reader
+	native_rotation_mode = nil,
+	kpv_rotation_mode = nil,
 }
 
 -- @orien: 1 for clockwise rotate, -1 for anti-clockwise
@@ -70,5 +73,4 @@ function Screen:updateRotationMode()
 		self.cur_rotation_mode = orie_fd:read() + (updown_fd:read() * 2)
 	end
 end
-
 

@@ -95,6 +95,7 @@ if optarg["d"] == "k3" then
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
+	input.open("/tmp/event_slider")
 	setK3Keycodes()
 elseif optarg["d"] == "emu" then
 	input.open("")
@@ -103,6 +104,7 @@ elseif optarg["d"] == "emu" then
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
+	input.open("/tmp/event_slider")
 
 	-- check if we are running on Kindle 3 (additional volume input)
 	local f=lfs.attributes("/dev/input/event2")
@@ -122,7 +124,7 @@ fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
-origin_rotation_mode = Screen.cur_rotation_mode
+Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
@@ -171,10 +173,10 @@ reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
-fb:setOrientation(origin_rotation_mode)
+fb:setOrientation(Screen.native_rotation_mode)
 
 input.closeAll()
---os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
 if optarg["d"] ~= "emu" then
+	--os.execute("killall -cont cvm")
 	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
 end
