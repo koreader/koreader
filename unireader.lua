@@ -563,22 +563,27 @@ function UniReader:show(no)
 	self.slot_visible = slot;
 end
 
+function UniReader:isSamePage(p1, p2)
+	return p1 == p2
+end
+
 --[[
 	@ pageno is the page you want to add to jump_stack
+	  NOTE: for CREReader, pageno refers to xpointer
 --]]
 function UniReader:addJump(pageno, notes)
 	local jump_item = nil
 	local notes_to_add = notes
 	if not notes_to_add then
 		-- no notes given, auto generate from Toc entry
-		notes_to_add = self:getTocTitleByPage(self.pageno)
+		notes_to_add = self:getTocTitleOfCurrentPage()
 		if notes_to_add ~= "" then
 			notes_to_add = "in "..notes_to_add
 		end
 	end
 	-- move pageno page to jump_stack top if already in
 	for _t,_v in ipairs(self.jump_stack) do
-		if _v.page == pageno then
+		if self:isSamePage(_v.page, pageno) then
 			jump_item = _v
 			table.remove(self.jump_stack, _t)
 			-- if original notes is not empty, probably defined by users,
@@ -762,29 +767,38 @@ function UniReader:getTocTitleByPage(pageno)
 	return self:cleanUpTocTitle(pre_entry.title)
 end
 
+function UniReader:getTocTitleOfCurrentPage()
+	return self:getTocTitleByPage(self.pageno)
+end
+
+function UniReader:gotoTocEntry(entry)
+	self:goto(entry.page)
+end
+
 function UniReader:showToc()
 	if not self.toc then
-		-- build toc when needed.
+		-- build toc if needed.
 		self:fillToc()
 	end
-	local menu_items = {}
-	local filtered_toc = {}
+
 	-- build menu items
+	local menu_items = {}
 	for k,v in ipairs(self.toc) do
 		table.insert(menu_items,
 		("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
-		table.insert(filtered_toc,v.page)
 	end
+
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
 		item_array = menu_items,
 		no_item_msg = "This document does not have a Table of Contents.",
 	}
 	item_no = toc_menu:choose(0, fb.bb:getHeight())
+
 	if item_no then
-		self:goto(filtered_toc[item_no])
+		self:gotoTocEntry(self.toc[item_no])
 	else
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -849,7 +863,7 @@ function UniReader:_drawReadingInfo()
 	local ypos = height - 50
 	fb.bb:paintRect(0, ypos, width, 50, 0)
 	ypos = ypos + 15
-	local cur_section = self:getTocTitleByPage(self.pageno)
+	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end

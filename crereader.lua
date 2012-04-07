@@ -3,7 +3,7 @@ require "inputbox"
 require "selectmenu"
 
 CREReader = UniReader:new{
-	pos = 0,
+	pos = nil,
 	percent = 0,
 
 	gamma_index = 15,
@@ -33,6 +33,9 @@ function CREReader:open(filename)
 	return true
 end
 
+----------------------------------------------------
+-- setting related methods
+----------------------------------------------------
 function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
 	self.font_face = font_face or "FreeSerif"
@@ -46,7 +49,7 @@ end
 function CREReader:getLastPageOrPos()
 	local last_percent = self.settings:readSetting("last_percent") 
 	if last_percent then
-		return (last_percent * self.doc:getFullHeight()) / 10000 
+		return math.floor((last_percent * self.doc:getFullHeight()) / 10000)
 	else
 		return 0
 	end
@@ -61,24 +64,40 @@ function CREReader:saveLastPageOrPos()
 	self.settings:savesetting("last_percent", self.percent)
 end
 
+----------------------------------------------------
+-- render related methods
+----------------------------------------------------
+-- we don't need setzoom in CREReader
 function CREReader:setzoom(page, preCache)
 	return
 end
 
-function CREReader:addJump(pos, notes)
-	return
+function CREReader:redrawCurrentPage()
+	self:goto(self.pos)
 end
 
-function CREReader:goto(pos)
-	local pos = math.min(pos, self.doc:getFullHeight())
-	pos = math.max(pos, 0)
-
-	-- add to jump_stack, distinguish jump from normal page turn
-	if self.pos and math.abs(self.pos - pos) > height then
-		self:addJump(self.percent)
+----------------------------------------------------
+-- goto related methods
+----------------------------------------------------
+function CREReader:goto(pos, pos_type)
+	local prev_xpointer = self.doc:getXPointer()
+	if pos_type == "xpointer" then
+		self.doc:gotoXPointer(pos)
+		pos = self.doc:getCurrentPos()
+	else -- pos_type is PERCENT * 100
+		pos = math.min(pos, self.doc:getFullHeight())
+		pos = math.max(pos, 0)
+		self.doc:gotoPos(pos)
 	end
 
-	self.doc:gotoPos(pos)
+	-- add to jump_stack, distinguish jump from normal page turn
+	-- NOTE:
+	-- even though we have called gotoPos() or gotoXPointer() previously, 
+	-- self.pos hasn't been updated yet here, so we can still make use of it.
+	if self.pos and math.abs(self.pos - pos) > height then
+		self:addJump(prev_xpointer)
+	end
+
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	if self.rcount == self.rcountmax then
@@ -93,13 +112,65 @@ function CREReader:goto(pos)
 
 	self.pos = pos
 	self.pageno = self.doc:getCurrentPage()
-	self.percent = self.doc:getPosPercent()
+	self.percent = self.doc:getCurrentPercent()
 end
 
-function CREReader:redrawCurrentPage()
-	self:goto(self.pos)
+function CREReader:gotoPercent(percent)
+	self:goto(percent * self.doc:getFullHeight() / 10000)
 end
 
+function CREReader:gotoTocEntry(entry)
+	self:goto(entry.xpointer, "xpointer")
+end
+
+function CREReader:nextView()
+	return self.pos + height - self.pan_overlap_vertical
+end
+
+function CREReader:prevView()
+	return self.pos - height + self.pan_overlap_vertical
+end
+
+----------------------------------------------------
+-- jump stack related methods
+----------------------------------------------------
+function CREReader:isSamePage(p1, p2)
+	return self.doc:getPageFromXPointer(p1) == self.doc:getPageFromXPointer(p2)
+end
+
+function CREReader:showJumpStack()
+	local menu_items = {}
+	print(dump(self.jump_stack))
+	for k,v in ipairs(self.jump_stack) do
+		table.insert(menu_items,
+			v.datetime.." -> page "..
+			(self.doc:getPageFromXPointer(v.page)).." "..v.notes)
+	end
+	jump_menu = SelectMenu:new{
+		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
+		item_array = menu_items,
+		no_item_msg = "No jump history.",
+	}
+	item_no = jump_menu:choose(0, fb.bb:getHeight())
+	if item_no then
+		local jump_item = self.jump_stack[item_no]
+		self:goto(jump_item.page, "xpointer")
+	else
+		self:redrawCurrentPage()
+	end
+end
+
+----------------------------------------------------
+-- TOC related methods
+----------------------------------------------------
+function CREReader:getTocTitleOfCurrentPage()
+	return self:getTocTitleByPage(self.percent)
+end
+
+
+----------------------------------------------------
+-- menu related methods
+----------------------------------------------------
 -- used in CREReader:showMenu()
 function CREReader:_drawReadingInfo()
 	local ypos = height - 50
@@ -109,7 +180,7 @@ function CREReader:_drawReadingInfo()
 
 	ypos = ypos + 15
 	local face, fhash = Font:getFaceAndHash(22)
-	local cur_section = self:getTocTitleByPage(self.pos)
+	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end
@@ -121,13 +192,7 @@ function CREReader:_drawReadingInfo()
 							5, 4, load_percent/100, 8)
 end
 
-function CREReader:nextView()
-	return self.pos + height - self.pan_overlap_vertical
-end
 
-function CREReader:prevView()
-	return self.pos - height + self.pan_overlap_vertical
-end
 
 function CREReader:adjustCreReaderCommands()
 	-- delete commands
@@ -202,6 +267,14 @@ function CREReader:adjustCreReaderCommands()
 		function(cr)
 			cr.doc:toggleFontBolder()
 			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_BACK,nil,"back",
+		"back to last jump",
+		function(cr)
+			if #cr.jump_stack ~= 0 then
+				cr:goto(cr.jump_stack[1].page, "xpointer")
+			end
 		end
 	)
 	self.commands:add(KEY_VPLUS, nil, "vol+",

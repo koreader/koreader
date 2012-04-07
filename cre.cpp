@@ -30,6 +30,7 @@ extern "C" {
 
 typedef struct CreDocument {
 	LVDocView *text_view;
+	ldomDocument *dom_doc;
 } CreDocument;
 
 
@@ -55,9 +56,9 @@ static int openDocument(lua_State *L) {
 	doc->text_view->setViewMode(DVM_SCROLL, -1);
 	doc->text_view->Resize(width, height);
 	doc->text_view->LoadDocument(file_name);
+	doc->dom_doc = doc->text_view->getDocument();
 	doc->text_view->Render();
 
-	printf("gamma: %d\n", fontMan->GetGammaIndex());
 
 	return 1;
 }
@@ -99,7 +100,20 @@ static int getCurrentPage(lua_State *L) {
 	return 1;
 }
 
-static int getPos(lua_State *L) {
+static int getPageFromXPointer(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *xpointer_str = luaL_checkstring(L, 2);
+
+	int page = 0;
+	ldomXPointer xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
+
+	page = doc->text_view->getBookmarkPage(xp);
+	lua_pushinteger(L, page);
+
+	return 1;
+}
+
+static int getCurrentPos(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	lua_pushinteger(L, doc->text_view->GetPos());
@@ -107,10 +121,34 @@ static int getPos(lua_State *L) {
 	return 1;
 }
 
-static int getPosPercent(lua_State *L) {
+//static int getPosFromXPointer(lua_State *L) {
+	//CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	//const char *xpointer_str = luaL_checkstring(L, 2);
+
+	//lvRect rc;
+	//int pos;
+
+	//ldomXPointer *xp = NULL;
+	//xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
+	//getCursorDocRect(*xp, rc);
+	//pos = 
+
+	//return 1;
+//}
+
+static int getCurrentPercent(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	lua_pushinteger(L, doc->text_view->getPosPercent());
+
+	return 1;
+}
+
+static int getXPointer(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	ldomXPointer xp = doc->text_view->getBookmark();
+	lua_pushstring(L, UnicodeToLocal(xp.toString()).c_str());
 
 	return 1;
 }
@@ -138,7 +176,13 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
 		/* set subtable, Toc entry */
 		lua_newtable(L);
 		lua_pushstring(L, "page");
-		lua_pushnumber(L, toc_tmp->getY());
+		lua_pushnumber(L, toc_tmp->getPercent()); 
+		lua_settable(L, -3);
+
+		lua_pushstring(L, "xpointer");
+		lua_pushstring(L, UnicodeToLocal(
+							toc_tmp->getXPointer().toString()).c_str()
+							);
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
@@ -163,8 +207,18 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
 /*
  * Return a table like this:
  * {
- *		{page=12, depth=1, title="chapter1"},
- *		{page=54, depth=1, title="chapter2"},
+ *    {
+ *       page=12, 
+ *       xpointer = "/body/DocFragment[11].0",
+ *       depth=1, 
+ *       title="chapter1"
+ *    },
+ *    {
+ *       page=54, 
+ *       xpointer = "/body/DocFragment[13].0",
+ *       depth=1, 
+ *       title="chapter2"
+ *    },
  * }
  *
  * Warnning: not like pdf or djvu support, page here refers to the
@@ -246,6 +300,21 @@ static int gotoPos(lua_State *L) {
 	return 0;
 }
 
+static int gotoXPointer(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *xpointer_str = luaL_checkstring(L, 2);
+
+	ldomXPointer xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
+
+	doc->text_view->goToBookmark(xp);
+	/* CREngine does not call checkPos() immediately after goToBookmark,
+	 * so I have to manually update the pos in order to get a correctionColor
+	 * return from GetPos() call. */
+	doc->text_view->SetPos(xp.toPoint().y);
+
+	return 0;
+}
+
 /* zoom font by given delta and return zoomed font size */
 static int zoomFont(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
@@ -261,6 +330,32 @@ static int toggleFontBolder(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	doc->text_view->doCommand(DCMD_TOGGLE_BOLD);
+
+	return 0;
+}
+
+static int cursorRight(lua_State *L) {
+	//CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	//LVDocView *tv = doc->text_view;
+
+	//ldomXPointer p = tv->getCurrentPageMiddleParagraph();
+	//lString16 s = p.toString();
+	//printf("~~~~~~~~~~%s\n", UnicodeToLocal(s).c_str());
+		
+	//tv->selectRange(*(tv->selectFirstPageLink()));
+	//ldomXRange *r = tv->selectNextPageLink(true);
+	//lString16 s = r->getRangeText();
+	//printf("------%s\n", UnicodeToLocal(s).c_str());
+	
+	//tv->selectRange(*r);
+	//tv->updateSelections();
+
+	//LVPageWordSelector sel(doc->text_view);
+	//doc->text_view->doCommand(DCMD_SELECT_FIRST_SENTENCE);
+	//sel.moveBy(DIR_RIGHT, 2);
+	//sel.updateSelection();
+	//printf("---------------- %s\n", UnicodeToLocal(sel.getSelectedWord()->getText()).c_str());
 
 	return 0;
 }
@@ -306,21 +401,26 @@ static const struct luaL_Reg cre_func[] = {
 };
 
 static const struct luaL_Reg credocument_meth[] = {
-	/* get methods */
+	/*--- get methods ---*/
 	{"getPages", getNumberOfPages},
 	{"getCurrentPage", getCurrentPage},
-	{"getPos", getPos},
-	{"getPosPercent", getPosPercent},
+	{"getPageFromXPointer", getPageFromXPointer},
+	{"getCurrentPos", getCurrentPos},
+	{"getCurrentPercent", getCurrentPercent},
+	{"getXPointer", getXPointer},
 	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
-	/* set methods */
+	/*--- set methods ---*/
 	{"setFontFace", setFontFace},
-	/* control methods */
+	/* --- control methods ---*/
 	{"gotoPage", gotoPage},
 	{"gotoPercent", gotoPercent},
 	{"gotoPos", gotoPos},
+	{"gotoXPointer", gotoXPointer},
 	{"zoomFont", zoomFont},
 	{"toggleFontBolder", toggleFontBolder},
+	//{"cursorLeft", cursorLeft},
+	//{"cursorRight", cursorRight},
 	{"drawCurrentPage", drawCurrentPage},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
