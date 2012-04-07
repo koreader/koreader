@@ -116,7 +116,7 @@ fetchthirdparty:
 	-rm -Rf mupdf/thirdparty
 	git submodule init
 	git submodule update
-	ln -s kpvcrlib/crengine/cr3gui/data data
+	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
 	cd mupdf/thirdparty/jpeg-*/ && \
