@@ -1219,7 +1219,6 @@ function UniReader:addAllCommands()
 			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 			fb:setOrientation(Screen.native_rotation_mode)
 			os.execute("killall -cont cvm")
-			print("resumed")
 		end)
 	self.commands:add(KEY_OUTOF_SCREEN_SAVER,nil,"slider",
 		"toggle screen saver",
