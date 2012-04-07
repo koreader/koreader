@@ -11,6 +11,9 @@ CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
 
+# must point to directory with *.ttf fonts for crengine
+TTF_FONTS_DIR=/usr/share/fonts/truetype/freefont/
+
 # set this to your ARM cross compiler:
 
 CC:=arm-unknown-linux-gnueabi-gcc
@@ -117,6 +120,7 @@ fetchthirdparty:
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
+	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
 	cd mupdf/thirdparty/jpeg-*/ && \
