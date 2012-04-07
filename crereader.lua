@@ -269,6 +269,12 @@ function CREReader:adjustCreReaderCommands()
 			cr:redrawCurrentPage()
 		end
 	)
+	self.commands:add(KEY_B, MOD_SHIFT, "B",
+		"add jump",
+		function(cr)
+			cr:addJump(self.doc:getXPointer())
+		end
+	)
 	self.commands:add(KEY_BACK,nil,"back",
 		"back to last jump",
 		function(cr)
