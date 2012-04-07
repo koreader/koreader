@@ -22,8 +22,8 @@
 #include <linux/input.h>
 #include "input.h"
 
-#define NUM_FDS 3
-int inputfds[3] = { -1, -1, -1 };
+#define NUM_FDS 4
+int inputfds[4] = { -1, -1, -1, -1 };
 
 static int openInputDevice(lua_State *L) {
 #ifndef EMULATE_READER

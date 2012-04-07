@@ -63,6 +63,8 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
+all:kpdfview slider_watcher
+
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
 		kpdfview.o \
@@ -83,6 +85,9 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 
 einkfb.o input.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
+
+slider_watcher: slider_watcher.c
+	$(CC) $(CFLAGS) $< -o $@
 
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
@@ -107,7 +112,7 @@ fetchthirdparty:
 	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
-	-rm -f *.o kpdfview
+	-rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
 	make -C $(LUADIR) clean
@@ -156,7 +161,7 @@ customupdate: kpdfview
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

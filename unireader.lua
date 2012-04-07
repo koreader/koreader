@@ -347,6 +347,8 @@ function UniReader:setzoom(page, preCache)
 		x1 = pwidth
 		y1 = pheight
 	end
+	if x1 == 0 then x1 = pwidth end
+	if y1 == 0 then y1 = pheight end
 	-- clamp to page BBox
 	if x0 < 0 then x0 = 0 end
 	if x1 > pwidth then x1 = pwidth end
@@ -1211,5 +1213,20 @@ function UniReader:addAllCommands()
 			end
 		end)
 	-- end panning
+	self.commands:add(KEY_INTO_SCREEN_SAVER,nil,"slider",
+		"toggle screen saver",
+		function(unireader)
+			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+			fb:setOrientation(Screen.native_rotation_mode)
+			os.execute("killall -cont cvm")
+		end)
+	self.commands:add(KEY_OUTOF_SCREEN_SAVER,nil,"slider",
+		"toggle screen saver",
+		function(unireader)
+			os.execute("sleep 1")
+			os.execute("killall -stop cvm")
+			fb:setOrientation(Screen.kpv_rotation_mode)
+			unireader:goto(unireader.pageno)
+		end)
 	print("## defined commands "..dump(self.commands.map))
 end
