@@ -13,6 +13,27 @@ function DJVUReader:open(filename)
 	return ok
 end
 
+function DJVUReader:init()
+	self:addAllCommands()
+	self:adjustDjvuReaderCommand()
+end
+
+function DJVUReader:adjustDjvuReaderCommand()
+	self.commands:add(KEY_N, nil, "N",
+		"start highlight mode",
+		function(unireader)
+			unireader:startHighLightMode()
+			unireader:goto(unireader.pageno)
+		end
+	)
+	self.commands:add(KEY_N, MOD_SHIFT, "N",
+		"display all highlights",
+		function(unireader)
+			unireader:showHighLight()
+			unireader:goto(unireader.pageno)
+		end
+	)
+end
 
 
 -----------[ highlight support ]----------

@@ -445,7 +445,7 @@ static const struct luaL_Reg pdfdocument_meth[] = {
 	{"authenticatePassword", authenticatePassword},
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
-	{"getTOC", getTableOfContent},
+	{"getToc", getTableOfContent},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
 	{"cleanCache", cleanCache},

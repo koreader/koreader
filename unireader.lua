@@ -94,20 +94,21 @@ end
 -- !!!!!!!!!!!!!!!!!!!!!!!!!
 --
 -- For a new specific reader,
--- you must always overwrite following two methods:
+-- you must always overwrite following method:
 --
 -- * self:open()
--- * self:init()
 --
 -- overwrite other methods if needed.
 ----------------------------------------------------
-function UniReader:init()
-end
 
--- open a file and its settings store
--- tips: you can use self:loadSettings in open() method.
+-- open a file
 function UniReader:open(filename, cache_size)
 	return false
+end
+
+function UniReader:init()
+	-- initialize commands
+	self:addAllCommands()
 end
 
 ----------------------------------------------------
@@ -128,7 +129,7 @@ function UniReader:toggleTextHighLight(word_list)
 end
 
 ----------------------------------------------------
--- renderer memory
+-- Renderer memory
 ----------------------------------------------------
 
 function UniReader:getCacheSize()
@@ -139,9 +140,46 @@ function UniReader:cleanCache()
 	return
 end
 
+----------------------------------------------------
+-- Setting related methods
+----------------------------------------------------
+
+-- load special settings for specific reader
+function UniReader:loadSpecialSettings()
+	return
+end
+
+-- save special settings for specific reader
+function UniReader:saveSpecialSettings()
+end
+
+
 
 --[ following are default methods ]--
 
+function UniReader:initGlobalSettings(settings)
+	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
+	if pan_overlap_vertical then
+		self.pan_overlap_vertical = pan_overlap_vertical
+	end
+
+	local cache_max_memsize = settings:readSetting("cache_max_memsize")
+	if cache_max_memsize then
+		self.cache_max_memsize = cache_max_memsize
+	end
+
+	local cache_max_ttl = settings:readSetting("cache_max_ttl")
+	if cache_max_ttl then
+		self.cache_max_ttl = cache_max_ttl
+	end
+
+	local rcountmax = settings:readSetting("partial_refresh_count")
+	if rcountmax then
+		self.rcountmax = rcountmax
+	end
+end
+
+-- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
 		self.settings = DocSettings:open(filename,self.cache_document_size)
@@ -164,33 +202,18 @@ function UniReader:loadSettings(filename)
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
 
+		self:loadSpecialSettings()
 		return true
 	end
 	return false
 end
 
-function UniReader:initGlobalSettings(settings)
-	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
-	if pan_overlap_vertical then
-		self.pan_overlap_vertical = pan_overlap_vertical
-	end
-	-- initialize commands
-	self:addAllCommands()
+function UniReader:getLastPageOrPos()
+	return self.settings:readSetting("last_page") or 1
+end
 
-	local cache_max_memsize = settings:readSetting("cache_max_memsize")
-	if cache_max_memsize then
-		self.cache_max_memsize = cache_max_memsize
-	end
-
-	local cache_max_ttl = settings:readSetting("cache_max_ttl")
-	if cache_max_ttl then
-		self.cache_max_ttl = cache_max_ttl
-	end
-
-	local rcountmax = settings:readSetting("partial_refresh_count")
-	if rcountmax then
-		self.rcountmax = rcountmax
-	end
+function UniReader:saveLastPageOrPos()
+	self.settings:savesetting("last_page", self.pageno)
 end
 
 -- guarantee that we have enough memory in cache
@@ -542,27 +565,32 @@ function UniReader:show(no)
 	self.slot_visible = slot;
 end
 
+function UniReader:isSamePage(p1, p2)
+	return p1 == p2
+end
+
 --[[
 	@ pageno is the page you want to add to jump_stack
+	  NOTE: for CREReader, pageno refers to xpointer
 --]]
 function UniReader:addJump(pageno, notes)
 	local jump_item = nil
 	local notes_to_add = notes
 	if not notes_to_add then
-		-- no notes given, auto generate from TOC entry
-		notes_to_add = self:getTOCTitleByPage(self.pageno)
+		-- no notes given, auto generate from Toc entry
+		notes_to_add = self:getTocTitleOfCurrentPage()
 		if notes_to_add ~= "" then
 			notes_to_add = "in "..notes_to_add
 		end
 	end
 	-- move pageno page to jump_stack top if already in
 	for _t,_v in ipairs(self.jump_stack) do
-		if _v.page == pageno then
+		if self:isSamePage(_v.page, pageno) then
 			jump_item = _v
 			table.remove(self.jump_stack, _t)
 			-- if original notes is not empty, probably defined by users,
 			-- we use the original notes to overwrite auto generated notes
-			-- from TOC entry
+			-- from Toc entry
 			if jump_item.notes ~= "" then
 				notes_to_add = jump_item.notes
 			end
@@ -620,6 +648,10 @@ function UniReader:goto(no)
 	end
 end
 
+function UniReader:redrawCurrentPage()
+	self:goto(self.pageno)
+end
+
 function UniReader:nextView()
 	local pageno = self.pageno
 
@@ -675,14 +707,14 @@ end
 function UniReader:modifyGamma(factor)
 	print("modifyGamma, gamma="..self.globalgamma.." factor="..factor)
 	self.globalgamma = self.globalgamma * factor;
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
 -- adjust zoom state and trigger re-rendering
 function UniReader:setGlobalZoomMode(newzoommode)
 	if self.globalzoommode ~= newzoommode then
 		self.globalzoommode = newzoommode
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -691,13 +723,13 @@ function UniReader:setGlobalZoom(zoom)
 	if self.globalzoom ~= zoom then
 		self.globalzoommode = self.ZOOM_BY_VALUE
 		self.globalzoom = zoom
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
 function UniReader:setRotate(rotate)
 	self.globalrotate = rotate
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
 -- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
@@ -705,21 +737,21 @@ function UniReader:screenRotate(orien)
 	Screen:screenRotate(orien)
 	width, height = fb:getSize()
 	self:clearCache()
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
-function UniReader:cleanUpTOCTitle(title)
+function UniReader:cleanUpTocTitle(title)
 	return title:gsub("\13", "")
 end
 
-function UniReader:fillTOC()
-	self.toc = self.doc:getTOC()
+function UniReader:fillToc()
+	self.toc = self.doc:getToc()
 end
 
-function UniReader:getTOCTitleByPage(pageno)
+function UniReader:getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
-		self:fillTOC()
+		self:fillToc()
 	end
 
 	-- no table of content
@@ -734,32 +766,41 @@ function UniReader:getTOCTitleByPage(pageno)
 		end
 		pre_entry = _v
 	end
-	return self:cleanUpTOCTitle(pre_entry.title)
+	return self:cleanUpTocTitle(pre_entry.title)
 end
 
-function UniReader:showTOC()
+function UniReader:getTocTitleOfCurrentPage()
+	return self:getTocTitleByPage(self.pageno)
+end
+
+function UniReader:gotoTocEntry(entry)
+	self:goto(entry.page)
+end
+
+function UniReader:showToc()
 	if not self.toc then
-		-- build toc when needed.
-		self:fillTOC()
+		-- build toc if needed.
+		self:fillToc()
 	end
-	local menu_items = {}
-	local filtered_toc = {}
+
 	-- build menu items
+	local menu_items = {}
 	for k,v in ipairs(self.toc) do
 		table.insert(menu_items,
-		("        "):rep(v.depth-1)..self:cleanUpTOCTitle(v.title))
-		table.insert(filtered_toc,v.page)
+		("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
 	end
+
 	toc_menu = SelectMenu:new{
 		menu_title = "Table of Contents",
 		item_array = menu_items,
 		no_item_msg = "This document does not have a Table of Contents.",
 	}
 	item_no = toc_menu:choose(0, fb.bb:getHeight())
+
 	if item_no then
-		self:goto(filtered_toc[item_no])
+		self:gotoTocEntry(self.toc[item_no])
 	else
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -779,7 +820,7 @@ function UniReader:showJumpStack()
 		local jump_item = self.jump_stack[item_no]
 		self:goto(jump_item.page)
 	else
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -806,7 +847,9 @@ function UniReader:showHighLight()
 	end
 end
 
-function UniReader:showMenu()
+-- used in UniReader:showMenu()
+function UniReader:_drawReadingInfo()
+	local ypos = height - 50
 	local load_percent = (self.pageno / self.doc:getPages())
 	local face, fhash = Font:getFaceAndHash(22)
 
@@ -822,7 +865,7 @@ function UniReader:showMenu()
 	local ypos = height - 50
 	fb.bb:paintRect(0, ypos, width, 50, 0)
 	ypos = ypos + 15
-	local cur_section = self:getTOCTitleByPage(self.pageno)
+	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end
@@ -833,6 +876,10 @@ function UniReader:showMenu()
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
+end
+
+function UniReader:showMenu()
+	self:_drawReadingInfo()
 
 	fb:refresh(1)
 	while 1 do
@@ -891,13 +938,14 @@ function UniReader:inputLoop()
 		self.doc:close()
 	end
 	if self.settings ~= nil then
-		self.settings:savesetting("last_page", self.pageno)
+		self:saveLastPageOrPos()
 		self.settings:savesetting("gamma", self.globalgamma)
 		self.settings:savesetting("jumpstack", self.jump_stack)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
 		self.settings:savesetting("highlight", self.highlight)
+		self:saveSpecialSettings()
 		self.settings:close()
 	end
 
@@ -1027,12 +1075,12 @@ function UniReader:addAllCommands()
 		"show help page",
 		function(unireader)
 			HelpPage:show(0,height,unireader.commands)
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content",
 		function(unireader)
-			unireader:showTOC()
+			unireader:showToc()
 		end)
 	self.commands:add(KEY_B,nil,"B",
 		"show jump stack",
@@ -1063,18 +1111,6 @@ function UniReader:addAllCommands()
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
-		end)
-	self.commands:add(KEY_N, nil, "N",
-		"start highlight mode",
-		function(unireader)
-			unireader:startHighLightMode()
-			unireader:goto(unireader.pageno)
-		end)
-	self.commands:add(KEY_N, MOD_SHIFT, "N",
-		"display all highlights",
-		function(unireader)
-			unireader:showHighLight()
-			unireader:goto(unireader.pageno)
 		end)
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",
@@ -1120,7 +1156,7 @@ function UniReader:addAllCommands()
 		"open menu",
 		function(unireader)
 			unireader:showMenu()
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	-- panning
 	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}
@@ -1208,7 +1244,7 @@ function UniReader:addAllCommands()
 				end
 				if old_offset_x ~= unireader.offset_x
 				or old_offset_y ~= unireader.offset_y then
-						unireader:goto(unireader.pageno)
+					unireader:redrawCurrentPage()
 				end
 			end
 		end)
@@ -1226,7 +1262,7 @@ function UniReader:addAllCommands()
 			os.execute("sleep 1")
 			os.execute("killall -stop cvm")
 			fb:setOrientation(Screen.kpv_rotation_mode)
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	print("## defined commands "..dump(self.commands.map))
 end

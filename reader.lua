@@ -20,6 +20,7 @@
 require "alt_getopt"
 require "pdfreader"
 require "djvureader"
+require "crereader"
 require "filechooser"
 require "settings"
 require "screen"
@@ -42,12 +43,14 @@ function openFile(filename)
 		reader = DJVUReader
 	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
 		reader = PDFReader
+	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" then
+		reader = CREReader
 	end
 	if reader then
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
-			page_num = reader.settings:readSetting("last_page") or 1
+			page_num = reader:getLastPageOrPos()
 			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
@@ -135,6 +138,7 @@ UniReader:initGlobalSettings(reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
+CREReader:init()
 
 -- display directory or open file
 local patharg = reader_settings:readSetting("lastfile")

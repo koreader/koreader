@@ -13,3 +13,7 @@ kindlepdfviewer-*.zip
 /.project
 /.reader.kpdfview
 
+kpvcrlib/CMakeCache.txt
+kpvcrlib/CMakeFiles/
+kpvcrlib/cmake_install.cmake
+kpvcrlib/Makefile
