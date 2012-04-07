@@ -30,10 +30,16 @@ function FileSearcher:readDir()
 		for __, d in pairs(self.dirs) do
 			-- handle files in d
 			for f in lfs.dir(d) do
+				local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
 				if lfs.attributes(d.."/"..f, "mode") == "directory"
 				and f ~= "." and f~= ".." and not string.match(f, "^%.[^.]") then
 					table.insert(new_dirs, d.."/"..f)
-				elseif string.match(f, ".+%.[pP][dD][fF]$") or string.match(f, ".+%.[dD][jJ][vV][uU]$") then
+				elseif file_type == "djvu" or file_type == "pdf" 
+				or file_type == "xps" or file_type == "cbz" 
+				or file_type == "epub" or file_type == "txt"
+				or file_type == "rtf" or file_type == "htm"
+				or file_type == "html"
+				or file_type == "fb2" or file_type == "chm" then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--print("file:"..d.."/"..f)

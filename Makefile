@@ -5,9 +5,14 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
+KPVCRLIGDIR=kpvcrlib
+CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
+
+# must point to directory with *.ttf fonts for crengine
+TTF_FONTS_DIR=/usr/share/fonts/truetype/freefont/
 
 # set this to your ARM cross compiler:
 
@@ -55,15 +60,25 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
+CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
+			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
+			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
+			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
-	       	$(MUPDFLIBDIR)/libjpeg.a \
-	       	$(MUPDFLIBDIR)/libopenjpeg.a \
-	       	$(MUPDFLIBDIR)/libjbig2dec.a \
-	       	$(MUPDFLIBDIR)/libz.a
+			$(MUPDFLIBDIR)/libopenjpeg.a \
+			$(MUPDFLIBDIR)/libjbig2dec.a \
+			$(MUPDFLIBDIR)/libjpeg.a \
+			$(MUPDFLIBDIR)/libz.a
+
+#@TODO patch crengine to use the latest libjpeg  04.04 2012 (houqp)
+			#$(MUPDFLIBDIR)/libjpeg.a 
+			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) djvu.o
+all:kpdfview slider_watcher
+
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
 		kpdfview.o \
 		einkfb.o \
@@ -79,10 +94,15 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(LUALIB) \
 		djvu.o \
 		$(DJVULIBS) \
+		cre.o \
+		$(CRENGINELIBS) \
 		-o kpdfview
 
 einkfb.o input.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
+
+slider_watcher: slider_watcher.c
+	$(CC) $(CFLAGS) $< -o $@
 
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
@@ -93,25 +113,38 @@ kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
+cre.o: %.o: %.cpp
+	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -Ilua/src $< -o $@ -lstdc++
+
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rm -Rf lua lua-5.1.4*
+	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
 	git submodule init
 	git submodule update
+	ln -sf kpvcrlib/crengine/cr3gui/data data
+	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
+	cd mupdf/thirdparty/jpeg-*/ && \
+		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
+		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
 	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
-	-rm -f *.o kpdfview
+	-rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
+	make -C $(CRENGINEDIR)/thirdparty/antiword clean
+	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
+	make -C $(CRENGINEDIR)/thirdparty/libpng clean
+	make -C $(CRENGINEDIR)/crengine clean
+	make -C $(KPVCRLIGDIR) clean
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -139,10 +172,15 @@ else
 endif
 	make -C $(DJVUDIR)/build
 
+$(CRENGINELIBS):
+	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
+		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		make
+
 $(LUALIB):
 	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
@@ -156,7 +194,9 @@ customupdate: kpdfview
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
+	cp -rpL data $(INSTALL_DIR)
+	cp -rp fonts $(INSTALL_DIR)
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

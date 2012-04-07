@@ -54,7 +54,11 @@ function FileChooser:readDir()
 			table.insert(self.dirs, f)
 		else
 			local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-			if file_type == "djvu" or file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
+			if file_type == "djvu"
+			or file_type == "pdf" or file_type == "xps" or file_type == "cbz" 
+			or file_type == "epub" or file_type == "txt" or file_type == "rtf"
+			or file_type == "htm" or file_type == "html"
+			or file_type == "fb2" or file_type == "chm" then
 				table.insert(self.files, f)
 			end
 		end

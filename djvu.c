@@ -473,7 +473,7 @@ static const struct luaL_Reg djvu_func[] = {
 static const struct luaL_Reg djvudocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
-	{"getTOC", getTableOfContent},
+	{"getToc", getTableOfContent},
 	{"getPageText", getPageText},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},

@@ -20,6 +20,7 @@
 require "alt_getopt"
 require "pdfreader"
 require "djvureader"
+require "crereader"
 require "filechooser"
 require "settings"
 require "screen"
@@ -42,12 +43,14 @@ function openFile(filename)
 		reader = DJVUReader
 	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
 		reader = PDFReader
+	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" then
+		reader = CREReader
 	end
 	if reader then
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
-			page_num = reader.settings:readSetting("last_page") or 1
+			page_num = reader:getLastPageOrPos()
 			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
@@ -92,6 +95,7 @@ if optarg["d"] == "k3" then
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 	input.open("/dev/input/event2")
+	input.open("/tmp/event_slider")
 	setK3Keycodes()
 elseif optarg["d"] == "emu" then
 	input.open("")
@@ -100,6 +104,7 @@ elseif optarg["d"] == "emu" then
 else
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
+	input.open("/tmp/event_slider")
 
 	-- check if we are running on Kindle 3 (additional volume input)
 	local f=lfs.attributes("/dev/input/event2")
@@ -119,7 +124,7 @@ fb = einkfb.open("/dev/fb0")
 width, height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
-origin_rotation_mode = Screen.cur_rotation_mode
+Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
@@ -133,6 +138,7 @@ UniReader:initGlobalSettings(reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
+CREReader:init()
 
 -- display directory or open file
 local patharg = reader_settings:readSetting("lastfile")
@@ -167,10 +173,10 @@ reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
-fb:setOrientation(origin_rotation_mode)
+fb:setOrientation(Screen.native_rotation_mode)
 
 input.closeAll()
---os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
 if optarg["d"] ~= "emu" then
+	--os.execute("killall -cont cvm")
 	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
 end
