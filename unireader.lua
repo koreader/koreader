@@ -707,14 +707,14 @@ end
 function UniReader:modifyGamma(factor)
 	print("modifyGamma, gamma="..self.globalgamma.." factor="..factor)
 	self.globalgamma = self.globalgamma * factor;
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
 -- adjust zoom state and trigger re-rendering
 function UniReader:setGlobalZoomMode(newzoommode)
 	if self.globalzoommode ~= newzoommode then
 		self.globalzoommode = newzoommode
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -723,13 +723,13 @@ function UniReader:setGlobalZoom(zoom)
 	if self.globalzoom ~= zoom then
 		self.globalzoommode = self.ZOOM_BY_VALUE
 		self.globalzoom = zoom
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
 function UniReader:setRotate(rotate)
 	self.globalrotate = rotate
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
 -- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
@@ -737,7 +737,7 @@ function UniReader:screenRotate(orien)
 	Screen:screenRotate(orien)
 	width, height = fb:getSize()
 	self:clearCache()
-	self:goto(self.pageno)
+	self:redrawCurrentPage()
 end
 
 function UniReader:cleanUpTocTitle(title)
@@ -820,7 +820,7 @@ function UniReader:showJumpStack()
 		local jump_item = self.jump_stack[item_no]
 		self:goto(jump_item.page)
 	else
-		self:goto(self.pageno)
+		self:redrawCurrentPage()
 	end
 end
 
@@ -1075,7 +1075,7 @@ function UniReader:addAllCommands()
 		"show help page",
 		function(unireader)
 			HelpPage:show(0,height,unireader.commands)
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content",
@@ -1244,7 +1244,7 @@ function UniReader:addAllCommands()
 				end
 				if old_offset_x ~= unireader.offset_x
 				or old_offset_y ~= unireader.offset_y then
-						unireader:goto(unireader.pageno)
+					unireader:redrawCurrentPage()
 				end
 			end
 		end)
@@ -1262,7 +1262,7 @@ function UniReader:addAllCommands()
 			os.execute("sleep 1")
 			os.execute("killall -stop cvm")
 			fb:setOrientation(Screen.kpv_rotation_mode)
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end)
 	print("## defined commands "..dump(self.commands.map))
 end
