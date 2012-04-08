@@ -15,4 +15,5 @@ killall slider_watcher
 
 ./reader.lua $1 2> /mnt/us/kindlepdfviewer/crash.log
 killall -cont cvm
+killall slider_watcher
 echo 1 > /proc/eink_fb/update_display
