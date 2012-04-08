@@ -85,8 +85,8 @@ function SelectMenu:addAllCommands()
 				sm.current = sm.current - 1
 				sm.markerdirty = true
 			end
-		end)
-
+		end
+	)
 	self.commands:add(KEY_FW_DOWN, nil, "",
 		"next item",
 		function(sm)
@@ -103,8 +103,8 @@ function SelectMenu:addAllCommands()
 					sm.markerdirty = true
 				end
 			end
-		end)
-
+		end
+	)
 	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, "",
 		"next page",
 		function(sm)
@@ -118,8 +118,8 @@ function SelectMenu:addAllCommands()
 				sm.current = sm.items - (sm.page - 1) * sm.perpage
 				sm.markerdirty = true
 			end
-		end)
-
+		end
+	)
 	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "",
 		"previous page",
 		function(sm)
@@ -130,8 +130,8 @@ function SelectMenu:addAllCommands()
 				sm.current = 1
 				sm.markerdirty = true
 			end
-		end)
-
+		end
+	)
 	self.commands:add(KEY_FW_PRESS, nil, "",
 		"select menu item",
 		function(sm)
@@ -143,8 +143,8 @@ function SelectMenu:addAllCommands()
 											+ sm.current)
 				end
 			end
-		end)
-	
+		end
+	)
 	local KEY_Q_to_E = {}
 	for i = KEY_Q, KEY_P do 
 		table.insert(KEY_Q_to_E, Keydef:new(i, nil, ""))
@@ -154,8 +154,8 @@ function SelectMenu:addAllCommands()
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Q + 1 ], sm.perpage)
-		end)
-
+		end
+	)
 	local KEY_A_to_L = {}
 	for i = KEY_A, KEY_L do 
 		table.insert(KEY_A_to_L, Keydef:new(i, nil, ""))
@@ -165,8 +165,8 @@ function SelectMenu:addAllCommands()
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_A + 11 ], sm.perpage)
-		end)
-
+		end
+	)
 	local KEY_Z_to_M = {}
 	for i = KEY_Z, KEY_M do 
 		table.insert(KEY_Z_to_M, Keydef:new(i, nil, ""))
@@ -176,38 +176,39 @@ function SelectMenu:addAllCommands()
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Z + 21 ], sm.perpage)
-		end)
-
+		end
+	)
 	self.commands:add(KEY_DEL, nil, "",
 		"Select menu item with del key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Del", sm.perpage)
-		end)
-	
+		end
+	)
 	self.commands:add(KEY_DOT, nil, "",
 		"Select menu item with dot key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut(".", sm.perpage)
-		end)
-
+		end
+	)
 	self.commands:add({KEY_SYM, KEY_SLASH}, nil, "",
 		"Select menu item with sym/slash key as shortcut",
 		function(sm)
 		-- DXG has slash after dot
 			sm.selected_item = sm:getItemIndexByShortCut("Sym", sm.perpage)
-		end)
-
+		end
+	)
 	self.commands:add(KEY_ENTER, nil, "",
 		"Select menu item with enter key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Ent", sm.perpage)
-		end)
-
+		end
+	)
 	self.commands:add(KEY_BACK, nil, "",
 		"Exit menu",
 		function(sm)
 			return "break"
-		end)
+		end
+	)
 end
 
 function SelectMenu:clearCommands()

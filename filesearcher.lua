@@ -85,42 +85,141 @@ function FileSearcher:init(search_path)
 	else
 		self:setPath("/mnt/us/documents")
 	end
+	self:addAllCommands()
 end
 
+function FileSearcher:prevItem()
+	if self.current == 1 then
+		if self.page > 1 then
+			self.current = self.perpage
+			self.page = self.page - 1
+			self.pagedirty = true
+		end
+	else
+		self.current = self.current - 1
+		self.markerdirty = true
+	end
+end
 
-function FileSearcher:choose(ypos, height, keywords)
-	local perpage = math.floor(height / self.spacing) - 2
-	local pagedirty = true
-	local markerdirty = false
-
-	local prevItem = function ()
-		if self.current == 1 then
-			if self.page > 1 then
-				self.current = perpage
-				self.page = self.page - 1
-				pagedirty = true
-			end
-		else
-			self.current = self.current - 1
-			markerdirty = true
+function FileSearcher:nextItem()
+	if self.current == self.perpage then
+		if self.page < (self.items / self.perpage) then
+			self.current = 1
+			self.page = self.page + 1
+			self.pagedirty = true
+		end
+	else
+		if self.page ~= math.floor(self.items / self.perpage) + 1
+			or self.current + (self.page-1)*self.perpage < self.items then
+			self.current = self.current + 1
+			self.markerdirty = true
 		end
 	end
+end
 
-	local nextItem = function ()
-		if self.current == perpage then
-			if self.page < (self.items / perpage) then
-				self.current = 1
+function FileSearcher:addAllCommands()
+	self.commands = Commands:new{}
+
+	self.commands:add(KEY_FW_UP, nil, "joypad up",
+		"goto previous item",
+		function(self)
+			self:prevItem()
+		end
+	)
+	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
+		"goto next item",
+		function(self)
+			self:nextItem()
+		end
+	)
+	self.commands:add(KEY_PGFWD, nil, ">",
+		"next page",
+		function(self)
+			if self.page < (self.items / self.perpage) then
+				if self.current + self.page*self.perpage > self.items then
+					self.current = self.items - self.page*self.perpage
+				end
 				self.page = self.page + 1
-				pagedirty = true
-			end
-		else
-			if self.page ~= math.floor(self.items / perpage) + 1
-				or self.current + (self.page-1)*perpage < self.items then
-				self.current = self.current + 1
-				markerdirty = true
+				self.pagedirty = true
+			else
+				self.current = self.items - (self.page-1)*self.perpage
+				self.markerdirty = true
 			end
 		end
-	end
+	)
+	self.commands:add(KEY_PGBCK, nil, "<",
+		"previous page",
+		function(self)
+			if self.page > 1 then
+				self.page = self.page - 1
+				self.pagedirty = true
+			else
+				self.current = 1
+				self.markerdirty = true
+			end
+		end
+	)
+	self.commands:add(KEY_S, nil, "S",
+		"invoke search inputbox",
+		function(self)
+			old_keywords = keywords
+			keywords = InputBox:input(height-100, 100, "Search:", old_keywords)
+			if keywords then
+				self:setSearchResult(keywords)
+			else
+				keywords = old_keywords
+			end
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_F, nil, "F",
+		"font menu",
+		function(self)
+			fonts_menu = SelectMenu:new{
+				menu_title = "Fonts Menu",
+				item_array = Font.fonts,
+			}
+			local re = fonts_menu:choose(0, height)
+			if re then
+				Font.cfont = Font.fonts[re]
+				Font:update()
+			end
+			self.pagedirty = true
+		end
+	)
+	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "",
+		"select item",
+		function(self)
+			file_entry = self.result[self.perpage*(self.page-1)+self.current]
+			file_full_path = file_entry.dir .. "/" .. file_entry.name
+
+			-- rotation mode might be changed while reading, so
+			-- record height_percent here
+			local height_percent = height/fb.bb:getHeight()
+			openFile(file_full_path)
+
+			--reset height and item index if screen has been rotated
+			local item_no = self.perpage * (self.page - 1) + self.current
+			self.perpage = math.floor(height / self.spacing) - 2
+			self.current = item_no % self.perpage
+			self.page = math.floor(item_no / self.perpage) + 1
+
+			self.pagedirty = true
+		end
+	)
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "",
+		"back to file browser",
+		function(self)
+			return "break"
+		end
+	)
+end
+
+function FileSearcher:choose(keywords)
+	self.perpage = math.floor(height / self.spacing) - 2
+	self.pagedirty = true
+	self.markerdirty = false
+
 
 	-- if given keywords, set new result according to keywords.
 	-- Otherwise, display the previous search result.
@@ -133,28 +232,28 @@ function FileSearcher:choose(ypos, height, keywords)
 		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
 		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
 
-		if pagedirty then
-			markerdirty = true
-			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
+		if self.pagedirty then
+			self.markerdirty = true
+			fb.bb:paintRect(0, 0, width, height, 0)
 
 			-- draw menu title
-			renderUtf8Text(fb.bb, 30, ypos + self.title_H, tface, tfhash,
+			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface, tfhash,
 				"Search Result for: "..keywords, true)
 
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found
-				y = ypos + self.title_H + self.spacing * 2
+				y = self.title_H + self.spacing * 2
 				renderUtf8Text(fb.bb, 20, y, cface, cfhash,
 					"Sorry, no match found.", true)
 				renderUtf8Text(fb.bb, 20, y + self.spacing, cface, cfhash,
 					"Please try a different keyword.", true)
-				markerdirty = false
+				self.markerdirty = false
 			else -- found something, draw it
-				for c = 1, perpage do
-					local i = (self.page - 1) * perpage + c
+				for c = 1, self.perpage do
+					local i = (self.page - 1) * self.perpage + c
 					if i <= self.items then
-						y = ypos + self.title_H + (self.spacing * c)
+						y = self.title_H + (self.spacing * c)
 						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
 							self.result[i].name, true)
 					end
@@ -162,103 +261,59 @@ function FileSearcher:choose(ypos, height, keywords)
 			end
 
 			-- draw footer
-			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H
-			x = (fb.bb:getWidth() / 2) - 50
-			all_page = (math.floor(self.items / perpage)+1)
+			y = self.title_H + (self.spacing * self.perpage) + self.foot_H
+			x = (width / 2) - 50
+			all_page = (math.floor(self.items / self.perpage)+1)
 			renderUtf8Text(fb.bb, x, y, fface, ffhash,
 				"Page "..self.page.." of "..all_page, true)
 		end
 
-		if markerdirty then
-			if not pagedirty then
+		if self.markerdirty then
+			if not self.pagedirty then
 				if self.oldcurrent > 0 then
-					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 10
-					fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 0)
-					fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+					y = self.title_H + (self.spacing * self.oldcurrent) + 10
+					fb.bb:paintRect(30, y, width - 60, 3, 0)
+					fb:refresh(1, 30, y, width - 60, 3)
 				end
 			end
 			-- draw new marker line
-			y = ypos + self.title_H + (self.spacing * self.current) + 10
-			fb.bb:paintRect(30, y, fb.bb:getWidth() - 60, 3, 15)
-			if not pagedirty then
-				fb:refresh(1, 30, y, fb.bb:getWidth() - 60, 3)
+			y = self.title_H + (self.spacing * self.current) + 10
+			fb.bb:paintRect(30, y, width - 60, 3, 15)
+			if not self.pagedirty then
+				fb:refresh(1, 30, y, width - 60, 3)
 			end
 			self.oldcurrent = self.current
-			markerdirty = false
+			self.markerdirty = false
 		end
 
-		if pagedirty then
-			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
-			pagedirty = false
+		if self.pagedirty then
+			fb:refresh(0, 0, 0, width, height)
+			self.pagedirty = false
 		end
 
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			if ev.code == KEY_FW_UP then
-				prevItem()
-			elseif ev.code == KEY_FW_DOWN then
-				nextItem()
-			elseif ev.code == KEY_PGFWD then
-				if self.page < (self.items / perpage) then
-					if self.current + self.page*perpage > self.items then
-						self.current = self.items - self.page*perpage
-					end
-					self.page = self.page + 1
-					pagedirty = true
-				else
-					self.current = self.items - (self.page-1)*perpage
-					markerdirty = true
-				end
-			elseif ev.code == KEY_PGBCK then
-				if self.page > 1 then
-					self.page = self.page - 1
-					pagedirty = true
-				else
-					self.current = 1
-					markerdirty = true
-				end
-			elseif ev.code == KEY_S then
-				old_keywords = keywords
-				keywords = InputBox:input(height-100, 100, "Search:", old_keywords)
-				if keywords then
-					self:setSearchResult(keywords)
-				else
-					keywords = old_keywords
-				end
-				pagedirty = true
-			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				fonts_menu = SelectMenu:new{
-					menu_title = "Fonts Menu",
-					item_array = Font.fonts,
-				}
-				local re = fonts_menu:choose(0, height)
-				if re then
-					Font.cfont = Font.fonts[re]
-					Font:update()
-				end
-				pagedirty = true
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				file_entry = self.result[perpage*(self.page-1)+self.current]
-				file_full_path = file_entry.dir .. "/" .. file_entry.name
+			keydef = Keydef:new(ev.code, getKeyModifier())
+			print("key pressed: "..tostring(keydef))
 
-				-- rotation mode might be changed while reading, so
-				-- record height_percent here
-				local height_percent = height/fb.bb:getHeight()
-				openFile(file_full_path)
-
-				--reset height and item index if screen has been rotated
-				local old_perpage = perpage
-				height = math.floor(fb.bb:getHeight()*height_percent)
-				perpage = math.floor(height / self.spacing) - 2
-				self.current = (old_perpage * (self.page - 1) +
-								self.current) % perpage
-				self.page = math.floor(self.items / perpage) + 1
-
-				pagedirty = true
-			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
-				return nil
+			command = self.commands:getByKeydef(keydef)
+			if command ~= nil then
+				print("command to execute: "..tostring(command))
+				ret_code = command.func(self, keydef)
+			else
+				print("command not found: "..tostring(command))
 			end
-		end
-	end
+
+			if ret_code == "break" then
+				break
+			end
+
+			if self.selected_item ~= nil then
+				print("# selected "..self.selected_item)
+				return self.selected_item
+			end
+		end -- EOF if
+	end -- EOF while
+	return nil
 end

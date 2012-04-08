@@ -162,5 +162,24 @@ function Commands:new(obj)
 	end
 	setmetatable(obj.map, mt)
 
+	obj:add(KEY_INTO_SCREEN_SAVER, nil, "slider",
+		"toggle screen saver",
+		function()
+			Screen:saveCurrentBB()
+			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+			fb:setOrientation(Screen.native_rotation_mode)
+			--os.execute("killall -cont cvm")
+		end
+	)
+	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "slider",
+		"toggle screen saver",
+		function()
+			os.execute("sleep 3")
+			--os.execute("killall -stop cvm")
+			fb:setOrientation(Screen.kpv_rotation_mode)
+			Screen:resotreFromSavedBB()
+			fb:refresh(0)
+		end
+	)
 	return obj
 end

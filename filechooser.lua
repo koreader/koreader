@@ -197,7 +197,7 @@ function FileChooser:choose(ypos, height)
 					--]]
 					return nil, function()
 						FileSearcher:init( self.path )
-						FileSearcher:choose(ypos, height, keywords)
+						FileSearcher:choose(keywords)
 					end
 				end
 				pagedirty = true
