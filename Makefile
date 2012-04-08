@@ -195,7 +195,8 @@ customupdate: kpdfview
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
 	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
-	cp -rpL data $(INSTALL_DIR)
+	mkdir $(INSTALL_DIR)/data
+	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rp fonts $(INSTALL_DIR)
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
