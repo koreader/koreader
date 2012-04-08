@@ -85,7 +85,7 @@ function CREReader:goto(pos, pos_type)
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
 	else -- pos_type is PERCENT * 100
-		pos = math.min(pos, self.doc:getFullHeight())
+		pos = math.min(pos, self.doc:getFullHeight()-height)
 		pos = math.max(pos, 0)
 		self.doc:gotoPos(pos)
 	end
