@@ -443,7 +443,7 @@ static int dimRect(lua_State *L) {
 	}
 
 	if(x & 1) {
-		/* This will invert the leftmost column
+		/* This will dimm the leftmost column
 		 * in the case when x is odd. After this,
 		 * x will become even. */
 		dstptr = (uint8_t*)(dst->data + 
@@ -451,7 +451,7 @@ static int dimRect(lua_State *L) {
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
 			int px = *dstptr & 0x0F;
-			*dstptr &= 0xF0 | px << 1;
+			*dstptr &= 0xF0 | px >> 1;
 			dstptr += dst->pitch;
 		}
 		x++;
@@ -469,7 +469,7 @@ static int dimRect(lua_State *L) {
 		dstptr += dst->pitch;
 	}
 	if(w & 1) {
-		/* This will invert the rightmost column 
+		/* This will dimm the rightmost column 
 		 * in the case when (w & 1) && !(x & 1) or
 		 * !(w & 1) && (x & 1). */
 		dstptr = (uint8_t*)(dst->data + 
