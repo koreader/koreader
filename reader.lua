@@ -110,7 +110,7 @@ if optarg["G"] ~= nil then
 end
 
 fb = einkfb.open("/dev/fb0")
-width, height = fb:getSize()
+G_width, G_height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
 Screen.native_rotation_mode = Screen.cur_rotation_mode
@@ -135,7 +135,7 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
-		local file, callback = FileChooser:choose(0,height)
+		local file, callback = FileChooser:choose(0, G_height)
 		if callback then
 			callback()
 		else

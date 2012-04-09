@@ -25,7 +25,7 @@ function CREReader:open(filename)
 	end
 	local style_sheet = "./data/"..file_type..".css"
 	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, 
-						width, height)
+						G_width, G_height)
 	if not ok then
 		return false, self.doc -- will contain error message
 	end
@@ -81,11 +81,13 @@ end
 ----------------------------------------------------
 function CREReader:goto(pos, pos_type)
 	local prev_xpointer = self.doc:getXPointer()
+	local width, height = G_width, G_height
+
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
 	else -- pos_type is PERCENT * 100
-		pos = math.min(pos, self.doc:getFullHeight()-height)
+		pos = math.min(pos, self.doc:getFullHeight() - height)
 		pos = math.max(pos, 0)
 		self.doc:gotoPos(pos)
 	end
@@ -111,6 +113,7 @@ function CREReader:goto(pos, pos_type)
 	end
 
 	self.pos = pos
+	print("------", self.pos)
 	self.pageno = self.doc:getCurrentPage()
 	self.percent = self.doc:getCurrentPercent()
 end
@@ -124,11 +127,11 @@ function CREReader:gotoTocEntry(entry)
 end
 
 function CREReader:nextView()
-	return self.pos + height - self.pan_overlap_vertical
+	return self.pos + G_height - self.pan_overlap_vertical
 end
 
 function CREReader:prevView()
-	return self.pos - height + self.pan_overlap_vertical
+	return self.pos - G_height + self.pan_overlap_vertical
 end
 
 ----------------------------------------------------
@@ -173,10 +176,10 @@ end
 ----------------------------------------------------
 -- used in CREReader:showMenu()
 function CREReader:_drawReadingInfo()
-	local ypos = height - 50
+	local ypos = G_height - 50
 	local load_percent = self.percent/100
 
-	fb.bb:paintRect(0, ypos, width, 50, 0)
+	fb.bb:paintRect(0, ypos, G_width, 50, 0)
 
 	ypos = ypos + 15
 	local face, fhash = Font:getFaceAndHash(22)
@@ -188,7 +191,7 @@ function CREReader:_drawReadingInfo()
 		"Position: "..load_percent.."%".."    "..cur_section, true)
 
 	ypos = ypos + 15
-	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
+	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15,
 							5, 4, load_percent/100, 8)
 end
 
@@ -253,7 +256,7 @@ function CREReader:adjustCreReaderCommands()
 				item_array = face_list,
 			}
 
-			local item_no = fonts_menu:choose(0, height)
+			local item_no = fonts_menu:choose(0, G_height)
 			print(face_list[item_no])
 			if item_no then
 				cr.doc:setFontFace(face_list[item_no])

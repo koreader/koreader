@@ -74,6 +74,7 @@ function FileSearcher:setSearchResult(keywords)
 			end
 		end
 	end
+	self.keywords = keywords
 	self.items = #self.result
 	self.page = 1
 	self.current = 1
@@ -162,12 +163,13 @@ function FileSearcher:addAllCommands()
 	self.commands:add(KEY_S, nil, "S",
 		"invoke search inputbox",
 		function(self)
-			old_keywords = keywords
-			keywords = InputBox:input(height-100, 100, "Search:", old_keywords)
-			if keywords then
-				self:setSearchResult(keywords)
+			old_keywords = self.keywords
+			self.keywords = InputBox:input(G_height - 100, 100,
+				"Search:", old_keywords)
+			if self.keywords then
+				self:setSearchResult(self.keywords)
 			else
-				keywords = old_keywords
+				self.keywords = old_keywords
 			end
 			self.pagedirty = true
 		end
@@ -179,7 +181,7 @@ function FileSearcher:addAllCommands()
 				menu_title = "Fonts Menu",
 				item_array = Font.fonts,
 			}
-			local re = fonts_menu:choose(0, height)
+			local re = fonts_menu:choose(0, G_height)
 			if re then
 				Font.cfont = Font.fonts[re]
 				Font:update()
@@ -193,14 +195,10 @@ function FileSearcher:addAllCommands()
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			file_full_path = file_entry.dir .. "/" .. file_entry.name
 
-			-- rotation mode might be changed while reading, so
-			-- record height_percent here
-			local height_percent = height/fb.bb:getHeight()
 			openFile(file_full_path)
-
 			--reset height and item index if screen has been rotated
 			local item_no = self.perpage * (self.page - 1) + self.current
-			self.perpage = math.floor(height / self.spacing) - 2
+			self.perpage = math.floor(G_height / self.spacing) - 2
 			self.current = item_no % self.perpage
 			self.page = math.floor(item_no / self.perpage) + 1
 
@@ -216,6 +214,7 @@ function FileSearcher:addAllCommands()
 end
 
 function FileSearcher:choose(keywords)
+	local width, height = G_width, G_height
 	self.perpage = math.floor(height / self.spacing) - 2
 	self.pagedirty = true
 	self.markerdirty = false
@@ -238,7 +237,7 @@ function FileSearcher:choose(keywords)
 
 			-- draw menu title
 			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface, tfhash,
-				"Search Result for: "..keywords, true)
+				"Search Result for: "..self.keywords, true)
 
 			-- draw results
 			local c

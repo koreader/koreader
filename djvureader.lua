@@ -66,13 +66,13 @@ function DJVUReader:_isEntireWordInScreenHeightRange(w)
 			(self.cur_full_height - (w.y1 * self.globalzoom) >=
 				-self.offset_y) and
 			(self.cur_full_height - (w.y0 * self.globalzoom) <= 
-				-self.offset_y + height)
+				-self.offset_y + G_height)
 end
 
 function DJVUReader:_isEntireWordInScreenWidthRange(w)
 	return	(w ~= nil) and
 			(w.x0 * self.globalzoom >= -self.offset_x) and
-			(w.x1 * self.globalzoom <= -self.offset_x + width)
+			(w.x1 * self.globalzoom <= -self.offset_x + G_width)
 end
 
 -- make sure at least part of the word can be seen in screen
@@ -81,9 +81,9 @@ function DJVUReader:_isWordInScreenRange(w)
 			(self.cur_full_height - (w.y0 * self.globalzoom) >=
 				-self.offset_y) and
 			(self.cur_full_height - (w.y1 * self.globalzoom) <= 
-				-self.offset_y + height) and
+				-self.offset_y + G_height) and
 			(w.x1 * self.globalzoom >= -self.offset_x) and
-			(w.x0 * self.globalzoom <= -self.offset_x + width)
+			(w.x0 * self.globalzoom <= -self.offset_x + G_width)
 end
 
 function DJVUReader:toggleTextHighLight(word_list)
