@@ -190,9 +190,10 @@ install:
 	scp launchpad/* root@192.168.2.2:/mnt/us/launchpad/
 
 VERSION?=$(shell git rev-parse --short HEAD)
-customupdate: kpdfview
+customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
+	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
 	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
