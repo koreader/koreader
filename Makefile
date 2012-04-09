@@ -98,17 +98,14 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(CRENGINELIBS) \
 		-o kpdfview
 
-einkfb.o input.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
-
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
 
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
+kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
