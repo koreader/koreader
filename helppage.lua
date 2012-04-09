@@ -15,20 +15,23 @@ HelpPage = {
 	-- state buffer
 	commands = nil,
 	items = 0,
-	page = 1
+	page = 1,
+
+	-- font for displaying keys
+	fsize = 20,
+	face = Font:getFace("hpkfont", 20),
+
+	-- font for displaying help messages
+	hfsize = 20,
+	hface = Font:getFace("hfont", 20),
+
+	-- font for paging display
+	ffsize = 15,
+	fface = Font:getFace("pgfont", 15)
 }
 
 -- Other Class vars:
 
--- font for displaying keys
-HelpPage.fsize = 20
-HelpPage.face, HelpPage.fhash = Font:getFaceAndHash(HelpPage.fsize, "mono")
--- font for displaying help messages
-HelpPage.hfsize = 20
-HelpPage.hface, HelpPage.hfhash = Font:getFaceAndHash(HelpPage.hfsize, "sans")
--- font for paging display
-HelpPage.ffsize = 15
-HelpPage.fface, HelpPage.ffhash = Font:getFaceAndHash(HelpPage.ffsize, "sans")
 
 function HelpPage:show(ypos, height, commands)
 	self.commands = {}
@@ -55,17 +58,17 @@ function HelpPage:show(ypos, height, commands)
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					local pen_x = renderUtf8Text(fb.bb, 5, ypos + self.spacing*c, self.face, self.fhash, self.commands[i].shortcut, true)
+					local pen_x = renderUtf8Text(fb.bb, 5, ypos + self.spacing*c, self.face, self.commands[i].shortcut, true)
 					max_x = math.max(max_x, pen_x)
 				end
 			end
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					renderUtf8Text(fb.bb, max_x + 20, ypos + self.spacing*c, self.hface, self.hfhash, self.commands[i].help, true)
+					renderUtf8Text(fb.bb, max_x + 20, ypos + self.spacing*c, self.hface, self.commands[i].help, true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, height - math.floor(self.ffsize * 0.4), self.fface, self.ffhash,
+			renderUtf8Text(fb.bb, 5, height - math.floor(self.ffsize * 0.4), self.fface,
 				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
 			markerdirty = true
 		end

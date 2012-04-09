@@ -1,3 +1,4 @@
+require "font"
 require "unireader"
 require "inputbox"
 require "selectmenu"
@@ -13,6 +14,14 @@ CREReader = UniReader:new{
 function CREReader:init()
 	self:addAllCommands()
 	self:adjustCreReaderCommands()
+	-- we need to initialize the CRE font list
+	local fonts = Font:getFontList()
+	for _k, _v in ipairs(fonts) do
+		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
+		if not ok then
+			print(err)
+		end
+	end
 end
 
 -- open a CREngine supported file and its settings store
@@ -182,12 +191,12 @@ function CREReader:_drawReadingInfo()
 	fb.bb:paintRect(0, ypos, G_width, 50, 0)
 
 	ypos = ypos + 15
-	local face, fhash = Font:getFaceAndHash(22)
+	local face = Font:getFace("rifont", 22)
 	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end
-	renderUtf8Text(fb.bb, 10, ypos+6, face, fhash,
+	renderUtf8Text(fb.bb, 10, ypos+6, face,
 		"Position: "..load_percent.."%".."    "..cur_section, true)
 
 	ypos = ypos + 15

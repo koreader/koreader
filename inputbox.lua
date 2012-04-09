@@ -1,3 +1,4 @@
+require "font"
 require "rendertext"
 require "keys"
 require "graphics"
@@ -21,8 +22,7 @@ InputBox = {
 
 	-- font for displaying input content
 	-- we have to use mono here for better distance controlling
-	face = freetype.newBuiltinFace("mono", 25),
-	fhash = "m25",
+	face = Font:getFace("infont", 25),
 	fheight = 25,
 	fwidth = 15,
 	commands = nil,
@@ -34,7 +34,7 @@ function InputBox:refreshText()
 					self.input_slot_w, self.fheight, self.input_bg)
 	-- paint new text
 	renderUtf8Text(fb.bb, self.input_start_x, self.input_start_y,
-					self.face, self.fhash,
+					self.face,
 					self.input_string, 0)
 end
 
@@ -97,7 +97,7 @@ function InputBox:drawBox(ypos, w, h, title)
 	-- draw input slot
 	fb.bb:paintRect(140, ypos + 10, w - 130, h - 20, self.input_bg)
 	-- draw input title
-	renderUtf8Text(fb.bb, 35, self.input_start_y, self.face, self.fhash,
+	renderUtf8Text(fb.bb, 35, self.input_start_y, self.face,
 		title, true)
 end
 

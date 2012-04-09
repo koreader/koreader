@@ -117,9 +117,9 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
-r_cfont = reader_settings:readSetting("cfont")
-if r_cfont ~=nil then
-	Font.cfont = r_cfont
+fontmap = reader_settings:readSetting("fontmap")
+if fontmap ~= nil then
+	Font.fontmap = fontmap
 end
 
 -- initialize global settings shared among all readers
@@ -157,7 +157,7 @@ end
 
 
 -- save reader settings
-reader_settings:savesetting("cfont", Font.cfont)
+reader_settings:savesetting("fontmap", Font.fontmap)
 reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll
