@@ -1195,7 +1195,7 @@ function UniReader:addAllCommands()
 					y = unireader.shift_y / 5
 				elseif unireader.pan_by_page then
 					x = G_width
-					y = G_height
+					y = G_height - unireader.pan_overlap_vertical -- overlap for lines which didn't fit
 				else
 					x = unireader.shift_x
 					y = unireader.shift_y
@@ -1234,14 +1234,14 @@ function UniReader:addAllCommands()
 						unireader.offset_x = unireader.min_offset_x
 					end
 				elseif keydef.keycode == KEY_FW_UP then
-					unireader.offset_y = unireader.offset_y + y - unireader.pan_overlap_vertical
+					unireader.offset_y = unireader.offset_y + y
 					if unireader.offset_y > 0 then
 						unireader.offset_y = 0
 					elseif unireader.pan_by_page then
 						unireader.show_overlap = unireader.pan_overlap_vertical -- bottom
 					end
 				elseif keydef.keycode == KEY_FW_DOWN then
-					unireader.offset_y = unireader.offset_y - y + unireader.pan_overlap_vertical
+					unireader.offset_y = unireader.offset_y - y
 					if unireader.offset_y < unireader.min_offset_y then
 						unireader.offset_y = unireader.min_offset_y
 					elseif unireader.pan_by_page then
