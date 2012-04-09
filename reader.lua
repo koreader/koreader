@@ -69,9 +69,6 @@ function showusage()
 	print("-g, --goto=page           start reading on page")
 	print("-G, --gamma=GAMMA         set gamma correction")
 	print("                          (floating point notation, e.g. \"1.5\")")
-	print("-d, --device=DEVICE       set device specific configuration,")
-	print("                          currently one of \"kdxg\" (default), \"k3\"")
-	print("                          \"emu\" (DXG emulation)")
 	print("-h, --help                show this usage help")
 	print("")
 	print("If you give the name of a directory instead of a file path, a file")
@@ -89,22 +86,14 @@ if optarg["h"] then
 	return showusage()
 end
 
-
-if optarg["d"] == "k3" then
-	-- for now, the only difference is the additional input device
-	input.open("/dev/input/event0")
-	input.open("/dev/input/event1")
-	input.open("/dev/input/event2")
-	input.open("/tmp/event_slider")
-	setK3Keycodes()
-elseif optarg["d"] == "emu" then
+if util.isEmulated()==1 then
 	input.open("")
 	-- SDL key codes
 	setEmuKeycodes()
 else
+	input.open("slider")
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
-	input.open("/tmp/event_slider")
 
 	-- check if we are running on Kindle 3 (additional volume input)
 	local f=lfs.attributes("/dev/input/event2")

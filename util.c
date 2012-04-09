@@ -46,9 +46,19 @@ static int utf8charcode(lua_State *L) {
 	return 1;
 }
 
+static int isEmulated(lua_State *L) {
+#ifdef EMULATE_READER
+	lua_pushinteger(L, 1);
+#else
+	lua_pushinteger(L, 0);
+#endif
+	return 1;
+}
+
 static const struct luaL_Reg util_func[] = {
 	{"gettime", gettime},
 	{"utf8charcode", utf8charcode},
+	{"isEmulated", isEmulated},
 	{NULL, NULL}
 };
 

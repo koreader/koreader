@@ -76,7 +76,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-all:kpdfview slider_watcher
+all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
@@ -98,17 +98,14 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(CRENGINELIBS) \
 		-o kpdfview
 
-einkfb.o input.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) $< -o $@
-
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
 
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) -I$(LFSDIR)/src $< -o $@
+kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
@@ -190,11 +187,12 @@ install:
 	scp launchpad/* root@192.168.2.2:/mnt/us/launchpad/
 
 VERSION?=$(shell git rev-parse --short HEAD)
-customupdate: kpdfview
+customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
+	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rp fonts $(INSTALL_DIR)
