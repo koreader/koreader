@@ -250,6 +250,7 @@ function UniReader:drawOrCache(no, preCache)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
 	local ok, page = pcall(self.doc.openPage, self.doc, no)
+	local width, height = G_width, G_height
 	if not ok then
 		-- TODO: error handling
 		return nil
@@ -362,6 +363,7 @@ end
 function UniReader:setzoom(page, preCache)
 	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
+	local width, height = G_width, G_height
 	print("# page::getSize "..pwidth.."*"..pheight);
 	local x0, y0, x1, y1 = page:getUsedBBox()
 	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
@@ -517,6 +519,8 @@ end
 -- render and blit a page
 function UniReader:show(no)
 	local pagehash, offset_x, offset_y = self:drawOrCache(no)
+	local width, height = G_width, G_height
+
 	if not pagehash then
 		return
 	end
@@ -662,7 +666,8 @@ function UniReader:nextView()
 			pageno = pageno + 1
 		else
 			-- goto next view of current page
-			self.offset_y = self.offset_y - height + self.pan_overlap_vertical
+			self.offset_y = self.offset_y - G_height
+							+ self.pan_overlap_vertical
 		end
 	else
 		-- not in fit to content width pan mode, just do a page turn
@@ -688,7 +693,8 @@ function UniReader:prevView()
 			pageno = pageno - 1
 		else
 			-- goto previous view of current page
-			self.offset_y = self.offset_y + height - self.pan_overlap_vertical
+			self.offset_y = self.offset_y + G_height
+							- self.pan_overlap_vertical
 		end
 	else
 		-- not in fit to content width pan mode, just do a page turn
@@ -735,7 +741,8 @@ end
 -- @ orien: 1 for clockwise rotate, -1 for anti-clockwise
 function UniReader:screenRotate(orien)
 	Screen:screenRotate(orien)
-	width, height = fb:getSize()
+	-- update global width and height variable
+	G_width, G_height = fb:getSize()
 	self:clearCache()
 	self:redrawCurrentPage()
 end
@@ -849,7 +856,7 @@ end
 
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
-	local ypos = height - 50
+	local width, height = G_width, G_height
 	local load_percent = (self.pageno / self.doc:getPages())
 	local face, fhash = Font:getFaceAndHash(22)
 
@@ -1060,7 +1067,7 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_G,nil,"G",
 		"goto page",
 		function(unireader)
-			local page = InputBox:input(height-100, 100, "Page:")
+			local page = InputBox:input(G_height-100, 100, "Page:")
 			-- convert string to number
 			if not pcall(function () page = page + 0 end) then
 				page = unireader.pageno
@@ -1074,7 +1081,7 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_H,nil,"H",
 		"show help page",
 		function(unireader)
-			HelpPage:show(0,height,unireader.commands)
+			HelpPage:show(0, G_height, unireader.commands)
 			unireader:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_T,nil,"T",
@@ -1130,8 +1137,8 @@ function UniReader:addAllCommands()
 			local bbox = {}
 			bbox["x0"] = - unireader.offset_x / unireader.globalzoom
 			bbox["y0"] = - unireader.offset_y / unireader.globalzoom
-			bbox["x1"] = bbox["x0"] + width / unireader.globalzoom
-			bbox["y1"] = bbox["y0"] + height / unireader.globalzoom
+			bbox["x1"] = bbox["x0"] + G_width / unireader.globalzoom
+			bbox["y1"] = bbox["y0"] + G_height / unireader.globalzoom
 			bbox.pan_x = unireader.pan_x
 			bbox.pan_y = unireader.pan_y
 			unireader.bbox[unireader.pageno] = bbox
@@ -1176,8 +1183,8 @@ function UniReader:addAllCommands()
 					x = unireader.shift_x / 5
 					y = unireader.shift_y / 5
 				elseif unireader.pan_by_page then
-					x = width;
-					y = height - unireader.pan_overlap_vertical; -- overlap for lines which didn't fit
+					x = G_width;
+					y = G_height - unireader.pan_overlap_vertical; -- overlap for lines which didn't fit
 				else
 					x = unireader.shift_x
 					y = unireader.shift_y

@@ -13,7 +13,7 @@ function PDFReader:open(filename)
 		return false, self.doc -- will contain error message
 	end
 	if self.doc:needsPassword() then
-		local password = InputBox:input(height-100, 100, "Pass:")
+		local password = InputBox:input(G_height-100, 100, "Pass:")
 		if not password or not self.doc:authenticatePassword(password) then
 			self.doc:close()
 			self.doc = nil

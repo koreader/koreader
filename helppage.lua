@@ -30,7 +30,7 @@ HelpPage.hface, HelpPage.hfhash = Font:getFaceAndHash(HelpPage.hfsize, "sans")
 HelpPage.ffsize = 15
 HelpPage.fface, HelpPage.ffhash = Font:getFaceAndHash(HelpPage.ffsize, "sans")
 
-function HelpPage:show(ypos, height,commands)
+function HelpPage:show(ypos, height, commands)
 	self.commands = {}
 	self.items = 0
 	local keys = {}
