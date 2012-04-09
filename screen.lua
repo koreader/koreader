@@ -77,6 +77,8 @@ function Screen:updateRotationMode()
 end
 
 function Screen:saveCurrentBB()
+	local width, height = G_width, G_height
+
 	if not self.saved_bb then
 		self.saved_bb = Blitbuffer.new(width, height)
 	end
@@ -92,7 +94,7 @@ function Screen:resotreFromSavedBB()
 end
 
 function Screen:getCurrentScreenBB()
-	local bb = Blitbuffer.new(width, height)
+	local bb = Blitbuffer.new(G_width, G_height)
 	bb:blitFullFrom(fb.bb)
 	return bb
 end

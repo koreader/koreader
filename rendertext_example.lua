@@ -3,7 +3,7 @@ require "rendertext"
 require "graphics"
 
 fb = einkfb.open("/dev/fb0")
-width, height = fb:getSize()
+G_width, G_height = fb:getSize()
 
 print("open")
 
