@@ -76,7 +76,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
-all:kpdfview slider_watcher
+all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
@@ -194,7 +194,7 @@ customupdate: kpdfview
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview slider_watcher *.lua $(INSTALL_DIR)
+	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rp fonts $(INSTALL_DIR)
