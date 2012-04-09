@@ -355,6 +355,9 @@ end
 
 -- blank the cache
 function UniReader:clearCache()
+	for k, _ in pairs(self.cache) do
+		self.cache[k].bb:free()
+	end
 	self.cache = {}
 	self.cache_current_memsize = 0
 end
