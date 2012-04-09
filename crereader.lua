@@ -111,6 +111,14 @@ function CREReader:goto(pos, pos_type)
 
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
+	print("## self.show_overlap "..self.show_overlap)
+	if self.show_overlap < 0 then
+		fb.bb:dimRect(0,0, width, -self.show_overlap)
+	elseif self.show_overlap > 0 then
+		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
+	end
+	self.show_overlap = 0
+
 	if self.rcount == self.rcountmax then
 		print("full refresh")
 		self.rcount = 1
@@ -136,10 +144,12 @@ function CREReader:gotoTocEntry(entry)
 end
 
 function CREReader:nextView()
+	self.show_overlap = -self.pan_overlap_vertical
 	return self.pos + G_height - self.pan_overlap_vertical
 end
 
 function CREReader:prevView()
+	self.show_overlap = self.pan_overlap_vertical
 	return self.pos - G_height + self.pan_overlap_vertical
 end
 
