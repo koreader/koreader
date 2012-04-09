@@ -34,6 +34,11 @@ ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
+DYNAMICLIBSTDCPP:=-lstdc++
+ifdef STATICLIBSTDCPP
+	DYNAMICLIBSTDCPP:=
+endif
+
 # you can configure an emulation for the (eink) framebuffer here.
 # the application won't use the framebuffer (and the special e-ink ioctls)
 # in that case.
@@ -82,7 +87,7 @@ LUALIB := $(LUADIR)/src/liblua.a
 all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) \
+	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -99,7 +104,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(DJVULIBS) \
 		cre.o \
 		$(CRENGINELIBS) \
-		libstdc++.a \
+		$(STATICLIBSTDCPP) \
 		-o kpdfview
 
 slider_watcher: slider_watcher.c
