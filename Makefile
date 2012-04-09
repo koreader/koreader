@@ -198,6 +198,7 @@ customupdate: all
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rp fonts $(INSTALL_DIR)
+	mkdir -p $(INSTALL_DIR)/fonts/host
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
