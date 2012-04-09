@@ -16,9 +16,9 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-CC:=arm-unknown-linux-gnueabi-gcc
-CXX:=arm-unknown-linux-gnueabi-g++
-HOST:=arm-unknown-linux-gnueabi
+CC:=arm-none-linux-gnueabi-gcc
+CXX:=arm-none-linux-gnueabi-g++
+HOST:=arm-none-linux-gnueabi
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
@@ -26,7 +26,9 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3
+CFLAGS:=-O3 --sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
+CXXFLAGS:=-O3 --sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
+LDFLAGS:=--sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
 ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
@@ -79,7 +81,7 @@ LUALIB := $(LUADIR)/src/liblua.a
 all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
+	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -96,6 +98,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(DJVULIBS) \
 		cre.o \
 		$(CRENGINELIBS) \
+		libstdc++.a \
 		-o kpdfview
 
 slider_watcher: slider_watcher.c
@@ -197,8 +200,8 @@ customupdate: all
 	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
-	cp -rp fonts $(INSTALL_DIR)
-	mkdir -p $(INSTALL_DIR)/fonts/host
+	cp -rpL fonts $(INSTALL_DIR)
+	mkdir $(INSTALL_DIR)/fonts/host
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
