@@ -165,7 +165,7 @@ reader_settings:close()
 fb:setOrientation(Screen.native_rotation_mode)
 
 input.closeAll()
-if optarg["d"] ~= "emu" then
+if util.isEmulated()==0 then
 	--os.execute("killall -cont cvm")
 	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
 end
