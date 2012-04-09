@@ -16,9 +16,10 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-CC:=arm-none-linux-gnueabi-gcc
-CXX:=arm-none-linux-gnueabi-g++
 HOST:=arm-none-linux-gnueabi
+CC:=$(HOST)-gcc
+CXX:=$(HOST)-g++
+STRIP:=$(HOST)-strip
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
@@ -26,9 +27,9 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3 --sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
-CXXFLAGS:=-O3 --sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
-LDFLAGS:=--sysroot=/home/hw/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sys-root
+CFLAGS:=-O3 $(SYSROOT)
+CXXFLAGS:=-O3 $(SYSROOT)
+LDFLAGS:= $(SYSROOT)
 ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
@@ -195,6 +196,8 @@ VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
+	$(STRIP) --strip-unneeded kpdfview
+	-rm kindlepdfviewer-$(VERSION).zip
 	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
 	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
@@ -202,6 +205,6 @@ customupdate: all
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
-	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
+	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
