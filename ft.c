@@ -56,49 +56,6 @@ static int newFace(lua_State *L) {
 	return 1;
 }
 
-static int newBuiltinFace(lua_State *L) {
-	const char *fontname = luaL_checkstring(L, 1);
-	int pxsize = luaL_optint(L, 2, 16*64);
-	char *fontdata = NULL;
-
-	unsigned int size;
-	/* we use compiled-in font data from mupdf build */
-	if(!strcmp("mono", fontname)) {
-		fontdata = pdf_find_substitute_font(1, 0, 0, 0, &size);
-	} else if(!strcmp("sans", fontname)) {
-		fontdata = pdf_find_substitute_font(0, 0, 0, 0, &size);
-	} else if(!strcmp("cjk", fontname)) {
-		fontdata = pdf_find_substitute_cjk_font(0, 0, &size);
-	} else {
-		fontdata = pdf_find_builtin_font(fontname, &size);
-	}
-	if(fontdata == NULL) {
-		return luaL_error(L, "no such built-in font");
-	}
-
-	FT_Face *face = (FT_Face*) lua_newuserdata(L, sizeof(FT_Face));
-	luaL_getmetatable(L, "ft_face");
-	lua_setmetatable(L, -2);
-
-	FT_Error error = FT_New_Memory_Face(freetypelib, (FT_Byte*)fontdata, size, 0, face);
-	if(error) {
-		return luaL_error(L, "freetype error");
-	}
-
-	error = FT_Set_Pixel_Sizes(*face, 0, pxsize);
-	if(error) {
-		error = FT_Done_Face(*face);
-		return luaL_error(L, "freetype error");
-	}
-
-	if((*face)->charmap == NULL) {
-		//TODO
-		//fprintf(stderr, "no unicode charmap found, to be implemented.\n");
-	}
-	return 1;
-}
-
-
 static int renderGlyph(lua_State *L) {
 	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
 	int ch = luaL_checkint(L, 2);
@@ -192,7 +149,6 @@ static const struct luaL_Reg ft_face_meth[] = {
 
 static const struct luaL_Reg ft_func[] = {
 	{"newFace", newFace},
-	{"newBuiltinFace", newBuiltinFace},
 	{NULL, NULL}
 };
 

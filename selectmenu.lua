@@ -12,8 +12,7 @@ SelectMenu = {
 	-- font for paging display
 	ffsize = 16,
 	-- font for item shortcut
-	sface = freetype.newBuiltinFace("mono", 22),
-	sfhash = "mono22",
+	sface = Font:getFace("scfont", 22),
 
 	-- title height
 	title_H = 40,
@@ -22,7 +21,7 @@ SelectMenu = {
 	-- foot height
 	foot_H = 27,
 
-	menu_title = "None Titled",
+	menu_title = "No Title",
 	no_item_msg = "No items found.",
 	item_array = {},
 	items = 0,
@@ -231,9 +230,9 @@ function SelectMenu:choose(ypos, height)
 	self.last_shortcut = 0
 
 	while true do
-		local cface, cfhash = Font:getFaceAndHash(22)
-		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
-		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+		local cface = Font:getFace("cfont", 22)
+		local tface = Font:getFace("tfont", 25)
+		local fface = Font:getFace("ffont", 16)
 
 		if self.pagedirty then
 			self.markerdirty = true
@@ -243,16 +242,16 @@ function SelectMenu:choose(ypos, height)
 
 			local x = 20
 			local y = ypos + self.title_H
-			renderUtf8Text(fb.bb, x, y, tface, tfhash, self.menu_title, true)
+			renderUtf8Text(fb.bb, x, y, tface, self.menu_title, true)
 
 			-- draw items
 			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
 			if self.items == 0 then
 				y = ypos + self.title_H + (self.spacing * 2)
-				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
+				renderUtf8Text(fb.bb, 30, y, cface,
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
-				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
+				renderUtf8Text(fb.bb, 30, y, cface,
 					self.no_item_msg, true)
 				self.markerdirty = false
 				self:clearCommands()
@@ -272,16 +271,16 @@ function SelectMenu:choose(ypos, height)
 						if self.item_shortcuts[c] ~= nil and 
 							string.len(self.item_shortcuts[c]) == 3 then
 							-- print "Del", "Sym and "Ent"
-							renderUtf8Text(fb.bb, 13, y, fface, ffhash,
+							renderUtf8Text(fb.bb, 13, y, fface,
 								self.item_shortcuts[c], true)
 						else
-							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
+							renderUtf8Text(fb.bb, 18, y, self.sface,
 								self.item_shortcuts[c], true)
 						end
 
 						self.last_shortcut = c
 
-						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
+						renderUtf8Text(fb.bb, 50, y, cface,
 							self.item_array[i], true)
 					end -- EOF if i <= self.items
 				end -- EOF for
@@ -291,7 +290,7 @@ function SelectMenu:choose(ypos, height)
 			y = ypos + self.title_H + (self.spacing * self.perpage)
 				+ self.foot_H + 5
 			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, fface, ffhash,
+			renderUtf8Text(fb.bb, x, y, fface,
 				"Page "..self.page.." of "..
 				(math.ceil(self.items / self.perpage)), true)
 		end
@@ -339,7 +338,7 @@ function SelectMenu:choose(ypos, height)
 
 			if self.selected_item ~= nil then
 				print("# selected "..self.selected_item)
-				return self.selected_item
+				return self.selected_item, self.item_array[self.selected_item]
 			end
 		end -- EOF if
 	end -- EOF while

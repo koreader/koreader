@@ -177,13 +177,13 @@ function FileSearcher:addAllCommands()
 	self.commands:add(KEY_F, nil, "F",
 		"font menu",
 		function(self)
-			fonts_menu = SelectMenu:new{
+			local fonts_menu = SelectMenu:new{
 				menu_title = "Fonts Menu",
-				item_array = Font.fonts,
+				item_array = Font:getFontList(),
 			}
-			local re = fonts_menu:choose(0, G_height)
+			local re, font = fonts_menu:choose(0, G_height)
 			if re then
-				Font.cfont = Font.fonts[re]
+				Font.fontmap["cfont"] = font
 				Font:update()
 			end
 			self.pagedirty = true
@@ -227,25 +227,25 @@ function FileSearcher:choose(keywords)
 	end
 
 	while true do
-		local cface, cfhash = Font:getFaceAndHash(22)
-		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
-		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+		local cface = Font:getFace("cfont", 22)
+		local tface = Font:getFace("tfont", 25)
+		local fface = Font:getFace("ffont", 16)
 
 		if self.pagedirty then
 			self.markerdirty = true
 			fb.bb:paintRect(0, 0, width, height, 0)
 
 			-- draw menu title
-			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface, tfhash,
+			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface,
 				"Search Result for: "..self.keywords, true)
 
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found
 				y = self.title_H + self.spacing * 2
-				renderUtf8Text(fb.bb, 20, y, cface, cfhash,
+				renderUtf8Text(fb.bb, 20, y, cface,
 					"Sorry, no match found.", true)
-				renderUtf8Text(fb.bb, 20, y + self.spacing, cface, cfhash,
+				renderUtf8Text(fb.bb, 20, y + self.spacing, cface,
 					"Please try a different keyword.", true)
 				self.markerdirty = false
 			else -- found something, draw it
@@ -253,7 +253,7 @@ function FileSearcher:choose(keywords)
 					local i = (self.page - 1) * self.perpage + c
 					if i <= self.items then
 						y = self.title_H + (self.spacing * c)
-						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
+						renderUtf8Text(fb.bb, 50, y, cface,
 							self.result[i].name, true)
 					end
 				end
@@ -263,7 +263,7 @@ function FileSearcher:choose(keywords)
 			y = self.title_H + (self.spacing * self.perpage) + self.foot_H
 			x = (width / 2) - 50
 			all_page = (math.floor(self.items / self.perpage)+1)
-			renderUtf8Text(fb.bb, x, y, fface, ffhash,
+			renderUtf8Text(fb.bb, x, y, fface,
 				"Page "..self.page.." of "..all_page, true)
 		end
 

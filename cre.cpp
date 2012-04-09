@@ -391,12 +391,20 @@ static int drawCurrentPage(lua_State *L) {
 	}
 }
 
+static int registerFont(lua_State *L) {
+	const char *fontfile = luaL_checkstring(L, 1);
+	if ( !fontMan->RegisterFont(lString8(fontfile)) ) {
+		return luaL_error(L, "cannot register font <%s>", fontfile);
+	}
+	return 0;
+}
 
 static const struct luaL_Reg cre_func[] = {
 	{"openDocument", openDocument},
 	{"getFontFaces", getFontFaces},
 	{"getGammaIndex", getGammaIndex},
 	{"setGammaIndex", setGammaIndex},
+	{"registerFont", registerFont},
 	{NULL, NULL}
 };
 
@@ -437,23 +445,8 @@ int luaopen_cre(lua_State *L) {
 	luaL_register(L, "cre", cre_func);
 
 
-	/* initialize fonts for CREngine */
-	InitFontManager(lString8("./fonts"));
-
-    lString8 fontDir("./fonts");
-	LVContainerRef dir = LVOpenDirectory( LocalToUnicode(fontDir).c_str() );
-	if ( !dir.isNull() )
-	for ( int i=0; i<dir->GetObjectCount(); i++ ) {
-		const LVContainerItemInfo * item = dir->GetObjectInfo(i);
-		lString16 fileName = item->GetName();
-		if ( !item->IsContainer() && fileName.length()>4 && lString16(fileName, fileName.length()-4, 4)==L".ttf" ) {
-			lString8 fn = UnicodeToLocal(fileName);
-			printf("loading font: %s\n", fn.c_str());
-			if ( !fontMan->RegisterFont(fn) ) {
-				printf("    failed\n");
-			}
-		}
-	}
+	/* initialize font manager for CREngine */
+	InitFontManager(lString8());
 
 #ifdef DEBUG_CRENGINE
 	CRLog::setStdoutLogger();

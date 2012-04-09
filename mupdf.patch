@@ -1,0 +1,171 @@
+diff --git a/pdf/pdf_font.c b/pdf/pdf_font.c
+index 5e54e0b..38bd1d8 100644
+--- a/pdf/pdf_font.c
++++ b/pdf/pdf_font.c
+@@ -182,8 +182,13 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
+ 	if (!data)
+ 		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
+ 
++#ifndef NOBUILTINFONT
+ 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
+ 	/* RJW: "cannot load freetype font from memory" */
++#else
++	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 1);
++	free(data);
++#endif
+ 
+ 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
+ 		fontdesc->flags |= PDF_FD_SYMBOLIC;
+@@ -199,8 +204,13 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
+ 	if (!data)
+ 		fz_throw(ctx, "cannot find substitute font");
+ 
++#ifndef NOBUILTINFONT
+ 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
+ 	/* RJW: "cannot load freetype font from memory" */
++#else
++	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 1);
++	free(data);
++#endif
+ 
+ 	fontdesc->font->ft_substitute = 1;
+ 	fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);
+@@ -218,7 +228,12 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros,
+ 		fz_throw(ctx, "cannot find builtin CJK font");
+ 
+ 	/* a glyph bbox cache is too big for droid sans fallback (51k glyphs!) */
++#ifndef NOBUILTINFONT
+ 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 0);
++#else
++	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 0);
++	free(data);
++#endif
+ 	/* RJW: "cannot load builtin CJK font" */
+ 
+ 	fontdesc->font->ft_substitute = 1;
+diff --git a/pdf/pdf_fontfile.c b/pdf/pdf_fontfile.c
+index 543ce76..a076033 100644
+--- a/pdf/pdf_fontfile.c
++++ b/pdf/pdf_fontfile.c
+@@ -1,6 +1,8 @@
+ #include "fitz.h"
+ #include "mupdf.h"
+ 
++#ifndef NOBUILTINFONT
++
+ #ifdef NOCJK
+ #define NOCJKFONT
+ #endif
+@@ -129,3 +131,112 @@ pdf_find_substitute_cjk_font(int ros, int serif, unsigned int *len)
+ 	return NULL;
+ #endif
+ }
++
++#else // NOBUILTINFONT
++
++unsigned char *
++get_font_file(char *name)
++{
++	char *fontdir;
++	char *filename;
++	int len;
++	fontdir = getenv("FONTDIR");
++	if(fontdir == NULL) {
++		fontdir = "./fonts";
++	}
++	len = strlen(fontdir) + strlen(name) + 2;
++	filename = malloc(len);
++	if(filename == NULL) {
++		return NULL;
++	}
++	snprintf(filename, len, "%s/%s", fontdir, name);
++	return filename;
++}
++
++unsigned char *
++pdf_find_builtin_font(char *name, unsigned int *len)
++{
++	*len = 0;
++	if (!strcmp("Courier", name)) {
++		return get_font_file("NimbusMonL-Regu.cff");
++	}
++	if (!strcmp("Courier-Bold", name)) {
++		return get_font_file("NimbusMonL-Bold.cff");
++	}
++	if (!strcmp("Courier-Oblique", name)) {
++		return get_font_file("NimbusMonL-ReguObli.cff");
++	}
++	if (!strcmp("Courier-BoldOblique", name)) {
++		return get_font_file("NimbusMonL-BoldObli.cff");
++	}
++	if (!strcmp("Helvetica", name)) {
++		return get_font_file("NimbusSanL-Regu.cff");
++	}
++	if (!strcmp("Helvetica-Bold", name)) {
++		return get_font_file("NimbusSanL-Bold.cff");
++	}
++	if (!strcmp("Helvetica-Oblique", name)) {
++		return get_font_file("NimbusSanL-ReguItal.cff");
++	}
++	if (!strcmp("Helvetica-BoldOblique", name)) {
++		return get_font_file("NimbusSanL-BoldItal.cff");
++	}
++	if (!strcmp("Times-Roman", name)) {
++		return get_font_file("NimbusRomNo9L-Regu.cff");
++	}
++	if (!strcmp("Times-Bold", name)) {
++		return get_font_file("NimbusRomNo9L-Medi.cff");
++	}
++	if (!strcmp("Times-Italic", name)) {
++		return get_font_file("NimbusRomNo9L-ReguItal.cff");
++	}
++	if (!strcmp("Times-BoldItalic", name)) {
++		return get_font_file("NimbusRomNo9L-MediItal.cff");
++	}
++	if (!strcmp("Symbol", name)) {
++		return get_font_file("StandardSymL.cff");
++	}
++	if (!strcmp("ZapfDingbats", name)) {
++		return get_font_file("Dingbats.cff");
++	}
++	return NULL;
++}
++
++unsigned char *
++pdf_find_substitute_font(int mono, int serif, int bold, int italic, unsigned int *len)
++{
++	if (mono) {
++		if (bold) {
++			if (italic) return pdf_find_builtin_font("Courier-BoldOblique", len);
++			else return pdf_find_builtin_font("Courier-Bold", len);
++		} else {
++			if (italic) return pdf_find_builtin_font("Courier-Oblique", len);
++			else return pdf_find_builtin_font("Courier", len);
++		}
++	} else if (serif) {
++		if (bold) {
++			if (italic) return pdf_find_builtin_font("Times-BoldItalic", len);
++			else return pdf_find_builtin_font("Times-Bold", len);
++		} else {
++			if (italic) return pdf_find_builtin_font("Times-Italic", len);
++			else return pdf_find_builtin_font("Times-Roman", len);
++		}
++	} else {
++		if (bold) {
++			if (italic) return pdf_find_builtin_font("Helvetica-BoldOblique", len);
++			else return pdf_find_builtin_font("Helvetica-Bold", len);
++		} else {
++			if (italic) return pdf_find_builtin_font("Helvetica-Oblique", len);
++			else return pdf_find_builtin_font("Helvetica", len);
++		}
++	}
++}
++
++unsigned char *
++pdf_find_substitute_cjk_font(int ros, int serif, unsigned int *len)
++{
++	*len = 0;
++	return get_font_file("droid/DroidSansFallback.ttf");
++}
++
++#endif // NOBUILTINFONT

@@ -122,8 +122,8 @@ function FileChooser:choose(ypos, height)
 	end
 
 	while true do
-		local cface, cfhash= Font:getFaceAndHash(25)
-		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+		local cface = Font:getFace("cfont", 25)
+		local fface = Font:getFace("ffont", 16)
 
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
@@ -132,17 +132,17 @@ function FileChooser:choose(ypos, height)
 				local i = (self.page - 1) * perpage + c
 				if i <= #self.dirs then
 					-- resembles display in midnight commander: adds "/" prefix for directories
-					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, cface, cfhash, "/", true)
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.dirs[i], true)
+					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, cface, "/", true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, self.dirs[i], true)
 				elseif i <= self.items then
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.files[i-#self.dirs], true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, self.files[i-#self.dirs], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface, ffhash,
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
 			self.exception_message = nil
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, ffhash, msg, true)
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, msg, true)
 			markerdirty = true
 		end
 		if markerdirty then
@@ -173,13 +173,13 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				fonts_menu = SelectMenu:new{
+				local fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
-					item_array = Font.fonts,
+					item_array = Font:getFontList(),
 				}
-				local re = fonts_menu:choose(0, height)
+				local re, font = fonts_menu:choose(0, height)
 				if re then
-					Font.cfont = Font.fonts[re]
+					Font.fontmap["cfont"] = font
 					Font:update()
 				end
 				pagedirty = true

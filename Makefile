@@ -12,7 +12,7 @@ FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
 LFSDIR=luafilesystem
 
 # must point to directory with *.ttf fonts for crengine
-TTF_FONTS_DIR=/usr/share/fonts/truetype/freefont/
+TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
@@ -119,6 +119,7 @@ lfs.o: $(LFSDIR)/src/lfs.c
 fetchthirdparty:
 	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
+	test -d mupdf && (cd mupdf; git checkout .)
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
@@ -128,6 +129,7 @@ fetchthirdparty:
 	cd mupdf/thirdparty/jpeg-*/ && \
 		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
+	cd mupdf && patch -N -p1 < ../mupdf.patch
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
 	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
@@ -158,7 +160,7 @@ $(MUPDFDIR)/cmapdump.host:
 
 $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS)" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS=
+	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS= verbose=1
 
 $(DJVULIBS):
 	-mkdir $(DJVUDIR)/build
@@ -196,6 +198,7 @@ customupdate: all
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rp fonts $(INSTALL_DIR)
+	mkdir -p $(INSTALL_DIR)/fonts/host
 	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
