@@ -74,6 +74,7 @@ function FileSearcher:setSearchResult(keywords)
 			end
 		end
 	end
+	self.keywords = keywords
 	self.items = #self.result
 	self.page = 1
 	self.current = 1
@@ -162,12 +163,13 @@ function FileSearcher:addAllCommands()
 	self.commands:add(KEY_S, nil, "S",
 		"invoke search inputbox",
 		function(self)
-			old_keywords = keywords
-			keywords = InputBox:input(height-100, 100, "Search:", old_keywords)
-			if keywords then
-				self:setSearchResult(keywords)
+			old_keywords = self.keywords
+			self.keywords = InputBox:input(height-100, 100,
+				"Search:", old_keywords)
+			if self.keywords then
+				self:setSearchResult(self.keywords)
 			else
-				keywords = old_keywords
+				self.keywords = old_keywords
 			end
 			self.pagedirty = true
 		end
@@ -238,7 +240,7 @@ function FileSearcher:choose(keywords)
 
 			-- draw menu title
 			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface, tfhash,
-				"Search Result for: "..keywords, true)
+				"Search Result for: "..self.keywords, true)
 
 			-- draw results
 			local c
