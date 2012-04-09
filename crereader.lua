@@ -104,9 +104,9 @@ function CREReader:goto(pos, pos_type)
 
 	print("## self.show_overlap "..self.show_overlap)
 	if self.show_overlap < 0 then
-		fb.bb:invertRect(0,0, width, -self.show_overlap)
+		fb.bb:dimRect(0,0, width, -self.show_overlap)
 	elseif self.show_overlap > 0 then
-		fb.bb:invertRect(0,height - self.show_overlap, width, self.show_overlap)
+		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
 

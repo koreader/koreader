@@ -423,6 +423,67 @@ static int invertRect(lua_State *L) {
 	return 0;
 }
 
+static int dimRect(lua_State *L) {
+	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	int x = luaL_checkint(L, 2);
+	int y = luaL_checkint(L, 3);
+	int w = luaL_checkint(L, 4);
+	int h = luaL_checkint(L, 5);
+	uint8_t *dstptr;
+
+	int cy, cx;
+	if(w <= 0 || h <= 0 || x >= dst->w || y >= dst->h) {
+		return 0;
+	}
+	if(x + w > dst->w) {
+		w = dst->w - x;
+	}
+	if(y + h > dst->h) {
+		h = dst->h - y;
+	}
+
+	if(x & 1) {
+		/* This will invert the leftmost column
+		 * in the case when x is odd. After this,
+		 * x will become even. */
+		dstptr = (uint8_t*)(dst->data + 
+				y * dst->pitch + 
+				x / 2);
+		for(cy = 0; cy < h; cy++) {
+			int px = *dstptr & 0x0F;
+			*dstptr &= 0xF0 | px << 1;
+			dstptr += dst->pitch;
+		}
+		x++;
+		w--;
+	}
+	dstptr = (uint8_t*)(dst->data + 
+			y * dst->pitch + 
+			x / 2);
+	for(cy = 0; cy < h; cy++) {
+		for(cx = 0; cx < w/2; cx++) {
+			*(dstptr+cx) =
+				*(dstptr+cx) >> 1 & 0xF0 |
+				*(dstptr+cx) & 0x0F >> 1;
+		}
+		dstptr += dst->pitch;
+	}
+	if(w & 1) {
+		/* This will invert the rightmost column 
+		 * in the case when (w & 1) && !(x & 1) or
+		 * !(w & 1) && (x & 1). */
+		dstptr = (uint8_t*)(dst->data + 
+				y * dst->pitch + 
+				(x + w) / 2);
+		for(cy = 0; cy < h; cy++) {
+			int px = *dstptr & 0xF0;
+			*dstptr &= 0x0F | ( px >> 1 & 0xF0 );
+			dstptr += dst->pitch;
+		}
+	}
+	return 0;
+}
+
 static const struct luaL_Reg blitbuffer_func[] = {
 	{"new", newBlitBuffer},
 	{NULL, NULL}
@@ -436,6 +497,7 @@ static const struct luaL_Reg blitbuffer_meth[] = {
 	{"blitFullFrom", blitFullToBuffer},
 	{"paintRect", paintRect},
 	{"invertRect", invertRect},
+	{"dimRect", dimRect},
 	{"free", freeBlitBuffer},
 	{"__gc", freeBlitBuffer},
 	{NULL, NULL}

@@ -555,9 +555,9 @@ function UniReader:show(no)
 
 	print("## self.show_overlap "..self.show_overlap)
 	if self.show_overlap < 0 then
-		fb.bb:invertRect(0,0, width, dest_y - self.show_overlap)
+		fb.bb:dimRect(0,0, width, dest_y - self.show_overlap)
 	elseif self.show_overlap > 0 then
-		fb.bb:invertRect(0,dest_y + height - self.show_overlap, width, self.show_overlap)
+		fb.bb:dimRect(0,dest_y + height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
 
