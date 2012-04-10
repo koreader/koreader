@@ -16,9 +16,10 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-CC:=arm-unknown-linux-gnueabi-gcc
-CXX:=arm-unknown-linux-gnueabi-g++
-HOST:=arm-unknown-linux-gnueabi
+HOST:=arm-none-linux-gnueabi
+CC:=$(HOST)-gcc
+CXX:=$(HOST)-g++
+STRIP:=$(HOST)-strip
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
@@ -26,10 +27,17 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3
+CFLAGS:=-O3 $(SYSROOT)
+CXXFLAGS:=-O3 $(SYSROOT)
+LDFLAGS:= $(SYSROOT)
 ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
+
+DYNAMICLIBSTDCPP:=-lstdc++
+ifdef STATICLIBSTDCPP
+	DYNAMICLIBSTDCPP:=
+endif
 
 # you can configure an emulation for the (eink) framebuffer here.
 # the application won't use the framebuffer (and the special e-ink ioctls)
@@ -79,7 +87,7 @@ LUALIB := $(LUADIR)/src/liblua.a
 all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) -lstdc++ \
+	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -96,6 +104,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		$(DJVULIBS) \
 		cre.o \
 		$(CRENGINELIBS) \
+		$(STATICLIBSTDCPP) \
 		-o kpdfview
 
 slider_watcher: slider_watcher.c
@@ -192,13 +201,15 @@ VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
+	$(STRIP) --strip-unneeded kpdfview
+	-rm kindlepdfviewer-$(VERSION).zip
 	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
 	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
-	cp -rp fonts $(INSTALL_DIR)
-	mkdir -p $(INSTALL_DIR)/fonts/host
-	zip -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
+	cp -rpL fonts $(INSTALL_DIR)
+	mkdir $(INSTALL_DIR)/fonts/host
+	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

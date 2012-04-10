@@ -54,6 +54,7 @@ UniReader = {
 	pan_y = 0,
 	pan_margin = 20, -- horizontal margin for two-column zoom
 	pan_overlap_vertical = 30,
+	show_overlap = 0,
 
 	-- the document:
 	doc = nil,
@@ -355,6 +356,9 @@ end
 
 -- blank the cache
 function UniReader:clearCache()
+	for k, _ in pairs(self.cache) do
+		self.cache[k].bb:free()
+	end
 	self.cache = {}
 	self.cache_current_memsize = 0
 end
@@ -552,6 +556,14 @@ function UniReader:show(no)
 		"width:"..width..", height:"..height)
 	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
 
+	print("## self.show_overlap "..self.show_overlap)
+	if self.show_overlap < 0 then
+		fb.bb:dimRect(0,0, width, dest_y - self.show_overlap)
+	elseif self.show_overlap > 0 then
+		fb.bb:dimRect(0,dest_y + height - self.show_overlap, width, self.show_overlap)
+	end
+	self.show_overlap = 0
+
 	-- render highlights to page
 	if self.highlight[no] then
 		self:toggleTextHighLight(self.highlight[no])
@@ -668,6 +680,7 @@ function UniReader:nextView()
 			-- goto next view of current page
 			self.offset_y = self.offset_y - G_height
 							+ self.pan_overlap_vertical
+			self.show_overlap = -self.pan_overlap_vertical -- top < 0
 		end
 	else
 		-- not in fit to content width pan mode, just do a page turn
@@ -695,6 +708,7 @@ function UniReader:prevView()
 			-- goto previous view of current page
 			self.offset_y = self.offset_y + G_height
 							- self.pan_overlap_vertical
+			self.show_overlap = self.pan_overlap_vertical -- bottom > 0
 		end
 	else
 		-- not in fit to content width pan mode, just do a page turn
@@ -1183,8 +1197,8 @@ function UniReader:addAllCommands()
 					x = unireader.shift_x / 5
 					y = unireader.shift_y / 5
 				elseif unireader.pan_by_page then
-					x = G_width;
-					y = G_height - unireader.pan_overlap_vertical; -- overlap for lines which didn't fit
+					x = G_width
+					y = G_height - unireader.pan_overlap_vertical -- overlap for lines which didn't fit
 				else
 					x = unireader.shift_x
 					y = unireader.shift_y
@@ -1226,11 +1240,15 @@ function UniReader:addAllCommands()
 					unireader.offset_y = unireader.offset_y + y
 					if unireader.offset_y > 0 then
 						unireader.offset_y = 0
+					elseif unireader.pan_by_page then
+						unireader.show_overlap = unireader.pan_overlap_vertical -- bottom
 					end
 				elseif keydef.keycode == KEY_FW_DOWN then
 					unireader.offset_y = unireader.offset_y - y
 					if unireader.offset_y < unireader.min_offset_y then
 						unireader.offset_y = unireader.min_offset_y
+					elseif unireader.pan_by_page then
+						unireader.show_overlap = -unireader.pan_overlap_vertical -- top
 					end
 				elseif keydef.keycode == KEY_FW_PRESS then
 					if keydef.modifier==MOD_SHIFT then
