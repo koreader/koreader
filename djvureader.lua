@@ -19,6 +19,9 @@ function DJVUReader:init()
 end
 
 function DJVUReader:adjustDjvuReaderCommand()
+	self.commands:del(KEY_J, MOD_SHIFT, "J")
+	self.commands:del(KEY_K, MOD_SHIFT, "K")
+
 	self.commands:add(KEY_N, nil, "N",
 		"start highlight mode",
 		function(unireader)

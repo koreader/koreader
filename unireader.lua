@@ -1006,7 +1006,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:setGlobalZoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
 		end)
-	self.commands:add(KEY_BACK,nil,"back",
+	self.commands:add(KEY_BACK,nil,"Back",
 		"back to last jump",
 		function(unireader)
 			if #unireader.jump_stack ~= 0 then
@@ -1113,22 +1113,22 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:addJump(unireader.pageno)
 		end)
-	self.commands:add(KEY_J,nil,"J",
+	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate 10° clockwise",
 		function(unireader)
 			unireader:setRotate( unireader.globalrotate + 10 )
 		end)
-	self.commands:add(KEY_J,MOD_SHIFT,"J",
+	self.commands:add(KEY_J,nil,"J",
 		"rotate screen 90° clockwise",
 		function(unireader)
 			unireader:screenRotate("clockwise")
 		end)
-	self.commands:add(KEY_K,nil,"K",
+	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate 10° counterclockwise",
 		function(unireader)
 			unireader:setRotate( unireader.globalrotate - 10 )
 		end)
-	self.commands:add(KEY_K,MOD_SHIFT,"K",
+	self.commands:add(KEY_K,nil,"K",
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
