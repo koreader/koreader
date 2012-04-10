@@ -31,6 +31,7 @@ InputBox = {
 	fheight = 25,
 	fwidth = 15,
 	commands = nil,
+	initialized = false,
 }
 
 function InputBox:new(o)
@@ -38,6 +39,13 @@ function InputBox:new(o)
 	setmetatable(o, self)
 	self.__index = self
 	return o
+end
+
+function InputBox:init()
+	if not self.initialized then
+		self:addAllCommands()
+		self.initialized = true
+	end
 end
 
 function InputBox:refreshText()
@@ -125,8 +133,8 @@ end
 -- @d_text: default to nil (used to set default text in input slot)
 ----------------------------------------------------------------------
 function InputBox:input(ypos, height, title, d_text)
+	self:init()
 	-- do some initilization
-	self:addAllCommands()
 	self.ypos = ypos
 	self.h = height
 	self.input_start_y = ypos + 35
@@ -170,6 +178,7 @@ function InputBox:input(ypos, height, title, d_text)
 			end
 
 			if ret_code == "break" then
+				ret_code = nil
 				break
 			end
 		end -- if
@@ -265,13 +274,12 @@ end
 -- Designed by eLiNK
 ----------------------------------------------------
 
-NumInputBox = InputBox:new{}
+NumInputBox = InputBox:new{
+	initialized = false,
+	commands = Commands:new{},
+}
 
 function NumInputBox:addAllCommands()
-	if self.commands then
-		-- we only initialize once
-		return
-	end
 	self.commands = Commands:new{}
 
 	INPUT_NUM_KEYS = {
@@ -320,7 +328,7 @@ function NumInputBox:addAllCommands()
 	)
 end
 
-function InputBox:drawHelpMsg(ypos, w, h)
+function NumInputBox:drawHelpMsg(ypos, w, h)
 	local w = 415
 	local y = ypos - 60
 	local x = (G_width - w) / 2 
