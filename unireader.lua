@@ -1081,7 +1081,7 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_G,nil,"G",
 		"goto page",
 		function(unireader)
-			local page = InputBox:input(G_height-100, 100, "Page:")
+			local page = NumInputBox:input(G_height-100, 100, "Page:")
 			-- convert string to number
 			if not pcall(function () page = page + 0 end) then
 				page = unireader.pageno
