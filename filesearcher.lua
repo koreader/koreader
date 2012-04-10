@@ -312,7 +312,7 @@ function FileSearcher:choose(keywords)
 				print("# selected "..self.selected_item)
 				return self.selected_item
 			end
-		end -- EOF if
-	end -- EOF while
+		end -- if
+	end -- while true
 	return nil
 end

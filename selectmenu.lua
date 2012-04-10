@@ -144,11 +144,11 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	local KEY_Q_to_E = {}
+	local KEY_Q_to_P = {}
 	for i = KEY_Q, KEY_P do 
-		table.insert(KEY_Q_to_E, Keydef:new(i, nil, ""))
+		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
 	end
-	self.commands:addGroup("Q to E", KEY_Q_to_E, 
+	self.commands:addGroup("Q to P", KEY_Q_to_P, 
 		"Select menu item with Q to E key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(

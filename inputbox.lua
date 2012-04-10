@@ -3,6 +3,11 @@ require "rendertext"
 require "keys"
 require "graphics"
 
+
+----------------------------------------------------
+-- General inputbox
+----------------------------------------------------
+
 InputBox = {
 	-- Class vars:
 	h = 100,
@@ -26,7 +31,22 @@ InputBox = {
 	fheight = 25,
 	fwidth = 15,
 	commands = nil,
+	initialized = false,
 }
+
+function InputBox:new(o)
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	return o
+end
+
+function InputBox:init()
+	if not self.initialized then
+		self:addAllCommands()
+		self.initialized = true
+	end
+end
 
 function InputBox:refreshText()
 	-- clear previous painted text
@@ -91,6 +111,10 @@ function InputBox:clearText()
 				self.input_slot_w, self.h-25)
 end
 
+function InputBox:drawHelpMsg(ypos, w, h)
+	return
+end
+
 function InputBox:drawBox(ypos, w, h, title)
 	-- draw input border
 	fb.bb:paintRect(20, ypos, w, h, 5)
@@ -109,8 +133,8 @@ end
 -- @d_text: default to nil (used to set default text in input slot)
 ----------------------------------------------------------------------
 function InputBox:input(ypos, height, title, d_text)
+	self:init()
 	-- do some initilization
-	self:addAllCommands()
 	self.ypos = ypos
 	self.h = height
 	self.input_start_y = ypos + 35
@@ -127,6 +151,7 @@ function InputBox:input(ypos, height, title, d_text)
 	-- draw box and content
 	w = fb.bb:getWidth() - 40
 	h = height - 45
+	self:drawHelpMsg(ypos, w, h)
 	self:drawBox(ypos, w, h, title)
 	if d_text then
 		self.input_string = d_text
@@ -153,6 +178,7 @@ function InputBox:input(ypos, height, title, d_text)
 			end
 
 			if ret_code == "break" then
+				ret_code = nil
 				break
 			end
 		end -- if
@@ -240,4 +266,92 @@ function InputBox:addAllCommands()
 			return "break"
 		end
 	)
+end
+
+
+----------------------------------------------------
+-- Inputbox for numbers only
+-- Designed by eLiNK
+----------------------------------------------------
+
+NumInputBox = InputBox:new{
+	initialized = false,
+	commands = Commands:new{},
+}
+
+function NumInputBox:addAllCommands()
+	self.commands = Commands:new{}
+
+	INPUT_NUM_KEYS = {
+		{KEY_Q, "1"}, {KEY_W, "2"}, {KEY_E, "3"}, {KEY_R, "4"}, {KEY_T, "5"}, 
+		{KEY_Y, "6"}, {KEY_U, "7"}, {KEY_I, "8"}, {KEY_O, "9"}, {KEY_P, "0"},
+
+		{KEY_1, "1"}, {KEY_2, "2"}, {KEY_3, "3"}, {KEY_4, "4"}, {KEY_5, "5"},
+		{KEY_6, "6"}, {KEY_7, "7"}, {KEY_8, "8"}, {KEY_9, "9"}, {KEY_0, "0"},
+	}
+	for k,v in ipairs(INPUT_NUM_KEYS) do
+		self.commands:add(v[1], nil, "",
+			"input "..v[2],
+			function(self)
+				self:addChar(v[2])
+			end
+		)
+	end -- for
+
+	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "",
+		"submit input content",
+		function(self)
+			if self.input_string == "" then
+				self.input_string = nil
+			end
+			return "break"
+		end
+	)
+	self.commands:add(KEY_DEL, nil, "",
+		"delete one character",
+		function(self)
+			self:delChar()
+		end
+	)
+	self.commands:add(KEY_DEL, MOD_SHIFT, "",
+		"empty inputbox",
+		function(self)
+			self:clearText()
+		end
+	)
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "",
+		"cancel inputbox",
+		function(self)
+			self.input_string = nil
+			return "break"
+		end
+	)
+end
+
+function NumInputBox:drawHelpMsg(ypos, w, h)
+	local w = 415
+	local y = ypos - 60
+	local x = (G_width - w) / 2 
+	local h = 50
+	local bw = 2
+	local face = Font:getFace("scfont", 22)
+
+	fb.bb:paintRect(x, y, w, h, 15)
+	fb.bb:paintRect(x+bw, y+bw, w-2*bw, h-2*bw, 0)
+	
+	local font_y = y + 22
+	local font_x = x + 22
+	INPUT_NUM_KEYS = {
+		{"Q", "1"}, {"W", "2"}, {"E", "3"}, {"R", "4"}, {"T", "5"}, 
+		{"Y", "6"}, {"U", "7"}, {"I", "8"}, {"O", "9"}, {"P", "0"},
+	}
+	for k,v in ipairs(INPUT_NUM_KEYS) do
+		renderUtf8Text(fb.bb, font_x, font_y, face,
+			v[1], true)
+		renderUtf8Text(fb.bb, font_x, font_y + 22, face,
+			v[2], true)
+		font_x = font_x + 40
+	end
+
+	fb:refresh(1, x, y, w, h)
 end
