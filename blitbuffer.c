@@ -463,8 +463,8 @@ static int dimRect(lua_State *L) {
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w/2; cx++) {
 			*(dstptr+cx) =
-				*(dstptr+cx) >> 1 & 0xF0 |
-				*(dstptr+cx) & 0x0F >> 1;
+				( *(dstptr+cx) >> 1 ) & 0xF0 |
+				( *(dstptr+cx) & 0x0F ) >> 1;
 		}
 		dstptr += dst->pitch;
 	}
