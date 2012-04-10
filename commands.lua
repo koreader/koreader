@@ -162,7 +162,7 @@ function Commands:new(obj)
 	end
 	setmetatable(obj.map, mt)
 
-	obj:add(KEY_INTO_SCREEN_SAVER, nil, "slider",
+	obj:add(KEY_INTO_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
 			Screen:saveCurrentBB()
@@ -171,7 +171,7 @@ function Commands:new(obj)
 			--os.execute("killall -cont cvm")
 		end
 	)
-	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "slider",
+	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
 			os.execute("sleep 3")
