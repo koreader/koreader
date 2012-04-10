@@ -214,8 +214,7 @@ function FileSearcher:addAllCommands()
 end
 
 function FileSearcher:choose(keywords)
-	local width, height = G_width, G_height
-	self.perpage = math.floor(height / self.spacing) - 2
+	self.perpage = math.floor(G_height / self.spacing) - 2
 	self.pagedirty = true
 	self.markerdirty = false
 
@@ -233,7 +232,7 @@ function FileSearcher:choose(keywords)
 
 		if self.pagedirty then
 			self.markerdirty = true
-			fb.bb:paintRect(0, 0, width, height, 0)
+			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 
 			-- draw menu title
 			renderUtf8Text(fb.bb, 30, 0 + self.title_H, tface,
@@ -261,7 +260,7 @@ function FileSearcher:choose(keywords)
 
 			-- draw footer
 			y = self.title_H + (self.spacing * self.perpage) + self.foot_H
-			x = (width / 2) - 50
+			x = (G_width / 2) - 50
 			all_page = (math.floor(self.items / self.perpage)+1)
 			renderUtf8Text(fb.bb, x, y, fface,
 				"Page "..self.page.." of "..all_page, true)
@@ -271,22 +270,22 @@ function FileSearcher:choose(keywords)
 			if not self.pagedirty then
 				if self.oldcurrent > 0 then
 					y = self.title_H + (self.spacing * self.oldcurrent) + 10
-					fb.bb:paintRect(30, y, width - 60, 3, 0)
-					fb:refresh(1, 30, y, width - 60, 3)
+					fb.bb:paintRect(30, y, G_width - 60, 3, 0)
+					fb:refresh(1, 30, y, G_width - 60, 3)
 				end
 			end
 			-- draw new marker line
 			y = self.title_H + (self.spacing * self.current) + 10
-			fb.bb:paintRect(30, y, width - 60, 3, 15)
+			fb.bb:paintRect(30, y, G_width - 60, 3, 15)
 			if not self.pagedirty then
-				fb:refresh(1, 30, y, width - 60, 3)
+				fb:refresh(1, 30, y, G_width - 60, 3)
 			end
 			self.oldcurrent = self.current
 			self.markerdirty = false
 		end
 
 		if self.pagedirty then
-			fb:refresh(0, 0, 0, width, height)
+			fb:refresh(0)
 			self.pagedirty = false
 		end
 
