@@ -462,7 +462,7 @@ function UniReader:setzoom(page, preCache)
 		if self.content_top == -2012 then
 			-- We must handle previous page turn as a special cases,
 			-- because we want to arrive at the bottom of previous page.
-			-- Since this a real page turn, we need to recalcunate stuff.
+			-- Since this a real page turn, we need to recalculate stuff.
 			if (x1 - x0) < pwidth then
 				self.globalzoom = width / (x1 - x0)
 			end
@@ -758,7 +758,6 @@ function UniReader:screenRotate(orien)
 	-- update global width and height variable
 	G_width, G_height = fb:getSize()
 	self:clearCache()
-	self:redrawCurrentPage()
 end
 
 function UniReader:cleanUpTocTitle(title)
@@ -1122,6 +1121,11 @@ function UniReader:addAllCommands()
 		"rotate screen 90° clockwise",
 		function(unireader)
 			unireader:screenRotate("clockwise")
+			if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+				self:setGlobalZoomMode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
+			else
+				self:redrawCurrentPage()
+			end
 		end)
 	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate 10° counterclockwise",
@@ -1132,6 +1136,11 @@ function UniReader:addAllCommands()
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
+			if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+				self:setGlobalZoomMode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
+			else
+				self:redrawCurrentPage()
+			end
 		end)
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",

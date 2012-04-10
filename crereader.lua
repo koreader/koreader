@@ -85,6 +85,11 @@ function CREReader:redrawCurrentPage()
 	self:goto(self.pos)
 end
 
+-- there is no zoom mode in CREReader
+function CREReader:setGlobalZoomMode()
+	return
+end
+
 ----------------------------------------------------
 -- goto related methods
 ----------------------------------------------------
