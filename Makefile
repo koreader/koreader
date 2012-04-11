@@ -71,7 +71,8 @@ DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
-			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
+# we don't support dictionary lookup corrently
+			#$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libopenjpeg.a \
 			$(MUPDFLIBDIR)/libjbig2dec.a \
@@ -79,8 +80,8 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libz.a
 
 #@TODO patch crengine to use the latest libjpeg  04.04 2012 (houqp)
-			#$(MUPDFLIBDIR)/libjpeg.a 
-			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a
+			#$(MUPDFLIBDIR)/libjpeg.a \
+			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
 LUALIB := $(LUADIR)/src/liblua.a
 
@@ -133,11 +134,15 @@ fetchthirdparty:
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
+	# CREngine patch: disable fontconfig
+	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
+	# dirty patch in MuPDF's thirdparty liby for CREngine
 	cd mupdf/thirdparty/jpeg-*/ && \
 		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
+	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
 	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
 	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
@@ -148,7 +153,7 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
-	make -C $(CRENGINEDIR)/thirdparty/antiword clean
+	#make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
 	make -C $(CRENGINEDIR)/thirdparty/libpng clean
 	make -C $(CRENGINEDIR)/crengine clean
