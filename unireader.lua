@@ -248,14 +248,16 @@ end
 
 -- remember to clear cursor before calling this
 function UniReader:drawCursorAfterWord(t, l, w)
-	local x, y, w, h = self:rectCoordTransform(t[l].x0, t[l].y0, t[l].x1, t[l].y1)
+	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	local x, y, wd, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
-	self.cursor:moveTo(x+w, y)
+	self.cursor:moveTo(x+wd, y)
 	self.cursor:draw()
 end
 
 function UniReader:drawCursorBeforeWord(t, l, w)
-	local x, y, w, h = self:rectCoordTransform(t[l].x0, t[l].y0, t[l].x1, t[l].y1)
+	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	local x, y, _, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x, y)
 	self.cursor:draw()
