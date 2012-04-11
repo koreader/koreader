@@ -1248,6 +1248,9 @@ function UniReader:addAllCommands()
 				elseif keydef.keycode == KEY_FW_UP then
 					unireader.offset_y = unireader.offset_y + y
 					if unireader.offset_y > 0 then
+						if unireader.pan_by_page then
+							unireader.show_overlap = unireader.offset_y + unireader.pan_overlap_vertical
+						end
 						unireader.offset_y = 0
 					elseif unireader.pan_by_page then
 						unireader.show_overlap = unireader.pan_overlap_vertical -- bottom
@@ -1255,6 +1258,9 @@ function UniReader:addAllCommands()
 				elseif keydef.keycode == KEY_FW_DOWN then
 					unireader.offset_y = unireader.offset_y - y
 					if unireader.offset_y < unireader.min_offset_y then
+						if unireader.pan_by_page then
+							unireader.show_overlap = unireader.offset_y + y - unireader.min_offset_y - G_height
+						end
 						unireader.offset_y = unireader.min_offset_y
 					elseif unireader.pan_by_page then
 						unireader.show_overlap = -unireader.pan_overlap_vertical -- top
