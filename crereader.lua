@@ -241,6 +241,8 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_D, MOD_ALT, "D")
 	self.commands:del(KEY_F, MOD_SHIFT, "F")
 	self.commands:del(KEY_F, MOD_ALT, "F")
+	self.commands:del(KEY_N, nil, "N") -- highlight
+	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
 
 	-- overwrite commands
 	self.commands:add(KEY_PGFWD, MOD_SHIFT_OR_ALT, ">",
