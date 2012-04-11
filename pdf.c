@@ -331,7 +331,6 @@ static int getPageText(lua_State *L) {
 	fz_text_span *ptr;
 	fz_device *tdev;
 	fz_bbox bbox, linebbox;
-	fz_matrix ctm;
 	int i;
 	int word, line;
 	int len, c;
@@ -341,12 +340,9 @@ static int getPageText(lua_State *L) {
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 
-	/* returned coordinates are in centi-point (n * 0.01 pt) */
-	ctm = fz_scale(100, 100);
-
 	page_text = fz_new_text_span(page->doc->context);
 	tdev = fz_new_text_device(page->doc->context, page_text);
-	fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+	fz_run_page(page->doc->xref, page->page, tdev, fz_identity, NULL);
 	fz_free_device(tdev);
 
 	/* table that contains all the lines */
