@@ -26,7 +26,6 @@ extern "C" {
 
 #include "crengine.h"
 
-//using namespace std;
 
 typedef struct CreDocument {
 	LVDocView *text_view;
@@ -47,7 +46,8 @@ static int openDocument(lua_State *L) {
 	lua_setmetatable(L, -2);
 
 	doc->text_view = new LVDocView();
-	doc->text_view->setBackgroundColor(0x000000);
+	//doc->text_view->setBackgroundColor(0xFFFFFF);
+	//doc->text_view->setTextColor(0x000000);
 	if (LVLoadStylesheetFile(lString16(style_sheet), css)){
 		if (!css.empty()){
 			doc->text_view->setStyleSheet(css);
@@ -58,7 +58,6 @@ static int openDocument(lua_State *L) {
 	doc->text_view->LoadDocument(file_name);
 	doc->dom_doc = doc->text_view->getDocument();
 	doc->text_view->Render();
-
 
 	return 1;
 }
@@ -308,7 +307,7 @@ static int gotoXPointer(lua_State *L) {
 
 	doc->text_view->goToBookmark(xp);
 	/* CREngine does not call checkPos() immediately after goToBookmark,
-	 * so I have to manually update the pos in order to get a correctionColor
+	 * so I have to manually update the pos in order to get a correct
 	 * return from GetPos() call. */
 	doc->text_view->SetPos(xp.toPoint().y);
 
@@ -367,21 +366,22 @@ static int drawCurrentPage(lua_State *L) {
 
 	int w = bb->w,
 		h = bb->h;
-	LVGrayDrawBuf drawBuf(w, h, 8);
+	/* Set DrawBuf to 4bpp */
+	LVGrayDrawBuf drawBuf(w, h, 4);
 
 	doc->text_view->Resize(w, h);
 	doc->text_view->Render();
 	doc->text_view->Draw(drawBuf);
 	
-
 	uint8_t *bbptr = (uint8_t*)bb->data;
 	uint8_t *pmptr = (uint8_t*)drawBuf.GetScanLine(0);
 	int i,x;
 
 	for (i = 0; i < h; i++) {
 		for (x = 0; x < (bb->w / 2); x++) {
-			bbptr[x] = 255 - (((pmptr[x*2 + 1] & 0xF0) >> 4) | 
-								(pmptr[x*2] & 0xF0));
+			/* When DrawBuf is set to 4bpp mode, CREngine still put every
+			 * four bits in one byte, but left the last 4 bits zero*/
+			bbptr[x] =  ~(pmptr[x*2] | (pmptr[x*2+1] >> 4));
 		}
 		if(bb->w & 1) {
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
@@ -389,6 +389,8 @@ static int drawCurrentPage(lua_State *L) {
 		bbptr += bb->pitch;
 		pmptr += w;
 	}
+
+	return 0;
 }
 
 static int registerFont(lua_State *L) {
