@@ -153,7 +153,7 @@ clean:
 cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
-	make -C $(CRENGINEDIR)/thirdparty/antiword clean
+	#make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
 	make -C $(CRENGINEDIR)/thirdparty/libpng clean
 	make -C $(CRENGINEDIR)/crengine clean
