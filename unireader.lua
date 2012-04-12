@@ -282,7 +282,6 @@ function UniReader:_toggleTextHighLight(t, l0, w0, l1, w1)
 	end
 
 	for _l, _w in self:_wordIterFromRange(t, l0, w0, l1, w1) do
-		print("------------",_l, _w, dump(t[_l][_w]))
 		if self:_isWordInScreenRange(t[_l][_w]) then
 			-- blitbuffer module will take care of the out of screen range part.
 			self:_toggleWordHighLight(t, _l, _w)
