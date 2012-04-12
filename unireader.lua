@@ -137,15 +137,24 @@ end
 --
 -- NOTE: this method does not check whether given area
 -- is can be shown in current screen. Make sure to check
--- with _isEntireWordInScreenRange() before you want to
--- draw on the returned area.
+-- with _isEntireWordInScreenRange() or _isWordInScreenRange()
+-- before you want to draw on the returned area.
 ----------------------------------------------------
 function UniReader:getRectInScreen(x0, y0, x1, y1)
 	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
-	return 
-		x + self.offset_x,
-		y + self.offset_y,
-		w, h
+	x = x + self.offset_x
+	y = y + self.offset_y
+	if x < 0 then
+		w = w + x
+		x = 0 
+	end
+	if y < 0 then
+		h = h + y
+		y = 0 
+	end
+	if x + w > G_width then w = G_width - x end
+	if y + h > G_height then h = G_height - y end
+	return x, y, w, h
 end
 
 -- make sure the whole word/line can be seen in screen
@@ -176,19 +185,27 @@ end
 
 -- make sure at least part of the word can be seen in screen
 function UniReader:_isWordInScreenRange(w)
-	return	(w ~= nil) and
-			((w.y1 * self.globalzoom) >= -self.offset_y
-			or w.y0 * self.globalzoom <= -self.offset_y + G_height)
-			and 
-			(w.x1 * self.globalzoom >= -self.offset_x
-			or w.x0 * self.globalzoom <= -self.offset_x + G_width)
+	if not w then
+		return false
+	end
+
+	is_entire_word_out_of_screen_height = 
+		(w.y1 * self.globalzoom <= -self.offset_y)
+		or (w.y0 * self.globalzoom >= -self.offset_y + G_height)
+
+	is_entire_word_out_of_screen_width = 
+			(w.x0 * self.globalzoom >= -self.offset_x + G_width
+			or w.x1 * self.globalzoom <= -self.offset_x)
+
+	return	(not is_entire_word_out_of_screen_height) and
+			(not is_entire_word_out_of_screen_width)
 end
 
 function UniReader:toggleTextHighLight(word_list)
 	for _,text_item in ipairs(word_list) do
 		for _,line_item in ipairs(text_item) do
 			-- make sure that line is in screen range
-			if self:_isEntireWordInScreenHeightRange(line_item) then
+			if self:_isWordInScreenRange(line_item) then
 				local x, y, w, h = self:getRectInScreen(
 										line_item.x0, line_item.y0,
 										line_item.x1, line_item.y1)
@@ -265,6 +282,7 @@ function UniReader:_toggleTextHighLight(t, l0, w0, l1, w1)
 	end
 
 	for _l, _w in self:_wordIterFromRange(t, l0, w0, l1, w1) do
+		print("------------",_l, _w, dump(t[_l][_w]))
 		if self:_isWordInScreenRange(t[_l][_w]) then
 			-- blitbuffer module will take care of the out of screen range part.
 			self:_toggleWordHighLight(t, _l, _w)
@@ -648,7 +666,7 @@ function UniReader:startHighLightMode()
 		end
 
 		if w.new ~= 0 and 
-		not self:_isEntireLineInScreenHeightRange(t[l.new][w.new]) then
+		not self:_isEntireLineInScreenHeightRange(t[l.new]) then
 			-- word out of left and right sides of current view should
 			-- not trigger pan by page
 			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
@@ -740,13 +758,13 @@ function UniReader:startHighLightMode()
 			elseif ev.code == KEY_FW_DOWN then
 				is_meet_start = false
 				if not is_meet_end then
+					-- handle left end of first line as special case
 					if w.cur == 0 then
-						-- handle left end of first line as special case
-						tmp_l = math.min(tmp_l + 1, #t)
 						tmp_w = 1
 					else
-						tmp_l, tmp_w = _wordInNextLine(t, l.new, w.new)
+						tmp_w = w.cur
 					end
+					tmp_l, tmp_w = _wordInNextLine(t, l.cur, tmp_w)
 					while not (tmp_l == l.cur and tmp_w == w.cur) do
 						l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
 					end

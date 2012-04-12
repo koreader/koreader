@@ -64,12 +64,22 @@ end
 
 -- y axel in djvulibre starts from bottom
 function DJVUReader:_isWordInScreenRange(w)
-	return	(w ~= nil) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) >= -self.offset_y
-			or self.cur_full_height - (w.y1 * self.globalzoom) <= -self.offset_y + G_height)
-			and 
-			(w.x1 * self.globalzoom >= -self.offset_x
-			or w.x0 * self.globalzoom <= -self.offset_x + G_width)
+	if not w then
+		return false
+	end
+
+	is_entire_word_out_of_screen_height = 
+		(self.cur_full_height - (w.y0 * self.globalzoom) <=
+											-self.offset_y)
+		or (self.cur_full_height - (w.y1 * self.globalzoom) >=
+											-self.offset_y + G_height)
+
+	is_entire_word_out_of_screen_width = 
+			(w.x0 * self.globalzoom >= -self.offset_x + G_width
+			or w.x1 * self.globalzoom <= -self.offset_x)
+
+	return	(not is_entire_word_out_of_screen_height) and
+			(not is_entire_word_out_of_screen_width)
 end
 
 
