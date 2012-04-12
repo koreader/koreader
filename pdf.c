@@ -347,9 +347,10 @@ static int getPageText(lua_State *L) {
 
 	/* table that contains all the lines */
 	lua_newtable(L);
-	ptr = page_text;
 	line = 1;
-	while(ptr) {
+	for(ptr = page_text; ptr != NULL; ptr = ptr->next) {
+		if(ptr->text == NULL) continue;
+
 		/* table for the words */
 		lua_newtable(L);
 		word = 1;
@@ -367,7 +368,14 @@ static int getPageText(lua_State *L) {
 					ptr->text[i].c == '\n' ||
 					ptr->text[i].c == '\v' ||
 					ptr->text[i].c == '\f' ||
-					ptr->text[i].c == '\r' ) {
+					ptr->text[i].c == '\r' ||
+					ptr->text[i].c == 0xA0 ||
+					ptr->text[i].c == 0x1680 ||
+					ptr->text[i].c == 0x180E ||
+					(ptr->text[i].c >= 0x2000 && ptr->text[i].c <= 0x200A) ||
+					ptr->text[i].c == 0x202F ||
+					ptr->text[i].c == 0x205F ||
+					ptr->text[i].c == 0x3000) {
 					// ignore and end word
 					i++;
 					break;
@@ -415,8 +423,6 @@ static int getPageText(lua_State *L) {
 		lua_settable(L, -3);
 
 		lua_rawseti(L, -2, line++);
-
-		ptr = ptr->next;
 	}
 
 	fz_free_text_span(page->doc->context, page_text);
