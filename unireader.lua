@@ -112,18 +112,40 @@ function UniReader:init()
 	self:addAllCommands()
 end
 
------------[ highlight support ]----------
+----------------------------------------------------
+-- highlight support 
+----------------------------------------------------
 
 ----------------------------------------------------
--- Given coordinates of four conners and return
--- coordinate of upper left conner with with and height
+-- Given coordinates of four conners in oringinal page
+-- size and return coordinate of upper left conner in 
+-- zoomed page size with width and height.
 ----------------------------------------------------
-function UniReader:rectCoordTransform(x0, y0, x1, y1)
+function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 	return 
 		x0 * self.globalzoom,
-		y1 * self.globalzoom - self.offset_y,
+		y0 * self.globalzoom,
 		(x1 - x0) * self.globalzoom,
 		(y1 - y0) * self.globalzoom
+end
+
+----------------------------------------------------
+-- Given coordinates of four conners in oringinal page
+-- size and return Rectangular area in screen. You
+-- might want to call this when you want to draw stuff
+-- on screen.
+--
+-- NOTE: this method doese not check whether given area
+-- is can be shown in current screen. Make sure to check
+-- with _isEntireWordInScreenRange() before you want to
+-- draw on screen.
+----------------------------------------------------
+function UniReader:getRectInScreen(x0, y0, x1, y1)
+	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
+	return 
+		x + self.offset_x,
+		y + self.offset_y,
+		w, h
 end
 
 -- make sure the whole word can be seen in screen
@@ -135,10 +157,8 @@ end
 -- y axel in djvulibre starts from bottom
 function UniReader:_isEntireWordInScreenHeightRange(w)
 	return	(w ~= nil) and
-			(self.cur_full_height - (w.y1 * self.globalzoom) >=
-				-self.offset_y) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) <= 
-				-self.offset_y + G_height)
+			(w.y1 * self.globalzoom) >= -self.offset_y
+			and (w.y0 * self.globalzoom) <= -self.offset_y + G_height
 end
 
 function UniReader:_isEntireWordInScreenWidthRange(w)
@@ -150,12 +170,10 @@ end
 -- make sure at least part of the word can be seen in screen
 function UniReader:_isWordInScreenRange(w)
 	return	(w ~= nil) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) >=
-				-self.offset_y) and
-			(self.cur_full_height - (w.y1 * self.globalzoom) <= 
-				-self.offset_y + G_height) and
-			(w.x1 * self.globalzoom >= -self.offset_x) and
-			(w.x0 * self.globalzoom <= -self.offset_x + G_width)
+			(w.y0 * self.globalzoom) >= -self.offset_y
+			and w.y1 * self.globalzoom <= -self.offset_y + G_height
+			and w.x1 * self.globalzoom >= -self.offset_x
+			and w.x0 * self.globalzoom <= -self.offset_x + G_width
 end
 
 function UniReader:toggleTextHighLight(word_list)
@@ -163,7 +181,7 @@ function UniReader:toggleTextHighLight(word_list)
 		for _,line_item in ipairs(text_item) do
 			-- make sure that line is in screen range
 			if self:_isEntireWordInScreenHeightRange(line_item) then
-				local x, y, w, h = self:rectCoordTransform(
+				local x, y, w, h = self:getRectInScreen(
 										line_item.x0, line_item.y0,
 										line_item.x1, line_item.y1)
 				-- slightly enlarge the highlight height 
@@ -183,9 +201,9 @@ function UniReader:toggleTextHighLight(word_list)
 				elseif self.highlight.drawer == "marker" then
 					fb.bb:invertRect(x, y, w, h)
 				end
-			end -- EOF if isEntireWordInScreenHeightRange
-		end -- EOF for line_item
-	end -- EOF for text_item
+			end -- if isEntireWordInScreenHeightRange
+		end -- for line_item
+	end -- for text_item
 end
 
 function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
@@ -217,7 +235,7 @@ function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
 end
 
 function UniReader:_toggleWordHighLight(t, l, w)
-	x, y, w, h = self:rectCoordTransform(t[l][w].x0, t[l].y0, 
+	x, y, w, h = self:getRectInScreen(t[l][w].x0, t[l].y0, 
 										t[l][w].x1, t[l].y1)
 	-- slightly enlarge the highlight range for better viewing experience
 	x = x - w * 0.05
@@ -248,16 +266,20 @@ end
 
 -- remember to clear cursor before calling this
 function UniReader:drawCursorAfterWord(t, l, w)
-	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
-	local x, y, wd, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
+	-- get height of line t[l][w] is in
+	local _, _, _, h = self:zoomedRectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	-- get rect of t[l][w]
+	local x, y, wd, h = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x+wd, y)
 	self.cursor:draw()
 end
 
 function UniReader:drawCursorBeforeWord(t, l, w)
-	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
-	local x, y, _, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
+	-- get height of line t[l][w] is in
+	local _, _, _, h = self:zoomedRectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	-- get rect of t[l][w]
+	local x, y, _, h = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x, y)
 	self.cursor:draw()
@@ -359,7 +381,7 @@ function UniReader:startHighLightMode()
 	local is_meet_end = false
 	local running = true
 
-	local cx, cy, cw, ch = self:rectCoordTransform(
+	local cx, cy, cw, ch = self:getRectInScreen(
 		t[l.cur][w.cur].x0,
 		t[l.cur][w.cur].y0,
 		t[l.cur][w.cur].x1,
@@ -716,16 +738,11 @@ function UniReader:startHighLightMode()
 				running = false
 			elseif ev.code == KEY_BACK then
 				running = false
-			end -- EOF if key event
+			end -- if key event
 			fb:refresh(1)
 		end
 	end -- EOF while
 end
-
-
-
-
-
 
 
 ----------------------------------------------------

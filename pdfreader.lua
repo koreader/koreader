@@ -31,16 +31,9 @@ function PDFReader:open(filename)
 	return true
 end
 
------------[ highlight support ]----------
-
-function PDFReader:rectCoordTransform(x0, y0, x1, y1)
-	return
-		x0 * self.globalzoom,
-		y1 * self.globalzoom - self.offset_y,
-		x1 - x0,
-		y1 - y0
-end
-
+----------------------------------------------------
+-- highlight support 
+----------------------------------------------------
 function PDFReader:getText(pageno)
 	local ok, page = pcall(self.doc.openPage, self.doc, pageno)
 	if not ok then
