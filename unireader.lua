@@ -400,16 +400,23 @@ function UniReader:startHighLightMode()
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			if ev.code == KEY_FW_LEFT then
+			if ev.code == KEY_FW_LEFT and not is_meet_start then
+				is_meet_end = false
 				if w.cur == 1 then
+					-- goto left end of current line. _prevWord does not 
+					-- understand and will not return zero w.cur
+					-- because zero does not point to a word, so we need to 
+					-- handle left end manually here.
 					w.cur = 0
 					w.new = 0
+					if l.cur == 1 then
+						-- on left end of first line
+						is_meet_start = true
+					end
 				else
-					if w.cur == 0 then 
-						-- already at the left end of current line, 
-						-- goto previous line (_prevWord does not understand
-						-- zero w.cur)
-						w.cur = 1 
+					-- handle left end manually.
+					if w.cur == 0 then
+						w.cur = 1
 					end
 					l.new, w.new = _prevWord(t, l.cur, w.cur)
 				end
@@ -434,7 +441,9 @@ function UniReader:startHighLightMode()
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
-			elseif ev.code == KEY_FW_RIGHT then
+			elseif ev.code == KEY_FW_RIGHT and not is_meet_end then
+					print(dump(l),dump(w))
+				is_meet_start = false
 				if w.cur == 0 then
 					w.cur = 1
 					w.new = 1
@@ -446,6 +455,9 @@ function UniReader:startHighLightMode()
 						w.cur = 0
 						w.new = 0
 					end
+				end
+				if l.new == #t and w.new == #t[l.new] then
+					is_meet_end = true
 				end
 
 				self.cursor:clear()
@@ -470,13 +482,15 @@ function UniReader:startHighLightMode()
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
-			elseif ev.code == KEY_FW_UP then
+			elseif ev.code == KEY_FW_UP and not is_meet_start then
+				is_meet_end = false
 				if w.cur == 0 then
 					-- goto left end of last line
 					l.new = math.max(l.cur - 1, 1)
 				elseif l.cur == 1 and w.cur == 1 then 
 					-- already first word, to the left end of first line
 					w.new = 0
+					is_meet_start = true
 				else
 					l.new, w.new = _wordInPrevLine(t, l.cur, w.cur)
 				end
@@ -503,13 +517,17 @@ function UniReader:startHighLightMode()
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
-			elseif ev.code == KEY_FW_DOWN then
+			elseif ev.code == KEY_FW_DOWN and not is_meet_end then
+				is_meet_start = false
 				if w.cur == 0 then
 					-- on the left end of current line, 
 					-- goto left end of next line
 					l.new = math.min(l.cur + 1, #t)
 				else
 					l.new, w.new = _wordInNextLine(t, l.cur, w.cur)
+				end
+				if l.new == #t and w.new == #t[l.new] then
+					is_meet_end = true
 				end
 
 				self.cursor:clear()
@@ -544,18 +562,14 @@ function UniReader:startHighLightMode()
 							and t[l.cur][w.cur].x1 <= line_item.x1 then
 								self.highlight[self.pageno][k] = nil
 							end
-						end -- EOF for line_item
-					end -- EOF for text_item
-				end -- EOF if not highlight table
+						end -- for line_item
+					end -- for text_item
+				end -- if not highlight table
 				if #self.highlight[self.pageno] == 0 then
 					self.highlight[self.pageno] = nil
 				end
 				return
 			elseif ev.code == KEY_FW_PRESS then
-				if w.cur == 0 then
-					w.cur = 1
-					l.cur, w.cur = _prevWord(t, l.cur, w.cur)
-				end
 				l.new, w.new = l.cur, w.cur
 				l.start, w.start = l.cur, w.cur
 				running = false
@@ -563,15 +577,23 @@ function UniReader:startHighLightMode()
 			elseif ev.code == KEY_BACK then
 				running = false
 				return
-			end -- EOF if key event
+			end -- if check key event
 			l.cur, w.cur = l.new, w.new
 			fb:refresh(1)
 		end
-	end -- EOF while
+	end -- while running
 	--print("start", l.cur, w.cur, l.start, w.start)
 
 	-- two helper functions for highlight
 	local function _togglePrevWordHighLight(t, l, w)
+		if w.cur == 0 then
+			if l.cur == 1 then
+				-- already at the begin of first line, nothing to toggle
+				return
+			else
+				w.cur = 1
+			end
+		end
 		l.new, w.new = _prevWord(t, l.cur, w.cur)
 
 		if l.cur == 1 and w.cur == 1 then
@@ -655,7 +677,7 @@ function UniReader:startHighLightMode()
 				is_meet_start = false
 				if not is_meet_end then
 					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
-				end -- EOF if is not is_meet_end
+				end -- if not is_meet_end
 			elseif ev.code == KEY_FW_UP then
 				is_meet_end = false
 				if not is_meet_start then
@@ -669,7 +691,7 @@ function UniReader:startHighLightMode()
 					while not (tmp_l == l.cur and tmp_w == w.cur) do
 						l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
 					end
-				end
+				end -- not is_meet_start
 			elseif ev.code == KEY_FW_DOWN then
 				is_meet_start = false
 				if not is_meet_end then
