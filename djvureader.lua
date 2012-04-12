@@ -54,14 +54,22 @@ function DJVUReader:_isEntireWordInScreenHeightRange(w)
 end
 
 -- y axel in djvulibre starts from bottom
+function DJVUReader:_isEntireLineInScreenHeightRange(l)
+	return	(l ~= nil) and
+			(self.cur_full_height - (l.y1 * self.globalzoom) >=
+				-self.offset_y) and
+			(self.cur_full_height - (l.y0 * self.globalzoom) <= 
+				-self.offset_y + G_height)
+end
+
+-- y axel in djvulibre starts from bottom
 function DJVUReader:_isWordInScreenRange(w)
 	return	(w ~= nil) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) >=
-				-self.offset_y) and
-			(self.cur_full_height - (w.y1 * self.globalzoom) <= 
-				-self.offset_y + G_height) and
-			(w.x1 * self.globalzoom >= -self.offset_x) and
-			(w.x0 * self.globalzoom <= -self.offset_x + G_width)
+			(self.cur_full_height - (w.y0 * self.globalzoom) >= -self.offset_y
+			or self.cur_full_height - (w.y1 * self.globalzoom) <= -self.offset_y + G_height)
+			and 
+			(w.x1 * self.globalzoom >= -self.offset_x
+			or w.x0 * self.globalzoom <= -self.offset_x + G_width)
 end
 
 
