@@ -24,24 +24,52 @@ function DJVUReader:adjustDjvuReaderCommand()
 end
 
 
------------[ highlight support ]----------
+----------------------------------------------------
+-- highlight support 
+----------------------------------------------------
+function DJVUReader:getText(pageno)
+	return self.doc:getPageText(pageno)
+end
 
 ----------------------------------------------------
--- Given coordinates of four conners and return
--- coordinate of upper left conner with with and height
---
 -- In djvulibre library, some coordinates starts from
--- down left conner, i.e. y is upside down. This method
--- only transform these coordinates.
+-- lower left conner, i.e. y is upside down in kpv's
+-- coordinate. So y0 should be taken with special care.
 ----------------------------------------------------
-function DJVUReader:rectCoordTransform(x0, y0, x1, y1)
+function DJVUReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 	return 
-		self.offset_x + x0 * self.globalzoom,
-		self.offset_y + self.cur_full_height - (y1 * self.globalzoom),
+		x0 * self.globalzoom,
+		self.cur_full_height - (y1 * self.globalzoom),
 		(x1 - x0) * self.globalzoom,
 		(y1 - y0) * self.globalzoom
 end
 
-function DJVUReader:getText(pageno)
-	return self.doc:getPageText(pageno)
+-- y axel in djvulibre starts from bottom
+function DJVUReader:_isEntireWordInScreenHeightRange(w)
+	return	(w ~= nil) and
+			(self.cur_full_height - (w.y1 * self.globalzoom) >=
+				-self.offset_y) and
+			(self.cur_full_height - (w.y0 * self.globalzoom) <= 
+				-self.offset_y + G_height)
 end
+
+-- y axel in djvulibre starts from bottom
+function DJVUReader:_isEntireLineInScreenHeightRange(l)
+	return	(l ~= nil) and
+			(self.cur_full_height - (l.y1 * self.globalzoom) >=
+				-self.offset_y) and
+			(self.cur_full_height - (l.y0 * self.globalzoom) <= 
+				-self.offset_y + G_height)
+end
+
+-- y axel in djvulibre starts from bottom
+function DJVUReader:_isWordInScreenRange(w)
+	return	(w ~= nil) and
+			(self.cur_full_height - (w.y0 * self.globalzoom) >= -self.offset_y
+			or self.cur_full_height - (w.y1 * self.globalzoom) <= -self.offset_y + G_height)
+			and 
+			(w.x1 * self.globalzoom >= -self.offset_x
+			or w.x0 * self.globalzoom <= -self.offset_x + G_width)
+end
+
+

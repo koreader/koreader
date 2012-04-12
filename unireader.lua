@@ -112,33 +112,60 @@ function UniReader:init()
 	self:addAllCommands()
 end
 
------------[ highlight support ]----------
+----------------------------------------------------
+-- highlight support 
+----------------------------------------------------
 
 ----------------------------------------------------
--- Given coordinates of four conners and return
--- coordinate of upper left conner with with and height
+-- Given coordinates of four corners in original page
+-- size and return coordinate of upper left conner in 
+-- zoomed page size with width and height.
 ----------------------------------------------------
-function UniReader:rectCoordTransform(x0, y0, x1, y1)
+function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 	return 
 		x0 * self.globalzoom,
-		y1 * self.globalzoom - self.offset_y,
+		y0 * self.globalzoom,
 		(x1 - x0) * self.globalzoom,
 		(y1 - y0) * self.globalzoom
 end
 
--- make sure the whole word can be seen in screen
+----------------------------------------------------
+-- Given coordinates of four corners in original page
+-- size and return rectangular area in screen. You
+-- might want to call this when you want to draw stuff
+-- on screen.
+--
+-- NOTE: this method does not check whether given area
+-- is can be shown in current screen. Make sure to check
+-- with _isEntireWordInScreenRange() before you want to
+-- draw on the returned area.
+----------------------------------------------------
+function UniReader:getRectInScreen(x0, y0, x1, y1)
+	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
+	return 
+		x + self.offset_x,
+		y + self.offset_y,
+		w, h
+end
+
+-- make sure the whole word/line can be seen in screen
+-- @TODO when not in FIT_TO_CONTENT_WIDTH mode,
+-- self.offset_{x,y} might be negative. 12.04 2012 (houqp)
+function UniReader:_isEntireLineInScreenHeightRange(l)
+	return	(l ~= nil) and
+			(l.y0 * self.globalzoom) >= -self.offset_y
+			and (l.y1 * self.globalzoom) <= -self.offset_y + G_height
+end
+
 function UniReader:_isEntireWordInScreenRange(w)
 	return self:_isEntireWordInScreenHeightRange(w) and
 			self:_isEntireWordInScreenWidthRange(w)
 end
 
--- y axel in djvulibre starts from bottom
 function UniReader:_isEntireWordInScreenHeightRange(w)
 	return	(w ~= nil) and
-			(self.cur_full_height - (w.y1 * self.globalzoom) >=
-				-self.offset_y) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) <= 
-				-self.offset_y + G_height)
+			(w.y0 * self.globalzoom) >= -self.offset_y
+			and (w.y1 * self.globalzoom) <= -self.offset_y + G_height
 end
 
 function UniReader:_isEntireWordInScreenWidthRange(w)
@@ -150,12 +177,11 @@ end
 -- make sure at least part of the word can be seen in screen
 function UniReader:_isWordInScreenRange(w)
 	return	(w ~= nil) and
-			(self.cur_full_height - (w.y0 * self.globalzoom) >=
-				-self.offset_y) and
-			(self.cur_full_height - (w.y1 * self.globalzoom) <= 
-				-self.offset_y + G_height) and
-			(w.x1 * self.globalzoom >= -self.offset_x) and
-			(w.x0 * self.globalzoom <= -self.offset_x + G_width)
+			((w.y1 * self.globalzoom) >= -self.offset_y
+			or w.y0 * self.globalzoom <= -self.offset_y + G_height)
+			and 
+			(w.x1 * self.globalzoom >= -self.offset_x
+			or w.x0 * self.globalzoom <= -self.offset_x + G_width)
 end
 
 function UniReader:toggleTextHighLight(word_list)
@@ -163,7 +189,7 @@ function UniReader:toggleTextHighLight(word_list)
 		for _,line_item in ipairs(text_item) do
 			-- make sure that line is in screen range
 			if self:_isEntireWordInScreenHeightRange(line_item) then
-				local x, y, w, h = self:rectCoordTransform(
+				local x, y, w, h = self:getRectInScreen(
 										line_item.x0, line_item.y0,
 										line_item.x1, line_item.y1)
 				-- slightly enlarge the highlight height 
@@ -183,9 +209,9 @@ function UniReader:toggleTextHighLight(word_list)
 				elseif self.highlight.drawer == "marker" then
 					fb.bb:invertRect(x, y, w, h)
 				end
-			end -- EOF if isEntireWordInScreenHeightRange
-		end -- EOF for line_item
-	end -- EOF for text_item
+			end -- if isEntireWordInScreenHeightRange
+		end -- for line_item
+	end -- for text_item
 end
 
 function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
@@ -213,11 +239,11 @@ function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
 			end
 			return i, j
 		end
-	end -- EOF closure
+	end -- closure
 end
 
 function UniReader:_toggleWordHighLight(t, l, w)
-	x, y, w, h = self:rectCoordTransform(t[l][w].x0, t[l].y0, 
+	x, y, w, h = self:getRectInScreen(t[l][w].x0, t[l].y0, 
 										t[l][w].x1, t[l].y1)
 	-- slightly enlarge the highlight range for better viewing experience
 	x = x - w * 0.05
@@ -248,16 +274,20 @@ end
 
 -- remember to clear cursor before calling this
 function UniReader:drawCursorAfterWord(t, l, w)
-	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
-	local x, y, wd, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
+	-- get height of line t[l][w] is in
+	local _, _, _, h = self:zoomedRectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	-- get rect of t[l][w]
+	local x, y, wd, _ = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x+wd, y)
 	self.cursor:draw()
 end
 
 function UniReader:drawCursorBeforeWord(t, l, w)
-	local _, _, _, h = self:rectCoordTransform(0, t[l].y0, 0, t[l].y1)
-	local x, y, _, h = self:rectCoordTransform(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
+	-- get height of line t[l][w] is in
+	local _, _, _, h = self:zoomedRectCoordTransform(0, t[l].y0, 0, t[l].y1)
+	-- get rect of t[l][w]
+	local x, y, _, _ = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x, y)
 	self.cursor:draw()
@@ -284,6 +314,13 @@ function UniReader:startHighLightMode()
 		return nil
 	end
 
+	local function _isMovingForward(l, w)
+		return l.cur > l.start or (l.cur == l.start and w.cur > w.start)
+	end
+
+	---------------------------------------
+	-- some word handling help functions
+	---------------------------------------
 	local function _prevWord(t, cur_l, cur_w)
 		if cur_l == 1 then
 			if cur_w == 1 then
@@ -340,9 +377,87 @@ function UniReader:startHighLightMode()
 		end
 	end
 
-	local function _isMovingForward(l, w)
-		return l.cur > l.start or (l.cur == l.start and w.cur > w.start)
+	---------------------------------------
+	-- some gap handling help functions
+	---------------------------------------
+	local function _nextGap(t, cur_l, cur_w)
+		local is_meet_end = false
+
+		-- handle left end of line as special case.
+		if cur_w == 0 then
+			if cur_l == #t and #t[cur_l] == 1 then
+				is_meet_end = true
+			end
+			return cur_l, 1, is_meet_end
+		end
+
+		cur_l, cur_w = _nextWord(t, cur_l, cur_w)
+		if cur_w == 1 then
+			cur_w = 0
+		end
+		if cur_w ~= 0 and cur_l == #t and cur_w == #t[cur_l] then
+			is_meet_end = true
+		end
+		return cur_l, cur_w, is_meet_end
 	end
+
+	local function _prevGap(t, cur_l, cur_w)
+		local is_meet_start = false
+
+		-- handle left end of line as special case.
+		if cur_l == 1 and (cur_w == 1 or cur_w == 0) then -- in the first line
+			is_meet_start = true
+			return cur_l, 0, is_meet_start
+		end
+		if cur_w == 1 then -- not in the first line
+			return cur_l, 0, is_meet_start
+		elseif cur_w == 0 then
+			-- set to 1 so _prevWord() can find previous word in previous line
+			cur_w = 1
+		end
+
+		cur_l, cur_w = _prevWord(t, cur_l, cur_w)
+		return cur_l, cur_w, is_meet_end
+	end
+
+	local function _gapInNextLine(t, cur_l, cur_w)
+		local is_meet_end = false
+
+		if cur_l == #t then
+			-- already in last line
+			cur_w = #t[cur_l]
+			is_meet_end = true
+		else
+			-- handle left end of line as special case.
+			if cur_w == 0 then
+				cur_l = math.min(cur_l + 1, #t)
+			else
+				cur_l, cur_w = _wordInNextLine(t, cur_l, cur_w)
+			end
+		end
+
+		return cur_l, cur_w, is_meet_end
+	end
+
+	local function _gapInPrevLine(t, cur_l, cur_w)
+		local is_meet_start = false
+
+		if cur_l == 1 then
+			-- already in first line
+			is_meet_start = true
+			cur_w = 0
+		else
+			if cur_w == 0 then
+				-- goto left end of previous line
+				cur_l = math.max(cur_l - 1, 1)
+			else
+				cur_l, cur_w = _wordInPrevLine(t, cur_l, cur_w)
+			end
+		end
+
+		return cur_l, cur_w, is_meet_start
+	end
+
 
 	local l = {}
 	local w = {}
@@ -359,7 +474,7 @@ function UniReader:startHighLightMode()
 	local is_meet_end = false
 	local running = true
 
-	local cx, cy, cw, ch = self:rectCoordTransform(
+	local cx, cy, cw, ch = self:getRectInScreen(
 		t[l.cur][w.cur].x0,
 		t[l.cur][w.cur].y0,
 		t[l.cur][w.cur].x1,
@@ -379,23 +494,13 @@ function UniReader:startHighLightMode()
 		local ev = input.waitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			if ev.code == KEY_FW_LEFT then
-				if w.cur == 1 then
-					w.cur = 0
-					w.new = 0
-				else
-					if w.cur == 0 then 
-						-- already at the left end of current line, 
-						-- goto previous line (_prevWord does not understand
-						-- zero w.cur)
-						w.cur = 1 
-					end
-					l.new, w.new = _prevWord(t, l.cur, w.cur)
-				end
+			if ev.code == KEY_FW_LEFT and not is_meet_start then
+				is_meet_end = false
+				l.new, w.new, is_meet_start = _prevGap(t, l.cur, w.cur)
 
 				self.cursor:clear()
 				if w.new ~= 0
-				and not self:_isEntireWordInScreenHeightRange(t[l.new][w.new])
+				and not self:_isEntireLineInScreenHeightRange(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 					-- word is in previous view
 					local pageno = self:prevView()
@@ -403,43 +508,7 @@ function UniReader:startHighLightMode()
 				end
 
 				-- update cursor
-				if w.cur == 0 then
-					-- meet line left end, must be handled as special case
-					if self:_isEntireWordInScreenRange(t[l.cur][1]) then
-						self:drawCursorBeforeWord(t, l.cur, 1)
-					end
-				else
-					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
-						self:drawCursorAfterWord(t, l.new, w.new)
-					end
-				end
-			elseif ev.code == KEY_FW_RIGHT then
-				if w.cur == 0 then
-					w.cur = 1
-					w.new = 1
-				else
-					l.new, w.new = _nextWord(t, l.cur, w.cur)
-					if w.new == 1 then
-						-- Must be come from the right end of previous line,
-						-- so goto the left end of current line.
-						w.cur = 0
-						w.new = 0
-					end
-				end
-
-				self.cursor:clear()
-
-				local tmp_w = w.new
-				if w.cur == 0 then
-					tmp_w = 1
-				end
-				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
-				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
-					local pageno = self:nextView()
-					self:goto(pageno)
-				end
-
-				if w.cur == 0 then
+				if w.new == 0 then
 					-- meet line left end, must be handled as special case
 					if self:_isEntireWordInScreenRange(t[l.new][1]) then
 						self:drawCursorBeforeWord(t, l.new, 1)
@@ -449,24 +518,44 @@ function UniReader:startHighLightMode()
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
-			elseif ev.code == KEY_FW_UP then
-				if w.cur == 0 then
-					-- goto left end of last line
-					l.new = math.max(l.cur - 1, 1)
-				elseif l.cur == 1 and w.cur == 1 then 
-					-- already first word, to the left end of first line
-					w.new = 0
-				else
-					l.new, w.new = _wordInPrevLine(t, l.cur, w.cur)
+			elseif ev.code == KEY_FW_RIGHT and not is_meet_end then
+				is_meet_start = false
+				l.new, w.new, is_meet_end = _nextGap(t, l.cur, w.cur)
+
+				self.cursor:clear()
+				-- we want to check whether the word is in screen range,
+				-- so trun gap into word
+				local tmp_w = w.new
+				if tmp_w == 0 then
+					tmp_w = 1
 				end
+				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
+				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
+					local pageno = self:nextView()
+					self:goto(pageno)
+				end
+
+				if w.new == 0 then
+					-- meet line left end, must be handled as special case
+					if self:_isEntireWordInScreenRange(t[l.new][1]) then
+						self:drawCursorBeforeWord(t, l.new, 1)
+					end
+				else
+					if self:_isEntireWordInScreenRange(t[l.new][w.new]) then
+						self:drawCursorAfterWord(t, l.new, w.new)
+					end
+				end
+			elseif ev.code == KEY_FW_UP and not is_meet_start then
+				is_meet_end = false
+				l.new, w.new, is_meet_start = _gapInPrevLine(t, l.cur, w.cur)
 
 				self.cursor:clear()
 
 				local tmp_w = w.new
-				if w.cur == 0 then
+				if tmp_w == 0 then
 					tmp_w = 1
 				end
-				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
+				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
@@ -482,14 +571,9 @@ function UniReader:startHighLightMode()
 						self:drawCursorAfterWord(t, l.new, w.new)
 					end
 				end
-			elseif ev.code == KEY_FW_DOWN then
-				if w.cur == 0 then
-					-- on the left end of current line, 
-					-- goto left end of next line
-					l.new = math.min(l.cur + 1, #t)
-				else
-					l.new, w.new = _wordInNextLine(t, l.cur, w.cur)
-				end
+			elseif ev.code == KEY_FW_DOWN and not is_meet_end then
+				is_meet_start = false
+				l.new, w.new, is_meet_end = _gapInNextLine(t, l.cur, w.cur)
 
 				self.cursor:clear()
 
@@ -497,7 +581,7 @@ function UniReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if not self:_isEntireWordInScreenHeightRange(t[l.new][tmp_w]) 
+				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
@@ -523,18 +607,14 @@ function UniReader:startHighLightMode()
 							and t[l.cur][w.cur].x1 <= line_item.x1 then
 								self.highlight[self.pageno][k] = nil
 							end
-						end -- EOF for line_item
-					end -- EOF for text_item
-				end -- EOF if not highlight table
+						end -- for line_item
+					end -- for text_item
+				end -- if not highlight table
 				if #self.highlight[self.pageno] == 0 then
 					self.highlight[self.pageno] = nil
 				end
 				return
 			elseif ev.code == KEY_FW_PRESS then
-				if w.cur == 0 then
-					w.cur = 1
-					l.cur, w.cur = _prevWord(t, l.cur, w.cur)
-				end
 				l.new, w.new = l.cur, w.cur
 				l.start, w.start = l.cur, w.cur
 				running = false
@@ -542,15 +622,23 @@ function UniReader:startHighLightMode()
 			elseif ev.code == KEY_BACK then
 				running = false
 				return
-			end -- EOF if key event
+			end -- if check key event
 			l.cur, w.cur = l.new, w.new
 			fb:refresh(1)
 		end
-	end -- EOF while
+	end -- while running
 	--print("start", l.cur, w.cur, l.start, w.start)
 
 	-- two helper functions for highlight
 	local function _togglePrevWordHighLight(t, l, w)
+		if w.cur == 0 then
+			if l.cur == 1 then
+				-- already at the begin of first line, nothing to toggle
+				return l, w, true
+			else
+				w.cur = 1
+			end
+		end
 		l.new, w.new = _prevWord(t, l.cur, w.cur)
 
 		if l.cur == 1 and w.cur == 1 then
@@ -560,7 +648,7 @@ function UniReader:startHighLightMode()
 		end
 
 		if w.new ~= 0 and 
-		not self:_isEntireWordInScreenHeightRange(t[l.new][w.new]) then
+		not self:_isEntireLineInScreenHeightRange(t[l.new][w.new]) then
 			-- word out of left and right sides of current view should
 			-- not trigger pan by page
 			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
@@ -597,7 +685,7 @@ function UniReader:startHighLightMode()
 			is_meet_end = true
 		end
 
-		if not self:_isEntireWordInScreenHeightRange(t[l.new][w.new]) then
+		if not self:_isEntireLineInScreenHeightRange(t[l.new]) then
 			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 				local pageno = self:nextView()
 				self:goto(pageno)
@@ -634,7 +722,7 @@ function UniReader:startHighLightMode()
 				is_meet_start = false
 				if not is_meet_end then
 					l, w, is_meet_end = _toggleNextWordHighLight(t, l, w)
-				end -- EOF if is not is_meet_end
+				end -- if not is_meet_end
 			elseif ev.code == KEY_FW_UP then
 				is_meet_end = false
 				if not is_meet_start then
@@ -648,7 +736,7 @@ function UniReader:startHighLightMode()
 					while not (tmp_l == l.cur and tmp_w == w.cur) do
 						l, w, is_meet_start = _togglePrevWordHighLight(t, l, w)
 					end
-				end
+				end -- not is_meet_start
 			elseif ev.code == KEY_FW_DOWN then
 				is_meet_start = false
 				if not is_meet_end then
@@ -716,16 +804,11 @@ function UniReader:startHighLightMode()
 				running = false
 			elseif ev.code == KEY_BACK then
 				running = false
-			end -- EOF if key event
+			end -- if key event
 			fb:refresh(1)
 		end
 	end -- EOF while
 end
-
-
-
-
-
 
 
 ----------------------------------------------------
