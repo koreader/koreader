@@ -117,7 +117,7 @@ end
 ----------------------------------------------------
 
 ----------------------------------------------------
--- Given coordinates of four conners in oringinal page
+-- Given coordinates of four corners in original page
 -- size and return coordinate of upper left conner in 
 -- zoomed page size with width and height.
 ----------------------------------------------------
@@ -130,15 +130,15 @@ function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 end
 
 ----------------------------------------------------
--- Given coordinates of four conners in oringinal page
--- size and return Rectangular area in screen. You
+-- Given coordinates of four corners in original page
+-- size and return rectangular area in screen. You
 -- might want to call this when you want to draw stuff
 -- on screen.
 --
--- NOTE: this method doese not check whether given area
+-- NOTE: this method does not check whether given area
 -- is can be shown in current screen. Make sure to check
 -- with _isEntireWordInScreenRange() before you want to
--- draw on screen.
+-- draw on the returned area.
 ----------------------------------------------------
 function UniReader:getRectInScreen(x0, y0, x1, y1)
 	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
@@ -154,7 +154,6 @@ function UniReader:_isEntireWordInScreenRange(w)
 			self:_isEntireWordInScreenWidthRange(w)
 end
 
--- y axel in djvulibre starts from bottom
 function UniReader:_isEntireWordInScreenHeightRange(w)
 	return	(w ~= nil) and
 			(w.y1 * self.globalzoom) >= -self.offset_y
@@ -231,7 +230,7 @@ function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
 			end
 			return i, j
 		end
-	end -- EOF closure
+	end -- closure
 end
 
 function UniReader:_toggleWordHighLight(t, l, w)
