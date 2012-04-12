@@ -318,7 +318,7 @@ function SelectMenu:choose(ypos, height)
 			self.pagedirty = false
 		end
 
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			keydef = Keydef:new(ev.code, getKeyModifier())

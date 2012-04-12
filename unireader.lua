@@ -508,7 +508,7 @@ function UniReader:startHighLightMode()
 
 	-- first use cursor to place start pos for highlight
 	while running do
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_LEFT and not is_meet_start then
@@ -727,7 +727,7 @@ function UniReader:startHighLightMode()
 	-- go into highlight mode
 	running = true
 	while running do
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_LEFT then
@@ -1602,7 +1602,7 @@ function UniReader:showMenu()
 
 	fb:refresh(1)
 	while 1 do
-		local ev = input.waitForEvent()
+		local ev = input.saceWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_BACK or ev.code == KEY_MENU then
@@ -1627,7 +1627,7 @@ end
 function UniReader:inputLoop()
 	local keep_running = true
 	while 1 do
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			local secs, usecs = util.gettime()
