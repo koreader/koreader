@@ -9,6 +9,8 @@ CREReader = UniReader:new{
 
 	gamma_index = 15,
 	font_face = nil,
+
+	line_space_percent = 100,
 }
 
 function CREReader:init()
@@ -39,6 +41,8 @@ function CREReader:open(filename)
 		return false, self.doc -- will contain error message
 	end
 
+	self.doc:setDefaultInterlineSpace(self.line_space_percent)
+
 	return true
 end
 
@@ -53,6 +57,9 @@ function CREReader:loadSpecialSettings()
 	local gamma_index = self.settings:readSetting("gamma_index")
 	self.gamma_index = gamma_index or self.gamma_index
 	cre.setGammaIndex(self.gamma_index)
+
+	local line_space_percent = self.settings:readSetting("line_space_percent")
+	self.line_space_percent = line_space_percent or self.line_space_percent
 end
 
 function CREReader:getLastPageOrPos()
@@ -67,6 +74,7 @@ end
 function CREReader:saveSpecialSettings()
 	self.settings:savesetting("font_face", self.font_face)
 	self.settings:savesetting("gamma_index", self.gamma_index)
+	self.settings:savesetting("line_space_percent", self.line_space_percent)
 end
 
 function CREReader:saveLastPageOrPos()
@@ -245,17 +253,41 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
 
 	-- overwrite commands
-	self.commands:add(KEY_PGFWD, MOD_SHIFT_OR_ALT, ">",
+	self.commands:add(KEY_PGFWD, MOD_SHIFT, ">",
 		"increase font size",
 		function(cr)
 			cr.doc:zoomFont(1)
 			cr:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_PGBCK, MOD_SHIFT_OR_ALT, "<",
+	self.commands:add(KEY_PGBCK, MOD_SHIFT, "<",
 		"decrease font size",
 		function(cr)
 			cr.doc:zoomFont(-1)
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_PGFWD, MOD_ALT, ">",
+		"increase line spacing",
+		function(cr)
+			self.line_space_percent = self.line_space_percent + 10
+			if self.line_space_percent > 200 then
+				self.line_space_percent = 200
+			end
+			print("line spacing set to", self.line_space_percent)
+			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
+			cr:redrawCurrentPage()
+		end
+	)
+	self.commands:add(KEY_PGBCK, MOD_ALT, "<",
+		"decrease line spacing",
+		function(cr)
+			self.line_space_percent = self.line_space_percent - 10
+			if self.line_space_percent < 100 then
+				self.line_space_percent = 100
+			end
+			print("line spacing set to", self.line_space_percent)
+			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
 		end
 	)

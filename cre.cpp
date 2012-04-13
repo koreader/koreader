@@ -325,6 +325,30 @@ static int zoomFont(lua_State *L) {
 	return 1;
 }
 
+static int setFontSize(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int size = luaL_checkint(L, 2);
+
+	doc->text_view->setFontSize(size);
+	return 0;
+}
+
+static int setDefaultInterlineSpace(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int space = luaL_checkint(L, 2);
+
+	doc->text_view->setDefaultInterlineSpace(space);
+	return 0;
+}
+
+static int setStyleSheet(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char* style_sheet_data = luaL_checkstring(L, 2);
+
+	doc->text_view->setStyleSheet(lString8(style_sheet_data));
+	return 0;
+}
+
 static int toggleFontBolder(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
@@ -422,6 +446,9 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
 	{"setFontFace", setFontFace},
+	{"setFontSize", setFontSize},
+	{"setDefaultInterlineSpace", setDefaultInterlineSpace},
+	{"setStyleSheet", setStyleSheet},
 	/* --- control methods ---*/
 	{"gotoPage", gotoPage},
 	{"gotoPercent", gotoPercent},
