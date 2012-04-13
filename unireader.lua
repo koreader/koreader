@@ -1186,11 +1186,13 @@ function UniReader:setzoom(page, preCache)
 		or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
 		if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
-		self.globalzoom = width / (x1 - x0 + margin)
+		local pg_margin = 0 -- margin scaled to page size
+		if margin > 0 then pg_margin = margin * 2 / self.globalzoom end
+		self.globalzoom = width / (x1 - x0 + pg_margin)
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + margin
-		self.globalzoom = height / (y1 - y0)
+		self.globalzoom = height / (y1 - y0 + pg_margin)
 		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
-		self.globalzoom = width / (x1 - x0 + margin) * 2
+		self.globalzoom = width / (x1 - x0 + pg_margin) * 2
 		print("column mode offset:"..self.offset_x.."*"..self.offset_y.." zoom:"..self.globalzoom);
 		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
