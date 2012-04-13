@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include <linux/input.h>
 #include "input.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #define OUTPUT_SIZE 21
 #define CODE_IN_SAVER 10000
@@ -29,6 +32,7 @@
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
+int slider_pid = -1;
 
 int findFreeFdSlot() {
 	int i;
@@ -98,6 +102,7 @@ static int openInputDevice(lua_State *L) {
 		} else {
 			close(pipefd[1]);
 			inputfds[fd] = pipefd[0];
+			slider_pid = childpid;
 		}
 	} else {
 		inputfds[fd] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
@@ -123,6 +128,11 @@ static int closeInputDevices(lua_State *L) {
 			ioctl(inputfds[i], EVIOCGRAB, 0);
 			close(i);
 		}
+	}
+	if(slider_pid != -1) {
+		/* kill and wait for child process */
+		kill(slider_pid, SIGTERM);
+		waitpid(-1, NULL, 0);
 	}
 	return 0;
 }
