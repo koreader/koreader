@@ -262,7 +262,7 @@ function input.saveWaitForEvent(timeout)
 		local ok, ev = pcall(input.waitForEvent, timeout)
 		if not ok then
 			print("got error waiting for events:", ev)
-			if ev == "Waiting for input failed: 4" then
+			if ev == "Waiting for input failed: 4\n" then
 				-- EINTR, we got interrupted. Try and restart
 				retry = true
 			else
