@@ -37,9 +37,16 @@ end
 -- coordinate. So y0 should be taken with special care.
 ----------------------------------------------------
 function DJVUReader:zoomedRectCoordTransform(x0, y0, x1, y1)
+	local x = self.dest_x
+	local y = self.dest_y
+	if self.offset_x < 0 or self.offset_y < 0 then
+		x = x + self.offset_x
+		y = y + self.offset_y
+	end
+	print("# zoomedRectCoordTransform x="..x.." y="..y.." dest="..self.dest_x..","..self.dest_y.." offset="..self.offset_x..","..self.offset_y);
 	return 
-		x0 * self.globalzoom,
-		self.cur_full_height - (y1 * self.globalzoom),
+		x0 * self.globalzoom + x,
+		self.cur_full_height - (y1 * self.globalzoom) + y,
 		(x1 - x0) * self.globalzoom,
 		(y1 - y0) * self.globalzoom
 end

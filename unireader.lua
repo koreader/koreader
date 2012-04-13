@@ -42,6 +42,8 @@ UniReader = {
 	cur_full_height = 0,
 	offset_x = 0,
 	offset_y = 0,
+	dest_x = 0, -- real offset_x when it's smaller than screen, so it's centered
+	dest_y = 0,
 	min_offset_x = 0,
 	min_offset_y = 0,
 	content_top = 0, -- for ZOOM_FIT_TO_CONTENT_WIDTH_PAN (prevView)
@@ -122,9 +124,16 @@ end
 -- zoomed page size with width and height.
 ----------------------------------------------------
 function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
-	return 
-		x0 * self.globalzoom,
-		y0 * self.globalzoom,
+	local x = self.dest_x
+	local y = self.dest_y
+	if self.offset_x < 0 or self.offset_y < 0 then
+		x = x + self.offset_x
+		y = y + self.offset_y
+	end
+	print("# zoomedRectCoordTransform x="..x.." y="..y.." dest="..self.dest_x..","..self.dest_y.." offset="..self.offset_x..","..self.offset_y);
+	return
+		x0 * self.globalzoom + x,
+		y0 * self.globalzoom + y,
 		(x1 - x0) * self.globalzoom,
 		(y1 - y0) * self.globalzoom
 end
@@ -142,8 +151,6 @@ end
 ----------------------------------------------------
 function UniReader:getRectInScreen(x0, y0, x1, y1)
 	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
-	x = x + self.offset_x
-	y = y + self.offset_y
 	if x < 0 then
 		w = w + x
 		x = 0 
@@ -1229,37 +1236,37 @@ function UniReader:show(no)
 	end
 	self.pagehash = pagehash
 	local bb = self.cache[pagehash].bb
-	local dest_x = 0
-	local dest_y = 0
+	self.dest_x = 0
+	self.dest_y = 0
 	if bb:getWidth() - offset_x < width then
 		-- we can't fill the whole output width, center the content
-		dest_x = (width - (bb:getWidth() - offset_x)) / 2
+		self.dest_x = (width - (bb:getWidth() - offset_x)) / 2
 	end
 	if bb:getHeight() - offset_y < height and
 	self.globalzoommode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		-- we can't fill the whole output height and not in
 		-- ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode, center the content
-		dest_y = (height - (bb:getHeight() - offset_y)) / 2
+		self.dest_y = (height - (bb:getHeight() - offset_y)) / 2
 	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
 	self.offset_y > 0 then
 		-- if we are in ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode and turning to
 		-- the top of the page, we might leave an empty space between the
 		-- page top and screen top.
-		dest_y = self.offset_y
+		self.dest_y = self.offset_y
 	end
-	if dest_x or dest_y then
+	if self.dest_x or self.dest_y then
 		fb.bb:paintRect(0, 0, width, height, 8)
 	end
-	print("# blitFrom dest_off:("..dest_x..", "..dest_y..
+	print("# blitFrom dest_off:("..self.dest_x..", "..self.dest_y..
 		"), src_off:("..offset_x..", "..offset_y.."), "..
 		"width:"..width..", height:"..height)
-	fb.bb:blitFrom(bb, dest_x, dest_y, offset_x, offset_y, width, height)
+	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
 	print("## self.show_overlap "..self.show_overlap)
 	if self.show_overlap < 0 then
-		fb.bb:dimRect(0,0, width, dest_y - self.show_overlap)
+		fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
 	elseif self.show_overlap > 0 then
-		fb.bb:dimRect(0,dest_y + height - self.show_overlap, width, self.show_overlap)
+		fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
 
