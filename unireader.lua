@@ -1602,7 +1602,7 @@ function UniReader:showMenu()
 
 	fb:refresh(1)
 	while 1 do
-		local ev = input.saceWaitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_BACK or ev.code == KEY_MENU then
