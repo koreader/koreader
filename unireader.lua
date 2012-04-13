@@ -1925,6 +1925,7 @@ function UniReader:addAllCommands()
 							unireader.offset_y = unireader.min_offset_y -- bottom
 							unireader:goto(unireader.pageno - 1)
 						else
+							unireader.show_overlap = 0
 							unireader.offset_y = unireader.min_offset_y
 						end
 					elseif unireader.offset_x > 0 then
@@ -1939,6 +1940,7 @@ function UniReader:addAllCommands()
 							unireader.offset_y = unireader.pan_y
 							unireader:goto(unireader.pageno + 1)
 						else
+							unireader.show_overlap = 0
 							unireader.offset_y = unireader.pan_y
 						end
 					elseif unireader.offset_x < unireader.min_offset_x then
