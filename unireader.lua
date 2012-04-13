@@ -342,6 +342,8 @@ function UniReader:startHighLightMode()
 			end
 		end
 
+		print("## _findFirstWordInView none found in "..dump(t))
+
 		return nil
 	end
 
@@ -2021,5 +2023,6 @@ function UniReader:addAllCommands()
 			unireader:goto(unireader.pageno)
 		end
 	)
-	print("## defined commands "..dump(self.commands.map))
+	-- commands.map is very large, impacts startup performance on device
+	--print("## defined commands "..dump(self.commands.map))
 end
