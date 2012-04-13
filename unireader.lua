@@ -342,6 +342,8 @@ function UniReader:startHighLightMode()
 			end
 		end
 
+		print("## _findFirstWordInView none found in "..dump(t))
+
 		return nil
 	end
 

@@ -41,7 +41,7 @@ function PDFReader:getText(pageno)
 		return nil
 	end
 	local text = page:getPageText()
-	print(dump(text))
+	--print("## page:getPageText "..dump(text)) -- performance impact on device
 	page:close()
 	return text
 end
