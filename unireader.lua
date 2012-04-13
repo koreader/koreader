@@ -118,19 +118,26 @@ end
 -- highlight support 
 ----------------------------------------------------
 
+function UniReader:screenOffset()
+	local x = self.dest_x
+	local y = self.dest_y
+	if self.offset_x < 0 then
+		x = x + self.offset_x
+	end
+	if self.offset_y < 0 then
+		y = y + self.offset_y
+	end
+	print("# screenOffset "..x..","..y)
+	return x,y
+end
+
 ----------------------------------------------------
 -- Given coordinates of four corners in original page
 -- size and return coordinate of upper left conner in 
 -- zoomed page size with width and height.
 ----------------------------------------------------
 function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
-	local x = self.dest_x
-	local y = self.dest_y
-	if self.offset_x < 0 or self.offset_y < 0 then
-		x = x + self.offset_x
-		y = y + self.offset_y
-	end
-	print("# zoomedRectCoordTransform x="..x.." y="..y.." dest="..self.dest_x..","..self.dest_y.." offset="..self.offset_x..","..self.offset_y);
+	local x,y = self:screenOffset()
 	return
 		x0 * self.globalzoom + x,
 		y0 * self.globalzoom + y,
