@@ -8,7 +8,7 @@ cd /mnt/us/kindlepdfviewer/
 
 grep /mnt/us/kindlepdfviewer/fonts/host /proc/mounts || mount -o bind /usr/java/lib/fonts /mnt/us/kindlepdfviewer/fonts/host
 
-./reader.lua "$1" 2> /mnt/us/kindlepdfviewer/crash.log
+./reader.lua "$1" 2> /mnt/us/kindlepdfviewer/crash.log || cat /mnt/us/kindlepdfviewer/crash.log
 
 grep /mnt/us/kindlepdfviewer/fonts/host /proc/mounts && umount /mnt/us/kindlepdfviewer/fonts/host
 
