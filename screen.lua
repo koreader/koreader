@@ -89,7 +89,7 @@ function Screen:saveCurrentBB()
 	self.saved_bb:blitFullFrom(fb.bb)
 end
 
-function Screen:resotreFromSavedBB()
+function Screen:restoreFromSavedBB()
 	self:restoreFromBB(self.saved_bb)
 end
 

@@ -177,7 +177,7 @@ function Commands:new(obj)
 			util.sleep(3)
 			--os.execute("killall -stop cvm")
 			fb:setOrientation(Screen.kpv_rotation_mode)
-			Screen:resotreFromSavedBB()
+			Screen:restoreFromSavedBB()
 			fb:refresh(0)
 		end
 	)
