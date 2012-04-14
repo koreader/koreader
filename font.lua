@@ -55,7 +55,7 @@ function Font:getFace(font, size)
 		end
 		self.faces[font..size] = face
 	end
-	return { ftface = face, hash = font..size }
+	return { size = size, ftface = face, hash = font..size }
 end
 
 function Font:_readList(target, dir, effective_dir)
