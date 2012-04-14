@@ -874,6 +874,11 @@ end
 --[ following are default methods ]--
 
 function UniReader:initGlobalSettings(settings)
+	local pan_margin = settings:readSetting("pan_margin")
+	if pan_margin then
+		self.pan_margin = pan_margin
+	end
+
 	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
 	if pan_overlap_vertical then
 		self.pan_overlap_vertical = pan_overlap_vertical
