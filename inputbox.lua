@@ -64,7 +64,7 @@ function InputBox:addChar(char)
 	-- draw new text
 	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
 						/ self.fwidth
-	self.input_string = self.input_string:sub(1,cur_index)..char..
+	self.input_string = self.input_string:sub(1, cur_index)..char..
 						self.input_string:sub(cur_index+1)
 	self:refreshText()
 	self.input_cur_x = self.input_cur_x + self.fwidth
@@ -88,7 +88,7 @@ function InputBox:delChar()
 	self.cursor:clear()
 
 	-- draw new text
-	self.input_string = self.input_string:sub(0,cur_index-1)..
+	self.input_string = self.input_string:sub(1, cur_index-1)..
 						self.input_string:sub(cur_index+1, -1)
 	self:refreshText()
 	self.input_cur_x = self.input_cur_x - self.fwidth
@@ -238,7 +238,7 @@ function InputBox:addAllCommands()
 		function(self)
 			if (self.cursor.x_pos + 3) < self.input_cur_x then
 				self.cursor:moveHorizontalAndDraw(self.fwidth)
-				fb:refresh(1,self.input_start_x-5, self.ypos,
+				fb:refresh(1, self.input_start_x-5, self.ypos,
 							self.input_slot_w, self.h)
 			end
 		end
@@ -303,6 +303,26 @@ function NumInputBox:addAllCommands()
 		)
 	end -- for
 
+	self.commands:add(KEY_FW_LEFT, nil, "",
+		"move cursor left",
+		function(self)
+			if (self.cursor.x_pos + 3) > self.input_start_x then
+				self.cursor:moveHorizontalAndDraw(-self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
+	self.commands:add(KEY_FW_RIGHT, nil, "",
+		"move cursor right",
+		function(self)
+			if (self.cursor.x_pos + 3) < self.input_cur_x then
+				self.cursor:moveHorizontalAndDraw(self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "",
 		"submit input content",
 		function(self)
