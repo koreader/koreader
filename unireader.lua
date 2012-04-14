@@ -1862,8 +1862,13 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",
 		function(unireader)
-			unireader.rcount = 1
+			-- eink will not refresh if nothing is changeed on the screen
+			-- so we fake a change here.
+			fb.bb:invertRect(0, 0, 1, 1)
+			fb:refresh(1)
+			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(0)
+			unireader.rcount = 1
 		end)
 	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
