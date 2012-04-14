@@ -174,7 +174,7 @@ function Commands:new(obj)
 	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
-			os.execute("sleep 3")
+			util.sleep(3)
 			--os.execute("killall -stop cvm")
 			fb:setOrientation(Screen.kpv_rotation_mode)
 			Screen:resotreFromSavedBB()

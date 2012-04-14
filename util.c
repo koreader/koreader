@@ -17,6 +17,7 @@
 */
 
 #include <sys/time.h>
+#include <unistd.h>
 
 #include "util.h"
 
@@ -28,6 +29,19 @@ static int gettime(lua_State *L) {
 	return 2;
 }
 
+static int util_sleep(lua_State *L) {
+	unsigned int seconds = luaL_optint(L, 1, 0);
+	sleep(seconds);
+	return 0;
+}
+
+static int util_usleep(lua_State *L) {
+	useconds_t useconds = luaL_optint(L, 1, 0);
+	usleep(useconds);
+	return 0;
+}
+
+/* Turn UTF-8 char code to Unicode */
 static int utf8charcode(lua_State *L) {
 	size_t len;
 	const char* utf8char = luaL_checklstring(L, 1, &len);
@@ -57,6 +71,8 @@ static int isEmulated(lua_State *L) {
 
 static const struct luaL_Reg util_func[] = {
 	{"gettime", gettime},
+	{"sleep", util_sleep},
+	{"usleep", util_usleep},
 	{"utf8charcode", utf8charcode},
 	{"isEmulated", isEmulated},
 	{NULL, NULL}
