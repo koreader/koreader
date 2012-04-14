@@ -87,7 +87,7 @@ LUALIB := $(LUADIR)/src/liblua.a
 
 all:kpdfview
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP) \
 		kpdfview.o \
 		einkfb.o \
@@ -98,6 +98,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		util.o \
 		ft.o \
 		lfs.o \
+		mupdfimg.o \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
@@ -114,7 +115,7 @@ slider_watcher: slider_watcher.c
 ft.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o: %.o: %.c
+kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 djvu.o: %.o: %.c

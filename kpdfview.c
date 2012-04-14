@@ -26,6 +26,7 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pdf.h"
+#include "mupdfimg.h"
 #include "djvu.h"
 #include "cre.h"
 #include "einkfb.h"
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
 		luaopen_input(L);
 		luaopen_util(L);
 		luaopen_ft(L);
+		luaopen_mupdfimg(L);
 
 		luaopen_lfs(L);
 
