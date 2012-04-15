@@ -1,9 +1,17 @@
+require "font"
 require "rendertext"
 require "keys"
 require "graphics"
 
+
+----------------------------------------------------
+-- General inputbox
+----------------------------------------------------
+
 InputBox = {
 	-- Class vars:
+	h = 100,
+	input_slot_w = nil,
 	input_start_x = 145,
 	input_start_y = nil,
 	input_cur_x = nil, -- points to the start of next input pos
@@ -15,44 +23,103 @@ InputBox = {
 	shiftmode = false,
 	altmode = false,
 
+	cursor = nil,
+
 	-- font for displaying input content
-	face = freetype.newBuiltinFace("mono", 25),
-	fhash = "m25",
+	-- we have to use mono here for better distance controlling
+	face = Font:getFace("infont", 25),
 	fheight = 25,
-	fwidth = 16,
+	fwidth = 15,
+	commands = nil,
+	initialized = false,
 }
 
-function InputBox:setDefaultInput(text)
-	self.input_string = ""
-	self:addString(text)
-	--self.input_cur_x = self.input_start_x + (string.len(text) * self.fwidth)
-	--self.input_string = text
+function InputBox:new(o)
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	return o
 end
 
-function InputBox:addString(str)
-	for i = 1, #str do
-		self:addChar(str:sub(i,i))
+function InputBox:init()
+	if not self.initialized then
+		self:addAllCommands()
+		self.initialized = true
 	end
 end
 
+function InputBox:refreshText()
+	-- clear previous painted text
+	fb.bb:paintRect(140, self.input_start_y-19, 
+					self.input_slot_w, self.fheight, self.input_bg)
+	-- paint new text
+	renderUtf8Text(fb.bb, self.input_start_x, self.input_start_y,
+					self.face,
+					self.input_string, 0)
+end
+
 function InputBox:addChar(char)
-	renderUtf8Text(fb.bb, self.input_cur_x, self.input_start_y, self.face, self.fhash,
-								char, true)
-	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
+	self.cursor:clear()
+
+	-- draw new text
+	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
+						/ self.fwidth
+	self.input_string = self.input_string:sub(1, cur_index)..char..
+						self.input_string:sub(cur_index+1)
+	self:refreshText()
 	self.input_cur_x = self.input_cur_x + self.fwidth
-	self.input_string = self.input_string .. char
+	-- draw new cursor
+	self.cursor:moveHorizontal(self.fwidth)
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
 end
 
 function InputBox:delChar()
 	if self.input_start_x == self.input_cur_x then
 		return
 	end
+
+	local cur_index = (self.cursor.x_pos + 3 - self.input_start_x)
+						/ self.fwidth
+	if cur_index == 0 then return end
+
+	self.cursor:clear()
+
+	-- draw new text
+	self.input_string = self.input_string:sub(1, cur_index-1)..
+						self.input_string:sub(cur_index+1, -1)
+	self:refreshText()
 	self.input_cur_x = self.input_cur_x - self.fwidth
+
 	--fill last character with blank rectangle
 	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19,
 									self.fwidth, self.fheight, self.input_bg)
 	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
 	self.input_string = self.input_string:sub(0,-2)
+
+	-- draw new cursor
+	self.cursor:moveHorizontal(-self.fwidth)
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
+end
+
+function InputBox:clearText()
+	self.cursor:clear()
+	self.input_string = ""
+	self:refreshText()
+	self.cursor.x_pos = self.input_start_x - 3
+	self.cursor:draw()
+
+	fb:refresh(1, self.input_start_x-5, self.input_start_y-25, 
+				self.input_slot_w, self.h-25)
+end
+
+function InputBox:drawHelpMsg(ypos, w, h)
+	return
 end
 
 function InputBox:drawBox(ypos, w, h, title)
@@ -61,139 +128,262 @@ function InputBox:drawBox(ypos, w, h, title)
 	-- draw input slot
 	fb.bb:paintRect(140, ypos + 10, w - 130, h - 20, self.input_bg)
 	-- draw input title
-	renderUtf8Text(fb.bb, 35, self.input_start_y, self.face, self.fhash,
+	renderUtf8Text(fb.bb, 35, self.input_start_y, self.face,
 		title, true)
 end
 
 
---[[
-	|| d_text default to nil (used to set default text in input slot)
---]]
+----------------------------------------------------------------------
+-- InputBox:input()
+--
+-- @title: input prompt for the box
+-- @d_text: default to nil (used to set default text in input slot)
+----------------------------------------------------------------------
 function InputBox:input(ypos, height, title, d_text)
-	local pagedirty = true
+	self:init()
 	-- do some initilization
+	self.ypos = ypos
+	self.h = height
 	self.input_start_y = ypos + 35
 	self.input_cur_x = self.input_start_x
+	self.input_slot_w = fb.bb:getWidth() - 170
 
-	if d_text then -- if specified default text, draw it
-		w = fb.bb:getWidth() - 40
-		h = height - 45
-		self:drawBox(ypos, w, h, title)
-		self:setDefaultInput(d_text)
-		fb:refresh(1, 20, ypos, w, h)
-		pagedirty = false
-	else -- otherwise, leave the draw task to the main loop
-		self.input_string = ""
+	self.cursor = Cursor:new {
+		x_pos = self.input_start_x - 3,
+		y_pos = ypos + 13,
+		h = 30,
+	}
+
+
+	-- draw box and content
+	w = fb.bb:getWidth() - 40
+	h = height - 45
+	self:drawHelpMsg(ypos, w, h)
+	self:drawBox(ypos, w, h, title)
+	if d_text then
+		self.input_string = d_text
+		self.input_cur_x = self.input_cur_x + (self.fwidth * d_text:len())
+		self.cursor.x_pos = self.cursor.x_pos + (self.fwidth * d_text:len())
+		self:refreshText()
 	end
+	self.cursor:draw()
+	fb:refresh(1, 20, ypos, w, h)
 
 	while true do
-		if pagedirty then
-			w = fb.bb:getWidth() - 40
-			h = height - 45
-			self:drawBox(ypos, w, h, title)
-			fb:refresh(1, 20, ypos, w, h)
-			pagedirty = false
-		end
-
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			--local secs, usecs = util.gettime()
-			if ev.code == KEY_FW_UP then
-			elseif ev.code == KEY_FW_DOWN then
-			elseif ev.code == KEY_A then
-				self:addChar("a")
-			elseif ev.code == KEY_B then
-				self:addChar("b")
-			elseif ev.code == KEY_C then
-				self:addChar("c")
-			elseif ev.code == KEY_D then
-				self:addChar("d")
-			elseif ev.code == KEY_E then
-				self:addChar("e")
-			elseif ev.code == KEY_F then
-				self:addChar("f")
-			elseif ev.code == KEY_G then
-				self:addChar("g")
-			elseif ev.code == KEY_H then
-				self:addChar("h")
-			elseif ev.code == KEY_I then
-				self:addChar("i")
-			elseif ev.code == KEY_J then
-				self:addChar("j")
-			elseif ev.code == KEY_K then
-				self:addChar("k")
-			elseif ev.code == KEY_L then
-				self:addChar("l")
-			elseif ev.code == KEY_M then
-				self:addChar("m")
-			elseif ev.code == KEY_N then
-				self:addChar("n")
-			elseif ev.code == KEY_O then
-				self:addChar("o")
-			elseif ev.code == KEY_P then
-				self:addChar("p")
-			elseif ev.code == KEY_Q then
-				self:addChar("q")
-			elseif ev.code == KEY_R then
-				self:addChar("r")
-			elseif ev.code == KEY_S then
-				self:addChar("s")
-			elseif ev.code == KEY_T then
-				self:addChar("t")
-			elseif ev.code == KEY_U then
-				self:addChar("u")
-			elseif ev.code == KEY_V then
-				self:addChar("v")
-			elseif ev.code == KEY_W then
-				self:addChar("w")
-			elseif ev.code == KEY_X then
-				self:addChar("x")
-			elseif ev.code == KEY_Y then
-				self:addChar("y")
-			elseif ev.code == KEY_Z then
-				self:addChar("z")
-			elseif ev.code == KEY_1 then
-				self:addChar("1")
-			elseif ev.code == KEY_2 then
-				self:addChar("2")
-			elseif ev.code == KEY_3 then
-				self:addChar("3")
-			elseif ev.code == KEY_4 then
-				self:addChar("4")
-			elseif ev.code == KEY_5 then
-				self:addChar("5")
-			elseif ev.code == KEY_6 then
-				self:addChar("6")
-			elseif ev.code == KEY_7 then
-				self:addChar("7")
-			elseif ev.code == KEY_8 then
-				self:addChar("8")
-			elseif ev.code == KEY_9 then
-				self:addChar("9")
-			elseif ev.code == KEY_0 then
-				self:addChar("0")
-			elseif ev.code == KEY_SPACE then
-				self:addChar(" ")
-			elseif ev.code == KEY_PGFWD then
-			elseif ev.code == KEY_PGBCK then
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				if self.input_string == "" then
-					self.input_string = nil
-				end
-				break
-			elseif ev.code == KEY_DEL then
-				self:delChar()
-			elseif ev.code == KEY_BACK then
-				self.input_string = nil
-				break
+			keydef = Keydef:new(ev.code, getKeyModifier())
+			print("key pressed: "..tostring(keydef))
+
+			command = self.commands:getByKeydef(keydef)
+			if command ~= nil then
+				print("command to execute: "..tostring(command))
+				ret_code = command.func(self, keydef)
+			else
+				print("command not found: "..tostring(command))
 			end
 
-			--local nsecs, nusecs = util.gettime()
-			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			--print("E: T="..ev.type.." V="..ev.value.." C="..ev.code.." DUR="..dur)
+			if ret_code == "break" then
+				ret_code = nil
+				break
+			end
 		end -- if
 	end -- while
 
-	return self.input_string
+	local return_str = self.input_string
+	self.input_string = ""
+	return return_str
+end
+
+function InputBox:addAllCommands()
+	if self.commands then
+		-- we only initialize once
+		return
+	end
+	self.commands = Commands:new{}
+	
+	INPUT_KEYS = {
+		{KEY_Q, "q"}, {KEY_W, "w"}, {KEY_E, "e"}, {KEY_R, "r"}, {KEY_T, "t"}, 
+		{KEY_Y, "y"}, {KEY_U, "u"}, {KEY_I, "i"}, {KEY_O, "o"}, {KEY_P, "p"},
+
+		{KEY_A, "a"}, {KEY_S, "s"}, {KEY_D, "d"}, {KEY_F, "f"}, {KEY_G, "g"},
+		{KEY_H, "h"}, {KEY_J, "j"}, {KEY_K, "k"}, {KEY_L, "l"},
+
+		{KEY_Z, "z"}, {KEY_X, "x"}, {KEY_C, "c"}, {KEY_V, "v"}, {KEY_B, "b"},
+		{KEY_N, "n"}, {KEY_M, "m"},
+
+		{KEY_1, "1"}, {KEY_2, "2"}, {KEY_3, "3"}, {KEY_4, "4"}, {KEY_5, "5"},
+		{KEY_6, "6"}, {KEY_7, "7"}, {KEY_8, "8"}, {KEY_9, "9"}, {KEY_0, "0"},
+
+		{KEY_SPACE, " "},
+
+		-- DXG keys
+		{KEY_DOT, "."}, {KEY_SLASH, "/"},
+	}
+	for k,v in ipairs(INPUT_KEYS) do
+		self.commands:add(v[1], nil, "",
+			"input "..v[2],
+			function(self)
+				self:addChar(v[2])
+			end
+		)
+	end
+
+	self.commands:add(KEY_FW_LEFT, nil, "",
+		"move cursor left",
+		function(self)
+			if (self.cursor.x_pos + 3) > self.input_start_x then
+				self.cursor:moveHorizontalAndDraw(-self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
+	self.commands:add(KEY_FW_RIGHT, nil, "",
+		"move cursor right",
+		function(self)
+			if (self.cursor.x_pos + 3) < self.input_cur_x then
+				self.cursor:moveHorizontalAndDraw(self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
+	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "",
+		"submit input content",
+		function(self)
+			if self.input_string == "" then
+				self.input_string = nil
+			end
+			return "break"
+		end
+	)
+	self.commands:add(KEY_DEL, nil, "",
+		"delete one character",
+		function(self)
+			self:delChar()
+		end
+	)
+	self.commands:add(KEY_DEL, MOD_SHIFT, "",
+		"empty inputbox",
+		function(self)
+			self:clearText()
+		end
+	)
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "",
+		"cancel inputbox",
+		function(self)
+			self.input_string = nil
+			return "break"
+		end
+	)
+end
+
+
+----------------------------------------------------
+-- Inputbox for numbers only
+-- Designed by eLiNK
+----------------------------------------------------
+
+NumInputBox = InputBox:new{
+	initialized = false,
+	commands = Commands:new{},
+}
+
+function NumInputBox:addAllCommands()
+	self.commands = Commands:new{}
+
+	INPUT_NUM_KEYS = {
+		{KEY_Q, "1"}, {KEY_W, "2"}, {KEY_E, "3"}, {KEY_R, "4"}, {KEY_T, "5"}, 
+		{KEY_Y, "6"}, {KEY_U, "7"}, {KEY_I, "8"}, {KEY_O, "9"}, {KEY_P, "0"},
+
+		{KEY_1, "1"}, {KEY_2, "2"}, {KEY_3, "3"}, {KEY_4, "4"}, {KEY_5, "5"},
+		{KEY_6, "6"}, {KEY_7, "7"}, {KEY_8, "8"}, {KEY_9, "9"}, {KEY_0, "0"},
+	}
+	for k,v in ipairs(INPUT_NUM_KEYS) do
+		self.commands:add(v[1], nil, "",
+			"input "..v[2],
+			function(self)
+				self:addChar(v[2])
+			end
+		)
+	end -- for
+
+	self.commands:add(KEY_FW_LEFT, nil, "",
+		"move cursor left",
+		function(self)
+			if (self.cursor.x_pos + 3) > self.input_start_x then
+				self.cursor:moveHorizontalAndDraw(-self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
+	self.commands:add(KEY_FW_RIGHT, nil, "",
+		"move cursor right",
+		function(self)
+			if (self.cursor.x_pos + 3) < self.input_cur_x then
+				self.cursor:moveHorizontalAndDraw(self.fwidth)
+				fb:refresh(1, self.input_start_x-5, self.ypos,
+							self.input_slot_w, self.h)
+			end
+		end
+	)
+	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "",
+		"submit input content",
+		function(self)
+			if self.input_string == "" then
+				self.input_string = nil
+			end
+			return "break"
+		end
+	)
+	self.commands:add(KEY_DEL, nil, "",
+		"delete one character",
+		function(self)
+			self:delChar()
+		end
+	)
+	self.commands:add(KEY_DEL, MOD_SHIFT, "",
+		"empty inputbox",
+		function(self)
+			self:clearText()
+		end
+	)
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "",
+		"cancel inputbox",
+		function(self)
+			self.input_string = nil
+			return "break"
+		end
+	)
+end
+
+function NumInputBox:drawHelpMsg(ypos, w, h)
+	local w = 415
+	local y = ypos - 60
+	local x = (G_width - w) / 2 
+	local h = 50
+	local bw = 2
+	local face = Font:getFace("scfont", 22)
+
+	fb.bb:paintRect(x, y, w, h, 15)
+	fb.bb:paintRect(x+bw, y+bw, w-2*bw, h-2*bw, 0)
+	
+	local font_y = y + 22
+	local font_x = x + 22
+	INPUT_NUM_KEYS = {
+		{"Q", "1"}, {"W", "2"}, {"E", "3"}, {"R", "4"}, {"T", "5"}, 
+		{"Y", "6"}, {"U", "7"}, {"I", "8"}, {"O", "9"}, {"P", "0"},
+	}
+	for k,v in ipairs(INPUT_NUM_KEYS) do
+		renderUtf8Text(fb.bb, font_x, font_y, face,
+			v[1], true)
+		renderUtf8Text(fb.bb, font_x, font_y + 22, face,
+			v[2], true)
+		font_x = font_x + 40
+	end
+
+	fb:refresh(1, x, y, w, h)
 end

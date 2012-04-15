@@ -13,6 +13,7 @@ function glyphCacheClaim(size)
 				glyphcache[k].age = glyphcache[k].age - 1
 			else
 				glyphcache_current_memsize = glyphcache_current_memsize - glyphcache[k].size
+				glyphcache[k].glyph.bb:free()
 				glyphcache[k] = nil
 			end
 		end
@@ -20,10 +21,10 @@ function glyphCacheClaim(size)
 	glyphcache_current_memsize = glyphcache_current_memsize + size
 	return true
 end
-function getGlyph(face, facehash, charcode)
-	local hash = glyphCacheHash(facehash, charcode)
+function getGlyph(face, charcode)
+	local hash = glyphCacheHash(face.hash, charcode)
 	if glyphcache[hash] == nil then
-		local glyph = face:renderGlyph(charcode)
+		local glyph = face.ftface:renderGlyph(charcode)
 		local size = glyph.bb:getWidth() * glyph.bb:getHeight() / 2 + 32
 		glyphCacheClaim(size);
 		glyphcache[hash] = {
@@ -88,9 +89,9 @@ function renderUtf8Text(buffer, x, y, face, facehash, text, kerning, backgroundC
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < buffer:getWidth() then
 			local charcode = util.utf8charcode(uchar)
-			local glyph = getGlyph(face, facehash, charcode)
+			local glyph = getGlyph(face, charcode)
 			if kerning and prevcharcode then
-				local kern = face:getKerning(prevcharcode, charcode)
+				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
 				--print("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
 				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())

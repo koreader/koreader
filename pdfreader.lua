@@ -8,12 +8,12 @@ function PDFReader:open(filename)
 	-- muPDF manages its own cache, set second parameter
 	-- to the maximum size you want it to grow
 	local ok
-	ok, self.doc = pcall(pdf.openDocument, filename, 64*1024*1024)
+	ok, self.doc = pcall(pdf.openDocument, filename, self.cache_document_size)
 	if not ok then
 		return false, self.doc -- will contain error message
 	end
 	if self.doc:needsPassword() then
-		local password = InputBox:input(height-100, 100, "Pass:")
+		local password = InputBox:input(G_height-100, 100, "Pass:")
 		if not password or not self.doc:authenticatePassword(password) then
 			self.doc:close()
 			self.doc = nil
@@ -29,4 +29,19 @@ function PDFReader:open(filename)
 		return false, "damaged page tree"
 	end
 	return true
+end
+
+----------------------------------------------------
+-- highlight support 
+----------------------------------------------------
+function PDFReader:getText(pageno)
+	local ok, page = pcall(self.doc.openPage, self.doc, pageno)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
+	local text = page:getPageText()
+	--print("## page:getPageText "..dump(text)) -- performance impact on device
+	page:close()
+	return text
 end

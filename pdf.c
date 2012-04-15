@@ -164,16 +164,16 @@ fz_alloc_context my_alloc_default =
 
 static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
-	int cachesize = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
+	int cache_size = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
 	char buf[15];
-	printf("cachesize: %s\n",readable_fs(cachesize,buf));
+	printf("## cache_size: %s\n",readable_fs(cache_size,buf));
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
 	luaL_getmetatable(L, "pdfdocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = fz_new_context(&my_alloc_default, NULL, cachesize);
+	doc->context = fz_new_context(&my_alloc_default, NULL, cache_size);
 
 	fz_try(doc->context) {
 		doc->xref = fz_open_document(doc->context, filename);
@@ -311,6 +311,125 @@ static int openPage(lua_State *L) {
 	return 1;
 }
 
+/* get the text of the given page
+ * 
+ * will return text in a Lua table that is modeled after
+ * djvu.c creates this table.
+ *
+ * note that the definition of "line" is somewhat arbitrary
+ * here (for now)
+ *
+ * MuPDFs API provides text as single char information
+ * that is collected in "spans". we use a span as a "line"
+ * in Lua output and segment spans into words by looking
+ * for space characters.
+ *
+ * will return an empty table if we have no text
+ */
+static int getPageText(lua_State *L) {
+	fz_text_span *page_text;
+	fz_text_span *ptr;
+	fz_device *tdev;
+	fz_bbox bbox, linebbox;
+	int i;
+	int word, line;
+	int len, c;
+	int start;
+	char chars[4]; // max length of UTF-8 encoded rune
+	luaL_Buffer textbuf;
+
+	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
+
+	page_text = fz_new_text_span(page->doc->context);
+	tdev = fz_new_text_device(page->doc->context, page_text);
+	fz_run_page(page->doc->xref, page->page, tdev, fz_identity, NULL);
+	fz_free_device(tdev);
+
+	/* table that contains all the lines */
+	lua_newtable(L);
+	line = 1;
+	for(ptr = page_text; ptr != NULL; ptr = ptr->next) {
+		if(ptr->text == NULL) continue;
+
+		/* table for the words */
+		lua_newtable(L);
+		word = 1;
+		linebbox = ptr->text[0].bbox; // start with sensible default
+		for(i = 0; i < ptr->len; ) {
+			/* will hold information about a word: */
+			lua_newtable(L);
+
+			luaL_buffinit(L, &textbuf);
+			bbox = ptr->text[i].bbox; // start with sensible default
+			for(; i < ptr->len; i++) {
+				/* check for space characters */
+				if(ptr->text[i].c == ' ' ||
+					ptr->text[i].c == '\t' ||
+					ptr->text[i].c == '\n' ||
+					ptr->text[i].c == '\v' ||
+					ptr->text[i].c == '\f' ||
+					ptr->text[i].c == '\r' ||
+					ptr->text[i].c == 0xA0 ||
+					ptr->text[i].c == 0x1680 ||
+					ptr->text[i].c == 0x180E ||
+					(ptr->text[i].c >= 0x2000 && ptr->text[i].c <= 0x200A) ||
+					ptr->text[i].c == 0x202F ||
+					ptr->text[i].c == 0x205F ||
+					ptr->text[i].c == 0x3000) {
+					// ignore and end word
+					i++;
+					break;
+				}
+				len = runetochar(chars, &ptr->text[i].c);
+				for(c = 0; c < len; c++) {
+					luaL_addchar(&textbuf, chars[c]);
+				}
+				bbox = fz_union_bbox(bbox, ptr->text[i].bbox);
+				linebbox = fz_union_bbox(linebbox, ptr->text[i].bbox);
+			}
+			lua_pushstring(L, "word");
+			luaL_pushresult(&textbuf);
+			lua_settable(L, -3);
+
+			/* bbox for a word: */
+			lua_pushstring(L, "x0");
+			lua_pushinteger(L, bbox.x0);
+			lua_settable(L, -3);
+			lua_pushstring(L, "y0");
+			lua_pushinteger(L, bbox.y0);
+			lua_settable(L, -3);
+			lua_pushstring(L, "x1");
+			lua_pushinteger(L, bbox.x1);
+			lua_settable(L, -3);
+			lua_pushstring(L, "y1");
+			lua_pushinteger(L, bbox.y1);
+			lua_settable(L, -3);
+
+			lua_rawseti(L, -2, word++);
+		}
+
+		/* bbox for a whole line (or in fact, a "span") */
+		lua_pushstring(L, "x0");
+		lua_pushinteger(L, linebbox.x0);
+		lua_settable(L, -3);
+		lua_pushstring(L, "y0");
+		lua_pushinteger(L, linebbox.y0);
+		lua_settable(L, -3);
+		lua_pushstring(L, "x1");
+		lua_pushinteger(L, linebbox.x1);
+		lua_settable(L, -3);
+		lua_pushstring(L, "y1");
+		lua_pushinteger(L, linebbox.y1);
+		lua_settable(L, -3);
+
+		lua_rawseti(L, -2, line++);
+	}
+
+	fz_free_text_span(page->doc->context, page_text);
+
+	return 1;
+}
+
 static int getPageSize(lua_State *L) {
 	fz_matrix ctm;
 	fz_rect bounds;
@@ -323,7 +442,7 @@ static int getPageSize(lua_State *L) {
 	ctm = fz_concat(ctm, fz_rotate(dc->rotate));
 	bbox = fz_transform_rect(ctm, bounds);
 
-    lua_pushnumber(L, bbox.x1-bbox.x0);
+	lua_pushnumber(L, bbox.x1-bbox.x0);
 	lua_pushnumber(L, bbox.y1-bbox.y0);
 
 	return 2;
@@ -423,6 +542,17 @@ static int drawPage(lua_State *L) {
 	return 0;
 }
 
+static int getCacheSize(lua_State *L) {
+	printf("## mupdf getCacheSize = %d\n", msize);
+	lua_pushnumber(L, msize);
+	return 1;
+}
+
+static int cleanCache(lua_State *L) {
+	printf("## mupdf cleanCache NOP\n");
+	return 0;
+}
+
 static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
@@ -433,8 +563,10 @@ static const struct luaL_Reg pdfdocument_meth[] = {
 	{"authenticatePassword", authenticatePassword},
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
-	{"getTOC", getTableOfContent},
+	{"getToc", getTableOfContent},
 	{"close", closeDocument},
+	{"getCacheSize", getCacheSize},
+	{"cleanCache", cleanCache},
 	{"__gc", closeDocument},
 	{NULL, NULL}
 };
@@ -442,6 +574,7 @@ static const struct luaL_Reg pdfdocument_meth[] = {
 static const struct luaL_Reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
+	{"getPageText", getPageText},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},

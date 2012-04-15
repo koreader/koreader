@@ -41,6 +41,11 @@ Codes for rotation modes:
 
 Screen = {
 	cur_rotation_mode = 0,
+	-- these two variabls are used to help switching from framework to reader
+	native_rotation_mode = nil,
+	kpv_rotation_mode = nil,
+
+	saved_bb = nil,
 }
 
 -- @orien: 1 for clockwise rotate, -1 for anti-clockwise
@@ -71,4 +76,29 @@ function Screen:updateRotationMode()
 	end
 end
 
+function Screen:saveCurrentBB()
+	local width, height = G_width, G_height
 
+	if not self.saved_bb then
+		self.saved_bb = Blitbuffer.new(width, height)
+	end
+	if self.saved_bb:getWidth() ~= width then
+		self.saved_bb:free()
+		self.saved_bb = Blitbuffer.new(width, height)
+	end
+	self.saved_bb:blitFullFrom(fb.bb)
+end
+
+function Screen:restoreFromSavedBB()
+	self:restoreFromBB(self.saved_bb)
+end
+
+function Screen:getCurrentScreenBB()
+	local bb = Blitbuffer.new(G_width, G_height)
+	bb:blitFullFrom(fb.bb)
+	return bb
+end
+
+function Screen:restoreFromBB(bb)
+	fb.bb:blitFullFrom(bb)
+end

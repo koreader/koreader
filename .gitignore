@@ -3,10 +3,17 @@ lua
 lua-*
 .reader.kpdfview.lua
 mupdf-thirdparty.zip
+djvulibre*
 kpdfview
 *.o
 
+kindlepdfviewer-*.zip
 
 /.cproject
 /.project
 /.reader.kpdfview
+
+kpvcrlib/CMakeCache.txt
+kpvcrlib/CMakeFiles/
+kpvcrlib/cmake_install.cmake
+kpvcrlib/Makefile

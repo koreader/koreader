@@ -7,22 +7,33 @@ require "selectmenu"
 require "commands"
 
 HelpPage = {
+	-- Other Class vars:
+
+	-- spacing between lines
+	spacing = 25,
+
 	-- state buffer
 	commands = nil,
 	items = 0,
-	page = 1
+	page = 1,
+
+	-- font for displaying keys
+	fsize = 20,
+	face = Font:getFace("hpkfont", 20),
+
+	-- font for displaying help messages
+	hfsize = 20,
+	hface = Font:getFace("hfont", 20),
+
+	-- font for paging display
+	ffsize = 15,
+	fface = Font:getFace("pgfont", 15)
 }
 
 -- Other Class vars:
 
--- font for displaying help messages
-HelpPage.sFace, HelpPage.sHash = Font:getFaceAndHash(20, "sans")
--- font for displaying keys
-HelpPage.mFace, HelpPage.mHash = Font:getFaceAndHash(20, "sans")
--- font for paging display
-HelpPage.fFace, HelpPage.fHash = Font:getFaceAndHash(15, "sans")
 
-function HelpPage:show(ypos,height,commands)
+function HelpPage:show(ypos, height, commands)
 	self.commands = {}
 	self.items = 0
 	local keys = {}
@@ -37,17 +48,17 @@ function HelpPage:show(ypos,height,commands)
 	end
 	table.sort(self.commands,function(w1,w2) return w1.order<w2.order end)
 
-	local mFaceHeight, mFaceAscender = self.mFace:getHeightAndAscender();
-	local fFaceHeight, fFaceAscender = self.fFace:getHeightAndAscender();
-	--print(mFaceHeight.."-"..mFaceAscender)
-	--print(fFaceHeight.."-"..fFaceAscender)
-	mFaceHeight = math.ceil(mFaceHeight)
-	mFaceAscender = math.ceil(mFaceAscender)
-	fFaceHeight = math.ceil(fFaceHeight)
-	fFaceAscender = math.ceil(fFaceAscender)
-	local spacing = mFaceHeight + 5
+	local faceHeight, faceAscender = self.face:getHeightAndAscender();
+	local ffaceHeight, ffaceAscender = self.fface:getHeightAndAscender();
+	--print(faceHeight.."-"..faceAscender)
+	--print(ffaceHeight.."-"..ffaceAscender)
+	faceHeight = math.ceil(faceHeight)
+	faceAscender = math.ceil(faceAscender)
+	ffaceHeight = math.ceil(ffaceHeight)
+	ffaceAscender = math.ceil(ffaceAscender)
+	local spacing = faceHeight + 5
 
-	local perpage = math.floor( (height - ypos - 1 * (fFaceHeight + 5)) / spacing )
+	local perpage = math.floor( (height - ypos - 1 * (ffaceHeight + 5)) / spacing )
 	local pagedirty = true
 
 	while true do
@@ -62,19 +73,19 @@ function HelpPage:show(ypos,height,commands)
 					local key = self.commands[i].shortcut
 					for _k,aMod in pairs(MOD_TABLE) do
 						local modStart, modEnd = key:find(aMod.v)
-						print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
+						--print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
 						if(modStart ~= nil) then
 							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
-							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.mFace, self.mHash, aMod.d, true)
+							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
 							fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4);
-							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.mFace, self.mHash, aMod.d.." + ", true)
+							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, aMod.d.." + ", true)
 							x = x + pen_x
 							max_x = math.max(max_x, pen_x)
 						end
 					end
-					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.mFace, self.mHash, key , true)
+					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
 					fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4);
-					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.mFace, self.mHash, key, true)
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, self.mHash, key, true)
 					x = x + pen_x
 					max_x = math.max(max_x, x)
 				end
@@ -82,10 +93,10 @@ function HelpPage:show(ypos,height,commands)
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c, self.sFace, self.sHash, self.commands[i].help, true)
+					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c, self.hface, self.commands[i].help, true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, height - fFaceHeight + fFaceAscender - 5, self.fFace, self.fHash,
+			renderUtf8Text(fb.bb, 5, height - ffaceHeight + ffaceAscender - 5, self.fFace,
 				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
 			markerdirty = true
 		end
@@ -94,7 +105,7 @@ function HelpPage:show(ypos,height,commands)
 			pagedirty = false
 		end
 
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		--print("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then

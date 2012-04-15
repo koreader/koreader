@@ -20,11 +20,13 @@
 require "alt_getopt"
 require "pdfreader"
 require "djvureader"
+require "crereader"
 require "filechooser"
 require "settings"
 require "screen"
 require "keys"
 require "commands"
+require "dialog"
 
 -- option parsing:
 longopts = {
@@ -42,17 +44,23 @@ function openFile(filename)
 		reader = DJVUReader
 	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
 		reader = PDFReader
+	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" then
+		reader = CREReader
 	end
 	if reader then
+		InfoMessage:show("Opening document, please wait... ")
+		fb:refresh(0)
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
-			page_num = reader.settings:readSetting("last_page") or 1
+			page_num = reader:getLastPageOrPos()
 			reader:goto(tonumber(page_num))
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
 		else
-			-- TODO: error handling
+			InfoMessage:show("Error opening document.")
+			fb:refresh(0)
+			util.sleep(2)
 		end
 	end
 	return true -- on failed attempts, we signal to keep running
@@ -66,9 +74,6 @@ function showusage()
 	print("-g, --goto=page           start reading on page")
 	print("-G, --gamma=GAMMA         set gamma correction")
 	print("                          (floating point notation, e.g. \"1.5\")")
-	print("-d, --device=DEVICE       set device specific configuration,")
-	print("                          currently one of \"kdxg\" (default), \"k3\"")
-	print("                          \"emu\" (DXG emulation)")
 	print("-h, --help                show this usage help")
 	print("")
 	print("If you give the name of a directory instead of a file path, a file")
@@ -86,18 +91,12 @@ if optarg["h"] then
 	return showusage()
 end
 
-
-if optarg["d"] == "k3" then
-	-- for now, the only difference is the additional input device
-	input.open("/dev/input/event0")
-	input.open("/dev/input/event1")
-	input.open("/dev/input/event2")
-	setK3Keycodes()
-elseif optarg["d"] == "emu" then
+if util.isEmulated()==1 then
 	input.open("")
 	-- SDL key codes
 	setEmuKeycodes()
 else
+	input.open("slider")
 	input.open("/dev/input/event0")
 	input.open("/dev/input/event1")
 
@@ -116,16 +115,16 @@ if optarg["G"] ~= nil then
 end
 
 fb = einkfb.open("/dev/fb0")
-width, height = fb:getSize()
+G_width, G_height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
-origin_rotation_mode = Screen.cur_rotation_mode
+Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
 reader_settings = DocSettings:open(".reader")
-r_cfont = reader_settings:readSetting("cfont")
-if r_cfont ~=nil then
-	Font.cfont = r_cfont
+fontmap = reader_settings:readSetting("fontmap")
+if fontmap ~= nil then
+	Font.fontmap = fontmap
 end
 
 -- initialize global settings shared among all readers
@@ -133,6 +132,7 @@ UniReader:initGlobalSettings(reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
+CREReader:init()
 
 -- display directory or open file
 local patharg = reader_settings:readSetting("lastfile")
@@ -140,12 +140,13 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
-		local file, callback = FileChooser:choose(0,height)
+		local file, callback = FileChooser:choose(0, G_height)
 		if callback then
 			callback()
 		else
 			if file ~= nil then
 				running = openFile(file)
+				print(file)
 			else
 				running = false
 			end
@@ -161,15 +162,15 @@ end
 
 
 -- save reader settings
-reader_settings:savesetting("cfont", Font.cfont)
+reader_settings:savesetting("fontmap", Font.fontmap)
 reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
-fb:setOrientation(origin_rotation_mode)
+fb:setOrientation(Screen.native_rotation_mode)
 
 input.closeAll()
---os.execute('test -e /proc/keypad && echo "send '..KEY_HOME..'" > /proc/keypad ')
-if optarg["d"] ~= "emu" then
+if util.isEmulated()==0 then
+	--os.execute("killall -cont cvm")
 	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
 end

@@ -54,7 +54,11 @@ function FileChooser:readDir()
 			table.insert(self.dirs, f)
 		else
 			local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-			if file_type == "djvu" or file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
+			if file_type == "djvu"
+			or file_type == "pdf" or file_type == "xps" or file_type == "cbz" 
+			or file_type == "epub" or file_type == "txt" or file_type == "rtf"
+			or file_type == "htm" or file_type == "html"
+			or file_type == "fb2" or file_type == "chm" then
 				table.insert(self.files, f)
 			end
 		end
@@ -118,8 +122,8 @@ function FileChooser:choose(ypos, height)
 	end
 
 	while true do
-		local cface, cfhash= Font:getFaceAndHash(25)
-		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+		local cface = Font:getFace("cfont", 25)
+		local fface = Font:getFace("ffont", 16)
 
 		if pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
@@ -128,17 +132,17 @@ function FileChooser:choose(ypos, height)
 				local i = (self.page - 1) * perpage + c
 				if i <= #self.dirs then
 					-- resembles display in midnight commander: adds "/" prefix for directories
-					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, cface, cfhash, "/", true)
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.dirs[i], true)
+					renderUtf8Text(fb.bb, 39, ypos + self.spacing*c, cface, "/", true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, self.dirs[i], true)
 				elseif i <= self.items then
-					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, cfhash, self.files[i-#self.dirs], true)
+					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, self.files[i-#self.dirs], true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface, ffhash,
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface,
 				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
 			self.exception_message = nil
-			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, ffhash, msg, true)
+			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, msg, true)
 			markerdirty = true
 		end
 		if markerdirty then
@@ -160,7 +164,7 @@ function FileChooser:choose(ypos, height)
 			pagedirty = false
 		end
 
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		--print("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
@@ -169,13 +173,13 @@ function FileChooser:choose(ypos, height)
 			elseif ev.code == KEY_FW_DOWN then
 				nextItem()
 			elseif ev.code == KEY_F then -- invoke fontchooser menu
-				fonts_menu = SelectMenu:new{
+				local fonts_menu = SelectMenu:new{
 					menu_title = "Fonts Menu",
-					item_array = Font.fonts,
+					item_array = Font:getFontList(),
 				}
-				local re = fonts_menu:choose(0, height)
+				local re, font = fonts_menu:choose(0, height)
 				if re then
-					Font.cfont = Font.fonts[re]
+					Font.fontmap["cfont"] = font
 					Font:update()
 				end
 				pagedirty = true
@@ -193,11 +197,11 @@ function FileChooser:choose(ypos, height)
 					--]]
 					return nil, function()
 						FileSearcher:init( self.path )
-						FileSearcher:choose(ypos, height, keywords)
+						FileSearcher:choose(keywords)
 					end
 				end
 				pagedirty = true
-			elseif ev.code == KEY_PGFWD then
+			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if self.page < (self.items / perpage) then
 					if self.current + self.page*perpage > self.items then
 						self.current = self.items - self.page*perpage
@@ -208,7 +212,7 @@ function FileChooser:choose(ypos, height)
 					self.current = self.items - (self.page-1)*perpage
 					markerdirty = true
 				end
-			elseif ev.code == KEY_PGBCK then
+			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if self.page > 1 then
 					self.page = self.page - 1
 					pagedirty = true

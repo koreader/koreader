@@ -2,6 +2,7 @@ require "rendertext"
 require "keys"
 require "graphics"
 require "font"
+require "commands"
 
 SelectMenu = {
 	-- font for displaying item names
@@ -11,8 +12,7 @@ SelectMenu = {
 	-- font for paging display
 	ffsize = 16,
 	-- font for item shortcut
-	sface = freetype.newBuiltinFace("mono", 22),
-	sfhash = "mono22",
+	sface = Font:getFace("scfont", 22),
 
 	-- title height
 	title_H = 40,
@@ -21,7 +21,7 @@ SelectMenu = {
 	-- foot height
 	foot_H = 27,
 
-	menu_title = "None Titled",
+	menu_title = "No Title",
 	no_item_msg = "No items found.",
 	item_array = {},
 	items = 0,
@@ -32,10 +32,14 @@ SelectMenu = {
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Ent",
 		},
 	last_shortcut = 0,
+
 	-- state buffer
 	page = 1,
 	current = 1,
 	oldcurrent = 0,
+	selected_item = nil,
+
+	commands = nil,
 }
 
 function SelectMenu:new(o)
@@ -46,10 +50,12 @@ function SelectMenu:new(o)
 	o.page = 1
 	o.current = 1
 	o.oldcurrent = 0
+	o.selected_item = nil
 	-- increase spacing for DXG so we don't have more than 30 shortcuts
 	if fb.bb:getHeight() == 1200 then
 		o.spacing = 37
 	end
+	o:addAllCommands()
 	return o
 end
 
@@ -62,74 +68,197 @@ function SelectMenu:getItemIndexByShortCut(c, perpage)
 	end
 end
 
---[
+function SelectMenu:addAllCommands()
+	self.commands = Commands:new{}
+
+	self.commands:add(KEY_FW_UP, nil, "",
+		"previous item",
+		function(sm)
+			if sm.current == 1 then
+				if sm.page > 1 then
+					sm.current = sm.perpage
+					sm.page = sm.page - 1
+					sm.pagedirty = true
+				end
+			else
+				sm.current = sm.current - 1
+				sm.markerdirty = true
+			end
+		end
+	)
+	self.commands:add(KEY_FW_DOWN, nil, "",
+		"next item",
+		function(sm)
+			if sm.current == sm.perpage then
+				if sm.page < (sm.items / sm.perpage) then
+					sm.current = 1
+					sm.page = sm.page + 1
+					sm.pagedirty = true
+				end
+			else
+				if sm.page ~= math.floor(sm.items / sm.perpage) + 1
+					or sm.current + (sm.page - 1) * sm.perpage < sm.items then
+					sm.current = sm.current + 1
+					sm.markerdirty = true
+				end
+			end
+		end
+	)
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, "",
+		"next page",
+		function(sm)
+			if sm.page < (sm.items / sm.perpage) then
+				if sm.current + sm.page * sm.perpage > sm.items then
+					sm.current = sm.items - sm.page * sm.perpage
+				end
+				sm.page = sm.page + 1
+				sm.pagedirty = true
+			else
+				sm.current = sm.items - (sm.page - 1) * sm.perpage
+				sm.markerdirty = true
+			end
+		end
+	)
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "",
+		"previous page",
+		function(sm)
+			if sm.page > 1 then
+				sm.page = sm.page - 1
+				sm.pagedirty = true
+			else
+				sm.current = 1
+				sm.markerdirty = true
+			end
+		end
+	)
+	self.commands:add(KEY_FW_PRESS, nil, "",
+		"select menu item",
+		function(sm)
+			if sm.last_shortcut < 30 then
+				if sm.items == 0 then
+					return "break"
+				else
+					self.selected_item = (sm.perpage * (sm.page - 1)
+											+ sm.current)
+				end
+			end
+		end
+	)
+	local KEY_Q_to_P = {}
+	for i = KEY_Q, KEY_P do 
+		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
+	end
+	self.commands:addGroup("Q to P", KEY_Q_to_P, 
+		"Select menu item with Q to E key as shortcut",
+		function(sm, keydef)
+			sm.selected_item = sm:getItemIndexByShortCut(
+				sm.item_shortcuts[ keydef.keycode - KEY_Q + 1 ], sm.perpage)
+		end
+	)
+	local KEY_A_to_L = {}
+	for i = KEY_A, KEY_L do 
+		table.insert(KEY_A_to_L, Keydef:new(i, nil, ""))
+	end
+	self.commands:addGroup("A to L", KEY_A_to_L, 
+		"Select menu item with A to L key as shortcut",
+		function(sm, keydef)
+			sm.selected_item = sm:getItemIndexByShortCut(
+				sm.item_shortcuts[ keydef.keycode - KEY_A + 11 ], sm.perpage)
+		end
+	)
+	local KEY_Z_to_M = {}
+	for i = KEY_Z, KEY_M do 
+		table.insert(KEY_Z_to_M, Keydef:new(i, nil, ""))
+	end
+	self.commands:addGroup("Z to M", KEY_Z_to_M, 
+		"Select menu item with Z to M key as shortcut",
+		function(sm, keydef)
+			sm.selected_item = sm:getItemIndexByShortCut(
+				sm.item_shortcuts[ keydef.keycode - KEY_Z + 21 ], sm.perpage)
+		end
+	)
+	self.commands:add(KEY_DEL, nil, "",
+		"Select menu item with del key as shortcut",
+		function(sm)
+			sm.selected_item = sm:getItemIndexByShortCut("Del", sm.perpage)
+		end
+	)
+	self.commands:add(KEY_DOT, nil, "",
+		"Select menu item with dot key as shortcut",
+		function(sm)
+			sm.selected_item = sm:getItemIndexByShortCut(".", sm.perpage)
+		end
+	)
+	self.commands:add({KEY_SYM, KEY_SLASH}, nil, "",
+		"Select menu item with sym/slash key as shortcut",
+		function(sm)
+		-- DXG has slash after dot
+			sm.selected_item = sm:getItemIndexByShortCut("Sym", sm.perpage)
+		end
+	)
+	self.commands:add(KEY_ENTER, nil, "",
+		"Select menu item with enter key as shortcut",
+		function(sm)
+			sm.selected_item = sm:getItemIndexByShortCut("Ent", sm.perpage)
+		end
+	)
+	self.commands:add(KEY_BACK, nil, "",
+		"Exit menu",
+		function(sm)
+			return "break"
+		end
+	)
+end
+
+function SelectMenu:clearCommands()
+	self.commands = Commands:new{}
+
+	self.commands:add(KEY_BACK, nil, "",
+		"Exit menu",
+		function(sm)
+			return "break"
+		end)
+end
+
+------------------------------------------------
 -- return the index of selected item
---]
+------------------------------------------------
 function SelectMenu:choose(ypos, height)
-	local perpage = math.floor(height / self.spacing) - 2
-	local pagedirty = true
-	local markerdirty = false
-
-	local prevItem = function ()
-		if self.current == 1 then
-			if self.page > 1 then
-				self.current = perpage
-				self.page = self.page - 1
-				pagedirty = true
-			end
-		else
-			self.current = self.current - 1
-			markerdirty = true
-		end
-	end
-
-	local nextItem = function ()
-		if self.current == perpage then
-			if self.page < (self.items / perpage) then
-				self.current = 1
-				self.page = self.page + 1
-				pagedirty = true
-			end
-		else
-			if self.page ~= math.floor(self.items / perpage) + 1
-				or self.current + (self.page-1)*perpage < self.items then
-				self.current = self.current + 1
-				markerdirty = true
-			end
-		end
-	end
-
+	self.perpage = math.floor(height / self.spacing) - 2
+	self.pagedirty = true
+	self.markerdirty = false
 	self.last_shortcut = 0
 
 	while true do
-		local cface, cfhash = Font:getFaceAndHash(22)
-		local tface, tfhash = Font:getFaceAndHash(25, Font.tfont)
-		local fface, ffhash = Font:getFaceAndHash(16, Font.ffont)
+		local cface = Font:getFace("cfont", 22)
+		local tface = Font:getFace("tfont", 25)
+		local fface = Font:getFace("ffont", 16)
 
-		if pagedirty then
-			markerdirty = true
+		if self.pagedirty then
+			self.markerdirty = true
 			-- draw menu title
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
 			fb.bb:paintRect(10, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
 
 			local x = 20
 			local y = ypos + self.title_H
-			renderUtf8Text(fb.bb, x, y, tface, tfhash, self.menu_title, true)
+			renderUtf8Text(fb.bb, x, y, tface, self.menu_title, true)
 
 			-- draw items
 			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
 			if self.items == 0 then
 				y = ypos + self.title_H + (self.spacing * 2)
-				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
+				renderUtf8Text(fb.bb, 30, y, cface,
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
-				renderUtf8Text(fb.bb, 30, y, cface, cfhash,
+				renderUtf8Text(fb.bb, 30, y, cface,
 					self.no_item_msg, true)
-				markerdirty = false
+				self.markerdirty = false
+				self:clearCommands()
 			else
 				local c
-				for c = 1, perpage do
-					local i = (self.page - 1) * perpage + c 
+				for c = 1, self.perpage do
+					local i = (self.page - 1) * self.perpage + c 
 					if i <= self.items then
 						y = ypos + self.title_H + (self.spacing * c)
 
@@ -142,30 +271,32 @@ function SelectMenu:choose(ypos, height)
 						if self.item_shortcuts[c] ~= nil and 
 							string.len(self.item_shortcuts[c]) == 3 then
 							-- print "Del", "Sym and "Ent"
-							renderUtf8Text(fb.bb, 13, y, fface, ffhash,
+							renderUtf8Text(fb.bb, 13, y, fface,
 								self.item_shortcuts[c], true)
 						else
-							renderUtf8Text(fb.bb, 18, y, self.sface, self.sfhash,
+							renderUtf8Text(fb.bb, 18, y, self.sface,
 								self.item_shortcuts[c], true)
 						end
 
 						self.last_shortcut = c
 
-						renderUtf8Text(fb.bb, 50, y, cface, cfhash,
+						renderUtf8Text(fb.bb, 50, y, cface,
 							self.item_array[i], true)
-					end
-				end
-			end
+					end -- EOF if i <= self.items
+				end -- EOF for
+			end -- EOF if
 
 			-- draw footer
-			y = ypos + self.title_H + (self.spacing * perpage) + self.foot_H + 5
+			y = ypos + self.title_H + (self.spacing * self.perpage)
+				+ self.foot_H + 5
 			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, fface, ffhash,
-				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
+			renderUtf8Text(fb.bb, x, y, fface,
+				"Page "..self.page.." of "..
+				(math.ceil(self.items / self.perpage)), true)
 		end
 
-		if markerdirty then
-			if not pagedirty then
+		if self.markerdirty then
+			if not self.pagedirty then
 				if self.oldcurrent > 0 then
 					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 8
 					fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 0)
@@ -175,72 +306,41 @@ function SelectMenu:choose(ypos, height)
 			-- draw new marker line
 			y = ypos + self.title_H + (self.spacing * self.current) + 8
 			fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 15)
-			if not pagedirty then
+			if not self.pagedirty then
 				fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
 			end
 			self.oldcurrent = self.current
-			markerdirty = false
+			self.markerdirty = false
 		end
 
-		if pagedirty then
+		if self.pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
-			pagedirty = false
+			self.pagedirty = false
 		end
 
-		local ev = input.waitForEvent()
+		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			local selected = nil
-			if ev.code == KEY_FW_UP then
-				prevItem()
-			elseif ev.code == KEY_FW_DOWN then
-				nextItem()
-			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if self.page < (self.items / perpage) then
-					if self.current + self.page*perpage > self.items then
-						self.current = self.items - self.page*perpage
-					end
-					self.page = self.page + 1
-					pagedirty = true
-				else
-					self.current = self.items - (self.page-1)*perpage
-					markerdirty = true
-				end
-			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if self.page > 1 then
-					self.page = self.page - 1
-					pagedirty = true
-				else
-					self.current = 1
-					markerdirty = true
-				end
-			elseif ev.code == KEY_FW_PRESS or ev.code == KEY_ENTER and self.last_shortcut < 30 then
-				if self.items == 0 then
-					return nil
-				else
-					return (perpage*(self.page-1) + self.current)
-				end
-			elseif ev.code >= KEY_Q and ev.code <= KEY_P then
-				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Q + 1 ], perpage)
-			elseif ev.code >= KEY_A and ev.code <= KEY_L then
-				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_A + 11], perpage)
-			elseif ev.code >= KEY_Z and ev.code <= KEY_M then
-				selected = self:getItemIndexByShortCut(self.item_shortcuts[ ev.code - KEY_Z + 21], perpage)
-			elseif ev.code == KEY_DEL then
-				selected = self:getItemIndexByShortCut("Del", perpage)
-			elseif ev.code == KEY_DOT then
-				selected = self:getItemIndexByShortCut(".", perpage)
-			elseif ev.code == KEY_SYM or ev.code == KEY_SLASH then -- DXG has slash after dot
-				selected = self:getItemIndexByShortCut("Sym", perpage)
-			elseif ev.code == KEY_ENTER then
-				selected = self:getItemIndexByShortCut("Ent", perpage)
-			elseif ev.code == KEY_BACK then
-				return nil
+			keydef = Keydef:new(ev.code, getKeyModifier())
+			print("key pressed: "..tostring(keydef))
+
+			command = self.commands:getByKeydef(keydef)
+			if command ~= nil then
+				print("command to execute: "..tostring(command))
+				ret_code = command.func(self, keydef)
+			else
+				print("command not found: "..tostring(command))
 			end
-			if selected ~= nil then
-				print("# selected "..selected)
-				return selected
+
+			if ret_code == "break" then
+				break
 			end
-		end
-	end
+
+			if self.selected_item ~= nil then
+				print("# selected "..self.selected_item)
+				return self.selected_item, self.item_array[self.selected_item]
+			end
+		end -- EOF if
+	end -- EOF while
+	return nil
 end

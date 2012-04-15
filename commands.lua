@@ -5,6 +5,7 @@ Keydef = {
 	modifier = nil,
 	descr = nil
 }
+
 function Keydef:_new(obj)
 	-- obj definition
 	obj = obj or {}
@@ -13,6 +14,7 @@ function Keydef:_new(obj)
 	self.__tostring=Keydef.tostring
 	return obj
 end
+
 function Keydef:new(keycode,modifier,descr)
 	obj = Keydef:_new()
 	obj.keycode = keycode
@@ -20,12 +22,15 @@ function Keydef:new(keycode,modifier,descr)
 	obj.descr = descr
 	return obj
 end
+
 function Keydef:display()
 	return (self.modifier or "")..(self.descr or "")
 end
+
 function Keydef:tostring()
 	return ((self.modifier and self.modifier.."+") or "").."["..(self.keycode or "").."]"..(self.descr or "")
 end
+
 
 Command = {
 	keydef = nil,
@@ -34,6 +39,7 @@ Command = {
 	help = nil,
 	order = nil
 }
+
 function Command:_new(obj)
 	-- obj definition
 	obj = obj or {}
@@ -42,6 +48,7 @@ function Command:_new(obj)
 	self.__tostring=Command.tostring
 	return obj
 end
+
 function Command:new(keydef, func, help, keygroup, order)
 	obj = Command:_new()
 	obj.keydef = keydef
@@ -52,6 +59,7 @@ function Command:new(keydef, func, help, keygroup, order)
 	--print("creating command: ["..tostring(keydef).."] keygroup:["..(keygroup or "").."] help:"..help)
 	return obj
 end
+
 function Command:tostring()
 	return tostring(self.keydef)..": "..(self.help or "<no help defined>")
 end
@@ -61,15 +69,54 @@ Commands = {
 	map = {},
 	size = 0
 }
+
 function Commands:add(keycode,modifier,keydescr,help,func)
-	local keydef = Keydef:new(keycode,modifier,keydescr)
-	self:_addImpl(keydef,help,func)
+	if type(keycode) == "table" then
+		for i=1,#keycode,1 do
+			local keydef = Keydef:new(keycode[i],modifier,keydescr)
+			self:_addImpl(keydef,help,func)
+		end
+	else
+		local keydef = Keydef:new(keycode,modifier,keydescr)
+		self:_addImpl(keydef,help,func)
+	end
 end
+
 function Commands:addGroup(keygroup,keys,help,func)
 	for _k,keydef in pairs(keys) do
 		self:_addImpl(keydef,help,func,keygroup)
 	end
 end
+
+--@TODO handle MOD_ANY  06.04 2012 (houqp)
+function Commands:del(keycode, modifier, keydescr)
+	local keydef = nil
+
+	if not keydescr then
+		for k,v in pairs(self.map) do
+			if v.keydef.keycode == keycode 
+			and v.keydef.modifier == modifier then
+				keydef = k
+				break
+			end
+		end -- EOF for
+	else
+		keydef = Keydef:new(keycode, modifier, keydescr)
+	end -- EOF if
+
+	self.map[keydef] = nil
+end
+
+function Commands:delGroup(keygroup)
+	if keygroup then
+		for k,v in pairs(self.map) do
+			if v.keygroup == keygroup then
+				self.map[k] = nil
+			end
+		end -- EOF for
+	end
+end
+
 function Commands:_addImpl(keydef,help,func,keygroup)
 	if keydef.modifier==MOD_ANY then
 		self:addGroup(keygroup or keydef.descr,{Keydef:new(keydef.keycode,nil), Keydef:new(keydef.keycode,MOD_SHIFT), Keydef:new(keydef.keycode,MOD_ALT)},help,func)
@@ -88,25 +135,51 @@ function Commands:_addImpl(keydef,help,func,keygroup)
 		end
 	end
 end
+
 function Commands:get(keycode,modifier)
 	return self.map[Keydef:new(keycode, modifier)]
 end
+
 function Commands:getByKeydef(keydef)
 	return self.map[keydef]
 end
+
 function Commands:new(obj)
-	-- payload
-	local mt = {}
-	setmetatable(self.map,mt)
-	mt.__index=function (table, key)
-		return rawget(table,(key.modifier or "").."@#@"..(key.keycode or ""))
-	end
-	mt.__newindex=function (table, key, value)
-		return rawset(table,(key.modifier or "").."@#@"..(key.keycode or ""),value)
-	end
 	-- obj definition
 	obj = obj or {}
+	obj.map = {}
+	obj.size = 0
 	setmetatable(obj, self)
 	self.__index = self
+
+	-- payload
+	local mt = {}
+	mt.__index = function(table, key)
+		return rawget(table,(key.modifier or "").."@#@"..(key.keycode or ""))
+	end
+	mt.__newindex = function(table, key, value)
+		return rawset(table,(key.modifier or "").."@#@"..(key.keycode or ""),value)
+	end
+	setmetatable(obj.map, mt)
+
+	obj:add(KEY_INTO_SCREEN_SAVER, nil, "Slider",
+		"toggle screen saver",
+		function()
+			Screen:saveCurrentBB()
+			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+			fb:setOrientation(Screen.native_rotation_mode)
+			--os.execute("killall -cont cvm")
+		end
+	)
+	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "Slider",
+		"toggle screen saver",
+		function()
+			util.sleep(3)
+			--os.execute("killall -stop cvm")
+			fb:setOrientation(Screen.kpv_rotation_mode)
+			Screen:restoreFromSavedBB()
+			fb:refresh(0)
+		end
+	)
 	return obj
 end

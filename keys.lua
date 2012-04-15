@@ -87,6 +87,9 @@ KEY_FW_UP = 122
 KEY_FW_DOWN = 123
 KEY_FW_PRESS = 92
 
+KEY_INTO_SCREEN_SAVER = 10000
+KEY_OUTOF_SCREEN_SAVER = 10001
+
 -- constants from <linux/input.h>
 EV_KEY = 1
 
@@ -126,6 +129,8 @@ end
 function setEmuKeycodes()
 	KEY_PGFWD = 117
 	KEY_PGBCK = 112
+	KEY_LPGBCK = 69 -- F3
+	KEY_LPGFWD = 70 -- F4
 	KEY_HOME = 110 -- home
 	KEY_BACK = 22 -- backspace
 	KEY_DEL = 119 -- Delete
@@ -251,4 +256,23 @@ function adjustKeyEvents(ev)
 	-- This should not happen.
 	print("# Unrecognizable rotation mode "..Screen.cur_rotation_mode.."!")
 	return nil
+end
+
+-- wrapper for input.waitForEvents that will retry for some cases
+function input.saveWaitForEvent(timeout)
+	local retry = true
+	while retry do
+		local ok, ev = pcall(input.waitForEvent, timeout)
+		if not ok then
+			print("got error waiting for events:", ev)
+			if ev == "Waiting for input failed: 4\n" then
+				-- EINTR, we got interrupted. Try and restart
+				retry = true
+			else
+				retry = false
+			end
+		else
+			return ev
+		end
+	end
 end
