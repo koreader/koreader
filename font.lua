@@ -25,6 +25,9 @@ Font = {
 		-- font for displaying input content
 		-- we have to use mono here for better distance controlling
 		infont = "droid/DroidSansMono.ttf",
+
+		-- font for info messages
+		infofont = "droid/DroidSans.ttf",
 	},
 
 	fontdir = os.getenv("FONTDIR") or "./fonts",
