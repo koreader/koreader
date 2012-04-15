@@ -15,10 +15,10 @@ HelpPage = {
 
 -- Other Class vars:
 
--- font for displaying keys
-HelpPage.mFace, HelpPage.mHash = Font:getFaceAndHash(20, "mono")
 -- font for displaying help messages
 HelpPage.sFace, HelpPage.sHash = Font:getFaceAndHash(20, "sans")
+-- font for displaying keys
+HelpPage.mFace, HelpPage.mHash = Font:getFaceAndHash(20, "sans")
 -- font for paging display
 HelpPage.fFace, HelpPage.fHash = Font:getFaceAndHash(15, "sans")
 
@@ -39,8 +39,8 @@ function HelpPage:show(ypos,height,commands)
 
 	local mFaceHeight, mFaceAscender = self.mFace:getHeightAndAscender();
 	local fFaceHeight, fFaceAscender = self.fFace:getHeightAndAscender();
-	print(mFaceHeight.."-"..mFaceAscender)
-	print(fFaceHeight.."-"..fFaceAscender)
+	--print(mFaceHeight.."-"..mFaceAscender)
+	--print(fFaceHeight.."-"..fFaceAscender)
 	mFaceHeight = math.ceil(mFaceHeight)
 	mFaceAscender = math.ceil(mFaceAscender)
 	fFaceHeight = math.ceil(fFaceHeight)
@@ -52,14 +52,31 @@ function HelpPage:show(ypos,height,commands)
 
 	while true do
 		if pagedirty then
-			fb.bb:paintRect(0, 0, fb.bb:getWidth(), height, 0)
+			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			local c
 			local max_x = 0
 			for c = 1, perpage do
+				local x = 5
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					local pen_x = renderUtf8Text(fb.bb, 5, ypos + spacing*c, self.mFace, self.mHash, self.commands[i].shortcut, true)
-					max_x = math.max(max_x, pen_x)
+					local key = self.commands[i].shortcut
+					for _k,aMod in pairs(MOD_TABLE) do
+						local modStart, modEnd = key:find(aMod.v)
+						print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
+						if(modStart ~= nil) then
+							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
+							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.mFace, self.mHash, aMod.d, true)
+							fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4);
+							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.mFace, self.mHash, aMod.d.." + ", true)
+							x = x + pen_x
+							max_x = math.max(max_x, pen_x)
+						end
+					end
+					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.mFace, self.mHash, key , true)
+					fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4);
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.mFace, self.mHash, key, true)
+					x = x + pen_x
+					max_x = math.max(max_x, x)
 				end
 			end
 			for c = 1, perpage do

@@ -815,63 +815,50 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:add(KEY_PGFWD,nil,">",
-		"next page",
-		function(unireader)
-			unireader:goto(unireader:nextView())
+
+	self.commands:addGroup("< >",{Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_PGFWD,nil)},
+		"previous/next page",
+		function(unireader,keydef)
+			unireader:goto(keydef.keycode==KEY_PGBCK and unireader:prevView() or unireader:nextView())
 		end)
-	self.commands:add(KEY_PGBCK,nil,"<",
-		"previous page",
-		function(unireader)
-			unireader:goto(unireader:prevView())
+	self.commands:addGroup(MOD_ALT.."< >",{Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT)},
+		"zoom out/in 10%",
+		function(unireader,keydef)
+			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.1)
 		end)
-	self.commands:add(KEY_PGFWD,MOD_ALT,">",
-		"zoom in 10%",
-		function(unireader)
-			unireader:setGlobalZoom(unireader.globalzoom+unireader.globalzoom_orig*0.1)
+	self.commands:addGroup(MOD_SHIFT.."< >",{Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_ALTSHIFT)},
+		"zoom out/in 20%",
+		function(unireader,keydef)
+			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.2)
 		end)
-	self.commands:add(KEY_PGBCK,MOD_ALT,"<",
-		"zoom out 10%",
-		function(unireader)
-			unireader:setGlobalZoom(unireader.globalzoom-unireader.globalzoom_orig*0.1)
-		end)
-	self.commands:add(KEY_PGFWD,MOD_SHIFT,">",
-		"zoom in 20%",
-		function(unireader)
-			unireader:setGlobalZoom(unireader.globalzoom+unireader.globalzoom_orig*0.2)
-		end)
-	self.commands:add(KEY_PGBCK,MOD_SHIFT,"<",
-		"zoom out 20%",
-		function(unireader)
-			unireader:setGlobalZoom(unireader.globalzoom-unireader.globalzoom_orig*0.2)
-		end)
-	self.commands:add(KEY_BACK,nil,"back",
+	self.commands:add(KEY_BACK,nil,"Back",
 		"back to last jump",
 		function(unireader)
 			if #unireader.jump_stack ~= 0 then
 				unireader:goto(unireader.jump_stack[1].page)
 			end
 		end)
-	self.commands:add(KEY_BACK,MOD_ALT,"back",
+	self.commands:add(KEY_BACK,MOD_ALT,"Back",
 		"close document",
 		function(unireader)
 			return "break"
 		end)
-	self.commands:add(KEY_VPLUS,nil,"vol+",
-		"increase gamma 25%",
+	self.commands:add(KEY_HOME,MOD_ALT,"Home",
+		"exit application",
 		function(unireader)
-			unireader:modifyGamma( 1.25 )
+			keep_running = false
+			return "break"
 		end)
-	self.commands:add(KEY_VMINUS,nil,"vol-",
-		"decrease gamma 25%",
-		function(unireader)
-			unireader:modifyGamma( 0.80 )
+	self.commands:addGroup("vol-/+",{Keydef:new(KEY_VPLUS,nil),Keydef:new(KEY_VMINUS,nil)},
+		"decrease/increase gamma 25%",
+		function(unireader,keydef)
+			unireader:modifyGamma(keydef.keycode==KEY_VPLUS and 1.25 or 0.8)
 		end)
 	--numeric key group
 	local numeric_keydefs = {}
 	for i=1,10 do numeric_keydefs[i]=Keydef:new(KEY_1+i-1,nil,tostring(i%10)) end
-	self.commands:addGroup("[1..0]",numeric_keydefs,
-		"jump to <key>*10% of document",
+	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
+		"jump to 10%, 20% .. 90%, 100% of document",
 		function(unireader,keydef)
 			print('jump to page: '..math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1)..'/'..unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
@@ -918,7 +905,7 @@ function UniReader:addAllCommands()
 			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)
 	self.commands:add(KEY_G,nil,"G",
-		"goto page",
+		"open 'go to page' input box",
 		function(unireader)
 			local page = InputBox:input(height-100, 100, "Page:")
 			-- convert string to number
@@ -972,12 +959,6 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
 		end)
-	self.commands:add(KEY_HOME,MOD_SHIFT_OR_ALT,"Home",
-		"exit application",
-		function(unireader)
-			keep_running = false
-			return "break"
-		end)
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
 		function(unireader)
@@ -1007,7 +988,7 @@ function UniReader:addAllCommands()
 			print("# bbox override: ", unireader.bbox.enabled);
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
-		"open menu",
+		"toggle info box",
 		function(unireader)
 			unireader:showMenu()
 			unireader:goto(unireader.pageno)

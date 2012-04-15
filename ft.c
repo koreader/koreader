@@ -139,6 +139,8 @@ static int renderGlyph(lua_State *L) {
 	lua_setfield(L, -2, "l");
 	lua_pushinteger(L, (*face)->glyph->bitmap_top);
 	lua_setfield(L, -2, "t");
+	lua_pushinteger(L, (*face)->glyph->metrics.horiAdvance >> 6);
+	lua_setfield(L, -2, "r");
 	lua_pushinteger(L, (*face)->glyph->advance.x >> 6);
 	lua_setfield(L, -2, "ax");
 	lua_pushinteger(L, (*face)->glyph->advance.y >> 6);
