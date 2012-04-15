@@ -141,6 +141,8 @@ static int renderGlyph(lua_State *L) {
 	lua_setfield(L, -2, "t");
 	lua_pushinteger(L, (*face)->glyph->advance.x >> 6);
 	lua_setfield(L, -2, "ax");
+	lua_pushinteger(L, (*face)->glyph->advance.y >> 6);
+	lua_setfield(L, -2, "ay");
 
 	return 1;
 }
@@ -168,6 +170,25 @@ static int getKerning(lua_State *L) {
 	return 1;
 }
 
+static int getHeightAndAscender(lua_State *L) {
+	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
+
+	double pixels_height,pixels_ascender;
+	double em_size, y_scale;
+
+	/* compute floating point scale factors */
+	em_size = 1.0 * (*face)->units_per_EM;
+	y_scale = (*face)->size->metrics.y_ppem / em_size;
+
+	/* convert design distances to floating point pixels */
+	pixels_height = (*face)->height * y_scale;
+	pixels_ascender = (*face)->ascender * y_scale;
+
+	lua_pushnumber(L, pixels_height);
+	lua_pushnumber(L, pixels_ascender);
+	return 2;
+}
+
 static int doneFace(lua_State *L) {
 	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
 	if(*face != NULL) {
@@ -184,6 +205,7 @@ static const struct luaL_Reg ft_face_meth[] = {
 	{"renderGlyph", renderGlyph},
 	{"hasKerning", hasKerning},
 	{"getKerning", getKerning},
+	{"getHeightAndAscender", getHeightAndAscender},
 	{"done", doneFace},
 	{"__gc", doneFace},
 	{NULL, NULL}
