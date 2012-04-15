@@ -29,3 +29,15 @@ function InfoMessage:show(text)
 	dialog:paintTo(fb.bb, 0, 0)
 	dialog:free()
 end
+
+function showInfoMsgWithDelay(text, msec, refresh_mode)
+	if not refresh_mode then refresh_mode = 0 end
+	Screen:saveCurrentBB()
+
+	InfoMessage:show(text)
+	fb:refresh(refresh_mode)
+	util.usleep(msec*1000)
+
+	Screen:restoreFromSavedBB()
+	fb:refresh(refresh_mode)
+end

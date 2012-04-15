@@ -1532,17 +1532,21 @@ function UniReader:showToc()
 		("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
 	end
 
-	toc_menu = SelectMenu:new{
-		menu_title = "Table of Contents",
-		item_array = menu_items,
-		no_item_msg = "This document does not have a Table of Contents.",
-	}
-	item_no = toc_menu:choose(0, fb.bb:getHeight())
-
-	if item_no then
-		self:gotoTocEntry(self.toc[item_no])
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"This document does not have a TOC.", 2000, 1)
 	else
-		self:redrawCurrentPage()
+		toc_menu = SelectMenu:new{
+			menu_title = "Table of Contents",
+			item_array = menu_items,
+		}
+		item_no = toc_menu:choose(0, fb.bb:getHeight())
+
+		if item_no then
+			self:gotoTocEntry(self.toc[item_no])
+		else
+			self:redrawCurrentPage()
+		end
 	end
 end
 
@@ -1552,17 +1556,22 @@ function UniReader:showJumpStack()
 		table.insert(menu_items,
 			v.datetime.." -> Page "..v.page.." "..v.notes)
 	end
-	jump_menu = SelectMenu:new{
-		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
-		item_array = menu_items,
-		no_item_msg = "No jump history.",
-	}
-	item_no = jump_menu:choose(0, fb.bb:getHeight())
-	if item_no then
-		local jump_item = self.jump_stack[item_no]
-		self:goto(jump_item.page)
+
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"No jump history found.", 2000, 1)
 	else
-		self:redrawCurrentPage()
+		jump_menu = SelectMenu:new{
+			menu_title = "Jump Keeper      (current page: "..self.pageno..")",
+			item_array = menu_items,
+		}
+		item_no = jump_menu:choose(0, fb.bb:getHeight())
+		if item_no then
+			local jump_item = self.jump_stack[item_no]
+			self:goto(jump_item.page)
+		else
+			self:redrawCurrentPage()
+		end
 	end
 end
 
@@ -1578,14 +1587,20 @@ function UniReader:showHighLight()
 			end
 		end
 	end
-	toc_menu = SelectMenu:new{
-		menu_title = "HighLights",
-		item_array = menu_items,
-		no_item_msg = "No HighLight found.",
-	}
-	item_no = toc_menu:choose(0, fb.bb:getHeight())
-	if item_no then
-		self:goto(highlight_dict[item_no].page)
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"No HighLights found.", 2000, 1)
+	else
+		toc_menu = SelectMenu:new{
+			menu_title = "HighLights",
+			item_array = menu_items,
+		}
+		item_no = toc_menu:choose(0, fb.bb:getHeight())
+		if item_no then
+			self:goto(highlight_dict[item_no].page)
+		else
+			self:redrawCurrentPage()
+		end
 	end
 end
 
