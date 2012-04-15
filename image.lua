@@ -17,7 +17,7 @@ end
 
 function Image.fromJPEG(filename)
 	local img = mupdfimg.new()
-	img:loadJPEGData(Image._getFileData(filename)(fimgdatailename))
+	img:loadJPEGData(Image._getFileData(filename))
 	local bb = img:toBlitBuffer()
 	img:free()
 	return bb
