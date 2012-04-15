@@ -1,7 +1,7 @@
 Image = {}
 
 function Image._getFileData(filename)
-	local f = io.open("test.png")
+	local f = io.open(filename)
 	local data = f:read("*a")
 	f:close()
 	return data
