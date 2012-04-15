@@ -48,6 +48,8 @@ function openFile(filename)
 		reader = CREReader
 	end
 	if reader then
+		InfoMessage:show("Opening document, please wait... ")
+		fb:refresh(0)
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
