@@ -130,7 +130,7 @@ lfs.o: $(LFSDIR)/src/lfs.c
 fetchthirdparty:
 	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
-	test -d mupdf && (cd mupdf; git checkout .)
+	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
@@ -155,10 +155,10 @@ cleanthirdparty:
 	make -C $(LUADIR) clean
 	make -C $(MUPDFDIR) clean
 	#make -C $(CRENGINEDIR)/thirdparty/antiword clean
-	make -C $(CRENGINEDIR)/thirdparty/chmlib clean
-	make -C $(CRENGINEDIR)/thirdparty/libpng clean
-	make -C $(CRENGINEDIR)/crengine clean
-	make -C $(KPVCRLIGDIR) clean
+	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
+	test -d $(KPVCRLIGDIR) && (make -C $(KPVCRLIGDIR) clean) || echo warn: chmlib folder not found
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -175,7 +175,7 @@ $(MUPDFDIR)/cmapdump.host:
 
 $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= XPS_APPS= verbose=1
+	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
 
 $(DJVULIBS):
 	-mkdir $(DJVUDIR)/build

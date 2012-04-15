@@ -44,7 +44,7 @@ function clearGlyphCache()
 	glyphcache = {}
 end
 
-function sizeUtf8Text(x, width, face, facehash, text, kerning)
+function sizeUtf8Text(x, width, face, text, kerning)
 	if text == nil then
 		print("# sizeUtf8Text called without text");
 		return
@@ -59,13 +59,13 @@ function sizeUtf8Text(x, width, face, facehash, text, kerning)
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < (width - x) then
 			local charcode = util.utf8charcode(uchar)
-			local glyph = getGlyph(face, facehash, charcode)
+			local glyph = getGlyph(face, charcode)
 			if kerning and prevcharcode then
-				local kern = face:getKerning(prevcharcode, charcode)
+				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
-				print("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." kern:"..kern)
+				--print("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." kern:"..kern)
 			else
-				print("curr:"..string.char(charcode))
+				--print("curr:"..string.char(charcode))
 			end
 			pen_x = pen_x + glyph.ax
 			pen_y_top = math.max(pen_y_top, glyph.t)
@@ -77,10 +77,10 @@ function sizeUtf8Text(x, width, face, facehash, text, kerning)
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
-function renderUtf8Text(buffer, x, y, face, facehash, text, kerning, backgroundColor)
+function renderUtf8Text(buffer, x, y, face, text, kerning)
 	if text == nil then
 		print("# renderUtf8Text called without text");
-		return
+		return 0
 	end
 	-- may still need more adaptive pen placement when kerning,
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html

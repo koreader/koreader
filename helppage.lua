@@ -48,8 +48,8 @@ function HelpPage:show(ypos, height, commands)
 	end
 	table.sort(self.commands,function(w1,w2) return w1.order<w2.order end)
 
-	local faceHeight, faceAscender = self.face:getHeightAndAscender();
-	local ffaceHeight, ffaceAscender = self.fface:getHeightAndAscender();
+	local faceHeight, faceAscender = self.face.ftface:getHeightAndAscender();
+	local ffaceHeight, ffaceAscender = self.fface.ftface:getHeightAndAscender();
 	--print(faceHeight.."-"..faceAscender)
 	--print(ffaceHeight.."-"..ffaceAscender)
 	faceHeight = math.ceil(faceHeight)
@@ -73,7 +73,7 @@ function HelpPage:show(ypos, height, commands)
 					local key = self.commands[i].shortcut
 					for _k,aMod in pairs(MOD_TABLE) do
 						local modStart, modEnd = key:find(aMod.v)
-						--print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
+						print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
 						if(modStart ~= nil) then
 							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
 							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
@@ -83,9 +83,10 @@ function HelpPage:show(ypos, height, commands)
 							max_x = math.max(max_x, pen_x)
 						end
 					end
+					print("key:"..key)
 					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
 					fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4);
-					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, self.mHash, key, true)
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, key, true)
 					x = x + pen_x
 					max_x = math.max(max_x, x)
 				end
@@ -96,7 +97,7 @@ function HelpPage:show(ypos, height, commands)
 					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c, self.hface, self.commands[i].help, true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, height - ffaceHeight + ffaceAscender - 5, self.fFace,
+			renderUtf8Text(fb.bb, 5, height - ffaceHeight + ffaceAscender - 5, self.fface,
 				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
 			markerdirty = true
 		end
