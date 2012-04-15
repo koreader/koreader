@@ -10,6 +10,7 @@ function InfoMessage:show(text)
 		dimen = { w = G_width, h = G_height },
 		FrameContainer:new({
 			margin = 2,
+			background = 0,
 			HorizontalGroup:new({
 				align = "center",
 				ImageWidget:new({

@@ -26,6 +26,7 @@ require "settings"
 require "screen"
 require "keys"
 require "commands"
+require "dialog"
 
 -- option parsing:
 longopts = {
@@ -55,7 +56,9 @@ function openFile(filename)
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
 		else
-			-- TODO: error handling
+			InfoMessage:show("Error opening document.")
+			fb:refresh(0)
+			util.sleep(2)
 		end
 	end
 	return true -- on failed attempts, we signal to keep running
