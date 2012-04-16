@@ -1739,7 +1739,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			return "break"
 		end)
-	self.commands:add(KEY_HOME,MOD_ALT,"Home",
+	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
 		function(unireader)
 			keep_running = false
