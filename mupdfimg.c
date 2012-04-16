@@ -84,11 +84,11 @@ static int toBlitBuffer(lua_State *L) {
 	} else {
 		fz_try(img->context) {
 			pix = fz_new_pixmap(img->context, fz_device_gray, img->pixmap->w, img->pixmap->h);
+			fz_convert_pixmap(img->context, pix, img->pixmap);
 		}
 		fz_catch(img->context) {
-			return luaL_error(L, "can't claim new grayscale fz_pixmap");
+			return luaL_error(L, "can't claim or convert new grayscale fz_pixmap");
 		}
-		fz_convert_pixmap(img->context, img->pixmap, pix);
 	}
 
 	ret = newBlitBufferNative(L, img->pixmap->w, img->pixmap->h, &bb);
@@ -121,10 +121,17 @@ static int toBlitBuffer(lua_State *L) {
 
 static int freeImage(lua_State *L) {
 	Image *img = (Image*) luaL_checkudata(L, 1, "image");
-	if(img->pixmap) {
+
+	// should be save if called twice
+	if(img->pixmap != NULL) {
 		fz_drop_pixmap(img->context, img->pixmap);
+		img->pixmap = NULL;
 	}
-	fz_free_context(img->context);
+	if(img->context != NULL) {
+		fz_free_context(img->context);
+		img->context = NULL;
+	}
+
 	return 0;
 }
 

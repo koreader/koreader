@@ -208,6 +208,8 @@ static int authenticatePassword(lua_State *L) {
 
 static int closeDocument(lua_State *L) {
 	PdfDocument *doc = (PdfDocument*) luaL_checkudata(L, 1, "pdfdocument");
+
+	// should be save if called twice
 	if(doc->xref != NULL) {
 		fz_close_document(doc->xref);
 		doc->xref = NULL;
@@ -216,6 +218,7 @@ static int closeDocument(lua_State *L) {
 		fz_free_context(doc->context);
 		doc->context = NULL;
 	}
+
 	return 0;
 }
 

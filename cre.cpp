@@ -78,7 +78,12 @@ static int setGammaIndex(lua_State *L) {
 
 static int closeDocument(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	delete doc->text_view;
+
+	// should be save if called twice
+	if(doc->text_view != NULL) {
+		delete doc->text_view;
+		doc->text_view = NULL;
+	}
 
 	return 0;
 }

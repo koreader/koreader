@@ -29,26 +29,35 @@
 
 FT_Library freetypelib;
 
+typedef struct KPVFace {
+	FT_Face face;
+	int allocated_face;
+} KPVFace;
+
 static int newFace(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
 	int pxsize = luaL_optint(L, 2, 16*64);
 
-	FT_Face *face = (FT_Face*) lua_newuserdata(L, sizeof(FT_Face));
+	KPVFace *face = (KPVFace*) lua_newuserdata(L, sizeof(KPVFace));
 	luaL_getmetatable(L, "ft_face");
 	lua_setmetatable(L, -2);
 
-	FT_Error error = FT_New_Face(freetypelib, filename, 0, face);
+	face->allocated_face = 0;
+
+	FT_Error error = FT_New_Face(freetypelib, filename, 0, &face->face);
 	if(error) {
 		return luaL_error(L, "freetype error");
 	}
 
-	error = FT_Set_Pixel_Sizes(*face, 0, pxsize);
+	face->allocated_face = 1;
+
+	error = FT_Set_Pixel_Sizes(face->face, 0, pxsize);
 	if(error) {
-		error = FT_Done_Face(*face);
+		error = FT_Done_Face(face->face);
 		return luaL_error(L, "freetype error");
 	}
 
-	if((*face)->charmap == NULL) {
+	if(face->face->charmap == NULL) {
 		//TODO
 		//fprintf(stderr, "no unicode charmap found, to be implemented.\n");
 	}
@@ -56,15 +65,15 @@ static int newFace(lua_State *L) {
 }
 
 static int renderGlyph(lua_State *L) {
-	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
+	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
 	int ch = luaL_checkint(L, 2);
-	FT_Error error = FT_Load_Char(*face, ch, FT_LOAD_RENDER);
+	FT_Error error = FT_Load_Char(face->face, ch, FT_LOAD_RENDER);
 	if(error) {
 		return luaL_error(L, "freetype error");
 	}
 
-	int w = (*face)->glyph->bitmap.width;
-	int h = (*face)->glyph->bitmap.rows;
+	int w = face->face->glyph->bitmap.width;
+	int h = face->face->glyph->bitmap.rows;
 
 	lua_newtable(L);
 
@@ -80,7 +89,7 @@ static int renderGlyph(lua_State *L) {
 	int y;
 	int x;
 	for(y = 0; y < h; y++) {
-		uint8_t *src = (*face)->glyph->bitmap.buffer + y * (*face)->glyph->bitmap.pitch;
+		uint8_t *src = face->face->glyph->bitmap.buffer + y * face->face->glyph->bitmap.pitch;
 		for(x = 0; x < (w/2); x++) {
 			*dst = (src[0] & 0xF0) | (src[1] >> 4);
 			src+=2;
@@ -92,23 +101,23 @@ static int renderGlyph(lua_State *L) {
 		}
 	}
 
-	lua_pushinteger(L, (*face)->glyph->bitmap_left);
+	lua_pushinteger(L, face->face->glyph->bitmap_left);
 	lua_setfield(L, -2, "l");
-	lua_pushinteger(L, (*face)->glyph->bitmap_top);
+	lua_pushinteger(L, face->face->glyph->bitmap_top);
 	lua_setfield(L, -2, "t");
-	lua_pushinteger(L, (*face)->glyph->metrics.horiAdvance >> 6);
+	lua_pushinteger(L, face->face->glyph->metrics.horiAdvance >> 6);
 	lua_setfield(L, -2, "r");
-	lua_pushinteger(L, (*face)->glyph->advance.x >> 6);
+	lua_pushinteger(L, face->face->glyph->advance.x >> 6);
 	lua_setfield(L, -2, "ax");
-	lua_pushinteger(L, (*face)->glyph->advance.y >> 6);
+	lua_pushinteger(L, face->face->glyph->advance.y >> 6);
 	lua_setfield(L, -2, "ay");
 
 	return 1;
 }
 
 static int hasKerning(lua_State *L) {
-	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
-	if(FT_HAS_KERNING((*face))) {
+	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
+	if(FT_HAS_KERNING((face->face))) {
 		lua_pushinteger(L, 1);
 	} else {
 		lua_pushinteger(L, 0);
@@ -117,11 +126,11 @@ static int hasKerning(lua_State *L) {
 }
 
 static int getKerning(lua_State *L) {
-	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
-	int left = FT_Get_Char_Index(*face, luaL_checkint(L, 2));
-	int right = FT_Get_Char_Index(*face, luaL_checkint(L, 3));
+	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
+	int left = FT_Get_Char_Index(face->face, luaL_checkint(L, 2));
+	int right = FT_Get_Char_Index(face->face, luaL_checkint(L, 3));
 	FT_Vector kerning;
-	FT_Error error = FT_Get_Kerning(*face, left, right, FT_KERNING_DEFAULT, &kerning);
+	FT_Error error = FT_Get_Kerning(face->face, left, right, FT_KERNING_DEFAULT, &kerning);
 	if(error) {
 		return luaL_error(L, "freetype error when getting kerning (l=%d, r=%d)", left, right);
 	}
@@ -130,18 +139,18 @@ static int getKerning(lua_State *L) {
 }
 
 static int getHeightAndAscender(lua_State *L) {
-	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
+	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
 
 	double pixels_height,pixels_ascender;
 	double em_size, y_scale;
 
 	/* compute floating point scale factors */
-	em_size = 1.0 * (*face)->units_per_EM;
-	y_scale = (*face)->size->metrics.y_ppem / em_size;
+	em_size = 1.0 * face->face->units_per_EM;
+	y_scale = face->face->size->metrics.y_ppem / em_size;
 
 	/* convert design distances to floating point pixels */
-	pixels_height = (*face)->height * y_scale;
-	pixels_ascender = (*face)->ascender * y_scale;
+	pixels_height = face->face->height * y_scale;
+	pixels_ascender = face->face->ascender * y_scale;
 
 	lua_pushnumber(L, pixels_height);
 	lua_pushnumber(L, pixels_ascender);
@@ -149,13 +158,12 @@ static int getHeightAndAscender(lua_State *L) {
 }
 
 static int doneFace(lua_State *L) {
-	FT_Face *face = (FT_Face*) luaL_checkudata(L, 1, "ft_face");
-	if(*face != NULL) {
-		FT_Error error = FT_Done_Face(*face);
+	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
+	if(face->allocated_face) {
+		FT_Error error = FT_Done_Face(face->face);
 		if(error) {
 			return luaL_error(L, "freetype error when freeing face");
 		}
-		*face = NULL;
 	}
 	return 0;
 }

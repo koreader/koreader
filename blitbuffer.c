@@ -61,6 +61,7 @@ static int getHeight(lua_State *L) {
 static int freeBlitBuffer(lua_State *L) {
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
 
+	// should be save if called twice
 	if(bb->allocated && bb->data != NULL) {
 		free(bb->data);
 		bb->data = NULL;

@@ -123,6 +123,7 @@ static int getSize(lua_State *L) {
 
 static int closeFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+	// should be save if called twice
 	if(fb->buf != NULL && fb->buf->data != NULL) {
 #ifndef EMULATE_READER
 		munmap(fb->buf->data, fb->finfo.smem_len);
@@ -131,6 +132,10 @@ static int closeFrameBuffer(lua_State *L) {
 		free(fb->buf->data);
 #endif
 		fb->buf->data = NULL;
+		// the blitbuffer in fb->buf should be freed
+		// by the Lua GC when our object is garbage
+		// collected sice it is visible as an entry
+		// in the fb table
 	}
 	return 0;
 }

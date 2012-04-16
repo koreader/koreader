@@ -97,6 +97,8 @@ static int openDocument(lua_State *L) {
 
 static int closeDocument(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+
+	// should be save if called twice
 	if(doc->doc_ref != NULL) {
 		ddjvu_document_release(doc->doc_ref);
 		doc->doc_ref = NULL;
@@ -352,6 +354,8 @@ static int getPageText(lua_State *L) {
 
 static int closePage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
+
+	// should be save if called twice
 	if(page->page_ref != NULL) {
 		ddjvu_page_release(page->page_ref);
 		page->page_ref = NULL;
