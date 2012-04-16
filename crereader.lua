@@ -274,6 +274,7 @@ function CREReader:adjustCreReaderCommands()
 			if self.line_space_percent > 200 then
 				self.line_space_percent = 200
 			end
+			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			print("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
@@ -286,6 +287,7 @@ function CREReader:adjustCreReaderCommands()
 			if self.line_space_percent < 100 then
 				self.line_space_percent = 100
 			end
+			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			print("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
