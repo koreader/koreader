@@ -99,7 +99,7 @@ function HelpPage:show(ypos, height, commands)
 				end
 			end
 			renderUtf8Text(fb.bb, 5, height - fface_height + fface_ascender - 5, self.fface,
-				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
+				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - Back to close this page", true)
 		end
 		if is_pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
