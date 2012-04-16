@@ -13,9 +13,9 @@ function InfoMessage:show(text)
 			background = 0,
 			HorizontalGroup:new({
 				align = "center",
-				ImageWidget:new({
-					file = "resources/info-i.png"
-				}),
+--				ImageWidget:new({
+--					file = "resources/info-i.png"
+--				}),
 				Widget:new({
 					dimen = { w = 10, h = 0 }
 				}),
