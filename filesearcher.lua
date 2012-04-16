@@ -51,6 +51,7 @@ function FileSearcher:readDir()
 end
 
 function FileSearcher:setPath(newPath)
+	InfoMessage:show("Reading filenames...",0)
 	self.path = newPath
 	self:readDir()
 	self.items = #self.files

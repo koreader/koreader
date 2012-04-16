@@ -48,8 +48,7 @@ function openFile(filename)
 		reader = CREReader
 	end
 	if reader then
-		InfoMessage:show("Opening document, please wait... ")
-		fb:refresh(0)
+		InfoMessage:show("Opening document, please wait... ", 0)
 		local ok, err = reader:open(filename)
 		if ok then
 			reader:loadSettings(filename)
@@ -58,8 +57,7 @@ function openFile(filename)
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
 		else
-			InfoMessage:show("Error opening document.")
-			fb:refresh(0)
+			InfoMessage:show("Error opening document.", 0)
 			util.sleep(2)
 		end
 	end

@@ -5,7 +5,8 @@ InfoMessage = {
 	face = Font:getFace("infofont", 25)
 }
 
-function InfoMessage:show(text)
+function InfoMessage:show(text,refresh_mode)
+	print("# InfoMessage ", text, refresh_mode)
 	local dialog = CenterContainer:new({
 		dimen = { w = G_width, h = G_height },
 		FrameContainer:new({
@@ -13,9 +14,9 @@ function InfoMessage:show(text)
 			background = 0,
 			HorizontalGroup:new({
 				align = "center",
-				ImageWidget:new({
-					file = "resources/info-i.png"
-				}),
+--				ImageWidget:new({
+--					file = "resources/info-i.png"
+--				}),
 				Widget:new({
 					dimen = { w = 10, h = 0 }
 				}),
@@ -28,6 +29,9 @@ function InfoMessage:show(text)
 	})
 	dialog:paintTo(fb.bb, 0, 0)
 	dialog:free()
+	if refresh_mode ~= nil then
+		fb:refresh(refresh_mode)
+	end
 end
 
 function showInfoMsgWithDelay(text, msec, refresh_mode)

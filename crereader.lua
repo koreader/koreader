@@ -274,6 +274,7 @@ function CREReader:adjustCreReaderCommands()
 			if self.line_space_percent > 200 then
 				self.line_space_percent = 200
 			end
+			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			print("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
@@ -286,6 +287,7 @@ function CREReader:adjustCreReaderCommands()
 			if self.line_space_percent < 100 then
 				self.line_space_percent = 100
 			end
+			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			print("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
@@ -305,8 +307,10 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	self.commands:add(KEY_F, nil, "F",
-		"invoke font menu",
+		"change document font",
 		function(cr)
+			Screen:saveCurrentBB()
+
 			local face_list = cre.getFontFaces()
 
 			local fonts_menu = SelectMenu:new{
@@ -320,6 +324,8 @@ function CREReader:adjustCreReaderCommands()
 				cr.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 			end
+			Screen:restoreFromSavedBB()
+			InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			cr:redrawCurrentPage()
 		end
 	)
