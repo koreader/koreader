@@ -38,7 +38,6 @@ Font = {
 
 
 function Font:getFace(font, size)
-print("getFace: "..font.." size:"..size)
 	if not font then
 		-- default to content font
 		font = self.cfont
@@ -58,7 +57,7 @@ print("getFace: "..font.." size:"..size)
 			return nil
 		end
 		self.faces[font..size] = face
-print("getFace, found: "..realname.." size:"..size)
+	--print("getFace, found: "..realname.." size:"..size)
 	end
 	return { size = size, ftface = face, hash = font..size }
 end
