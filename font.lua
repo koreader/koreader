@@ -57,6 +57,7 @@ function Font:getFace(font, size)
 			return nil
 		end
 		self.faces[font..size] = face
+	--print("getFace, found: "..realname.." size:"..size)
 	end
 	return { size = size, ftface = face, hash = font..size }
 end

@@ -24,7 +24,7 @@ function Keydef:new(keycode,modifier,descr)
 end
 
 function Keydef:display()
-	return ((self.modifier and self.modifier.."+") or "")..(self.descr or "")
+	return (self.modifier or "")..(self.descr or "")
 end
 
 function Keydef:tostring()
@@ -121,7 +121,7 @@ function Commands:_addImpl(keydef,help,func,keygroup)
 	if keydef.modifier==MOD_ANY then
 		self:addGroup(keygroup or keydef.descr,{Keydef:new(keydef.keycode,nil), Keydef:new(keydef.keycode,MOD_SHIFT), Keydef:new(keydef.keycode,MOD_ALT)},help,func)
 	elseif keydef.modifier==MOD_SHIFT_OR_ALT then
-		self:addGroup(keygroup or (MOD_SHIFT.."|"..MOD_ALT.."+"..(keydef.descr or "")),{Keydef:new(keydef.keycode,MOD_SHIFT), Keydef:new(keydef.keycode,MOD_ALT)},help,func)
+		self:addGroup(keygroup or (MOD_SHIFT..MOD_ALT..(keydef.descr or "")),{Keydef:new(keydef.keycode,MOD_SHIFT), Keydef:new(keydef.keycode,MOD_ALT)},help,func)
 	else
 		local command = self.map[keydef]
 		if command == nil then

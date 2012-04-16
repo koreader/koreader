@@ -75,7 +75,7 @@ static int blitFullToBuffer(lua_State *L) {
 	if(src->w != dst->w || src->h != dst->h) {
 		return luaL_error(L, "blitbuffer size must be framebuffer size!");
 	}
-	
+
 	memcpy(dst->data, src->data, src->pitch * src->h);
 
 	return 0;
@@ -146,8 +146,8 @@ static int blitToBuffer(lua_State *L) {
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
-		dstptr = (uint8_t*)(dst->data + 
-				ydest * dst->pitch + 
+		dstptr = (uint8_t*)(dst->data +
+				ydest * dst->pitch +
 				xdest / 2);
 		srcptr = (uint8_t*)(src->data +
 				yoffs * src->pitch +
@@ -172,8 +172,8 @@ static int blitToBuffer(lua_State *L) {
 		w--;
 	}
 
-	dstptr = (uint8_t*)(dst->data + 
-			ydest * dst->pitch + 
+	dstptr = (uint8_t*)(dst->data +
+			ydest * dst->pitch +
 			xdest / 2);
 	srcptr = (uint8_t*)(src->data +
 			yoffs * src->pitch +
@@ -243,8 +243,8 @@ static int addblitToBuffer(lua_State *L) {
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
-		dstptr = (uint8_t*)(dst->data + 
-				ydest * dst->pitch + 
+		dstptr = (uint8_t*)(dst->data +
+				ydest * dst->pitch +
 				xdest / 2);
 		srcptr = (uint8_t*)(src->data +
 				yoffs * src->pitch +
@@ -269,8 +269,8 @@ static int addblitToBuffer(lua_State *L) {
 		w--;
 	}
 
-	dstptr = (uint8_t*)(dst->data + 
-			ydest * dst->pitch + 
+	dstptr = (uint8_t*)(dst->data +
+			ydest * dst->pitch +
 			xdest / 2);
 	srcptr = (uint8_t*)(src->data +
 			yoffs * src->pitch +
@@ -332,8 +332,8 @@ static int paintRect(lua_State *L) {
 		/* This will render the leftmost column
 		 * in the case when x is odd. After this,
 		 * x will become even. */
-		dstptr = (uint8_t*)(dst->data + 
-				y * dst->pitch + 
+		dstptr = (uint8_t*)(dst->data +
+				y * dst->pitch +
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
 			*dstptr &= 0xF0;
@@ -343,19 +343,19 @@ static int paintRect(lua_State *L) {
 		x++;
 		w--;
 	}
-	dstptr = (uint8_t*)(dst->data + 
-			y * dst->pitch + 
+	dstptr = (uint8_t*)(dst->data +
+			y * dst->pitch +
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		memset(dstptr, c | (c << 4), w / 2);
 		dstptr += dst->pitch;
 	}
 	if(w & 1) {
-		/* This will render the rightmost column 
+		/* This will render the rightmost column
 		 * in the case when (w & 1) && !(x & 1) or
 		 * !(w & 1) && (x & 1). */
-		dstptr = (uint8_t*)(dst->data + 
-				y * dst->pitch + 
+		dstptr = (uint8_t*)(dst->data +
+				y * dst->pitch +
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
 			*dstptr &= 0x0F;

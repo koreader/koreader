@@ -47,34 +47,63 @@ function HelpPage:show(ypos, height, commands)
 		end
 	end
 	table.sort(self.commands,function(w1,w2) return w1.order<w2.order end)
-	local perpage = math.floor( (height - 1 * (self.ffsize + 5)) / self.spacing )
-	local pagedirty = true
+
+	local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+	--local hface_height, hface_ascender = self.hface.ftface:getHeightAndAscender()
+	local fface_height, fface_ascender = self.fface.ftface:getHeightAndAscender()
+	--print(face_height.."-"..face_ascender)
+	--print(fface_height.."-"..fface_ascender)
+	face_height = math.ceil(face_height)
+	face_ascender = math.ceil(face_ascender)
+	fface_height = math.ceil(fface_height)
+	fface_ascender = math.ceil(fface_ascender)
+	local spacing = face_height + 5
+
+	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5)) / spacing )
+	local is_pagedirty = true
 
 	while true do
-		if pagedirty then
+		if is_pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			local c
 			local max_x = 0
 			for c = 1, perpage do
+				local x = 5
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					local pen_x = renderUtf8Text(fb.bb, 5, ypos + self.spacing*c, self.face, self.commands[i].shortcut, true)
-					max_x = math.max(max_x, pen_x)
+					local key = self.commands[i].shortcut
+					for _k,aMod in pairs(MOD_TABLE) do
+						local modStart, modEnd = key:find(aMod.v)
+						print("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
+						if(modStart ~= nil) then
+							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
+							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
+							fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4)
+							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, aMod.d.." + ", true)
+							x = x + pen_x
+							max_x = math.max(max_x, pen_x)
+						end
+					end
+					print("key:"..key)
+					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
+					fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4)
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, key, true)
+					x = x + pen_x
+					max_x = math.max(max_x, x)
 				end
 			end
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					renderUtf8Text(fb.bb, max_x + 20, ypos + self.spacing*c, self.hface, self.commands[i].help, true)
+					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c, self.hface, self.commands[i].help, true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, height - math.floor(self.ffsize * 0.4), self.fface,
+			renderUtf8Text(fb.bb, 5, height - fface_height + fface_ascender - 5, self.fface,
 				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - click Back to close this page", true)
-			markerdirty = true
 		end
-		if pagedirty then
+		if is_pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
-			pagedirty = false
+			is_pagedirty = false
 		end
 
 		local ev = input.saveWaitForEvent()
@@ -84,12 +113,12 @@ function HelpPage:show(ypos, height, commands)
 			if ev.code == KEY_PGFWD then
 				if self.page < (self.items / perpage) then
 					self.page = self.page + 1
-					pagedirty = true
+					is_pagedirty = true
 				end
 			elseif ev.code == KEY_PGBCK then
 				if self.page > 1 then
 					self.page = self.page - 1
-					pagedirty = true
+					is_pagedirty = true
 				end
 			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
 				return nil

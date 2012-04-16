@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <fitz/fitz.h>
+#include <fitz/fitz-internal.h>
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
@@ -311,8 +311,105 @@ static int openPage(lua_State *L) {
 	return 1;
 }
 
+static void load_lua_text_page(lua_State *L, fz_text_page *page)
+{
+	fz_text_block *block;
+	fz_text_line *aline;
+	fz_text_span *span;
+
+	fz_rect bbox, linebbox;
+	int i;
+	int word, line;
+	int len, c;
+	int start;
+	char chars[4]; // max length of UTF-8 encoded rune
+	luaL_Buffer textbuf;
+
+	/* table that contains all the lines */
+	lua_newtable(L);
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		for (aline = block->lines; aline < block->lines + block->len; aline++)
+		{
+			for (span = aline->spans; span < aline->spans + aline->len; span++)
+			{
+				linebbox = span->text[0].bbox; // start with sensible default
+				for(i = 0; i < span->len; ) {
+					/* will hold information about a word: */
+					lua_newtable(L);
+
+					luaL_buffinit(L, &textbuf);
+					bbox = span->text[i].bbox; // start with sensible default
+					for(; i < span->len; i++) {
+						/* check for space characters */
+						if(span->text[i].c == ' ' ||
+							span->text[i].c == '\t' ||
+							span->text[i].c == '\n' ||
+							span->text[i].c == '\v' ||
+							span->text[i].c == '\f' ||
+							span->text[i].c == '\r' ||
+							span->text[i].c == 0xA0 ||
+							span->text[i].c == 0x1680 ||
+							span->text[i].c == 0x180E ||
+							(span->text[i].c >= 0x2000 && span->text[i].c <= 0x200A) ||
+							span->text[i].c == 0x202F ||
+							span->text[i].c == 0x205F ||
+							span->text[i].c == 0x3000) {
+							// ignore and end word
+							i++;
+							break;
+						}
+						len = fz_runetochar(chars, &span->text[i].c);
+						for(c = 0; c < len; c++) {
+							luaL_addchar(&textbuf, chars[c]);
+						}
+						bbox = fz_union_rect(bbox, span->text[i].bbox);
+						linebbox = fz_union_rect(linebbox, span->text[i].bbox);
+					}
+					lua_pushstring(L, "word");
+					luaL_pushresult(&textbuf);
+					lua_settable(L, -3);
+
+					/* bbox for a word: */
+					lua_pushstring(L, "x0");
+					lua_pushinteger(L, bbox.x0);
+					lua_settable(L, -3);
+					lua_pushstring(L, "y0");
+					lua_pushinteger(L, bbox.y0);
+					lua_settable(L, -3);
+					lua_pushstring(L, "x1");
+					lua_pushinteger(L, bbox.x1);
+					lua_settable(L, -3);
+					lua_pushstring(L, "y1");
+					lua_pushinteger(L, bbox.y1);
+					lua_settable(L, -3);
+
+					lua_rawseti(L, -2, word++);
+				}
+
+				/* bbox for a whole line (or in fact, a "span") */
+				lua_pushstring(L, "x0");
+				lua_pushinteger(L, linebbox.x0);
+				lua_settable(L, -3);
+				lua_pushstring(L, "y0");
+				lua_pushinteger(L, linebbox.y0);
+				lua_settable(L, -3);
+				lua_pushstring(L, "x1");
+				lua_pushinteger(L, linebbox.x1);
+				lua_settable(L, -3);
+				lua_pushstring(L, "y1");
+				lua_pushinteger(L, linebbox.y1);
+				lua_settable(L, -3);
+
+				lua_rawseti(L, -2, line++);
+
+			}
+		}
+	}
+}
+
 /* get the text of the given page
- * 
+ *
  * will return text in a Lua table that is modeled after
  * djvu.c creates this table.
  *
@@ -327,105 +424,20 @@ static int openPage(lua_State *L) {
  * will return an empty table if we have no text
  */
 static int getPageText(lua_State *L) {
-	fz_text_span *page_text;
-	fz_text_span *ptr;
+	fz_text_page *text_page;
 	fz_device *tdev;
-	fz_bbox bbox, linebbox;
-	int i;
-	int word, line;
-	int len, c;
-	int start;
-	char chars[4]; // max length of UTF-8 encoded rune
-	luaL_Buffer textbuf;
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 
-	page_text = fz_new_text_span(page->doc->context);
-	tdev = fz_new_text_device(page->doc->context, page_text);
+	text_page = fz_new_text_page(page->doc->context, fz_bound_page(page->doc->xref, page->page));
+	tdev = fz_new_text_device(page->doc->context, NULL, text_page);
 	fz_run_page(page->doc->xref, page->page, tdev, fz_identity, NULL);
 	fz_free_device(tdev);
+	tdev = NULL;
 
-	/* table that contains all the lines */
-	lua_newtable(L);
-	line = 1;
-	for(ptr = page_text; ptr != NULL; ptr = ptr->next) {
-		if(ptr->text == NULL) continue;
+	load_lua_text_page(L, text_page);
 
-		/* table for the words */
-		lua_newtable(L);
-		word = 1;
-		linebbox = ptr->text[0].bbox; // start with sensible default
-		for(i = 0; i < ptr->len; ) {
-			/* will hold information about a word: */
-			lua_newtable(L);
-
-			luaL_buffinit(L, &textbuf);
-			bbox = ptr->text[i].bbox; // start with sensible default
-			for(; i < ptr->len; i++) {
-				/* check for space characters */
-				if(ptr->text[i].c == ' ' ||
-					ptr->text[i].c == '\t' ||
-					ptr->text[i].c == '\n' ||
-					ptr->text[i].c == '\v' ||
-					ptr->text[i].c == '\f' ||
-					ptr->text[i].c == '\r' ||
-					ptr->text[i].c == 0xA0 ||
-					ptr->text[i].c == 0x1680 ||
-					ptr->text[i].c == 0x180E ||
-					(ptr->text[i].c >= 0x2000 && ptr->text[i].c <= 0x200A) ||
-					ptr->text[i].c == 0x202F ||
-					ptr->text[i].c == 0x205F ||
-					ptr->text[i].c == 0x3000) {
-					// ignore and end word
-					i++;
-					break;
-				}
-				len = runetochar(chars, &ptr->text[i].c);
-				for(c = 0; c < len; c++) {
-					luaL_addchar(&textbuf, chars[c]);
-				}
-				bbox = fz_union_bbox(bbox, ptr->text[i].bbox);
-				linebbox = fz_union_bbox(linebbox, ptr->text[i].bbox);
-			}
-			lua_pushstring(L, "word");
-			luaL_pushresult(&textbuf);
-			lua_settable(L, -3);
-
-			/* bbox for a word: */
-			lua_pushstring(L, "x0");
-			lua_pushinteger(L, bbox.x0);
-			lua_settable(L, -3);
-			lua_pushstring(L, "y0");
-			lua_pushinteger(L, bbox.y0);
-			lua_settable(L, -3);
-			lua_pushstring(L, "x1");
-			lua_pushinteger(L, bbox.x1);
-			lua_settable(L, -3);
-			lua_pushstring(L, "y1");
-			lua_pushinteger(L, bbox.y1);
-			lua_settable(L, -3);
-
-			lua_rawseti(L, -2, word++);
-		}
-
-		/* bbox for a whole line (or in fact, a "span") */
-		lua_pushstring(L, "x0");
-		lua_pushinteger(L, linebbox.x0);
-		lua_settable(L, -3);
-		lua_pushstring(L, "y0");
-		lua_pushinteger(L, linebbox.y0);
-		lua_settable(L, -3);
-		lua_pushstring(L, "x1");
-		lua_pushinteger(L, linebbox.x1);
-		lua_settable(L, -3);
-		lua_pushstring(L, "y1");
-		lua_pushinteger(L, linebbox.y1);
-		lua_settable(L, -3);
-
-		lua_rawseti(L, -2, line++);
-	}
-
-	fz_free_text_span(page->doc->context, page_text);
+	fz_free_text_page(page->doc->context, text_page);
 
 	return 1;
 }
@@ -490,16 +502,15 @@ static int drawPage(lua_State *L) {
 	fz_device *dev;
 	fz_matrix ctm;
 	fz_bbox bbox;
-	fz_bbox rect;
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	rect.x0 = luaL_checkint(L, 4);
-	rect.y0 = luaL_checkint(L, 5);
-	rect.x1 = rect.x0 + bb->w;
-	rect.y1 = rect.y0 + bb->h;
-	pix = fz_new_pixmap_with_rect(page->doc->context, fz_device_gray, rect);
+	bbox.x0 = luaL_checkint(L, 4);
+	bbox.y0 = luaL_checkint(L, 5);
+	bbox.x1 = bbox.x0 + bb->w;
+	bbox.y1 = bbox.y0 + bb->h;
+	pix = fz_new_pixmap_with_bbox(page->doc->context, fz_device_gray, bbox);
 	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
 
 	ctm = fz_scale(dc->zoom, dc->zoom);
