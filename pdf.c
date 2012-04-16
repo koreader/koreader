@@ -330,13 +330,21 @@ static void load_lua_text_page(lua_State *L, fz_text_page *page)
 
 	/* table that contains all the lines */
 	lua_newtable(L);
+
+	line = 1;
+
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
 		for (aline = block->lines; aline < block->lines + block->len; aline++)
 		{
+			linebbox = fz_empty_rect;
+			/* will hold information about a line: */
+			lua_newtable(L);
+
+			word = 1;
+
 			for (span = aline->spans; span < aline->spans + aline->len; span++)
 			{
-				linebbox = span->text[0].bbox; // start with sensible default
 				for(i = 0; i < span->len; ) {
 					/* will hold information about a word: */
 					lua_newtable(L);
@@ -362,7 +370,7 @@ static void load_lua_text_page(lua_State *L, fz_text_page *page)
 							i++;
 							break;
 						}
-						len = fz_runetochar(chars, &span->text[i].c);
+						len = fz_runetochar(chars, span->text[i].c);
 						for(c = 0; c < len; c++) {
 							luaL_addchar(&textbuf, chars[c]);
 						}
@@ -389,24 +397,22 @@ static void load_lua_text_page(lua_State *L, fz_text_page *page)
 
 					lua_rawseti(L, -2, word++);
 				}
-
-				/* bbox for a whole line (or in fact, a "span") */
-				lua_pushstring(L, "x0");
-				lua_pushinteger(L, linebbox.x0);
-				lua_settable(L, -3);
-				lua_pushstring(L, "y0");
-				lua_pushinteger(L, linebbox.y0);
-				lua_settable(L, -3);
-				lua_pushstring(L, "x1");
-				lua_pushinteger(L, linebbox.x1);
-				lua_settable(L, -3);
-				lua_pushstring(L, "y1");
-				lua_pushinteger(L, linebbox.y1);
-				lua_settable(L, -3);
-
-				lua_rawseti(L, -2, line++);
-
 			}
+			/* bbox for a whole line */
+			lua_pushstring(L, "x0");
+			lua_pushinteger(L, linebbox.x0);
+			lua_settable(L, -3);
+			lua_pushstring(L, "y0");
+			lua_pushinteger(L, linebbox.y0);
+			lua_settable(L, -3);
+			lua_pushstring(L, "x1");
+			lua_pushinteger(L, linebbox.x1);
+			lua_settable(L, -3);
+			lua_pushstring(L, "y1");
+			lua_pushinteger(L, linebbox.y1);
+			lua_settable(L, -3);
+
+			lua_rawseti(L, -2, line++);
 		}
 	}
 }
@@ -428,12 +434,14 @@ static void load_lua_text_page(lua_State *L, fz_text_page *page)
  */
 static int getPageText(lua_State *L) {
 	fz_text_page *text_page;
+	fz_text_sheet *text_sheet;
 	fz_device *tdev;
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 
 	text_page = fz_new_text_page(page->doc->context, fz_bound_page(page->doc->xref, page->page));
-	tdev = fz_new_text_device(page->doc->context, NULL, text_page);
+	text_sheet = fz_new_text_sheet(page->doc->context);
+	tdev = fz_new_text_device(page->doc->context, text_sheet, text_page);
 	fz_run_page(page->doc->xref, page->page, tdev, fz_identity, NULL);
 	fz_free_device(tdev);
 	tdev = NULL;
@@ -441,6 +449,7 @@ static int getPageText(lua_State *L) {
 	load_lua_text_page(L, text_page);
 
 	fz_free_text_page(page->doc->context, text_page);
+	fz_free_text_sheet(page->doc->context, text_sheet);
 
 	return 1;
 }
