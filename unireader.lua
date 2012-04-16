@@ -1722,7 +1722,7 @@ function UniReader:addAllCommands()
 		function(unireader,keydef)
 			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.1)
 		end)
-	self.commands:addGroup(MOD_SHIFT.."< >",{Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_ALTSHIFT)},
+	self.commands:addGroup(MOD_SHIFT.."< >",{Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT)},
 		"zoom out/in 20%",
 		function(unireader,keydef)
 			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.2)
@@ -1739,7 +1739,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			return "break"
 		end)
-	self.commands:add(KEY_HOME,MOD_ALT,"Home",
+	self.commands:add(KEY_HOME,nil,"Home",
 		"exit application",
 		function(unireader)
 			keep_running = false
