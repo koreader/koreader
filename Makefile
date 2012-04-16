@@ -136,7 +136,7 @@ fetchthirdparty:
 	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	# CREngine patch: disable fontconfig
-	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h
+	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	unzip mupdf-thirdparty.zip -d mupdf
 	# dirty patch in MuPDF's thirdparty liby for CREngine
