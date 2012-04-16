@@ -307,8 +307,10 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	self.commands:add(KEY_F, nil, "F",
-		"invoke font menu",
+		"change document font",
 		function(cr)
+			Screen:saveCurrentBB()
+
 			local face_list = cre.getFontFaces()
 
 			local fonts_menu = SelectMenu:new{
@@ -322,6 +324,8 @@ function CREReader:adjustCreReaderCommands()
 				cr.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 			end
+			Screen:restoreFromSavedBB()
+			InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			cr:redrawCurrentPage()
 		end
 	)
