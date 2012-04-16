@@ -36,7 +36,8 @@ function showInfoMsgWithDelay(text, msec, refresh_mode)
 
 	InfoMessage:show(text)
 	fb:refresh(refresh_mode)
-	util.usleep(msec*1000)
+	-- util.usleep(msec*1000)
+	input.waitForEvent(msec*1000)
 
 	Screen:restoreFromSavedBB()
 	fb:refresh(refresh_mode)
