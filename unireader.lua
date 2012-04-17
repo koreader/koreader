@@ -1892,18 +1892,27 @@ function UniReader:addAllCommands()
 			print("# bbox " .. unireader.pageno .. dump(unireader.bbox))
 			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
 			showInfoMsgWithDelay(
-				"Manual cropping added.", 2000, 1)
+				"Manual crop setting saved.", 2000, 1)
 		end)
 	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
 		"reset crop",
 		function(unireader)
 			unireader.bbox[unireader.pageno] = nil;
+			showInfoMsgWithDelay(
+				"Manual crop setting removed.", 2000, 1)
 			print("# bbox remove "..unireader.pageno .. dump(unireader.bbox));
 		end)
 	self.commands:add(KEY_Z,MOD_ALT,"Z",
 		"toggle crop mode",
 		function(unireader)
 			unireader.bbox.enabled = not unireader.bbox.enabled;
+			if unireader.bbox.enabled then
+				showInfoMsgWithDelay(
+					"Manual crop enabled.", 2000, 1)
+			else
+				showInfoMsgWithDelay(
+					"Manual crop disabled.", 2000, 1)
+			end
 			print("# bbox override: ", unireader.bbox.enabled);
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
