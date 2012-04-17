@@ -27,12 +27,12 @@ function debug(...)
 	local line = ""
 	for i,v in ipairs(arg) do
 		if type(v) == "table" then
-			line = line .. dump(v)
+			line = line .. " " .. dump(v)
 		else
-			line = line .. tostring(v)
+			line = line .. " " .. tostring(v)
 		end
 	end
-	print("# "..line)
+	print("#"..line)
 end
 
 -- simple serialization function, won't do uservalues, functions, loops
