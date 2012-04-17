@@ -1891,6 +1891,8 @@ function UniReader:addAllCommands()
 			unireader.bbox.enabled = true
 			print("# bbox " .. unireader.pageno .. dump(unireader.bbox))
 			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
+			showInfoMsgWithDelay(
+				"Manual cropping added.", 2000, 1)
 		end)
 	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
 		"reset crop",
