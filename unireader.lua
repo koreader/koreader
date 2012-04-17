@@ -1712,10 +1712,12 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:addGroup("< >",{Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_PGFWD,nil)},
+	self.commands:addGroup("< >",{Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
 		"previous/next page",
 		function(unireader,keydef)
-			unireader:goto(keydef.keycode==KEY_PGBCK and unireader:prevView() or unireader:nextView())
+			unireader:goto(
+			(keydef.keycode == KEY_PGBCK or Keydef.keycode == KEY_LPGBCK)
+			and unireader:prevView() or unireader:nextView())
 		end)
 	self.commands:addGroup(MOD_ALT.."< >",{Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT)},
 		"zoom out/in 10%",
