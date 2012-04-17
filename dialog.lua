@@ -41,7 +41,17 @@ function showInfoMsgWithDelay(text, msec, refresh_mode)
 	InfoMessage:show(text)
 	fb:refresh(refresh_mode)
 	-- util.usleep(msec*1000)
-	input.waitForEvent(msec*1000)
+	
+	-- eat the first key release event
+	local ev = input.waitForEvent()
+	adjustKeyEvents(ev)
+	repeat
+		ok = pcall( function()
+			ev = input.waitForEvent(msec*1000)
+			adjustKeyEvents(ev)
+		end)
+		print(is_not_timeout)
+	until not ok or ev.value == EVENT_VALUE_KEY_PRESS
 
 	Screen:restoreFromSavedBB()
 	fb:refresh(refresh_mode)

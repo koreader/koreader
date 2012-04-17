@@ -181,17 +181,22 @@ function CREReader:showJumpStack()
 			v.datetime.." -> page "..
 			(self.doc:getPageFromXPointer(v.page)).." "..v.notes)
 	end
-	jump_menu = SelectMenu:new{
-		menu_title = "Jump Keeper      (current page: "..self.pageno..")",
-		item_array = menu_items,
-		no_item_msg = "No jump history.",
-	}
-	item_no = jump_menu:choose(0, fb.bb:getHeight())
-	if item_no then
-		local jump_item = self.jump_stack[item_no]
-		self:goto(jump_item.page, "xpointer")
+
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"No jump history found.", 2000, 1)
 	else
-		self:redrawCurrentPage()
+		jump_menu = SelectMenu:new{
+			menu_title = "Jump Keeper      (current page: "..self.pageno..")",
+			item_array = menu_items,
+		}
+		item_no = jump_menu:choose(0, fb.bb:getHeight())
+		if item_no then
+			local jump_item = self.jump_stack[item_no]
+			self:goto(jump_item.page, "xpointer")
+		else
+			self:redrawCurrentPage()
+		end
 	end
 end
 
