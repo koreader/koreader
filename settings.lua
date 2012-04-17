@@ -23,6 +23,18 @@ function dump(data)
 	return table.concat(out)
 end
 
+function debug(...)
+	local line = ""
+	for i,v in ipairs(arg) do
+		if type(v) == "table" then
+			line = line .. " " .. dump(v)
+		else
+			line = line .. " " .. tostring(v)
+		end
+	end
+	print("#"..line)
+end
+
 -- simple serialization function, won't do uservalues, functions, loops
 function DocSettings:_serialize(what, outt, indent)
 	if type(what) == "table" then
