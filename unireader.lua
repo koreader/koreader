@@ -501,6 +501,7 @@ function UniReader:startHighLightMode()
 		return
 	end
 
+	w.start = 0
 	l.cur, w.cur = l.start, w.start
 	l.new, w.new = l.cur, w.cur
 	local is_meet_start = false
@@ -508,13 +509,13 @@ function UniReader:startHighLightMode()
 	local running = true
 
 	local cx, cy, cw, ch = self:getRectInScreen(
-		t[l.cur][w.cur].x0,
-		t[l.cur][w.cur].y0,
-		t[l.cur][w.cur].x1,
-		t[l.cur][w.cur].y1)
+		t[l.cur][1].x0,
+		t[l.cur][1].y0,
+		t[l.cur][1].x1,
+		t[l.cur][1].y1)
 	
 	self.cursor = Cursor:new {
-		x_pos = cx+cw,
+		x_pos = cx,
 		y_pos = cy,
 		h = ch,
 		line_width_factor = 4,
