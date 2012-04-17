@@ -332,7 +332,7 @@ end
 function UniReader:startHighLightMode()
 	local t = self:getText(self.pageno)
 	if not t or #t == 0 then
-		showInfoMsgWithDelay("No text available for highlight",1);
+		showInfoMsgWithDelay("No text available for highlight", 2000, 1);
 		return nil
 	end
 
@@ -343,7 +343,7 @@ function UniReader:startHighLightMode()
 			end
 		end
 
-		showInfoMsgWithDelay("No visible text for highlight",1);
+		showInfoMsgWithDelay("No visible text for highlight", 2000, 1);
 		print("## _findFirstWordInView none found in "..dump(t))
 
 		return nil
