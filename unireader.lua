@@ -1341,7 +1341,7 @@ function UniReader:addJump(pageno)
 	-- build notes from TOC
 	local notes = self:getTocTitleOfCurrentPage()
 	if notes ~= "" then
-		notes = "in "..notes_to_add
+		notes = "in "..notes
 	end
 	-- create a head
 	jump_item = {
@@ -1389,7 +1389,7 @@ function UniReader:addBookmark(pageno)
 	-- build notes from TOC
 	local notes = self:getTocTitleOfCurrentPage()
 	if notes ~= "" then
-		notes = "in "..notes_to_add
+		notes = "in "..notes
 	end
 	mark_item = {
 		page = pageno,
