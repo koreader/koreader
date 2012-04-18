@@ -79,7 +79,10 @@ UniReader = {
 
 	pagehash = nil,
 
-	jump_stack = {},
+	-- we use array to simluate two stacks,
+	-- one for backwards, one for forwards
+	jump_history = {cur = 1},
+	bookmarks = {},
 	highlight = {},
 	toc = nil,
 
@@ -914,8 +917,16 @@ function UniReader:loadSettings(filename)
 			self.globalgamma = gamma
 		end
 
-		local jumpstack = self.settings:readSetting("jumpstack")
-		self.jump_stack = jumpstack or {}
+		--@TODO clear obselate jump_stack  18.04 2012 (houqp)
+		local jump_history = self.settings:readSetting("jump_history")
+		if jump_history then
+			self.jump_history = jump_history
+		else
+			self.jump_history = {cur = 1}
+		end
+
+		local bookmarks = self.settings:readSetting("bookmarks")
+		self.bookmarks = bookmarks or {}
 
 		local highlight = self.settings:readSetting("highlight")
 		self.highlight = highlight or {}
@@ -1312,69 +1323,85 @@ function UniReader:isSamePage(p1, p2)
 end
 
 --[[
-	@ pageno is the page you want to add to jump_stack
+	@ pageno is the page you want to add to jump_history, this will
+	  clear the forward stack since pageno is the new head.
 	  NOTE: for CREReader, pageno refers to xpointer
 --]]
-function UniReader:addJump(pageno, notes)
-	local jump_item = nil
-	local notes_to_add = notes
-	if not notes_to_add then
-		-- no notes given, auto generate from Toc entry
-		notes_to_add = self:getTocTitleOfCurrentPage()
-		if notes_to_add ~= "" then
-			notes_to_add = "in "..notes_to_add
+function UniReader:addJump(pageno)
+	-- build notes from TOC
+	local notes = self:getTocTitleOfCurrentPage()
+	if notes ~= "" then
+		notes = "in "..notes_to_add
+	end
+	-- create a head
+	jump_item = {
+		page = pageno,
+		datetime = os.date("%Y-%m-%d %H:%M:%S"),
+		notes = notes,
+	}
+	-- clear forward stack if it is not empty
+	if self.jump_history.cur < #self.jump_history then
+		for i=self.jump_history.cur+1, #self.jump_history do
+			self.jump_history[i] = nil
 		end
 	end
-	-- move pageno page to jump_stack top if already in
-	for _t,_v in ipairs(self.jump_stack) do
-		if self:isSamePage(_v.page, pageno) then
-			jump_item = _v
-			table.remove(self.jump_stack, _t)
-			-- if original notes is not empty, probably defined by users,
-			-- we use the original notes to overwrite auto generated notes
-			-- from Toc entry
-			if jump_item.notes ~= "" then
-				notes_to_add = jump_item.notes
-			end
-			jump_item.notes = notes or notes_to_add
-			break
-		end
+	-- keep the size less than 10
+	if #self.jump_history > 10 then
+		table.remove(self.jump_history)
 	end
-	-- create a new one if page not found in stack
-	if not jump_item then
-		jump_item = {
-			page = pageno,
-			datetime = os.date("%Y-%m-%d %H:%M:%S"),
-			notes = notes_to_add,
-		}
+	-- set up new head
+	-- if backward stack top is the same as page to record, remove it
+	if #self.jump_history ~= 0 and
+	self.jump_history[#self.jump_history].page == pageno then
+		self.jump_history[#self.jump_history] = nil
 	end
-
-	-- insert item at the start
-	table.insert(self.jump_stack, 1, jump_item)
-
-	if #self.jump_stack > 10 then
-		-- remove the last element to keep the size less than 10
-		table.remove(self.jump_stack)
-	end
+	table.insert(self.jump_history, jump_item)
+	self.jump_history.cur = #self.jump_history + 1
+	return true
 end
 
 function UniReader:delJump(pageno)
-	for _t,_v in ipairs(self.jump_stack) do
+	for _t,_v in ipairs(self.jump_history) do
 		if _v.page == pageno then
-			table.remove(self.jump_stack, _t)
+			table.remove(self.jump_history, _t)
 		end
 	end
 end
 
+-- return nil if page already marked
+-- otherwise, return true
+function UniReader:addBookmark(pageno)
+	for k,v in ipairs(self.bookmarks) do
+		if v.page == pageno then
+			return nil
+		end
+	end
+	-- build notes from TOC
+	local notes = self:getTocTitleOfCurrentPage()
+	if notes ~= "" then
+		notes = "in "..notes_to_add
+	end
+	mark_item = {
+		page = pageno,
+		datetime = os.date("%Y-%m-%d %H:%M:%S"),
+		notes = notes,
+	}
+	table.insert(self.bookmarks, mark_item)
+	return true
+end
+
 -- change current page and cache next page after rendering
-function UniReader:goto(no)
+function UniReader:goto(no, is_ignore_jump)
 	if no < 1 or no > self.doc:getPages() then
 		return
 	end
 
-	-- for jump_stack, distinguish jump from normal page turn
-	if self.pageno and math.abs(self.pageno - no) > 1 then
-		self:addJump(self.pageno)
+	-- for jump_history
+	if not is_ignore_jump then
+		-- distinguish jump from normal page turn
+		if self.pageno and math.abs(self.pageno - no) > 1 then
+			self:addJump(self.pageno)
+		end
 	end
 
 	self.pageno = no
@@ -1554,25 +1581,60 @@ function UniReader:showToc()
 	end
 end
 
-function UniReader:showJumpStack()
+function UniReader:showJumpHist()
 	local menu_items = {}
-	for k,v in ipairs(self.jump_stack) do
+	for k,v in ipairs(self.jump_history) do
+		if k == self.jump_history.cur then
+			cur_sign = "*(Cur) "
+		else
+			cur_sign = ""
+		end
 		table.insert(menu_items,
-			v.datetime.." -> Page "..v.page.." "..v.notes)
+			cur_sign..v.datetime.." -> Page "..v.page.." "..v.notes)
 	end
 
 	if #menu_items == 0 then
-		showInfoMsgWithDelay(
-			"No jump history found.", 2000, 1)
+		showInfoMsgWithDelay("No jump history found.", 2000, 1)
 	else
+		-- if cur points to head, draw entry for current page
+		if self.jump_history.cur > #self.jump_history then
+			table.insert(menu_items,
+				"Current Page "..self.pageno)
+		end
+
 		jump_menu = SelectMenu:new{
-			menu_title = "Jump Keeper      (current page: "..self.pageno..")",
+			menu_title = "Jump History",
 			item_array = menu_items,
 		}
 		item_no = jump_menu:choose(0, fb.bb:getHeight())
+		if item_no and item_no <= #self.jump_history then
+			local jump_item = self.jump_history[item_no]
+			self.jump_history.cur = item_no
+			self:goto(jump_item.page, true)
+		else
+			self:redrawCurrentPage()
+		end
+	end
+end
+
+function UniReader:showBookMarks()
+	local menu_items = {}
+	-- build menu items
+	for k,v in ipairs(self.bookmarks) do
+		table.insert(menu_items,
+			"Page "..v.page.." "..v.notes.." @ "..v.datetime)
+	end
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"No bookmark found.", 2000, 1)
+	else
+		toc_menu = SelectMenu:new{
+			menu_title = "Bookmarks",
+			item_array = menu_items,
+		}
+		item_no = toc_menu:choose(0, fb.bb:getHeight())
 		if item_no then
-			local jump_item = self.jump_stack[item_no]
-			self:goto(jump_item.page)
+			self:goto(self.bookmarks[item_no].page)
 		else
 			self:redrawCurrentPage()
 		end
@@ -1701,7 +1763,8 @@ function UniReader:inputLoop()
 	if self.settings ~= nil then
 		self:saveLastPageOrPos()
 		self.settings:savesetting("gamma", self.globalgamma)
-		self.settings:savesetting("jumpstack", self.jump_stack)
+		self.settings:savesetting("jump_history", self.jump_history)
+		self.settings:savesetting("bookmarks", self.bookmarks)
 		self.settings:savesetting("bbox", self.bbox)
 		self.settings:savesetting("globalzoom", self.globalzoom)
 		self.settings:savesetting("globalzoommode", self.globalzoommode)
@@ -1734,10 +1797,25 @@ function UniReader:addAllCommands()
 			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.2)
 		end)
 	self.commands:add(KEY_BACK,nil,"Back",
-		"back to last jump",
+		"go backward in jump history",
 		function(unireader)
-			if #unireader.jump_stack ~= 0 then
-				unireader:goto(unireader.jump_stack[1].page)
+			local prev_jump_no = unireader.jump_history.cur - 1
+			if prev_jump_no >= 1 then
+				unireader.jump_history.cur = prev_jump_no
+				unireader:goto(unireader.jump_history[prev_jump_no].page, true)
+			else
+				showInfoMsgWithDelay("Already first jump!", 2000, 1)
+			end
+		end)
+	self.commands:add(KEY_BACK,MOD_SHIFT,"Back",
+		"go forward in jump history",
+		function(unireader)
+			local next_jump_no = unireader.jump_history.cur + 1
+			if next_jump_no <= #self.jump_history then
+				unireader.jump_history.cur = next_jump_no
+				unireader:goto(unireader.jump_history[next_jump_no].page, true)
+			else
+				showInfoMsgWithDelay("Already last jump!", 2000, 1)
 			end
 		end)
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",
@@ -1832,14 +1910,24 @@ function UniReader:addAllCommands()
 			unireader:showToc()
 		end)
 	self.commands:add(KEY_B,nil,"B",
-		"show jump stack",
+		"show book marks",
 		function(unireader)
-			unireader:showJumpStack()
+			unireader:showBookMarks()
+		end)
+	self.commands:add(KEY_B,MOD_ALT,"B",
+		"add book mark to current page",
+		function(unireader)
+			ok = unireader:addBookmark(self.pageno)
+			if not ok then
+				showInfoMsgWithDelay("Page already marked!", 2000, 1)
+			else
+				showInfoMsgWithDelay("Page marked.", 2000, 1)
+			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
-		"add jump",
+		"show jump history",
 		function(unireader)
-			unireader:addJump(unireader.pageno)
+			unireader:showJumpHist()
 		end)
 	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate 10° clockwise",
@@ -1897,15 +1985,13 @@ function UniReader:addAllCommands()
 			unireader.bbox.enabled = true
 			debug("bbox", unireader.pageno, unireader.bbox)
 			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
-			showInfoMsgWithDelay(
-				"Manual crop setting saved.", 2000, 1)
+			showInfoMsgWithDelay("Manual crop setting saved.", 2000, 1)
 		end)
 	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
 		"reset crop",
 		function(unireader)
 			unireader.bbox[unireader.pageno] = nil;
-			showInfoMsgWithDelay(
-				"Manual crop setting removed.", 2000, 1)
+			showInfoMsgWithDelay("Manual crop setting removed.", 2000, 1)
 			debug("bbox remove", unireader.pageno, unireader.bbox);
 		end)
 	self.commands:add(KEY_Z,MOD_ALT,"Z",
@@ -1913,11 +1999,9 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader.bbox.enabled = not unireader.bbox.enabled;
 			if unireader.bbox.enabled then
-				showInfoMsgWithDelay(
-					"Manual crop enabled.", 2000, 1)
+				showInfoMsgWithDelay("Manual crop enabled.", 2000, 1)
 			else
-				showInfoMsgWithDelay(
-					"Manual crop disabled.", 2000, 1)
+				showInfoMsgWithDelay("Manual crop disabled.", 2000, 1)
 			end
 			debug("bbox override", unireader.bbox.enabled);
 		end)

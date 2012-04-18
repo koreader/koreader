@@ -53,7 +53,7 @@ function openFile(filename)
 		if ok then
 			reader:loadSettings(filename)
 			page_num = reader:getLastPageOrPos()
-			reader:goto(tonumber(page_num))
+			reader:goto(tonumber(page_num), true)
 			reader_settings:savesetting("lastfile", filename)
 			return reader:inputLoop()
 		else
