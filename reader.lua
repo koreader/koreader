@@ -54,7 +54,7 @@ function openFile(filename)
 			reader:loadSettings(filename)
 			page_num = reader:getLastPageOrPos()
 			reader:goto(tonumber(page_num), true)
-			reader_settings:savesetting("lastfile", filename)
+			reader_settings:saveSetting("lastfile", filename)
 			return reader:inputLoop()
 		else
 			InfoMessage:show("Error opening document.", 0)
@@ -160,7 +160,7 @@ end
 
 
 -- save reader settings
-reader_settings:savesetting("fontmap", Font.fontmap)
+reader_settings:saveSetting("fontmap", Font.fontmap)
 reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll

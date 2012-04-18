@@ -917,7 +917,6 @@ function UniReader:loadSettings(filename)
 			self.globalgamma = gamma
 		end
 
-		--@TODO clear obselate jump_stack  18.04 2012 (houqp)
 		local jump_history = self.settings:readSetting("jump_history")
 		if jump_history then
 			self.jump_history = jump_history
@@ -927,6 +926,17 @@ function UniReader:loadSettings(filename)
 
 		local bookmarks = self.settings:readSetting("bookmarks")
 		self.bookmarks = bookmarks or {}
+
+		-- clear obselate jumpstack settings
+		-- move jump_stack to bookmarks incase users used
+		-- it as bookmark feature before.
+		local jump_stack = self.settings:readSetting("jumpstack")
+		if jump_stack then
+			if #self.bookmarks == 0 then
+				self.bookmarks = jump_stack
+			end
+			self.settings:delSetting("jumpstack")
+		end
 
 		local highlight = self.settings:readSetting("highlight")
 		self.highlight = highlight or {}
@@ -949,7 +959,7 @@ function UniReader:getLastPageOrPos()
 end
 
 function UniReader:saveLastPageOrPos()
-	self.settings:savesetting("last_page", self.pageno)
+	self.settings:saveSetting("last_page", self.pageno)
 end
 
 -- guarantee that we have enough memory in cache
@@ -1762,13 +1772,13 @@ function UniReader:inputLoop()
 	end
 	if self.settings ~= nil then
 		self:saveLastPageOrPos()
-		self.settings:savesetting("gamma", self.globalgamma)
-		self.settings:savesetting("jump_history", self.jump_history)
-		self.settings:savesetting("bookmarks", self.bookmarks)
-		self.settings:savesetting("bbox", self.bbox)
-		self.settings:savesetting("globalzoom", self.globalzoom)
-		self.settings:savesetting("globalzoommode", self.globalzoommode)
-		self.settings:savesetting("highlight", self.highlight)
+		self.settings:saveSetting("gamma", self.globalgamma)
+		self.settings:saveSetting("jump_history", self.jump_history)
+		self.settings:saveSetting("bookmarks", self.bookmarks)
+		self.settings:saveSetting("bbox", self.bbox)
+		self.settings:saveSetting("globalzoom", self.globalzoom)
+		self.settings:saveSetting("globalzoommode", self.globalzoommode)
+		self.settings:saveSetting("highlight", self.highlight)
 		self:saveSpecialSettings()
 		self.settings:close()
 	end

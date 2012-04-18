@@ -13,8 +13,12 @@ function DocSettings:readSetting(key)
 	return self.data[key]
 end
 
-function DocSettings:savesetting(key, value)
+function DocSettings:saveSetting(key, value)
 	self.data[key] = value
+end
+
+function DocSettings:delSetting(key)
+	self.data[key] = nil
 end
 
 function dump(data)
