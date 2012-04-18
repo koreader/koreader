@@ -18,6 +18,9 @@ if test "$1" == "--framework_stop"; then
 	/etc/init.d/framework stop
 fi
 
+# stop cvm
+killall -stop cvm
+
 # finally call reader
 ./reader.lua "$1" 2> /mnt/us/kindlepdfviewer/crash.log || cat /mnt/us/kindlepdfviewer/crash.log
 

@@ -138,8 +138,9 @@ function FileChooser:choose(ypos, height)
 					renderUtf8Text(fb.bb, 50, ypos + self.spacing*c, cface, self.files[i-#self.dirs], true)
 				end
 			end
+			all_page = math.ceil(self.items/perpage)
 			renderUtf8Text(fb.bb, 5, ypos + self.spacing * perpage + 42, fface,
-				"Page "..self.page.." of "..(math.floor(self.items / perpage)+1), true)
+				"Page "..self.page.." of "..all_page, true)
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or "Path: "..self.path
 			self.exception_message = nil
 			renderUtf8Text(fb.bb, 5, ypos + self.spacing * (perpage+1) + 27, fface, msg, true)

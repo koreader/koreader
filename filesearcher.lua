@@ -262,7 +262,7 @@ function FileSearcher:choose(keywords)
 			-- draw footer
 			y = self.title_H + (self.spacing * self.perpage) + self.foot_H
 			x = (G_width / 2) - 50
-			all_page = (math.floor(self.items / self.perpage)+1)
+			all_page = math.ceil(self.items/self.perpage)
 			renderUtf8Text(fb.bb, x, y, fface,
 				"Page "..self.page.." of "..all_page, true)
 		end

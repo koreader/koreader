@@ -100,5 +100,9 @@ function Screen:getCurrentScreenBB()
 end
 
 function Screen:restoreFromBB(bb)
-	fb.bb:blitFullFrom(bb)
+	if bb then
+		fb.bb:blitFullFrom(bb)
+	else
+		debug("Got nil bb in restoreFromSavedBB!")
+	end
 end
