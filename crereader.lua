@@ -101,7 +101,7 @@ end
 ----------------------------------------------------
 -- goto related methods
 ----------------------------------------------------
-function CREReader:goto(pos, pos_type)
+function CREReader:goto(pos, is_ignore_jump, pos_type)
 	local prev_xpointer = self.doc:getXPointer()
 	local width, height = G_width, G_height
 
@@ -118,8 +118,10 @@ function CREReader:goto(pos, pos_type)
 	-- NOTE:
 	-- even though we have called gotoPos() or gotoXPointer() previously, 
 	-- self.pos hasn't been updated yet here, so we can still make use of it.
-	if self.pos and math.abs(self.pos - pos) > height then
-		self:addJump(prev_xpointer)
+	if not is_ignore_jump then
+		if self.pos and math.abs(self.pos - pos) > height then
+			self:addJump(prev_xpointer)
+		end
 	end
 
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
@@ -143,7 +145,6 @@ function CREReader:goto(pos, pos_type)
 	end
 
 	self.pos = pos
-	print("------", self.pos)
 	self.pageno = self.doc:getCurrentPage()
 	self.percent = self.doc:getCurrentPercent()
 end
@@ -153,7 +154,7 @@ function CREReader:gotoPercent(percent)
 end
 
 function CREReader:gotoTocEntry(entry)
-	self:goto(entry.xpointer, "xpointer")
+	self:goto(entry.xpointer, nil, "xpointer")
 end
 
 function CREReader:nextView()
@@ -173,27 +174,66 @@ function CREReader:isSamePage(p1, p2)
 	return self.doc:getPageFromXPointer(p1) == self.doc:getPageFromXPointer(p2)
 end
 
-function CREReader:showJumpStack()
+function CREReader:showJumpHist()
 	local menu_items = {}
-	print(dump(self.jump_stack))
-	for k,v in ipairs(self.jump_stack) do
+	for k,v in ipairs(self.jump_history) do
+		if k == self.jump_history.cur then
+			cur_sign = "*(Cur) "
+		else
+			cur_sign = ""
+		end
 		table.insert(menu_items,
-			v.datetime.." -> page "..
-			(self.doc:getPageFromXPointer(v.page)).." "..v.notes)
+			cur_sign..v.datetime.." -> Page "
+			..self.doc:getPageFromXPointer(v.page).." "..v.notes)
 	end
 
 	if #menu_items == 0 then
 		showInfoMsgWithDelay(
 			"No jump history found.", 2000, 1)
 	else
+		-- if cur points to head, draw entry for current page
+		if self.jump_history.cur > #self.jump_history then
+			table.insert(menu_items,
+				"Current Page "..self.pageno)
+		end
+
 		jump_menu = SelectMenu:new{
-			menu_title = "Jump Keeper      (current page: "..self.pageno..")",
+			menu_title = "Jump History",
 			item_array = menu_items,
 		}
 		item_no = jump_menu:choose(0, fb.bb:getHeight())
+		if item_no and item_no <= #self.jump_history then
+			local jump_item = self.jump_history[item_no]
+			self.jump_history.cur = item_no
+			self:goto(jump_item.page, true, "xpointer")
+		else
+			self:redrawCurrentPage()
+		end
+	end
+end
+
+----------------------------------------------------
+-- bookmarks related methods
+----------------------------------------------------
+function CREReader:showBookMarks()
+	local menu_items = {}
+	-- build menu items
+	for k,v in ipairs(self.bookmarks) do
+		table.insert(menu_items,
+			"Page "..self.doc:getPageFromXPointer(v.page)
+			.." "..v.notes.." @ "..v.datetime)
+	end
+	if #menu_items == 0 then
+		showInfoMsgWithDelay(
+			"No bookmark found.", 2000, 1)
+	else
+		toc_menu = SelectMenu:new{
+			menu_title = "Bookmarks",
+			item_array = menu_items,
+		}
+		item_no = toc_menu:choose(0, fb.bb:getHeight())
 		if item_no then
-			local jump_item = self.jump_stack[item_no]
-			self:goto(jump_item.page, "xpointer")
+			self:goto(self.bookmarks[item_no].page, nil, "xpointer")
 		else
 			self:redrawCurrentPage()
 		end
@@ -341,17 +381,38 @@ function CREReader:adjustCreReaderCommands()
 			cr:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_B, MOD_SHIFT, "B",
-		"add jump",
+	self.commands:add(KEY_B, MOD_ALT, "B",
+		"add book mark to current page",
 		function(cr)
-			cr:addJump(self.doc:getXPointer())
+			ok = cr:addBookmark(self.doc:getXPointer())
+			if not ok then
+				showInfoMsgWithDelay("Page already marked!", 2000, 1)
+			else
+				showInfoMsgWithDelay("Page marked.", 2000, 1)
+			end
 		end
 	)
-	self.commands:add(KEY_BACK,nil,"back",
-		"back to last jump",
+	self.commands:add(KEY_BACK, nil, "Back",
+		"go backward in jump history",
 		function(cr)
-			if #cr.jump_stack ~= 0 then
-				cr:goto(cr.jump_stack[1].page, "xpointer")
+			local prev_jump_no = cr.jump_history.cur - 1
+			if prev_jump_no >= 1 then
+				cr.jump_history.cur = prev_jump_no
+				cr:goto(cr.jump_history[prev_jump_no].page, true, "xpointer")
+			else
+				showInfoMsgWithDelay("Already first jump!", 2000, 1)
+			end
+		end
+	)
+	self.commands:add(KEY_BACK, MOD_SHIFT, "Back",
+		"go forward in jump history",
+		function(cr)
+			local next_jump_no = cr.jump_history.cur + 1
+			if next_jump_no <= #self.jump_history then
+				cr.jump_history.cur = next_jump_no
+				cr:goto(cr.jump_history[next_jump_no].page, true, "xpointer")
+			else
+				showInfoMsgWithDelay("Already last jump!", 2000, 1)
 			end
 		end
 	)
