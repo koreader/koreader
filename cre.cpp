@@ -99,7 +99,7 @@ static int getNumberOfPages(lua_State *L) {
 static int getCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
-	lua_pushinteger(L, doc->text_view->getCurPage());
+	lua_pushinteger(L, doc->text_view->getCurPage()+1);
 
 	return 1;
 }

@@ -114,7 +114,7 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 		self.doc:gotoPos(pos)
 	end
 
-	-- add to jump_stack, distinguish jump from normal page turn
+	-- add to jump history, distinguish jump from normal page turn
 	-- NOTE:
 	-- even though we have called gotoPos() or gotoXPointer() previously, 
 	-- self.pos hasn't been updated yet here, so we can still make use of it.
@@ -168,7 +168,7 @@ function CREReader:prevView()
 end
 
 ----------------------------------------------------
--- jump stack related methods
+-- jump history related methods
 ----------------------------------------------------
 function CREReader:isSamePage(p1, p2)
 	return self.doc:getPageFromXPointer(p1) == self.doc:getPageFromXPointer(p2)

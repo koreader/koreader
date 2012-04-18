@@ -1362,7 +1362,7 @@ function UniReader:addJump(pageno)
 	-- set up new head
 	-- if backward stack top is the same as page to record, remove it
 	if #self.jump_history ~= 0 and
-	self.jump_history[#self.jump_history].page == pageno then
+	self:isSamePage(self.jump_history[#self.jump_history].page, pageno) then
 		self.jump_history[#self.jump_history] = nil
 	end
 	table.insert(self.jump_history, jump_item)
