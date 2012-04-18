@@ -174,14 +174,14 @@ function InputBox:input(ypos, height, title, d_text)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			print("key pressed: "..tostring(keydef))
+			debug("key pressed: "..tostring(keydef))
 
 			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				print("command to execute: "..tostring(command))
+				debug("command to execute: "..tostring(command))
 				ret_code = command.func(self, keydef)
 			else
-				print("command not found: "..tostring(command))
+				debug("command not found: "..tostring(command))
 			end
 
 			if ret_code == "break" then

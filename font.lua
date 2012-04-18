@@ -53,11 +53,11 @@ function Font:getFace(font, size)
 		realname = self.fontdir.."/"..realname
 		ok, face = pcall(freetype.newFace, realname, size)
 		if not ok then
-			print("#! Font "..font.." ("..realname..") not supported: "..face)
+			debug("#! Font "..font.." ("..realname..") not supported: "..face)
 			return nil
 		end
 		self.faces[font..size] = face
-	--print("getFace, found: "..realname.." size:"..size)
+	--debug("getFace, found: "..realname.." size:"..size)
 	end
 	return { size = size, ftface = face, hash = font..size }
 end

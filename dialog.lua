@@ -6,7 +6,7 @@ InfoMessage = {
 }
 
 function InfoMessage:show(text,refresh_mode)
-	print("# InfoMessage ", text, refresh_mode)
+	debug("# InfoMessage ", text, refresh_mode)
 	local dialog = CenterContainer:new({
 		dimen = { w = G_width, h = G_height },
 		FrameContainer:new({
@@ -50,7 +50,6 @@ function showInfoMsgWithDelay(text, msec, refresh_mode)
 			ev = input.waitForEvent(msec*1000)
 			adjustKeyEvents(ev)
 		end)
-		print(is_not_timeout)
 	until not ok or ev.value == EVENT_VALUE_KEY_PRESS
 
 	Screen:restoreFromSavedBB()

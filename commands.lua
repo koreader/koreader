@@ -56,7 +56,7 @@ function Command:new(keydef, func, help, keygroup, order)
 	obj.help = help
 	obj.keygroup = keygroup
 	obj.order = order
-	--print("creating command: ["..tostring(keydef).."] keygroup:["..(keygroup or "").."] help:"..help)
+	--debug("creating command: ["..tostring(keydef).."] keygroup:["..(keygroup or "").."] help:"..help)
 	return obj
 end
 

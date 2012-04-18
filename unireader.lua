@@ -1087,7 +1087,7 @@ function UniReader:drawOrCache(no, preCache)
 		size = tile.w * tile.h / 2,
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
-	--print ("# new biltbuffer:"..dump(self.cache[pagehash]))
+	--debug ("# new biltbuffer:"..dump(self.cache[pagehash]))
 	dc:setOffset(-tile.x, -tile.y)
 	debug("rendering page", no)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0)

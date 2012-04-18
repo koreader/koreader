@@ -100,7 +100,6 @@ else
 
 	-- check if we are running on Kindle 3 (additional volume input)
 	local f=lfs.attributes("/dev/input/event2")
-	print(f)
 	if f then
 		print("Auto-detected Kindle 3")
 		input.open("/dev/input/event2")

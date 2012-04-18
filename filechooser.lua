@@ -40,7 +40,7 @@ function getAbsolutePath(aPath)
 			abs_path = lfs.currentdir()
 			lfs.chdir(curr_dir)
 		end
-		--print("rel: '"..aPath.."' abs:'"..abs_path.."'")
+		--debug("rel: '"..aPath.."' abs:'"..abs_path.."'")
 	end
 	return abs_path
 end
@@ -50,7 +50,7 @@ function FileChooser:readDir()
 	self.files = {}
 	for f in lfs.dir(self.path) do
 		if lfs.attributes(self.path.."/"..f, "mode") == "directory" and f ~= "." and not (f==".." and self.path=="/") and not string.match(f, "^%.[^.]") then
-			--print(self.path.." -> adding: '"..f.."'")
+			--debug(self.path.." -> adding: '"..f.."'")
 			table.insert(self.dirs, f)
 		else
 			local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
@@ -73,7 +73,7 @@ function FileChooser:setPath(newPath)
 	self.path = getAbsolutePath(newPath)
 	local readdir_ok, exc = pcall(self.readDir,self)
 	if(not readdir_ok) then
-		print("readDir error: "..tostring(exc))
+		debug("readDir error: "..tostring(exc))
 		self.exception_message = exc
 		return self:setPath(curr_path)
 	else
@@ -166,7 +166,7 @@ function FileChooser:choose(ypos, height)
 		end
 
 		local ev = input.saveWaitForEvent()
-		--print("key code:"..ev.code)
+		--debug("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_FW_UP then

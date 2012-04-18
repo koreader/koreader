@@ -21,7 +21,7 @@ function CREReader:init()
 	for _k, _v in ipairs(fonts) do
 		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
 		if not ok then
-			print(err)
+			debug(err)
 		end
 	end
 end
@@ -126,7 +126,7 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
-	print("## self.show_overlap "..self.show_overlap)
+	debug("## self.show_overlap "..self.show_overlap)
 	if self.show_overlap < 0 then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
 	elseif self.show_overlap > 0 then
@@ -135,11 +135,11 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.show_overlap = 0
 
 	if self.rcount == self.rcountmax then
-		print("full refresh")
+		debug("full refresh")
 		self.rcount = 1
 		fb:refresh(0)
 	else
-		print("partial refresh")
+		debug("partial refresh")
 		self.rcount = self.rcount + 1
 		fb:refresh(1)
 	end
@@ -240,6 +240,7 @@ function CREReader:showBookMarks()
 	end
 end
 
+
 ----------------------------------------------------
 -- TOC related methods
 ----------------------------------------------------
@@ -320,7 +321,7 @@ function CREReader:adjustCreReaderCommands()
 				self.line_space_percent = 200
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
-			print("line spacing set to", self.line_space_percent)
+			debug("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
 		end
@@ -333,7 +334,7 @@ function CREReader:adjustCreReaderCommands()
 				self.line_space_percent = 100
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
-			print("line spacing set to", self.line_space_percent)
+			debug("line spacing set to", self.line_space_percent)
 			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
 			cr:redrawCurrentPage()
 		end
@@ -345,7 +346,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:addGroup("[1..0]", numeric_keydefs,
 		"jump to <key>*10% of document",
 		function(cr, keydef)
-			print('jump to position: '..
+			debug('jump to position: '..
 				math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
 				'/'..cr.doc:getFullHeight())
 			cr:goto(math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
@@ -364,7 +365,7 @@ function CREReader:adjustCreReaderCommands()
 			}
 
 			local item_no = fonts_menu:choose(0, G_height)
-			print(face_list[item_no])
+			debug(face_list[item_no])
 			if item_no then
 				cr.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
