@@ -168,14 +168,15 @@ function Commands:new(obj)
 			Screen:saveCurrentBB()
 			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 			fb:setOrientation(Screen.native_rotation_mode)
-			--os.execute("killall -cont cvm")
+			util.sleep(1)
+			os.execute("killall -cont cvm")
 		end
 	)
 	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
-			util.sleep(3)
-			--os.execute("killall -stop cvm")
+			util.usleep(1500000)
+			os.execute("killall -stop cvm")
 			fb:setOrientation(Screen.kpv_rotation_mode)
 			Screen:restoreFromSavedBB()
 			fb:refresh(0)
