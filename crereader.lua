@@ -72,13 +72,13 @@ function CREReader:getLastPageOrPos()
 end
 
 function CREReader:saveSpecialSettings()
-	self.settings:savesetting("font_face", self.font_face)
-	self.settings:savesetting("gamma_index", self.gamma_index)
-	self.settings:savesetting("line_space_percent", self.line_space_percent)
+	self.settings:saveSetting("font_face", self.font_face)
+	self.settings:saveSetting("gamma_index", self.gamma_index)
+	self.settings:saveSetting("line_space_percent", self.line_space_percent)
 end
 
 function CREReader:saveLastPageOrPos()
-	self.settings:savesetting("last_percent", self.percent)
+	self.settings:saveSetting("last_percent", self.percent)
 end
 
 ----------------------------------------------------
