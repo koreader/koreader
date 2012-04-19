@@ -380,9 +380,9 @@ function CREReader:adjustCreReaderCommands()
 			if item_no then
 				cr.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
+				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			end
 			Screen:restoreFromSavedBB()
-			InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			cr:redrawCurrentPage()
 		end
 	)
