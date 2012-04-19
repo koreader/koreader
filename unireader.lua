@@ -1318,7 +1318,7 @@ function UniReader:show(no)
 
 	if self.rcount >= self.rcountmax then
 		debug("full refresh")
-		self.rcount = 1
+		self.rcount = 0
 		fb:refresh(0)
 	else
 		debug("partial refresh")
@@ -1984,7 +1984,7 @@ function UniReader:addAllCommands()
 			fb:refresh(1)
 			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(0)
-			unireader.rcount = 1
+			unireader.rcount = 0
 		end)
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
