@@ -108,10 +108,10 @@ static int getPageFromXPointer(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	const char *xpointer_str = luaL_checkstring(L, 2);
 
-	int page = 0;
+	int page = 1;
 	ldomXPointer xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
 
-	page = doc->text_view->getBookmarkPage(xp);
+	page = doc->text_view->getBookmarkPage(xp) + 1;
 	lua_pushinteger(L, page);
 
 	return 1;
@@ -180,7 +180,7 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
 		/* set subtable, Toc entry */
 		lua_newtable(L);
 		lua_pushstring(L, "page");
-		lua_pushnumber(L, toc_tmp->getPercent()); 
+		lua_pushnumber(L, toc_tmp->getPage()+1); 
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "xpointer");
@@ -224,10 +224,6 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
  *       title="chapter2"
  *    },
  * }
- *
- * Warnning: not like pdf or djvu support, page here refers to the
- * percent of height within the document, not the real page number.
- * We use page here just to keep consistent with other readers.
  *
  */
 static int getTableOfContent(lua_State *L) {
@@ -281,7 +277,7 @@ static int gotoPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	int pageno = luaL_checkint(L, 2);
 
-	doc->text_view->goToPage(pageno);
+	doc->text_view->goToPage(pageno-1);
 
 	return 0;
 }

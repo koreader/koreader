@@ -191,7 +191,7 @@ function FileChooser:choose(ypos, height)
 					--[[
 					This might looks a little bit dirty for using callback.
 					But I cannot come up with a better solution for renewing
-					the height arguemtn according to screen rotation mode.
+					the height argument according to screen rotation mode.
 
 					The callback might also be useful for calling system
 					settings menu in the future.

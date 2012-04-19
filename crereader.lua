@@ -108,7 +108,7 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
-	else -- pos_type is PERCENT * 100
+	else -- pos_type is position within document
 		pos = math.min(pos, self.doc:getFullHeight() - height)
 		pos = math.max(pos, 0)
 		self.doc:gotoPos(pos)
@@ -134,9 +134,9 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	end
 	self.show_overlap = 0
 
-	if self.rcount == self.rcountmax then
+	if self.rcount >= self.rcountmax then
 		debug("full refresh")
-		self.rcount = 1
+		self.rcount = 0
 		fb:refresh(0)
 	else
 		debug("partial refresh")
@@ -244,8 +244,19 @@ end
 ----------------------------------------------------
 -- TOC related methods
 ----------------------------------------------------
+function CREReader:getTocTitleByPage(page_or_xpoint)
+	local page = 1
+	-- tranform xpointer to page
+	if type(page_or_xpoint) == "string" then
+		page = self.doc:getPageFromXPointer(page_or_xpoint)
+	else
+		page = page_or_xpoint
+	end
+	return self:_getTocTitleByPage(page)
+end
+
 function CREReader:getTocTitleOfCurrentPage()
-	return self:getTocTitleByPage(self.percent)
+	return self:getTocTitleByPage(self.doc:getXPointer())
 end
 
 

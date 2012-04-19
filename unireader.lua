@@ -907,11 +907,19 @@ function UniReader:initGlobalSettings(settings)
 	end
 end
 
+-- Method to load settings before document open
+function UniReader:preLoadSettings(filename)
+	self.settings = DocSettings:open(filename)
+
+	local cache_d_size = self.settings:readSetting("cache_document_size")
+	if cache_d_size then
+		self.cache_document_size = cache_d_size
+	end
+end
+
 -- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename,self.cache_document_size)
-
 		local gamma = self.settings:readSetting("gamma")
 		if gamma then
 			self.globalgamma = gamma
@@ -1318,7 +1326,7 @@ function UniReader:show(no)
 
 	if self.rcount >= self.rcountmax then
 		debug("full refresh")
-		self.rcount = 1
+		self.rcount = 0
 		fb:refresh(0)
 	else
 		debug("partial refresh")
@@ -1339,7 +1347,7 @@ end
 --]]
 function UniReader:addJump(pageno)
 	-- build notes from TOC
-	local notes = self:getTocTitleOfCurrentPage()
+	local notes = self:getTocTitleByPage(pageno)
 	if notes ~= "" then
 		notes = "in "..notes
 	end
@@ -1387,7 +1395,7 @@ function UniReader:addBookmark(pageno)
 		end
 	end
 	-- build notes from TOC
-	local notes = self:getTocTitleOfCurrentPage()
+	local notes = self:getTocTitleByPage(pageno)
 	if notes ~= "" then
 		notes = "in "..notes
 	end
@@ -1531,7 +1539,13 @@ function UniReader:fillToc()
 	self.toc = self.doc:getToc()
 end
 
+-- getTocTitleByPage wrapper, so specific reader
+-- can tranform pageno according its need
 function UniReader:getTocTitleByPage(pageno)
+	return self:_getTocTitleByPage(pageno)
+end
+
+function UniReader:_getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
 		self:fillToc()
@@ -1793,7 +1807,7 @@ function UniReader:addAllCommands()
 		"previous/next page",
 		function(unireader,keydef)
 			unireader:goto(
-			(keydef.keycode == KEY_PGBCK or Keydef.keycode == KEY_LPGBCK)
+			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
 		end)
 	self.commands:addGroup(MOD_ALT.."< >",{Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT)},
@@ -1978,7 +1992,7 @@ function UniReader:addAllCommands()
 			fb:refresh(1)
 			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(0)
-			unireader.rcount = 1
+			unireader.rcount = 0
 		end)
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
