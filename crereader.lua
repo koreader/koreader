@@ -244,6 +244,17 @@ end
 ----------------------------------------------------
 -- TOC related methods
 ----------------------------------------------------
+function CREReader:getTocTitleByPage(page_or_xpoint)
+	local page = 1
+	-- tranform xpointer to page
+	if type(page_or_xpoint) == "string" then
+		page = self.doc:getPageFromXPointer(page_or_xpoint)
+	else
+		page = page_or_xpoint
+	end
+	return self:_getTocTitleByPage(page)
+end
+
 function CREReader:getTocTitleOfCurrentPage()
 	return self:getTocTitleByPage(self.percent)
 end

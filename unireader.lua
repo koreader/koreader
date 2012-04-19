@@ -1339,7 +1339,7 @@ end
 --]]
 function UniReader:addJump(pageno)
 	-- build notes from TOC
-	local notes = self:getTocTitleOfCurrentPage()
+	local notes = self:getTocTitleByPage(pageno)
 	if notes ~= "" then
 		notes = "in "..notes
 	end
@@ -1387,7 +1387,7 @@ function UniReader:addBookmark(pageno)
 		end
 	end
 	-- build notes from TOC
-	local notes = self:getTocTitleOfCurrentPage()
+	local notes = self:getTocTitleByPage(pageno)
 	if notes ~= "" then
 		notes = "in "..notes
 	end
@@ -1531,7 +1531,13 @@ function UniReader:fillToc()
 	self.toc = self.doc:getToc()
 end
 
+-- getTocTitleByPage wrapper, so specific reader
+-- can tranform pageno according its need
 function UniReader:getTocTitleByPage(pageno)
+	return self:_getTocTitleByPage(pageno)
+end
+
+function UniReader:_getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
 		self:fillToc()
