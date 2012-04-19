@@ -1799,7 +1799,7 @@ function UniReader:addAllCommands()
 		"previous/next page",
 		function(unireader,keydef)
 			unireader:goto(
-			(keydef.keycode == KEY_PGBCK or Keydef.keycode == KEY_LPGBCK)
+			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
 		end)
 	self.commands:addGroup(MOD_ALT.."< >",{Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT)},
