@@ -907,11 +907,19 @@ function UniReader:initGlobalSettings(settings)
 	end
 end
 
+-- Method to load settings before document open
+function UniReader:preLoadSettings(filename)
+	self.settings = DocSettings:open(filename)
+
+	local cache_d_size = self.settings:readSetting("cache_document_size")
+	if cache_d_size then
+		self.cache_document_size = cache_d_size
+	end
+end
+
 -- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		self.settings = DocSettings:open(filename,self.cache_document_size)
-
 		local gamma = self.settings:readSetting("gamma")
 		if gamma then
 			self.globalgamma = gamma
