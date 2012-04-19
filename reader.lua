@@ -33,7 +33,7 @@ longopts = {
 	password = "p",
 	goto = "g",
 	gamma = "G",
-	device = "d",
+	debug = "d",
 	help = "h"
 }
 
@@ -71,6 +71,7 @@ function showusage()
 	print("-p, --password=PASSWORD   set password for reading PDF document")
 	print("-g, --goto=page           start reading on page")
 	print("-G, --gamma=GAMMA         set gamma correction")
+	print("-d, --debug               start in debug mode")
 	print("                          (floating point notation, e.g. \"1.5\")")
 	print("-h, --help                show this usage help")
 	print("")
@@ -84,9 +85,17 @@ function showusage()
 	return
 end
 
-optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:d:", longopts)
+optarg, optind = alt_getopt.get_opts(ARGV, "p:g:G:hg:dg:", longopts)
 if optarg["h"] then
 	return showusage()
+end
+
+if not optarg["d"] then
+	debug = function() end
+end
+
+if optarg["G"] ~= nil then
+	globalgamma = optarg["G"]
 end
 
 if util.isEmulated()==1 then
@@ -105,10 +114,6 @@ else
 		input.open("/dev/input/event2")
 		setK3Keycodes()
 	end
-end
-
-if optarg["G"] ~= nil then
-	globalgamma = optarg["G"]
 end
 
 fb = einkfb.open("/dev/fb0")
