@@ -256,7 +256,7 @@ function CREReader:getTocTitleByPage(page_or_xpoint)
 end
 
 function CREReader:getTocTitleOfCurrentPage()
-	return self:getTocTitleByPage(self.percent)
+	return self:getTocTitleByPage(self.doc:getXPointer())
 end
 
 
