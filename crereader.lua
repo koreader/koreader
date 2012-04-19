@@ -134,9 +134,9 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	end
 	self.show_overlap = 0
 
-	if self.rcount == self.rcountmax then
+	if self.rcount >= self.rcountmax then
 		debug("full refresh")
-		self.rcount = 1
+		self.rcount = 0
 		fb:refresh(0)
 	else
 		debug("partial refresh")
