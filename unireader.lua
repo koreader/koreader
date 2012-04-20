@@ -1945,12 +1945,12 @@ function UniReader:addAllCommands()
 			unireader:showToc()
 		end)
 	self.commands:add(KEY_B,nil,"B",
-		"show book marks",
+		"show bookmarks",
 		function(unireader)
 			unireader:showBookMarks()
 		end)
 	self.commands:add(KEY_B,MOD_ALT,"B",
-		"add book mark to current page",
+		"add bookmark to current page",
 		function(unireader)
 			ok = unireader:addBookmark(self.pageno)
 			if not ok then

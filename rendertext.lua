@@ -46,7 +46,7 @@ end
 
 function sizeUtf8Text(x, width, face, text, kerning)
 	if text == nil then
-		debug("# sizeUtf8Text called without text");
+		debug("sizeUtf8Text called without text");
 		return
 	end
 	-- may still need more adaptive pen placement when kerning,
@@ -78,7 +78,7 @@ end
 
 function renderUtf8Text(buffer, x, y, face, text, kerning)
 	if text == nil then
-		debug("# renderUtf8Text called without text");
+		debug("renderUtf8Text called without text");
 		return 0
 	end
 	-- may still need more adaptive pen placement when kerning,

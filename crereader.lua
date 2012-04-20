@@ -394,7 +394,7 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	self.commands:add(KEY_B, MOD_ALT, "B",
-		"add book mark to current page",
+		"add bookmark to current page",
 		function(self)
 			ok = self:addBookmark(self.doc:getXPointer())
 			if not ok then
