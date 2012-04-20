@@ -1803,22 +1803,32 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:addGroup("< >",{Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
+	self.commands:addGroup("< >",{
+		Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
+		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
 		"previous/next page",
 		function(unireader,keydef)
 			unireader:goto(
 			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
 		end)
-	self.commands:addGroup(MOD_ALT.."< >",{Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
+		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
 		"zoom out/in 10%",
 		function(unireader,keydef)
-			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.1)
+			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			unireader:setGlobalZoom(unireader.globalzoom_orig
+				+ (is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.1)
 		end)
-	self.commands:addGroup(MOD_SHIFT.."< >",{Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT)},
+	self.commands:addGroup(MOD_SHIFT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
+		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
 		"zoom out/in 20%",
 		function(unireader,keydef)
-			unireader:setGlobalZoom(unireader.globalzoom + (keydef.keycode==KEY_PGBCK and -1 or 1)*unireader.globalzoom_orig*0.2)
+			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			unireader:setGlobalZoom(unireader.globalzoom_orig
+				+ ( is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.2)
 		end)
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
