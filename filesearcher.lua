@@ -134,7 +134,7 @@ function FileSearcher:addAllCommands()
 			self:nextItem()
 		end
 	)
-	self.commands:add(KEY_PGFWD, nil, ">",
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, ">",
 		"next page",
 		function(self)
 			if self.page < (self.items / self.perpage) then
@@ -149,7 +149,7 @@ function FileSearcher:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_PGBCK, nil, "<",
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
 		"previous page",
 		function(self)
 			if self.page > 1 then
