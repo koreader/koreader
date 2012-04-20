@@ -138,8 +138,10 @@ end
 --
 -- @title: input prompt for the box
 -- @d_text: default to nil (used to set default text in input slot)
+-- @is_hint: if this arg is true, default text will be used as hint 
+--           message for input
 ----------------------------------------------------------------------
-function InputBox:input(ypos, height, title, d_text)
+function InputBox:input(ypos, height, title, d_text, is_hint)
 	self:init()
 	-- do some initilization
 	self.ypos = ypos
@@ -161,10 +163,21 @@ function InputBox:input(ypos, height, title, d_text)
 	self:drawHelpMsg(ypos, w, h)
 	self:drawBox(ypos, w, h, title)
 	if d_text then
-		self.input_string = d_text
-		self.input_cur_x = self.input_cur_x + (self.fwidth * d_text:len())
-		self.cursor.x_pos = self.cursor.x_pos + (self.fwidth * d_text:len())
-		self:refreshText()
+		if is_hint then
+			-- print hint text
+			fb.bb:paintRect(140, self.input_start_y-19, 
+							self.input_slot_w, self.fheight, self.input_bg)
+			renderUtf8Text(fb.bb, self.input_start_x+5, self.input_start_y,
+							self.face,
+							d_text, 0)
+			fb.bb:dimRect(140, self.input_start_y-19, 
+							self.input_slot_w, self.fheight, self.input_bg)
+		else
+			self.input_string = d_text
+			self.input_cur_x = self.input_cur_x + (self.fwidth * d_text:len())
+			self.cursor.x_pos = self.cursor.x_pos + (self.fwidth * d_text:len())
+			self:refreshText()
+		end
 	end
 	self.cursor:draw()
 	fb:refresh(1, 20, ypos, w, h)
