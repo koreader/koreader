@@ -197,6 +197,7 @@ function FileChooser:choose(ypos, height)
 					settings menu in the future.
 					--]]
 					return nil, function()
+						InfoMessage:show("Searching...",0)
 						FileSearcher:init( self.path )
 						FileSearcher:choose(keywords)
 					end
