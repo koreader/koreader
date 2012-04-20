@@ -310,44 +310,44 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
 
 	-- overwrite commands
-	self.commands:add(KEY_PGFWD, MOD_SHIFT, ">",
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, MOD_SHIFT, ">",
 		"increase font size",
-		function(cr)
-			cr.doc:zoomFont(1)
-			cr:redrawCurrentPage()
+		function(self)
+			self.doc:zoomFont(1)
+			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_PGBCK, MOD_SHIFT, "<",
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, MOD_SHIFT, "<",
 		"decrease font size",
-		function(cr)
-			cr.doc:zoomFont(-1)
-			cr:redrawCurrentPage()
+		function(self)
+			self.doc:zoomFont(-1)
+			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_PGFWD, MOD_ALT, ">",
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, MOD_ALT, ">",
 		"increase line spacing",
-		function(cr)
+		function(self)
 			self.line_space_percent = self.line_space_percent + 10
 			if self.line_space_percent > 200 then
 				self.line_space_percent = 200
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			debug("line spacing set to", self.line_space_percent)
-			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
-			cr:redrawCurrentPage()
+			self.doc:setDefaultInterlineSpace(self.line_space_percent)
+			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_PGBCK, MOD_ALT, "<",
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, MOD_ALT, "<",
 		"decrease line spacing",
-		function(cr)
+		function(self)
 			self.line_space_percent = self.line_space_percent - 10
 			if self.line_space_percent < 100 then
 				self.line_space_percent = 100
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			debug("line spacing set to", self.line_space_percent)
-			cr.doc:setDefaultInterlineSpace(self.line_space_percent)
-			cr:redrawCurrentPage()
+			self.doc:setDefaultInterlineSpace(self.line_space_percent)
+			self:redrawCurrentPage()
 		end
 	)
 	local numeric_keydefs = {}
@@ -356,16 +356,16 @@ function CREReader:adjustCreReaderCommands()
 	end
 	self.commands:addGroup("[1..0]", numeric_keydefs,
 		"jump to <key>*10% of document",
-		function(cr, keydef)
+		function(self, keydef)
 			debug('jump to position: '..
-				math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
-				'/'..cr.doc:getFullHeight())
-			cr:goto(math.floor(cr.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
+				math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
+				'/'..self.doc:getFullHeight())
+			self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
 		end
 	)
 	self.commands:add(KEY_F, nil, "F",
 		"change document font",
-		function(cr)
+		function(self)
 			Screen:saveCurrentBB()
 
 			local face_list = cre.getFontFaces()
@@ -378,25 +378,25 @@ function CREReader:adjustCreReaderCommands()
 			local item_no = fonts_menu:choose(0, G_height)
 			debug(face_list[item_no])
 			if item_no then
-				cr.doc:setFontFace(face_list[item_no])
+				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			end
 			Screen:restoreFromSavedBB()
-			cr:redrawCurrentPage()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_F, MOD_ALT, "F",
 		"Toggle font bolder attribute",
-		function(cr)
-			cr.doc:toggleFontBolder()
-			cr:redrawCurrentPage()
+		function(self)
+			self.doc:toggleFontBolder()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_B, MOD_ALT, "B",
 		"add book mark to current page",
-		function(cr)
-			ok = cr:addBookmark(self.doc:getXPointer())
+		function(self)
+			ok = self:addBookmark(self.doc:getXPointer())
 			if not ok then
 				showInfoMsgWithDelay("Page already marked!", 2000, 1)
 			else
@@ -406,11 +406,11 @@ function CREReader:adjustCreReaderCommands()
 	)
 	self.commands:add(KEY_BACK, nil, "Back",
 		"go backward in jump history",
-		function(cr)
-			local prev_jump_no = cr.jump_history.cur - 1
+		function(self)
+			local prev_jump_no = self.jump_history.cur - 1
 			if prev_jump_no >= 1 then
-				cr.jump_history.cur = prev_jump_no
-				cr:goto(cr.jump_history[prev_jump_no].page, true, "xpointer")
+				self.jump_history.cur = prev_jump_no
+				self:goto(self.jump_history[prev_jump_no].page, true, "xpointer")
 			else
 				showInfoMsgWithDelay("Already first jump!", 2000, 1)
 			end
@@ -418,11 +418,11 @@ function CREReader:adjustCreReaderCommands()
 	)
 	self.commands:add(KEY_BACK, MOD_SHIFT, "Back",
 		"go forward in jump history",
-		function(cr)
-			local next_jump_no = cr.jump_history.cur + 1
+		function(self)
+			local next_jump_no = self.jump_history.cur + 1
 			if next_jump_no <= #self.jump_history then
-				cr.jump_history.cur = next_jump_no
-				cr:goto(cr.jump_history[next_jump_no].page, true, "xpointer")
+				self.jump_history.cur = next_jump_no
+				self:goto(self.jump_history[next_jump_no].page, true, "xpointer")
 			else
 				showInfoMsgWithDelay("Already last jump!", 2000, 1)
 			end
@@ -430,30 +430,30 @@ function CREReader:adjustCreReaderCommands()
 	)
 	self.commands:add(KEY_VPLUS, nil, "vol+",
 		"increase gamma",
-		function(cr)
+		function(self)
 			cre.setGammaIndex(self.gamma_index + 1)
 			self.gamma_index = cre.getGammaIndex()
-			cr:redrawCurrentPage()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_VMINUS, nil, "vol-",
 		"decrease gamma",
-		function(cr)
+		function(self)
 			cre.setGammaIndex(self.gamma_index - 1)
 			self.gamma_index = cre.getGammaIndex()
-			cr:redrawCurrentPage()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"pan "..self.shift_y.." pixels upwards",
-		function(cr)
-			cr:goto(cr.pos - cr.shift_y)
+		function(self)
+			self:goto(self.pos - self.shift_y)
 		end
 	)
 	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
 		"pan "..self.shift_y.." pixels downwards",
-		function(cr)
-			cr:goto(cr.pos + cr.shift_y)
+		function(self)
+			self:goto(self.pos + self.shift_y)
 		end
 	)
 end
