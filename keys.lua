@@ -129,8 +129,8 @@ end
 function setEmuKeycodes()
 	KEY_PGFWD = 117
 	KEY_PGBCK = 112
-	KEY_LPGBCK = 69 -- F3
-	KEY_LPGFWD = 70 -- F4
+	KEY_LPGBCK = 72 -- F6
+	KEY_LPGFWD = 73 -- F7
 	KEY_HOME = 110 -- home
 	KEY_BACK = 22 -- backspace
 	KEY_DEL = 119 -- Delete

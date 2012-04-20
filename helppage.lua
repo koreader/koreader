@@ -110,12 +110,12 @@ function HelpPage:show(ypos, height, commands)
 		--debug("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
-			if ev.code == KEY_PGFWD then
+			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
 				if self.page < (self.items / perpage) then
 					self.page = self.page + 1
 					is_pagedirty = true
 				end
-			elseif ev.code == KEY_PGBCK then
+			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
 				if self.page > 1 then
 					self.page = self.page - 1
 					is_pagedirty = true
