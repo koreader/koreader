@@ -428,18 +428,15 @@ function CREReader:adjustCreReaderCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_VPLUS, nil, "vol+",
-		"increase gamma",
-		function(self)
-			cre.setGammaIndex(self.gamma_index + 1)
-			self.gamma_index = cre.getGammaIndex()
-			self:redrawCurrentPage()
-		end
-	)
-	self.commands:add(KEY_VMINUS, nil, "vol-",
-		"decrease gamma",
-		function(self)
-			cre.setGammaIndex(self.gamma_index - 1)
+	self.commands:addGroup("vol-/+",
+		{Keydef:new(KEY_VPLUS,nil), Keydef:new(KEY_VMINUS,nil)},
+		"decrease/increase gamma",
+		function(self, keydef)
+			local delta = 1
+			if keydef.keycode == KEY_VMINUS then
+				delta = -1
+			end
+			cre.setGammaIndex(self.gamma_index+delta)
 			self.gamma_index = cre.getGammaIndex()
 			self:redrawCurrentPage()
 		end

@@ -45,6 +45,18 @@ function DJVUReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 		(y1 - y0) * self.globalzoom
 end
 
+-- make sure at least part of the box can be seen in next/previous view
+-- @FIXME only works in FIT_TO_CONTENT_WIDTH mode  21.04 2012 (houqp)
+-- @TODO use zoomedRectCoordTransform in unireader, no need to overwrite
+--       it in here.
+function DJVUReader:_isBoxInNextView(box)
+	return self.cur_full_height - (box.y0 * self.globalzoom) > -self.offset_y + G_height
+end
+
+function DJVUReader:_isBoxInPrevView(box)
+	return self.cur_full_height - (box.y1 * self.globalzoom) < -self.offset_y
+end
+
 -- y axel in djvulibre starts from bottom
 function DJVUReader:_isEntireWordInScreenHeightRange(w)
 	return	(w ~= nil) and
