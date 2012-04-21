@@ -27,7 +27,7 @@ UniReader = {
 	-- zoom state:
 	globalzoom = 1.0,
 	globalzoom_orig = 1.0,
-	globalzoommode = -1, -- ZOOM_FIT_TO_PAGE
+	globalzoom_mode = -1, -- ZOOM_FIT_TO_PAGE
 
 	globalrotate = 0,
 
@@ -174,6 +174,16 @@ function UniReader:getRectInScreen(x0, y0, x1, y1)
 	return x, y, w, h
 end
 
+-- make sure at least part of the box can be seen in next/previous view
+-- @FIXME only works in FIT_TO_CONTENT_WIDTH mode  21.04 2012 (houqp)
+function UniReader:_isBoxInNextView(box)
+	return box.y1 * self.globalzoom > -self.offset_y + G_height
+end
+
+function UniReader:_isBoxInPrevView(box)
+	return box.y0 * self.globalzoom < -self.offset_y
+end
+
 -- make sure the whole word/line can be seen in screen
 -- @TODO when not in FIT_TO_CONTENT_WIDTH mode,
 -- self.offset_{x,y} might be negative. 12.04 2012 (houqp)
@@ -216,6 +226,18 @@ function UniReader:_isWordInScreenRange(w)
 
 	return	(not is_entire_word_out_of_screen_height) and
 			(not is_entire_word_out_of_screen_width)
+end
+
+function UniReader:_isWordInNextView(w)
+	return self:_isBoxInNextView(w)
+end
+
+function UniReader:_isLineInNextView(l)
+	return self:_isBoxInNextView(l)
+end
+
+function UniReader:_isLineInPrevView(l)
+	return self:_isBoxInPrevView(l)
 end
 
 function UniReader:toggleTextHighLight(word_list)
@@ -540,7 +562,7 @@ function UniReader:startHighLightMode()
 
 				self.cursor:clear()
 				if w.new ~= 0
-				and not self:_isEntireLineInScreenHeightRange(t[l.new])
+				and self:_isLineInPrevView(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 					-- word is in previous view
 					local pageno = self:prevView()
@@ -569,7 +591,7 @@ function UniReader:startHighLightMode()
 				if tmp_w == 0 then
 					tmp_w = 1
 				end
-				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
+				if self:_isLineInNextView(t[l.new]) 
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
@@ -595,7 +617,7 @@ function UniReader:startHighLightMode()
 				if tmp_w == 0 then
 					tmp_w = 1
 				end
-				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
+				if self:_isLineInPrevView(t[l.new]) 
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
@@ -621,7 +643,7 @@ function UniReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if not self:_isEntireLineInScreenHeightRange(t[l.new]) 
+				if self:_isLineInNextView(t[l.new]) 
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
@@ -693,7 +715,7 @@ function UniReader:startHighLightMode()
 		end
 
 		if w.new ~= 0 and 
-		not self:_isEntireLineInScreenHeightRange(t[l.new]) then
+		self:_isLineInPrevView(t[l.new]) then
 			-- word out of left and right sides of current view should
 			-- not trigger pan by page
 			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
@@ -730,7 +752,7 @@ function UniReader:startHighLightMode()
 			is_meet_end = true
 		end
 
-		if not self:_isEntireLineInScreenHeightRange(t[l.new]) then
+		if self:_isLineInNextView(t[l.new]) then
 			if self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
 				local pageno = self:nextView()
 				self:goto(pageno)
@@ -959,7 +981,7 @@ function UniReader:loadSettings(filename)
 		self.bbox = bbox
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
-		self.globalzoommode = self.settings:readSetting("globalzoommode") or -1
+		self.globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
 
 		self:loadSpecialSettings()
 		return true
@@ -1173,8 +1195,8 @@ function UniReader:setzoom(page, preCache)
 
 	debug("page::getUsedBBox", x0, y0, x1, y1 )
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_PAGE
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_PAGE
+	or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
@@ -1184,21 +1206,21 @@ function UniReader:setzoom(page, preCache)
 			self.offset_y = 0
 		end
 		self.pan_by_page = false
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_WIDTH
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_PAGE_WIDTH
+	or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		self.globalzoom = width / pwidth
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
 		self.pan_by_page = false
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_PAGE_HEIGHT
-	or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_PAGE_HEIGHT
+	or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
 		self.pan_by_page = false
 	end
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT then
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
 			if height / (y1 - y0) < self.globalzoom then
@@ -1207,7 +1229,7 @@ function UniReader:setzoom(page, preCache)
 		end
 		self.offset_x = -1 * x0 * self.globalzoom
 		self.offset_y = -1 * y0 * self.globalzoom
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH then
 		if (x1 - x0) < pwidth then
 			self.globalzoom = width / (x1 - x0)
 		end
@@ -1215,8 +1237,8 @@ function UniReader:setzoom(page, preCache)
 		self.offset_y = -1 * y0 * self.globalzoom
 		self.content_top = self.offset_y
 		-- enable pan mode in ZOOM_FIT_TO_CONTENT_WIDTH
-		self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.content_top == -2012 then
 			-- We must handle previous page turn as a special cases,
 			-- because we want to arrive at the bottom of previous page.
@@ -1228,16 +1250,16 @@ function UniReader:setzoom(page, preCache)
 			self.content_top = -1 * y0 * self.globalzoom
 			self.offset_y = fb.bb:getHeight() - self.fullheight
 		end
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		if (y1 - y0) < pheight then
 			self.globalzoom = height / (y1 - y0)
 		end
 		self.offset_x = -1 * x0 * self.globalzoom
 		self.offset_y = -1 * y0 * self.globalzoom
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH
-		or self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH
+		or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
-		if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
+		if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
 		local pg_margin = 0 -- margin scaled to page size
 		if margin > 0 then pg_margin = margin * 2 / self.globalzoom end
 		self.globalzoom = width / (x1 - x0 + pg_margin)
@@ -1246,7 +1268,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
 		self.globalzoom = width / (x1 - x0 + pg_margin) * 2
 		debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom);
-		self.globalzoommode = self.ZOOM_BY_VALUE -- enable pan mode
+		self.globalzoom_mode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
 		self.pan_y = self.offset_y
 		self.pan_by_page = true
@@ -1297,11 +1319,11 @@ function UniReader:show(no)
 		self.dest_x = (width - (bb:getWidth() - offset_x)) / 2
 	end
 	if bb:getHeight() - offset_y < height and
-	self.globalzoommode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+	self.globalzoom_mode ~= self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		-- we can't fill the whole output height and not in
 		-- ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode, center the content
 		self.dest_y = (height - (bb:getHeight() - offset_y)) / 2
-	elseif self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
+	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN and
 	self.offset_y > 0 then
 		-- if we are in ZOOM_FIT_TO_CONTENT_WIDTH_PAN mode and turning to
 		-- the top of the page, we might leave an empty space between the
@@ -1447,10 +1469,10 @@ end
 function UniReader:nextView()
 	local pageno = self.pageno
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y <= self.min_offset_y then
 			-- hit content bottom, turn to next page
-			self.globalzoommode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+			self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
 			pageno = pageno + 1
 		else
 			-- goto next view of current page
@@ -1474,7 +1496,7 @@ end
 function UniReader:prevView()
 	local pageno = self.pageno
 
-	if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y >= self.content_top then
 			-- hit content top, turn to previous page
 			-- set self.content_top with magic num to signal self:setZoom
@@ -1507,9 +1529,9 @@ function UniReader:modifyGamma(factor)
 end
 
 -- adjust zoom state and trigger re-rendering
-function UniReader:setGlobalZoomMode(newzoommode)
-	if self.globalzoommode ~= newzoommode then
-		self.globalzoommode = newzoommode
+function UniReader:setglobalzoom_mode(newzoommode)
+	if self.globalzoom_mode ~= newzoommode then
+		self.globalzoom_mode = newzoommode
 		self:redrawCurrentPage()
 	end
 end
@@ -1517,7 +1539,7 @@ end
 -- adjust zoom state and trigger re-rendering
 function UniReader:setGlobalZoom(zoom)
 	if self.globalzoom ~= zoom then
-		self.globalzoommode = self.ZOOM_BY_VALUE
+		self.globalzoom_mode = self.ZOOM_BY_VALUE
 		self.globalzoom = zoom
 		self:redrawCurrentPage()
 	end
@@ -1796,7 +1818,7 @@ function UniReader:inputLoop()
 		self.settings:saveSetting("bookmarks", self.bookmarks)
 		self.settings:saveSetting("bbox", self.bbox)
 		self.settings:saveSetting("globalzoom", self.globalzoom)
-		self.settings:saveSetting("globalzoommode", self.globalzoommode)
+		self.settings:saveSetting("globalzoom_mode", self.globalzoom_mode)
 		self.settings:saveSetting("highlight", self.highlight)
 		self:saveSpecialSettings()
 		self.settings:close()
@@ -1886,42 +1908,42 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_A,nil,"A",
 		"zoom to fit page",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE)
 		end)
 	self.commands:add(KEY_A,MOD_SHIFT,"A",
 		"zoom to fit content",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
 	self.commands:add(KEY_S,nil,"S",
 		"zoom to fit page width",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
 		end)
 	self.commands:add(KEY_S,MOD_SHIFT,"S",
 		"zoom to fit content width",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
 		end)
 	self.commands:add(KEY_D,nil,"D",
 		"zoom to fit page height",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
 		end)
 	self.commands:add(KEY_D,MOD_SHIFT,"D",
 		"zoom to fit content height",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
 		end)
 	self.commands:add(KEY_F,nil,"F",
 		"zoom to fit margin 2-column mode",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 		end)
 	self.commands:add(KEY_F,MOD_SHIFT,"F",
 		"zoom to fit content 2-column mode",
 		function(unireader)
-			unireader:setGlobalZoomMode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
+			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)
 	self.commands:add(KEY_G,nil,"G",
 		"open 'go to page' input box",
@@ -1978,8 +2000,8 @@ function UniReader:addAllCommands()
 		"rotate screen 90° clockwise",
 		function(unireader)
 			unireader:screenRotate("clockwise")
-			if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
-				self:setGlobalZoomMode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
+			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
 			else
 				self:redrawCurrentPage()
 			end
@@ -1993,8 +2015,8 @@ function UniReader:addAllCommands()
 		"rotate screen 90° counterclockwise",
 		function(unireader)
 			unireader:screenRotate("anticlockwise")
-			if self.globalzoommode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
-				self:setGlobalZoomMode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
+			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
 			else
 				self:redrawCurrentPage()
 			end
@@ -2024,7 +2046,7 @@ function UniReader:addAllCommands()
 			unireader.bbox[unireader:oddEven(unireader.pageno)] = bbox
 			unireader.bbox.enabled = true
 			debug("bbox", unireader.pageno, unireader.bbox)
-			unireader.globalzoommode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
+			unireader.globalzoom_mode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
 			showInfoMsgWithDelay("Manual crop setting saved.", 2000, 1)
 		end)
 	self.commands:add(KEY_Z,MOD_SHIFT,"Z",
@@ -2057,9 +2079,9 @@ function UniReader:addAllCommands()
 		"pan the active view; use Shift or Alt for smaller steps",
 		function(unireader,keydef)
 			if keydef.keycode ~= KEY_FW_PRESS then
-				unireader.globalzoommode = unireader.ZOOM_BY_VALUE
+				unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
 			end
-			if unireader.globalzoommode == unireader.ZOOM_BY_VALUE then
+			if unireader.globalzoom_mode == unireader.ZOOM_BY_VALUE then
 				local x
 				local y
 				if keydef.modifier==MOD_SHIFT then -- shift always moves in small steps
