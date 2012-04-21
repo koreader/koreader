@@ -638,6 +638,10 @@ function UniReader:startHighLightMode()
 					end
 				end
 			elseif ev.code == KEY_DEL then
+				-- handle left end of line as special case
+				if w.cur == 0 then
+					w.cur = 1
+				end
 				if self.highlight[self.pageno] then
 					for k, text_item in ipairs(self.highlight[self.pageno]) do
 						for _, line_item in ipairs(text_item) do
@@ -646,14 +650,15 @@ function UniReader:startHighLightMode()
 							and t[l.cur][w.cur].x0 >= line_item.x0
 							and t[l.cur][w.cur].x1 <= line_item.x1 then
 								self.highlight[self.pageno][k] = nil
+								-- remove page entry if empty
+								if #self.highlight[self.pageno] == 0 then
+									self.highlight[self.pageno] = nil
+								end
+								return
 							end
 						end -- for line_item
 					end -- for text_item
 				end -- if not highlight table
-				if #self.highlight[self.pageno] == 0 then
-					self.highlight[self.pageno] = nil
-				end
-				return
 			elseif ev.code == KEY_FW_PRESS then
 				l.new, w.new = l.cur, w.cur
 				l.start, w.start = l.cur, w.cur
