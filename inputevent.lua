@@ -230,11 +230,11 @@ function Input:init()
 	end
 end
 
-function Input:waitEvent(timeout)
+function Input:waitEvent(timeout_us, timeout_s)
 	-- wrapper for input.waitForEvents that will retry for some cases
 	local ok, ev
 	while true do
-		ok, ev = pcall(input.waitForEvent, timeout)
+		ok, ev = pcall(input.waitForEvent, timeout_us, timeout_s)
 		if ok then
 			break
 		end

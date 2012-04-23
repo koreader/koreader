@@ -109,24 +109,31 @@ function UIManager:run()
 
 		-- check if we have timed events in our queue and search next one
 		local wait_until = nil
-		for i = #self._execution_stack, 1, -1 do
-			local task = self._execution_stack[i]
-			if not task.time
-				or task.time[1] < now[1]
-				or task.time[1] == now[1] and task.time[2] < now[2] then
-				-- task is pending to be executed right now. do it.
-				task.action()
-				-- and remove from table
-				table.remove(self._execution_stack, i)
-			elseif not wait_until
-				or wait_until[1] > task.time[1]
-				or wait_until[1] == task.time[1] and wait_until[2] > task.time[2] then
-				-- task is to be run in the future _and_ is scheduled
-				-- earlier than the tasks we looked at already
-				-- so adjust to the currently examined task instead.
-				wait_until = task.time
+		local all_tasks_checked
+		repeat
+			all_tasks_checked = true
+			for i = #self._execution_stack, 1, -1 do
+				local task = self._execution_stack[i]
+				if not task.time
+					or task.time[1] < now[1]
+					or task.time[1] == now[1] and task.time[2] < now[2] then
+					-- task is pending to be executed right now. do it.
+					task.action()
+					-- and remove from table
+					table.remove(self._execution_stack, i)
+					-- start loop again, since new tasks might be on the
+					-- queue now
+					all_tasks_checked = false
+				elseif not wait_until
+					or wait_until[1] > task.time[1]
+					or wait_until[1] == task.time[1] and wait_until[2] > task.time[2] then
+					-- task is to be run in the future _and_ is scheduled
+					-- earlier than the tasks we looked at already
+					-- so adjust to the currently examined task instead.
+					wait_until = task.time
+				end
 			end
-		end
+		until all_tasks_checked
 
 		--debug("---------------------------------------------------")
 		--debug("exec stack", self._execution_stack)
@@ -166,8 +173,13 @@ function UIManager:run()
 			input_event = Input:waitEvent()
 		elseif wait_until[1] > now[1]
 		or wait_until[1] == now[1] and wait_until[2] > now[2] then
+			local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }
+			if wait_for.us < 0 then
+				wait_for.s = wait_for.s - 1
+				wait_for.us = 1000000 + wait_for.us
+			end
 			-- wait until next task is pending
-			input_event = Input:waitEvent((wait_until[1] - now[1]) * 1000000 + (wait_until[2] - now[2]))
+			input_event = Input:waitEvent(wait_for.us, wait_for.s)
 		end
 
 		-- delegate input_event to handler
