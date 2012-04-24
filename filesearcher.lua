@@ -39,7 +39,8 @@ function FileSearcher:readDir()
 				or file_type == "epub" or file_type == "txt"
 				or file_type == "rtf" or file_type == "htm"
 				or file_type == "html" or file_type == "mobi"
-				or file_type == "fb2" or file_type == "chm" then
+				or file_type == "fb2" or file_type == "chm"
+				or file_type == "doc" then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--debug("file:"..d.."/"..f)

@@ -71,8 +71,7 @@ DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
-# we don't support dictionary lookup corrently
-			#$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
+			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libopenjpeg.a \
 			$(MUPDFLIBDIR)/libjbig2dec.a \
