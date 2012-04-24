@@ -133,7 +133,7 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
 		/* page numbers appear as #11, set # to 0 so strtol works */
 		page_number[0]= '0'; 
-		lua_pushnumber(L, strtol(page_number, NULL, 10)+1);
+		lua_pushnumber(L, strtol(page_number, NULL, 10));
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
