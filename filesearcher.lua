@@ -40,7 +40,7 @@ function FileSearcher:readDir()
 				or file_type == "rtf" or file_type == "htm"
 				or file_type == "html" or file_type == "mobi"
 				or file_type == "fb2" or file_type == "chm"
-				or file_type == "doc" then
+				or file_type == "doc" or file_type == "zip" then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--debug("file:"..d.."/"..f)
