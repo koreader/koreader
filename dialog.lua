@@ -150,9 +150,7 @@ function ConfirmBox:init()
 				ImageWidget:new{
 					file = "resources/info-i.png"
 				},
-				Widget:new{
-					dimen = { w = 10, h = 0 }
-				},
+				HorizontalSpan:new{ width = 10 },
 				VerticalGroup:new{
 					align = "left",
 					TextWidget:new{

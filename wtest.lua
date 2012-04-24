@@ -53,7 +53,7 @@ function Clock:schedFunc()
 	UIManager:setDirty(self)
 	-- reschedule
 	-- TODO: wait until next real minute shift
-	UIManager:scheduleIn(60, function() self:schedFunc() end)
+	UIManager:scheduleIn(1, function() self:schedFunc() end)
 end
 
 function Clock:onShow()
@@ -65,7 +65,7 @@ function Clock:getTextWidget()
 	return CenterContainer:new{
 		dimen = { w = 300, h = 25 },
 		TextWidget:new{
-			text = os.date("%H:%M"),
+			text = os.date("%H:%M:%S"),
 			face = Font:getFace("cfont", 12)
 		}
 	}

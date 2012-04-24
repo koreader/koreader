@@ -277,6 +277,17 @@ function HorizontalGroup:free()
 end
 
 --[[
+Dummy Widget that reserves horizontal space
+]]
+HorizontalSpan = Widget:new{
+	width = 0,
+}
+
+function HorizontalSpan:getSize()
+	return {w = self.width, h = 0}
+end
+
+--[[
 A Layout widget that puts objects under each other
 ]]
 VerticalGroup = WidgetContainer:new{
@@ -322,6 +333,17 @@ function VerticalGroup:free()
 	self._size = nil
 	self._offsets = {}
 	WidgetContainer.free(self)
+end
+
+--[[
+Dummy Widget that reserves vertical space
+]]
+VerticalSpan = Widget:new{
+	width = 0,
+}
+
+function VerticalSpan:getSize()
+	return {w = 0, h = self.width}
 end
 
 --[[
