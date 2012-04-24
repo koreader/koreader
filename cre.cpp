@@ -269,6 +269,7 @@ static int setFontFace(lua_State *L) {
 	const char *face = luaL_checkstring(L, 2);
 
 	doc->text_view->setDefaultFontFace(lString8(face));
+	//fontMan->SetFallbackFontFace(lString8(face));
 
 	return 0;
 }
@@ -364,6 +365,7 @@ static int cursorRight(lua_State *L) {
 	//LVDocView *tv = doc->text_view;
 
 	//ldomXPointer p = tv->getCurrentPageMiddleParagraph();
+	//lString16 s = p.getText();
 	//lString16 s = p.toString();
 	//printf("~~~~~~~~~~%s\n", UnicodeToLocal(s).c_str());
 		
@@ -378,7 +380,6 @@ static int cursorRight(lua_State *L) {
 	//LVPageWordSelector sel(doc->text_view);
 	//doc->text_view->doCommand(DCMD_SELECT_FIRST_SENTENCE);
 	//sel.moveBy(DIR_RIGHT, 2);
-	//sel.updateSelection();
 	//printf("---------------- %s\n", UnicodeToLocal(sel.getSelectedWord()->getText()).c_str());
 
 	return 0;

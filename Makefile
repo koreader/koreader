@@ -71,8 +71,7 @@ DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
-# we don't support dictionary lookup corrently
-			#$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
+			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			$(MUPDFLIBDIR)/libopenjpeg.a \
 			$(MUPDFLIBDIR)/libjbig2dec.a \
@@ -138,6 +137,10 @@ fetchthirdparty:
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
 	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
+	# CREngine patch: change child nodes' type face
+	# @TODO replace this dirty hack  24.04 2012 (houqp)
+	cd kpvcrlib/crengine/crengine/src && \
+		patch -N -p0 < ../../../lvrend_node_type_face.patch || true
 	unzip mupdf-thirdparty.zip -d mupdf
 	# dirty patch in MuPDF's thirdparty liby for CREngine
 	cd mupdf/thirdparty/jpeg-*/ && \

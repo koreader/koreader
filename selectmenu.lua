@@ -134,13 +134,10 @@ function SelectMenu:addAllCommands()
 	self.commands:add(KEY_FW_PRESS, nil, "",
 		"select menu item",
 		function(sm)
-			if sm.last_shortcut < 30 then
-				if sm.items == 0 then
-					return "break"
-				else
-					self.selected_item = (sm.perpage * (sm.page - 1)
-											+ sm.current)
-				end
+			if sm.items == 0 then
+				return "break"
+			else
+				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
 			end
 		end
 	)
@@ -282,9 +279,9 @@ function SelectMenu:choose(ypos, height)
 
 						renderUtf8Text(fb.bb, 50, y, cface,
 							self.item_array[i], true)
-					end -- EOF if i <= self.items
-				end -- EOF for
-			end -- EOF if
+					end -- if i <= self.items
+				end -- for c=1, self.perpage
+			end -- if self.items == 0
 
 			-- draw footer
 			y = ypos + self.title_H + (self.spacing * self.perpage)
