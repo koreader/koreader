@@ -124,17 +124,25 @@ Widget that shows a message and OK/Cancel buttons
 ]]
 ConfirmBox = FocusManager:new{
 	text = "no text",
+	width = nil,
+	ok_text = "OK",
+	cancel_text = "Cancel",
 }
 
 function ConfirmBox:init()
+	-- calculate box width on the fly if not given
+	if not self.width then
+		self.width = G_width - 200
+	end
+	-- build bottons
 	self.key_events.Close = { {{"Home","Back"}}, doc = "cancel" }
 	self.key_events.Select = { {{"Enter","Press"}}, doc = "chose selected option" }
 
 	local ok_button = Button:new{
-		text = "OK"
+		text = self.ok_text,
 	}
 	local cancel_button = Button:new{
-		text = "Cancel",
+		text = self.cancel_text,
 		preselect = true
 	}
 
@@ -153,17 +161,18 @@ function ConfirmBox:init()
 				HorizontalSpan:new{ width = 10 },
 				VerticalGroup:new{
 					align = "left",
-					TextWidget:new{
+					TextBoxWidget:new{
 						text = self.text,
-						face = Font:getFace("cfont", 30)
+						face = Font:getFace("cfont", 30),
+						width = self.width,
 					},
+					VerticalSpan:new{ width = 10 },
 					HorizontalGroup:new{
 						ok_button,
 						Widget:new{ dimen = { w = 10, h = 0 } },
 						cancel_button
 					}
 				}
-					
 			}
 		}
 	}
