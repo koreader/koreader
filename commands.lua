@@ -166,6 +166,7 @@ function Commands:new(obj)
 		"toggle screen saver",
 		function()
 			Screen:saveCurrentBB()
+			InfoMessage:show("Going into screensaver... ", 0)
 			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 			fb:setOrientation(Screen.native_rotation_mode)
 			util.sleep(1)
