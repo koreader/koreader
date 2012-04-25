@@ -52,7 +52,7 @@ function Clock:schedFunc()
 	self[1] = self:getTextWidget()
 	UIManager:setDirty(self)
 	-- reschedule
-	-- TODO: wait until next real minute shift
+	-- TODO: wait until next real second shift
 	UIManager:scheduleIn(1, function() self:schedFunc() end)
 end
 
@@ -71,7 +71,15 @@ function Clock:getTextWidget()
 	}
 end
 
+quiz = ConfirmBox:new{
+	text = "Tell me the truth, isn't it COOL?!",
+	width = 300,
+	ok_text = "Yes, of course.",
+	cancel_text = "No, it's ugly.",
+}
+quiz:init()
 
 UIManager:show(Background:new())
 UIManager:show(Clock:new())
+UIManager:show(quiz)
 UIManager:run()
