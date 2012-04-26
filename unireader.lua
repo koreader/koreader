@@ -2080,20 +2080,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			local bbox = unireader.cur_bbox
 			debug("bbox", bbox)
-			local x,y = unireader:screenOffset()
-			x = x + bbox["x0"] * self.globalzoom
-			y = y + bbox["y0"] * self.globalzoom
-			local w = ( bbox["x1"] - bbox["x0"] ) * self.globalzoom
-			local h = ( bbox["y1"] - bbox["y0"] ) * self.globalzoom
-			debug("inxertRect",x,y,w,h)
-			if x < 0 then
-				w = w + x -- x is negative!
-				x = 0
-			end
-			if y < 0 then
-				h = h + y
-				y = 0
-			end
+			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
 			debug("inxertRect",x,y,w,h)
 			fb.bb:invertRect( x,y, w,h )
 			fb:refresh(0)
