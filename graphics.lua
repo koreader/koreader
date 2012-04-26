@@ -1,10 +1,31 @@
+--[[
+Draw a border
 
-blitbuffer.paintBorder = function (bb, x, y, w, h, bw, c)
-	bb:paintRect(x, y, w, bw, c)
-	bb:paintRect(x, y+h-bw, w, bw, c)
-	bb:paintRect(x, y+bw, bw, h - 2*bw, c)
-	bb:paintRect(x+w-bw, y+bw, bw, h - 2*bw, c)
+@x:  start position in x axis
+@y:  start position in y axis
+@w:  width of the border
+@h:  height of the border
+@bw: line width of the border
+@c:  color for loading bar
+@r:  radius of for border's corner (nil or 0 means right corner border)
+--]]
+function blitbuffer.paintBorder(bb, x, y, w, h, bw, c, r)
+	if not r or r == 0 then
+		bb:paintRect(x, y, w, bw, c)
+		bb:paintRect(x, y+h-bw, w, bw, c)
+		bb:paintRect(x, y+bw, bw, h - 2*bw, c)
+		bb:paintRect(x+w-bw, y+bw, bw, h - 2*bw, c)
+	else
+		if h < 2*r then h = 2 * r end
+		if w < 2*r then w = 2 * r end
+		bb:paintRoundedCorner(x, y, w, h, bw, r, c)
+		bb:paintRect(r+x, y, w-2*r, bw, c)
+		bb:paintRect(r+x, y+h-bw, w-2*r, bw, c)
+		bb:paintRect(x, r+y, bw, h-2*r, c)
+		bb:paintRect(x+w-bw, r+y, bw, h-2*r, c)
+	end
 end
+
 
 
 --[[
@@ -19,8 +40,8 @@ Draw a progress bar according to following args:
 @load_percent: progress in percent
 @c:  color for loading bar
 --]]
-blitbuffer.progressBar = function (bb, x, y, w, h, 
-									load_m_w, load_m_h, load_percent, c)
+function blitbuffer.progressBar(bb, x, y, w, h, 
+								load_m_w, load_m_h, load_percent, c)
 	if load_m_h*2 > h then
 		load_m_h = h/2
 	end
