@@ -376,8 +376,8 @@ function CREReader:adjustCreReaderCommands()
 
 			local item_no = fonts_menu:choose(0, G_height)
 			debug(face_list[item_no])
-			Screen:restoreFromSavedBB()
 			if item_no then
+				Screen:restoreFromSavedBB()
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
