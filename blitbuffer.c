@@ -20,6 +20,20 @@
 #include <string.h>
 #include "blitbuffer.h"
 
+
+inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
+	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
+
+	if(x % 2 == 0) {
+		*dstptr &= 0x0F;
+		*dstptr |= c << 4;
+	} else {
+		*dstptr &= 0xF0;
+		*dstptr |= c;
+	}
+	return 0;
+}
+
 int newBlitBufferNative(lua_State *L, int w, int h, BlitBuffer **newBuffer) {
 	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
 	luaL_getmetatable(L, "blitbuffer");
@@ -78,7 +92,6 @@ static int blitFullToBuffer(lua_State *L) {
 	}
 
 	memcpy(dst->data, src->data, src->pitch * src->h);
-
 	return 0;
 }
 
@@ -485,6 +498,172 @@ static int dimRect(lua_State *L) {
 	return 0;
 }
 
+/*
+ * @r: radius
+ * @c: color of the line to draw
+ * @w: width of the line to draw
+ */
+static int paintCircle(lua_State *L) {
+	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	int center_x = luaL_checkint(L, 2);
+	int center_y = luaL_checkint(L, 3);
+	int r = luaL_checkint(L, 4);
+	int c = luaL_optint(L, 5, 15);
+	int w = luaL_optint(L, 6, r);
+
+	if( (center_x + r > dst->h) || (center_x - r < 0) ||
+		(center_y + r > dst->w) || (center_y - r < 0) ||
+		(r == 0)) {
+		return 0;
+	}
+	if(w > r) {
+		w = r;
+	}
+
+
+	int tmp_y;
+	/* for outer circle */
+	int x = 0, y = r;	
+	float delta = 5/4 - r;
+	/* for inter circle */
+	int r2 = r - w;
+	int x2 = 0, y2 = r2;	
+	float delta2 = 5/4 - r;
+
+	/* draw two axles */
+	for(tmp_y = r; tmp_y > r2; tmp_y--) {
+		setPixel(dst, center_x+0, center_y+tmp_y, c);
+		setPixel(dst, center_x-0, center_y-tmp_y, c);
+		setPixel(dst, center_x+tmp_y, center_y+0, c);
+		setPixel(dst, center_x-tmp_y, center_y-0, c);
+	}
+
+	while(x < y) {
+		/* decrease y if we are out of circle */
+		x++;
+		if (delta > 0) {
+			y--;
+			delta = delta + 2*x - 2*y + 2;
+		} else {
+			delta = delta + 2*x + 1;
+		}
+
+		/* inner circle finished drawing, increase y linearly for filling */
+		if(x2 > y2) {
+			y2++;
+			x2++;
+		} else {
+			x2++;
+			if (delta2 > 0) {
+				y2--;
+				delta2 = delta2 + 2*x2 - 2*y2 + 2;
+			} else {
+				delta2 = delta2 + 2*x2 + 1;
+			}
+		}
+
+		for(tmp_y = y; tmp_y > y2; tmp_y--) {
+			setPixel(dst, center_x+x, center_y+tmp_y, c);
+			setPixel(dst, center_x+tmp_y, center_y+x, c);
+
+			setPixel(dst, center_x+tmp_y, center_y-x, c);
+			setPixel(dst, center_x+x, center_y-tmp_y, c);
+
+			setPixel(dst, center_x-x, center_y-tmp_y, c);
+			setPixel(dst, center_x-tmp_y, center_y-x, c);
+
+			setPixel(dst, center_x-tmp_y, center_y+x, c);
+			setPixel(dst, center_x-x, center_y+tmp_y, c);
+		}
+	}
+	if(r == w) {
+		setPixel(dst, center_x, center_y, c);
+	}
+	return 0;
+}
+
+static int paintRoundedCorner(lua_State *L) {
+	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	int off_x = luaL_checkint(L, 2);
+	int off_y = luaL_checkint(L, 3);
+	int w = luaL_checkint(L, 4);
+	int h = luaL_checkint(L, 5);
+	int bw = luaL_checkint(L, 6);
+	int r = luaL_checkint(L, 7);
+	int c = luaL_optint(L, 8, 15);
+
+	if((2*r > h) || (2*r > w) || (r == 0)) {
+		return 0;
+	}
+	if(r > h) {
+		r = h;
+	}
+	if(r > w) {
+		r = w;
+	}
+	if(bw > r) {
+		bw = r;
+	}
+
+
+	int tmp_y;
+	/* for outer circle */
+	int x = 0, y = r;	
+	float delta = 5/4 - r;
+	/* for inter circle */
+	int r2 = r - bw;
+	int x2 = 0, y2 = r2;	
+	float delta2 = 5/4 - r;
+
+	/* draw two axles */
+	/*for(tmp_y = r; tmp_y > r2; tmp_y--) {*/
+		/*setPixel(dst, (w-r)+off_x+0, (h-r)+off_y+tmp_y-1, c);*/
+		/*setPixel(dst, (w-r)+off_x-0, (r)+off_y-tmp_y, c);*/
+		/*setPixel(dst, (w-r)+off_x+tmp_y, (h-r)+off_y+0, c);*/
+		/*setPixel(dst, (r)+off_x-tmp_y, (h-r)+off_y-0-1, c);*/
+	/*}*/
+
+	while(x < y) {
+		/* decrease y if we are out of circle */
+		x++;
+		if (delta > 0) {
+			y--;
+			delta = delta + 2*x - 2*y + 2;
+		} else {
+			delta = delta + 2*x + 1;
+		}
+
+		/* inner circle finished drawing, increase y linearly for filling */
+		if(x2 > y2) {
+			y2++;
+			x2++;
+		} else {
+			x2++;
+			if (delta2 > 0) {
+				y2--;
+				delta2 = delta2 + 2*x2 - 2*y2 + 2;
+			} else {
+				delta2 = delta2 + 2*x2 + 1;
+			}
+		}
+
+		for(tmp_y = y; tmp_y > y2; tmp_y--) {
+			setPixel(dst, (w-r)+off_x+x-1, (h-r)+off_y+tmp_y-1, c);
+			setPixel(dst, (w-r)+off_x+tmp_y-1, (h-r)+off_y+x-1, c);
+
+			setPixel(dst, (w-r)+off_x+tmp_y-1, (r)+off_y-x, c);
+			setPixel(dst, (w-r)+off_x+x-1, (r)+off_y-tmp_y, c);
+
+			setPixel(dst, (r)+off_x-x, (r)+off_y-tmp_y, c);
+			setPixel(dst, (r)+off_x-tmp_y, (r)+off_y-x, c);
+
+			setPixel(dst, (r)+off_x-tmp_y, (h-r)+off_y+x-1, c);
+			setPixel(dst, (r)+off_x-x, (h-r)+off_y+tmp_y-1, c);
+		}
+	}
+	return 0;
+}
+
 static const struct luaL_Reg blitbuffer_func[] = {
 	{"new", newBlitBuffer},
 	{NULL, NULL}
@@ -497,6 +676,8 @@ static const struct luaL_Reg blitbuffer_meth[] = {
 	{"addblitFrom", addblitToBuffer},
 	{"blitFullFrom", blitFullToBuffer},
 	{"paintRect", paintRect},
+	{"paintCircle", paintCircle},
+	{"paintRoundedCorner", paintRoundedCorner},
 	{"invertRect", invertRect},
 	{"dimRect", dimRect},
 	{"free", freeBlitBuffer},
