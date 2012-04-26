@@ -317,9 +317,12 @@ function CREReader:adjustCreReaderCommands()
 		"increase/decrease font size",
 		function(self)
 			local delta = 1
+			local change = "increase"
 			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
 				delta = -1
+				change = "decrease"
 			end
+			InfoMessage:show(change.." font size", 0)
 			self.doc:zoomFont(delta)
 			self:redrawCurrentPage()
 		end
