@@ -1792,7 +1792,7 @@ function UniReader:inputLoop()
 	while 1 do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			local secs, usecs = util.gettime()
 			keydef = Keydef:new(ev.code, getKeyModifier())
 			debug("key pressed:", tostring(keydef))
