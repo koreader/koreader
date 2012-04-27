@@ -1810,6 +1810,13 @@ function UniReader:inputLoop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
+
+			if ev.value == EVENT_VALUE_KEY_REPEAT then
+				self.rcount = 0
+				debug("prevent full screen refresh", self.rcount)
+			end
+		else
+			debug("ignored ev ",ev)
 		end
 	end
 
