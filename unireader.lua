@@ -556,7 +556,7 @@ function UniReader:startHighLightMode()
 	while running do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			if ev.code == KEY_FW_LEFT and not is_meet_start then
 				is_meet_end = false
 				l.new, w.new, is_meet_start = _prevGap(t, l.cur, w.cur)
@@ -780,7 +780,7 @@ function UniReader:startHighLightMode()
 	while running do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			if ev.code == KEY_FW_LEFT then
 				is_meet_end = false
 				if not is_meet_start then
