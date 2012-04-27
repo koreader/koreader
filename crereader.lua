@@ -310,39 +310,38 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
 
 	-- overwrite commands
-	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, MOD_SHIFT, ">",
-		"increase font size",
+	
+	self.commands:addGroup(MOD_SHIFT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
+		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
+		"increase/decrease font size",
 		function(self)
-			self.doc:zoomFont(1)
-			self:redrawCurrentPage()
-		end
-	)
-	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, MOD_SHIFT, "<",
-		"decrease font size",
-		function(self)
-			self.doc:zoomFont(-1)
-			self:redrawCurrentPage()
-		end
-	)
-	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, MOD_ALT, ">",
-		"increase line spacing",
-		function(self)
-			self.line_space_percent = self.line_space_percent + 10
-			if self.line_space_percent > 200 then
-				self.line_space_percent = 200
+			local delta = 1
+			local change = "increase"
+			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
+				delta = -1
+				change = "decrease"
 			end
-			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
-			debug("line spacing set to", self.line_space_percent)
-			self.doc:setDefaultInterlineSpace(self.line_space_percent)
+			InfoMessage:show(change.." font size", 0)
+			self.doc:zoomFont(delta)
 			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, MOD_ALT, "<",
-		"decrease line spacing",
+	self.commands:addGroup(MOD_ALT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
+		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
+		"increase/decrease line spacing",
 		function(self)
-			self.line_space_percent = self.line_space_percent - 10
-			if self.line_space_percent < 100 then
-				self.line_space_percent = 100
+			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
+				self.line_space_percent = self.line_space_percent - 10
+				if self.line_space_percent < 100 then
+					self.line_space_percent = 100
+				end
+			else
+				self.line_space_percent = self.line_space_percent + 10
+				if self.line_space_percent > 200 then
+					self.line_space_percent = 200
+				end
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			debug("line spacing set to", self.line_space_percent)
@@ -378,11 +377,11 @@ function CREReader:adjustCreReaderCommands()
 			local item_no = fonts_menu:choose(0, G_height)
 			debug(face_list[item_no])
 			if item_no then
+				Screen:restoreFromSavedBB()
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			end
-			Screen:restoreFromSavedBB()
 			self:redrawCurrentPage()
 		end
 	)
