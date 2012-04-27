@@ -1792,7 +1792,7 @@ function UniReader:inputLoop()
 	while 1 do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			local secs, usecs = util.gettime()
 			keydef = Keydef:new(ev.code, getKeyModifier())
 			debug("key pressed:", tostring(keydef))
@@ -1810,6 +1810,13 @@ function UniReader:inputLoop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
+
+			if ev.value == EVENT_VALUE_KEY_REPEAT then
+				self.rcount = 0
+				debug("prevent full screen refresh", self.rcount)
+			end
+		else
+			debug("ignored ev ",ev)
 		end
 	end
 
