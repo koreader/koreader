@@ -40,6 +40,7 @@ UniReader = {
 	-- size of current page for current zoom level in pixels
 	cur_full_width = 0,
 	cur_full_height = 0,
+	cur_bbox = {}, -- current page bbox
 	offset_x = 0,
 	offset_y = 0,
 	dest_x = 0, -- real offset_x when it's smaller than screen, so it's centered
@@ -1280,6 +1281,15 @@ function UniReader:setzoom(page, preCache)
 	if not preCache then -- save current page fullsize
 		self.cur_full_width = self.fullwidth
 		self.cur_full_height = self.fullheight
+
+		self.cur_bbox = {
+			["x0"] = x0,
+			["y0"] = y0,
+			["x1"] = x1,
+			["y1"] = y1,
+		}
+		debug("cur_bbox", self.cur_bbox)
+
 	end
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
 	self.min_offset_y = fb.bb:getHeight() - self.fullheight
@@ -2064,6 +2074,16 @@ function UniReader:addAllCommands()
 				showInfoMsgWithDelay("Manual crop disabled.", 2000, 1)
 			end
 			debug("bbox override", unireader.bbox.enabled);
+		end)
+	self.commands:add(KEY_X,nil,"X",
+		"invert page bbox",
+		function(unireader)
+			local bbox = unireader.cur_bbox
+			debug("bbox", bbox)
+			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
+			debug("inxertRect",x,y,w,h)
+			fb.bb:invertRect( x,y, w,h )
+			fb:refresh(0)
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
 		"toggle info box",
