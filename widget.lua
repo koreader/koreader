@@ -124,6 +124,7 @@ FrameContainer = WidgetContainer:new{
 	background = nil,
 	color = 15,
 	margin = 0,
+	radius = 0,
 	bordersize = 2,
 	padding = 5,
 }
@@ -145,7 +146,7 @@ function FrameContainer:paintTo(bb, x, y)
 	if self.bordersize > 0 then
 		bb:paintBorder(x + self.margin, y + self.margin,
 			my_size.w - self.margin * 2, my_size.h - self.margin * 2,
-			self.bordersize, self.color)
+			self.bordersize, self.color, self.radius)
 	end
 	if self[1] then
 		self[1]:paintTo(bb,
@@ -265,7 +266,7 @@ function TextBoxWidget:_render()
 		end
 		y = y + line_height_px + font_height
 	end
-	-- if text is only one line, shrink to text's width
+	-- if text is shorter than one line, shrink to text's width
 	if #v_list == 1 then
 		self.width = pen_x
 	end
