@@ -127,6 +127,8 @@ ConfirmBox = FocusManager:new{
 	width = nil,
 	ok_text = "OK",
 	cancel_text = "Cancel",
+	ok_callback = function() end,
+	cancel_callback = function() end,
 }
 
 function ConfirmBox:init()
@@ -169,8 +171,8 @@ function ConfirmBox:init()
 					VerticalSpan:new{ width = 10 },
 					HorizontalGroup:new{
 						ok_button,
-						Widget:new{ dimen = { w = 10, h = 0 } },
-						cancel_button
+						HorizontalSpan:new{ width = 10 },
+						cancel_button,
 					}
 				}
 			}
@@ -179,12 +181,18 @@ function ConfirmBox:init()
 end
 
 function ConfirmBox:onClose()
+	self:cancel_callback()
 	UIManager:close(self)
 	return true
 end
 
 function ConfirmBox:onSelect()
-	print("selected:", self.selected.x)
+	debug("selected:", self.selected.x)
+	if self.selected.x == 1 then
+		self:ok_callback()
+	else
+		self:cancel_callback()
+	end
 	UIManager:close(self)
 	return true
 end
@@ -217,9 +225,7 @@ function InfoMessage:init()
 				ImageWidget:new{
 					file = "resources/info-i.png"
 				},
-				Widget:new{
-					dimen = { w = 10, h = 0 }
-				},
+				HorizontalSpan:new{ width = 10 },
 				TextWidget:new{
 					text = self.text,
 					face = Font:getFace("cfont", 30)
