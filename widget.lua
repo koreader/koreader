@@ -256,14 +256,18 @@ function TextBoxWidget:_render()
 	local h = (font_height + line_height_px) * #v_list - line_height_px
 	self._bb = Blitbuffer.new(self.width, h)
 	local y = font_height
-
+	local pen_x = 0
 	for _,l in ipairs(v_list) do
-		local pen_x = 0
+		pen_x = 0
 		for _,w in ipairs(l) do
 			renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true)
 			pen_x = pen_x + w.width + space_w
 		end
 		y = y + line_height_px + font_height
+	end
+	-- if text is only one line, shrink to text's width
+	if #v_list == 1 then
+		self.width = pen_x
 	end
 end
 
