@@ -183,6 +183,8 @@ Input = {
 	-- these groups are just helpers:
 	group = {
 		Cursor = { "Up", "Down", "Left", "Right" },
+		PgFwd = { "RPgFwd", "LPgFwd" },
+		PgBack = { "RPgBack", "LPgBack" },
 		Alphabet = {
 			"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 			"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
