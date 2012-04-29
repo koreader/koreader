@@ -71,15 +71,42 @@ function Clock:getTextWidget()
 	}
 end
 
-quiz = ConfirmBox:new{
+Quiz = ConfirmBox:new{
 	text = "Tell me the truth, isn't it COOL?!",
 	width = 300,
 	ok_text = "Yes, of course.",
 	cancel_text = "No, it's ugly.",
+	cancel_callback = function()
+		UIManager:show(InfoMessage:new{
+			text="You liar!",
+		})
+	end,
 }
-quiz:init()
+
+menu_items = {
+	{text = "item1"},
+	{text = "item2"},
+	{text = "This is a very very log item whose length should exceed the width of the menu."},
+	{text = "item3"},
+	{text = "item4"},
+	{text = "item5"},
+	{text = "item6"},
+	{text = "item7"},
+	{text = "item8"},
+	{text = "item9"},
+	{text = "item10"},
+	{text = "item11"},
+	{text = "item12"},
+}
+M = Menu:new{
+	title = "Test Menu",
+	item_table = menu_items,
+	width = 500,
+	height = 400,
+}
 
 UIManager:show(Background:new())
 UIManager:show(Clock:new())
-UIManager:show(quiz)
+UIManager:show(M)
+UIManager:show(Quiz)
 UIManager:run()
