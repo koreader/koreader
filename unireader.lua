@@ -150,6 +150,19 @@ function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
 end
 
 ----------------------------------------------------
+-- Given coordinates on the screen return positioni
+-- in original page
+----------------------------------------------------
+function UniReader:screenToPageTransform(x, y)
+	local x_o,y_o = self:screenOffset()
+	local x_p,y_p =
+		( x - x_o ) / self.globalzoom,
+		( y - y_o ) / self.globalzoom
+	debug("screenToPage", x,y, "offset", x_o,y_o, "page", x_p,y_p)
+	return x_p, y_p
+end
+
+----------------------------------------------------
 -- Given coordinates of four corners in original page
 -- size and return rectangular area in screen. You
 -- might want to call this when you want to draw stuff
@@ -2090,7 +2103,88 @@ function UniReader:addAllCommands()
 			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
 			debug("inxertRect",x,y,w,h)
 			fb.bb:invertRect( x,y, w,h )
-			fb:refresh(0)
+			fb:refresh(1)
+		end)
+	self.commands:add(KEY_X,MOD_SHIFT,"X",
+		"modify page bbox",
+		function(unireader)
+			local bbox = unireader.cur_bbox
+			debug("bbox", bbox)
+			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
+			local new_bbox = bbox
+			local x_s, y_s = x,y
+			running = "top-left"
+
+			Screen:saveCurrentBB()
+
+			fb.bb:invertRect( 0,y_s, G_width,3 )
+			fb.bb:invertRect( x_s,0, 3,G_height )
+			InfoMessage:show(running.." bbox");
+			fb:refresh(1)
+
+			while running do
+				local ev = input.saveWaitForEvent()
+				ev.code = adjustKeyEvents(ev)
+
+				if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+
+					fb.bb:invertRect( 0,y_s, G_width,3 )
+					fb.bb:invertRect( x_s,0, 3,G_height )
+
+					local x_o, y_o = 0,0
+					if ev.code == KEY_FW_LEFT then
+						x_o = -10
+					elseif ev.code == KEY_FW_RIGHT then
+						x_o =  10
+					elseif ev.code == KEY_FW_UP then
+						y_o = -10
+					elseif ev.code == KEY_FW_DOWN then
+						y_o =  10
+					elseif ev.code == KEY_FW_PRESS then
+						local p_x,p_y = unireader:screenToPageTransform(x_s,y_s)
+						if running == "top-left" then
+							new_bbox["x0"] = p_x
+							new_bbox["y0"] = p_y
+							debug("change top-left", bbox, "to", new_bbox)
+							running = "bottom-right"
+							Screen:restoreFromSavedBB()
+							InfoMessage:show(running.." bbox")
+							fb:refresh(1)
+							x_s = x+w
+							y_s = y+h
+						else
+							new_bbox["x1"] = p_x
+							new_bbox["y1"] = p_y
+							running = false
+						end
+					end
+
+					if running then
+						if x_s+x_o >= 0 and x_s+x_o <= G_width  then x_s = x_s + x_o end
+						if y_s+y_o >= 0 and y_s+y_o <= G_height then y_s = y_s + y_o end
+
+						fb.bb:invertRect( 0,y_s, G_width,3 )
+						fb.bb:invertRect( x_s,0, 3,G_height )
+
+						fb:refresh(1)
+					end
+				end
+
+			end
+
+			unireader.bbox[unireader.pageno] = new_bbox
+			unireader.bbox[unireader:oddEven(unireader.pageno)] = new_bbox
+			unireader.bbox.enabled = true
+			debug("crop bbox", bbox, "to", new_bbox)
+
+			Screen:restoreFromSavedBB()
+			x,y,w,h = unireader:getRectInScreen( new_bbox["x0"], new_bbox["y0"], new_bbox["x1"], new_bbox["y1"] )
+			fb.bb:invertRect( x,y, w,h )
+			--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
+			InfoMessage:show("new page bbox");
+			fb:refresh(1)
+
+			--unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
 		"toggle info box",
