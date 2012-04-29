@@ -2103,7 +2103,7 @@ function UniReader:addAllCommands()
 			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
 			debug("inxertRect",x,y,w,h)
 			fb.bb:invertRect( x,y, w,h )
-			fb:refresh(0)
+			fb:refresh(1)
 		end)
 	self.commands:add(KEY_X,MOD_SHIFT,"X",
 		"modify page bbox",
@@ -2120,7 +2120,7 @@ function UniReader:addAllCommands()
 			fb.bb:invertRect( 0,y_s, G_width,3 )
 			fb.bb:invertRect( x_s,0, 3,G_height )
 			InfoMessage:show(running.." bbox");
-			fb:refresh(0)
+			fb:refresh(1)
 
 			while running do
 				local ev = input.saveWaitForEvent()
@@ -2149,7 +2149,7 @@ function UniReader:addAllCommands()
 							running = "bottom-right"
 							Screen:restoreFromSavedBB()
 							InfoMessage:show(running.." bbox")
-							fb:refresh(0)
+							fb:refresh(1)
 							x_s = x+w
 							y_s = y+h
 						else
@@ -2166,7 +2166,7 @@ function UniReader:addAllCommands()
 						fb.bb:invertRect( 0,y_s, G_width,3 )
 						fb.bb:invertRect( x_s,0, 3,G_height )
 
-						fb:refresh(0)
+						fb:refresh(1)
 					end
 				end
 
@@ -2182,7 +2182,7 @@ function UniReader:addAllCommands()
 			fb.bb:invertRect( x,y, w,h )
 			--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
 			InfoMessage:show("new page bbox");
-			fb:refresh(0)
+			fb:refresh(1)
 
 			--unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
