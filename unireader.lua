@@ -2274,6 +2274,8 @@ function UniReader:addAllCommands()
 			InfoMessage:show("new page bbox");
 			fb:refresh(1)
 
+			self.rcount = self.rcountmax -- force next full refresh
+
 			--unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
