@@ -44,6 +44,30 @@ function clearGlyphCache()
 	glyphcache = {}
 end
 
+function getSubTextByWidth(text, face, width, kerning)
+	local pen_x = 0
+	local prevcharcode = 0
+	local char_list = {}
+	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+		if pen_x < width then
+			local charcode = util.utf8charcode(uchar)
+			local glyph = getGlyph(face, charcode)
+			if kerning and prevcharcode then
+				local kern = face.ftface:getKerning(prevcharcode, charcode)
+				pen_x = pen_x + kern
+			end
+			pen_x = pen_x + glyph.ax
+			if pen_x <= width then
+				prevcharcode = charcode
+				table.insert(char_list, uchar)
+			else
+				break
+			end
+		end
+	end
+	return table.concat(char_list)
+end
+
 function sizeUtf8Text(x, width, face, text, kerning)
 	if text == nil then
 		debug("sizeUtf8Text called without text");

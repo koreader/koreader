@@ -40,6 +40,7 @@ UniReader = {
 	-- size of current page for current zoom level in pixels
 	cur_full_width = 0,
 	cur_full_height = 0,
+	cur_bbox = {}, -- current page bbox
 	offset_x = 0,
 	offset_y = 0,
 	dest_x = 0, -- real offset_x when it's smaller than screen, so it's centered
@@ -54,7 +55,7 @@ UniReader = {
 	pan_by_page = false, -- using shift_[xy] or width/height
 	pan_x = 0, -- top-left offset of page when pan activated
 	pan_y = 0,
-	pan_margin = 20, -- horizontal margin for two-column zoom
+	pan_margin = 5, -- horizontal margin for two-column zoom (in pixels)
 	pan_overlap_vertical = 30,
 	show_overlap = 0,
 
@@ -555,7 +556,7 @@ function UniReader:startHighLightMode()
 	while running do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			if ev.code == KEY_FW_LEFT and not is_meet_start then
 				is_meet_end = false
 				l.new, w.new, is_meet_start = _prevGap(t, l.cur, w.cur)
@@ -779,7 +780,7 @@ function UniReader:startHighLightMode()
 	while running do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			if ev.code == KEY_FW_LEFT then
 				is_meet_end = false
 				if not is_meet_start then
@@ -1260,13 +1261,11 @@ function UniReader:setzoom(page, preCache)
 		or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
 		if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
-		local pg_margin = 0 -- margin scaled to page size
-		if margin > 0 then pg_margin = margin * 2 / self.globalzoom end
-		self.globalzoom = width / (x1 - x0 + pg_margin)
+		self.globalzoom = width / (x1 - x0 + margin)
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + margin
-		self.globalzoom = height / (y1 - y0 + pg_margin)
+		self.globalzoom = height / (y1 - y0 + margin)
 		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
-		self.globalzoom = width / (x1 - x0 + pg_margin) * 2
+		self.globalzoom = width / (x1 - x0 + margin) * 2
 		debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom);
 		self.globalzoom_mode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
@@ -1282,6 +1281,15 @@ function UniReader:setzoom(page, preCache)
 	if not preCache then -- save current page fullsize
 		self.cur_full_width = self.fullwidth
 		self.cur_full_height = self.fullheight
+
+		self.cur_bbox = {
+			["x0"] = x0,
+			["y0"] = y0,
+			["x1"] = x1,
+			["y1"] = y1,
+		}
+		debug("cur_bbox", self.cur_bbox)
+
 	end
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
 	self.min_offset_y = fb.bb:getHeight() - self.fullheight
@@ -1784,7 +1792,7 @@ function UniReader:inputLoop()
 	while 1 do
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
-		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			local secs, usecs = util.gettime()
 			keydef = Keydef:new(ev.code, getKeyModifier())
 			debug("key pressed:", tostring(keydef))
@@ -1802,6 +1810,13 @@ function UniReader:inputLoop()
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
+
+			if ev.value == EVENT_VALUE_KEY_REPEAT then
+				self.rcount = 0
+				debug("prevent full screen refresh", self.rcount)
+			end
+		else
+			debug("ignored ev ",ev)
 		end
 	end
 
@@ -2066,6 +2081,16 @@ function UniReader:addAllCommands()
 				showInfoMsgWithDelay("Manual crop disabled.", 2000, 1)
 			end
 			debug("bbox override", unireader.bbox.enabled);
+		end)
+	self.commands:add(KEY_X,nil,"X",
+		"invert page bbox",
+		function(unireader)
+			local bbox = unireader.cur_bbox
+			debug("bbox", bbox)
+			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
+			debug("inxertRect",x,y,w,h)
+			fb.bb:invertRect( x,y, w,h )
+			fb:refresh(0)
 		end)
 	self.commands:add(KEY_MENU,nil,"Menu",
 		"toggle info box",

@@ -85,8 +85,8 @@ end
 Containers will pass events to children or react on them themselves
 ]]
 function WidgetContainer:handleEvent(event)
-	-- call our own standard event handler
 	if not self:propagateEvent(event) then
+		-- call our own standard event handler
 		return Widget.handleEvent(self, event)
 	else
 		return true
@@ -124,6 +124,7 @@ FrameContainer = WidgetContainer:new{
 	background = nil,
 	color = 15,
 	margin = 0,
+	radius = 0,
 	bordersize = 2,
 	padding = 5,
 }
@@ -145,7 +146,7 @@ function FrameContainer:paintTo(bb, x, y)
 	if self.bordersize > 0 then
 		bb:paintBorder(x + self.margin, y + self.margin,
 			my_size.w - self.margin * 2, my_size.h - self.margin * 2,
-			self.bordersize, self.color)
+			self.bordersize, self.color, self.radius)
 	end
 	if self[1] then
 		self[1]:paintTo(bb,
@@ -167,9 +168,9 @@ TextWidget = Widget:new{
 }
 
 function TextWidget:_render()
-	local h = self.face.size * 1.5
+	local h = self.face.size * 1.3
 	self._bb = Blitbuffer.new(self._maxlength, h)
-	self._length = renderUtf8Text(self._bb, 0, h*.7, self.face, self.text, self.color)
+	self._length = renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, self.color)
 end
 
 function TextWidget:getSize()
@@ -256,14 +257,18 @@ function TextBoxWidget:_render()
 	local h = (font_height + line_height_px) * #v_list - line_height_px
 	self._bb = Blitbuffer.new(self.width, h)
 	local y = font_height
-
+	local pen_x = 0
 	for _,l in ipairs(v_list) do
-		local pen_x = 0
+		pen_x = 0
 		for _,w in ipairs(l) do
-			renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true)
+			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, true)
 			pen_x = pen_x + w.width + space_w
 		end
 		y = y + line_height_px + font_height
+	end
+	-- if text is shorter than one line, shrink to text's width
+	if #v_list == 1 then
+		self.width = pen_x
 	end
 end
 
@@ -454,13 +459,17 @@ UnderlineContainer = WidgetContainer:new{
 
 function UnderlineContainer:getSize()
 	local contentSize = self[1]:getSize()
+	if self.dimen then
+		if contentSize.w < self.dimen.w then contentSize.w = self.dimen.w end
+		if contentSize.h < self.dimen.h then contentSize.h = self.dimen.h end
+	end
 	return { w = contentSize.w, h = contentSize.h + self.linesize + self.padding }
 end
 
 function UnderlineContainer:paintTo(bb, x, y)
-	local contentSize = self[1]:getSize()
+	local contentSize = self:getSize()
 	self[1]:paintTo(bb, x, y)
-	bb:paintRect(x, y + contentSize.h + self.padding,
+	bb:paintRect(x, y + contentSize.h - self.linesize,
 		contentSize.w, self.linesize, self.color)
 end
 
