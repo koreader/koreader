@@ -2111,60 +2111,150 @@ function UniReader:addAllCommands()
 			local bbox = unireader.cur_bbox
 			debug("bbox", bbox)
 			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
+			debug("getRectInScreen",x,y,w,h)
+
 			local new_bbox = bbox
 			local x_s, y_s = x,y
-			running = "top-left"
+			local running_corner = "top-left"
 
 			Screen:saveCurrentBB()
 
-			fb.bb:invertRect( 0,y_s, G_width,3 )
-			fb.bb:invertRect( x_s,0, 3,G_height )
-			InfoMessage:show(running.." bbox");
+			fb.bb:invertRect( 0,y_s, G_width,1 )
+			fb.bb:invertRect( x_s,0, 1,G_height )
+			InfoMessage:show(running_corner.." bbox");
 			fb:refresh(1)
 
-			while running do
+			local last_direction = { x = 0, y = 0 }
+
+			while running_corner do
 				local ev = input.saveWaitForEvent()
+				debug("ev",ev)
 				ev.code = adjustKeyEvents(ev)
 
 				if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 
-					fb.bb:invertRect( 0,y_s, G_width,3 )
-					fb.bb:invertRect( x_s,0, 3,G_height )
+					fb.bb:invertRect( 0,y_s, G_width,1 )
+					fb.bb:invertRect( x_s,0, 1,G_height )
 
-					local x_o, y_o = 0,0
+					local step   = 10
+					local factor = 1
+
+					local x_direction, y_direction = 0,0
 					if ev.code == KEY_FW_LEFT then
-						x_o = -10
+						x_direction = -1
 					elseif ev.code == KEY_FW_RIGHT then
-						x_o =  10
+						x_direction =  1
 					elseif ev.code == KEY_FW_UP then
-						y_o = -10
+						y_direction = -1
 					elseif ev.code == KEY_FW_DOWN then
-						y_o =  10
+						y_direction =  1
 					elseif ev.code == KEY_FW_PRESS then
 						local p_x,p_y = unireader:screenToPageTransform(x_s,y_s)
-						if running == "top-left" then
+						if running_corner == "top-left" then
 							new_bbox["x0"] = p_x
 							new_bbox["y0"] = p_y
 							debug("change top-left", bbox, "to", new_bbox)
-							running = "bottom-right"
+							running_corner = "bottom-right"
 							Screen:restoreFromSavedBB()
-							InfoMessage:show(running.." bbox")
+							InfoMessage:show(running_corner.." bbox")
 							fb:refresh(1)
 							x_s = x+w
 							y_s = y+h
 						else
 							new_bbox["x1"] = p_x
 							new_bbox["y1"] = p_y
-							running = false
+							running_corner = false
 						end
+					elseif ev.code >= KEY_Q and ev.code <= KEY_P then
+						factor = ev.code - KEY_Q + 1
+						x_direction = last_direction["x"]
+						y_direction = last_direction["y"]
+						debug("factor",factor,"deltas",x_direction,y_direction)
+					elseif ev.code >= KEY_A and ev.code <= KEY_L then
+						factor = ev.code - KEY_A + 11
+						x_direction = last_direction["x"]
+						y_direction = last_direction["y"]
+					elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+						factor = ev.code - KEY_Z + 20
+						x_direction = last_direction["x"]
+						y_direction = last_direction["y"]
+					elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
+						running_corner = false
 					end
 
-					if running then
+					debug("factor",factor,"deltas",x_direction,y_direction)
+
+					if running_corner then
+						local x_o = x_direction * step * factor
+						local y_o = y_direction * step * factor
+						debug("move slider",x_o,y_o)
 						if x_s+x_o >= 0 and x_s+x_o <= G_width  then x_s = x_s + x_o end
 						if y_s+y_o >= 0 and y_s+y_o <= G_height then y_s = y_s + y_o end
 
-						fb.bb:invertRect( 0,y_s, G_width,3 )
-						fb.bb:invertRect( x_s,0, 3,G_height )
+						if x_direction ~= 0 or y_direction ~= 0 then
+							Screen:restoreFromSavedBB()
+						end
+
+						fb.bb:invertRect( 0,y_s, G_width,1 )
+						fb.bb:invertRect( x_s,0, 1,G_height )
+
+						if x_direction or y_direction then
+							last_direction = { x = x_direction, y = y_direction }
+							debug("last_direction",last_direction)
+
+							-- FIXME partial duplicate of SelectMenu.item_shortcuts
+							local keys = {
+								"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
+								"A", "S", "D", "F", "G", "H", "J", "K", "L",
+								"Z", "X", "C", "V", "B", "N", "M",
+							}
+
+							local max = 0
+							if x_direction == 1 then
+								max = G_width - x_s
+							elseif x_direction == -1 then
+								max = x_s
+							elseif y_direction == 1 then
+								max = G_height - y_s
+							elseif y_direction == -1 then
+								max = y_s
+							else
+								print("ERROR: unknown direction!")
+							end
+
+							max = max / step
+							if max > #keys then max = #keys end
+
+							local face = Font:getFace("cfont", 10)
+
+							for i = 1, max, 1 do
+								local key = keys[i]
+								local tick = i * step * x_direction
+								if x_direction ~= 0 then
+									local tick = i * step * x_direction
+									debug("x tick",i,tick,key)
+									if running_corner == "top-left" then -- ticks must be inside page
+										fb.bb:invertRect(     x_s+tick, y_s, 1, math.abs(tick))
+									else
+										fb.bb:invertRect(     x_s+tick, y_s-math.abs(tick), 1, math.abs(tick))
+									end
+									if x_direction < 0 then tick = tick - step end
+									tick = tick - step * x_direction / 2
+									renderUtf8Text(fb.bb, x_s+tick+3, y_s+3, face, key)
+								else
+									local tick = i * step * y_direction
+									debug("y tick",i,tick,key)
+									if running_corner == "top-left" then -- ticks must be inside page
+										fb.bb:invertRect(     x_s, y_s+tick, math.abs(tick),1)
+									else
+										fb.bb:invertRect(     x_s-math.abs(tick), y_s+tick, math.abs(tick),1)
+									end
+									if y_direction > 0 then tick = tick + step end
+									tick = tick - step * y_direction / 2
+									renderUtf8Text(fb.bb, x_s-3, y_s+tick-3, face, key)
+								end
+							end
+						end
 
 						fb:refresh(1)
 					end
@@ -2183,6 +2273,8 @@ function UniReader:addAllCommands()
 			--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
 			InfoMessage:show("new page bbox");
 			fb:refresh(1)
+
+			self.rcount = self.rcountmax -- force next full refresh
 
 			--unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
