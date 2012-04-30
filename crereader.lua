@@ -37,6 +37,7 @@ function CREReader:open(filename)
 	end
 
 	-- detect file type for documents inside zip file
+	-- @TODO do the detection after the file is unzipped  30.04 2012 (houqp)
 	if file_type == "zip" then
 		-- store filename without zip-extention to fn
 		local fn = string.lower(string.sub(filename,0,-4))

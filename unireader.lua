@@ -2402,6 +2402,17 @@ function UniReader:addAllCommands()
 			unireader:goto(unireader.pageno)
 		end
 	)
+	self.commands:add(KEY_P, MOD_SHIFT, "P",
+	"make screenshot",
+	function(unireader)
+		--@TODO convert bitmap to png or jpeg  30.04 2012 (houqp)
+		os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
+		local d = os.date("%Y%m%d%H%M%S")
+		InfoMessage:show("making screenshot...", 1)
+		os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+		unireader:redrawCurrentPage()
+	end 
+	)
 	-- commands.map is very large, impacts startup performance on device
 	--debug("defined commands "..dump(self.commands.map))
 end
