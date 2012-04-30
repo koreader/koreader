@@ -141,7 +141,7 @@ function FrameContainer:paintTo(bb, x, y)
 	local my_size = self:getSize()
 
 	if self.background then
-		bb:paintRect(x, y, my_size.w, my_size.h, self.background)
+		bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.background, self.radius)
 	end
 	if self.bordersize > 0 then
 		bb:paintBorder(x + self.margin, y + self.margin,
