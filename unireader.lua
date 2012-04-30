@@ -1683,6 +1683,10 @@ function UniReader:showJumpHist()
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
 			self:goto(jump_item.page, true)
+			-- set new head if we reached the top of backward stack
+			if self.jump_history.cur == #self.jump_history then
+				self.jump_history.cur = self.jump_history.cur + 1
+			end
 		else
 			self:redrawCurrentPage()
 		end
@@ -1888,7 +1892,15 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
 		function(unireader)
-			local prev_jump_no = unireader.jump_history.cur - 1
+			local prev_jump_no = 0
+			if unireader.jump_history.cur > #unireader.jump_history then
+				-- if cur points to head, put current page in history
+				unireader:addJump(self.pageno)
+				prev_jump_no = unireader.jump_history.cur - 2
+			else
+				prev_jump_no = unireader.jump_history.cur - 1
+			end
+
 			if prev_jump_no >= 1 then
 				unireader.jump_history.cur = prev_jump_no
 				unireader:goto(unireader.jump_history[prev_jump_no].page, true)
@@ -1903,6 +1915,10 @@ function UniReader:addAllCommands()
 			if next_jump_no <= #self.jump_history then
 				unireader.jump_history.cur = next_jump_no
 				unireader:goto(unireader.jump_history[next_jump_no].page, true)
+				-- set new head if we reached the top of backward stack
+				if unireader.jump_history.cur == #unireader.jump_history then
+					unireader.jump_history.cur = unireader.jump_history.cur + 1
+				end
 			else
 				showInfoMsgWithDelay("Already last jump!", 2000, 1)
 			end
