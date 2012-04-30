@@ -97,7 +97,6 @@ function InputBox:delChar()
 	fb.bb:paintRect(self.input_cur_x, self.input_start_y-19,
 									self.fwidth, self.fheight, self.input_bg)
 	fb:refresh(1, self.input_cur_x, self.input_start_y-19, self.fwidth, self.fheight)
-	self.input_string = self.input_string:sub(0,-2)
 
 	-- draw new cursor
 	self.cursor:moveHorizontal(-self.fwidth)
