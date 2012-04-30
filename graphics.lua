@@ -16,13 +16,35 @@ function blitbuffer.paintBorder(bb, x, y, w, h, bw, c, r)
 		bb:paintRect(x, y+bw, bw, h - 2*bw, c)
 		bb:paintRect(x+w-bw, y+bw, bw, h - 2*bw, c)
 	else
-		if h < 2*r then h = 2 * r end
-		if w < 2*r then w = 2 * r end
+		if h < 2*r then r = math.floor(h/2) end
+		if w < 2*r then r = math.floor(w/2) end
 		bb:paintRoundedCorner(x, y, w, h, bw, r, c)
 		bb:paintRect(r+x, y, w-2*r, bw, c)
 		bb:paintRect(r+x, y+h-bw, w-2*r, bw, c)
 		bb:paintRect(x, r+y, bw, h-2*r, c)
 		bb:paintRect(x+w-bw, r+y, bw, h-2*r, c)
+	end
+end
+
+
+--[[
+Fill a rounded corner rectangular area
+
+@x:  start position in x axis
+@y:  start position in y axis
+@w:  width of the area
+@h:  height of the area
+@c:  color used to fill the area
+@r:  radius of for four corners
+--]]
+function blitbuffer.paintRoundedRect(bb, x, y, w, h, c, r)
+	if not r or r == 0 then
+		bb:paintRect(x, y, w, h, c)
+	else
+		if h < 2*r then r = math.floor(h/2) end
+		if w < 2*r then r = math.floor(w/2) end
+		bb:paintBorder(x, y, w, h, r, c, r)
+		bb:paintRect(x+r, y+r, w-2*r, h-2*r, c)
 	end
 end
 
