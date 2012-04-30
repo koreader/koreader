@@ -255,6 +255,17 @@ static int getPageText(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 
+	/* get page height for coordinates transform */
+	ddjvu_pageinfo_t info;
+	ddjvu_status_t r;
+	while ((r=ddjvu_document_get_pageinfo(
+				   doc->doc_ref, pageno-1, &info))<DDJVU_JOB_OK) {
+		handle(L, doc->context, TRUE);
+	}
+	if (r>=DDJVU_JOB_FAILED)
+		return luaL_error(L, "cannot get page #%d information", pageno);
+
+	/* start retrieving page text */
 	miniexp_t sexp, se_line, se_word;
 	int i = 1, j = 1, counter_l = 1, counter_w=1,
 		nr_line = 0, nr_word = 0;
@@ -292,16 +303,18 @@ static int getPageText(lua_State *L) {
 		lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_line)));
 		lua_settable(L, -3);
 
-		lua_pushstring(L, "y0");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_line)));
+		lua_pushstring(L, "y1");
+		lua_pushnumber(L, 
+				info.height - miniexp_to_int(miniexp_nth(2, se_line)));
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "x1");
 		lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_line)));
 		lua_settable(L, -3);
 
-		lua_pushstring(L, "y1");
-		lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_line)));
+		lua_pushstring(L, "y0");
+		lua_pushnumber(L, 
+				info.height - miniexp_to_int(miniexp_nth(4, se_line)));
 		lua_settable(L, -3);
 
 		/* now loop through each word in the line */
@@ -325,16 +338,18 @@ static int getPageText(lua_State *L) {
 			lua_pushnumber(L, miniexp_to_int(miniexp_nth(1, se_word)));
 			lua_settable(L, -3);
 
-			lua_pushstring(L, "y0");
-			lua_pushnumber(L, miniexp_to_int(miniexp_nth(2, se_word)));
+			lua_pushstring(L, "y1");
+			lua_pushnumber(L, 
+					info.height - miniexp_to_int(miniexp_nth(2, se_word)));
 			lua_settable(L, -3);
 
 			lua_pushstring(L, "x1");
 			lua_pushnumber(L, miniexp_to_int(miniexp_nth(3, se_word)));
 			lua_settable(L, -3);
 
-			lua_pushstring(L, "y1");
-			lua_pushnumber(L, miniexp_to_int(miniexp_nth(4, se_word)));
+			lua_pushstring(L, "y0");
+			lua_pushnumber(L, 
+					info.height - miniexp_to_int(miniexp_nth(4, se_word)));
 			lua_settable(L, -3);
 
 			lua_pushstring(L, "word");
