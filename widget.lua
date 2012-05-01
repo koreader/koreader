@@ -164,27 +164,36 @@ TextWidget = Widget:new{
 	color = 15,
 	_bb = nil,
 	_length = 0,
+	_height = 0,
 	_maxlength = 1200,
 }
 
-function TextWidget:_render()
-	local h = self.face.size * 1.3
-	self._bb = Blitbuffer.new(self._maxlength, h)
-	self._length = renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, self.color)
-end
+--function TextWidget:_render()
+	--local h = self.face.size * 1.3
+	--self._bb = Blitbuffer.new(self._maxlength, h)
+	--self._length = renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, self.color)
+--end
 
 function TextWidget:getSize()
-	if not self._bb then
-		self:_render()
-	end
-	return { w = self._length, h = self._bb:getHeight() }
+	--if not self._bb then
+		--self:_render()
+	--end
+	--return { w = self._length, h = self._bb:getHeight() }
+	
+	self._length = sizeUtf8Text(0, G_width, self.face, self.text, true).x
+	self._height = self.face.size * 1.3
+	return {
+		w = self._length,
+		h = self._height,
+	}
 end
 
 function TextWidget:paintTo(bb, x, y)
-	if not self._bb then
-		self:_render()
-	end
-	bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
+	--if not self._bb then
+		--self:_render()
+	--end
+	--bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
+	renderUtf8Text(bb, x, y+self._height*0.8, self.face, self.text, true)
 end
 
 function TextWidget:free()
