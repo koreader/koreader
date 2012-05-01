@@ -265,17 +265,37 @@ ItemShortCutIcon = WidgetContainer:new{
 	height = 22,
 	key = nil,
 	bordersize = 2,
+	radius = 0,
+	style = "square"
 }
 
 function ItemShortCutIcon:init()
 	if not self.key then
 		return
 	end
+
+	local radius = 0
+	local background = 0
+	if self.style == "rounded_corner" then
+		radius = math.floor(self.width/2)
+	elseif self.style == "grey_square" then
+		background = 3
+	end
+
+	--@TODO calculate font size by icon size  01.05 2012 (houqp)
+	if self.key:len() > 1 then
+		sc_face = Font:getFace("ffont", 14)
+	else
+		sc_face = Font:getFace("scfont", 22)
+	end
+
 	self[1] = HorizontalGroup:new{
 		HorizontalSpan:new{ width = 5 },
 		FrameContainer:new{
 			padding = 0,
 			bordersize = self.bordersize,
+			radius = radius,
+			background = background,
 			dimen = {
 				w = self.width,
 				h = self.height,
@@ -287,7 +307,7 @@ function ItemShortCutIcon:init()
 				},
 				TextWidget:new{
 					text = self.key,
-					face = Font:getFace("scfont", 22)
+					face = sc_face,
 				},
 			},
 		},
@@ -307,6 +327,7 @@ MenuItem = WidgetContainer:new{
 	width = nil,
 	height = nil,
 	shortcut = nil,
+	shortcut_style = "square",
 }
 
 function MenuItem:init()
@@ -331,6 +352,8 @@ function MenuItem:init()
 			width = shortcut_icon_w,
 			height = shortcut_icon_h,
 			key = self.shortcut,
+			radius = shortcut_icon_r,
+			style = self.shortcut_style,
 		},
 		HorizontalSpan:new{ width = 5 },
 		UnderlineContainer:new{
@@ -453,7 +476,14 @@ function Menu:_updateItems()
 		local i = (self.page - 1) * self.perpage + c 
 		if i <= self.items then
 			local item_shortcut = nil
+			local shortcut_style = "square"
 			if self.is_enable_shortcut then
+				-- give different shortcut_style to keys in different
+				-- lines of keyboard
+				if c >= 11 and c <= 20 then
+					--shortcut_style = "rounded_corner"
+					shortcut_style = "grey_square"
+				end
 				item_shortcut = self.item_shortcuts[c]
 				if item_shortcut == "Enter" then
 					item_shortcut = "Ent"
@@ -464,7 +494,8 @@ function Menu:_updateItems()
 				face = self.cface,
 				width = self.width - 14,
 				height = self.item_height,
-				shortcut = item_shortcut
+				shortcut = item_shortcut,
+				shortcut_style = shortcut_style,
 			}
 			table.insert(item_group, item_tmp)
 			table.insert(self.layout, {item_tmp})
