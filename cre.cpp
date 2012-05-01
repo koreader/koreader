@@ -308,10 +308,6 @@ static int gotoXPointer(lua_State *L) {
 	ldomXPointer xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
 
 	doc->text_view->goToBookmark(xp);
-	/* CREngine does not call checkPos() immediately after goToBookmark,
-	 * so I have to manually update the pos in order to get a correct
-	 * return from GetPos() call. */
-	doc->text_view->SetPos(xp.toPoint().y);
 
 	return 0;
 }
