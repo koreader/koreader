@@ -44,7 +44,7 @@ function openFile(filename)
 		reader = DJVUReader
 	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
 		reader = PDFReader
-	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" or file_type == "mobi" or file_type == "doc" or file_type == "zip" then
+	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" or file_type == "mobi" or file_type == "prc" or file_type == "doc" or file_type == "zip" then
 		reader = CREReader
 	end
 	if reader then
