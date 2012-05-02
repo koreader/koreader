@@ -10,6 +10,8 @@ Draw a border
 @r:  radius of for border's corner (nil or 0 means right corner border)
 --]]
 function blitbuffer.paintBorder(bb, x, y, w, h, bw, c, r)
+	x, y = math.ceil(x), math.ceil(y)
+	h, w = math.ceil(h), math.ceil(w)
 	if not r or r == 0 then
 		bb:paintRect(x, y, w, bw, c)
 		bb:paintRect(x, y+h-bw, w, bw, c)
@@ -38,6 +40,8 @@ Fill a rounded corner rectangular area
 @r:  radius of for four corners
 --]]
 function blitbuffer.paintRoundedRect(bb, x, y, w, h, c, r)
+	x, y = math.ceil(x), math.ceil(y)
+	h, w = math.ceil(h), math.ceil(w)
 	if not r or r == 0 then
 		bb:paintRect(x, y, w, h, c)
 	else
@@ -47,7 +51,6 @@ function blitbuffer.paintRoundedRect(bb, x, y, w, h, c, r)
 		bb:paintRect(x+r, y+r, w-2*r, h-2*r, c)
 	end
 end
-
 
 
 --[[
