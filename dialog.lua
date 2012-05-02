@@ -289,29 +289,25 @@ function ItemShortCutIcon:init()
 		sc_face = Font:getFace("scfont", 22)
 	end
 
-	self[1] = HorizontalGroup:new{
-		HorizontalSpan:new{ width = 5 },
-		FrameContainer:new{
-			padding = 0,
-			bordersize = self.bordersize,
-			radius = radius,
-			background = background,
+	self[1] = FrameContainer:new{
+		padding = 0,
+		bordersize = self.bordersize,
+		radius = radius,
+		background = background,
+		dimen = {
+			w = self.width,
+			h = self.height,
+		},
+		CenterContainer:new{
 			dimen = {
 				w = self.width,
 				h = self.height,
 			},
-			CenterContainer:new{
-				dimen = {
-					w = self.width,
-					h = self.height,
-				},
-				TextWidget:new{
-					text = self.key,
-					face = sc_face,
-				},
+			TextWidget:new{
+				text = self.key,
+				face = sc_face,
 			},
 		},
-		HorizontalSpan:new{ width = 5 },
 	}
 end
 
@@ -339,15 +335,19 @@ function MenuItem:init()
 	end
 
 	self.detail = self.text
+	-- 15 for HorizontalSpan,
+	self.content_width = self.width - shortcut_icon_w - 15
+
 	w = sizeUtf8Text(0, self.width, self.face, self.text, true).x
-	if w >= self.width - shortcut_icon_w then
+	if w >= self.content_width then
 		indicator = "  >>"
 		indicator_w = sizeUtf8Text(0, self.width, self.face, indicator, true).x
 		self.text = getSubTextByWidth(self.text, self.face,
-			self.width - shortcut_icon_w - indicator_w - 4, true) .. indicator
+			self.content_width - indicator_w, true) .. indicator
 	end
 
 	self[1] = HorizontalGroup:new{
+		HorizontalSpan:new{ width = 5 },
 		ItemShortCutIcon:new{
 			width = shortcut_icon_w,
 			height = shortcut_icon_h,
@@ -355,10 +355,10 @@ function MenuItem:init()
 			radius = shortcut_icon_r,
 			style = self.shortcut_style,
 		},
-		HorizontalSpan:new{ width = 5 },
+		HorizontalSpan:new{ width = 10 },
 		UnderlineContainer:new{
 			dimen = {
-				w = self.width - 5 - shortcut_icon_w,
+				w = self.content_width,
 				h = self.height
 			},
 			HorizontalGroup:new {
@@ -373,12 +373,12 @@ function MenuItem:init()
 end
 
 function MenuItem:onFocus()
-	self[1][3].color = 10
+	self[1][4].color = 10
 	return true
 end
 
 function MenuItem:onUnfocus()
-	self[1][3].color = 0
+	self[1][4].color = 0
 	return true
 end
 
@@ -424,7 +424,7 @@ Menu = FocusManager:new{
 
 function Menu:init()
 	self.items = #self.item_table
-	self.perpage = math.floor(self.height / self.item_height)
+	self.perpage = math.floor(self.height / self.item_height) - 2
 	self.page = 1
 	self.page_num = math.ceil(self.items / self.perpage)
 
