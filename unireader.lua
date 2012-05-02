@@ -2241,7 +2241,7 @@ function UniReader:addAllCommands()
 							max = max / step
 							if max > #keys then max = #keys end
 
-							local face = Font:getFace("cfont", 10)
+							local face = Font:getFace("hpkfont", 11)
 
 							for i = 1, max, 1 do
 								local key = keys[i]
@@ -2256,7 +2256,7 @@ function UniReader:addAllCommands()
 									end
 									if x_direction < 0 then tick = tick - step end
 									tick = tick - step * x_direction / 2
-									renderUtf8Text(fb.bb, x_s+tick+3, y_s+3, face, key)
+									renderUtf8Text(fb.bb, x_s+tick+2, y_s+4, face, key)
 								else
 									local tick = i * step * y_direction
 									debug("y tick",i,tick,key)
@@ -2267,7 +2267,7 @@ function UniReader:addAllCommands()
 									end
 									if y_direction > 0 then tick = tick + step end
 									tick = tick - step * y_direction / 2
-									renderUtf8Text(fb.bb, x_s-3, y_s+tick-3, face, key)
+									renderUtf8Text(fb.bb, x_s-3, y_s+tick-1, face, key)
 								end
 							end
 						end
