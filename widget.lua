@@ -181,7 +181,7 @@ function TextWidget:getSize()
 	--return { w = self._length, h = self._bb:getHeight() }
 	
 	self._length = sizeUtf8Text(0, G_width, self.face, self.text, true).x
-	self._height = self.face.size * 1.3
+	self._height = self.face.size * 1.5
 	return {
 		w = self._length,
 		h = self._height,
@@ -193,7 +193,7 @@ function TextWidget:paintTo(bb, x, y)
 		--self:_render()
 	--end
 	--bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
-	renderUtf8Text(bb, x, y+self._height*0.8, self.face, self.text, true)
+	renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true)
 end
 
 function TextWidget:free()
@@ -367,7 +367,7 @@ end
 
 function HorizontalGroup:paintTo(bb, x, y)
 	local size = self:getSize()
-	
+
 	for i, widget in ipairs(self) do
 		if self.align == "center" then
 			widget:paintTo(bb, x + self._offsets[i].x, y + (size.h - self._offsets[i].y) / 2)
@@ -467,19 +467,22 @@ UnderlineContainer = WidgetContainer:new{
 }
 
 function UnderlineContainer:getSize()
-	local contentSize = self[1]:getSize()
 	if self.dimen then
-		if contentSize.w < self.dimen.w then contentSize.w = self.dimen.w end
-		if contentSize.h < self.dimen.h then contentSize.h = self.dimen.h end
+		return { w = self.dimen.w, h = self.dimen.h }
+	else
+		local contentSize = self[1]:getSize()
+		return { 
+			w = contentSize.w, 
+			h = contentSize.h + self.linesize + self.padding
+		}
 	end
-	return { w = contentSize.w, h = contentSize.h + self.linesize + self.padding }
 end
 
 function UnderlineContainer:paintTo(bb, x, y)
-	local contentSize = self:getSize()
+	local content_size = self:getSize()
 	self[1]:paintTo(bb, x, y)
-	bb:paintRect(x, y + contentSize.h - self.linesize,
-		contentSize.w, self.linesize, self.color)
+	bb:paintRect(x, y + content_size.h - self.linesize,
+		content_size.w, self.linesize, self.color)
 end
 
 

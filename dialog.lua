@@ -459,7 +459,6 @@ function Menu:init()
 					text = "page "..self.page.."/"..self.page_num,
 					face = self.fface,
 				},
-				VerticalSpan:new{ width = 5 },
 			}, -- VerticalGroup
 		}, -- FrameContainer
 	} -- CenterContainer
