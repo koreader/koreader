@@ -2287,8 +2287,8 @@ function UniReader:addAllCommands()
 			x,y,w,h = unireader:getRectInScreen( new_bbox["x0"], new_bbox["y0"], new_bbox["x1"], new_bbox["y1"] )
 			fb.bb:invertRect( x,y, w,h )
 			--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
-			InfoMessage:show("new page bbox");
-			fb:refresh(1)
+			showInfoMsgWithDelay("new page bbox", 2000, 1);
+			self:redrawCurrentPage()
 
 			self.rcount = self.rcountmax -- force next full refresh
 
