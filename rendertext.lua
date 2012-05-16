@@ -104,3 +104,84 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 	end
 	return pen_x
 end
+
+
+-- NuPogodi: Some New Functions to render UTF8 text restricted by some width 'w'
+
+function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
+	if text == nil then
+		debug("renderUtf8Text called without text");
+		return nil
+	end
+	local pen_x = 0
+	local rest = ""
+	local prevcharcode = 0
+	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+		if pen_x < w then
+			local charcode = util.utf8charcode(uchar)
+			local glyph = getGlyph(face, charcode)
+			if kerning and prevcharcode then
+				local kern = face.ftface:getKerning(prevcharcode, charcode)
+				pen_x = pen_x + kern
+				--debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
+				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			else
+				--debug(" curr:"..string.char(charcode))
+				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			end
+			pen_x = pen_x + glyph.ax
+			prevcharcode = charcode
+		else
+			-- accumulating the rest of text here
+			rest = rest .. uchar
+		end
+	end
+	return { leaved = rest, x = pen_x, y = y }
+end
+
+function SplitString(text)
+	local words = {}
+	local word = ""
+	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+		if uchar == "/" or uchar == " " or uchar == "-" or uchar == "_" or uchar == "\." then
+			words[#words+1] = word .. uchar
+			word = ""
+		else
+			word = word .. uchar
+		end
+	end
+	-- add the rest of string as the last word
+	words[#words+1] = word
+	return words
+end
+
+function renderUtf8Multiline(buffer, x, y, face, text, kerning, w, line_spacing)
+	-- at first, split a text on separate words
+	local words = SplitString(text)
+	
+	-- test whether it is inside of reasonable values 1.0 < line_spacing < 5.0 or given in pixels (>5)
+	-- default value is 1.75 ; getGlyph(face, 48).t = height of char '0'
+	if line_spacing<1 then line_spacing=math.ceil(getGlyph(face, 48).t) -- single = minimum
+		elseif line_spacing < 5 then line_spacing=math.ceil(getGlyph(face, 48).t * line_spacing)
+		-- if line_spacing>5 then it seems to be defined in pixels
+		elseif line_spacing>=5 then line_spacing=line_spacing 
+		-- and, finally, default value
+		else line_spacing = math.ceil(getGlyph(face, 48).t * 1.75) 
+	end
+	
+	local lx = x
+	for i = 1, #words do
+		if sizeUtf8Text(lx, buffer:getWidth(), face, words[i], kerning).x < (w - lx + x) then
+			lx = lx + renderUtf8TextWidth(buffer, lx, y, face, words[i], kerning, w - lx + x).x
+		else
+			-- set lx to the line start
+			lx = x
+			-- add the y-distance between lines
+			y = y + line_spacing
+			-- and draw next word
+			lx = lx + renderUtf8TextWidth(buffer, lx, y, face, words[i], kerning, w - lx + x).x
+		end -- if
+	end --for 
+	return { x = x, y = y }
+end
+
