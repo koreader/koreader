@@ -112,7 +112,7 @@ function CREReader:saveSpecialSettings()
 	self.settings:saveSetting("gamma_index", self.gamma_index)
 	self.settings:saveSetting("line_space_percent", self.line_space_percent)
 	-- NuPogodi, 17.05.12: saving the font size
-	self.settings:saveSetting("font_zoom", font_zoom)
+	self.settings:saveSetting("font_zoom", self.font_zoom)
 end
 
 function CREReader:saveLastPageOrPos()
