@@ -1,47 +1,25 @@
-glyphcache_max_memsize = 256*1024 -- 256kB glyphcache
-glyphcache_current_memsize = 0
-glyphcache = {}
-glyphcache_max_age = 4096
-function glyphCacheClaim(size)
-	if(size > glyphcache_max_memsize) then
-		error("too much memory claimed")
-		return false
-	end
-	while glyphcache_current_memsize + size > glyphcache_max_memsize do
-		for k, _ in pairs(glyphcache) do
-			if glyphcache[k].age > 0 then
-				glyphcache[k].age = glyphcache[k].age - 1
-			else
-				glyphcache_current_memsize = glyphcache_current_memsize - glyphcache[k].size
-				glyphcache[k].glyph.bb:free()
-				glyphcache[k] = nil
-			end
-		end
-	end
-	glyphcache_current_memsize = glyphcache_current_memsize + size
-	return true
-end
+require "cache"
+
+--[[
+TODO: all these functions should probably be methods on Face objects
+]]--
+
 function getGlyph(face, charcode)
-	local hash = glyphCacheHash(face.hash, charcode)
-	if glyphcache[hash] == nil then
-		local glyph = face.ftface:renderGlyph(charcode)
-		local size = glyph.bb:getWidth() * glyph.bb:getHeight() / 2 + 32
-		glyphCacheClaim(size);
-		glyphcache[hash] = {
-			age = glyphcache_max_age,
-			size = size,
-			g = glyph
-		}
-	else
-		glyphcache[hash].age = glyphcache_max_age
+	local hash = "glyph|"..face.hash.."|"..charcode
+	local glyph = Cache:check(hash)
+	if glyph then
+		-- cache hit
+		return glyph[1]
 	end
-	return glyphcache[hash].g
-end
-function glyphCacheHash(face, charcode)
-	return face..'_'..charcode;
-end
-function clearGlyphCache()
-	glyphcache = {}
+	local rendered_glyph = face.ftface:renderGlyph(charcode)
+	if not rendered_glyph then
+		debug("error rendering glyph (charcode=", charcode, ") for face", face)
+		return
+	end
+	glyph = CacheItem:new{rendered_glyph}
+	glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+	Cache:insert(hash, glyph)
+	return glyph[1]
 end
 
 function getSubTextByWidth(text, face, width, kerning)
