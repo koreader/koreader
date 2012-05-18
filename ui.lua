@@ -1,3 +1,4 @@
+require "geometry"
 require "inputevent"
 require "widget"
 require "screen"
