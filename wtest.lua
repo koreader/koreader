@@ -1,4 +1,6 @@
 require "ui"
+require "readerui"
+require "document"
 
 TestGrid = Widget:new{}
 
@@ -127,11 +129,26 @@ M = Menu:new{
 	height = 600,
 }
 
+
+readerwindow = CenterContainer:new{
+	dimen = Geom:new{ w = G_width, h = G_height },
+	FrameContainer:new{
+		background = 0
+	}
+}
+reader = ReaderUI:new{
+	dialog = readerwindow,
+	dimen = Geom:new{ w = G_width - 100, h = G_height - 100 },
+	document = DocumentRegistry:getProvider("test/2col.pdf")
+}
+readerwindow[1][1] = reader
+
 UIManager:show(Background:new())
 UIManager:show(TestGrid)
 UIManager:show(Clock:new())
 UIManager:show(M)
 UIManager:show(Quiz)
+UIManager:show(readerwindow)
 UIManager:run()
 
 
