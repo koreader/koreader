@@ -1,9 +1,9 @@
-require "rendertext"
-require "graphics"
-require "image"
-require "event"
-require "inputevent"
-require "font"
+require "ui/rendertext"
+require "ui/graphics"
+require "ui/image"
+require "ui/event"
+require "ui/inputevent"
+require "ui/font"
 
 --[[
 This is a generic Widget interface

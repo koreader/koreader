@@ -1,6 +1,8 @@
-require "ui"
-require "readerui"
-require "document"
+print(package.path)
+package.path = "./frontend/?.lua"
+require "ui/ui"
+require "ui/readerui"
+require "document/document"
 
 TestGrid = Widget:new{}
 

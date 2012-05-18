@@ -1,3 +1,4 @@
+require "settings" -- for debug()
 
 Font = {
 	fontmap = {

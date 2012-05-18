@@ -95,7 +95,7 @@ end
 
 
 require "cache"
-require "geometry"
+require "ui/geometry"
 
 
 PdfDocument = Document:new{

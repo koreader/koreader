@@ -1,5 +1,3 @@
-require "ui"
-
 ReaderView = WidgetContainer:new{
 	document = nil,
 

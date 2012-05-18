@@ -1,8 +1,8 @@
-require "geometry"
-require "inputevent"
-require "widget"
-require "screen"
-require "dialog"
+require "ui/geometry"
+require "ui/inputevent"
+require "ui/widget"
+require "ui/screen"
+require "ui/dialog"
 require "settings" -- for debug(), TODO: put debug() somewhere else
 
 

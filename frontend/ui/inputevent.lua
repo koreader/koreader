@@ -1,4 +1,4 @@
-require "event"
+require "ui/event"
 
 -- constants from <linux/input.h>
 EV_KEY = 1

@@ -1,6 +1,5 @@
-require "widget"
-require "font"
-require "commands"
+require "ui/widget"
+require "ui/font"
 
 --[[
 Wrapper Widget that manages focus for a whole dialog

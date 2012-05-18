@@ -1,9 +1,9 @@
-require "ui"
-require "readerview"
-require "readerzooming"
-require "readerpanning"
-require "readerrotation"
-require "readerpaging"
+require "ui/ui"
+require "ui/reader/readerview"
+require "ui/reader/readerzooming"
+require "ui/reader/readerpanning"
+require "ui/reader/readerrotation"
+require "ui/reader/readerpaging"
 
 --[[
 This is an abstraction for a reader interface
