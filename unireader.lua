@@ -115,6 +115,7 @@ end
 
 function UniReader:init()
 	-- initialize commands
+	InfoMessage:show("Registering fonts...", 1)
 	self:addAllCommands()
 end
 
