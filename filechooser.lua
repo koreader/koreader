@@ -346,11 +346,7 @@ function FileChooser:choose(ypos, height)
 				end
 				pagedirty = true
 			elseif ev.code == KEY_P then	-- make screenshot
-				os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
-				local d = os.date("%Y%m%d%H%M%S")
-				showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-				os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
-				pagedirty = true
+				Screen:screenshot()
 			elseif ev.code == KEY_FW_RIGHT or ev.code == KEY_I then	-- show file info
 				return nil, function()
 						local newdir = self.dirs[perpage*(self.page-1)+self.current]

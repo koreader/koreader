@@ -366,10 +366,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_P, MOD_SHIFT, "P",
 		"make screenshot",
 		function(cr)
-			os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
-			local d = os.date("%Y%m%d%H%M%S")
-			showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-			os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+			Screen:screenshot()
 		end
 	)
 	
