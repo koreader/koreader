@@ -20,6 +20,10 @@ SelectMenu = {
 	spacing = 36,
 	-- foot height
 	foot_H = 27,
+	-- horisontal margin
+	margin_H = 10,
+	-- NuPogodi, 18.05.12: new parameter
+	current_entry = 0,
 
 	menu_title = "No Title",
 	no_item_msg = "No items found.",
@@ -225,30 +229,41 @@ function SelectMenu:choose(ypos, height)
 	self.pagedirty = true
 	self.markerdirty = false
 	self.last_shortcut = 0
-
+	
+	-- NuPogodi, 18.02.12: let us define the starting position
+	-- If it was, certainly, send before by SelectMenu:new() via current_entry
+	self.current_entry = math.min(self.current_entry,self.items)
+	-- self.current_entry = math.max(self.current_entry,1)
+	-- now calculating the page & cursor
+	self.page = math.floor(self.current_entry / self.perpage) + 1
+	self.page = math.max(1, self.page)
+	self.current = self.current_entry - (self.page - 1) * self.perpage + 1
+	self.current = math.max(1, self.current)
+	-- end of changes (NuPogodi)
+	
 	while true do
 		local cface = Font:getFace("cfont", 22)
 		local tface = Font:getFace("tfont", 25)
 		local fface = Font:getFace("ffont", 16)
-
+		
+		local lx = self.margin_H + 40
+		local fw = fb.bb:getWidth() - lx - self.margin_H
+		
 		if self.pagedirty then
+			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			self.markerdirty = true
-			-- draw menu title
-			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), self.title_H + 10, 0)
-			fb.bb:paintRect(10, ypos + 10, fb.bb:getWidth() - 20, self.title_H, 5)
-
-			local x = 20
-			local y = ypos + self.title_H
-			renderUtf8Text(fb.bb, x, y, tface, self.menu_title, true)
-
+			-- draw menu title (new version with clock & battery)
+			DrawTitle(self.menu_title,self.margin_H,0,self.title_H,4,tface)
+			
+			
 			-- draw items
-			fb.bb:paintRect(0, ypos + self.title_H + 10, fb.bb:getWidth(), height - self.title_H, 0)
+			fb.bb:paintRect(0, ypos + self.title_H + self.margin_H, fb.bb:getWidth(), height - self.title_H, 0)
 			if self.items == 0 then
 				y = ypos + self.title_H + (self.spacing * 2)
-				renderUtf8Text(fb.bb, 30, y, cface,
+				renderUtf8Text(fb.bb, self.margin_H + 20, y, cface,
 					"Oops...  Bad news for you:", true)
 				y = y + self.spacing
-				renderUtf8Text(fb.bb, 30, y, cface,
+				renderUtf8Text(fb.bb, self.margin_H + 20, y, cface,
 					self.no_item_msg, true)
 				self.markerdirty = false
 				self:clearCommands()
@@ -257,54 +272,63 @@ function SelectMenu:choose(ypos, height)
 				for c = 1, self.perpage do
 					local i = (self.page - 1) * self.perpage + c 
 					if i <= self.items then
-						y = ypos + self.title_H + (self.spacing * c)
+						y = ypos + self.title_H + (self.spacing * c) + 4
 
 						-- paint shortcut indications
 						if c <= 10 or c > 20 then
-							blitbuffer.paintBorder(fb.bb, 10, y-22, 29, 29, 2, 15)
+							blitbuffer.paintBorder(fb.bb, self.margin_H, y-22, 29, 29, 2, 15)
 						else
-							fb.bb:paintRect(10, y-22, 29, 29, 3)
+							fb.bb:paintRect(self.margin_H, y-22, 29, 29, 3)
 						end
 						if self.item_shortcuts[c] ~= nil and 
 							string.len(self.item_shortcuts[c]) == 3 then
 							-- debug "Del", "Sym and "Ent"
-							renderUtf8Text(fb.bb, 13, y, fface,
+							renderUtf8Text(fb.bb, self.margin_H + 3, y, fface,
 								self.item_shortcuts[c], true)
 						else
-							renderUtf8Text(fb.bb, 18, y, self.sface,
+							renderUtf8Text(fb.bb, self.margin_H + 8, y, self.sface,
 								self.item_shortcuts[c], true)
 						end
 
 						self.last_shortcut = c
-
-						renderUtf8Text(fb.bb, 50, y, cface,
-							self.item_array[i], true)
+						-- NuPogodi, 15.05.12: paint items by own glyphs if the menu title == 'Fonts Menu', 
+						-- but not "Fonts Menu " (crereader.lua); the problem is crereader creates own list
+						-- with the font families, rather then filenames of available fonts
+						local own_face = cface
+						if self.menu_title == "Fonts Menu" then
+							own_face = Font:getFace(self.item_array[i], 22)
+						end
+						-- NuPogodi, 18.05.12: rendering menu items ( fixed too long strings)
+						if sizeUtf8Text(lx,fb.bb:getWidth(),own_face,self.item_array[i],true).x < (fw - 10) then
+							renderUtf8Text(fb.bb,lx,y,own_face,self.item_array[i],true)
+						else
+							local gapx = sizeUtf8Text(0,fb.bb:getWidth(),own_face,"...", true).x
+							gapx = lx + renderUtf8TextWidth(fb.bb,lx,y,own_face,self.item_array[i],true,fw-gapx-15).x
+							renderUtf8Text(fb.bb,gapx,y,own_face,"...",true)
+						end
+						-- end of changes (NuPogodi) 
 					end -- if i <= self.items
 				end -- for c=1, self.perpage
 			end -- if self.items == 0
 
 			-- draw footer
-			y = ypos + self.title_H + (self.spacing * self.perpage)
-				+ self.foot_H + 5
-			x = (fb.bb:getWidth() / 2) - 50
-			renderUtf8Text(fb.bb, x, y, fface,
-				"Page "..self.page.." of "..
-				(math.ceil(self.items / self.perpage)), true)
+			DrawFooter("Page "..self.page.." of "..(math.ceil(self.items / self.perpage)),fface,self.foot_H)
+			
 		end
 
 		if self.markerdirty then
 			if not self.pagedirty then
 				if self.oldcurrent > 0 then
-					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 8
-					fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 0)
-					fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
+					y = ypos + self.title_H + (self.spacing * self.oldcurrent) + 12
+					fb.bb:paintRect( lx, y, fw, 3, 0)
+					fb:refresh(1, lx, y, fw, 3)
 				end
 			end
 			-- draw new marker line
-			y = ypos + self.title_H + (self.spacing * self.current) + 8
-			fb.bb:paintRect(45, y, fb.bb:getWidth() - 60, 3, 15)
+			y = ypos + self.title_H + (self.spacing * self.current) + 12
+			fb.bb:paintRect(lx, y, fw, 3, 15)
 			if not self.pagedirty then
-				fb:refresh(1, 45, y, fb.bb:getWidth() - 60, 3)
+				fb:refresh(1, lx, y, fw, 3)
 			end
 			self.oldcurrent = self.current
 			self.markerdirty = false

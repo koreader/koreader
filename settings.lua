@@ -1,7 +1,36 @@
-DocSettings = {}
+DocSettings = {
+	}
+
+function DocToHistory(fullname)
+	local i,j = 1,0
+	while i ~= nil do
+		i = string.find(fullname,"/",i+1)
+		if i==nil then break end
+		j = i
+	end
+	local f = string.sub(fullname,j+1,-1)
+	if j>0 then return "./history/\["..string.gsub(string.sub(fullname,1,j),"/","#").."\] "..f..".lua"
+	else return "./settings"..f..".lua" end
+end
+
+function HistoryToName(history)
+	-- at first, search for path length
+	local s = string.len(string.match(history,"%b[]"))
+	-- and return the rest of string without 4 last characters (".lua")
+	return string.sub(history, s+2, -5)
+end
+
+function HistoryToPath(history)
+	-- 1. select everything included in brackets
+	local s = string.match(history,"%b[]")
+	-- 2. crop the bracket-sign from both sides
+	-- 3. and finally replace decorative signs '#' to dir-char '/'
+	return string.gsub(string.sub(s,2,-3),"#","/")
+end
 
 function DocSettings:open(docfile)
-	local new = { file = docfile..".kpdfview.lua", data = {} }
+	lfs.mkdir("./history")
+	local new = { file = DocToHistory(docfile), data = {} }
 	local ok, stored = pcall(dofile,new.file)
 	if ok then
 		new.data = stored

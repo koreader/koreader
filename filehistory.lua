@@ -4,9 +4,10 @@ require "graphics"
 require "font"
 require "inputbox"
 require "dialog"
-require "extentions"
+require "filesearcher"
+require "settings"
 
-FileSearcher = {
+FileHistory = {
 	-- title height
 	title_H = 40,
 	-- spacing between lines
@@ -17,7 +18,7 @@ FileSearcher = {
 	margin_H = 10,
 
 	-- state buffer
-	dirs = {},
+	history_files = {},
 	files = {},
 	result = {},
 	items = 0,
@@ -26,34 +27,19 @@ FileSearcher = {
 	oldcurrent = 1,
 }
 
-function FileSearcher:readDir()
-	self.dirs = {self.path}
-	self.files = {}
-	while #self.dirs ~= 0 do
-		new_dirs = {}
-		-- handle each dir
-		for __, d in pairs(self.dirs) do
-			-- handle files in d
-			for f in lfs.dir(d) do
-				local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-				if lfs.attributes(d.."/"..f, "mode") == "directory" and f ~= "." and f~= ".." then
-					table.insert(new_dirs, d.."/"..f)
-				elseif ext:getReader(file_type) then
-					file_entry = {dir=d, name=f,}
-					table.insert(self.files, file_entry)
-					--debug("file:"..d.."/"..f)
-				end
-			end
-		end
-		self.dirs = new_dirs
+function FileHistory:init(history_path)
+	if history_path then
+		self:setPath(history_path)
+	else
+		self:setPath("./history")
 	end
+	self:addAllCommands()
 end
 
-function FileSearcher:setPath(newPath)
+function FileHistory:setPath(newPath)
 	self.path = newPath
-	self:readDir()
+	self:readDir("-c ") 
 	self.items = #self.files
-	--@TODO check none found  19.02 2012
 	if self.items == 0 then
 		return nil
 	end
@@ -62,14 +48,31 @@ function FileSearcher:setPath(newPath)
 	return true
 end
 
-function FileSearcher:setSearchResult(keywords)
+function FileHistory:readDir(order_criteria)
+	self.history_files = {}
+	self.files = {}
+	local listfile = self.path.."/.history.txt"
+	os.execute("ls "..order_criteria.."-1 "..self.path.." > "..listfile)
+	for f in io.lines(listfile) do
+		-- insert history files
+		file_entry = {dir=self.path, name=f}
+		table.insert(self.history_files, file_entry)
+		-- and corresponding path & file items
+		file_entry = {dir=HistoryToPath(f), name=HistoryToName(f)}
+		table.insert(self.files, file_entry)
+	end
+end
+
+function FileHistory:setSearchResult(keywords)
 	self.result = {}
-	if keywords == " " then -- one space to show all files
+	if keywords == "" or keywords == " " then
+		-- show all history 
 		self.result = self.files
-	else
+	else 
+		-- select history files with keywords in the filename
 		for __,f in pairs(self.files) do
 			if string.find(string.lower(f.name), keywords) then
-				table.insert(self.result, f)
+				table.insert(self.result,f)
 			end
 		end
 	end
@@ -79,16 +82,7 @@ function FileSearcher:setSearchResult(keywords)
 	self.current = 1
 end
 
-function FileSearcher:init(search_path)
-	if search_path then
-		self:setPath(search_path)
-	else
-		self:setPath("/mnt/us/documents")
-	end
-	self:addAllCommands()
-end
-
-function FileSearcher:prevItem()
+function FileHistory:prevItem()
 	if self.current == 1 then
 		if self.page > 1 then
 			self.current = self.perpage
@@ -101,7 +95,7 @@ function FileSearcher:prevItem()
 	end
 end
 
-function FileSearcher:nextItem()
+function FileHistory:nextItem()
 	if self.current == self.perpage then
 		if self.page < (self.items / self.perpage) then
 			self.current = 1
@@ -117,14 +111,28 @@ function FileSearcher:nextItem()
 	end
 end
 
-function FileSearcher:addAllCommands()
+function FileHistory:addAllCommands()
 	self.commands = Commands:new{}
+	-- search among last documents
+	self.commands:add(KEY_S, nil, "S",
+		"search among files",
+		function(self)
+			old_keywords = self.keywords
+			self.keywords = InputBox:input(G_height - 100, 100,
+				"Search:", old_keywords)
+			if self.keywords then
+				self:setSearchResult(self.keywords)
+			else
+				self.keywords = old_keywords
+			end
+			self.pagedirty = true
+		end
+	)
 	-- last documents
 	self.commands:add(KEY_L, nil, "L",
 		"last documents",
 		function(self)
-			FileHistory:init()
-			FileHistory:choose("")
+			self:setSearchResult("")
 			self.pagedirty = true
 		end
 	)
@@ -135,7 +143,7 @@ function FileSearcher:addAllCommands()
 			HelpPage:show(0, G_height, self.commands)
 			self.pagedirty = true
 		end
-	) 
+	)
 	-- make screenshot
 	self.commands:add(KEY_P, MOD_SHIFT, "P",
 		"make screenshot",
@@ -196,20 +204,6 @@ function FileSearcher:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_S, nil, "S",
-		"invoke search inputbox",
-		function(self)
-			old_keywords = self.keywords
-			self.keywords = InputBox:input(G_height - 100, 100,
-				"Search:", old_keywords)
-			if self.keywords then
-				self:setSearchResult(self.keywords)
-			else
-				self.keywords = old_keywords
-			end
-			self.pagedirty = true
-		end
-	)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"font menu",
 		function(self)
@@ -234,6 +228,7 @@ function FileSearcher:addAllCommands()
 			self.pagedirty = true
 		end
 	)
+	
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
 		"open selected item",
 		function(self)
@@ -272,15 +267,16 @@ function FileSearcher:addAllCommands()
 						-- and its history file, if any
 						os.execute("rm \""..DocToHistory(file_to_del).."\"")
 						 -- to avoid showing just deleted file
-						self:init( self.path )
-						self:choose(self.keywords)
+						self:init()
+						self:setSearchResult(self.keywords)
 					end
 					self.pagedirty = true
 					break
 				end -- if ev.type == EV_KEY
 			end -- while
 		end
-	)	self.commands:add({KEY_SPACE}, nil, "Space",
+	)
+	self.commands:add({KEY_SPACE}, nil, "Space",
 		"refresh page manually",
 		function(self)
 			self.pagedirty = true
@@ -296,17 +292,12 @@ function FileSearcher:addAllCommands()
 	)]]
 end
 
-function FileSearcher:choose(keywords)
+function FileHistory:choose(keywords)
 	self.perpage = math.floor(G_height / self.spacing) - 2
 	self.pagedirty = true
 	self.markerdirty = false
 
-
-	-- if given keywords, set new result according to keywords.
-	-- Otherwise, display the previous search result.
-	if keywords then
-		self:setSearchResult(keywords)
-	end
+	self:setSearchResult(keywords)
 
 	while true do
 		local cface = Font:getFace("cfont", 22)
@@ -317,17 +308,20 @@ function FileSearcher:choose(keywords)
 			self.markerdirty = true
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 
-			-- draw menu title
-			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'",self.margin_H,0,self.title_H,4,tface)
-
-			-- draw results
+			-- draw header
+			local header = "Last Documents"
+			if self.keywords ~= "" and self.keywords ~= " " then 
+				--header = header .. " (filter: \'" .. string.upper(self.keywords) .. "\')"
+				header = "Search Results for \'"..string.upper(self.keywords).."\'"
+			end
+			DrawTitle(header,self.margin_H,0,self.title_H,4,tface)
+			
+			-- draw found results
 			local c
 			if self.items == 0 then -- nothing found
 				y = self.title_H + self.spacing * 2
 				renderUtf8Text(fb.bb, self.margin_H, y, cface,
-					"Sorry, no match found.", true)
-				renderUtf8Text(fb.bb, self.margin_H, y + self.spacing, cface,
-					"Please try a different keyword.", true)
+					"Sorry, no files found.", true)
 				self.markerdirty = false
 			else -- found something, draw it
 				for c = 1, self.perpage do

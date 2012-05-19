@@ -27,6 +27,7 @@ require "screen"
 require "keys"
 require "commands"
 require "dialog"
+require "extentions"
 
 -- option parsing:
 longopts = {
@@ -40,13 +41,8 @@ longopts = {
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local reader = nil
-	if file_type == "djvu" then
-		reader = DJVUReader
-	elseif file_type == "pdf" or file_type == "xps" or file_type == "cbz" then
-		reader = PDFReader
-	elseif file_type == "epub" or file_type == "txt" or file_type == "rtf" or file_type == "htm" or file_type == "html" or file_type == "fb2" or file_type == "chm" or file_type == "mobi" or file_type == "prc" or file_type == "doc" or file_type == "zip" then
-		reader = CREReader
-	end
+
+	reader = ext:getReader(file_type)
 	if reader then
 		InfoMessage:show("Opening document, please wait... ", 0)
 		reader:preLoadSettings(filename)
