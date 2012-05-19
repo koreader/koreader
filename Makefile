@@ -133,6 +133,7 @@ fetchthirdparty:
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
+	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
