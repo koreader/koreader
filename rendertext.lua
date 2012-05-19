@@ -30,12 +30,12 @@ function getGlyph(face, charcode)
 		glyphcache[hash] = {
 			age = glyphcache_max_age,
 			size = size,
-			g = glyph
+			glyph = glyph
 		}
 	else
 		glyphcache[hash].age = glyphcache_max_age
 	end
-	return glyphcache[hash].g
+	return glyphcache[hash].glyph
 end
 function glyphCacheHash(face, charcode)
 	return face..'_'..charcode;
