@@ -278,7 +278,7 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+	self.commands:add({KEY_BACK, KEY_HOME, KEY_FW_LEFT}, nil, "Back",
 		"back",
 		function(self)
 			return "break"
