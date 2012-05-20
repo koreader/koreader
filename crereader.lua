@@ -33,23 +33,37 @@ function CREReader:init()
 	end
 end
 
+-- NuPogodi, 20.05.12: inspect the zipfile content
+function CREReader:ZipContentExt(fname)
+	local outfile = "./data/zip_content"
+	local s = ""
+	os.execute("unzip ".."-l \""..fname.."\" > "..outfile)
+	local i = 1
+	if io.open(outfile,"r") then
+		for lines in io.lines(outfile) do 
+			if i == 4 then s = lines break else i = i + 1 end
+		end
+	end
+	-- return the extention
+	return string.lower(string.match(s, ".+%.([^.]+)"))
+end
+
 -- open a CREngine supported file and its settings store
 function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
-
-	-- try to find double extentions like fb2.zip or htm.zip
+	
 	if file_type == "zip" then
-		-- remove zip-extention
-		local fn = string.lower(string.sub(filename,0,-4))
-		-- if no double extention then default file_type
-		file_type = string.lower(string.match(fn, ".+%.([^.]+)") or "cr3")
+		-- NuPogodi, 20.05.12: read the content of zip-file
+		-- and return extention of the 1st file
+		file_type = self:ZipContentExt(filename)
 	end
-
+	
 	-- these two format use the same css file
 	if file_type == "html" then
 		file_type = "htm"
 	end
+	
 	-- if native css-file doesn't exist, one needs to use default cr3.css
 	if not io.open("./data/"..file_type..".css") then
 		file_type = "cr3"
