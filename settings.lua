@@ -1,9 +1,63 @@
-DocSettings = {}
+DocSettings = {
+	}
+
+function DocToHistory(fullname)
+	local i,j = 1,0
+	while i ~= nil do
+		i = string.find(fullname,"/",i+1)
+		if i==nil then break end
+		j = i
+	end
+	local f = string.sub(fullname,j+1,-1)
+	if j>0 then return "./history/\["..string.gsub(string.sub(fullname,1,j),"/","#").."\] "..f..".lua"
+	else return "./settings"..f..".lua" end
+end
+
+function HistoryToName(history)
+	-- at first, search for path length
+	local s = string.len(string.match(history,"%b[]"))
+	-- and return the rest of string without 4 last characters (".lua")
+	return string.sub(history, s+2, -5)
+end
+
+function HistoryToPath(history)
+	-- 1. select everything included in brackets
+	local s = string.match(history,"%b[]")
+	-- 2. crop the bracket-sign from both sides
+	-- 3. and finally replace decorative signs '#' to dir-char '/'
+	return string.gsub(string.sub(s,2,-3),"#","/")
+end
 
 function DocSettings:open(docfile)
-	local new = { file = docfile..".kpdfview.lua", data = {} }
+	-- history feature moves configuration files into history directory
+	lfs.mkdir("./history")
+	local new = { file = DocToHistory(docfile), data = {} }
 	local ok, stored = pcall(dofile,new.file)
+	if not ok then
+		ok, stored = pcall(dofile,docfile..".kpdfview.lua")
+	end
 	if ok then
+		if stored.version == nil then
+			stored.version = 0
+		end
+
+		if stored.version < 2012.05 then
+			debug("settings", docfile, stored)
+			if stored.jumpstack ~= nil then
+				stored.jump_history = stored.jumpstack
+				stored.jumpstack = nil
+				if not stored.jump_history.cur then
+					stored.jump_history.cur = 1
+				end
+			end
+			if stored.globalzoommode ~= nil then
+				stored.globalzoom_mode = stored.globalzoommode
+				stored.globalzoommode = nil
+			end
+			stored.version = 2012.05
+			debug("upgraded", stored)
+		end
+
 		new.data = stored
 	end
 	return setmetatable(new, { __index = DocSettings})

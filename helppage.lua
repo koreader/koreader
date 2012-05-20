@@ -9,6 +9,14 @@ require "commands"
 HelpPage = {
 	-- Other Class vars:
 
+	-- title height
+	title_H = 40,
+	-- horisontal margin
+	margin_H = 10,
+	-- foot height
+	foot_H = 28,
+	-- background color
+	bg_color = 4,
 	-- spacing between lines
 	spacing = 25,
 
@@ -58,17 +66,20 @@ function HelpPage:show(ypos, height, commands)
 	fface_height = math.ceil(fface_height)
 	fface_ascender = math.ceil(fface_ascender)
 	local spacing = face_height + 5
+	local vert_S = self.title_H + 12
 
-	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5)) / spacing )
+	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5) - vert_S) / spacing )
 	local is_pagedirty = true
 
 	while true do
 		if is_pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
+			-- draw header
+			DrawTitle("Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,Font:getFace("tfont", 25))
 			local c
 			local max_x = 0
 			for c = 1, perpage do
-				local x = 5
+				local x = self.margin_H
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
 					local key = self.commands[i].shortcut
@@ -78,16 +89,16 @@ function HelpPage:show(ypos, height, commands)
 						if(modStart ~= nil) then
 							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
 							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
-							fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4)
-							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, aMod.d.." + ", true)
+							fb.bb:paintRect(x, ypos + spacing*c - box.y_top + vert_S, box.x + self.title_H, box.y_top + box.y_bottom, self.bg_color)
+							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c + vert_S, self.face, aMod.d.." + ", true)
 							x = x + pen_x
 							max_x = math.max(max_x, pen_x)
 						end
 					end
 					debug("key:"..key)
 					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
-					fb.bb:paintRect(x, ypos + spacing*c - box.y_top, box.x, box.y_top + box.y_bottom, 4)
-					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c, self.face, key, true)
+					fb.bb:paintRect(x, ypos + spacing*c - box.y_top + vert_S, box.x, box.y_top + box.y_bottom, self.bg_color)
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c  + vert_S, self.face, key, true)
 					x = x + pen_x
 					max_x = math.max(max_x, x)
 				end
@@ -95,11 +106,13 @@ function HelpPage:show(ypos, height, commands)
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c, self.hface, self.commands[i].help, true)
+					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c + vert_S, self.hface, self.commands[i].help, true)
 				end
 			end
-			renderUtf8Text(fb.bb, 5, height - fface_height + fface_ascender - 5, self.fface,
-				"Page "..self.page.." of "..math.ceil(self.items / perpage).."  - Back to close this page", true)
+			-- draw footer
+			local footer = "Page "..self.page.." of "..math.ceil(self.items / perpage).."  - Back to close this page"
+			-- DrawFooter(footer,Font:getFace("ffont", 16),self.foot_H) --
+			renderUtf8Text(fb.bb, self.margin_H, height-7, self.fface, footer, true)
 		end
 		if is_pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)

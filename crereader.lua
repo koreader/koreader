@@ -9,8 +9,15 @@ CREReader = UniReader:new{
 
 	gamma_index = 15,
 	font_face = nil,
+	-- NuPogodi, 17.05.12: to store fontsize changes
+	font_zoom = 0,
 
 	line_space_percent = 100,
+	
+	-- NuPogodi, 17.05.12: insert new parameter to store old doc height before rescaling.
+	-- One needs it to change font(face & size) and / or interline spacig without 
+	-- appreciable changing of the current position in document
+	old_doc_height = 0,
 }
 
 function CREReader:init()
@@ -31,22 +38,24 @@ function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 
+	-- try to find double extentions like fb2.zip or htm.zip
+	if file_type == "zip" then
+		-- remove zip-extention
+		local fn = string.lower(string.sub(filename,0,-4))
+		-- if no double extention then default file_type
+		file_type = string.lower(string.match(fn, ".+%.([^.]+)") or "cr3")
+	end
+
 	-- these two format use the same css file
 	if file_type == "html" then
 		file_type = "htm"
 	end
-
-	-- detect file type for documents inside zip file
-	-- @TODO do the detection after the file is unzipped  30.04 2012 (houqp)
-	if file_type == "zip" then
-		-- store filename without zip-extention to fn
-		local fn = string.lower(string.sub(filename,0,-4))
-		-- if no double extention then default file_type
-		file_type = string.lower(string.match(fn, ".+%.([^.]+)") or "fb2")
-	end 
-
+	-- if native css-file doesn't exist, one needs to use default cr3.css
+	if not io.open("./data/"..file_type..".css") then
+		file_type = "cr3"
+	end
 	local style_sheet = "./data/"..file_type..".css"
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, 
+	ok, self.doc = pcall(cre.openDocument, filename, style_sheet,
 						G_width, G_height)
 	if not ok then
 		return false, self.doc -- will contain error message
@@ -62,7 +71,7 @@ end
 ----------------------------------------------------
 function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
-	self.font_face = font_face or "Droid Sans Fallback"
+	self.font_face = font_face or "Droid Sans"
 	self.doc:setFontFace(self.font_face)
 
 	local gamma_index = self.settings:readSetting("gamma_index")
@@ -71,6 +80,19 @@ function CREReader:loadSpecialSettings()
 
 	local line_space_percent = self.settings:readSetting("line_space_percent")
 	self.line_space_percent = line_space_percent or self.line_space_percent
+	
+	-- NuPogodi, 17.05.12: reading & setting the font size
+	self.font_zoom = self.settings:readSetting("font_zoom") or 0
+	if self.font_zoom ~= 0 then
+		local i = math.abs(self.font_zoom)
+		local step = self.font_zoom / i
+		while i>0 do
+			self.doc:zoomFont(step)
+			i=i-1
+		end
+	end
+	-- define the original document height
+	self.old_doc_height = self.doc:getFullHeight()
 end
 
 function CREReader:getLastPageOrPos()
@@ -86,6 +108,8 @@ function CREReader:saveSpecialSettings()
 	self.settings:saveSetting("font_face", self.font_face)
 	self.settings:saveSetting("gamma_index", self.gamma_index)
 	self.settings:saveSetting("line_space_percent", self.line_space_percent)
+	-- NuPogodi, 17.05.12: saving the font size
+	self.settings:saveSetting("font_zoom", self.font_zoom)
 end
 
 function CREReader:saveLastPageOrPos()
@@ -101,7 +125,12 @@ function CREReader:setzoom(page, preCache)
 end
 
 function CREReader:redrawCurrentPage()
-	self:goto(self.pos)
+	-- NuPogodi, 15.05.12: Something was wrong here!
+	-- self:goto(self.pos)
+	-- after changing the font(face, size or boldface) or interline spacing 
+	-- the position inside document HAS TO REMAIN CONSTANT! it was NOT!
+	-- Fixed the problem by the following correction to new document height
+	self:goto(self.pos * (self.doc:getFullHeight() - G_height) / (self.old_doc_height - G_height))
 end
 
 -- there is no zoom mode in CREReader
@@ -158,6 +187,8 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.pos = pos
 	self.pageno = self.doc:getCurrentPage()
 	self.percent = self.doc:getCurrentPercent()
+	-- NuPogodi, 18.05.12: storing new document height
+	self.old_doc_height = self.doc:getFullHeight()
 end
 
 function CREReader:gotoPercent(percent)
@@ -282,17 +313,26 @@ function CREReader:_drawReadingInfo()
 	fb.bb:paintRect(0, ypos, G_width, 50, 0)
 
 	ypos = ypos + 15
-	local face = Font:getFace("rifont", 22)
+	-- NuPogodi 15.05.12: a bit smaller font 20 instead of 22
+	local face = Font:getFace("rifont", 20)
+
 	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
 		cur_section = "Section: "..cur_section
 	end
-	renderUtf8Text(fb.bb, 10, ypos+6, face,
-		"Position: "..load_percent.."%".."    "..cur_section, true)
+	-- NuPogodi 15.05.12: Rewrite the following renderUtf8Text() in order to fix too long strings
+	local footer = "Position: "..load_percent.."\%".."  "..cur_section
+	if sizeUtf8Text(10, fb.bb:getWidth(), face, footer, true).x < (fb.bb:getWidth() - 20) then
+		renderUtf8Text(fb.bb, 10, ypos+6, face, footer, true)
+	else
+		local gapx = sizeUtf8Text(10, fb.bb:getWidth(), face, "...", true).x
+		gapx = 10 + renderUtf8TextWidth(fb.bb, 10, ypos+6, face, footer, true, fb.bb:getWidth() - 30 - gapx).x
+		renderUtf8Text(fb.bb, gapx, ypos+6, face, "...", true)
+	end
+	-- end of changes (NuPogodi)
 
 	ypos = ypos + 15
-	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15,
-							5, 4, load_percent/100, 8)
+	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
 end
 
 
@@ -323,6 +363,13 @@ function CREReader:adjustCreReaderCommands()
 
 	-- overwrite commands
 	
+	self.commands:add(KEY_P, MOD_SHIFT, "P",
+		"make screenshot",
+		function(cr)
+			Screen:screenshot()
+		end
+	)
+	
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
@@ -334,9 +381,15 @@ function CREReader:adjustCreReaderCommands()
 				delta = -1
 				change = "decrease"
 			end
-			InfoMessage:show(change.." font size", 0)
+			self.font_zoom = self.font_zoom + delta
+			InfoMessage:show(change.." font size to "..self.font_zoom, 0)
+			-- NuPogodi, 15.05.12: storing old document height
+			self.old_doc_height = self.doc:getFullHeight()
+			-- end of changes (NuPogodi)
 			self.doc:zoomFont(delta)
 			self:redrawCurrentPage()
+			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:fillToc()
 		end
 	)
 	self.commands:addGroup(MOD_ALT.."< >",{
@@ -346,19 +399,20 @@ function CREReader:adjustCreReaderCommands()
 		function(self)
 			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
 				self.line_space_percent = self.line_space_percent - 10
-				if self.line_space_percent < 100 then
-					self.line_space_percent = 100
-				end
+				-- NuPogodi, 15.05.12: reduce lowest space_percent to 80
+				self.line_space_percent = math.max(self.line_space_percent, 80)
 			else
 				self.line_space_percent = self.line_space_percent + 10
-				if self.line_space_percent > 200 then
-					self.line_space_percent = 200
-				end
+				self.line_space_percent = math.min(self.line_space_percent, 200)
 			end
-			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
+			InfoMessage:show("line spacing "..self.line_space_percent.."\%", 0)
 			debug("line spacing set to", self.line_space_percent)
+			-- NuPogodi, 17.05.12: storing old document height
+			self.old_doc_height = self.doc:getFullHeight()
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
 			self:redrawCurrentPage()
+			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:fillToc()
 		end
 	)
 	local numeric_keydefs = {}
@@ -374,20 +428,27 @@ function CREReader:adjustCreReaderCommands()
 			self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
 		end
 	)
-	self.commands:add(KEY_F, nil, "F",
+	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"change document font",
 		function(self)
 			Screen:saveCurrentBB()
 
 			local face_list = cre.getFontFaces()
-
+			-- NuPogodi, 18.05.12: define the number of the current font in face_list 
+			local item_no = 0
+			while face_list[item_no] ~= self.font_face and item_no < #face_list do 
+				item_no = item_no + 1 
+			end
 			local fonts_menu = SelectMenu:new{
-				menu_title = "Fonts Menu",
-				item_array = face_list,
+				menu_title = "Fonts Menu ",
+				item_array = face_list, 
+				current_entry = item_no - 1,
 			}
 
 			local item_no = fonts_menu:choose(0, G_height)
 			debug(face_list[item_no])
+			-- NuPogodi, 17.05.12: storing old document height
+			self.old_doc_height = self.doc:getFullHeight()
 			if item_no then
 				Screen:restoreFromSavedBB()
 				self.doc:setFontFace(face_list[item_no])
@@ -395,13 +456,19 @@ function CREReader:adjustCreReaderCommands()
 				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 			end
 			self:redrawCurrentPage()
+			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:fillToc()
 		end
 	)
 	self.commands:add(KEY_F, MOD_ALT, "F",
 		"Toggle font bolder attribute",
 		function(self)
+			-- NuPogodi, 17.05.12: storing old document height
+			self.old_doc_height = self.doc:getFullHeight()
 			self.doc:toggleFontBolder()
 			self:redrawCurrentPage()
+			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:fillToc()
 		end
 	)
 	self.commands:add(KEY_B, MOD_ALT, "B",
@@ -450,6 +517,8 @@ function CREReader:adjustCreReaderCommands()
 			cre.setGammaIndex(self.gamma_index+delta)
 			self.gamma_index = cre.getGammaIndex()
 			self:redrawCurrentPage()
+			-- NuPogodi, 16.05.12: FIXED! gamma_index -> self.gamma_index
+			showInfoMsgWithDelay("Redraw with gamma = "..self.gamma_index, 2000, 1)
 		end
 	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",

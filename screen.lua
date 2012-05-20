@@ -106,3 +106,12 @@ function Screen:restoreFromBB(bb)
 		debug("Got nil bb in restoreFromSavedBB!")
 	end
 end
+
+function Screen:screenshot()
+		--@TODO convert bitmap to png or jpeg  30.04 2012 (houqp)
+		os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
+		local d = os.date("%Y%m%d%H%M%S")
+		os.execute("dd if=/dev/fb0 of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+		showInfoMsgWithDelay("screenshot "..d.." created", 1000, 1)
+end
+
