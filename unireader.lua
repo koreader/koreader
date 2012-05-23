@@ -990,6 +990,20 @@ function UniReader:loadSettings(filename)
 
 		local highlight = self.settings:readSetting("highlight")
 		self.highlight = highlight or {}
+		if self.highlight.to_fix ~= nil then
+			for _,fix_item in ipairs(self.highlight.to_fix) do
+				if fix_item == "djvu invert y axle" then
+					InfoMessage:show("Updating HighLight data...", 1)
+					for pageno,text_table in pairs(self.highlight) do
+						if type(pageno) == "number" then
+							text_table = self:invertTextYAxel(pageno, text_table)
+						end
+					end
+				end
+			end
+			debug(self.highlight)
+			self.highlight.to_fix = nil
+		end
 
 		local bbox = self.settings:readSetting("bbox")
 		debug("bbox loaded ", bbox)
