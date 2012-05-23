@@ -230,6 +230,23 @@ static int getUsedBBox(lua_State *L) {
 	return 4;
 }
 
+static int getOriginalPageSize(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	int pageno = luaL_checkint(L, 2);
+
+	ddjvu_status_t r;
+	ddjvu_pageinfo_t info;
+
+	while ((r=ddjvu_document_get_pageinfo(
+				   doc->doc_ref, pageno-1, &info))<DDJVU_JOB_OK) {
+		handle(L, doc->context, TRUE);
+	}
+
+	lua_pushnumber(L, info.width);
+	lua_pushnumber(L, info.height);
+
+	return 2;
+}
 
 /*
  * Return a table like following:
@@ -472,7 +489,7 @@ static int drawPage(lua_State *L) {
 static int getCacheSize(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	unsigned long size = ddjvu_cache_get_size(doc->context);
-	printf("## ddjvu_cache_get_size = %d\n", size);
+	printf("## ddjvu_cache_get_size = %d\n", (int)size);
 	lua_pushnumber(L, size);
 	return 1;
 }
@@ -494,6 +511,7 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"getPages", getNumberOfPages},
 	{"getToc", getTableOfContent},
 	{"getPageText", getPageText},
+	{"getOriginalPageSize", getOriginalPageSize},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
 	{"cleanCache", cleanCache},

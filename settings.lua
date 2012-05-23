@@ -1,5 +1,5 @@
 DocSettings = {
-	}
+}
 
 function DocToHistory(fullname)
 	local i,j = 1,0
@@ -47,12 +47,21 @@ function DocSettings:open(docfile)
 				stored.jump_history = stored.jumpstack
 				stored.jumpstack = nil
 				if not stored.jump_history.cur then
-					stored.jump_history.cur = 1
+					-- set up new history head
+					stored.jump_history.cur = #stored.jump_history + 1
 				end
 			end
+			-- update variable name
 			if stored.globalzoommode ~= nil then
 				stored.globalzoom_mode = stored.globalzoommode
 				stored.globalzoommode = nil
+			end
+
+			if stored.highlight ~= nil then
+				local file_type = string.lower(string.match(docfile, ".+%.([^.]+)"))
+				if file_type == "djvu" then
+					stored.highlight.to_fix = {"djvu invert y axle"}
+				end
 			end
 			stored.version = 2012.05
 			debug("upgraded", stored)
