@@ -28,12 +28,15 @@ FileChooser = {
 	page = 1,
 	current = 1,
 	oldcurrent = 0,
-	exception_message = nil
+	exception_message = nil,
+	-- NuPogodi, 20.05.12: added new parameters
+	pagedirty = true,
+	markerdirty = false,
+	perpage,
 }
--- to duplicate visual info by speaking
-function say(text)
-	os.execute("say ".."\""..text.."\"")
-end
+
+-- NuPogodi: some new auxiliary functions
+
 -- make long headers for fit in title width by removing first characters
 function getProperTitleLength(txt,font_face,max_width)
 	local tw = TextWidget:new({ text = txt, face = font_face})
@@ -47,7 +50,7 @@ function getProperTitleLength(txt,font_face,max_width)
 	end
 	return string.sub(txt,n-1,-1)
 end
-
+-- return the battery level - either "XY%" or "?" (if error)
 function BatteryLevel()
 	local fn, battery = "./data/temporary", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
@@ -59,7 +62,7 @@ function BatteryLevel()
 	end
 	return battery
 end
-
+-- draw the text-header for menues and add the clock & battery level
 function DrawTitle(text,lmargin,y,height,color,font_face)
 	fb.bb:paintRect(lmargin, y+10, fb.bb:getWidth() - lmargin*2, height, color)
 	-- to have a horisontal gap between text & background rectangle
@@ -84,12 +87,36 @@ function DrawTitle(text,lmargin,y,height,color,font_face)
 		renderUtf8Text(fb.bb, lmargin+tw:getSize().w, y + height, font_face, txt, true)
 	end
 end
-
+-- just a footer
 function DrawFooter(text,font_face,h)
-	y = G_height - 7
-	x = (G_width / 2) - 50
+	local y = G_height - 7
+	local x = (G_width / 2) - 50
 	renderUtf8Text(fb.bb, x, y, font_face, text, true)
 end
+-- to draw items in filechooser, filesearcher & filehistory
+-- TODO?: one can consider replacing icons by hotkeys (requires to redefine existing hotkeys)
+function DrawFileItem(name,x,y,image)
+	-- define icon file for
+	if name == ".." then image = "upfolder" end
+	local fn = "./resources/"..image..".png"
+	-- check whether the icon file exists or not
+	if not io.open(fn, "r") then fn = "./resources/other.png" end
+	local iw = ImageWidget:new({ file = fn })
+	iw:paintTo(fb.bb, x, y - iw:getSize().h + 1)
+	-- then drawing filenames
+	local cface = Font:getFace("cfont", 22)
+	local xleft = x + iw:getSize().w + 9 -- 8-10 pixels = the gap between icon & filename
+	local width = fb.bb:getWidth() - xleft - x
+	-- now printing the name
+	if sizeUtf8Text(xleft, fb.bb:getWidth() - x, cface, name, true).x < width then
+		renderUtf8Text(fb.bb, xleft, y, cface, name, true)
+	else 
+		local lgap = sizeUtf8Text(0, width, cface, " ...", true).x
+		local handle = renderUtf8TextWidth(fb.bb, xleft, y, cface, name, true, width - lgap - x)
+		renderUtf8Text(fb.bb, handle.x + lgap + x, y, cface, " ...", true)
+	end
+end
+-- end of NuPogodi's functions
 
 function getAbsolutePath(aPath)
 	local abs_path
@@ -152,74 +179,26 @@ function FileChooser:setPath(newPath)
 	end
 end
 
-function DrawFileItem(name,x,y,image)
-	-- define icon file for
-	if name == ".." then image = "upfolder" end
-	local fn = "./resources/"..image..".png"
-	-- check whether the icon file exists or not
-	if not io.open(fn, "r") then fn = "./resources/other.png" end
-	local iw = ImageWidget:new({ file = fn })
-	iw:paintTo(fb.bb, x, y - iw:getSize().h + 1)
-	-- then drawing filenames
-	local cface = Font:getFace("cfont", 22)
-	local xleft = x + iw:getSize().w + 9 -- 8-10 pixels = the gap between icon & filename
-	local width = fb.bb:getWidth() - xleft - x
-	-- now printing the name
-	if sizeUtf8Text(xleft, fb.bb:getWidth() - x, cface, name, true).x < width then
-		renderUtf8Text(fb.bb, xleft, y, cface, name, true)
-	else 
-		local lgap = sizeUtf8Text(0, width, cface, " ...", true).x
-		local handle = renderUtf8TextWidth(fb.bb, xleft, y, cface, name, true, width - lgap - x)
-		renderUtf8Text(fb.bb, handle.x + lgap + x, y, cface, " ...", true)
-	end
-end
+-- NuPogodi, 20.05.12: rewrote this function in common way 
+-- (with help page, AddAllCommands, etc.)
 
 function FileChooser:choose(ypos, height)
-	local perpage = math.floor(height / self.spacing) - 2
-	local pagedirty = true
-	local markerdirty = false
+	self.perpage = math.floor(height / self.spacing) - 2
+	self.pagedirty = true
+	self.markerdirty = false
 
-	local prevItem = function ()
-		if self.current == 1 then
-			if self.page > 1 then
-				self.current = perpage
-				self.page = self.page - 1
-				pagedirty = true
-			end
-		else
-			self.current = self.current - 1
-			markerdirty = true
-		end
-	end
-
-	local nextItem = function ()
-		if self.current == perpage then
-			if self.page < (self.items / perpage) then
-				self.current = 1
-				self.page = self.page + 1
-				pagedirty = true
-			end
-		else
-			if self.page ~= math.floor(self.items / perpage) + 1
-				or self.current + (self.page-1)*perpage < self.items then
-				self.current = self.current + 1
-				markerdirty = true
-			end
-		end
-	end
+	self:addAllCommands()
 
 	while true do
 		local tface = Font:getFace("tfont", 25)
 		local fface = Font:getFace("ffont", 16)
 		local cface = Font:getFace("cfont", 22)
 
-		if pagedirty then
-			-- starttime was to optimize drawing process
-			--local starttime = os.clock()
+		if self.pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			local c
-			for c = 1, perpage do
-				local i = (self.page - 1) * perpage + c
+			for c = 1, self.perpage do
+				local i = (self.page - 1) * self.perpage + c
 				if i <= #self.dirs then
 					DrawFileItem(self.dirs[i],self.margin_H,ypos+self.title_H+self.spacing*c,"folder")
 				elseif i <= self.items then
@@ -228,168 +207,259 @@ function FileChooser:choose(ypos, height)
 				end
 			end
 			-- draw footer
-			all_page = math.ceil(self.items/perpage)
+			all_page = math.ceil(self.items/self.perpage)
 			DrawFooter("Page "..self.page.." of "..all_page,fface,self.foot_H)
 			-- draw menu title
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or self.path
 			self.exception_message = nil
 			-- draw header
 			DrawTitle(msg,self.margin_H,ypos,self.title_H,4,tface)
-			--say("The page was drawn in "..string.format("%.2f",os.clock()-starttime).." seconds.")
-			markerdirty = true
+			self.markerdirty = true
 		end
-		if markerdirty then
+
+		if self.markerdirty then
 			local ymarker = ypos + 8 + self.title_H
-			if not pagedirty then
+			if not self.pagedirty then
 				if self.oldcurrent > 0 then
 					fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.oldcurrent, fb.bb:getWidth()-2*self.margin_H, 3, 0)
 					fb:refresh(1, self.margin_H, ymarker+self.spacing*self.oldcurrent, fb.bb:getWidth() - 2*self.margin_H, 3)
 				end
 			end
 			fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.current, fb.bb:getWidth()-2*self.margin_H, 3, 15)
-			if not pagedirty then
+			if not self.pagedirty then
 				fb:refresh(1, self.margin_H, ymarker+self.spacing*self.current, fb.bb:getWidth()-2*self.margin_H, 3)
 			end
 			self.oldcurrent = self.current
-			markerdirty = false
+			self.markerdirty = false
 		end
-		if pagedirty then
+
+		if self.pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
-			pagedirty = false
+			self.pagedirty = false
 		end
 
 		local ev = input.saveWaitForEvent()
 		--debug("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
-			if ev.code == KEY_FW_UP then
-				prevItem()
-			elseif ev.code == KEY_FW_DOWN then
-				nextItem()
-			elseif ev.code == KEY_F or ev.code == KEY_AA then -- invoke fontchooser menu
-				-- NuPogodi, 18.05.12: define the number of the current font in face_list 
-				local item_no = 0
-				local face_list = Font:getFontList() 
-				while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
-					item_no = item_no + 1 
-				end	
-				
-				local fonts_menu = SelectMenu:new{
-					menu_title = "Fonts Menu",
-					item_array = face_list,
-					-- NuPogodi, 18.05.12: define selected item
-					current_entry = item_no - 1,
-				}
-				local re, font = fonts_menu:choose(0, height)
-				if re then
-					Font.fontmap["cfont"] = font
-					Font:update()
-				end
-				pagedirty = true
-			elseif ev.code == KEY_S then -- invoke search input
-				keywords = InputBox:input(height-100, 100, "Search:")
-				if keywords then
-					-- call FileSearcher
-					--[[
-					This might looks a little bit dirty for using callback.
-					But I cannot come up with a better solution for renewing
-					the height argument according to screen rotation mode.
+			keydef = Keydef:new(ev.code, getKeyModifier())
+			debug("key pressed: "..tostring(keydef))
 
-					The callback might also be useful for calling system
-					settings menu in the future.
-					--]]
-					return nil, function()
-						InfoMessage:show("Searching... ",0)
-						FileSearcher:init( self.path )
-						FileSearcher:choose(keywords)
-					end
-				end
-				pagedirty = true
-			elseif ev.code == KEY_L then -- last opened files
-				InfoMessage:show("Searching last docs... ",0)
-				if true then
-					return nil, function()
-						FileHistory:init()
-						FileHistory:choose("") -- show all files
-					end
-				end
-				pagedirty = true
-			elseif ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then
-				if self.page < (self.items / perpage) then
-					if self.current + self.page*perpage > self.items then
-						self.current = self.items - self.page*perpage
-					end
-					self.page = self.page + 1
-					pagedirty = true
-				else
-					self.current = self.items - (self.page-1)*perpage
-					markerdirty = true
-				end
-			elseif ev.code == KEY_PGBCK or ev.code == KEY_LPGBCK then
-				if self.page > 1 then
-					self.page = self.page - 1
-					pagedirty = true
-				else
-					self.current = 1
-					markerdirty = true
-				end
-			elseif ev.code == KEY_ENTER or ev.code == KEY_FW_PRESS then
-				local newdir = self.dirs[perpage*(self.page-1)+self.current]
-				if newdir == ".." then
-					local path = string.gsub(self.path, "(.*)/[^/]+/?$", "%1")
-					self:setPath(path)
-				elseif newdir then
-					local path = self.path.."/"..newdir
-					self:setPath(path)
-				else
-					return self.path.."/"..self.files[perpage*(self.page-1)+self.current - #self.dirs]
-				end
-				pagedirty = true
-			elseif ev.code == KEY_P then	-- make screenshot
-				Screen:screenshot()
-			elseif ev.code == KEY_FW_RIGHT or ev.code == KEY_I then	-- show file info
-				return nil, function()
-						local newdir = self.dirs[perpage*(self.page-1)+self.current]
-						if newdir == ".." then
-							showInfoMsgWithDelay("<UP-DIR>",1000,1)
-						elseif newdir then
-							showInfoMsgWithDelay("<DIR>",1000,1)
-						else
-							FileInfo:show(self.path,self.files[perpage*(self.page-1)+self.current - #self.dirs])
-							pagedirty = true
-						end
-					end
-			elseif ev.code == KEY_SPACE then	-- manual refresh
-				pagedirty = true
-			elseif ev.code == KEY_DEL then
-				local dir_to_del = self.dirs[perpage*(self.page-1)+self.current]
-				if dir_to_del == ".." then
-					showInfoMsgWithDelay("<UP-DIR>",1000,1)
-				elseif dir_to_del then
-					showInfoMsgWithDelay("<DIR>",1000,1)
-				else
-					local file_to_del=self.path.."/"..self.files[perpage*(self.page-1)+self.current - #self.dirs]
-					InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
-					while true do
-						ev = input.saveWaitForEvent()
-						ev.code = adjustKeyEvents(ev)
-						if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
-							if ev.code == KEY_Y then
-								-- delete the file itself
-								os.execute("rm \""..file_to_del.."\"")
-								-- and its history file, if any
-								os.execute("rm \""..DocToHistory(file_to_del).."\"")
-								 -- to avoid showing just deleted file
-								self:setPath(self.path)
-							end
-							pagedirty = true
-							break
-						end
-					end -- while
-				end
-			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
-				return nil
+			command = self.commands:getByKeydef(keydef)
+			if command ~= nil then
+				debug("command to execute: "..tostring(command))
+				ret_code = command.func(self, keydef)
+			else
+				debug("command not found: "..tostring(command))
 			end
+
+			if ret_code == "break" then break end
+
+			if self.selected_item ~= nil then
+				debug("# selected "..self.selected_item)
+				return self.selected_item
+			end
+		end -- if ev.type ==
+	end -- while
+end
+
+-- NuPogodi, 20.05.12: common-way addAllCommands()
+
+function FileChooser:addAllCommands()
+	self.commands = Commands:new{}
+
+	self.commands:add({KEY_SPACE}, nil, "Space",
+		"refresh page manually",
+		function(self)
+			self.pagedirty = true
 		end
-	end
+	)
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, ">",
+		"goto next page",
+		function(self)
+			if self.page < (self.items / self.perpage) then
+				if self.current + self.page*self.perpage > self.items then
+					self.current = self.items - self.page*self.perpage
+				end
+				self.page = self.page + 1
+				self.pagedirty = true
+			else
+				self.current = self.items - (self.page-1)*self.perpage
+				self.markerdirty = true
+			end -- if
+		end -- function
+	)
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
+		"goto previous page",
+		function(self)
+			if self.page > 1 then
+				self.page = self.page - 1
+				self.pagedirty = true
+			else
+				self.current = 1
+				self.markerdirty = true
+			end -- if
+		end -- function
+	)
+	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
+		"goto next item",
+		function(self)
+			if self.current == self.perpage then
+				if self.page < (self.items / self.perpage) then
+					self.current = 1
+					self.page = self.page + 1
+					self.pagedirty = true
+				end
+			else
+				if self.page ~= math.floor(self.items / self.perpage) + 1
+					or self.current + (self.page-1)*self.perpage < self.items then
+					self.current = self.current + 1
+					self.markerdirty = true
+				end
+			end -- if
+		end -- function
+	)
+	self.commands:add(KEY_FW_UP, nil, "joypad up",
+		"goto previous item",
+		function(self)
+			if self.current == 1 then
+				if self.page > 1 then
+					self.current = self.perpage
+					self.page = self.page - 1
+					self.pagedirty = true
+				end
+			else
+				self.current = self.current - 1
+				self.markerdirty = true
+			end -- if
+		end -- function
+	)
+	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
+		"show document information",
+		function(self)
+			local newdir = self.dirs[self.perpage*(self.page-1)+self.current]
+			if newdir == ".." then
+				showInfoMsgWithDelay("<UP-DIR>",1000,1)
+			elseif newdir then
+				showInfoMsgWithDelay("<DIR>",1000,1)
+			else
+				FileInfo:show(self.path,self.files[self.perpage*(self.page-1)+self.current - #self.dirs])
+				self.pagedirty = true
+			end
+		end -- function
+	)
+	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
+		"open document",
+		function(self)
+			local newdir = self.dirs[self.perpage*(self.page-1)+self.current]
+			if newdir == ".." then
+				local path = string.gsub(self.path, "(.*)/[^/]+/?$", "%1")
+				self:setPath(path)
+			elseif newdir then
+				self:setPath(self.path.."/"..newdir)
+			else
+				self.pathfile = self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				openFile(self.pathfile)
+			end
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_DEL, nil, "Del",
+		"delete document",
+		function(self)
+			local dir_to_del = self.dirs[self.perpage*(self.page-1)+self.current]
+			if dir_to_del == ".." then
+				showInfoMsgWithDelay("<UP-DIR>",1000,1)
+			elseif dir_to_del then
+				showInfoMsgWithDelay("<DIR>",1000,1)
+			else
+				local file_to_del=self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+				while true do
+					ev = input.saveWaitForEvent()
+					ev.code = adjustKeyEvents(ev)
+					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+						if ev.code == KEY_Y then
+							-- delete the file itself
+							os.execute("rm \""..file_to_del.."\"")
+							-- and its history file, if any
+							os.execute("rm \""..DocToHistory(file_to_del).."\"")
+							 -- to avoid showing just deleted file
+							self:setPath(self.path)
+						end
+						self.pagedirty = true
+						break
+					end
+				end -- while
+			end -- if
+		end -- function
+	)
+	self.commands:add({KEY_F, KEY_AA}, nil, "F",
+		"goto font menu",
+		function(self)
+			-- NuPogodi, 18.05.12: define the number of the current font in face_list 
+			local item_no = 0
+			local face_list = Font:getFontList() 
+			while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
+				item_no = item_no + 1 
+			end
+				
+			local fonts_menu = SelectMenu:new{
+				menu_title = "Fonts Menu",
+				item_array = face_list,
+				-- NuPogodi, 18.05.12: define selected item
+				current_entry = item_no - 1,
+				}
+			local re, font = fonts_menu:choose(0, G_height)
+			if re then
+				Font.fontmap["cfont"] = font
+				Font:update()
+			end
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_H,nil,"H",
+		"show help page",
+		function(self)
+			HelpPage:show(0, G_height, self.commands)
+			self.pagedirty = true
+		end
+	) 
+	self.commands:add(KEY_L, nil, "L",
+		"show last documents",
+		function(self)
+			FileHistory:init()
+			FileHistory:choose("")
+			self.pagedirty = true
+			return nil
+		end
+	) 
+	self.commands:add(KEY_S, nil, "S",
+		"search among files",
+		function(self)
+			local keywords = InputBox:input(fb.bb:getHeight()-100, 100, "Search:")
+			if keywords then
+				InfoMessage:show("Searching... ",0)
+				FileSearcher:init( self.path )
+				FileSearcher:choose(keywords)
+			end
+			self.pagedirty = true 
+		end -- function
+	)
+	self.commands:add(KEY_P, MOD_SHIFT, "P",
+		"make screenshot",
+		function(self)
+			os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
+			local d = os.date("%Y%m%d%H%M%S")
+			showInfoMsgWithDelay("making screenshot... ", 1000, 1)
+			os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+		end
+	) 
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+		"exit",
+		function(self)
+			return "break"
+		end
+	)
+
 end
