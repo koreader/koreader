@@ -416,9 +416,8 @@ Menu = FocusManager:new{
 
 	item_height = 36,
 	page = 1,
-	current = 1,
-	oldcurrent = 0,
-	selected_item = nil,
+
+	on_select_callback = function() end,
 }
 
 function Menu:init()
@@ -440,9 +439,9 @@ function Menu:init()
 	if self.is_enable_shortcut then
 		self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 	end
+	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 
 	self[1] = CenterContainer:new{
-		dimen = {w = G_width, h = G_height},
 		FrameContainer:new{
 			background = 0,
 			radius = math.floor(self.width/20),
@@ -460,6 +459,7 @@ function Menu:init()
 				},
 			}, -- VerticalGroup
 		}, -- FrameContainer
+		dimen = {w = G_width, h = G_height},
 	} -- CenterContainer
 
 	self:_updateItems()
@@ -467,7 +467,10 @@ end
 
 function Menu:_updateItems()
 	self.layout = {}
-	self[1][1][1][2] = VerticalGroup:new{}
+	self[1]
+		[1] -- FrameContainer
+		[1] -- VerticalGroup
+		[2] = VerticalGroup:new{}
 	local item_group = self[1][1][1][2]
 
 	for c = 1, self.perpage do
@@ -506,15 +509,17 @@ end
 
 function Menu:onSelectByShortCut(_, keyevent)
 	for k,v in ipairs(self.item_shortcuts) do
-		if v == keyevent.key then
-			local item = self.item_table[k]
+		if k > self.perpage then
+			break
+		elseif v == keyevent.key then
+			local item = self.item_table[(self.page-1)*self.perpage+k]
 			self.item_table = nil
 			UIManager:close(self)
-			debug(item)
-			-- send events
+			self.on_select_callback(item)
 			break 
 		end
 	end
+	return true
 end
 
 function Menu:onNextPage()
@@ -523,10 +528,7 @@ function Menu:onNextPage()
 		self.page = self.page + 1
 		self:_updateItems()
 		self.selected = { x = 1, y = 1 }
-		self[1][1][1][3] = TextWidget:new{
-			text = "page "..self.page.."/"..self.page_num,
-			face = self.fface,
-		},
+		self[1][1][1][3].text = "page "..self.page.."/"..self.page_num
 		UIManager:setDirty(self)
 	end
 	return true
@@ -538,10 +540,7 @@ function Menu:onPrevPage()
 		self.page = self.page - 1
 		self:_updateItems()
 		self.selected = { x = 1, y = 1 }
-		self[1][1][1][3] = TextWidget:new{
-			text = "page "..self.page.."/"..self.page_num,
-			face = self.fface,
-		},
+		self[1][1][1][3].text = "page "..self.page.."/"..self.page_num
 		UIManager:setDirty(self)
 	end
 	return true
@@ -551,6 +550,12 @@ function Menu:onShowItemDetail()
 	return self.layout[self.selected.y][self.selected.x]:handleEvent(
 		Event:new("ShowDetail")
 	)
+end
+
+function Menu:onSelect()
+	UIManager:close(self)
+	self.on_select_callback(self.item_table[self.selected.y])
+	return true
 end
 
 function Menu:onClose()
