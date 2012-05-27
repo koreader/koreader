@@ -92,6 +92,10 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 	return native_dimen
 end
 
+function Document:getToc()
+	return self._document:getToc()
+end
+
 -- load implementations:
 
 require "document/pdfdocument"

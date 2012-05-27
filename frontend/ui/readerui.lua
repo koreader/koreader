@@ -4,6 +4,7 @@ require "ui/reader/readerzooming"
 require "ui/reader/readerpanning"
 require "ui/reader/readerrotation"
 require "ui/reader/readerpaging"
+require "ui/reader/readertoc"
 
 --[[
 This is an abstraction for a reader interface
@@ -50,6 +51,12 @@ function ReaderUI:init()
 	}
 	-- rotation controller
 	self[4] = ReaderRotation:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	}
+	-- Toc menu controller
+	self[5] = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
