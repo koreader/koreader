@@ -416,9 +416,8 @@ Menu = FocusManager:new{
 
 	item_height = 36,
 	page = 1,
-	current = 1,
-	oldcurrent = 0,
-	selected_item = nil,
+
+	on_select_callback = function() end,
 }
 
 function Menu:init()
@@ -440,6 +439,7 @@ function Menu:init()
 	if self.is_enable_shortcut then
 		self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 	end
+	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 
 	self[1] = CenterContainer:new{
 		dimen = {w = G_width, h = G_height},
@@ -506,15 +506,17 @@ end
 
 function Menu:onSelectByShortCut(_, keyevent)
 	for k,v in ipairs(self.item_shortcuts) do
-		if v == keyevent.key then
+		if k > self.perpage then
+			break
+		elseif v == keyevent.key then
 			local item = self.item_table[k]
 			self.item_table = nil
 			UIManager:close(self)
-			debug(item)
-			-- send events
+			self.on_select_callback(item)
 			break 
 		end
 	end
+	return true
 end
 
 function Menu:onNextPage()
@@ -551,6 +553,12 @@ function Menu:onShowItemDetail()
 	return self.layout[self.selected.y][self.selected.x]:handleEvent(
 		Event:new("ShowDetail")
 	)
+end
+
+function Menu:onSelect()
+	UIManager:close(self)
+	self.on_select_callback(self.item_table[self.selected.y])
+	return true
 end
 
 function Menu:onClose()
