@@ -323,6 +323,7 @@ MenuItem = WidgetContainer:new{
 	height = nil,
 	shortcut = nil,
 	shortcut_style = "square",
+	_underline_container = nil
 }
 
 function MenuItem:init()
@@ -345,6 +346,20 @@ function MenuItem:init()
 			self.content_width - indicator_w, true) .. indicator
 	end
 
+	self._underline_container = UnderlineContainer:new{
+		dimen = {
+			w = self.content_width,
+			h = self.height
+		},
+		HorizontalGroup:new {
+			align = "center",
+			TextWidget:new{
+				text = self.text,
+				face = self.face,
+			},
+		},
+	}
+
 	self[1] = HorizontalGroup:new{
 		HorizontalSpan:new{ width = 5 },
 		ItemShortCutIcon:new{
@@ -355,29 +370,17 @@ function MenuItem:init()
 			style = self.shortcut_style,
 		},
 		HorizontalSpan:new{ width = 10 },
-		UnderlineContainer:new{
-			dimen = {
-				w = self.content_width,
-				h = self.height
-			},
-			HorizontalGroup:new {
-				align = "center",
-				TextWidget:new{
-					text = self.text,
-					face = self.face,
-				},
-			},
-		},
+		self._underline_container
 	}
 end
 
 function MenuItem:onFocus()
-	self[1][4].color = 10
+	self._underline_container.color = 10
 	return true
 end
 
 function MenuItem:onUnfocus()
-	self[1][4].color = 0
+	self._underline_container.color = 0
 	return true
 end
 
@@ -418,6 +421,9 @@ Menu = FocusManager:new{
 	page = 1,
 
 	on_select_callback = function() end,
+
+	item_group = nil,
+	page_info = nil,
 }
 
 function Menu:init()
@@ -426,6 +432,7 @@ function Menu:init()
 	self.page = 1
 	self.page_num = math.ceil(self.items / self.perpage)
 
+	-- set up keyboard events
 	self.key_events.Close = { {"Back"}, doc = "close menu" }
 	self.key_events.Select = { {"Press"}, doc = "chose selected item" }
 	self.key_events.NextPage = {
@@ -434,12 +441,20 @@ function Menu:init()
 	self.key_events.PrevPage = {
 		{Input.group.PgBack}, doc = "goto previous page of the menu"
 	}
+	-- we won't catch presses to "Right"
 	self.key_events.FocusRight = nil
+	-- rather, we reserve that key for showing details
 	self.key_events.ShowItemDetail = { {"Right"}, doc = "show item detail" }
 	if self.is_enable_shortcut then
 		self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 	end
 	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
+
+	-- group for items
+	self.item_group = VerticalGroup:new{}
+	self.page_info = TextWidget:new{
+		face = self.fface,
+	}
 
 	self[1] = CenterContainer:new{
 		FrameContainer:new{
@@ -450,13 +465,8 @@ function Menu:init()
 					text = self.title,
 					face = self.tface,
 				},
-				-- group for items
-				VerticalGroup:new{
-				},
-				TextWidget:new{
-					text = "page "..self.page.."/"..self.page_num,
-					face = self.fface,
-				},
+				self.item_group,
+				self.page_info,
 			}, -- VerticalGroup
 		}, -- FrameContainer
 		dimen = {w = G_width, h = G_height},
@@ -467,11 +477,7 @@ end
 
 function Menu:_updateItems()
 	self.layout = {}
-	self[1]
-		[1] -- FrameContainer
-		[1] -- VerticalGroup
-		[2] = VerticalGroup:new{}
-	local item_group = self[1][1][1][2]
+	self.item_group:clear()
 
 	for c = 1, self.perpage do
 		local i = (self.page - 1) * self.perpage + c 
@@ -498,13 +504,17 @@ function Menu:_updateItems()
 				shortcut = item_shortcut,
 				shortcut_style = shortcut_style,
 			}
-			table.insert(item_group, item_tmp)
+			table.insert(self.item_group, item_tmp)
 			table.insert(self.layout, {item_tmp})
 			--self.last_shortcut = c
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	-- set focus to first menu item
-	item_group[1]:onFocus()
+	self.item_group[1]:onFocus()
+	-- reset focus manager accordingly
+	self.selected = { x = 1, y = 1 }
+	-- update page information
+	self.page_info.text = "page "..self.page.."/"..self.page_num
 end
 
 function Menu:onSelectByShortCut(_, keyevent)
@@ -524,11 +534,8 @@ end
 
 function Menu:onNextPage()
 	if self.page < self.page_num then
-		local page_info = self[1][1][1][3]
 		self.page = self.page + 1
 		self:_updateItems()
-		self.selected = { x = 1, y = 1 }
-		self[1][1][1][3].text = "page "..self.page.."/"..self.page_num
 		UIManager:setDirty(self)
 	end
 	return true
@@ -536,20 +543,18 @@ end
 
 function Menu:onPrevPage()
 	if self.page > 1 then
-		local page_info = self[1][1][1][3]
 		self.page = self.page - 1
 		self:_updateItems()
-		self.selected = { x = 1, y = 1 }
-		self[1][1][1][3].text = "page "..self.page.."/"..self.page_num
 		UIManager:setDirty(self)
 	end
 	return true
 end
 
 function Menu:onShowItemDetail()
-	return self.layout[self.selected.y][self.selected.x]:handleEvent(
+	self.layout[self.selected.y][self.selected.x]:handleEvent(
 		Event:new("ShowDetail")
 	)
+	return true
 end
 
 function Menu:onSelect()

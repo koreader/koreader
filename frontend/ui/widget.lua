@@ -63,6 +63,13 @@ function WidgetContainer:getSize()
 	end
 end
 
+--[[
+delete all child widgets
+]]--
+function WidgetContainer:clear()
+	while table.remove(self) do end
+end
+
 function WidgetContainer:paintTo(bb, x, y)
 	-- default to pass request to first child widget
 	if self[1] then
