@@ -409,7 +409,6 @@ Menu = FocusManager:new{
 	height = 500,
 	width = 500,
 	item_table = {},
-	items = 0,
 	item_shortcuts = {
 		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
@@ -427,10 +426,9 @@ Menu = FocusManager:new{
 }
 
 function Menu:init()
-	self.items = #self.item_table
 	self.perpage = math.floor(self.height / self.item_height) - 2
 	self.page = 1
-	self.page_num = math.ceil(self.items / self.perpage)
+	self.page_num = math.ceil(#self.item_table / self.perpage)
 
 	-- set up keyboard events
 	self.key_events.Close = { {"Back"}, doc = "close menu" }
@@ -472,16 +470,20 @@ function Menu:init()
 		dimen = {w = G_width, h = G_height},
 	} -- CenterContainer
 
-	self:_updateItems()
+	if #self.item_table > 0 then
+		-- if the table is not yet initialized, this call
+		-- must be done manually:
+		self:updateItems()
+	end
 end
 
-function Menu:_updateItems()
+function Menu:updateItems()
 	self.layout = {}
 	self.item_group:clear()
 
 	for c = 1, self.perpage do
 		local i = (self.page - 1) * self.perpage + c 
-		if i <= self.items then
+		if i <= #self.item_table then
 			local item_shortcut = nil
 			local shortcut_style = "square"
 			if self.is_enable_shortcut then
@@ -515,6 +517,8 @@ function Menu:_updateItems()
 	self.selected = { x = 1, y = 1 }
 	-- update page information
 	self.page_info.text = "page "..self.page.."/"..self.page_num
+
+	UIManager:setDirty(self)
 end
 
 function Menu:onSelectByShortCut(_, keyevent)
@@ -535,8 +539,7 @@ end
 function Menu:onNextPage()
 	if self.page < self.page_num then
 		self.page = self.page + 1
-		self:_updateItems()
-		UIManager:setDirty(self)
+		self:updateItems()
 	end
 	return true
 end
@@ -544,8 +547,7 @@ end
 function Menu:onPrevPage()
 	if self.page > 1 then
 		self.page = self.page - 1
-		self:_updateItems()
-		UIManager:setDirty(self)
+		self:updateItems()
 	end
 	return true
 end
