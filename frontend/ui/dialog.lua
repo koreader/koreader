@@ -315,7 +315,7 @@ end
 Widget that displays an item for menu
 
 ]]
-MenuItem = WidgetContainer:new{
+MenuItem = InputContainer:new{
 	text = nil,
 	detail = nil,
 	face = Font:getFace("cfont", 22),
@@ -323,7 +323,12 @@ MenuItem = WidgetContainer:new{
 	height = nil,
 	shortcut = nil,
 	shortcut_style = "square",
-	_underline_container = nil
+	_underline_container = nil,
+
+	key_events = {
+		Select = { {"Press"}, doc = "chose selected item" },
+		ShowItemDetail = { {"Right"}, doc = "show item detail" }
+	}
 }
 
 function MenuItem:init()
@@ -432,7 +437,6 @@ function Menu:init()
 
 	-- set up keyboard events
 	self.key_events.Close = { {"Back"}, doc = "close menu" }
-	self.key_events.Select = { {"Press"}, doc = "chose selected item" }
 	self.key_events.NextPage = {
 		{Input.group.PgFwd}, doc = "goto next page of the menu"
 	}
@@ -441,8 +445,6 @@ function Menu:init()
 	}
 	-- we won't catch presses to "Right"
 	self.key_events.FocusRight = nil
-	-- rather, we reserve that key for showing details
-	self.key_events.ShowItemDetail = { {"Right"}, doc = "show item detail" }
 	if self.is_enable_shortcut then
 		self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 	end
@@ -561,7 +563,7 @@ end
 
 function Menu:onSelect()
 	UIManager:close(self)
-	self.on_select_callback(self.item_table[self.selected.y])
+	self.on_select_callback(self.item_table[(self.page-1)*self.perpage+self.selected.y])
 	return true
 end
 

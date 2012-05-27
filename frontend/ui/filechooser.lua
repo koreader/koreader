@@ -2,6 +2,7 @@ require "ui/dialog" -- for Menu
 
 FileChooser = Menu:new{
 	path = ".",
+	parent = nil,
 	show_hidden = false,
 	filter = function(filename) return true end,
 }
@@ -13,6 +14,7 @@ end
 function FileChooser:changeToPath(path)
 	local dirs = {}
 	local files = {}
+	self.path = path
 	for f in lfs.dir(self.path) do
 		if self.show_hidden or not string.match(f, "^%.[^.]") then
 			local filename = self.path.."/"..f
@@ -32,11 +34,24 @@ function FileChooser:changeToPath(path)
 
 	self.item_table = {}
 	for _, dir in ipairs(dirs) do
-		table.insert(self.item_table, { text = dir.."/" })
+		table.insert(self.item_table, { text = dir.."/", path = self.path.."/"..dir })
 	end
 	for _, file in ipairs(files) do
-		table.insert(self.item_table, { text = file })
+		table.insert(self.item_table, { text = file, path = self.path.."/"..file })
 	end
 
 	Menu.init(self) -- call parent's init()
+end
+
+function FileChooser:onSelect()
+	local selected = self.item_table[(self.page-1)*self.perpage+self.selected.y]
+	if lfs.attributes(selected.path, "mode") == "directory" then
+		UIManager:close(self)
+		self:changeToPath(selected.path)
+		UIManager:show(self)
+	else
+		UIManager:close(self)
+		self.on_select_callback(self.item_table[self.selected.y])
+	end
+	return true
 end
