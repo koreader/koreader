@@ -85,7 +85,7 @@ function Cursor:setHeight(h)
 	self.line_w = math.floor(self.h / self.line_width_factor)
 end
 
-function Cursor:_draw(x, y)
+function Cursor:_draw(x, y, refresh)
 	local up_down_width = math.floor(self.line_w / 2)
 	local body_h = self.h - (up_down_width * 2)
 	-- paint upper horizontal line
@@ -95,19 +95,23 @@ function Cursor:_draw(x, y)
 							self.line_w, body_h)
 	-- paint lower horizontal line
 	fb.bb:invertRect(x, y + body_h + up_down_width, self.w, up_down_width)
-end
 
-function Cursor:draw()
-	if self.is_cleared then
-		self.is_cleared = false
-		self:_draw(self.x_pos, self.y_pos)
+	if refresh then
+		fb:refresh(1, x, y, self.w, body_h + up_down_width * 2)
 	end
 end
 
-function Cursor:clear()
+function Cursor:draw(refresh)
+	if self.is_cleared then
+		self.is_cleared = false
+		self:_draw(self.x_pos, self.y_pos, refresh)
+	end
+end
+
+function Cursor:clear(refresh)
 	if not self.is_cleared then
 		self.is_cleared = true
-		self:_draw(self.x_pos, self.y_pos)
+		self:_draw(self.x_pos, self.y_pos, refresh)
 	end
 end
 

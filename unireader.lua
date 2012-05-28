@@ -351,7 +351,7 @@ function UniReader:drawCursorAfterWord(t, l, w)
 	local x, y, wd, _ = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x+wd, y)
-	self.cursor:draw()
+	self.cursor:draw(true)
 end
 
 function UniReader:drawCursorBeforeWord(t, l, w)
@@ -361,7 +361,7 @@ function UniReader:drawCursorBeforeWord(t, l, w)
 	local x, y, _, _ = self:getRectInScreen(t[l][w].x0, t[l][w].y0, t[l][w].x1, t[l][w].y1)
 	self.cursor:setHeight(h)
 	self.cursor:moveTo(x, y)
-	self.cursor:draw()
+	self.cursor:draw(true)
 end
 
 function UniReader:getText(pageno)
@@ -563,8 +563,7 @@ function UniReader:startHighLightMode()
 		h = ch,
 		line_width_factor = 4,
 	}
-	self.cursor:draw()
-	fb:refresh(1)
+	self.cursor:draw(true)
 
 	-- first use cursor to place start pos for highlight
 	while running do
@@ -575,7 +574,7 @@ function UniReader:startHighLightMode()
 				is_meet_end = false
 				l.new, w.new, is_meet_start = _prevGap(t, l.cur, w.cur)
 
-				self.cursor:clear()
+				self.cursor:clear(true)
 				if w.new ~= 0
 				and self:_isLineInPrevView(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][w.new]) then
@@ -599,7 +598,7 @@ function UniReader:startHighLightMode()
 				is_meet_start = false
 				l.new, w.new, is_meet_end = _nextGap(t, l.cur, w.cur)
 
-				self.cursor:clear()
+				self.cursor:clear(true)
 				-- we want to check whether the word is in screen range,
 				-- so trun gap into word
 				local tmp_w = w.new
@@ -626,7 +625,7 @@ function UniReader:startHighLightMode()
 				is_meet_end = false
 				l.new, w.new, is_meet_start = _gapInPrevLine(t, l.cur, w.cur)
 
-				self.cursor:clear()
+				self.cursor:clear(true)
 
 				local tmp_w = w.new
 				if tmp_w == 0 then
@@ -652,7 +651,7 @@ function UniReader:startHighLightMode()
 				is_meet_start = false
 				l.new, w.new, is_meet_end = _gapInNextLine(t, l.cur, w.cur)
 
-				self.cursor:clear()
+				self.cursor:clear(true)
 
 				local tmp_w = w.new
 				if w.cur == 0 then
@@ -700,13 +699,12 @@ function UniReader:startHighLightMode()
 				l.new, w.new = l.cur, w.cur
 				l.start, w.start = l.cur, w.cur
 				running = false
-				self.cursor:clear()
+				self.cursor:clear(true)
 			elseif ev.code == KEY_BACK then
 				running = false
 				return
 			end -- if check key event
 			l.cur, w.cur = l.new, w.new
-			fb:refresh(1)
 		end
 	end -- while running
 	debug("start", l.cur, w.cur, l.start, w.start)
