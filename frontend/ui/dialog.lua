@@ -193,7 +193,7 @@ function ConfirmBox:onClose()
 end
 
 function ConfirmBox:onSelect()
-	debug("selected:", self.selected.x)
+	DEBUG("selected:", self.selected.x)
 	if self.selected.x == 1 then
 		self:ok_callback()
 	else
@@ -324,11 +324,6 @@ MenuItem = InputContainer:new{
 	shortcut = nil,
 	shortcut_style = "square",
 	_underline_container = nil,
-
-	key_events = {
-		Select = { {"Press"}, doc = "chose selected item" },
-		ShowItemDetail = { {"Right"}, doc = "show item detail" }
-	}
 }
 
 function MenuItem:init()
@@ -343,8 +338,14 @@ function MenuItem:init()
 	-- 15 for HorizontalSpan,
 	self.content_width = self.width - shortcut_icon_w - 15
 
+	-- we need this table per-instance, so we declare it here
+	self.active_key_events = {
+		Select = { {"Press"}, doc = "chose selected item" },
+	}
+
 	w = sizeUtf8Text(0, self.width, self.face, self.text, true).x
 	if w >= self.content_width then
+		self.active_key_events.ShowItemDetail = { {"Right"}, doc = "show item detail" }
 		indicator = "  >>"
 		indicator_w = sizeUtf8Text(0, self.width, self.face, indicator, true).x
 		self.text = getSubTextByWidth(self.text, self.face,
@@ -381,15 +382,17 @@ end
 
 function MenuItem:onFocus()
 	self._underline_container.color = 10
+	self.key_events = self.active_key_events
 	return true
 end
 
 function MenuItem:onUnfocus()
 	self._underline_container.color = 0
+	self.key_events = { }
 	return true
 end
 
-function MenuItem:onShowDetail()
+function MenuItem:onShowItemDetail()
 	UIManager:show(InfoMessage:new{
 		text=self.detail,
 	})
@@ -551,13 +554,6 @@ function Menu:onPrevPage()
 		self.page = self.page - 1
 		self:updateItems()
 	end
-	return true
-end
-
-function Menu:onShowItemDetail()
-	self.layout[self.selected.y][self.selected.x]:handleEvent(
-		Event:new("ShowDetail")
-	)
 	return true
 end
 

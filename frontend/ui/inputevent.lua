@@ -248,7 +248,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 			ev = nil
 			break
 		end
-		debug("got error waiting for events:", ev)
+		DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then
 			-- we abort if the error is not EINTR
 			break

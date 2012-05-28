@@ -89,10 +89,10 @@ function PdfDocument:renderPage(pageno, rect, zoom, rotation)
 	-- we prefer to render the full page, if it fits into cache
 	if not Cache:willAccept(size.w * size.h / 2) then
 		-- whole page won't fit into cache
-		debug("rendering only part of the page")
+		DEBUG("rendering only part of the page")
 		-- TODO: figure out how to better segment the page
 		if not rect then
-			debug("aborting, since we do not have a specification for that part")
+			DEBUG("aborting, since we do not have a specification for that part")
 			-- required part not given, so abort
 			return
 		end
@@ -145,11 +145,11 @@ function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation)
 	if not tile then
 		tile = Cache:check(hash_excerpt)
 		if not tile then
-			debug("rendering")
+			DEBUG("rendering")
 			tile = self:renderPage(pageno, rect, zoom, rotation)
 		end
 	end
-	debug("now painting", tile)
+	DEBUG("now painting", tile)
 	target:blitFrom(tile.bb, x, y, rect.x - tile.excerpt.x, rect.y - tile.excerpt.y, rect.w, rect.h)
 end
 

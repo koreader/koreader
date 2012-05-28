@@ -63,13 +63,13 @@ function ReaderZooming:setZoom()
 end
 
 function ReaderZooming:onZoom(direction)
-	debug("zoom", direction)
+	DEBUG("zoom", direction)
 	if direction == "in" then
 		self.zoom = self.zoom * 1.333333
 	elseif direction == "out" then
 		self.zoom = self.zoom * 0.75
 	end
-	debug("zoom is now at", self.zoom)
+	DEBUG("zoom is now at", self.zoom)
 	self:onSetZoomMode("free")
 	self.view:ZoomUpdate(self.zoom)
 	return true
@@ -77,7 +77,7 @@ end
 
 function ReaderZooming:onSetZoomMode(what)
 	if self.zoom_mode ~= what then
-		debug("setting zoom mode to", what)
+		DEBUG("setting zoom mode to", what)
 		self.zoom_mode = what
 		self:setZoom()
 	end

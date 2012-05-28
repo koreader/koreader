@@ -27,7 +27,7 @@ function dump(data)
 	return table.concat(out)
 end
 
-function debug(...)
+function DEBUG(...)
 	local line = ""
 	for i,v in ipairs(arg) do
 		if type(v) == "table" then

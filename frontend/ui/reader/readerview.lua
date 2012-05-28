@@ -16,7 +16,7 @@ ReaderView = WidgetContainer:new{
 }
 
 function ReaderView:paintTo(bb, x, y)
-	debug("painting", self.visible_area, "to", x, y)
+	DEBUG("painting", self.visible_area, "to", x, y)
 	local inner_offset = Geom:new{x = 0, y = 0}
 
 	-- draw surrounding space, if any
@@ -61,14 +61,14 @@ function ReaderView:onSetDimensions(dimensions)
 end
 
 function ReaderView:PanningUpdate(dx, dy)
-	debug("pan by", dx, dy)
+	DEBUG("pan by", dx, dy)
 	local old = Geom:copy(self.visible_area)
 	self.visible_area:offsetWithin(self.page_area, dx, dy)
 	if self.visible_area ~= old then
 		-- flag a repaint
 		UIManager:setDirty(self.dialog)
-		debug(self.page_area)
-		debug(self.visible_area)
+		DEBUG(self.page_area)
+		DEBUG(self.visible_area)
 	end
 	return true
 end

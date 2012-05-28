@@ -174,12 +174,12 @@ end
 check if our size is smaller than the size of the given dimension/rectangle
 ]]--
 function Geom:__lt(rect_b)
-	debug("lt:",self,rect_b)
+	DEBUG("lt:",self,rect_b)
 	if self.w < rect_b.w and self.h < rect_b.h then
-debug("lt+")
+DEBUG("lt+")
 		return true
 	end
-debug("lt-")
+DEBUG("lt-")
 	return false
 end
 

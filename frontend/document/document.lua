@@ -88,7 +88,7 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 		native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
 	end
 	native_dimen:scaleBy(zoom)
-	debug("dimen for pageno", pageno, "zoom", zoom, "rotation", rotation, "is", native_dimen)
+	DEBUG("dimen for pageno", pageno, "zoom", zoom, "rotation", rotation, "is", native_dimen)
 	return native_dimen
 end
 
