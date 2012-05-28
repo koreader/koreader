@@ -201,11 +201,6 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
-install:
-	# install to kindle using USB networking
-	scp kpdfview *.lua root@192.168.2.2:/mnt/us/$(INSTALL_DIR)/
-	scp launchpad/* root@192.168.2.2:/mnt/us/launchpad/
-
 VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
@@ -220,6 +215,6 @@ customupdate: all
 	cp -rpL fonts $(INSTALL_DIR)
 	cp -r resources $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
-	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
+	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
