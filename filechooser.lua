@@ -33,7 +33,7 @@ FileChooser = {
 	pagedirty = true,
 	markerdirty = false,
 	perpage,
-	clipboard = "/mnt/us/kindlepdfviewer/clipboard", -- NO finishing slash
+	clipboard = lfs.currentdir() .. "/clipboard", -- NO finishing slash
 }
 
 function getProperTitleLength(txt,font_face,max_width)
