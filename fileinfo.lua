@@ -16,7 +16,6 @@ FileInfo = {
 	foot_H = 28,
 	-- horisontal margin
 	margin_H = 10,
-
 	-- state buffer
 	result = {},
 	files = {},
@@ -30,37 +29,54 @@ FileInfo = {
 function FileInfo:FileCreated(fname,attr)
 	return os.date("%d %b %Y, %H:%M:%S", lfs.attributes(fname,attr))
 end
-
-function FileInfo:FileSize(fname)
-	local size = lfs.attributes(fname,"size")
+-- NuPogodi, 26.05.12: a bit changed to return string from size
+function FileInfo:FileSize(size)
 	if size < 1024 then
 		return size.." Bytes"
-	elseif size < 1048576 then
-		return string.format("%.2f", size/1024).."KB \("..size.." Bytes\)"
+	elseif size < 2^20 then
+		return string.format("%.2f", size/2^10).."KB \("..size.." Bytes\)"
 	else
-		return string.format("%.2f", size/1048576).."MB \("..size.." Bytes\)"
+		return string.format("%.2f", size/2^20).."MB \("..size.." Bytes\)"
 	end
-end
+end -- end of changes (NuPogodi, 26.05.12)
 
 function FileInfo:init(path,fname)
 	self.pathfile = path.."/"..fname
 	self.result = {}
 	self:addAllCommands()
-	
+
 	local info_entry = {dir = "Name", name = fname}
 	table.insert(self.result, info_entry)
 	info_entry = {dir = "Path", name = path}
 	table.insert(self.result, info_entry)
-	info_entry = {dir = "Size", name = FileInfo:FileSize(self.pathfile)}
+	-- NuPogodi, 26.05.12: now one has to call FileInfo:FileSize(integer)
+	info_entry = {dir = "Size", name = FileInfo:FileSize(lfs.attributes(self.pathfile,"size"))}
 	table.insert(self.result, info_entry)
-	-- empty line
-	--info_entry = {dir = " ", name = " "}
-	--table.insert(self.result, info_entry)
+	-- NuPogodi, 26.05.12: size & filename of unzipped entry for zips 
+	if string.lower(string.match(fname, ".+%.([^.]+)")) == "zip" then
+		local outfile = "./data/zip_content"
+		local l, s = 1, ""
+		os.execute("unzip ".."-l \""..self.pathfile.."\" > "..outfile)
+		if io.open(outfile, "r") then
+			for lines in io.lines(outfile) do 
+				if l == 4 then s = lines break else l = l + 1 end
+			end
+			-- due to rewriting FileInfo:FileSize(integer), one can use it now
+			info_entry = { dir = "Unpacked", name = FileInfo:FileSize(tonumber(string.sub(s,1,11))) }
+			table.insert(self.result, info_entry)
+			--[[ TODO: When the fileentry inside zips is encoded as ANSI (codes 128-255)
+			any attempt to print such fileentry causes crash by drawing!!! When fileentries
+			are encoded as UTF8, everything seems fine
+			info_entry = { dir = "Content", name = string.sub(s,29,-1) }
+			table.insert(self.result, info_entry) ]]
+		end
+	end	-- end of changes (NuPogodi, 26.05.12)
+
 	info_entry = {dir = "Created", name = FileInfo:FileCreated(self.pathfile,"change")}
 	table.insert(self.result, info_entry)
 	info_entry = {dir = "Modified", name = FileInfo:FileCreated(self.pathfile,"modification")}
 	table.insert(self.result, info_entry)
-	
+
 	-- if the document was already opened
 	local history = DocToHistory(self.pathfile)
 	local file, msg = io.open(history,"r")
@@ -85,7 +101,7 @@ function FileInfo:init(path,fname)
 			end
 		end
 	end
-	
+
 	self.items = #self.result
 	-- now calculating the horizontal space for left column
 	local tw, width
@@ -102,11 +118,10 @@ function FileInfo:show(path,name)
 	-- it's necessary for last documents
 	if not io.open(path.."/"..name,"r") then return nil end
 	-- then goto main functions
-		self.perpage = math.floor(G_height / self.spacing) - 2
+	self.perpage = math.floor(G_height / self.spacing) - 2
 	self.pagedirty = true
 	self.markerdirty = false
 	FileInfo:init(path,name)
-
 
 	while true do
 		local cface = Font:getFace("cfont", 22)
@@ -117,51 +132,28 @@ function FileInfo:show(path,name)
 		if self.pagedirty then
 			self.markerdirty = true
 			-- gap between title rectangle left & left text drawing point
-			local xgap = 10
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 			-- draw menu title
-			DrawTitle("Document Information",self.margin_H,0,self.title_H,3,tface)
-			local c
+			DrawTitle("Document Information",self.margin_H,0,self.title_H,4,tface)
 			-- position of left column
-			local x1 = self.margin_H + xgap
+			local x1 = self.margin_H
 			-- position of right column + its width + a small gap between columns
 			local x2 = x1 + self.lcolumn_width + 15
 			-- y-position correction because of the multiline drawing 
-			local dy = 5
+			local dy, c = 5, 1
 			for c = 1, self.perpage do
 				local i = (self.page - 1) * self.perpage + c
 				if i <= self.items then
 					y = self.title_H + self.spacing * c + dy
 					renderUtf8Text(fb.bb, x1, y, lface, self.result[i].dir, true)
-					-- set interline spacing = 1.65 of the char height 
-					-- or directly in pixels (if it exceeds 5)
 					dy = dy + renderUtf8Multiline(fb.bb, x2, y, cface, self.result[i].name, true,
-						G_width - self.margin_H - x2 - xgap, 1.65).y - y
+						G_width - self.margin_H - x2, 1.65).y - y
 				end
 			end
 			-- draw footer
 			all_page = math.ceil(self.items/self.perpage)
 			DrawFooter("Page "..self.page.." of "..all_page,fface,self.foot_H)
 		end
-		
---[[	-- may be used in future for selecting some of displayed items	
-		if self.markerdirty then
-			if not self.pagedirty then
-				if self.oldcurrent > 0 then
-					y = self.title_H + (self.spacing * self.oldcurrent) + 12
-					fb.bb:paintRect(self.margin_H, y, G_width - 2 * self.margin_H, 3, 15)
-					fb:refresh(1, self.margin_H, y, G_width - 2 * self.margin_H, 3)
-				end
-			end
-			-- draw new marker line
-			y = self.title_H + (self.spacing * self.current) + 12
-			fb.bb:paintRect(self.margin_H, y, G_width - 2 * self.margin_H, 3, 15)
-			if not self.pagedirty then
-				fb:refresh(1, self.margin_H, y, G_width - 2 * self.margin_H, 3)
-			end
-			self.oldcurrent = self.current
-			self.markerdirty = false
-		end ]]
 
 		if self.pagedirty then
 			fb:refresh(0)
@@ -195,7 +187,13 @@ end
 
 function FileInfo:addAllCommands()
 	self.commands = Commands:new{}
-	-- show help page
+
+	self.commands:add({KEY_SPACE}, nil, "Space",
+		"refresh page manually",
+		function(self)
+			self.pagedirty = true
+		end
+	)
 	self.commands:add(KEY_H,nil,"H",
 		"show help page",
 		function(self)
@@ -203,14 +201,6 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	) 
-	-- make screenshot
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-		"make screenshot",
-		function(self)
-			Screen:screenshot()
-		end
-	) 
-	-- recent documents
 	self.commands:add(KEY_L, nil, "L",
 		"last documents",
 		function(self)
@@ -219,11 +209,9 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	) 
-	-- fonts 
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"font menu",
 		function(self)
-			-- NuPogodi, 18.05.12: define the number of the current font in face_list 
 			local item_no = 0
 			local face_list = Font:getFontList() 
 			while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
@@ -233,7 +221,6 @@ function FileInfo:addAllCommands()
 			local fonts_menu = SelectMenu:new{
 				menu_title = "Fonts Menu",
 				item_array = face_list,
-				-- NuPogodi, 18.05.12: define selected item
 				current_entry = item_no - 1,
 				}
 			local re, font = fonts_menu:choose(0, G_height)
@@ -278,24 +265,17 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME, KEY_FW_LEFT}, nil, "Back",
+	-- make screenshot
+	self.commands:add(KEY_P, MOD_SHIFT, "P",
+		"make screenshot",
+		function(self)
+			Screen:screenshot()
+		end
+	) 
+	self.commands:add({KEY_BACK, KEY_FW_LEFT}, nil, "Back",
 		"back",
 		function(self)
 			return "break"
 		end
 	)
-	self.commands:add({KEY_SPACE}, nil, "Space",
-		"refresh page manually",
-		function(self)
-			self.pagedirty = true
-		end
-	)
---[[	self.commands:add({KEY_B}, nil, "B",
-		"file browser",
-		function(self)
-			--FileChooser:setPath(".")
-			FileChooser:choose(0, G_height)
-			self.pagedirty = true
-		end
-	)]]
 end

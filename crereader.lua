@@ -9,15 +9,15 @@ CREReader = UniReader:new{
 
 	gamma_index = 15,
 	font_face = nil,
-	-- NuPogodi, 17.05.12: to store fontsize changes
 	font_zoom = 0,
 
 	line_space_percent = 100,
 	
-	-- NuPogodi, 17.05.12: insert new parameter to store old doc height before rescaling.
-	-- One needs it to change font(face & size) and / or interline spacig without 
-	-- appreciable changing of the current position in document
+	-- NuPogodi, 15.05.12: insert the parameter to store old doc height before rescaling.
+	-- One needs it to change font(face, size, bold) without appreciable changing of the
+	-- current position in document
 	old_doc_height = 0,
+	-- end of changes (NuPogodi)
 }
 
 function CREReader:init()
@@ -32,7 +32,6 @@ function CREReader:init()
 		end
 	end
 end
-
 -- NuPogodi, 20.05.12: inspect the zipfile content
 function CREReader:ZipContentExt(fname)
 	local outfile = "./data/zip_content"
@@ -52,18 +51,15 @@ end
 function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
-	
 	if file_type == "zip" then
 		-- NuPogodi, 20.05.12: read the content of zip-file
 		-- and return extention of the 1st file
 		file_type = self:ZipContentExt(filename)
 	end
-	
 	-- these two format use the same css file
 	if file_type == "html" then
 		file_type = "htm"
 	end
-	
 	-- if native css-file doesn't exist, one needs to use default cr3.css
 	if not io.open("./data/"..file_type..".css") then
 		file_type = "cr3"
@@ -74,9 +70,7 @@ function CREReader:open(filename)
 	if not ok then
 		return false, self.doc -- will contain error message
 	end
-
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
-
 	return true
 end
 
@@ -94,8 +88,7 @@ function CREReader:loadSpecialSettings()
 
 	local line_space_percent = self.settings:readSetting("line_space_percent")
 	self.line_space_percent = line_space_percent or self.line_space_percent
-	
-	-- NuPogodi, 17.05.12: reading & setting the font size
+
 	self.font_zoom = self.settings:readSetting("font_zoom") or 0
 	if self.font_zoom ~= 0 then
 		local i = math.abs(self.font_zoom)
@@ -110,7 +103,7 @@ function CREReader:loadSpecialSettings()
 end
 
 function CREReader:getLastPageOrPos()
-	local last_percent = self.settings:readSetting("last_percent") 
+	local last_percent = self.settings:readSetting("last_percent")
 	if last_percent then
 		return math.floor((last_percent * self.doc:getFullHeight()) / 10000)
 	else
@@ -122,7 +115,6 @@ function CREReader:saveSpecialSettings()
 	self.settings:saveSetting("font_face", self.font_face)
 	self.settings:saveSetting("gamma_index", self.gamma_index)
 	self.settings:saveSetting("line_space_percent", self.line_space_percent)
-	-- NuPogodi, 17.05.12: saving the font size
 	self.settings:saveSetting("font_zoom", self.font_zoom)
 end
 
@@ -142,8 +134,8 @@ function CREReader:redrawCurrentPage()
 	-- NuPogodi, 15.05.12: Something was wrong here!
 	-- self:goto(self.pos)
 	-- after changing the font(face, size or boldface) or interline spacing 
-	-- the position inside document HAS TO REMAIN CONSTANT! it was NOT!
-	-- Fixed the problem by the following correction to new document height
+	-- the position inside document HAS TO REMAIN NEARLY CONSTANT! it was NOT!
+	-- SEEMS TO BE FIXED by relacing self:goto(self.pos) on
 	self:goto(self.pos * (self.doc:getFullHeight() - G_height) / (self.old_doc_height - G_height))
 end
 
@@ -158,7 +150,7 @@ end
 function CREReader:goto(pos, is_ignore_jump, pos_type)
 	local prev_xpointer = self.doc:getXPointer()
 	local width, height = G_width, G_height
-
+	
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
@@ -167,17 +159,16 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 		pos = math.max(pos, 0)
 		self.doc:gotoPos(pos)
 	end
-
 	-- add to jump history, distinguish jump from normal page turn
 	-- NOTE:
-	-- even though we have called gotoPos() or gotoXPointer() previously, 
+	-- even though we have called gotoPos() or gotoXPointer() previously,
 	-- self.pos hasn't been updated yet here, so we can still make use of it.
 	if not is_ignore_jump then
 		if self.pos and math.abs(self.pos - pos) > height then
 			self:addJump(prev_xpointer)
 		end
 	end
-
+	
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	debug("## self.show_overlap "..self.show_overlap)
@@ -344,12 +335,9 @@ function CREReader:_drawReadingInfo()
 		renderUtf8Text(fb.bb, gapx, ypos+6, face, "...", true)
 	end
 	-- end of changes (NuPogodi)
-
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
 end
-
-
 
 function CREReader:adjustCreReaderCommands()
 	-- delete commands
@@ -376,14 +364,6 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
 
 	-- overwrite commands
-	
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-		"make screenshot",
-		function(cr)
-			Screen:screenshot()
-		end
-	)
-	
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
@@ -421,8 +401,9 @@ function CREReader:adjustCreReaderCommands()
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."\%", 0)
 			debug("line spacing set to", self.line_space_percent)
-			-- NuPogodi, 17.05.12: storing old document height
+			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
+			-- end of changes (NuPogodi)
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
 			self:redrawCurrentPage()
 			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
@@ -430,8 +411,8 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	local numeric_keydefs = {}
-	for i=1,10 do 
-		numeric_keydefs[i]=Keydef:new(KEY_1+i-1, nil, tostring(i%10)) 
+	for i=1,10 do
+		numeric_keydefs[i]=Keydef:new(KEY_1+i-1, nil, tostring(i%10))
 	end
 	self.commands:addGroup("[1..0]", numeric_keydefs,
 		"jump to <key>*10% of document",
@@ -458,11 +439,12 @@ function CREReader:adjustCreReaderCommands()
 				item_array = face_list, 
 				current_entry = item_no - 1,
 			}
-
-			local item_no = fonts_menu:choose(0, G_height)
+			item_no = nil
+			item_no = fonts_menu:choose(0, G_height)
 			debug(face_list[item_no])
-			-- NuPogodi, 17.05.12: storing old document height
+			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
+			-- end of changes (NuPogodi)
 			if item_no then
 				Screen:restoreFromSavedBB()
 				self.doc:setFontFace(face_list[item_no])
@@ -477,8 +459,9 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_F, MOD_ALT, "F",
 		"Toggle font bolder attribute",
 		function(self)
-			-- NuPogodi, 17.05.12: storing old document height
+			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
+			-- end of changes (NuPogodi)
 			self.doc:toggleFontBolder()
 			self:redrawCurrentPage()
 			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
