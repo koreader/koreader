@@ -29,15 +29,13 @@ FileChooser = {
 	current = 1,
 	oldcurrent = 0,
 	exception_message = nil,
-	-- NuPogodi, 20.05.12: added new parameters
+	-- NuPogodi, 20.05.12: added new parameters to make helppage available
 	pagedirty = true,
 	markerdirty = false,
 	perpage,
+	clipboard = "/mnt/us/kindlepdfviewer/clipboard", -- NO finishing slash
 }
 
--- NuPogodi: some new auxiliary functions
-
--- make long headers for fit in title width by removing first characters
 function getProperTitleLength(txt,font_face,max_width)
 	local tw = TextWidget:new({ text = txt, face = font_face})
 	-- 1st approximation for a point where to start title
@@ -50,7 +48,7 @@ function getProperTitleLength(txt,font_face,max_width)
 	end
 	return string.sub(txt,n-1,-1)
 end
--- return the battery level - either "XY%" or "?" (if error)
+
 function BatteryLevel()
 	local fn, battery = "./data/temporary", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
@@ -62,39 +60,39 @@ function BatteryLevel()
 	end
 	return battery
 end
--- draw the text-header for menues and add the clock & battery level
+
 function DrawTitle(text,lmargin,y,height,color,font_face)
-	fb.bb:paintRect(lmargin, y+10, fb.bb:getWidth() - lmargin*2, height, color)
+	-- radius for round corners
+	local r = 6
+	-- redefine to ignore the input for background color
+	color = 3
+	fb.bb:paintRect(1, 1, fb.bb:getWidth() - 2, height - r, color)
+	blitbuffer.paintBorder(fb.bb, 1, height/2, fb.bb:getWidth() - 2, height/2, height/2, color, r)
 	-- to have a horisontal gap between text & background rectangle
-	lmargin = lmargin + 10
 	t = BatteryLevel() .. os.date(" %H:%M")
 	local tw = TextWidget:new({ text = t, face = font_face})
 	twidth = tw:getSize().w
-	renderUtf8Text(fb.bb, fb.bb:getWidth()-twidth-lmargin, y + height, font_face, t, true)
+	renderUtf8Text(fb.bb, fb.bb:getWidth()-twidth-lmargin, height-10, font_face, t, true)
 	tw:free()
 
 	tw = TextWidget:new({ text = text, face = font_face})
-	local max_width = fb.bb:getWidth() - 2 * lmargin - twidth
+	local max_width = fb.bb:getWidth() - 2*lmargin - twidth
 	if tw:getSize().w < max_width then
-		renderUtf8Text(fb.bb, lmargin, y + height, font_face, text, true)
+		renderUtf8Text(fb.bb, lmargin, height-10, font_face, text, true)
 	else
-		tw:free()
-		-- separately draw the title prefix = ...
-		local tw = TextWidget:new({ text = "...", face = font_face})
-		renderUtf8Text(fb.bb, lmargin, y + height, font_face, "...", true)
-		-- then define proper text length and draw it
-		local txt = getProperTitleLength(text,font_face,max_width-tw:getSize().w)
-		renderUtf8Text(fb.bb, lmargin+tw:getSize().w, y + height, font_face, txt, true)
+		local w = renderUtf8Text(fb.bb, lmargin, height-10, font_face, "...", true)
+		local txt = getProperTitleLength(text, font_face, max_width-w)
+		renderUtf8Text(fb.bb, w+lmargin, height-10, font_face, txt, true)
 	end
+	tw:free()
 end
--- just a footer
+
 function DrawFooter(text,font_face,h)
 	local y = G_height - 7
 	local x = (G_width / 2) - 50
 	renderUtf8Text(fb.bb, x, y, font_face, text, true)
 end
--- to draw items in filechooser, filesearcher & filehistory
--- TODO?: one can consider replacing icons by hotkeys (requires to redefine existing hotkeys)
+
 function DrawFileItem(name,x,y,image)
 	-- define icon file for
 	if name == ".." then image = "upfolder" end
@@ -105,7 +103,7 @@ function DrawFileItem(name,x,y,image)
 	iw:paintTo(fb.bb, x, y - iw:getSize().h + 1)
 	-- then drawing filenames
 	local cface = Font:getFace("cfont", 22)
-	local xleft = x + iw:getSize().w + 9 -- 8-10 pixels = the gap between icon & filename
+	local xleft = x + iw:getSize().w + 9 -- the gap between icon & filename
 	local width = fb.bb:getWidth() - xleft - x
 	-- now printing the name
 	if sizeUtf8Text(xleft, fb.bb:getWidth() - x, cface, name, true).x < width then
@@ -116,7 +114,7 @@ function DrawFileItem(name,x,y,image)
 		renderUtf8Text(fb.bb, handle.x + lgap + x, y, cface, " ...", true)
 	end
 end
--- end of NuPogodi's functions
+-- end of old NuPogodi's functions
 
 function getAbsolutePath(aPath)
 	local abs_path
@@ -179,8 +177,8 @@ function FileChooser:setPath(newPath)
 	end
 end
 
--- NuPogodi, 20.05.12: rewrote this function in common way 
--- (with help page, AddAllCommands, etc.)
+-- NuPogodi, 20.05.12: FileChooser:choose is totally rewritten
+-- to make helppage with hotkeys available for users
 
 function FileChooser:choose(ypos, height)
 	self.perpage = math.floor(height / self.spacing) - 2
@@ -263,8 +261,7 @@ function FileChooser:choose(ypos, height)
 	end -- while
 end
 
--- NuPogodi, 20.05.12: common-way addAllCommands()
-
+-- NuPogodi, 20.05.12: add available commands
 function FileChooser:addAllCommands()
 	self.commands = Commands:new{}
 
@@ -286,8 +283,8 @@ function FileChooser:addAllCommands()
 			else
 				self.current = self.items - (self.page-1)*self.perpage
 				self.markerdirty = true
-			end -- if
-		end -- function
+			end
+		end
 	)
 	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
 		"goto previous page",
@@ -298,8 +295,8 @@ function FileChooser:addAllCommands()
 			else
 				self.current = 1
 				self.markerdirty = true
-			end -- if
-		end -- function
+			end
+		end
 	)
 	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
 		"goto next item",
@@ -316,8 +313,8 @@ function FileChooser:addAllCommands()
 					self.current = self.current + 1
 					self.markerdirty = true
 				end
-			end -- if
-		end -- function
+			end
+		end
 	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"goto previous item",
@@ -331,25 +328,20 @@ function FileChooser:addAllCommands()
 			else
 				self.current = self.current - 1
 				self.markerdirty = true
-			end -- if
-		end -- function
+			end
+		end
 	)
 	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
 		"show document information",
 		function(self)
-			local newdir = self.dirs[self.perpage*(self.page-1)+self.current]
-			if newdir == ".." then
-				showInfoMsgWithDelay("<UP-DIR>",1000,1)
-			elseif newdir then
-				showInfoMsgWithDelay("<DIR>",1000,1)
-			else
+			if self:FullFileName() then
 				FileInfo:show(self.path,self.files[self.perpage*(self.page-1)+self.current - #self.dirs])
 				self.pagedirty = true
 			end
-		end -- function
+		end
 	)
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
-		"open document",
+		"open document / goto folder",
 		function(self)
 			local newdir = self.dirs[self.perpage*(self.page-1)+self.current]
 			if newdir == ".." then
@@ -364,36 +356,57 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
+-- NuPogodi, 23.05.12: modified to delete both files and empty folders
 	self.commands:add(KEY_DEL, nil, "Del",
-		"delete document",
+		"delete selected item",
 		function(self)
-			local dir_to_del = self.dirs[self.perpage*(self.page-1)+self.current]
-			if dir_to_del == ".." then
-				showInfoMsgWithDelay("<UP-DIR>",1000,1)
-			elseif dir_to_del then
-				showInfoMsgWithDelay("<DIR>",1000,1)
-			else
-				local file_to_del=self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+			local folder = self.dirs[self.perpage*(self.page-1)+self.current]
+			if folder == ".." then
+				showInfoMsgWithDelay("<UP-DIR> can not be deleted! ",2000,1)
+			elseif folder then
 				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
-				while true do
-					ev = input.saveWaitForEvent()
-					ev.code = adjustKeyEvents(ev)
-					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
-						if ev.code == KEY_Y then
-							-- delete the file itself
-							os.execute("rm \""..file_to_del.."\"")
-							-- and its history file, if any
-							os.execute("rm \""..DocToHistory(file_to_del).."\"")
-							 -- to avoid showing just deleted file
-							self:setPath(self.path)
-						end
-						self.pagedirty = true
-						break
+				if self:ReturnKey() == KEY_Y then
+					if lfs.rmdir(self.path.."/"..folder) then
+						self:setPath(self.path)
+					else
+						showInfoMsgWithDelay("This folder can not be deleted! ",2000,1)
 					end
-				end -- while
-			end -- if
+				end
+				self.pagedirty = true
+			else
+				local file_to_del = self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+				if self:ReturnKey() == KEY_Y then
+					-- delete the file itself
+					os.execute("rm "..self:InQuotes(file_to_del))
+					-- and its history file, if any
+					os.execute("rm "..self:InQuotes(DocToHistory(file_to_del)))
+					-- to avoid showing just deleted file
+					self:setPath(self.path)
+				end
+				self.pagedirty = true
+			end -- if folder == ".."
 		end -- function
 	)
+-- NuPogodi, 24.05.12: Added function to rename documents (extention comes from the old file)
+	self.commands:add(KEY_R, MOD_SHIFT, "R",
+		"rename document",
+		function(self)
+			local oldname = self:FullFileName()
+			if oldname then
+				local newname = InputBox:input(0, 0, "New filename:", "without extention", true)
+				if newname then
+					local ext = string.lower(string.match(oldname, ".+%.([^.]+)") or "")
+					newname = self.path.."/"..newname..'.'..ext
+					os.rename(oldname, newname)
+					os.rename(DocToHistory(oldname), DocToHistory(newname))
+					self:setPath(self.path)
+				end
+				self.pagedirty = true
+			end
+		end
+	)
+-- end of changes (NuPogodi)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"goto font menu",
 		function(self)
@@ -428,31 +441,96 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_L, nil, "L",
 		"show last documents",
 		function(self)
+			lfs.mkdir("./history/")
 			FileHistory:init()
 			FileHistory:choose("")
 			self.pagedirty = true
 			return nil
 		end
-	) 
+	)
 	self.commands:add(KEY_S, nil, "S",
 		"search among files",
 		function(self)
-			local keywords = InputBox:input(fb.bb:getHeight()-100, 100, "Search:")
+			local keywords = InputBox:input(0, 0, "Search:")
 			if keywords then
 				InfoMessage:show("Searching... ",0)
 				FileSearcher:init( self.path )
 				FileSearcher:choose(keywords)
 			end
-			self.pagedirty = true 
+			self.pagedirty = true
 		end -- function
 	)
+	
+-- NuPogodi, 23.05.12: new functions to manipulate (copy & move) files via clipboard
+	self.commands:add(KEY_C, MOD_SHIFT, "C",
+		"copy document to \'clipboard\'",
+		function(self)
+			local file = self:FullFileName()
+			if file then
+				lfs.mkdir(self.clipboard)
+				os.execute("cp "..self:InQuotes(file).." "..self.clipboard)
+				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				os.execute("cp "..self:InQuotes(DocToHistory(file)).." "
+					..self:InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
+				showInfoMsgWithDelay("file is copied to clipboard ", 1000, 1)
+			end
+		end
+	) 
+	self.commands:add(KEY_X, MOD_SHIFT, "X",
+		"move document to \'clipboard\'",
+		function(self)
+			local file = self:FullFileName()
+			if file then
+				lfs.mkdir(self.clipboard)
+				os.execute("mv "..self:InQuotes(file).." "..self.clipboard)
+				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
+				InfoMessage:show("file is moved to clipboard ", 0)
+				self:setPath(self.path)
+				self.pagedirty = true
+			end
+		end
+	)
+	self.commands:add(KEY_V, MOD_SHIFT, "V",
+		"paste documents from \'clipboard\'",
+		function(self)
+			InfoMessage:show("moving file(s) from clipboard ", 0)
+			for f in lfs.dir(self.clipboard) do
+				if lfs.attributes(self.clipboard.."/"..f, "mode") == "file" then
+					os.rename(self.clipboard.."/"..f, self.path.."/"..f)
+					os.rename(DocToHistory(self.clipboard.."/"..f), DocToHistory(self.path.."/"..f))
+				end
+			end
+			self:setPath(self.path)
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_B, MOD_SHIFT, "B",
+		"show content of \'clipboard\'",
+		function(self)
+			lfs.mkdir(self.clipboard)
+			self:setPath(self.clipboard)
+			-- TODO: exit back from clipboard to last folder - Redefine Exit on FW_Right?
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_N, MOD_SHIFT, "N",
+		"make new folder",
+		function(self)
+			local folder = InputBox:input(0, 0, "New Folder:")
+			if folder then
+				if lfs.mkdir(self.path.."/"..folder) then
+					self:setPath(self.path)
+				end
+			end
+			self.pagedirty = true
+		end
+	)
+-- end of changes (NuPogodi)
 	self.commands:add(KEY_P, MOD_SHIFT, "P",
 		"make screenshot",
 		function(self)
-			os.execute("mkdir ".."/mnt/us/kindlepdfviewer/screenshots")
-			local d = os.date("%Y%m%d%H%M%S")
-			showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-			os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+			Screen:screenshot()
 		end
 	) 
 	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
@@ -461,5 +539,35 @@ function FileChooser:addAllCommands()
 			return "break"
 		end
 	)
-
 end
+
+-- NuPogodi, 23.05.12: returns full filename or nil (if folder)
+function FileChooser:FullFileName()
+	local file
+	local folder = self.dirs[self.perpage*(self.page-1)+self.current]
+	if folder == ".." then
+		showInfoMsgWithDelay("<UP-DIR> ",1000,1)
+	elseif folder then
+		showInfoMsgWithDelay("<DIR> ",1000,1)
+	else
+		file=self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+	end
+	return file
+end
+-- returns the keycode of released key and (if debug) shows the keycode on screen
+function FileChooser:ReturnKey(debug)
+	while true do
+		ev = input.saveWaitForEvent()
+		ev.code = adjustKeyEvents(ev)
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+			break
+		end
+	end
+	if debug then showInfoMsgWithDelay("Keycode = "..ev.code,1000,1) end
+	return ev.code
+end
+
+function FileChooser:InQuotes(text)
+	return "\""..text.."\""
+end
+
