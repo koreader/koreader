@@ -1,6 +1,6 @@
 # you can probably leave these settings alone:
 
-LUADIR=lua
+LUADIR=luajit-2.0
 MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
@@ -82,7 +82,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(MUPDFLIBDIR)/libjpeg.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
-LUALIB := $(LUADIR)/src/liblua.a
+LUALIB := $(LUADIR)/src/libluajit.a
 
 all:kpdfview
 
@@ -127,9 +127,9 @@ lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
 	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
+	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
@@ -148,8 +148,6 @@ fetchthirdparty:
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
-	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
-	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
 	-rm -f *.o kpdfview slider_watcher
@@ -195,7 +193,11 @@ $(CRENGINELIBS):
 		make
 
 $(LUALIB):
-	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
+ifdef EMULATE_READER
+	make -C $(LUADIR)
+else
+endif
+#	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
