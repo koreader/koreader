@@ -87,6 +87,9 @@ KEY_FW_UP = 122
 KEY_FW_DOWN = 123
 KEY_FW_PRESS = 92
 
+-- this is for the K2 - it won't hurt on the KDX
+KEY_LPGFWD = 104
+
 KEY_INTO_SCREEN_SAVER = 10000
 KEY_OUTOF_SCREEN_SAVER = 10001
 
