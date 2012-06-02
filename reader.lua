@@ -51,7 +51,7 @@ function openFile(filename)
 			reader:loadSettings(filename)
 			page_num = reader:getLastPageOrPos()
 			reader:goto(tonumber(page_num), true)
-			reader_settings:saveSetting("lastfile", filename)
+			G_reader_settings:saveSetting("lastfile", filename)
 			return reader:inputLoop()
 		else
 			InfoMessage:show("Error opening document.", 0)
@@ -120,21 +120,21 @@ Screen:updateRotationMode()
 Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- set up reader's setting: font
-reader_settings = DocSettings:open(".reader")
-fontmap = reader_settings:readSetting("fontmap")
+G_reader_settings = DocSettings:open(".reader")
+fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
 	Font.fontmap = fontmap
 end
 
 -- initialize global settings shared among all readers
-UniReader:initGlobalSettings(reader_settings)
+UniReader:initGlobalSettings(G_reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
 CREReader:init()
 
 -- display directory or open file
-local patharg = reader_settings:readSetting("lastfile")
+local patharg = G_reader_settings:readSetting("lastfile")
 if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
@@ -161,8 +161,8 @@ end
 
 
 -- save reader settings
-reader_settings:saveSetting("fontmap", Font.fontmap)
-reader_settings:close()
+G_reader_settings:saveSetting("fontmap", Font.fontmap)
+G_reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012

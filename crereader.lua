@@ -9,6 +9,7 @@ CREReader = UniReader:new{
 
 	gamma_index = 15,
 	font_face = nil,
+	default_font = "Droid Sans",
 	font_zoom = 0,
 
 	line_space_percent = 100,
@@ -30,6 +31,11 @@ function CREReader:init()
 		if not ok then
 			debug(err)
 		end
+	end
+
+	local default_font = G_reader_settings:readSetting("cre_font")
+	if default_font then
+		self.default_font = default_font
 	end
 end
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -79,7 +85,10 @@ end
 ----------------------------------------------------
 function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
-	self.font_face = font_face or "Droid Sans"
+	if not font_face then
+		font_face = self.default_font
+	end
+	self.font_face = font_face
 	self.doc:setFontFace(self.font_face)
 
 	local gamma_index = self.settings:readSetting("gamma_index")
@@ -454,6 +463,13 @@ function CREReader:adjustCreReaderCommands()
 			self:redrawCurrentPage()
 			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
 			self:fillToc()
+		end
+	)
+	self.commands:add(KEY_F, MOD_SHIFT, "F",
+		"use document font as default font",
+		function(self)
+			G_reader_settings:saveSetting("cre_font", self.font_face)
+			showInfoMsgWithDelay("Default document font set", 2000, 1)
 		end
 	)
 	self.commands:add(KEY_F, MOD_ALT, "F",
