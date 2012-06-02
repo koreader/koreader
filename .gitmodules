@@ -10,3 +10,6 @@
 [submodule "kpvcrlib/crengine"]
 	path = kpvcrlib/crengine
 	url = git://crengine.git.sourceforge.net/gitroot/crengine/crengine
+[submodule "luajit-2.0"]
+	path = luajit-2.0
+	url = http://luajit.org/git/luajit-2.0.git
