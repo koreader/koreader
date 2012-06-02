@@ -9,7 +9,7 @@ function DocToHistory(fullname)
 		j = i
 	end
 	local f = string.sub(fullname,j+1,-1)
-	if j>0 then return "./history/\["..string.gsub(string.sub(fullname,1,j),"/","#").."\] "..f..".lua"
+	if j>0 then return "./history/["..string.gsub(string.sub(fullname,1,j),"/","#").."] "..f..".lua"
 	else return "./settings"..f..".lua" end
 end
 

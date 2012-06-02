@@ -145,7 +145,7 @@ function SplitString(text)
 	local words = {}
 	local word = ""
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-		if uchar == "/" or uchar == " " or uchar == "-" or uchar == "_" or uchar == "\." then
+		if uchar == "/" or uchar == " " or uchar == "-" or uchar == "_" or uchar == "." then
 			words[#words+1] = word .. uchar
 			word = ""
 		else
