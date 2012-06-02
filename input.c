@@ -117,6 +117,7 @@ static int openInputDevice(lua_State *L) {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
 	}
+	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	return 0;
 #endif
 }
