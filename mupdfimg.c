@@ -53,6 +53,7 @@ static int loadPNGData(lua_State *L) {
 	fz_catch(img->context) {
 		return luaL_error(L, "cannot load PNG data");
 	}
+	return 0;
 }
 
 static int loadJPEGData(lua_State *L) {
@@ -65,6 +66,7 @@ static int loadJPEGData(lua_State *L) {
 	fz_catch(img->context) {
 		return luaL_error(L, "cannot open JPEG data");
 	}
+	return 0;
 }
 
 static int toBlitBuffer(lua_State *L) {
