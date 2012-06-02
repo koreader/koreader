@@ -1,7 +1,7 @@
 glyphcache_max_memsize = 256*1024 -- 256kB glyphcache
 glyphcache_current_memsize = 0
 glyphcache = {}
-glyphcache_max_age = 4096
+glyphcache_max_age = 4
 function glyphCacheClaim(size)
 	if(size > glyphcache_max_memsize) then
 		error("too much memory claimed")
@@ -15,6 +15,7 @@ function glyphCacheClaim(size)
 				glyphcache_current_memsize = glyphcache_current_memsize - glyphcache[k].size
 				glyphcache[k].glyph.bb:free()
 				glyphcache[k] = nil
+				break -- leave loop and check again if we have enough free space now
 			end
 		end
 	end
@@ -42,6 +43,7 @@ function glyphCacheHash(face, charcode)
 end
 function clearGlyphCache()
 	glyphcache = {}
+	glyphcache_current_memsize = 0
 end
 
 function sizeUtf8Text(x, width, face, text, kerning)
