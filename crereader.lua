@@ -432,6 +432,22 @@ function CREReader:adjustCreReaderCommands()
 			self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
 		end
 	)
+	self.commands:add(KEY_G,nil,"G",
+		"open 'go to position' input box",
+		function(unireader)
+			local height = self.doc:getFullHeight()
+			local position = NumInputBox:input(G_height-100, 100,
+				"Position in percent:", "current: "..math.floor((self.pos / height)*100), true)
+			-- convert string to number
+			if position and pcall(function () position = position + 0 end) then
+				if position >= 0 and position <= 100 then
+					self:goto(math.floor(height * position / 100))
+					return
+				end
+			end
+			self:redrawCurrentPage()
+		end
+	)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"change document font",
 		function(self)
