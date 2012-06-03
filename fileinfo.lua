@@ -34,9 +34,9 @@ function FileInfo:FileSize(size)
 	if size < 1024 then
 		return size.." Bytes"
 	elseif size < 2^20 then
-		return string.format("%.2f", size/2^10).."KB \("..size.." Bytes\)"
+		return string.format("%.2f", size/2^10).."KB ("..size.." Bytes)"
 	else
-		return string.format("%.2f", size/2^20).."MB \("..size.." Bytes\)"
+		return string.format("%.2f", size/2^20).."MB ("..size.." Bytes)"
 	end
 end -- end of changes (NuPogodi, 26.05.12)
 
@@ -87,9 +87,9 @@ function FileInfo:init(path,fname)
 		info_entry = {dir = "Last Read", name = FileInfo:FileCreated(history,"change")}
 		table.insert(self.result, info_entry)
 		local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
-		local to_search, add, factor = "\[\"last_percent\"\]", "\%", 100
+		local to_search, add, factor = "[\"last_percent\"]", "%", 100
 		if ext:getReader(file_type) ~= CREReader then
-			to_search = "\[\"last_page\"\]"
+			to_search = "[\"last_page\"]"
 			add = " pages"
 			factor = 1
 		end

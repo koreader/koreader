@@ -335,7 +335,7 @@ function CREReader:_drawReadingInfo()
 		cur_section = "Section: "..cur_section
 	end
 	-- NuPogodi 15.05.12: Rewrite the following renderUtf8Text() in order to fix too long strings
-	local footer = "Position: "..load_percent.."\%".."  "..cur_section
+	local footer = "Position: "..load_percent.."%".."  "..cur_section
 	if sizeUtf8Text(10, fb.bb:getWidth(), face, footer, true).x < (fb.bb:getWidth() - 20) then
 		renderUtf8Text(fb.bb, 10, ypos+6, face, footer, true)
 	else
@@ -408,7 +408,7 @@ function CREReader:adjustCreReaderCommands()
 				self.line_space_percent = self.line_space_percent + 10
 				self.line_space_percent = math.min(self.line_space_percent, 200)
 			end
-			InfoMessage:show("line spacing "..self.line_space_percent.."\%", 0)
+			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
 			debug("line spacing set to", self.line_space_percent)
 			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
