@@ -3,7 +3,7 @@ require "ui/inputevent"
 require "ui/widget"
 require "ui/screen"
 require "ui/dialog"
-require "settings" -- for debug(), TODO: put debug() somewhere else
+require "settings" -- for DEBUG(), TODO: put DEBUG() somewhere else
 
 
 -- we also initialize the framebuffer
@@ -136,11 +136,11 @@ function UIManager:run()
 			end
 		until all_tasks_checked
 
-		--debug("---------------------------------------------------")
-		--debug("exec stack", self._execution_stack)
-		--debug("window stack", self._window_stack)
-		--debug("dirty stack", self._dirty)
-		--debug("---------------------------------------------------")
+		--DEBUG("---------------------------------------------------")
+		--DEBUG("exec stack", self._execution_stack)
+		--DEBUG("window stack", self._window_stack)
+		--DEBUG("dirty stack", self._dirty)
+		--DEBUG("---------------------------------------------------")
 
 		-- stop when we have no window to show (bug)
 		if #self._window_stack == 0 then

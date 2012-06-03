@@ -22,7 +22,7 @@ end
 
 function ReaderPanning:onPanning(args, key)
 	local dx, dy = unpack(args)
-	debug("key =", key)
+	DEBUG("key =", key)
 	-- for now, bounds checking/calculation is done in the view
 	self.view:PanningUpdate(
 		dx * self.panning_steps.normal * self.dimen.w / 100,

@@ -1,51 +1,38 @@
 require "cache"
 require "ui/geometry"
 
-PdfDocument = Document:new{
+DjvuDocument = Document:new{
 	_document = false,
-	-- muPDF manages its own additional cache
-	mupdf_cache_size = 5 * 1024 * 1024,
+	-- libdjvulibre manages its own additional cache, default value is hard written in c module.
+	djvulibre_cache_size = nil,
 	dc_null = DrawContext.new()
 }
 
-function PdfDocument:init()
+function DjvuDocument:init()
 	local ok
-	ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)
+	ok, self._document = pcall(djvu.openDocument, self.file, self.djvulibre_cache_size)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
 	end
 	self.is_open = true
 	self.info.has_pages = true
-	if self._document:needsPassword() then
-		self.is_locked = true
-	else
-		self:_readMetadata()
-	end
+	self:_readMetadata()
 end
 
-function PdfDocument:unlock(password)
-	if not self._document:authenticatePassword(password) then
-		self._document:close()
-		return false, "wrong password"
-	end
-	self.is_locked = false
-	return self:_readMetadata()
-end
-
-function PdfDocument:_readMetadata()
+function DjvuDocument:_readMetadata()
 	self.info.number_of_pages = self._document:getPages()
 	return true
 end
 
-function PdfDocument:close()
+function DjvuDocument:close()
 	if self.is_open then
 		self.is_open = false
 		self._document:close()
 	end
 end
 
-function PdfDocument:getNativePageDimensions(pageno)
+function DjvuDocument:getNativePageDimensions(pageno)
 	local hash = "pgdim|"..self.file.."|"..pageno
 	local cached = Cache:check(hash)
 	if cached then
@@ -59,21 +46,21 @@ function PdfDocument:getNativePageDimensions(pageno)
 	return page_size
 end
 
-function PdfDocument:getUsedBBox(pageno)
-	local hash = "pgubbox|"..self.file.."|"..pageno
-	local cached = Cache:check(hash)
-	if cached then
-		return cached.data
-	end
-	local page = self._document:openPage(pageno)
+function DjvuDocument:getUsedBBox(pageno)
+	--local hash = "pgubbox|"..self.file.."|"..pageno
+	--local cached = Cache:check(hash)
+	--if cached then
+		--return cached.data
+	--end
+	--local page = self._document:openPage(pageno)
 	local used = {}
-	used.x, used.y, used.w, used.h = page:getUsedBBox()
-	Cache:insert(hash, CacheItem:new{ used })
-	page:close()
+	used.x, used.y, used.w, used.h = 0.01, 0.01, -0.01, -0.01
+	--Cache:insert(hash, CacheItem:new{ used })
+	--page:close()
 	return used
 end
 
-function PdfDocument:getPageText(pageno)
+function DjvuDocument:getPageText(pageno)
 	-- is this worth caching? not done yet.
 	local page = self._document:openPage(pageno)
 	local text = page:getPageText()
@@ -81,7 +68,7 @@ function PdfDocument:getPageText(pageno)
 	return text
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation)
+function DjvuDocument:renderPage(pageno, rect, zoom, rotation)
 	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
@@ -134,11 +121,11 @@ end
 
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
-function PdfDocument:hintPage(pageno, zoom, rotation)
+function DjvuDocument:hintPage(pageno, zoom, rotation)
 	self:renderPage(pageno, nil, zoom, rotation)
 end
 
-function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation)
+function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation)
 	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
 	local hash_excerpt = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
 	local tile = Cache:check(hash_full_page)
@@ -153,4 +140,14 @@ function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation)
 	target:blitFrom(tile.bb, x, y, rect.x - tile.excerpt.x, rect.y - tile.excerpt.y, rect.w, rect.h)
 end
 
-DocumentRegistry:addProvider("pdf", "application/pdf", PdfDocument)
+function DjvuDocument:invertTextYAxel(pageno, text_table)
+	local _, height = self.doc:getOriginalPageSize(pageno)
+	for _,text in pairs(text_table) do
+		for _,line in ipairs(text) do
+			line.y0, line.y1 = (height - line.y1), (height - line.y0)
+		end
+	end
+	return text_table
+end
+
+DocumentRegistry:addProvider("djvu", "application/djvu", DjvuDocument)

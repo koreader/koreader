@@ -76,7 +76,7 @@ function ReaderUI:init()
 end
 
 function ReaderUI:onClose()
-	debug("closing reader")
+	DEBUG("closing reader")
 	if self.document then
 		self.document:close()
 		self.document = false

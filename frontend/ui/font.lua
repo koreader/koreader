@@ -1,4 +1,4 @@
-require "settings" -- for debug()
+require "settings" -- for DEBUG()
 
 Font = {
 	fontmap = {
@@ -54,11 +54,11 @@ function Font:getFace(font, size)
 		realname = self.fontdir.."/"..realname
 		ok, face = pcall(freetype.newFace, realname, size)
 		if not ok then
-			debug("#! Font "..font.." ("..realname..") not supported: "..face)
+			DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
 			return nil
 		end
 		self.faces[font..size] = face
-	--debug("getFace, found: "..realname.." size:"..size)
+	--DEBUG("getFace, found: "..realname.." size:"..size)
 	end
 	return { size = size, ftface = face, hash = font..size }
 end

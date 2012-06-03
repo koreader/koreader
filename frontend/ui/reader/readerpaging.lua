@@ -31,7 +31,7 @@ function ReaderPaging:gotoPage(number)
 	or number < 1 then
 		return false
 	end
-	debug("going to page number", number)
+	DEBUG("going to page number", number)
 
 	-- this is an event to allow other controllers to be aware of this change
 	self.ui:handleEvent(Event:new("PageUpdate", number))
@@ -44,7 +44,7 @@ function ReaderPaging:onPageUpdate(new_page_no)
 end
 
 function ReaderPaging:onGotoPercent(percent)
-	debug("goto document offset in percent:", percent)
+	DEBUG("goto document offset in percent:", percent)
 	local dest = math.floor(self.number_of_pages * percent / 100)
 	if dest < 1 then dest = 1 end
 	if dest > self.number_of_pages then
@@ -55,7 +55,7 @@ function ReaderPaging:onGotoPercent(percent)
 end
 
 function ReaderPaging:onGotoPageRel(diff)
-	debug("goto relative page:", diff)
+	DEBUG("goto relative page:", diff)
 	self:gotoPage(self.current_page + diff)
 	return true
 end
