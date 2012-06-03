@@ -42,7 +42,7 @@ function DocSettings:open(docfile)
 		end
 
 		if stored.version < 2012.05 then
-			debug("settings", docfile, stored)
+			Debug("settings", docfile, stored)
 			if stored.jumpstack ~= nil then
 				stored.jump_history = stored.jumpstack
 				stored.jumpstack = nil
@@ -64,7 +64,7 @@ function DocSettings:open(docfile)
 				end
 			end
 			stored.version = 2012.05
-			debug("upgraded", stored)
+			Debug("upgraded", stored)
 		end
 
 		new.data = stored
@@ -90,8 +90,9 @@ function dump(data)
 	return table.concat(out)
 end
 
-function debug(...)
+function Debug(...)
 	local line = ""
+	local arg = {...}
 	for i,v in ipairs(arg) do
 		if type(v) == "table" then
 			line = line .. " " .. dump(v)

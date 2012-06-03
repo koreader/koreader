@@ -257,7 +257,7 @@ function adjustKeyEvents(ev)
 		end
 	end
 	-- This should not happen.
-	debug("# Unrecognizable rotation mode "..Screen.cur_rotation_mode.."!")
+	Debug("# Unrecognizable rotation mode "..Screen.cur_rotation_mode.."!")
 	return nil
 end
 
@@ -267,7 +267,7 @@ function input.saveWaitForEvent(timeout)
 	while retry do
 		local ok, ev = pcall(input.waitForEvent, timeout)
 		if not ok then
-			debug("got error waiting for events:", ev)
+			Debug("got error waiting for events:", ev)
 			if ev == "Waiting for input failed: 4\n" then
 				-- EINTR, we got interrupted. Try and restart
 				retry = true

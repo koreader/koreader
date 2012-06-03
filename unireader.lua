@@ -132,7 +132,7 @@ function UniReader:screenOffset()
 	if self.offset_y < 0 then
 		y = y + self.offset_y
 	end
-	debug("screenOffset", x, y)
+	Debug("screenOffset", x, y)
 	return x,y
 end
 
@@ -159,7 +159,7 @@ function UniReader:screenToPageTransform(x, y)
 	local x_p,y_p =
 		( x - x_o ) / self.globalzoom,
 		( y - y_o ) / self.globalzoom
-	debug("screenToPage", x,y, "offset", x_o,y_o, "page", x_p,y_p)
+	Debug("screenToPage", x,y, "offset", x_o,y_o, "page", x_p,y_p)
 	return x_p, y_p
 end
 
@@ -326,7 +326,7 @@ function UniReader:_toggleWordHighLight(t, l, w)
 end
 
 function UniReader:_toggleTextHighLight(t, l0, w0, l1, w1)
-	debug("_toggleTextHighLight range", l0, w0, l1, w1)
+	Debug("_toggleTextHighLight range", l0, w0, l1, w1)
 	-- make sure (l0, w0) is smaller than (l1, w1)
 	if l0 > l1 then
 		l0, l1 = l1, l0
@@ -384,7 +384,7 @@ function UniReader:startHighLightMode()
 		end
 
 		showInfoMsgWithDelay("No visible text for highlight", 2000, 1);
-		debug("_findFirstWordInView none found in", t)
+		Debug("_findFirstWordInView none found in", t)
 
 		return nil
 	end
@@ -539,7 +539,7 @@ function UniReader:startHighLightMode()
 
 	l.start, w.start = _findFirstWordInView(t)
 	if not l.start then
-		debug("no text in current view!")
+		Debug("no text in current view!")
 		-- InfoMessage about reason already shown
 		return
 	end
@@ -707,7 +707,7 @@ function UniReader:startHighLightMode()
 			l.cur, w.cur = l.new, w.new
 		end
 	end -- while running
-	debug("start", l.cur, w.cur, l.start, w.start)
+	Debug("start", l.cur, w.cur, l.start, w.start)
 
 	-- two helper functions for highlight
 	local function _togglePrevWordHighLight(t, l, w)
@@ -999,12 +999,12 @@ function UniReader:loadSettings(filename)
 					end
 				end
 			end
-			debug(self.highlight)
+			Debug(self.highlight)
 			self.highlight.to_fix = nil
 		end
 
 		local bbox = self.settings:readSetting("bbox")
-		debug("bbox loaded ", bbox)
+		Debug("bbox loaded ", bbox)
 		self.bbox = bbox
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
@@ -1135,7 +1135,7 @@ function UniReader:drawOrCache(no, preCache)
 		end
 	else
 		if not preCache then
-			debug("ERROR not enough memory in cache left, probably a bug.")
+			Debug("ERROR not enough memory in cache left, probably a bug.")
 		end
 		return nil
 	end
@@ -1151,7 +1151,7 @@ function UniReader:drawOrCache(no, preCache)
 	}
 	--debug ("# new biltbuffer:"..dump(self.cache[pagehash]))
 	dc:setOffset(-tile.x, -tile.y)
-	debug("rendering page", no)
+	Debug("rendering page", no)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0)
 	page:close()
 
@@ -1175,7 +1175,7 @@ function UniReader:setzoom(page, preCache)
 	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	local width, height = G_width, G_height
-	debug("page::getSize",pwidth,pheight)
+	Debug("page::getSize",pwidth,pheight)
 	local x0, y0, x1, y1 = page:getUsedBBox()
 	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
 		x0 = 0
@@ -1192,22 +1192,22 @@ function UniReader:setzoom(page, preCache)
 	if y1 > pheight then y1 = pheight end
 
 	if self.bbox.enabled then
-		debug("ORIGINAL page::getUsedBBox", x0,y0, x1,y1 )
+		Debug("ORIGINAL page::getUsedBBox", x0,y0, x1,y1 )
 		local bbox = self.bbox[self.pageno] -- exact
 
 		local oddEven = self:oddEven(self.pageno)
 		if bbox ~= nil then
-			debug("bbox from", self.pageno)
+			Debug("bbox from", self.pageno)
 		else
 			bbox = self.bbox[oddEven] -- odd/even
 		end
 		if bbox ~= nil then -- last used up to this page
-			debug("bbox from", oddEven)
+			Debug("bbox from", oddEven)
 		else
 			for i = 0,self.pageno do
 				bbox = self.bbox[ self.pageno - i ]
 				if bbox ~= nil then
-					debug("bbox from", self.pageno - i)
+					Debug("bbox from", self.pageno - i)
 					break
 				end
 			end
@@ -1220,7 +1220,7 @@ function UniReader:setzoom(page, preCache)
 		end
 	end
 
-	debug("page::getUsedBBox", x0, y0, x1, y1 )
+	Debug("page::getUsedBBox", x0, y0, x1, y1 )
 
 	if self.globalzoom_mode == self.ZOOM_FIT_TO_PAGE
 	or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT then
@@ -1292,7 +1292,7 @@ function UniReader:setzoom(page, preCache)
 		self.globalzoom = height / (y1 - y0 + margin)
 		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
 		self.globalzoom = width / (x1 - x0 + margin) * 2
-		debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom);
+		Debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom);
 		self.globalzoom_mode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
 		self.pan_y = self.offset_y
@@ -1314,7 +1314,7 @@ function UniReader:setzoom(page, preCache)
 			["x1"] = x1,
 			["y1"] = y1,
 		}
-		debug("cur_bbox", self.cur_bbox)
+		Debug("cur_bbox", self.cur_bbox)
 
 	end
 	self.min_offset_x = fb.bb:getWidth() - self.fullwidth
@@ -1326,11 +1326,11 @@ function UniReader:setzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 
-	debug("Reader:setZoom globalzoom:", self.globalzoom, " globalrotate:", self.globalrotate, " offset:", self.offset_x, self.offset_y, " pagesize:", self.fullwidth, self.fullheight, " min_offset:", self.min_offset_x, self.min_offset_y)
+	Debug("Reader:setZoom globalzoom:", self.globalzoom, " globalrotate:", self.globalrotate, " offset:", self.offset_x, self.offset_y, " pagesize:", self.fullwidth, self.fullheight, " min_offset:", self.min_offset_x, self.min_offset_y)
 
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
-		debug("gamma correction: ", self.globalgamma)
+		Debug("gamma correction: ", self.globalgamma)
 		dc:setGamma(self.globalgamma)
 	end
 	return dc
@@ -1367,12 +1367,12 @@ function UniReader:show(no)
 	if self.dest_x or self.dest_y then
 		fb.bb:paintRect(0, 0, width, height, 8)
 	end
-	debug("blitFrom dest_off:", self.dest_x, self.dest_y, 
+	Debug("blitFrom dest_off:", self.dest_x, self.dest_y, 
 		"src_off:", offset_x, offset_y,
 		"width:", width, "height:", height)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
-	debug("self.show_overlap", self.show_overlap)
+	Debug("self.show_overlap", self.show_overlap)
 	if self.show_overlap < 0 then
 		fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
 	elseif self.show_overlap > 0 then
@@ -1386,11 +1386,11 @@ function UniReader:show(no)
 	end
 
 	if self.rcount >= self.rcountmax then
-		debug("full refresh")
+		Debug("full refresh")
 		self.rcount = 0
 		fb:refresh(0)
 	else
-		debug("partial refresh")
+		Debug("partial refresh")
 		self.rcount = self.rcount + 1
 		fb:refresh(1)
 	end
@@ -1557,7 +1557,7 @@ end
 
 -- adjust global gamma setting
 function UniReader:modifyGamma(factor)
-	debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
+	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
 	self:redrawCurrentPage()
 end
@@ -1808,7 +1808,7 @@ function UniReader:showMenu()
 end
 
 function UniReader:oddEven(number)
-	debug("oddEven", number)
+	Debug("oddEven", number)
 	if number % 2 == 1 then
 		return "odd"
 	else
@@ -1825,28 +1825,28 @@ function UniReader:inputLoop()
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			local secs, usecs = util.gettime()
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			debug("key pressed:", tostring(keydef))
+			Debug("key pressed:", tostring(keydef))
 			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				debug("command to execute:", tostring(command))
+				Debug("command to execute:", tostring(command))
 				ret_code = command.func(self,keydef)
 				if ret_code == "break" then
 					break;
 				end
 			else
-				debug("command not found:", tostring(command))
+				Debug("command not found:", tostring(command))
 			end
 
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
+			Debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
 
 			if ev.value == EVENT_VALUE_KEY_REPEAT then
 				self.rcount = 0
-				debug("prevent full screen refresh", self.rcount)
+				Debug("prevent full screen refresh", self.rcount)
 			end
 		else
-			debug("ignored ev ",ev)
+			Debug("ignored ev ",ev)
 		end
 	end
 
@@ -1958,7 +1958,7 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 10%, 20% .. 90%, 100% of document",
 		function(unireader,keydef)
-			debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
+			Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
 	-- end numeric keys
@@ -2102,7 +2102,7 @@ function UniReader:addAllCommands()
 			unireader.bbox[unireader.pageno] = bbox
 			unireader.bbox[unireader:oddEven(unireader.pageno)] = bbox
 			unireader.bbox.enabled = true
-			debug("bbox", unireader.pageno, unireader.bbox)
+			Debug("bbox", unireader.pageno, unireader.bbox)
 			unireader.globalzoom_mode = unireader.ZOOM_FIT_TO_CONTENT -- use bbox
 			showInfoMsgWithDelay("Manual crop setting saved.", 2000, 1)
 		end)
@@ -2111,7 +2111,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader.bbox[unireader.pageno] = nil;
 			showInfoMsgWithDelay("Manual crop setting removed.", 2000, 1)
-			debug("bbox remove", unireader.pageno, unireader.bbox);
+			Debug("bbox remove", unireader.pageno, unireader.bbox);
 		end)
 	self.commands:add(KEY_Z,MOD_ALT,"Z",
 		"toggle crop mode",
@@ -2122,15 +2122,15 @@ function UniReader:addAllCommands()
 			else
 				showInfoMsgWithDelay("Manual crop disabled.", 2000, 1)
 			end
-			debug("bbox override", unireader.bbox.enabled);
+			Debug("bbox override", unireader.bbox.enabled);
 		end)
 	self.commands:add(KEY_X,nil,"X",
 		"invert page bbox",
 		function(unireader)
 			local bbox = unireader.cur_bbox
-			debug("bbox", bbox)
+			Debug("bbox", bbox)
 			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
-			debug("inxertRect",x,y,w,h)
+			Debug("inxertRect",x,y,w,h)
 			fb.bb:invertRect( x,y, w,h )
 			fb:refresh(1)
 		end)
@@ -2138,9 +2138,9 @@ function UniReader:addAllCommands()
 		"modify page bbox",
 		function(unireader)
 			local bbox = unireader.cur_bbox
-			debug("bbox", bbox)
+			Debug("bbox", bbox)
 			x,y,w,h = unireader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
-			debug("getRectInScreen",x,y,w,h)
+			Debug("getRectInScreen",x,y,w,h)
 
 			local new_bbox = bbox
 			local x_s, y_s = x,y
@@ -2157,7 +2157,7 @@ function UniReader:addAllCommands()
 
 			while running_corner do
 				local ev = input.saveWaitForEvent()
-				debug("ev",ev)
+				Debug("ev",ev)
 				ev.code = adjustKeyEvents(ev)
 
 				if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
@@ -2182,7 +2182,7 @@ function UniReader:addAllCommands()
 						if running_corner == "top-left" then
 							new_bbox["x0"] = p_x
 							new_bbox["y0"] = p_y
-							debug("change top-left", bbox, "to", new_bbox)
+							Debug("change top-left", bbox, "to", new_bbox)
 							running_corner = "bottom-right"
 							Screen:restoreFromSavedBB()
 							InfoMessage:show(running_corner.." bbox")
@@ -2198,7 +2198,7 @@ function UniReader:addAllCommands()
 						factor = ev.code - KEY_Q + 1
 						x_direction = last_direction["x"]
 						y_direction = last_direction["y"]
-						debug("factor",factor,"deltas",x_direction,y_direction)
+						Debug("factor",factor,"deltas",x_direction,y_direction)
 					elseif ev.code >= KEY_A and ev.code <= KEY_L then
 						factor = ev.code - KEY_A + 11
 						x_direction = last_direction["x"]
@@ -2211,12 +2211,12 @@ function UniReader:addAllCommands()
 						running_corner = false
 					end
 
-					debug("factor",factor,"deltas",x_direction,y_direction)
+					Debug("factor",factor,"deltas",x_direction,y_direction)
 
 					if running_corner then
 						local x_o = x_direction * step * factor
 						local y_o = y_direction * step * factor
-						debug("move slider",x_o,y_o)
+						Debug("move slider",x_o,y_o)
 						if x_s+x_o >= 0 and x_s+x_o <= G_width  then x_s = x_s + x_o end
 						if y_s+y_o >= 0 and y_s+y_o <= G_height then y_s = y_s + y_o end
 
@@ -2229,7 +2229,7 @@ function UniReader:addAllCommands()
 
 						if x_direction or y_direction then
 							last_direction = { x = x_direction, y = y_direction }
-							debug("last_direction",last_direction)
+							Debug("last_direction",last_direction)
 
 							-- FIXME partial duplicate of SelectMenu.item_shortcuts
 							local keys = {
@@ -2261,7 +2261,7 @@ function UniReader:addAllCommands()
 								local tick = i * step * x_direction
 								if x_direction ~= 0 then
 									local tick = i * step * x_direction
-									debug("x tick",i,tick,key)
+									Debug("x tick",i,tick,key)
 									if running_corner == "top-left" then -- ticks must be inside page
 										fb.bb:invertRect(     x_s+tick, y_s, 1, math.abs(tick))
 									else
@@ -2272,7 +2272,7 @@ function UniReader:addAllCommands()
 									renderUtf8Text(fb.bb, x_s+tick+2, y_s+4, face, key)
 								else
 									local tick = i * step * y_direction
-									debug("y tick",i,tick,key)
+									Debug("y tick",i,tick,key)
 									if running_corner == "top-left" then -- ticks must be inside page
 										fb.bb:invertRect(     x_s, y_s+tick, math.abs(tick),1)
 									else
@@ -2294,7 +2294,7 @@ function UniReader:addAllCommands()
 			unireader.bbox[unireader.pageno] = new_bbox
 			unireader.bbox[unireader:oddEven(unireader.pageno)] = new_bbox
 			unireader.bbox.enabled = true
-			debug("crop bbox", bbox, "to", new_bbox)
+			Debug("crop bbox", bbox, "to", new_bbox)
 
 			Screen:restoreFromSavedBB()
 			x,y,w,h = unireader:getRectInScreen( new_bbox["x0"], new_bbox["y0"], new_bbox["x1"], new_bbox["y1"] )
@@ -2338,12 +2338,12 @@ function UniReader:addAllCommands()
 					y = unireader.shift_y
 				end
 
-				debug("offset", unireader.offset_x, unireader.offset_x, " shift", x, y, " globalzoom", unireader.globalzoom)
+				Debug("offset", unireader.offset_x, unireader.offset_x, " shift", x, y, " globalzoom", unireader.globalzoom)
 				local old_offset_x = unireader.offset_x
 				local old_offset_y = unireader.offset_y
 
 				if keydef.keycode == KEY_FW_LEFT then
-					debug("KEY_FW_LEFT", unireader.offset_x, "+", x, "> 0");
+					Debug("KEY_FW_LEFT", unireader.offset_x, "+", x, "> 0");
 					unireader.offset_x = unireader.offset_x + x
 					if unireader.pan_by_page then
 						if unireader.offset_x > 0 and unireader.pageno > 1 then
@@ -2358,7 +2358,7 @@ function UniReader:addAllCommands()
 						unireader.offset_x = 0
 					end
 				elseif keydef.keycode == KEY_FW_RIGHT then
-					debug("KEY_FW_RIGHT", unireader.offset_x, "-", x, "<", unireader.min_offset_x, "-", unireader.pan_margin);
+					Debug("KEY_FW_RIGHT", unireader.offset_x, "-", x, "<", unireader.min_offset_x, "-", unireader.pan_margin);
 					unireader.offset_x = unireader.offset_x - x
 					if unireader.pan_by_page then
 						if unireader.offset_x < unireader.min_offset_x - unireader.pan_margin and unireader.pageno < unireader.doc:getPages() then
@@ -2438,5 +2438,5 @@ function UniReader:addAllCommands()
 	end 
 	)
 	-- commands.map is very large, impacts startup performance on device
-	--debug("defined commands "..dump(self.commands.map))
+	--Debug("defined commands "..dump(self.commands.map))
 end

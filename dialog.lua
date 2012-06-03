@@ -6,7 +6,7 @@ InfoMessage = {
 }
 
 function InfoMessage:show(text,refresh_mode)
-	debug("# InfoMessage ", text, refresh_mode)
+	Debug("# InfoMessage ", text, refresh_mode)
 	local dialog = CenterContainer:new({
 		dimen = { w = G_width, h = G_height },
 		FrameContainer:new({

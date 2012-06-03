@@ -4,7 +4,7 @@ Font = {
 		-- default font for menu contents
 		cfont = "droid/DroidSans.ttf",
 		-- default font for title
-		tfont = "droid/DroidSansBold.ttf",
+		tfont = "droid/DroidSans.ttf",
 		-- default font for footer
 		ffont = "droid/DroidSans.ttf",
 
@@ -53,11 +53,11 @@ function Font:getFace(font, size)
 		realname = self.fontdir.."/"..realname
 		ok, face = pcall(freetype.newFace, realname, size)
 		if not ok then
-			debug("#! Font "..font.." ("..realname..") not supported: "..face)
+			Debug("#! Font "..font.." ("..realname..") not supported: "..face)
 			return nil
 		end
 		self.faces[font..size] = face
-	--debug("getFace, found: "..realname.." size:"..size)
+	--Debug("getFace, found: "..realname.." size:"..size)
 	end
 	return { size = size, ftface = face, hash = font..size }
 end

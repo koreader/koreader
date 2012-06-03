@@ -41,7 +41,7 @@ function FileSearcher:readDir()
 				elseif ext:getReader(file_type) then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
-					--debug("file:"..d.."/"..f)
+					--Debug("file:"..d.."/"..f)
 				end
 			end
 		end
@@ -370,14 +370,14 @@ function FileSearcher:choose(keywords)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			debug("key pressed: "..tostring(keydef))
+			Debug("key pressed: "..tostring(keydef))
 
 			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				debug("command to execute: "..tostring(command))
+				Debug("command to execute: "..tostring(command))
 				ret_code = command.func(self, keydef)
 			else
-				debug("command not found: "..tostring(command))
+				Debug("command not found: "..tostring(command))
 			end
 
 			if ret_code == "break" then
@@ -385,7 +385,7 @@ function FileSearcher:choose(keywords)
 			end
 
 			if self.selected_item ~= nil then
-				debug("# selected "..self.selected_item)
+				Debug("# selected "..self.selected_item)
 				return self.selected_item
 			end
 		end -- if

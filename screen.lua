@@ -103,7 +103,7 @@ function Screen:restoreFromBB(bb)
 	if bb then
 		fb.bb:blitFullFrom(bb)
 	else
-		debug("Got nil bb in restoreFromSavedBB!")
+		Debug("Got nil bb in restoreFromSavedBB!")
 	end
 end
 

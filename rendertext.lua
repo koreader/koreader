@@ -48,7 +48,7 @@ end
 
 function sizeUtf8Text(x, width, face, text, kerning)
 	if text == nil then
-		debug("sizeUtf8Text called without text");
+		Debug("sizeUtf8Text called without text");
 		return
 	end
 	-- may still need more adaptive pen placement when kerning,
@@ -64,14 +64,14 @@ function sizeUtf8Text(x, width, face, text, kerning)
 			if kerning and prevcharcode then
 				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
-				--debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." kern:"..kern)
+				--Debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." kern:"..kern)
 			else
-				--debug("curr:"..string.char(charcode))
+				--Debug("curr:"..string.char(charcode))
 			end
 			pen_x = pen_x + glyph.ax
 			pen_y_top = math.max(pen_y_top, glyph.t)
 			pen_y_bottom = math.max(pen_y_bottom, glyph.bb:getHeight() - glyph.t)
-			--debug("ax:"..glyph.ax.." t:"..glyph.t.." r:"..glyph.r.." h:"..glyph.bb:getHeight().." w:"..glyph.bb:getWidth().." yt:"..pen_y_top.." yb:"..pen_y_bottom)
+			--Debug("ax:"..glyph.ax.." t:"..glyph.t.." r:"..glyph.r.." h:"..glyph.bb:getHeight().." w:"..glyph.bb:getWidth().." yt:"..pen_y_top.." yb:"..pen_y_bottom)
 			prevcharcode = charcode
 		end
 	end
@@ -80,7 +80,7 @@ end
 
 function renderUtf8Text(buffer, x, y, face, text, kerning)
 	if text == nil then
-		debug("renderUtf8Text called without text");
+		Debug("renderUtf8Text called without text");
 		return 0
 	end
 	-- may still need more adaptive pen placement when kerning,
@@ -94,10 +94,10 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 			if kerning and prevcharcode then
 				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
-				--debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
+				--Debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
 				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			else
-				--debug(" curr:"..string.char(charcode))
+				--Debug(" curr:"..string.char(charcode))
 				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			end
 			pen_x = pen_x + glyph.ax
@@ -112,7 +112,7 @@ end
 
 function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
 	if text == nil then
-		debug("renderUtf8Text called without text");
+		Debug("renderUtf8Text called without text");
 		return nil
 	end
 	local pen_x = 0
@@ -125,10 +125,10 @@ function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
 			if kerning and prevcharcode then
 				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
-				--debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
+				--Debug("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
 				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			else
-				--debug(" curr:"..string.char(charcode))
+				--Debug(" curr:"..string.char(charcode))
 				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			end
 			pen_x = pen_x + glyph.ax

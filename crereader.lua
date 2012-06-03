@@ -29,7 +29,7 @@ function CREReader:init()
 	for _k, _v in ipairs(fonts) do
 		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
 		if not ok then
-			debug(err)
+			Debug(err)
 		end
 	end
 
@@ -180,7 +180,7 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
-	debug("## self.show_overlap "..self.show_overlap)
+	Debug("## self.show_overlap "..self.show_overlap)
 	if self.show_overlap < 0 then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
 	elseif self.show_overlap > 0 then
@@ -189,11 +189,11 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.show_overlap = 0
 
 	if self.rcount >= self.rcountmax then
-		debug("full refresh")
+		Debug("full refresh")
 		self.rcount = 0
 		fb:refresh(0)
 	else
-		debug("partial refresh")
+		Debug("partial refresh")
 		self.rcount = self.rcount + 1
 		fb:refresh(1)
 	end
@@ -409,7 +409,7 @@ function CREReader:adjustCreReaderCommands()
 				self.line_space_percent = math.min(self.line_space_percent, 200)
 			end
 			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
-			debug("line spacing set to", self.line_space_percent)
+			Debug("line spacing set to", self.line_space_percent)
 			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
 			-- end of changes (NuPogodi)
@@ -426,7 +426,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:addGroup("[1..0]", numeric_keydefs,
 		"jump to <key>*10% of document",
 		function(self, keydef)
-			debug('jump to position: '..
+			Debug('jump to position: '..
 				math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
 				'/'..self.doc:getFullHeight())
 			self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
@@ -466,7 +466,7 @@ function CREReader:adjustCreReaderCommands()
 			}
 			item_no = nil
 			item_no = fonts_menu:choose(0, G_height)
-			debug(face_list[item_no])
+			Debug(face_list[item_no])
 			-- NuPogodi, 15.05.12: storing old document height
 			self.old_doc_height = self.doc:getFullHeight()
 			-- end of changes (NuPogodi)

@@ -133,7 +133,7 @@ function getAbsolutePath(aPath)
 			abs_path = lfs.currentdir()
 			lfs.chdir(curr_dir)
 		end
-		--debug("rel: '"..aPath.."' abs:'"..abs_path.."'")
+		--Debug("rel: '"..aPath.."' abs:'"..abs_path.."'")
 	end
 	return abs_path
 end
@@ -163,7 +163,7 @@ function FileChooser:setPath(newPath)
 	self.path = getAbsolutePath(newPath)
 	local readdir_ok, exc = pcall(self.readDir,self)
 	if(not readdir_ok) then
-		debug("readDir error: "..tostring(exc))
+		Debug("readDir error: "..tostring(exc))
 		self.exception_message = exc
 		return self:setPath(curr_path)
 	else
@@ -237,24 +237,24 @@ function FileChooser:choose(ypos, height)
 		end
 
 		local ev = input.saveWaitForEvent()
-		--debug("key code:"..ev.code)
+		--Debug("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			debug("key pressed: "..tostring(keydef))
+			Debug("key pressed: "..tostring(keydef))
 
 			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				debug("command to execute: "..tostring(command))
+				Debug("command to execute: "..tostring(command))
 				ret_code = command.func(self, keydef)
 			else
-				debug("command not found: "..tostring(command))
+				Debug("command not found: "..tostring(command))
 			end
 
 			if ret_code == "break" then break end
 
 			if self.selected_item ~= nil then
-				debug("# selected "..self.selected_item)
+				Debug("# selected "..self.selected_item)
 				return self.selected_item
 			end
 		end -- if ev.type ==

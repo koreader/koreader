@@ -47,7 +47,7 @@ function HelpPage:show(ypos, height, commands)
 	local keys = {}
 	for k,v in pairs(commands.map) do
 		local key = v.keygroup or v.keydef:display()
-		--debug("order: "..v.order.." command: "..tostring(v.keydef).." - keygroup:"..(v.keygroup or "nil").." -keys[key]:"..(keys[key] or "nil"))
+		--Debug("order: "..v.order.." command: "..tostring(v.keydef).." - keygroup:"..(v.keygroup or "nil").." -keys[key]:"..(keys[key] or "nil"))
 		if keys[key] == nil then
 			keys[key] = 1
 			table.insert(self.commands,{shortcut=key,help=v.help,order=v.order})
@@ -59,8 +59,8 @@ function HelpPage:show(ypos, height, commands)
 	local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
 	--local hface_height, hface_ascender = self.hface.ftface:getHeightAndAscender()
 	local fface_height, fface_ascender = self.fface.ftface:getHeightAndAscender()
-	--debug(face_height.."-"..face_ascender)
-	--debug(fface_height.."-"..fface_ascender)
+	--Debug(face_height.."-"..face_ascender)
+	--Debug(fface_height.."-"..fface_ascender)
 	face_height = math.ceil(face_height)
 	face_ascender = math.ceil(face_ascender)
 	fface_height = math.ceil(fface_height)
@@ -86,7 +86,7 @@ function HelpPage:show(ypos, height, commands)
 					local key = self.commands[i].shortcut
 					for _k,aMod in pairs(MOD_TABLE) do
 						local modStart, modEnd = key:find(aMod.v)
-						debug("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
+						Debug("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
 						if(modStart ~= nil) then
 							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
 							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
@@ -96,7 +96,7 @@ function HelpPage:show(ypos, height, commands)
 							max_x = math.max(max_x, pen_x)
 						end
 					end
-					debug("key:"..key)
+					Debug("key:"..key)
 					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
 					fb.bb:paintRect(x, ypos + spacing*c - box.y_top + vert_S, box.x, box.y_top + box.y_bottom, self.bg_color)
 					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c  + vert_S, self.face, key, true)
@@ -121,7 +121,7 @@ function HelpPage:show(ypos, height, commands)
 		end
 
 		local ev = input.saveWaitForEvent()
-		--debug("key code:"..ev.code)
+		--Debug("key code:"..ev.code)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
 			if ev.code == KEY_PGFWD or ev.code == KEY_LPGFWD then

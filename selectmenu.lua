@@ -343,14 +343,14 @@ function SelectMenu:choose(ypos, height)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			debug("key pressed: "..tostring(keydef))
+			Debug("key pressed: "..tostring(keydef))
 
 			command = self.commands:getByKeydef(keydef)
 			if command ~= nil then
-				debug("command to execute: "..tostring(command))
+				Debug("command to execute: "..tostring(command))
 				ret_code = command.func(self, keydef)
 			else
-				debug("command not found: "..tostring(command))
+				Debug("command not found: "..tostring(command))
 			end
 
 			if ret_code == "break" then
@@ -358,7 +358,7 @@ function SelectMenu:choose(ypos, height)
 			end
 
 			if self.selected_item ~= nil then
-				debug("# selected "..self.selected_item)
+				Debug("# selected "..self.selected_item)
 				return self.selected_item, self.item_array[self.selected_item]
 			end
 		end -- EOF if
