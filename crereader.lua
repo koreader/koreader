@@ -484,6 +484,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_F, MOD_SHIFT, "F",
 		"use document font as default font",
 		function(self)
+			self.default_font = self.font_face
 			G_reader_settings:saveSetting("cre_font", self.font_face)
 			showInfoMsgWithDelay("Default document font set", 2000, 1)
 		end
