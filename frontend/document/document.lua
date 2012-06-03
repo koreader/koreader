@@ -99,3 +99,4 @@ end
 -- load implementations:
 
 require "document/pdfdocument"
+require "document/djvudocument"
