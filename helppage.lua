@@ -69,6 +69,7 @@ function HelpPage:show(ypos, height, commands)
 	local vert_S = self.title_H + 12
 
 	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5) - vert_S) / spacing )
+	self.page = 1
 	local is_pagedirty = true
 
 	while true do
