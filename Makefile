@@ -8,7 +8,7 @@ DJVUDIR=djvulibre
 KPVCRLIGDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.9
 LFSDIR=luafilesystem
 
 # must point to directory with *.ttf fonts for crengine
@@ -111,7 +111,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
 
-ft.o: %.o: %.c
+ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
