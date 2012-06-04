@@ -26,7 +26,6 @@
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))
 #define MAX(a, b)      ((a) > (b) ? (a) : (b))
 
-/*@TODO check all the close method, ensure memories are freed  03.03 2012*/
 
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
@@ -363,6 +362,16 @@ static int closePage(lua_State *L) {
 	return 0;
 }
 
+/* draw part of the page to bb.
+ *
+ * @page: DjvuPage user data
+ * @dc: DrawContext user data
+ * @bb: BlitBuffer user data
+ * @x: x offset within zoomed page
+ * @y: y offset within zoomed page
+ *
+ * width and height for the visible_area is obtained from bb.
+ */
 static int drawPage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -382,17 +391,11 @@ static int drawPage(lua_State *L) {
 	ddjvu_format_set_gamma(pixelformat, dc->gamma);
 	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
 
-	/*printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);*/
-
 	/* render full page into rectangle specified by pagerect */
-	/*pagerect.x = luaL_checkint(L, 4);*/
-	/*pagerect.y = luaL_checkint(L, 5);*/
 	pagerect.x = 0;
 	pagerect.y = 0;
 	pagerect.w = page->info.width * dc->zoom;
 	pagerect.h = page->info.height * dc->zoom;
-
-	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
 
 
 	/* copy pixels area from pagerect specified by renderrect.
@@ -405,12 +408,13 @@ static int drawPage(lua_State *L) {
 	 * and up. So we need to handle positive offset manually when copying 
 	 * imagebuffer to blitbuffer (framebuffer). 
 	 */
-	renderrect.x = MAX(-dc->offset_x, 0);
-	renderrect.y = MAX(-dc->offset_y, 0);
+	renderrect.x = luaL_checkint(L, 4);
+	renderrect.y = luaL_checkint(L, 5);
+	/*renderrect.x = MAX(-dc->offset_x, 0);*/
+	/*renderrect.y = MAX(-dc->offset_y, 0);*/
 	renderrect.w = MIN(pagerect.w - renderrect.x, bb->w);
 	renderrect.h = MIN(pagerect.h - renderrect.y, bb->h);
 
-	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
 	/* ddjvulibre library only supports rotation of 0, 90, 180 and 270 degrees. 
 	 * This four kinds of rotations can already be achieved by native system.
