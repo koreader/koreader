@@ -3,6 +3,7 @@ ReaderView = WidgetContainer:new{
 
 	state = {
 		page = 0,
+		pos = 0,
 		zoom = 1.0,
 		rotation = 0,
 		offset = {},
@@ -32,25 +33,38 @@ function ReaderView:paintTo(bb, x, y)
 	end
 
 	-- draw content
-	self.ui.document:drawPage(
-		bb,
-		x + inner_offset.x,
-		y + inner_offset.y,
-		self.visible_area,
-		self.state.page,
-		self.state.zoom,
-		self.state.rotation)
+	if self.ui.document.info.has_pages then
+		self.ui.document:drawPage(
+			bb,
+			x + inner_offset.x,
+			y + inner_offset.y,
+			self.visible_area,
+			self.state.page,
+			self.state.zoom,
+			self.state.rotation)
+	else
+		self.ui.document:drawCurrentView(
+			bb,
+			x + inner_offset.x,
+			y + inner_offset.y,
+			self.visible_area,
+			self.state.pos)
+	end
 end
 
 function ReaderView:recalculate()
-	local page_size = self.ui.document:getPageDimensions(self.state.page, self.state.zoom, self.state.rotation)
-	-- TODO: bbox
-	self.page_area = page_size
+	if self.ui.document.info.has_pages then
+		local page_size = self.ui.document:getPageDimensions(self.state.page, self.state.zoom, self.state.rotation)
+		-- TODO: bbox
+		self.page_area = page_size
 
-	-- reset our size
-	self.visible_area:setSizeTo(self.ui.dimen)
-	-- and recalculate it according to page size
-	self.visible_area:offsetWithin(self.page_area, 0, 0)
+		-- reset our size
+		self.visible_area:setSizeTo(self.ui.dimen)
+		-- and recalculate it according to page size
+		self.visible_area:offsetWithin(self.page_area, 0, 0)
+	else
+		self.visible_area:setSizeTo(self.ui.dimen)
+	end
 	-- flag a repaint
 	UIManager:setDirty(self.dialog)
 end
@@ -75,6 +89,11 @@ end
 
 function ReaderView:onPageUpdate(new_page_no)
 	self.state.page = new_page_no
+	self:recalculate()
+end
+
+function ReaderView:onPosUpdate(new_pos)
+	self.state.pos = new_pos
 	self:recalculate()
 end
 

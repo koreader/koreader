@@ -4,6 +4,7 @@ ReaderToc = InputContainer:new{
 	},
 	dimen = Geom:new{ w = G_width-20, h = G_height-20},
 	current_page = 0,
+	current_pos = 0,
 }
 
 function ReaderToc:cleanUpTocTitle(title)
@@ -72,6 +73,10 @@ end
 
 function ReaderToc:onPageUpdate(new_page_no)
 	self.current_page = new_page_no
+end
+
+function ReaderToc:onPosUpdate(new_pos)
+	self.current_pos = new_pos
 end
 
 

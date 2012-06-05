@@ -95,7 +95,11 @@ function Document:getNativePageDimensions(pageno)
 end
 
 function Document:_readMetadata()
-	self.info.number_of_pages = self._document:getPages()
+	if self.info.has_pages then
+		self.info.number_of_pages = self._document:getPages()
+	else
+		self.info.length = self._document:getFullHeight()
+	end
 	return true
 end
 
@@ -187,6 +191,13 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation)
 	target:blitFrom(tile.bb, x, y, rect.x - tile.excerpt.x, rect.y - tile.excerpt.y, rect.w, rect.h)
 end
 
+function Document:drawCurrentView(target, x, y, rect, pos)
+	self._document:gotoPos(pos)
+	tile_bb = Blitbuffer.new(rect.w, rect.h)
+	self._document:drawCurrentView(tile_bb)
+	target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
+end
+
 function Document:getPageText(pageno)
 	-- is this worth caching? not done yet.
 	local page = self._document:openPage(pageno)
@@ -200,3 +211,4 @@ end
 
 require "document/pdfdocument"
 require "document/djvudocument"
+require "document/credocument"

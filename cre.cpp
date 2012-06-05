@@ -385,10 +385,9 @@ static int cursorRight(lua_State *L) {
 	return 0;
 }
 
-static int drawCurrentPage(lua_State *L) {
+static int drawCurrentView(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
-	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
 
 	int w = bb->w,
 		h = bb->h;
@@ -460,7 +459,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"toggleFontBolder", toggleFontBolder},
 	//{"cursorLeft", cursorLeft},
 	//{"cursorRight", cursorRight},
-	{"drawCurrentPage", drawCurrentPage},
+	{"drawCurrentView", drawCurrentView},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
