@@ -1,7 +1,12 @@
+require "ui/reader/readerpanning"
+
 ReaderRolling = InputContainer:new{
 	key_events = {
 		GotoNextView = { {Input.group.PgFwd}, doc = "go to next view", event = "GotoViewRel", args = 1 },
 		GotoPrevView = { {Input.group.PgBack}, doc = "go to previous view", event = "GotoViewRel", args = -1 },
+
+		MoveUp = { {"Up"}, doc = "move view up", event = "Panning", args = {0, -1} },
+		MoveDown = { {"Down"}, doc = "move view down", event = "Panning", args = {0,  1} },
 
 		GotoFirst = { {"1"}, doc = "go to start", event = "GotoPercent", args = 0},
 		Goto11 = { {"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
@@ -14,8 +19,10 @@ ReaderRolling = InputContainer:new{
 		Goto88 = { {"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
 		GotoLast = { {"0"}, doc = "go to end", event = "GotoPercent", args = 100},
 	},
+
 	current_pos = 0,
 	length = nil,
+	panning_steps = ReaderPanning.panning_steps,
 }
 
 function ReaderRolling:init()
@@ -42,6 +49,13 @@ end
 function ReaderRolling:onGotoViewRel(diff)
 	DEBUG("goto relative screen:", diff)
 	self:gotoPos(self.current_pos + diff * self.ui.dimen.h)
+	return true
+end
+
+function ReaderRolling:onPanning(args, key)
+	local _, dy = unpack(args)
+	DEBUG("key =", key)
+	self:gotoPos(self.current_pos + dy * self.panning_steps.normal)
 	return true
 end
 
