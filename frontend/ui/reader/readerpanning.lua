@@ -1,10 +1,10 @@
 ReaderPanning = InputContainer:new{
 	key_events = {
 		-- these will all generate the same event, just with different arguments
-		MoveUp = { {"Up"}, doc = "move focus up", event = "Panning", args = {0, -1} },
-		MoveDown = { {"Down"}, doc = "move focus down", event = "Panning", args = {0,  1} },
-		MoveLeft = { {"Left"}, doc = "move focus left", event = "Panning", args = {-1, 0} },
-		MoveRight = { {"Right"}, doc = "move focus right", event = "Panning", args = {1,  0} },
+		MoveUp = { {"Up"}, doc = "move visible area up", event = "Panning", args = {0, -1} },
+		MoveDown = { {"Down"}, doc = "move visible area down", event = "Panning", args = {0,  1} },
+		MoveLeft = { {"Left"}, doc = "move visible area left", event = "Panning", args = {-1, 0} },
+		MoveRight = { {"Right"}, doc = "move visible area right", event = "Panning", args = {1,  0} },
 	},
 
 	-- defaults
