@@ -142,6 +142,8 @@ reader = ReaderUI:new{
 	dialog = readerwindow,
 	dimen = Geom:new{ w = G_width - 100, h = G_height - 100 },
 	document = DocumentRegistry:getProvider("test/2col.pdf")
+	--document = DocumentRegistry:getProvider("test/djvu3spec.djvu")
+	--document = DocumentRegistry:getProvider("./README.TXT")
 }
 readerwindow[1][1] = reader
 
