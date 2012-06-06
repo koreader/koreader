@@ -287,8 +287,8 @@ end
 function CREReader:prevBookMarkedPage()
 	local pre_item = nil
 	for k,v in ipairs(self.bookmarks) do
-		if self.pos <= self.doc:getPosFromXPointer(v) then
-			if self.doc:getPosFromXPointer(pre_item) < self.pos then
+		if self.pos <= self.doc:getPosFromXPointer(v.page) then
+			if self.doc:getPosFromXPointer(pre_item.page) < self.pos then
 				return pre_item
 			end
 		end
@@ -402,23 +402,15 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
-		"increase/decrease font size",
-		function(self)
-			local delta = 1
-			local change = "increase"
-			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
-				delta = -1
-				change = "decrease"
+		"jump between bookmarks",
+		function(unireader,keydef)
+			is_prev_bm = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			if is_prev_bm then
+				bm = self:prevBookMarkedPage()
+			else
+				bm = self:nextBookMarkedPage()
 			end
-			self.font_zoom = self.font_zoom + delta
-			InfoMessage:show(change.." font size to "..self.font_zoom, 0)
-			-- NuPogodi, 15.05.12: storing old document height
-			self.old_doc_height = self.doc:getFullHeight()
-			-- end of changes (NuPogodi)
-			self.doc:zoomFont(delta)
-			self:redrawCurrentPage()
-			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
-			self:fillToc()
+			if bm then self:goto(bm.page, "xpointer") end
 		end
 	)
 	self.commands:addGroup(MOD_ALT.."< >",{
