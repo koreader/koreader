@@ -133,6 +133,7 @@ fetchthirdparty:
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
+	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
@@ -196,8 +197,8 @@ $(LUALIB):
 ifdef EMULATE_READER
 	make -C $(LUADIR)
 else
+	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
-#	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
