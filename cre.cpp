@@ -117,6 +117,22 @@ static int getPageFromXPointer(lua_State *L) {
 	return 1;
 }
 
+static int getPosFromXPointer(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *xpointer_str = luaL_checkstring(L, 2);
+
+	int pos = 0;
+	ldomXPointer xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
+
+	lvPoint pt = xp.toPoint();
+	if (pt.y > 0) {
+		pos = pt.y;
+	}
+	lua_pushinteger(L, pos);
+
+	return 1;
+}
+
 static int getCurrentPos(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
@@ -124,21 +140,6 @@ static int getCurrentPos(lua_State *L) {
 
 	return 1;
 }
-
-//static int getPosFromXPointer(lua_State *L) {
-	//CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	//const char *xpointer_str = luaL_checkstring(L, 2);
-
-	//lvRect rc;
-	//int pos;
-
-	//ldomXPointer *xp = NULL;
-	//xp = doc->dom_doc->createXPointer(lString16(xpointer_str));
-	//getCursorDocRect(*xp, rc);
-	//pos = 
-
-	//return 1;
-//}
 
 static int getCurrentPercent(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
@@ -437,6 +438,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPages", getNumberOfPages},
 	{"getCurrentPage", getCurrentPage},
 	{"getPageFromXPointer", getPageFromXPointer},
+	{"getPosFromXPointer", getPosFromXPointer},
 	{"getCurrentPos", getCurrentPos},
 	{"getCurrentPercent", getCurrentPercent},
 	{"getXPointer", getXPointer},

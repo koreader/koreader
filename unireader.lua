@@ -1447,6 +1447,10 @@ function UniReader:delJump(pageno)
 	end
 end
 
+function UniReader:isBookmarkInSequence(a, b)
+	return a.page < b.page
+end
+
 -- return nil if page already marked
 -- otherwise, return true
 function UniReader:addBookmark(pageno)
@@ -1466,6 +1470,9 @@ function UniReader:addBookmark(pageno)
 		notes = notes,
 	}
 	table.insert(self.bookmarks, mark_item)
+	table.sort(self.bookmarks, function(a,b)
+		return self:isBookmarkInSequence(a, b)
+	end)
 	return true
 end
 
@@ -1728,6 +1735,28 @@ function UniReader:showBookMarks()
 			self:redrawCurrentPage()
 		end
 	end
+end
+
+function UniReader:nextBookMarkedPage()
+	for k,v in ipairs(self.bookmarks) do
+		if self.pageno < v.page then
+			return v
+		end
+	end
+	return nil
+end
+
+function UniReader:prevBookMarkedPage()
+	local pre_item = nil
+	for k,v in ipairs(self.bookmarks) do
+		if self.pageno <= v.page then
+			if pre_item.page < self.pageno then
+				return pre_item
+			end
+		end
+		pre_item = v
+	end
+	return nil
 end
 
 function UniReader:showHighLight()

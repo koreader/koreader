@@ -271,6 +271,32 @@ end
 ----------------------------------------------------
 -- bookmarks related methods
 ----------------------------------------------------
+function CREReader:isBookmarkInSequence(a, b)
+	return self.doc:getPosFromXPointer(a.page) < self.doc:getPosFromXPointer(b.page)
+end
+
+function CREReader:nextBookMarkedPage()
+	for k,v in ipairs(self.bookmarks) do
+		if self.pos < self.doc:getPosFromXPointer(v.page) then
+			return v
+		end
+	end
+	return nil
+end
+
+function CREReader:prevBookMarkedPage()
+	local pre_item = nil
+	for k,v in ipairs(self.bookmarks) do
+		if self.pos <= self.doc:getPosFromXPointer(v) then
+			if self.doc:getPosFromXPointer(pre_item) < self.pos then
+				return pre_item
+			end
+		end
+		pre_item = v
+	end
+	return nil
+end
+
 function CREReader:showBookMarks()
 	local menu_items = {}
 	-- build menu items
