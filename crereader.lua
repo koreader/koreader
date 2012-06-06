@@ -287,14 +287,17 @@ end
 function CREReader:prevBookMarkedPage()
 	local pre_item = nil
 	for k,v in ipairs(self.bookmarks) do
+		Debug(v)
 		if self.pos <= self.doc:getPosFromXPointer(v.page) then
-			if self.doc:getPosFromXPointer(pre_item.page) < self.pos then
+			if not pre_item then
+				break
+			elseif self.doc:getPosFromXPointer(pre_item.page) < self.pos then
 				return pre_item
 			end
 		end
 		pre_item = v
 	end
-	return nil
+	return pre_item
 end
 
 function CREReader:showBookMarks()
@@ -410,7 +413,7 @@ function CREReader:adjustCreReaderCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then self:goto(bm.page, "xpointer") end
+			if bm then self:goto(bm.page, nil, "xpointer") end
 		end
 	)
 	self.commands:addGroup(MOD_ALT.."< >",{

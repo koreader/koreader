@@ -1750,13 +1750,15 @@ function UniReader:prevBookMarkedPage()
 	local pre_item = nil
 	for k,v in ipairs(self.bookmarks) do
 		if self.pageno <= v.page then
-			if pre_item.page < self.pageno then
+			if not pre_item then
+				break
+			elseif pre_item.page < self.pageno then
 				return pre_item
 			end
 		end
 		pre_item = v
 	end
-	return nil
+	return pre_item
 end
 
 function UniReader:showHighLight()
@@ -1925,11 +1927,15 @@ function UniReader:addAllCommands()
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
-		"zoom out/in 20%",
+		"jump between bookmarks",
 		function(unireader,keydef)
-			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			unireader:setGlobalZoom(unireader.globalzoom_orig
-				+ ( is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.2)
+			is_prev_bm = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			if is_prev_bm then
+				bm = self:prevBookMarkedPage()
+			else
+				bm = self:nextBookMarkedPage()
+			end
+			if bm then self:goto(bm.page) end
 		end)
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
