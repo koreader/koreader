@@ -315,8 +315,8 @@ function Input:sequenceToString(sequence)
 		end
 	end
 	if #modifiers then
-		keystring[0] = table.concat(modifiers, "-")
-		keystring[1] = "-"
+		keystring[1] = table.concat(modifiers, "-")
+		keystring[2] = "-"
 	end
 	return table.concat(keystring)
 end

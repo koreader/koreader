@@ -4,6 +4,7 @@ require "ui/reader/readerzooming"
 require "ui/reader/readerpanning"
 require "ui/reader/readerrotation"
 require "ui/reader/readerpaging"
+require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
 
 --[[
@@ -37,32 +38,36 @@ function ReaderUI:init()
 		dialog = self.dialog,
 		ui = self
 	}
-	-- zooming controller
-	self[2] = ReaderZooming:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
-	-- panning controller
-	self[3] = ReaderPanning:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
 	-- rotation controller
-	self[4] = ReaderRotation:new{
+	self[2] = ReaderRotation:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
 	-- Toc menu controller
-	self[5] = ReaderToc:new{
+	self[3] = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	-- if needed, insert a paging container
 	if self.document.info.has_pages then
+		-- for page specific controller
+		
+		-- zooming controller
+		local zoomer = ReaderZooming:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, zoomer)
+		-- panning controller
+		local panner = ReaderPanning:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, panner)
+		-- if needed, insert a paging container
 		local pager = ReaderPaging:new{
 			dialog = self.dialog,
 			view = self[1],
@@ -70,6 +75,14 @@ function ReaderUI:init()
 		}
 		table.insert(self, pager)
 		pager:gotoPage(1)
+	else
+		local roller = ReaderRolling:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, roller)
+		roller:gotoPos(0)
 	end
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
