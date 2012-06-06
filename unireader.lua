@@ -1927,15 +1927,11 @@ function UniReader:addAllCommands()
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
-		"jump between bookmarks",
+		"zoom out/in 20%",
 		function(unireader,keydef)
-			is_prev_bm = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			if is_prev_bm then
-				bm = self:prevBookMarkedPage()
-			else
-				bm = self:nextBookMarkedPage()
-			end
-			if bm then self:goto(bm.page) end
+			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			unireader:setGlobalZoom(unireader.globalzoom_orig
+			   + ( is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.2)
 		end)
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
