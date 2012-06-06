@@ -1730,6 +1730,28 @@ function UniReader:showBookMarks()
 	end
 end
 
+function UniReader:nextBookMarkedPage()
+	for k,v in ipairs(self.bookmarks) do
+		if self.pageno < v.page then
+			return v
+		end
+	end
+	return nil
+end
+
+function UniReader:prevBookMarkedPage()
+	local pre_item = nil
+	for k,v in ipairs(self.bookmarks) do
+		if self.pageno <= v.page then
+			if pre_item.page < self.pageno then
+				return pre_item
+			end
+		end
+		pre_item = v
+	end
+	return nil
+end
+
 function UniReader:showHighLight()
 	local menu_items = {}
 	local highlight_dict = {}
