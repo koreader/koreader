@@ -1466,6 +1466,7 @@ function UniReader:addBookmark(pageno)
 		notes = notes,
 	}
 	table.insert(self.bookmarks, mark_item)
+	table.sort(self.bookmarks, function(a,b) return a.page < b.page end)
 	return true
 end
 
