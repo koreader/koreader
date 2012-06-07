@@ -191,8 +191,8 @@ function Commands:new(obj)
 			G_screen_saver_mode = false
 		end
 	)
-	obj:add(KEY_CHARGING, nil, nil,
-		"",
+	obj:add(KEY_CHARGING, nil, "plugin/out usb",
+		"toggle usb drive mode",
 		function()
 			--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
@@ -206,8 +206,8 @@ function Commands:new(obj)
 			G_charging_mode = true
 		end
 	)
-	obj:add(KEY_NOT_CHARGING, nil, nil,
-		"",
+	obj:add(KEY_NOT_CHARGING, nil, "plugin/out usb",
+		"toggle usb drive mode",
 		function()
 			--os.execute("echo 'usb out' >> /mnt/us/event_test.txt")
 			if G_charging_mode == true and G_screen_saver_mode == false then
@@ -217,6 +217,8 @@ function Commands:new(obj)
 				Screen:restoreFromSavedBB()
 				fb:refresh(0)
 			end
+			FileChooser:setPath(FileChooser.path)
+			FileChooser.pagedirty = true
 			G_charging_mode = false
 		end
 	)
