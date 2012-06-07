@@ -27,8 +27,12 @@
 #include <signal.h>
 
 #define OUTPUT_SIZE 21
-#define CODE_IN_SAVER 10000
-#define CODE_OUT_SAVER 10001
+#define CODE_IN_SAVER		10000
+#define CODE_OUT_SAVER		10001
+#define CODE_USB_PLUG_IN	10010
+#define CODE_USB_PLUG_OUT	10011
+#define CODE_CHARGING		10020
+#define CODE_NOT_CHARGING	10021
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
@@ -78,7 +82,11 @@ static int openInputDevice(lua_State *L) {
 
 			/* listen power slider events */
 			while(1) {
-				fp = popen("exec lipc-wait-event com.lab126.powerd goingToScreenSaver,outOfScreenSaver", "r");
+				fp = popen("exec lipc-wait-event com.lab126.powerd goingToScreenSaver,outOfScreenSaver,charging,notCharging", "r");
+				/* @TODO  07.06 2012 (houqp)
+				 * plugin and out event can only be watched by:
+					lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
+				 */
 				if(fgets(std_out, OUTPUT_SIZE, fp) == NULL) {
 					break;
 				}
@@ -87,6 +95,14 @@ static int openInputDevice(lua_State *L) {
 					ev.code = CODE_IN_SAVER;
 				} else if(std_out[0] == 'o') {
 					ev.code = CODE_OUT_SAVER;
+				} else if((std_out[0] == 'u') && (std_out[7] == 'I')) {
+					ev.code = CODE_USB_PLUG_IN;
+				} else if((std_out[0] == 'u') && (std_out[7] == 'O')) {
+					ev.code = CODE_USB_PLUG_OUT;
+				} else if(std_out[0] == 'c') {
+					ev.code = CODE_CHARGING;
+				} else if(std_out[0] == 'n') {
+					ev.code = CODE_NOT_CHARGING;
 				} else {
 					printf("Unrecognized event.\n");
 				}
