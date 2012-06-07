@@ -287,14 +287,16 @@ end
 function CREReader:prevBookMarkedPage()
 	local pre_item = nil
 	for k,v in ipairs(self.bookmarks) do
-		if self.pos <= self.doc:getPosFromXPointer(v) then
-			if self.doc:getPosFromXPointer(pre_item) < self.pos then
+		if self.pos <= self.doc:getPosFromXPointer(v.page) then
+			if not pre_item then
+				break
+			elseif self.doc:getPosFromXPointer(pre_item.page) < self.pos then
 				return pre_item
 			end
 		end
 		pre_item = v
 	end
-	return nil
+	return pre_item
 end
 
 function CREReader:showBookMarks()
@@ -407,8 +409,8 @@ function CREReader:adjustCreReaderCommands()
 			local delta = 1
 			local change = "increase"
 			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
-				delta = -1
-				change = "decrease"
+			   delta = -1
+			   change = "decrease"
 			end
 			self.font_zoom = self.font_zoom + delta
 			InfoMessage:show(change.." font size to "..self.font_zoom, 0)
