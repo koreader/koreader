@@ -165,22 +165,59 @@ function Commands:new(obj)
 	obj:add(KEY_INTO_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
-			Screen:saveCurrentBB()
-			InfoMessage:show("Going into screensaver... ", 0)
-			Screen.kpv_rotation_mode = Screen.cur_rotation_mode
-			fb:setOrientation(Screen.native_rotation_mode)
-			util.sleep(1)
-			os.execute("killall -cont cvm")
+			--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
+			if G_charging_mode == false and G_screen_saver_mode == false then
+				Screen:saveCurrentBB()
+				InfoMessage:show("Going into screensaver... ", 0)
+				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+				fb:setOrientation(Screen.native_rotation_mode)
+				util.sleep(1)
+				os.execute("killall -cont cvm")
+				G_screen_saver_mode = true
+			end
 		end
 	)
 	obj:add(KEY_OUTOF_SCREEN_SAVER, nil, "Slider",
 		"toggle screen saver",
 		function()
-			util.usleep(1500000)
-			os.execute("killall -stop cvm")
-			fb:setOrientation(Screen.kpv_rotation_mode)
-			Screen:restoreFromSavedBB()
-			fb:refresh(0)
+			--os.execute("echo 'screensaver out' >> /mnt/us/event_test.txt")
+			if G_screen_saver_mode == true and G_charging_mode == false then
+				util.usleep(1500000)
+				os.execute("killall -stop cvm")
+				fb:setOrientation(Screen.kpv_rotation_mode)
+				Screen:restoreFromSavedBB()
+				fb:refresh(0)
+			end
+			G_screen_saver_mode = false
+		end
+	)
+	obj:add(KEY_CHARGING, nil, nil,
+		"",
+		function()
+			--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
+			if G_charging_mode == false and G_screen_saver_mode == false then
+				Screen:saveCurrentBB()
+				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+				fb:setOrientation(Screen.native_rotation_mode)
+				InfoMessage:show("Going into USB mode... ", 0)
+				util.sleep(1)
+				os.execute("killall -cont cvm")
+			end
+			G_charging_mode = true
+		end
+	)
+	obj:add(KEY_NOT_CHARGING, nil, nil,
+		"",
+		function()
+			--os.execute("echo 'usb out' >> /mnt/us/event_test.txt")
+			if G_charging_mode == true and G_screen_saver_mode == false then
+				util.usleep(1500000)
+				os.execute("killall -stop cvm")
+				fb:setOrientation(Screen.kpv_rotation_mode)
+				Screen:restoreFromSavedBB()
+				fb:refresh(0)
+			end
+			G_charging_mode = false
 		end
 	)
 	return obj
