@@ -360,31 +360,33 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_DEL, nil, "Del",
 		"delete selected item",
 		function(self)
-			local folder = self.dirs[self.perpage*(self.page-1)+self.current]
+			local pos = self.perpage*(self.page-1)+self.current
+			local folder = self.dirs[pos]
 			if folder == ".." then
 				showInfoMsgWithDelay("<UP-DIR> can not be deleted! ",2000,1)
 			elseif folder then
 				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
 				if self:ReturnKey() == KEY_Y then
 					if lfs.rmdir(self.path.."/"..folder) then
-						self:setPath(self.path)
+						self.pagedirty = true
+						table.remove(self.dirs, offset)
 					else
 						showInfoMsgWithDelay("This folder can not be deleted! ",2000,1)
 					end
 				end
-				self.pagedirty = true
 			else
-				local file_to_del = self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
 				if self:ReturnKey() == KEY_Y then
+					pos = pos - #self.dirs
+					local fullpath = self.path.."/"..self.files[pos]
 					-- delete the file itself
-					os.execute("rm "..self:InQuotes(file_to_del))
+					os.remove(fullpath)
 					-- and its history file, if any
-					os.execute("rm "..self:InQuotes(DocToHistory(file_to_del)))
+					os.remove(DocToHistory(fullpath))
 					-- to avoid showing just deleted file
-					self:setPath(self.path)
+					table.remove(self.files, pos)
+					self.pagedirty = true
 				end
-				self.pagedirty = true
 			end -- if folder == ".."
 		end -- function
 	)
@@ -482,7 +484,7 @@ function FileChooser:addAllCommands()
 			local file = self:FullFileName()
 			if file then
 				lfs.mkdir(self.clipboard)
-				os.execute("mv "..self:InQuotes(file).." "..self.clipboard)
+				os.rename(file, self.clipboard.."/"..file)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
 				InfoMessage:show("file is moved to clipboard ", 0)
