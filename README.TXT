@@ -57,10 +57,8 @@ To build in "emulation mode", you need to run make like this:
 	make clean cleanthirdparty
 	EMULATE_READER=1 make thirdparty kpdfview
 
-The reader.lua script needs a device argument in order to cope with some
-slight differences between actual readers and the emulation. Run it like
-this:
-	./reader.lua -d emu /PATH/TO/PDF.pdf
+And run the emulator like this:
+	./reader.lua /PATH/TO/PDF.pdf
 
 By default emulation will provide DXG resolution of 824*1200. It can be
 specified at compile time, this is example for Kindle 3:
