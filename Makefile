@@ -53,6 +53,9 @@ ifdef EMULATE_READER
 		     -DEMULATE_READER_W=$(EMULATE_READER_W) \
 		     -DEMULATE_READER_H=$(EMULATE_READER_H)
 	EMU_LDFLAGS?=$(shell sdl-config --libs)
+	ifeq "$(shell uname -s -m)" "Darwin x86_64"
+		EMU_LDFLAGS += -pagezero_size 10000 -image_base 100000000
+	endif
 else
 	CFLAGS+= $(ARM_CFLAGS)
 endif
