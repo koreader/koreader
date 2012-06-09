@@ -18,10 +18,14 @@
 #ifndef _PDF_EINKFB_H
 #define _PDF_EINKFB_H
 
-#include <linux/fb.h>
 #ifdef EMULATE_READER
 #include <SDL.h>
+struct fb_var_screeninfo {
+    uint32_t xres;
+    uint32_t yres;
+};
 #else
+#include <linux/fb.h>
 #include "include/einkfb.h"
 #endif
 
@@ -34,11 +38,12 @@
 typedef struct FBInfo {
 	int fd;
 	BlitBuffer *buf;
-	struct fb_fix_screeninfo finfo;
-	struct fb_var_screeninfo vinfo;
 #ifdef EMULATE_READER
 	SDL_Surface *screen;
+#else
+	struct fb_fix_screeninfo finfo;
 #endif
+	struct fb_var_screeninfo vinfo;
 } FBInfo;
 
 int luaopen_einkfb(lua_State *L);

@@ -83,6 +83,8 @@ static int openFrameBuffer(lua_State *L) {
 	if(fb->buf->data == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
+	memset(fb->buf->data, 0, fb->finfo.smem_len);
+	fb->buf->pitch = fb->finfo.line_length;
 #else
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
@@ -91,26 +93,17 @@ static int openFrameBuffer(lua_State *L) {
 		return luaL_error(L, "can't get video surface %dx%d for 32bpp.",
 				EMULATE_READER_W, EMULATE_READER_H);
 	}
-	memset(&fb->finfo, 0, sizeof(fb->finfo));
-	memset(&fb->vinfo, 0, sizeof(fb->vinfo));
 	fb->vinfo.xres = EMULATE_READER_W;
 	fb->vinfo.yres = EMULATE_READER_H;
-	fb->vinfo.grayscale = 1;
-	fb->vinfo.bits_per_pixel = 4;
-	fb->finfo.smem_len = ((EMULATE_READER_W + 1) / 2) * EMULATE_READER_H;
-	fb->finfo.line_length = (EMULATE_READER_W + 1) / 2;
-	fb->finfo.type = FB_TYPE_PACKED_PIXELS;
-	fb->buf->data = malloc(fb->finfo.smem_len);
+	fb->buf->pitch = (EMULATE_READER_W + 1) / 2;
+	fb->buf->data = calloc(fb->buf->pitch * EMULATE_READER_H, sizeof(char));
 	if(fb->buf->data == NULL) {
 		return luaL_error(L, "cannot get framebuffer emu memory");
 	}
 #endif
-	memset(fb->buf->data, 0, fb->finfo.smem_len);
 	fb->buf->w = fb->vinfo.xres;
 	fb->buf->h = fb->vinfo.yres;
-	fb->buf->pitch = fb->finfo.line_length;
 	fb->buf->allocated = 0;
-
 	return 1;
 }
 
