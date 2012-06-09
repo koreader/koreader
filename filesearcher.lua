@@ -265,9 +265,9 @@ function FileSearcher:addAllCommands()
 				if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 					if ev.code == KEY_Y then
 						-- delete the file itself
-						os.execute("rm \""..file_to_del.."\"")
+						os.remove(file_to_del)
 						-- and its history file, if any
-						os.execute("rm \""..DocToHistory(file_to_del).."\"")
+						os.remove(DocToHistory(file_to_del))
 						 -- to avoid showing just deleted file
 						self:init( self.path )
 						self:choose(self.keywords)
