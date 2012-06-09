@@ -18,9 +18,12 @@ Follow these steps:
 - install muPDF third-party sources (see muPDF homepage) into a new subfolder
   "mupdf/thirdparty"
 
-- install Lua sources into subfolder "lua"
+- install libDjvuLibre sources into subfolder "djvulibre"
+- install CREngine sources into subfolder "kpvcrlib/crengine"
 
-=> note that there's a make target to do this. You need wget, unzip and git
+- install LuaJit sources into subfolder "luajit-2.0"
+
+=> note that there's a make target to do all the above. You need wget, unzip and git
    installed. Then just run "make fetchthirdparty".
 
 - adapt Makefile to your needs
