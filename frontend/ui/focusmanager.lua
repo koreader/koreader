@@ -58,9 +58,13 @@ function FocusManager:onFocusMove(args)
 
 		-- move cyclic in vertical direction
 		if self.selected.y + dy > #self.layout then
-			self.selected.y = 1
+			if not self:onWrapLast() then
+				break
+			end
 		elseif self.selected.y + dy < 1 then
-			self.selected.y = #self.layout
+			if not self:onWrapFirst() then
+				break
+			end
 		else
 			self.selected.y = self.selected.y + dy
 		end
@@ -80,3 +84,12 @@ function FocusManager:onFocusMove(args)
 	return true
 end
 
+function FocusManager:onWrapFirst()
+	self.selected.y = #self.layout
+	return true
+end
+
+function FocusManager:onWrapLast()
+	self.selected.y = 1
+	return true
+end

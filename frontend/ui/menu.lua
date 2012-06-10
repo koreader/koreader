@@ -235,11 +235,11 @@ function Menu:init()
 	if #self.item_table > 0 then
 		-- if the table is not yet initialized, this call
 		-- must be done manually:
-		self:updateItems()
+		self:updateItems(1)
 	end
 end
 
-function Menu:updateItems()
+function Menu:updateItems(select_number)
 	self.layout = {}
 	self.item_group:clear()
 
@@ -272,11 +272,11 @@ function Menu:updateItems()
 			--self.last_shortcut = c
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
-	-- set focus to first menu item
 	if self.item_group[1] then
-		self.item_group[1]:onFocus()
 		-- reset focus manager accordingly
-		self.selected = { x = 1, y = 1 }
+		self.selected = { x = 1, y = select_number }
+		-- set focus to requested menu item
+		self.item_group[select_number]:onFocus()
 		-- update page information
 		self.page_info.text = "page "..self.page.."/"..self.page_num
 	else
@@ -300,6 +300,25 @@ function Menu:onSelectByShortCut(_, keyevent)
 	return true
 end
 
+function Menu:onWrapFirst()
+	if self.page > 1 then
+		self.page = self.page - 1
+		local end_position = self.perpage
+		if self.page == self.page_num then
+			end_position = #self.item_table % self.perpage
+		end
+		self:updateItems(end_position)
+	end
+	return false
+end
+
+function Menu:onWrapLast()
+	if self.page < self.page_num then
+		self:onNextPage()
+	end
+	return false
+end
+
 --[[
 override this function to process the item selected in a different manner
 ]]--
@@ -319,7 +338,13 @@ end
 function Menu:onNextPage()
 	if self.page < self.page_num then
 		self.page = self.page + 1
-		self:updateItems()
+		self:updateItems(1)
+	elseif self.page == self.page_num then
+		-- on the last page, we check if we're on the last item
+		local end_position = #self.item_table % self.perpage
+		if end_position ~= self.selected.y then
+			self:updateItems(end_position)
+		end
 	end
 	return true
 end
@@ -327,7 +352,7 @@ end
 function Menu:onPrevPage()
 	if self.page > 1 then
 		self.page = self.page - 1
-		self:updateItems()
+		self:updateItems(1)
 	end
 	return true
 end
