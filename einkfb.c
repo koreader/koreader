@@ -225,7 +225,23 @@ static int einkSetOrientation(lua_State *L) {
 		return luaL_error(L, "Wrong rotation mode %d given!", mode);
 	}
 
-	/* ioctl has a different definition for rotation mode. */
+	/* ioctl has a different definition for rotation mode.
+	 *	          1
+	 *	   +--------------+
+	 *	   | +----------+ |
+	 *	   | |          | |
+	 *	   | | Freedom! | |
+	 *	   | |          | |  
+	 *	   | |          | |  
+	 *	 3 | |          | | 2
+	 *	   | |          | |
+	 *	   | |          | |
+	 *	   | +----------+ |
+	 *	   |              |
+	 *	   |              |
+	 *	   +--------------+
+	 *	          0
+	 * */
 	if (mode == 1) 
 		mode = 2;
 	else if (mode == 2)
@@ -242,6 +258,13 @@ static int einkGetOrientation(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 
 	ioctl(fb->fd, FBIO_EINK_GET_DISPLAY_ORIENTATION, &mode);
+
+	/* adjust ioctl's rotate mode definition to KPV's 
+	 * refer to screen.lua */
+	if (mode == 2)
+		mode = 1;
+	else if (mode == 1)
+		mode = 2;
 #endif
 	lua_pushinteger(L, mode);
 	return 1;
