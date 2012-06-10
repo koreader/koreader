@@ -38,6 +38,46 @@
 
 lua_State *L;
 
+/* from luajit-2.0/src/luajit.c : */
+static int traceback(lua_State *L)
+{
+  if (!lua_isstring(L, 1)) { /* Non-string error object? Try metamethod. */
+    if (lua_isnoneornil(L, 1) ||
+	!luaL_callmeta(L, 1, "__tostring") ||
+	!lua_isstring(L, -1))
+      return 1;  /* Return non-string error object. */
+    lua_remove(L, 1);  /* Replace object by result of __tostring metamethod. */
+  }
+  lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+  if (!lua_istable(L, -1)) {
+    lua_pop(L, 1);
+    return 1;
+  }
+  lua_getfield(L, -1, "traceback");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 2);
+    return 1;
+  }
+  lua_pushvalue(L, 1);  /* Push error message. */
+  lua_pushinteger(L, 2);  /* Skip this function and debug.traceback(). */
+  lua_call(L, 2, 1);  /* Call debug.traceback(). */
+  return 1;
+}
+
+/* from luajit-2.0/src/luajit.c : */
+static int docall(lua_State *L, int narg, int clear)
+{
+  int status;
+  int base = lua_gettop(L) - narg;  /* function index */
+  lua_pushcfunction(L, traceback);  /* push traceback function */
+  lua_insert(L, base);  /* put it under chunk and args */
+  status = lua_pcall(L, narg, (clear ? 0 : LUA_MULTRET), base);
+  lua_remove(L, base);  /* remove traceback function */
+  /* force a complete garbage collection in case of errors */
+  if (status != 0) lua_gc(L, LUA_GCCOLLECT, 0);
+  return status;
+}
+
 int main(int argc, char **argv) {
 	int i, err;
 
@@ -71,7 +111,7 @@ int main(int argc, char **argv) {
 		}
 		lua_setglobal(L, "ARGV");
 
-		if(luaL_dofile(L, argv[1])) {
+		if(luaL_loadfile(L, argv[1]) || docall(L, 0, 1)) {
 			fprintf(stderr, "lua config error: %s\n", lua_tostring(L, -1));
 			lua_close(L);
 			L=NULL;
