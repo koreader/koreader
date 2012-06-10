@@ -1,3 +1,4 @@
+require "ui/screen"
 require "ui/rendertext"
 require "ui/graphics"
 require "ui/image"
@@ -186,10 +187,13 @@ function TextWidget:getSize()
 		--self:_render()
 	--end
 	--return { w = self._length, h = self._bb:getHeight() }
-	
-	self._length = sizeUtf8Text(0, G_width, self.face, self.text, true).x
+	local tsize = sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true)
+	if not tsize then
+		return Geom:new{}
+	end
+	self._length = tsize.x
 	self._height = self.face.size * 1.5
-	return {
+	return Geom:new{
 		w = self._length,
 		h = self._height,
 	}
@@ -226,7 +230,7 @@ TextBoxWidget = Widget:new{
 
 function TextBoxWidget:_wrapGreedyAlg(h_list)
 	local cur_line_width = 0
-	local space_w = sizeUtf8Text(0, G_width, self.face, " ", true).x
+	local space_w = sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
 	local cur_line = {}
 	local v_list = {}
 
@@ -255,7 +259,7 @@ function TextBoxWidget:_getVerticalList(alg)
 	for w in self.text:gmatch("%S+") do
 		word_box = {}
 		word_box.word = w
-		word_box.width = sizeUtf8Text(0, G_width, self.face, w, true).x
+		word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
 		table.insert(h_list, word_box)
 	end
 
@@ -269,7 +273,7 @@ function TextBoxWidget:_render()
 	local v_list = self.v_list
 	local font_height = self.face.size
 	local line_height_px = self.line_height * font_height
-	local space_w = sizeUtf8Text(0, G_width, self.face, " ", true).x
+	local space_w = sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
 	local h = (font_height + line_height_px) * #v_list - line_height_px
 	self._bb = Blitbuffer.new(self.width, h)
 	local y = font_height

@@ -21,8 +21,13 @@
 #include "blitbuffer.h"
 
 
-inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
+inline int setPixel(lua_State *L, BlitBuffer *bb, int x, int y, int c) {
 	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
+#ifndef NO_CHECK_BOUNDS
+	if(x < 0 || x >= bb->w || y < 0 || y >= bb->h) {
+		return luaL_error(L, "out of bounds in blitbuffer.setPixel()");
+	}
+#endif
 
 	if(x % 2 == 0) {
 		*dstptr &= 0x0F;
@@ -532,10 +537,10 @@ static int paintCircle(lua_State *L) {
 
 	/* draw two axles */
 	for(tmp_y = r; tmp_y > r2; tmp_y--) {
-		setPixel(dst, center_x+0, center_y+tmp_y, c);
-		setPixel(dst, center_x-0, center_y-tmp_y, c);
-		setPixel(dst, center_x+tmp_y, center_y+0, c);
-		setPixel(dst, center_x-tmp_y, center_y-0, c);
+		setPixel(L, dst, center_x+0, center_y+tmp_y, c);
+		setPixel(L, dst, center_x-0, center_y-tmp_y, c);
+		setPixel(L, dst, center_x+tmp_y, center_y+0, c);
+		setPixel(L, dst, center_x-tmp_y, center_y-0, c);
 	}
 
 	while(x < y) {
@@ -563,21 +568,21 @@ static int paintCircle(lua_State *L) {
 		}
 
 		for(tmp_y = y; tmp_y > y2; tmp_y--) {
-			setPixel(dst, center_x+x, center_y+tmp_y, c);
-			setPixel(dst, center_x+tmp_y, center_y+x, c);
+			setPixel(L, dst, center_x+x, center_y+tmp_y, c);
+			setPixel(L, dst, center_x+tmp_y, center_y+x, c);
 
-			setPixel(dst, center_x+tmp_y, center_y-x, c);
-			setPixel(dst, center_x+x, center_y-tmp_y, c);
+			setPixel(L, dst, center_x+tmp_y, center_y-x, c);
+			setPixel(L, dst, center_x+x, center_y-tmp_y, c);
 
-			setPixel(dst, center_x-x, center_y-tmp_y, c);
-			setPixel(dst, center_x-tmp_y, center_y-x, c);
+			setPixel(L, dst, center_x-x, center_y-tmp_y, c);
+			setPixel(L, dst, center_x-tmp_y, center_y-x, c);
 
-			setPixel(dst, center_x-tmp_y, center_y+x, c);
-			setPixel(dst, center_x-x, center_y+tmp_y, c);
+			setPixel(L, dst, center_x-tmp_y, center_y+x, c);
+			setPixel(L, dst, center_x-x, center_y+tmp_y, c);
 		}
 	}
 	if(r == w) {
-		setPixel(dst, center_x, center_y, c);
+		setPixel(L, dst, center_x, center_y, c);
 	}
 	return 0;
 }
@@ -617,10 +622,10 @@ static int paintRoundedCorner(lua_State *L) {
 
 	/* draw two axles */
 	/*for(tmp_y = r; tmp_y > r2; tmp_y--) {*/
-		/*setPixel(dst, (w-r)+off_x+0, (h-r)+off_y+tmp_y-1, c);*/
-		/*setPixel(dst, (w-r)+off_x-0, (r)+off_y-tmp_y, c);*/
-		/*setPixel(dst, (w-r)+off_x+tmp_y, (h-r)+off_y+0, c);*/
-		/*setPixel(dst, (r)+off_x-tmp_y, (h-r)+off_y-0-1, c);*/
+		/*setPixel(L, dst, (w-r)+off_x+0, (h-r)+off_y+tmp_y-1, c);*/
+		/*setPixel(L, dst, (w-r)+off_x-0, (r)+off_y-tmp_y, c);*/
+		/*setPixel(L, dst, (w-r)+off_x+tmp_y, (h-r)+off_y+0, c);*/
+		/*setPixel(L, dst, (r)+off_x-tmp_y, (h-r)+off_y-0-1, c);*/
 	/*}*/
 
 	while(x < y) {
@@ -648,17 +653,17 @@ static int paintRoundedCorner(lua_State *L) {
 		}
 
 		for(tmp_y = y; tmp_y > y2; tmp_y--) {
-			setPixel(dst, (w-r)+off_x+x-1, (h-r)+off_y+tmp_y-1, c);
-			setPixel(dst, (w-r)+off_x+tmp_y-1, (h-r)+off_y+x-1, c);
+			setPixel(L, dst, (w-r)+off_x+x-1, (h-r)+off_y+tmp_y-1, c);
+			setPixel(L, dst, (w-r)+off_x+tmp_y-1, (h-r)+off_y+x-1, c);
 
-			setPixel(dst, (w-r)+off_x+tmp_y-1, (r)+off_y-x, c);
-			setPixel(dst, (w-r)+off_x+x-1, (r)+off_y-tmp_y, c);
+			setPixel(L, dst, (w-r)+off_x+tmp_y-1, (r)+off_y-x, c);
+			setPixel(L, dst, (w-r)+off_x+x-1, (r)+off_y-tmp_y, c);
 
-			setPixel(dst, (r)+off_x-x, (r)+off_y-tmp_y, c);
-			setPixel(dst, (r)+off_x-tmp_y, (r)+off_y-x, c);
+			setPixel(L, dst, (r)+off_x-x, (r)+off_y-tmp_y, c);
+			setPixel(L, dst, (r)+off_x-tmp_y, (r)+off_y-x, c);
 
-			setPixel(dst, (r)+off_x-tmp_y, (h-r)+off_y+x-1, c);
-			setPixel(dst, (r)+off_x-x, (h-r)+off_y+tmp_y-1, c);
+			setPixel(L, dst, (r)+off_x-tmp_y, (h-r)+off_y+x-1, c);
+			setPixel(L, dst, (r)+off_x-x, (h-r)+off_y+tmp_y-1, c);
 		}
 	}
 	return 0;

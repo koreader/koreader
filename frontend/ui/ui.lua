@@ -2,16 +2,10 @@ require "ui/geometry"
 require "ui/inputevent"
 require "ui/widget"
 require "ui/screen"
-require "ui/dialog"
 require "settings" -- for DEBUG(), TODO: put DEBUG() somewhere else
 
 
--- we also initialize the framebuffer
-
-fb = einkfb.open("/dev/fb0")
-G_width, G_height = fb:getSize()
-
--- and the input handling
+-- initialize the input handling
 
 Input:init()
 
@@ -151,7 +145,7 @@ function UIManager:run()
 		local dirty = false
 		for _, widget in ipairs(self._window_stack) do
 			if self._dirty[widget.widget] then
-				widget.widget:paintTo(fb.bb, widget.x, widget.y)
+				widget.widget:paintTo(Screen.fb.bb, widget.x, widget.y)
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
 				-- trigger repaint
@@ -161,7 +155,7 @@ function UIManager:run()
 
 		if dirty then
 			-- refresh FB
-			fb:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
+			Screen.fb:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
 			-- reset refresh_type
 			self.refresh_type = 0
 		end

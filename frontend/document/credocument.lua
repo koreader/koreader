@@ -55,7 +55,7 @@ function CreDocument:init()
 	local style_sheet = "./data/"..file_type..".css"
 
 	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
-								G_width, G_height)
+				Screen:getWidth(), Screen:getHeight())
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return

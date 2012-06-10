@@ -1,4 +1,4 @@
-require "ui/dialog" -- for Menu
+require "ui/menu"
 
 FileChooser = Menu:new{
 	path = ".",
@@ -43,15 +43,18 @@ function FileChooser:changeToPath(path)
 	Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:onSelect()
-	local selected = self.item_table[(self.page-1)*self.perpage+self.selected.y]
-	if lfs.attributes(selected.path, "mode") == "directory" then
+function FileChooser:onMenuSelect(item)
+	if lfs.attributes(item.path, "mode") == "directory" then
 		UIManager:close(self)
-		self:changeToPath(selected.path)
+		self:changeToPath(item.path)
 		UIManager:show(self)
 	else
-		UIManager:close(self)
-		self.on_select_callback(self.item_table[self.selected.y])
+		self:onFileSelect(item.path)
 	end
+	return true
+end
+
+function FileChooser:onFileSelect(file)
+	UIManager:close(self)
 	return true
 end

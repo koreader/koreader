@@ -105,7 +105,7 @@ end
 
 -- calculates page dimensions
 function Document:getPageDimensions(pageno, zoom, rotation)
-	local native_dimen = Geom:copy(self:getNativePageDimensions(pageno))
+	local native_dimen = self:getNativePageDimensions(pageno):copy()
 	if rotation == 90 or rotation == 270 then
 		-- switch orientation
 		native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w

@@ -46,6 +46,8 @@ Screen = {
 	kpv_rotation_mode = nil,
 
 	saved_bb = nil,
+
+	fb = einkfb.open("/dev/fb0")
 }
 
 -- @orien: 1 for clockwise rotate, -1 for anti-clockwise
@@ -61,13 +63,28 @@ function Screen:screenRotate(orien)
 
 	self.cur_rotation_mode = (self.cur_rotation_mode + orien) % 4
 	-- you have to reopen framebuffer after rotate
-	fb:setOrientation(self.cur_rotation_mode)
-	fb:close()
-	fb = einkfb.open("/dev/fb0")
+	self.fb:setOrientation(self.cur_rotation_mode)
+	self.fb:close()
+	self.fb = einkfb.open("/dev/fb0")
+end
+
+function Screen:getSize()
+	local w, h = self.fb:getSize()
+	return Geom:new{w = w, h = h}
+end
+
+function Screen:getWidth()
+	local w, _ = self.fb:getSize()
+	return w
+end
+
+function Screen:getHeight()
+	local _, h = self.fb:getSize()
+	return h
 end
 
 function Screen:updateRotationMode()
-	if KEY_FW_DOWN == 116 then -- in EMU mode always set to 0
+	if util.isEmulated() then -- in EMU mode always set to 0
 		self.cur_rotation_mode = 0
 	else
 		orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
@@ -77,7 +94,7 @@ function Screen:updateRotationMode()
 end
 
 function Screen:saveCurrentBB()
-	local width, height = G_width, G_height
+	local width, height = self:getWidth(), self.getHeight()
 
 	if not self.saved_bb then
 		self.saved_bb = Blitbuffer.new(width, height)
@@ -94,14 +111,14 @@ function Screen:restoreFromSavedBB()
 end
 
 function Screen:getCurrentScreenBB()
-	local bb = Blitbuffer.new(G_width, G_height)
-	bb:blitFullFrom(fb.bb)
+	local bb = Blitbuffer.new(self:getWidth(), self:getHeight())
+	bb:blitFullFrom(self.fb.bb)
 	return bb
 end
 
 function Screen:restoreFromBB(bb)
 	if bb then
-		fb.bb:blitFullFrom(bb)
+		self.fb.bb:blitFullFrom(bb)
 	else
 		DEBUG("Got nil bb in restoreFromSavedBB!")
 	end
