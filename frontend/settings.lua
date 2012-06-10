@@ -29,7 +29,7 @@ end
 
 function DEBUG(...)
 	local line = ""
-	for i,v in ipairs(arg) do
+	for i,v in ipairs({...}) do
 		if type(v) == "table" then
 			line = line .. " " .. dump(v)
 		else
