@@ -236,6 +236,17 @@ static int einkSetOrientation(lua_State *L) {
 	return 0;
 }
 
+static int einkGetOrientation(lua_State *L) {
+	int mode = 0;
+#ifndef EMULATE_READER
+	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+
+	ioctl(fb->fd, FBIO_EINK_GET_DISPLAY_ORIENTATION, &mode);
+#endif
+	lua_pushinteger(L, mode);
+	return 1;
+}
+
 
 static const struct luaL_Reg einkfb_func[] = {
 	{"open", openFrameBuffer},
@@ -246,6 +257,7 @@ static const struct luaL_Reg einkfb_meth[] = {
 	{"close", closeFrameBuffer},
 	{"__gc", closeFrameBuffer},
 	{"refresh", einkUpdate},
+	{"getOrientation", einkGetOrientation},
 	{"setOrientation", einkSetOrientation},
 	{"getSize", getSize},
 	{NULL, NULL}
