@@ -67,11 +67,6 @@ static int openFrameBuffer(lua_State *L) {
 		return luaL_error(L, "only grayscale is supported but framebuffer says it isn't");
 	}
 
-	if (fb->vinfo.bits_per_pixel != 4) {
-		return luaL_error(L, "only 4bpp is supported for now, got %d bpp",
-				fb->vinfo.bits_per_pixel);
-	}
-
 	if (fb->vinfo.xres <= 0 || fb->vinfo.yres <= 0) {
 		return luaL_error(L, "invalid resolution %dx%d.\n",
 				fb->vinfo.xres, fb->vinfo.yres);
@@ -138,6 +133,28 @@ static int einkUpdate(lua_State *L) {
 	// for Kindle e-ink display
 	int fxtype = luaL_optint(L, 2, 0);
 #ifndef EMULATE_READER
+	int i = 0, j = 0, h = 0, w = 0;
+	uint8_t *fb_buf = NULL;
+
+	/* dulplicate 4bpp to 8bpp */
+	if (fb->vinfo.bits_per_pixel != 4) {
+		fb_buf = fb->buf->data;
+		h = fb->buf->h;
+		w = fb->buf->w;
+
+		for (i = (h-1); i > 0; i--) {
+			for (j = (w-1)/2; j > 0; j--) {
+				fb_buf[i*w + j*2] = fb_buf[i*w + j];
+				fb_buf[i*w + j*2] &= 0xF0;
+				fb_buf[i*w + j*2] |= fb_buf[i*w + j*2]>>4 & 0x0F;
+
+				fb_buf[i*w + j*2 + 1] = fb_buf[i*w + j];
+				fb_buf[i*w + j*2 + 1] &= 0x0F;
+				fb_buf[i*w + j*2 + 1] |= fb_buf[i*w + j*2 + 1]<<4 & 0xF0;
+			}
+		}
+	}
+
 	update_area_t myarea;
 	myarea.x1 = luaL_optint(L, 3, 0);
 	myarea.y1 = luaL_optint(L, 4, 0);
@@ -146,6 +163,15 @@ static int einkUpdate(lua_State *L) {
 	myarea.buffer = NULL;
 	myarea.which_fx = fxtype ? fx_update_partial : fx_update_full;
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
+
+	/* revert 8bpp to 4bpp */
+	if (fb->vinfo.bits_per_pixel != 4) {
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w/2; j++) {
+				fb_buf[i*w + j] = (fb_buf[i*w + j*2] & 0xF0) | (fb_buf[i*w + j*2 + 1] & 0x0F);
+			}
+		}
+	}
 #else
 	// for now, we only do fullscreen blits in emulation mode
 	if (fxtype == 0) {

@@ -217,6 +217,7 @@ customupdate: all
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
 	cp -r resources $(INSTALL_DIR)
+	cp -r frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
 	rm -Rf $(INSTALL_DIR)
