@@ -1,6 +1,6 @@
 # you can probably leave these settings alone:
 
-LUADIR=lua
+LUADIR=luajit-2.0
 MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
@@ -8,7 +8,7 @@ DJVUDIR=djvulibre
 KPVCRLIGDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.8
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.9
 LFSDIR=luafilesystem
 
 # must point to directory with *.ttf fonts for crengine
@@ -82,7 +82,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(MUPDFLIBDIR)/libjpeg.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
-LUALIB := $(LUADIR)/src/liblua.a
+LUALIB := $(LUADIR)/src/libluajit.a
 
 all:kpdfview
 
@@ -111,7 +111,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
 
-ft.o: %.o: %.c
+ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
@@ -127,12 +127,13 @@ lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rm -Rf lua lua-5.1.4
 	-rm -Rf mupdf/thirdparty
 	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
+	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
 	ln -sf kpvcrlib/crengine/cr3gui/data data
+	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
@@ -148,16 +149,14 @@ fetchthirdparty:
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
-	test -f lua-5.1.4.tar.gz || wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
-	tar xvzf lua-5.1.4.tar.gz && ln -s lua-5.1.4 lua
 
 clean:
 	-rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	make -C $(LUADIR) clean
-	make -C $(MUPDFDIR) clean
-	#make -C $(CRENGINEDIR)/thirdparty/antiword clean
+	-make -C $(LUADIR) clean
+	-make -C $(MUPDFDIR) clean
+	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
 	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
 	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
@@ -195,16 +194,15 @@ $(CRENGINELIBS):
 		make
 
 $(LUALIB):
-	make -C lua/src CC="$(CC)" CFLAGS="$(CFLAGS)" MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E" liblua.a
+ifdef EMULATE_READER
+	make -C $(LUADIR)
+else
+	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+endif
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
-
-install:
-	# install to kindle using USB networking
-	scp kpdfview *.lua root@192.168.2.2:/mnt/us/$(INSTALL_DIR)/
-	scp launchpad/* root@192.168.2.2:/mnt/us/launchpad/
 
 VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
@@ -221,6 +219,6 @@ customupdate: all
 	cp -r resources $(INSTALL_DIR)
 	cp -r frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
-	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/
+	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
 	rm -Rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

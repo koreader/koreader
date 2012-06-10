@@ -18,9 +18,12 @@ Follow these steps:
 - install muPDF third-party sources (see muPDF homepage) into a new subfolder
   "mupdf/thirdparty"
 
-- install Lua sources into subfolder "lua"
+- install libDjvuLibre sources into subfolder "djvulibre"
+- install CREngine sources into subfolder "kpvcrlib/crengine"
 
-=> note that there's a make target to do this. You need wget, unzip and git
+- install LuaJit sources into subfolder "luajit-2.0"
+
+=> note that there's a make target to do all the above. You need wget, unzip and git
    installed. Then just run "make fetchthirdparty".
 
 - adapt Makefile to your needs
@@ -57,10 +60,8 @@ To build in "emulation mode", you need to run make like this:
 	make clean cleanthirdparty
 	EMULATE_READER=1 make thirdparty kpdfview
 
-The reader.lua script needs a device argument in order to cope with some
-slight differences between actual readers and the emulation. Run it like
-this:
-	./reader.lua -d emu /PATH/TO/PDF.pdf
+And run the emulator like this:
+	./reader.lua /PATH/TO/PDF.pdf
 
 By default emulation will provide DXG resolution of 824*1200. It can be
 specified at compile time, this is example for Kindle 3:
