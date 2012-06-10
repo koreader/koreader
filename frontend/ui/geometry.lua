@@ -23,12 +23,12 @@ function Geom:new(o)
 	return o
 end
 
-function Geom:copy(o)
-	local n = self:new()
-	n.x = o.x
-	n.y = o.y
-	n.w = o.w
-	n.h = o.h
+function Geom:copy()
+	local n = Geom:new()
+	n.x = self.x
+	n.y = self.y
+	n.w = self.w
+	n.h = self.h
 	return n
 end
 
@@ -42,6 +42,7 @@ offset rectangle or point by relative values
 function Geom:offsetBy(dx, dy)
 	self.x = self.x + dx
 	self.y = self.y + dy
+	return self
 end
 
 --[[
@@ -50,6 +51,7 @@ offset rectangle or point to certain coordinates
 function Geom:offsetTo(x, y)
 	self.x = x
 	self.y = y
+	return self
 end
 
 --[[
@@ -60,6 +62,18 @@ if a single factor is given, it is applied to both width and height
 function Geom:scaleBy(zx, zy)
 	self.w = self.w * zx
 	self.h = self.h * (zy or zx)
+	return self
+end
+
+--[[
+enlarges or shrinks dimensions or rectangles
+
+note that for rectangles the offset stays the same
+]]--
+function Geom:changeSizeBy(dw, dh)
+	self.w = self.w + dw
+	self.h = self.h + dh
+	return self
 end
 
 --[[
@@ -118,12 +132,9 @@ end
 set size of dimension or rectangle to size of given dimension/rectangle
 ]]--
 function Geom:setSizeTo(rect_b)
-	if self.w == rect_b.w and self.h == rect_b.h then
-		return false
-	end
 	self.w = rect_b.w
 	self.h = rect_b.h
-	return true
+	return self
 end
 
 --[[

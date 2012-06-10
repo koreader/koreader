@@ -6,18 +6,18 @@ require "document/document"
 
 TestGrid = Widget:new{}
 
-function TestGrid:paintTo()
-	v_line = math.floor(G_width / 50)
-	h_line = math.floor(G_height / 50)
+function TestGrid:paintTo(bb)
+	v_line = math.floor(bb:getWidth() / 50)
+	h_line = math.floor(bb:getHeight() / 50)
 	for i=1,h_line do
 		y_num = i*50
-		renderUtf8Text(fb.bb, 0, y_num+10, Font:getFace("ffont", 12), y_num, true)
-		fb.bb:paintRect(0, y_num, G_width, 1, 10)
+		renderUtf8Text(bb, 0, y_num+10, Font:getFace("ffont", 12), y_num, true)
+		bb:paintRect(0, y_num, bb:getWidth(), 1, 10)
 	end
 	for i=1,v_line do
 		x_num = i*50
-		renderUtf8Text(fb.bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
-		fb.bb:paintRect(x_num, 0, 1, G_height, 10)
+		renderUtf8Text(bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
+		bb:paintRect(x_num, 0, 1, bb:getHeight(), 10)
 	end
 end
 
@@ -33,7 +33,7 @@ Background = InputContainer:new{
 	FrameContainer:new{
 		background = 3,
 		bordersize = 0,
-		dimen = { w = G_width, h = G_height }
+		dimen = Screen:getSize()
 	}
 }
 
@@ -133,14 +133,14 @@ M = Menu:new{
 
 
 readerwindow = CenterContainer:new{
-	dimen = Geom:new{ w = G_width, h = G_height },
+	dimen = Screen:getSize(),
 	FrameContainer:new{
 		background = 0
 	}
 }
 reader = ReaderUI:new{
 	dialog = readerwindow,
-	dimen = Geom:new{ w = G_width - 100, h = G_height - 100 },
+	dimen = Geom:new{ w = Screen:getWidth() - 100, h = Screen:getHeight() - 100 },
 	document = DocumentRegistry:getProvider("test/2col.pdf")
 	--document = DocumentRegistry:getProvider("test/djvu3spec.djvu")
 	--document = DocumentRegistry:getProvider("./README.TXT")

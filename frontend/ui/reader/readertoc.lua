@@ -2,7 +2,7 @@ ReaderToc = InputContainer:new{
 	key_events = {
 		ShowToc = { {"T"}, doc = "show Table of Content menu"},
 	},
-	dimen = Geom:new{ w = G_width-20, h = G_height-20},
+	dimen = Geom:new{ w = Screen:getWidth()-20, h = Screen:getHeight()-20},
 	current_page = 0,
 	current_pos = 0,
 }
@@ -51,22 +51,21 @@ function ReaderToc:getTocTitleOfCurrentPage()
 end
 
 function ReaderToc:onShowToc()
-	function callback(item)
-		self.ui:handleEvent(Event:new("PageUpdate", item.page))
-	end
-
 	local items = self.ui.document:getToc()
 	-- build menu items
 	for _,v in ipairs(items) do
 		v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
 	end
-	toc_menu = Menu:new{
+	local toc_menu = Menu:new{
 		title = "Table of Contents",
 		item_table = items,
 		width = self.dimen.w,
 		height = self.dimen.h,
-		on_select_callback = callback,
+		ui = self.ui
 	}
+	function toc_menu:onMenuChoice(item)
+		self.ui:handleEvent(Event:new("PageUpdate", item.page))
+	end
 
 	UIManager:show(toc_menu)
 end

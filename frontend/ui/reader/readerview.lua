@@ -76,7 +76,7 @@ end
 
 function ReaderView:PanningUpdate(dx, dy)
 	DEBUG("pan by", dx, dy)
-	local old = Geom:copy(self.visible_area)
+	local old = self.visible_area:copy()
 	self.visible_area:offsetWithin(self.page_area, dx, dy)
 	if self.visible_area ~= old then
 		-- flag a repaint

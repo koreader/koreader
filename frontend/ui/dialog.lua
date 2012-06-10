@@ -49,6 +49,9 @@ function FocusManager:onFocusMove(args)
 		return true
 	end
 
+	if not self.layout or not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
+		return true
+	end
 	local current_item = self.layout[self.selected.y][self.selected.x]
 	while true do
 		if self.selected.x + dx > #self.layout[self.selected.y]
@@ -140,7 +143,7 @@ ConfirmBox = FocusManager:new{
 function ConfirmBox:init()
 	-- calculate box width on the fly if not given
 	if not self.width then
-		self.width = G_width - 200
+		self.width = Screen:getWidth() - 200
 	end
 	-- build bottons
 	self.key_events.Close = { {{"Home","Back"}}, doc = "cancel" }
@@ -158,7 +161,7 @@ function ConfirmBox:init()
 	self.selected.x = 2 -- Cancel is default 
 
 	self[1] = CenterContainer:new{
-		dimen = { w = G_width, h = G_height },
+		dimen = Screen:getSize(),
 		FrameContainer:new{
 			margin = 2,
 			background = 0,
@@ -222,7 +225,7 @@ InfoMessage = InputContainer:new{
 function InfoMessage:init()
 	-- we construct the actual content here because self.text is only available now
 	self[1] = CenterContainer:new{
-		dimen = { w = G_width, h = G_height },
+		dimen = Screen:getSize(),
 		FrameContainer:new{
 			margin = 2,
 			background = 0,
@@ -260,8 +263,7 @@ end
 Widget that displays a shortcut icon for menu item
 ]]
 ItemShortCutIcon = WidgetContainer:new{
-	width = 22,
-	height = 22,
+	dimen = Geom:new{ w = 22, h = 22 },
 	key = nil,
 	bordersize = 2,
 	radius = 0,
@@ -293,15 +295,9 @@ function ItemShortCutIcon:init()
 		bordersize = self.bordersize,
 		radius = radius,
 		background = background,
-		dimen = {
-			w = self.width,
-			h = self.height,
-		},
+		dimen = self.dimen,
 		CenterContainer:new{
-			dimen = {
-				w = self.width,
-				h = self.height,
-			},
+			dimen = self.dimen,
 			TextWidget:new{
 				text = self.key,
 				face = sc_face,
@@ -319,43 +315,41 @@ MenuItem = InputContainer:new{
 	text = nil,
 	detail = nil,
 	face = Font:getFace("cfont", 22),
-	width = nil,
-	height = nil,
+	dimen = nil,
 	shortcut = nil,
 	shortcut_style = "square",
 	_underline_container = nil,
 }
 
 function MenuItem:init()
-	local shortcut_icon_w = 0
-	local shortcut_icon_h = 0
+	local shortcut_icon_dimen = Geom:new()
 	if self.shortcut then
-		shortcut_icon_w = math.floor(self.height*4/5)
-		shortcut_icon_h = shortcut_icon_w 
+		shortcut_icon_dimen.w = math.floor(self.dimen.h*4/5)
+		shortcut_icon_dimen.h = shortcut_icon_dimen.w 
 	end
 
 	self.detail = self.text
 	-- 15 for HorizontalSpan,
-	self.content_width = self.width - shortcut_icon_w - 15
+	self.content_width = self.dimen.w - shortcut_icon_dimen.w - 15
 
 	-- we need this table per-instance, so we declare it here
 	self.active_key_events = {
 		Select = { {"Press"}, doc = "chose selected item" },
 	}
 
-	w = sizeUtf8Text(0, self.width, self.face, self.text, true).x
+	w = sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
 	if w >= self.content_width then
 		self.active_key_events.ShowItemDetail = { {"Right"}, doc = "show item detail" }
 		indicator = "  >>"
-		indicator_w = sizeUtf8Text(0, self.width, self.face, indicator, true).x
+		indicator_w = sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
 		self.text = getSubTextByWidth(self.text, self.face,
 			self.content_width - indicator_w, true) .. indicator
 	end
 
 	self._underline_container = UnderlineContainer:new{
-		dimen = {
+		dimen = Geom:new{
 			w = self.content_width,
-			h = self.height
+			h = self.dimen.h
 		},
 		HorizontalGroup:new {
 			align = "center",
@@ -369,8 +363,7 @@ function MenuItem:init()
 	self[1] = HorizontalGroup:new{
 		HorizontalSpan:new{ width = 5 },
 		ItemShortCutIcon:new{
-			width = shortcut_icon_w,
-			height = shortcut_icon_h,
+			dimen = shortcut_icon_dimen,
 			key = self.shortcut,
 			radius = shortcut_icon_r,
 			style = self.shortcut_style,
@@ -414,8 +407,7 @@ Menu = FocusManager:new{
 	sface = Font:getFace("scfont", 20),
 
 	title = "No Title",
-	height = 500,
-	width = 500,
+	dimen = Geom:new{ w = 500, h = 500 },
 	item_table = {},
 	item_shortcuts = {
 		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
@@ -424,17 +416,23 @@ Menu = FocusManager:new{
 	},
 	is_enable_shortcut = true,
 
-	item_height = 36,
+	item_dimen = nil,
 	page = 1,
-
-	on_select_callback = function() end,
 
 	item_group = nil,
 	page_info = nil,
+
+	-- set this to true to not paint as popup menu
+	is_borderless = false,
 }
 
 function Menu:init()
-	self.perpage = math.floor(self.height / self.item_height) - 2
+	self.item_dimen = Geom:new{
+		w = self.dimen.w,
+		h = 36, -- hardcoded for now
+	}
+
+	self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - 2
 	self.page = 1
 	self.page_num = math.ceil(#self.item_table / self.perpage)
 
@@ -459,21 +457,36 @@ function Menu:init()
 		face = self.fface,
 	}
 
-	self[1] = CenterContainer:new{
-		FrameContainer:new{
+	local content = VerticalGroup:new{
+		TextWidget:new{
+			text = self.title,
+			face = self.tface,
+		},
+		self.item_group,
+		self.page_info,
+	} -- VerticalGroup
+
+	if not self.is_borderless then
+		self[1] = CenterContainer:new{
+			FrameContainer:new{
+				background = 0,
+				radius = math.floor(self.dimen.w/20),
+				content
+			},
+			dimen = Screen:getSize(),
+		}
+		-- we need to substract border, margin and padding
+		self.item_dimen.w = self.item_dimen.w - 14
+	else
+		self[1] = FrameContainer:new{
 			background = 0,
-			radius = math.floor(self.width/20),
-			VerticalGroup:new{
-				TextWidget:new{
-					text = self.title,
-					face = self.tface,
-				},
-				self.item_group,
-				self.page_info,
-			}, -- VerticalGroup
-		}, -- FrameContainer
-		dimen = {w = G_width, h = G_height},
-	} -- CenterContainer
+			bordersize = 0,
+			padding = 0,
+			margin = 0,
+			dimen = Screen:getSize(),
+			content
+		}
+	end
 
 	if #self.item_table > 0 then
 		-- if the table is not yet initialized, this call
@@ -503,11 +516,10 @@ function Menu:updateItems()
 					item_shortcut = "Ent"
 				end
 			end
-			item_tmp = MenuItem:new{
+			local item_tmp = MenuItem:new{
 				text = self.item_table[i].text,
 				face = self.cface,
-				width = self.width - 14,
-				height = self.item_height,
+				dimen = self.item_dimen,
 				shortcut = item_shortcut,
 				shortcut_style = shortcut_style,
 			}
@@ -517,11 +529,15 @@ function Menu:updateItems()
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	-- set focus to first menu item
-	self.item_group[1]:onFocus()
-	-- reset focus manager accordingly
-	self.selected = { x = 1, y = 1 }
-	-- update page information
-	self.page_info.text = "page "..self.page.."/"..self.page_num
+	if self.item_group[1] then
+		self.item_group[1]:onFocus()
+		-- reset focus manager accordingly
+		self.selected = { x = 1, y = 1 }
+		-- update page information
+		self.page_info.text = "page "..self.page.."/"..self.page_num
+	else
+		self.page_info.text = "no choices available"
+	end
 
 	UIManager:setDirty(self)
 end
@@ -531,13 +547,28 @@ function Menu:onSelectByShortCut(_, keyevent)
 		if k > self.perpage then
 			break
 		elseif v == keyevent.key then
-			local item = self.item_table[(self.page-1)*self.perpage+k]
-			self.item_table = nil
-			UIManager:close(self)
-			self.on_select_callback(item)
+			if self.item_table[(self.page-1)*self.perpage + k] then
+				self:onMenuSelect(self.item_table[(self.page-1)*self.perpage + k])
+			end
 			break 
 		end
 	end
+	return true
+end
+
+--[[
+override this function to process the item selected in a different manner
+]]--
+function Menu:onMenuSelect(item)
+	UIManager:close(self)
+	self:onMenuChoice(item)
+	return true
+end
+
+--[[
+override this function to handle the choice
+]]--
+function Menu:onMenuChoice(item)
 	return true
 end
 
@@ -558,8 +589,7 @@ function Menu:onPrevPage()
 end
 
 function Menu:onSelect()
-	UIManager:close(self)
-	self.on_select_callback(self.item_table[(self.page-1)*self.perpage+self.selected.y])
+	self:onMenuSelect(self.item_table[(self.page-1)*self.perpage+self.selected.y])
 	return true
 end
 
@@ -567,3 +597,4 @@ function Menu:onClose()
 	UIManager:close(self)
 	return true
 end
+
