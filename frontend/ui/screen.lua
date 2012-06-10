@@ -84,13 +84,8 @@ function Screen:getHeight()
 end
 
 function Screen:updateRotationMode()
-	if util.isEmulated() then -- in EMU mode always set to 0
-		self.cur_rotation_mode = 0
-	else
-		orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
-		updown_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_upside_down", "r"))
-		self.cur_rotation_mode = orie_fd:read() + (updown_fd:read() * 2)
-	end
+	-- in EMU mode, you will always get 0 from getOrientation()
+	self.cur_rotation_mode = self.fb:getOrientation()
 end
 
 function Screen:saveCurrentBB()
