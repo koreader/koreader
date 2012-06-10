@@ -44,7 +44,7 @@ static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
 {
 	const ddjvu_message_t *msg;
 	if (!ctx)
-		return;
+		return -1;
 	if (wait)
 		msg = ddjvu_message_wait(ctx);
 	while ((msg = ddjvu_message_peek(ctx)))
