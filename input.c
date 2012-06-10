@@ -20,7 +20,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#ifdef EMULATE_READER
+#include <SDL.h>
+#define EV_KEY 0x01
+#else
 #include <linux/input.h>
+#endif
 #include "input.h"
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -139,6 +144,7 @@ static int openInputDevice(lua_State *L) {
 }
 
 static int closeInputDevices(lua_State *L) {
+#ifndef EMULATE_READER
 	int i;
 	for(i=0; i<NUM_FDS; i++) {
 		if(inputfds[i] != -1) {
@@ -152,6 +158,9 @@ static int closeInputDevices(lua_State *L) {
 		waitpid(-1, NULL, 0);
 	}
 	return 0;
+#else
+	return 0;
+#endif
 }
 
 static int waitForInput(lua_State *L) {
