@@ -2,7 +2,6 @@ require "ui/geometry"
 require "ui/inputevent"
 require "ui/widget"
 require "ui/screen"
-require "ui/dialog"
 require "settings" -- for DEBUG(), TODO: put DEBUG() somewhere else
 
 

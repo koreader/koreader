@@ -2,6 +2,7 @@ package.path = "./frontend/?.lua"
 require "ui/ui"
 require "ui/readerui"
 require "ui/filechooser"
+require "ui/infomessage"
 require "document/document"
 
 function showReader(file)

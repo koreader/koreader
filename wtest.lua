@@ -1,7 +1,11 @@
 print(package.path)
 package.path = "./frontend/?.lua"
+require "ui/widget"
 require "ui/ui"
 require "ui/readerui"
+require "ui/menu"
+require "ui/infomessage"
+require "ui/confirmbox"
 require "document/document"
 
 TestGrid = Widget:new{}

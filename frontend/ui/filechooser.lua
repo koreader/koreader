@@ -1,4 +1,4 @@
-require "ui/dialog" -- for Menu
+require "ui/menu"
 
 FileChooser = Menu:new{
 	path = ".",
