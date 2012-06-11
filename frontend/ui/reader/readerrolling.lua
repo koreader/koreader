@@ -40,9 +40,13 @@ function ReaderRolling:gotoPos(new_pos)
 	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
 end
 
+function ReaderRolling:gotoPercent(new_percent)
+	self:gotoPos(new_percent * self.length / 10000)
+end
+
 function ReaderRolling:onGotoPercent(percent)
 	DEBUG("goto document offset in percent:", percent)
-	self:gotoPos(percent * self.length / 10000)
+	self:gotoPercent(percent)
 	return true
 end
 
