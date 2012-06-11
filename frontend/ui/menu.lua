@@ -158,6 +158,7 @@ Menu = FocusManager:new{
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Enter",
 	},
+	item_table_stack = {},
 	is_enable_shortcut = true,
 
 	item_dimen = nil,
@@ -195,6 +196,10 @@ function Menu:init()
 	end
 	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 
+	self.menu_title = TextWidget:new{
+		text = self.title,
+		face = self.tface,
+	}
 	-- group for items
 	self.item_group = VerticalGroup:new{}
 	self.page_info = TextWidget:new{
@@ -202,10 +207,7 @@ function Menu:init()
 	}
 
 	local content = VerticalGroup:new{
-		TextWidget:new{
-			text = self.title,
-			face = self.tface,
-		},
+		self.menu_title,
 		self.item_group,
 		self.page_info,
 	} -- VerticalGroup
@@ -286,6 +288,12 @@ function Menu:updateItems(select_number)
 	UIManager:setDirty(self)
 end
 
+function Menu:swithItemTable(new_title, new_item_table)
+	self.menu_title.text = new_title
+	self.item_table = new_item_table
+	self:updateItems(1)
+end
+
 function Menu:onSelectByShortCut(_, keyevent)
 	for k,v in ipairs(self.item_shortcuts) do
 		if k > self.perpage then
@@ -323,8 +331,15 @@ end
 override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
-	UIManager:close(self)
-	self:onMenuChoice(item)
+	if item.sub_item_table == nil then
+		UIManager:close(self)
+		self:onMenuChoice(item)
+	else
+		-- save menu title for later resume
+		self.item_table.title = self.title
+		table.insert(self.item_table_stack, self.item_table)
+		self:swithItemTable(item.text, item.sub_item_table)
+	end
 	return true
 end
 
@@ -363,7 +378,14 @@ function Menu:onSelect()
 end
 
 function Menu:onClose()
-	UIManager:close(self)
+	local table_length = #self.item_table_stack
+	if table_length == 0 then
+		UIManager:close(self)
+	else
+		-- back to parent menu
+		parent_item_table = table.remove(self.item_table_stack, table_length)
+		self:swithItemTable(parent_item_table.title, parent_item_table)
+	end
 	return true
 end
 
