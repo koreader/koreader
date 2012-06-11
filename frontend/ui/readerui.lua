@@ -27,6 +27,11 @@ ReaderUI = InputContainer:new{
 
 	-- the document interface
 	document = nil,
+
+	-- initial page or percent inside document on opening
+	start_pos = nil,
+	-- password for document unlock
+	password = nil,
 }
 
 function ReaderUI:init()
@@ -80,7 +85,10 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, pager)
-		pager:gotoPage(1)
+		if not self.start_pos then
+			self.start_pos = 1
+		end
+		pager:gotoPage(self.start_pos)
 	else
 		local roller = ReaderRolling:new{
 			dialog = self.dialog,
@@ -88,7 +96,10 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, roller)
-		roller:gotoPos(0)
+		if not self.start_pos then
+			self.start_pos = 0
+		end
+		roller:gotoPercent(self.start_pos)
 	end
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
