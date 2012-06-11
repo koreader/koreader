@@ -76,4 +76,17 @@ end
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
+DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
+DocumentRegistry:addProvider("html", "application/html", CreDocument)
+DocumentRegistry:addProvider("htm", "application/htm", CreDocument)
+DocumentRegistry:addProvider("zip", "application/zip", CreDocument)
+DocumentRegistry:addProvider("rtf", "application/rtf", CreDocument)
+DocumentRegistry:addProvider("mobi", "application/mobi", CreDocument)
+DocumentRegistry:addProvider("prc", "application/prc", CreDocument)
+DocumentRegistry:addProvider("azw", "application/azw", CreDocument)
+DocumentRegistry:addProvider("chm", "application/chm", CreDocument)
+DocumentRegistry:addProvider("pdb", "application/pdb", CreDocument)
+DocumentRegistry:addProvider("doc", "application/doc", CreDocument)
+DocumentRegistry:addProvider("tcr", "application/tcr", CreDocument)
