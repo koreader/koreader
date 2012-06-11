@@ -8,6 +8,18 @@ function ReaderMenu:onShowMenu()
 	local item_table = {}
 
 	table.insert(item_table, {
+		text = "Switch zoom mode",
+		sub_item_table = {
+			{
+				text = "Zoom to fit content width",
+			},
+			{
+				text = "Zoom to fit content height",
+			},
+		}
+	})
+
+	table.insert(item_table, {
 		text = "Return to file browser"
 	})
 
