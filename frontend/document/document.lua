@@ -9,10 +9,6 @@ function DocumentRegistry:addProvider(extension, mimetype, provider)
 	table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
 end
 
-function DocumentRegistry:openDocument(file)
-	return self:getProvider(file):new{file = file}
-end
-
 function DocumentRegistry:getProvider(file)
 	-- TODO: some implementation based on mime types?
 	local extension = string.lower(string.match(file, ".+%.([^.]+)"))
@@ -21,6 +17,10 @@ function DocumentRegistry:getProvider(file)
 			return provider.provider
 		end
 	end
+end
+
+function DocumentRegistry:openDocument(file)
+	return self:getProvider(file):new{file = file}
 end
 
 

@@ -1,10 +1,11 @@
-require "cache"
 require "ui/geometry"
 
 CreDocument = Document:new{
 	_document = false,
+	engine_initilized = false,
+
 	line_space_percent = 100,
-	--dc_null = DrawContext.new()
+	default_font = "Droid Sans Fallback",
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -22,20 +23,28 @@ function CreDocument:zipContentExt(fname)
 	return string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
-function CreDocument:init()
-	-- we need to initialize the CRE font list
-	local fonts = Font:getFontList()
-	for _k, _v in ipairs(fonts) do
-		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
-		if not ok then
-			DEBUG(err)
+function CreDocument:engineInit()
+	if not engine_initilized then
+		-- we need to initialize the CRE font list
+		local fonts = Font:getFontList()
+		for _k, _v in ipairs(fonts) do
+			local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
+			if not ok then
+				DEBUG(err)
+			end
 		end
-	end
 
-	--local default_font = G_reader_settings:readSetting("cre_font")
-	--if default_font then
-		--self.default_font = default_font
-	--end
+		local default_font = G_reader_settings:readSetting("cre_font")
+		if default_font then
+			self.default_font = default_font
+		end
+
+		engine_initilized = true
+	end
+end
+
+function CreDocument:init()
+	self:engineInit()
 
 	local ok
 	local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
