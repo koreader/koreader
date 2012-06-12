@@ -85,13 +85,23 @@ end
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
-function CreDocument:setFont(new_font_face)
-	if new_font_face and self.font_face ~= new_font_face then
+function CreDocument:getFontFace()
+	return self._document:getFontFace()
+end
+
+function CreDocument:setFontFace(new_font_face)
+	if new_font_face  then
 		self._document:setFontFace(new_font_face)
-		self.font_face = new_font_face
 	end
 end
 
+function CreDocument:getFontSize()
+	return self._document:getFontSize()
+end
+
+function CreDocument:zoomFont(delta)
+	self._document:zoomFont(delta)
+end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)

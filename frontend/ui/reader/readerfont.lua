@@ -5,7 +5,15 @@ ReaderFont = InputContainer:new{
 		DecreaseSize = { { "Shift", Input.group.PgBack }, doc = "decrease font size", event = "ChangeSize", args = "decrease" },
 	},
 	dimen = Geom:new{ w = Screen:getWidth()-20, h = Screen:getHeight()-20},
+
+	font_face = nil,
+	font_size = nil,
 }
+
+function ReaderFont:init()
+	self.font_face = self.ui.document:getFontFace()
+	self.font_size = self.ui.document:getFontSize()
+end
 
 function ReaderFont:onShowFontMenu()
 	-- build menu item_table
@@ -33,15 +41,34 @@ function ReaderFont:onShowFontMenu()
 	}
 
 	function font_menu:onMenuChoice(item)
-		msg = InfoMessage:new{ text = "Redrawing with "..item.text}
-		UIManager:show(msg)
-		self.ui.document:setFont(item.text)
-		-- signal readerrolling to update pos in new height
-		self.ui:handleEvent(Event:new("UpdatePos"))
-		UIManager:close(msg)
+		if item.text and self.font_face ~= item.text then
+			self.font_face = item.text
+			msg = InfoMessage:new{ text = "Redrawing with "..item.text}
+			UIManager:show(msg)
+			self.ui.document:setFontFace(item.text)
+			-- signal readerrolling to update pos in new height
+			self.ui:handleEvent(Event:new("UpdatePos"))
+			UIManager:close(msg)
+		end
 	end
 
 	UIManager:show(font_menu)
+	return true
+end
+
+function ReaderFont:onChangeSize(direction)
+	local delta = 1
+	if direction == "decrease" then
+	   delta = -1
+	end
+	self.font_size = self.font_size + delta
+	msg = InfoMessage:new{text = direction.." font size to "..self.font_size}
+	UIManager:show(msg)
+	self.ui.document:zoomFont(delta)
+	self.ui:handleEvent(Event:new("UpdatePos"))
+	UIManager:close(msg)
+
+	return true
 end
 
 
