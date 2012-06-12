@@ -174,6 +174,14 @@ static int getFontSize(lua_State *L) {
 	return 1;
 }
 
+static int getFontFace(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_pushstring(L, doc->text_view->getDefaultFontFace().c_str());
+
+	return 1;
+}
+
 /*
  * helper function for getTableOfContent()
  */
@@ -455,6 +463,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getCurrentXPointer", getCurrentXPointer},
 	{"getFullHeight", getFullHeight},
 	{"getFontSize", getFontSize},
+	{"getFontFace", getFontFace},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
 	{"setFontFace", setFontFace},
