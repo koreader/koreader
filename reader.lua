@@ -100,6 +100,15 @@ if optarg["G"] ~= nil then
 	globalgamma = optarg["G"]
 end
 
+-- set up reader's setting: font
+G_reader_settings = DocSettings:open(".reader")
+fontmap = G_reader_settings:readSetting("fontmap")
+DEBUG(fontmap)
+if fontmap ~= nil then
+	Font.fontmap = fontmap
+end
+local last_file = G_reader_settings:readSetting("lastfile")
+
 Screen:updateRotationMode()
 Screen.native_rotation_mode = Screen.cur_rotation_mode
 
@@ -113,7 +122,6 @@ if ARGV[optind] then
 	end
 	UIManager:run()
 elseif last_file and lfs.attributes(last_file, "mode") == "file" then
-	--@TODO get last_file from settings  12.06 2012 (houqp)
 	showReader(last_file, optarg["p"])
 	UIManager:run()
 else
