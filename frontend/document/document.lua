@@ -9,15 +9,20 @@ function DocumentRegistry:addProvider(extension, mimetype, provider)
 	table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
 end
 
+function DocumentRegistry:openDocument(file)
+	return self:getProvider(file):new{file = file}
+end
+
 function DocumentRegistry:getProvider(file)
 	-- TODO: some implementation based on mime types?
 	local extension = string.lower(string.match(file, ".+%.([^.]+)"))
 	for _, provider in ipairs(self.providers) do
 		if extension == provider.extension then
-			return provider.provider:new{file = file}
+			return provider.provider
 		end
 	end
 end
+
 
 --[[
 This is an abstract interface to a document
