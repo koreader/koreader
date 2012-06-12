@@ -145,9 +145,9 @@ readerwindow = CenterContainer:new{
 reader = ReaderUI:new{
 	dialog = readerwindow,
 	dimen = Geom:new{ w = Screen:getWidth() - 100, h = Screen:getHeight() - 100 },
-	document = DocumentRegistry:getProvider("test/2col.pdf")
-	--document = DocumentRegistry:getProvider("test/djvu3spec.djvu")
-	--document = DocumentRegistry:getProvider("./README.TXT")
+	document = DocumentRegistry:openDocument("test/2col.pdf")
+	--document = DocumentRegistry:openDocument("test/djvu3spec.djvu")
+	--document = DocumentRegistry:openDocument("./README.TXT")
 }
 readerwindow[1][1] = reader
 

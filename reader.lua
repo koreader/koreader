@@ -10,7 +10,7 @@ require "alt_getopt"
 
 
 function showReader(file, pass)
-	local document = DocumentRegistry:getProvider(file)
+	local document = DocumentRegistry:openDocument(file)
 	if not document then
 		UIManager:show(InfoMessage:new{ text = "No reader engine for this file" })
 		return
@@ -39,7 +39,12 @@ function showFileManager(path)
 	local FileManager = FileChooser:new{
 		path = path,
 		dimen = Screen:getSize(),
-		is_borderless = true
+		is_borderless = true,
+		filter = function(filename) 
+			if DocumentRegistry:getProvider(filename) then
+				return true
+			end
+		end
 	}
 
 	function FileManager:onFileSelect(file)
