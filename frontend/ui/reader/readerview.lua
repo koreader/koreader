@@ -107,3 +107,12 @@ function ReaderView:onRotationUpdate(rotation)
 	self:recalculate()
 end
 
+function ReaderView:onFontChange(font_face)
+	msg = InfoMessage:new{ text = "Redrawing with "..font_face}
+	UIManager:show(msg)
+	self.ui.document:setFont(font_face)
+	-- signal readerrolling to update pos in new height
+	self.ui:handleEvent(Event:new("UpdatePos"))
+	UIManager:close(msg)
+end
+

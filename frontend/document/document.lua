@@ -46,7 +46,7 @@ Document = {
 
 		number_of_pages = 0,
 		-- if not pageable, length of the document in pixels
-		length = 0,
+		doc_height = 0,
 
 		-- other metadata
 		title = "",
@@ -103,7 +103,7 @@ function Document:_readMetadata()
 	if self.info.has_pages then
 		self.info.number_of_pages = self._document:getPages()
 	else
-		self.info.length = self._document:getFullHeight()
+		self.info.doc_height = self._document:getFullHeight()
 	end
 	return true
 end

@@ -6,6 +6,7 @@ require "ui/reader/readerrotation"
 require "ui/reader/readerpaging"
 require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
+require "ui/reader/readerfont"
 require "ui/reader/readermenu"
 
 --[[
@@ -90,6 +91,7 @@ function ReaderUI:init()
 		end
 		pager:gotoPage(self.start_pos)
 	else
+		-- rolling controller
 		local roller = ReaderRolling:new{
 			dialog = self.dialog,
 			view = self[1],
@@ -100,6 +102,13 @@ function ReaderUI:init()
 			self.start_pos = 0
 		end
 		roller:gotoPercent(self.start_pos)
+		-- font menu
+		local font_menu = ReaderFont:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, font_menu)
 	end
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
