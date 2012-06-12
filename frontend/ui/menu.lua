@@ -370,8 +370,8 @@ end
 function Menu:onPrevPage()
 	if self.page > 1 then
 		self.page = self.page - 1
-		self:updateItems(1)
 	end
+	self:updateItems(1)
 	return true
 end
 
