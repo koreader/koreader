@@ -357,6 +357,9 @@ function Menu:onNextPage()
 	elseif self.page == self.page_num then
 		-- on the last page, we check if we're on the last item
 		local end_position = #self.item_table % self.perpage
+		if end_position == 0 then
+			end_position = self.perpage
+		end
 		if end_position ~= self.selected.y then
 			self:updateItems(end_position)
 		end
