@@ -1,13 +1,28 @@
 ReaderFont = InputContainer:new{
 	key_events = {
 		ShowFontMenu = { {"F"}, doc = "show font menu"},
-		IncreaseSize = { { "Shift", Input.group.PgFwd }, doc = "increase font size", event = "ChangeSize", args = "increase" },
-		DecreaseSize = { { "Shift", Input.group.PgBack }, doc = "decrease font size", event = "ChangeSize", args = "decrease" },
+		IncreaseSize = { 
+			{ "Shift", Input.group.PgFwd }, 
+			doc = "increase font size", 
+			event = "ChangeSize", args = "increase" },
+		DecreaseSize = { 
+			{ "Shift", Input.group.PgBack },
+			doc = "decrease font size",
+			event = "ChangeSize", args = "decrease" },
+		IncreaseLineSpace = {
+			{ "Alt", Input.group.PgFwd },
+			doc = "increase line space",
+			event = "ChangeLineSpace", args = "increase" },
+		DecreaseLineSpace = {
+			{ "Alt", Input.group.PgBack },
+			doc = "decrease line space",
+			event = "ChangeLineSpace", args = "decrease" },
 	},
 	dimen = Geom:new{ w = Screen:getWidth()-20, h = Screen:getHeight()-20},
 
 	font_face = nil,
 	font_size = nil,
+	line_space_percent = 100,
 }
 
 function ReaderFont:init()
@@ -67,6 +82,22 @@ function ReaderFont:onChangeSize(direction)
 	self.ui.document:zoomFont(delta)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 	UIManager:close(msg)
+
+	return true
+end
+
+function ReaderFont:onChangeLineSpace(direction)
+	if direction == "decrease" then
+		self.line_space_percent = self.line_space_percent - 10
+		-- NuPogodi, 15.05.12: reduce lowest space_percent to 80
+		self.line_space_percent = math.max(self.line_space_percent, 80)
+	else
+		self.line_space_percent = self.line_space_percent + 10
+		self.line_space_percent = math.min(self.line_space_percent, 200)
+	end
+	msg = InfoMessage:new{"line spacing "..self.line_space_percent.."%"}
+	self.ui.document:setInterlineSpacePercent(self.line_space_percent)
+	self.ui:handleEvent(Event:new("UpdatePos"))
 
 	return true
 end

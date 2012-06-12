@@ -73,7 +73,8 @@ function CreDocument:init()
 	self.info.has_pages = false
 	self:_readMetadata()
 
-	self._document:setDefaultInterlineSpace(self.line_space_percent)
+	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
+	--self._document:setDefaultInterlineSpace(self.line_space_percent)
 end
 
 function CreDocument:hintPage(pageno, zoom, rotation)
@@ -101,6 +102,10 @@ end
 
 function CreDocument:zoomFont(delta)
 	self._document:zoomFont(delta)
+end
+
+function CreDocument:setInterlineSpacePercent(percent)
+	self._document:setDefaultInterlineSpace(percent)
 end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
