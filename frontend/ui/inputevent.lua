@@ -247,6 +247,8 @@ function Input:waitEvent(timeout_us, timeout_s)
 			-- don't report an error on timeout
 			ev = nil
 			break
+		elseif ev == "application forced to quit" then
+			os.exit(0)
 		end
 		DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then
