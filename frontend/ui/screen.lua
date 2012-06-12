@@ -66,6 +66,7 @@ function Screen:screenRotate(orien)
 	self.fb:setOrientation(self.cur_rotation_mode)
 	self.fb:close()
 	self.fb = einkfb.open("/dev/fb0")
+	Input.rotation = self.cur_rotation_mode
 end
 
 function Screen:getSize()

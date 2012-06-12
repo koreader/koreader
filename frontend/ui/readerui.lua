@@ -43,6 +43,7 @@ function ReaderUI:init()
 	-- a view container (so it must be child #1!)
 	self[1] = ReaderView:new{
 		dialog = self.dialog,
+		dimen = self.dimen,
 		ui = self
 	}
 	-- rotation controller
@@ -112,6 +113,10 @@ function ReaderUI:init()
 	end
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
+end
+
+function ReaderUI:onSetDimensions(dimen)
+	self.dimen = dimen
 end
 
 function ReaderUI:onClose()

@@ -30,6 +30,10 @@ function ReaderFont:init()
 	self.font_size = self.ui.document:getFontSize()
 end
 
+function ReaderFont:onSetDimensions(dimen)
+	self.dimen = dimen
+end
+
 function ReaderFont:onShowFontMenu()
 	-- build menu item_table
 	local face_list = cre.getFontFaces()

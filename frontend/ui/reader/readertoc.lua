@@ -69,6 +69,10 @@ function ReaderToc:onShowToc()
 	UIManager:show(toc_menu)
 end
 
+function ReaderToc:onSetDimensions(dimen)
+	self.dimen = dimen
+end
+
 function ReaderToc:onPageUpdate(new_page_no)
 	self.current_page = new_page_no
 end

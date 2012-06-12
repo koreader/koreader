@@ -59,19 +59,14 @@ function ReaderView:recalculate()
 		self.page_area = page_size
 
 		-- reset our size
-		self.visible_area:setSizeTo(self.ui.dimen)
+		self.visible_area:setSizeTo(self.dimen)
 		-- and recalculate it according to page size
 		self.visible_area:offsetWithin(self.page_area, 0, 0)
 	else
-		self.visible_area:setSizeTo(self.ui.dimen)
+		self.visible_area:setSizeTo(self.dimen)
 	end
 	-- flag a repaint
 	UIManager:setDirty(self.dialog)
-end
-
-function ReaderView:onSetDimensions(dimensions)
-	-- recalculate view
-	self:recalculate()
 end
 
 function ReaderView:PanningUpdate(dx, dy)
@@ -85,6 +80,12 @@ function ReaderView:PanningUpdate(dx, dy)
 		DEBUG(self.visible_area)
 	end
 	return true
+end
+
+function ReaderView:onSetDimensions(dimensions)
+	self.dimen = dimensions
+	-- recalculate view
+	self:recalculate()
 end
 
 function ReaderView:onPageUpdate(new_page_no)
