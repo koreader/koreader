@@ -138,7 +138,9 @@ end
 -- screen orientation and upside down mode 09.03 2012
 Screen:setRotationMode(Screen.native_rotation_mode)
 
+input.closeAll()
 if util.isEmulated()==0 then
 	os.execute("killall -cont cvm")
-	os.execute('echo "send '..KEY_MENU..'" > /proc/keypad;echo "send '..KEY_MENU..'" > /proc/keypad')
+	-- send double menu key press events to trigger screen refresh
+	os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
 end
