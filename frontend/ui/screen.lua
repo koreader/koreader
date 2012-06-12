@@ -88,6 +88,10 @@ function Screen:updateRotationMode()
 	self.cur_rotation_mode = self.fb:getOrientation()
 end
 
+function Screen:setRotationMode(mode)
+	self.fb:setOrientation(Screen.native_rotation_mode)
+end
+
 function Screen:saveCurrentBB()
 	local width, height = self:getWidth(), self.getHeight()
 

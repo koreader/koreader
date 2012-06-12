@@ -103,7 +103,6 @@ end
 -- set up reader's setting: font
 G_reader_settings = DocSettings:open(".reader")
 fontmap = G_reader_settings:readSetting("fontmap")
-DEBUG(fontmap)
 if fontmap ~= nil then
 	Font.fontmap = fontmap
 end
@@ -132,7 +131,7 @@ end
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
-fb:setOrientation(Screen.native_rotation_mode)
+Screen:setRotationMode(Screen.native_rotation_mode)
 
 if util.isEmulated()==0 then
 	os.execute("killall -cont cvm")
