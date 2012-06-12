@@ -166,6 +166,14 @@ static int getFullHeight(lua_State *L) {
 	return 1;
 }
 
+static int getFontSize(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_pushinteger(L, doc->text_view->getFontSize());
+
+	return 1;
+}
+
 /*
  * helper function for getTableOfContent()
  */
@@ -446,6 +454,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getCurrentPercent", getCurrentPercent},
 	{"getCurrentXPointer", getCurrentXPointer},
 	{"getFullHeight", getFullHeight},
+	{"getFontSize", getFontSize},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
 	{"setFontFace", setFontFace},
