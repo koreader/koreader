@@ -149,7 +149,7 @@ static int getCurrentPercent(lua_State *L) {
 	return 1;
 }
 
-static int getXPointer(lua_State *L) {
+static int getCurrentXPointer(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	ldomXPointer xp = doc->text_view->getBookmark();
@@ -444,7 +444,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPosFromXPointer", getPosFromXPointer},
 	{"getCurrentPos", getCurrentPos},
 	{"getCurrentPercent", getCurrentPercent},
-	{"getXPointer", getXPointer},
+	{"getCurrentXPointer", getCurrentXPointer},
 	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
