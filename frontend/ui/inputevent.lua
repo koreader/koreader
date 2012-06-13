@@ -1,4 +1,5 @@
 require "ui/event"
+require "ui/device"
 
 -- constants from <linux/input.h>
 EV_KEY = 1
@@ -110,6 +111,7 @@ Input = {
 		[44] = "Z", [45] = "X", [46] = "C", [47] = "V", [48] = "B", [49] = "N", [50] = "M", [52] = ".", [53] = "/", -- only KDX
 
 		[28] = "Enter",
+		[29] = "ScreenKB", -- K[4]
 		[42] = "Shift",
 		[56] = "Alt",
 		[57] = " ",
@@ -118,12 +120,12 @@ Input = {
 		[92] = "Press", -- KDX
 		[94] = "Sym", -- KDX
 		[98] = "Home", -- KDX
-		[102] = "Home", -- K[3]
+		[102] = "Home", -- K[3] & k[4]
 		[104] = "LPgBack", -- K[3] only
-		[103] = "Up", -- K[3]
+		[103] = "Up", -- K[3] & k[4]
 		[105] = "Left",
 		[106] = "Right",
-		[108] = "Down", -- K[3]
+		[108] = "Down", -- K[3] & k[4]
 		[109] = "RPgBack",
 		[114] = "VMinus",
 		[115] = "VPlus",
@@ -132,11 +134,11 @@ Input = {
 		[124] = "RPgFwd", -- KDX
 		[126] = "Sym", -- K[3]
 		[139] = "Menu",
-		[158] = "Back", -- K[3]
+		[158] = "Back", -- K[3] & K[4]
 		[190] = "AA", -- K[3]
-		[191] = "RPgFwd", -- K[3]
+		[191] = "RPgFwd", -- K[3] & k[4]
 		[193] = "LPgFwd", -- K[3] only
-		[194] = "Press", -- K[3]
+		[194] = "Press", -- K[3] & k[4]
 	},
 	sdl_event_map = {
 		[10] = "1", [11] = "2", [12] = "3", [13] = "4", [14] = "5", [15] = "6", [16] = "7", [17] = "8", [18] = "9", [19] = "0",
@@ -229,10 +231,22 @@ function Input:init()
 		-- check if we are running on Kindle 3 (additional volume input)
 		local f=lfs.attributes("/dev/input/event2")
 		if f then
-			print("Auto-detected Kindle 3")
 			input.open("/dev/input/event2")
+			if util.isKindle3() then
+				print("Auto-detected Kindle 3")
+			end
+		end
+
+		if util.isKindle4() then
+			print("Auto-detected Kindle 4")
+			self:adjustKindle4EventMap()
 		end
 	end
+end
+
+function Input:adjustKindle4EventMap()
+	self.event_map[193] = "LPgBack"
+	self.event_map[104] = "LPgFwd"
 end
 
 function Input:waitEvent(timeout_us, timeout_s)
@@ -247,6 +261,8 @@ function Input:waitEvent(timeout_us, timeout_s)
 			-- don't report an error on timeout
 			ev = nil
 			break
+		elseif ev == "application forced to quit" then
+			os.exit(0)
 		end
 		DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then

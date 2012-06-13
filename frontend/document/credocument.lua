@@ -1,10 +1,11 @@
-require "cache"
 require "ui/geometry"
 
 CreDocument = Document:new{
 	_document = false,
+	engine_initilized = false,
+
 	line_space_percent = 100,
-	--dc_null = DrawContext.new()
+	default_font = "Droid Sans Fallback",
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -22,20 +23,28 @@ function CreDocument:zipContentExt(fname)
 	return string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
-function CreDocument:init()
-	-- we need to initialize the CRE font list
-	local fonts = Font:getFontList()
-	for _k, _v in ipairs(fonts) do
-		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
-		if not ok then
-			DEBUG(err)
+function CreDocument:engineInit()
+	if not engine_initilized then
+		-- we need to initialize the CRE font list
+		local fonts = Font:getFontList()
+		for _k, _v in ipairs(fonts) do
+			local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
+			if not ok then
+				DEBUG(err)
+			end
 		end
-	end
 
-	--local default_font = G_reader_settings:readSetting("cre_font")
-	--if default_font then
-		--self.default_font = default_font
-	--end
+		local default_font = G_reader_settings:readSetting("cre_font")
+		if default_font then
+			self.default_font = default_font
+		end
+
+		engine_initilized = true
+	end
+end
+
+function CreDocument:init()
+	self:engineInit()
 
 	local ok
 	local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
@@ -64,7 +73,8 @@ function CreDocument:init()
 	self.info.has_pages = false
 	self:_readMetadata()
 
-	self._document:setDefaultInterlineSpace(self.line_space_percent)
+	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
+	--self._document:setDefaultInterlineSpace(self.line_space_percent)
 end
 
 function CreDocument:hintPage(pageno, zoom, rotation)
@@ -76,4 +86,38 @@ end
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
+function CreDocument:getFontFace()
+	return self._document:getFontFace()
+end
+
+function CreDocument:setFontFace(new_font_face)
+	if new_font_face  then
+		self._document:setFontFace(new_font_face)
+	end
+end
+
+function CreDocument:getFontSize()
+	return self._document:getFontSize()
+end
+
+function CreDocument:zoomFont(delta)
+	self._document:zoomFont(delta)
+end
+
+function CreDocument:setInterlineSpacePercent(percent)
+	self._document:setDefaultInterlineSpace(percent)
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
+DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
+DocumentRegistry:addProvider("html", "application/html", CreDocument)
+DocumentRegistry:addProvider("htm", "application/htm", CreDocument)
+DocumentRegistry:addProvider("zip", "application/zip", CreDocument)
+DocumentRegistry:addProvider("rtf", "application/rtf", CreDocument)
+DocumentRegistry:addProvider("mobi", "application/mobi", CreDocument)
+DocumentRegistry:addProvider("prc", "application/prc", CreDocument)
+DocumentRegistry:addProvider("azw", "application/azw", CreDocument)
+DocumentRegistry:addProvider("chm", "application/chm", CreDocument)
+DocumentRegistry:addProvider("pdb", "application/pdb", CreDocument)
+DocumentRegistry:addProvider("doc", "application/doc", CreDocument)
+DocumentRegistry:addProvider("tcr", "application/tcr", CreDocument)

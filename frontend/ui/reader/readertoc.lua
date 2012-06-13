@@ -59,8 +59,7 @@ function ReaderToc:onShowToc()
 	local toc_menu = Menu:new{
 		title = "Table of Contents",
 		item_table = items,
-		width = self.dimen.w,
-		height = self.dimen.h,
+		dimen = self.dimen,
 		ui = self.ui
 	}
 	function toc_menu:onMenuChoice(item)
@@ -68,6 +67,10 @@ function ReaderToc:onShowToc()
 	end
 
 	UIManager:show(toc_menu)
+end
+
+function ReaderToc:onSetDimensions(dimen)
+	self.dimen = dimen
 end
 
 function ReaderToc:onPageUpdate(new_page_no)

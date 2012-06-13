@@ -66,6 +66,7 @@ function Screen:screenRotate(orien)
 	self.fb:setOrientation(self.cur_rotation_mode)
 	self.fb:close()
 	self.fb = einkfb.open("/dev/fb0")
+	Input.rotation = self.cur_rotation_mode
 end
 
 function Screen:getSize()
@@ -86,6 +87,10 @@ end
 function Screen:updateRotationMode()
 	-- in EMU mode, you will always get 0 from getOrientation()
 	self.cur_rotation_mode = self.fb:getOrientation()
+end
+
+function Screen:setRotationMode(mode)
+	self.fb:setOrientation(Screen.native_rotation_mode)
 end
 
 function Screen:saveCurrentBB()

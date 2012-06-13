@@ -20,13 +20,15 @@ ReaderRolling = InputContainer:new{
 		GotoLast = { {"0"}, doc = "go to end", event = "GotoPercent", args = 100},
 	},
 
+	old_doc_height = nil,
 	current_pos = 0,
-	length = nil,
+	doc_height = nil,
 	panning_steps = ReaderPanning.panning_steps,
 }
 
 function ReaderRolling:init()
-	self.length = self.ui.document.info.length
+	self.doc_height = self.ui.document.info.doc_height
+	self.old_doc_height = self.doc_height
 end
 
 function ReaderRolling:onPosUpdate(new_pos)
@@ -36,13 +38,32 @@ end
 function ReaderRolling:gotoPos(new_pos)
 	if new_pos == self.current_pos then return end
 	if new_pos < 0 then new_pos = 0 end
-	if new_pos > self.length then new_pos = self.length end
+	if new_pos > self.doc_height then new_pos = self.doc_height end
 	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
+end
+
+function ReaderRolling:gotoPercent(new_percent)
+	self:gotoPos(new_percent * self.doc_height / 10000)
+end
+
+-- remember to signal this event the document has been zoomed,
+-- font has been changed, or line height has been changed.
+function ReaderRolling:onUpdatePos()
+	-- reread document height
+	self.ui.document:_readMetadata()
+	-- update self.current_pos if the height of document has been changed.
+	if self.old_doc_height ~= self.ui.document.info.doc_height then
+		self:gotoPos(self.current_pos * 
+			(self.ui.document.info.doc_height - self.dialog.dimen.h) / 
+			(self.old_doc_height - self.dialog.dimen.h))
+		self.old_doc_height = self.ui.document.info.doc_height
+	end
+	return true
 end
 
 function ReaderRolling:onGotoPercent(percent)
 	DEBUG("goto document offset in percent:", percent)
-	self:gotoPos(percent * self.length / 10000)
+	self:gotoPercent(percent)
 	return true
 end
 
@@ -60,5 +81,6 @@ function ReaderRolling:onPanning(args, key)
 end
 
 function ReaderRolling:onZoom()
-	--@TODO re-read length info after font or lineheight changes  05.06 2012 (houqp)
+	--@TODO re-read doc_height info after font or lineheight changes  05.06 2012 (houqp)
+	self:onUpdatePos()
 end

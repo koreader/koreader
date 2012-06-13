@@ -149,7 +149,7 @@ static int getCurrentPercent(lua_State *L) {
 	return 1;
 }
 
-static int getXPointer(lua_State *L) {
+static int getCurrentXPointer(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	ldomXPointer xp = doc->text_view->getBookmark();
@@ -162,6 +162,22 @@ static int getFullHeight(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
 	lua_pushinteger(L, doc->text_view->GetFullHeight());
+
+	return 1;
+}
+
+static int getFontSize(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_pushinteger(L, doc->text_view->getFontSize());
+
+	return 1;
+}
+
+static int getFontFace(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_pushstring(L, doc->text_view->getDefaultFontFace().c_str());
 
 	return 1;
 }
@@ -444,8 +460,10 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPosFromXPointer", getPosFromXPointer},
 	{"getCurrentPos", getCurrentPos},
 	{"getCurrentPercent", getCurrentPercent},
-	{"getXPointer", getXPointer},
+	{"getCurrentXPointer", getCurrentXPointer},
 	{"getFullHeight", getFullHeight},
+	{"getFontSize", getFontSize},
+	{"getFontFace", getFontFace},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
 	{"setFontFace", setFontFace},

@@ -1,4 +1,5 @@
 require "ui/geometry"
+require "ui/device"
 require "ui/inputevent"
 require "ui/widget"
 require "ui/screen"

@@ -14,10 +14,15 @@ function DocumentRegistry:getProvider(file)
 	local extension = string.lower(string.match(file, ".+%.([^.]+)"))
 	for _, provider in ipairs(self.providers) do
 		if extension == provider.extension then
-			return provider.provider:new{file = file}
+			return provider.provider
 		end
 	end
 end
+
+function DocumentRegistry:openDocument(file)
+	return self:getProvider(file):new{file = file}
+end
+
 
 --[[
 This is an abstract interface to a document
@@ -41,7 +46,7 @@ Document = {
 
 		number_of_pages = 0,
 		-- if not pageable, length of the document in pixels
-		length = 0,
+		doc_height = 0,
 
 		-- other metadata
 		title = "",
@@ -98,7 +103,7 @@ function Document:_readMetadata()
 	if self.info.has_pages then
 		self.info.number_of_pages = self._document:getPages()
 	else
-		self.info.length = self._document:getFullHeight()
+		self.info.doc_height = self._document:getFullHeight()
 	end
 	return true
 end
