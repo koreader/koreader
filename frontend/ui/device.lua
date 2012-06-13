@@ -1,4 +1,9 @@
-function util.isKindle4()
+Device = {
+	screen_saver_mode = false,
+	charging_mode = false,
+}
+
+function Device:isKindle4()
 	re_val = os.execute("cat /proc/cpuinfo | grep MX50")
 	if re_val == 0 then
 		return true
@@ -7,7 +12,7 @@ function util.isKindle4()
 	end
 end
 
-function util.isKindle3()
+function Device:isKindle3()
 	re_val = os.execute("cat /proc/cpuinfo | grep MX35")
 	if re_val == 0 then
 		return true
@@ -16,11 +21,72 @@ function util.isKindle3()
 	end
 end
 
-function util.isKindle2()
+function Device:isKindle2()
 	re_val = os.execute("cat /proc/cpuinfo | grep MX3")
 	if re_val == 0 then
 		return true
 	else
 		return false
 	end
+end
+
+function Device:intoScreenSaver()
+	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
+	if self.charging_mode == false and self.screen_saver_mode == false then
+		Screen:saveCurrentBB()
+		msg = InfoMessage:new{"Going into screensaver... "}
+		UIManager:show(msg)
+
+		Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+		Screen.fb:setOrientation(Screen.native_rotation_mode)
+		util.sleep(1)
+		os.execute("killall -cont cvm")
+		self.screen_saver_mode = true
+
+		UIManager:close(msg)
+	end
+end
+
+function Device:outofScreenSaver()
+	--os.execute("echo 'screensaver out' >> /mnt/us/event_test.txt")
+	if self.screen_saver_mode == true and self.charging_mode == false then
+		util.usleep(1500000)
+		os.execute("killall -stop cvm")
+		Screen.fb:setOrientation(Screen.kpv_rotation_mode)
+		Screen:restoreFromSavedBB()
+		Screen.fb:refresh(0)
+	end
+	self.screen_saver_mode = false
+end
+
+function Device:usbPlugIn()
+	--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
+	if self.charging_mode == false and self.screen_saver_mode == false then
+		Screen:saveCurrentBB()
+		Screen.kpv_rotation_mode = Screen.cur_rotation_mode
+		Screen.fb:setOrientation(Screen.native_rotation_mode)
+		msg = InfoMessage:new{"Going into USB mode... "}
+		UIManager:show(msg)
+		util.sleep(1)
+		UIManager:close(msg)
+		os.execute("killall -cont cvm")
+	end
+	self.charging_mode = true
+end
+
+function Device:usbPlugOut()
+	--os.execute("echo 'usb out' >> /mnt/us/event_test.txt")
+	if self.charging_mode == true and self.screen_saver_mode == false then
+		util.usleep(1500000)
+		os.execute("killall -stop cvm")
+		Screen.fb:setOrientation(Screen.kpv_rotation_mode)
+		Screen:restoreFromSavedBB()
+		Screen.fb:refresh(0)
+	end
+
+	--@TODO signal filemanager for file changes  13.06 2012 (houqp)
+	--FileChooser:setPath(FileChooser.path)
+	--FileChooser.pagedirty = true
+	
+	self.charging_mode = false
 end
