@@ -92,7 +92,7 @@ static int blitFullToBuffer(lua_State *L) {
 	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
 	BlitBuffer *src = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
 
-	if(src->w != dst->w || src->h != dst->h) {
+	if(src->w != dst->w || src->h != dst->h || src->pitch != dst->pitch) {
 		return luaL_error(L, "blitbuffer size must be framebuffer size!");
 	}
 
