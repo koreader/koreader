@@ -38,7 +38,7 @@ InputBox = {
 	-- default layout = 2, i.e. shiftmode = symbolmode = utf8mode = false
 	layout = 2,
 	-- now bits to toggle the layout mode
-	shiftmode = false,	-- toggle chars <> capitals,	lowest bit in (layout-2)
+	shiftmode = true,	-- toggle chars <> capitals,	lowest bit in (layout-2)
 	symbolmode = false,	-- toggle chars <> symbols,		middle bit in (layout-2)
 	utf8mode = false,	-- toggle english <> national,	highest bit in (layout-2)
 }
