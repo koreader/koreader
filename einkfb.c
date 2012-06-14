@@ -140,13 +140,15 @@ static int closeFrameBuffer(lua_State *L) {
 	// should be save if called twice
 	if(fb->buf != NULL && fb->buf->data != NULL) {
 #ifndef EMULATE_READER
-		munmap(fb->buf->data, fb->finfo.smem_len);
+		if (fb->vinfo.bits_per_pixel != 4) {
+			munmap(fb->read_buf->data, fb->finfo.smem_len);
+			free(fb->buf->data);
+		} else {
+			munmap(fb->buf->data, fb->finfo.smem_len);
+		}
 		close(fb->fd);
 #else
 		free(fb->buf->data);
-		if (fb->vinfo.bits_per_pixel != 4) {
-			free(fb->real_buf->data);
-		}
 #endif
 		fb->buf->data = NULL;
 		// the blitbuffer in fb->buf should be freed
