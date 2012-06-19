@@ -141,7 +141,7 @@ static int closeFrameBuffer(lua_State *L) {
 	if(fb->buf != NULL && fb->buf->data != NULL) {
 #ifndef EMULATE_READER
 		if (fb->vinfo.bits_per_pixel != 4) {
-			munmap(fb->read_buf->data, fb->finfo.smem_len);
+			munmap(fb->real_buf->data, fb->finfo.smem_len);
 			free(fb->buf->data);
 		} else {
 			munmap(fb->buf->data, fb->finfo.smem_len);
