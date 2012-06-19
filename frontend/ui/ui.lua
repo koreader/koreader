@@ -14,7 +14,7 @@ Input:init()
 -- there is only one instance of this
 UIManager = {
 	-- change this to set refresh type for next refresh
-	refresh_type = 1, -- defaults to 1 initially but will be set to 0 after each refresh
+	refresh_type = 1, -- defaults to 1 initially and will be set to 1 after each refresh
 
 	_running = true,
 	_window_stack = {},
@@ -70,8 +70,15 @@ function UIManager:scheduleIn(seconds, action)
 end
 
 -- register a widget to be repainted
-function UIManager:setDirty(widget)
-	self._dirty[widget] = true
+function UIManager:setDirty(widget, refresh_type)
+	if not refresh_type then
+		refresh_type = "full"
+	elseif refresh_type == 0 then
+		refresh_type = "full"
+	elseif refresh_type == 1 then
+		refresh_type = "partial"
+	end
+	self._dirty[widget] = refresh_type
 end
 
 -- signal to quit
@@ -144,21 +151,34 @@ function UIManager:run()
 
 		-- repaint dirty widgets
 		local dirty = false
+		local update_area = Geom:new{}
 		for _, widget in ipairs(self._window_stack) do
 			if self._dirty[widget.widget] then
+				widget_dimen = widget.widget:getSize()
+				if widget_dimen then
+					widget_area = Geom:new{
+										x = widget.x, y = widget.y,
+										w = widget_dimen.w, h = widget_dimen.h}
+					update_area = update_area:combine(widget_area)
+				end
 				widget.widget:paintTo(Screen.fb.bb, widget.x, widget.y)
+				if self._dirty[widget.widget] == "full" then
+					self.refresh_type = 0
+				end
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
 				-- trigger repaint
 				dirty = true
 			end
 		end
+		-- @TODO make use of update_area on refresh  19.06 2012 (houqp)
+		--DEBUG(update_area)
 
 		if dirty then
 			-- refresh FB
 			Screen.fb:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
 			-- reset refresh_type
-			self.refresh_type = 0
+			self.refresh_type = 1
 		end
 
 		-- wait for next event
