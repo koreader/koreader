@@ -58,7 +58,7 @@ static int openInputDevice(lua_State *L) {
 		return luaL_error(L, "no free slot for new input device <%s>", inputdevice);
 	}
 
-	if(!strcmp("slider",inputdevice)) {
+	if(!strcmp("fake_events",inputdevice)) {
 		/* special case: the power slider */
 		int pipefd[2];
 		int childpid;
