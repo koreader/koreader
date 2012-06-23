@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -77,7 +78,7 @@ static int openFrameBuffer(lua_State *L) {
 	fb->buf->pitch = fb->finfo.line_length;
 	fb_map_address = mmap(0, fb->finfo.smem_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, fb->fd, 0);
-	if(fb->buf->data == MAP_FAILED) {
+	if(fb_map_address == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
 	if (fb->vinfo.bits_per_pixel != 4) {
@@ -85,7 +86,7 @@ static int openFrameBuffer(lua_State *L) {
 		 * K4 uses 16 scale 8bpp framebuffer, so we still cheat it as 4bpp */
 		fb->buf->pitch = fb->buf->pitch / 2;
 
-		fb->buf->data = malloc(fb->buf->pitch * fb->vinfo.yres);
+		fb->buf->data = (uint8_t *)calloc(fb->buf->pitch * fb->vinfo.yres, sizeof(uint8_t));
 		if (!fb->buf->data) {
 			return luaL_error(L, "failed to allocate memory for framebuffer's shadow blitbuffer!");
 		}
@@ -104,8 +105,8 @@ static int openFrameBuffer(lua_State *L) {
 		/* for K2, K3 and DXG, we map framebuffer to fb->buf->data directly */
 		fb->real_buf = NULL;
 		fb->buf->data = fb_map_address;
+		fb->buf->allocated = 0;
 	}
-	memset(fb->buf->data, 0, fb->buf->pitch * fb->buf->h);
 #else
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
@@ -124,7 +125,7 @@ static int openFrameBuffer(lua_State *L) {
 #endif
 	fb->buf->w = fb->vinfo.xres;
 	fb->buf->h = fb->vinfo.yres;
-	fb->buf->allocated = 0;
+	memset(fb->buf->data, 0, fb->buf->pitch * fb->buf->h);
 	return 1;
 }
 
