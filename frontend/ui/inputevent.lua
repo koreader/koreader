@@ -229,7 +229,7 @@ function Input:init()
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
-		input.open("slider")
+		input.open("fake_events")
 		input.open("/dev/input/event0")
 		input.open("/dev/input/event1")
 
