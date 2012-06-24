@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -26,6 +27,7 @@
 static int openFrameBuffer(lua_State *L) {
 	const char *fb_device = luaL_checkstring(L, 1);
 	FBInfo *fb = (FBInfo*) lua_newuserdata(L, sizeof(FBInfo));
+	uint8_t *fb_map_address = NULL;
 
 	luaL_getmetatable(L, "einkfb");
 
@@ -73,13 +75,38 @@ static int openFrameBuffer(lua_State *L) {
 	}
 
 	/* mmap the framebuffer */
-	fb->buf->data = mmap(0, fb->finfo.smem_len,
+	fb->buf->pitch = fb->finfo.line_length;
+	fb_map_address = mmap(0, fb->finfo.smem_len,
 			PROT_READ | PROT_WRITE, MAP_SHARED, fb->fd, 0);
-	if(fb->buf->data == MAP_FAILED) {
+	if(fb_map_address == MAP_FAILED) {
 		return luaL_error(L, "cannot mmap framebuffer");
 	}
-	memset(fb->buf->data, 0, fb->finfo.smem_len);
-	fb->buf->pitch = fb->finfo.line_length;
+	if (fb->vinfo.bits_per_pixel != 4) {
+		/* for 8bpp K4, we create a shadow 4bpp blitbuffer 
+		 * K4 uses 16 scale 8bpp framebuffer, so we still cheat it as 4bpp */
+		fb->buf->pitch = fb->buf->pitch / 2;
+
+		fb->buf->data = (uint8_t *)calloc(fb->buf->pitch * fb->vinfo.yres, sizeof(uint8_t));
+		if (!fb->buf->data) {
+			return luaL_error(L, "failed to allocate memory for framebuffer's shadow blitbuffer!");
+		}
+		fb->buf->allocated = 1;
+
+		fb->real_buf = (BlitBuffer *)malloc(sizeof(BlitBuffer));
+		if (!fb->buf->data) {
+			return luaL_error(L, "failed to allocate memory for framebuffer's blitbuffer!");
+		}
+		fb->real_buf->pitch = fb->finfo.line_length;
+		fb->real_buf->w = fb->vinfo.xres;
+		fb->real_buf->h = fb->vinfo.yres;
+		fb->real_buf->allocated = 0;
+		fb->real_buf->data = fb_map_address;
+	} else {
+		/* for K2, K3 and DXG, we map framebuffer to fb->buf->data directly */
+		fb->real_buf = NULL;
+		fb->buf->data = fb_map_address;
+		fb->buf->allocated = 0;
+	}
 #else
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
@@ -98,7 +125,7 @@ static int openFrameBuffer(lua_State *L) {
 #endif
 	fb->buf->w = fb->vinfo.xres;
 	fb->buf->h = fb->vinfo.yres;
-	fb->buf->allocated = 0;
+	memset(fb->buf->data, 0, fb->buf->pitch * fb->buf->h);
 	return 1;
 }
 
@@ -114,7 +141,12 @@ static int closeFrameBuffer(lua_State *L) {
 	// should be save if called twice
 	if(fb->buf != NULL && fb->buf->data != NULL) {
 #ifndef EMULATE_READER
-		munmap(fb->buf->data, fb->finfo.smem_len);
+		if (fb->vinfo.bits_per_pixel != 4) {
+			munmap(fb->real_buf->data, fb->finfo.smem_len);
+			free(fb->buf->data);
+		} else {
+			munmap(fb->buf->data, fb->finfo.smem_len);
+		}
 		close(fb->fd);
 #else
 		free(fb->buf->data);
@@ -133,24 +165,25 @@ static int einkUpdate(lua_State *L) {
 	// for Kindle e-ink display
 	int fxtype = luaL_optint(L, 2, 0);
 #ifndef EMULATE_READER
-	int i = 0, j = 0, h = 0, w = 0;
+	int i = 0, j = 0, h = 0, w = 0, pitch = 0;
 	uint8_t *fb_buf = NULL;
 
-	/* dulplicate 4bpp to 8bpp */
+	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
 	if (fb->vinfo.bits_per_pixel != 4) {
 		fb_buf = fb->buf->data;
 		h = fb->buf->h;
 		w = fb->buf->w;
+		pitch = fb->buf->pitch;
 
 		for (i = (h-1); i > 0; i--) {
 			for (j = (w-1)/2; j > 0; j--) {
-				fb_buf[i*w + j*2] = fb_buf[i*w + j];
-				fb_buf[i*w + j*2] &= 0xF0;
-				fb_buf[i*w + j*2] |= fb_buf[i*w + j*2]>>4 & 0x0F;
+				fb->real_buf->data[i*w + j*2] = fb_buf[i*pitch + j];
+				fb->real_buf->data[i*w + j*2] &= 0xF0;
+				fb->real_buf->data[i*w + j*2] |= fb_buf[i*pitch + j]>>4 & 0x0F;
 
-				fb_buf[i*w + j*2 + 1] = fb_buf[i*w + j];
-				fb_buf[i*w + j*2 + 1] &= 0x0F;
-				fb_buf[i*w + j*2 + 1] |= fb_buf[i*w + j*2 + 1]<<4 & 0xF0;
+				fb->real_buf->data[i*w + j*2 + 1] = fb_buf[i*pitch + j];
+				fb->real_buf->data[i*w + j*2 + 1] &= 0x0F;
+				fb->real_buf->data[i*w + j*2 + 1] |= fb_buf[i*pitch + j]<<4 & 0xF0;
 			}
 		}
 	}
@@ -163,15 +196,6 @@ static int einkUpdate(lua_State *L) {
 	myarea.buffer = NULL;
 	myarea.which_fx = fxtype ? fx_update_partial : fx_update_full;
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
-
-	/* revert 8bpp to 4bpp */
-	if (fb->vinfo.bits_per_pixel != 4) {
-		for (i = 0; i < h; i++) {
-			for (j = 0; j < w/2; j++) {
-				fb_buf[i*w + j] = (fb_buf[i*w + j*2] & 0xF0) | (fb_buf[i*w + j*2 + 1] & 0x0F);
-			}
-		}
-	}
 #else
 	// for now, we only do fullscreen blits in emulation mode
 	if (fxtype == 0) {

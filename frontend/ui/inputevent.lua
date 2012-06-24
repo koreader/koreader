@@ -139,6 +139,11 @@ Input = {
 		[191] = "RPgFwd", -- K[3] & k[4]
 		[193] = "LPgFwd", -- K[3] only
 		[194] = "Press", -- K[3] & k[4]
+
+		[10000] = "IntoSS", -- go into screen saver
+		[10001] = "OutOfSS", -- go out of screen saver
+		[10020] = "Charging",
+		[10021] = "NotCharging",
 	},
 	sdl_event_map = {
 		[10] = "1", [11] = "2", [12] = "3", [13] = "4", [14] = "5", [15] = "6", [16] = "7", [17] = "8", [18] = "9", [19] = "0",
@@ -224,7 +229,7 @@ function Input:init()
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
-		input.open("slider")
+		input.open("fake_events")
 		input.open("/dev/input/event0")
 		input.open("/dev/input/event1")
 
@@ -232,12 +237,12 @@ function Input:init()
 		local f=lfs.attributes("/dev/input/event2")
 		if f then
 			input.open("/dev/input/event2")
-			if util.isKindle3() then
+			if Device:isKindle3() then
 				print("Auto-detected Kindle 3")
 			end
 		end
 
-		if util.isKindle4() then
+		if Device:isKindle4() then
 			print("Auto-detected Kindle 4")
 			self:adjustKindle4EventMap()
 		end
@@ -281,6 +286,20 @@ function Input:waitEvent(timeout_us, timeout_s)
 			-- take device rotation into account
 			if self.rotation_map[self.rotation][keycode] then
 				keycode = self.rotation_map[self.rotation][keycode]
+			end
+
+			if keycode == "IntoSS" then
+				Device:intoScreenSaver()
+				return
+			elseif keycode == "OutOfSS" then
+				Device:outofScreenSaver()
+				return
+			elseif keycode == "Charging" then
+				Device:usbPlugIn()
+				return
+			elseif keycode == "NotCharging" then
+				Device:usbPlugOut()
+				return
 			end
 
 			-- handle modifier keys

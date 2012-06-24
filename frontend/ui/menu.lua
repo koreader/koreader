@@ -118,7 +118,7 @@ function MenuItem:init()
 end
 
 function MenuItem:onFocus()
-	self._underline_container.color = 10
+	self._underline_container.color = 15
 	self.key_events = self.active_key_events
 	return true
 end
