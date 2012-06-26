@@ -42,7 +42,6 @@ function ReaderUI:init()
 	end
 
 	self.doc_settings = DocSettings:open(self.document.file)
-	DEBUG(self.doc_settings)
 
 	-- a view container (so it must be child #1!)
 	self[1] = ReaderView:new{
@@ -91,10 +90,6 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, pager)
-		if not self.start_pos then
-			self.start_pos = 1
-		end
-		pager:gotoPage(self.start_pos)
 	else
 		-- rolling controller
 		local roller = ReaderRolling:new{
@@ -103,10 +98,10 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, roller)
-		if not self.start_pos then
-			self.start_pos = 0
-		end
-		roller:gotoPercent(self.start_pos)
+		--if not self.start_pos then
+			--self.start_pos = 0
+		--end
+		--roller:gotoPercent(self.start_pos)
 		-- font menu
 		local font_menu = ReaderFont:new{
 			dialog = self.dialog,
@@ -115,6 +110,9 @@ function ReaderUI:init()
 		}
 		table.insert(self, font_menu)
 	end
+	--DEBUG(self.doc_settings)
+	-- we only read settings after all the widgets are initialized
+	self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
