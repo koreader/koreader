@@ -31,10 +31,6 @@ function ReaderRolling:init()
 	self.old_doc_height = self.doc_height
 end
 
-function ReaderRolling:onPosUpdate(new_pos)
-	self.current_pos = new_pos
-end
-
 function ReaderRolling:gotoPos(new_pos)
 	if new_pos == self.current_pos then return end
 	if new_pos < 0 then new_pos = 0 end
@@ -44,6 +40,14 @@ end
 
 function ReaderRolling:gotoPercent(new_percent)
 	self:gotoPos(new_percent * self.doc_height / 10000)
+end
+
+function ReaderRolling:onReadSettings(config)
+	self:gotoPercent(config:readSetting("last_percent") or 0)
+end
+
+function ReaderRolling:onPosUpdate(new_pos)
+	self.current_pos = new_pos
 end
 
 -- remember to signal this event the document has been zoomed,
@@ -83,4 +87,9 @@ end
 function ReaderRolling:onZoom()
 	--@TODO re-read doc_height info after font or lineheight changes  05.06 2012 (houqp)
 	self:onUpdatePos()
+end
+
+function ReaderRolling:onCloseDocument()
+	self.ui.doc_settings:saveSetting("last_percent", 
+		10000 * self.current_pos / self.doc_height)
 end
