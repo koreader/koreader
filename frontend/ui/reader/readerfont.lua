@@ -26,8 +26,15 @@ ReaderFont = InputContainer:new{
 }
 
 function ReaderFont:init()
-	self.font_face = self.ui.document:getFontFace()
-	self.font_size = self.ui.document:getFontSize()
+	self.font_face = self.ui.doc_settings:readSetting("font_face")
+	if not self.font_face then 
+		self.font_face = self.ui.document:getFontFace()
+	end
+
+	self.font_size = self.ui.doc_settings:readSetting("font_size")
+	if not self.font_size then 
+		self.font_size = self.ui.document:getFontSize()
+	end
 end
 
 function ReaderFont:onSetDimensions(dimen)
@@ -56,12 +63,13 @@ function ReaderFont:onShowFontMenu()
 		title = "Font Menu",
 		item_table = face_list,
 		dimen = self.dimen,
+		caller = self,
 		ui = self.ui
 	}
 
 	function font_menu:onMenuChoice(item)
 		if item.text and self.font_face ~= item.text then
-			self.font_face = item.text
+			self.caller.font_face = item.text
 			msg = InfoMessage:new{ text = "Redrawing with "..item.text}
 			UIManager:show(msg)
 			self.ui.document:setFontFace(item.text)
@@ -106,4 +114,7 @@ function ReaderFont:onChangeLineSpace(direction)
 	return true
 end
 
-
+function ReaderFont:onCloseDocument()
+	self.ui.doc_settings:saveSetting("font_face", self.font_face)
+	self.ui.doc_settings:saveSetting("font_size", self.font_size)
+end
