@@ -40,6 +40,10 @@ function ReaderUI:init()
 	if not self.dialog then
 		self.dialog = self
 	end
+
+	self.doc_settings = DocSettings:open(self.document.file)
+	DEBUG(self.doc_settings)
+
 	-- a view container (so it must be child #1!)
 	self[1] = ReaderView:new{
 		dialog = self.dialog,
@@ -121,6 +125,8 @@ end
 
 function ReaderUI:onClose()
 	DEBUG("closing reader")
+	self:handleEvent(Event:new("CloseDocument"))
+	self.doc_settings:flush()
 	if self.document then
 		self.document:close()
 		self.document = false
