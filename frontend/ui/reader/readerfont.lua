@@ -26,19 +26,22 @@ ReaderFont = InputContainer:new{
 }
 
 function ReaderFont:init()
-	self.font_face = self.ui.doc_settings:readSetting("font_face")
-	if not self.font_face then 
-		self.font_face = self.ui.document:getFontFace()
-	end
-
-	self.font_size = self.ui.doc_settings:readSetting("font_size")
-	if not self.font_size then 
-		self.font_size = self.ui.document:getFontSize()
-	end
 end
 
 function ReaderFont:onSetDimensions(dimen)
 	self.dimen = dimen
+end
+
+function ReaderFont:onReadSettings(config)
+	self.font_face = config:readSetting("font_face")
+	if not self.font_face then 
+		self.font_face = self.ui.document:getFontFace()
+	end
+
+	self.font_size = config:readSetting("font_size")
+	if not self.font_size then 
+		self.font_size = self.ui.document:getFontSize()
+	end
 end
 
 function ReaderFont:onShowFontMenu()
