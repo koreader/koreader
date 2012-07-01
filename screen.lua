@@ -109,7 +109,64 @@ end
 
 function Screen:screenshot()
 	lfs.mkdir("./screenshots")
-	local d = os.date("%Y%m%d%H%M%S")
-	showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+	local start = os.clock()
+	--showInfoMsgWithDelay("making screenshot... ", 2500, 1)
+	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")
+	showInfoMsgWithDelay(string.format("BMP-shot ready in %.2f(s)", os.clock()-start), 1000, 1)
+end
+
+function Screen:BMP(fn, pack) -- ~1.6-1.8(s), @ Kindle3, 600x800, remains 4bpp
+	local inputf = assert(io.open("/dev/fb0","rb"))
+	if inputf then
+		local outputf = assert(io.open(fn,"wb"))
+		-- writing header
+		outputf:write("BM", string.char(246), string.char(169), string.char(3), string.rep(string.char(0),5),
+			string.char(118), string.rep(string.char(0),3), string.char(40), string.char(0),
+			string.rep(string.char(0),2), string.char(G_width%256), string.char((G_width-G_width%256)/256),	-- width
+			string.rep(string.char(0),2), string.char(G_height%256), string.char((G_height-G_height%256)/256),	-- height
+			string.rep(string.char(0),2), string.char(1), string.char(0), string.char(4), string.rep(string.char(0),5),
+			string.char(128), string.char(169), string.char(3), string.char(0), 
+			string.char(135), string.char(25), string.rep(string.char(0),2), string.char(135), string.char(25),
+			string.rep(string.char(0), 2), string.char(16), string.rep(string.char(0),7))
+		local block, i = G_width/2, 15
+		-- add palette to header
+		while i>=0 do
+			outputf:write(string.rep(string.char(i*16+i),3), string.char(0))
+			i=i-1
+		end
+		-- now read fb0-content & invert the line order (i.e. make a vertical flip)
+		local content = ""
+		for i=1, G_height do
+			content = inputf:read(block)..content
+		end
+		-- write v-flipped bmp-data to the output file
+		outputf:write(content)
+		inputf:close()
+		outputf:close()
+		if pack then os.execute(pack..fn) end
+	end
+end
+
+function Screen:PGM(fn, pack) -- ~2.5(s) @ Kindle3, 600x800 slow because of 4bpp to 8bpp conversion
+	local inputf = assert(io.open("/dev/fb0","rb"))
+	if inputf then
+		local outputf = assert(io.open(fn,"wb"))
+		outputf:write("P5\n\# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
+		local bpp8, block, i, j, line = {}, G_width/2
+		-- create convertion table: char > 2 chars
+		for j=0, 255 do 
+			i = j%16
+			bpp8[#bpp8+1] = string.char(255-j+i)..string.char(255-i*16)
+		end
+		-- now read, convert & write the fb0-content by blocks
+		for i=1, G_height do
+			line = inputf:read(block)
+			for j=1, block do
+				outputf:write(bpp8[1+string.byte(line,j)])
+			end
+		end
+		inputf:close()
+		outputf:close()
+		if pack then os.execute(pack..fn) end
+	end
 end
