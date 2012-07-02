@@ -109,17 +109,17 @@ end
 
 function Screen:screenshot()
 	lfs.mkdir("./screenshots")
-	local start = os.clock()
-	--showInfoMsgWithDelay("making screenshot... ", 2500, 1)
+	--local start = os.clock()
+	showInfoMsgWithDelay("making screenshot... ", 1000, 1)
 	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")
-	showInfoMsgWithDelay(string.format("BMP-shot ready in %.2f(s)", os.clock()-start), 1000, 1)
+	--showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
 end
 
-function Screen:BMP(fn, pack) -- ~1.6-1.8(s), @ Kindle3, 600x800, remains 4bpp
+function Screen:BMP(fn, pack) -- ~0.1-0.2(s) @ Kindle3 (600x800) BMP remains 4bpp
 	local inputf = assert(io.open("/dev/fb0","rb"))
 	if inputf then
 		local outputf = assert(io.open(fn,"wb"))
-		-- writing header
+		-- writing the bmp-header
 		outputf:write("BM", string.char(246), string.char(169), string.char(3), string.rep(string.char(0),5),
 			string.char(118), string.rep(string.char(0),3), string.char(40), string.char(0),
 			string.rep(string.char(0),2), string.char(G_width%256), string.char((G_width-G_width%256)/256),	-- width
@@ -134,13 +134,15 @@ function Screen:BMP(fn, pack) -- ~1.6-1.8(s), @ Kindle3, 600x800, remains 4bpp
 			outputf:write(string.rep(string.char(i*16+i),3), string.char(0))
 			i=i-1
 		end
-		-- now read fb0-content & invert the line order (i.e. make a vertical flip)
-		local content = ""
+		-- now read fb0-content & fill the table in the reversed line order (i.e. make a vertical flip)
+		local content = {}
 		for i=1, G_height do
-			content = inputf:read(block)..content
+			table.insert(content, 1, inputf:read(block))
 		end
 		-- write v-flipped bmp-data to the output file
-		outputf:write(content)
+		for i=1, G_height do
+			outputf:write(content[i])
+		end
 		inputf:close()
 		outputf:close()
 		if pack then os.execute(pack..fn) end
