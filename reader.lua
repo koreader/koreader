@@ -8,7 +8,6 @@ require "ui/infomessage"
 require "document/document"
 require "alt_getopt"
 
-
 function showReader(file, pass)
 	local document = DocumentRegistry:openDocument(file)
 	if not document then
@@ -103,6 +102,12 @@ end
 
 if optarg["G"] ~= nil then
 	globalgamma = optarg["G"]
+end
+
+
+if Device.isKindle4() then
+	-- remove menu item shortcut for K4
+	Menu.is_enable_shortcut = false
 end
 
 -- set up reader's setting: font

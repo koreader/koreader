@@ -29,6 +29,7 @@ function ReaderPaging:gotoPage(number)
 	end
 	if number > self.number_of_pages
 	or number < 1 then
+		DEBUG("wrong page number: "..number.."!")
 		return false
 	end
 	DEBUG("going to page number", number)
@@ -37,6 +38,10 @@ function ReaderPaging:gotoPage(number)
 	self.ui:handleEvent(Event:new("PageUpdate", number))
 
 	return true
+end
+
+function ReaderPaging:onReadSettings(config)
+	self:gotoPage(config:readSetting("last_page") or 1)
 end
 
 function ReaderPaging:onPageUpdate(new_page_no)
@@ -58,4 +63,8 @@ function ReaderPaging:onGotoPageRel(diff)
 	DEBUG("goto relative page:", diff)
 	self:gotoPage(self.current_page + diff)
 	return true
+end
+
+function ReaderPaging:onCloseDocument()
+	self.ui.doc_settings:saveSetting("last_page", self.current_page)
 end
