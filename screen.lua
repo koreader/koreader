@@ -135,7 +135,7 @@ function Screen:BMP(fn, pack) -- for 4bpp framebuffers only
 	if inputf then
 		local outputf, size = assert(io.open(fn,"wb"))
 		if math.max(G_width,G_height)>1000 then	-- KDX(G) 
-			size=string.char(0x0F,0x1B,3,0)	-- 0x00,0x72,0x06,0x00 > raw bytes in image 825*1200/2 = 0x000F1B30 @ KDX(G)
+			size=string.char(0x98,0x8D,7,0)	-- 0x00,0x72,0x06,0x00 > raw bytes in image 825*1200/2 = 0x00078D98 @ KDX(G)
 		else	-- 600x800
 			size=string.char(0x80,0xA9,3,0)	-- 0x80,0xA9,0x03,0x00 > raw bytes in image  600*800/2 = 0x0003A980 @ K2&3
 		end
