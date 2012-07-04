@@ -107,39 +107,56 @@ function Screen:restoreFromBB(bb)
 	end
 end
 
+
 function Screen:screenshot()
 	lfs.mkdir("./screenshots")
 	--local start = os.clock()
 	showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")
+	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")	-- fastest for 4bpp devices
+	--self:PGM(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ",8)	-- fastest for 8bpp devices
 	--showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
 end
 
-function Screen:BMP(fn, pack) -- ~0.1-0.2(s) @ Kindle3 (600x800) BMP remains 4bpp
+-- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
+-- todo: to look for the arm-compiled bmp2png converter & to use it instead of the current bzip2-packer.
+
+function Screen:LE(i) -- returns value in the little-endian binary sequence (4chars)
+	local j=i%256 -- lowest byte
+	return string.char(0,0,j,(i-j)/256)
+end
+
+--[[ This function saves the 4bpp framebuffer as 4bpp BMP and, if necessary, packes the output by command os.execute(pack..fn).
+Since framebuffer enumerates the lines from top to bottom and the bmp-file does it in the inversed order, the process includes
+a vertical flip that makes it a bit slower - ~0.15(s) @ Kindle3 & Kindle2.
+NB: needs free memory of G_width*G_height/2 bytes to manupulate the fb-content! ]]
+
+function Screen:BMP(fn, pack) -- for 4bpp framebuffers only
 	local inputf = assert(io.open("/dev/fb0","rb"))
 	if inputf then
-		local outputf = assert(io.open(fn,"wb"))
-		-- writing the bmp-header
-		outputf:write("BM", string.char(246), string.char(169), string.char(3), string.rep(string.char(0),5),
-			string.char(118), string.rep(string.char(0),3), string.char(40), string.char(0),
-			string.rep(string.char(0),2), string.char(G_width%256), string.char((G_width-G_width%256)/256),	-- width
-			string.rep(string.char(0),2), string.char(G_height%256), string.char((G_height-G_height%256)/256),	-- height
-			string.rep(string.char(0),2), string.char(1), string.char(0), string.char(4), string.rep(string.char(0),5),
-			string.char(128), string.char(169), string.char(3), string.char(0), 
-			string.char(135), string.char(25), string.rep(string.char(0),2), string.char(135), string.char(25),
-			string.rep(string.char(0), 2), string.char(16), string.rep(string.char(0),7))
-		local block, i = G_width/2, 15
-		-- add palette to header
+		local outputf, size = assert(io.open(fn,"wb"))
+		if math.max(G_width,G_height)>1000 then	-- KDX(G) 
+			size=string.char(0x0F,0x1B,3,0)	-- 0x00,0x72,0x06,0x00 > raw bytes in image 825*1200/2 = 0x000F1B30 @ KDX(G)
+		else	-- 600x800
+			size=string.char(0x80,0xA9,3,0)	-- 0x80,0xA9,0x03,0x00 > raw bytes in image  600*800/2 = 0x0003A980 @ K2&3
+		end
+		-- writing bmp-header
+		outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
+				self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
+				string.char(0,0,1,0,4,0,0,0,0,0), size,
+				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 0x87,0x19,0x00,0x00 = 6536 pix/m = 166 dpi - resolution_x, res_y
+				string.char(16,0,0,0,0,0,0,0))		-- 16 colors
+		local line, i = G_width/2, 15
+		-- add palette to bmp-header
 		while i>=0 do
-			outputf:write(string.rep(string.char(i*16+i),3), string.char(0))
+			outputf:write(string.char(i*16+i):rep(3), string.char(0))
 			i=i-1
 		end
-		-- now read fb0-content & fill the table in the reversed line order (i.e. make a vertical flip)
+		-- read the fb-content line-by-line & fill the content-table in the inversed order
 		local content = {}
 		for i=1, G_height do
-			table.insert(content, 1, inputf:read(block))
+			table.insert(content, 1, inputf:read(line))
 		end
-		-- write v-flipped bmp-data to the output file
+		-- write the v-flipped bmp-data
 		for i=1, G_height do
 			outputf:write(content[i])
 		end
@@ -149,22 +166,29 @@ function Screen:BMP(fn, pack) -- ~0.1-0.2(s) @ Kindle3 (600x800) BMP remains 4bp
 	end
 end
 
-function Screen:PGM(fn, pack) -- ~2.5(s) @ Kindle3, 600x800 slow because of 4bpp to 8bpp conversion
+--[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it. It's relatively slow for 4bpp devices 
+(~2.5s on Kindle3, 600x800, 4bpp), but should be extremely fast (<0.1s) when no 4bbp to 8bpp is needed. ]]
+
+function Screen:PGM(fn, pack, bpp)
 	local inputf = assert(io.open("/dev/fb0","rb"))
 	if inputf then
 		local outputf = assert(io.open(fn,"wb"))
 		outputf:write("P5\n\# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
-		local bpp8, block, i, j, line = {}, G_width/2
-		-- create convertion table: char > 2 chars
-		for j=0, 255 do 
-			i = j%16
-			bpp8[#bpp8+1] = string.char(255-j+i)..string.char(255-i*16)
-		end
-		-- now read, convert & write the fb0-content by blocks
-		for i=1, G_height do
-			line = inputf:read(block)
-			for j=1, block do
-				outputf:write(bpp8[1+string.byte(line,j)])
+		if bpp == 8 then -- needs free memory of G_width*G_height bytes!
+			outputf:write(inputf:read("*all"))
+		else	-- convert 4bpp to 8bpp; needs free memory to store a block = G_width/2 bytes (could be changed)
+			local bpp8, block, i, j, line = {}, G_width/2
+			-- to accelerate a process, let us first create the convertion table: char (0..255) > 2 chars
+			for j=0, 255 do 
+				i = j%16
+				bpp8[#bpp8+1] = string.char(255-j+i)..string.char(255-i*16)
+			end
+			-- now read, convert & write the fb0-content by blocks
+			for i=1, G_height do
+				line = inputf:read(block)
+				for j=1, block do
+					outputf:write(bpp8[1+string.byte(line,j)])
+				end
 			end
 		end
 		inputf:close()
