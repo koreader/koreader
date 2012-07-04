@@ -110,11 +110,11 @@ end
 
 function Screen:screenshot()
 	lfs.mkdir("./screenshots")
-	--local start = os.clock()
-	showInfoMsgWithDelay("making screenshot... ", 1000, 1)
+	local start = os.clock()
+	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
 	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")	-- fastest for 4bpp devices
 	--self:PGM(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ",8)	-- fastest for 8bpp devices
-	--showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
+	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
 end
 
 -- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
