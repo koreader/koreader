@@ -107,43 +107,38 @@ function Screen:restoreFromBB(bb)
 	end
 end
 
+-- NuPogodi (02.07.2012): functions to save the fb-content as common graphic files - bmp & pgm.
+-- ToDo: png, gif ?
 
-function Screen:screenshot()
-	lfs.mkdir("./screenshots")
-	local start = os.clock()
-	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	self:BMP(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", "bzip2 ")	-- fastest for 4bpp devices
-	--self:PGM(lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ",8)	-- fastest for 8bpp devices
-	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
-end
-
--- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
--- todo: to look for the arm-compiled bmp2png converter & to use it instead of the current bzip2-packer.
-
-function Screen:LE(i) -- returns value in the little-endian binary sequence (4chars)
-	local j=i%256 -- lowest byte
-	return string.char(0,0,j,(i-j)/256)
+function Screen:LE(x) -- converts positive upto 32bit-number to a little-endian for bmp-header
+	local s, n = "", 4
+	if x<0x10000 then 
+		s = string.char(0,0)
+		n = 2
+	end
+	x = math.floor(x)
+	for i = 1,n do
+		s = s..string.char(x%256)
+		x = math.floor(x/256)
+	end
+	return s
 end
 
 --[[ This function saves the 4bpp framebuffer as 4bpp BMP and, if necessary, packes the output by command os.execute(pack..fn).
 Since framebuffer enumerates the lines from top to bottom and the bmp-file does it in the inversed order, the process includes
-a vertical flip that makes it a bit slower - ~0.15(s) @ Kindle3 & Kindle2.
+a vertical flip that makes it a bit slower - ~0.16(s) @ Kindle3 & Kindle2.
 NB: needs free memory of G_width*G_height/2 bytes to manupulate the fb-content! ]]
 
-function Screen:BMP(fn, pack) -- for 4bpp framebuffers only
-	local inputf = assert(io.open("/dev/fb0","rb"))
+function Screen:fb2bmp(fin, fout, pack) -- atm, for 4bpp framebuffers only
+	local inputf = assert(io.open(fin,"rb"))
 	if inputf then
-		local outputf, size = assert(io.open(fn,"wb"))
-		if math.max(G_width,G_height)>1000 then	-- KDX(G) 
-			size=string.char(0x98,0x8D,7,0)	-- raw bytes in image 825*1200/2 = 0x00078D98 @ KDX(G)
-		else	-- 600x800
-			size=string.char(0x80,0xA9,3,0)	-- raw bytes in image  600*800/2 = 0x0003A980 @ K2&3
-		end
+		local outputf, size = assert(io.open(fout,"wb"))
 		-- writing bmp-header
 		outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
 				self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
-				string.char(0,0,1,0,4,0,0,0,0,0), size,
-				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 0x87,0x19,0x00,0x00 = 6536 pix/m = 166 dpi - resolution_x, res_y
+				string.char(0,0,1,0,4,0,0,0,0,0),
+				self:LE(G_width*G_height/2),		-- raw bytes in image
+				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 6536 pixel/m = 166 dpi for both x&y resolutions
 				string.char(16,0,0,0,0,0,0,0))		-- 16 colors
 		local line, i = G_width/2, 15
 		-- add palette to bmp-header
@@ -162,28 +157,28 @@ function Screen:BMP(fn, pack) -- for 4bpp framebuffers only
 		end
 		inputf:close()
 		outputf:close()
-		if pack then os.execute(pack..fn) end
+		if pack then os.execute(pack..fout) end
 	end
 end
 
 --[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it. It's relatively slow for 4bpp devices 
-(~2.5s on Kindle3, 600x800, 4bpp), but should be extremely fast (<0.1s) when no 4bbp to 8bpp is needed. ]]
+(~2.5s on Kindle3, 600x800, 4bpp), but should be extremely fast (<0.1s) when no color conversion (4bpp>8bpp) is needed. ]]
 
-function Screen:PGM(fn, pack, bpp)
-	local inputf = assert(io.open("/dev/fb0","rb"))
+function Screen:fb2pgm(fin, fout, pack, bpp)
+	local inputf = assert(io.open(fin,"rb"))
 	if inputf then
-		local outputf = assert(io.open(fn,"wb"))
+		local outputf = assert(io.open(fout,"wb"))
 		outputf:write("P5\n\# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
-		if bpp == 8 then -- needs free memory of G_width*G_height bytes!
+		if bpp == 8 then -- then needs free memory of G_width*G_height bytes, but extremely fast!
 			outputf:write(inputf:read("*all"))
-		else	-- convert 4bpp to 8bpp; needs free memory to store a block = G_width/2 bytes (could be changed)
+		else	-- convert 4bpp to 8bpp; needs free memory just to store a block = G_width/2 bytes
 			local bpp8, block, i, j, line = {}, G_width/2
 			-- to accelerate a process, let us first create the convertion table: char (0..255) > 2 chars
 			for j=0, 255 do 
 				i = j%16
-				bpp8[#bpp8+1] = string.char(255-j+i)..string.char(255-i*16)
+				bpp8[#bpp8+1] = string.char(255-j+i, 255-i*16)
 			end
-			-- now read, convert & write the fb0-content by blocks
+			-- now read, convert & write the fb-content by blocks
 			for i=1, G_height do
 				line = inputf:read(block)
 				for j=1, block do
@@ -193,6 +188,7 @@ function Screen:PGM(fn, pack, bpp)
 		end
 		inputf:close()
 		outputf:close()
-		if pack then os.execute(pack..fn) end
+		if pack then os.execute(pack..fout) end
 	end
 end
+
