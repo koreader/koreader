@@ -107,7 +107,17 @@ function Screen:restoreFromBB(bb)
 	end
 end
 
--- NuPogodi (02.07.2012): functions to save the fb-content as common graphic files - bmp & pgm.
+
+function Screen:screenshot()
+	lfs.mkdir("./screenshots")
+	local start = os.clock()
+	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
+	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
+	--self:fb2pgm("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ", 4)
+	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
+end
+
+-- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
 -- ToDo: png, gif ?
 
 function Screen:LE(x) -- converts positive upto 32bit-number to a little-endian for bmp-header
@@ -126,10 +136,12 @@ end
 
 --[[ This function saves the 4bpp framebuffer as 4bpp BMP and, if necessary, packes the output by command os.execute(pack..fn).
 Since framebuffer enumerates the lines from top to bottom and the bmp-file does it in the inversed order, the process includes
-a vertical flip that makes it a bit slower - ~0.16(s) @ Kindle3 & Kindle2.
+a vertical flip that makes it a bit slower, namely,
+	~0.16(s) @ Kindle3 & Kindle2 (600x800)			~0.02s @ without v-flip
+	~0.36(s) @ Kindle DX (824x1200)
 NB: needs free memory of G_width*G_height/2 bytes to manupulate the fb-content! ]]
 
-function Screen:fb2bmp(fin, fout, pack) -- atm, for 4bpp framebuffers only
+function Screen:fb2bmp(fin, fout, vflip, pack) -- atm, for 4bpp framebuffers only
 	local inputf = assert(io.open(fin,"rb"))
 	if inputf then
 		local outputf, size = assert(io.open(fout,"wb"))
@@ -137,7 +149,7 @@ function Screen:fb2bmp(fin, fout, pack) -- atm, for 4bpp framebuffers only
 		outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
 				self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
 				string.char(0,0,1,0,4,0,0,0,0,0),
-				self:LE(G_width*G_height/2),		-- raw bytes in image
+				self:LE(G_height*G_width/2),		-- raw bytes in image
 				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 6536 pixel/m = 166 dpi for both x&y resolutions
 				string.char(16,0,0,0,0,0,0,0))		-- 16 colors
 		local line, i = G_width/2, 15
@@ -146,23 +158,32 @@ function Screen:fb2bmp(fin, fout, pack) -- atm, for 4bpp framebuffers only
 			outputf:write(string.char(i*16+i):rep(3), string.char(0))
 			i=i-1
 		end
-		-- read the fb-content line-by-line & fill the content-table in the inversed order
-		local content = {}
-		for i=1, G_height do
-			table.insert(content, 1, inputf:read(line))
-		end
-		-- write the v-flipped bmp-data
-		for i=1, G_height do
-			outputf:write(content[i])
+		if vflip then -- flip image vertically to make it bmp-compliant
+			-- read the fb-content line-by-line & fill the content-table in the inversed order
+			local content = {}
+			for i=1, G_height do
+				table.insert(content, 1, inputf:read(line))
+			end
+			-- write the v-flipped bmp-data
+			for i=1, G_height do
+				outputf:write(content[i])
+			end
+		else -- without v-flip, it takes only 0.02s @ 600x800, 4bpp
+			outputf:write(inputf:read("*all")) 
 		end
 		inputf:close()
 		outputf:close()
+		-- here one may use either standard archivers (bzip2, gzip)
+		-- or standalone converters (bmp2png, bmp2gif)
 		if pack then os.execute(pack..fout) end
 	end
 end
 
---[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it. It's relatively slow for 4bpp devices 
-(~2.5s on Kindle3, 600x800, 4bpp), but should be extremely fast (<0.1s) when no color conversion (4bpp>8bpp) is needed. ]]
+--[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it.
+It's relatively slow for 4bpp devices such as
+	~2.5s @ K2 and K3 > 600x800, 4bpp
+	~5.0s @ KDX > 824x1200, 
+but should be very fast (<<0.1s) when no color conversion (4bpp>8bpp) is needed. ]]
 
 function Screen:fb2pgm(fin, fout, pack, bpp)
 	local inputf = assert(io.open(fin,"rb"))
