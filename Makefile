@@ -158,9 +158,9 @@ cleanthirdparty:
 	-make -C $(MUPDFDIR) clean
 	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
-	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
-	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
-	test -d $(KPVCRLIBDIR) && (make -C $(KPVCRLIBDIR) clean) || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: libpng folder not found
+	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: crengine folder not found
+	test -d $(KPVCRLIBDIR) && (make -C $(KPVCRLIBDIR) clean) || echo warn: kpvcrlib folder not found
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
