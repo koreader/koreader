@@ -143,7 +143,11 @@ fetchthirdparty:
 	cd kpvcrlib/crengine/crengine/src && \
 		patch -N -p0 < ../../../lvrend_node_type_face.patch || true
 	unzip mupdf-thirdparty.zip -d mupdf
-	# dirty patch in MuPDF's thirdparty liby for CREngine
+	# check mupdf's thirdparty libs' version, if not matched, remove the old one
+	# run make fetchthirdparty again to get the latest thirdparty libs.
+	test -d $(FREETYPEDIR) || ( echo "error: mupdf's thirdparty libs' version not match" ; \
+		rm -rf mupdf-thirdparty.zip ; exit 1 )
+	# dirty patch in MuPDF's thirdparty lib for CREngine
 	cd mupdf/thirdparty/jpeg-*/ && \
 		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
