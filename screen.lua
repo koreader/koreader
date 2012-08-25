@@ -112,7 +112,8 @@ function Screen:screenshot()
 	lfs.mkdir("./screenshots")
 	local start = os.clock()
 	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
+	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
+	--self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
 	--self:fb2pgm("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ", 4)
 	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
 end
@@ -189,7 +190,7 @@ function Screen:fb2pgm(fin, fout, pack, bpp)
 	local inputf = assert(io.open(fin,"rb"))
 	if inputf then
 		local outputf = assert(io.open(fout,"wb"))
-		outputf:write("P5\n\# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
+		outputf:write("P5\n# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
 		if bpp == 8 then -- then needs free memory of G_width*G_height bytes, but extremely fast!
 			outputf:write(inputf:read("*all"))
 		else	-- convert 4bpp to 8bpp; needs free memory just to store a block = G_width/2 bytes
