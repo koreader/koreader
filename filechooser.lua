@@ -50,7 +50,7 @@ function getProperTitleLength(txt,font_face,max_width)
 end
 
 function BatteryLevel()
-	local fn, battery = "./data/temporary", "?"
+	local fn, battery = "/tmp/kindle-battery-info", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
 	os.execute("(gasgauge-info ".."-s) ".."> "..fn)
 	if io.open(fn,"r") then
@@ -200,7 +200,6 @@ function FileChooser:choose(ypos, height)
 				if i <= #self.dirs then
 					DrawFileItem(self.dirs[i],self.margin_H,ypos+self.title_H+self.spacing*c,"folder")
 				elseif i <= self.items then
-					print("-----", self.files[i-#self.dirs])
 					local file_type = string.lower(string.match(self.files[i-#self.dirs], ".+%.([^.]+)") or "")
 					DrawFileItem(self.files[i-#self.dirs],self.margin_H,ypos+self.title_H+self.spacing*c,file_type)
 				end
