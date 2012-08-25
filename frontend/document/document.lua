@@ -70,6 +70,10 @@ function Document:new(o)
 	return o
 end
 
+-- override this method to open a document
+function Document:init()
+end
+
 -- this might be overridden by a document implementation
 function Document:unlock(password)
 	-- return true instead when the password provided unlocked the document
