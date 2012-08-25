@@ -567,7 +567,7 @@ static int drawPage(lua_State *L) {
 }
 
 static int getCacheSize(lua_State *L) {
-	printf("## mupdf getCacheSize = %d\n", msize);
+	printf("## mupdf getCacheSize = %zu\n", msize);
 	lua_pushnumber(L, msize);
 	return 1;
 }
