@@ -1790,6 +1790,47 @@ function UniReader:showHighLight()
 	end
 end
 
+
+function UniReader:searchHighLight(search)
+	local t = self:getText(self.pageno)
+	if not t or #t == 0 then
+		showInfoMsgWithDelay("No text available for search", 2000, 1);
+		return nil
+	end
+
+	Debug("self:getText", self.pageno,t)
+
+	for i = 1, #t, 1 do
+		for j = 1, #t[i], 1 do
+			local e = t[i][j]
+			if e.word ~= nil then
+				if string.match( e.word, search ) then
+
+					if not self.highlight[self.pageno] then
+						self.highlight[self.pageno] = {}
+					end
+
+					local hl_item = {
+						text = e.word,
+						[1] = {
+							x0 = e.x0,
+							y0 = e.y0,
+							x1 = e.x1,
+							y1 = e.y1,
+						}
+					}
+
+					table.insert(self.highlight[self.pageno], hl_item)
+				end
+			end
+		end
+	end
+
+	Debug("self.highlight", self.highlight);
+
+end
+
+
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
@@ -2468,47 +2509,9 @@ function UniReader:addAllCommands()
 			local search = InputBox:input(G_height - 100, 100,
 				"Search:")
 
-			if search == nil or string.len( search ) < 1 then
-				unireader:goto(unireader.pageno)
-				return nil
+			if search ~= nil and string.len( search ) > 0 then
+				unireader:searchHighLight(search)
 			end
-
-			local t = self:getText(self.pageno)
-			if not t or #t == 0 then
-				showInfoMsgWithDelay("No text available for search", 2000, 1);
-				return nil
-			end
-
-			Debug("self:getText", self.pageno,t)
-
-			for i = 1, #t, 1 do
-				for j = 1, #t[i], 1 do
-					local e = t[i][j]
-					if e.word ~= nil then
-						if string.match( e.word, search ) then
-
-							if not self.highlight[self.pageno] then
-								self.highlight[self.pageno] = {}
-							end
-
-							local hl_item = {
-								text = e.word,
-								[1] = {
-									x0 = e.x0,
-									y0 = e.y0,
-									x1 = e.x1,
-									y1 = e.y1,
-								}
-							}
-
-							table.insert(self.highlight[self.pageno], hl_item)
-						end
-					end
-				end
-			end
-
-			Debug("self.highlight", self.highlight);
-
 			unireader:goto(unireader.pageno)
 		end
 	)
