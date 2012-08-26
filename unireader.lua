@@ -1800,11 +1800,17 @@ function UniReader:searchHighLight(search)
 
 	Debug("self:getText", self.pageno,t)
 
+	local found = 0
+	local old_highlight = self.highlight
+	self.highlight = {} -- FIXME show only search results?
+
+	search = string.lower(search)
+
 	for i = 1, #t, 1 do
 		for j = 1, #t[i], 1 do
 			local e = t[i][j]
 			if e.word ~= nil then
-				if string.match( e.word, search ) then
+				if string.match( string.lower(e.word), search ) then
 
 					if not self.highlight[self.pageno] then
 						self.highlight[self.pageno] = {}
@@ -1821,12 +1827,21 @@ function UniReader:searchHighLight(search)
 					}
 
 					table.insert(self.highlight[self.pageno], hl_item)
+					found = found + 1
 				end
 			end
 		end
 	end
 
-	Debug("self.highlight", self.highlight);
+	if found > 0 then
+		Debug("self.highlight", self.highlight);
+	else
+		found = 'NO'
+	end
+	self:goto(self.pageno) -- show highlights, remove input
+	showInfoMsgWithDelay( found.." hits for "..search, 5000, 1)
+
+	self.highlight = old_highlight -- will not remove search highlights until page refresh
 
 end
 
@@ -2512,7 +2527,6 @@ function UniReader:addAllCommands()
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
 			end
-			unireader:goto(unireader.pageno)
 		end
 	)
 	self.commands:add(KEY_P, MOD_SHIFT, "P",
