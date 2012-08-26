@@ -5,8 +5,8 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
-KPVCRLIGDIR=kpvcrlib
-CRENGINEDIR=$(KPVCRLIGDIR)/crengine
+KPVCRLIBDIR=kpvcrlib
+CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.9
 LFSDIR=luafilesystem
@@ -32,7 +32,7 @@ CXXFLAGS:=-O3 $(SYSROOT)
 LDFLAGS:= $(SYSROOT)
 ARM_CFLAGS:=-march=armv6
 # use this for debugging:
-#CFLAGS:=-O0 -g
+#CFLAGS:=-O0 -g $(SYSROOT)
 
 DYNAMICLIBSTDCPP:=-lstdc++
 ifdef STATICLIBSTDCPP
@@ -53,6 +53,9 @@ ifdef EMULATE_READER
 		     -DEMULATE_READER_W=$(EMULATE_READER_W) \
 		     -DEMULATE_READER_H=$(EMULATE_READER_H)
 	EMU_LDFLAGS?=$(shell sdl-config --libs)
+	ifeq "$(shell uname -s -m)" "Darwin x86_64"
+		EMU_LDFLAGS += -pagezero_size 10000 -image_base 100000000
+	endif
 else
 	CFLAGS+= $(ARM_CFLAGS)
 endif
@@ -121,7 +124,7 @@ djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 cre.o: %.o: %.cpp
-	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -Ilua/src $< -o $@ -lstdc++
+	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@ -lstdc++
 
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
@@ -143,7 +146,11 @@ fetchthirdparty:
 	cd kpvcrlib/crengine/crengine/src && \
 		patch -N -p0 < ../../../lvrend_node_type_face.patch || true
 	unzip mupdf-thirdparty.zip -d mupdf
-	# dirty patch in MuPDF's thirdparty liby for CREngine
+	# check mupdf's thirdparty libs' version, if not matched, remove the old one
+	# run make fetchthirdparty again to get the latest thirdparty libs.
+	test -d $(FREETYPEDIR) || ( echo "error: mupdf's thirdparty libs' version not match" ; \
+		rm -rf mupdf-thirdparty.zip ; exit 1 )
+	# dirty patch in MuPDF's thirdparty lib for CREngine
 	cd mupdf/thirdparty/jpeg-*/ && \
 		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
@@ -158,9 +165,9 @@ cleanthirdparty:
 	-make -C $(MUPDFDIR) clean
 	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
-	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
-	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
-	test -d $(KPVCRLIGDIR) && (make -C $(KPVCRLIGDIR) clean) || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: libpng folder not found
+	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: crengine folder not found
+	test -d $(KPVCRLIBDIR) && (make -C $(KPVCRLIBDIR) clean) || echo warn: kpvcrlib folder not found
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -189,7 +196,7 @@ endif
 	make -C $(DJVUDIR)/build
 
 $(CRENGINELIBS):
-	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
+	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
 		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
 		make
 
@@ -217,7 +224,7 @@ customupdate: all
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
 	cp -r resources $(INSTALL_DIR)
-	cp -r frontend $(INSTALL_DIR)
+	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
 	rm -Rf $(INSTALL_DIR)
