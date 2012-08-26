@@ -88,6 +88,8 @@ UniReader = {
 	toc = nil,
 
 	bbox = {}, -- override getUsedBBox
+
+	last_search = {}
 }
 
 function UniReader:new(o)
@@ -1802,6 +1804,16 @@ function UniReader:searchHighLight(search)
 	local max_pageno = self.doc:getPages()
 	local found = 0
 
+	if self.last_search then
+		Debug("self.last_search",self.last_search)
+		if self.last_search.pageno == self.pageno
+		and self.last_search.search == search
+		then
+			pageno = pageno + 1
+			Debug("continue search for ", search)
+		end
+	end
+
 	while found == 0 do
 
 		local t = self:getText(pageno)
@@ -1857,6 +1869,11 @@ function UniReader:searchHighLight(search)
 	self:goto(self.pageno) -- show highlights, remove input
 	if found > 0 then
 		showInfoMsgWithDelay( found.." hits '"..search.."' page "..self.pageno, 2000, 1)
+		self.last_search = {
+			pageno = self.pageno,
+			search = search,
+			hits = found,
+		}
 	else
 		showInfoMsgWithDelay( "'"..search.."' not found in document", 2000, 1)
 	end
@@ -2542,7 +2559,7 @@ function UniReader:addAllCommands()
 		"search and highlight text",
 		function(unireader)
 			local search = InputBox:input(G_height - 100, 100,
-				"Search:")
+				"Search:", self.last_search.search )
 
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
