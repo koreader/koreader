@@ -1792,54 +1792,74 @@ end
 
 
 function UniReader:searchHighLight(search)
-	local t = self:getText(self.pageno)
-	if not t or #t == 0 then
-		showInfoMsgWithDelay("No text available for search", 2000, 1);
-		return nil
-	end
 
-	Debug("self:getText", self.pageno,t)
+	search = string.lower(search) -- case in-sensitive
 
-	local found = 0
 	local old_highlight = self.highlight
 	self.highlight = {} -- FIXME show only search results?
 
-	search = string.lower(search)
+	local pageno = self.pageno -- start search at current page
+	local max_pageno = self.doc:getPages()
+	local found = 0
 
-	for i = 1, #t, 1 do
-		for j = 1, #t[i], 1 do
-			local e = t[i][j]
-			if e.word ~= nil then
-				if string.match( string.lower(e.word), search ) then
+	while found == 0 do
 
-					if not self.highlight[self.pageno] then
-						self.highlight[self.pageno] = {}
+		local t = self:getText(pageno)
+
+		if t ~= nil and #t > 0 then
+
+			Debug("self:getText", pageno, #t)
+
+			for i = 1, #t, 1 do
+				for j = 1, #t[i], 1 do
+					local e = t[i][j]
+					if e.word ~= nil then
+						if string.match( string.lower(e.word), search ) then
+
+							if not self.highlight[pageno] then
+								self.highlight[pageno] = {}
+							end
+
+							local hl_item = {
+								text = e.word,
+								[1] = {
+									x0 = e.x0,
+									y0 = e.y0,
+									x1 = e.x1,
+									y1 = e.y1,
+								}
+							}
+
+							table.insert(self.highlight[pageno], hl_item)
+							found = found + 1
+						end
 					end
-
-					local hl_item = {
-						text = e.word,
-						[1] = {
-							x0 = e.x0,
-							y0 = e.y0,
-							x1 = e.x1,
-							y1 = e.y1,
-						}
-					}
-
-					table.insert(self.highlight[self.pageno], hl_item)
-					found = found + 1
 				end
 			end
+
+		else
+			Debug("self:getText", pageno, 'empty')
 		end
+
+		if found > 0 then
+			Debug("self.highlight", self.highlight);
+			self.pageno = pageno
+		else
+			pageno = math.mod( pageno + 1, max_pageno + 1 )
+			Debug("next page", pageno, max_pageno)
+			if pageno == self.pageno then -- wrap around, stop
+				found = -1
+			end
+		end
+
 	end
 
-	if found > 0 then
-		Debug("self.highlight", self.highlight);
-	else
-		found = 'NO'
-	end
 	self:goto(self.pageno) -- show highlights, remove input
-	showInfoMsgWithDelay( found.." hits for "..search, 5000, 1)
+	if found > 0 then
+		showInfoMsgWithDelay( found.." hits '"..search.."' page "..self.pageno, 2000, 1)
+	else
+		showInfoMsgWithDelay( "'"..search.."' not found in document", 2000, 1)
+	end
 
 	self.highlight = old_highlight -- will not remove search highlights until page refresh
 
