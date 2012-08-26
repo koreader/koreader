@@ -107,9 +107,110 @@ function Screen:restoreFromBB(bb)
 	end
 end
 
+
 function Screen:screenshot()
 	lfs.mkdir("./screenshots")
-	local d = os.date("%Y%m%d%H%M%S")
-	showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	os.execute("dd ".."if=/dev/fb0 ".."of=/mnt/us/kindlepdfviewer/screenshots/" .. d .. ".raw")
+	local start = os.clock()
+	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
+	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
+	--self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
+	--self:fb2pgm("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ", 4)
+	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
 end
+
+-- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
+-- ToDo: png, gif ?
+
+function Screen:LE(x) -- converts positive upto 32bit-number to a little-endian for bmp-header
+	local s, n = "", 4
+	if x<0x10000 then 
+		s = string.char(0,0)
+		n = 2
+	end
+	x = math.floor(x)
+	for i = 1,n do
+		s = s..string.char(x%256)
+		x = math.floor(x/256)
+	end
+	return s
+end
+
+--[[ This function saves the 4bpp framebuffer as 4bpp BMP and, if necessary, packes the output by command os.execute(pack..fn).
+Since framebuffer enumerates the lines from top to bottom and the bmp-file does it in the inversed order, the process includes
+a vertical flip that makes it a bit slower, namely,
+	~0.16(s) @ Kindle3 & Kindle2 (600x800)			~0.02s @ without v-flip
+	~0.36(s) @ Kindle DX (824x1200)
+NB: needs free memory of G_width*G_height/2 bytes to manupulate the fb-content! ]]
+
+function Screen:fb2bmp(fin, fout, vflip, pack) -- atm, for 4bpp framebuffers only
+	local inputf = assert(io.open(fin,"rb"))
+	if inputf then
+		local outputf, size = assert(io.open(fout,"wb"))
+		-- writing bmp-header
+		outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
+				self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
+				string.char(0,0,1,0,4,0,0,0,0,0),
+				self:LE(G_height*G_width/2),		-- raw bytes in image
+				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 6536 pixel/m = 166 dpi for both x&y resolutions
+				string.char(16,0,0,0,0,0,0,0))		-- 16 colors
+		local line, i = G_width/2, 15
+		-- add palette to bmp-header
+		while i>=0 do
+			outputf:write(string.char(i*16+i):rep(3), string.char(0))
+			i=i-1
+		end
+		if vflip then -- flip image vertically to make it bmp-compliant
+			-- read the fb-content line-by-line & fill the content-table in the inversed order
+			local content = {}
+			for i=1, G_height do
+				table.insert(content, 1, inputf:read(line))
+			end
+			-- write the v-flipped bmp-data
+			for i=1, G_height do
+				outputf:write(content[i])
+			end
+		else -- without v-flip, it takes only 0.02s @ 600x800, 4bpp
+			outputf:write(inputf:read("*all")) 
+		end
+		inputf:close()
+		outputf:close()
+		-- here one may use either standard archivers (bzip2, gzip)
+		-- or standalone converters (bmp2png, bmp2gif)
+		if pack then os.execute(pack..fout) end
+	end
+end
+
+--[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it.
+It's relatively slow for 4bpp devices such as
+	~2.5s @ K2 and K3 > 600x800, 4bpp
+	~5.0s @ KDX > 824x1200, 
+but should be very fast (<<0.1s) when no color conversion (4bpp>8bpp) is needed. ]]
+
+function Screen:fb2pgm(fin, fout, pack, bpp)
+	local inputf = assert(io.open(fin,"rb"))
+	if inputf then
+		local outputf = assert(io.open(fout,"wb"))
+		outputf:write("P5\n# Created by kindlepdfviewer\n"..G_width.." "..G_height.."\n255\n")
+		if bpp == 8 then -- then needs free memory of G_width*G_height bytes, but extremely fast!
+			outputf:write(inputf:read("*all"))
+		else	-- convert 4bpp to 8bpp; needs free memory just to store a block = G_width/2 bytes
+			local bpp8, block, i, j, line = {}, G_width/2
+			-- to accelerate a process, let us first create the convertion table: char (0..255) > 2 chars
+			for j=0, 255 do 
+				i = j%16
+				bpp8[#bpp8+1] = string.char(255-j+i, 255-i*16)
+			end
+			-- now read, convert & write the fb-content by blocks
+			for i=1, G_height do
+				line = inputf:read(block)
+				for j=1, block do
+					outputf:write(bpp8[1+string.byte(line,j)])
+				end
+			end
+		end
+		inputf:close()
+		outputf:close()
+		if pack then os.execute(pack..fout) end
+	end
+end
+
