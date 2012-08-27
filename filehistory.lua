@@ -249,28 +249,15 @@ function FileHistory:addAllCommands()
 		end
 	)
 	self.commands:add({KEY_DEL}, nil, "Del",
-		"delete document",
+		"delete history entry",
 		function(self)
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
-			InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
-			while true do
-				ev = input.saveWaitForEvent()
-				ev.code = adjustKeyEvents(ev)
-				if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
-					if ev.code == KEY_Y then
-						-- delete the file itself
-						os.execute("rm \""..file_to_del.."\"")
-						-- and its history file, if any
-						os.execute("rm \""..DocToHistory(file_to_del).."\"")
-						 -- to avoid showing just deleted file
-						self:init()
-						self:setSearchResult(self.keywords)
-					end
-					self.pagedirty = true
-					break
-				end -- if ev.type == EV_KEY
-			end -- while
+			os.execute("rm \""..DocToHistory(file_to_del).."\"")
+			-- to avoid showing just deleted file
+			self:init()
+			self:setSearchResult(self.keywords)
+			self.pagedirty = true
 		end
 	)
 	self.commands:add({KEY_SPACE}, nil, "Space",
