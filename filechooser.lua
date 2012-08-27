@@ -113,6 +113,7 @@ function DrawFileItem(name,x,y,image)
 		local handle = renderUtf8TextWidth(fb.bb, xleft, y, cface, name, true, width - lgap - x)
 		renderUtf8Text(fb.bb, handle.x + lgap + x, y, cface, " ...", true)
 	end
+	iw:free()
 end
 -- end of old NuPogodi's functions
 
