@@ -1892,9 +1892,9 @@ function UniReader:_drawReadingInfo()
 	-- display memory on top of page
 	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face,
-		"Memory: "..
+		"M: "..
 		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
-		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).." k",
+		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).."k "..os.date("%a %d %b %Y %T").." ["..BatteryLevel().."]",
 	true)
 
 	-- display reading progress on bottom of page
@@ -1903,7 +1903,7 @@ function UniReader:_drawReadingInfo()
 	ypos = ypos + 15
 	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
-		cur_section = "Section: "..cur_section
+		cur_section = "Sec: "..cur_section
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face,
 		"Page: "..self.pageno.."/"..self.doc:getPages()..
