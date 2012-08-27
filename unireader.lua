@@ -34,6 +34,10 @@ UniReader = {
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
+	-- rendering mode toggle (used in djvu.c:drawPage())
+	-- if set to 1 render in BLACK & WHITE, otherwise COLOR
+	render_mode = 1,
+
 	-- cached tile size
 	fullwidth = 0,
 	fullheight = 0,
@@ -1154,7 +1158,7 @@ function UniReader:drawOrCache(no, preCache)
 	--debug ("# new biltbuffer:"..dump(self.cache[pagehash]))
 	dc:setOffset(-tile.x, -tile.y)
 	Debug("rendering page", no)
-	page:draw(dc, self.cache[pagehash].bb, 0, 0)
+	page:draw(dc, self.cache[pagehash].bb, 0, 0, self.render_mode)
 	page:close()
 
 	-- return hash and offset within blitbuffer
@@ -1568,6 +1572,17 @@ end
 function UniReader:modifyGamma(factor)
 	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
+	showInfoMsgWithDelay("New gamma = "..self.globalgamma, 1000, 1)
+	self:redrawCurrentPage()
+end
+
+-- toggle rendering mode between colour (0) and b&w (1)
+function UniReader:toggle_render_mode()
+	Debug("toggle_render_mode, render_mode=", self.render_mode)
+	self.render_mode = 1 - self.render_mode
+	self:clearCache()
+	self.doc:cleanCache()
+	showInfoMsgWithDelay("New render_mode = "..self.render_mode, 1000, 1)
 	self:redrawCurrentPage()
 end
 
@@ -2201,6 +2216,11 @@ function UniReader:addAllCommands()
 			else
 				self:redrawCurrentPage()
 			end
+		end)
+	self.commands:add(KEY_R, nil, "R",
+		"toggle rendering mode: b&w/colour",
+		function(unireader)
+			unireader:toggle_render_mode()
 		end)
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",

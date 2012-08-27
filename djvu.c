@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <math.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
@@ -186,7 +187,7 @@ static int openPage(lua_State *L) {
 	luaL_getmetatable(L, "djvupage");
 	lua_setmetatable(L, -2);
 
-	/* djvulibre counts page starts form 0 */
+	/* djvulibre counts page starts from 0 */
 	page->page_ref = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
 	while (! ddjvu_page_decoding_done(page->page_ref))
 		handle(L, doc->context, TRUE);
@@ -197,7 +198,7 @@ static int openPage(lua_State *L) {
 	page->doc = doc;
 	page->num = pageno;
 
-	/* djvulibre counts page starts form 0 */
+	/* djvulibre counts page starts from 0 */
 	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno - 1, 
 										&(page->info)))<DDJVU_JOB_OK)
 		handle(L, doc->context, TRUE);
@@ -399,6 +400,15 @@ static int drawPage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
+	int render_mode = (int) luaL_checkint(L, 6);
+	ddjvu_render_mode_t djvu_render_mode;
+	unsigned char adjusted_low[16], adjusted_high[16];
+	int i, adjust_pixels = 0;
+
+	if (render_mode)
+		djvu_render_mode = DDJVU_RENDER_BLACK;
+	else
+		djvu_render_mode = DDJVU_RENDER_COLOR;
 
 	ddjvu_format_t *pixelformat;
 	ddjvu_rect_t pagerect, renderrect;
@@ -450,7 +460,7 @@ static int drawPage(lua_State *L) {
 	 */
 
 	ddjvu_page_render(page->page_ref,
-			DDJVU_RENDER_COLOR,
+			djvu_render_mode,
 			&pagerect,
 			&renderrect,
 			pixelformat,
@@ -464,12 +474,26 @@ static int drawPage(lua_State *L) {
 	int x_offset = MAX(0, dc->offset_x);
 	int y_offset = MAX(0, dc->offset_y);
 
+	/* prepare the tables for adjusting the intensity of pixels */
+	if (dc->gamma != -1.0) {
+		for (i=0; i<16; i++) {
+			adjusted_low[i] = MIN(15, (unsigned char)floorf(dc->gamma * (float)i));
+			adjusted_high[i] = adjusted_low[i] << 4; 
+		}
+		adjust_pixels = 1;
+	}
+
 	bbptr += bb->pitch * y_offset;
 	for(y = y_offset; y < bb->h; y++) {
 		/* bbptr's line width is half of pmptr's */
 		for(x = x_offset/2; x < (bb->w / 2); x++) {
-			bbptr[x] = 255 - (((pmptr[x*2 + 1 - x_offset] & 0xF0) >> 4) | 
-								(pmptr[x*2 - x_offset] & 0xF0));
+			int p = x*2 - x_offset;
+			unsigned char low = 15 - (pmptr[p + 1] >> 4);
+			unsigned char high = 15 - (pmptr[p] >> 4);
+			if (adjust_pixels)
+				bbptr[x] = adjusted_high[high] | adjusted_low[low];
+			else
+				bbptr[x] = (high << 4) | low;
 		}
 		if(bb->w & 1) {
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
