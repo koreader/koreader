@@ -470,7 +470,7 @@ function FileChooser:addAllCommands()
 	
 -- NuPogodi, 23.05.12: new functions to manipulate (copy & move) files via clipboard
 	self.commands:add(KEY_C, MOD_SHIFT, "C",
-		"copy document to \'clipboard\'",
+		"copy file to \'clipboard\'",
 		function(self)
 			local file = self:FullFileName()
 			if file then
@@ -479,12 +479,12 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..self:InQuotes(DocToHistory(file)).." "
 					..self:InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
-				showInfoMsgWithDelay("file is copied to clipboard ", 1000, 1)
+				showInfoMsgWithDelay("File copied to clipboard ", 1000, 1)
 			end
 		end
 	) 
 	self.commands:add(KEY_X, MOD_SHIFT, "X",
-		"move document to \'clipboard\'",
+		"move file to \'clipboard\'",
 		function(self)
 			local file = self:FullFileName()
 			if file then
@@ -492,14 +492,14 @@ function FileChooser:addAllCommands()
 				os.rename(file, self.clipboard.."/"..file)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
-				InfoMessage:show("file is moved to clipboard ", 0)
+				InfoMessage:show("File moved to clipboard ", 0)
 				self:setPath(self.path)
 				self.pagedirty = true
 			end
 		end
 	)
 	self.commands:add(KEY_V, MOD_SHIFT, "V",
-		"paste documents from \'clipboard\'",
+		"paste file(s) from \'clipboard\'",
 		function(self)
 			InfoMessage:show("moving file(s) from clipboard ", 0)
 			for f in lfs.dir(self.clipboard) do
