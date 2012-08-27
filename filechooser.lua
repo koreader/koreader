@@ -396,15 +396,15 @@ function FileChooser:addAllCommands()
 		end -- function
 	)
 -- NuPogodi, 24.05.12: Added function to rename documents (extention comes from the old file)
+-- Tigran, 18/08/12: corrected the rename operation to include extension.
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
-		"rename document",
+		"rename file",
 		function(self)
 			local oldname = self:FullFileName()
 			if oldname then
-				local newname = InputBox:input(0, 0, "New filename:", "without extention", true)
+				local newname = InputBox:input(0, 0, "New filename:", "including extension", true)
 				if newname then
-					local ext = string.lower(string.match(oldname, ".+%.([^.]+)") or "")
-					newname = self.path.."/"..newname..'.'..ext
+					newname = self.path.."/"..newname
 					os.rename(oldname, newname)
 					os.rename(DocToHistory(oldname), DocToHistory(newname))
 					self:setPath(self.path)
