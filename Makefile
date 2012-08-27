@@ -8,7 +8,7 @@ DJVUDIR=djvulibre
 KPVCRLIGDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIGDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.9
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
 LFSDIR=luafilesystem
 
 # must point to directory with *.ttf fonts for crengine
