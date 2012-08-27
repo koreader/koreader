@@ -16,7 +16,7 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-HOST:=arm-none-linux-gnueabi
+HOST:=arm-kindle-linux-gnueabi
 CC:=$(HOST)-gcc
 CXX:=$(HOST)-g++
 STRIP:=$(HOST)-strip
@@ -27,14 +27,16 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3 $(SYSROOT)
-CXXFLAGS:=-O3 $(SYSROOT)
-LDFLAGS:= $(SYSROOT)
+SYSROOT=/usr/local/arm/$(HOST)/$(HOST)/sysroot/
+CFLAGS:=-O3 --sysroot=$(SYSROOT)
+CXXFLAGS:=-O3 --sysroot=$(SYSROOT)
+LDFLAGS:= --sysroot=$(SYSROOT)
 ARM_CFLAGS:=-march=armv6
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
 DYNAMICLIBSTDCPP:=-lstdc++
+STATICLIBSTDCPP=$(SYSROOT)lib/libstdc++.a
 ifdef STATICLIBSTDCPP
 	DYNAMICLIBSTDCPP:=
 endif
@@ -124,7 +126,7 @@ djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 cre.o: %.o: %.cpp
-	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@ -lstdc++
+	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@
 
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
@@ -200,7 +202,7 @@ $(LUALIB):
 ifdef EMULATE_READER
 	make -C $(LUADIR)
 else
-	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="--sysroot=$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
