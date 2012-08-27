@@ -88,6 +88,8 @@ UniReader = {
 	toc = nil,
 
 	bbox = {}, -- override getUsedBBox
+
+	last_search = {}
 }
 
 function UniReader:new(o)
@@ -1790,6 +1792,97 @@ function UniReader:showHighLight()
 	end
 end
 
+
+function UniReader:searchHighLight(search)
+
+	search = string.lower(search) -- case in-sensitive
+
+	local old_highlight = self.highlight
+	self.highlight = {} -- FIXME show only search results?
+
+	local pageno = self.pageno -- start search at current page
+	local max_pageno = self.doc:getPages()
+	local found = 0
+
+	if self.last_search then
+		Debug("self.last_search",self.last_search)
+		if self.last_search.pageno == self.pageno
+		and self.last_search.search == search
+		then
+			pageno = pageno + 1
+			Debug("continue search for ", search)
+		end
+	end
+
+	while found == 0 do
+
+		local t = self:getText(pageno)
+
+		if t ~= nil and #t > 0 then
+
+			Debug("self:getText", pageno, #t)
+
+			for i = 1, #t, 1 do
+				for j = 1, #t[i], 1 do
+					local e = t[i][j]
+					if e.word ~= nil then
+						if string.match( string.lower(e.word), search ) then
+
+							if not self.highlight[pageno] then
+								self.highlight[pageno] = {}
+							end
+
+							local hl_item = {
+								text = e.word,
+								[1] = {
+									x0 = e.x0,
+									y0 = e.y0,
+									x1 = e.x1,
+									y1 = e.y1,
+								}
+							}
+
+							table.insert(self.highlight[pageno], hl_item)
+							found = found + 1
+						end
+					end
+				end
+			end
+
+		else
+			Debug("self:getText", pageno, 'empty')
+		end
+
+		if found > 0 then
+			Debug("self.highlight", self.highlight);
+			self.pageno = pageno
+		else
+			pageno = math.mod( pageno + 1, max_pageno + 1 )
+			Debug("next page", pageno, max_pageno)
+			if pageno == self.pageno then -- wrap around, stop
+				found = -1
+			end
+		end
+
+	end
+
+	self:goto(self.pageno) -- show highlights, remove input
+	if found > 0 then
+		showInfoMsgWithDelay( found.." hits '"..search.."' page "..self.pageno, 2000, 1)
+		self.last_search = {
+			pageno = self.pageno,
+			search = search,
+			hits = found,
+		}
+	else
+		showInfoMsgWithDelay( "'"..search.."' not found in document", 2000, 1)
+	end
+
+	self.highlight = old_highlight -- will not remove search highlights until page refresh
+
+end
+
+
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
@@ -2460,6 +2553,17 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
+		end
+	)
+	self.commands:add(KEY_DOT, nil, ".",
+		"search and highlight text",
+		function(unireader)
+			local search = InputBox:input(G_height - 100, 100,
+				"Search:", self.last_search.search )
+
+			if search ~= nil and string.len( search ) > 0 then
+				unireader:searchHighLight(search)
+			end
 		end
 	)
 	self.commands:add(KEY_P, MOD_SHIFT, "P",

@@ -149,6 +149,14 @@ function InputBox:input(ypos, height, title, d_text, is_hint)
 			renderUtf8Text(fb.bb, self.input_start_x+5, self.input_start_y, self.face, d_text, 0)
 			fb.bb:dimRect(self.input_start_x-5, self.input_start_y-19, self.input_slot_w, self.fheight, self.input_bg)
 		else
+			self.input_string = d_text
+			string.gsub( d_text, "(.)", function(char)
+				table.insert(self.charlist, self.charpos, char)
+				self.charpos = self.charpos + 1
+				return ""
+			end)
+			Debug("charlist", self.charlist)
+
 			self.input_cur_x = self.input_cur_x + (self.fwidth * #self.charlist)
 			self.cursor.x_pos = self.cursor.x_pos + (self.fwidth * #self.charlist)
 			self:refreshText()
