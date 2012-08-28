@@ -481,8 +481,9 @@ static int findText(lua_State *L) {
                 int pos = ranges->get(0)->start.y;
                 //doc->text_view->SetPos(pos); // commented out not to mask lua code which does the same
         		CRLog::debug("# SetPos = %d", pos);
+				lua_pushinteger(L, ranges->length()); // results found
 				lua_pushinteger(L, pos);
-				return 1;
+				return 2;
             }
         }
         return 0;

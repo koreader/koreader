@@ -611,16 +611,19 @@ function CREReader:searchHighLight(search)
 		origin = 1
 	end
 
-	local pos = self.doc:findText(
+	local found, pos = self.doc:findText(
 		search,
 		origin,
 		0, -- reverse: boolean
 		1  -- caseInsensitive: boolean
 	)
 
-	if pos then
+	if found then
 		self.pos = pos -- first metch position
 		self:redrawCurrentPage()
+		showInfoMsgWithDelay( found.." hits '"..search.."' pos "..pos, 2000, 1)
+	else
+		showInfoMsgWithDelay( "'"..search.."' not found in document", 2000, 1)
 	end
 
 	self.last_search.search = search
