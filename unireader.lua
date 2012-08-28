@@ -34,9 +34,9 @@ UniReader = {
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
-	-- rendering mode toggle (used in djvu.c:drawPage())
-	-- if set to 1 render in BLACK & WHITE, otherwise COLOR
-	render_mode = 1,
+	-- DjVu page rendering mode (used in djvu.c:drawPage())
+	-- See comments in djvureader.lua:DJVUReader:cycle_render_mode()
+	render_mode = 0, -- COLOUR
 
 	-- cached tile size
 	fullwidth = 0,
@@ -1576,16 +1576,6 @@ function UniReader:modifyGamma(factor)
 	self:redrawCurrentPage()
 end
 
--- toggle rendering mode between colour (0) and b&w (1)
-function UniReader:toggle_render_mode()
-	Debug("toggle_render_mode, render_mode=", self.render_mode)
-	self.render_mode = 1 - self.render_mode
-	self:clearCache()
-	self.doc:cleanCache()
-	showInfoMsgWithDelay("New render_mode = "..self.render_mode, 1000, 1)
-	self:redrawCurrentPage()
-end
-
 -- adjust zoom state and trigger re-rendering
 function UniReader:setglobalzoom_mode(newzoommode)
 	if self.globalzoom_mode ~= newzoommode then
@@ -2216,11 +2206,6 @@ function UniReader:addAllCommands()
 			else
 				self:redrawCurrentPage()
 			end
-		end)
-	self.commands:add(KEY_R, nil, "R",
-		"toggle rendering mode: b&w/colour",
-		function(unireader)
-			unireader:toggle_render_mode()
 		end)
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",
