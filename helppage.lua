@@ -40,8 +40,8 @@ HelpPage = {
 
 -- Other Class vars:
 
-
-function HelpPage:show(ypos, height, commands)
+-- 02.06.12: added parameter 'title' for the header to make this function usable for various documentation purposes
+function HelpPage:show(ypos, height, commands, title)
 	self.commands = {}
 	self.items = 0
 	local keys = {}
@@ -66,7 +66,8 @@ function HelpPage:show(ypos, height, commands)
 	fface_height = math.ceil(fface_height)
 	fface_ascender = math.ceil(fface_ascender)
 	local spacing = face_height + 5
-	local vert_S = self.title_H + 12
+	-- 02.06.12: minor correction to vertical position of displayed items
+	local vert_S = self.title_H + 3
 
 	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5) - vert_S) / spacing )
 	self.page = 1
@@ -75,8 +76,8 @@ function HelpPage:show(ypos, height, commands)
 	while true do
 		if is_pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-			-- draw header
-			DrawTitle("Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,Font:getFace("tfont", 25))
+			-- 02.06.12: one should use it here
+			DrawTitle(title or "Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,Font:getFace("tfont", 25))
 			local c
 			local max_x = 0
 			for c = 1, perpage do
