@@ -592,3 +592,40 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 end
+
+
+----------------------------------------------------
+--- search
+----------------------------------------------------
+function CREReader:searchHighLight(search)
+	Debug("FIXME CreReader::searchHighLight", search)
+
+	if self.last_search == nil or self.last_search.search == nil then
+		self.last_search = {
+			search = "",
+		}
+	end
+
+	local origin = 0 -- 0=current 1=next-last -1=first-current
+	if self.last_search.search == search then
+		origin = 1
+	end
+
+	local found, pos = self.doc:findText(
+		search,
+		origin,
+		0, -- reverse: boolean
+		1  -- caseInsensitive: boolean
+	)
+
+	if found then
+		self.pos = pos -- first metch position
+		self:redrawCurrentPage()
+		showInfoMsgWithDelay( found.." hits '"..search.."' pos "..pos, 2000, 1)
+	else
+		showInfoMsgWithDelay( "'"..search.."' not found in document", 2000, 1)
+	end
+
+	self.last_search.search = search
+
+end

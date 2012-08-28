@@ -17,6 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define DEBUG_CRENGINE 1
 
 extern "C" {
 #include "blitbuffer.h"
@@ -424,6 +425,73 @@ static int registerFont(lua_State *L) {
 	return 0;
 }
 
+// ported from Android UI kpvcrlib/crengine/android/jni/docview.cpp
+
+static int findText(lua_State *L) {
+	CreDocument *doc		= (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *l_pattern   = luaL_checkstring(L, 2);
+	lString16 pattern		= lString16(l_pattern);
+	int origin				= luaL_checkint(L, 3);
+	bool reverse			= luaL_checkint(L, 4);
+	bool caseInsensitive	= luaL_checkint(L, 5);
+
+    if ( pattern.empty() )
+        return 0;
+
+    LVArray<ldomWord> words;
+    lvRect rc;
+    doc->text_view->GetPos( rc );
+    int pageHeight = rc.height();
+    int start = -1;
+    int end = -1;
+    if ( reverse ) {
+        // reverse
+        if ( origin == 0 ) {
+            // from end current page to first page
+            end = rc.bottom;
+        } else if ( origin == -1 ) {
+            // from last page to end of current page
+            start = rc.bottom;
+        } else { // origin == 1
+            // from prev page to first page
+            end = rc.top;
+        }
+    } else {
+        // forward
+        if ( origin == 0 ) {
+            // from current page to last page
+            start = rc.top;
+        } else if ( origin == -1 ) {
+            // from first page to current page
+            end = rc.top;
+        } else { // origin == 1
+            // from next page to last
+            start = rc.bottom;
+        }
+    }
+    CRLog::debug("CRViewDialog::findText: Current page: %d .. %d", rc.top, rc.bottom);
+    CRLog::debug("CRViewDialog::findText: searching for text '%s' from %d to %d origin %d", LCSTR(pattern), start, end, origin );
+    if ( doc->text_view->getDocument()->findText( pattern, caseInsensitive, reverse, start, end, words, 200, pageHeight ) ) {
+        CRLog::debug("CRViewDialog::findText: pattern found");
+        doc->text_view->clearSelection();
+        doc->text_view->selectWords( words );
+        ldomMarkedRangeList * ranges = doc->text_view->getMarkedRanges();
+        if ( ranges ) {
+            if ( ranges->length()>0 ) {
+                int pos = ranges->get(0)->start.y;
+                //doc->text_view->SetPos(pos); // commented out not to mask lua code which does the same
+        		CRLog::debug("# SetPos = %d", pos);
+				lua_pushinteger(L, ranges->length()); // results found
+				lua_pushinteger(L, pos);
+				return 2;
+            }
+        }
+        return 0;
+    }
+    CRLog::debug("CRViewDialog::findText: pattern not found");
+    return 0;
+}
+
 static const struct luaL_Reg cre_func[] = {
 	{"openDocument", openDocument},
 	{"getFontFaces", getFontFaces},
@@ -459,6 +527,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	//{"cursorLeft", cursorLeft},
 	//{"cursorRight", cursorRight},
 	{"drawCurrentPage", drawCurrentPage},
+	{"findText", findText},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
