@@ -592,3 +592,29 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 end
+
+
+----------------------------------------------------
+--- search
+----------------------------------------------------
+function CREReader:searchHighLight(search)
+	Debug("FIXME CreReader::searchHighLight", search)
+
+	if self.last_search ~= nil then
+		self.last_search = {
+			search = "",
+		}
+	end
+
+	self.doc:findText(
+		search,
+		0, -- origin: 0=current 1=prev-first -1=backwards
+		0, -- reverse: boolean
+		1, -- caseInsensitive: boolean
+		self.last_search.search
+	)
+
+	self:redrawCurrentPage()
+
+	self.last_search.search = search
+end
