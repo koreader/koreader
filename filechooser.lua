@@ -549,6 +549,14 @@ function FileChooser:addAllCommands()
 			return "break"
 		end
 	)
+	self.commands:add(KEY_K, MOD_SHIFT, "K",
+		"run calculator",
+		function(self)
+			local CalcBox = InputBox:new{ calcmode = true }
+			CalcBox:input(0, 0, "Calc ")
+			self.pagedirty = true
+		end
+	)
 end
 
 -- NuPogodi, 23.05.12: returns full filename or nil (if folder)
