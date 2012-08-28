@@ -434,14 +434,10 @@ static int findText(lua_State *L) {
 	int origin				= luaL_checkint(L, 3);
 	bool reverse			= luaL_checkint(L, 4);
 	bool caseInsensitive	= luaL_checkint(L, 5);
-	const char *l_lastPatt	= luaL_checkstring(L, 6);
-	lString16 _lastPattern	= lString16(l_lastPatt);
 
     if ( pattern.empty() )
         return 0;
-    if ( pattern!=_lastPattern && origin==1 )
-        origin = 0;
-    _lastPattern = pattern;
+
     LVArray<ldomWord> words;
     lvRect rc;
     doc->text_view->GetPos( rc );
@@ -483,7 +479,10 @@ static int findText(lua_State *L) {
         if ( ranges ) {
             if ( ranges->length()>0 ) {
                 int pos = ranges->get(0)->start.y;
-                doc->text_view->SetPos(pos);
+                //doc->text_view->SetPos(pos); // commented out not to mask lua code which does the same
+        		CRLog::debug("# SetPos = %d", pos);
+				lua_pushinteger(L, pos);
+				return 1;
             }
         }
         return 0;

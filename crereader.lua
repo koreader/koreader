@@ -600,21 +600,29 @@ end
 function CREReader:searchHighLight(search)
 	Debug("FIXME CreReader::searchHighLight", search)
 
-	if self.last_search ~= nil then
+	if self.last_search == nil or self.last_search.search == nil then
 		self.last_search = {
 			search = "",
 		}
 	end
 
-	self.doc:findText(
+	local origin = 0 -- 0=current 1=next-last -1=first-current
+	if self.last_search.search == search then
+		origin = 1
+	end
+
+	local pos = self.doc:findText(
 		search,
-		0, -- origin: 0=current 1=prev-first -1=backwards
+		origin,
 		0, -- reverse: boolean
-		1, -- caseInsensitive: boolean
-		self.last_search.search
+		1  -- caseInsensitive: boolean
 	)
 
-	self:redrawCurrentPage()
+	if pos then
+		self.pos = pos -- first metch position
+		self:redrawCurrentPage()
+	end
 
 	self.last_search.search = search
+
 end
