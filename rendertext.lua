@@ -107,17 +107,13 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 	return pen_x
 end
 
-
--- NuPogodi: Some New Functions to render UTF8 text restricted by some width 'w'
-
+-- render UTF8 text restricted by width 'w'
 function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
 	if text == nil then
 		Debug("renderUtf8Text called without text");
 		return nil
 	end
-	local pen_x = 0
-	local rest = ""
-	local prevcharcode = 0
+	local prevcharcode, pen_x, rest = 0, 0, ""
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < w then
 			local charcode = util.utf8charcode(uchar)
@@ -158,30 +154,33 @@ function SplitString(text)
 end
 
 function renderUtf8Multiline(buffer, x, y, face, text, kerning, w, line_spacing)
-	-- at first, split a text on separate words
 	local words = SplitString(text)
-	
 	-- test whether it is inside of reasonable values 1.0 < line_spacing < 5.0 or given in pixels (>5)
-	-- default value is 1.75 ; getGlyph(face, 48).t = height of char '0'
-	if line_spacing<1 then line_spacing=math.ceil(getGlyph(face, 48).t) -- single = minimum
-		elseif line_spacing < 5 then line_spacing=math.ceil(getGlyph(face, 48).t * line_spacing)
+	-- default value is 1.75 ; getGlyph(face, 65).t = height of char 'A'
+	local gl = getGlyph(face, 65)
+	if line_spacing<1 then line_spacing=gl.t -- single = minimum
+		elseif line_spacing < 5 then line_spacing=math.ceil(gl.t * line_spacing)
 		-- if line_spacing>5 then it seems to be defined in pixels
-		elseif line_spacing>=5 then line_spacing=line_spacing 
-		-- and, finally, default value
-		else line_spacing = math.ceil(getGlyph(face, 48).t * 1.75) 
+		elseif line_spacing>=5 then line_spacing=line_spacing
+		-- and, just for a case, default value
+		else line_spacing = math.ceil(gl.t * 1.75) 
 	end
-	
-	local lx = x
+	-- NuPogodi, 17.07.2012: minor modification to solve issue #214
+	local lx, render = x
 	for i = 1, #words do
 		if sizeUtf8Text(lx, buffer:getWidth(), face, words[i], kerning).x < (w - lx + x) then
 			lx = lx + renderUtf8TextWidth(buffer, lx, y, face, words[i], kerning, w - lx + x).x
-		else
-			-- set lx to the line start
-			lx = x
-			-- add the y-distance between lines
-			y = y + line_spacing
-			-- and draw next word
-			lx = lx + renderUtf8TextWidth(buffer, lx, y, face, words[i], kerning, w - lx + x).x
+		else	-- shift down if it's not the first word in the current line
+			if lx > x then 
+				y = y + line_spacing
+			end
+			lx = x	-- move lx to the line start and draw next word until the last char
+			render = renderUtf8TextWidth(buffer, lx, y, face, words[i], kerning, w-gl.ax)
+			while render.leaved ~= "" do
+				y = y + line_spacing
+				render = renderUtf8TextWidth(buffer, lx, y, face, render.leaved, kerning, w-gl.ax)
+			end
+			lx = lx + render.x
 		end -- if
 	end --for 
 	return { x = x, y = y }

@@ -1657,19 +1657,23 @@ function UniReader:showToc()
 	end
 
 	-- build menu items
-	local menu_items = {}
+	local menu_items, item_no = {}, -1
 	for k,v in ipairs(self.toc) do
-		table.insert(menu_items,
-		("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
+		table.insert(menu_items, ("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
+		-- to find current TOC-entry
+		if v.page <= self.pageno then
+			item_no = item_no + 1
+		end
 	end
 
 	if #menu_items == 0 then
-		showInfoMsgWithDelay(
-			"This document does not have a TOC.", 2000, 1)
+		showInfoMsgWithDelay("This document does not have a TOC.", 2000, 1)
 	else
 		toc_menu = SelectMenu:new{
 			menu_title = "Table of Contents",
 			item_array = menu_items,
+			-- to autoselect current TOC-entry
+			current_entry = item_no,
 		}
 		item_no = toc_menu:choose(0, fb.bb:getHeight())
 
@@ -1871,6 +1875,8 @@ function UniReader:searchHighLight(search)
 		end
 
 	end
+
+	self.highlight.drawer = "marker" -- show as inverted block instead of underline
 
 	self:goto(self.pageno) -- show highlights, remove input
 	if found > 0 then
