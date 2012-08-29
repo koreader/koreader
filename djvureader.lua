@@ -50,8 +50,8 @@ function DJVUReader:select_render_mode()
 		Debug("select_render_mode(), render_mode=", self.render_mode)
 		self:clearCache()
 		self.doc:cleanCache()
-		self:redrawCurrentPage()
 	end
+	self:redrawCurrentPage()
 end
 
 ----------------------------------------------------
