@@ -2563,8 +2563,10 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_DOT, nil, ".",
 		"search and highlight text",
 		function(unireader)
+			Screen:saveCurrentBB()
 			local search = InputBox:input(G_height - 100, 100,
 				"Search:", self.last_search.search )
+			Screen:restoreFromSavedBB()
 
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
