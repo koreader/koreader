@@ -39,10 +39,10 @@ end
 --  then we should update our values here also. This is a bit risky, but these values never change, so it should be ok :)
 function DJVUReader:cycle_render_mode()
 	self.render_mode = (self.render_mode + 1)%6
-	Debug("cycle_render_mode, render_mode=", self.render_mode)
+	Debug("cycle_render_mode(), render_mode=", self.render_mode)
 	self:clearCache()
 	self.doc:cleanCache()
-	local render_mode_name
+	local render_mode_name = "UNKNOWN"
 	if self.render_mode == 0 then
 		render_mode_name = "COLOUR"
 	elseif self.render_mode == 1 then
@@ -55,14 +55,10 @@ function DJVUReader:cycle_render_mode()
 		render_mode_name = "COLOUR BACKGROUND"
 	elseif self.render_mode == 5 then
 		render_mode_name = "COLOUR FOREGROUND"
-	else
-		render_mode_name = "UNKNOWN"
 	end
 	showInfoMsgWithDelay("("..self.render_mode..") "..render_mode_name, 1000, 1)
 	self:redrawCurrentPage()
 end
-
-
 
 ----------------------------------------------------
 -- highlight support 
