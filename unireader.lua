@@ -1015,6 +1015,7 @@ function UniReader:loadSettings(filename)
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
+		self.render_mode = self.settings:readSetting("render_mode") or 0
 
 		self:loadSpecialSettings()
 		return true
@@ -1994,6 +1995,7 @@ function UniReader:inputLoop()
 		self.settings:saveSetting("globalzoom", self.globalzoom)
 		self.settings:saveSetting("globalzoom_mode", self.globalzoom_mode)
 		self.settings:saveSetting("highlight", self.highlight)
+		self.settings:saveSetting("render_mode", self.render_mode)
 		self:saveSpecialSettings()
 		self.settings:close()
 	end
