@@ -1881,6 +1881,8 @@ function UniReader:searchHighLight(search)
 
 	end
 
+	self.highlight.drawer = "marker" -- show as inverted block instead of underline
+
 	self:goto(self.pageno) -- show highlights, remove input
 	if found > 0 then
 		showInfoMsgWithDelay( found.." hits '"..search.."' page "..self.pageno, 2000, 1)
