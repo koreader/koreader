@@ -400,8 +400,7 @@ static int drawPage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	int render_mode = (int) luaL_checkint(L, 6);
-	ddjvu_render_mode_t djvu_render_mode = render_mode;
+	ddjvu_render_mode_t djvu_render_mode = (int) luaL_checkint(L, 6);
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
 	ddjvu_format_t *pixelformat;
