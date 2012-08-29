@@ -24,40 +24,34 @@ function DJVUReader:adjustDjvuReaderCommand()
 	self.commands:add(KEY_R, nil, "R",
 		"colour/b&w/colouronly/maskonly/backg/foreg",
 		function(self)
-			self:cycle_render_mode()
+			self:select_render_mode()
 	end) 
 end
 
--- cycle through all rendering modes supported by djvulibre:
---  0	(color page or stencil)
---  1	(stencil or color page)
---  2	(color page or fail)
---  3	(stencil or fail)
---  4	(color background layer)
---  5	(color foreground layer)
---  Note that if the values in the definition of ddjvu_render_mode_t in djvulibre/libdjvu/ddjvuapi.h change,
---  then we should update our values here also. This is a bit risky, but these values never change, so it should be ok :)
-function DJVUReader:cycle_render_mode()
-	self.render_mode = (self.render_mode + 1)%6
-	Debug("cycle_render_mode(), render_mode=", self.render_mode)
-	self:clearCache()
-	self.doc:cleanCache()
-	local render_mode_name = "UNKNOWN"
-	if self.render_mode == 0 then
-		render_mode_name = "COLOUR"
-	elseif self.render_mode == 1 then
-		render_mode_name = "BLACK & WHITE"
-	elseif self.render_mode == 2 then
-		render_mode_name = "COLOUR ONLY"
-	elseif self.render_mode == 3 then
-		render_mode_name = "MASK ONLY"
-	elseif self.render_mode == 4 then
-		render_mode_name = "COLOUR BACKGROUND"
-	elseif self.render_mode == 5 then
-		render_mode_name = "COLOUR FOREGROUND"
+-- select the rendering mode from those supported by djvulibre.
+-- Note that if the values in the definition of ddjvu_render_mode_t in djvulibre/libdjvu/ddjvuapi.h change,
+-- then we should update our values here also. This is a bit risky, but these values never change, so it should be ok :)
+function DJVUReader:select_render_mode()
+	local mode_menu = SelectMenu:new{
+		menu_title = "Select DjVu page rendering mode",
+		item_array = {
+			"COLOUR (works for both colour and b&w pages)",		--  0  (colour page or stencil)
+			"BLACK & WHITE (for b&w pages only, much faster)",	--  1  (stencil or colour page)
+			"COLOUR ONLY (slightly faster than COLOUR)",		--  2  (colour page or fail)
+			"MASK ONLY",										--  3  (stencil or fail)
+			"COLOUR BACKGROUND (show only background)",			--  4  (colour background layer)
+			"COLOUR FOREGROUND (show only foreground)"			--  5  (colour foreground layer)
+			},
+		current_entry = self.render_mode,
+	}
+	local mode = mode_menu:choose(0, fb.bb:getHeight()) 
+	if mode then
+		self.render_mode = mode - 1
+		Debug("select_render_mode(), render_mode=", self.render_mode)
+		self:clearCache()
+		self.doc:cleanCache()
+		self:redrawCurrentPage()
 	end
-	showInfoMsgWithDelay("("..self.render_mode..") "..render_mode_name, 1000, 1)
-	self:redrawCurrentPage()
 end
 
 ----------------------------------------------------
