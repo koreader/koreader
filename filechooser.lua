@@ -403,11 +403,9 @@ function FileChooser:addAllCommands()
 			local oldname = self:FullFileName()
 			if oldname then
 				local name_we = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
-				local ext = string.lower(string.match(oldname, ".+%.([^.]+)") or "")
-				name_we = string.sub(name_we,1,-2-string.len(ext))
 				local newname = InputBox:input(0, 0, "New filename:", name_we)
 				if newname then
-					newname = self.path.."/"..newname..'.'..ext
+					newname = self.path.."/"..newname
 					os.rename(oldname, newname)
 					os.rename(DocToHistory(oldname), DocToHistory(newname))
 					self:setPath(self.path)
