@@ -22,7 +22,7 @@ function DJVUReader:adjustDjvuReaderCommand()
 	self.commands:del(KEY_J, MOD_SHIFT, "J")
 	self.commands:del(KEY_K, MOD_SHIFT, "K")
 	self.commands:add(KEY_R, nil, "R",
-		"colour/b&w/colouronly/maskonly/backg/foreg",
+		"select djvu page rendering mode",
 		function(self)
 			self:select_render_mode()
 	end) 
