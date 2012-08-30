@@ -35,7 +35,7 @@ UniReader = {
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
-	-- See comments in djvureader.lua:DJVUReader:cycle_render_mode()
+	-- See comments in djvureader.lua:DJVUReader:select_render_mode()
 	render_mode = 0, -- COLOUR
 
 	-- cached tile size
