@@ -2578,6 +2578,8 @@ function UniReader:addAllCommands()
 
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
+			else
+				unireader:goto(unireader.pageno)
 			end
 		end
 	)
