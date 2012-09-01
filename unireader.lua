@@ -22,7 +22,7 @@ UniReader = {
 
 	-- framebuffer update policy state:
 	rcount = 5,
-	rcountmax = 0,
+	rcountmax = 5,
 
 	-- zoom state:
 	globalzoom = 1.0,
@@ -1576,16 +1576,6 @@ function UniReader:modifyGamma(factor)
 	self:redrawCurrentPage()
 end
 
--- toggle rendering mode between colour (0) and b&w (1)
-function UniReader:toggle_render_mode()
-	Debug("toggle_render_mode, render_mode=", self.render_mode)
-	self.render_mode = 1 - self.render_mode
-	self:clearCache()
-	self.doc:cleanCache()
-	showInfoMsgWithDelay("New render_mode = "..self.render_mode, 1000, 1)
-	self:redrawCurrentPage()
-end
-
 -- adjust zoom state and trigger re-rendering
 function UniReader:setglobalzoom_mode(newzoommode)
 	if self.globalzoom_mode ~= newzoommode then
@@ -2107,6 +2097,38 @@ function UniReader:addAllCommands()
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
 	-- end numeric keys
+
+	-- function calls menu to visualize and/or to switch zoom mode
+	self.commands:add(KEY_M, nil, "M",
+		"select zoom mode",
+		function(unireader)
+			local mode_list = {
+				"Zoom by value",			-- ZOOM_BY_VALUE = 0, remove?
+				"Fit zoom to page",			-- A	ZOOM_FIT_TO_PAGE = -1,
+				"Fit zoom to page width",		-- S	ZOOM_FIT_TO_PAGE_WIDTH = -2,
+				"Fit zoom to page height",		-- D	ZOOM_FIT_TO_PAGE_HEIGHT = -3,
+				"Fit zoom to content",			-- ^A	ZOOM_FIT_TO_CONTENT = -4,
+				"Fit zoom to content width",		-- ^S	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
+				"Fit zoom to content height",		-- ^D	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
+				"Fit zoom to content width with panoraming",	-- 	ZOOM_FIT_TO_CONTENT_WIDTH_PAN = -7, remove?
+				"Fit zoom to content height with panoraming",	-- 	ZOOM_FIT_TO_CONTENT_HEIGHT_PAN = -8, remove?
+				"Fit zoom to content half-width with margin",	-- F	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -9,
+				"Fit zoom to content half-width"		-- ^F	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -10,
+				}
+			local zoom_menu = SelectMenu:new{
+				menu_title = "Select mode to zoom pages",
+				item_array = mode_list,
+				current_entry = - unireader.globalzoom_mode
+				}
+			local re = zoom_menu:choose(0, G_height)
+			if not re or re==1 or re==8 or re==9 then -- if not proper zoom-mode
+				unireader:redrawCurrentPage()
+			else
+				unireader:setglobalzoom_mode(1-re)
+			end
+		end)
+	-- to leave or to erase 8 hotkeys switching zoom-mode directly?
+
 	self.commands:add(KEY_A,nil,"A",
 		"zoom to fit page",
 		function(unireader)
@@ -2223,22 +2245,30 @@ function UniReader:addAllCommands()
 				self:redrawCurrentPage()
 			end
 		end)
-	self.commands:add(KEY_R, nil, "R",
-		"toggle rendering mode: b&w/colour",
-		function(unireader)
-			unireader:toggle_render_mode()
-		end)
+
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"manual full screen refresh",
 		function(unireader)
-			-- eink will not refresh if nothing is changeed on the screen
+			local count = NumInputBox:input(G_height-100, 100,
+				"Full refresh after:", self.rcountmax, true)
+			-- convert string to number
+			if pcall(function () count = count + 0 end) then
+				-- restrict self.rcountmax in reasonable range
+				self.rcountmax = math.max(count, 0)
+				self.rcountmax = math.min(count, 10)
+			end
+			-- now, perform full screen refresh
+			self.rcount = self.rcountmax
+			self:redrawCurrentPage()
+			--[[ eink will not refresh if nothing is changeed on the screen
 			-- so we fake a change here.
 			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(1)
 			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(0)
-			unireader.rcount = 0
+			unireader.rcount = 0 ]]
 		end)
+
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
 		function(unireader)
