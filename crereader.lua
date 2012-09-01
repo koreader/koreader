@@ -324,7 +324,7 @@ function CREReader:getTocTitleOfCurrentPage()
 	return self:getTocTitleByPage(self.doc:getXPointer())
 end
 
---[[ NuPogodi, 16.08.12 --> to scroll chapters without calling TOC-menu
+--[[ function to scroll chapters without calling TOC-menu,
 direction is either +1 (next chapter) or -1 (previous one).
 Jump over several chapters is principally possible when direction > 1 ]]
 
@@ -345,8 +345,7 @@ function CREReader:gotoPrevNextTocEntry(direction)
 			break
 		end
 	end
-	-- NuPogodi, 31.08.12: minor correction for the case
-	-- when current page is not the page opening current chapter
+	-- minor correction when current page is not the page opening current chapter
 	if self.pageno > self.toc[item_no].page and direction < 0 then
 		direction = direction + 1
 	end
@@ -417,6 +416,10 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, nil, "N")
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_X, MOD_SHIFT, "X")	-- remove manual cropping
+
+	-- NuPogodi, 01.09.12: remove new hotkey in unireader.lua
+	-- that calls 'zoom-mode' menu
+	self.commands:del(KEY_M, nil, "M")
 
 	-- CCW-rotation
 	self.commands:add(KEY_K, nil, "K",
