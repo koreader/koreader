@@ -13,12 +13,6 @@ CREReader = UniReader:new{
 	font_zoom = 0,
 
 	line_space_percent = 100,
-	
-	-- NuPogodi, 15.05.12: insert the parameter to store old doc height before rescaling.
-	-- One needs it to change font(face, size, bold) without appreciable changing of the
-	-- current position in document
-	old_doc_height = 0,
-	-- end of changes (NuPogodi)
 }
 
 function CREReader:init()
@@ -38,7 +32,7 @@ function CREReader:init()
 		self.default_font = default_font
 	end
 end
--- NuPogodi, 20.05.12: inspect the zipfile content
+-- inspect the zipfile content
 function CREReader:ZipContentExt(fname)
 	local outfile = "./data/zip_content"
 	local s = ""
@@ -58,8 +52,6 @@ function CREReader:open(filename)
 	local ok
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	if file_type == "zip" then
-		-- NuPogodi, 20.05.12: read the content of zip-file
-		-- and return extention of the 1st file
 		file_type = self:ZipContentExt(filename)
 	end
 	-- these two format use the same css file
@@ -107,8 +99,6 @@ function CREReader:loadSpecialSettings()
 			i=i-1
 		end
 	end
-	-- define the original document height
-	self.old_doc_height = self.doc:getFullHeight()
 end
 
 function CREReader:getLastPageOrPos()
@@ -140,12 +130,7 @@ function CREReader:setzoom(page, preCache)
 end
 
 function CREReader:redrawCurrentPage()
-	-- NuPogodi, 15.05.12: Something was wrong here!
-	-- self:goto(self.pos)
-	-- after changing the font(face, size or boldface) or interline spacing 
-	-- the position inside document HAS TO REMAIN NEARLY CONSTANT! it was NOT!
-	-- SEEMS TO BE FIXED by relacing self:goto(self.pos) on
-	self:goto(self.pos * (self.doc:getFullHeight() - G_height) / (self.old_doc_height - G_height))
+	self:goto(self.pos)
 end
 
 -- there is no zoom mode in CREReader
@@ -177,7 +162,6 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 			self:addJump(prev_xpointer)
 		end
 	end
-	
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	Debug("## self.show_overlap "..self.show_overlap)
@@ -201,8 +185,6 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.pos = pos
 	self.pageno = self.doc:getCurrentPage()
 	self.percent = self.doc:getCurrentPercent()
-	-- NuPogodi, 18.05.12: storing new document height
-	self.old_doc_height = self.doc:getFullHeight()
 end
 
 function CREReader:gotoPercent(percent)
@@ -257,7 +239,7 @@ function CREReader:showJumpHist()
 			menu_title = "Jump History",
 			item_array = menu_items,
 		}
-		item_no = jump_menu:choose(0, fb.bb:getHeight())
+		item_no = jump_menu:choose(0, G_height)
 		if item_no and item_no <= #self.jump_history then
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
@@ -311,11 +293,11 @@ function CREReader:showBookMarks()
 		showInfoMsgWithDelay(
 			"No bookmark found.", 2000, 1)
 	else
-		toc_menu = SelectMenu:new{
+		local bkmk_menu = SelectMenu:new{
 			menu_title = "Bookmarks",
 			item_array = menu_items,
 		}
-		item_no = toc_menu:choose(0, fb.bb:getHeight())
+		item_no = bkmk_menu:choose(0, G_height)
 		if item_no then
 			self:goto(self.bookmarks[item_no].page, nil, "xpointer")
 		else
@@ -323,7 +305,6 @@ function CREReader:showBookMarks()
 		end
 	end
 end
-
 
 ----------------------------------------------------
 -- TOC related methods
@@ -343,6 +324,42 @@ function CREReader:getTocTitleOfCurrentPage()
 	return self:getTocTitleByPage(self.doc:getXPointer())
 end
 
+--[[ NuPogodi, 16.08.12 --> to scroll chapters without calling TOC-menu
+direction is either +1 (next chapter) or -1 (previous one).
+Jump over several chapters is principally possible when direction > 1 ]]
+
+function CREReader:gotoPrevNextTocEntry(direction)
+	if not self.toc then
+		self:fillToc()
+	end
+	if #self.toc == 0 then
+		showInfoMsgWithDelay("This document does not have a TOC.", 2000, 1)
+		return
+	end
+	-- search for current TOC-entry
+	local item_no = 0
+	for k,v in ipairs(self.toc) do
+		if v.page <= self.pageno then
+			item_no = item_no + 1
+		else
+			break
+		end
+	end
+	-- NuPogodi, 31.08.12: minor correction for the case
+	-- when current page is not the page opening current chapter
+	if self.pageno > self.toc[item_no].page and direction < 0 then
+		direction = direction + 1
+	end
+	-- define the jump target
+	item_no = item_no + direction
+	if item_no > #self.toc then -- jump to last page
+		self:goto(self.doc:getFullHeight()-G_height)
+	elseif item_no > 0 then
+		self:gotoTocEntry(self.toc[item_no])
+	else
+		self:goto(0) -- jump to first page
+	end
+end
 
 ----------------------------------------------------
 -- menu related methods
@@ -355,15 +372,16 @@ function CREReader:_drawReadingInfo()
 	fb.bb:paintRect(0, ypos, G_width, 50, 0)
 
 	ypos = ypos + 15
-	-- NuPogodi 15.05.12: a bit smaller font 20 instead of 22
 	local face = Font:getFace("rifont", 20)
 
 	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
-		cur_section = "Section: "..cur_section
+		cur_section = "  Section: "..cur_section
 	end
-	-- NuPogodi 15.05.12: Rewrite the following renderUtf8Text() in order to fix too long strings
-	local footer = "Position: "..load_percent.."%".."  "..cur_section
+	--[[ NuPogodi, 30.08.12: to show or not to show (page numbers in info message)?
+		"  Page: "..self.pageno.." of "..self.doc:getPages()
+	TODO: similar bar at the page top with the book author, book title, etc. ]]
+	local footer = "Position: "..load_percent.."%"..cur_section
 	if sizeUtf8Text(10, fb.bb:getWidth(), face, footer, true).x < (fb.bb:getWidth() - 20) then
 		renderUtf8Text(fb.bb, 10, ypos+6, face, footer, true)
 	else
@@ -371,7 +389,6 @@ function CREReader:_drawReadingInfo()
 		gapx = 10 + renderUtf8TextWidth(fb.bb, 10, ypos+6, face, footer, true, fb.bb:getWidth() - 30 - gapx).x
 		renderUtf8Text(fb.bb, gapx, ypos+6, face, "...", true)
 	end
-	-- end of changes (NuPogodi)
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
 end
@@ -397,29 +414,83 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_X, nil, "X")
 	self.commands:del(KEY_F, MOD_SHIFT, "F")
 	self.commands:del(KEY_F, MOD_ALT, "F")
-	self.commands:del(KEY_N, nil, "N") -- highlight
-	self.commands:del(KEY_N, MOD_SHIFT, "N") -- show highlights
+	self.commands:del(KEY_N, nil, "N")
+	self.commands:del(KEY_N, MOD_SHIFT, "N")
+	self.commands:del(KEY_X, MOD_SHIFT, "X")	-- remove manual cropping
 
-	-- overwrite commands
+	-- CCW-rotation
+	self.commands:add(KEY_K, nil, "K",
+		"rotate screen counterclockwise",
+		function(self)
+			InfoMessage:show("Rotating counterclockwise ", 0)
+			local prev_xpointer = self.doc:getXPointer()
+			Screen:screenRotate("anticlockwise")
+			G_width, G_height = fb:getSize()
+			self:fillToc()
+			self:goto(prev_xpointer, nil, "xpointer")
+			self.pos = self.doc:getCurrentPos()
+		end
+	)
+	-- CW-rotation
+	self.commands:add(KEY_J, nil, "J",
+		"rotate screen clockwise",
+		function(self)
+			InfoMessage:show("Rotating clockwise ", 0)
+			local prev_xpointer = self.doc:getXPointer()
+			Screen:screenRotate("clockwise")
+			G_width, G_height = fb:getSize()
+			self:fillToc()
+			self:goto(prev_xpointer, nil, "xpointer")
+			self.pos = self.doc:getCurrentPos()
+		end
+	)
+	-- navigate between chapters by Shift+Up & Shift-Down
+	self.commands:addGroup(MOD_SHIFT.."up/down",{
+		Keydef:new(KEY_FW_UP,MOD_SHIFT), Keydef:new(KEY_FW_DOWN,MOD_SHIFT)},
+		"scroll to previous/next chapter",
+		function(self)
+			if keydef.keycode == KEY_FW_UP then
+				--InfoMessage:show("Jumping to previous chapter ", 0)
+				self:gotoPrevNextTocEntry(-1)
+			else
+				--InfoMessage:show("Jumping to next chapter ", 0)
+				self:gotoPrevNextTocEntry(1)
+			end
+		end
+	)
+	-- fast navigation by Shift+Left & Shift-Right
+	local scrollpages = 10
+	self.commands:addGroup(MOD_SHIFT.."left/right",
+		{Keydef:new(KEY_FW_LEFT,MOD_SHIFT),Keydef:new(KEY_FW_RIGHT,MOD_SHIFT)},
+		"scroll "..scrollpages.." pages backwards/forward",
+		function(self)
+			if keydef.keycode == KEY_FW_LEFT then
+				--InfoMessage:show("Scrolling "..scrollpages.." pages backwards ", 0)
+				self:goto(math.max(0, self.pos - scrollpages*G_height))
+			else
+				--InfoMessage:show("Scrolling "..scrollpages.." pages forward ", 0)
+				self:goto(math.min(self.pos + scrollpages*G_height, self.doc:getFullHeight()-G_height))
+			end
+		end
+	)
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
 		"increase/decrease font size",
 		function(self)
 			local delta = 1
-			local change = "increase"
+			local change = "Increase"
 			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
 			   delta = -1
-			   change = "decrease"
+			   change = "Decrease"
 			end
 			self.font_zoom = self.font_zoom + delta
 			InfoMessage:show(change.." font size to "..self.font_zoom, 0)
-			-- NuPogodi, 15.05.12: storing old document height
-			self.old_doc_height = self.doc:getFullHeight()
-			-- end of changes (NuPogodi)
+			-- NuPogodi, 18.08.12: XPointer-method to restore position
+			Debug("font zoomed to", self.font_zoom)
+			local prev_xpointer = self.doc:getXPointer()
 			self.doc:zoomFont(delta)
-			self:redrawCurrentPage()
-			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:goto(prev_xpointer, nil, "xpointer")
 			self:fillToc()
 		end
 	)
@@ -430,20 +501,17 @@ function CREReader:adjustCreReaderCommands()
 		function(self)
 			if keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK then
 				self.line_space_percent = self.line_space_percent - 10
-				-- NuPogodi, 15.05.12: reduce lowest space_percent to 80
 				self.line_space_percent = math.max(self.line_space_percent, 80)
 			else
 				self.line_space_percent = self.line_space_percent + 10
 				self.line_space_percent = math.min(self.line_space_percent, 200)
 			end
-			InfoMessage:show("line spacing "..self.line_space_percent.."%", 0)
+			InfoMessage:show("Line spacing "..self.line_space_percent.."%", 0)
 			Debug("line spacing set to", self.line_space_percent)
-			-- NuPogodi, 15.05.12: storing old document height
-			self.old_doc_height = self.doc:getFullHeight()
-			-- end of changes (NuPogodi)
+			-- NuPogodi, 18.08.12: XPointer-method to restore position
+			local prev_xpointer = self.doc:getXPointer()
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
-			self:redrawCurrentPage()
-			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:goto(prev_xpointer, nil, "xpointer")
 			self:fillToc()
 		end
 	)
@@ -479,10 +547,12 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
 		"change document font",
 		function(self)
-			Screen:saveCurrentBB()
-
+			--[[ NuPogodi, 18.08.12:
+			1.	removed excessive saving [saveCurrentBB()] and restoring [restoreFromSavedBB()]
+				the screen, respectively, before & after calling 'fonts_menu'
+			2.	used XPointer-based method to restore position after document rescaling ]]
 			local face_list = cre.getFontFaces()
-			-- NuPogodi, 18.05.12: define the number of the current font in face_list 
+			-- define the current font in face_list 
 			local item_no = 0
 			while face_list[item_no] ~= self.font_face and item_no < #face_list do 
 				item_no = item_no + 1 
@@ -492,21 +562,16 @@ function CREReader:adjustCreReaderCommands()
 				item_array = face_list, 
 				current_entry = item_no - 1,
 			}
-			item_no = nil
 			item_no = fonts_menu:choose(0, G_height)
-			Debug(face_list[item_no])
-			-- NuPogodi, 15.05.12: storing old document height
-			self.old_doc_height = self.doc:getFullHeight()
-			-- end of changes (NuPogodi)
+			local prev_xpointer = self.doc:getXPointer()
 			if item_no then
-				Screen:restoreFromSavedBB()
+				Debug(face_list[item_no])
+				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
-				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
+				self:fillToc()
 			end
-			self:redrawCurrentPage()
-			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
-			self:fillToc()
+			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
 	self.commands:add(KEY_F, MOD_SHIFT, "F",
@@ -518,14 +583,15 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	self.commands:add(KEY_F, MOD_ALT, "F",
-		"Toggle font bolder attribute",
+		--[[ NuPogodi, 18.08.12: 1. Changed a description to be shown in helppage
+		2. Added message to user; 3. Improved a method to restore position ]]
+		"toggle font-weight: bold <> normal",
 		function(self)
-			-- NuPogodi, 15.05.12: storing old document height
-			self.old_doc_height = self.doc:getFullHeight()
-			-- end of changes (NuPogodi)
+			
+			InfoMessage:show("Changing font-weight ", 0)
+			local prev_xpointer = self.doc:getXPointer()
 			self.doc:toggleFontBolder()
-			self:redrawCurrentPage()
-			-- NuPogodi, 18.05.12: storing new height of document & refreshing TOC
+			self:goto(prev_xpointer, nil, "xpointer")
 			self:fillToc()
 		end
 	)
@@ -575,7 +641,6 @@ function CREReader:adjustCreReaderCommands()
 			cre.setGammaIndex(self.gamma_index+delta)
 			self.gamma_index = cre.getGammaIndex()
 			self:redrawCurrentPage()
-			-- NuPogodi, 16.05.12: FIXED! gamma_index -> self.gamma_index
 			showInfoMsgWithDelay("Redraw with gamma = "..self.gamma_index, 2000, 1)
 		end
 	)
@@ -592,7 +657,6 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 end
-
 
 ----------------------------------------------------
 --- search
@@ -629,3 +693,4 @@ function CREReader:searchHighLight(search)
 	self.last_search.search = search
 
 end
+
