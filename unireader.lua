@@ -34,9 +34,9 @@ UniReader = {
 	-- gamma setting:
 	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
 
-	-- rendering mode toggle (used in djvu.c:drawPage())
-	-- if set to 1 render in BLACK & WHITE, otherwise COLOR
-	render_mode = 1,
+	-- DjVu page rendering mode (used in djvu.c:drawPage())
+	-- See comments in djvureader.lua:DJVUReader:select_render_mode()
+	render_mode = 0, -- COLOUR
 
 	-- cached tile size
 	fullwidth = 0,
@@ -1015,6 +1015,7 @@ function UniReader:loadSettings(filename)
 
 		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
 		self.globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
+		self.render_mode = self.settings:readSetting("render_mode") or 0
 
 		self:loadSpecialSettings()
 		return true
@@ -2000,6 +2001,7 @@ function UniReader:inputLoop()
 		self.settings:saveSetting("globalzoom", self.globalzoom)
 		self.settings:saveSetting("globalzoom_mode", self.globalzoom_mode)
 		self.settings:saveSetting("highlight", self.highlight)
+		self.settings:saveSetting("render_mode", self.render_mode)
 		self:saveSpecialSettings()
 		self.settings:close()
 	end
@@ -2260,7 +2262,7 @@ function UniReader:addAllCommands()
 			-- now, perform full screen refresh
 			self.rcount = self.rcountmax
 			self:redrawCurrentPage()
-			--[[ eink will not refresh if nothing is changeed on the screen
+			--[[ eink will not refresh if nothing is changed on the screen
 			-- so we fake a change here.
 			fb.bb:invertRect(0, 0, 1, 1)
 			fb:refresh(1)
