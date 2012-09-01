@@ -38,7 +38,7 @@ function DJVUReader:select_render_mode()
 			"COLOUR (works for both colour and b&w pages)",		--  0  (colour page or stencil)
 			"BLACK & WHITE (for b&w pages only, much faster)",	--  1  (stencil or colour page)
 			"COLOUR ONLY (slightly faster than COLOUR)",		--  2  (colour page or fail)
-			"MASK ONLY",										--  3  (stencil or fail)
+			"MASK ONLY (for b&w pages only)",					--  3  (stencil or fail)
 			"COLOUR BACKGROUND (show only background)",			--  4  (colour background layer)
 			"COLOUR FOREGROUND (show only foreground)"			--  5  (colour foreground layer)
 			},
@@ -71,4 +71,3 @@ function DJVUReader:invertTextYAxel(pageno, text_table)
 	end
 	return text_table
 end
-
