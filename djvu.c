@@ -32,6 +32,7 @@
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
 	ddjvu_document_t *doc_ref;
+	ddjvu_format_t *pixelformat;
 } DjvuDocument;
 
 typedef struct DjvuPage {
@@ -93,6 +94,15 @@ static int openDocument(lua_State *L) {
 		return luaL_error(L, "cannot open DJVU file <%s>", filename);
 	}
 
+	doc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
+	if (! doc->pixelformat) {
+		return luaL_error(L, "cannot create DJVU pixelformat for <%s>", filename);
+	}
+	ddjvu_format_set_row_order(doc->pixelformat, 1);
+	ddjvu_format_set_y_direction(doc->pixelformat, 1);
+	/* dithering bits <8 are ignored by djvulibre */
+	/* ddjvu_format_set_ditherbits(doc->pixelformat, 4); */
+
 	return 1;
 }
 
@@ -100,13 +110,17 @@ static int closeDocument(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 
 	// should be save if called twice
-	if(doc->doc_ref != NULL) {
+	if (doc->doc_ref != NULL) {
 		ddjvu_document_release(doc->doc_ref);
 		doc->doc_ref = NULL;
 	}
-	if(doc->context != NULL) {
+	if (doc->context != NULL) {
 		ddjvu_context_release(doc->context);
 		doc->context = NULL;
+	}
+	if (doc->pixelformat != NULL) {
+		ddjvu_format_release(doc->pixelformat);
+		doc->pixelformat = NULL;
 	}
 	return 0;
 }
@@ -179,7 +193,7 @@ static int openPage(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 
-	if(pageno < 1 || pageno > ddjvu_document_get_pagenum(doc->doc_ref)) {
+	if (pageno < 1 || pageno > ddjvu_document_get_pagenum(doc->doc_ref)) {
 		return luaL_error(L, "cannot open page #%d, out of range (1-%d)", pageno, ddjvu_document_get_pagenum(doc->doc_ref));
 	}
 
@@ -191,7 +205,7 @@ static int openPage(lua_State *L) {
 	page->page_ref = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
 	while (! ddjvu_page_decoding_done(page->page_ref))
 		handle(L, doc->context, TRUE);
-	if(! page->page_ref) {
+	if (! page->page_ref) {
 		return luaL_error(L, "cannot open page #%d", pageno);
 	}
 
@@ -307,7 +321,7 @@ static int getPageText(lua_State *L) {
 		/* retrive one line entry */
 		se_line = miniexp_nth(i, sexp);
 		nr_word = miniexp_length(se_line);
-		if(nr_word == 0) {
+		if (nr_word == 0) {
 			continue;
 		}
 
@@ -388,8 +402,8 @@ static int getPageText(lua_State *L) {
 static int closePage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 
-	// should be save if called twice
-	if(page->page_ref != NULL) {
+	// should be safe if called twice
+	if (page->page_ref != NULL) {
 		ddjvu_page_release(page->page_ref);
 		page->page_ref = NULL;
 	}
@@ -403,21 +417,13 @@ static int drawPage(lua_State *L) {
 	ddjvu_render_mode_t djvu_render_mode = (int) luaL_checkint(L, 6);
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
-	ddjvu_format_t *pixelformat;
 	ddjvu_rect_t pagerect, renderrect;
-	uint8_t *imagebuffer = NULL;
-
-	imagebuffer = malloc((bb->w)*(bb->h)+1);
-	/* fill pixel map with white color */
-	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
-
-	pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
-	ddjvu_format_set_row_order(pixelformat, 1);
-	ddjvu_format_set_y_direction(pixelformat, 1);
-	ddjvu_format_set_gamma(pixelformat, dc->gamma);
-	/*ddjvu_format_set_ditherbits(dc->pixelformat, 2);*/
+	uint8_t *imagebuffer = malloc((bb->w)*(bb->h)+1);
 
 	/*printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);*/
+
+	/* fill pixel map with white color */
+	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -429,13 +435,12 @@ static int drawPage(lua_State *L) {
 
 	/*printf("--pagerect--- (x: %d, y: %d), w: %d, h: %d.\n", 0, 0, pagerect.w, pagerect.h);*/
 
-
 	/* copy pixels area from pagerect specified by renderrect.
-
+	 *
 	 * ddjvulibre library does not support negative offset, positive offset 
 	 * means moving towards right and down.
 	 *
-	 * However, djvureader.lua handles offset differently. It use negative 
+	 * However, djvureader.lua handles offset differently. It uses negative 
 	 * offset to move right and down while positive offset to move left 
 	 * and up. So we need to handle positive offset manually when copying 
 	 * imagebuffer to blitbuffer (framebuffer). 
@@ -448,7 +453,7 @@ static int drawPage(lua_State *L) {
 	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
 	/* ddjvulibre library only supports rotation of 0, 90, 180 and 270 degrees. 
-	 * This four kinds of rotations can already be achieved by native system.
+	 * These four kinds of rotations can already be achieved by native system.
 	 * So we don't set rotation here.
 	 */
 
@@ -456,12 +461,12 @@ static int drawPage(lua_State *L) {
 			djvu_render_mode,
 			&pagerect,
 			&renderrect,
-			pixelformat,
+			page->doc->pixelformat,
 			bb->w,
 			imagebuffer);
 
-	uint8_t *bbptr = (uint8_t*)bb->data;
-	uint8_t *pmptr = (uint8_t*)imagebuffer;
+	uint8_t *bbptr = bb->data;
+	uint8_t *pmptr = imagebuffer;
 	int x, y;
 	/* if offset is positive, we are moving towards up and left. */
 	int x_offset = MAX(0, dc->offset_x);
@@ -488,7 +493,7 @@ static int drawPage(lua_State *L) {
 			else
 				bbptr[x] = (high << 4) | low;
 		}
-		if(bb->w & 1) {
+		if (bb->w & 1) {
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
 		}
 		/* go to next line */
@@ -497,9 +502,6 @@ static int drawPage(lua_State *L) {
 	}
 
 	free(imagebuffer);
-	pmptr = imagebuffer = NULL;
-	ddjvu_format_release(pixelformat);
-
 	return 0;
 }
 
