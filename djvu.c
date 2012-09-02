@@ -100,7 +100,8 @@ static int openDocument(lua_State *L) {
 	}
 	ddjvu_format_set_row_order(doc->pixelformat, 1);
 	ddjvu_format_set_y_direction(doc->pixelformat, 1);
-	ddjvu_format_set_ditherbits(doc->pixelformat, 4);
+	/* dithering bits <8 are ignored by djvulibre */
+	/* ddjvu_format_set_ditherbits(doc->pixelformat, 4); */
 
 	return 1;
 }
