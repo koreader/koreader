@@ -490,8 +490,8 @@ function FileChooser:addAllCommands()
 			local file = self:FullFileName()
 			if file then
 				lfs.mkdir(self.clipboard)
-				os.rename(file, self.clipboard.."/"..file)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
 				InfoMessage:show("File moved to clipboard ", 0)
 				self:setPath(self.path)
