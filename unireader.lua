@@ -2124,7 +2124,6 @@ function UniReader:addAllCommands()
 				}
 			local re = zoom_menu:choose(0, G_height)
 			if re and re ~= 1 and re ~= 8 and re ~= 9 then -- if proper zoom-mode
-				Debug("setting zoom mode re=" .. re)
 				unireader:setglobalzoom_mode(1-re)
 			end
 			unireader:redrawCurrentPage()
