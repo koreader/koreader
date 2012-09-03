@@ -2123,11 +2123,11 @@ function UniReader:addAllCommands()
 				current_entry = - unireader.globalzoom_mode
 				}
 			local re = zoom_menu:choose(0, G_height)
-			if not re or re==1 or re==8 or re==9 then -- if not proper zoom-mode
-				unireader:redrawCurrentPage()
-			else
+			if re and re ~= 1 and re ~= 8 and re ~= 9 then -- if proper zoom-mode
+				Debug("setting zoom mode re=" .. re)
 				unireader:setglobalzoom_mode(1-re)
 			end
+			unireader:redrawCurrentPage()
 		end)
 	-- to leave or to erase 8 hotkeys switching zoom-mode directly?
 
