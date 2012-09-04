@@ -56,6 +56,8 @@ UniReader = {
 	-- set panning distance
 	shift_x = 100,
 	shift_y = 50,
+	-- step to change zoom manually, default = 16%
+	step_manual_zoom = 16,
 	pan_by_page = false, -- using shift_[xy] or width/height
 	pan_x = 0, -- top-left offset of page when pan activated
 	pan_y = 0,
@@ -927,59 +929,25 @@ end
 --[ following are default methods ]--
 
 function UniReader:initGlobalSettings(settings)
-	local pan_margin = settings:readSetting("pan_margin")
-	if pan_margin then
-		self.pan_margin = pan_margin
-	end
-
-	local pan_overlap_vertical = settings:readSetting("pan_overlap_vertical")
-	if pan_overlap_vertical then
-		self.pan_overlap_vertical = pan_overlap_vertical
-	end
-
-	local cache_max_memsize = settings:readSetting("cache_max_memsize")
-	if cache_max_memsize then
-		self.cache_max_memsize = cache_max_memsize
-	end
-
-	local cache_max_ttl = settings:readSetting("cache_max_ttl")
-	if cache_max_ttl then
-		self.cache_max_ttl = cache_max_ttl
-	end
-
-	local rcountmax = settings:readSetting("partial_refresh_count")
-	if rcountmax then
-		self.rcountmax = rcountmax
-	end
+	self.pan_margin = settings:readSetting("pan_margin") or self.pan_margin
+	self.pan_overlap_vertical = settings:readSetting("pan_overlap_vertical") or self.pan_overlap_vertical
+	self.cache_max_memsize = settings:readSetting("cache_max_memsize") or self.cache_max_memsize
+	self.cache_max_ttl = settings:readSetting("cache_max_ttl") or self.cache_max_ttl
+	self.rcountmax = settings:readSetting("rcountmax") or self.rcountmax
 end
 
 -- Method to load settings before document open
 function UniReader:preLoadSettings(filename)
 	self.settings = DocSettings:open(filename)
-
-	local cache_d_size = self.settings:readSetting("cache_document_size")
-	if cache_d_size then
-		self.cache_document_size = cache_d_size
-	end
+	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
 end
 
 -- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
-		local gamma = self.settings:readSetting("gamma")
-		if gamma then
-			self.globalgamma = gamma
-		end
-
-		local jump_history = self.settings:readSetting("jump_history")
-		if jump_history then
-			self.jump_history = jump_history
-		else
-			self.jump_history = {cur = 1}
-		end
-
-		local bookmarks = self.settings:readSetting("bookmarks")
-		self.bookmarks = bookmarks or {}
+		-- moved "gamma" to not-crengine related parameters
+		self.jump_history = self.settings:readSetting("jump_history") or {cur = 1}
+		self.bookmarks = self.settings:readSetting("bookmarks") or {}
 
 		-- clear obselate jumpstack settings
 		-- move jump_stack to bookmarks incase users used
@@ -992,8 +960,7 @@ function UniReader:loadSettings(filename)
 			self.settings:delSetting("jumpstack")
 		end
 
-		local highlight = self.settings:readSetting("highlight")
-		self.highlight = highlight or {}
+		self.highlight = self.settings:readSetting("highlight") or {}
 		if self.highlight.to_fix ~= nil then
 			for _,fix_item in ipairs(self.highlight.to_fix) do
 				if fix_item == "djvu invert y axle" then
@@ -1009,13 +976,24 @@ function UniReader:loadSettings(filename)
 			self.highlight.to_fix = nil
 		end
 
-		local bbox = self.settings:readSetting("bbox")
-		Debug("bbox loaded ", bbox)
-		self.bbox = bbox
+		self.rcountmax = self.settings:readSetting("rcountmax") or self.rcountmax
 
-		self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
-		self.globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
-		self.render_mode = self.settings:readSetting("render_mode") or 0
+		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
+		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
+		local ftype = string.lower(string.match(filename, ".+%.([^.]+)") or "")
+		if ext:getReader(ftype) ~= CREReader then
+			self.globalgamma = self.settings:readSetting("gamma") or self.globalgamma
+			local bbox = self.settings:readSetting("bbox")
+			Debug("bbox loaded ", bbox)
+			self.bbox = bbox
+
+			self.globalzoom = self.settings:readSetting("globalzoom") or 1.0
+			self.globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
+			self.render_mode = self.settings:readSetting("render_mode") or 0
+			self.shift_x = self.settings:readSetting("shift_x") or self.shift_x
+			self.shift_y = self.settings:readSetting("shift_y") or self.shift_y
+			self.step_manual_zoom = self.settings:readSetting("step_manual_zoom") or self.step_manual_zoom
+		end
 
 		self:loadSpecialSettings()
 		return true
@@ -1899,7 +1877,8 @@ end
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
 	local load_percent = (self.pageno / self.doc:getPages())
-	local face = Font:getFace("cfont", 22)
+	-- changed to be the same font group as originaly intended
+	local face = Font:getFace("rifont", 20)
 
 	-- display memory on top of page
 	fb.bb:paintRect(0, 0, width, 15+6*2, 0)
@@ -1994,14 +1973,21 @@ function UniReader:inputLoop()
 	end
 	if self.settings ~= nil then
 		self:saveLastPageOrPos()
-		self.settings:saveSetting("gamma", self.globalgamma)
 		self.settings:saveSetting("jump_history", self.jump_history)
 		self.settings:saveSetting("bookmarks", self.bookmarks)
+		self.settings:saveSetting("highlight", self.highlight)
+		-- other parameters are reader-specific --> @TODO: move to a proper place, like saveSpecialSettings()
+		self.settings:saveSetting("gamma", self.globalgamma)
 		self.settings:saveSetting("bbox", self.bbox)
 		self.settings:saveSetting("globalzoom", self.globalzoom)
 		self.settings:saveSetting("globalzoom_mode", self.globalzoom_mode)
-		self.settings:saveSetting("highlight", self.highlight)
-		self.settings:saveSetting("render_mode", self.render_mode)
+		self.settings:saveSetting("render_mode", self.render_mode)	-- djvu-related only
+		--[[ the following parameters was already stored when user changed defaults
+		self.settings:saveSetting("shift_x", self.shift_x)
+		self.settings:saveSetting("shift_y", self.shift_y)
+		self.settings:saveSetting("step_manual_zoom", self.step_manual_zoom)
+		self.settings:saveSetting("rcountmax", self.rcountmax)
+		]]
 		self:saveSpecialSettings()
 		self.settings:close()
 	end
@@ -2021,23 +2007,34 @@ function UniReader:addAllCommands()
 			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
 		end)
-	self.commands:addGroup(MOD_ALT.."< >",{
-		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
-		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
-		"zoom out/in 10%",
-		function(unireader,keydef)
-			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			unireader:setGlobalZoom(unireader.globalzoom_orig
-				+ (is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.1)
-		end)
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
-		"zoom out/in 20%",
+		"zoom out/in ".. self.step_manual_zoom .."% ",
 		function(unireader,keydef)
-			is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			unireader:setGlobalZoom(unireader.globalzoom_orig
-			   + ( is_zoom_out and -1 or 1)*unireader.globalzoom_orig*0.2)
+			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+			unireader:setGlobalZoom(unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100))
+		end)
+	-- NuPogodi, 03.09.12: make zoom step user-configurable
+	self.commands:addGroup(MOD_ALT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
+		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
+		"decrease/increase zoom step",
+		function(unireader,keydef)
+			if keydef.keycode == KEY_PGFWD or keydef.keycode == KEY_LPGFWD then
+				unireader.step_manual_zoom = unireader.step_manual_zoom * 2
+				self.settings:saveSetting("step_manual_zoom", self.step_manual_zoom)
+				--showInfoMsgWithDelay("New zoom step is "..unireader.step_manual_zoom.."%. ", 2000, 1)
+			else
+				local minstep = 1
+				if unireader.step_manual_zoom > 2*minstep then
+					unireader.step_manual_zoom = unireader.step_manual_zoom / 2
+					self.settings:saveSetting("step_manual_zoom", self.step_manual_zoom)
+					--showInfoMsgWithDelay("New zoom step is "..unireader.step_manual_zoom.."%. ", 2000, 1)
+				else
+					showInfoMsgWithDelay("Minimum zoom step is "..minstep.."%. ", 2000, 1)
+				end
+			end
 		end)
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
@@ -2073,17 +2070,7 @@ function UniReader:addAllCommands()
 				showInfoMsgWithDelay("Already last jump!", 2000, 1)
 			end
 		end)
-	self.commands:add(KEY_BACK,MOD_ALT,"Back",
-		"close document",
-		function(unireader)
-			return "break"
-		end)
-	self.commands:add(KEY_HOME,nil,"Home",
-		"exit application",
-		function(unireader)
-			keep_running = false
-			return "break"
-		end)
+	-- NuPogodi, 03.09.12 : moved the exit commands from here to the end of hotkey list 
 	self.commands:addGroup("vol-/+",{Keydef:new(KEY_VPLUS,nil),Keydef:new(KEY_VMINUS,nil)},
 		"decrease/increase gamma 25%",
 		function(unireader,keydef)
@@ -2123,10 +2110,12 @@ function UniReader:addAllCommands()
 				current_entry = - unireader.globalzoom_mode
 				}
 			local re = zoom_menu:choose(0, G_height)
-			if re and re ~= 1 and re ~= 8 and re ~= 9 then -- if proper zoom-mode
+			if not re or re==(1-unireader.globalzoom_mode) or re==1 or re==8 or re==9 then -- if not proper zoom-mode
+				unireader:redrawCurrentPage()
+			else -- in most cases the message is not necessary, so feel you free to comment
+				InfoMessage:show("Redrawing in new zoom mode...", 1)
 				unireader:setglobalzoom_mode(1-re)
 			end
-			unireader:redrawCurrentPage()
 		end)
 	-- to leave or to erase 8 hotkeys switching zoom-mode directly?
 
@@ -2248,7 +2237,7 @@ function UniReader:addAllCommands()
 		end)
 
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
-		"manual full screen refresh",
+		"full screen refresh",
 		function(unireader)
 			local count = NumInputBox:input(G_height-100, 100,
 				"Full refresh after:", self.rcountmax, true)
@@ -2257,6 +2246,9 @@ function UniReader:addAllCommands()
 				-- restrict self.rcountmax in reasonable range
 				self.rcountmax = math.max(count, 0)
 				self.rcountmax = math.min(count, 10)
+				-- storing this parameter in both global and local settings
+				G_reader_settings:saveSetting("rcountmax", self.rcountmax)
+				self.settings:saveSetting("rcountmax", self.rcountmax)
 			end
 			-- now, perform full screen refresh
 			self.rcount = self.rcountmax
@@ -2494,24 +2486,21 @@ function UniReader:addAllCommands()
 			unireader:showMenu()
 			unireader:redrawCurrentPage()
 		end)
-	-- panning
-	local panning_keys = {Keydef:new(KEY_FW_LEFT,MOD_ANY),Keydef:new(KEY_FW_RIGHT,MOD_ANY),Keydef:new(KEY_FW_UP,MOD_ANY),Keydef:new(KEY_FW_DOWN,MOD_ANY),Keydef:new(KEY_FW_PRESS,MOD_ANY)}
+	-- panning: NuPogodi, 03.09.2012: since Alt+KEY_FW-keys do not work and Shift+KEY_FW-keys alone
+	-- are not enough to cover the wide range, I've extracted changing pansteps to separate functions
+	local panning_keys = {	Keydef:new(KEY_FW_LEFT,nil), Keydef:new(KEY_FW_RIGHT,nil),
+					Keydef:new(KEY_FW_UP,nil), Keydef:new(KEY_FW_DOWN,nil),
+					Keydef:new(KEY_FW_PRESS,MOD_ANY) }
+
 	self.commands:addGroup("[joypad]",panning_keys,
-		"pan the active view; use Shift or Alt for smaller steps",
+		"pan the active view",
 		function(unireader,keydef)
 			if keydef.keycode ~= KEY_FW_PRESS then
 				unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
 			end
 			if unireader.globalzoom_mode == unireader.ZOOM_BY_VALUE then
-				local x
-				local y
-				if keydef.modifier==MOD_SHIFT then -- shift always moves in small steps
-					x = unireader.shift_x / 2
-					y = unireader.shift_y / 2
-				elseif keydef.modifier==MOD_ALT then
-					x = unireader.shift_x / 5
-					y = unireader.shift_y / 5
-				elseif unireader.pan_by_page then
+				local x, y
+				if unireader.pan_by_page then
 					x = G_width
 					y = G_height - unireader.pan_overlap_vertical -- overlap for lines which didn't fit
 				else
@@ -2596,7 +2585,47 @@ function UniReader:addAllCommands()
 				end
 			end
 		end)
+	-- NuPogodi, 03.09.2012: functions to change panning steps
+	self.commands:addGroup("Shift + left/right", {Keydef:new(KEY_FW_LEFT,MOD_SHIFT), Keydef:new(KEY_FW_RIGHT,MOD_SHIFT)},
+		"increase/decrease X-panning step",
+		function(unireader,keydef)
+			unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
+			local minstep = 1
+			if keydef.keycode == KEY_FW_RIGHT then
+				unireader.shift_x = unireader.shift_x * 2
+				self.settings:saveSetting("shift_x", self.shift_x)
+				--showInfoMsgWithDelay("New X-panning step is "..unireader.shift_x..". ", 2000, 1)
+			else
+				if unireader.shift_x >= 2*minstep then
+					unireader.shift_x = math.ceil(unireader.shift_x / 2)
+					self.settings:saveSetting("shift_x", self.shift_x)
+					--showInfoMsgWithDelay("New X-panning step is "..unireader.shift_x..". ", 2000, 1)
+				else
+					showInfoMsgWithDelay("Minimum X-panning step is "..minstep..". ", 2000, 1)
+				end
+			end
+		end)
+	self.commands:addGroup("Shift + up/down", {Keydef:new(KEY_FW_DOWN,MOD_SHIFT), Keydef:new(KEY_FW_UP,MOD_SHIFT)},
+		"increase/decrease Y-panning step",
+		function(unireader,keydef)
+			unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
+			local minstep = 1
+			if keydef.keycode == KEY_FW_UP then
+				unireader.shift_y = unireader.shift_y * 2
+				self.settings:saveSetting("shift_y", self.shift_y)
+				--showInfoMsgWithDelay("New Y-panning step is "..unireader.shift_y..". ", 2000, 1)
+			else
+				if unireader.shift_y >= 2*minstep then
+					unireader.shift_y = math.ceil(unireader.shift_y / 2)
+					self.settings:saveSetting("shift_y", self.shift_y)
+					--showInfoMsgWithDelay("New Y-panning step is "..unireader.shift_y..". ", 2000, 1)
+				else
+					showInfoMsgWithDelay("Minimum Y-panning step is "..minstep..". ", 2000, 1)
+				end
+			end
+		end)
 	-- end panning
+
 	-- highlight mode
 	self.commands:add(KEY_N, nil, "N",
 		"start highlight mode",
@@ -2633,6 +2662,18 @@ function UniReader:addAllCommands()
 		Screen:screenshot()
 	end 
 	)
+	-- NuPogodi, 03.09.12: moved the exit commands here: just cosmetics
+	self.commands:add(KEY_BACK,MOD_ALT,"Back",
+		"close document",
+		function(unireader)
+			return "break"
+		end)
+	self.commands:add(KEY_HOME,nil,"Home",
+		"exit application",
+		function(unireader)
+			keep_running = false
+			return "break"
+		end)
 	-- commands.map is very large, impacts startup performance on device
 	--Debug("defined commands "..dump(self.commands.map))
 end
