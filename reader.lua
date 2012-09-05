@@ -53,7 +53,7 @@ function openFile(filename)
 			G_reader_settings:saveSetting("lastfile", filename)
 			return reader:inputLoop()
 		else
-			InfoMessage:show("Error opening document.", 0)
+			InfoMessage:show(err or "Error opening document.", 0)
 			util.sleep(2)
 		end
 	end

@@ -34,25 +34,36 @@ function CREReader:init()
 end
 -- inspect the zipfile content
 function CREReader:ZipContentExt(fname)
-	local outfile = "./data/zip_content"
-	local s = ""
-	os.execute("unzip ".."-l \""..fname.."\" > "..outfile)
+	local outfile, s = "./data/zip_content"
+	os.execute("unzip -l \""..fname.."\" > "..outfile)
 	local i = 1
 	if io.open(outfile,"r") then
 		for lines in io.lines(outfile) do 
 			if i == 4 then s = lines break else i = i + 1 end
 		end
 	end
-	-- return the extention
-	return string.lower(string.match(s, ".+%.([^.]+)"))
+	if s then -- return the extention
+		return string.lower(string.match(s, ".+%.([^.]+)") or "")
+	else
+		return nil
+	end
 end
+
 
 -- open a CREngine supported file and its settings store
 function CREReader:open(filename)
 	local ok
-	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	local file_type = string.lower(string.match(filename, ".+%.([^.]+)") or "")
+	-- check zips for potential problems - wrong zip & wrong content
 	if file_type == "zip" then
 		file_type = self:ZipContentExt(filename)
+	end
+	if not file_type then
+		return false, "Error unzipping file. "
+	end
+	-- if the zip entry is not cre-document
+	if ext:getReader(file_type) ~= CREReader then
+		return false, "Zip contains improper content. "
 	end
 	-- these two format use the same css file
 	if file_type == "html" then
@@ -63,10 +74,9 @@ function CREReader:open(filename)
 		file_type = "cr3"
 	end
 	local style_sheet = "./data/"..file_type..".css"
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet,
-						G_width, G_height)
+	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height)
 	if not ok then
-		return false, self.doc -- will contain error message
+		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
 	return true

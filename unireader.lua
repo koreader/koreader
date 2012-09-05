@@ -2007,18 +2007,18 @@ function UniReader:addAllCommands()
 			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
 		end)
-	self.commands:addGroup(MOD_SHIFT.."< >",{
-		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
-		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
+	self.commands:addGroup(MOD_ALT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
+		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
 		"zoom out/in ".. self.step_manual_zoom .."% ",
 		function(unireader,keydef)
 			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			unireader:setGlobalZoom(unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100))
 		end)
 	-- NuPogodi, 03.09.12: make zoom step user-configurable
-	self.commands:addGroup(MOD_ALT.."< >",{
-		Keydef:new(KEY_PGBCK,MOD_ALT),Keydef:new(KEY_PGFWD,MOD_ALT),
-		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
+	self.commands:addGroup(MOD_SHIFT.."< >",{
+		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
+		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
 		"decrease/increase zoom step",
 		function(unireader,keydef)
 			if keydef.keycode == KEY_PGFWD or keydef.keycode == KEY_LPGFWD then
@@ -2593,6 +2593,10 @@ function UniReader:addAllCommands()
 			local minstep = 1
 			if keydef.keycode == KEY_FW_RIGHT then
 				unireader.shift_x = unireader.shift_x * 2
+				if unireader.shift_x >= G_width then
+					unireader.shift_x = G_width
+					showInfoMsgWithDelay("Maximum X-panning step is "..G_width..". ", 2000, 1)
+				end
 				self.settings:saveSetting("shift_x", self.shift_x)
 				--showInfoMsgWithDelay("New X-panning step is "..unireader.shift_x..". ", 2000, 1)
 			else
@@ -2612,6 +2616,10 @@ function UniReader:addAllCommands()
 			local minstep = 1
 			if keydef.keycode == KEY_FW_UP then
 				unireader.shift_y = unireader.shift_y * 2
+				if unireader.shift_y >= G_height then
+					unireader.shift_y = G_height
+					showInfoMsgWithDelay("Maximum Y-panning step is "..G_height..". ", 2000, 1)
+				end
 				self.settings:saveSetting("shift_y", self.shift_y)
 				--showInfoMsgWithDelay("New Y-panning step is "..unireader.shift_y..". ", 2000, 1)
 			else
