@@ -7,14 +7,10 @@ require "dialog"
 require "extentions"
 
 FileSearcher = {
-	-- title height
-	title_H = 40,
-	-- spacing between lines
-	spacing = 36,
-	-- foot height
-	foot_H = 28,
-	-- horisontal margin
-	margin_H = 10,
+	title_H = 40,	-- title height
+	spacing = 36,	-- spacing between lines
+	foot_H = 28,	-- foot height
+	margin_H = 10,	-- horisontal margin
 
 	-- state buffer
 	dirs = {},
@@ -119,7 +115,6 @@ end
 
 function FileSearcher:addAllCommands()
 	self.commands = Commands:new{}
-	-- last documents
 	self.commands:add(KEY_L, nil, "L",
 		"last documents",
 		function(self)
@@ -128,7 +123,6 @@ function FileSearcher:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	-- show help page
 	self.commands:add(KEY_H, nil, "H",
 		"show help page",
 		function(self)
@@ -136,15 +130,6 @@ function FileSearcher:addAllCommands()
 			self.pagedirty = true
 		end
 	) 
-	-- make screenshot
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-		"make screenshot",
-		function(self)
-			Screen:screenshot()
-		end
-	) 
-	
-	-- file info
 	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
 		"document details",
 		function(self)
@@ -153,7 +138,6 @@ function FileSearcher:addAllCommands()
 			self.pagedirty = true
 		end
 	) 
-	
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"goto previous item",
 		function(self)
@@ -208,26 +192,9 @@ function FileSearcher:addAllCommands()
 		end
 	)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
-		"font menu",
+		"change font faces",
 		function(self)
-				-- NuPogodi, 18.05.12: define the number of the current font in face_list 
-				local item_no = 0
-				local face_list = Font:getFontList() 
-				while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
-					item_no = item_no + 1 
-				end
-				
-				local fonts_menu = SelectMenu:new{
-				menu_title = "Fonts Menu",
-				item_array = face_list,
-				-- NuPogodi, 18.05.12: define selected item
-				current_entry = item_no - 1,
-			}
-			local re, font = fonts_menu:choose(0, G_height)
-			if re then
-				Font.fontmap["cfont"] = font
-				Font:update()
-			end
+			Font:chooseFonts()
 			self.pagedirty = true
 		end
 	)
@@ -245,12 +212,6 @@ function FileSearcher:addAllCommands()
 			self.page = math.floor(item_no / self.perpage) + 1
 
 			self.pagedirty = true
-		end
-	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
-		"back",
-		function(self)
-			return "break"
 		end
 	)
 	self.commands:add({KEY_DEL}, nil, "Del",
@@ -277,20 +238,18 @@ function FileSearcher:addAllCommands()
 				end -- if ev.type == EV_KEY
 			end -- while
 		end
-	)	self.commands:add({KEY_SPACE}, nil, "Space",
+	)	
+	self.commands:add({KEY_SPACE}, nil, "Space",
 		"refresh page manually",
 		function(self)
 			self.pagedirty = true
 		end
 	)
---[[	self.commands:add({KEY_B}, nil, "B",
-		"file browser",
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+		"back",
 		function(self)
-			--FileChooser:setPath(".")
-			FileChooser:choose(0, G_height)
-			self.pagedirty = true
+			return "break"
 		end
-	)]]
 end
 
 function FileSearcher:choose(keywords)
@@ -315,8 +274,7 @@ function FileSearcher:choose(keywords)
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 
 			-- draw menu title
-			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'",self.margin_H,0,self.title_H,4,tface)
-
+			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'",self.margin_H,0,self.title_H,3,tface)
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found
@@ -336,11 +294,9 @@ function FileSearcher:choose(keywords)
 					end
 				end
 			end
-
 			-- draw footer
 			all_page = math.ceil(self.items/self.perpage)
-			DrawFooter("Page "..self.page.." of "..all_page,fface,self.foot_H)
-			
+			DrawFooter("Page "..self.page.." of "..all_page,fface,self.foot_H)		
 		end
 
 		if self.markerdirty then
