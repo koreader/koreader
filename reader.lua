@@ -127,6 +127,8 @@ if fontmap ~= nil then
 	Font.fontmap = fontmap
 end
 
+-- set up the mode to manage files
+FileChooser.filemanager_expert_mode = G_reader_settings:readSetting("filemanager_expert_mode") or 1
 -- initialize global settings shared among all readers
 UniReader:initGlobalSettings(G_reader_settings)
 -- initialize specific readers
