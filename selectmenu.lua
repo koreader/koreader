@@ -22,7 +22,6 @@ SelectMenu = {
 	foot_H = 27,
 	-- horisontal margin
 	margin_H = 10,
-	-- NuPogodi, 18.05.12: new parameter
 	current_entry = 0,
 
 	menu_title = "No Title",
@@ -44,6 +43,11 @@ SelectMenu = {
 	selected_item = nil,
 
 	commands = nil,
+
+	-- NuPogodi, 30.08.12: define font to render menu items
+	own_glyph = 0,	-- render menu items with default "cfont"
+	-- own_glyph = 1 => own glyphs for items like "Droid/DroidSans.ttf"
+	-- own_glyph = 2 => own glyphs for Font.fontmap._index like "ffont", "tfont", etc.
 }
 
 function SelectMenu:new(o)
@@ -229,18 +233,16 @@ function SelectMenu:choose(ypos, height)
 	self.pagedirty = true
 	self.markerdirty = false
 	self.last_shortcut = 0
-	
-	-- NuPogodi, 18.02.12: let us define the starting position
-	-- If it was, certainly, send before by SelectMenu:new() via current_entry
+
 	self.current_entry = math.min(self.current_entry,self.items)
-	-- self.current_entry = math.max(self.current_entry,1)
+
 	-- now calculating the page & cursor
 	self.page = math.floor(self.current_entry / self.perpage) + 1
 	self.page = math.max(1, self.page)
 	self.current = self.current_entry - (self.page - 1) * self.perpage + 1
 	self.current = math.max(1, self.current)
-	-- end of changes (NuPogodi)
-	
+	local own_face
+
 	while true do
 		local cface = Font:getFace("cfont", 22)
 		local tface = Font:getFace("tfont", 25)
@@ -252,10 +254,8 @@ function SelectMenu:choose(ypos, height)
 		if self.pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
 			self.markerdirty = true
-			-- draw menu title (new version with clock & battery)
-			DrawTitle(self.menu_title,self.margin_H,0,self.title_H,4,tface)
-			
-			
+			-- draw menu title
+			DrawTitle(self.menu_title,self.margin_H,0,self.title_H,3,tface)
 			-- draw items
 			fb.bb:paintRect(0, ypos + self.title_H + self.margin_H, fb.bb:getWidth(), height - self.title_H, 0)
 			if self.items == 0 then
@@ -291,14 +291,15 @@ function SelectMenu:choose(ypos, height)
 						end
 
 						self.last_shortcut = c
-						-- NuPogodi, 15.05.12: paint items by own glyphs if the menu title == 'Fonts Menu', 
-						-- but not "Fonts Menu " (crereader.lua); the problem is crereader creates own list
-						-- with the font families, rather then filenames of available fonts
-						local own_face = cface
-						if self.menu_title == "Fonts Menu" then
+						-- NuPogodi, 30.08.12: improved method to use own fontface for each menu item
+						if self.own_glyph == 1 then -- Font.fontmap[_index], like "Droid/DroidSans.ttf"
 							own_face = Font:getFace(self.item_array[i], 22)
+						elseif self.own_glyph == 2 then -- Font.fontmap._index, like "[cfont] description"
+							own_face = Font:getFace(string.sub(string.match(self.item_array[i],"%b[]"), 2, -2), 22)
+						else
+							own_face = cface
 						end
-						-- NuPogodi, 18.05.12: rendering menu items ( fixed too long strings)
+						-- rendering menu items
 						if sizeUtf8Text(lx,fb.bb:getWidth(),own_face,self.item_array[i],true).x < (fw - 10) then
 							renderUtf8Text(fb.bb,lx,y,own_face,self.item_array[i],true)
 						else
