@@ -59,7 +59,7 @@ function HelpPage:show(ypos, height, commands, title)
 	while true do
 		if is_pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-			DrawTitle(title or "Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,tfont)
+			DrawTitle(title or "Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,tface)
 			local c
 			local max_x = 0
 			for c = 1, perpage do
