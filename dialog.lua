@@ -21,7 +21,7 @@ function InfoMessage:show(text,refresh_mode)
 				}),
 				TextWidget:new({
 					text = text,
-					face = Font:getFace("infofont", 30)
+					face = Font:getFace("infont", 30)
 				})
 			})
 		})
