@@ -124,7 +124,14 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 G_reader_settings = DocSettings:open(".reader")
 fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
-	Font.fontmap = fontmap
+	-- we need to iterate over all fonts used in reader to support upgrade from older configuration
+	for name,path in pairs(fontmap) do
+		if Font.fontmap[name] then
+			Font.fontmap[name] = path
+		else
+			Debug("missing "..name.." in user configuration, using default font "..path)
+		end
+	end
 end
 
 -- set up the mode to manage files
