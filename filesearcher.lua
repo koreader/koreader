@@ -250,6 +250,7 @@ function FileSearcher:addAllCommands()
 		function(self)
 			return "break"
 		end
+	)
 end
 
 function FileSearcher:choose(keywords)
