@@ -128,7 +128,6 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	-- last documents
 	self.commands:add(KEY_L, nil, "L",
 		"last documents",
 		function(self)
@@ -136,7 +135,6 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	-- show help page
 	self.commands:add(KEY_H, nil, "H",
 		"show help page",
 		function(self)
@@ -144,15 +142,6 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	-- make screenshot
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-		"make screenshot",
-		function(self)
-			Screen:screenshot()
-		end
-	) 
-	
-	-- file info
 	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
 		"document details",
 		function(self)
@@ -160,8 +149,7 @@ function FileHistory:addAllCommands()
 			FileInfo:show(file_entry.dir,file_entry.name)
 			self.pagedirty = true
 		end
-	) 
-	
+	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"goto previous item",
 		function(self)
@@ -202,30 +190,12 @@ function FileHistory:addAllCommands()
 		end
 	)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F",
-		"font menu",
+		"change font faces",
 		function(self)
-				-- NuPogodi, 18.05.12: define the number of the current font in face_list 
-				local item_no = 0
-				local face_list = Font:getFontList() 
-				while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
-					item_no = item_no + 1 
-				end
-				
-				local fonts_menu = SelectMenu:new{
-				menu_title = "Fonts Menu",
-				item_array = face_list,
-				-- NuPogodi, 18.05.12: define selected item
-				current_entry = item_no - 1,
-			}
-			local re, font = fonts_menu:choose(0, G_height)
-			if re then
-				Font.fontmap["cfont"] = font
-				Font:update()
-			end
+			Font:chooseFonts()
 			self.pagedirty = true
 		end
 	)
-	
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
 		"open selected item",
 		function(self)
@@ -240,12 +210,6 @@ function FileHistory:addAllCommands()
 			self.page = math.floor(item_no / self.perpage) + 1
 
 			self.pagedirty = true
-		end
-	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
-		"back",
-		function(self)
-			return "break"
 		end
 	)
 	self.commands:add({KEY_DEL}, nil, "Del",
@@ -266,14 +230,12 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
---[[	self.commands:add({KEY_B}, nil, "B",
-		"file browser",
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+		"back",
 		function(self)
-			--FileChooser:setPath(".")
-			FileChooser:choose(0, G_height)
-			self.pagedirty = true
+			return "break"
 		end
-	)]]
+	)
 end
 
 function FileHistory:choose(keywords)

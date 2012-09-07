@@ -11,14 +11,10 @@ require "dialog"
 require "extentions"
 
 FileChooser = {
-	-- title height
-	title_H = 40,
-	-- spacing between lines
-	spacing = 36,
-	-- foot height
-	foot_H = 28,
-	-- horisontal margin
-	margin_H = 10,
+	title_H = 40,	-- title height
+	spacing = 36,	-- spacing between lines
+	foot_H = 28,	-- foot height
+	margin_H = 10,	-- horisontal margin
 
 	-- state buffer
 	dirs = nil,
@@ -29,11 +25,20 @@ FileChooser = {
 	current = 1,
 	oldcurrent = 0,
 	exception_message = nil,
-	-- NuPogodi, 20.05.12: added new parameters to make helppage available
+
 	pagedirty = true,
 	markerdirty = false,
 	perpage,
 	clipboard = lfs.currentdir() .. "/clipboard", -- NO finishing slash
+
+	-- NuPogodi, 04.09.2012: introduced modes that configures the filechoser 
+	-- for users with various purposes & skills
+	filemanager_expert_mode, -- default value is defined in reader.lua
+	-- the definitions
+	BEGINNERS_MODE = 1, -- the filemanager content is restricted by files with reader-related extentions; safe renaming (no extention)
+	ADVANCED_MODE = 2, -- no extention-based filtering; renaming with extentions; appreciable danger to crash crengine by improper docs
+	ROOT_MODE = 3, -- TODO: all functions (including non-stable and dangerous)
+
 }
 
 function getProperTitleLength(txt,font_face,max_width)
@@ -52,7 +57,7 @@ end
 function BatteryLevel()
 	local fn, battery = "/tmp/kindle-battery-info", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
-	os.execute("(gasgauge-info ".."-s) ".."> "..fn)
+	os.execute("gasgauge-info -s > "..fn)
 	if io.open(fn,"r") then
 		for lines in io.lines(fn) do battery = " " .. lines end
 	else
@@ -62,10 +67,9 @@ function BatteryLevel()
 end
 
 function DrawTitle(text,lmargin,y,height,color,font_face)
-	-- radius for round corners
-	local r = 6
-	-- redefine to ignore the input for background color
-	color = 3
+	local r = 6	-- radius for round corners
+	color = 3	-- redefine to ignore the input for background color
+
 	fb.bb:paintRect(1, 1, fb.bb:getWidth() - 2, height - r, color)
 	blitbuffer.paintBorder(fb.bb, 1, height/2, fb.bb:getWidth() - 2, height/2, height/2, color, r)
 	-- to have a horisontal gap between text & background rectangle
@@ -115,7 +119,6 @@ function DrawFileItem(name,x,y,image)
 	end
 	iw:free()
 end
--- end of old NuPogodi's functions
 
 function getAbsolutePath(aPath)
 	local abs_path
@@ -177,9 +180,6 @@ function FileChooser:setPath(newPath)
 		return true
 	end
 end
-
--- NuPogodi, 20.05.12: FileChooser:choose is totally rewritten
--- to make helppage with hotkeys available for users
 
 function FileChooser:choose(ypos, height)
 	self.perpage = math.floor(height / self.spacing) - 2
@@ -395,17 +395,25 @@ function FileChooser:addAllCommands()
 			end -- if folder == ".."
 		end -- function
 	)
--- NuPogodi, 24.05.12: Added function to rename documents (extention comes from the old file)
--- Tigran, 18/08/12: corrected the rename operation to include extension.
+	-- make renaming flexible: it either keeps old extention (BEGINNERS_MODE) or
+	-- allows to rename the whole filename including the extention
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"rename file",
 		function(self)
 			local oldname = self:FullFileName()
 			if oldname then
-				local name_we = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+				-- NuPogodi, 04.09.2012: safe mode (keep old extentions)
+				-- Tigran, 18/08/12: corrected the rename operation to include extension.)
+				local oldname = self:FullFileName()
+				local name_we = self.files[self.perpage*(self.page-1)+self.current-#self.dirs]
+				local ext = ""
+				if self.filemanager_expert_mode <= self.BEGINNERS_MODE then
+					ext = "."..string.lower(string.match(oldname, ".+%.([^.]+)") or "")
+					name_we = string.sub(name_we, 1, -1-string.len(ext))
+				end
 				local newname = InputBox:input(0, 0, "New filename:", name_we)
 				if newname then
-					newname = self.path.."/"..newname
+					newname = self.path.."/"..newname..ext
 					os.rename(oldname, newname)
 					os.rename(DocToHistory(oldname), DocToHistory(newname))
 					self:setPath(self.path)
@@ -414,28 +422,17 @@ function FileChooser:addAllCommands()
 			end
 		end
 	)
--- end of changes (NuPogodi)
-	self.commands:add({KEY_F, KEY_AA}, nil, "F",
-		"goto font menu",
+	-- NuPogodi, 04.09.12: menu to switch the filechooser mode
+	self.commands:add(KEY_M, MOD_ALT, "M",
+		"set mode for filemanager",
 		function(self)
-			-- NuPogodi, 18.05.12: define the number of the current font in face_list 
-			local item_no = 0
-			local face_list = Font:getFontList() 
-			while face_list[item_no] ~= Font.fontmap.cfont and item_no < #face_list do 
-				item_no = item_no + 1 
-			end
-				
-			local fonts_menu = SelectMenu:new{
-				menu_title = "Fonts Menu",
-				item_array = face_list,
-				-- NuPogodi, 18.05.12: define selected item
-				current_entry = item_no - 1,
-				}
-			local re, font = fonts_menu:choose(0, G_height)
-			if re then
-				Font.fontmap["cfont"] = font
-				Font:update()
-			end
+			self:changeFileChooserMode()
+		end
+	)
+	self.commands:add({KEY_F, KEY_AA}, nil, "F",
+		"change font faces",
+		function(self)
+			Font:chooseFonts()
 			self.pagedirty = true
 		end
 	)
@@ -468,8 +465,6 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end -- function
 	)
-	
--- NuPogodi, 23.05.12: new functions to manipulate (copy & move) files via clipboard
 	self.commands:add(KEY_C, MOD_SHIFT, "C",
 		"copy file to \'clipboard\'",
 		function(self)
@@ -534,19 +529,6 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
--- end of changes (NuPogodi)
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-		"make screenshot",
-		function(self)
-			Screen:screenshot()
-		end
-	) 
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
-		"exit",
-		function(self)
-			return "break"
-		end
-	)
 	self.commands:add(KEY_K, MOD_SHIFT, "K",
 		"run calculator",
 		function(self)
@@ -555,9 +537,15 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+		"exit",
+		function(self)
+			return "break"
+		end
+	)
 end
 
--- NuPogodi, 23.05.12: returns full filename or nil (if folder)
+-- returns full filename or nil (if folder)
 function FileChooser:FullFileName()
 	local file
 	local folder = self.dirs[self.perpage*(self.page-1)+self.current]
@@ -585,5 +573,47 @@ end
 
 function FileChooser:InQuotes(text)
 	return "\""..text.."\""
+end
+
+--[[ NuPogodi, 04.09.2012: to make it more easy for users with various purposes and skills.
+ATM, one may leave only silent toggling between BEGINNERS_MODE <> ADVANCED_MODE
+-- But, in future, one more (the so called ROOT_MODE) might also be rather useful.
+Shitch this mode on should allow developers & beta-testers to use some unstable 
+and/or dangerous functions able to crash the reader. ]]
+
+function FileChooser:changeFileChooserMode()
+	local face_list = { "safe mode for beginners", "advanced mode for experienced users", "expert mode for beta-testers & developers" }
+	local modes_menu = SelectMenu:new{
+		menu_title = "Select proper mode to manage files",
+		item_array = face_list,
+		current_entry = self.filemanager_expert_mode - 1,
+		}
+	local m = modes_menu:choose(0, G_height)
+	if m and m ~= self.filemanager_expert_mode then
+		--[[ TODO: to allow multiline-rendering for info messages & to include detailed description of the selected mode
+		local msg = "Press 'Y' to accept new mode..."
+		if m==self.BEGINNERS_MODE then
+			msg = "You have selected safe mode for beginners: the filemanager shows only files with the reader-related extentions (*.pdf, *.djvu, etc.); "..
+			"safe renaming (no extentions); unstable or dangerous functions are NOT included. "..msg
+		elseif m==self.ADVANCED_MODE then
+			msg = "You have selected advanced mode for experienced users: the filemanager shows all files; "..
+			"you may rename not only their names, but also the extentions; the files with unknown extentions would be sent to CREReader "..
+			"and could crash the reader. Please, use it in your own risk. "..msg
+		else -- ROOT_MODE
+			msg = "You have selected the most advanced and dangerous mode. I hope You know what you are doing. God bless You. "..msg
+		end 
+		InfoMessage:show(msg, 1)
+		if self:ReturnKey() == KEY_Y then ]]
+			if (self.filemanager_expert_mode == self.BEGINNERS_MODE and m > self.BEGINNERS_MODE)
+			or (m == self.BEGINNERS_MODE and self.filemanager_expert_mode > self.BEGINNERS_MODE) then
+				self.filemanager_expert_mode = m	-- make sure that new mode is set before...
+				self:setPath(self.path)		-- refreshing the folder content
+			else
+				self.filemanager_expert_mode = m
+			end
+			G_reader_settings:saveSetting("filemanager_expert_mode", self.filemanager_expert_mode)
+		-- end
+	end
+	self.pagedirty = true
 end
 

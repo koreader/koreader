@@ -8,40 +8,24 @@ require "commands"
 
 HelpPage = {
 	-- Other Class vars:
-
-	-- title height
-	title_H = 40,
-	-- horisontal margin
-	margin_H = 10,
-	-- foot height
-	foot_H = 28,
-	-- background color
-	bg_color = 4,
-	-- spacing between lines
-	spacing = 25,
+	title_H = 40,	-- title height
+	margin_H = 10,	-- horisontal margin
+	foot_H = 28,	-- foot height
+	bg_color = 3,	-- background color
+	spacing = 25,	-- spacing between lines
 
 	-- state buffer
 	commands = nil,
 	items = 0,
 	page = 1,
-
-	-- font for displaying keys
-	fsize = 20,
-	face = Font:getFace("hpkfont", 20),
-
-	-- font for displaying help messages
-	hfsize = 20,
-	hface = Font:getFace("hfont", 20),
-
-	-- font for paging display
-	ffsize = 15,
-	fface = Font:getFace("pgfont", 15)
 }
 
--- Other Class vars:
-
--- 02.06.12: added parameter 'title' for the header to make this function usable for various documentation purposes
 function HelpPage:show(ypos, height, commands, title)
+	local face = Font:getFace("hpkfont", 20)
+	local hface = Font:getFace("hfont", 20)
+	local fface = Font:getFace("ffont", 16)
+	local tface = Font:getFace("tfont", 25)
+
 	self.commands = {}
 	self.items = 0
 	local keys = {}
@@ -56,9 +40,9 @@ function HelpPage:show(ypos, height, commands, title)
 	end
 	table.sort(self.commands,function(w1,w2) return w1.order<w2.order end)
 
-	local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
-	--local hface_height, hface_ascender = self.hface.ftface:getHeightAndAscender()
-	local fface_height, fface_ascender = self.fface.ftface:getHeightAndAscender()
+	local face_height, face_ascender = face.ftface:getHeightAndAscender()
+	--local hface_height, hface_ascender = hface.ftface:getHeightAndAscender()
+	local fface_height, fface_ascender = fface.ftface:getHeightAndAscender()
 	--Debug(face_height.."-"..face_ascender)
 	--Debug(fface_height.."-"..fface_ascender)
 	face_height = math.ceil(face_height)
@@ -66,7 +50,6 @@ function HelpPage:show(ypos, height, commands, title)
 	fface_height = math.ceil(fface_height)
 	fface_ascender = math.ceil(fface_ascender)
 	local spacing = face_height + 5
-	-- 02.06.12: minor correction to vertical position of displayed items
 	local vert_S = self.title_H + 3
 
 	local perpage = math.floor( (height - ypos - 1 * (fface_height + 5) - vert_S) / spacing )
@@ -76,8 +59,7 @@ function HelpPage:show(ypos, height, commands, title)
 	while true do
 		if is_pagedirty then
 			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
-			-- 02.06.12: one should use it here
-			DrawTitle(title or "Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,Font:getFace("tfont", 25))
+			DrawTitle(title or "Active Hotkeys",self.margin_H,0,self.title_H,self.bg_color,tfont)
 			local c
 			local max_x = 0
 			for c = 1, perpage do
@@ -90,17 +72,17 @@ function HelpPage:show(ypos, height, commands, title)
 						Debug("key:"..key.." v:"..aMod.v.." d:"..aMod.d.." modstart:"..(modStart or "nil"))
 						if(modStart ~= nil) then
 							key = key:sub(1,modStart-1)..key:sub(modEnd+1)
-							local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, aMod.d, true)
+							local box = sizeUtf8Text( x, fb.bb:getWidth(), face, aMod.d, true)
 							fb.bb:paintRect(x, ypos + spacing*c - box.y_top + vert_S, box.x + self.title_H, box.y_top + box.y_bottom, self.bg_color)
-							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c + vert_S, self.face, aMod.d.." + ", true)
+							local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c + vert_S, face, aMod.d.." + ", true)
 							x = x + pen_x
 							max_x = math.max(max_x, pen_x)
 						end
 					end
 					Debug("key:"..key)
-					local box = sizeUtf8Text( x, fb.bb:getWidth(), self.face, key , true)
+					local box = sizeUtf8Text( x, fb.bb:getWidth(), face, key , true)
 					fb.bb:paintRect(x, ypos + spacing*c - box.y_top + vert_S, box.x, box.y_top + box.y_bottom, self.bg_color)
-					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c  + vert_S, self.face, key, true)
+					local pen_x = renderUtf8Text(fb.bb, x, ypos + spacing*c  + vert_S, face, key, true)
 					x = x + pen_x
 					max_x = math.max(max_x, x)
 				end
@@ -108,13 +90,12 @@ function HelpPage:show(ypos, height, commands, title)
 			for c = 1, perpage do
 				local i = (self.page - 1) * perpage + c
 				if i <= self.items then
-					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c + vert_S, self.hface, self.commands[i].help, true)
+					renderUtf8Text(fb.bb, max_x + 20, ypos + spacing*c + vert_S, hface, self.commands[i].help, true)
 				end
 			end
 			-- draw footer
 			local footer = "Page "..self.page.." of "..math.ceil(self.items / perpage).."  - Back to close this page"
-			-- DrawFooter(footer,Font:getFace("ffont", 16),self.foot_H) --
-			renderUtf8Text(fb.bb, self.margin_H, height-7, self.fface, footer, true)
+			renderUtf8Text(fb.bb, self.margin_H, height-7, fface, footer, true)
 		end
 		if is_pagedirty then
 			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)

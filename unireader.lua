@@ -2113,7 +2113,7 @@ function UniReader:addAllCommands()
 			if not re or re==(1-unireader.globalzoom_mode) or re==1 or re==8 or re==9 then -- if not proper zoom-mode
 				unireader:redrawCurrentPage()
 			else -- in most cases the message is not necessary, so feel you free to comment
-				InfoMessage:show("Redrawing in new zoom mode...", 1)
+				-- InfoMessage:show("Redrawing in new zoom mode...", 1)
 				unireader:setglobalzoom_mode(1-re)
 			end
 		end)
@@ -2165,12 +2165,9 @@ function UniReader:addAllCommands()
 			local page = NumInputBox:input(G_height-100, 100,
 				"Page:", "current page "..self.pageno, true)
 			-- convert string to number
-			if not pcall(function () page = page + 0 end) then
+			if not pcall(function () page = math.floor(page) end) 
+			or page < 1 or page > unireader.doc:getPages() then
 				page = unireader.pageno
-			else
-				if page < 1 or page > unireader.doc:getPages() then
-					page = unireader.pageno
-				end
 			end
 			unireader:goto(page)
 		end)
@@ -2664,13 +2661,6 @@ function UniReader:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_P, MOD_SHIFT, "P",
-	"make screenshot",
-	function(unireader)
-		Screen:screenshot()
-	end 
-	)
-	-- NuPogodi, 03.09.12: moved the exit commands here: just cosmetics
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",
 		"close document",
 		function(unireader)

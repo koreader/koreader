@@ -2,7 +2,6 @@ require "widget"
 require "font"
 
 InfoMessage = {
-	face = Font:getFace("infofont", 25)
 }
 
 function InfoMessage:show(text,refresh_mode)
@@ -22,7 +21,7 @@ function InfoMessage:show(text,refresh_mode)
 				}),
 				TextWidget:new({
 					text = text,
-					face = Font:getFace("cfont", 30)
+					face = Font:getFace("infofont", 30)
 				})
 			})
 		})

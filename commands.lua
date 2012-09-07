@@ -222,5 +222,12 @@ function Commands:new(obj)
 			G_charging_mode = false
 		end
 	)
+	-- Shift+P would be overwritten in inputbox by entering char 'P'
+	-- I suggest one should probably change the hotkey to, say, Alt+Space
+	obj:add(KEY_P, MOD_SHIFT, "P", "make screenshot",
+		function()
+			Screen:screenshot()
+		end
+	)
 	return obj
 end
