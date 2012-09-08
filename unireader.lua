@@ -1591,7 +1591,8 @@ function UniReader:screenRotate(orien)
 end
 
 function UniReader:cleanUpTocTitle(title)
-	return title:gsub("\13", "")
+	local s, _ = title:gsub("\13", "")
+	return s
 end
 
 function UniReader:fillToc()
