@@ -14,7 +14,7 @@ FileInfo = {
 	-- state buffer
 	pagedirty = true,
 	result = {},
-	commands = {},
+	commands = nil,
 	items = 0,
 	pathfile = "",
 }
