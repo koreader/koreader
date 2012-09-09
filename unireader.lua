@@ -1823,24 +1823,33 @@ end
 
 function UniReader:showBookMarks()
 	local menu_items = {}
+	local ret_code, item_no = -1, -1
+
 	-- build menu items
 	for k,v in ipairs(self.bookmarks) do
 		table.insert(menu_items,
 			"Page "..v.page.." "..v.notes.." @ "..v.datetime)
 	end
 	if #menu_items == 0 then
-		showInfoMsgWithDelay(
-			"No bookmark found.", 2000, 1)
-	else
-		toc_menu = SelectMenu:new{
+		return showInfoMsgWithDelay("No bookmarks found", 1500, 1)
+	end
+	while true do
+		bm_menu = SelectMenu:new{
 			menu_title = "Bookmarks",
 			item_array = menu_items,
+			deletable = true,
 		}
-		item_no = toc_menu:choose(0, fb.bb:getHeight())
-		if item_no then
-			self:goto(self.bookmarks[item_no].page)
-		else
-			self:redrawCurrentPage()
+		ret_code, item_no = bm_menu:choose(0, fb.bb:getHeight())
+		if ret_code then -- normal item selection
+			return self:goto(self.bookmarks[ret_code].page)
+		elseif item_no then -- delete item
+			table.remove(menu_items, item_no)
+			table.remove(self.bookmarks, item_no)
+			if #menu_items == 0 then
+				return self:redrawCurrentPage()
+			end
+		else -- return via Back
+			return self:redrawCurrentPage()
 		end
 	end
 end
@@ -2315,9 +2324,9 @@ function UniReader:addAllCommands()
 		function(unireader)
 			ok = unireader:addBookmark(self.pageno)
 			if not ok then
-				showInfoMsgWithDelay("Page already marked!", 2000, 1)
+				showInfoMsgWithDelay("Page already marked!", 1500, 1)
 			else
-				showInfoMsgWithDelay("Page marked.", 2000, 1)
+				showInfoMsgWithDelay("Page marked", 1500, 1)
 			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",

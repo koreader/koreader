@@ -31,7 +31,7 @@ SelectMenu = {
 
 	item_shortcuts = {
 		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
-		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
+		"A", "S", "D", "F", "G", "H", "J", "K", "L", "/",
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Ent",
 		},
 	last_shortcut = 0,
@@ -44,6 +44,8 @@ SelectMenu = {
 
 	commands = nil,
 	expandable = false, -- if true handle Right/Left FW selector keys
+	deletable = false, -- if true handle Del key as a request to delete item
+	-- note that currently expandable and deletable are mutually exclusive
 
 	-- NuPogodi, 30.08.12: define font to render menu items
 	own_glyph = 0,	-- render menu items with default "cfont"
@@ -150,6 +152,15 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
+	if self.deletable then
+		self.commands:add(KEY_DEL, nil, "",
+			"delete menu item",
+			function(sm)
+				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
+				return "delete"
+			end
+		)
+	end
 	if self.expandable then
 		self.commands:add(KEY_FW_RIGHT, nil, "",
 			"expand menu item",
@@ -199,10 +210,10 @@ function SelectMenu:addAllCommands()
 				sm.item_shortcuts[ keydef.keycode - KEY_Z + 21 ], sm.perpage)
 		end
 	)
-	self.commands:add(KEY_DEL, nil, "",
-		"Select menu item with del key as shortcut",
+	self.commands:add(KEY_SLASH, nil, "/",
+		"Select menu item with / key as shortcut",
 		function(sm)
-			sm.selected_item = sm:getItemIndexByShortCut("Del", sm.perpage)
+			sm.selected_item = sm:getItemIndexByShortCut("/", sm.perpage)
 		end
 	)
 	self.commands:add(KEY_DOT, nil, "",
@@ -211,10 +222,9 @@ function SelectMenu:addAllCommands()
 			sm.selected_item = sm:getItemIndexByShortCut(".", sm.perpage)
 		end
 	)
-	self.commands:add({KEY_SYM, KEY_SLASH}, nil, "",
-		"Select menu item with sym/slash key as shortcut",
+	self.commands:add(KEY_SYM, nil, "",
+		"Select menu item with sym key as shortcut",
 		function(sm)
-		-- DXG has slash after dot
 			sm.selected_item = sm:getItemIndexByShortCut("Sym", sm.perpage)
 		end
 	)
@@ -331,7 +341,9 @@ function SelectMenu:choose(ypos, height)
 
 			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage))
 			if self.expandable then
-				footer = footer.." (Use Right/Left FW-selector keys to expand/collapse nodes)"
+				footer = footer.." (Use Right/Left FW-selector keys to expand/collapse items)"
+			elseif self.deletable then
+				footer = footer.." (Use Del key to delete item)"
 			end
 			renderUtf8Text(fb.bb, self.margin_H, height-7, fface, footer, true)
 		end
@@ -380,12 +392,12 @@ function SelectMenu:choose(ypos, height)
 			if self.selected_item ~= nil then
 				if self.expandable then
 					if ret_code == "expand" then
-						Debug("# expand "..self.selected_item)
 						return nil, self.selected_item
 					elseif ret_code == "collapse" then
-						Debug("# collapse "..self.selected_item)
 						return nil, -self.selected_item
 					end
+				elseif self.deletable and ret_code == "delete" then
+						return nil, self.selected_item
 				end
 				Debug("# selected "..self.selected_item)
 				return self.selected_item, self.item_array[self.selected_item]
