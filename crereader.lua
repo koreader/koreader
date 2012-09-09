@@ -653,8 +653,8 @@ function CREReader:adjustCreReaderCommands()
 			end
 			cre.setGammaIndex(self.gamma_index+delta)
 			self.gamma_index = cre.getGammaIndex()
+			InfoMessage:show("Redraw with gamma = "..self.gamma_index, 1) -- no delay
 			self:redrawCurrentPage()
-			showInfoMsgWithDelay("Redraw with gamma = "..self.gamma_index, 2000, 1)
 		end
 	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
