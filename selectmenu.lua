@@ -43,6 +43,7 @@ SelectMenu = {
 	selected_item = nil,
 
 	commands = nil,
+	expandable = false, -- if true handle Right/Left FW selector keys
 
 	-- NuPogodi, 30.08.12: define font to render menu items
 	own_glyph = 0,	-- render menu items with default "cfont"
@@ -149,6 +150,22 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
+	if self.expandable then
+		self.commands:add(KEY_FW_RIGHT, nil, "",
+			"expand menu item",
+			function(sm)
+				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
+				return "expand"
+			end
+		)
+		self.commands:add(KEY_FW_LEFT, nil, "",
+			"collapse menu item",
+			function(sm)
+				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
+				return "collapse"
+			end
+		)
+	end
 	local KEY_Q_to_P = {}
 	for i = KEY_Q, KEY_P do 
 		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
@@ -312,9 +329,11 @@ function SelectMenu:choose(ypos, height)
 				end -- for c=1, self.perpage
 			end -- if self.items == 0
 
-			-- draw footer
-			DrawFooter("Page "..self.page.." of "..(math.ceil(self.items / self.perpage)),fface,self.foot_H)
-			
+			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage))
+			if self.expandable then
+				footer = footer.." (Use Right/Left FW-selector keys to expand/collapse nodes)"
+			end
+			renderUtf8Text(fb.bb, self.margin_H, height-7, fface, footer, true)
 		end
 
 		if self.markerdirty then
@@ -359,6 +378,15 @@ function SelectMenu:choose(ypos, height)
 			end
 
 			if self.selected_item ~= nil then
+				if self.expandable then
+					if ret_code == "expand" then
+						Debug("# expand "..self.selected_item)
+						return nil, self.selected_item
+					elseif ret_code == "collapse" then
+						Debug("# collapse "..self.selected_item)
+						return nil, -self.selected_item
+					end
+				end
 				Debug("# selected "..self.selected_item)
 				return self.selected_item, self.item_array[self.selected_item]
 			end

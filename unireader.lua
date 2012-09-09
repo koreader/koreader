@@ -92,6 +92,11 @@ UniReader = {
 	bookmarks = {},
 	highlight = {},
 	toc = nil,
+	toc_children = nil, -- each element is the list of children for each TOC node (nil if none)
+	toc_curitem = 0, -- points to the current location in TOC
+	toc_xview = nil, -- fully expanded (and marked with '+') view of TOC
+	toc_cview = nil, -- current view of TOC
+	toc_curidx_to_x = nil, -- current view to expanded view map
 
 	bbox = {}, -- override getUsedBBox
 
@@ -1586,7 +1591,8 @@ function UniReader:screenRotate(orien)
 end
 
 function UniReader:cleanUpTocTitle(title)
-	return title:gsub("\13", "")
+	local s, _ = title:gsub("\13", "")
+	return s
 end
 
 function UniReader:fillToc()
@@ -1628,39 +1634,148 @@ function UniReader:gotoTocEntry(entry)
 	self:goto(entry.page)
 end
 
+-- expand TOC item to one level down
+function UniReader:expandTOCItem(xidx, item_no)
+	if string.find(self.toc_cview[item_no], "^+ ") then
+		for i=#self.toc_children[xidx],1,-1 do
+			table.insert(self.toc_cview, item_no+1,
+				self.toc_xview[self.toc_children[xidx][i]])
+			table.insert(self.toc_curidx_to_x, item_no+1,
+				self.toc_children[xidx][i])
+		end
+		self.toc_cview[item_no] = string.gsub(self.toc_cview[item_no], "^+ ", "- ", 1)
+	end
+end
+
+-- collapse TOC item AND all its descendants to all levels, recursively
+function UniReader:collapseTOCItem(xidx, item_no)
+	if string.find(self.toc_cview[item_no], "^- ") then
+		for i=1,#self.toc_children[xidx] do
+			self:collapseTOCItem(self.toc_curidx_to_x[item_no+1], item_no+1)
+			table.remove(self.toc_cview, item_no+1)
+			table.remove(self.toc_curidx_to_x, item_no+1)
+		end
+		self.toc_cview[item_no] = string.gsub(self.toc_cview[item_no], "^- ", "+ ", 1)
+	end
+end
+
+-- calculate the position as index into self.toc_cview[],
+-- corresponding to the current page.
+function UniReader:findTOCpos()
+	local pos, found_pos = 0, false
+
+	-- find the index into toc_xview first
+	for k,v in ipairs(self.toc) do
+		if v.page > self.pageno then
+			pos = k - 1
+			break
+		end
+	end
+
+	if pos == 0 then
+		pos = #self.toc
+	end
+
+	-- now map it to toc_cview[]
+	for k,v in ipairs(self.toc_curidx_to_x) do
+		if v == pos then
+			pos = k
+			found_pos = true
+			break
+		elseif v > pos then
+			pos = k - 1
+			found_pos = true
+			break
+		end
+	end
+
+	if not found_pos then
+		pos = #self.toc_cview
+	end
+
+	return pos
+end
+
 function UniReader:showToc()
 	if not self.toc then
-		-- build toc if needed.
-		self:fillToc()
-	end
+		InfoMessage:show("Retrieving TOC...", 1)
+		self:fillToc() -- fill self.toc(title,page,depth) from physical TOC
+		self.toc_children = {}
+		self.toc_xview = {}
+		self.toc_cview = {}
+		self.toc_curidx_to_x = {}
 
-	-- build menu items
-	local menu_items, item_no = {}, -1
-	for k,v in ipairs(self.toc) do
-		table.insert(menu_items, ("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
-		-- to find current TOC-entry
-		if v.page <= self.pageno then
-			item_no = item_no + 1
+		-- To combine the forest represented by the array of depths
+		-- (self.toc[].depth) into a single tree we introduce a virtual head
+		-- of depth=0 at position index=0 (The Great Parent)
+		local prev, prev_depth = 0, 0
+		self.toc_xview[0] = "_HEAD"
+
+		-- the parent[] array is only needed for the calculation of
+		-- self.toc_children[] arrays.
+		local parent = {}
+		for k,v in ipairs(self.toc) do
+			table.insert(self.toc_xview,
+				("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
+			if (v.depth > prev_depth) then --> k is a child of prev
+				if not self.toc_children[prev] then
+					self.toc_children[prev] = {}
+				end
+				table.insert(self.toc_children[prev], k)
+				parent[k] = prev
+				self.toc_xview[prev] = "+ "..self.toc_xview[prev]
+			elseif (v.depth == prev_depth) then --> k and prev are siblings
+				parent[k] = parent[prev]
+				table.insert(self.toc_children[parent[k]], k)
+			else --> k and prev must have a common (possibly virtual) ancestor
+				local par = parent[prev]
+				while (self.toc[par].depth > v.depth) do
+					par = parent[par]
+				end
+				parent[k] = parent[par]
+				table.insert(self.toc_children[parent[k]], k)
+			end
+			prev = k
+			prev_depth = self.toc[prev].depth
+		end -- for k,v in ipairs(self.toc)
+		self.toc_curidx_to_x = self.toc_children[0]
+		for i=1,#self.toc_children[0] do
+			table.insert(self.toc_cview, self.toc_xview[self.toc_children[0][i]])
 		end
 	end
 
-	if #menu_items == 0 then
-		showInfoMsgWithDelay("This document does not have a TOC.", 2000, 1)
-	else
+	if #self.toc == 0 then
+		return showInfoMsgWithDelay("No Table of Contents", 1500, 1)
+	end
+
+	self.toc_curitem = self:findTOCpos()
+
+	while true do
+		local ret_code = -1
 		toc_menu = SelectMenu:new{
-			menu_title = "Table of Contents",
-			item_array = menu_items,
-			-- to autoselect current TOC-entry
-			current_entry = item_no,
+			menu_title = "Table of Contents (" .. tostring(#self.toc_cview) .. "/" .. tostring(#self.toc) .. " items)",
+			item_array = self.toc_cview,
+			current_entry = self.toc_curitem-1,
+			expandable = true
 		}
-		item_no = toc_menu:choose(0, fb.bb:getHeight())
-
-		if item_no then
-			self:gotoTocEntry(self.toc[item_no])
-		else
-			self:redrawCurrentPage()
-		end
-	end
+		ret_code, item_no = toc_menu:choose(0, fb.bb:getHeight())
+		if ret_code then -- normal item selection
+			return self:gotoTocEntry(self.toc[self.toc_curidx_to_x[ret_code]])
+		elseif item_no then -- expand or collapse item
+			local abs_item_no = math.abs(item_no)
+			local xidx = self.toc_curidx_to_x[abs_item_no]
+			if self.toc_children[xidx] then
+				if item_no > 0 then
+					self:expandTOCItem(xidx, item_no)
+				else
+					self:collapseTOCItem(xidx, abs_item_no)
+				end
+			end
+			self.toc_curitem = abs_item_no
+		else -- return from menu via Back
+			return self:redrawCurrentPage()
+		end -- if ret_code
+	end -- while true
 end
 
 function UniReader:showJumpHist()
@@ -1968,6 +2083,12 @@ function UniReader:inputLoop()
 	-- do clean up stuff
 	self:clearCache()
 	self.toc = nil
+	self.toc_children = nil
+	self.toc_curitem = 0
+	self.toc_xview = nil
+	self.toc_cview = nil
+	self.toc_curidx_to_x = nil
+	self.toc_xidx_to_cur = nil
 	if self.doc ~= nil then
 		self.doc:close()
 	end
@@ -1982,7 +2103,7 @@ function UniReader:inputLoop()
 		self.settings:saveSetting("globalzoom", self.globalzoom)
 		self.settings:saveSetting("globalzoom_mode", self.globalzoom_mode)
 		self.settings:saveSetting("render_mode", self.render_mode)	-- djvu-related only
-		--[[ the following parameters was already stored when user changed defaults
+		--[[ the following parameters were already stored when user changed defaults
 		self.settings:saveSetting("shift_x", self.shift_x)
 		self.settings:saveSetting("shift_y", self.shift_y)
 		self.settings:saveSetting("step_manual_zoom", self.step_manual_zoom)
@@ -2112,8 +2233,7 @@ function UniReader:addAllCommands()
 			local re = zoom_menu:choose(0, G_height)
 			if not re or re==(1-unireader.globalzoom_mode) or re==1 or re==8 or re==9 then -- if not proper zoom-mode
 				unireader:redrawCurrentPage()
-			else -- in most cases the message is not necessary, so feel you free to comment
-				-- InfoMessage:show("Redrawing in new zoom mode...", 1)
+			else
 				unireader:setglobalzoom_mode(1-re)
 			end
 		end)
@@ -2178,7 +2298,7 @@ function UniReader:addAllCommands()
 			unireader:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_T,nil,"T",
-		"show table of content",
+		"show table of content (TOC)",
 		function(unireader)
 			unireader:showToc()
 		end)

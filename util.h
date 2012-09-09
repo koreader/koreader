@@ -1,5 +1,5 @@
 /*
-    KindlePDFViewer: buffer for blitting muPDF data to framebuffer (blitbuffer)
+    KindlePDFViewer: miscellaneous utility functions for Lua
     Copyright (C) 2011 Hans-Werner Hilse <hilse@web.de>
 
     This program is free software: you can redistribute it and/or modify
