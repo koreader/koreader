@@ -1765,7 +1765,6 @@ function UniReader:showToc()
 			local abs_item_no = math.abs(item_no)
 			local xidx = self.toc_curidx_to_x[abs_item_no]
 			if self.toc_children[xidx] then
-				local i
 				if item_no > 0 then
 					self:expandTOCItem(xidx, item_no)
 				else
