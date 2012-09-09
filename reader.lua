@@ -43,7 +43,7 @@ function openFile(filename)
 
 	reader = ext:getReader(file_type)
 	if reader then
-		InfoMessage:show("Opening document, please wait... ", 0)
+		InfoMessage:show("Opening document... ", 0)
 		reader:preLoadSettings(filename)
 		local ok, err = reader:open(filename)
 		if ok then
