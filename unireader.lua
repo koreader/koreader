@@ -1046,6 +1046,14 @@ function UniReader:drawOrCache(no, preCache)
 	-- #3 goal: we render the full page
 	-- #4 goal: we render next page, too. (TODO)
 
+	local pg_w = G_width / ( self.doc:getPages() )
+	local page_indicator = function() 
+		fb.bb:invertRect( pg_w*(no-1),0, pg_w,10)
+		fb:refresh(1,     pg_w*(no-1),0, pg_w,10)
+		Debug('page_indicator',no)
+	end
+	page_indicator()
+
 	-- ideally, this should be factored out and only be called when needed (TODO)
 	local ok, page = pcall(self.doc.openPage, self.doc, no)
 	local width, height = G_width, G_height
@@ -1083,6 +1091,9 @@ function UniReader:drawOrCache(no, preCache)
 				self.cache[pagehash].ttl = self.cache_max_ttl
 			end
 			-- ...and return blitbuffer plus offset into it
+
+			page_indicator()
+
 			return pagehash,
 				offset_x_in_page - self.cache[pagehash].x,
 				offset_y_in_page - self.cache[pagehash].y
@@ -1144,6 +1155,8 @@ function UniReader:drawOrCache(no, preCache)
 	Debug("rendering page", no)
 	page:draw(dc, self.cache[pagehash].bb, 0, 0, self.render_mode)
 	page:close()
+
+	page_indicator()
 
 	-- return hash and offset within blitbuffer
 	return pagehash,
