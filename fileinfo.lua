@@ -32,6 +32,7 @@ end
 
 function FileInfo:init(path, fname)
 	self.pathfile = path.."/"..fname
+	self.result = {}
 	-- add commands only once
 	if not self.commands then
 		self:addAllCommands()
