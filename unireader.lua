@@ -1569,7 +1569,7 @@ end
 function UniReader:modifyGamma(factor)
 	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
-	showInfoMsgWithDelay("New gamma = "..self.globalgamma, 1000, 1)
+	InfoMessage:show("New gamma = "..self.globalgamma, 1) -- we don't want delay here
 	self:redrawCurrentPage()
 end
 
