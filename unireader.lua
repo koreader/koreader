@@ -1738,7 +1738,7 @@ function UniReader:showToc()
 			prev = k
 			prev_depth = self.toc[prev].depth
 		end -- for k,v in ipairs(self.toc)
-		if ( self.toc_children[0] ) then
+		if (self.toc_children[0]) then
 			self.toc_curidx_to_x = self.toc_children[0]
 			for i=1,#self.toc_children[0] do
 				table.insert(self.toc_cview, self.toc_xview[self.toc_children[0][i]])
@@ -1747,7 +1747,8 @@ function UniReader:showToc()
 	end
 
 	if #self.toc == 0 then
-		return showInfoMsgWithDelay("No Table of Contents", 1500, 1)
+		showInfoMsgWithDelay("No Table of Contents", 1500, 1)
+		return self:redrawCurrentPage()
 	end
 
 	self.toc_curitem = self:findTOCpos()
