@@ -364,21 +364,20 @@ function FileChooser:addAllCommands()
 			local pos = self.perpage*(self.page-1)+self.current
 			local folder = self.dirs[pos]
 			if folder == ".." then
-				showInfoMsgWithDelay("<UP-DIR> can not be deleted! ",2000,1)
+				showInfoMsgWithDelay(".. cannot be deleted! ",2000,1)
 			elseif folder then
-				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+				InfoMessage:show("Press \'Y\' to confirm",0)
 				if self:ReturnKey() == KEY_Y then
 					if lfs.rmdir(self.path.."/"..folder) then
-						self.pagedirty = true
 						table.remove(self.dirs, offset)
 						self.items = self.items - 1
 						self.current = self.current - 1
 					else
-						showInfoMsgWithDelay("This folder can not be deleted! ",2000,1)
+						showInfoMsgWithDelay("Cannot be deleted!",2000,1)
 					end
 				end
 			else
-				InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+				InfoMessage:show("Press \'Y\' to confirm",0)
 				if self:ReturnKey() == KEY_Y then
 					pos = pos - #self.dirs
 					local fullpath = self.path.."/"..self.files[pos]
@@ -390,9 +389,9 @@ function FileChooser:addAllCommands()
 					table.remove(self.files, pos)
 					self.items = self.items - 1
 					self.current = self.current - 1
-					self.pagedirty = true
 				end
 			end -- if folder == ".."
+			self.pagedirty = true
 		end -- function
 	)
 	-- make renaming flexible: it either keeps old extention (BEGINNERS_MODE) or
