@@ -346,7 +346,7 @@ function CREReader:gotoPrevNextTocEntry(direction)
 		self:fillToc()
 	end
 	if #self.toc == 0 then
-		showInfoMsgWithDelay("This document does not have a TOC.", 2000, 1)
+		showInfoMsgWithDelay("No Table of Contents", 1500, 1)
 		return
 	end
 	-- search for current TOC-entry
@@ -442,7 +442,6 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			Screen:screenRotate("anticlockwise")
 			G_width, G_height = fb:getSize()
-			self:fillToc()
 			self:goto(prev_xpointer, nil, "xpointer")
 			self.pos = self.doc:getCurrentPos()
 		end
@@ -455,7 +454,6 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			Screen:screenRotate("clockwise")
 			G_width, G_height = fb:getSize()
-			self:fillToc()
 			self:goto(prev_xpointer, nil, "xpointer")
 			self.pos = self.doc:getCurrentPos()
 		end
@@ -507,7 +505,6 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:zoomFont(delta)
 			self:goto(prev_xpointer, nil, "xpointer")
-			self:fillToc()
 		end
 	)
 	self.commands:addGroup(MOD_ALT.."< >",{
@@ -528,7 +525,6 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
 			self:goto(prev_xpointer, nil, "xpointer")
-			self:fillToc()
 		end
 	)
 	local numeric_keydefs = {}
@@ -585,7 +581,6 @@ function CREReader:adjustCreReaderCommands()
 				InfoMessage:show("Redrawing with "..face_list[item_no], 0)
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
-				self:fillToc()
 			end
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
@@ -608,7 +603,6 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:toggleFontBolder()
 			self:goto(prev_xpointer, nil, "xpointer")
-			self:fillToc()
 		end
 	)
 	self.commands:add(KEY_B, MOD_ALT, "B",
