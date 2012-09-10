@@ -33,6 +33,13 @@ typedef struct CreDocument {
 	ldomDocument *dom_doc;
 } CreDocument;
 
+static int initCache(lua_State *L) {
+	int cache_size = luaL_optint(L, 1, (2 << 20) * 64); // 64Mb on disk cache for DOM
+
+	ldomDocCache::init(lString16("./cr3cache"), cache_size);
+
+	return 0;
+}
 
 static int openDocument(lua_State *L) {
 	const char *file_name = luaL_checkstring(L, 1);
@@ -512,6 +519,7 @@ static int findText(lua_State *L) {
 }
 
 static const struct luaL_Reg cre_func[] = {
+	{"initCache", initCache},
 	{"openDocument", openDocument},
 	{"getFontFaces", getFontFaces},
 	{"getGammaIndex", getGammaIndex},
@@ -566,8 +574,6 @@ int luaopen_cre(lua_State *L) {
 
 	/* initialize font manager for CREngine */
 	InitFontManager(lString8());
-
-	ldomDocCache::init(lString16("./cr3cache"), 1024 * 1024 * 64); // 64Mb on disk cache for DOM
 
 #ifdef DEBUG_CRENGINE
 	CRLog::setStdoutLogger();
