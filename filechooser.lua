@@ -35,8 +35,8 @@ FileChooser = {
 	-- for users with various purposes & skills
 	filemanager_expert_mode, -- default value is defined in reader.lua
 	-- the definitions
-	BEGINNERS_MODE = 1, -- the filemanager content is restricted by files with reader-related extentions; safe renaming (no extention)
-	ADVANCED_MODE = 2, -- no extention-based filtering; renaming with extentions; appreciable danger to crash crengine by improper docs
+	BEGINNERS_MODE = 1, -- the filemanager content is restricted by files with reader-related extensions; safe renaming (no extension)
+	ADVANCED_MODE = 2, -- no extension-based filtering; renaming with extensions; appreciable danger to crash crengine by improper docs
 	ROOT_MODE = 3, -- TODO: all functions (including non-stable and dangerous)
 
 }
@@ -394,16 +394,15 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end -- function
 	)
-	-- make renaming flexible: it either keeps old extention (BEGINNERS_MODE) or
-	-- allows to rename the whole filename including the extention
+	-- make renaming flexible: it either keeps old extension (BEGINNERS_MODE) or
+	-- allows to rename the whole filename including the extension
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"rename file",
 		function(self)
 			local oldname = self:FullFileName()
 			if oldname then
-				-- NuPogodi, 04.09.2012: safe mode (keep old extentions)
+				-- NuPogodi, 04.09.2012: safe mode (keep old extensions)
 				-- Tigran, 18/08/12: corrected the rename operation to include extension.)
-				local oldname = self:FullFileName()
 				local name_we = self.files[self.perpage*(self.page-1)+self.current-#self.dirs]
 				local ext = ""
 				if self.filemanager_expert_mode <= self.BEGINNERS_MODE then
@@ -592,11 +591,11 @@ function FileChooser:changeFileChooserMode()
 		--[[ TODO: to allow multiline-rendering for info messages & to include detailed description of the selected mode
 		local msg = "Press 'Y' to accept new mode..."
 		if m==self.BEGINNERS_MODE then
-			msg = "You have selected safe mode for beginners: the filemanager shows only files with the reader-related extentions (*.pdf, *.djvu, etc.); "..
-			"safe renaming (no extentions); unstable or dangerous functions are NOT included. "..msg
+			msg = "You have selected safe mode for beginners: the filemanager shows only files with the reader-related extensions (*.pdf, *.djvu, etc.); "..
+			"safe renaming (no extensions); unstable or dangerous functions are NOT included. "..msg
 		elseif m==self.ADVANCED_MODE then
 			msg = "You have selected advanced mode for experienced users: the filemanager shows all files; "..
-			"you may rename not only their names, but also the extentions; the files with unknown extentions would be sent to CREReader "..
+			"you may rename not only their names, but also the extensions; the files with unknown extensions would be sent to CREReader "..
 			"and could crash the reader. Please, use it in your own risk. "..msg
 		else -- ROOT_MODE
 			msg = "You have selected the most advanced and dangerous mode. I hope You know what you are doing. God bless You. "..msg

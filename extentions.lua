@@ -1,4 +1,4 @@
--- List of acceptable extentions
+-- List of acceptable extensions
 
 ext = {
 	djvuRead = ";djvu;",

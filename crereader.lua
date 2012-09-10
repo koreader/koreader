@@ -45,7 +45,7 @@ function CREReader:ZipContentExt(fname)
 			if i == 4 then s = lines break else i = i + 1 end
 		end
 	end
-	if s then -- return the extention
+	if s then -- return the extension
 		return string.lower(string.match(s, ".+%.([^.]+)") or "")
 	else
 		return nil
