@@ -546,7 +546,7 @@ int luaopen_cre(lua_State *L) {
 	/* initialize font manager for CREngine */
 	InitFontManager(lString8());
 
-	ldomDocCache::init(lString16("./cr3cache"), 100);
+	ldomDocCache::init(lString16("./cr3cache"), 1024 * 1024 * 64); // 64Mb on disk cache for DOM
 
 #ifdef DEBUG_CRENGINE
 	CRLog::setStdoutLogger();
