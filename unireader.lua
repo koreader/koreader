@@ -1609,7 +1609,52 @@ function UniReader:cleanUpTocTitle(title)
 end
 
 function UniReader:fillToc()
+	InfoMessage:show("Retrieving TOC...", 1)
 	self.toc = self.doc:getToc()
+	self.toc_children = {}
+	self.toc_xview = {}
+	self.toc_cview = {}
+	self.toc_curidx_to_x = {}
+
+	-- To combine the forest represented by the array of depths
+	-- (self.toc[].depth) into a single tree we introduce a virtual head
+	-- of depth=0 at position index=0 (The Great Parent)
+	local prev, prev_depth = 0, 0
+	self.toc_xview[0] = "_HEAD"
+
+	-- the parent[] array is only needed for the calculation of
+	-- self.toc_children[] arrays.
+	local parent = {}
+	for k,v in ipairs(self.toc) do
+		table.insert(self.toc_xview,
+			("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
+		if (v.depth > prev_depth) then --> k is a child of prev
+			if not self.toc_children[prev] then
+				self.toc_children[prev] = {}
+			end
+			table.insert(self.toc_children[prev], k)
+			parent[k] = prev
+			self.toc_xview[prev] = "+ "..self.toc_xview[prev]
+		elseif (v.depth == prev_depth) then --> k and prev are siblings
+			parent[k] = parent[prev]
+			table.insert(self.toc_children[parent[k]], k)
+		else --> k and prev must have a common (possibly virtual) ancestor
+			local par = parent[prev]
+			while (self.toc[par].depth > v.depth) do
+				par = parent[par]
+			end
+			parent[k] = parent[par]
+			table.insert(self.toc_children[parent[k]], k)
+		end
+		prev = k
+		prev_depth = self.toc[prev].depth
+	end -- for k,v in ipairs(self.toc)
+	if (self.toc_children[0]) then
+		self.toc_curidx_to_x = self.toc_children[0]
+		for i=1,#self.toc_children[0] do
+			table.insert(self.toc_cview, self.toc_xview[self.toc_children[0][i]])
+		end
+	end
 end
 
 -- getTocTitleByPage wrapper, so specific reader
@@ -1622,6 +1667,7 @@ function UniReader:_getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
 		self:fillToc()
+		self:redrawCurrentPage()
 	end
 
 	-- no table of content
@@ -1681,13 +1727,16 @@ function UniReader:findTOCpos()
 	for k,v in ipairs(self.toc) do
 		if v.page > self.pageno then
 			pos = k - 1
+			found_pos = true
 			break
 		end
 	end
 
-	if pos == 0 then
+	if not found_pos then
 		pos = #self.toc
 	end
+
+	found_pos = false
 
 	-- now map it to toc_cview[]
 	for k,v in ipairs(self.toc_curidx_to_x) do
@@ -1711,52 +1760,7 @@ end
 
 function UniReader:showToc()
 	if not self.toc then
-		InfoMessage:show("Retrieving TOC...", 1)
 		self:fillToc() -- fill self.toc(title,page,depth) from physical TOC
-		self.toc_children = {}
-		self.toc_xview = {}
-		self.toc_cview = {}
-		self.toc_curidx_to_x = {}
-
-		-- To combine the forest represented by the array of depths
-		-- (self.toc[].depth) into a single tree we introduce a virtual head
-		-- of depth=0 at position index=0 (The Great Parent)
-		local prev, prev_depth = 0, 0
-		self.toc_xview[0] = "_HEAD"
-
-		-- the parent[] array is only needed for the calculation of
-		-- self.toc_children[] arrays.
-		local parent = {}
-		for k,v in ipairs(self.toc) do
-			table.insert(self.toc_xview,
-				("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title))
-			if (v.depth > prev_depth) then --> k is a child of prev
-				if not self.toc_children[prev] then
-					self.toc_children[prev] = {}
-				end
-				table.insert(self.toc_children[prev], k)
-				parent[k] = prev
-				self.toc_xview[prev] = "+ "..self.toc_xview[prev]
-			elseif (v.depth == prev_depth) then --> k and prev are siblings
-				parent[k] = parent[prev]
-				table.insert(self.toc_children[parent[k]], k)
-			else --> k and prev must have a common (possibly virtual) ancestor
-				local par = parent[prev]
-				while (self.toc[par].depth > v.depth) do
-					par = parent[par]
-				end
-				parent[k] = parent[par]
-				table.insert(self.toc_children[parent[k]], k)
-			end
-			prev = k
-			prev_depth = self.toc[prev].depth
-		end -- for k,v in ipairs(self.toc)
-		if (self.toc_children[0]) then
-			self.toc_curidx_to_x = self.toc_children[0]
-			for i=1,#self.toc_children[0] do
-				table.insert(self.toc_cview, self.toc_xview[self.toc_children[0][i]])
-			end
-		end
 	end
 
 	if #self.toc == 0 then
