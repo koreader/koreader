@@ -601,23 +601,27 @@ function InputBox:ModeDependentCommands()
 		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "joypad center",
 			"calculate the result",
 			function(self)
-				local s = self:PrepareStringToCalc()
-				if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) then
-					f()
-					self:clearText()
-					self.cursor:clear()
-					for i=1, string.len(r) do
-						table.insert(self.charlist, string.sub(r,i,i))
-					end
-					self.charpos = #self.charlist + 1
-					self.input_string = r
-					self:refreshText()
-					self.cursor:moveHorizontal(#self.charlist*self.fwidth)
-					self.cursor:draw()
-					fb:refresh(1, self.input_start_x-5, self.input_start_y-25, self.input_slot_w, self.h-25)
+				if #self.input_string == 0 then
+					showInfoMsgWithDelay("No input ", 1000, 1)
 				else
-					showInfoMsgWithDelay("Wrong Input! ", 2000, 1)
-				end -- if pcall
+					local s = self:PrepareStringToCalc()
+					if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) then
+						f()
+						self:clearText()
+						self.cursor:clear()
+						for i=1, string.len(r) do
+							table.insert(self.charlist, string.sub(r,i,i))
+						end
+						self.charpos = #self.charlist + 1
+						self.input_string = r
+						self:refreshText()
+						self.cursor:moveHorizontal(#self.charlist*self.fwidth)
+						self.cursor:draw()
+						fb:refresh(1, self.input_start_x-5, self.input_start_y-25, self.input_slot_w, self.h-25)
+					else
+						showInfoMsgWithDelay("Invalid input ", 1000, 1)
+					end -- if pcall
+				end
 			end -- function
 			)
 		-- add the calculator help (short list of available functions)
