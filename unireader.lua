@@ -1605,8 +1605,7 @@ function UniReader:screenRotate(orien)
 end
 
 function UniReader:cleanUpTocTitle(title)
-	local s, _ = title:gsub("\13", "")
-	return s
+	return (title:gsub("\13", ""))
 end
 
 function UniReader:fillToc()
@@ -1727,15 +1726,12 @@ end
 function UniReader:expandAllTOCSubItems(xidx, item_no)
 	if string.find(self.toc_cview[item_no], "^+ ") then
 		for i=#self.toc_children[xidx],1,-1 do
-			table.insert(self.toc_cview, item_no+1,
-				self.toc_xview[self.toc_children[xidx][i]])
-			table.insert(self.toc_curidx_to_x, item_no+1,
-				self.toc_children[xidx][i])
+			table.insert(self.toc_cview, item_no+1, self.toc_xview[self.toc_children[xidx][i]])
+			table.insert(self.toc_curidx_to_x, item_no+1, self.toc_children[xidx][i])
 			self:expandAllTOCSubItems(self.toc_curidx_to_x[item_no+1], item_no+1)
 		end
 		self.toc_cview[item_no] = string.gsub(self.toc_cview[item_no], "^+ ", "- ", 1)
 	end
-
 end
 
 -- calculate the position as index into self.toc_cview[],
