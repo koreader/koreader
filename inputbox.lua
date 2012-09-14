@@ -556,11 +556,10 @@ function InputBox:showHelpPage(list, title)
 	HelpPage:show(0, fb.bb:getHeight()-165, list, title)
 	-- on the helppage-exit, making inactive helpage
 	fb.bb:dimRect(0, 40, fb.bb:getWidth(), fb.bb:getHeight()-205, self.input_bg)
-	fb:refresh(1, 0, 40, fb.bb:getWidth(), fb.bb:getHeight()-205)
 	-- and active input slot
 	self:refreshText()
 	self.cursor:draw() -- show cursor = ready to input
-	fb:refresh(1, self.input_start_x-5, self.ypos, self.input_slot_w, self.h)
+	fb:refresh(1)
 end
 
 function InputBox:setCalcMode()
@@ -601,23 +600,28 @@ function InputBox:ModeDependentCommands()
 		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "joypad center",
 			"calculate the result",
 			function(self)
-				local s = self:PrepareStringToCalc()
-				if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) then
-					f()
-					self:clearText()
-					self.cursor:clear()
-					for i=1, string.len(r) do
-						table.insert(self.charlist, string.sub(r,i,i))
-					end
-					self.charpos = #self.charlist + 1
-					self.input_string = r
-					self:refreshText()
-					self.cursor:moveHorizontal(#self.charlist*self.fwidth)
-					self.cursor:draw()
-					fb:refresh(1, self.input_start_x-5, self.input_start_y-25, self.input_slot_w, self.h-25)
+				if #self.input_string == 0 then
+					showInfoMsgWithDelay("No input ", 1000, 1)
 				else
-					showInfoMsgWithDelay("Wrong Input! ", 2000, 1)
-				end -- if pcall
+					local s = self:PrepareStringToCalc()
+					if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) then
+						f()
+						self:clearText()
+						self.cursor:clear()
+						for i=1, string.len(r) do
+							table.insert(self.charlist, string.sub(r,i,i))
+						end
+						self.charpos = #self.charlist + 1
+						self.input_cur_x = self.input_start_x + #self.charlist * self.fwidth
+						self.input_string = r
+						self:refreshText()
+						self.cursor:moveHorizontal(#self.charlist*self.fwidth)
+						self.cursor:draw()
+						fb:refresh(1, self.input_start_x-5, self.input_start_y-25, self.input_slot_w, self.h-25)
+					else
+						showInfoMsgWithDelay("Invalid input ", 1000, 1)
+					end -- if pcall
+				end
 			end -- function
 			)
 		-- add the calculator help (short list of available functions)
