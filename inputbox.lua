@@ -556,11 +556,10 @@ function InputBox:showHelpPage(list, title)
 	HelpPage:show(0, fb.bb:getHeight()-165, list, title)
 	-- on the helppage-exit, making inactive helpage
 	fb.bb:dimRect(0, 40, fb.bb:getWidth(), fb.bb:getHeight()-205, self.input_bg)
-	fb:refresh(1, 0, 40, fb.bb:getWidth(), fb.bb:getHeight()-205)
 	-- and active input slot
 	self:refreshText()
 	self.cursor:draw() -- show cursor = ready to input
-	fb:refresh(1, self.input_start_x-5, self.ypos, self.input_slot_w, self.h)
+	fb:refresh(1)
 end
 
 function InputBox:setCalcMode()
