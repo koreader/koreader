@@ -612,7 +612,7 @@ function InputBox:ModeDependentCommands()
 							table.insert(self.charlist, string.sub(r,i,i))
 						end
 						self.charpos = #self.charlist + 1
-						self.input_cur_x = self.input_start_x + (self.charpos-1)*self.fwidth
+						self.input_cur_x = self.input_start_x + #self.charlist * self.fwidth
 						self.input_string = r
 						self:refreshText()
 						self.cursor:moveHorizontal(#self.charlist*self.fwidth)
