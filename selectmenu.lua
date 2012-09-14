@@ -176,6 +176,13 @@ function SelectMenu:addAllCommands()
 				return "collapse"
 			end
 		)
+		self.commands:add(KEY_FW_RIGHT, MOD_SHIFT, "",
+			"expand all subitems",
+			function(sm)
+				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
+				return "expand all"
+			end
+		)
 	end
 	local KEY_Q_to_P = {}
 	for i = KEY_Q, KEY_P do 
@@ -341,7 +348,7 @@ function SelectMenu:choose(ypos, height)
 
 			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage))
 			if self.expandable then
-				footer = footer.." (Use Right/Left FW-selector keys to expand/collapse items)"
+				footer = footer.." (Right/Left to expand/collapse, Shift-Right to expand all subitems)"
 			elseif self.deletable then
 				footer = footer.." (Use Del key to delete item)"
 			end
@@ -395,6 +402,8 @@ function SelectMenu:choose(ypos, height)
 						return nil, self.selected_item
 					elseif ret_code == "collapse" then
 						return nil, -self.selected_item
+					elseif ret_code == "expand all" then
+						return nil, self.selected_item, "all"
 					end
 				elseif self.deletable and ret_code == "delete" then
 						return nil, self.selected_item
