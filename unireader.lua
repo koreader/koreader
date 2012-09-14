@@ -1723,6 +1723,21 @@ function UniReader:collapseTOCItem(xidx, item_no)
 	end
 end
 
+-- expand all subitems of a given TOC item to all levels, recursively
+function UniReader:expandAllTOCSubItems(xidx, item_no)
+	if string.find(self.toc_cview[item_no], "^+ ") then
+		for i=#self.toc_children[xidx],1,-1 do
+			table.insert(self.toc_cview, item_no+1,
+				self.toc_xview[self.toc_children[xidx][i]])
+			table.insert(self.toc_curidx_to_x, item_no+1,
+				self.toc_children[xidx][i])
+			self:expandAllTOCSubItems(self.toc_curidx_to_x[item_no+1], item_no+1)
+		end
+		self.toc_cview[item_no] = string.gsub(self.toc_cview[item_no], "^+ ", "- ", 1)
+	end
+
+end
+
 -- calculate the position as index into self.toc_cview[],
 -- corresponding to the current page.
 function UniReader:findTOCpos()
@@ -1776,14 +1791,13 @@ function UniReader:showToc()
 	self.toc_curitem = self:findTOCpos()
 
 	while true do
-		local ret_code = -1
 		toc_menu = SelectMenu:new{
 			menu_title = "Table of Contents (" .. tostring(#self.toc_cview) .. "/" .. tostring(#self.toc) .. " items)",
 			item_array = self.toc_cview,
 			current_entry = self.toc_curitem-1,
 			expandable = self.toc_expandable
 		}
-		ret_code, item_no = toc_menu:choose(0, fb.bb:getHeight())
+		local ret_code, item_no, all = toc_menu:choose(0, fb.bb:getHeight())
 		if ret_code then -- normal item selection
 			return self:gotoTocEntry(self.toc[self.toc_curidx_to_x[ret_code]])
 		elseif item_no then -- expand or collapse item
@@ -1791,7 +1805,11 @@ function UniReader:showToc()
 			local xidx = self.toc_curidx_to_x[abs_item_no]
 			if self.toc_children[xidx] then
 				if item_no > 0 then
-					self:expandTOCItem(xidx, item_no)
+					if not all then
+						self:expandTOCItem(xidx, item_no)
+					else
+						self:expandAllTOCSubItems(xidx, item_no)
+					end
 				else
 					self:collapseTOCItem(xidx, abs_item_no)
 				end
