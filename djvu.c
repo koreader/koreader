@@ -78,9 +78,9 @@ static int openDocument(lua_State *L) {
 	luaL_getmetatable(L, "djvudocument");
 	lua_setmetatable(L, -2);
 
-	doc->context = ddjvu_context_create("DJVUReader");
+	doc->context = ddjvu_context_create("kindlepdfviewer");
 	if (! doc->context) {
-		return luaL_error(L, "cannot create context.");
+		return luaL_error(L, "cannot create context");
 	}
 
 	printf("## cache_size = %d\n", cache_size);
@@ -90,12 +90,12 @@ static int openDocument(lua_State *L) {
 	while (! ddjvu_document_decoding_done(doc->doc_ref))
 		handle(L, doc->context, True);
 	if (! doc->doc_ref) {
-		return luaL_error(L, "cannot open DJVU file <%s>", filename);
+		return luaL_error(L, "cannot open DjVu file <%s>", filename);
 	}
 
 	doc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
 	if (! doc->pixelformat) {
-		return luaL_error(L, "cannot create DJVU pixelformat for <%s>", filename);
+		return luaL_error(L, "cannot create DjVu pixelformat for <%s>", filename);
 	}
 	ddjvu_format_set_row_order(doc->pixelformat, 1);
 	ddjvu_format_set_y_direction(doc->pixelformat, 1);
