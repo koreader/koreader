@@ -604,8 +604,7 @@ function InputBox:ModeDependentCommands()
 					showInfoMsgWithDelay("No input ", 1000, 1)
 				else
 					local s = self:PrepareStringToCalc()
-					if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) then
-						f()
+					if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) and pcall(f) then
 						self:clearText()
 						self.cursor:clear()
 						for i=1, string.len(r) do
