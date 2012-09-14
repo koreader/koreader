@@ -92,6 +92,7 @@ UniReader = {
 	bookmarks = {},
 	highlight = {},
 	toc = nil,
+	toc_expandable = false, -- if true then TOC contains expandable/collapsible items
 	toc_children = nil, -- each element is the list of children for each TOC node (nil if none)
 	toc_curitem = 0, -- points to the current location in TOC
 	toc_xview = nil, -- fully expanded (and marked with '+') view of TOC
@@ -1610,6 +1611,7 @@ end
 
 function UniReader:fillToc()
 	InfoMessage:show("Retrieving TOC...", 1)
+	self.toc_expandable = false
 	self.toc = self.doc:getToc()
 	self.toc_children = {}
 	self.toc_xview = {}
@@ -1635,6 +1637,9 @@ function UniReader:fillToc()
 			table.insert(self.toc_children[prev], k)
 			parent[k] = prev
 			self.toc_xview[prev] = "+ "..self.toc_xview[prev]
+			if prev > 0 then
+				self.toc_expandable = true
+			end
 		elseif (v.depth == prev_depth) then --> k and prev are siblings
 			parent[k] = parent[prev]
 			table.insert(self.toc_children[parent[k]], k)
@@ -1776,7 +1781,7 @@ function UniReader:showToc()
 			menu_title = "Table of Contents (" .. tostring(#self.toc_cview) .. "/" .. tostring(#self.toc) .. " items)",
 			item_array = self.toc_cview,
 			current_entry = self.toc_curitem-1,
-			expandable = true
+			expandable = self.toc_expandable
 		}
 		ret_code, item_no = toc_menu:choose(0, fb.bb:getHeight())
 		if ret_code then -- normal item selection
@@ -2112,6 +2117,7 @@ function UniReader:inputLoop()
 	-- do clean up stuff
 	self:clearCache()
 	self.toc = nil
+	self.toc_expandable = false
 	self.toc_children = nil
 	self.toc_curitem = 0
 	self.toc_xview = nil
