@@ -219,7 +219,7 @@ function FileSearcher:addAllCommands()
 		function(self)
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
-			InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+			InfoMessage:show("Press \'Y\' to confirm... ",0)
 			while true do
 				ev = input.saveWaitForEvent()
 				ev.code = adjustKeyEvents(ev)
