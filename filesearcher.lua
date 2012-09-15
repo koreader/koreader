@@ -64,7 +64,7 @@ function FileSearcher:setSearchResult(keywords)
 		self.result = self.files
 	else
 		for __,f in pairs(self.files) do
-			if string.find(string.lower(f.name), keywords) then
+			if string.find(string.lower(f.name), string.lower(keywords)) then
 				table.insert(self.result, f)
 			end
 		end
