@@ -1744,7 +1744,7 @@ function UniReader:findTOCpos()
 
 	-- find the index into toc_xview first
 	for k,v in ipairs(self.toc) do
-		if v.page >= 1 and v.page <= self.doc:getPages() and v.page > self.pageno then
+		if v.page >= 1 and v.page <= numpages and v.page > self.pageno then
 			pos = k - 1
 			found_pos = true
 			break
