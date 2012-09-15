@@ -275,7 +275,7 @@ function FileSearcher:choose(keywords)
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 
 			-- draw menu title
-			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'",self.margin_H,0,self.title_H,3,tface)
+			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'".." ("..tostring(self.items).." hits)",self.margin_H,0,self.title_H,3,tface)
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found
