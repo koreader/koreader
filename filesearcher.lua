@@ -64,7 +64,7 @@ function FileSearcher:setSearchResult(keywords)
 		self.result = self.files
 	else
 		for __,f in pairs(self.files) do
-			if string.find(string.lower(f.name), keywords) then
+			if string.find(string.lower(f.name), string.lower(keywords)) then
 				table.insert(self.result, f)
 			end
 		end
@@ -219,7 +219,7 @@ function FileSearcher:addAllCommands()
 		function(self)
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
-			InfoMessage:show("Press \'Y\' to confirm deleting... ",0)
+			InfoMessage:show("Press \'Y\' to confirm... ",0)
 			while true do
 				ev = input.saveWaitForEvent()
 				ev.code = adjustKeyEvents(ev)
@@ -275,7 +275,7 @@ function FileSearcher:choose(keywords)
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 
 			-- draw menu title
-			DrawTitle("Search Results for \'"..string.upper(self.keywords).."\'",self.margin_H,0,self.title_H,3,tface)
+			DrawTitle("Search Results for \'"..self.keywords.."\'".." ("..tostring(self.items).." hits)",self.margin_H,0,self.title_H,3,tface)
 			-- draw results
 			local c
 			if self.items == 0 then -- nothing found

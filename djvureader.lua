@@ -47,9 +47,7 @@ function DJVUReader:select_render_mode()
 	local mode = mode_menu:choose(0, fb.bb:getHeight()) 
 	if mode then
 		self.render_mode = mode - 1
-		Debug("select_render_mode(), render_mode=", self.render_mode)
 		self:clearCache()
-		self.doc:cleanCache()
 	end
 	self:redrawCurrentPage()
 end
