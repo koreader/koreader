@@ -90,7 +90,7 @@ LUALIB := $(LUADIR)/src/libluajit.a
 all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP) \
+	$(CC) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -109,7 +109,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
-		-o kpdfview
+		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
