@@ -26,7 +26,7 @@ Follow these steps:
 
 	* automatically fetch thirdparty sources with Makefile:
 		* make sure you have wget, unzip and git installed
-		* run "make fetchthirdparty".
+		* run `make fetchthirdparty`.
 
 * adapt Makefile to your needs
 
@@ -68,17 +68,18 @@ To build in "emulation mode", you need to run make like this:
 
 And run the emulator like this:
 ```
-	./reader.lua /PATH/TO/PDF.pdf
+./reader.lua /PATH/TO/PDF.pdf
 ```
+
 or:
 ```
-	./reader.lua /ANY/PATH
+./reader.lua /ANY/PATH
 ```
 
 By default emulation will provide DXG resolution of 824*1200. It can be
 specified at compile time, this is example for Kindle 3:
 
 ```
-	EMULATE_READER_W=600 EMULATE_READER_H=800 EMULATE_READER=1 make kpdfview
+EMULATE_READER_W=600 EMULATE_READER_H=800 EMULATE_READER=1 make kpdfview
 ```
 
