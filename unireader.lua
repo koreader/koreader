@@ -1483,8 +1483,6 @@ end
 -- change current page and cache next page after rendering
 function UniReader:goto(no, is_ignore_jump)
 	if no < 1 or no > self.doc:getPages() then
-		-- may be reached by following TOC entry pointing to external file.
-		self:redrawCurrentPage()
 		return
 	end
 
@@ -1740,10 +1738,11 @@ end
 -- corresponding to the current page.
 function UniReader:findTOCpos()
 	local pos, found_pos = 0, false
+	local numpages = self.doc:getPages()
 
 	-- find the index into toc_xview first
 	for k,v in ipairs(self.toc) do
-		if v.page > self.pageno then
+		if v.page >= 1 and v.page <= numpages and v.page > self.pageno then
 			pos = k - 1
 			found_pos = true
 			break
@@ -1797,7 +1796,14 @@ function UniReader:showToc()
 		}
 		local ret_code, item_no, all = toc_menu:choose(0, fb.bb:getHeight())
 		if ret_code then -- normal item selection
-			return self:gotoTocEntry(self.toc[self.toc_curidx_to_x[ret_code]])
+			-- check to make sure the destination is local
+			local pagenum = self.toc[self.toc_curidx_to_x[ret_code]].page
+			if pagenum < 1 or pagenum > self.doc:getPages() then
+				showInfoMsgWithDelay("External links unsupported", 1500, 1)
+				self.toc_curitem = ret_code
+			else
+				return self:goto(pagenum)
+			end
 		elseif item_no then -- expand or collapse item
 			local abs_item_no = math.abs(item_no)
 			local xidx = self.toc_curidx_to_x[abs_item_no]
