@@ -15,25 +15,25 @@ Building
 
 Follow these steps:
 
-- fetch thirdparty sources
-	- manually fetch all the thirdparty sources:
-		- install muPDF sources into subfolder "mupdf"
-		- install muPDF third-party sources (see muPDF homepage) into a new
+* fetch thirdparty sources
+	* manually fetch all the thirdparty sources:
+		* install muPDF sources into subfolder "mupdf"
+		* install muPDF third-party sources (see muPDF homepage) into a new
 		subfolder "mupdf/thirdparty"
-		- install libDjvuLibre sources into subfolder "djvulibre"
-		- install CREngine sources into subfolder "kpvcrlib/crengine"
-		- install LuaJit sources into subfolder "luajit-2.0"
+		* install libDjvuLibre sources into subfolder "djvulibre"
+		* install CREngine sources into subfolder "kpvcrlib/crengine"
+		* install LuaJit sources into subfolder "luajit-2.0"
 
-	- automatically fetch thirdparty sources with Makefile:
-		- make sure you have wget, unzip and git installed
-		- run "make fetchthirdparty".
+	* automatically fetch thirdparty sources with Makefile:
+		* make sure you have wget, unzip and git installed
+		* run `make fetchthirdparty`.
 
-- adapt Makefile to your needs
+* adapt Makefile to your needs
 
-- run "make thirdparty". This will build MuPDF (plus the libraries it depends
+* run `make thirdparty`. This will build MuPDF (plus the libraries it depends
   on), libDjvuLibre, CREngine and Lua.
 
-- run "make". This will build the kpdfview application
+* run `make`. This will build the kpdfview application
 
 
 Running
@@ -67,12 +67,19 @@ To build in "emulation mode", you need to run make like this:
 	EMULATE_READER=1 make thirdparty kpdfview
 
 And run the emulator like this:
-	./reader.lua /PATH/TO/PDF.pdf
+```
+./reader.lua /PATH/TO/PDF.pdf
+```
+
 or:
-	./reader.lua /ANY/PATH
+```
+./reader.lua /ANY/PATH
+```
 
 By default emulation will provide DXG resolution of 824*1200. It can be
 specified at compile time, this is example for Kindle 3:
 
-	EMULATE_READER_W=600 EMULATE_READER_H=800 EMULATE_READER=1 make kpdfview
+```
+EMULATE_READER_W=600 EMULATE_READER_H=800 EMULATE_READER=1 make kpdfview
+```
 
