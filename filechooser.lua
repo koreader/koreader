@@ -57,7 +57,7 @@ end
 function BatteryLevel()
 	local fn, battery = "/tmp/kindle-battery-info", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
-	os.execute("gasgauge-info -s > "..fn)
+	os.execute("gasgauge-info -s 2> /dev/null > "..fn)
 	if io.open(fn,"r") then
 		for lines in io.lines(fn) do battery = " " .. lines end
 	else
