@@ -211,6 +211,8 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
+LUA_FILES=reader.lua
+
 VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
@@ -219,7 +221,7 @@ customupdate: all
 	-rm kindlepdfviewer-$(VERSION).zip
 	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -p README.md COPYING kpdfview $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
