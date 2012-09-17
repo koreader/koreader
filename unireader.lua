@@ -1610,7 +1610,6 @@ end
 
 function UniReader:fillToc()
 	InfoMessage:show("Retrieving TOC...", 1)
-	self.toc_expandable = false
 	self.toc = self.doc:getToc()
 	self.toc_children = {}
 	self.toc_xview = {}
@@ -2145,7 +2144,6 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
-	self.toc_xidx_to_cur = nil
 	if self.doc ~= nil then
 		self.doc:close()
 	end
