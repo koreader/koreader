@@ -8,7 +8,7 @@ DJVUDIR=djvulibre
 KPVCRLIBDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.9
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
 LFSDIR=luafilesystem
 
 # must point to directory with *.ttf fonts for crengine
@@ -90,7 +90,7 @@ LUALIB := $(LUADIR)/src/libluajit.a
 all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
-	$(CC) -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP) \
+	$(CC) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -109,7 +109,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
-		-o kpdfview
+		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
 slider_watcher: slider_watcher.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -211,6 +211,8 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
+LUA_FILES=reader.lua
+
 VERSION?=$(shell git rev-parse --short HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
@@ -219,7 +221,7 @@ customupdate: all
 	-rm kindlepdfviewer-$(VERSION).zip
 	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
-	cp -p README.TXT COPYING kpdfview *.lua $(INSTALL_DIR)
+	cp -p README.md COPYING kpdfview $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
