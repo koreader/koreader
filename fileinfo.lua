@@ -30,6 +30,15 @@ function FileInfo:FileSize(size)
 	end
 end
 
+function getUnpackedZipSize(zipfile)
+	local cmd='unzip -l '..zipfile..' | tail -1 | sed -e "s/^ *\\([0-9][0-9]*\\) *.*/\\1/"'
+	local p = assert(io.popen(cmd, "r"))
+	local res = assert(p:read("*a"))
+	p:close()
+	res = string.gsub(res, "[\n\r]+", "")
+	return tonumber(res)
+end
+
 function FileInfo:init(path, fname)
 	self.pathfile = path.."/"..fname
 	self.result = {}
@@ -45,25 +54,16 @@ function FileInfo:init(path, fname)
 
 	info_entry = {dir = "Size", name = FileInfo:FileSize(lfs.attributes(self.pathfile, "size"))}
 	table.insert(self.result, info_entry)
-	-- size & filename of unzipped entry for zips 
-	if string.lower(string.match(fname, ".+%.([^.]+)")) == "zip" then
-		local outfile = "./data/zip_content"
-		local l, s = 1
-		os.execute("unzip -l \""..self.pathfile.."\" > "..outfile)
-		if io.open(outfile, "r") then
-			for lines in io.lines(outfile) do 
-				if l == 4 then s = lines break else l = l + 1 end
-			end
-			if s then
-				info_entry = { dir = "Unpacked", name = FileInfo:FileSize(tonumber(string.sub(s,1,11))) }
-				table.insert(self.result, info_entry)
-			end
-			--[[ TODO: When the fileentry inside zips is encoded as ANSI (codes 128-255)
-			any attempt to print such fileentry causes crash by drawing!!! When fileentries
-			are encoded as UTF8, everything seems fine
-			info_entry = { dir = "Content", name = string.sub(s,29,-1) }
-			table.insert(self.result, info_entry) ]]
-		end
+	-- total size of all unzipped entries for zips 
+	local match = string.match(fname, ".+%.([^.]+)")
+	if match and string.lower(match) == "zip" then
+		info_entry = {dir = "Unpacked", name = FileInfo:FileSize(getUnpackedZipSize(self.pathfile))}
+		table.insert(self.result, info_entry)
+		--[[ TODO: When the fileentry inside zips is encoded as ANSI (codes 128-255)
+		any attempt to print such fileentry causes crash by drawing!!! When fileentries
+		are encoded as UTF8, everything seems fine
+		info_entry = { dir = "Content", name = string.sub(s,29,-1) }
+		table.insert(self.result, info_entry) ]]
 	end
 
 	info_entry = {dir = "Created", name = FileInfo:FileCreated(self.pathfile, "change")}
