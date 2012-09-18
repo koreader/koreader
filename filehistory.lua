@@ -217,7 +217,7 @@ function FileHistory:addAllCommands()
 		function(self)
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
-			os.execute("rm \""..DocToHistory(file_to_del).."\"")
+			os.remove(DocToHistory(file_to_del))
 			-- to avoid showing just deleted file
 			self:init()
 			self:setSearchResult(self.keywords)
