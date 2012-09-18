@@ -5,8 +5,8 @@ MUPDFDIR=mupdf
 MUPDFTARGET=build/debug
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
-KPVCRLIGDIR=kpvcrlib
-CRENGINEDIR=$(KPVCRLIGDIR)/crengine
+KPVCRLIBDIR=kpvcrlib
+CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
 LFSDIR=luafilesystem
@@ -163,7 +163,7 @@ cleanthirdparty:
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
 	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
 	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
-	test -d $(KPVCRLIGDIR) && (make -C $(KPVCRLIGDIR) clean) || echo warn: chmlib folder not found
+	test -d $(KPVCRLIBDIR) && (make -C $(KPVCRLIBDIR) clean) || echo warn: chmlib folder not found
 	-rm -rf $(DJVUDIR)/build
 	-rm -f $(MUPDFDIR)/fontdump.host
 	-rm -f $(MUPDFDIR)/cmapdump.host
@@ -192,7 +192,7 @@ endif
 	make -C $(DJVUDIR)/build
 
 $(CRENGINELIBS):
-	cd $(KPVCRLIGDIR) && rm -rf CMakeCache.txt CMakeFiles && \
+	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
 		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
 		make
 
