@@ -11,7 +11,7 @@ end
 
 function DocumentRegistry:getProvider(file)
 	-- TODO: some implementation based on mime types?
-	local extension = string.lower(string.match(file, ".+%.([^.]+)"))
+	local extension = string.lower(string.match(file, ".+%.([^.]+)") or "")
 	for _, provider in ipairs(self.providers) do
 		if extension == provider.extension then
 			return provider.provider
