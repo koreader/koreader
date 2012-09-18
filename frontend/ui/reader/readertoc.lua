@@ -8,7 +8,7 @@ ReaderToc = InputContainer:new{
 }
 
 function ReaderToc:cleanUpTocTitle(title)
-	return title:gsub("\13", "")
+	return (title:gsub("\13", ""))
 end
 
 function ReaderToc:onSetDimensions(dimen)
