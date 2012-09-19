@@ -1958,7 +1958,6 @@ function UniReader:showHighLight()
 			if #self.highlight[hpage] == 0 then
 				table.remove(self.highlight, hpage)
 			end
-			table.remove(highlight_page, item_no)
 			table.remove(menu_items, item_no)
 			if #menu_items == 0 then
 				return self:redrawCurrentPage()
