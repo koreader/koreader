@@ -55,15 +55,12 @@ function getProperTitleLength(txt,font_face,max_width)
 end
 
 function BatteryLevel()
-	local fn, battery = "/tmp/kindle-battery-info", "?"
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
-	os.execute("gasgauge-info -s 2> /dev/null > "..fn)
-	if io.open(fn,"r") then
-		for lines in io.lines(fn) do battery = " " .. lines end
-	else
-		battery = ""
-	end
-	return battery
+	local cmd="gasgauge-info -s 2> /dev/null"
+	local p = assert(io.popen(cmd, "r"))
+	local battery = assert(p:read("*a"))
+	p:close()
+	return string.gsub(battery, "[\n\r]+", "")
 end
 
 function DrawTitle(text,lmargin,y,height,color,font_face)

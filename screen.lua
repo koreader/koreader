@@ -67,7 +67,7 @@ function Screen:screenRotate(orien)
 end
 
 function Screen:updateRotationMode()
-	if KEY_FW_DOWN == 116 then -- in EMU mode always set to 0
+	if util.isEmulated() == 1 then -- in EMU mode always set to 0
 		self.cur_rotation_mode = 0
 	else
 		orie_fd = assert(io.open("/sys/module/eink_fb_hal_broads/parameters/bs_orientation", "r"))
