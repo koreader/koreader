@@ -699,10 +699,10 @@ function UniReader:startHighLightMode()
 							and t[l.cur][w.cur].y1 <= line_item.y1
 							and t[l.cur][w.cur].x0 >= line_item.x0
 							and t[l.cur][w.cur].x1 <= line_item.x1 then
-								self.highlight[self.pageno][k] = nil
+								table.remove(self.highlight[self.pageno],k)
 								-- remove page entry if empty
 								if #self.highlight[self.pageno] == 0 then
-									self.highlight[self.pageno] = nil
+									table.remove(self.highlight, self.pageno)
 								end
 								return
 							end
@@ -1440,6 +1440,7 @@ function UniReader:addJump(pageno)
 	end
 	table.insert(self.jump_history, jump_item)
 	self.jump_history.cur = #self.jump_history + 1
+	self:redrawCurrentPage()
 	return true
 end
 
@@ -1477,6 +1478,7 @@ function UniReader:addBookmark(pageno)
 	table.sort(self.bookmarks, function(a,b)
 		return self:isBookmarkInSequence(a, b)
 	end)
+	self:redrawCurrentPage()
 	return true
 end
 
@@ -1670,7 +1672,6 @@ function UniReader:_getTocTitleByPage(pageno)
 	if not self.toc then
 		-- build toc when needed.
 		self:fillToc()
-		self:redrawCurrentPage()
 	end
 
 	-- no table of content
@@ -1679,11 +1680,12 @@ function UniReader:_getTocTitleByPage(pageno)
 	end
 
 	local pre_entry = self.toc[1]
-	for _k,_v in ipairs(self.toc) do
-		if _v.page > pageno then
+	local numpages = self.doc:getPages()
+	for k,v in ipairs(self.toc) do
+		if v.page >= 1 and v.page <= numpages and v.page > pageno then
 			break
 		end
-		pre_entry = _v
+		pre_entry = v
 	end
 	return self:cleanUpTocTitle(pre_entry.title)
 end
@@ -1878,7 +1880,7 @@ function UniReader:showBookMarks()
 	end
 	while true do
 		bm_menu = SelectMenu:new{
-			menu_title = "Bookmarks",
+			menu_title = "Bookmarks ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
 			deletable = true,
 		}
@@ -1922,30 +1924,47 @@ function UniReader:prevBookMarkedPage()
 end
 
 function UniReader:showHighLight()
-	local menu_items = {}
-	local highlight_dict = {}
+	local menu_items, highlight_page, highlight_num = {}, {}, {}
+	local ret_code, item_no = -1, -1
+
 	-- build menu items
 	for k,v in pairs(self.highlight) do
 		if type(k) == "number" then
 			for k1,v1 in ipairs(v) do
 				table.insert(menu_items, v1.text)
-				table.insert(highlight_dict, {page=k, start=v1[1]})
+				table.insert(highlight_page, k)
+				table.insert(highlight_num, k1)
 			end
 		end
 	end
+
 	if #menu_items == 0 then
-		showInfoMsgWithDelay(
-			"No HighLights found.", 2000, 1)
-	else
-		toc_menu = SelectMenu:new{
-			menu_title = "HighLights",
+		return showInfoMsgWithDelay("No HighLights found", 1000, 1)
+	end
+
+	while true do
+		hl_menu = SelectMenu:new{
+			menu_title = "HighLights ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
+			deletable = true,
 		}
-		item_no = toc_menu:choose(0, fb.bb:getHeight())
-		if item_no then
-			self:goto(highlight_dict[item_no].page)
+		ret_code, item_no = hl_menu:choose(0, fb.bb:getHeight())
+		if ret_code then
+			return self:goto(highlight_page[ret_code])
+		elseif item_no then -- delete item
+			local hpage = highlight_page[item_no]
+			local hnum = highlight_num[item_no]
+			table.remove(self.highlight[hpage], hnum)
+			if #self.highlight[hpage] == 0 then
+				table.remove(self.highlight, hpage)
+			end
+			table.remove(highlight_page, item_no)
+			table.remove(menu_items, item_no)
+			if #menu_items == 0 then
+				return self:redrawCurrentPage()
+			end
 		else
-			self:redrawCurrentPage()
+			return self:redrawCurrentPage()
 		end
 	end
 end
@@ -2808,14 +2827,14 @@ function UniReader:addAllCommands()
 
 	-- highlight mode
 	self.commands:add(KEY_N, nil, "N",
-		"start highlight mode",
+		"enter highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
 			unireader:goto(unireader.pageno)
 		end
 	)
 	self.commands:add(KEY_N, MOD_SHIFT, "N",
-		"display all highlights",
+		"show all highlights",
 		function(unireader)
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
