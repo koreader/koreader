@@ -199,6 +199,10 @@ function FileHistory:addAllCommands()
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
 		"open selected item",
 		function(self)
+			if #self.result == 0 then
+				showInfoMsgWithDelay("No files to open", 1500, 1)
+				return
+			end
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			file_full_path = file_entry.dir .. "/" .. file_entry.name
 
