@@ -532,7 +532,7 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add(KEY_HOME, nil, "Back",
+	self.commands:add(KEY_HOME, nil, "Home",
 		"exit",
 		function(self)
 			return "break"
