@@ -970,7 +970,7 @@ function UniReader:loadSettings(filename)
 		if self.highlight.to_fix ~= nil then
 			for _,fix_item in ipairs(self.highlight.to_fix) do
 				if fix_item == "djvu invert y axle" then
-					InfoMessage:show("Updating HighLight data...", 1)
+					Debug("Updating HighLight data...")
 					for pageno,text_table in pairs(self.highlight) do
 						if type(pageno) == "number" then
 							text_table = self:invertTextYAxel(pageno, text_table)
