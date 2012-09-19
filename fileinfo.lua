@@ -23,10 +23,15 @@ function FileInfo:FileCreated(fname, attr)
 	return os.date("%d %b %Y, %H:%M:%S", lfs.attributes(fname,attr))
 end
 
-function FileInfo:FileSize(size)
-	if size < 1024 then		return size.." Bytes"
-	elseif size < 2^20 then	return string.format("%.2f", size/2^10).."KB ("..size.." Bytes)"
-	else				return string.format("%.2f", size/2^20).."MB ("..size.." Bytes)"
+function FileInfo:FormatSize(size)
+	if size < 1024 then
+		return size.." Bytes"
+	elseif size < 2^20 then
+		return string.format("%.2f", size/2^10).."KB ("..size.." Bytes)"
+	elseif size < 2^30 then
+		return string.format("%.2f", size/2^20).."MB ("..size.." Bytes)"
+	else
+		return string.format("%.2f", size/2^30).."GB ("..size.." Bytes)"
 	end
 end
 
@@ -52,12 +57,12 @@ function FileInfo:init(path, fname)
 	info_entry = {dir = "Path", name = path}
 	table.insert(self.result, info_entry)
 
-	info_entry = {dir = "Size", name = FileInfo:FileSize(lfs.attributes(self.pathfile, "size"))}
+	info_entry = {dir = "Size", name = FileInfo:FormatSize(lfs.attributes(self.pathfile, "size"))}
 	table.insert(self.result, info_entry)
 	-- total size of all unzipped entries for zips 
 	local match = string.match(fname, ".+%.([^.]+)")
 	if match and string.lower(match) == "zip" then
-		info_entry = {dir = "Unpacked", name = FileInfo:FileSize(getUnpackedZipSize(self.pathfile))}
+		info_entry = {dir = "Unpacked", name = FileInfo:FormatSize(getUnpackedZipSize(self.pathfile))}
 		table.insert(self.result, info_entry)
 		--[[ TODO: When the fileentry inside zips is encoded as ANSI (codes 128-255)
 		any attempt to print such fileentry causes crash by drawing!!! When fileentries
@@ -66,6 +71,8 @@ function FileInfo:init(path, fname)
 		table.insert(self.result, info_entry) ]]
 	end
 
+	info_entry = {dir = "Free space", name = FileInfo:FormatSize(util.df("."))}
+	table.insert(self.result, info_entry)
 	info_entry = {dir = "Created", name = FileInfo:FileCreated(self.pathfile, "change")}
 	table.insert(self.result, info_entry)
 	info_entry = {dir = "Modified", name = FileInfo:FileCreated(self.pathfile, "modification")}
