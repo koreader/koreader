@@ -17,6 +17,7 @@
 */
 
 #include <sys/time.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 
 #include "util.h"
@@ -41,10 +42,18 @@ static int util_usleep(lua_State *L) {
 	return 0;
 }
 
+static int util_df(lua_State *L) {
+	char *path = luaL_checkstring(L, 1);
+	struct statvfs vfs;
+	statvfs(path, &vfs);
+	lua_pushnumber(L, (double)vfs.f_bfree * (double)vfs.f_bsize);
+	return 1;
+}
+
 /* Turn UTF-8 char code to Unicode */
 static int utf8charcode(lua_State *L) {
 	size_t len;
-	const char* utf8char = luaL_checklstring(L, 1, &len);
+	const char *utf8char = luaL_checklstring(L, 1, &len);
 	int c;
 	if(len == 1) {
 		c = utf8char[0] & 0x7F; /* should not be needed */
@@ -75,6 +84,7 @@ static const struct luaL_Reg util_func[] = {
 	{"usleep", util_usleep},
 	{"utf8charcode", utf8charcode},
 	{"isEmulated", isEmulated},
+	{"df", util_df},
 	{NULL, NULL}
 };
 
