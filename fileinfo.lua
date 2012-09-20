@@ -73,19 +73,21 @@ function FileInfo:init(path, fname)
 
 	info_entry = {dir = "Free space", name = FileInfo:FormatSize(util.df("."))}
 	table.insert(self.result, info_entry)
-	info_entry = {dir = "Created", name = FileInfo:FileCreated(self.pathfile, "change")}
+	info_entry = {dir = "Status changed", name = FileInfo:FileCreated(self.pathfile, "change")}
 	table.insert(self.result, info_entry)
 	info_entry = {dir = "Modified", name = FileInfo:FileCreated(self.pathfile, "modification")}
+	table.insert(self.result, info_entry)
+	info_entry = {dir = "Accessed", name = FileInfo:FileCreated(self.pathfile, "access")}
 	table.insert(self.result, info_entry)
 
 	-- if the document was already opened
 	local history = DocToHistory(self.pathfile)
 	local file, msg = io.open(history, "r")
 	if not file then 
-		info_entry = {dir = "Last Read", name = "Never"}
+		info_entry = {dir = "Last read", name = "Never"}
 		table.insert(self.result, info_entry)
 	else
-		info_entry = {dir = "Last Read", name = FileInfo:FileCreated(history, "change")}
+		info_entry = {dir = "Last read", name = FileInfo:FileCreated(history, "change")}
 		table.insert(self.result, info_entry)
 		local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
 		local to_search, add, factor = "[\"last_percent\"]", "%", 100
