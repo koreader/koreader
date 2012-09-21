@@ -2062,6 +2062,11 @@ function UniReader:searchHighLight(search)
 end
 
 
+function UniReader:getPageLinks(pageno)
+	Debug("getPageLinks not supported in this format")
+	return nil
+end
+
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
@@ -2853,6 +2858,13 @@ function UniReader:addAllCommands()
 			else
 				unireader:goto(unireader.pageno)
 			end
+		end
+	)
+	self.commands:add(KEY_L, MOD_SHIFT, "L",
+		"page links",
+		function(unireader)
+			Debug("unireader", unireader)
+			unireader:getPageLinks( unireader.pageno )
 		end
 	)
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",

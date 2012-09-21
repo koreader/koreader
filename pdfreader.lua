@@ -45,3 +45,16 @@ function PDFReader:getText(pageno)
 	page:close()
 	return text
 end
+
+function PDFReader:getPageLinks(pageno)
+	local ok, page = pcall(self.doc.openPage, self.doc, pageno)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
+	local links = page:getPageLinks()
+	Debug("## page:getPageLinks ", links)
+	page:close()
+	return links
+end
+
