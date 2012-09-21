@@ -361,16 +361,16 @@ function FileChooser:addAllCommands()
 			local pos = self.perpage*(self.page-1)+self.current
 			local folder = self.dirs[pos]
 			if folder == ".." then
-				showInfoMsgWithDelay(".. cannot be deleted! ",2000,1)
+				showInfoMsgWithDelay(".. cannot be deleted! ",1500,1)
 			elseif folder then
 				InfoMessage:show("Press \'Y\' to confirm",0)
 				if self:ReturnKey() == KEY_Y then
 					if lfs.rmdir(self.path.."/"..folder) then
 						table.remove(self.dirs, offset)
 						self.items = self.items - 1
-						self.current = self.current - 1
+						self:setPath(self.path)
 					else
-						showInfoMsgWithDelay("Cannot be deleted!",2000,1)
+						showInfoMsgWithDelay("Cannot be deleted!",1500,1)
 					end
 				end
 			else
