@@ -492,9 +492,9 @@ static int getUsedBBox(lua_State *L) {
 		return luaL_error(L, "cannot calculate bbox for page");
 	}
 
-       	lua_pushnumber(L, ((double)result.x0)/100);
+	lua_pushnumber(L, ((double)result.x0)/100);
 	lua_pushnumber(L, ((double)result.y0)/100);
-       	lua_pushnumber(L, ((double)result.x1)/100);
+	lua_pushnumber(L, ((double)result.x1)/100);
 	lua_pushnumber(L, ((double)result.y1)/100);
 
 	return 4;
