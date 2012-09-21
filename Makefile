@@ -217,6 +217,7 @@ customupdate: all
 	-rm kindlepdfviewer-$(VERSION).zip
 	rm -Rf $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)
+	echo $(VERSION) > $(INSTALL_DIR)/git-rev
 	cp -p README.md COPYING kpdfview $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
