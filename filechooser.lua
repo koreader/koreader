@@ -367,7 +367,6 @@ function FileChooser:addAllCommands()
 				if self:ReturnKey() == KEY_Y then
 					if lfs.rmdir(self.path.."/"..folder) then
 						table.remove(self.dirs, offset)
-						self.items = self.items - 1
 						self:setPath(self.path)
 					else
 						showInfoMsgWithDelay("Cannot be deleted!",1500,1)
