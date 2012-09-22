@@ -82,7 +82,7 @@ end
 function SelectMenu:addAllCommands()
 	self.commands = Commands:new{}
 
-	self.commands:add(KEY_FW_UP, nil, "",
+	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"previous item",
 		function(sm)
 			if sm.current == 1 then
@@ -97,7 +97,7 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_FW_DOWN, nil, "",
+	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
 		"next item",
 		function(sm)
 			if sm.current == sm.perpage then
@@ -115,7 +115,7 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, "",
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, "next",
 		"next page",
 		function(sm)
 			if sm.page < (sm.items / sm.perpage) then
@@ -130,7 +130,7 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "",
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "prev",
 		"previous page",
 		function(sm)
 			if sm.page > 1 then
@@ -142,8 +142,8 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_FW_PRESS, nil, "",
-		"select menu item",
+	self.commands:add(KEY_FW_PRESS, nil, "joypad center",
+		"select item",
 		function(sm)
 			if sm.items == 0 then
 				return "break"
@@ -153,8 +153,8 @@ function SelectMenu:addAllCommands()
 		end
 	)
 	if self.deletable then
-		self.commands:add(KEY_DEL, nil, "",
-			"delete menu item",
+		self.commands:add(KEY_DEL, nil, "Del",
+			"delete item",
 			function(sm)
 				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
 				return "delete"
@@ -162,21 +162,21 @@ function SelectMenu:addAllCommands()
 		)
 	end
 	if self.expandable then
-		self.commands:add(KEY_FW_RIGHT, nil, "",
-			"expand menu item",
+		self.commands:add(KEY_FW_RIGHT, nil, "joypad right",
+			"expand item",
 			function(sm)
 				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
 				return "expand"
 			end
 		)
-		self.commands:add(KEY_FW_LEFT, nil, "",
-			"collapse menu item",
+		self.commands:add(KEY_FW_LEFT, nil, "joypad left",
+			"collapse item",
 			function(sm)
 				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
 				return "collapse"
 			end
 		)
-		self.commands:add(KEY_FW_RIGHT, MOD_SHIFT, "",
+		self.commands:add(KEY_FW_RIGHT, MOD_SHIFT, "joypad right",
 			"expand all subitems",
 			function(sm)
 				self.selected_item = (sm.perpage * (sm.page - 1) + sm.current)
@@ -189,7 +189,7 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("Q to P", KEY_Q_to_P, 
-		"Select menu item with Q to E key as shortcut",
+		"Select item with Q to E key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Q + 1 ], sm.perpage)
@@ -200,7 +200,7 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_A_to_L, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("A to L", KEY_A_to_L, 
-		"Select menu item with A to L key as shortcut",
+		"Select item with A to L key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_A + 11 ], sm.perpage)
@@ -211,42 +211,48 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_Z_to_M, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("Z to M", KEY_Z_to_M, 
-		"Select menu item with Z to M key as shortcut",
+		"Select item with Z to M key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Z + 21 ], sm.perpage)
 		end
 	)
 	self.commands:add(KEY_SLASH, nil, "/",
-		"Select menu item with / key as shortcut",
+		"Select item with / key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("/", sm.perpage)
 		end
 	)
-	self.commands:add(KEY_DOT, nil, "",
-		"Select menu item with dot key as shortcut",
+	self.commands:add(KEY_DOT, nil, ".",
+		"Select item with dot key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut(".", sm.perpage)
 		end
 	)
-	self.commands:add(KEY_SYM, nil, "",
-		"Select menu item with sym key as shortcut",
+	self.commands:add(KEY_SYM, nil, "Sym",
+		"Select item with Sym key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Sym", sm.perpage)
 		end
 	)
-	self.commands:add(KEY_ENTER, nil, "",
-		"Select menu item with enter key as shortcut",
+	self.commands:add(KEY_ENTER, nil, "Enter",
+		"Select item with Enter key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Ent", sm.perpage)
 		end
 	)
-	self.commands:add(KEY_BACK, nil, "",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"Exit menu",
 		function(sm)
 			return "break"
 		end
 	)
+	self.commands:add(KEY_H,MOD_ALT,"H",
+		"show help page",
+		function(sm)
+		HelpPage:show(0, G_height, sm.commands)
+		sm.pagedirty = true
+	end)
 end
 
 function SelectMenu:clearCommands()
@@ -346,12 +352,7 @@ function SelectMenu:choose(ypos, height)
 				end -- for c=1, self.perpage
 			end -- if self.items == 0
 
-			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage))
-			if self.expandable then
-				footer = footer.." (Right/Left to expand/collapse, Shift-Right to expand all subitems)"
-			elseif self.deletable then
-				footer = footer.." (Use Del key to delete item)"
-			end
+			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage)).." Press Alt-H for help"
 			renderUtf8Text(fb.bb, self.margin_H, height-7, fface, footer, true)
 		end
 
