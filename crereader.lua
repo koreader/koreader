@@ -405,6 +405,20 @@ function CREReader:_drawReadingInfo()
 	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
 end
 
+function UniReader:showMenu()
+	self:_drawReadingInfo()
+	fb:refresh(1)
+	while true do
+		local ev = input.saveWaitForEvent()
+		ev.code = adjustKeyEvents(ev)
+		if ev.type == EV_KEY and ev.value == EVENT_VALUE_KEY_PRESS then
+			if ev.code == KEY_BACK or ev.code == KEY_MENU then
+				return
+			end
+		end
+	end
+end
+
 function CREReader:adjustCreReaderCommands()
 	-- delete commands
 	self.commands:delGroup("[joypad]")
