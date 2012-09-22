@@ -406,7 +406,7 @@ function CREReader:_drawReadingInfo()
 	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
 end
 
-function UniReader:showMenu()
+function CREReader:showMenu()
 	self:_drawReadingInfo()
 	fb:refresh(1)
 	while true do
