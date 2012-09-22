@@ -1798,12 +1798,13 @@ function UniReader:showToc()
 		local ret_code, item_no, all = toc_menu:choose(0, fb.bb:getHeight())
 		if ret_code then -- normal item selection
 			-- check to make sure the destination is local
-			local pagenum = self.toc[self.toc_curidx_to_x[ret_code]].page
+			local toc_entry = self.toc[self.toc_curidx_to_x[ret_code]]
+			local pagenum = toc_entry.page
 			if pagenum < 1 or pagenum > self.doc:getPages() then
 				showInfoMsgWithDelay("External links unsupported", 1500, 1)
 				self.toc_curitem = ret_code
 			else
-				return self:goto(pagenum)
+				return self:gotoTocEntry(toc_entry)
 			end
 		elseif item_no then -- expand or collapse item
 			local abs_item_no = math.abs(item_no)
