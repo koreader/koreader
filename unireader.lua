@@ -2921,7 +2921,7 @@ function UniReader:addAllCommands()
 						end
 					end
 
-					if link then
+					if link and links[link] ~= nil and links[link].page ~= nil then
 						goto_page = links[ link ].page + 1
 					end
 
