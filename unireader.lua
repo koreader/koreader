@@ -1389,6 +1389,14 @@ function UniReader:show(no)
 		self:toggleTextHighLight(self.highlight[no])
 	end
 
+	-- draw links on page
+	local links = self:getPageLinks( no )
+	for i, link in ipairs(links) do
+		local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+		fb.bb:invertRect(x,y+h-3, w,1)
+		fb:refresh(1,    x,y+h-3, w,1)
+	end
+
 	if self.rcount >= self.rcountmax then
 		Debug("full refresh")
 		self.rcount = 0
