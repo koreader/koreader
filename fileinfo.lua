@@ -36,7 +36,8 @@ function FileInfo:FormatSize(size)
 end
 
 function getUnpackedZipSize(zipfile)
-	local cmd='unzip -l '..zipfile..' | tail -1 | sed -e "s/^ *\\([0-9][0-9]*\\) *.*/\\1/"'
+	-- adding quotes allows us to avoid crash on zips which filename contains space(s)
+	local cmd='unzip -l \"'..zipfile..'\" | tail -1 | sed -e "s/^ *\\([0-9][0-9]*\\) *.*/\\1/"'
 	local p = assert(io.popen(cmd, "r"))
 	local res = assert(p:read("*a"))
 	p:close()
@@ -44,63 +45,123 @@ function getUnpackedZipSize(zipfile)
 	return tonumber(res)
 end
 
+function getDiskSizeInfo()
+	local s = {}
+	local tmp = assert(io.popen('df /mnt/us/ | tail -1', "r"))
+	local output = assert(tmp:read("*line"))
+	for w in string.gmatch(output, "%d+") do 
+		s[#s+1] = tonumber(w)*1024 -- to return in bytes
+	end
+	tmp:close()
+	if #s < 3 then return nil end
+	return { total = s[1], used = s[2], free = s[3] }
+end
+
+function FileInfo:formatDiskSizeInfo()
+	local s = getDiskSizeInfo()
+	if s then 
+		return self:FormatSize(s.free)..string.format(", %.2f", 100*s.free/s.total).."%" 
+	end
+	return "?"
+end
+
+function FileInfo:getFolderContent()
+	InfoMessage:show("Scanning folder...", 1)
+	local tmp = assert(io.popen('du -a \"'..self.pathfile..'\"', "r"))
+	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
+	while true do
+		output = tmp:read("*line")
+		if not output then break end
+		j = output:find("/")
+		name = output:sub(j, -1)
+		size = tonumber(output:sub(1, j-1)) -- in kB
+		j = lfs.attributes(name, "mode")
+		if j == "file" then 
+			files = files + 1
+			ftype = string.match(name, ".+%.([^.]+)")
+			if ftype and ext:getReader(ftype) then
+				books = books + 1
+			end
+		elseif j == "directory" then
+			dirs = dirs + 1
+		end
+	end
+	tmp:close()
+	-- add 2 entries; might be joined / splitted
+	table.insert(self.result, {dir = "Contents", name = dirs.." sub-folder(s) / "..files.." file(s) / "..books.." book(s)"})
+	table.insert(self.result, {dir = "Size", name = self:FormatSize(size*1024)})
+end
+
 function FileInfo:init(path, fname)
-	self.pathfile = path.."/"..fname
-	self.result = {}
 	-- add commands only once
 	if not self.commands then
 		self:addAllCommands()
 	end
 
-	local info_entry = {dir = "Name", name = fname}
-	table.insert(self.result, info_entry)
-	info_entry = {dir = "Path", name = path}
-	table.insert(self.result, info_entry)
-
-	info_entry = {dir = "Size", name = FileInfo:FormatSize(lfs.attributes(self.pathfile, "size"))}
-	table.insert(self.result, info_entry)
-	-- total size of all unzipped entries for zips 
-	local match = string.match(fname, ".+%.([^.]+)")
-	if match and string.lower(match) == "zip" then
-		info_entry = {dir = "Unpacked", name = FileInfo:FormatSize(getUnpackedZipSize(self.pathfile))}
-		table.insert(self.result, info_entry)
-		--[[ TODO: When the fileentry inside zips is encoded as ANSI (codes 128-255)
-		any attempt to print such fileentry causes crash by drawing!!! When fileentries
-		are encoded as UTF8, everything seems fine
-		info_entry = { dir = "Content", name = string.sub(s,29,-1) }
-		table.insert(self.result, info_entry) ]]
+	if fname then
+		self.pathfile = path.."/"..fname
+		table.insert(self.result, {dir = "Name", name = fname} )
+		self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
+			"open document",
+			function(self)
+				openFile(self.pathfile)
+				self.pagedirty = true
+			end)
+	else
+		self.pathfile = path.."/"
+		-- extracting folder name
+		local i, j = 0, 0
+		while true do
+			i = string.find(path, "/", i+1)
+			if i == nil then break else j=i end
+		end
+		table.insert(self.result, {dir = "Name", name = path:sub(j+1,-1) } )
+		table.insert(self.result, {dir = "Path", name = path:sub(1,j) } )
+		self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
+			"goto folder",
+			function(self)
+				return "goto"
+			end)
 	end
 
-	info_entry = {dir = "Free space", name = FileInfo:FormatSize(util.df("."))}
-	table.insert(self.result, info_entry)
-	info_entry = {dir = "Status changed", name = FileInfo:FileCreated(self.pathfile, "change")}
-	table.insert(self.result, info_entry)
-	info_entry = {dir = "Modified", name = FileInfo:FileCreated(self.pathfile, "modification")}
-	table.insert(self.result, info_entry)
-	info_entry = {dir = "Accessed", name = FileInfo:FileCreated(self.pathfile, "access")}
-	table.insert(self.result, info_entry)
-
-	-- if the document was already opened
-	local history = DocToHistory(self.pathfile)
-	local file, msg = io.open(history, "r")
-	if not file then 
-		info_entry = {dir = "Last read", name = "Never"}
-		table.insert(self.result, info_entry)
-	else
-		info_entry = {dir = "Last read", name = FileInfo:FileCreated(history, "change")}
-		table.insert(self.result, info_entry)
-		local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
-		local to_search, add, factor = "[\"last_percent\"]", "%", 100
-		if ext:getReader(file_type) ~= CREReader then
-			to_search = "[\"last_page\"]"
-			add = " pages"
-			factor = 1
+	local tmp, output
+	if fname then -- file info
+		table.insert(self.result, {dir = "Path", name = path.."/"} )
+		table.insert(self.result, {dir = "Size", name = self:FormatSize(lfs.attributes(self.pathfile, "size"))} )
+		-- total size of all unzipped entries for zips 
+		local match = string.match(fname, ".+%.([^.]+)")
+		if match and string.lower(match) == "zip" then
+			table.insert(self.result, {dir = "Unpacked", name = self:FormatSize(getUnpackedZipSize(self.pathfile))} )
 		end
-		for line in io.lines(history) do
-			if string.match(line, "%b[]") == to_search then
-				local cdc = tonumber(string.match(line, "%d+")) / factor
-				info_entry = {dir = "Completed", name = string.format("%d", cdc)..add }
-				table.insert(self.result, info_entry)
+	else -- folder info
+		self:getFolderContent()
+	end
+
+	table.insert(self.result, {dir = "Free space", name = self:formatDiskSizeInfo()})
+	table.insert(self.result, {dir = "Status changed", name = self:FileCreated(self.pathfile, "change")})
+	table.insert(self.result, {dir = "Modified", name = self:FileCreated(self.pathfile, "modification")})
+	table.insert(self.result, {dir = "Accessed", name = self:FileCreated(self.pathfile, "access")})
+
+	if fname then
+		-- if the document was already opened
+		local history = DocToHistory(self.pathfile)
+		local file, msg = io.open(history, "r")
+		if not file then 
+			table.insert(self.result, {dir = "Last read", name = "Never"})
+		else
+			table.insert(self.result, {dir = "Last read", name = self:FileCreated(history, "change")})
+			local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
+			local to_search, add, factor = "[\"last_percent\"]", "%", 100
+			if ext:getReader(file_type) ~= CREReader then
+				to_search = "[\"last_page\"]"
+				add = " pages"
+				factor = 1
+			end
+			for line in io.lines(history) do
+				if string.match(line, "%b[]") == to_search then
+					local cdc = tonumber(string.match(line, "%d+")) / factor
+					table.insert(self.result, {dir = "Completed", name = string.format("%d", cdc)..add })
+				end
 			end
 		end
 	end
@@ -109,9 +170,9 @@ end
 
 function FileInfo:show(path, name)
 	-- at first, one has to test whether the file still exists or not: necessary for last documents
-	if not io.open(path.."/"..name,"r") then return nil end
+	if name and not io.open(path.."/"..name,"r") then return nil end
 	-- then goto main functions
-	FileInfo:init(path,name)
+	self:init(path,name)
 	-- local variables
 	local cface, lface, tface, fface, width, xrcol, c, dy, ev, keydef, ret_code
 	while true do
@@ -123,7 +184,7 @@ function FileInfo:show(path, name)
 			fface = Font:getFace("ffont", 16)
 			-- drawing
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
-			DrawTitle("Document Information", self.margin_H, 0, self.title_H, 3, tface)
+			DrawTitle(name and "Document Information" or "Folder Information", self.margin_H, 0, self.title_H, 3, tface)
 			-- now calculating xrcol-position for the right column
 			width = 0
 			for c = 1, self.items do
@@ -145,21 +206,14 @@ function FileInfo:show(path, name)
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
 			keydef = Keydef:new(ev.code, getKeyModifier())
-			--Debug("key pressed: "..tostring(keydef))
 			command = self.commands:getByKeydef(keydef)
-			if command ~= nil then
-				--Debug("command to execute: "..tostring(command))
-				ret_code = command.func(self, keydef)
-			else
-				--Debug("command not found: "..tostring(command))
-			end
-			if ret_code == "break" then break end
+			if command ~= nil then ret_code = command.func(self, keydef) end
+			if ret_code == "break" or ret_code == "goto" then break end
 		end -- if ev.type
 	end -- while true
-	-- clear results
 	self.pagedirty = true
-	result = {}
-	return nil
+	self.result = {}
+	return ret_code
 end
 
 function FileInfo:addAllCommands()
@@ -192,13 +246,6 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	) 
-	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
-		"open document",
-		function(self)
-			openFile(self.pathfile)
-			self.pagedirty = true
-		end
-	)
 	self.commands:add({KEY_BACK, KEY_FW_LEFT}, nil, "Back",
 		"back",
 		function(self)

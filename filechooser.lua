@@ -332,10 +332,20 @@ function FileChooser:addAllCommands()
 	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
 		"show document information",
 		function(self)
-			if self:FullFileName() then
-				FileInfo:show(self.path,self.files[self.perpage*(self.page-1)+self.current - #self.dirs])
-				self.pagedirty = true
+			local folder = self.dirs[self.perpage*(self.page-1)+self.current]
+			if folder then
+				if folder == ".." then
+					showInfoMsgWithDelay("<UP-DIR> ", 1000, 1)
+				else
+					folder = self.path.."/"..folder
+					if FileInfo:show(folder) == "goto" then 
+						self:setPath(folder)
+					end
+				end
+			else -- file info
+				FileInfo:show(self.path, self.files[self.perpage*(self.page-1)+self.current-#self.dirs])
 			end
+			self.pagedirty = true
 		end
 	)
 	self.commands:add({KEY_ENTER, KEY_FW_PRESS}, nil, "Enter",
