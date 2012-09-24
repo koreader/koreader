@@ -62,9 +62,7 @@ function FileInfo:getFolderContent()
 	InfoMessage:show("Scanning folder...", 1)
 	local tmp = assert(io.popen('du -a \"'..self.pathfile..'\"', "r"))
 	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
-	while true do
-		output = tmp:read("*line")
-		if not output then break end
+	for output in tmp:lines() do
 		j = output:find("/")
 		name = output:sub(j, -1)
 		size = tonumber(output:sub(1, j-1)) -- in kB
