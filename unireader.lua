@@ -2860,11 +2860,19 @@ function UniReader:addAllCommands()
 			end
 		end
 	)
-	self.commands:add(KEY_L, MOD_SHIFT, "L",
+	self.commands:add(KEY_L, nil, "L",
 		"page links",
 		function(unireader)
-			Debug("unireader", unireader)
-			unireader:getPageLinks( unireader.pageno )
+			local links = unireader:getPageLinks( unireader.pageno )
+			if next(links) == nil then
+				showInfoMsgWithDelay("No links on this page", 2000, 1)
+			else
+				for i, link in ipairs(links) do
+					Debug("link", i, link)
+					fb.bb:invertRect(link.x0, link.y0, link.x1 - link.x0, link.y1 - link.y0)
+					fb:refresh(1,    link.x0, link.y0, link.x1 - link.x0, link.y1 - link.y0)
+				end
+			end
 		end
 	)
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",
