@@ -46,15 +46,8 @@ function getUnpackedZipSize(zipfile)
 end
 
 function getDiskSizeInfo()
-	local s = {}
-	local tmp = assert(io.popen('df /mnt/us/ | tail -1', "r"))
-	local output = assert(tmp:read("*line"))
-	for w in string.gmatch(output, "%d+") do 
-		s[#s+1] = tonumber(w)*1024 -- to return in bytes
-	end
-	tmp:close()
-	if #s < 3 then return nil end
-	return { total = s[1], used = s[2], free = s[3] }
+	local t, f = util.df(".")
+	return { total = t, free = f }
 end
 
 function FileInfo:formatDiskSizeInfo()
