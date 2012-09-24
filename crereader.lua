@@ -35,18 +35,15 @@ function CREReader:init()
 		self.default_font = default_font
 	end
 end
+
 -- inspect the zipfile content
 function CREReader:ZipContentExt(fname)
 	local i, s = 1
-	local tmp = assert(io.popen('unzip -l \"'..fname..'\"', "r"))
-	while tmp do
-		s = tmp:read("*line")
-		if i > 3 then tmp:close(); break; end
-		i = i + 1
-	end
+	local tmp = assert(io.popen('unzip -l \"'..fname..'\" | head -4 | tail -1', "r"))
+	s = tmp:read("*line")
+	tmp:close()
 	return s and string.lower(string.match(s, ".+%.([^.]+)"))
 end
-
 
 -- open a CREngine supported file and its settings store
 function CREReader:open(filename)
