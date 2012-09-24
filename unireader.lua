@@ -1393,8 +1393,8 @@ function UniReader:show(no)
 	local links = self:getPageLinks( no )
 	for i, link in ipairs(links) do
 		local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-		fb.bb:invertRect(x,y+h-3, w,1)
-		fb:refresh(1,    x,y+h-3, w,1)
+		fb.bb:invertRect(x,y+h-2, w,1)
+		fb:refresh(1,    x,y+h-2, w,1)
 	end
 
 	if self.rcount >= self.rcountmax then
@@ -2875,7 +2875,7 @@ function UniReader:addAllCommands()
 			if next(links) == nil then
 				showInfoMsgWithDelay("No links on this page", 2000, 1)
 			else
-				local font_size = math.ceil( (links[1].y1 - links[1].y0) * 1.6 )
+				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
 				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
 				local face = Font:getFace("rifont", font_size)
@@ -2888,7 +2888,7 @@ function UniReader:addAllCommands()
 					fb.bb:dimRect(x,y,w,h) -- black 50%
 					fb.bb:dimRect(x,y,w,h) -- black 25%
 
-					renderUtf8Text(fb.bb, x + w - font_size, y + font_size, face, SelectMenu.item_shortcuts[i])
+					renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
 
 					fb:refresh(1,    x,y, w,h)
 				end
