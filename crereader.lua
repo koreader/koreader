@@ -37,19 +37,14 @@ function CREReader:init()
 end
 -- inspect the zipfile content
 function CREReader:ZipContentExt(fname)
-	local outfile, s = "./data/zip_content"
-	os.execute("unzip -l \""..fname.."\" > "..outfile)
-	local i = 1
-	if io.open(outfile,"r") then
-		for lines in io.lines(outfile) do 
-			if i == 4 then s = lines break else i = i + 1 end
-		end
+	local i, s = 1
+	local tmp = assert(io.popen('unzip -l \"'..fname..'\"', "r"))
+	while tmp do
+		s = tmp:read("*line")
+		if i > 3 then tmp:close(); break; end
+		i = i + 1
 	end
-	if s then -- return the extension
-		return string.lower(string.match(s, ".+%.([^.]+)") or "")
-	else
-		return nil
-	end
+	return s and string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
 
