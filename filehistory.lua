@@ -51,9 +51,8 @@ end
 function FileHistory:readDir(order_criteria)
 	self.history_files = {}
 	self.files = {}
-	local listfile = self.path.."/.history.txt"
-	os.execute("ls "..order_criteria.."-1 "..self.path.." > "..listfile)
-	for f in io.lines(listfile) do
+	local p = io.popen("ls "..order_criteria.."-1 "..self.path)
+	for f in p:lines() do
 		-- insert history files
 		file_entry = {dir=self.path, name=f}
 		table.insert(self.history_files, file_entry)
@@ -61,6 +60,7 @@ function FileHistory:readDir(order_criteria)
 		file_entry = {dir=HistoryToPath(f), name=HistoryToName(f)}
 		table.insert(self.files, file_entry)
 	end
+	p:close()
 end
 
 function FileHistory:setSearchResult(keywords)
