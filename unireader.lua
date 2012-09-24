@@ -1393,8 +1393,10 @@ function UniReader:show(no)
 	local links = self:getPageLinks( no )
 	for i, link in ipairs(links) do
 		local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-		fb.bb:invertRect(x,y+h-2, w,1)
-		fb:refresh(1,    x,y+h-2, w,1)
+		if link.page then -- skip non-page links
+			fb.bb:invertRect(x,y+h-2, w,1)
+			fb:refresh(1,    x,y+h-2, w,1)
+		end
 	end
 
 	if self.rcount >= self.rcountmax then
