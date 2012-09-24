@@ -2867,12 +2867,61 @@ function UniReader:addAllCommands()
 			if next(links) == nil then
 				showInfoMsgWithDelay("No links on this page", 2000, 1)
 			else
+				local font_size = math.ceil( (links[1].y1 - links[1].y0) * 1.6 )
+				Debug("font_size",font_size)
+				Debug("shortcuts",SelectMenu.item_shortcuts)
+				local face = Font:getFace("rifont", font_size)
+
 				for i, link in ipairs(links) do
 					Debug("link", i, link)
 					local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-					fb.bb:invertRect(x,y, w,h)
+					Debug("box",x,y,w,h)
+
+					fb.bb:dimRect(x,y,w,h) -- black 50%
+					fb.bb:dimRect(x,y,w,h) -- black 25%
+
+					renderUtf8Text(fb.bb, x + w - font_size, y + font_size, face, SelectMenu.item_shortcuts[i])
+
 					fb:refresh(1,    x,y, w,h)
 				end
+
+				local goto_page = nil
+
+				while not goto_page do
+
+					local ev = input.saveWaitForEvent()
+					ev.code = adjustKeyEvents(ev)
+					Debug("ev",ev)
+
+					local link = nil
+
+					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+						if ev.code >= KEY_Q and ev.code <= KEY_P then
+							link = ev.code - KEY_Q + 1
+						elseif ev.code >= KEY_A and ev.code <= KEY_L then
+							link = ev.code - KEY_A + 11
+						elseif ev.code == KEY_SLASH then
+							link = 20
+						elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+							link = ev.code - KEY_Z + 21
+						elseif ev.code == KEY_DOT then
+							link = 29
+						elseif ev.code == KEY_SYM then
+							link = 30
+						elseif ev.code == KEY_BACK then
+							goto_page = unireader.pageno
+						end
+					end
+
+					if link then
+						goto_page = links[ link ].page + 1
+					end
+
+					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
+				end
+
+				unireader:goto(goto_page)
+
 			end
 		end
 	)
