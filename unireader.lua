@@ -1642,14 +1642,22 @@ function UniReader:fillToc()
 			end
 		elseif (v.depth == prev_depth) then --> k and prev are siblings
 			parent[k] = parent[prev]
-			table.insert(self.toc_children[parent[k]], k)
+			if not self.toc_children[parent[k]] then
+				table.insert(self.toc_children[0],k)
+			else
+				table.insert(self.toc_children[parent[k]], k)
+			end
 		else --> k and prev must have a common (possibly virtual) ancestor
 			local par = parent[prev]
 			while (self.toc[par].depth > v.depth) do
 				par = parent[par]
 			end
 			parent[k] = parent[par]
-			table.insert(self.toc_children[parent[k]], k)
+			if not self.toc_children[parent[k]] then
+				table.insert(self.toc_children[0],k)
+			else
+				table.insert(self.toc_children[parent[k]], k)
+			end
 		end
 		prev = k
 		prev_depth = self.toc[prev].depth
