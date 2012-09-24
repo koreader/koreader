@@ -2869,8 +2869,9 @@ function UniReader:addAllCommands()
 			else
 				for i, link in ipairs(links) do
 					Debug("link", i, link)
-					fb.bb:invertRect(link.x0, link.y0, link.x1 - link.x0, link.y1 - link.y0)
-					fb:refresh(1,    link.x0, link.y0, link.x1 - link.x0, link.y1 - link.y0)
+					local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+					fb.bb:invertRect(x,y, w,h)
+					fb:refresh(1,    x,y, w,h)
 				end
 			end
 		end
