@@ -46,15 +46,8 @@ function getUnpackedZipSize(zipfile)
 end
 
 function getDiskSizeInfo()
-	local s = {}
-	local tmp = assert(io.popen('df /mnt/us/ | tail -1', "r"))
-	local output = assert(tmp:read("*line"))
-	for w in string.gmatch(output, "%d+") do 
-		s[#s+1] = tonumber(w)*1024 -- to return in bytes
-	end
-	tmp:close()
-	if #s < 3 then return nil end
-	return { total = s[1], used = s[2], free = s[3] }
+	local t, f = util.df(".")
+	return { total = t, free = f }
 end
 
 function FileInfo:formatDiskSizeInfo()
@@ -69,9 +62,7 @@ function FileInfo:getFolderContent()
 	InfoMessage:show("Scanning folder...", 1)
 	local tmp = assert(io.popen('du -a \"'..self.pathfile..'\"', "r"))
 	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
-	while true do
-		output = tmp:read("*line")
-		if not output then break end
+	for output in tmp:lines() do
 		j = output:find("/")
 		name = output:sub(j, -1)
 		size = tonumber(output:sub(1, j-1)) -- in kB
