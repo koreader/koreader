@@ -1,4 +1,4 @@
-#!./kpdfview
+#!./kpdfview.emulator
 --[[
     KindlePDFViewer: a reader implementation
     Copyright (C) 2011 Hans-Werner Hilse <hilse@web.de>
@@ -153,16 +153,11 @@ if ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "directory" then
 	local running = true
 	FileChooser:setPath(ARGV[optind])
 	while running do
-		local file, callback = FileChooser:choose(0, G_height)
-		if callback then
-			callback()
+		local file = FileChooser:choose(0, G_height)
+		if file then
+			running = openFile(file)
 		else
-			if file ~= nil then
-				running = openFile(file)
-				print(file)
-			else
-				running = false
-			end
+			running = false
 		end
 	end
 elseif ARGV[optind] and lfs.attributes(ARGV[optind], "mode") == "file" then
