@@ -67,7 +67,7 @@ longopts = {
 	goto = "g",
 	gamma = "G",
 	debug = "d",
-	help = "h"
+	help = "h",
 }
 
 function showusage()
