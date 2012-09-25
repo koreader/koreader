@@ -56,9 +56,9 @@ end
 
 function BatteryLevel()
 	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
-	local cmd="gasgauge-info -s 2> /dev/null"
-	local p = assert(io.popen(cmd, "r"))
-	local battery = assert(p:read("*a"))
+	local p = io.popen("gasgauge-info -s 2> /dev/null", "r") -- io.popen() _never_ fails!
+	local battery = p:read("*a") or "?"
+	if battery == "" then battery = "?" end
 	p:close()
 	return string.gsub(battery, "[\n\r]+", "")
 end
@@ -450,7 +450,6 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_L, nil, "L",
 		"show last documents",
 		function(self)
-			lfs.mkdir("./history/")
 			FileHistory:init()
 			FileHistory:choose("")
 			self.pagedirty = true

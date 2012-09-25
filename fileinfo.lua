@@ -24,7 +24,9 @@ function FileInfo:FileCreated(fname, attr)
 end
 
 function FileInfo:FormatSize(size)
-	if size < 1024 then
+	if not tonumber(size) then
+		return "Invalid"
+	elseif size < 1024 then
 		return size.." Bytes"
 	elseif size < 2^20 then
 		return string.format("%.2f", size/2^10).."KB ("..size.." Bytes)"
@@ -35,10 +37,20 @@ function FileInfo:FormatSize(size)
 	end
 end
 
+function FileExists(path)
+	local f = io.open(path, "r")
+	if f then
+		f:close()
+		return true
+	else
+		return false
+	end
+end
+
 function getUnpackedZipSize(zipfile)
 	-- adding quotes allows us to avoid crash on zips which filename contains space(s)
 	local cmd='unzip -l \"'..zipfile..'\" | tail -1 | sed -e "s/^ *\\([0-9][0-9]*\\) *.*/\\1/"'
-	local p = assert(io.popen(cmd, "r"))
+	local p = io.popen(cmd, "r")
 	local res = assert(p:read("*a"))
 	p:close()
 	res = string.gsub(res, "[\n\r]+", "")
@@ -52,22 +64,22 @@ end
 
 function FileInfo:formatDiskSizeInfo()
 	local s = getDiskSizeInfo()
-	if s then 
-		return self:FormatSize(s.free)..string.format(", %.2f", 100*s.free/s.total).."%" 
+	if s then
+		return self:FormatSize(s.free)..string.format(", %.2f", 100*s.free/s.total).."%"
 	end
 	return "?"
 end
 
 function FileInfo:getFolderContent()
 	InfoMessage:show("Scanning folder...", 1)
-	local tmp = assert(io.popen('du -a \"'..self.pathfile..'\"', "r"))
+	local tmp = io.popen('du -a \"'..self.pathfile..'\"', "r")
 	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
 	for output in tmp:lines() do
 		j = output:find("/")
 		name = output:sub(j, -1)
 		size = tonumber(output:sub(1, j-1)) -- in kB
 		j = lfs.attributes(name, "mode")
-		if j == "file" then 
+		if j == "file" then
 			files = files + 1
 			ftype = string.match(name, ".+%.([^.]+)")
 			if ftype and ext:getReader(ftype) then
@@ -119,7 +131,7 @@ function FileInfo:init(path, fname)
 	if fname then -- file info
 		table.insert(self.result, {dir = "Path", name = path.."/"} )
 		table.insert(self.result, {dir = "Size", name = self:FormatSize(lfs.attributes(self.pathfile, "size"))} )
-		-- total size of all unzipped entries for zips 
+		-- total size of all unzipped entries for zips
 		local match = string.match(fname, ".+%.([^.]+)")
 		if match and string.lower(match) == "zip" then
 			table.insert(self.result, {dir = "Unpacked", name = self:FormatSize(getUnpackedZipSize(self.pathfile))} )
@@ -136,8 +148,7 @@ function FileInfo:init(path, fname)
 	if fname then
 		-- if the document was already opened
 		local history = DocToHistory(self.pathfile)
-		local file, msg = io.open(history, "r")
-		if not file then 
+		if not FileExists(history) then
 			table.insert(self.result, {dir = "Last read", name = "Never"})
 		else
 			table.insert(self.result, {dir = "Last read", name = self:FileCreated(history, "change")})
@@ -161,7 +172,7 @@ end
 
 function FileInfo:show(path, name)
 	-- at first, one has to test whether the file still exists or not: necessary for last documents
-	if name and not io.open(path.."/"..name,"r") then return nil end
+	if name and not FileExists(path.."/"..name) then return nil end
 	-- then goto main functions
 	self:init(path,name)
 	-- local variables
@@ -236,7 +247,7 @@ function FileInfo:addAllCommands()
 			FileHistory:choose("")
 			self.pagedirty = true
 		end
-	) 
+	)
 	self.commands:add({KEY_BACK, KEY_FW_LEFT}, nil, "Back",
 		"back",
 		function(self)
