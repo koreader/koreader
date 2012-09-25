@@ -2915,8 +2915,10 @@ function UniReader:addAllCommands()
 						elseif ev.code >= KEY_Z and ev.code <= KEY_M then
 							link = ev.code - KEY_Z + 21
 						elseif ev.code == KEY_DOT then
-							link = 29
+							link = 28
 						elseif ev.code == KEY_SYM then
+							link = 29
+						elseif ev.code == KEY_ENTER then
 							link = 30
 						elseif ev.code == KEY_BACK then
 							goto_page = unireader.pageno
