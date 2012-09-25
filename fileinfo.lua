@@ -24,7 +24,9 @@ function FileInfo:FileCreated(fname, attr)
 end
 
 function FileInfo:FormatSize(size)
-	if size < 1024 then
+	if not tonumber(size) then
+		return "Invalid"
+	elseif size < 1024 then
 		return size.." Bytes"
 	elseif size < 2^20 then
 		return string.format("%.2f", size/2^10).."KB ("..size.." Bytes)"
