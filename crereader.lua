@@ -39,9 +39,12 @@ end
 -- inspect the zipfile content
 function CREReader:ZipContentExt(fname)
 	local i, s = 1
-	local tmp = assert(io.popen('unzip -l \"'..fname..'\" | head -4 | tail -1', "r"))
-	s = tmp:read("*line")
-	tmp:close()
+	local tmp = io.popen('unzip -l \"'..fname..'\"', "r")
+	while true do
+		s = tmp:read("*line")
+		if i > 3 then tmp:close(); break; end
+		i = i + 1
+	end
 	return s and string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
