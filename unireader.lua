@@ -2957,8 +2957,13 @@ function UniReader:addAllCommands()
 						end
 					end
 
-					if link and links[link] ~= nil and links[link].page ~= nil then
-						goto_page = links[ link + shortcut_offset ].page + 1
+					if link then
+						link = link + shortcut_offset
+						if links[link] ~= nil and links[link].page ~= nil then
+							goto_page = links[link].page + 1
+						else
+							Debug("missing link", link)
+						end
 					end
 
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
