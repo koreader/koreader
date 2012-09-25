@@ -1391,10 +1391,12 @@ function UniReader:show(no)
 
 	-- draw links on page
 	local links = self:getPageLinks( no )
-	for i, link in ipairs(links) do
-		local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-		if link.page then -- skip non-page links
-			fb.bb:invertRect(x,y+h-2, w,1)
+	if links ~= nil then
+		for i, link in ipairs(links) do
+			local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+			if link.page then -- skip non-page links
+				fb.bb:invertRect(x,y+h-2, w,1)
+			end
 		end
 	end
 
@@ -2873,7 +2875,7 @@ function UniReader:addAllCommands()
 		"page links",
 		function(unireader)
 			local links = unireader:getPageLinks( unireader.pageno )
-			if next(links) == nil then
+			if links == nil or next(links) == nil then
 				showInfoMsgWithDelay("No links on this page", 2000, 1)
 			else
 				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
