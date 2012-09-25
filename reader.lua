@@ -23,7 +23,6 @@ require "crereader"
 require "filechooser"
 require "settings"
 require "screen"
-require "keys"
 require "commands"
 require "dialog"
 require "extentions"
@@ -53,8 +52,12 @@ function openFile(filename)
 			G_reader_settings:saveSetting("lastfile", filename)
 			return reader:inputLoop()
 		else
-			InfoMessage:show(err or "Error opening document.", 0)
-			util.sleep(2)
+			if err then
+				Debug("openFile(): "..err)
+				showInfoMsgWithDelay(err:sub(1,30), 2000, 1)
+			else
+				showInfoMsgWithDelay("Error opening document ", 2000, 1)
+			end
 		end
 	end
 	return true -- on failed attempts, we signal to keep running
