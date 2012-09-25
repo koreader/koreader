@@ -87,6 +87,8 @@ if optarg["h"] then
 end
 
 if not optarg["d"] then
+	Debug = function() end
+	dump = function() end
 	debug = function() end
 end
 
