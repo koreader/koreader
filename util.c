@@ -43,7 +43,7 @@ static int util_usleep(lua_State *L) {
 }
 
 static int util_df(lua_State *L) {
-	char *path = luaL_checkstring(L, 1);
+	const char *path = luaL_checkstring(L, 1);
 	struct statvfs vfs;
 	statvfs(path, &vfs);
 	lua_pushnumber(L, (double)vfs.f_blocks * (double)vfs.f_bsize);
