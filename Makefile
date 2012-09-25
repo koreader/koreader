@@ -185,9 +185,9 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	-mkdir $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefiles
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST) --disable-xmltools --disable-desktopfiles
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST) --disable-xmltools --disable-largefiles
 endif
 	make -C $(DJVUDIR)/build
 
