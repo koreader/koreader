@@ -189,7 +189,7 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("Q to P", KEY_Q_to_P, 
-		"Select item with Q to E key as shortcut",
+		"Select item with Q to P key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Q + 1 ], sm.perpage)
