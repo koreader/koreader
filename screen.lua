@@ -18,7 +18,7 @@
 --[[
 Codes for rotation modes:
 
-1 for no rotation, 
+1 for no rotation,
 2 for landscape with bottom on the right side of screen, etc.
 
            2
@@ -26,8 +26,8 @@ Codes for rotation modes:
    | +----------+ |
    | |          | |
    | | Freedom! | |
-   | |          | |  
-   | |          | |  
+   | |          | |
+   | |          | |
  3 | |          | | 1
    | |          | |
    | |          | |
@@ -109,12 +109,15 @@ end
 
 
 function Screen:screenshot()
-	local start = os.clock()
-	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
-	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
+	local secs, usecs = util.gettime()
+	if FileExists("/dev/fb0") then
+		self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
+	end
+	local nsecs, nusecs = util.gettime()
+	local diff = nsecs - secs + (nusecs - usecs)/1000000
 	--self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
 	--self:fb2pgm("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ", 4)
-	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2f(s) ", os.clock()-start), 1000, 1)
+	showInfoMsgWithDelay(string.format("Screenshot is ready in %.2fs ", diff), 2000, 1)
 end
 
 -- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.
@@ -122,7 +125,7 @@ end
 
 function Screen:LE(x) -- converts positive upto 32bit-number to a little-endian for bmp-header
 	local s, n = "", 4
-	if x<0x10000 then 
+	if x<0x10000 then
 		s = string.char(0,0)
 		n = 2
 	end
@@ -169,7 +172,7 @@ function Screen:fb2bmp(fin, fout, vflip, pack) -- atm, for 4bpp framebuffers onl
 				outputf:write(content[i])
 			end
 		else -- without v-flip, it takes only 0.02s @ 600x800, 4bpp
-			outputf:write(inputf:read("*all")) 
+			outputf:write(inputf:read("*all"))
 		end
 		inputf:close()
 		outputf:close()
@@ -182,9 +185,10 @@ end
 --[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it.
 It's relatively slow for 4bpp devices such as
 	~2.5s @ K2 and K3 > 600x800, 4bpp
-	~5.0s @ KDX > 824x1200, 
+	~5.0s @ KDX > 824x1200,
 but should be very fast (<<0.1s) when no color conversion (4bpp>8bpp) is needed. ]]
 
+--[[
 function Screen:fb2pgm(fin, fout, pack, bpp)
 	local inputf = assert(io.open(fin,"rb"))
 	if inputf then
@@ -195,7 +199,7 @@ function Screen:fb2pgm(fin, fout, pack, bpp)
 		else	-- convert 4bpp to 8bpp; needs free memory just to store a block = G_width/2 bytes
 			local bpp8, block, i, j, line = {}, G_width/2
 			-- to accelerate a process, let us first create the convertion table: char (0..255) > 2 chars
-			for j=0, 255 do 
+			for j=0, 255 do
 				i = j%16
 				bpp8[#bpp8+1] = string.char(255-j+i, 255-i*16)
 			end
@@ -212,4 +216,4 @@ function Screen:fb2pgm(fin, fout, pack, bpp)
 		if pack then os.execute(pack..fout) end
 	end
 end
-
+]]
