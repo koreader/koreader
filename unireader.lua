@@ -2883,17 +2883,30 @@ function UniReader:addAllCommands()
 				local face = Font:getFace("rifont", font_size)
 
 				for i, link in ipairs(links) do
-					Debug("link", i, link)
 					local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-					Debug("box",x,y,w,h)
-
 					fb.bb:dimRect(x,y,w,h) -- black 50%
 					fb.bb:dimRect(x,y,w,h) -- black 25%
-
-					renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
-
-					fb:refresh(1,    x,y, w,h)
 				end
+
+				Screen:saveCurrentBB() -- save dimmed links
+
+				local shortcut_offset = 0
+
+				local render_shortcuts = function()
+					Screen:restoreFromSavedBB()
+
+					for i = 1, #SelectMenu.item_shortcuts, 1 do
+						local link = links[ i + shortcut_offset ]
+						if link == nil then break end
+						Debug("link", i, shortcut_offset, link)
+						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+						renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
+					end
+
+					fb:refresh(1)
+				end
+
+				render_shortcuts()
 
 				local goto_page = nil
 
@@ -2922,11 +2935,17 @@ function UniReader:addAllCommands()
 							link = 30
 						elseif ev.code == KEY_BACK then
 							goto_page = unireader.pageno
+						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #links - 30 then
+							shortcut_offset = shortcut_offset + 30
+							render_shortcuts()
+						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
+							shortcut_offset = shortcut_offset - 30
+							render_shortcuts()
 						end
 					end
 
 					if link and links[link] ~= nil and links[link].page ~= nil then
-						goto_page = links[ link ].page + 1
+						goto_page = links[ link + shortcut_offset ].page + 1
 					end
 
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
