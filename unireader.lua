@@ -2883,12 +2883,20 @@ function UniReader:addAllCommands()
 				Debug("shortcuts",SelectMenu.item_shortcuts)
 				local face = Font:getFace("rifont", font_size)
 
+				local page_links = 0
+
 				for i, link in ipairs(links) do
 					if link.page then
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						fb.bb:dimRect(x,y,w,h) -- black 50%
 						fb.bb:dimRect(x,y,w,h) -- black 25%
+						page_links = page_links + 1
 					end
+				end
+
+				if page_links == 0 then
+					showInfoMsgWithDelay("No links on this page", 2000, 1)
+					return
 				end
 
 				Screen:saveCurrentBB() -- save dimmed links
