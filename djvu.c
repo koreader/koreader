@@ -16,18 +16,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <math.h>
+#include <string.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
-#include "string.h"
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "djvu.h"
 
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))
 #define MAX(a, b)      ((a) > (b) ? (a) : (b))
-
-/*@TODO check all the close method, ensure memories are freed  03.03 2012*/
 
 typedef struct DjvuDocument {
 	ddjvu_context_t *context;
@@ -42,7 +40,6 @@ typedef struct DjvuPage {
 	DjvuDocument *doc;
 } DjvuPage;
 
-
 static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
 {
 	const ddjvu_message_t *msg;
@@ -56,8 +53,8 @@ static int handle(lua_State *L, ddjvu_context_t *ctx, int wait)
 		{
 		case DDJVU_ERROR:
 			if (msg->m_error.filename) {
-				return luaL_error(L, "ddjvu: %s\nddjvu: '%s:%d'\n", 
-					msg->m_error.message, msg->m_error.filename, 
+				return luaL_error(L, "ddjvu: %s\nddjvu: '%s:%d'\n",
+					msg->m_error.message, msg->m_error.filename,
 					msg->m_error.lineno);
 			} else {
 				return luaL_error(L, "ddjvu: %s\n", msg->m_error.message);
@@ -84,7 +81,7 @@ static int openDocument(lua_State *L) {
 		return luaL_error(L, "cannot create context");
 	}
 
-	printf("## cache_size = %d\n", cache_size);
+	//printf("## cache_size = %d\n", cache_size);
 	ddjvu_cache_set_size(doc->context, (unsigned long)cache_size);
 
 	doc->doc_ref = ddjvu_document_create_by_filename_utf8(doc->context, filename, TRUE);
@@ -109,7 +106,7 @@ static int openDocument(lua_State *L) {
 static int closeDocument(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 
-	// should be save if called twice
+	// should be safe if called twice
 	if (doc->doc_ref != NULL) {
 		ddjvu_document_release(doc->doc_ref);
 		doc->doc_ref = NULL;
@@ -147,12 +144,12 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 		lua_pushstring(L, "page");
 		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
 		/* page numbers appear as #11, set # to 0 so strtol works */
-		page_number[0]= '0'; 
+		page_number[0]= '0';
 		lua_pushnumber(L, strtol(page_number, NULL, 10));
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
-		lua_pushnumber(L, depth); 
+		lua_pushnumber(L, depth);
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "title");
@@ -170,7 +167,6 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 	}
 	return 0;
 }
-
 
 static int getTableOfContent(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
@@ -213,7 +209,7 @@ static int openPage(lua_State *L) {
 	page->num = pageno;
 
 	/* djvulibre counts page starts from 0 */
-	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno - 1, 
+	while((r=ddjvu_document_get_pageinfo(doc->doc_ref, pageno - 1,
 										&(page->info)))<DDJVU_JOB_OK)
 		handle(L, doc->context, TRUE);
 	if (r>=DDJVU_JOB_FAILED)
@@ -267,7 +263,7 @@ static int getOriginalPageSize(lua_State *L) {
  * Return a table like following:
  * {
  *    -- a line entry
- *    1 = {  
+ *    1 = {
  *       1 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
  *       2 = {word="is", x0=377, y0=4857, x1=2427, y1=5089},
  *       3 = {word="Word", x0=377, y0=4857, x1=2427, y1=5089},
@@ -276,7 +272,7 @@ static int getOriginalPageSize(lua_State *L) {
  *    },
  *
  *    -- an other line entry
- *    2 = {  
+ *    2 = {
  *       1 = {word="This", x0=377, y0=4857, x1=2427, y1=5089},
  *       2 = {word="is", x0=377, y0=4857, x1=2427, y1=5089},
  *       x0 = 377, y0 = 4857, x1 = 2427, y1 = 5089,
@@ -336,7 +332,7 @@ static int getPageText(lua_State *L) {
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "y1");
-		lua_pushnumber(L, 
+		lua_pushnumber(L,
 				info.height - miniexp_to_int(miniexp_nth(2, se_line)));
 		lua_settable(L, -3);
 
@@ -345,7 +341,7 @@ static int getPageText(lua_State *L) {
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "y0");
-		lua_pushnumber(L, 
+		lua_pushnumber(L,
 				info.height - miniexp_to_int(miniexp_nth(4, se_line)));
 		lua_settable(L, -3);
 
@@ -371,7 +367,7 @@ static int getPageText(lua_State *L) {
 			lua_settable(L, -3);
 
 			lua_pushstring(L, "y1");
-			lua_pushnumber(L, 
+			lua_pushnumber(L,
 					info.height - miniexp_to_int(miniexp_nth(2, se_word)));
 			lua_settable(L, -3);
 
@@ -380,7 +376,7 @@ static int getPageText(lua_State *L) {
 			lua_settable(L, -3);
 
 			lua_pushstring(L, "y0");
-			lua_pushnumber(L, 
+			lua_pushnumber(L,
 					info.height - miniexp_to_int(miniexp_nth(4, se_word)));
 			lua_settable(L, -3);
 
@@ -437,13 +433,13 @@ static int drawPage(lua_State *L) {
 
 	/* copy pixels area from pagerect specified by renderrect.
 	 *
-	 * ddjvulibre library does not support negative offset, positive offset 
+	 * ddjvulibre library does not support negative offset, positive offset
 	 * means moving towards right and down.
 	 *
-	 * However, djvureader.lua handles offset differently. It uses negative 
-	 * offset to move right and down while positive offset to move left 
-	 * and up. So we need to handle positive offset manually when copying 
-	 * imagebuffer to blitbuffer (framebuffer). 
+	 * However, djvureader.lua handles offset differently. It uses negative
+	 * offset to move right and down while positive offset to move left
+	 * and up. So we need to handle positive offset manually when copying
+	 * imagebuffer to blitbuffer (framebuffer).
 	 */
 	renderrect.x = MAX(-dc->offset_x, 0);
 	renderrect.y = MAX(-dc->offset_y, 0);
@@ -452,7 +448,7 @@ static int drawPage(lua_State *L) {
 
 	/*printf("--renderrect--- (%d, %d), w:%d, h:%d\n", renderrect.x, renderrect.y, renderrect.w, renderrect.h);*/
 
-	/* ddjvulibre library only supports rotation of 0, 90, 180 and 270 degrees. 
+	/* ddjvulibre library only supports rotation of 0, 90, 180 and 270 degrees.
 	 * These four kinds of rotations can already be achieved by native system.
 	 * So we don't set rotation here.
 	 */
@@ -476,7 +472,7 @@ static int drawPage(lua_State *L) {
 	if (dc->gamma != -1.0) {
 		for (i=0; i<16; i++) {
 			adjusted_low[i] = MIN(15, (unsigned char)floorf(dc->gamma * (float)i));
-			adjusted_high[i] = adjusted_low[i] << 4; 
+			adjusted_high[i] = adjusted_low[i] << 4;
 		}
 		adjust_pixels = 1;
 	}
@@ -508,14 +504,14 @@ static int drawPage(lua_State *L) {
 static int getCacheSize(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	unsigned long size = ddjvu_cache_get_size(doc->context);
-	printf("## ddjvu_cache_get_size = %d\n", (int)size);
+	//printf("## ddjvu_cache_get_size = %d\n", (int)size);
 	lua_pushnumber(L, size);
 	return 1;
 }
 
 static int cleanCache(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
-	printf("## ddjvu_cache_clear\n");
+	//printf("## ddjvu_cache_clear\n");
 	ddjvu_cache_clear(doc->context);
 	return 0;
 }
