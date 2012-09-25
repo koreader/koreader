@@ -109,10 +109,11 @@ end
 
 
 function Screen:screenshot()
-	local secs, usecs = util.gettime()
-	if FileExists("/dev/fb0") then
-		self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
+	if util.isEmulated() == 1 then
+		return
 	end
+	local secs, usecs = util.gettime()
+	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)
 	local nsecs, nusecs = util.gettime()
 	local diff = nsecs - secs + (nusecs - usecs)/1000000
 	--self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
