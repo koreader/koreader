@@ -1440,7 +1440,7 @@ function UniReader:addJump(pageno)
 	end
 	table.insert(self.jump_history, jump_item)
 	self.jump_history.cur = #self.jump_history + 1
-	self:redrawCurrentPage()
+	--self:redrawCurrentPage()
 	return true
 end
 

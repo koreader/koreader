@@ -198,7 +198,7 @@ end
 
 function CREReader:gotoTocEntry(entry)
 	self:goto(entry.xpointer, nil, "xpointer")
-	self:redrawCurrentPage()
+	--self:redrawCurrentPage()
 end
 
 function CREReader:nextView()
