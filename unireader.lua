@@ -1393,8 +1393,8 @@ function UniReader:show(no)
 	local links = self:getPageLinks( no )
 	if links ~= nil then
 		for i, link in ipairs(links) do
-			local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 			if link.page then -- skip non-page links
+				local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 				fb.bb:invertRect(x,y+h-2, w,1)
 			end
 		end
@@ -2884,9 +2884,11 @@ function UniReader:addAllCommands()
 				local face = Font:getFace("rifont", font_size)
 
 				for i, link in ipairs(links) do
-					local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-					fb.bb:dimRect(x,y,w,h) -- black 50%
-					fb.bb:dimRect(x,y,w,h) -- black 25%
+					if link.page then
+						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+						fb.bb:dimRect(x,y,w,h) -- black 50%
+						fb.bb:dimRect(x,y,w,h) -- black 25%
+					end
 				end
 
 				Screen:saveCurrentBB() -- save dimmed links
@@ -2900,8 +2902,10 @@ function UniReader:addAllCommands()
 						local link = links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
-						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-						renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
+						if link.page then
+							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
+						end
 					end
 
 					fb:refresh(1)
