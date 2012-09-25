@@ -450,7 +450,6 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_L, nil, "L",
 		"show last documents",
 		function(self)
-			lfs.mkdir("./history/")
 			FileHistory:init()
 			FileHistory:choose("")
 			self.pagedirty = true

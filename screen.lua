@@ -109,7 +109,6 @@ end
 
 
 function Screen:screenshot()
-	lfs.mkdir("./screenshots")
 	local start = os.clock()
 	--showInfoMsgWithDelay("making screenshot... ", 1000, 1)
 	self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, nil)

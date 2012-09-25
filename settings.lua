@@ -30,7 +30,6 @@ end
 
 function DocSettings:open(docfile)
 	-- history feature moves configuration files into history directory
-	lfs.mkdir("./history")
 	local new = { file = DocToHistory(docfile), data = {} }
 	local ok, stored = pcall(dofile,new.file)
 	if not ok then
