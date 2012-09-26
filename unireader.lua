@@ -2902,11 +2902,13 @@ function UniReader:addAllCommands()
 				Screen:saveCurrentBB() -- save dimmed links
 
 				local shortcut_offset = 0
+				local shortcut_map
 
 				local render_shortcuts = function()
 					Screen:restoreFromSavedBB()
 
 					local shortcut_nr = 1
+					shortcut_map = {}
 
 					for i = 1, #SelectMenu.item_shortcuts, 1 do
 						local link = links[ i + shortcut_offset ]
@@ -2915,9 +2917,12 @@ function UniReader:addAllCommands()
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							shortcut_map[shortcut_nr] = i
 							shortcut_nr = shortcut_nr + 1
 						end
 					end
+
+					Debug("shortcut_map", shortcut_map)
 
 					fb:refresh(1)
 				end
@@ -2961,7 +2966,7 @@ function UniReader:addAllCommands()
 					end
 
 					if link then
-						link = link + shortcut_offset
+						link = shortcut_map[ link + shortcut_offset ]
 						if links[link] ~= nil and links[link].page ~= nil then
 							goto_page = links[link].page + 1
 						else
