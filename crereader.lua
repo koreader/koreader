@@ -45,7 +45,14 @@ function CREReader:ZipContentExt(fname)
 		if i > 3 then tmp:close(); break; end
 		i = i + 1
 	end
-	return s and string.lower(string.match(s, ".+%.([^.]+)"))
+	if s then
+		local ext = string.match(s, ".+%.([^.]+)")
+		if ext then
+			ext = string.lower(ext)
+			return ext
+		end
+	end
+	return nil
 end
 
 -- open a CREngine supported file and its settings store
