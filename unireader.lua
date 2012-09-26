@@ -1389,6 +1389,17 @@ function UniReader:show(no)
 		self:toggleTextHighLight(self.highlight[no])
 	end
 
+	-- draw links on page
+	local links = self:getPageLinks( no )
+	if links ~= nil then
+		for i, link in ipairs(links) do
+			if link.page then -- skip non-page links
+				local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+				fb.bb:invertRect(x,y+h-2, w,1)
+			end
+		end
+	end
+
 	if self.rcount >= self.rcountmax then
 		Debug("full refresh")
 		self.rcount = 0
@@ -2069,6 +2080,11 @@ function UniReader:searchHighLight(search)
 
 end
 
+
+function UniReader:getPageLinks(pageno)
+	Debug("getPageLinks not supported in this format")
+	return nil
+end
 
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
@@ -2862,6 +2878,117 @@ function UniReader:addAllCommands()
 				unireader:searchHighLight(search)
 			else
 				unireader:goto(unireader.pageno)
+			end
+		end
+	)
+	self.commands:add(KEY_L, nil, "L",
+		"page links",
+		function(unireader)
+			local links = unireader:getPageLinks( unireader.pageno )
+			if links == nil or next(links) == nil then
+				showInfoMsgWithDelay("No links on this page", 2000, 1)
+			else
+				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
+				Debug("font_size",font_size)
+				Debug("shortcuts",SelectMenu.item_shortcuts)
+				local face = Font:getFace("rifont", font_size)
+
+				local page_links = 0
+
+				for i, link in ipairs(links) do
+					if link.page then
+						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+						fb.bb:dimRect(x,y,w,h) -- black 50%
+						fb.bb:dimRect(x,y,w,h) -- black 25%
+						page_links = page_links + 1
+					end
+				end
+
+				if page_links == 0 then
+					showInfoMsgWithDelay("No links on this page", 2000, 1)
+					return
+				end
+
+				Screen:saveCurrentBB() -- save dimmed links
+
+				local shortcut_offset = 0
+				local shortcut_map
+
+				local render_shortcuts = function()
+					Screen:restoreFromSavedBB()
+
+					local shortcut_nr = 1
+					shortcut_map = {}
+
+					for i = 1, #SelectMenu.item_shortcuts, 1 do
+						local link = links[ i + shortcut_offset ]
+						if link == nil then break end
+						Debug("link", i, shortcut_offset, link)
+						if link.page then
+							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							shortcut_map[shortcut_nr] = i + shortcut_offset
+							shortcut_nr = shortcut_nr + 1
+						end
+					end
+
+					Debug("shortcut_map", shortcut_map)
+
+					fb:refresh(1)
+				end
+
+				render_shortcuts()
+
+				local goto_page = nil
+
+				while not goto_page do
+
+					local ev = input.saveWaitForEvent()
+					ev.code = adjustKeyEvents(ev)
+					Debug("ev",ev)
+
+					local link = nil
+
+					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+						if ev.code >= KEY_Q and ev.code <= KEY_P then
+							link = ev.code - KEY_Q + 1
+						elseif ev.code >= KEY_A and ev.code <= KEY_L then
+							link = ev.code - KEY_A + 11
+						elseif ev.code == KEY_SLASH then
+							link = 20
+						elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+							link = ev.code - KEY_Z + 21
+						elseif ev.code == KEY_DOT then
+							link = 28
+						elseif ev.code == KEY_SYM then
+							link = 29
+						elseif ev.code == KEY_ENTER then
+							link = 30
+						elseif ev.code == KEY_BACK then
+							goto_page = unireader.pageno
+						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #links - 30 then
+							shortcut_offset = shortcut_offset + 30
+							render_shortcuts()
+						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
+							shortcut_offset = shortcut_offset - 30
+							render_shortcuts()
+						end
+					end
+
+					if link then
+						link = shortcut_map[link]
+						if links[link] ~= nil and links[link].page ~= nil then
+							goto_page = links[link].page + 1
+						else
+							Debug("missing link", link)
+						end
+					end
+
+					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
+				end
+
+				unireader:goto(goto_page)
+
 			end
 		end
 	)
