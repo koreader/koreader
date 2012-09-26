@@ -2266,7 +2266,7 @@ function UniReader:addAllCommands()
 				-- addJump() will cause a "Retrieving TOC..." msg, so we'll
 				-- need to redraw the page after our own
 				-- ifo msg "Already first jump!" below
-				if not self.toc then need_refresh = true end
+				if not unireader.toc then need_refresh = true end
 
 				-- if cur points to head, put current page in history
 				unireader:addJump(self.pageno)
