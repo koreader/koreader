@@ -2906,13 +2906,16 @@ function UniReader:addAllCommands()
 				local render_shortcuts = function()
 					Screen:restoreFromSavedBB()
 
+					local shortcut_nr = 1
+
 					for i = 1, #SelectMenu.item_shortcuts, 1 do
 						local link = links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[i])
+							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							shortcut_nr = shortcut_nr + 1
 						end
 					end
 
