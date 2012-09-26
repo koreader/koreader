@@ -146,41 +146,43 @@ a vertical flip that makes it a bit slower, namely,
 NB: needs free memory of G_width*G_height/2 bytes to manupulate the fb-content! ]]
 
 function Screen:fb2bmp(fin, fout, vflip, pack) -- atm, for 4bpp framebuffers only
-	local inputf = assert(io.open(fin,"rb"))
+	local inputf = io.open(fin,"rb")
 	if inputf then
-		local outputf, size = assert(io.open(fout,"wb"))
-		-- writing bmp-header
-		outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
-				self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
-				string.char(0,0,1,0,4,0,0,0,0,0),
-				self:LE(G_height*G_width/2),		-- raw bytes in image
-				string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 6536 pixel/m = 166 dpi for both x&y resolutions
-				string.char(16,0,0,0,0,0,0,0))		-- 16 colors
-		local line, i = G_width/2, 15
-		-- add palette to bmp-header
-		while i>=0 do
-			outputf:write(string.char(i*16+i):rep(3), string.char(0))
-			i=i-1
-		end
-		if vflip then -- flip image vertically to make it bmp-compliant
-			-- read the fb-content line-by-line & fill the content-table in the inversed order
-			local content = {}
-			for i=1, G_height do
-				table.insert(content, 1, inputf:read(line))
+		local outputf, size = io.open(fout,"wb")
+		if outputf then
+			-- writing bmp-header
+			outputf:write(string.char(0x42,0x4D,0xF6,0xA9,3,0,0,0,0,0,0x76,0,0,0,40,0),
+					self:LE(G_width), self:LE(G_height),	-- width & height: 4 chars each
+					string.char(0,0,1,0,4,0,0,0,0,0),
+					self:LE(G_height*G_width/2),		-- raw bytes in image
+					string.char(0x87,0x19,0,0,0x87,0x19,0,0),	-- 6536 pixel/m = 166 dpi for both x&y resolutions
+					string.char(16,0,0,0,0,0,0,0))		-- 16 colors
+			local line, i = G_width/2, 15
+			-- add palette to bmp-header
+			while i>=0 do
+				outputf:write(string.char(i*16+i):rep(3), string.char(0))
+				i=i-1
 			end
-			-- write the v-flipped bmp-data
-			for i=1, G_height do
-				outputf:write(content[i])
+			if vflip then -- flip image vertically to make it bmp-compliant
+				-- read the fb-content line-by-line & fill the content-table in the inversed order
+				local content = {}
+				for i=1, G_height do
+					table.insert(content, 1, inputf:read(line))
+				end
+				-- write the v-flipped bmp-data
+				for i=1, G_height do
+					outputf:write(content[i])
+				end
+			else -- without v-flip, it takes only 0.02s @ 600x800, 4bpp
+				outputf:write(inputf:read("*all"))
 			end
-		else -- without v-flip, it takes only 0.02s @ 600x800, 4bpp
-			outputf:write(inputf:read("*all"))
-		end
+			outputf:close()
+			-- here one may use either standard archivers (bzip2, gzip)
+			-- or standalone converters (bmp2png, bmp2gif)
+			if pack then os.execute(pack..fout) end
+		end -- if output f
 		inputf:close()
-		outputf:close()
-		-- here one may use either standard archivers (bzip2, gzip)
-		-- or standalone converters (bmp2png, bmp2gif)
-		if pack then os.execute(pack..fout) end
-	end
+	end -- if inputf
 end
 
 --[[ This function saves the fb-content (both 4bpp and 8bpp) as 8bpp PGM and pack it.
