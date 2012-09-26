@@ -1330,7 +1330,7 @@ function UniReader:setzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 
-	Debug("Reader:setZoom globalzoom:", self.globalzoom, " globalrotate:", self.globalrotate, " offset:", self.offset_x, self.offset_y, " pagesize:", self.fullwidth, self.fullheight, " min_offset:", self.min_offset_x, self.min_offset_y)
+	Debug("Reader:setZoom globalzoom_mode:", self.globalzoom_mode, " globalzoom:", self.globalzoom, " globalrotate:", self.globalrotate, " offset:", self.offset_x, self.offset_y, " pagesize:", self.fullwidth, self.fullheight, " min_offset:", self.min_offset_x, self.min_offset_y)
 
 	-- set gamma here, we don't have any other good place for this right now:
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
@@ -1527,7 +1527,10 @@ end
 function UniReader:nextView()
 	local pageno = self.pageno
 
-	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
+
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
+	or self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y <= self.min_offset_y then
 			-- hit content bottom, turn to next page
 			self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
@@ -1554,7 +1557,10 @@ end
 function UniReader:prevView()
 	local pageno = self.pageno
 
-	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+	Debug("prevView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
+
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
+	or self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y >= self.content_top then
 			-- hit content top, turn to previous page
 			-- set self.content_top with magic num to signal self:setZoom
@@ -2722,7 +2728,11 @@ function UniReader:addAllCommands()
 		"pan the active view",
 		function(unireader,keydef)
 			if keydef.keycode ~= KEY_FW_PRESS then
-				unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
+				if unireader.globalzoom_mode ~= unireader.ZOOM_BY_VALUE then
+					Debug("save last_globalzoom_mode=", unireader.globalzoom_mode);
+					self.last_globalzoom_mode = unireader.globalzoom_mode
+					unireader.globalzoom_mode = unireader.ZOOM_BY_VALUE
+				end
 			end
 			if unireader.globalzoom_mode == unireader.ZOOM_BY_VALUE then
 				local x, y
