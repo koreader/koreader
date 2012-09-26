@@ -2917,7 +2917,7 @@ function UniReader:addAllCommands()
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
-							shortcut_map[shortcut_nr] = i
+							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
 					end
@@ -2966,7 +2966,7 @@ function UniReader:addAllCommands()
 					end
 
 					if link then
-						link = shortcut_map[ link + shortcut_offset ]
+						link = shortcut_map[link]
 						if links[link] ~= nil and links[link].page ~= nil then
 							goto_page = links[link].page + 1
 						else
