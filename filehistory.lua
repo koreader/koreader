@@ -220,6 +220,7 @@ function FileHistory:addAllCommands()
 		"delete history entry",
 		function(self)
 			file_entry = self.result[self.perpage*(self.page-1)+self.current]
+			if not file_entry then return end
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
 			os.remove(DocToHistory(file_to_del))
 			-- to avoid showing just deleted file
