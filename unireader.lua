@@ -2761,10 +2761,13 @@ function UniReader:addAllCommands()
 					if unireader.pan_by_page then
 						if unireader.offset_x > 0 and unireader.pageno > 1 then
 							unireader.adjust_offset = function(unireader)
-								unireader.offset_x = unireader.pan_x
+								local columns = math.floor( math.abs( unireader.min_offset_x - unireader.pan_x ) / G_width + 0.5 ) -- round for thin columns
+								unireader.offset_x = unireader.pan_x - columns * G_width -- move to last column
 								unireader.offset_y = unireader.min_offset_y
 								Debug("pan to right-bottom of previous page")
 							end
+							self.globalzoom_mode = self.pan_by_page
+							Debug("recalculate top-left of previous page")
 							unireader:goto(unireader.pageno - 1)
 						else
 							unireader.show_overlap = 0
