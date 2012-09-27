@@ -389,6 +389,29 @@ static int invertRect(lua_State *L) {
 	uint8_t *dstptr;
 
 	int cy, cx;
+
+	//printf("## invertRect x=%d y=%d w=%d h=%d\n",x,y,w,h);
+
+	if (x < 0) {
+		if ( x + w > 0 ) {
+			w = w + x;
+			x = 0;
+		} else {
+			//printf("## invertRect x out of bound\n");
+			return 0;
+		}
+	}
+
+	if (y < 0) {
+		if ( y + h > 0 ) {
+			h = h + y;
+			y = 0;
+		} else {
+			//printf("## invertRect y out of bound\n");
+			return 0;
+		}
+	}
+
 	if(w <= 0 || h <= 0 || x >= dst->w || y >= dst->h) {
 		return 0;
 	}
