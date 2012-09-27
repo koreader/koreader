@@ -78,7 +78,7 @@ static void resetMsize(){
 
 static void showMsize(){
 	char buf[15],buf2[15],buf3[15],buf4[15];
-	printf("§§§ now: %s was: %s - min: %s - max: %s\n",readable_fs(msize,buf),readable_fs(msize_iniz,buf2),readable_fs(msize_min,buf3),readable_fs(msize_max,buf4));
+	//printf("§§§ now: %s was: %s - min: %s - max: %s\n",readable_fs(msize,buf),readable_fs(msize_iniz,buf2),readable_fs(msize_min,buf3),readable_fs(msize_max,buf4));
 	resetMsize();
 }
 
@@ -89,7 +89,7 @@ static void log_size(char *funcName){
 		msize_min = msize;
 	if(1==0 && abs(msize-msize_prev)>msize_prev*LOG_TRESHOLD_PERC){
 		char buf[15],buf2[15];
-		printf("§§§ %s - total: %s (was %s)\n",funcName, readable_fs(msize,buf),readable_fs(msize_prev,buf2));
+		//printf("§§§ %s - total: %s (was %s)\n",funcName, readable_fs(msize,buf),readable_fs(msize_prev,buf2));
 		msize_prev = msize;
 	}
 }
@@ -133,7 +133,7 @@ my_realloc_default(void *opaque, void *old, unsigned int size)
     } else {
     	struct header * h = ((struct header *)old) - 1;
 		if (h -> magic != MAGIC) { // Not allocated by my_malloc_default
-			printf("§§§ warn: not allocated by my_malloc_default, new size: %i\n",size);
+			//printf("§§§ warn: not allocated by my_malloc_default, new size: %i\n",size);
 			newp = realloc(old,size);
 		} else { // malloc + free
 			is_realloc = 1;
@@ -166,7 +166,7 @@ static int openDocument(lua_State *L) {
 	char *filename = strdup(luaL_checkstring(L, 1));
 	int cache_size = luaL_optint(L, 2, 64 << 20); // 64 MB limit default
 	char buf[15];
-	printf("## cache_size: %s\n",readable_fs(cache_size,buf));
+	//printf("## cache_size: %s\n",readable_fs(cache_size,buf));
 
 	PdfDocument *doc = (PdfDocument*) lua_newuserdata(L, sizeof(PdfDocument));
 
@@ -567,13 +567,13 @@ static int drawPage(lua_State *L) {
 }
 
 static int getCacheSize(lua_State *L) {
-	printf("## mupdf getCacheSize = %zu\n", msize);
+	//printf("## mupdf getCacheSize = %zu\n", msize);
 	lua_pushnumber(L, msize);
 	return 1;
 }
 
 static int cleanCache(lua_State *L) {
-	printf("## mupdf cleanCache NOP\n");
+	//printf("## mupdf cleanCache NOP\n");
 	return 0;
 }
 
