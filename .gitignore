@@ -12,6 +12,13 @@ kindlepdfviewer-*.zip
 /.cproject
 /.project
 /.reader.kpdfview
+/settings.reader.lua
+
+fonts
+data
+history
+screenshots
+cr3cache
 
 kpvcrlib/CMakeCache.txt
 kpvcrlib/CMakeFiles/
