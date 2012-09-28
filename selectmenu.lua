@@ -12,7 +12,6 @@ SelectMenu = {
 	-- font for paging display
 	ffsize = 16,
 	-- font for item shortcut
-	sface = Font:getFace("scfont", 22),
 
 	-- title height
 	title_H = 40,
@@ -287,6 +286,7 @@ function SelectMenu:choose(ypos, height)
 		local cface = Font:getFace("cfont", 22)
 		local tface = Font:getFace("tfont", 25)
 		local fface = Font:getFace("ffont", 16)
+		local sface = Font:getFace("scfont", 22)
 		
 		local lx = self.margin_H + 40
 		local fw = fb.bb:getWidth() - lx - self.margin_H
@@ -326,7 +326,7 @@ function SelectMenu:choose(ypos, height)
 							renderUtf8Text(fb.bb, self.margin_H + 3, y, fface,
 								self.item_shortcuts[c], true)
 						else
-							renderUtf8Text(fb.bb, self.margin_H + 8, y, self.sface,
+							renderUtf8Text(fb.bb, self.margin_H + 8, y, sface,
 								self.item_shortcuts[c], true)
 						end
 
