@@ -2,8 +2,15 @@
 lua
 lua-*
 .reader.kpdfview.lua
+settings.reader.lua
 mupdf-thirdparty.zip
 djvulibre*
+cr3cache
+history
+crash.log
+.vimrc
+data
+fonts
 kpdfview
 *.o
 
