@@ -1377,6 +1377,12 @@ function UniReader:show(no)
 		-- page top and screen top.
 		self.dest_y = self.offset_y
 	end
+
+	if self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		Debug("ZOOM_FIT_TO_CONTENT_WIDTH_PAN - fit page to top")
+		self.dest_y = 0
+	end
+
 	if self.dest_x or self.dest_y then
 		fb.bb:paintRect(0, 0, width, height, 8)
 	end
