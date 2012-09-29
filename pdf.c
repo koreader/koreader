@@ -623,7 +623,7 @@ static int getPageLinks(lua_State *L) {
 		lua_rawseti(L, -2, ++link_count);
     }
 
-	printf("## getPageLinks found %d links in document\n", link_count);
+	//printf("## getPageLinks found %d links in document\n", link_count);
 
 	fz_drop_link(page->doc->context, page_links);
 
