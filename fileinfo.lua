@@ -200,6 +200,8 @@ function FileInfo:show(path, name)
 				dy = dy + renderUtf8Multiline(fb.bb, xrcol, y, cface, self.result[c].name, true,
 						G_width - self.margin_H - xrcol, 1.65).y - y
 			end
+			-- NuPogodi, 29.09.12: restored footer > to see 'Press H for help'
+			DrawFooter("Page 1 of 1",fface,self.foot_H)
 			fb:refresh(0)
 			self.pagedirty = false
 		end
