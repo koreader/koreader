@@ -493,7 +493,7 @@ function InputBox:defineCalcFunctions() -- for the calculator documentation
 	self.calcfunctions:del(KEY_OUTOF_SCREEN_SAVER, nil, "Slider")
 	self.calcfunctions:del(KEY_CHARGING, nil, "plugin/out usb")
 	self.calcfunctions:del(KEY_NOT_CHARGING, nil, "plugin/out usb")
-	self.calcfunctions:del(KEY_SPACE, MOD_ALT, "Space")
+	self.calcfunctions:del(KEY_P, MOD_SHIFT, "P")
 
 	local s = " " -- space for function groups
 	local a = 100 -- arithmetic functions

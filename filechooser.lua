@@ -90,8 +90,9 @@ end
 
 function DrawFooter(text,font_face,h)
 	local y = G_height - 7
-	local x = (G_width / 2) - 50
-	renderUtf8Text(fb.bb, x, y, font_face, text, true)
+	-- NuPogodi, 29.09.12: just dirty fix to have the same footer everywhere
+	local x = FileChooser.margin_H --(G_width / 2) - 50
+	renderUtf8Text(fb.bb, x, y, font_face, text.."  - Press H for help", true)
 end
 
 function DrawFileItem(name,x,y,image)
