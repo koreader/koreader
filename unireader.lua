@@ -1528,8 +1528,12 @@ function UniReader:goto(no, is_ignore_jump)
 	-- TODO: move the following to a more appropriate place
 	-- into the caching section
 	if no < self.doc:getPages() then
-		if #self.bbox == 0 or not self.bbox.enabled then
-			-- pre-cache next page, but if we will modify bbox don't!
+		if self.bbox.enabled and #self.bbox > 0 then
+			Debug("no preCache -- using custom bbox")
+		elseif self.pan_by_page then
+			Debug("no preCache -- in two column mode")
+		else
+			Debug("preCache", no+1)
 			self:drawOrCache(no+1, true)
 		end
 	end
