@@ -2490,7 +2490,7 @@ function UniReader:addAllCommands()
 			if pcall(function () count = count + 0 end) then
 				-- restrict self.rcountmax in reasonable range
 				self.rcountmax = math.max(count, 0)
-				self.rcountmax = math.min(count, 10)
+				self.rcountmax = math.min(self.rcountmax, 10)
 				-- storing this parameter in both global and local settings
 				G_reader_settings:saveSetting("rcountmax", self.rcountmax)
 				self.settings:saveSetting("rcountmax", self.rcountmax)
