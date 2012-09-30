@@ -2487,10 +2487,13 @@ function UniReader:addAllCommands()
 			local count = NumInputBox:input(G_height-100, 100,
 				"Full refresh after:", self.rcountmax, true)
 			-- convert string to number
-			if pcall(function () count = count + 0 end) then
-				-- restrict self.rcountmax in reasonable range
-				self.rcountmax = math.max(count, 0)
-				self.rcountmax = math.min(self.rcountmax, 10)
+			if pcall(function () count = math.floor(count) end) then
+				if count < 0 then
+					count = 0
+				elseif count > 10 then
+					count = 10
+				end
+				self.rcountmax = count
 				-- storing this parameter in both global and local settings
 				G_reader_settings:saveSetting("rcountmax", self.rcountmax)
 				self.settings:saveSetting("rcountmax", self.rcountmax)
