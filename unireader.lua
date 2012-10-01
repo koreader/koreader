@@ -1613,6 +1613,7 @@ end
 -- adjust zoom state and trigger re-rendering
 function UniReader:setglobalzoom_mode(newzoommode)
 	if self.globalzoom_mode ~= newzoommode then
+		self.last_globalzoom_mode = nil
 		self.globalzoom_mode = newzoommode
 		self:redrawCurrentPage()
 	end
