@@ -2,7 +2,7 @@
 
 LUADIR=luajit-2.0
 MUPDFDIR=mupdf
-MUPDFTARGET=build/debug
+MUPDFTARGET=build/release
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
 KPVCRLIBDIR=kpvcrlib
@@ -29,8 +29,8 @@ HOSTCXX:=g++
 
 CFLAGS:=-O3 $(SYSROOT)
 CXXFLAGS:=-O3 $(SYSROOT)
-LDFLAGS:= $(SYSROOT)
-ARM_CFLAGS:=-march=armv6
+LDFLAGS:=-Wl,-O1 -Wl,--as-needed
+ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
@@ -58,6 +58,7 @@ ifdef EMULATE_READER
 	endif
 else
 	CFLAGS+= $(ARM_CFLAGS)
+	CXXFLAGS+= $(ARM_CFLAGS)
 endif
 
 # standard includes
@@ -158,7 +159,7 @@ clean:
 
 cleanthirdparty:
 	-make -C $(LUADIR) clean
-	-make -C $(MUPDFDIR) clean
+	-make -C $(MUPDFDIR) build="release" clean
 	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
 	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
@@ -169,18 +170,18 @@ cleanthirdparty:
 	-rm -f $(MUPDFDIR)/cmapdump.host
 
 $(MUPDFDIR)/fontdump.host:
-	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
+	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	make -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
+	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	make -C mupdf clean
 
 $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
+	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf build="release" CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
 
 $(DJVULIBS):
 	-mkdir $(DJVUDIR)/build
@@ -193,7 +194,7 @@ endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" cmake . && \
 		make
 
 $(LUALIB):
