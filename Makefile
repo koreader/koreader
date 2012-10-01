@@ -30,7 +30,7 @@ HOSTCXX:=g++
 CFLAGS:=-O3 $(SYSROOT)
 CXXFLAGS:=-O3 $(SYSROOT)
 LDFLAGS:= $(SYSROOT)
-ARM_CFLAGS:=-march=armv6
+ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
 # use this for debugging:
 #CFLAGS:=-O0 -g $(SYSROOT)
 
@@ -58,6 +58,7 @@ ifdef EMULATE_READER
 	endif
 else
 	CFLAGS+= $(ARM_CFLAGS)
+	CXXFLAGS+= $(ARM_CFLAGS)
 endif
 
 # standard includes
@@ -197,7 +198,7 @@ endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
 		make
 
 $(LUALIB):
