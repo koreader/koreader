@@ -29,7 +29,7 @@ HOSTCXX:=g++
 
 CFLAGS:=-O3 $(SYSROOT)
 CXXFLAGS:=-O3 $(SYSROOT)
-LDFLAGS:= $(SYSROOT)
+LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
 # use this for debugging:
 #CFLAGS:=-O0 -g
@@ -92,6 +92,7 @@ all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) \
+		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -110,6 +111,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
+		$(LDFLAGS) \
 		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
 slider_watcher: slider_watcher.c
@@ -194,7 +196,7 @@ endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" cmake . && \
 		make
 
 $(LUALIB):
