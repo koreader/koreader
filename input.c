@@ -190,7 +190,7 @@ static int closeInputDevices(lua_State *L) {
 	}
 	if(slider_pid != -1) {
 		/* kill and wait for child process */
-		kill(slider_pid, SIGTERM);	// We could kill -slider_pid (note the minus) to kill the whole process group, but we trap SIGTERM to handle things nicely
+		kill(slider_pid, SIGTERM);
 		waitpid(-1, NULL, 0);
 	}
 	return 0;
