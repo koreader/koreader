@@ -65,16 +65,9 @@ main ( int argc, char *argv[] )
 	ev.value = 1;
 
 	/* listen power slider events */
-	char *exec_file = "lipc-wait-event";
-	char *arg1 = "-m";
-	char *arg2 = "-s";
-	char *arg3 = "0";
-	char *arg4 = "com.lab126.powerd";
-	char *arg5 = "goingToScreenSaver,outOfScreenSaver";
-	char *arg6 = (char *) NULL;
-	char *chargv[] = {exec_file, arg1, arg2, arg3, arg4, arg5, arg6};
+	char *argv[] = {"lipc-wait-event", "-m", "-s", "0", "com.lab126.powerd", "goingToScreenSaver,outOfScreenSaver", (char *) NULL};
 
-	fp = popen_noshell(exec_file, (const char * const *)chargv, "r", &pclose_arg, 0);
+	fp = popen_noshell("lipc-wait-event", (const char * const *)chargv, "r", &pclose_arg, 0);
 	if (!fp) {
 		err(EXIT_FAILURE, "popen_noshell()");
 	}

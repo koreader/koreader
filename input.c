@@ -50,7 +50,8 @@ void slider_handler(int sig)
 {
 	/* Kill lipc-wait-event properly on exit */
 	if(pclose_arg.pid != 0) {
-		kill(pclose_arg.pid, SIGTERM);
+		// Be a little more gracious, lipc seems to handle SIGINT properly
+		kill(pclose_arg.pid, SIGINT);
 	}
 }
 
@@ -84,7 +85,7 @@ static int openInputDevice(lua_State *L) {
 			return luaL_error(L, "cannot fork() slider event listener");
 		}
 		if(childpid == 0) {
-			// Setup signal handler, to cleanup on exit
+			// We send a SIGTERM to this child on exit, trap it to kill lipc properly.
 			signal(SIGTERM, slider_handler);
 
 			FILE *fp;
@@ -99,24 +100,20 @@ static int openInputDevice(lua_State *L) {
 			ev.code = key_code;
 			ev.value = 1;
 
-			/* listen power slider events */
-			char *exec_file = "lipc-wait-event";
-			char *arg1 = "-m";	// Hang for ever, don't exit on the first one: we're in a dedicated child, and we'll be killed/closed on exit, so we don't care
-			char *arg2 = "-s";
-			char *arg3 = "0";
-			char *arg4 = "com.lab126.powerd";
-			char *arg5 = "goingToScreenSaver,outOfScreenSaver,charging,notCharging";
-			char *arg6 = (char *) NULL;
-			char *argv[] = {exec_file, arg1, arg2, arg3, arg4, arg5, arg6};
+			/* listen power slider events (listen for ever for multiple events) */
+			char *argv[] = {"lipc-wait-event", "-m", "-s", "0", "com.lab126.powerd", "goingToScreenSaver,outOfScreenSaver,charging,notCharging", (char *) NULL};
 			/* @TODO  07.06 2012 (houqp)
 			*  plugin and out event can only be watched by:
 				lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
 			*/
 
-			fp = popen_noshell(exec_file, (const char * const *)argv, "r", &pclose_arg, 0);
+			fp = popen_noshell("lipc-wait-event", (const char * const *)argv, "r", &pclose_arg, 0);
 			if (!fp) {
 				err(EXIT_FAILURE, "popen_noshell()");
 			}
+
+			/* Flush to get rid of buffering issues? */
+			fflush(fp);
 
 			while(fgets(std_out, sizeof(std_out)-1, fp)) {
 				if(std_out[0] == 'g') {
@@ -147,13 +144,13 @@ static int openInputDevice(lua_State *L) {
 			if (status == -1) {
 				err(EXIT_FAILURE, "pclose_noshell()");
 			} else {
-				printf("Power slider event listener child exited with status %d.\n", status);
+				printf("lipc-wait-event exited with status %d.\n", status);
 
 				if WIFEXITED(status) {
-					printf("Child exited normally with status: %d.\n", WEXITSTATUS(status));
+					printf("lipc-wait-event exited normally with status: %d.\n", WEXITSTATUS(status));
 				}
 				if WIFSIGNALED(status) {
-					printf("Child terminated by signal: %d.\n", WTERMSIG(status));
+					printf("lipc-wait-event terminated by signal: %d.\n", WTERMSIG(status));
 				}
 			}
 
@@ -193,7 +190,7 @@ static int closeInputDevices(lua_State *L) {
 	}
 	if(slider_pid != -1) {
 		/* kill and wait for child process */
-		kill(slider_pid, SIGTERM);
+		kill(slider_pid, SIGTERM);	// We could kill -slider_pid (note the minus) to kill the whole process group, but we trap SIGTERM to handle things nicely
 		waitpid(-1, NULL, 0);
 	}
 	return 0;
