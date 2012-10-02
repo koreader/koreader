@@ -29,33 +29,27 @@ FileChooser = {
 	pagedirty = true,
 	markerdirty = false,
 	perpage,
-	clipboard = lfs.currentdir() .. "/clipboard", -- NO finishing slash
 
-	-- NuPogodi, 04.09.2012: introduced modes that configures the filechoser 
-	-- for users with various purposes & skills
+	clipboard = lfs.currentdir() .. "/clipboard", -- NO finishing slash
+	before_clipboard, -- NuPogodi, 30.09.12: to store the path where jump to clipboard was made from
+
+	-- modes that configures the filechoser for users with various purposes & skills
 	filemanager_expert_mode, -- default value is defined in reader.lua
 	-- the definitions
 	BEGINNERS_MODE = 1, -- the filemanager content is restricted by files with reader-related extensions; safe renaming (no extension)
 	ADVANCED_MODE = 2, -- no extension-based filtering; renaming with extensions; appreciable danger to crash crengine by improper docs
 	ROOT_MODE = 3, -- TODO: all functions (including non-stable and dangerous)
-
 }
 
-function getProperTitleLength(txt,font_face,max_width)
-	local tw = TextWidget:new({ text = txt, face = font_face})
-	-- 1st approximation for a point where to start title
-	local n = math.floor(string.len(txt) * (1 - max_width / tw:getSize().w)) - 2
-	n = math.max(n, 1)
-	while tw:getSize().w >= max_width do
-		tw:free()
-		tw = TextWidget:new({ text = string.sub(txt,n,-1), face = font_face})
-		n = n + 1
+-- NuPogodi, 29.09.12: simplified the code
+function getProperTitleLength(txt, font_face, max_width)
+	while sizeUtf8Text(0, G_width, font_face, txt, true).x > max_width do
+		txt = txt:sub(2, -1)
 	end
-	return string.sub(txt,n-1,-1)
+	return txt
 end
 
 function BatteryLevel()
-	-- NuPogodi, 18.05.12: This command seems to work even without Amazon Kindle framework 
 	local p = io.popen("gasgauge-info -s 2> /dev/null", "r") -- io.popen() _never_ fails!
 	local battery = p:read("*a") or "?"
 	if battery == "" then battery = "?" end
@@ -63,36 +57,30 @@ function BatteryLevel()
 	return string.gsub(battery, "[\n\r]+", "")
 end
 
+-- NuPogodi, 29.09.12: avoid using widgets
 function DrawTitle(text,lmargin,y,height,color,font_face)
 	local r = 6	-- radius for round corners
 	color = 3	-- redefine to ignore the input for background color
-
-	fb.bb:paintRect(1, 1, fb.bb:getWidth() - 2, height - r, color)
-	blitbuffer.paintBorder(fb.bb, 1, height/2, fb.bb:getWidth() - 2, height/2, height/2, color, r)
-	-- to have a horisontal gap between text & background rectangle
-	t = BatteryLevel() .. os.date(" %H:%M")
-	local tw = TextWidget:new({ text = t, face = font_face})
-	twidth = tw:getSize().w
-	renderUtf8Text(fb.bb, fb.bb:getWidth()-twidth-lmargin, height-10, font_face, t, true)
-	tw:free()
-
-	tw = TextWidget:new({ text = text, face = font_face})
-	local max_width = fb.bb:getWidth() - 2*lmargin - twidth
-	if tw:getSize().w < max_width then
+	fb.bb:paintRect(1, 1, G_width-2, height - r, color)
+	blitbuffer.paintBorder(fb.bb, 1, height/2, G_width-2, height/2, height/2, color, r)
+	local t = BatteryLevel() .. os.date(" %H:%M")
+	r = sizeUtf8Text(0, G_width, font_face, t, true).x
+	renderUtf8Text(fb.bb, G_width-r-lmargin, height-10, font_face, t, true)
+	r = G_width - r - 2 * lmargin - 10 -- let's leave small gap
+	if sizeUtf8Text(0, G_width, font_face, text, true).x <= r then
 		renderUtf8Text(fb.bb, lmargin, height-10, font_face, text, true)
 	else
-		local w = renderUtf8Text(fb.bb, lmargin, height-10, font_face, "...", true)
-		local txt = getProperTitleLength(text, font_face, max_width-w)
-		renderUtf8Text(fb.bb, w+lmargin, height-10, font_face, txt, true)
+		t = renderUtf8Text(fb.bb, lmargin, height-10, font_face, "...", true)
+		text = getProperTitleLength(text, font_face, r-t)
+		renderUtf8Text(fb.bb, lmargin+t, height-10, font_face, text, true)
 	end
-	tw:free()
 end
 
 function DrawFooter(text,font_face,h)
 	local y = G_height - 7
-	-- NuPogodi, 29.09.12: just dirty fix to have the same footer everywhere
+	-- just dirty fix to have the same footer everywhere
 	local x = FileChooser.margin_H --(G_width / 2) - 50
-	renderUtf8Text(fb.bb, x, y, font_face, text.."  - Press H for help", true)
+	renderUtf8Text(fb.bb, x, y, font_face, text.." - Press H for help", true)
 end
 
 function DrawFileItem(name,x,y,image)
@@ -106,11 +94,11 @@ function DrawFileItem(name,x,y,image)
 	-- then drawing filenames
 	local cface = Font:getFace("cfont", 22)
 	local xleft = x + iw:getSize().w + 9 -- the gap between icon & filename
-	local width = fb.bb:getWidth() - xleft - x
+	local width = G_width - xleft - x
 	-- now printing the name
-	if sizeUtf8Text(xleft, fb.bb:getWidth() - x, cface, name, true).x < width then
+	if sizeUtf8Text(xleft, G_width - x, cface, name, true).x < width then
 		renderUtf8Text(fb.bb, xleft, y, cface, name, true)
-	else 
+	else
 		local lgap = sizeUtf8Text(0, width, cface, " ...", true).x
 		local handle = renderUtf8TextWidth(fb.bb, xleft, y, cface, name, true, width - lgap - x)
 		renderUtf8Text(fb.bb, handle.x + lgap + x, y, cface, " ...", true)
@@ -162,6 +150,10 @@ end
 
 function FileChooser:setPath(newPath)
 	local curr_path = self.path
+	if self.before_clipboard then -- back from clipboard
+		newPath = self.before_clipboard
+		self.before_clipboard = nil
+	end
 	self.path = getAbsolutePath(newPath)
 	local readdir_ok, exc = pcall(self.readDir,self)
 	if(not readdir_ok) then
@@ -173,8 +165,20 @@ function FileChooser:setPath(newPath)
 		if self.items == 0 then
 			return nil
 		end
-		self.page = 1
-		self.current = 1
+		-- NuPogodi, 02.10.12: 1) changing the current item position ONLY IF the path was changed
+		-- 2) trying to set marker under the folder that was just left by ".."
+		if self.path ~= curr_path then
+			local i = 2
+			while i <= #self.dirs and not string.find(curr_path, self.dirs[i]) do
+				i = i + 1
+			end
+			if i <= #self.dirs then -- found
+				self.current, self.page = gotoTargetItem(i, self.items, self.current, self.page, self.perpage)
+			else -- set defaults
+				self.page = 1
+				self.current = 1
+			end
+		end
 		return true
 	end
 end
@@ -210,7 +214,7 @@ function FileChooser:choose(ypos, height)
 			local msg = self.exception_message and self.exception_message:match("[^%:]+:%d+: (.*)") or self.path
 			self.exception_message = nil
 			-- draw header
-			DrawTitle(msg,self.margin_H,ypos,self.title_H,4,tface)
+			DrawTitle(msg,self.margin_H,ypos,self.title_H,3,tface)
 			self.markerdirty = true
 		end
 
@@ -260,7 +264,7 @@ function FileChooser:choose(ypos, height)
 	end -- while
 end
 
--- NuPogodi, 20.05.12: add available commands
+-- add available commands
 function FileChooser:addAllCommands()
 	self.commands = Commands:new{}
 
@@ -270,35 +274,8 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, ">",
-		"goto next page",
-		function(self)
-			if self.page < (self.items / self.perpage) then
-				if self.current + self.page*self.perpage > self.items then
-					self.current = self.items - self.page*self.perpage
-				end
-				self.page = self.page + 1
-				self.pagedirty = true
-			else
-				self.current = self.items - (self.page-1)*self.perpage
-				self.markerdirty = true
-			end
-		end
-	)
-	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
-		"goto previous page",
-		function(self)
-			if self.page > 1 then
-				self.page = self.page - 1
-				self.pagedirty = true
-			else
-				self.current = 1
-				self.markerdirty = true
-			end
-		end
-	)
 	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
-		"goto next item",
+		"next item",
 		function(self)
 			if self.current == self.perpage then
 				if self.page < (self.items / self.perpage) then
@@ -316,7 +293,7 @@ function FileChooser:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
-		"goto previous item",
+		"previous item",
 		function(self)
 			if self.current == 1 then
 				if self.page > 1 then
@@ -330,16 +307,69 @@ function FileChooser:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_FW_RIGHT, KEY_I}, nil, "joypad right",
+	-- NuPogodi, 01.10.12: fast jumps to items at positions 10, 20, .. 90, 0% within the list
+	local numeric_keydefs, i = {}
+	for i=1, 10 do numeric_keydefs[i]=Keydef:new(KEY_1+i-1, nil, tostring(i%10)) end
+	self.commands:addGroup("[1, 2 .. 9, 0]", numeric_keydefs,
+		"item at position 0%, 10% .. 90%, 100%",
+		function(self)
+			local target_item = math.ceil(self.items * (keydef.keycode-KEY_1) / 9)
+			self.current, self.page, self.markerdirty, self.pagedirty =
+				gotoTargetItem(target_item, self.items, self.current, self.page, self.perpage)
+		end
+	)
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, ">",
+		"next page",
+		function(self)
+			if self.page < (self.items / self.perpage) then
+				if self.current + self.page*self.perpage > self.items then
+					self.current = self.items - self.page*self.perpage
+				end
+				self.page = self.page + 1
+				self.pagedirty = true
+			else
+				self.current = self.items - (self.page-1)*self.perpage
+				self.markerdirty = true
+			end
+		end
+	)
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
+		"previous page",
+		function(self)
+			if self.page > 1 then
+				self.page = self.page - 1
+				self.pagedirty = true
+			else
+				self.current = 1
+				self.markerdirty = true
+			end
+		end
+	)
+	self.commands:add(KEY_G, nil, "G", -- NuPogodi, 01.10.12: goto page No.
+		"goto page",
+		function(self)
+			local n = math.ceil(self.items / self.perpage)
+			local page = NumInputBox:input(G_height-100, 100, "Page:", "current page "..self.page.." of "..n, true)
+			if pcall(function () page = math.floor(page) end) -- convert string to number
+			and page ~= self.page and page > 0 and page <= n then
+				self.page = page
+				if self.current + (page-1)*self.perpage > self.items then
+					self.current = self.items - (page-1)*self.perpage
+				end
+			end
+			self.pagedirty = true
+		end
+	)
+	self.commands:add(KEY_FW_RIGHT, nil, "joypad right",
 		"show document information",
 		function(self)
 			local folder = self.dirs[self.perpage*(self.page-1)+self.current]
 			if folder then
 				if folder == ".." then
-					showInfoMsgWithDelay("<UP-DIR> ", 1000, 1)
+					warningUnsupportedFunction()
 				else
 					folder = self.path.."/"..folder
-					if FileInfo:show(folder) == "goto" then 
+					if FileInfo:show(folder) == "goto" then
 						self:setPath(folder)
 					end
 				end
@@ -365,39 +395,29 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
--- NuPogodi, 23.05.12: modified to delete both files and empty folders
+	-- modified to delete both files and empty folders
 	self.commands:add(KEY_DEL, nil, "Del",
 		"delete selected item",
 		function(self)
 			local pos = self.perpage*(self.page-1)+self.current
-			local folder = self.dirs[pos]
-			if folder == ".." then
-				showInfoMsgWithDelay(".. cannot be deleted! ",1500,1)
-			elseif folder then
-				InfoMessage:show("Press \'Y\' to confirm",0)
-				if self:ReturnKey() == KEY_Y then
-					if lfs.rmdir(self.path.."/"..folder) then
-						table.remove(self.dirs, offset)
-						self:setPath(self.path)
-					else
-						showInfoMsgWithDelay("Cannot be deleted!",1500,1)
-					end
+			local confirm = "Please, press key Y to confirm deleting"
+			if pos > #self.dirs then -- file
+				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then	-- silent regime
+					self:deleteFileAtPosition(pos)
+				else
+					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
+					if self:ReturnKey() == KEY_Y then self:deleteFileAtPosition(pos) end
 				end
-			else
-				InfoMessage:show("Press \'Y\' to confirm",0)
-				if self:ReturnKey() == KEY_Y then
-					pos = pos - #self.dirs
-					local fullpath = self.path.."/"..self.files[pos]
-					-- delete the file itself
-					os.remove(fullpath)
-					-- and its history file, if any
-					os.remove(DocToHistory(fullpath))
-					-- to avoid showing just deleted file
-					table.remove(self.files, pos)
-					self.items = self.items - 1
-					self.current = self.current - 1
+			elseif self.dirs[pos] == ".." then 
+				warningUnsupportedFunction()
+			else -- other folders
+				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then -- silent regime
+					self:deleteFolderAtPosition(pos)
+				else
+					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
+					if self:ReturnKey() == KEY_Y then self:deleteFolderAtPosition(pos) end
 				end
-			end -- if folder == ".."
+			end
 			self.pagedirty = true
 		end -- function
 	)
@@ -427,14 +447,48 @@ function FileChooser:addAllCommands()
 			end
 		end
 	)
-	-- NuPogodi, 04.09.12: menu to switch the filechooser mode
 	self.commands:add(KEY_M, MOD_ALT, "M",
 		"set mode for filemanager",
 		function(self)
 			self:changeFileChooserMode()
 		end
 	)
-	self.commands:add({KEY_F, KEY_AA}, nil, "F",
+-- NuPogodi, 25.09.12: new functions to tune the way how to inform user about the reader events
+	local popup_text = "Unstable... For experts only! "
+	local voice_text = "This function is still under development and available only for experts and beta testers."
+	self.commands:add(KEY_I, nil, "I",
+		"change the way to inform about events",
+		function(self)
+			if self.filemanager_expert_mode == self.ROOT_MODE then
+				InfoMessage:chooseNotificatonMethods()
+				self.pagedirty = true
+			else
+				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
+			end
+		end
+	)
+	self.commands:addGroup("Vol-/+", {Keydef:new(KEY_VPLUS,nil), Keydef:new(KEY_VMINUS,nil)},
+		"decrease/increase sound volume",
+		function(self)
+			if self.filemanager_expert_mode == self.ROOT_MODE then
+				InfoMessage:incrSoundVolume(keydef.keycode == KEY_VPLUS and 1 or -1)
+			else
+				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
+			end
+		end
+	)
+	self.commands:addGroup(MOD_SHIFT.."Vol-/+", {Keydef:new(KEY_VPLUS,MOD_SHIFT), Keydef:new(KEY_VMINUS,MOD_SHIFT)},
+		"decrease/increase TTS-engine speed",
+		function(self)
+			if self.filemanager_expert_mode == self.ROOT_MODE then
+				InfoMessage:incrTTSspeed(keydef.keycode == KEY_VPLUS and 1 or -1)
+			else
+				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
+			end
+		end
+	)
+------------ end of changes (NuPogodi, 25.09.12) ------------
+	self.commands:add({KEY_F, KEY_AA}, nil, "F, Aa",
 		"change font faces",
 		function(self)
 			Font:chooseFonts()
@@ -447,7 +501,7 @@ function FileChooser:addAllCommands()
 			HelpPage:show(0, G_height, self.commands)
 			self.pagedirty = true
 		end
-	) 
+	)
 	self.commands:add(KEY_L, nil, "L",
 		"show last documents",
 		function(self)
@@ -462,16 +516,17 @@ function FileChooser:addAllCommands()
 		function(self)
 			local keywords = InputBox:input(0, 0, "Search:")
 			if keywords then
-				InfoMessage:show("Searching... ",0)
+				InfoMessage:inform("Searching... ", nil, 1, MSG_AUX)
 				FileSearcher:init( self.path )
 				FileSearcher:choose(keywords)
 			end
 			self.pagedirty = true
-		end -- function
+		end
 	)
 	self.commands:add(KEY_C, MOD_SHIFT, "C",
-		"copy file to \'clipboard\'",
+		"copy file to 'clipboard'",
 		function(self)
+			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
 				lfs.mkdir(self.clipboard)
@@ -479,29 +534,34 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..self:InQuotes(DocToHistory(file)).." "
 					..self:InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
-				showInfoMsgWithDelay("File copied to clipboard ", 1000, 1)
+				InfoMessage:inform("File copied to clipboard ", 1000, 1, MSG_WARN,
+					"The file has been copied to clipboard.")
 			end
 		end
-	) 
+	)
 	self.commands:add(KEY_X, MOD_SHIFT, "X",
-		"move file to \'clipboard\'",
+		"move file to 'clipboard'",
 		function(self)
+			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
 				lfs.mkdir(self.clipboard)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
-				InfoMessage:show("File moved to clipboard ", 0)
+				InfoMessage:inform("File moved to clipboard ", nil, 0, MSG_WARN,
+					"The file has been moved to clipboard.")
 				self:setPath(self.path)
 				self.pagedirty = true
 			end
 		end
 	)
 	self.commands:add(KEY_V, MOD_SHIFT, "V",
-		"paste file(s) from \'clipboard\'",
+		"paste file(s) from 'clipboard'",
 		function(self)
-			InfoMessage:show("moving file(s) from clipboard ", 0)
+			-- TODO (NuPogodi, 27.09.12): first test whether the clipboard is empty & answer respectively
+			-- TODO (NuPogodi, 27.09.12): overwrite?
+			InfoMessage:inform("Moving files from clipboard...", nil, 0, MSG_AUX)
 			for f in lfs.dir(self.clipboard) do
 				if lfs.attributes(self.clipboard.."/"..f, "mode") == "file" then
 					os.rename(self.clipboard.."/"..f, self.path.."/"..f)
@@ -513,11 +573,15 @@ function FileChooser:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_B, MOD_SHIFT, "B",
-		"show content of \'clipboard\'",
+		"show content of 'clipboard'",
 		function(self)
+			-- NuPogodi, 30.09.12: exit back from clipboard to last folder by '..'
+			local current_path = self.path
 			lfs.mkdir(self.clipboard)
-			self:setPath(self.clipboard)
-			-- TODO: exit back from clipboard to last folder - Redefine Exit on FW_Right?
+			if self.clipboard ~= self.path then
+				self:setPath(self.clipboard)
+				self.before_clipboard = current_path
+			end
 			self.pagedirty = true
 		end
 	)
@@ -536,13 +600,12 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_K, MOD_SHIFT, "K",
 		"run calculator",
 		function(self)
-			local CalcBox = InputBox:new{ calcmode = true }
+			local CalcBox = InputBox:new{ inputmode = MODE_CALC }
 			CalcBox:input(0, 0, "Calc ")
 			self.pagedirty = true
 		end
 	)
-	self.commands:add(KEY_HOME, nil, "Home",
-		"exit",
+	self.commands:addGroup("Home, Alt + Back", { Keydef:new(KEY_HOME, nil),Keydef:new(KEY_BACK, MOD_ALT)}, "exit",
 		function(self)
 			return "break"
 		end
@@ -551,19 +614,14 @@ end
 
 -- returns full filename or nil (if folder)
 function FileChooser:FullFileName()
-	local file
-	local folder = self.dirs[self.perpage*(self.page-1)+self.current]
-	if folder == ".." then
-		showInfoMsgWithDelay("<UP-DIR> ",1000,1)
-	elseif folder then
-		showInfoMsgWithDelay("<DIR> ",1000,1)
-	else
-		file=self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
+	if self.current > #self.dirs then
+		return self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 	end
-	return file
+	warningUnsupportedFunction()
+	return nil
 end
--- returns the keycode of released key and (if debug) shows the keycode on screen
-function FileChooser:ReturnKey(debug)
+-- returns the keycode of released key
+function FileChooser:ReturnKey()
 	while true do
 		ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -571,7 +629,6 @@ function FileChooser:ReturnKey(debug)
 			break
 		end
 	end
-	if debug then showInfoMsgWithDelay("Keycode = "..ev.code,1000,1) end
 	return ev.code
 end
 
@@ -582,11 +639,11 @@ end
 --[[ NuPogodi, 04.09.2012: to make it more easy for users with various purposes and skills.
 ATM, one may leave only silent toggling between BEGINNERS_MODE <> ADVANCED_MODE
 -- But, in future, one more (the so called ROOT_MODE) might also be rather useful.
-Shitch this mode on should allow developers & beta-testers to use some unstable 
+Switching this mode on should allow developers & beta-testers to use some unstable
 and/or dangerous functions able to crash the reader. ]]
 
 function FileChooser:changeFileChooserMode()
-	local face_list = { "safe mode for beginners", "advanced mode for experienced users", "expert mode for beta-testers & developers" }
+	local face_list = { "Safe mode for beginners", "Advanced mode for experienced users", "Expert mode for beta-testers & developers" }
 	local modes_menu = SelectMenu:new{
 		menu_title = "Select proper mode to manage files",
 		item_array = face_list,
@@ -594,30 +651,58 @@ function FileChooser:changeFileChooserMode()
 		}
 	local m = modes_menu:choose(0, G_height)
 	if m and m ~= self.filemanager_expert_mode then
-		--[[ TODO: to allow multiline-rendering for info messages & to include detailed description of the selected mode
-		local msg = "Press 'Y' to accept new mode..."
-		if m==self.BEGINNERS_MODE then
-			msg = "You have selected safe mode for beginners: the filemanager shows only files with the reader-related extensions (*.pdf, *.djvu, etc.); "..
-			"safe renaming (no extensions); unstable or dangerous functions are NOT included. "..msg
-		elseif m==self.ADVANCED_MODE then
-			msg = "You have selected advanced mode for experienced users: the filemanager shows all files; "..
-			"you may rename not only their names, but also the extensions; the files with unknown extensions would be sent to CREReader "..
-			"and could crash the reader. Please, use it in your own risk. "..msg
-		else -- ROOT_MODE
-			msg = "You have selected the most advanced and dangerous mode. I hope You know what you are doing. God bless You. "..msg
-		end 
-		InfoMessage:show(msg, 1)
-		if self:ReturnKey() == KEY_Y then ]]
 			if (self.filemanager_expert_mode == self.BEGINNERS_MODE and m > self.BEGINNERS_MODE)
 			or (m == self.BEGINNERS_MODE and self.filemanager_expert_mode > self.BEGINNERS_MODE) then
 				self.filemanager_expert_mode = m	-- make sure that new mode is set before...
-				self:setPath(self.path)		-- refreshing the folder content
+				self:setPath(self.path)			-- refreshing the folder content
 			else
 				self.filemanager_expert_mode = m
 			end
 			G_reader_settings:saveSetting("filemanager_expert_mode", self.filemanager_expert_mode)
-		-- end
 	end
+	-- NuPogodi, 26.09.2012: temporary place; when properly tested, might be commented / deleted the following line
+	InfoMessage:initInfoMessageSettings()
 	self.pagedirty = true
 end
 
+-- NuPogodi, 28.09.12: two following functions are extracted just to make the code more compact
+function FileChooser:deleteFolderAtPosition(pos)
+	if lfs.rmdir(self.path.."/"..self.dirs[pos]) then
+		table.remove(self.dirs, pos) -- to avoid showing just deleted file
+		self.items = #self.dirs + #self.files
+		self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
+	else
+		InfoMessage:inform("Folder can't be deleted! ", 1500, 1, MSG_ERROR,
+			"This folder can not be deleted! Please, make sure that it is empty.")
+	end
+end
+
+function FileChooser:deleteFileAtPosition(pos)
+	local fullpath = self.path.."/"..self.files[pos-#self.dirs]
+	os.remove(fullpath)			-- delete the file itself
+	os.remove(DocToHistory(fullpath))	-- and its history file, if any
+	table.remove(self.files, pos-#self.dirs)	-- to avoid showing just deleted file
+	self.items = self.items - 1
+	self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
+end
+
+-- NuPogodi, 01.10.12: jump to defined item in the itemlist
+function gotoTargetItem(target_item, all_items, current_item, current_page, perpage)
+	target_item = math.max(math.min(target_item, all_items), 1)
+	local target_page = math.ceil(target_item/perpage)
+	local target_curr = (target_item -1) % perpage + 1
+	local pagedirty, markerdirty = false, false
+	if target_page ~= current_page then
+		current_page = target_page
+		pagedirty = true
+		markerdirty = true
+	elseif target_curr ~= current_item then 
+		markerdirty = true
+	end
+	return target_curr, current_page, markerdirty, pagedirty
+end
+
+function warningUnsupportedFunction()
+	InfoMessage:inform("Unsupported function! ", 2000, 1, MSG_WARN,
+		"The requested function is not supported.")
+end
