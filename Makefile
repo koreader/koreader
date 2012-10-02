@@ -16,7 +16,7 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-HOST:=arm-none-linux-gnueabi
+HOST:=arm-kindle-linux-gnueabi
 CC:=$(HOST)-gcc
 CXX:=$(HOST)-g++
 STRIP:=$(HOST)-strip
@@ -27,10 +27,14 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3 $(SYSROOT)
-CXXFLAGS:=-O3 $(SYSROOT)
+# Base CFLAGS, without arch. Will use it as-is for luajit, because its buildsystem picks up the wrong flags, possibly from my env...
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+
+CFLAGS:=$(BASE_CFLAGS)
+CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
+HOSTCFLAGS:=-O2 -march=native -ffast-math -pipe -fomit-frame-pointer
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
@@ -92,6 +96,7 @@ all:kpdfview
 
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) \
+		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
@@ -110,6 +115,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
+		$(LDFLAGS) \
 		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
 slider_watcher: slider_watcher.c
@@ -158,7 +164,7 @@ clean:
 	-rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	-make -C $(LUADIR) clean
+	-make -C $(LUADIR) clean CFLAGS=""
 	-make -C $(MUPDFDIR) build="release" clean
 	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -170,12 +176,12 @@ cleanthirdparty:
 	-rm -f $(MUPDFDIR)/cmapdump.host
 
 $(MUPDFDIR)/fontdump.host:
-	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
+	make -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	make -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
+	make -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	make -C mupdf clean
 
@@ -201,7 +207,7 @@ $(LUALIB):
 ifdef EMULATE_READER
 	make -C $(LUADIR)
 else
-	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(BASE_CFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(HOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2" V=1
 endif
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
