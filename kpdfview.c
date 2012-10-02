@@ -15,9 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <errno.h>
+#include <unistd.h>
+#include <err.h>
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -39,7 +43,7 @@
 lua_State *L;
 
 int main(int argc, char **argv) {
-	int i, err;
+	int i;
 
 	if(argc < 2) {
 		fprintf(stderr, "needs config file as first argument.\n");
@@ -78,6 +82,15 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
+
+	/* Make popen_noshell & valgrind happy */
+	if (fflush(stdout) != 0)
+		err(EXIT_FAILURE, "fflush(stdout)");
+	if (fflush(stderr) != 0)
+		err(EXIT_FAILURE, "fflush(stderr)");
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
 
 	return 0;
 }
