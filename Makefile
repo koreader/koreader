@@ -172,7 +172,7 @@ fetchthirdparty:
 	cd mupdf && patch -N -p1 < ../mupdf.patch
 	svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
 	# popen_noshell patch: Make it build on recent TCs, and implement a simple Makefile for building it as a static lib
-	cd popen-noshell && patch -N -p0 < popen_noshell-buildfix.patch
+	cd popen-noshell && tesf -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
 	rm -f *.o kpdfview slider_watcher
