@@ -214,7 +214,7 @@ INSTALL_DIR=kindlepdfviewer
 
 LUA_FILES=reader.lua
 
-VERSION?=$(shell git rev-parse --short HEAD)
+VERSION?=$(shell git describe HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
