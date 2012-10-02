@@ -36,7 +36,7 @@ BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_
 #BASE_CFLAGS:=-O0 -g
 ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
 HOST_ARCH:=-march=native
-HOSTCFLAGS:=$(HOST_CFLAGS) $(BASE_CFLAGS)
+HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
 CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
