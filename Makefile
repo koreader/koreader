@@ -30,10 +30,13 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-CFLAGS:=-O3 $(SYSROOT)
-CXXFLAGS:=-O3 $(SYSROOT)
+# Base CFLAGS, without arch. Will use it as-is for luajit, because its buildsystem picks up the wrong flags, possibly from my env...
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+CFLAGS:=$(BASE_CFLAGS)
+CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
+HOSTCFLAGS:=-O2 -march=native -ffast-math -pipe -fomit-frame-pointer
 # use this for debugging:
 #CFLAGS:=-O0 -g
 
@@ -176,7 +179,7 @@ clean:
 	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) clean
+	$(MAKE) -C $(LUADIR) clean CFLAGS=""
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -189,12 +192,12 @@ cleanthirdparty:
 	$(MAKE) -C $(POPENNSDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
+	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	$(MAKE) -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
+	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C mupdf clean
 
@@ -220,7 +223,7 @@ $(LUALIB):
 ifdef EMULATE_READER
 	$(MAKE) -C $(LUADIR)
 else
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(CHOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(BASE_CFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 $(POPENNSLIB):
