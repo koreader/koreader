@@ -49,11 +49,9 @@ struct popen_noshell_pass_to_pclose pclose_arg;
 
 void slider_handler(int sig)
 {
-	int status;
 	/* Kill lipc-wait-event properly on exit */
 	if(pclose_arg.pid != 0) {
-		status = kill(pclose_arg.pid, SIGTERM);
-		printf("[SIGTERM] kill returned %d\n", status);
+		kill(pclose_arg.pid, SIGTERM);
 	}
 }
 
@@ -76,8 +74,6 @@ static int openInputDevice(lua_State *L) {
 	if(fd == -1) {
 		return luaL_error(L, "no free slot for new input device <%s>", inputdevice);
 	}
-
-	printf("Opening input device <%s> in slot %d.\n", inputdevice, fd);
 
 	if(!strcmp("slider",inputdevice)) {
 		/* special case: the power slider */
@@ -106,7 +102,7 @@ static int openInputDevice(lua_State *L) {
 
 			/* listen power slider events */
 			char *exec_file = "lipc-wait-event";
-			char *arg1 = "-m";	// Hang for ever, don't exit on the first one, we're in a dedicated child, and we'll be closed on exit, so we don't care
+			char *arg1 = "-m";	// Hang for ever, don't exit on the first one: we're in a dedicated child, and we'll be killed/closed on exit, so we don't care
 			char *arg2 = "-s";
 			char *arg3 = "0";
 			char *arg4 = "com.lab126.powerd";
@@ -122,8 +118,6 @@ static int openInputDevice(lua_State *L) {
 			if (!fp) {
 				err(EXIT_FAILURE, "popen_noshell()");
 			}
-
-			printf("PID of our child is: %d (ours: %d)\n", (int)pclose_arg.pid, (int)getpid());
 
 			while(fgets(std_out, sizeof(std_out)-1, fp)) {
 				if(std_out[0] == 'g') {
@@ -167,11 +161,9 @@ static int openInputDevice(lua_State *L) {
 			// We're done, go away :).
 			_exit(EXIT_SUCCESS);
 		} else {
-			printf("Slider pipe close in slot %d [inputfd[fd]: %d].\n", fd, pipefd[0]);
 			close(pipefd[1]);
 			inputfds[fd] = pipefd[0];
 			slider_pid = childpid;
-			printf("slider_pid is: %d\n", (int)slider_pid);
 		}
 	} else {
 		inputfds[fd] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
@@ -192,26 +184,18 @@ static int openInputDevice(lua_State *L) {
 }
 
 static int closeInputDevices(lua_State *L) {
-	printf("closeInputDevices(): BEGIN\n");
 #ifndef EMULATE_READER
-	int i, ret;
+	int i;
 	for(i=0; i<NUM_FDS; i++) {
-		printf("closeInputDevices(): loop on inputfd %d of %d\n", i, NUM_FDS);
 		if(inputfds[i] != -1) {
-			printf("closeInputDevices(): closing inputfd %d of %d (%d)\n", i, NUM_FDS, inputfds[i]);
-			ret = ioctl(inputfds[i], EVIOCGRAB, 0);
-			printf("closeInputDevices(): ioctl returned %d for inputfd %d\n", ret, i);
-			ret = close(inputfds[i]);
-			printf("closeInputDevices(): close returned %d for inputfd %d\n", ret, i);
+			ioctl(inputfds[i], EVIOCGRAB, 0);
+			close(inputfds[i]);
 		}
 	}
-	printf("closeInputDevices(): slider_pid is: %d\n", (int)slider_pid);
 	if(slider_pid != -1) {
 		/* kill and wait for child process */
-		ret = kill(slider_pid, SIGTERM);
-		printf("closeInputDevices(): kill returned %d\n", ret);
-		ret = waitpid(-1, NULL, 0);
-		printf("closeInputDevices(): waitpid returned %d\n", ret);
+		kill(slider_pid, SIGTERM);
+		waitpid(-1, NULL, 0);
 	}
 	return 0;
 #else
