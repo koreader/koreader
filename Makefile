@@ -18,7 +18,7 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-HOST:=arm-kindle-linux-gnueabi
+HOST:=arm-none-linux-gnueabi
 CC:=$(HOST)-gcc
 CXX:=$(HOST)-g++
 STRIP:=$(HOST)-strip
@@ -29,14 +29,10 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-# Base CFLAGS, without arch. Will use it as-is for luajit, because its buildsystem picks up the wrong flags, possibly from my env...
-BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
-
-CFLAGS:=$(BASE_CFLAGS)
-CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
+CFLAGS:=-O3 $(SYSROOT)
+CXXFLAGS:=-O3 $(SYSROOT)
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
-HOSTCFLAGS:=-O2 -march=native -ffast-math -pipe -fomit-frame-pointer
 # use this for debugging:
 #CFLAGS:=-O0 -g $(SYSROOT)
 
@@ -177,7 +173,7 @@ clean:
 	-rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	-make -C $(LUADIR) clean CFLAGS=""
+	-make -C $(LUADIR) clean
 	-make -C $(MUPDFDIR) build="release" clean
 	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -189,12 +185,12 @@ cleanthirdparty:
 	-rm -f $(MUPDFDIR)/cmapdump.host
 
 $(MUPDFDIR)/fontdump.host:
-	make -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
+	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	make -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	make -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
+	make -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	make -C mupdf clean
 
@@ -220,7 +216,7 @@ $(LUALIB):
 ifdef EMULATE_READER
 	make -C $(LUADIR)
 else
-	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(BASE_CFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(HOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2" V=1
+	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
