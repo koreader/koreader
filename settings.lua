@@ -100,6 +100,7 @@ function Debug(...)
 		end
 	end
 	print("#"..line)
+	return true -- debug enabled
 end
 
 -- simple serialization function, won't do uservalues, functions, loops
