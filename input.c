@@ -33,7 +33,6 @@
 #include "input.h"
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
 
 #define CODE_IN_SAVER		10000
 #define CODE_OUT_SAVER		10001

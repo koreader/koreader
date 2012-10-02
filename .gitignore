@@ -12,6 +12,7 @@ crash.log
 data
 fonts
 kpdfview
+slider_watcher
 *.o
 
 kindlepdfviewer-*.zip

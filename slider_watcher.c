@@ -16,8 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
+#include "popen-noshell/popen_noshell.h"
+#include <err.h>
 #include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -25,18 +28,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <sys/wait.h>
 
-#define OUTPUT_SIZE 21
-#define EVENT_PIPE "/tmp/event_slider"
 #define CODE_IN_SAVER 10000
 #define CODE_OUT_SAVER 10001
 
 int
 main ( int argc, char *argv[] )
 {
-	int fd, ret;
+	int fd;
 	FILE *fp;
-	char std_out[OUTPUT_SIZE] = "";
+	char std_out[256];
+	int status;
+	struct popen_noshell_pass_to_pclose pclose_arg;
 	struct input_event ev;
 	__u16 key_code = 10000;
 
@@ -51,7 +55,7 @@ main ( int argc, char *argv[] )
 	/* open npipe for writing */
 	fd = open(argv[1], O_RDWR | O_NONBLOCK);
 	if(fd < 0) {
-		printf("Open %s falied: %s\n", argv[1], strerror(errno));
+		printf("Open %s failed: %s\n", argv[1], strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -60,15 +64,25 @@ main ( int argc, char *argv[] )
 	ev.code = key_code;
 	ev.value = 1;
 
-	while(1) {
-		/* listen power slider events */
-		memset(std_out, 0, OUTPUT_SIZE);
-		fp = popen("lipc-wait-event  -s 0 com.lab126.powerd goingToScreenSaver,outOfScreenSaver", "r");
-		ret = fread(std_out, OUTPUT_SIZE, 1, fp);
-		pclose(fp);
+	/* listen power slider events */
+	char *exec_file = "lipc-wait-event";
+	char *arg1 = "-m";
+	char *arg2 = "-s";
+	char *arg3 = "0";
+	char *arg4 = "com.lab126.powerd";
+	char *arg5 = "goingToScreenSaver,outOfScreenSaver";
+	char *arg6 = (char *) NULL;
+	char *chargv[] = {exec_file, arg1, arg2, arg3, arg4, arg5, arg6};
 
-		/* fill event struct */
-		gettimeofday(&ev.time, NULL);
+	fp = popen_noshell(exec_file, (const char * const *)chargv, "r", &pclose_arg, 0);
+	if (!fp) {
+		err(EXIT_FAILURE, "popen_noshell()");
+	}
+
+	while(fgets(std_out, sizeof(std_out)-1, fp)) {
+
+		/* printf("Got line: %s", std_out); */
+
 		if(std_out[0] == 'g') {
 			ev.code = CODE_IN_SAVER;
 		} else if(std_out[0] == 'o') {
@@ -77,9 +91,29 @@ main ( int argc, char *argv[] )
 			printf("Unrecognized event.\n");
 			exit(EXIT_FAILURE);
 		}
+		/* fill event struct */
+		gettimeofday(&ev.time, NULL);
+
+		/* printf("Send event %d\n", ev.code); */
 
 		/* generate event */
-		ret = write(fd, &ev, sizeof(struct input_event));
+		if(write(fd, &ev, sizeof(struct input_event)) == -1) {
+			printf("Failed to generate event.\n");
+		}
+	}
+
+	status = pclose_noshell(&pclose_arg);
+	if (status == -1) {
+		err(EXIT_FAILURE, "pclose_noshell()");
+	} else {
+		printf("Power slider event listener child exited with status %d.\n", status);
+
+		if WIFEXITED(status) {
+			printf("Child exited normally with status: %d.\n", WEXITSTATUS(status));
+		}
+		if WIFSIGNALED(status) {
+			printf("Child terminated by signal: %d.\n", WTERMSIG(status));
+		}
 	}
 
 	close(fd);

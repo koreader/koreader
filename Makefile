@@ -121,8 +121,11 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o popen_noshell.o i
 		$(LDFLAGS) \
 		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
-slider_watcher: slider_watcher.c
-	$(CC) $(CFLAGS) $< -o $@
+slider_watcher.o: %.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+slider_watcher: popen_noshell.o slider_watcher.o
+	$(CC) $(CFLAGS) popen_noshell.o slider_watcher.o -o $@
 
 ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
