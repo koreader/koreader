@@ -123,15 +123,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	/* Make popen_noshell & valgrind happy */
-	if (fflush(stdout) != 0)
-		err(EXIT_FAILURE, "fflush(stdout)");
-	if (fflush(stderr) != 0)
-		err(EXIT_FAILURE, "fflush(stderr)");
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
-
 	return 0;
 }
 
