@@ -15,7 +15,7 @@ Index: Makefile
 ===================================================================
 --- Makefile	(revision 0)
 +++ Makefile	(working copy)
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +SRCS=popen_noshell.c
 +
 +OBJS:=$(SRCS:%.c=%.o)
@@ -31,6 +31,8 @@ Index: Makefile
 +clean:
 +	rm -rf *.o
 +	rm -rf libpopen_noshell.a
++
++.PHONY: clean
 
 Property changes on: Makefile
 ___________________________________________________________________
