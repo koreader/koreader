@@ -25,3 +25,17 @@ kpvcrlib/CMakeCache.txt
 kpvcrlib/CMakeFiles/
 kpvcrlib/cmake_install.cmake
 kpvcrlib/Makefile
+
+popen-noshell/libpopen_noshell.a
+popen-noshell/*.o
+popen-noshell/.svn/
+popen-noshell/CREDITS
+popen-noshell/Makefile
+popen-noshell/README
+popen-noshell/performance_tests/
+popen-noshell/popen_noshell.c
+popen-noshell/popen_noshell.h
+popen-noshell/popen_noshell_examples.c
+popen-noshell/popen_noshell_tests.c
+popen-noshell/popen_noshell_tests.cpp
+
