@@ -170,9 +170,9 @@ fetchthirdparty:
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
-	svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
+	test -f popen-noshell/popen_noshell.c || svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
 	# popen_noshell patch: Make it build on recent TCs, and implement a simple Makefile for building it as a static lib
-	cd popen-noshell && tesf -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
+	cd popen-noshell && test -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
 	rm -f *.o kpdfview slider_watcher
