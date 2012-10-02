@@ -5,6 +5,7 @@ lua-*
 mupdf-thirdparty.zip
 djvulibre*
 kpdfview
+slider_watcher
 *.o
 
 kindlepdfviewer-*.zip
