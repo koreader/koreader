@@ -11,6 +11,8 @@ CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
 LFSDIR=luafilesystem
 
+POPENNSDIR=popen-noshell
+
 # must point to directory with *.ttf fonts for crengine
 TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
@@ -94,7 +96,7 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 all:kpdfview
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o popen_noshell.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
@@ -102,6 +104,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		pdf.o \
 		blitbuffer.o \
 		drawcontext.o \
+		popen_noshell.o \
 		input.o \
 		util.o \
 		ft.o \
@@ -135,6 +138,9 @@ cre.o: %.o: %.cpp
 
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
+
+popen_noshell.o: $(POPENNSDIR)/popen_noshell.c
+	$(CC) -c $(CFLAGS) -I$(POPENNSDIR) $(POPENNSDIR)/popen_noshell.c -o $@
 
 fetchthirdparty:
 	-rm -Rf mupdf/thirdparty

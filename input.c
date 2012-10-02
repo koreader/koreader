@@ -15,7 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include "popen-noshell/popen_noshell.h"
+#include <err.h>
 #include <stdio.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -31,7 +35,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#define OUTPUT_SIZE 21
 #define CODE_IN_SAVER		10000
 #define CODE_OUT_SAVER		10001
 #define CODE_USB_PLUG_IN	10010
@@ -41,7 +44,18 @@
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
-int slider_pid = -1;
+pid_t slider_pid = -1;
+struct popen_noshell_pass_to_pclose pclose_arg;
+
+void slider_handler(int sig)
+{
+	int status;
+	/* Kill lipc-wait-event properly on exit */
+	if(pclose_arg.pid != 0) {
+		status = kill(pclose_arg.pid, SIGTERM);
+		printf("[SIGTERM] kill returned %d\n", status);
+	}
+}
 
 int findFreeFdSlot() {
 	int i;
@@ -63,7 +77,9 @@ static int openInputDevice(lua_State *L) {
 		return luaL_error(L, "no free slot for new input device <%s>", inputdevice);
 	}
 
-	if(!strcmp("fake_events",inputdevice)) {
+	printf("Opening input device <%s> in slot %d.\n", inputdevice, fd);
+
+	if(!strcmp("slider",inputdevice)) {
 		/* special case: the power slider */
 		int pipefd[2];
 		int childpid;
@@ -73,10 +89,13 @@ static int openInputDevice(lua_State *L) {
 			return luaL_error(L, "cannot fork() slider event listener");
 		}
 		if(childpid == 0) {
+			// Setup signal handler, to cleanup on exit
+			signal(SIGTERM, slider_handler);
+
 			FILE *fp;
-			char std_out[OUTPUT_SIZE] = "";
+			char std_out[256];
+			int status;
 			struct input_event ev;
-			int ret;
 			__u16 key_code = 10000;
 
 			close(pipefd[0]);
@@ -86,16 +105,27 @@ static int openInputDevice(lua_State *L) {
 			ev.value = 1;
 
 			/* listen power slider events */
-			while(1) {
-				fp = popen("exec lipc-wait-event com.lab126.powerd goingToScreenSaver,outOfScreenSaver,charging,notCharging", "r");
-				/* @TODO  07.06 2012 (houqp)
-				 * plugin and out event can only be watched by:
-					lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
-				 */
-				if(fgets(std_out, OUTPUT_SIZE, fp) == NULL) {
-					break;
-				}
-				pclose(fp);
+			char *exec_file = "lipc-wait-event";
+			char *arg1 = "-m";	// Hang for ever, don't exit on the first one, we're in a dedicated child, and we'll be closed on exit, so we don't care
+			char *arg2 = "-s";
+			char *arg3 = "0";
+			char *arg4 = "com.lab126.powerd";
+			char *arg5 = "goingToScreenSaver,outOfScreenSaver,charging,notCharging";
+			char *arg6 = (char *) NULL;
+			char *argv[] = {exec_file, arg1, arg2, arg3, arg4, arg5, arg6};
+			/* @TODO  07.06 2012 (houqp)
+			*  plugin and out event can only be watched by:
+				lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
+			*/
+
+			fp = popen_noshell(exec_file, (const char * const *)argv, "r", &pclose_arg, 0);
+			if (!fp) {
+				err(EXIT_FAILURE, "popen_noshell()");
+			}
+
+			printf("PID of our child is: %d (ours: %d)\n", (int)pclose_arg.pid, (int)getpid());
+
+			while(fgets(std_out, sizeof(std_out)-1, fp)) {
 				if(std_out[0] == 'g') {
 					ev.code = CODE_IN_SAVER;
 				} else if(std_out[0] == 'o') {
@@ -116,14 +146,32 @@ static int openInputDevice(lua_State *L) {
 
 				/* generate event */
 				if(write(pipefd[1], &ev, sizeof(struct input_event)) == -1) {
-					break;
+					printf("Failed to generate event.\n");
 				}
 			}
-			exit(0); /* cannot be reached?! */
+
+			status = pclose_noshell(&pclose_arg);
+			if (status == -1) {
+				err(EXIT_FAILURE, "pclose_noshell()");
+			} else {
+				printf("Power slider event listener child exited with status %d.\n", status);
+
+				if WIFEXITED(status) {
+					printf("Child exited normally with status: %d.\n", WEXITSTATUS(status));
+				}
+				if WIFSIGNALED(status) {
+					printf("Child terminated by signal: %d.\n", WTERMSIG(status));
+				}
+			}
+
+			// We're done, go away :).
+			_exit(EXIT_SUCCESS);
 		} else {
+			printf("Slider pipe close in slot %d [inputfd[fd]: %d].\n", fd, pipefd[0]);
 			close(pipefd[1]);
 			inputfds[fd] = pipefd[0];
 			slider_pid = childpid;
+			printf("slider_pid is: %d\n", (int)slider_pid);
 		}
 	} else {
 		inputfds[fd] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
@@ -138,23 +186,32 @@ static int openInputDevice(lua_State *L) {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
 	}
+	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	return 0;
 #endif
 }
 
 static int closeInputDevices(lua_State *L) {
+	printf("closeInputDevices(): BEGIN\n");
 #ifndef EMULATE_READER
-	int i;
+	int i, ret;
 	for(i=0; i<NUM_FDS; i++) {
+		printf("closeInputDevices(): loop on inputfd %d of %d\n", i, NUM_FDS);
 		if(inputfds[i] != -1) {
-			ioctl(inputfds[i], EVIOCGRAB, 0);
-			close(i);
+			printf("closeInputDevices(): closing inputfd %d of %d (%d)\n", i, NUM_FDS, inputfds[i]);
+			ret = ioctl(inputfds[i], EVIOCGRAB, 0);
+			printf("closeInputDevices(): ioctl returned %d for inputfd %d\n", ret, i);
+			ret = close(inputfds[i]);
+			printf("closeInputDevices(): close returned %d for inputfd %d\n", ret, i);
 		}
 	}
+	printf("closeInputDevices(): slider_pid is: %d\n", (int)slider_pid);
 	if(slider_pid != -1) {
 		/* kill and wait for child process */
-		kill(slider_pid, SIGTERM);
-		waitpid(-1, NULL, 0);
+		ret = kill(slider_pid, SIGTERM);
+		printf("closeInputDevices(): kill returned %d\n", ret);
+		ret = waitpid(-1, NULL, 0);
+		printf("closeInputDevices(): waitpid returned %d\n", ret);
 	}
 	return 0;
 #else
@@ -164,15 +221,14 @@ static int closeInputDevices(lua_State *L) {
 
 static int waitForInput(lua_State *L) {
 	int usecs = luaL_optint(L, 1, -1); // we check for <0 later
-	int secs = luaL_optint(L, 2, 0);
 
 #ifndef EMULATE_READER
 	fd_set fds;
 	struct timeval timeout;
 	int i, num, nfds;
 
-	timeout.tv_sec = secs;
-	timeout.tv_usec = usecs;
+	timeout.tv_sec = (usecs/1000000);
+	timeout.tv_usec = (usecs%1000000);
 
 	nfds = 0;
 
@@ -222,11 +278,11 @@ static int waitForInput(lua_State *L) {
 		if (usecs < 0)
 			SDL_WaitEvent(&event);
 		else {
-			while (SDL_GetTicks()-ticks <= secs * 1000 + usecs/1000) {
-				if (SDL_PollEvent(&event)) break; 
+			while (SDL_GetTicks()-ticks <= usecs/1000) {
+				if (SDL_PollEvent(&event)) break;
 				SDL_Delay(10);
 			}
-			if (SDL_GetTicks()-ticks > secs * 1000 + usecs/1000)
+			if (SDL_GetTicks()-ticks > usecs/1000)
 				return luaL_error(L, "Waiting for input failed: timeout\n");
 		}
 		switch(event.type) {
