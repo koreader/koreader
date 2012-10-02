@@ -142,6 +142,26 @@ end
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
 Screen:setRotationMode(Screen.native_rotation_mode)
+		if file then
+			running = openFile(file)
+		else
+			running = false
+		end
+		showReader(ARGV[optind], optarg["p"])
+	end
+	UIManager:run()
+elseif last_file and lfs.attributes(last_file, "mode") == "file" then
+	showReader(last_file, optarg["p"])
+	UIManager:run()
+else
+	return showusage()
+end
+
+
+
+-- @TODO dirty workaround, find a way to force native system poll
+-- screen orientation and upside down mode 09.03 2012
+Screen:setRotationMode(Screen.native_rotation_mode)
 
 input.closeAll()
 if util.isEmulated()==0 then
