@@ -22,7 +22,7 @@ CHOST?=arm-none-linux-gnueabi
 CC:=$(CHOST)-gcc
 CXX:=$(CHOST)-g++
 STRIP:=$(CHOST)-strip
-STRIP:=$(CHOST)-ar
+AR:=$(CHOST)-ar
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
