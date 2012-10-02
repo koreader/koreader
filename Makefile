@@ -30,15 +30,16 @@ endif
 HOSTCC:=gcc
 HOSTCXX:=g++
 
-# Base CFLAGS, without arch. Will use it as-is for luajit, because its buildsystem picks up the wrong flags, possibly from my env...
+# Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
 BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+# Use this for debugging:
+#BASE_CFLAGS:=-O0 -g
+ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
+HOST_ARCH:=-march=native
+HOSTCFLAGS:=$(HOST_CFLAGS) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
 CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
-ARM_CFLAGS:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
-HOSTCFLAGS:=-O2 -march=native -ffast-math -pipe -fomit-frame-pointer
-# use this for debugging:
-#CFLAGS:=-O0 -g
 
 DYNAMICLIBSTDCPP:=-lstdc++
 ifdef STATICLIBSTDCPP
@@ -62,9 +63,11 @@ ifdef EMULATE_READER
 	ifeq "$(shell uname -s -m)" "Darwin x86_64"
 		EMU_LDFLAGS += -pagezero_size 10000 -image_base 100000000
 	endif
+	CFLAGS+= $(HOST_ARCH)
+	CXXFLAGS+= $(HOST_ARCH)
 else
-	CFLAGS+= $(ARM_CFLAGS)
-	CXXFLAGS+= $(ARM_CFLAGS)
+	CFLAGS+= $(ARM_ARCH)
+	CXXFLAGS+= $(ARM_ARCH)
 endif
 
 # standard includes
@@ -175,7 +178,7 @@ clean:
 	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) clean CFLAGS=""
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(CHOST)-" clean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -219,7 +222,8 @@ $(LUALIB):
 ifdef EMULATE_READER
 	$(MAKE) -C $(LUADIR)
 else
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(BASE_CFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 $(POPENNSLIB):
