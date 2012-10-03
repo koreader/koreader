@@ -76,11 +76,7 @@ function FileSearcher:setSearchResult(keywords)
 end
 
 function FileSearcher:init(search_path)
-	if search_path then
-		self:setPath(search_path)
-	else
-		self:setPath("/mnt/us/documents")
-	end
+	self:setPath(search_path or "/mnt/us/documents")
 	self:addAllCommands()
 end
 
@@ -245,7 +241,7 @@ function FileSearcher:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"back",
 		function(self)
 			return "break"
