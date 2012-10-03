@@ -218,7 +218,7 @@ $(DJVULIBS):
 ifdef EMULATE_READER
 	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
 else
-	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"  ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
+	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
 endif
 	$(MAKE) -C $(DJVUDIR)/build
 
