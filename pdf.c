@@ -492,9 +492,9 @@ static int getUsedBBox(lua_State *L) {
 		return luaL_error(L, "cannot calculate bbox for page");
 	}
 
-       	lua_pushnumber(L, ((double)result.x0)/100);
+	lua_pushnumber(L, ((double)result.x0)/100);
 	lua_pushnumber(L, ((double)result.y0)/100);
-       	lua_pushnumber(L, ((double)result.x1)/100);
+	lua_pushnumber(L, ((double)result.x1)/100);
 	lua_pushnumber(L, ((double)result.y1)/100);
 
 	return 4;
@@ -577,6 +577,59 @@ static int cleanCache(lua_State *L) {
 	return 0;
 }
 
+
+static int getPageLinks(lua_State *L) {
+	fz_link *page_links;
+	fz_link *link;
+
+	int link_count;
+
+	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
+
+	page_links = fz_load_links(page->doc->xref, page->page); // page->doc->xref?
+
+	lua_newtable(L); // all links
+
+	link_count = 0;
+
+	for (link = page_links; link; link = link->next) {
+		lua_newtable(L); // new link
+
+		lua_pushstring(L, "x0");
+		lua_pushinteger(L, link->rect.x0);
+		lua_settable(L, -3);
+		lua_pushstring(L, "y0");
+		lua_pushinteger(L, link->rect.y0);
+		lua_settable(L, -3);
+		lua_pushstring(L, "x1");
+		lua_pushinteger(L, link->rect.x1);
+		lua_settable(L, -3);
+		lua_pushstring(L, "y1");
+		lua_pushinteger(L, link->rect.y1);
+		lua_settable(L, -3);
+
+		if (link->dest.kind == FZ_LINK_URI) {
+			lua_pushstring(L, "uri");
+			lua_pushstring(L, link->dest.ld.uri.uri);
+			lua_settable(L, -3);
+		} else if (link->dest.kind == FZ_LINK_GOTO) {
+			lua_pushstring(L, "page");
+			lua_pushinteger(L, link->dest.ld.gotor.page); // FIXME page+1?
+			lua_settable(L, -3);
+		} else {
+			printf("ERROR: unkown link kind: %x", link->dest.kind);
+		}
+
+		lua_rawseti(L, -2, ++link_count);
+    }
+
+	//printf("## getPageLinks found %d links in document\n", link_count);
+
+	fz_drop_link(page->doc->context, page_links);
+
+	return 1;
+}
+
 static const struct luaL_Reg pdf_func[] = {
 	{"openDocument", openDocument},
 	{NULL, NULL}
@@ -599,6 +652,7 @@ static const struct luaL_Reg pdfpage_meth[] = {
 	{"getSize", getPageSize},
 	{"getUsedBBox", getUsedBBox},
 	{"getPageText", getPageText},
+	{"getPageLinks", getPageLinks},
 	{"close", closePage},
 	{"__gc", closePage},
 	{"draw", drawPage},

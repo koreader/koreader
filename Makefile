@@ -2,7 +2,7 @@
 
 LUADIR=luajit-2.0
 MUPDFDIR=mupdf
-MUPDFTARGET=build/debug
+MUPDFTARGET=build/release
 MUPDFLIBDIR=$(MUPDFDIR)/$(MUPDFTARGET)
 DJVUDIR=djvulibre
 KPVCRLIBDIR=kpvcrlib
@@ -11,28 +11,36 @@ CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
 LFSDIR=luafilesystem
 
+POPENNSDIR=popen-noshell
+
 # must point to directory with *.ttf fonts for crengine
 TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
-HOST:=arm-none-linux-gnueabi
-CC:=$(HOST)-gcc
-CXX:=$(HOST)-g++
-STRIP:=$(HOST)-strip
+CHOST?=arm-none-linux-gnueabi
+CC:=$(CHOST)-gcc
+CXX:=$(CHOST)-g++
+STRIP:=$(CHOST)-strip
+AR:=$(CHOST)-ar
 ifdef SBOX_UNAME_MACHINE
 	CC:=gcc
 	CXX:=g++
 endif
 HOSTCC:=gcc
 HOSTCXX:=g++
+HOSTAR:=ar
 
-CFLAGS:=-O3 $(SYSROOT)
-CXXFLAGS:=-O3 $(SYSROOT)
-LDFLAGS:= $(SYSROOT)
-ARM_CFLAGS:=-march=armv6
-# use this for debugging:
-#CFLAGS:=-O0 -g $(SYSROOT)
+# Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+# Use this for debugging:
+#BASE_CFLAGS:=-O0 -g
+ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
+HOST_ARCH:=-march=native
+HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
+CFLAGS:=$(BASE_CFLAGS)
+CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
+LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 
 DYNAMICLIBSTDCPP:=-lstdc++
 ifdef STATICLIBSTDCPP
@@ -46,6 +54,7 @@ endif
 ifdef EMULATE_READER
 	CC:=$(HOSTCC) -g
 	CXX:=$(HOSTCXX)
+	AR:=$(HOSTAR)
 	EMULATE_READER_W?=824
 	EMULATE_READER_H?=1200
 	EMU_CFLAGS?=$(shell sdl-config --cflags)
@@ -56,8 +65,11 @@ ifdef EMULATE_READER
 	ifeq "$(shell uname -s -m)" "Darwin x86_64"
 		EMU_LDFLAGS += -pagezero_size 10000 -image_base 100000000
 	endif
+	CFLAGS+= $(HOST_ARCH)
+	CXXFLAGS+= $(HOST_ARCH)
 else
-	CFLAGS+= $(ARM_CFLAGS)
+	CFLAGS+= $(ARM_ARCH)
+	CXXFLAGS+= $(ARM_ARCH)
 endif
 
 # standard includes
@@ -87,16 +99,20 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 
 LUALIB := $(LUADIR)/src/libluajit.a
 
-all:kpdfview
+POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+all: kpdfview
+
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
 	$(CC) \
+		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
+		$(POPENNSLIB) \
 		util.o \
 		ft.o \
 		lfs.o \
@@ -109,10 +125,14 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o util.o ft
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
-		-o kpdfview -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
+		$(LDFLAGS) \
+		-o $@ -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
 
-slider_watcher: slider_watcher.c
-	$(CC) $(CFLAGS) $< -o $@
+slider_watcher.o: %.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+slider_watcher: slider_watcher.o $(POPENNSLIB)
+	$(CC) $(CFLAGS) slider_watcher.o $(POPENNSLIB) -o $@
 
 ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
@@ -124,13 +144,13 @@ djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 cre.o: %.o: %.cpp
-	$(CC) -c -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@ -lstdc++
+	$(CC) -c $(CFLAGS) -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@
 
 lfs.o: $(LFSDIR)/src/lfs.c
 	$(CC) -c $(CFLAGS) -I$(LUADIR)/src -I$(LFSDIR)/src $(LFSDIR)/src/lfs.c -o $@
 
 fetchthirdparty:
-	-rm -Rf mupdf/thirdparty
+	rm -rf mupdf/thirdparty
 	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
@@ -156,73 +176,81 @@ fetchthirdparty:
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
+	test -f popen-noshell/popen_noshell.c || svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
+	# popen_noshell patch: Make it build on recent TCs, and implement a simple Makefile for building it as a static lib
+	cd popen-noshell && test -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
-	-rm -f *.o kpdfview slider_watcher
+	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	-make -C $(LUADIR) clean
-	-make -C $(MUPDFDIR) clean
-	-make -C $(CRENGINEDIR)/thirdparty/antiword clean
-	test -d $(CRENGINEDIR)/thirdparty/chmlib && make -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
-	test -d $(CRENGINEDIR)/thirdparty/libpng && (make -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: libpng folder not found
-	test -d $(CRENGINEDIR)/crengine && (make -C $(CRENGINEDIR)/crengine clean) || echo warn: crengine folder not found
-	test -d $(KPVCRLIBDIR) && (make -C $(KPVCRLIBDIR) clean) || echo warn: kpvcrlib folder not found
-	-rm -rf $(DJVUDIR)/build
-	-rm -f $(MUPDFDIR)/fontdump.host
-	-rm -f $(MUPDFDIR)/cmapdump.host
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(CHOST)-" clean
+	$(MAKE) -C $(MUPDFDIR) build="release" clean
+	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
+	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/thirdparty/libpng && ($(MAKE) -C $(CRENGINEDIR)/thirdparty/libpng clean) || echo warn: chmlib folder not found
+	test -d $(CRENGINEDIR)/crengine && ($(MAKE) -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
+	test -d $(KPVCRLIBDIR) && ($(MAKE) -C $(KPVCRLIBDIR) clean) || echo warn: chmlib folder not found
+	rm -rf $(DJVUDIR)/build
+	rm -f $(MUPDFDIR)/fontdump.host
+	rm -f $(MUPDFDIR)/cmapdump.host
+	$(MAKE) -C $(POPENNSDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
-	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
+	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
-	make -C mupdf clean
+	$(MAKE) -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	make -C mupdf CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
+	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
-	make -C mupdf clean
+	$(MAKE) -C mupdf clean
 
 $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" make -C mupdf CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
+	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" $(MAKE) -C mupdf build="release" CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
 
 $(DJVULIBS):
-	-mkdir $(DJVUDIR)/build
+	mkdir -p $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefiles
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(HOST) --disable-xmltools --disable-largefiles
+	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
 endif
-	make -C $(DJVUDIR)/build
+	$(MAKE) -C $(DJVUDIR)/build
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CC="$(CC)" CXX="$(CXX)" cmake . && \
-		make
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" cmake . && \
+		$(MAKE)
 
 $(LUALIB):
 ifdef EMULATE_READER
-	make -C $(LUADIR)
+	$(MAKE) -C $(LUADIR)
 else
-	make -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(HOST)-" TARGET_FLAGS="$(SYSROOT) -DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
+$(POPENNSLIB):
+	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
+
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB)
 
 INSTALL_DIR=kindlepdfviewer
 
 LUA_FILES=reader.lua
 
-VERSION?=$(shell git rev-parse --short HEAD)
+VERSION?=$(shell git describe HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
 	$(STRIP) --strip-unneeded kpdfview
-	-rm kindlepdfviewer-$(VERSION).zip
-	rm -Rf $(INSTALL_DIR)
+	rm -f kindlepdfviewer-$(VERSION).zip
+	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots}
 	echo $(VERSION) > $(INSTALL_DIR)/git-rev
-	cp -p README.md COPYING kpdfview $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING kpdfview kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
@@ -230,5 +258,5 @@ customupdate: all
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
-	rm -Rf $(INSTALL_DIR)
+	rm -rf $(INSTALL_DIR)
 	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"

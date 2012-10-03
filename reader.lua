@@ -138,6 +138,20 @@ else
 end
 
 
+if ARGV[optind] then
+	if lfs.attributes(ARGV[optind], "mode") == "directory" then
+		showFileManager(ARGV[optind])
+	elseif lfs.attributes(ARGV[optind], "mode") == "file" then
+		showReader(ARGV[optind], optarg["p"])
+	end
+	UIManager:run()
+elseif last_file and lfs.attributes(last_file, "mode") == "file" then
+	showReader(last_file, optarg["p"])
+	UIManager:run()
+else
+	return showusage()
+end
+
 
 -- @TODO dirty workaround, find a way to force native system poll
 -- screen orientation and upside down mode 09.03 2012
