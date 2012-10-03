@@ -32,10 +32,12 @@ HOSTCXX:=g++
 HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
-BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
-ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm -fno-finite-math-only
+# Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
+ARM_BACKWARD_COMPAT_FLAGS:=-fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE -fno-finite-math-only
+ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
 HOST_ARCH:=-march=native
 HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
@@ -68,8 +70,8 @@ ifdef EMULATE_READER
 	CFLAGS+= $(HOST_ARCH)
 	CXXFLAGS+= $(HOST_ARCH)
 else
-	CFLAGS+= $(ARM_ARCH)
-	CXXFLAGS+= $(ARM_ARCH)
+	CFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_FLAGS)
+	CXXFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_FLAGS)
 endif
 
 # standard includes
