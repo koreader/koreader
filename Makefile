@@ -35,7 +35,7 @@ HOSTAR:=ar
 BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
-ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
+ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm -fno-finite-math-only
 HOST_ARCH:=-march=native
 HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
