@@ -32,7 +32,7 @@ HOSTCXX:=g++
 HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
-BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
 ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
@@ -209,9 +209,9 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
+	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
+	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"  ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
 endif
 	$(MAKE) -C $(DJVUDIR)/build
 
