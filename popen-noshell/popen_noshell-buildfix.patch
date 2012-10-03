@@ -1,0 +1,86 @@
+Index: CREDITS
+===================================================================
+--- CREDITS	(revision 0)
++++ CREDITS	(working copy)
+@@ -0,0 +1 @@
++Taken from http://code.google.com/p/popen-noshell/
+
+Property changes on: CREDITS
+___________________________________________________________________
+Added: svn:keywords
+## -0,0 +1 ##
++Id
+\ No newline at end of property
+Index: Makefile
+===================================================================
+--- Makefile	(revision 0)
++++ Makefile	(working copy)
+@@ -0,0 +1,17 @@
++SRCS=popen_noshell.c
++
++OBJS:=$(SRCS:%.c=%.o)
++
++%.o: %.c
++	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
++
++all: libpopen_noshell.a
++
++libpopen_noshell.a: $(OBJS)
++	$(AR) rcs $@ $(OBJS)
++
++clean:
++	rm -rf *.o
++	rm -rf libpopen_noshell.a
++
++.PHONY: clean
+
+Property changes on: Makefile
+___________________________________________________________________
+Added: svn:keywords
+## -0,0 +1 ##
++Id
+\ No newline at end of property
+Index: popen_noshell.c
+===================================================================
+--- popen_noshell.c	(revision 8)
++++ popen_noshell.c	(working copy)
+@@ -16,6 +16,10 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses>.
+  */
+ 
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
++
+ #include "popen_noshell.h"
+ #include <errno.h>
+ #include <unistd.h>
+@@ -28,10 +32,6 @@
+ #include <sys/wait.h>
+ #include <stdlib.h>
+ #include <inttypes.h>
+-
+-#ifndef _GNU_SOURCE
+-#define _GNU_SOURCE
+-#endif
+ #include <sched.h>
+ 
+ /*
+@@ -249,7 +249,7 @@
+ 		 * The above malloc() + align implementation is taken from:
+ 		 * 	http://stackoverflow.com/questions/227897/solve-the-memory-alignment-in-c-interview-question-that-stumped-me
+ 		 */
+-		
++
+ #ifndef POPEN_NOSHELL_VALGRIND_DEBUG
+ 		pid = clone(fn, stack_aligned, CLONE_VM | SIGCHLD, arg);
+ #else
+@@ -358,7 +358,7 @@
+ 
+ 	pclose_arg->fp = fp;
+ 	pclose_arg->pid = pid;
+-	
++
+ 	return fp; // we should never end up here
+ }
+ 

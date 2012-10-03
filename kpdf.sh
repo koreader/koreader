@@ -31,3 +31,7 @@ fi
 
 # always try to continue cvm
 killall -cont cvm || /etc/init.d/framework start
+
+# cleanup hanging process
+killall lipc-wait-event
+

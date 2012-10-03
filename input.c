@@ -15,7 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include "popen-noshell/popen_noshell.h"
+#include <err.h>
 #include <stdio.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -29,9 +33,7 @@
 #include "input.h"
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
 
-#define OUTPUT_SIZE 21
 #define CODE_IN_SAVER		10000
 #define CODE_OUT_SAVER		10001
 #define CODE_USB_PLUG_IN	10010
@@ -41,7 +43,17 @@
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
-int slider_pid = -1;
+pid_t slider_pid = -1;
+struct popen_noshell_pass_to_pclose pclose_arg;
+
+void slider_handler(int sig)
+{
+	/* Kill lipc-wait-event properly on exit */
+	if(pclose_arg.pid != 0) {
+		// Be a little more gracious, lipc seems to handle SIGINT properly
+		kill(pclose_arg.pid, SIGINT);
+	}
+}
 
 int findFreeFdSlot() {
 	int i;
@@ -73,10 +85,13 @@ static int openInputDevice(lua_State *L) {
 			return luaL_error(L, "cannot fork() slider event listener");
 		}
 		if(childpid == 0) {
+			// We send a SIGTERM to this child on exit, trap it to kill lipc properly.
+			signal(SIGTERM, slider_handler);
+
 			FILE *fp;
-			char std_out[OUTPUT_SIZE] = "";
+			char std_out[256];
+			int status;
 			struct input_event ev;
-			int ret;
 			__u16 key_code = 10000;
 
 			close(pipefd[0]);
@@ -85,17 +100,22 @@ static int openInputDevice(lua_State *L) {
 			ev.code = key_code;
 			ev.value = 1;
 
-			/* listen power slider events */
-			while(1) {
-				fp = popen("exec lipc-wait-event com.lab126.powerd goingToScreenSaver,outOfScreenSaver,charging,notCharging", "r");
-				/* @TODO  07.06 2012 (houqp)
-				 * plugin and out event can only be watched by:
-					lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
-				 */
-				if(fgets(std_out, OUTPUT_SIZE, fp) == NULL) {
-					break;
-				}
-				pclose(fp);
+			/* listen power slider events (listen for ever for multiple events) */
+			char *argv[] = {"lipc-wait-event", "-m", "-s", "0", "com.lab126.powerd", "goingToScreenSaver,outOfScreenSaver,charging,notCharging", (char *) NULL};
+			/* @TODO  07.06 2012 (houqp)
+			*  plugin and out event can only be watched by:
+				lipc-wait-event com.lab126.hal usbPlugOut,usbPlugIn
+			*/
+
+			fp = popen_noshell("lipc-wait-event", (const char * const *)argv, "r", &pclose_arg, 0);
+			if (!fp) {
+				err(EXIT_FAILURE, "popen_noshell()");
+			}
+
+			/* Flush to get rid of buffering issues? */
+			fflush(fp);
+
+			while(fgets(std_out, sizeof(std_out)-1, fp)) {
 				if(std_out[0] == 'g') {
 					ev.code = CODE_IN_SAVER;
 				} else if(std_out[0] == 'o') {
@@ -116,10 +136,26 @@ static int openInputDevice(lua_State *L) {
 
 				/* generate event */
 				if(write(pipefd[1], &ev, sizeof(struct input_event)) == -1) {
-					break;
+					printf("Failed to generate event.\n");
 				}
 			}
-			exit(0); /* cannot be reached?! */
+
+			status = pclose_noshell(&pclose_arg);
+			if (status == -1) {
+				err(EXIT_FAILURE, "pclose_noshell()");
+			} else {
+				printf("lipc-wait-event exited with status %d.\n", status);
+
+				if WIFEXITED(status) {
+					printf("lipc-wait-event exited normally with status: %d.\n", WEXITSTATUS(status));
+				}
+				if WIFSIGNALED(status) {
+					printf("lipc-wait-event terminated by signal: %d.\n", WTERMSIG(status));
+				}
+			}
+
+			// We're done, go away :).
+			_exit(EXIT_SUCCESS);
 		} else {
 			close(pipefd[1]);
 			inputfds[fd] = pipefd[0];
@@ -149,7 +185,7 @@ static int closeInputDevices(lua_State *L) {
 	for(i=0; i<NUM_FDS; i++) {
 		if(inputfds[i] != -1) {
 			ioctl(inputfds[i], EVIOCGRAB, 0);
-			close(i);
+			close(inputfds[i]);
 		}
 	}
 	if(slider_pid != -1) {
@@ -223,7 +259,7 @@ static int waitForInput(lua_State *L) {
 			SDL_WaitEvent(&event);
 		else {
 			while (SDL_GetTicks()-ticks <= usecs/1000) {
-				if (SDL_PollEvent(&event)) break; 
+				if (SDL_PollEvent(&event)) break;
 				SDL_Delay(10);
 			}
 			if (SDL_GetTicks()-ticks > usecs/1000)

@@ -5,22 +5,14 @@ require "font"
 require "commands"
 
 SelectMenu = {
-	-- font for displaying item names
-	fsize = 22,
-	-- font for page title
-	tfsize = 25,
-	-- font for paging display
-	ffsize = 16,
-	-- font for item shortcut
+	fsize = 22,	-- font for displaying item names
+	tfsize = 25,	-- font for page title
+	ffsize = 16,-- font for paging display
 
-	-- title height
-	title_H = 40,
-	-- spacing between lines
-	spacing = 36,
-	-- foot height
-	foot_H = 27,
-	-- horisontal margin
-	margin_H = 10,
+	title_H = 40,	-- title height
+	spacing = 36,	-- spacing between lines
+	foot_H = 27,	-- foot height
+	margin_H = 10,	-- horisontal margin
 	current_entry = 0,
 
 	menu_title = "No Title",
@@ -114,7 +106,7 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, "next",
+	self.commands:add({KEY_PGFWD, KEY_LPGFWD}, nil, ">",
 		"next page",
 		function(sm)
 			if sm.page < (sm.items / sm.perpage) then
@@ -129,7 +121,7 @@ function SelectMenu:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "prev",
+	self.commands:add({KEY_PGBCK, KEY_LPGBCK}, nil, "<",
 		"previous page",
 		function(sm)
 			if sm.page > 1 then
@@ -188,7 +180,7 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_Q_to_P, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("Q to P", KEY_Q_to_P, 
-		"Select item with Q to P key as shortcut",
+		"select item with Q to P key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Q + 1 ], sm.perpage)
@@ -199,7 +191,7 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_A_to_L, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("A to L", KEY_A_to_L, 
-		"Select item with A to L key as shortcut",
+		"select item with A to L key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_A + 11 ], sm.perpage)
@@ -210,40 +202,34 @@ function SelectMenu:addAllCommands()
 		table.insert(KEY_Z_to_M, Keydef:new(i, nil, ""))
 	end
 	self.commands:addGroup("Z to M", KEY_Z_to_M, 
-		"Select item with Z to M key as shortcut",
+		"select item with Z to M key as shortcut",
 		function(sm, keydef)
 			sm.selected_item = sm:getItemIndexByShortCut(
 				sm.item_shortcuts[ keydef.keycode - KEY_Z + 21 ], sm.perpage)
 		end
 	)
 	self.commands:add(KEY_SLASH, nil, "/",
-		"Select item with / key as shortcut",
+		"select item with / key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("/", sm.perpage)
 		end
 	)
 	self.commands:add(KEY_DOT, nil, ".",
-		"Select item with dot key as shortcut",
+		"select item with dot key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut(".", sm.perpage)
 		end
 	)
 	self.commands:add(KEY_SYM, nil, "Sym",
-		"Select item with Sym key as shortcut",
+		"select item with Sym key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Sym", sm.perpage)
 		end
 	)
 	self.commands:add(KEY_ENTER, nil, "Enter",
-		"Select item with Enter key as shortcut",
+		"select item with Enter key as shortcut",
 		function(sm)
 			sm.selected_item = sm:getItemIndexByShortCut("Ent", sm.perpage)
-		end
-	)
-	self.commands:add(KEY_BACK, nil, "Back",
-		"Exit menu",
-		function(sm)
-			return "break"
 		end
 	)
 	self.commands:add(KEY_H,MOD_ALT,"H",
@@ -252,13 +238,19 @@ function SelectMenu:addAllCommands()
 		HelpPage:show(0, G_height, sm.commands)
 		sm.pagedirty = true
 	end)
+	self.commands:add({KEY_BACK,KEY_HOME}, nil, "Back, Home",
+		"exit menu",
+		function(sm)
+			return "break"
+		end
+	)
 end
 
 function SelectMenu:clearCommands()
 	self.commands = Commands:new{}
 
-	self.commands:add(KEY_BACK, nil, "",
-		"Exit menu",
+	self.commands:add({KEY_BACK,KEY_HOME}, nil, "Back, Home",
+		"exit menu",
 		function(sm)
 			return "break"
 		end)
@@ -352,7 +344,7 @@ function SelectMenu:choose(ypos, height)
 				end -- for c=1, self.perpage
 			end -- if self.items == 0
 
-			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage)).." Press Alt-H for help"
+			local footer = "Page "..self.page.." of "..(math.ceil(self.items / self.perpage)).." - Press Alt-H for help"
 			renderUtf8Text(fb.bb, self.margin_H, height-7, fface, footer, true)
 		end
 

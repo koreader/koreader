@@ -39,7 +39,7 @@
 lua_State *L;
 
 int main(int argc, char **argv) {
-	int i, err;
+	int i;
 
 	if(argc < 2) {
 		fprintf(stderr, "needs config file as first argument.\n");
