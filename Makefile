@@ -112,21 +112,32 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
-		$(POPENNSLIB) \
 		util.o \
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
-		$(MUPDFLIBS) \
-		$(THIRDPARTYLIBS) \
-		$(LUALIB) \
 		djvu.o \
-		$(DJVULIBS) \
 		cre.o \
-		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
-		-o $@ -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
+		-L$(POPENNSDIR) \
+		-L$(MUPDFLIBDIR) \
+		-L$(DJVUDIR)/build/libdjvu/.libs \
+		-L$(LUADIR)/src \
+		-L$(CRENGINEDIR)/crengine \
+		-L$(CRENGINEDIR)/thirdparty/chmlib \
+		-L$(CRENGINEDIR)/thirdparty/libpng \
+		-L$(CRENGINEDIR)/thirdparty/antiword \
+		-L$(MUPDFLIBDIR) \
+		-o $@ \
+		-lm -ldl -lpthread \
+		-lpopen_noshell \
+		-lfitz -lfreetype -lopenjpeg -ljbig2dec -ljpeg -lz \
+		-lluajit \
+		-ldjvulibre \
+		-lcrengine -lchmlib -lpng -lantiword \
+		$(EMU_LDFLAGS) \
+		$(DYNAMICLIBSTDCPP)
 
 slider_watcher.o: %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -180,7 +191,7 @@ clean:
 	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) CC=$(HOSTCC) CFLAGS=$(BASE_CFLAGS) distclean
+	$(MAKE) -C $(LUADIR) CC=$(HOSTCC) CFLAGS="$(BASE_CFLAGS)" distclean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
