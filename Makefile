@@ -251,7 +251,7 @@ customupdate: all
 	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots}
 	echo $(VERSION) > $(INSTALL_DIR)/git-rev
-	cp -p README.md COPYING kpdfview $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING kpdfview kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
