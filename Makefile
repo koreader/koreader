@@ -29,6 +29,7 @@ ifdef SBOX_UNAME_MACHINE
 endif
 HOSTCC:=gcc
 HOSTCXX:=g++
+HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
 BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
@@ -53,6 +54,7 @@ endif
 ifdef EMULATE_READER
 	CC:=$(HOSTCC) -g
 	CXX:=$(HOSTCXX)
+	AR:=$(HOSTAR)
 	EMULATE_READER_W?=824
 	EMULATE_READER_H?=1200
 	EMU_CFLAGS?=$(shell sdl-config --cflags)
