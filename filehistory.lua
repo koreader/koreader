@@ -26,12 +26,7 @@ FileHistory = {
 }
 
 function FileHistory:init(history_path)
-	if history_path then
-		self:setPath(history_path)
-	else
-		self:setPath("./history")
-	end
-	
+	self:setPath("history")
 	-- to initialize only once
 	if not self.commands then self:addAllCommands() end
 end
@@ -49,8 +44,8 @@ function FileHistory:setPath(newPath)
 end
 
 function FileHistory:readDir(order_criteria)
-	self.history_files = { {dir=self.path, name=".."} }
-	self.files = { {dir=self.path, name=".."} }
+	self.history_files = {}
+	self.files = {}
 	local p = io.popen("ls "..order_criteria.."-1 "..self.path)
 	for f in p:lines() do
 		-- insert history files
@@ -62,7 +57,7 @@ function FileHistory:readDir(order_criteria)
 end
 
 function FileHistory:setSearchResult(keywords)
-	self.result = { {dir=self.path, name=".."} }
+	self.result = {}
 	if keywords == "" or keywords == " " then
 		-- show all history
 		self.result = self.files
@@ -207,7 +202,7 @@ function FileHistory:addAllCommands()
 			if self.keywords then
 				self:setSearchResult(self.keywords)
 			end
-			if #self.result < 2 then
+			if #self.result < 1 then
 				InfoMessage:inform("No hits! Try another keyword. ", 2000, 1, MSG_WARN,
 					"The search has given no results! Please, try another keyword.")
 				-- restoring the original data
@@ -231,7 +226,6 @@ function FileHistory:addAllCommands()
 		"open selected document",
 		function(self)
 			local file_entry = self.result[self.perpage*(self.page-1)+self.current]
-			if file_entry.name == ".." then return "break" end -- quit
 			file_full_path = file_entry.dir .. "/" .. file_entry.name
 			openFile(file_full_path)
 			--reset height and item index if screen has been rotated
@@ -242,14 +236,10 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_DEL}, nil, "Del",
+	self.commands:add(KEY_DEL, nil, "Del",
 		"delete history entry",
 		function(self)
 			local file_entry = self.result[self.perpage*(self.page-1)+self.current]
-			if file_entry.name == ".." then
-				warningUnsupportedFunction()
-				return
-			end -- do not delete
 			local file_to_del = file_entry.dir .. "/" .. file_entry.name
 			if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then -- silent regime
 				os.remove(DocToHistory(file_to_del))
@@ -265,6 +255,9 @@ function FileHistory:addAllCommands()
 				end
 			end
 			self.pagedirty = true
+			if self.items == 0 then
+				return "break"
+			end
 		end
 	)
 	self.commands:add({KEY_SPACE}, nil, "Space",
@@ -273,7 +266,7 @@ function FileHistory:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, '..', Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"back",
 		function(self)
 			return "break"
@@ -287,7 +280,7 @@ function FileHistory:choose(keywords)
 	self.markerdirty = false
 
 	-- NuPogodi, 30.09.12: immediate quit (no redraw), if empty
-	if self:setSearchResult(keywords) < 2 then -- only ".."
+	if self:setSearchResult(keywords) < 1 then
 		InfoMessage:inform("No reading history! ", 2000, 1, MSG_WARN, "The reading history is empty!")
 		return nil
 	end
@@ -301,7 +294,7 @@ function FileHistory:choose(keywords)
 			self.markerdirty = true
 			fb.bb:paintRect(0, 0, G_width, G_height, 0)
 			-- draw header
-			local header = "Last Documents"
+			local header = "Last Documents ("..tostring(self.items).." items)"
 			if self.keywords ~= "" and self.keywords ~= " " then 
 				--header = header .. " (filter: \'" .. string.upper(self.keywords) .. "\')"
 				header = "Search Results for \'"..string.upper(self.keywords).."\'"
