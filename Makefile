@@ -200,12 +200,12 @@ cleanthirdparty:
 	$(MAKE) -C $(POPENNSDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
+	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	$(MAKE) -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
+	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C mupdf clean
 
