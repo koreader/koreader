@@ -25,7 +25,7 @@ Follow these steps:
 		* install LuaJit sources into subfolder "luajit-2.0"
 
 	* automatically fetch thirdparty sources with Makefile:
-		* make sure you have wget, unzip and git installed
+		* make sure you have wget, unzip, git and svn installed
 		* run `make fetchthirdparty`.
 
 * adapt Makefile to your needs
