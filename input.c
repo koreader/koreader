@@ -43,8 +43,10 @@
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
+#ifndef EMULATE_READER
 pid_t slider_pid = -1;
 struct popen_noshell_pass_to_pclose pclose_arg;
+#endif
 
 void slider_handler(int sig)
 {
