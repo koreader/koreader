@@ -112,30 +112,22 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
+		$(POPENNSLIB) \
 		util.o \
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
+		$(MUPDFLIBS) \
+		$(THIRDPARTYLIBS) \
+		$(LUALIB) \
 		djvu.o \
+		$(DJVULIBS) \
 		cre.o \
+		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
-		-L$(POPENNSDIR) \
-		-L$(MUPDFLIBDIR) \
-		-L$(DJVUDIR)/build/libdjvu/.libs \
-		-L$(LUADIR)/src \
-		-L$(CRENGINEDIR)/crengine \
-		-L$(CRENGINEDIR)/thirdparty/chmlib \
-		-L$(CRENGINEDIR)/thirdparty/libpng \
-		-L$(CRENGINEDIR)/thirdparty/antiword \
-		-L$(MUPDFLIBDIR) \
 		-o $@ \
-		-lm -lpthread \
-		-lpopen_noshell \
-		-lfitz -lfreetype -lopenjpeg -ljbig2dec -ljpeg -lz \
-		-lluajit -ldl \
-		-ldjvulibre \
-		-lcrengine -lchmlib -lpng -lantiword \
+		-lm -ldl -lpthread \
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
