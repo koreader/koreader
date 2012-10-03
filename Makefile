@@ -190,7 +190,6 @@ cleanthirdparty:
 	rm -rf $(DJVUDIR)/build
 	rm -f $(MUPDFDIR)/fontdump.host
 	rm -f $(MUPDFDIR)/cmapdump.host
-	rm -rf $(POPENNSLIB)
 	$(MAKE) -C $(POPENNSDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
