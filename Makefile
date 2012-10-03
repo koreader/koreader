@@ -32,14 +32,20 @@ HOSTCXX:=g++
 HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
-BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer -fno-stack-protector -U_FORTIFY_SOURCE
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
-ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp
+# Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
+# NOTE: -mno-unaligned-access is needed for TC based on Linaro 4.6/4.7 or GCC 4.7, or weird crap happens on FW 2.x. We unfortunately can't set it by default, since it's a new flag.
+# A possible workaround would be to set the alignment trap to fixup (echo 2 > /proc/cpu/alignment) in the launch script, but that's terribly ugly, and might severly nerf performance...
+# That said, MG 2012.03 is still using GCC 4.6.3, so we're good ;).
+ARM_BACKWARD_COMPAT_CFLAGS:=-fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE -fno-finite-math-only
+ARM_BACKWARD_COMPAT_CXXFLAGS:=-fno-use-cxa-atexit
+ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
 HOST_ARCH:=-march=native
 HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
-CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
+CXXFLAGS:=$(BASE_CFLAGS)
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 
 DYNAMICLIBSTDCPP:=-lstdc++
@@ -68,8 +74,8 @@ ifdef EMULATE_READER
 	CFLAGS+= $(HOST_ARCH)
 	CXXFLAGS+= $(HOST_ARCH)
 else
-	CFLAGS+= $(ARM_ARCH)
-	CXXFLAGS+= $(ARM_ARCH)
+	CFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_CFLAGS)
+	CXXFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_CFLAGS) $(ARM_BACKWARD_COMPAT_CXXFLAGS)
 endif
 
 # standard includes
@@ -126,7 +132,10 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
-		-o $@ -lm -ldl -lpthread $(EMU_LDFLAGS) $(DYNAMICLIBSTDCPP)
+		-o $@ \
+		-lm -ldl -lpthread \
+		$(EMU_LDFLAGS) \
+		$(DYNAMICLIBSTDCPP)
 
 slider_watcher.o: %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -184,7 +193,7 @@ clean:
 	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(CHOST)-" clean
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" CFLAGS="$(BASE_CFLAGS)" distclean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -197,12 +206,12 @@ cleanthirdparty:
 	$(MAKE) -C $(POPENNSDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/fontdump
+	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
 	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
 	$(MAKE) -C mupdf clean
 
 $(MUPDFDIR)/cmapdump.host:
-	$(MAKE) -C mupdf build="release" CC="$(HOSTCC)" CFLAGS="$(HOSTCFLAGS) -I../mupdf/fitz -I../mupdf/pdf" $(MUPDFTARGET)/cmapdump
+	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
 	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C mupdf clean
 
@@ -213,9 +222,9 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
+	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
 else
-	cd $(DJVUDIR)/build && ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
+	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
 endif
 	$(MAKE) -C $(DJVUDIR)/build
 
@@ -226,10 +235,10 @@ $(CRENGINELIBS):
 
 $(LUALIB):
 ifdef EMULATE_READER
-	$(MAKE) -C $(LUADIR)
+	$(MAKE) -C $(LUADIR) BUILDMODE=static
 else
 	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	$(MAKE) -C $(LUADIR) BUILDMODE=static CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 $(POPENNSLIB):

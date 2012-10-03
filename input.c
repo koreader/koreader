@@ -43,6 +43,7 @@
 
 #define NUM_FDS 4
 int inputfds[4] = { -1, -1, -1, -1 };
+#ifndef EMULATE_READER
 pid_t slider_pid = -1;
 struct popen_noshell_pass_to_pclose pclose_arg;
 
@@ -54,6 +55,7 @@ void slider_handler(int sig)
 		kill(pclose_arg.pid, SIGINT);
 	}
 }
+#endif
 
 int findFreeFdSlot() {
 	int i;

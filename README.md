@@ -23,6 +23,7 @@ Follow these steps:
 		* install libDjvuLibre sources into subfolder "djvulibre"
 		* install CREngine sources into subfolder "kpvcrlib/crengine"
 		* install LuaJit sources into subfolder "luajit-2.0"
+		* install popen_noshell sources into subfolder "popen-noshell"
 
 	* automatically fetch thirdparty sources with Makefile:
 		* make sure you have wget, unzip, git and svn installed
@@ -58,7 +59,7 @@ Device emulation
 The code also features a device emulation. You need SDL headers and library
 for this. It allows to develop on a standard PC and saves precious development
 time. It might also compose the most unfriendly desktop PDF reader, depending
-on your view. 
+on your view.
 
 If you are using Ubuntu, simply install `libsdl-dev1.2` package.
 
