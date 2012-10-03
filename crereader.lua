@@ -24,9 +24,11 @@ function CREReader:init()
 	-- we need to initialize the CRE font list
 	local fonts = Font:getFontList()
 	for _k, _v in ipairs(fonts) do
-		local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
-		if not ok then
-			Debug(err)
+		if _v ~= "Dingbats.cff" and _v ~= "StandardSymL.cff" then
+			local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
+			if not ok then
+				Debug(err)
+			end
 		end
 	end
 
