@@ -36,12 +36,13 @@ BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
 # Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
-ARM_BACKWARD_COMPAT_FLAGS:=-fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE -fno-finite-math-only
+ARM_BACKWARD_COMPAT_CFLAGS:=-fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE -fno-finite-math-only
+ARM_BACKWARD_COMPAT_CXXFLAGS:=-fno-use-cxa-atexit
 ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
 HOST_ARCH:=-march=native
 HOSTCFLAGS:=$(HOST_ARCH) $(BASE_CFLAGS)
 CFLAGS:=$(BASE_CFLAGS)
-CXXFLAGS:=$(BASE_CFLAGS) -fno-use-cxa-atexit
+CXXFLAGS:=$(BASE_CFLAGS)
 LDFLAGS:=-Wl,-O1 -Wl,--as-needed
 
 DYNAMICLIBSTDCPP:=-lstdc++
@@ -70,8 +71,8 @@ ifdef EMULATE_READER
 	CFLAGS+= $(HOST_ARCH)
 	CXXFLAGS+= $(HOST_ARCH)
 else
-	CFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_FLAGS)
-	CXXFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_FLAGS)
+	CFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_CFLAGS)
+	CXXFLAGS+= $(ARM_ARCH) $(ARM_BACKWARD_COMPAT_CFLAGS) $(ARM_BACKWARD_COMPAT_CXXFLAGS)
 endif
 
 # standard includes
