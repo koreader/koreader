@@ -36,6 +36,7 @@ BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
 # Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
+# NOTE: Right now, -mno-unaligned-access is not needed, but it probably will (for FW 2.x) be once MG moves to GCC 4.7.
 ARM_BACKWARD_COMPAT_CFLAGS:=-fno-stack-protector -U_FORTIFY_SOURCE -D_GNU_SOURCE -fno-finite-math-only
 ARM_BACKWARD_COMPAT_CXXFLAGS:=-fno-use-cxa-atexit
 ARM_ARCH:=-march=armv6j -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
