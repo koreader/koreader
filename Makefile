@@ -184,7 +184,7 @@ clean:
 	rm -f *.o kpdfview slider_watcher
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CROSS="$(CHOST)-" clean
+	$(MAKE) -C $(LUADIR) CC=$(HOSTCC) CFLAGS=$(BASE_CFLAGS) clean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
