@@ -9,8 +9,6 @@ Font = {
 		hpkfont = "droid/DroidSansMono.ttf",	-- help page: font for displaying keys
 		hfont = "droid/DroidSans.ttf",		-- help page: font for displaying help messages
 		infont = "droid/DroidSansMono.ttf",	-- inputbox: use mono for better distance controlling
-		-- pgfont = "droid/DroidSans.ttf", 	-- was in use in heppage to render footer
-		-- to be repalced by ffont
 	},
 	fontdir = os.getenv("FONTDIR") or "./fonts",
 	-- face table

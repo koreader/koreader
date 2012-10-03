@@ -42,7 +42,7 @@ function openFile(filename)
 
 	reader = ext:getReader(file_type)
 	if reader then
-		InfoMessage:show("Opening document... ", 0)
+		InfoMessage:inform("Opening document... ", nil, 0, MSG_AUX)
 		reader:preLoadSettings(filename)
 		local ok, err = reader:open(filename)
 		if ok then
@@ -54,9 +54,9 @@ function openFile(filename)
 		else
 			if err then
 				Debug("openFile(): "..err)
-				showInfoMsgWithDelay(err:sub(1,30), 2000, 1)
+				InfoMessage:inform(err:sub(1,30), 2000, 1, MSG_ERROR)
 			else
-				showInfoMsgWithDelay("Error opening document ", 2000, 1)
+				InfoMessage:inform("Error opening document! ", 2000, 1, MSG_ERROR)
 			end
 		end
 	end
@@ -140,6 +140,8 @@ end
 
 -- set up the mode to manage files
 FileChooser.filemanager_expert_mode = G_reader_settings:readSetting("filemanager_expert_mode") or 1
+InfoMessage:initInfoMessageSettings()
+
 -- initialize global settings shared among all readers
 UniReader:initGlobalSettings(G_reader_settings)
 -- initialize specific readers
@@ -171,6 +173,7 @@ end
 
 -- save reader settings
 G_reader_settings:saveSetting("fontmap", Font.fontmap)
+InfoMessage:saveInfoMessageSettings()
 G_reader_settings:close()
 
 -- @TODO dirty workaround, find a way to force native system poll

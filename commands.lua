@@ -168,7 +168,7 @@ function Commands:new(obj)
 			--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
 				Screen:saveCurrentBB()
-				InfoMessage:show("Going into screensaver... ", 0)
+				InfoMessage:inform("Going into screensaver... ", nil, 0, MSG_AUX)
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
 				util.sleep(1)
@@ -199,7 +199,7 @@ function Commands:new(obj)
 				Screen:saveCurrentBB()
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
-				InfoMessage:show("Going into USB mode... ", 0)
+				InfoMessage:inform("Going into USB mode... ", nil, 0, MSG_AUX)
 				util.sleep(1)
 				os.execute("killall -cont cvm")
 			end

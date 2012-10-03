@@ -3,6 +3,9 @@ require "rendertext"
 require "keys"
 require "graphics"
 
+MODE_CALC = 1
+MODE_TERM = 2
+
 ----------------------------------------------------
 -- General inputbox
 ----------------------------------------------------
@@ -37,7 +40,7 @@ InputBox = {
 	shiftmode = true,	-- toggle chars <-> capitals,	lowest bit in (layout-2)
 	symbolmode = false,	-- toggle chars <-> symbols,	middle bit in (layout-2)
 	utf8mode = false,	-- toggle english <-> national,	highest bit in (layout-2)
-	calcmode = false,	-- toggle calculator mode
+	inputmode,		-- define mode: input <> calculator <> terminal
 	calcfunctions = nil, -- math functions for calculator helppage
 }
 
@@ -128,7 +131,7 @@ function InputBox:input(ypos, height, title, d_text, is_hint)
 	-- my own position, at the bottom screen edge
 	ypos = fb.bb:getHeight() - 165
 	-- some corrections for calculator mode
-	if self.calcmode then
+	if self.inputmode == MODE_CALC then
 		self:setCalcMode()
 	end
 
@@ -366,7 +369,7 @@ function InputBox:CharlistToString()
 end
 
 function InputBox:addAllCommands()
-	-- if already initialized, we (re)define only calcmode-dependent commands
+	-- if already initialized, we (re)define only inputmode-dependent commands
 	if self.commands then
 		self:ModeDependentCommands()
 		self:DrawVirtualKeyboard()
@@ -378,7 +381,7 @@ function InputBox:addAllCommands()
 	self:addCharCommands(self.layout)
 	-- adding the rest commands (independent of the selected layout)
 	self.commands:add(KEY_H, MOD_ALT, "H",
-		"show helppage",
+		"show help page",
 		function(self)
 			self:showHelpPage(self.commands)
 		end
@@ -436,7 +439,7 @@ function InputBox:addAllCommands()
 		end
 	)
 	self.commands:addGroup("up/down", { Keydef:new(KEY_FW_DOWN, nil), Keydef:new(KEY_FW_UP, nil) },
-		"goto previous/next VK-layout",
+		"previous/next VK-layout",
 		function(self)
 			if keydef.keycode == KEY_FW_DOWN then
 				if self.layout == self.max_layout then self:addCharCommands(self.min_layout)
@@ -469,10 +472,10 @@ function InputBox:addAllCommands()
 			self:addCharCommands()
 		end
 	)
-	-- NuPogodi, 02.06.12: calcmode-dependent commands are collected
+	-- NuPogodi, 02.06.12: inputmode-dependent commands are collected
 	self:ModeDependentCommands() -- here
 
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back",
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, Home",
 		"back",
 		function(self)
 			self.input_string = nil
@@ -552,9 +555,8 @@ function InputBox:showHelpPage(list, title)
 	self.cursor:clear() -- hide cursor
 	fb.bb:dimRect(self.input_start_x-5, self.input_start_y-19, self.input_slot_w, self.fheight, self.input_bg)
 	fb:refresh(1, self.input_start_x-5, self.ypos, self.input_slot_w, self.h)
-	-- now start the helppage with own list of commands and own title
 	HelpPage:show(0, fb.bb:getHeight()-165, list, title)
-	-- on the helppage-exit, making inactive helpage
+	-- on the help page-exit, making inactive helpage
 	fb.bb:dimRect(0, 40, fb.bb:getWidth(), fb.bb:getHeight()-205, self.input_bg)
 	-- and active input slot
 	self:refreshText()
@@ -595,13 +597,13 @@ end
 
 -- define whether we need to calculate the result or to return 'self.input_string'
 function InputBox:ModeDependentCommands()
-	if self.calcmode then
+	if self.inputmode == MODE_CALC then
 		-- define what to do with the input_string
-		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "joypad center",
+		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "Enter",
 			"calculate the result",
 			function(self)
 				if #self.input_string == 0 then
-					showInfoMsgWithDelay("No input ", 1000, 1)
+					InfoMessage:inform("No input! ", 1000, 1, MSG_WARN, "There is nothing to calculate")
 				else
 					local s = self:PrepareStringToCalc()
 					if pcall(function () f = assert(loadstring("r = tostring("..s..")")) end) and pcall(f) then
@@ -618,7 +620,7 @@ function InputBox:ModeDependentCommands()
 						self.cursor:draw()
 						fb:refresh(1, self.input_start_x-5, self.input_start_y-25, self.input_slot_w, self.h-25)
 					else
-						showInfoMsgWithDelay("Invalid input ", 1000, 1)
+						InfoMessage:inform("Invalid input! ", 1000, 1, MSG_WARN)
 					end -- if pcall
 				end
 			end -- function
@@ -633,7 +635,7 @@ function InputBox:ModeDependentCommands()
 			end
 			)
 	else 	-- return input_string & close input box
-		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "joypad center",
+		self.commands:add({KEY_FW_PRESS, KEY_ENTER}, nil, "Enter",
 			"submit input content",
 			function(self)
 				if self.input_string == "" then
@@ -644,7 +646,7 @@ function InputBox:ModeDependentCommands()
 			)
 		-- delete calculator-specific help
 		self.commands:del(KEY_M, MOD_ALT, "M")
-	end -- if self.calcmode
+	end -- if self.inputmode
 end
 
 ----------------------------------------------------
