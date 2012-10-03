@@ -1512,7 +1512,8 @@ end
 
 -- change current page and cache next page after rendering
 function UniReader:goto(no, is_ignore_jump)
-	if no < 1 or no > self.doc:getPages() then
+	local numpages = self.doc:getPages()
+	if no < 1 or no > numpages then
 		return
 	end
 
@@ -1529,9 +1530,11 @@ function UniReader:goto(no, is_ignore_jump)
 
 	-- TODO: move the following to a more appropriate place
 	-- into the caching section
-	if no < self.doc:getPages() then
+	if no < numpages then
 		if #self.bbox == 0 or not self.bbox.enabled then
 			-- pre-cache next page, but if we will modify bbox don't!
+			-- Tigran: I think we should _always_ precache the page
+			-- because of the benefits of pre-decoding it (for DjVu).
 			self:drawOrCache(no+1, true)
 		end
 	end

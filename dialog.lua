@@ -215,6 +215,9 @@ function InfoMessage:incrTTSspeed(direction) -- either +1 or -1
 end
 
 function InfoMessage:getTTSspeed()
+	if util.isEmulated() == 1 then
+		return 0
+	end
 	local tmp = io.popen('lipc-get-prop com.lab126.tts TtsISpeed', "r")
 	local speed = tmp:read("*number")
 	tmp:close()
@@ -234,6 +237,9 @@ function InfoMessage:incrSoundVolume(direction) -- either +1 or -1
 end
 
 function InfoMessage:getSoundVolume()
+	if util.isEmulated() == 1 then
+		return 0
+	end
 	local tmp = io.popen('lipc-get-prop com.lab126.audio Volume', "r")
 	local volume = tmp:read("*number")
 	tmp:close()
