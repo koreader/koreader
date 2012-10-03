@@ -57,17 +57,9 @@ function getUnpackedZipSize(zipfile)
 	return tonumber(res)
 end
 
-function getDiskSizeInfo()
-	local t, f = util.df(".")
-	return { total = t, free = f }
-end
-
 function FileInfo:formatDiskSizeInfo()
-	local s = getDiskSizeInfo()
-	if s then
-		return self:FormatSize(s.free)..string.format(", %.2f", 100*s.free/s.total).."%"
-	end
-	return "?"
+	local t, f = util.df(".")
+	return self:FormatSize(f)..string.format(", %.2f", 100*f/t).."%"
 end
 
 function FileInfo:getFolderContent()
