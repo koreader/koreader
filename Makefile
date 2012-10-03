@@ -130,10 +130,10 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		-L$(CRENGINEDIR)/thirdparty/antiword \
 		-L$(MUPDFLIBDIR) \
 		-o $@ \
-		-lm -ldl -lpthread \
+		-lm -lpthread \
 		-lpopen_noshell \
 		-lfitz -lfreetype -lopenjpeg -ljbig2dec -ljpeg -lz \
-		-lluajit \
+		-lluajit -ldl \
 		-ldjvulibre \
 		-lcrengine -lchmlib -lpng -lantiword \
 		$(EMU_LDFLAGS) \
@@ -233,10 +233,10 @@ $(CRENGINELIBS):
 
 $(LUALIB):
 ifdef EMULATE_READER
-	$(MAKE) -C $(LUADIR)
+	$(MAKE) -C $(LUADIR) BUILDMODE=static
 else
 	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	$(MAKE) -C $(LUADIR) BUILDMODE=static CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 
 $(POPENNSLIB):
