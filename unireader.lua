@@ -22,7 +22,8 @@ UniReader = {
 
 	-- framebuffer update policy state:
 	rcount = 5,
-	rcountmax = 5,
+	-- default to full refresh on every page turn
+	rcountmax = 0,
 
 	-- zoom state:
 	globalzoom = 1.0,
