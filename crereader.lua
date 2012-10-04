@@ -639,13 +639,7 @@ function CREReader:adjustCreReaderCommands()
 		"go backward in jump history",
 		function(self)
 			local prev_jump_no = 0
-			local need_refresh = false
 			if self.jump_history.cur > #self.jump_history then
-				-- addJump() will cause a "Retrieving TOC..." msg, so we'll
-				-- need to redraw the page after our own
-				-- ifo msg "Already first jump!" below
-				if not self.toc then need_refresh = true end
-
 				-- if cur points to head, put current page in history
 				self:addJump(self.doc:getXPointer())
 				prev_jump_no = self.jump_history.cur - 2
@@ -658,9 +652,6 @@ function CREReader:adjustCreReaderCommands()
 				self:goto(self.jump_history[prev_jump_no].page, true, "xpointer")
 			else
 				showInfoMsgWithDelay("Already first jump!", 2000, 1)
-				if need_refresh then
-					self:redrawCurrentPage()
-				end
 			end
 		end
 	)
