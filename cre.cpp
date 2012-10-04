@@ -554,7 +554,7 @@ int luaopen_cre(lua_State *L) {
 	/* initialize font manager for CREngine */
 	InitFontManager(lString8());
 
-#ifdef DEBUG_CRENGINE
+#if DEBUG_CRENGINE
 	CRLog::setStdoutLogger();
 	CRLog::setLogLevel(CRLog::LL_DEBUG);
 #endif
