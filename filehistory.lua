@@ -227,13 +227,17 @@ function FileHistory:addAllCommands()
 		function(self)
 			local file_entry = self.result[self.perpage*(self.page-1)+self.current]
 			file_full_path = file_entry.dir .. "/" .. file_entry.name
-			openFile(file_full_path)
-			--reset height and item index if screen has been rotated
-			local item_no = self.perpage * (self.page - 1) + self.current
-			self.perpage = math.floor(G_height / self.spacing) - 2
-			self.current = item_no % self.perpage
-			self.page = math.floor(item_no / self.perpage) + 1
-			self.pagedirty = true
+			if FileExists(file_full_path) then
+				openFile(file_full_path)
+				--reset height and item index if screen has been rotated
+				local item_no = self.perpage * (self.page - 1) + self.current
+				self.perpage = math.floor(G_height / self.spacing) - 2
+				self.current = item_no % self.perpage
+				self.page = math.floor(item_no / self.perpage) + 1
+				self.pagedirty = true
+			else
+				InfoMessage:inform("File does not exist", 2000, 1, MSG_ERROR, "File does not exist")
+			end
 		end
 	)
 	self.commands:add(KEY_DEL, nil, "Del",
