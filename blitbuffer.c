@@ -332,14 +332,34 @@ static int paintRect(lua_State *L) {
 	uint8_t *dstptr;
 
 	int cy;
-	if(w <= 0 || h <= 0 || x >= dst->w || y >= dst->h) {
-		return 0;
+
+	if(x < 0) {
+		if (x+w > 0) {
+			w += x;
+			x = 0;
+		} else {
+			return 0;
+		}
 	}
+
+	if(y < 0) {
+		if (y+h > 0) {
+			h += y;
+			y = 0;
+		} else {
+			return 0;
+		}
+	}
+
 	if(x + w > dst->w) {
 		w = dst->w - x;
 	}
 	if(y + h > dst->h) {
 		h = dst->h - y;
+	}
+
+	if(w <= 0 || h <= 0 || x >= dst->w || y >= dst->h) {
+		return 0;
 	}
 
 	if(x & 1) {
