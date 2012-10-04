@@ -199,11 +199,10 @@ static int openPage(lua_State *L) {
 
 	/* djvulibre counts page starts from 0 */
 	page->page_ref = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
+	if (! page->page_ref)
+		return luaL_error(L, "cannot open page #%d", pageno);
 	while (! ddjvu_page_decoding_done(page->page_ref))
 		handle(L, doc->context, TRUE);
-	if (! page->page_ref) {
-		return luaL_error(L, "cannot open page #%d", pageno);
-	}
 
 	page->doc = doc;
 	page->num = pageno;
@@ -255,8 +254,20 @@ static int getOriginalPageSize(lua_State *L) {
 
 	lua_pushnumber(L, info.width);
 	lua_pushnumber(L, info.height);
+	lua_pushnumber(L, info.dpi);
 
-	return 2;
+	return 3;
+}
+
+static int getPageInfo(lua_State *L) {
+	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
+	int pageno = luaL_checkint(L, 2);
+	ddjvu_page_t *djvu_page;
+	djvu_page = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
+	if (!djvu_page)
+		return luaL_error(L, "cannot create djvu_page #%d", pageno);
+	while (! ddjvu_page_decoding_done(djvu_page))
+		handle(L, doc->context, TRUE);
 }
 
 /*
@@ -535,6 +546,7 @@ static const struct luaL_Reg djvudocument_meth[] = {
 	{"getToc", getTableOfContent},
 	{"getPageText", getPageText},
 	{"getOriginalPageSize", getOriginalPageSize},
+	{"getPageInfo", getPageInfo},
 	{"close", closeDocument},
 	{"getCacheSize", getCacheSize},
 	{"cleanCache", cleanCache},
