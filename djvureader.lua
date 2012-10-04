@@ -69,3 +69,39 @@ function DJVUReader:invertTextYAxel(pageno, text_table)
 	end
 	return text_table
 end
+
+function DJVUReader:_drawReadingInfo()
+	local width, height = G_width, G_height
+	local numpages = self.doc:getPages()
+	local load_percent = self.pageno/numpages
+	local face = Font:getFace("rifont", 20)
+	local page_width, page_height, page_dpi, page_gamma, page_type = self.doc:getPageInfo(self.pageno)
+
+	-- display memory, time, battery and DjVu info on top of page
+	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face,
+		"M: "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k, "..
+		math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).."k, "..
+		os.date("%a %d %b %Y %T")..
+		" ["..BatteryLevel().."]", true)
+	renderUtf8Text(fb.bb, 10, 15+6+22, face,
+		"Gm:"..string.format("%.1f",self.globalgamma).." ["..tostring(page_gamma).."], "..
+		tostring(page_width).."x"..tostring(page_height)..", "..
+		tostring(page_dpi).."dpi, "..page_type, true)
+
+	-- display reading progress on bottom of page
+	local ypos = height - 50
+	fb.bb:paintRect(0, ypos, width, 50, 0)
+	ypos = ypos + 15
+	local cur_section = self:getTocTitleOfCurrentPage()
+	if cur_section ~= "" then
+		cur_section = "Sec: "..cur_section
+	end
+	renderUtf8Text(fb.bb, 10, ypos+6, face,
+		"Page: "..self.pageno.."/"..numpages.."   "..cur_section, true)
+
+	ypos = ypos + 15
+	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
+							5, 4, load_percent, 8)
+end
