@@ -2317,9 +2317,9 @@ function UniReader:addAllCommands()
 		end)
 	-- NuPogodi, 03.09.12 : moved the exit commands from here to the end of hotkey list 
 	self.commands:addGroup("vol-/+",{Keydef:new(KEY_VPLUS,nil),Keydef:new(KEY_VMINUS,nil)},
-		"decrease/increase gamma 25%",
+		"decrease/increase gamma 10%",
 		function(unireader,keydef)
-			unireader:modifyGamma(keydef.keycode==KEY_VPLUS and 1.25 or 0.8)
+			unireader:modifyGamma(keydef.keycode==KEY_VPLUS and 1.1 or 0.9)
 		end)
 	--numeric key group
 	local numeric_keydefs = {}
