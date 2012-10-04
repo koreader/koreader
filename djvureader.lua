@@ -70,19 +70,14 @@ function DJVUReader:invertTextYAxel(pageno, text_table)
 	return text_table
 end
 
--- used in UniReader:showMenu()
----[[
 function DJVUReader:_drawReadingInfo()
-	local secs, usecs = util.gettime()
 	local width, height = G_width, G_height
 	local numpages = self.doc:getPages()
 	local load_percent = self.pageno/numpages
-	-- changed to be the same font group as originaly intended
 	local face = Font:getFace("rifont", 20)
-	--local page_width, page_height, page_dpi = self.doc:getOriginalPageSize(self.pageno)
-	local page_width, page_height, page_dpi = self.doc:getPageInfo(self.pageno)
+	local page_width, page_height, page_dpi, page_gamma, page_type = self.doc:getPageInfo(self.pageno)
 
-	-- display memory on top of page
+	-- display memory, time, battery and DjVu info on top of page
 	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face,
 		"M: "..
@@ -91,9 +86,9 @@ function DJVUReader:_drawReadingInfo()
 		os.date("%a %d %b %Y %T")..
 		" ["..BatteryLevel().."]", true)
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
-		"Gamma:"..tostring(self.globalgamma)..", "..
+		"Gm:"..string.format("%.1f",self.globalgamma).." ["..tostring(page_gamma).."], "..
 		tostring(page_width).."x"..tostring(page_height)..", "..
-		tostring(page_dpi).."dpi", true)
+		tostring(page_dpi).."dpi, "..page_type, true)
 
 	-- display reading progress on bottom of page
 	local ypos = height - 50
@@ -109,8 +104,4 @@ function DJVUReader:_drawReadingInfo()
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
 							5, 4, load_percent, 8)
-	local nsecs, nusecs = util.gettime()
-	local diff = (nsecs - secs)*1000000 + nusecs - usecs
-	print("DJVUReader:_drawReadingInfo(): "..tostring(diff).." us")
 end
---]]

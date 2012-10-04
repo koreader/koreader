@@ -85,11 +85,10 @@ static int openDocument(lua_State *L) {
 	ddjvu_cache_set_size(doc->context, (unsigned long)cache_size);
 
 	doc->doc_ref = ddjvu_document_create_by_filename_utf8(doc->context, filename, TRUE);
+	if (! doc->doc_ref)
+		return luaL_error(L, "cannot open DjVu file <%s>", filename);
 	while (! ddjvu_document_decoding_done(doc->doc_ref))
 		handle(L, doc->context, True);
-	if (! doc->doc_ref) {
-		return luaL_error(L, "cannot open DjVu file <%s>", filename);
-	}
 
 	doc->pixelformat = ddjvu_format_create(DDJVU_FORMAT_GREY8, 0, NULL);
 	if (! doc->pixelformat) {
@@ -254,20 +253,65 @@ static int getOriginalPageSize(lua_State *L) {
 
 	lua_pushnumber(L, info.width);
 	lua_pushnumber(L, info.height);
-	lua_pushnumber(L, info.dpi);
 
-	return 3;
+	return 2;
 }
 
 static int getPageInfo(lua_State *L) {
 	DjvuDocument *doc = (DjvuDocument*) luaL_checkudata(L, 1, "djvudocument");
 	int pageno = luaL_checkint(L, 2);
 	ddjvu_page_t *djvu_page;
+	int page_width, page_height, page_dpi;
+	double page_gamma;
+	ddjvu_page_type_t page_type;
+	char *page_type_str;
+
 	djvu_page = ddjvu_page_create_by_pageno(doc->doc_ref, pageno - 1);
-	if (!djvu_page)
+	if (! djvu_page)
 		return luaL_error(L, "cannot create djvu_page #%d", pageno);
+
 	while (! ddjvu_page_decoding_done(djvu_page))
 		handle(L, doc->context, TRUE);
+
+	page_width = ddjvu_page_get_width(djvu_page);
+	lua_pushnumber(L, page_width);
+
+	page_height = ddjvu_page_get_height(djvu_page);
+	lua_pushnumber(L, page_height);
+
+	page_dpi = ddjvu_page_get_resolution(djvu_page);
+	lua_pushnumber(L, page_dpi);
+
+	page_gamma = ddjvu_page_get_gamma(djvu_page);
+	lua_pushnumber(L, page_gamma);
+
+	page_type = ddjvu_page_get_type(djvu_page);
+	switch (page_type) {
+		case DDJVU_PAGETYPE_UNKNOWN:
+			page_type_str = "UNKNOWN";
+			break;
+
+		case DDJVU_PAGETYPE_BITONAL:
+			page_type_str = "BITONAL";
+			break;
+
+		case DDJVU_PAGETYPE_PHOTO:
+			page_type_str = "PHOTO";
+			break;
+
+		case DDJVU_PAGETYPE_COMPOUND:
+			page_type_str = "COMPOUND";
+			break;
+
+		default:
+			page_type_str = "INVALID";
+			break;
+	}
+	lua_pushstring(L, page_type_str);
+
+	ddjvu_page_release(djvu_page);
+
+	return 5;
 }
 
 /*
