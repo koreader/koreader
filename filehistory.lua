@@ -236,7 +236,7 @@ function FileHistory:addAllCommands()
 				self.page = math.floor(item_no / self.perpage) + 1
 				self.pagedirty = true
 			else
-				InfoMessage:inform("File does not exist", 2000, 1, MSG_ERROR, "File does not exist")
+				InfoMessage:inform("File does not exist ", 2000, 1, MSG_ERROR)
 			end
 		end
 	)
