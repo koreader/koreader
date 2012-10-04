@@ -2665,7 +2665,7 @@ function UniReader:addAllCommands()
 							elseif y_direction == -1 then
 								max = y_s
 							else
-								print("ERROR: unknown direction!")
+								Debug("ERROR: unknown direction!")
 							end
 
 							max = max / step
