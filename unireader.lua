@@ -1532,12 +1532,37 @@ function UniReader:goto(no, is_ignore_jump)
 	-- TODO: move the following to a more appropriate place
 	-- into the caching section
 	if no < numpages then
-		if #self.bbox == 0 or not self.bbox.enabled then
-			-- pre-cache next page, but if we will modify bbox don't!
-			-- Tigran: I think we should _always_ precache the page
-			-- because of the benefits of pre-decoding it (for DjVu).
-			self:drawOrCache(no+1, true)
-		end
+
+		local old = {
+			globalzoom = self.globalzoom,
+			offset_x = self.offset_x,
+			offset_y = self.offset_y,
+			dest_x = self.dest_x,
+			dest_y = self.dest_y,
+			min_offset_x = self.min_offset_x,
+			min_offset_y = self.min_offset_y,
+			pan_x = self.pan_x,
+			pan_y = self.pan_y
+		}
+
+		self:drawOrCache(no+1, true)
+
+		-- restore currently visible values, not from preCache page
+		self.globalzoom = old.globalzoom
+		self.offset_x = old.offset_x
+		self.offset_y = old.offset_y
+		self.dest_x = old.dest_x
+		self.dest_y = old.dest_y
+		self.min_offset_x = old.min_offset_x
+		self.min_offset_y = old.min_offset_y
+		self.pan_x = old.pan_x
+		self.pan_y = old.pan_y
+
+		Debug("pre-cached page ", no+1, " and restored offsets")
+
+
+		Debug("globalzoom_mode:", self.globalzoom_mode, " globalzoom:", self.globalzoom, " globalrotate:", self.globalrotate, " offset:", self.offset_x, self.offset_y, " pagesize:", self.fullwidth, self.fullheight, " min_offset:", self.min_offset_x, self.min_offset_y)
+
 	end
 end
 
