@@ -63,7 +63,7 @@ function FileInfo:formatDiskSizeInfo()
 end
 
 function FileInfo:getFolderContent()
-	InfoMessage:show("Scanning folder...", 1)
+	InfoMessage:inform("Scanning folder...", nil, 1, MSG_AUX)
 	local tmp = io.popen('du -a \"'..self.pathfile..'\"', "r")
 	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
 	for output in tmp:lines() do
@@ -214,7 +214,7 @@ end
 
 function FileInfo:addAllCommands()
 	self.commands = Commands:new{}
-	self.commands:add({KEY_SPACE}, nil, "Space",
+	self.commands:add(KEY_SPACE, nil, "Space",
 		"refresh page manually",
 		function(self)
 			self.pagedirty = true
@@ -227,7 +227,7 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_F, KEY_AA}, nil, "F",
+	self.commands:add({KEY_F, KEY_AA}, nil, "F, Aa",
 		"change font faces",
 		function(self)
 			Font:chooseFonts()
@@ -242,7 +242,7 @@ function FileInfo:addAllCommands()
 			self.pagedirty = true
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_FW_LEFT}, nil, "Back",
+	self.commands:add({KEY_BACK, KEY_FW_LEFT}, nil, "Back, FW-Left",
 		"back",
 		function(self)
 			return "break"

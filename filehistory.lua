@@ -205,8 +205,8 @@ function FileHistory:addAllCommands()
 				self.keywords = old_keywords
 			end
 			if #self.result < 1 then
-				InfoMessage:inform("No hits! Try another keyword. ", 2000, 1, MSG_WARN,
-					"The search has given no results! Please, try another keyword.")
+				InfoMessage:inform("No search hits ", 2000, 1, MSG_WARN,
+					"The search has given no results")
 				-- restoring the original data
 				self.result = old_data
 				self.items = #self.result
@@ -266,7 +266,7 @@ function FileHistory:addAllCommands()
 			end
 		end
 	)
-	self.commands:add({KEY_SPACE}, nil, "Space",
+	self.commands:add(KEY_SPACE, nil, "Space",
 		"refresh page manually",
 		function(self)
 			self.pagedirty = true
@@ -287,7 +287,7 @@ function FileHistory:choose(keywords)
 
 	-- NuPogodi, 30.09.12: immediate quit (no redraw), if empty
 	if self:setSearchResult(keywords) < 1 then
-		InfoMessage:inform("No reading history! ", 2000, 1, MSG_WARN, "The reading history is empty!")
+		InfoMessage:inform("No reading history ", 2000, 1, MSG_WARN, "The reading history is empty!")
 		return nil
 	end
 
