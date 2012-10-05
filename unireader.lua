@@ -2960,18 +2960,22 @@ function UniReader:addAllCommands()
 				local face = Font:getFace("rifont", font_size)
 
 				local page_links = 0
+				local visible_links = {}
 
 				for i, link in ipairs(links) do
 					if link.page then
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-						fb.bb:dimRect(x,y,w,h) -- black 50%
-						fb.bb:dimRect(x,y,w,h) -- black 25%
-						page_links = page_links + 1
+						if x > 0 and y > 0 and x < G_width and y < G_height then
+							fb.bb:dimRect(x,y,w,h) -- black 50%
+							fb.bb:dimRect(x,y,w,h) -- black 25%
+							page_links = page_links + 1
+							visible_links[page_links] = link
+						end
 					end
 				end
 
 				if page_links == 0 then
-					InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
+					InfoMessage:inform("No visible links on this page ", 2000, 1, MSG_WARN)
 					return
 				end
 
@@ -2987,7 +2991,7 @@ function UniReader:addAllCommands()
 					shortcut_map = {}
 
 					for i = 1, #SelectMenu.item_shortcuts, 1 do
-						local link = links[ i + shortcut_offset ]
+						local link = visible_links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
 						if link.page then
@@ -3032,7 +3036,7 @@ function UniReader:addAllCommands()
 							link = 30
 						elseif ev.code == KEY_BACK then
 							goto_page = unireader.pageno
-						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #links - 30 then
+						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #visible_links - 30 then
 							shortcut_offset = shortcut_offset + 30
 							render_shortcuts()
 						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
@@ -3043,7 +3047,7 @@ function UniReader:addAllCommands()
 
 					if link then
 						link = shortcut_map[link]
-						if links[link] ~= nil and links[link].page ~= nil then
+						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
 							goto_page = links[link].page + 1
 						else
 							Debug("missing link", link)
