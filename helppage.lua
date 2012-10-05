@@ -116,7 +116,7 @@ function HelpPage:show(ypos, height, commands, title)
 					self.page = self.page - 1
 					is_pagedirty = true
 				end
-			elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
+			elseif ev.code == KEY_BACK then
 				return nil
 			end
 		end
