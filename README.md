@@ -26,7 +26,7 @@ Follow these steps:
 		* install popen_noshell sources into subfolder "popen-noshell"
 
 	* automatically fetch thirdparty sources with Makefile:
-		* make sure you have wget, unzip, git and svn installed
+		* make sure you have patch, wget, unzip, git and svn installed
 		* run `make fetchthirdparty`.
 
 * adapt Makefile to your needs
