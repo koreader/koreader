@@ -263,7 +263,11 @@ function InfoMessage:getVolumeLevels()
 end	]]
 
 function say(text)
-	os.execute("say \""..text.."\"")
+	if util.isEmulated() == 1 then
+		os.execute("espeak \""..text.."\"")
+	else
+		os.execute("say \""..text.."\"")
+	end
 end
 
 -- The read/write global InfoMessage settings. When properly tested, the
