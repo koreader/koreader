@@ -332,11 +332,11 @@ function SelectMenu:choose(ypos, height)
 							own_face = cface
 						end
 						-- rendering menu items
-						if sizeUtf8Text(lx,fb.bb:getWidth(),own_face,self.item_array[i],true).x < (fw - 10) then
-							renderUtf8Text(fb.bb,lx,y,own_face,self.item_array[i],true)
+						if sizeUtf8Text(lx,fb.bb:getWidth(),own_face,self.item_array[i],false).x < (fw - 10) then
+							renderUtf8Text(fb.bb,lx,y,own_face,self.item_array[i],false)
 						else
 							local gapx = sizeUtf8Text(0,fb.bb:getWidth(),own_face,"...", true).x
-							gapx = lx + renderUtf8TextWidth(fb.bb,lx,y,own_face,self.item_array[i],true,fw-gapx-15).x
+							gapx = lx + renderUtf8TextWidth(fb.bb,lx,y,own_face,self.item_array[i],false,fw-gapx-15).x
 							renderUtf8Text(fb.bb,gapx,y,own_face,"...",true)
 						end
 						-- end of changes (NuPogodi) 
