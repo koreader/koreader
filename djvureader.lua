@@ -70,6 +70,24 @@ function DJVUReader:invertTextYAxel(pageno, text_table)
 	return text_table
 end
 
+function render_mode_string(rm)
+	if (rm == 0) then
+		return "COLOUR"
+	elseif (rm == 1) then
+		return "B&W"
+	elseif (rm == 2) then
+		return "COLOUR ONLY"
+	elseif (rm == 3) then
+		return "MASK ONLY"
+	elseif (rm == 4) then
+		return "COLOUR BG"
+	elseif (rm == 5) then
+		return "COLOUR FG"
+	else
+		return "UNKNOWN"
+	end
+end
+
 function DJVUReader:_drawReadingInfo()
 	local width, height = G_width, G_height
 	local numpages = self.doc:getPages()
@@ -88,7 +106,8 @@ function DJVUReader:_drawReadingInfo()
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
 		"Gm:"..string.format("%.1f",self.globalgamma).." ["..tostring(page_gamma).."], "..
 		tostring(page_width).."x"..tostring(page_height)..", "..
-		tostring(page_dpi).."dpi, "..page_type, true)
+		tostring(page_dpi).."dpi, "..page_type..", "..
+		render_mode_string(self.render_mode), true)
 
 	-- display reading progress on bottom of page
 	local ypos = height - 50
