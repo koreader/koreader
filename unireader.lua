@@ -3051,7 +3051,7 @@ function UniReader:addAllCommands()
 					if link then
 						link = shortcut_map[link]
 						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
-							goto_page = links[link].page + 1
+							goto_page = visible_links[link].page + 1
 						else
 							Debug("missing link", link)
 						end
