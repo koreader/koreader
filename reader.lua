@@ -99,6 +99,15 @@ if optarg["G"] ~= nil then
 	globalgamma = optarg["G"]
 end
 
+local vfile = io.open("git-rev", "r")
+if vfile then
+	G_program_version = vfile:read("*a") or "?"
+	G_program_version = G_program_version:gsub("[\n\r]+", "")
+	vfile.close()
+else
+	G_program_version = "(unknown version)"
+end
+
 if util.isEmulated()==1 then
 	input.open("")
 	-- SDL key codes
