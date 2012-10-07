@@ -58,14 +58,17 @@ function BatteryLevel()
 end
 
 -- NuPogodi, 29.09.12: avoid using widgets
-function DrawTitle(text,lmargin,y,height,color,font_face)
+function DrawTitle(text, lmargin, y, height, color, font_face)
 	local r = 6	-- radius for round corners
 	color = 3	-- redefine to ignore the input for background color
+
 	fb.bb:paintRect(1, 1, G_width-2, height - r, color)
 	blitbuffer.paintBorder(fb.bb, 1, height/2, G_width-2, height/2, height/2, color, r)
+
 	local t = BatteryLevel() .. os.date(" %H:%M")
 	r = sizeUtf8Text(0, G_width, font_face, t, true).x
 	renderUtf8Text(fb.bb, G_width-r-lmargin, height-10, font_face, t, true)
+
 	r = G_width - r - 2 * lmargin - 10 -- let's leave small gap
 	if sizeUtf8Text(0, G_width, font_face, text, true).x <= r then
 		renderUtf8Text(fb.bb, lmargin, height-10, font_face, text, true)
