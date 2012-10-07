@@ -498,8 +498,7 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_H,nil,"H",
 		"show help page",
 		function(self)
-			local title="Hotkeys  "..G_program_version
-			HelpPage:show(0, G_height, self.commands, title)
+			HelpPage:show(0, G_height, self.commands, "Hotkeys  "..G_program_version)
 			self.pagedirty = true
 		end
 	)
