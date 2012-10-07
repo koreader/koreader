@@ -109,7 +109,9 @@ POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
 all: kpdfview
 
+VERSION?=$(shell git describe HEAD)
 kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
@@ -246,7 +248,6 @@ INSTALL_DIR=kindlepdfviewer
 
 LUA_FILES=alt_getopt.lua commands.lua crereader.lua dialog.lua djvureader.lua extentions.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
 
-VERSION?=$(shell git describe HEAD)
 customupdate: all
 	# ensure that build binary is for ARM
 	file kpdfview | grep ARM || exit 1
@@ -254,12 +255,11 @@ customupdate: all
 	rm -f kindlepdfviewer-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots}
-	echo $(VERSION) > $(INSTALL_DIR)/git-rev
 	cp -p README.md COPYING kpdfview kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
-	cp -r resources $(INSTALL_DIR)
+	cp -r git-rev resources $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/
 	rm -rf $(INSTALL_DIR)
