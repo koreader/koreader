@@ -123,7 +123,7 @@ function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
 		if pen_x < w then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and prevcharcode then
+			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
 			buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
