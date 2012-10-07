@@ -107,7 +107,7 @@ TextWidget = Widget:new({
 function TextWidget:_render()
 	local h = self.face.size * 1.5
 	self._bb = Blitbuffer.new(self._maxlength, h)
-	self._length = renderUtf8Text(self._bb, 0, h*.7, self.face, self.text, self.color)
+	self._length = renderUtf8Text(self._bb, 0, h*.7, self.face, self.text, true)
 end
 
 function TextWidget:getSize()
