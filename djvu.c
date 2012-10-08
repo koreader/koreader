@@ -229,13 +229,10 @@ static int getPageSize(lua_State *L) {
 
 /* unsupported so fake it */
 static int getUsedBBox(lua_State *L) {
-	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-
 	lua_pushnumber(L, (double)0.01);
 	lua_pushnumber(L, (double)0.01);
 	lua_pushnumber(L, (double)-0.01);
 	lua_pushnumber(L, (double)-0.01);
-
 	return 4;
 }
 
