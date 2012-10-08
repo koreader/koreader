@@ -19,12 +19,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <setjmp.h>
+
+#include "jpeglib.h"
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pic.h"
 
 typedef struct PicDocument {
-	int width, height;
+	int width;
+	int height;
+	int components;
+	unsigned char *image;
 } PicDocument;
 
 typedef struct PicPage {
@@ -32,23 +38,88 @@ typedef struct PicPage {
 	PicDocument *doc;
 } PicPage;
 
+struct my_error_mgr {
+	struct jpeg_error_mgr pub;
+	jmp_buf setjmp_buffer;
+};
+
+typedef struct my_error_mgr *my_error_ptr;
+
+METHODDEF(void) my_error_exit(j_common_ptr cinfo)
+{
+	my_error_ptr myerr = (my_error_ptr) cinfo->err;
+	(*cinfo->err->output_message) (cinfo);
+	longjmp(myerr->setjmp_buffer, 1);
+}
+
+unsigned char *readJPEG(const char *fname, int *width, int *height, int *components)
+{
+	struct jpeg_decompress_struct cinfo;
+	struct my_error_mgr jerr;
+	FILE *infile;
+	JSAMPARRAY buffer;
+	int row_stride;
+	long cont;
+	JSAMPLE *image_buffer;
+
+	if ((infile = fopen(fname, "r")) == NULL) return NULL;
+	cinfo.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = my_error_exit;
+	if (setjmp(jerr.setjmp_buffer)) {
+		jpeg_destroy_decompress(&cinfo);
+		fclose(infile);
+		return NULL;
+	}
+	jpeg_create_decompress(&cinfo);
+	jpeg_stdio_src(&cinfo, infile);
+	(void) jpeg_read_header(&cinfo, TRUE);
+	(void) jpeg_start_decompress(&cinfo);
+	row_stride = cinfo.output_width * cinfo.output_components;
+	buffer = (*cinfo.mem->alloc_sarray)
+		((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
+
+	image_buffer = (JSAMPLE *) malloc(cinfo.image_width*cinfo.image_height*cinfo.output_components);
+	if (image_buffer == NULL) return NULL;
+	*width = cinfo.image_width;
+	*height = cinfo.image_height;
+
+	cont = cinfo.output_height - 1;
+	while (cinfo.output_scanline < cinfo.output_height) {
+		(void) jpeg_read_scanlines(&cinfo, buffer, 1);
+		memcpy(image_buffer + cinfo.image_width * cinfo.output_components * cont, buffer[0], row_stride);
+		cont--;
+	}
+
+	(void) jpeg_finish_decompress(&cinfo);
+	jpeg_destroy_decompress(&cinfo);
+	fclose(infile);
+	*components = cinfo.output_components;
+	return image_buffer;
+}
+
 static int openDocument(lua_State *L) {
+	int width, height, components;
 	const char *filename = luaL_checkstring(L, 1);
-	printf("openDocument(%s)\n", filename);
 
 	PicDocument *doc = (PicDocument*) lua_newuserdata(L, sizeof(PicDocument));
 	luaL_getmetatable(L, "picdocument");
 	lua_setmetatable(L, -2);
 
-	doc->width = 600;
-	doc->height = 800;
+	unsigned char *image = readJPEG(filename, &width, &height, &components);
+	if (!image)
+		return luaL_error(L, "cannot open jpeg file");
+
+	doc->image = image;
+	doc->width = width;
+	doc->height = height;
+	doc->components = components;
+	printf("openDocument(%s) decoded image: %dx%dx%d\n", filename, width, height, components);
 	return 1;
 }
 
 static int openPage(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
 	int pageno = luaL_checkint(L, 2);
-	printf("openPage(%d)\n", pageno);
 
 	PicPage *page = (PicPage*) lua_newuserdata(L, sizeof(PicPage));
 	luaL_getmetatable(L, "picpage");
@@ -59,11 +130,6 @@ static int openPage(lua_State *L) {
 
 	return 1;
 }
-
-static const struct luaL_Reg pic_func[] = {
-	{"openDocument", openDocument},
-	{NULL, NULL}
-};
 
 static int getNumberOfPages(lua_State *L) {
 	lua_pushinteger(L, 1);
@@ -79,24 +145,22 @@ static int getOriginalPageSize(lua_State *L) {
 
 static int closeDocument(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
+	if (doc->image != NULL)
+		free(doc->image);
 	return 0;
 }
 
 static int drawPage(lua_State *L) {
-	printf("drawPage()\n");
 	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	uint8_t *imagebuffer = malloc((bb->w)*(bb->h)+1);
-	
-	/* fill pixel map with white color */
-	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
-	free(imagebuffer);
+	printf("drawPage(): bb->w=%d, bb->h=%d\n", bb->w, bb->h);
 	return 0;
 }
 
 static int getCacheSize(lua_State *L) {
-	lua_pushnumber(L, 8192);
+	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
+	lua_pushnumber(L, doc->width * doc->height * doc->components);
 	return 1;
 }
 
@@ -117,7 +181,6 @@ static int getPageSize(lua_State *L) {
 
 static int closePage(lua_State *L) {
 	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
-	printf("closePage()\n");
 	return 0;
 }
 
@@ -130,10 +193,22 @@ static int getUsedBBox(lua_State *L) {
 	return 4;
 }
 
+static int getTableOfContent(lua_State *L) {
+	lua_newtable(L);
+	return 1;
+}
+
+static const struct luaL_Reg pic_func[] = {
+	{"openDocument", openDocument},
+	{NULL, NULL}
+};
+
 static const struct luaL_Reg picdocument_meth[] = {
 	{"openPage", openPage},
 	{"getPages", getNumberOfPages},
+	{"getToc", getTableOfContent},
 	{"getOriginalPageSize", getOriginalPageSize},
+	{"getCacheSize", getCacheSize},
 	{"close", closeDocument},
 	{"cleanCache", cleanCache},
 	{"__gc", closeDocument},

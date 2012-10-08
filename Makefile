@@ -9,6 +9,7 @@ KPVCRLIBDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
+JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
@@ -136,7 +137,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread \
+		-lm -ldl -lpthread -ljpeg -L$(MUPDFLIBDIR) \
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -156,7 +157,7 @@ djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 pic.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) $< -o $@
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(JPEGDIR)/ -I$(MUPDFDIR)/scripts/ $< -o $@
 
 cre.o: %.o: %.cpp
 	$(CC) -c $(CFLAGS) -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@
