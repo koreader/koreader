@@ -87,11 +87,12 @@ uint8_t *readJPEG(const char *fname, int *width, int *height, int *components)
 	*width = cinfo.image_width;
 	*height = cinfo.image_height;
 
-	cont = cinfo.output_height - 1;
+	//cont = cinfo.output_height - 1;
+	cont = 0;
 	while (cinfo.output_scanline < cinfo.output_height) {
 		(void) jpeg_read_scanlines(&cinfo, buffer, 1);
 		memcpy(image_buffer + cinfo.image_width * cinfo.output_components * cont, buffer[0], row_stride);
-		cont--;
+		cont++;
 	}
 
 	(void) jpeg_finish_decompress(&cinfo);
@@ -163,10 +164,13 @@ static int drawPage(lua_State *L) {
 	int x, y;
 	int img_width = page->doc->width;
 	int img_height = page->doc->height;
+	int img_components = page->doc->components;
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
 
-	printf("drawPage(): bb->pitch=%d, bb->w=%d, bb->h=%d, x_offset=%d, y_offset=%d\n", bb->pitch, bb->w, bb->h, x_offset, y_offset);
+	printf("drawPage(): dc->zoom=%f, bb->pitch=%d, bb->w=%d, bb->h=%d, x_offset=%d, y_offset=%d\n", dc->zoom, bb->pitch, bb->w, bb->h, x_offset, y_offset);
+
+	if (dc->zoom > 1.0) return 0;
 
 	/* prepare the tables for adjusting the intensity of pixels */
 	if (dc->gamma != -1.0) {
@@ -177,19 +181,23 @@ static int drawPage(lua_State *L) {
 		adjust_pixels = 1;
 	}
 
-/*
-	if (bb->w > img_width) bb->w = img_width;
-	if (bb->h > img_height) bb->h = img_height;
-*/
-
 	uint8_t *bbptr = bb->data;
 	uint8_t *pmptr = page->doc->image;
 	bbptr += bb->pitch * y_offset;
 	for(y = y_offset; y < bb->h; y++) {
 		for(x = x_offset/2; x < (bb->w / 2); x++) {
 			int p = x*2 - x_offset;
-			unsigned char low = 15 - (pmptr[p + 1] >> 4);
-			unsigned char high = 15 - (pmptr[p] >> 4);
+			unsigned char low, high;
+			if (img_components == 1) {
+				low = 15 - (pmptr[p + 1] >> 4);
+				high = 15 - (pmptr[p] >> 4);
+			} else if (img_components == 3) {
+				low = 15 - (pmptr[p + 3] >> 4);
+				high = 15 - (pmptr[p] >> 4);
+			} else {
+				fprintf(stderr, "pic.c:drawPage(): unsupported image format\n");
+				return 0;
+			}
 			if (adjust_pixels)
 				bbptr[x] = adjusted_high[high] | adjusted_low[low];
 			else
