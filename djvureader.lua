@@ -2,9 +2,23 @@ require "unireader"
 
 DJVUReader = UniReader:new{}
 
+-- check DjVu magic string to validate
+function validDJVUFile(filename)
+	f = io.open(filename, "r")
+	if not f then return false end
+	local magic = f:read(8)
+	f:close()
+	if not magic or magic ~= "AT&TFORM" then return false end
+	return true
+end
+
 -- open a DJVU file and its settings store
 -- DJVU does not support password yet
 function DJVUReader:open(filename)
+	if not validDJVUFile(filename) then
+		return false, "Not a valid DjVu file"
+	end
+
 	local ok
 	ok, self.doc = pcall(djvu.openDocument, filename, self.cache_document_size)
 	if not ok then
