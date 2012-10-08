@@ -183,9 +183,9 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	Debug("## self.show_overlap "..self.show_overlap)
-	if self.show_overlap < 0 then
+	if self.show_overlap < 0 and self.dim_overlap then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
-	elseif self.show_overlap > 0 then
+	elseif self.show_overlap > 0 and self.dim_overlap then
 		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
