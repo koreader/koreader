@@ -2529,10 +2529,16 @@ function UniReader:addAllCommands()
 				G_reader_settings:saveSetting("rcountmax", self.rcountmax)
 				self.settings:saveSetting("rcountmax", self.rcountmax)
 			end
-			-- now, perform full screen refresh
+			self:redrawCurrentPage()
+		end)
+
+	self.commands:add(KEY_SPACE, nil, "Space",
+		"manual full screen refresh",
+		function(unireader)
 			self.rcount = self.rcountmax
 			self:redrawCurrentPage()
 		end)
+
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
 		function(unireader)
