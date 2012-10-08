@@ -2513,10 +2513,10 @@ function UniReader:addAllCommands()
 		end)
 
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
-		"full screen refresh",
+		"set full screen refresh count",
 		function(unireader)
 			local count = NumInputBox:input(G_height-100, 100,
-				"Full refresh after:", self.rcountmax, true)
+				"Full refresh every N pages (0-10)", self.rcountmax, true)
 			-- convert string to number
 			if pcall(function () count = math.floor(count) end) then
 				if count < 0 then
