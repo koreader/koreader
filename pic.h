@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _JPG_H
-#define _JPG_H
+#ifndef _PIC_H
+#define _PIC_H
 
 #include <lua.h>
 #include <lualib.h>
