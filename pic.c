@@ -20,17 +20,21 @@
 #include <string.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <math.h>
 
 #include "jpeglib.h"
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pic.h"
 
+#define MIN(a, b)      ((a) < (b) ? (a) : (b))
+#define MAX(a, b)      ((a) > (b) ? (a) : (b))
+
 typedef struct PicDocument {
 	int width;
 	int height;
 	int components;
-	unsigned char *image;
+	uint8_t *image;
 } PicDocument;
 
 typedef struct PicPage {
@@ -52,7 +56,7 @@ METHODDEF(void) my_error_exit(j_common_ptr cinfo)
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
-unsigned char *readJPEG(const char *fname, int *width, int *height, int *components)
+uint8_t *readJPEG(const char *fname, int *width, int *height, int *components)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct my_error_mgr jerr;
@@ -94,7 +98,7 @@ unsigned char *readJPEG(const char *fname, int *width, int *height, int *compone
 	jpeg_destroy_decompress(&cinfo);
 	fclose(infile);
 	*components = cinfo.output_components;
-	return image_buffer;
+	return (uint8_t *)image_buffer;
 }
 
 static int openDocument(lua_State *L) {
@@ -154,7 +158,49 @@ static int drawPage(lua_State *L) {
 	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
-	printf("drawPage(): bb->w=%d, bb->h=%d\n", bb->w, bb->h);
+	int x_offset = MAX(0, dc->offset_x);
+	int y_offset = MAX(0, dc->offset_y);
+	int x, y;
+	int img_width = page->doc->width;
+	int img_height = page->doc->height;
+	unsigned char adjusted_low[16], adjusted_high[16];
+	int i, adjust_pixels = 0;
+
+	printf("drawPage(): bb->pitch=%d, bb->w=%d, bb->h=%d, x_offset=%d, y_offset=%d\n", bb->pitch, bb->w, bb->h, x_offset, y_offset);
+
+	/* prepare the tables for adjusting the intensity of pixels */
+	if (dc->gamma != -1.0) {
+		for (i=0; i<16; i++) {
+			adjusted_low[i] = MIN(15, (unsigned char)floorf(dc->gamma * (float)i));
+			adjusted_high[i] = adjusted_low[i] << 4;
+		}
+		adjust_pixels = 1;
+	}
+
+/*
+	if (bb->w > img_width) bb->w = img_width;
+	if (bb->h > img_height) bb->h = img_height;
+*/
+
+	uint8_t *bbptr = bb->data;
+	uint8_t *pmptr = page->doc->image;
+	bbptr += bb->pitch * y_offset;
+	for(y = y_offset; y < bb->h; y++) {
+		for(x = x_offset/2; x < (bb->w / 2); x++) {
+			int p = x*2 - x_offset;
+			unsigned char low = 15 - (pmptr[p + 1] >> 4);
+			unsigned char high = 15 - (pmptr[p] >> 4);
+			if (adjust_pixels)
+				bbptr[x] = adjusted_high[high] | adjusted_low[low];
+			else
+				bbptr[x] = (high << 4) | low;
+		}
+		if (bb->w & 1)
+			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+		bbptr += bb->pitch;
+		//pmptr += bb->w;
+		pmptr += img_width;
+	}
 	return 0;
 }
 
