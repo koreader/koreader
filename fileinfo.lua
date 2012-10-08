@@ -74,7 +74,7 @@ function FileInfo:getFolderContent()
 		if j == "file" then
 			files = files + 1
 			ftype = string.match(name, ".+%.([^.]+)")
-			if ftype and ext:getReader(ftype) then
+			if ftype and ext:getReader(string.lower(ftype)) then
 				books = books + 1
 			end
 		elseif j == "directory" then
