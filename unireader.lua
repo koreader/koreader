@@ -1469,7 +1469,6 @@ function UniReader:addJump(pageno)
 	end
 	table.insert(self.jump_history, jump_item)
 	self.jump_history.cur = #self.jump_history + 1
-	--self:redrawCurrentPage()
 	return true
 end
 
@@ -1507,7 +1506,6 @@ function UniReader:addBookmark(pageno)
 	table.sort(self.bookmarks, function(a,b)
 		return self:isBookmarkInSequence(a, b)
 	end)
-	self:redrawCurrentPage()
 	return true
 end
 
