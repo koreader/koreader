@@ -2354,7 +2354,7 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 0%, 10% .. 90%, 100% of document",
 		function(unireader,keydef)
-			Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
+			--Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
 	-- end numeric keys
@@ -2513,10 +2513,10 @@ function UniReader:addAllCommands()
 		end)
 
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
-		"full screen refresh",
+		"set full screen refresh count",
 		function(unireader)
 			local count = NumInputBox:input(G_height-100, 100,
-				"Full refresh after:", self.rcountmax, true)
+				"Full refresh every N pages (0-10)", self.rcountmax, true)
 			-- convert string to number
 			if pcall(function () count = math.floor(count) end) then
 				if count < 0 then
@@ -2529,10 +2529,16 @@ function UniReader:addAllCommands()
 				G_reader_settings:saveSetting("rcountmax", self.rcountmax)
 				self.settings:saveSetting("rcountmax", self.rcountmax)
 			end
-			-- now, perform full screen refresh
+			self:redrawCurrentPage()
+		end)
+
+	self.commands:add(KEY_SPACE, nil, "Space",
+		"manual full screen refresh",
+		function(unireader)
 			self.rcount = self.rcountmax
 			self:redrawCurrentPage()
 		end)
+
 	self.commands:add(KEY_Z,nil,"Z",
 		"set crop mode",
 		function(unireader)
