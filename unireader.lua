@@ -66,7 +66,7 @@ UniReader = {
 	pan_margin = 5, -- horizontal margin for two-column zoom (in pixels)
 	pan_overlap_vertical = 30,
 	show_overlap = 0,
-	dim_overlap = true, -- if set to false, don't dim the overlap area
+	show_overlap_enable = true,
 
 	-- the document:
 	doc = nil,
@@ -986,7 +986,7 @@ function UniReader:loadSettings(filename)
 		end
 
 		self.rcountmax = self.settings:readSetting("rcountmax") or self.rcountmax
-		self.dim_overlap = self.settings:readSetting("dim_overlap")
+		self.show_overlap_enable = self.settings:readSetting("show_overlap_enable")
 
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
 		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
@@ -1397,9 +1397,9 @@ function UniReader:show(no)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
 	Debug("self.show_overlap", self.show_overlap)
-	if self.show_overlap < 0 and self.dim_overlap then
+	if self.show_overlap < 0 and self.show_overlap_enable then
 		fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
-	elseif self.show_overlap > 0 and self.dim_overlap then
+	elseif self.show_overlap > 0 and self.show_overlap_enable then
 		fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
@@ -2515,13 +2515,13 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_O, nil, "O",
 		"toggle showing page overlap areas",
 		function(unireader)
-			unireader.dim_overlap = not unireader.dim_overlap
-			if unireader.dim_overlap then
+			unireader.show_overlap_enable = not unireader.show_overlap_enable
+			if unireader.show_overlap_enable then
 				InfoMessage:inform("Turning overlap ON", nil, 1, MSG_AUX)
 			else
 				InfoMessage:inform("Turning overlap OFF", nil, 1, MSG_AUX)
 			end
-			self.settings:saveSetting("dim_overlap", unireader.dim_overlap)
+			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
 
