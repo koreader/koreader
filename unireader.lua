@@ -2954,10 +2954,7 @@ function UniReader:addAllCommands()
 			if links == nil or next(links) == nil then
 				InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
 			else
-				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
-				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
-				local face = Font:getFace("rifont", font_size)
 
 				local page_links = 0
 				local visible_links = {}
@@ -2996,7 +2993,8 @@ function UniReader:addAllCommands()
 						Debug("link", i, shortcut_offset, link)
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							local face = Font:getFace("rifont", h)
+							renderUtf8Text(fb.bb, x, y + h - 2, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
