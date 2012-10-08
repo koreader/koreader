@@ -19,6 +19,7 @@
 require "alt_getopt"
 require "pdfreader"
 require "djvureader"
+require "picviewer"
 require "crereader"
 require "filechooser"
 require "settings"
@@ -156,6 +157,7 @@ UniReader:initGlobalSettings(G_reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
+PICViewer:init()
 CREReader:init()
 
 -- display directory or open file

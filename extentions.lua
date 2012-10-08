@@ -3,7 +3,8 @@
 ext = {
 	djvuRead = ";djvu;",
 	pdfRead  = ";pdf;xps;cbz;",
-	creRead  = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;"
+	creRead  = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;",
+	picRead = ";jpg;"
 	-- seems to accept pdb-files for PalmDoc only
 }
 
@@ -16,6 +17,8 @@ function ext:getReader(ftype)
 		return PDFReader
 	elseif string.find(self.djvuRead,s..ftype..s) then
 		return DJVUReader
+	elseif string.find(self.picRead,s..ftype..s) then
+		return PICViewer
 	elseif FileChooser.filemanager_expert_mode > FileChooser.BEGINNERS_MODE
 	or string.find(self.creRead,s..ftype..s) then
 		return CREReader
