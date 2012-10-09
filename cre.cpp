@@ -475,6 +475,15 @@ static int getPageLinks(lua_State *L) {
 	return 1;
 }
 
+static int gotoLink(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *pos = luaL_checkstring(L, 2);
+
+	doc->text_view->goLink(lString16(pos), true);
+
+	return 0;
+}
+
 
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
@@ -624,6 +633,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"drawCurrentPage", drawCurrentPage},
 	{"findText", findText},
 	{"getPageLinks", getPageLinks},
+	{"gotoLink", gotoLink},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
