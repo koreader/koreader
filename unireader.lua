@@ -1633,7 +1633,7 @@ end
 function UniReader:modifyGamma(factor)
 	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
-	InfoMessage:inform("Changing gamma to "..self.globalgamma..". ", nil, 1, MSG_AUX)
+	InfoMessage:inform(string.format("New gamma is %.1f", self.globalgamma), nil, 1, MSG_AUX)
 	self:redrawCurrentPage()
 end
 
