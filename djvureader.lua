@@ -107,6 +107,7 @@ function DJVUReader:_drawReadingInfo()
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
 		"Gm:"..string.format("%.1f",self.globalgamma).." ["..tostring(page_gamma).."], "..
 		tostring(page_width).."x"..tostring(page_height)..", "..
+		string.format("%.1fx, ", self.globalzoom)..
 		tostring(page_dpi).."dpi, "..page_type..", "..
 		render_mode_string(self.render_mode), true)
 
