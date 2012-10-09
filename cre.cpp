@@ -464,6 +464,13 @@ static int gotoLink(lua_State *L) {
 	return 0;
 }
 
+static int clearSelection(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	doc->text_view->clearSelection();
+
+	return 0;
+}
 
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
@@ -613,6 +620,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"findText", findText},
 	{"getPageLinks", getPageLinks},
 	{"gotoLink", gotoLink},
+	{"clearSelection", clearSelection},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}

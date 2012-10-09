@@ -3135,6 +3135,8 @@ Debug("link coords",x,y,w,h)
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
 				end
 
+				self.doc:clearSelection()
+
 				unireader:goto(goto_page, true, "link")
 
 			end
