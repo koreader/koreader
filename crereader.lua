@@ -166,6 +166,9 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
+	elseif pos_type == "link" then
+		self.doc:gotoLink(pos)
+		pos = self.doc:getCurrentPos()
 	else -- pos_type is position within document
 		pos = math.min(pos, self.doc:getFullHeight() - height)
 		pos = math.max(pos, 0)

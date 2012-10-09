@@ -3024,10 +3024,12 @@ function UniReader:addAllCommands()
 							page_links = page_links + 1
 							visible_links[page_links] = link
 						end
-					elseif link.section then -- from crengine
---						fb.bb:invertRect(link.x0,link.y0,link.x1 - link.x0, link.y1-link.y0)
-						page_links = page_links + 1
-						visible_links[page_links] = link
+					elseif link.section and string.sub(link.section,1,1) == "#" then -- from crengine
+						if link.start_y >= self.pos and link.start_y <= self.pos + G_height then
+							link.start_y = link.start_y - self.pos -- top of screen
+							page_links = page_links + 1
+							visible_links[page_links] = link
+						end
 					end
 				end
 
@@ -3056,15 +3058,16 @@ function UniReader:addAllCommands()
 						local x,y,w,h
 						if link.page then
 							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-						elseif link.section then
-							x,y,w,h = link.start_x, link.start_y - self.pos -- make y relative to top of screen
+						elseif link.section
+ then
+							x,y,w,h = link.start_x, link.start_y
 						end
 
 Debug("link coords",x,y,w,h)
 
 						if x and y then
-							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr])
 							local face = Font:getFace("rifont", h)
+							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr], "for", shortcut_nr)
 							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
