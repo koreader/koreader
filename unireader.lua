@@ -2975,10 +2975,7 @@ function UniReader:addAllCommands()
 			if links == nil or next(links) == nil then
 				InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
 			else
-				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
-				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
-				local face = Font:getFace("rifont", font_size)
 
 				local page_links = 0
 				local visible_links = {}
@@ -2987,6 +2984,11 @@ function UniReader:addAllCommands()
 					if link.page then
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						if x > 0 and y > 0 and x < G_width and y < G_height then
+							-- draw top and side borders so we get a box for each link (bottom one is on page)
+							fb.bb:invertRect(x,    y, w,1)
+							fb.bb:invertRect(x,    y, 1,h-2)
+							fb.bb:invertRect(x+w-2,y, 1,h-2)
+
 							fb.bb:dimRect(x,y,w,h) -- black 50%
 							fb.bb:dimRect(x,y,w,h) -- black 25%
 							page_links = page_links + 1
@@ -3017,7 +3019,8 @@ function UniReader:addAllCommands()
 						Debug("link", i, shortcut_offset, link)
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							local face = Font:getFace("rifont", h)
+							renderUtf8Text(fb.bb, x, y + h - 2, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
@@ -3069,7 +3072,7 @@ function UniReader:addAllCommands()
 					if link then
 						link = shortcut_map[link]
 						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
-							goto_page = links[link].page + 1
+							goto_page = visible_links[link].page + 1
 						else
 							Debug("missing link", link)
 						end
