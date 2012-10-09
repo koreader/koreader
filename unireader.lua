@@ -1633,7 +1633,7 @@ end
 function UniReader:modifyGamma(factor)
 	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
-	InfoMessage:inform(string.format("New gamma is %.1f", self.globalgamma), nil, 1, MSG_AUX)
+	InfoMessage:inform(string.format("New gamma is %.2f", self.globalgamma), nil, 1, MSG_AUX)
 	self:redrawCurrentPage()
 end
 
@@ -2287,7 +2287,7 @@ function UniReader:addAllCommands()
 		function(unireader,keydef)
 			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			local new_zoom = unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100)
-			InfoMessage:inform(string.format("New zoom is %.1f ", new_zoom), nil, 1, MSG_WARN)
+			InfoMessage:inform(string.format("New zoom is %.2f ", new_zoom), nil, 1, MSG_WARN)
 			unireader:setGlobalZoom(new_zoom)
 		end)
 	-- NuPogodi, 03.09.12: make zoom step user-configurable
