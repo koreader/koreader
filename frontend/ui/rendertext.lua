@@ -47,10 +47,11 @@ function getSubTextByWidth(text, face, width, kerning)
 end
 
 function sizeUtf8Text(x, width, face, text, kerning)
-	if text == nil then
+	if not text then
 		DEBUG("sizeUtf8Text called without text");
 		return
 	end
+
 	-- may still need more adaptive pen placement when kerning,
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
@@ -61,48 +62,46 @@ function sizeUtf8Text(x, width, face, text, kerning)
 		if pen_x < (width - x) then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and prevcharcode then
-				local kern = face.ftface:getKerning(prevcharcode, charcode)
-				pen_x = pen_x + kern
-				--DEBUG("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." kern:"..kern)
-			else
-				--DEBUG("curr:"..string.char(charcode))
+			if kerning and (prevcharcode ~= 0) then
+				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
 			pen_x = pen_x + glyph.ax
 			pen_y_top = math.max(pen_y_top, glyph.t)
 			pen_y_bottom = math.max(pen_y_bottom, glyph.bb:getHeight() - glyph.t)
 			--DEBUG("ax:"..glyph.ax.." t:"..glyph.t.." r:"..glyph.r.." h:"..glyph.bb:getHeight().." w:"..glyph.bb:getWidth().." yt:"..pen_y_top.." yb:"..pen_y_bottom)
 			prevcharcode = charcode
-		end
-	end
+		end -- if pen_x < (width - x)
+	end -- for uchar
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
 function renderUtf8Text(buffer, x, y, face, text, kerning)
-	if text == nil then
+	if not text then
 		DEBUG("renderUtf8Text called without text");
 		return 0
 	end
+
 	-- may still need more adaptive pen placement when kerning,
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
 	local prevcharcode = 0
+	local buffer_width = buffer:getWidth()
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-		if pen_x < buffer:getWidth() then
+		if pen_x < buffer_width then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and prevcharcode then
-				local kern = face.ftface:getKerning(prevcharcode, charcode)
-				pen_x = pen_x + kern
-				--DEBUG("prev:"..string.char(prevcharcode).." curr:"..string.char(charcode).." pen_x:"..pen_x.." kern:"..kern)
-				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
-			else
-				--DEBUG(" curr:"..string.char(charcode))
-				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			if kerning and (prevcharcode ~= 0) then
+				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
+			buffer:addblitFrom(
+				glyph.bb,
+				x + pen_x + glyph.l, y - glyph.t,
+				0, 0,
+				glyph.bb:getWidth(), glyph.bb:getHeight())
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
-		end
-	end
+		end -- if pen_x < buffer_width
+	end -- for uchar
+
 	return pen_x
 end
