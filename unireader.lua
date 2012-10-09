@@ -2286,7 +2286,9 @@ function UniReader:addAllCommands()
 		"zoom out/in ".. self.step_manual_zoom .."% ",
 		function(unireader,keydef)
 			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			unireader:setGlobalZoom(unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100))
+			local new_zoom = unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100)
+			InfoMessage:inform(string.format("New zoom is %.1f ", new_zoom), nil, 1, MSG_WARN)
+			unireader:setGlobalZoom(new_zoom)
 		end)
 	-- NuPogodi, 03.09.12: make zoom step user-configurable
 	self.commands:addGroup(MOD_SHIFT.."< >",{
