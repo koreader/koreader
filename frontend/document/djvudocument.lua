@@ -9,6 +9,11 @@ DjvuDocument = Document:new{
 }
 
 function DjvuDocument:init()
+	if not validDjvuFile(self.file) then
+		self.error_message = "Not a valid DjVu file"
+		return
+	end
+
 	local ok
 	ok, self._document = pcall(djvu.openDocument, self.file, self.djvulibre_cache_size)
 	if not ok then
@@ -18,6 +23,16 @@ function DjvuDocument:init()
 	self.is_open = true
 	self.info.has_pages = true
 	self:_readMetadata()
+end
+
+-- check DjVu magic string to validate
+function validDjvuFile(filename)
+	f = io.open(filename, "r")
+	if not f then return false end
+	local magic = f:read(8)
+	f:close()
+	if not magic or magic ~= "AT&TFORM" then return false end
+	return true
 end
 
 function DjvuDocument:getUsedBBox(pageno)
