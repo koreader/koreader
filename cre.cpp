@@ -426,8 +426,6 @@ static int getPageLinks(lua_State *L) {
 	if ( linkCount ) {
 		sel.clear();
 		for ( int i=0; i<linkCount; i++ ) {
-			sel.add( new ldomXRange(*links[i]) );
-
 			lString16 txt = links[i]->getRangeText();
 			lString8 txt8 = UnicodeToLocal( txt );
 
@@ -462,9 +460,17 @@ static int getPageLinks(lua_State *L) {
 
 			const char * link_to = link8.c_str();
 
-			lua_pushstring(L, "section");
-			lua_pushstring(L, link_to);
-			lua_settable(L, -3);
+			if ( link_to[0] == '#' ) {
+				lua_pushstring(L, "section");
+				lua_pushstring(L, link_to);
+				lua_settable(L, -3);
+
+				sel.add( new ldomXRange(*links[i]) ); // highlight
+			} else {
+				lua_pushstring(L, "uri");
+				lua_pushstring(L, link_to);
+				lua_settable(L, -3);
+			}
 
 			lua_rawseti(L, -2, i + 1);
 
