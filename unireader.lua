@@ -3087,20 +3087,16 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_M, MOD_ALT, "M",
 		"select reader mode",
 		function(unireader)
-			--Screen:saveCurrentBB()
 			FileChooser:changeFileChooserMode()
 			self:redrawCurrentPage()
-			--Screen:restoreFromSavedBB()
 		end
 	)
 	self.commands:add(KEY_I, nil, "I",
 		"change the way to inform about events",
 		function(unireader)
 			if FileChooser.filemanager_expert_mode == FileChooser.ROOT_MODE then
-				--Screen:saveCurrentBB()
 				InfoMessage:chooseNotificatonMethods()
 				self:redrawCurrentPage()
-				--Screen:restoreFromSavedBB()
 			else
 				InfoMessage:inform("Unstable... For experts only ", -1, 1, MSG_WARN,
 					"This function is still under development and available only for experts and beta testers.")
