@@ -466,12 +466,10 @@ static int drawPage(lua_State *L) {
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
 	ddjvu_rect_t pagerect, renderrect;
-	uint8_t *imagebuffer = malloc((bb->w)*(bb->h)+1);
+	int bbsize = (bb->w)*(bb->h)+1;
+	uint8_t *imagebuffer = malloc(bbsize);
 
 	/*printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);*/
-
-	/* fill pixel map with white color */
-	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -505,13 +503,8 @@ static int drawPage(lua_State *L) {
 	 * So we don't set rotation here.
 	 */
 
-	ddjvu_page_render(page->page_ref,
-			djvu_render_mode,
-			&pagerect,
-			&renderrect,
-			page->doc->pixelformat,
-			bb->w,
-			imagebuffer);
+	if (!ddjvu_page_render(page->page_ref, djvu_render_mode, &pagerect, &renderrect, page->doc->pixelformat, bb->w, imagebuffer))
+		memset(imagebuffer, 0xFF, bbsize);
 
 	uint8_t *bbptr = bb->data;
 	uint8_t *pmptr = imagebuffer;
