@@ -94,7 +94,7 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
 	local prevcharcode = 0
-	buffer_width = buffer:getWidth()
+	local buffer_width = buffer:getWidth()
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < buffer_width then
 			local charcode = util.utf8charcode(uchar)
