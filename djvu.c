@@ -17,6 +17,7 @@
 */
 #include <math.h>
 #include <string.h>
+#include <errno.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
@@ -134,17 +135,28 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 
 	int length = miniexp_length(r);
 	int counter = 0;
-	char page_number[6];
+	const char* page_name;
+	int page_number;
 
 	while(counter < length-1) {
 		lua_pushnumber(L, *count);
 		lua_newtable(L);
 
 		lua_pushstring(L, "page");
-		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
-		/* page numbers appear as #11, set # to 0 so strtol works */
-		page_number[0]= '0';
-		lua_pushnumber(L, strtol(page_number, NULL, 10));
+		page_name = miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista))));
+		if(page_name != NULL && page_name[0] == '#') {
+			errno = 0;
+			page_number = strtol(page_name + 1, NULL, 10);
+			if(!errno) {
+				lua_pushnumber(L, page_number);
+			} else {
+				/* we can not parse this as a number, TODO: parse page names */
+				lua_pushnumber(L, -1);
+			}
+		} else {
+			/* something we did not expect here */
+			lua_pushnumber(L, -1);
+		}
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
