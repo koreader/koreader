@@ -17,6 +17,7 @@
 */
 #include <math.h>
 #include <string.h>
+#include <errno.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
@@ -134,17 +135,28 @@ static int walkTableOfContent(lua_State *L, miniexp_t r, int *count, int depth) 
 
 	int length = miniexp_length(r);
 	int counter = 0;
-	char page_number[6];
+	const char* page_name;
+	int page_number;
 
 	while(counter < length-1) {
 		lua_pushnumber(L, *count);
 		lua_newtable(L);
 
 		lua_pushstring(L, "page");
-		strcpy(page_number,miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista)))));
-		/* page numbers appear as #11, set # to 0 so strtol works */
-		page_number[0]= '0';
-		lua_pushnumber(L, strtol(page_number, NULL, 10));
+		page_name = miniexp_to_str(miniexp_car(miniexp_cdr(miniexp_nth(counter, lista))));
+		if(page_name != NULL && page_name[0] == '#') {
+			errno = 0;
+			page_number = strtol(page_name + 1, NULL, 10);
+			if(!errno) {
+				lua_pushnumber(L, page_number);
+			} else {
+				/* we can not parse this as a number, TODO: parse page names */
+				lua_pushnumber(L, -1);
+			}
+		} else {
+			/* something we did not expect here */
+			lua_pushnumber(L, -1);
+		}
 		lua_settable(L, -3);
 
 		lua_pushstring(L, "depth");
@@ -229,13 +241,10 @@ static int getPageSize(lua_State *L) {
 
 /* unsupported so fake it */
 static int getUsedBBox(lua_State *L) {
-	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-
 	lua_pushnumber(L, (double)0.01);
 	lua_pushnumber(L, (double)0.01);
 	lua_pushnumber(L, (double)-0.01);
 	lua_pushnumber(L, (double)-0.01);
-
 	return 4;
 }
 
@@ -469,12 +478,10 @@ static int drawPage(lua_State *L) {
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
 	ddjvu_rect_t pagerect, renderrect;
-	uint8_t *imagebuffer = malloc((bb->w)*(bb->h)+1);
+	int bbsize = (bb->w)*(bb->h)+1;
+	uint8_t *imagebuffer = malloc(bbsize);
 
 	/*printf("@page %d, @@zoom:%f, offset: (%d, %d)\n", page->num, dc->zoom, dc->offset_x, dc->offset_y);*/
-
-	/* fill pixel map with white color */
-	memset(imagebuffer, 0xFF, (bb->w)*(bb->h)+1);
 
 	/* render full page into rectangle specified by pagerect */
 	/*pagerect.x = luaL_checkint(L, 4);*/
@@ -508,13 +515,8 @@ static int drawPage(lua_State *L) {
 	 * So we don't set rotation here.
 	 */
 
-	ddjvu_page_render(page->page_ref,
-			djvu_render_mode,
-			&pagerect,
-			&renderrect,
-			page->doc->pixelformat,
-			bb->w,
-			imagebuffer);
+	if (!ddjvu_page_render(page->page_ref, djvu_render_mode, &pagerect, &renderrect, page->doc->pixelformat, bb->w, imagebuffer))
+		memset(imagebuffer, 0xFF, bbsize);
 
 	uint8_t *bbptr = bb->data;
 	uint8_t *pmptr = imagebuffer;
