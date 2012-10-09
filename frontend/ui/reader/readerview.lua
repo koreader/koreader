@@ -9,8 +9,9 @@ ReaderView = WidgetContainer:new{
 		offset = {},
 		bbox = nil,
 	},
-
 	outer_page_color = 7,
+	-- DjVu page rendering mode (used in djvu.c:drawPage())
+	render_mode = 0, -- default to COLOR
 
 	visible_area = Geom:new{x = 0, y = 0},
 	page_area = Geom:new{},
@@ -41,7 +42,8 @@ function ReaderView:paintTo(bb, x, y)
 			self.visible_area,
 			self.state.page,
 			self.state.zoom,
-			self.state.rotation)
+			self.state.rotation,
+			self.render_mode)
 	else
 		self.ui.document:drawCurrentView(
 			bb,
@@ -88,6 +90,10 @@ function ReaderView:onSetDimensions(dimensions)
 	self:recalculate()
 end
 
+function ReaderView:onReadSettings(config)
+	self.render_mode = config:readSetting("render_mode") or 0
+end
+
 function ReaderView:onPageUpdate(new_page_no)
 	self.state.page = new_page_no
 	self:recalculate()
@@ -108,3 +114,6 @@ function ReaderView:onRotationUpdate(rotation)
 	self:recalculate()
 end
 
+function ReaderView:onCloseDocument()
+	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
+end

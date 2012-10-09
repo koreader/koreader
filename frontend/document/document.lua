@@ -128,7 +128,7 @@ function Document:getToc()
 	return self._document:getToc()
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation)
+function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
 	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
@@ -172,7 +172,7 @@ function Document:renderPage(pageno, rect, zoom, rotation)
 
 	-- render
 	local page = self._document:openPage(pageno)
-	page:draw(dc, tile.bb, size.x, size.y)
+	page:draw(dc, tile.bb, size.x, size.y, render_mode)
 	page:close()
 	Cache:insert(hash, tile)
 
@@ -185,7 +185,7 @@ function Document:hintPage(pageno, zoom, rotation)
 	self:renderPage(pageno, nil, zoom, rotation)
 end
 
-function Document:drawPage(target, x, y, rect, pageno, zoom, rotation)
+function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
 	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
 	local hash_excerpt = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
 	local tile = Cache:check(hash_full_page)
@@ -193,7 +193,7 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation)
 		tile = Cache:check(hash_excerpt)
 		if not tile then
 			DEBUG("rendering")
-			tile = self:renderPage(pageno, rect, zoom, rotation)
+			tile = self:renderPage(pageno, rect, zoom, rotation, render_mode)
 		end
 	end
 	DEBUG("now painting", tile)
