@@ -3000,7 +3000,8 @@ function UniReader:addAllCommands()
 					font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
 				else
 					Debug("using font size from crengine for font size")
-					font_size = self.font_zoom
+					font_size = self.doc:zoomFont(0) -- delta=0, return font size
+					self:redrawCurrentPage() -- show links
 				end
 
 				Debug("font_size",font_size)
@@ -3056,13 +3057,13 @@ function UniReader:addAllCommands()
 						if link.page then
 							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						elseif link.section then
-							x,y,w,h = link.start_x, link.start_y, 10, 10
+							x,y,w,h = link.start_x, link.start_y
 						end
 
 Debug("link coords",x,y,w,h)
 
-						if x and y and w and h then
-							Debug("shortcut", x,y, SelectMenu.item_shortcuts[shortcut_nr])
+						if x and y then
+							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr])
 							local face = Font:getFace("rifont", h)
 							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
