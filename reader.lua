@@ -121,6 +121,8 @@ local last_file = G_reader_settings:readSetting("lastfile")
 Screen:updateRotationMode()
 Screen.native_rotation_mode = Screen.cur_rotation_mode
 
+--@TODO we can read version here, refer to commit in master tree:   (houqp)
+--87712cf0e43fed624f8a9f610be42b1fe174b9fe
 
 
 if ARGV[optind] then
