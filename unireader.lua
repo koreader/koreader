@@ -3057,7 +3057,7 @@ function UniReader:addAllCommands()
 						if link.page then
 							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						elseif link.section then
-							x,y,w,h = link.start_x, link.start_y
+							x,y,w,h = link.start_x, link.start_y - self.pos -- make y relative to top of screen
 						end
 
 Debug("link coords",x,y,w,h)
@@ -3116,8 +3116,14 @@ Debug("link coords",x,y,w,h)
 
 					if link then
 						link = shortcut_map[link]
-						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
-							goto_page = visible_links[link].page + 1
+						if visible_links[link] ~= nil then
+							if visible_links[link].page ~= nil then
+								goto_page = visible_links[link].page + 1
+							elseif visible_links[link].section ~= nil then
+								goto_page = visible_links[link].section
+							else
+								Debug("Unknown link target in", link)
+							end
 						else
 							Debug("missing link", link)
 						end
@@ -3126,7 +3132,7 @@ Debug("link coords",x,y,w,h)
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
 				end
 
-				unireader:goto(goto_page)
+				unireader:goto(goto_page, true, "link")
 
 			end
 		end
