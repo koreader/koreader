@@ -67,6 +67,7 @@ UniReader = {
 	pan_overlap_vertical = 30,
 	show_overlap = 0,
 	show_overlap_enable = true,
+	show_links_enable = true,
 
 	-- the document:
 	doc = nil,
@@ -987,6 +988,7 @@ function UniReader:loadSettings(filename)
 
 		self.rcountmax = self.settings:readSetting("rcountmax") or self.rcountmax
 		self.show_overlap_enable = self.settings:readSetting("show_overlap_enable")
+		self.show_links_enable = self.settings:readSetting("show_links_enable")
 
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
 		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
@@ -1410,7 +1412,10 @@ function UniReader:show(no)
 	end
 
 	-- draw links on page
-	local links = self:getPageLinks( no )
+	local links = nil
+	if self.show_links_enable then
+		links = self:getPageLinks( no )
+	end
 	if links ~= nil then
 		for i, link in ipairs(links) do
 			if link.page then -- skip non-page links
@@ -2966,6 +2971,19 @@ function UniReader:addAllCommands()
 			else
 				unireader:goto(unireader.pageno)
 			end
+		end
+	)
+	self.commands:add(KEY_L, MOD_SHIFT, "L",
+		"show/hide links on page",
+		function(unireader)
+			unireader.show_links_enable = not unireader.show_links_enable
+			if unireader.show_links_enable then
+				InfoMessage:inform("Links on page ON", nil, 1, MSG_AUX)
+			else
+				InfoMessage:inform("Links on page OFF", nil, 1, MSG_AUX)
+			end
+			self.settings:saveSetting("show_links_enable", unireader.show_links_enable)
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_L, nil, "L",
