@@ -19,6 +19,7 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
+SHELL:=/bin/bash
 CHOST?=arm-none-linux-gnueabi
 CC:=$(CHOST)-gcc
 CXX:=$(CHOST)-g++
