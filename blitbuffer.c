@@ -105,6 +105,63 @@ static int blitFullToBuffer(lua_State *L) {
 	return 0;
 }
 
+/**
+* check/adapt boundaries for blitting operations
+*
+* @return 0 if no blitting is needed, 1 otherwise
+*/
+int fitBlitBufferBoundaries(BlitBuffer* src, BlitBuffer* dst, int* xdest, int* ydest, int* xoffs, int* yoffs, int* w, int* h) {
+	// check bounds
+	if(*ydest < 0) {
+		// negative ydest, try to compensate
+		if(*ydest + *h > 0) {
+			// shrink h by negative dest offset
+			*h += *ydest;
+			// extend source offset
+			*yoffs += -(*ydest);
+			*ydest = 0;
+		} else {
+			// effectively no height
+			return 0;
+		}
+	} else if(*ydest >= dst->h) {
+		// we're told to paint to off-bound target coords
+		return 0;
+	}
+	if(*ydest + *h > dst->h) {
+		// clamp height if too large for target size
+		*h = dst->h - *ydest;
+	}
+	if(*yoffs >= src->h) {
+		// recalculated source offset is out of bounds
+		return 0;
+	} else if(*yoffs + *h > src->h) {
+		// clamp height if too large for source size
+		*h = src->h - *yoffs;
+	}
+	// same stuff for x coords:
+	if(*xdest < 0) {
+		if(*xdest + *w > 0) {
+			*w += *xdest;
+			*xoffs += -(*xdest);
+			*xdest = 0;
+		} else {
+			return 0;
+		}
+	} else if(*xdest >= dst->w) {
+		return 0;
+	}
+	if(*xdest + *w > dst->w) {
+		*w = dst->w - *xdest;
+	}
+	if(*xoffs >= src->w) {
+		return 0;
+	} else if(*xoffs + *w > src->w) {
+		*w = src->w - *xoffs;
+	}
+	return 1; // continue processing
+}
+
 static int blitToBuffer(lua_State *L) {
 	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
 	BlitBuffer *src = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
@@ -116,57 +173,11 @@ static int blitToBuffer(lua_State *L) {
 	int h = luaL_checkint(L, 8);
 	int x, y;
 
-	// check bounds
-	if(ydest < 0) {
-		// negative ydest, try to compensate
-		if(ydest + h > 0) {
-			// shrink h by negative dest offset
-			h += ydest;
-			// extend source offset
-			yoffs += -ydest;
-			ydest = 0;
-		} else {
-			// effectively no height
-			return 0;
-		}
-	} else if(ydest >= dst->h) {
-		// we're told to paint to off-bound target coords
-		return 0;
-	}
-	if(ydest + h > dst->h) {
-		// clamp height if too large for target size
-		h = dst->h - ydest;
-	}
-	if(yoffs >= src->h) {
-		// recalculated source offset is out of bounds
-		return 0;
-	} else if(yoffs + h > src->h) {
-		// clamp height if too large for source size
-		h = src->h - yoffs;
-	}
-	// same stuff for x coords:
-	if(xdest < 0) {
-		if(xdest + w > 0) {
-			w += xdest;
-			xoffs += -xdest;
-			xdest = 0;
-		} else {
-			return 0;
-		}
-	} else if(xdest >= dst->w) {
-		return 0;
-	}
-	if(xdest + w > dst->w) {
-		w = dst->w - xdest;
-	}
-	if(xoffs >= src->w) {
-		return 0;
-	} else if(xoffs + w > src->w) {
-		w = src->w - xoffs;
-	}
-
 	uint8_t *dstptr;
 	uint8_t *srcptr;
+
+	if(!fitBlitBufferBoundaries(src, dst, &xdest, &ydest, &xoffs, &yoffs, &w, &h))
+		return 0;
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
@@ -248,30 +259,11 @@ static int addblitToBuffer(lua_State *L) {
 	int h = luaL_checkint(L, 8);
 	int x, y;
 
-	// check bounds
-	if(yoffs >= src->h) {
-		return 0;
-	} else if(yoffs + h > src->h) {
-		h = src->h - yoffs;
-	}
-	if(ydest >= dst->h) {
-		return 0;
-	} else if(ydest + h > dst->h) {
-		h = dst->h - ydest;
-	}
-	if(xoffs >= src->w) {
-		return 0;
-	} else if(xoffs + w > src->w) {
-		w = src->w - xoffs;
-	}
-	if(xdest >= dst->w) {
-		return 0;
-	} else if(xdest + w > dst->w) {
-		w = dst->w - xdest;
-	}
-
 	uint8_t *dstptr;
 	uint8_t *srcptr;
+
+	if(!fitBlitBufferBoundaries(src, dst, &xdest, &ydest, &xoffs, &yoffs, &w, &h))
+		return 0;
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
