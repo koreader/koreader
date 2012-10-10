@@ -114,6 +114,9 @@ static int openDocument(lua_State *L) {
 	if (!image)
 		return luaL_error(L, "cannot open jpeg file");
 
+	if (components != 1)
+		return luaL_error(L, "Unsupported image format");
+
 	doc->image = image;
 	doc->width = width;
 	doc->height = height;
@@ -155,7 +158,7 @@ static int closeDocument(lua_State *L) {
 	return 0;
 }
 
-static void scaleImage(uint8_t *result, uint8_t *image, int width, int height, int components, int new_width, int new_height)
+static void scaleImage(uint8_t *result, uint8_t *image, int width, int height, int new_width, int new_height)
 {
 	int x, y;
 
@@ -173,7 +176,6 @@ static int drawPage(lua_State *L) {
 	int x, y;
 	int img_width = page->doc->width;
 	int img_height = page->doc->height;
-	int img_components = page->doc->components;
 	int img_new_width = bb->w;
 	int img_new_height = bb->h;
 	unsigned char adjusted_low[16], adjusted_high[16];
@@ -192,7 +194,7 @@ static int drawPage(lua_State *L) {
 	if (!scaled_image)
 		return 0;
 
-	scaleImage(scaled_image, page->doc->image, img_width, img_height, img_components, img_new_width, img_new_height);
+	scaleImage(scaled_image, page->doc->image, img_width, img_height, img_new_width, img_new_height);
 
 	uint8_t *bbptr = bb->data;
 	uint8_t *pmptr = scaled_image;
@@ -200,17 +202,8 @@ static int drawPage(lua_State *L) {
 	for(y = y_offset; y < img_new_height; y++) {
 		for(x = x_offset/2; x < (img_new_width / 2); x++) {
 			int p = x*2 - x_offset;
-			unsigned char low, high;
-			if (img_components == 1) {
-				low = 15 - (pmptr[p + 1] >> 4);
-				high = 15 - (pmptr[p] >> 4);
-			} else if (img_components == 3) {
-				low = 15 - (pmptr[p + 3] >> 4);
-				high = 15 - (pmptr[p] >> 4);
-			} else {
-				fprintf(stderr, "pic.c:drawPage(): unsupported image format\n");
-				return 0;
-			}
+			unsigned char low = 15 - (pmptr[p + 1] >> 4);
+			unsigned char high = 15 - (pmptr[p] >> 4);
 			if (adjust_pixels)
 				bbptr[x] = adjusted_high[high] | adjusted_low[low];
 			else
