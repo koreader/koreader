@@ -1633,7 +1633,7 @@ end
 function UniReader:modifyGamma(factor)
 	Debug("modifyGamma, gamma=", self.globalgamma, " factor=", factor)
 	self.globalgamma = self.globalgamma * factor;
-	InfoMessage:inform("Changing gamma to "..self.globalgamma..". ", nil, 1, MSG_AUX)
+	InfoMessage:inform(string.format("New gamma is %.2f", self.globalgamma), nil, 1, MSG_AUX)
 	self:redrawCurrentPage()
 end
 
@@ -2287,7 +2287,7 @@ function UniReader:addAllCommands()
 		function(unireader,keydef)
 			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			local new_zoom = unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100)
-			InfoMessage:inform(string.format("New zoom is %.1f ", new_zoom), nil, 1, MSG_WARN)
+			InfoMessage:inform(string.format("New zoom is %.2f ", new_zoom), nil, 1, MSG_WARN)
 			unireader:setGlobalZoom(new_zoom)
 		end)
 	-- NuPogodi, 03.09.12: make zoom step user-configurable
@@ -2975,10 +2975,7 @@ function UniReader:addAllCommands()
 			if links == nil or next(links) == nil then
 				InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
 			else
-				local font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
-				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
-				local face = Font:getFace("rifont", font_size)
 
 				local page_links = 0
 				local visible_links = {}
@@ -2987,6 +2984,11 @@ function UniReader:addAllCommands()
 					if link.page then
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						if x > 0 and y > 0 and x < G_width and y < G_height then
+							-- draw top and side borders so we get a box for each link (bottom one is on page)
+							fb.bb:invertRect(x,    y, w,1)
+							fb.bb:invertRect(x,    y, 1,h-2)
+							fb.bb:invertRect(x+w-2,y, 1,h-2)
+
 							fb.bb:dimRect(x,y,w,h) -- black 50%
 							fb.bb:dimRect(x,y,w,h) -- black 25%
 							page_links = page_links + 1
@@ -3017,7 +3019,8 @@ function UniReader:addAllCommands()
 						Debug("link", i, shortcut_offset, link)
 						if link.page then
 							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
-							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							local face = Font:getFace("rifont", h)
+							renderUtf8Text(fb.bb, x, y + h - 2, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
@@ -3069,7 +3072,7 @@ function UniReader:addAllCommands()
 					if link then
 						link = shortcut_map[link]
 						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
-							goto_page = links[link].page + 1
+							goto_page = visible_links[link].page + 1
 						else
 							Debug("missing link", link)
 						end
@@ -3087,18 +3090,16 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_M, MOD_ALT, "M",
 		"select reader mode",
 		function(unireader)
-			Screen:saveCurrentBB()
 			FileChooser:changeFileChooserMode()
-			Screen:restoreFromSavedBB()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_I, nil, "I",
 		"change the way to inform about events",
 		function(unireader)
 			if FileChooser.filemanager_expert_mode == FileChooser.ROOT_MODE then
-				Screen:saveCurrentBB()
 				InfoMessage:chooseNotificatonMethods()
-				Screen:restoreFromSavedBB()
+				self:redrawCurrentPage()
 			else
 				InfoMessage:inform("Unstable... For experts only ", -1, 1, MSG_WARN,
 					"This function is still under development and available only for experts and beta testers.")

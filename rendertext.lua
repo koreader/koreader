@@ -70,7 +70,7 @@ function sizeUtf8Text(x, width, face, text, kerning)
 		if pen_x < (width - x) then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and (prevcharcode ~= 0) then
+			if kerning and prevcharcode then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
 			pen_x = pen_x + glyph.ax
@@ -94,15 +94,17 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
 	local prevcharcode = 0
-	buffer_width = buffer:getWidth()
+	local buffer_width = buffer:getWidth()
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < buffer_width then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and (prevcharcode ~= 0) then
+			if kerning and prevcharcode then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
+				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			else
+				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			end
-			buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
 		end -- if pen_x < buffer_width
@@ -123,10 +125,12 @@ function renderUtf8TextWidth(buffer, x, y, face, text, kerning, w)
 		if pen_x < w then
 			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
-			if kerning and (prevcharcode ~= 0) then
+			if kerning and prevcharcode then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
+				buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
+			else
+				buffer:blitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			end
-			buffer:addblitFrom(glyph.bb, x + pen_x + glyph.l, y - glyph.t, 0, 0, glyph.bb:getWidth(), glyph.bb:getHeight())
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
 		else
