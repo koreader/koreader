@@ -20,9 +20,19 @@
 #include <string.h>
 #include "blitbuffer.h"
 
+/* debugging statements, switch as needed */
+#ifdef DEBUG
+#define ASSERT_BLITBUFFER_BOUNDARIES(bb,bb_ptr) \
+	if((bb_ptr < bb->data) || (bb_ptr >= (bb->data + bb->pitch * bb->h))) { \
+		fprintf(stderr, "violated blitbuffer constraints in file %s, line %d!\r\n", __FILE__, __LINE__); exit(1); \
+	}
+#else // DEBUG
+#define ASSERT_BLITBUFFER_BOUNDARIES(bb,bb_ptr) {}
+#endif // DEBUG
 
 inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
 	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
+	ASSERT_BLITBUFFER_BOUNDARIES(bb, dstptr);
 
 	if(x % 2 == 0) {
 		*dstptr &= 0x0F;
@@ -168,6 +178,8 @@ static int blitToBuffer(lua_State *L) {
 				xoffs / 2 );
 		if(xoffs & 1) {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				*dstptr &= 0xF0;
 				*dstptr |= *srcptr & 0x0F;
 				dstptr += dst->pitch;
@@ -175,6 +187,8 @@ static int blitToBuffer(lua_State *L) {
 			}
 		} else {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				*dstptr &= 0xF0;
 				*dstptr |= *srcptr >> 4;
 				dstptr += dst->pitch;
@@ -195,6 +209,8 @@ static int blitToBuffer(lua_State *L) {
 
 	if(xoffs & 1) {
 		for(y = 0; y < h; y++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+			ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 			for(x = 0; x < (w / 2); x++) {
 				dstptr[x] = (srcptr[x] << 4) | (srcptr[x+1] >> 4);
 			}
@@ -207,6 +223,8 @@ static int blitToBuffer(lua_State *L) {
 		}
 	} else {
 		for(y = 0; y < h; y++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+			ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 			memcpy(dstptr, srcptr, w / 2);
 			if(w & 1) {
 				dstptr[w/2] &= 0x0F;
@@ -265,6 +283,8 @@ static int addblitToBuffer(lua_State *L) {
 				xoffs / 2 );
 		if(xoffs & 1) {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint8_t v = (*dstptr & 0x0F) + (*srcptr & 0x0F);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
@@ -272,6 +292,8 @@ static int addblitToBuffer(lua_State *L) {
 			}
 		} else {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint8_t v = (*dstptr & 0x0F) + (*srcptr >> 4);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
@@ -293,11 +315,15 @@ static int addblitToBuffer(lua_State *L) {
 	if(xoffs & 1) {
 		for(y = 0; y < h; y++) {
 			for(x = 0; x < (w / 2); x++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
 				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x+1] >> 4);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
@@ -307,11 +333,15 @@ static int addblitToBuffer(lua_State *L) {
 	} else {
 		for(y = 0; y < h; y++) {
 			for(x = 0; x < (w / 2); x++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
 				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x] & 0x0F);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
@@ -370,6 +400,7 @@ static int paintRect(lua_State *L) {
 				y * dst->pitch +
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr &= 0xF0;
 			*dstptr |= c;
 			dstptr += dst->pitch;
@@ -381,6 +412,7 @@ static int paintRect(lua_State *L) {
 			y * dst->pitch +
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
+		ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 		memset(dstptr, c | (c << 4), w / 2);
 		dstptr += dst->pitch;
 	}
@@ -392,6 +424,7 @@ static int paintRect(lua_State *L) {
 				y * dst->pitch +
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr &= 0x0F;
 			*dstptr |= (c << 4);
 			dstptr += dst->pitch;
@@ -450,6 +483,7 @@ static int invertRect(lua_State *L) {
 				y * dst->pitch + 
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr ^= 0x0F;
 			dstptr += dst->pitch;
 		}
@@ -461,6 +495,7 @@ static int invertRect(lua_State *L) {
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w/2; cx++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, (dstptr+cx));
 			*(dstptr+cx) ^=  0xFF;
 		}
 		dstptr += dst->pitch;
@@ -473,6 +508,7 @@ static int invertRect(lua_State *L) {
 				y * dst->pitch + 
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr ^= 0xF0;
 			dstptr += dst->pitch;
 		}
@@ -528,6 +564,7 @@ static int dimRect(lua_State *L) {
 				y * dst->pitch + 
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			int px = *dstptr & 0x0F;
 			*dstptr &= 0xF0 | px >> 1;
 			dstptr += dst->pitch;
@@ -540,6 +577,7 @@ static int dimRect(lua_State *L) {
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w/2; cx++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, (dstptr+cx));
 			*(dstptr+cx) =
 				( *(dstptr+cx) >> 1 ) & 0xF0 |
 				( *(dstptr+cx) & 0x0F ) >> 1;
@@ -554,6 +592,7 @@ static int dimRect(lua_State *L) {
 				y * dst->pitch + 
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			int px = *dstptr & 0xF0;
 			*dstptr &= 0x0F | ( px >> 1 & 0xF0 );
 			dstptr += dst->pitch;
