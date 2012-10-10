@@ -2150,7 +2150,7 @@ function UniReader:_drawReadingInfo()
 		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 )..
 		" "..math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).."k", true)
 	local txt = os.date("%a %d %b %Y %T").." ["..BatteryLevel().."]"
-	local w = sizeUtf8Text(0, G_width, face, txt, true).x
+	local w = sizeUtf8Text(0, width, face, txt, true).x
 	renderUtf8Text(fb.bb, width - w - 10, 15+6, face, txt, true)
 
 	-- display reading progress on bottom of page
