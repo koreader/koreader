@@ -20,9 +20,19 @@
 #include <string.h>
 #include "blitbuffer.h"
 
+/* debugging statements, switch as needed */
+#ifdef DEBUG
+#define ASSERT_BLITBUFFER_BOUNDARIES(bb,bb_ptr) \
+	if((bb_ptr < bb->data) || (bb_ptr >= (bb->data + bb->pitch * bb->h))) { \
+		fprintf(stderr, "violated blitbuffer constraints in file %s, line %d!\r\n", __FILE__, __LINE__); exit(1); \
+	}
+#else // DEBUG
+#define ASSERT_BLITBUFFER_BOUNDARIES(bb,bb_ptr) {}
+#endif // DEBUG
 
 inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
 	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
+	ASSERT_BLITBUFFER_BOUNDARIES(bb, dstptr);
 
 	if(x % 2 == 0) {
 		*dstptr &= 0x0F;
@@ -95,6 +105,63 @@ static int blitFullToBuffer(lua_State *L) {
 	return 0;
 }
 
+/**
+* check/adapt boundaries for blitting operations
+*
+* @return 0 if no blitting is needed, 1 otherwise
+*/
+int fitBlitBufferBoundaries(BlitBuffer* src, BlitBuffer* dst, int* xdest, int* ydest, int* xoffs, int* yoffs, int* w, int* h) {
+	// check bounds
+	if(*ydest < 0) {
+		// negative ydest, try to compensate
+		if(*ydest + *h > 0) {
+			// shrink h by negative dest offset
+			*h += *ydest;
+			// extend source offset
+			*yoffs += -(*ydest);
+			*ydest = 0;
+		} else {
+			// effectively no height
+			return 0;
+		}
+	} else if(*ydest >= dst->h) {
+		// we're told to paint to off-bound target coords
+		return 0;
+	}
+	if(*ydest + *h > dst->h) {
+		// clamp height if too large for target size
+		*h = dst->h - *ydest;
+	}
+	if(*yoffs >= src->h) {
+		// recalculated source offset is out of bounds
+		return 0;
+	} else if(*yoffs + *h > src->h) {
+		// clamp height if too large for source size
+		*h = src->h - *yoffs;
+	}
+	// same stuff for x coords:
+	if(*xdest < 0) {
+		if(*xdest + *w > 0) {
+			*w += *xdest;
+			*xoffs += -(*xdest);
+			*xdest = 0;
+		} else {
+			return 0;
+		}
+	} else if(*xdest >= dst->w) {
+		return 0;
+	}
+	if(*xdest + *w > dst->w) {
+		*w = dst->w - *xdest;
+	}
+	if(*xoffs >= src->w) {
+		return 0;
+	} else if(*xoffs + *w > src->w) {
+		*w = src->w - *xoffs;
+	}
+	return 1; // continue processing
+}
+
 static int blitToBuffer(lua_State *L) {
 	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
 	BlitBuffer *src = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
@@ -106,57 +173,11 @@ static int blitToBuffer(lua_State *L) {
 	int h = luaL_checkint(L, 8);
 	int x, y;
 
-	// check bounds
-	if(ydest < 0) {
-		// negative ydest, try to compensate
-		if(ydest + h > 0) {
-			// shrink h by negative dest offset
-			h += ydest;
-			// extend source offset
-			yoffs += -ydest;
-			ydest = 0;
-		} else {
-			// effectively no height
-			return 0;
-		}
-	} else if(ydest >= dst->h) {
-		// we're told to paint to off-bound target coords
-		return 0;
-	}
-	if(ydest + h > dst->h) {
-		// clamp height if too large for target size
-		h = dst->h - ydest;
-	}
-	if(yoffs >= src->h) {
-		// recalculated source offset is out of bounds
-		return 0;
-	} else if(yoffs + h > src->h) {
-		// clamp height if too large for source size
-		h = src->h - yoffs;
-	}
-	// same stuff for x coords:
-	if(xdest < 0) {
-		if(xdest + w > 0) {
-			w += xdest;
-			xoffs += -xdest;
-			xdest = 0;
-		} else {
-			return 0;
-		}
-	} else if(xdest >= dst->w) {
-		return 0;
-	}
-	if(xdest + w > dst->w) {
-		w = dst->w - xdest;
-	}
-	if(xoffs >= src->w) {
-		return 0;
-	} else if(xoffs + w > src->w) {
-		w = src->w - xoffs;
-	}
-
 	uint8_t *dstptr;
 	uint8_t *srcptr;
+
+	if(!fitBlitBufferBoundaries(src, dst, &xdest, &ydest, &xoffs, &yoffs, &w, &h))
+		return 0;
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
@@ -168,6 +189,8 @@ static int blitToBuffer(lua_State *L) {
 				xoffs / 2 );
 		if(xoffs & 1) {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				*dstptr &= 0xF0;
 				*dstptr |= *srcptr & 0x0F;
 				dstptr += dst->pitch;
@@ -175,6 +198,8 @@ static int blitToBuffer(lua_State *L) {
 			}
 		} else {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				*dstptr &= 0xF0;
 				*dstptr |= *srcptr >> 4;
 				dstptr += dst->pitch;
@@ -195,6 +220,8 @@ static int blitToBuffer(lua_State *L) {
 
 	if(xoffs & 1) {
 		for(y = 0; y < h; y++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+			ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 			for(x = 0; x < (w / 2); x++) {
 				dstptr[x] = (srcptr[x] << 4) | (srcptr[x+1] >> 4);
 			}
@@ -207,6 +234,8 @@ static int blitToBuffer(lua_State *L) {
 		}
 	} else {
 		for(y = 0; y < h; y++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+			ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 			memcpy(dstptr, srcptr, w / 2);
 			if(w & 1) {
 				dstptr[w/2] &= 0x0F;
@@ -230,30 +259,11 @@ static int addblitToBuffer(lua_State *L) {
 	int h = luaL_checkint(L, 8);
 	int x, y;
 
-	// check bounds
-	if(yoffs >= src->h) {
-		return 0;
-	} else if(yoffs + h > src->h) {
-		h = src->h - yoffs;
-	}
-	if(ydest >= dst->h) {
-		return 0;
-	} else if(ydest + h > dst->h) {
-		h = dst->h - ydest;
-	}
-	if(xoffs >= src->w) {
-		return 0;
-	} else if(xoffs + w > src->w) {
-		w = src->w - xoffs;
-	}
-	if(xdest >= dst->w) {
-		return 0;
-	} else if(xdest + w > dst->w) {
-		w = dst->w - xdest;
-	}
-
 	uint8_t *dstptr;
 	uint8_t *srcptr;
+
+	if(!fitBlitBufferBoundaries(src, dst, &xdest, &ydest, &xoffs, &yoffs, &w, &h))
+		return 0;
 
 	if(xdest & 1) {
 		/* this will render the leftmost column */
@@ -265,6 +275,8 @@ static int addblitToBuffer(lua_State *L) {
 				xoffs / 2 );
 		if(xoffs & 1) {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint8_t v = (*dstptr & 0x0F) + (*srcptr & 0x0F);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
@@ -272,6 +284,8 @@ static int addblitToBuffer(lua_State *L) {
 			}
 		} else {
 			for(y = 0; y < h; y++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint8_t v = (*dstptr & 0x0F) + (*srcptr >> 4);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
@@ -293,11 +307,15 @@ static int addblitToBuffer(lua_State *L) {
 	if(xoffs & 1) {
 		for(y = 0; y < h; y++) {
 			for(x = 0; x < (w / 2); x++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
 				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x+1] >> 4);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
@@ -307,11 +325,15 @@ static int addblitToBuffer(lua_State *L) {
 	} else {
 		for(y = 0; y < h; y++) {
 			for(x = 0; x < (w / 2); x++) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
 				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x] & 0x0F);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
+				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
+				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
 				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
@@ -370,6 +392,7 @@ static int paintRect(lua_State *L) {
 				y * dst->pitch +
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr &= 0xF0;
 			*dstptr |= c;
 			dstptr += dst->pitch;
@@ -381,6 +404,7 @@ static int paintRect(lua_State *L) {
 			y * dst->pitch +
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
+		ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 		memset(dstptr, c | (c << 4), w / 2);
 		dstptr += dst->pitch;
 	}
@@ -392,6 +416,7 @@ static int paintRect(lua_State *L) {
 				y * dst->pitch +
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr &= 0x0F;
 			*dstptr |= (c << 4);
 			dstptr += dst->pitch;
@@ -450,6 +475,7 @@ static int invertRect(lua_State *L) {
 				y * dst->pitch + 
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr ^= 0x0F;
 			dstptr += dst->pitch;
 		}
@@ -461,6 +487,7 @@ static int invertRect(lua_State *L) {
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w/2; cx++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, (dstptr+cx));
 			*(dstptr+cx) ^=  0xFF;
 		}
 		dstptr += dst->pitch;
@@ -473,6 +500,7 @@ static int invertRect(lua_State *L) {
 				y * dst->pitch + 
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			*dstptr ^= 0xF0;
 			dstptr += dst->pitch;
 		}
@@ -528,6 +556,7 @@ static int dimRect(lua_State *L) {
 				y * dst->pitch + 
 				x / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			int px = *dstptr & 0x0F;
 			*dstptr &= 0xF0 | px >> 1;
 			dstptr += dst->pitch;
@@ -540,6 +569,7 @@ static int dimRect(lua_State *L) {
 			x / 2);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w/2; cx++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, (dstptr+cx));
 			*(dstptr+cx) =
 				( *(dstptr+cx) >> 1 ) & 0xF0 |
 				( *(dstptr+cx) & 0x0F ) >> 1;
@@ -554,6 +584,7 @@ static int dimRect(lua_State *L) {
 				y * dst->pitch + 
 				(x + w) / 2);
 		for(cy = 0; cy < h; cy++) {
+			ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 			int px = *dstptr & 0xF0;
 			*dstptr &= 0x0F | ( px >> 1 & 0xF0 );
 			dstptr += dst->pitch;
