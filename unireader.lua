@@ -2987,7 +2987,7 @@ function UniReader:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_L, nil, "L",
-		"page links",
+		"page links shortcut keys",
 		function(unireader)
 			local links = unireader:getPageLinks( unireader.pageno )
 			if links == nil or next(links) == nil then
