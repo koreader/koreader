@@ -9,6 +9,7 @@ cr3cache
 history
 crash.log
 .vimrc
+git-rev
 data
 fonts
 kpdfview
