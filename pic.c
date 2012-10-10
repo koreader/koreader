@@ -118,7 +118,7 @@ static int openDocument(lua_State *L) {
 	doc->width = width;
 	doc->height = height;
 	doc->components = components;
-	printf("openDocument(%s) decoded image: %dx%dx%d\n", filename, width, height, components);
+	//printf("openDocument(%s) decoded image: %dx%dx%d\n", filename, width, height, components);
 	return 1;
 }
 
@@ -155,6 +155,15 @@ static int closeDocument(lua_State *L) {
 	return 0;
 }
 
+static void scaleImage(uint8_t *result, uint8_t *image, int width, int height, int components, int new_width, int new_height)
+{
+	int x, y;
+
+	for (x = 0; x<new_width; x++)
+		for (y=0; y<new_height; y++)
+			result[x+y*new_width] = image[(x*width/new_width) + (y*height/new_height)*width];
+}
+
 static int drawPage(lua_State *L) {
 	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -165,12 +174,10 @@ static int drawPage(lua_State *L) {
 	int img_width = page->doc->width;
 	int img_height = page->doc->height;
 	int img_components = page->doc->components;
+	int img_new_width = bb->w;
+	int img_new_height = bb->h;
 	unsigned char adjusted_low[16], adjusted_high[16];
 	int i, adjust_pixels = 0;
-
-	printf("drawPage(): dc->zoom=%f, bb->pitch=%d, bb->w=%d, bb->h=%d, x_offset=%d, y_offset=%d\n", dc->zoom, bb->pitch, bb->w, bb->h, x_offset, y_offset);
-
-	if (dc->zoom > 1.0) return 0;
 
 	/* prepare the tables for adjusting the intensity of pixels */
 	if (dc->gamma != -1.0) {
@@ -181,11 +188,17 @@ static int drawPage(lua_State *L) {
 		adjust_pixels = 1;
 	}
 
+	uint8_t *scaled_image = malloc(img_new_width*img_new_height+1);
+	if (!scaled_image)
+		return 0;
+
+	scaleImage(scaled_image, page->doc->image, img_width, img_height, img_components, img_new_width, img_new_height);
+
 	uint8_t *bbptr = bb->data;
-	uint8_t *pmptr = page->doc->image;
+	uint8_t *pmptr = scaled_image;
 	bbptr += bb->pitch * y_offset;
-	for(y = y_offset; y < bb->h; y++) {
-		for(x = x_offset/2; x < (bb->w / 2); x++) {
+	for(y = y_offset; y < img_new_height; y++) {
+		for(x = x_offset/2; x < (img_new_width / 2); x++) {
 			int p = x*2 - x_offset;
 			unsigned char low, high;
 			if (img_components == 1) {
@@ -203,12 +216,13 @@ static int drawPage(lua_State *L) {
 			else
 				bbptr[x] = (high << 4) | low;
 		}
-		if (bb->w & 1)
+		if (img_new_width & 1)
 			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
 		bbptr += bb->pitch;
-		//pmptr += bb->w;
-		pmptr += img_width;
+		pmptr += img_new_width;
 	}
+
+	free(scaled_image);
 	return 0;
 }
 
