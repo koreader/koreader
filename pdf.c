@@ -58,6 +58,7 @@ static size_t msize_min;
 static size_t msize_iniz;
 static int is_realloc=0;
 
+#if 0
 char* readable_fs(double size/*in bytes*/, char *buf) {
     int i = 0;
     const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
@@ -68,6 +69,7 @@ char* readable_fs(double size/*in bytes*/, char *buf) {
     sprintf(buf, "%.*f %s", i, size, units[i]);
     return buf;
 }
+#endif
 
 static void resetMsize(){
 	msize_iniz = msize;
