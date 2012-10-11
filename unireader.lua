@@ -2997,22 +2997,11 @@ function UniReader:addAllCommands()
 			if links == nil or next(links) == nil then
 				InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
 			else
-				local font_size
-
-				if links[1].y0 then
-					Debug("using link box from mupdf for font size")
-					font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
-				else
-					Debug("using font size from crengine for font size")
-					font_size = self.doc:zoomFont(0) -- delta=0, return font size
-					self:redrawCurrentPage() -- show links
-				end
-
-				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
 
 				local page_links = 0
 				local visible_links = {}
+				local need_refresh = false
 
 				for i, link in ipairs(links) do
 					if link.page then -- from mupdf
@@ -3033,6 +3022,7 @@ function UniReader:addAllCommands()
 							link.start_y = link.start_y - self.pos -- top of screen
 							page_links = page_links + 1
 							visible_links[page_links] = link
+							need_refresh = true
 						end
 					end
 				end
@@ -3044,13 +3034,20 @@ function UniReader:addAllCommands()
 
 				Debug("visible_links", visible_links)
 
+				if need_refresh then
+					unireader:redrawCurrentPage() -- show links
+					need_refresh = false
+				end
+
 				Screen:saveCurrentBB() -- save dimmed links
 
 				local shortcut_offset = 0
 				local shortcut_map
 
 				local render_shortcuts = function()
-					Screen:restoreFromSavedBB()
+					if need_refresh then
+						Screen:restoreFromSavedBB()
+					end
 
 					local shortcut_nr = 1
 					shortcut_map = {}
@@ -3064,15 +3061,13 @@ function UniReader:addAllCommands()
 							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						elseif link.section
  then
-							x,y,w,h = link.start_x, link.start_y
+							x,y,h = link.start_x, link.start_y, self.doc:zoomFont(0) -- delta=0, return font size
 						end
 
-Debug("link coords",x,y,w,h)
-
-						if x and y then
+						if x and y and h then
 							local face = Font:getFace("rifont", h)
 							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr], "for", shortcut_nr)
-							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
+							renderUtf8Text(fb.bb, x, y + h - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
@@ -3096,6 +3091,7 @@ Debug("link coords",x,y,w,h)
 					local link = nil
 
 					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+						need_refresh = true
 						if ev.code >= KEY_Q and ev.code <= KEY_P then
 							link = ev.code - KEY_Q + 1
 						elseif ev.code >= KEY_A and ev.code <= KEY_L then
@@ -3118,6 +3114,8 @@ Debug("link coords",x,y,w,h)
 						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
 							shortcut_offset = shortcut_offset - 30
 							render_shortcuts()
+						else
+							need_refresh = false
 						end
 					end
 
