@@ -102,6 +102,25 @@ uint8_t *readJPEG(const char *fname, int *width, int *height, int *components)
 	return (uint8_t *)image_buffer;
 }
 
+/* Uses luminance match for approximating the human perception of colour,
+ * as per http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+ * L = 0.299*Red + 0.587*Green + 0.114*Blue */
+static uint8_t *rgbToGrayscale(uint8_t *image, int width, int height)
+{
+	int x, y;
+	uint8_t *buf = malloc(width*height+1);
+
+	if (!buf) return NULL;
+
+	for (x = 0; x<width; x++)
+		for (y=0; y<height; y++) {
+			int pos = 3*(x+y*width);
+			buf[x+y*width] = (uint8_t)(0.299*((double)image[pos]) + 0.587*((double)image[pos+1]) + 0.114*((double)image[pos+2]));
+		}
+
+	return buf;
+}
+
 static int openDocument(lua_State *L) {
 	int width, height, components;
 	const char *filename = luaL_checkstring(L, 1);
@@ -110,18 +129,27 @@ static int openDocument(lua_State *L) {
 	luaL_getmetatable(L, "picdocument");
 	lua_setmetatable(L, -2);
 
-	unsigned char *image = readJPEG(filename, &width, &height, &components);
-	if (!image)
-		return luaL_error(L, "cannot open jpeg file");
+	uint8_t *raw_image = readJPEG(filename, &width, &height, &components);
+	if (!raw_image)
+		return luaL_error(L, "Cannot open jpeg file");
 
-	if (components != 1)
+	if (components == 1)
+		doc->image = raw_image;
+	else if (components == 3) {
+		uint8_t *gray_image = rgbToGrayscale(raw_image, width, height);
+		if (!gray_image) {
+			free(raw_image);
+			return luaL_error(L, "Cannot convert to grayscale");
+		} else {
+			free(raw_image);
+			doc->image = gray_image;
+		}
+	} else
 		return luaL_error(L, "Unsupported image format");
 
-	doc->image = image;
 	doc->width = width;
 	doc->height = height;
 	doc->components = components;
-	//printf("openDocument(%s) decoded image: %dx%dx%d\n", filename, width, height, components);
 	return 1;
 }
 
@@ -132,6 +160,7 @@ static int openPage(lua_State *L) {
 	PicPage *page = (PicPage*) lua_newuserdata(L, sizeof(PicPage));
 	luaL_getmetatable(L, "picpage");
 	lua_setmetatable(L, -2);
+
 	page->width = doc->width;
 	page->height = doc->height;
 	page->doc = doc;
@@ -158,6 +187,7 @@ static int closeDocument(lua_State *L) {
 	return 0;
 }
 
+/* uses very simple nearest neighbour scaling */
 static void scaleImage(uint8_t *result, uint8_t *image, int width, int height, int new_width, int new_height)
 {
 	int x, y;
