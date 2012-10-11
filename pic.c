@@ -133,6 +133,7 @@ static int openDocument(lua_State *L) {
 	if (!raw_image)
 		return luaL_error(L, "Cannot open jpeg file");
 
+	doc->image = NULL;
 	if (components == 1)
 		doc->image = raw_image;
 	else if (components == 3) {
