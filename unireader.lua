@@ -2993,13 +2993,24 @@ function UniReader:addAllCommands()
 			if links == nil or next(links) == nil then
 				InfoMessage:inform("No links on this page ", 2000, 1, MSG_WARN)
 			else
+				local font_size
+
+				if links[1].y0 then
+					Debug("using link box from mupdf for font size")
+					font_size = math.ceil( (links[1].y1 - links[1].y0 - 2) * unireader.globalzoom )
+				else
+					Debug("using font size from crengine for font size")
+					font_size = self.font_zoom
+				end
+
+				Debug("font_size",font_size)
 				Debug("shortcuts",SelectMenu.item_shortcuts)
 
 				local page_links = 0
 				local visible_links = {}
 
 				for i, link in ipairs(links) do
-					if link.page then
+					if link.page then -- from mupdf
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						if x > 0 and y > 0 and x < G_width and y < G_height then
 							-- draw top and side borders so we get a box for each link (bottom one is on page)
@@ -3012,6 +3023,10 @@ function UniReader:addAllCommands()
 							page_links = page_links + 1
 							visible_links[page_links] = link
 						end
+					elseif link.section then -- from crengine
+--						fb.bb:invertRect(link.x0,link.y0,link.x1 - link.x0, link.y1-link.y0)
+						page_links = page_links + 1
+						visible_links[page_links] = link
 					end
 				end
 
@@ -3019,6 +3034,8 @@ function UniReader:addAllCommands()
 					InfoMessage:inform("No visible links on this page ", 2000, 1, MSG_WARN)
 					return
 				end
+
+				Debug("visible_links", visible_links)
 
 				Screen:saveCurrentBB() -- save dimmed links
 
@@ -3035,10 +3052,19 @@ function UniReader:addAllCommands()
 						local link = visible_links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
+						local x,y,w,h
 						if link.page then
-							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+						elseif link.section then
+							x,y,w,h = link.start_x, link.start_y, 10, 10
+						end
+
+Debug("link coords",x,y,w,h)
+
+						if x and y and w and h then
+							Debug("shortcut", x,y, SelectMenu.item_shortcuts[shortcut_nr])
 							local face = Font:getFace("rifont", h)
-							renderUtf8Text(fb.bb, x, y + h - 2, face, SelectMenu.item_shortcuts[shortcut_nr])
+							renderUtf8Text(fb.bb, x, y + font_size - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end

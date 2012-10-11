@@ -680,6 +680,12 @@ function CREReader:adjustCreReaderCommands()
 	)
 end
 
+function CREReader:getPageLinks()
+	local links = self.doc:getPageLinks()
+	Debug("getPageLinks", links)
+	return links
+end
+
 ----------------------------------------------------
 --- search
 ----------------------------------------------------

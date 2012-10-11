@@ -390,6 +390,72 @@ static int cursorRight(lua_State *L) {
 	return 0;
 }
 
+static int getPageLinks(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	lua_newtable(L); // all links
+
+	int pos = doc->text_view->GetPos();
+
+	printf("## pos=%d\n", pos);
+
+	ldomXRangeList links;
+	ldomXRangeList & sel = doc->text_view->getDocument()->getSelections();
+	doc->text_view->getCurrentPageLinks( links );
+	int linkCount = links.length();
+	if ( linkCount ) {
+		sel.clear();
+		for ( int i=0; i<linkCount; i++ ) {
+			sel.add( new ldomXRange(*links[i]) );
+
+			lString16 txt = links[i]->getRangeText();
+			lString8 txt8 = UnicodeToLocal( txt );
+
+			lString16 link = links[i]->getHRef();
+			lString8 link8 = UnicodeToLocal( link );
+
+			ldomXRange currSel;
+			currSel = *links[i];
+
+			lvPoint start_pt ( currSel.getStart().toPoint() );
+			lvPoint end_pt ( currSel.getEnd().toPoint() );
+
+			printf("# link %d start %d %d end %d %d '%s' %s\n", i,
+				start_pt.x, start_pt.y, end_pt.x, end_pt.y,
+				txt8.c_str(), link8.c_str()
+			);
+
+			lua_newtable(L); // new link
+
+			lua_pushstring(L, "start_x");
+			lua_pushinteger(L, start_pt.x);
+			lua_settable(L, -3);
+			lua_pushstring(L, "start_y");
+			lua_pushinteger(L, start_pt.y);
+			lua_settable(L, -3);
+			lua_pushstring(L, "end_x");
+			lua_pushinteger(L, end_pt.x);
+			lua_settable(L, -3);
+			lua_pushstring(L, "end_y");
+			lua_pushinteger(L, end_pt.y);
+			lua_settable(L, -3);
+
+			const char * link_to = link8.c_str();
+
+			lua_pushstring(L, "section");
+			lua_pushstring(L, link_to);
+			lua_settable(L, -3);
+
+			lua_rawseti(L, -2, i + 1);
+
+		}
+		doc->text_view->updateSelections();
+	}
+
+	return 1;
+}
+
+
 static int drawCurrentPage(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -536,6 +602,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	//{"cursorRight", cursorRight},
 	{"drawCurrentPage", drawCurrentPage},
 	{"findText", findText},
+	{"getPageLinks", getPageLinks},
 	{"close", closeDocument},
 	{"__gc", closeDocument},
 	{NULL, NULL}
