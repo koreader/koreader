@@ -142,8 +142,10 @@ static int openDocument(lua_State *L) {
 			return luaL_error(L, "Cannot convert to grayscale");
 		else
 			doc->image = gray_image;
-	} else
+	} else {
+		free(raw_image);
 		return luaL_error(L, "Unsupported image format");
+	}
 
 	doc->width = width;
 	doc->height = height;
