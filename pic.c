@@ -178,10 +178,13 @@ static int getOriginalPageSize(lua_State *L) {
 	return 2;
 }
 
+/* re-entrant */
 static int closeDocument(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
-	if (doc->image != NULL)
+	if (doc->image != NULL) {
 		free(doc->image);
+		doc->image = NULL;
+	}
 	return 0;
 }
 
