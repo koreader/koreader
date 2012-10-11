@@ -191,7 +191,7 @@ function FileChooser:setPath(newPath)
 		end
 
 		if search_position then
-			-- extract the leaf part of oldPath, i.e. the actual directory name
+			-- extract the base part of oldPath, i.e. the actual directory name
 			local pos, _, oldPathBase = string.find(oldPath, "^.*/(.*)$")
 
 			-- now search for the base part of oldPath among self.dirs[]
