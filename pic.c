@@ -137,13 +137,11 @@ static int openDocument(lua_State *L) {
 		doc->image = raw_image;
 	else if (components == 3) {
 		uint8_t *gray_image = rgbToGrayscale(raw_image, width, height);
-		if (!gray_image) {
-			free(raw_image);
+		free(raw_image);
+		if (!gray_image)
 			return luaL_error(L, "Cannot convert to grayscale");
-		} else {
-			free(raw_image);
+		else
 			doc->image = gray_image;
-		}
 	} else
 		return luaL_error(L, "Unsupported image format");
 
