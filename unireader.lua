@@ -3034,7 +3034,7 @@ function UniReader:addAllCommands()
 				end
 
 				if page_links == 0 then
-					InfoMessage:inform("No visible links on this page ", 2000, 1, MSG_WARN)
+					InfoMessage:inform("No page links on this page ", 2000, 1, MSG_WARN)
 					return
 				end
 
