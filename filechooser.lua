@@ -152,37 +152,60 @@ function FileChooser:readDir()
 end
 
 function FileChooser:setPath(newPath)
-	local curr_path = self.path
-	if self.before_clipboard then -- back from clipboard
+	local oldPath = self.path
+	local search_position = false
+
+	-- We only need to re-scan the directory for the correct
+	-- position if we are entering it via ".." entry.
+	-- Unfortunately, ".." reaches us in the form of an absolute path,
+	-- but we can use the following trick: if we are traversing via "..",
+	-- then the new pathname will always be shorter than the old pathname.
+	if oldPath ~= "" and #newPath < #oldPath then
+		search_position = true
+	end
+
+	-- treat ".." entry in the clipboard as
+	-- a special case, namely return to the directory saved
+	-- in self.before_clipboard
+	if self.before_clipboard then
 		newPath = self.before_clipboard
 		self.before_clipboard = nil
 	end
+
+	-- convert to the absolute path so that we can
+	-- traverse up to the parent via ".."
 	self.path = getAbsolutePath(newPath)
-	local readdir_ok, exc = pcall(self.readDir,self)
-	if(not readdir_ok) then
-		Debug("readDir error: "..tostring(exc))
-		self.exception_message = exc
-		return self:setPath(curr_path)
+
+	-- read the whole self.path directory
+	-- the error message is stored for display in the header.
+	local ret, msg = pcall(self.readDir, self)
+	if not ret then
+		self.exception_message = msg
+		return self:setPath(oldPath)
 	else
 		self.items = #self.dirs + #self.files
-		if self.items == 0 then
-			return nil
+
+		-- Dijkstra will hate me for this...
+		if newPath == oldPath then
+			return
 		end
-		-- NuPogodi, 02.10.12: 1) changing the current item position ONLY IF the path was changed
-		-- 2) trying to set marker under the folder that was just left by ".."
-		if self.path ~= curr_path then
-			local i = 2
-			while i <= #self.dirs and not string.find(curr_path, self.dirs[i]) do
-				i = i + 1
+
+		if search_position then
+			-- extract the leaf part of oldPath, i.e. the actual directory name
+			local pos, _, oldPathBase = string.find(oldPath, "^.*/(.*)$")
+
+			-- now search for the base part of oldPath among self.dirs[]
+			for k, v in ipairs(self.dirs) do
+				if v == oldPathBase then
+					self.current, self.page = gotoTargetItem(k, self.items, self.current, self.page, self.perpage)
+					break
+				end
 			end
-			if i <= #self.dirs then -- found
-				self.current, self.page = gotoTargetItem(i, self.items, self.current, self.page, self.perpage)
-			else -- set defaults
-				self.page = 1
-				self.current = 1
-			end
+		else
+			-- point the current position to ".." entry
+			self.page = 1
+			self.current = 1
 		end
-		return true
 	end
 end
 
@@ -554,7 +577,10 @@ function FileChooser:addAllCommands()
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
 				InfoMessage:inform("File moved to clipboard ", nil, 0, MSG_WARN,
 					"The file has been moved to clipboard.")
-				self:setPath(self.path)
+				local pos = self.perpage*(self.page-1)+self.current
+				table.remove(self.files, pos-#self.dirs)
+				self.items = self.items - 1
+				self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
 				self.pagedirty = true
 			end
 		end
@@ -578,7 +604,8 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_B, MOD_SHIFT, "B",
 		"show content of 'clipboard'",
 		function(self)
-			-- NuPogodi, 30.09.12: exit back from clipboard to last folder by '..'
+			-- save the current directory in order to
+			-- return from clipboard via ".." entry
 			local current_path = self.path
 			lfs.mkdir(self.clipboard)
 			if self.clipboard ~= self.path then
