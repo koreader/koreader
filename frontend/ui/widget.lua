@@ -204,6 +204,7 @@ function TextWidget:paintTo(bb, x, y)
 		--self:_render()
 	--end
 	--bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
+	--@TODO Don't use kerning for monospaced fonts.    (houqp)
 	renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true)
 end
 
@@ -281,6 +282,8 @@ function TextBoxWidget:_render()
 	for _,l in ipairs(v_list) do
 		pen_x = 0
 		for _,w in ipairs(l) do
+			--@TODO Don't use kerning for monospaced fonts.    (houqp)
+			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
 			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, true)
 			pen_x = pen_x + w.width + space_w
 		end
