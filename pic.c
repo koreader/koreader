@@ -175,7 +175,8 @@ static int getOriginalPageSize(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
 	lua_pushnumber(L, doc->width);
 	lua_pushnumber(L, doc->height);
-	return 2;
+	lua_pushnumber(L, doc->components);
+	return 3;
 }
 
 /* re-entrant */

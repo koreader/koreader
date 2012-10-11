@@ -13,7 +13,7 @@ end
 function PICViewer:_drawReadingInfo()
 	local width = G_width
 	local face = Font:getFace("rifont", 20)
-	local page_width, page_height = self.doc:getOriginalPageSize()
+	local page_width, page_height, page_components = self.doc:getOriginalPageSize()
 
 	-- display memory, time, battery and image info on top of page
 	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
@@ -26,6 +26,6 @@ function PICViewer:_drawReadingInfo()
 	renderUtf8Text(fb.bb, width - w - 10, 15+6, face, txt, true)
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
 		"Gm:"..string.format("%.1f",self.globalgamma)..", "..
-		tostring(page_width).."x"..tostring(page_height)..", "..
+		tostring(page_width).."x"..tostring(page_height).."x"..tostring(page_components)..", "..
 		string.format("%.1fx", self.globalzoom), true)
 end
