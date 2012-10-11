@@ -683,12 +683,6 @@ function CREReader:adjustCreReaderCommands()
 	)
 end
 
-function CREReader:getPageLinks()
-	local links = self.doc:getPageLinks()
-	Debug("getPageLinks", links)
-	return links
-end
-
 ----------------------------------------------------
 --- search
 ----------------------------------------------------
@@ -723,4 +717,18 @@ function CREReader:searchHighLight(search)
 
 	self.last_search.search = search
 
+end
+
+----------------------------------------------------
+--- page links
+----------------------------------------------------
+function CREReader:getPageLinks()
+	local links = self.doc:getPageLinks()
+	Debug("getPageLinks", links)
+	return links
+end
+
+function CREReader:clearSelection()
+	Debug("clearSelection")
+	self.doc:clearSelection()
 end

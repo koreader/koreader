@@ -2141,6 +2141,10 @@ function UniReader:getPageLinks(pageno)
 	return nil
 end
 
+function UniReader:clearSelection()
+	-- used only in crengine
+end
+
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
@@ -3135,7 +3139,7 @@ Debug("link coords",x,y,w,h)
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
 				end
 
-				self.doc:clearSelection()
+				unireader:clearSelection()
 
 				unireader:goto(goto_page, true, "link")
 
