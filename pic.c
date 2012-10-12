@@ -19,13 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <setjmp.h>
 #include <math.h>
 
-#include "jpeglib.h"
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pic.h"
+#include "pic_jpeg.h"
 
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))
 #define MAX(a, b)      ((a) > (b) ? (a) : (b))
@@ -41,66 +40,6 @@ typedef struct PicPage {
 	int width, height;
 	PicDocument *doc;
 } PicPage;
-
-struct my_error_mgr {
-	struct jpeg_error_mgr pub;
-	jmp_buf setjmp_buffer;
-};
-
-typedef struct my_error_mgr *my_error_ptr;
-
-METHODDEF(void) my_error_exit(j_common_ptr cinfo)
-{
-	my_error_ptr myerr = (my_error_ptr) cinfo->err;
-	(*cinfo->err->output_message) (cinfo);
-	longjmp(myerr->setjmp_buffer, 1);
-}
-
-uint8_t *readJPEG(const char *fname, int *width, int *height, int *components)
-{
-	struct jpeg_decompress_struct cinfo;
-	struct my_error_mgr jerr;
-	FILE *infile;
-	JSAMPARRAY buffer;
-	int row_stride;
-	long cont;
-	JSAMPLE *image_buffer;
-
-	if ((infile = fopen(fname, "r")) == NULL) return NULL;
-	cinfo.err = jpeg_std_error(&jerr.pub);
-	jerr.pub.error_exit = my_error_exit;
-	if (setjmp(jerr.setjmp_buffer)) {
-		jpeg_destroy_decompress(&cinfo);
-		fclose(infile);
-		return NULL;
-	}
-	jpeg_create_decompress(&cinfo);
-	jpeg_stdio_src(&cinfo, infile);
-	(void) jpeg_read_header(&cinfo, TRUE);
-	(void) jpeg_start_decompress(&cinfo);
-	row_stride = cinfo.output_width * cinfo.output_components;
-	buffer = (*cinfo.mem->alloc_sarray)
-		((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
-
-	image_buffer = (JSAMPLE *) malloc(cinfo.image_width*cinfo.image_height*cinfo.output_components);
-	if (image_buffer == NULL) return NULL;
-	*width = cinfo.image_width;
-	*height = cinfo.image_height;
-
-	//cont = cinfo.output_height - 1;
-	cont = 0;
-	while (cinfo.output_scanline < cinfo.output_height) {
-		(void) jpeg_read_scanlines(&cinfo, buffer, 1);
-		memcpy(image_buffer + cinfo.image_width * cinfo.output_components * cont, buffer[0], row_stride);
-		cont++;
-	}
-
-	(void) jpeg_finish_decompress(&cinfo);
-	jpeg_destroy_decompress(&cinfo);
-	fclose(infile);
-	*components = cinfo.output_components;
-	return (uint8_t *)image_buffer;
-}
 
 /* Uses luminance match for approximating the human perception of colour,
  * as per http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
@@ -129,7 +68,7 @@ static int openDocument(lua_State *L) {
 	luaL_getmetatable(L, "picdocument");
 	lua_setmetatable(L, -2);
 
-	uint8_t *raw_image = readJPEG(filename, &width, &height, &components);
+	uint8_t *raw_image = jpegLoadFile(filename, &width, &height, &components);
 	if (!raw_image)
 		return luaL_error(L, "Cannot open jpeg file");
 
@@ -156,7 +95,7 @@ static int openDocument(lua_State *L) {
 
 static int openPage(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
-	int pageno = luaL_checkint(L, 2);
+	//int pageno = luaL_checkint(L, 2);
 
 	PicPage *page = (PicPage*) lua_newuserdata(L, sizeof(PicPage));
 	luaL_getmetatable(L, "picpage");
@@ -276,7 +215,7 @@ static int getPageSize(lua_State *L) {
 
 
 static int closePage(lua_State *L) {
-	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
+	//PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	return 0;
 }
 
