@@ -133,6 +133,7 @@ static int openDocument(lua_State *L) {
 	if (!raw_image)
 		return luaL_error(L, "Cannot open jpeg file");
 
+	doc->image = NULL;
 	if (components == 1)
 		doc->image = raw_image;
 	else if (components == 3) {
@@ -142,8 +143,10 @@ static int openDocument(lua_State *L) {
 			return luaL_error(L, "Cannot convert to grayscale");
 		else
 			doc->image = gray_image;
-	} else
+	} else {
+		free(raw_image);
 		return luaL_error(L, "Unsupported image format");
+	}
 
 	doc->width = width;
 	doc->height = height;
