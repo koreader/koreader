@@ -4,7 +4,7 @@ ext = {
 	djvuRead = ";djvu;",
 	pdfRead  = ";pdf;xps;cbz;",
 	creRead  = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;",
-	picRead = ";jpg;"
+	picRead = ";jpg;jpeg;"
 	-- seems to accept pdb-files for PalmDoc only
 }
 
