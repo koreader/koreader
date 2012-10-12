@@ -987,8 +987,14 @@ function UniReader:loadSettings(filename)
 		end
 
 		self.rcountmax = self.settings:readSetting("rcountmax") or self.rcountmax
-		self.show_overlap_enable = self.settings:readSetting("show_overlap_enable")
-		self.show_links_enable = self.settings:readSetting("show_links_enable")
+		local tmp = self.settings:readSetting("show_overlap_enable")
+		if tmp ~= nil then
+			self.show_overlap_enable = tmp
+		end
+		tmp = self.settings:readSetting("show_links_enable")
+		if tmp ~= nil then
+			self.show_links_enable = tmp
+		end
 
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
 		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
@@ -2246,6 +2252,8 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
+	self.show_overlap_enable = true
+	self.show_links_enable = true
 	if self.doc ~= nil then
 		self.doc:close()
 	end
@@ -2978,9 +2986,9 @@ function UniReader:addAllCommands()
 		function(unireader)
 			unireader.show_links_enable = not unireader.show_links_enable
 			if unireader.show_links_enable then
-				InfoMessage:inform("Links on page ON", nil, 1, MSG_AUX)
+				InfoMessage:inform("Link underlines ON", nil, 1, MSG_AUX)
 			else
-				InfoMessage:inform("Links on page OFF", nil, 1, MSG_AUX)
+				InfoMessage:inform("Link underlines OFF", nil, 1, MSG_AUX)
 			end
 			self.settings:saveSetting("show_links_enable", unireader.show_links_enable)
 			self:redrawCurrentPage()
