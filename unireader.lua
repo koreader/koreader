@@ -2982,7 +2982,7 @@ function UniReader:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_L, MOD_SHIFT, "L",
-		"show/hide links on page",
+		"show/hide link underlines",
 		function(unireader)
 			unireader.show_links_enable = not unireader.show_links_enable
 			if unireader.show_links_enable then
