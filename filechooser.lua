@@ -644,12 +644,10 @@ end
 
 -- returns full filename or nil (if folder)
 function FileChooser:FullFileName()
-	if self.current > #self.dirs then
-		return self.path.."/"..self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
-	end
-	warningUnsupportedFunction()
-	return nil
+	local pos = self.current + self.perpage*(self.page-1) - #self.dirs
+	return pos > 0 and self.path.."/"..self.files[pos] or warningUnsupportedFunction()
 end
+
 -- returns the keycode of released key
 function FileChooser:ReturnKey()
 	while true do
@@ -735,4 +733,5 @@ end
 function warningUnsupportedFunction()
 	InfoMessage:inform("Unsupported function! ", 2000, 1, MSG_WARN,
 		"The requested function is not supported.")
+	return nil
 end
