@@ -95,7 +95,7 @@ static int openDocument(lua_State *L) {
 
 static int openPage(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
-	int pageno = luaL_checkint(L, 2);
+	//int pageno = luaL_checkint(L, 2);
 
 	PicPage *page = (PicPage*) lua_newuserdata(L, sizeof(PicPage));
 	luaL_getmetatable(L, "picpage");
@@ -215,7 +215,7 @@ static int getPageSize(lua_State *L) {
 
 
 static int closePage(lua_State *L) {
-	PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
+	//PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	return 0;
 }
 
