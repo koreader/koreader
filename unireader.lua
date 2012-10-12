@@ -1862,8 +1862,7 @@ function UniReader:showToc()
 	end
 
 	if #self.toc == 0 then
-		InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
-		return self:redrawCurrentPage()
+		return InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
 	end
 
 	self.toc_curitem = self:findTOCpos()
