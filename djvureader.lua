@@ -1,8 +1,10 @@
 require "unireader"
 
-DJVUReader = UniReader:new{
-	show_links_enable = false
-}
+DJVUReader = UniReader:new{}
+
+function DJVUReader:setDefaults()
+	self.show_links_enable = false
+end
 
 -- check DjVu magic string to validate
 function validDJVUFile(filename)

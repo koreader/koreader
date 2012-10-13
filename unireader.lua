@@ -66,8 +66,8 @@ UniReader = {
 	pan_margin = 5, -- horizontal margin for two-column zoom (in pixels)
 	pan_overlap_vertical = 30,
 	show_overlap = 0,
-	show_overlap_enable = true,
-	show_links_enable = true,
+	show_overlap_enable,
+	show_links_enable,
 
 	-- the document:
 	doc = nil,
@@ -952,6 +952,13 @@ function UniReader:preLoadSettings(filename)
 	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
 end
 
+-- all defaults which can be overriden by reader objects
+-- (PDFReader, DJVUReader, etc) must be initialized here.
+function UniReader:setDefaults()
+	self.show_overlap_enable = true
+	self.show_links_enable = true
+end
+
 -- This is a low-level method that can be shared with all readers.
 function UniReader:loadSettings(filename)
 	if self.doc ~= nil then
@@ -987,6 +994,8 @@ function UniReader:loadSettings(filename)
 		end
 
 		self.rcountmax = self.settings:readSetting("rcountmax") or self.rcountmax
+
+		self:setDefaults()
 		local tmp = self.settings:readSetting("show_overlap_enable")
 		if tmp ~= nil then
 			self.show_overlap_enable = tmp
@@ -2251,8 +2260,7 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
-	self.show_overlap_enable = true
-	self.show_links_enable = true
+	self:setDefaults()
 	if self.doc ~= nil then
 		self.doc:close()
 	end
