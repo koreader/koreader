@@ -449,6 +449,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, nil, "N")
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_X, MOD_SHIFT, "X")	-- remove manual cropping
+	self.commands:del(KEY_L, MOD_SHIFT, "L")
 
 	-- NuPogodi, 01.09.12: remove new hotkey in unireader.lua
 	-- that calls 'zoom-mode' menu
