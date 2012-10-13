@@ -37,7 +37,9 @@ typedef struct PicDocument {
 } PicDocument;
 
 typedef struct PicPage {
-	int width, height;
+	int width;
+	int height;
+	uint8_t *image;
 	PicDocument *doc;
 } PicPage;
 
@@ -103,6 +105,7 @@ static int openPage(lua_State *L) {
 
 	page->width = doc->width;
 	page->height = doc->height;
+	page->image = doc->image;
 	page->doc = doc;
 
 	return 1;
@@ -148,8 +151,8 @@ static int drawPage(lua_State *L) {
 	int x_offset = MAX(0, dc->offset_x);
 	int y_offset = MAX(0, dc->offset_y);
 	int x, y;
-	int img_width = page->doc->width;
-	int img_height = page->doc->height;
+	int img_width = page->width;
+	int img_height = page->height;
 	int img_new_width = bb->w;
 	int img_new_height = bb->h;
 	unsigned char adjusted_low[16], adjusted_high[16];
@@ -168,7 +171,7 @@ static int drawPage(lua_State *L) {
 	if (!scaled_image)
 		return 0;
 
-	scaleImage(scaled_image, page->doc->image, img_width, img_height, img_new_width, img_new_height);
+	scaleImage(scaled_image, page->image, img_width, img_height, img_new_width, img_new_height);
 
 	uint8_t *bbptr = bb->data;
 	uint8_t *pmptr = scaled_image;
@@ -195,7 +198,7 @@ static int drawPage(lua_State *L) {
 
 static int getCacheSize(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
-	lua_pushnumber(L, doc->width * doc->height * doc->components);
+	lua_pushnumber(L, 0);
 	return 1;
 }
 
