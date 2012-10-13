@@ -166,6 +166,9 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
+	elseif pos_type == "link" then
+		self.doc:gotoLink(pos)
+		pos = self.doc:getCurrentPos()
 	else -- pos_type is position within document
 		pos = math.min(pos, self.doc:getFullHeight() - height)
 		pos = math.max(pos, 0)
@@ -446,6 +449,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_N, nil, "N")
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_X, MOD_SHIFT, "X")	-- remove manual cropping
+	self.commands:del(KEY_L, MOD_SHIFT, "L")
 
 	-- NuPogodi, 01.09.12: remove new hotkey in unireader.lua
 	-- that calls 'zoom-mode' menu
@@ -714,4 +718,18 @@ function CREReader:searchHighLight(search)
 
 	self.last_search.search = search
 
+end
+
+----------------------------------------------------
+--- page links
+----------------------------------------------------
+function CREReader:getPageLinks()
+	local links = self.doc:getPageLinks()
+	Debug("getPageLinks", links)
+	return links
+end
+
+function CREReader:clearSelection()
+	Debug("clearSelection")
+	self.doc:clearSelection()
 end

@@ -2155,6 +2155,10 @@ function UniReader:getPageLinks(pageno)
 	return nil
 end
 
+function UniReader:clearSelection()
+	-- used only in crengine
+end
+
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
@@ -3012,9 +3016,10 @@ function UniReader:addAllCommands()
 
 				local page_links = 0
 				local visible_links = {}
+				local need_refresh = false
 
 				for i, link in ipairs(links) do
-					if link.page then
+					if link.page then -- from mupdf
 						local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
 						if x > 0 and y > 0 and x < G_width and y < G_height then
 							-- draw top and side borders so we get a box for each link (bottom one is on page)
@@ -3027,12 +3032,26 @@ function UniReader:addAllCommands()
 							page_links = page_links + 1
 							visible_links[page_links] = link
 						end
+					elseif link.section and string.sub(link.section,1,1) == "#" then -- from crengine
+						if link.start_y >= self.pos and link.start_y <= self.pos + G_height then
+							link.start_y = link.start_y - self.pos -- top of screen
+							page_links = page_links + 1
+							visible_links[page_links] = link
+							need_refresh = true
+						end
 					end
 				end
 
 				if page_links == 0 then
-					InfoMessage:inform("No visible links on this page ", 2000, 1, MSG_WARN)
+					InfoMessage:inform("No page links on this page ", 2000, 1, MSG_WARN)
 					return
+				end
+
+				Debug("visible_links", visible_links)
+
+				if need_refresh then
+					unireader:redrawCurrentPage() -- show links
+					need_refresh = false
 				end
 
 				Screen:saveCurrentBB() -- save dimmed links
@@ -3041,7 +3060,9 @@ function UniReader:addAllCommands()
 				local shortcut_map
 
 				local render_shortcuts = function()
-					Screen:restoreFromSavedBB()
+					if need_refresh then
+						Screen:restoreFromSavedBB()
+					end
 
 					local shortcut_nr = 1
 					shortcut_map = {}
@@ -3050,10 +3071,18 @@ function UniReader:addAllCommands()
 						local link = visible_links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
+						local x,y,w,h
 						if link.page then
-							local x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+							x,y,w,h = self:zoomedRectCoordTransform( link.x0,link.y0, link.x1,link.y1 )
+						elseif link.section
+ then
+							x,y,h = link.start_x, link.start_y, self.doc:zoomFont(0) -- delta=0, return font size
+						end
+
+						if x and y and h then
 							local face = Font:getFace("rifont", h)
-							renderUtf8Text(fb.bb, x, y + h - 2, face, SelectMenu.item_shortcuts[shortcut_nr])
+							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr], "for", shortcut_nr)
+							renderUtf8Text(fb.bb, x, y + h - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
 						end
@@ -3077,6 +3106,7 @@ function UniReader:addAllCommands()
 					local link = nil
 
 					if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+						need_refresh = true
 						if ev.code >= KEY_Q and ev.code <= KEY_P then
 							link = ev.code - KEY_Q + 1
 						elseif ev.code >= KEY_A and ev.code <= KEY_L then
@@ -3099,13 +3129,21 @@ function UniReader:addAllCommands()
 						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
 							shortcut_offset = shortcut_offset - 30
 							render_shortcuts()
+						else
+							need_refresh = false
 						end
 					end
 
 					if link then
 						link = shortcut_map[link]
-						if visible_links[link] ~= nil and visible_links[link].page ~= nil then
-							goto_page = visible_links[link].page + 1
+						if visible_links[link] ~= nil then
+							if visible_links[link].page ~= nil then
+								goto_page = visible_links[link].page + 1
+							elseif visible_links[link].section ~= nil then
+								goto_page = visible_links[link].section
+							else
+								Debug("Unknown link target in", link)
+							end
 						else
 							Debug("missing link", link)
 						end
@@ -3114,7 +3152,9 @@ function UniReader:addAllCommands()
 					Debug("goto_page", goto_page, "now on", unireader.pageno, "link", link)
 				end
 
-				unireader:goto(goto_page)
+				unireader:clearSelection()
+
+				unireader:goto(goto_page, false, "link")
 
 			end
 		end
