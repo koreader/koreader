@@ -3139,7 +3139,7 @@ function UniReader:addAllCommands()
 
 				unireader:clearSelection()
 
-				unireader:goto(goto_page, true, "link")
+				unireader:goto(goto_page, false, "link")
 
 			end
 		end
