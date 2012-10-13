@@ -421,6 +421,11 @@ static int getPageLinks(lua_State *L) {
 
 	ldomXRangeList links;
 	ldomXRangeList & sel = doc->text_view->getDocument()->getSelections();
+
+	if ( sel.length() == 0 ) {
+		return 0;
+	}
+
 	doc->text_view->getCurrentPageLinks( links );
 	int linkCount = links.length();
 	if ( linkCount ) {
