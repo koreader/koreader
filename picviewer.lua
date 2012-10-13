@@ -32,3 +32,23 @@ function PICViewer:_drawReadingInfo()
 		" ("..tostring(math.ceil(page_width*page_height*page_components/1024)).."k), "..
 		string.format("%.1fx", self.globalzoom), true)
 end
+
+function PICViewer:init()
+	self:addAllCommands()
+	self:adjustCommands()
+end
+
+function PICViewer:adjustCommands()
+	self.commands:del(KEY_G, nil, "G")
+	self.commands:del(KEY_T, nil, "T")
+	self.commands:del(KEY_B, nil, "B")
+	self.commands:del(KEY_B, MOD_ALT, "B")
+	self.commands:del(KEY_B, MOD_SHIFT, "B")
+	self.commands:del(KEY_R, MOD_SHIFT, "R")
+	self.commands:del(KEY_DOT, nil, ".")
+	self.commands:del(KEY_N, nil, "N")
+	self.commands:del(KEY_L, nil, "L")
+	self.commands:del(KEY_L, MOD_SHIFT, "L")
+	self.commands:del(KEY_N, MOD_SHIFT, "N")
+	self.commands:delGroup("[1, 2 .. 9, 0]")
+end
