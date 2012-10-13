@@ -952,8 +952,8 @@ function UniReader:preLoadSettings(filename)
 	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
 end
 
--- all boolean defaults MUST be initialized here
--- (provided to allow other objects override UniReader's defaults)
+-- all defaults which can be overriden by reader objects
+-- (PDFReader, DJVUReader, etc) must be initialized here.
 function UniReader:setDefaults()
 	self.show_overlap_enable = true
 	self.show_links_enable = true
