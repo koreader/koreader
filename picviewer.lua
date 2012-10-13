@@ -22,13 +22,13 @@ function PICViewer:_drawReadingInfo()
 	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face,
 		"M: "..
-		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k, "..
-		math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).."k", true)
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k", true)
 	local txt = os.date("%a %d %b %Y %T").." ["..BatteryLevel().."]"
 	local w = sizeUtf8Text(0, width, face, txt, true).x
 	renderUtf8Text(fb.bb, width - w - 10, 15+6, face, txt, true)
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
 		"Gm:"..string.format("%.1f",self.globalgamma)..", "..
-		tostring(page_width).."x"..tostring(page_height).."x"..tostring(page_components)..", "..
+		tostring(page_width).."x"..tostring(page_height).."x"..tostring(page_components)..
+		" ("..tostring(math.ceil(page_width*page_height*page_components/1024)).."k), "..
 		string.format("%.1fx", self.globalzoom), true)
 end
