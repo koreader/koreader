@@ -395,16 +395,8 @@ static int getPageLinks(lua_State *L) {
 
 	lua_newtable(L); // all links
 
-	int pos = doc->text_view->GetPos();
-
-	printf("## pos=%d\n", pos);
-
 	ldomXRangeList links;
 	ldomXRangeList & sel = doc->text_view->getDocument()->getSelections();
-
-	if ( sel.length() == 0 ) {
-		return 0;
-	}
 
 	doc->text_view->getCurrentPageLinks( links );
 	int linkCount = links.length();
@@ -423,7 +415,7 @@ static int getPageLinks(lua_State *L) {
 			lvPoint start_pt ( currSel.getStart().toPoint() );
 			lvPoint end_pt ( currSel.getEnd().toPoint() );
 
-			printf("# link %d start %d %d end %d %d '%s' %s\n", i,
+    			CRLog::debug("# link %d start %d %d end %d %d '%s' %s\n", i,
 				start_pt.x, start_pt.y, end_pt.x, end_pt.y,
 				txt8.c_str(), link8.c_str()
 			);
