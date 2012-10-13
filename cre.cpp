@@ -17,7 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef DEBUG_CRENGINE
 #define DEBUG_CRENGINE 0
+#endif
 
 extern "C" {
 #include "blitbuffer.h"
