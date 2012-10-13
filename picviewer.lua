@@ -1,9 +1,11 @@
 require "unireader"
 
-PICViewer = UniReader:new{
-	show_overlap_enable = false,
-	show_links_enable = false,
-}
+PICViewer = UniReader:new{}
+
+function PICViewer:setDefaults()
+	self.show_overlap_enable = false
+	self.show_links_enable = false
+end
 
 function PICViewer:open(filename)
 	ok, self.doc = pcall(pic.openDocument, filename)
