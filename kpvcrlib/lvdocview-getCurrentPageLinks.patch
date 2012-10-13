@@ -1,0 +1,14 @@
+diff --git a/crengine/src/lvdocview.cpp b/crengine/src/lvdocview.cpp
+index e7a355a..e1178de 100755
+--- a/crengine/src/lvdocview.cpp
++++ b/crengine/src/lvdocview.cpp
+@@ -4539,7 +4539,8 @@ void LVDocView::getCurrentPageLinks(ldomXRangeList & list) {
+ 						if (_list[i]->getStart().getNode() == elem)
+ 							return true; // don't add, duplicate found!
+ 					}
+-                                        _list.add(new ldomXRange(elem->getChildNode(0)));
++					ldomNode * node = elem->getChildNode(0);
++					if ( node ) _list.add(new ldomXRange(node));
+ 				}
+ 				return true;
+ 			}

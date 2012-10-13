@@ -185,7 +185,8 @@ fetchthirdparty:
 	# CREngine patch: change child nodes' type face
 	# @TODO replace this dirty hack  24.04 2012 (houqp)
 	cd kpvcrlib/crengine/crengine/src && \
-		patch -N -p0 < ../../../lvrend_node_type_face.patch || true
+		patch -N -p0 < ../../../lvrend_node_type_face.patch && \
+		patch -N -p3 < ../../../lvdocview-getCurrentPageLinks.patch || true
 	unzip mupdf-thirdparty.zip -d mupdf
 	# dirty patch in MuPDF's thirdparty liby for CREngine
 	cd mupdf/thirdparty/jpeg-*/ && \
