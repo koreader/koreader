@@ -1,10 +1,11 @@
 KindlePDFViewer
 ===============
 
-This is a PDF viewer application, created for usage on the Kindle e-ink reader.
-It is currently restricted to 4bpp inverse grayscale displays. It's using the
-muPDF library (see http://mupdf.com/) and its UI is scripted using Lua (see
-http://www.lua.org/).
+This is a document viewer application, created for usage on the Kindle e-ink reader.
+It is currently restricted to 4bpp inverse grayscale displays. For PDF files
+it is using the muPDF library (see http://mupdf.com/), for DjVu files djvulibre library
+and for ebooks (fb2, mobi, ePub, etc) crengine. It can also read JPEG images using
+libjpeg library. The user interface is scripted using Lua (see http://www.lua.org/).
 
 The application is licensed under the GPLv3 (see COPYING file).
 
