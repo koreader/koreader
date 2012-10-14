@@ -2499,7 +2499,7 @@ function UniReader:addAllCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then self:goto(bm.page) end
+			if bm then self:goto(bm.page, true) end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
 		"show jump history",

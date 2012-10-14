@@ -629,7 +629,7 @@ function CREReader:adjustCreReaderCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then self:goto(bm.page, nil, "xpointer") end
+			if bm then self:goto(bm.page, true, "xpointer") end
 		end)
 	self.commands:add(KEY_BACK, nil, "Back",
 		"go backward in jump history",
