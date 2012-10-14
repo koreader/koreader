@@ -7,9 +7,13 @@ function Device:getModel()
 	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
 	local cpu_mod = std_out:read()	
 	if not cpu_mod then
-		return nil
+		local ret = os.execute("grep 'Hardware : Mario Platform' /proc/cpuinfo", "r")
+		if ret ~= 0 then
+			return nil
+		else
+			return "KindleDXG"
+		end
 	end
-
 	if cpu_mod == "MX50" then
 		local f = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
 		if f then
@@ -19,12 +23,7 @@ function Device:getModel()
 		end
 	elseif cpu_mod == "MX35" then
 		-- check if we are running on Kindle 3 (additional volume input)
-		local f = lfs.attributes("/dev/input/event2")
-		if f then
-			return "Kindle3"
-		else
-			return "KindleDXG"
-		end
+		return "Kindle3"
 	elseif cpu_mod == "MX3" then
 		return "Kindle2"
 	else
