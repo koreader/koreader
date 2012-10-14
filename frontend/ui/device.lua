@@ -3,6 +3,35 @@ Device = {
 	charging_mode = false,
 }
 
+function Device:getModel()
+	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
+	local cpu_mod = std_out:read()	
+	if not cpu_mod then
+		return nil
+	end
+
+	if cpu_mod == "MX50" then
+		local f = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
+		if f then
+			return "KindlePaperWhite"
+		else
+			return "Kindle4"
+		end
+	elseif cpu_mod == "MX35" then
+		-- check if we are running on Kindle 3 (additional volume input)
+		local f = lfs.attributes("/dev/input/event2")
+		if f then
+			return "Kindle3"
+		else
+			return "KindleDXG"
+		end
+	elseif cpu_mod == "MX3" then
+		return "Kindle2"
+	else
+		return nil
+	end
+end
+
 function Device:isKindle4()
 	re_val = os.execute("cat /proc/cpuinfo | grep MX50")
 	if re_val == 0 then
