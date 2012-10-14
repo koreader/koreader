@@ -2574,6 +2574,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_SPACE, nil, "Space",
 		"manual full screen refresh",
 		function(unireader)
+			-- eInk will not refresh if nothing has changed on the screen so we fake a change here.
+			fb.bb:invertRect(0, 0, 1, 1)
+			fb:refresh(1)
+			fb.bb:invertRect(0, 0, 1, 1)
+			fb:refresh(0)
 			self.rcount = self.rcountmax
 			self:redrawCurrentPage()
 		end)
