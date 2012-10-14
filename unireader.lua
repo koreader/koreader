@@ -2490,8 +2490,8 @@ function UniReader:addAllCommands()
 				InfoMessage:inform("Page marked ", 1500, 1, MSG_WARN)
 			end
 		end)
-	self.commands:addGroup(MOD_SHIFT.."up/down",{
-		Keydef:new(KEY_FW_UP,MOD_SHIFT), Keydef:new(KEY_FW_DOWN,MOD_SHIFT)},
+	self.commands:addGroup(MOD_ALT.."up/down",{
+		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
 		"Jump between bookmarks",
 		function(unireader,keydef)
 			if keydef.keycode == KEY_FW_UP then
