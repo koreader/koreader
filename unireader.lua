@@ -98,7 +98,6 @@ UniReader = {
 	toc = nil,
 	toc_expandable = false, -- if true then TOC contains expandable/collapsible items
 	toc_children = nil, -- each element is the list of children for each TOC node (nil if none)
-	toc_curitem = 0, -- points to the current location in TOC
 	toc_xview = nil, -- fully expanded (and marked with '+') view of TOC
 	toc_cview = nil, -- current view of TOC
 	toc_curidx_to_x = nil, -- current view to expanded view map
@@ -1874,13 +1873,13 @@ function UniReader:showToc()
 		return InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
 	end
 
-	self.toc_curitem = self:findTOCpos()
+	local toc_curitem = self:findTOCpos()
 
 	while true do
 		toc_menu = SelectMenu:new{
 			menu_title = "Table of Contents (" .. tostring(#self.toc_cview) .. "/" .. tostring(#self.toc) .. " items)",
 			item_array = self.toc_cview,
-			current_entry = self.toc_curitem-1,
+			current_entry = toc_curitem-1,
 			expandable = self.toc_expandable
 		}
 		local ret_code, item_no, all = toc_menu:choose(0, fb.bb:getHeight())
@@ -1890,7 +1889,7 @@ function UniReader:showToc()
 			local pagenum = toc_entry.page
 			if pagenum < 1 or pagenum > self.doc:getPages() then
 				InfoMessage:inform("External links unsupported ", 1500, 1, MSG_WARN)
-				self.toc_curitem = ret_code
+				toc_curitem = ret_code
 			else
 				return self:gotoTocEntry(toc_entry)
 			end
@@ -1908,7 +1907,7 @@ function UniReader:showToc()
 					self:collapseTOCItem(xidx, abs_item_no)
 				end
 			end
-			self.toc_curitem = abs_item_no
+			toc_curitem = abs_item_no
 		else -- return from menu via Back
 			return self:redrawCurrentPage()
 		end -- if ret_code
@@ -2260,7 +2259,6 @@ function UniReader:inputLoop()
 	self.toc = nil
 	self.toc_expandable = false
 	self.toc_children = nil
-	self.toc_curitem = 0
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
