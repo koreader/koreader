@@ -2494,6 +2494,17 @@ function UniReader:addAllCommands()
 				InfoMessage:inform("Page marked ", 1500, 1, MSG_WARN)
 			end
 		end)
+	self.commands:addGroup(MOD_ALT.."up/down",{
+		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
+		"Jump between bookmarks",
+		function(unireader,keydef)
+			if keydef.keycode == KEY_FW_UP then
+				bm = self:prevBookMarkedPage()
+			else
+				bm = self:nextBookMarkedPage()
+			end
+			if bm then self:goto(bm.page, true) end
+		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
 		"show jump history",
 		function(unireader)

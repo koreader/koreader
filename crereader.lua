@@ -624,6 +624,17 @@ function CREReader:adjustCreReaderCommands()
 			end
 		end
 	)
+	self.commands:addGroup(MOD_ALT.."up/down",{
+		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
+		"Jump between bookmarks",
+		function(unireader,keydef)
+			if keydef.keycode == KEY_FW_UP then
+				bm = self:prevBookMarkedPage()
+			else
+				bm = self:nextBookMarkedPage()
+			end
+			if bm then self:goto(bm.page, true, "xpointer") end
+		end)
 	self.commands:add(KEY_BACK, nil, "Back",
 		"go backward in jump history",
 		function(self)
@@ -717,7 +728,6 @@ function CREReader:searchHighLight(search)
 	end
 
 	self.last_search.search = search
-
 end
 
 ----------------------------------------------------
