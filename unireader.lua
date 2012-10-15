@@ -2343,7 +2343,7 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:addGroup(MOD_ALT.."ALT_LEFT/ALT_RIGHT", {Keydef:new(KEY_FW_LEFT,MOD_ALT), Keydef:new(KEY_FW_RIGHT,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."left/right", {Keydef:new(KEY_FW_LEFT,MOD_ALT), Keydef:new(KEY_FW_RIGHT,MOD_ALT)},
 		"go to prev/next TOC entry",
 		function(unireader,keydef)
 			if keydef.keycode == KEY_FW_LEFT then

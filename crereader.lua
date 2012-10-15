@@ -427,7 +427,7 @@ end
 
 function CREReader:adjustCreReaderCommands()
 	self.commands:delGroup("[joypad]")
-	self.commands:delGroup("ALT_LEFT/ALT_RIGHT")
+	self.commands:delGroup(MOD_ALT.."left/right")
 	self.commands:del(KEY_G, nil, "G")
 	self.commands:del(KEY_J, MOD_SHIFT, "J")
 	self.commands:del(KEY_K, MOD_SHIFT, "K")
