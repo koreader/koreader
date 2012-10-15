@@ -2343,10 +2343,10 @@ end
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
-	self.commands:addGroup(MOD_ALT.."left/right", {Keydef:new(KEY_FW_LEFT,MOD_ALT), Keydef:new(KEY_FW_RIGHT,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."H/J", {Keydef:new(KEY_H,MOD_ALT), Keydef:new(KEY_J,MOD_ALT)},
 		"go to prev/next TOC entry",
 		function(unireader,keydef)
-			if keydef.keycode == KEY_FW_LEFT then
+			if keydef.keycode == KEY_H then
 				self:gotoPrevNextTocEntry(-1)
 			else
 				self:gotoPrevNextTocEntry(1)
@@ -2552,11 +2552,12 @@ function UniReader:addAllCommands()
 				InfoMessage:inform("Page marked ", 1500, 1, MSG_WARN)
 			end
 		end)
-	self.commands:addGroup(MOD_ALT.."up/down",{
-		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."K/L",{
+		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
 		"Jump between bookmarks",
 		function(unireader,keydef)
-			if keydef.keycode == KEY_FW_UP then
+			local bm = nil
+			if keydef.keycode == KEY_K then
 				bm = self:prevBookMarkedPage()
 			else
 				bm = self:nextBookMarkedPage()
