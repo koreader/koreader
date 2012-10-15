@@ -3235,7 +3235,7 @@ function UniReader:addAllCommands()
 	)
 	-- NuPogodi, 02.10.12: added functions to switch kpdfviewer mode from readers
 	self.commands:add(KEY_M, MOD_ALT, "M",
-		"select reader mode",
+		"set user privilege level",
 		function(unireader)
 			FileChooser:changeFileChooserMode()
 			self:redrawCurrentPage()

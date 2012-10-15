@@ -474,7 +474,7 @@ function FileChooser:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_M, MOD_ALT, "M",
-		"set mode for filemanager",
+		"set user privilege level",
 		function(self)
 			self:changeFileChooserMode()
 		end
