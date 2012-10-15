@@ -426,8 +426,8 @@ function CREReader:showMenu()
 end
 
 function CREReader:adjustCreReaderCommands()
-	-- delete commands
 	self.commands:delGroup("[joypad]")
+	self.commands:delGroup("ALT_LEFT/ALT_RIGHT")
 	self.commands:del(KEY_G, nil, "G")
 	self.commands:del(KEY_J, MOD_SHIFT, "J")
 	self.commands:del(KEY_K, MOD_SHIFT, "K")
@@ -448,11 +448,8 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_F, MOD_ALT, "F")
 	self.commands:del(KEY_N, nil, "N")
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
-	self.commands:del(KEY_X, MOD_SHIFT, "X")	-- remove manual cropping
+	self.commands:del(KEY_X, MOD_SHIFT, "X")
 	self.commands:del(KEY_L, MOD_SHIFT, "L")
-
-	-- NuPogodi, 01.09.12: remove new hotkey in unireader.lua
-	-- that calls 'zoom-mode' menu
 	self.commands:del(KEY_M, nil, "M")
 
 	-- CCW-rotation
