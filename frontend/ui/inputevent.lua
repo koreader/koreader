@@ -230,21 +230,27 @@ function Input:init()
 		self.event_map = self.sdl_event_map
 	else
 		input.open("fake_events")
+		local dev_mod = Device:getModel()
+
 		input.open("/dev/input/event0")
-		input.open("/dev/input/event1")
-
-		-- check if we are running on Kindle 3 (additional volume input)
-		local f=lfs.attributes("/dev/input/event2")
-		if f then
-			input.open("/dev/input/event2")
-			if Device:isKindle3() then
-				print("Auto-detected Kindle 3")
-			end
-		end
-
-		if Device:isKindle4() then
+		if dev_mod ~= "KindlePaperWhite" then
+			-- we don't have event1 in KindlePaperWhite
+			input.open("/dev/input/event1")
+		elseif dev_mod == "KindlePaperWhite" then
+			print("Auto-detected Kindle PaperWhite")
+		elseif dev_mod == "Kindle4" then
 			print("Auto-detected Kindle 4")
 			self:adjustKindle4EventMap()
+		elseif dev_mod == "Kindle3" then
+			input.open("/dev/input/event2")
+			print("Auto-detected Kindle 3")
+		elseif dev_mod == "KindleDXG" then
+			print("Auto-detected Kindle DXG")
+		elseif dev_mod == "Kindle2" then
+			print("Auto-detected Kindle 2")
+		else
+			print("Not supported device model!")
+			os.exit(-1)
 		end
 	end
 end
