@@ -2624,13 +2624,13 @@ function UniReader:addAllCommands()
 		"set full screen refresh count",
 		function(unireader)
 			local count = NumInputBox:input(G_height-100, 100,
-				"Full refresh every N pages (0-10)", self.rcountmax, true)
+				"Full refresh every N pages (0-200)", self.rcountmax, true)
 			-- convert string to number
 			if pcall(function () count = math.floor(count) end) then
 				if count < 0 then
 					count = 0
-				elseif count > 10 then
-					count = 10
+				elseif count > 200 then
+					count = 200
 				end
 				self.rcountmax = count
 				-- storing this parameter in both global and local settings
