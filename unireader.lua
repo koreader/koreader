@@ -2556,6 +2556,7 @@ function UniReader:addAllCommands()
 		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
 		"Jump between bookmarks",
 		function(unireader,keydef)
+			local bm = nil
 			if keydef.keycode == KEY_FW_UP then
 				bm = self:prevBookMarkedPage()
 			else
