@@ -98,7 +98,6 @@ UniReader = {
 	toc = nil,
 	toc_expandable = false, -- if true then TOC contains expandable/collapsible items
 	toc_children = nil, -- each element is the list of children for each TOC node (nil if none)
-	toc_curitem = 0, -- points to the current location in TOC
 	toc_xview = nil, -- fully expanded (and marked with '+') view of TOC
 	toc_cview = nil, -- current view of TOC
 	toc_curidx_to_x = nil, -- current view to expanded view map
@@ -138,7 +137,7 @@ function UniReader:init()
 end
 
 ----------------------------------------------------
--- highlight support 
+-- highlight support
 ----------------------------------------------------
 
 function UniReader:screenOffset()
@@ -156,7 +155,7 @@ end
 
 ----------------------------------------------------
 -- Given coordinates of four corners in original page
--- size and return coordinate of upper left conner in 
+-- size and return coordinate of upper left conner in
 -- zoomed page size with width and height.
 ----------------------------------------------------
 function UniReader:zoomedRectCoordTransform(x0, y0, x1, y1)
@@ -196,11 +195,11 @@ function UniReader:getRectInScreen(x0, y0, x1, y1)
 	x, y, w, h = self:zoomedRectCoordTransform(x0, y0, x1, y1)
 	if x < 0 then
 		w = w + x
-		x = 0 
+		x = 0
 	end
 	if y < 0 then
 		h = h + y
-		y = 0 
+		y = 0
 	end
 	if x + w > G_width then w = G_width - x end
 	if y + h > G_height then h = G_height - y end
@@ -249,11 +248,11 @@ function UniReader:_isWordInScreenRange(w)
 		return false
 	end
 
-	is_entire_word_out_of_screen_height = 
+	is_entire_word_out_of_screen_height =
 		(w.y1 * self.globalzoom <= -self.offset_y)
 		or (w.y0 * self.globalzoom >= -self.offset_y + G_height)
 
-	is_entire_word_out_of_screen_width = 
+	is_entire_word_out_of_screen_width =
 			(w.x0 * self.globalzoom >= -self.offset_x + G_width
 			or w.x1 * self.globalzoom <= -self.offset_x)
 
@@ -281,7 +280,7 @@ function UniReader:toggleTextHighLight(word_list)
 				local x, y, w, h = self:getRectInScreen(
 										line_item.x0, line_item.y0,
 										line_item.x1, line_item.y1)
-				-- slightly enlarge the highlight height 
+				-- slightly enlarge the highlight height
 				-- for better viewing experience
 				x = x
 				y = y - h * 0.1
@@ -332,7 +331,7 @@ function UniReader:_wordIterFromRange(t, l0, w0, l1, w1)
 end
 
 function UniReader:_toggleWordHighLight(t, l, w)
-	x, y, w, h = self:getRectInScreen(t[l][w].x0, t[l].y0, 
+	x, y, w, h = self:getRectInScreen(t[l][w].x0, t[l].y0,
 										t[l][w].x1, t[l].y1)
 	-- slightly enlarge the highlight range for better viewing experience
 	x = x - w * 0.05
@@ -421,7 +420,7 @@ function UniReader:startHighLightMode()
 				return 1, 1
 			else
 				-- in first line, but not first word
-				return cur_l, cur_w -1 
+				return cur_l, cur_w -1
 			end
 		end
 
@@ -623,7 +622,7 @@ function UniReader:startHighLightMode()
 				if tmp_w == 0 then
 					tmp_w = 1
 				end
-				if self:_isLineInNextView(t[l.new]) 
+				if self:_isLineInNextView(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					local pageno = self:nextView()
 					self:goto(pageno)
@@ -649,7 +648,7 @@ function UniReader:startHighLightMode()
 				if tmp_w == 0 then
 					tmp_w = 1
 				end
-				if self:_isLineInPrevView(t[l.new]) 
+				if self:_isLineInPrevView(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:prevView()
@@ -675,7 +674,7 @@ function UniReader:startHighLightMode()
 				if w.cur == 0 then
 					tmp_w = 1
 				end
-				if self:_isLineInNextView(t[l.new]) 
+				if self:_isLineInNextView(t[l.new])
 				and self:_isEntireWordInScreenWidthRange(t[l.new][tmp_w]) then
 					-- goto next view of current page
 					local pageno = self:nextView()
@@ -745,7 +744,7 @@ function UniReader:startHighLightMode()
 			w.new = 0
 		end
 
-		if w.new ~= 0 and 
+		if w.new ~= 0 and
 		self:_isLineInPrevView(t[l.new]) then
 			-- word out of left and right sides of current view should
 			-- not trigger pan by page
@@ -763,7 +762,7 @@ function UniReader:startHighLightMode()
 				l0, w0 = _nextWord(t, l0, w0)
 				l1, w1 = l.new, w.new
 			end
-			self:_toggleTextHighLight(t, l0, w0, 
+			self:_toggleTextHighLight(t, l0, w0,
 										l1, w1)
 		else
 			self:_toggleWordHighLight(t, l.cur, w.cur)
@@ -794,7 +793,7 @@ function UniReader:startHighLightMode()
 			if _isMovingForward(l, w) then
 				tmp_l, tmp_w = _nextWord(t, tmp_l, tmp_w)
 			end
-			self:_toggleTextHighLight(t, tmp_l, tmp_w, 
+			self:_toggleTextHighLight(t, tmp_l, tmp_w,
 										l.new, w.new)
 		else
 			self:_toggleWordHighLight(t, l.new, w.new)
@@ -881,7 +880,7 @@ function UniReader:startHighLightMode()
 						table.insert(hl_item, l_item)
 						-- re initialize l_item for new line
 						l_item = {
-							x0 = word_item.x0, 
+							x0 = word_item.x0,
 							y0 = t[_l].y0,
 							y1 = t[_l].y1,
 						}
@@ -1408,7 +1407,7 @@ function UniReader:show(no)
 	if self.dest_x or self.dest_y then
 		fb.bb:paintRect(0, 0, width, height, 8)
 	end
-	Debug("blitFrom dest_off:", self.dest_x, self.dest_y, 
+	Debug("blitFrom dest_off:", self.dest_x, self.dest_y,
 		"src_off:", offset_x, offset_y,
 		"width:", width, "height:", height)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
@@ -1874,13 +1873,13 @@ function UniReader:showToc()
 		return InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
 	end
 
-	self.toc_curitem = self:findTOCpos()
+	local toc_curitem = self:findTOCpos()
 
 	while true do
 		toc_menu = SelectMenu:new{
 			menu_title = "Table of Contents (" .. tostring(#self.toc_cview) .. "/" .. tostring(#self.toc) .. " items)",
 			item_array = self.toc_cview,
-			current_entry = self.toc_curitem-1,
+			current_entry = toc_curitem-1,
 			expandable = self.toc_expandable
 		}
 		local ret_code, item_no, all = toc_menu:choose(0, fb.bb:getHeight())
@@ -1890,7 +1889,7 @@ function UniReader:showToc()
 			local pagenum = toc_entry.page
 			if pagenum < 1 or pagenum > self.doc:getPages() then
 				InfoMessage:inform("External links unsupported ", 1500, 1, MSG_WARN)
-				self.toc_curitem = ret_code
+				toc_curitem = ret_code
 			else
 				return self:gotoTocEntry(toc_entry)
 			end
@@ -1908,7 +1907,7 @@ function UniReader:showToc()
 					self:collapseTOCItem(xidx, abs_item_no)
 				end
 			end
-			self.toc_curitem = abs_item_no
+			toc_curitem = abs_item_no
 		else -- return from menu via Back
 			return self:redrawCurrentPage()
 		end -- if ret_code
@@ -2260,7 +2259,6 @@ function UniReader:inputLoop()
 	self.toc = nil
 	self.toc_expandable = false
 	self.toc_children = nil
-	self.toc_curitem = 0
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
@@ -2292,9 +2290,69 @@ function UniReader:inputLoop()
 	return keep_running
 end
 
+function UniReader:gotoPrevNextTocEntry(direction)
+	if not self.toc then
+		self:fillToc()
+	end
+	if #self.toc == 0 then
+		return InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
+	end
+
+	local numpages, last_toc_page, penul_toc_page = self.doc:getPages(), 1, 1
+	local found_curr_toc = false
+	for k, v in ipairs(self.toc) do
+		if self.toc[k-1] then
+			penul_toc_page = self.toc[k-1].page
+		end
+		last_toc_page = v.page
+		if v.page >= 1 and v.page <= numpages and v.page > self.pageno then
+			k = k - 1
+			found_curr_toc = true
+			if direction == -1 then -- skip all previous TOC entries with the same page
+				while true do
+					local curr_toc = self.toc[k]
+					local prev_toc = self.toc[k-1]
+					if prev_toc and (prev_toc.page == curr_toc.page) then
+						k = k - 1
+					else
+						break
+					end
+				end
+			end
+			local toc_entry = self.toc[k + direction]
+			if toc_entry then
+				return self:goto(toc_entry.page, true)	
+			end
+			break
+		end
+	end
+
+	if not found_curr_toc then
+		if direction == 1 and self.pageno ~= numpages then
+			return self:goto(numpages, true)
+		elseif direction == -1 then
+			if self.pageno == numpages then
+				return self:goto(last_toc_page, true)
+			else
+				return self:goto(penul_toc_page, true)
+			end
+		end
+	end
+end
+
 -- command definitions
 function UniReader:addAllCommands()
 	self.commands = Commands:new()
+	self.commands:addGroup(MOD_ALT.."left/right", {Keydef:new(KEY_FW_LEFT,MOD_ALT), Keydef:new(KEY_FW_RIGHT,MOD_ALT)},
+		"go to prev/next TOC entry",
+		function(unireader,keydef)
+			if keydef.keycode == KEY_FW_LEFT then
+				self:gotoPrevNextTocEntry(-1)
+			else
+				self:gotoPrevNextTocEntry(1)
+			end
+		end
+	)
 	self.commands:addGroup("< >",{
 		Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
 		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
@@ -2462,7 +2520,7 @@ function UniReader:addAllCommands()
 			local page = NumInputBox:input(G_height-100, 100,
 				"Page:", "current page "..self.pageno, true)
 			-- convert string to number
-			if not pcall(function () page = math.floor(page) end) 
+			if not pcall(function () page = math.floor(page) end)
 			or page < 1 or page > unireader.doc:getPages() then
 				page = unireader.pageno
 			end

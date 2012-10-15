@@ -59,4 +59,5 @@ function PICViewer:adjustCommands()
 	self.commands:del(KEY_BACK, nil,"Back")
 	self.commands:del(KEY_BACK, MOD_SHIFT,"Back")
 	self.commands:delGroup("[1, 2 .. 9, 0]")
+	self.commands:delGroup(MOD_ALT.."left/right")
 end
