@@ -621,12 +621,12 @@ function CREReader:adjustCreReaderCommands()
 			end
 		end
 	)
-	self.commands:addGroup(MOD_ALT.."up/down",{
-		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."K/L",{
+		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
 		"Jump between bookmarks",
 		function(unireader,keydef)
 			local bm = nil
-			if keydef.keycode == KEY_FW_UP then
+			if keydef.keycode == KEY_K then
 				bm = self:prevBookMarkedPage()
 			else
 				bm = self:nextBookMarkedPage()
