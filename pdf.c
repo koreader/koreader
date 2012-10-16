@@ -522,8 +522,9 @@ static int reflowPage(lua_State *L) {
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	double zoom = (double) luaL_checknumber(L, 3);
 
-	double dpi = 200;
+	double dpi = 250*zoom;
 	double dpp;
 	dpp = dpi / 72.;
 	pix = NULL;
@@ -572,15 +573,14 @@ static int reflowPage(lua_State *L) {
 }
 
 static int drawReflowedPage(lua_State *L) {
-	static unsigned char *bmptr = NULL;
+	uint8_t *pmptr = NULL;
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
- 	k2pdfopt_mupdf_rfbmp_ptr(&bmptr);
 
-	uint8_t *bbptr = (uint8_t*)bb->data;
-	uint8_t *pmptr = (uint8_t*)bmptr;
+	uint8_t *bbptr = bb->data;
+	k2pdfopt_mupdf_rfbmp_ptr(&pmptr);
 
 	int x_offset = 0;
 	int y_offset = 0;
