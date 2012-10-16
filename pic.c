@@ -53,7 +53,7 @@ static uint8_t *rgbToGrayscale(uint8_t *image, int width, int height)
 
 	if (!buf) return NULL;
 
-	for (x = 0; x<width; x++)
+	for (x=0; x<width; x++)
 		for (y=0; y<height; y++) {
 			int pos = 3*(x+y*width);
 			buf[x+y*width] = (uint8_t)(0.299*((double)image[pos]) + 0.587*((double)image[pos+1]) + 0.114*((double)image[pos+2]));
@@ -97,8 +97,6 @@ static int openDocument(lua_State *L) {
 
 static int openPage(lua_State *L) {
 	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
-	//int pageno = luaL_checkint(L, 2);
-
 	PicPage *page = (PicPage*) lua_newuserdata(L, sizeof(PicPage));
 	luaL_getmetatable(L, "picpage");
 	lua_setmetatable(L, -2);
@@ -139,7 +137,7 @@ static void scaleImage(uint8_t *result, uint8_t *image, int width, int height, i
 {
 	int x, y;
 
-	for (x = 0; x<new_width; x++)
+	for (x=0; x<new_width; x++)
 		for (y=0; y<new_height; y++)
 			result[x+y*new_width] = image[(x*width/new_width) + (y*height/new_height)*width];
 }
@@ -197,7 +195,6 @@ static int drawPage(lua_State *L) {
 }
 
 static int getCacheSize(lua_State *L) {
-	PicDocument *doc = (PicDocument*) luaL_checkudata(L, 1, "picdocument");
 	lua_pushnumber(L, 0);
 	return 1;
 }
@@ -218,7 +215,6 @@ static int getPageSize(lua_State *L) {
 
 
 static int closePage(lua_State *L) {
-	//PicPage *page = (PicPage*) luaL_checkudata(L, 1, "picpage");
 	return 0;
 }
 
