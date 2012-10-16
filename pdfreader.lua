@@ -2,15 +2,11 @@ require "unireader"
 require "inputbox"
 
 PDFReader = UniReader:new{
-	-- "constants":
-	REFLOW_MODE_ON = 1,
-	REFLOW_MODE_OFF = 0,
-	
-	-- "pdf page":
-	src_page_dpi = 300,
-	
 	-- "reflow state":
-	reflow_mode_enable = true,
+	reflow_mode_enable = false,
+	
+	-- "save/restore states when alternating reflow state ":
+	last_mode_states = {}
 }
 
 -- open a PDF file and its settings store
@@ -81,15 +77,6 @@ function PDFReader:drawOrCache(no, preCache)
 	if not self.reflow_mode_enable then
 		return UniReader.drawOrCache(self, no, preCache)
 	end
-	
-	local pg_w = G_width / ( self.doc:getPages() )
-	local page_indicator = function()
-		if Debug('page_indicator',no) then
-			fb.bb:invertRect( pg_w*(no-1),0, pg_w,10)
-			fb:refresh(1,     pg_w*(no-1),0, pg_w,10)
-		end
-	end
-	page_indicator()
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
 	local ok, page = pcall(self.doc.openPage, self.doc, no)
@@ -100,6 +87,7 @@ function PDFReader:drawOrCache(no, preCache)
 	end
 	
 	local dc = self:rfzoom(page, preCache)
+	self.globalzoom_orig = self.globalzoom
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive.
@@ -111,13 +99,7 @@ function PDFReader:drawOrCache(no, preCache)
 	if offset_y_in_page < 0 then offset_y_in_page = 0 end
 	
 	-- check if we have relevant cache contents
-	local reflow_mode
-	if reflow_mode_enable then 
-		reflow_mode = self.REFLOW_MODE_ON
-	else
-		reflow_mode = self.REFLOW_MODE_OFF
-	end
-	local pagehash = no..'_'..reflow_mode..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
+	local pagehash = no..'_'..(self.reflow_mode_enable and 1 or 0)..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -132,17 +114,23 @@ function PDFReader:drawOrCache(no, preCache)
 		if(self.min_offset_y > 0) then
 			self.min_offset_y = 0
 		end
+		
+		if self.offset_y < self.min_offset_y then
+			self.offset_y = self.min_offset_y
+		end
+		
+		Debug("cached page offset_x",self.offset_x,"offset_y",self.offset_y,"min_offset_x",self.min_offset_x,"min_offset_y",self.min_offset_y)
 		-- ...and give it more time to live (ttl), except if we're precaching
 		if not preCache then
 			self.cache[pagehash].ttl = self.cache_max_ttl
 		end
 		-- ...and return blitbuffer plus offset into it
 
-		page_indicator()
-
 		return pagehash,
-			offset_x_in_page - self.cache[pagehash].x,
-			offset_y_in_page - self.cache[pagehash].y
+			--offset_x_in_page - self.cache[pagehash].x,
+			--offset_y_in_page - self.cache[pagehash].y
+			-self.offset_x - self.cache[pagehash].x,
+			-self.offset_y - self.cache[pagehash].y
 	end
 	
 	-- okay, we do not have it in cache yet.
@@ -156,7 +144,8 @@ function PDFReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	self.fullwidth, self.fullheight = page:reflow(dc)
+	self.fullwidth, self.fullheight = page:reflow(dc, self.globalzoom)
+	--self.fullwidth, self.fullheight = page:reflow(dc, self.globalzoom)
 	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
@@ -187,8 +176,6 @@ function PDFReader:drawOrCache(no, preCache)
 	page:rfdraw(dc, self.cache[pagehash].bb)
 	page:close()
 
-	page_indicator()
-
 	-- return hash and offset within blitbuffer
 	return pagehash,
 		offset_x_in_page - tile.x,
@@ -197,16 +184,9 @@ end
 
 -- set viewer state according to zoom state
 function PDFReader:rfzoom(page, preCache)
-	--self.fullwidth_orig, self.fullheight_orig = self.fullwidth, self.fullheight
-	-- Bugfix: self.cur_bbox is set with unflowed page size
-	--local dc = UniReader.setzoom(self, page, preCache)
-	local dc = DrawContext.new()
-	--self.fullwidth, self.fullheight = self.fullwidth_orig, self.fullheight_orig
-	--self.globalzoom_mode = self.ZOOM_BY_VALUE
-	self.globalzoom_mode = self.ZOOM_FIT_TO_PAGE_WIDTH
-	self.globalzoom = 1
+
+	self.globalzoom_mode = self.ZOOM_BY_VALUE
 	
-	Debug("rfzoom: fullheight", self.fullheight)
 	if(self.min_offset_x > 0) then
 		self.min_offset_x = 0
 	end
@@ -214,38 +194,135 @@ function PDFReader:rfzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 	
+	local dc = DrawContext.new()
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
 		Debug("gamma correction: ", self.globalgamma)
 		dc:setGamma(self.globalgamma)
 	end
 	
 	return dc
+end	
+
+-- "save/restore states when alternating reflow state ":
+function PDFReader:restoreReaderStates()
+	local tmp_states = {
+		globalzoom = self.globalzoom,
+		offset_x = self.offset_x,
+		offset_y = self.offset_y,
+		dest_x = self.dest_x,
+		dest_y = self.dest_y,
+		min_offset_x = self.min_offset_x,
+		min_offset_y = self.min_offset_y,
+		pan_x = self.pan_x,
+		pan_y = self.pan_y
+	}
+	
+	self.globalzoom = self.last_mode_states.globalzoom
+	self.offset_x = self.last_mode_states.offset_x
+	self.offset_y = self.last_mode_states.offset_y
+	self.dest_x = self.last_mode_states.dest_x
+	self.dest_y = self.last_mode_states.dest_y
+	self.min_offset_x = self.last_mode_states.min_offset_x
+	self.min_offset_y = self.last_mode_states.min_offset_y
+	self.pan_x = self.last_mode_states.pan_x
+	self.pan_y = self.last_mode_states.pan_y
+	
+	self.last_mode_states = {
+		globalzoom = tmp_states.globalzoom,
+		offset_x = tmp_states.offset_x,
+		offset_y = tmp_states.offset_y,
+		dest_x = tmp_states.dest_x,
+		dest_y = tmp_states.dest_y,
+		min_offset_x = tmp_states.min_offset_x,
+		min_offset_y = tmp_states.min_offset_y,
+		pan_x = tmp_states.pan_x,
+		pan_y = tmp_states.pan_y
+	}
+end
+
+function PDFReader:rfNextView()
+	local pageno = self.pageno
+
+	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
+	Debug("nextView offset_y", self.offset_y, "min_offset_y", self.min_offset_y)
+	if self.offset_y <= self.min_offset_y then
+		-- hit content bottom, turn to next page top
+		self.offset_x = 0
+		self.offset_y = 0
+		pageno = pageno + 1
+	else
+		-- goto next view of current page
+		local offset_y_dec = self.offset_y - G_height + self.pan_overlap_vertical
+		self.offset_y = offset_y_dec > self.min_offset_y and offset_y_dec or self.min_offset_y
+	end
+	
+	return pageno
+end
+
+function PDFReader:rfPrevView()
+	local pageno = self.pageno
+
+	Debug("prevView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
+	if self.offset_y >= 0 then
+		-- hit content top, turn to previous page bottom
+		self.offset_x = 0
+		self.offset_y = -2012534
+		pageno = pageno - 1
+	else
+		-- goto previous view of current page
+		local offset_y_inc = self.offset_y + G_height - self.pan_overlap_vertical
+		self.offset_y = offset_y_inc < 0 and offset_y_inc or 0
+	end
+
+	return pageno
 end
 
 -- command definitions
-function PDFReader:addAllCommands()
-	UniReader.addAllCommands(self)
-	self.commands:addGroup("< >",{
-		Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
-		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
-		"previous/next page",
-		function(unireader,keydef)
-			self.offset_y = 0
-			unireader:goto(
-			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			and unireader:prevView() or unireader:nextView())
-		end)
-		
+function PDFReader:init()
+	self:addAllCommands()
+	self:adjustPDFReaderCommand(self.reflow_mode_enable)
+	-- init last_mode_states. maybe somewhere else?
+	self.last_mode_states = {
+		globalzoom = self.globalzoom,
+		offset_x = self.offset_x,
+		offset_y = self.offset_y,
+		dest_x = self.dest_x,
+		dest_y = self.dest_y,
+		min_offset_x = self.min_offset_x,
+		min_offset_y = self.min_offset_y,
+		pan_x = self.pan_x,
+		pan_y = self.pan_y
+	}
+end
+
+function PDFReader:adjustPDFReaderCommand(reflow_mode)
+	if reflow_mode then
+		self.commands:del(KEY_Z, nil,"Z")
+		self.commands:del(KEY_Z, MOD_ALT, "Z")
+		self.commands:del(KEY_Z, MOD_SHIFT, "Z")
+		self.commands:addGroup("< >",{
+			Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
+			Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
+			"previous/next page",
+			function(pdfreader,keydef)
+				pdfreader:goto(
+				(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
+				and pdfreader:rfPrevView() or pdfreader:rfNextView())
+			end)
+	else
+		PDFReader:addAllCommands()
+	end
 	self.commands:add(KEY_R, nil, "R",
-		"toggle reflow page",
+		"toggle reflow mode",
 		function(pdfreader)
 			pdfreader.reflow_mode_enable = not pdfreader.reflow_mode_enable
+			pdfreader:adjustPDFReaderCommand(pdfreader.reflow_mode_enable)
+			pdfreader:restoreReaderStates()
 			if pdfreader.reflow_mode_enable then
 				InfoMessage:inform("Turning reflow ON", nil, 1, MSG_AUX)
 			else
 				InfoMessage:inform("Turning reflow OFF", nil, 1, MSG_AUX)
 			end
-			self.settings:saveSetting("reflow_mode_enable", pdfreader.reflow_mode_enable)
 			self:redrawCurrentPage()
 		end)
 end
