@@ -427,7 +427,7 @@ end
 
 function CREReader:adjustCreReaderCommands()
 	self.commands:delGroup("[joypad]")
-	self.commands:delGroup(MOD_ALT.."K/L")
+	self.commands:delGroup(MOD_ALT.."H/J")
 	self.commands:del(KEY_G, nil, "G")
 	self.commands:del(KEY_J, MOD_SHIFT, "J")
 	self.commands:del(KEY_K, MOD_SHIFT, "K")
@@ -621,11 +621,12 @@ function CREReader:adjustCreReaderCommands()
 			end
 		end
 	)
-	self.commands:addGroup(MOD_ALT.."up/down",{
-		Keydef:new(KEY_FW_UP,MOD_ALT), Keydef:new(KEY_FW_DOWN,MOD_ALT)},
+	self.commands:addGroup(MOD_ALT.."K/L",{
+		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
 		"Jump between bookmarks",
 		function(unireader,keydef)
-			if keydef.keycode == KEY_FW_UP then
+			local bm = nil
+			if keydef.keycode == KEY_K then
 				bm = self:prevBookMarkedPage()
 			else
 				bm = self:nextBookMarkedPage()
