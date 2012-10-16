@@ -112,13 +112,14 @@ POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 all: kpdfview
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
+		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
@@ -154,6 +155,9 @@ ft.o: %.o: %.c $(THIRDPARTYLIBS)
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
+
+k2pdfopt.o: %.o: %.c
+	$(CC) -c -I$(MUPDFDIR)/ $(CFLAGS) $< -o $@
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@

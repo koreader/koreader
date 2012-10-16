@@ -20,6 +20,7 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pdf.h"
+#include "k2pdfopt.h"
 #include <stdio.h>
 #include <math.h>
 #include <stddef.h>
@@ -511,6 +512,96 @@ static int closePage(lua_State *L) {
 	return 0;
 }
 
+static int reflowPage(lua_State *L) {
+	fz_context *ctx;
+	fz_device *dev;
+	fz_pixmap *pix;
+	fz_rect bounds,bounds2;
+	fz_matrix ctm;
+	fz_bbox bbox;
+
+	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+
+	double dpi = 200;
+	double dpp;
+	dpp = dpi / 72.;
+	pix = NULL;
+	fz_var(pix);
+	bounds = fz_bound_page(page->doc->xref, page->page);
+	ctm = fz_scale(dpp, dpp);
+	//    ctm=fz_concat(ctm,fz_rotate(rotation));
+	bounds2 = fz_transform_rect(ctm, bounds);
+	bbox = fz_round_rect(bounds2);
+	//    ctm=fz_translate(0,-page->mediabox.y1);
+	//    ctm=fz_concat(ctm,fz_scale(dpp,-dpp));
+	//    ctm=fz_concat(ctm,fz_rotate(page->rotate));
+	//    ctm=fz_concat(ctm,fz_rotate(0));
+	//    bbox=fz_round_rect(fz_transform_rect(ctm,page->mediabox));
+	//    pix=fz_new_pixmap_with_rect(colorspace,bbox);
+	pix = fz_new_pixmap_with_bbox(page->doc->context, fz_device_gray, bbox);
+	printf("bbox:%d,%d,%d,%d\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1);
+	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
+	dev = fz_new_draw_device(page->doc->context, pix);
+#ifdef MUPDF_TRACE
+	fz_device *tdev;
+	fz_try(page->doc->context) {
+		tdev = fz_new_trace_device(page->doc->context);
+		fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+	}
+	fz_always(page->doc->context) {
+		fz_free_device(tdev);
+	}
+#endif
+	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_free_device(dev);
+
+	if(dc->gamma >= 0.0) {
+		fz_gamma_pixmap(page->doc->context, pix, dc->gamma);
+	}
+	int width, height;
+	k2pdfopt_mupdf_reflow_bmp(page->doc->context, pix, 0);
+	k2pdfopt_mupdf_rfbmp_size(&width, &height);
+
+	lua_pushnumber(L, (double)width);
+	lua_pushnumber(L, (double)height);
+
+	fz_drop_pixmap(page->doc->context, pix);
+
+	return 2;
+}
+
+static int drawReflowedPage(lua_State *L) {
+	static unsigned char *bmptr = NULL;
+
+	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
+ 	k2pdfopt_mupdf_rfbmp_ptr(&bmptr);
+
+	uint8_t *bbptr = (uint8_t*)bb->data;
+	uint8_t *pmptr = (uint8_t*)bmptr;
+
+	int x_offset = 0;
+	int y_offset = 0;
+
+	bbptr += bb->pitch * y_offset;
+	int x, y;
+	for(y = y_offset; y < bb->h; y++) {
+		for(x = x_offset/2; x < (bb->w/2); x++) {
+			int p = x*2 - x_offset;
+			bbptr[x] = (((pmptr[p + 1] & 0xF0) >> 4) | (pmptr[p] & 0xF0)) ^ 0xFF;
+		}
+		bbptr += bb->pitch;
+		pmptr += bb->w;
+		if (bb->w & 1) {
+			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+		}
+	}
+
+	return 0;
+}
+
 static int drawPage(lua_State *L) {
 	fz_pixmap *pix;
 	fz_device *dev;
@@ -657,6 +748,8 @@ static const struct luaL_Reg pdfpage_meth[] = {
 	{"getPageLinks", getPageLinks},
 	{"close", closePage},
 	{"__gc", closePage},
+	{"reflow", reflowPage},
+	{"rfdraw", drawReflowedPage},
 	{"draw", drawPage},
 	{NULL, NULL}
 };
