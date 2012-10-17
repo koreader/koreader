@@ -87,7 +87,6 @@ function PDFReader:drawOrCache(no, preCache)
 	end
 	
 	local dc = self:rfzoom(page, preCache)
-	self.globalzoom_orig = self.globalzoom
 
 	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
 	-- they are always positive.
@@ -144,7 +143,7 @@ function PDFReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	self.fullwidth, self.fullheight = page:reflow(dc, self.globalzoom)
+	self.fullwidth, self.fullheight = page:reflow(dc)
 	--self.fullwidth, self.fullheight = page:reflow(dc, self.globalzoom)
 	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
 	
@@ -184,7 +183,7 @@ end
 
 -- set viewer state according to zoom state
 function PDFReader:rfzoom(page, preCache)
-
+	local dc = DrawContext.new()
 	self.globalzoom_mode = self.ZOOM_BY_VALUE
 	
 	if(self.min_offset_x > 0) then
@@ -194,7 +193,9 @@ function PDFReader:rfzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 	
-	local dc = DrawContext.new()
+	dc:setZoom(self.globalzoom)
+	self.globalzoom_orig = self.globalzoom
+	
 	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
 		Debug("gamma correction: ", self.globalgamma)
 		dc:setGamma(self.globalgamma)
