@@ -227,17 +227,7 @@ function PDFReader:restoreReaderStates()
 	self.pan_x = self.last_mode_states.pan_x
 	self.pan_y = self.last_mode_states.pan_y
 	
-	self.last_mode_states = {
-		globalzoom = tmp_states.globalzoom,
-		offset_x = tmp_states.offset_x,
-		offset_y = tmp_states.offset_y,
-		dest_x = tmp_states.dest_x,
-		dest_y = tmp_states.dest_y,
-		min_offset_x = tmp_states.min_offset_x,
-		min_offset_y = tmp_states.min_offset_y,
-		pan_x = tmp_states.pan_x,
-		pan_y = tmp_states.pan_y
-	}
+	self.last_mode_states = tmp_states
 end
 
 function PDFReader:rfNextView()
