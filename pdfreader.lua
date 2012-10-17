@@ -287,9 +287,21 @@ end
 
 function PDFReader:adjustPDFReaderCommand(reflow_mode)
 	if reflow_mode then
+		self.commands:del(KEY_A, nil,"A")
+		self.commands:del(KEY_A, MOD_SHIFT, "A")
+		self.commands:del(KEY_D, nil,"D")
+		self.commands:del(KEY_D, MOD_SHIFT, "D")
+		self.commands:del(KEY_F, nil,"F")
+		self.commands:del(KEY_F, MOD_SHIFT, "F")
 		self.commands:del(KEY_Z, nil,"Z")
 		self.commands:del(KEY_Z, MOD_ALT, "Z")
 		self.commands:del(KEY_Z, MOD_SHIFT, "Z")
+		self.commands:del(KEY_X, nil,"X")
+		self.commands:del(KEY_X, MOD_SHIFT, "X")
+		self.commands:del(KEY_N, nil,"N")
+		self.commands:del(KEY_N, MOD_SHIFT, "N")
+		self.commands:del(KEY_L, nil, "L")
+		self.commands:del(KEY_L, MOD_SHIFT, "L")
 		self.commands:addGroup("< >",{
 			Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
 			Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
@@ -300,7 +312,7 @@ function PDFReader:adjustPDFReaderCommand(reflow_mode)
 				and pdfreader:rfPrevView() or pdfreader:rfNextView())
 			end)
 	else
-		PDFReader:addAllCommands()
+		self:addAllCommands()
 	end
 	self.commands:add(KEY_R, nil, "R",
 		"toggle reflow mode",
