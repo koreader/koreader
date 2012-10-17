@@ -522,9 +522,8 @@ static int reflowPage(lua_State *L) {
 
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
-	double zoom = (double) luaL_checknumber(L, 3);
 
-	double dpi = 250*zoom;
+	double dpi = 250*(dc->zoom);
 	double dpp;
 	dpp = dpi / 72.;
 	pix = NULL;
