@@ -19,6 +19,7 @@
 require "alt_getopt"
 require "pdfreader"
 require "djvureader"
+require "koptreader"
 require "picviewer"
 require "crereader"
 require "filechooser"
