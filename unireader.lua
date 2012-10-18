@@ -1067,9 +1067,9 @@ function UniReader:drawOrCache(no, preCache)
 	-- #3 goal: we render the full page
 	-- #4 goal: we render next page, too. (TODO)
 
-	local pg_w = G_width / ( self.doc:getPages() )
 	local page_indicator = function()
 		if Debug('page_indicator',no) then
+			local pg_w = G_width / ( self.doc:getPages() )
 			fb.bb:invertRect( pg_w*(no-1),0, pg_w,10)
 			fb:refresh(1,     pg_w*(no-1),0, pg_w,10)
 		end
