@@ -140,7 +140,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread \
+		-lm -ldl -lpthread -ljpeg -L$(MUPDFLIBDIR) \
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
