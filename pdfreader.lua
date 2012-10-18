@@ -126,8 +126,6 @@ function PDFReader:drawOrCache(no, preCache)
 		-- ...and return blitbuffer plus offset into it
 
 		return pagehash,
-			--offset_x_in_page - self.cache[pagehash].x,
-			--offset_y_in_page - self.cache[pagehash].y
 			-self.offset_x - self.cache[pagehash].x,
 			-self.offset_y - self.cache[pagehash].y
 	end
@@ -144,7 +142,6 @@ function PDFReader:drawOrCache(no, preCache)
 	end
 	
 	self.fullwidth, self.fullheight = page:reflow(dc)
-	--self.fullwidth, self.fullheight = page:reflow(dc, self.globalzoom)
 	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
@@ -268,7 +265,6 @@ function PDFReader:rfPrevView()
 	return pageno
 end
 
--- command definitions
 function PDFReader:init()
 	self:addAllCommands()
 	self:adjustPDFReaderCommand(self.reflow_mode_enable)
@@ -286,6 +282,12 @@ function PDFReader:init()
 	}
 end
 
+function PDFReader:setDefaults()
+    self.show_overlap_enable = true
+    self.show_links_enable = false
+end
+
+-- command definitions
 function PDFReader:adjustPDFReaderCommand(reflow_mode)
 	if reflow_mode then
 		self.commands:del(KEY_A, nil,"A")
