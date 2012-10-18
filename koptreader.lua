@@ -117,7 +117,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	self.fullwidth, self.fullheight = page:reflow(dc)
+	self.fullwidth, self.fullheight = page:reflow(dc, self.render_mode)
 	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
@@ -240,7 +240,7 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_L, nil, "L")
 	self.commands:del(KEY_L, MOD_SHIFT, "L")
-	--self.commands:deleteGroup("< >")
+	--self.commands:delGroup("< >")
 	self.commands:addGroup("< >",{
 		Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
 		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},

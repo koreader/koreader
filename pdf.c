@@ -20,7 +20,6 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pdf.h"
-#include "k2pdfopt.h"
 #include <stdio.h>
 #include <math.h>
 #include <stddef.h>
@@ -560,8 +559,8 @@ static int reflowPage(lua_State *L) {
 		fz_gamma_pixmap(page->doc->context, pix, dc->gamma);
 	}
 	int width, height;
-	k2pdfopt_mupdf_reflow_bmp(page->doc->context, pix, 0);
-	k2pdfopt_mupdf_rfbmp_size(&width, &height);
+	k2pdfopt_mupdf_reflow(page->doc->context, pix, 0);
+	k2pdfopt_rfbmp_size(&width, &height);
 
 	lua_pushnumber(L, (double)width);
 	lua_pushnumber(L, (double)height);
@@ -579,7 +578,7 @@ static int drawReflowedPage(lua_State *L) {
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
 
 	uint8_t *bbptr = bb->data;
-	k2pdfopt_mupdf_rfbmp_ptr(&pmptr);
+	k2pdfopt_rfbmp_ptr(&pmptr);
 
 	int x_offset = 0;
 	int y_offset = 0;

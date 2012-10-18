@@ -158,6 +158,7 @@ UniReader:initGlobalSettings(G_reader_settings)
 -- initialize specific readers
 PDFReader:init()
 DJVUReader:init()
+KOPTReader:init()
 PICViewer:init()
 CREReader:init()
 

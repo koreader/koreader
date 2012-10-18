@@ -30,13 +30,13 @@
  */
 // #define WILLUSDEBUGX 32
 // #define WILLUSDEBUG
-#include "k2pdfopt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include "k2pdfopt.h"
 
 #define HAVE_MUPDF
 
@@ -408,43 +408,33 @@ static void bmp_contrast_adjust(WILLUSBITMAP *dest,WILLUSBITMAP *src,double cont
 static void bmp_convert_to_greyscale_ex(WILLUSBITMAP *dst, WILLUSBITMAP *src);
 static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx,
 		fz_pixmap *pixmap);
+static void handle(int wait, ddjvu_context_t *ctx);
 
 static MASTERINFO _masterinfo, *masterinfo;
-static WILLUSBITMAP _bmp, *bmp;
 static int master_bmp_inited = 0;
 static int master_bmp_width = 0;
 static int master_bmp_height = 0;
 
-void k2pdfopt_mupdf_reflow_bmp(fz_context *ctx, fz_pixmap *pix, double rot_deg) {
+static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	PAGEINFO _pageinfo, *pageinfo;
-	WILLUSBITMAP _src, *src;
 	WILLUSBITMAP _srcgrey, *srcgrey;
-	int i, status, white, pw, np, src_type, or_detect, orep_detect,
-			second_time_through;
-	int pagecount, pagestep, pages_done, is_gray, dpi;
-	double size, area_ratio, bormean;
+	int i, white, dpi;
+	double area_ratio;
 
-	masterinfo = &_masterinfo;
 	masterinfo->debugfolder[0] = '\0';
-	second_time_through = 0;
 	white = src_whitethresh; /* Will be set by adjust_contrast() or set to src_whitethresh */
 	dpi = src_dpi;
 	adjust_params_init();
 	set_region_widths();
 
-	bmp = &_bmp;
-	src = &_src;
 	srcgrey = &_srcgrey;
-
 	if (master_bmp_inited == 0) {
 		bmp_init(&masterinfo->bmp);
 		master_bmp_inited = 1;
 	}
-	// free last used master bmp
-	bmp_free(&masterinfo->bmp);
 
+	bmp_free(&masterinfo->bmp);
 	bmp_init(&masterinfo->bmp);
-	bmp_init(src);
 	bmp_init(srcgrey);
 
 	wrapbmp_init();
@@ -462,8 +452,6 @@ void k2pdfopt_mupdf_reflow_bmp(fz_context *ctx, fz_pixmap *pix, double rot_deg) 
 	bmp_fill(&masterinfo->bmp, 255, 255, 255);
 
 	BMPREGION region;
-
-	status = bmpmupdf_pixmap_to_bmp(src, ctx, pix);
 	bmp_copy(srcgrey, src);
 	adjust_contrast(src, srcgrey, &white);
 	white_margins(src, srcgrey);
@@ -479,22 +467,72 @@ void k2pdfopt_mupdf_reflow_bmp(fz_context *ctx, fz_pixmap *pix, double rot_deg) 
 	masterinfo->bgcolor = white;
 	masterinfo->fit_to_page = dst_fit_to_page;
 	/* Check to see if master bitmap might need more room */
-	bmpregion_multicolumn_add(&region, masterinfo, 1, pageinfo,
-			pages_done == 0. ? 0. : (int) (0.25 * src_dpi + .5));
+	bmpregion_multicolumn_add(&region, masterinfo, 1, pageinfo, (int) (0.25 * src_dpi + .5));
 
 	master_bmp_width = masterinfo->bmp.width;
 	master_bmp_height = masterinfo->rows;
 
 	bmp_free(srcgrey);
+}
+
+void k2pdfopt_mupdf_reflow(fz_context *ctx, fz_pixmap *pix, double rot_deg) {
+	WILLUSBITMAP _src, *src;
+	src = &_src;
+	masterinfo = &_masterinfo;
+	bmp_init(src);
+	int status = bmpmupdf_pixmap_to_bmp(src, ctx, pix);
+	k2pdfopt_reflow_bmp(masterinfo, src);
 	bmp_free(src);
 }
 
-void k2pdfopt_mupdf_rfbmp_size(int *width, int *height) {
+void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
+		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double dpi) {
+	WILLUSBITMAP _src, *src;
+	ddjvu_rect_t prect;
+	ddjvu_rect_t rrect;
+	int i, iw, ih, idpi, status;
+
+	while (!ddjvu_page_decoding_done(page))
+			handle(1, ctx);
+
+	iw = ddjvu_page_get_width(page);
+	ih = ddjvu_page_get_height(page);
+	idpi = ddjvu_page_get_resolution(page);
+	prect.x = prect.y = 0;
+	prect.w = iw * dpi / idpi;
+	prect.h = ih * dpi / idpi;
+	rrect = prect;
+
+	src = &_src;
+	masterinfo = &_masterinfo;
+	bmp_init(src);
+
+	src->width = prect.w = iw * dpi / idpi;
+	src->height = prect.h = ih * dpi / idpi;
+	src->bpp = 8;
+	rrect = prect;
+	bmp_alloc(src);
+	if (src->bpp == 8) {
+		int ii;
+		for (ii = 0; ii < 256; ii++)
+		src->red[ii] = src->blue[ii] = src->green[ii] = ii;
+	}
+
+	ddjvu_format_set_row_order(fmt, 1);
+
+	status = ddjvu_page_render(page, mode, &prect, &rrect, fmt,
+			bmp_bytewidth(src), (char *) src->data);
+
+	k2pdfopt_reflow_bmp(masterinfo, src);
+	bmp_free(src);
+}
+
+void k2pdfopt_rfbmp_size(int *width, int *height) {
 	*width = master_bmp_width;
 	*height = master_bmp_height;
 }
 
-void k2pdfopt_mupdf_rfbmp_ptr(unsigned char** bmp_ptr_ptr) {
+void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr) {
 	*bmp_ptr_ptr = masterinfo->bmp.data;
 }
 
@@ -6336,3 +6374,29 @@ static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx,
 		}
 	return (0);
 }
+
+static void handle(int wait, ddjvu_context_t *ctx)
+    {
+    const ddjvu_message_t *msg;
+
+    if (!ctx)
+        return;
+    if (wait)
+        msg = ddjvu_message_wait(ctx);
+    while ((msg = ddjvu_message_peek(ctx)))
+        {
+        switch(msg->m_any.tag)
+            {
+            case DDJVU_ERROR:
+                fprintf(stderr,"ddjvu: %s\n", msg->m_error.message);
+                if (msg->m_error.filename)
+                    fprintf(stderr,"ddjvu: '%s:%d'\n",
+                      msg->m_error.filename, msg->m_error.lineno);
+            exit(10);
+            default:
+            break;
+            }
+        }
+    ddjvu_message_pop(ctx);
+}
+
