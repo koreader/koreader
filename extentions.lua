@@ -1,6 +1,7 @@
 -- List of acceptable extensions
 
 ext = {
+	koptRead = ";djvu;pdf;",
 	djvuRead = ";djvu;",
 	pdfRead  = ";pdf;xps;cbz;",
 	creRead  = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;",
@@ -13,6 +14,9 @@ function ext:getReader(ftype)
 	local s = ";"
 	if ftype == "" then
 		return nil
+	-- for testing use koptreader for djvu/pdf files by default
+	elseif string.find(self.koptRead,s..ftype..s) then
+		return KOPTReader
 	elseif string.find(self.pdfRead,s..ftype..s) then
 		return PDFReader
 	elseif string.find(self.djvuRead,s..ftype..s) then

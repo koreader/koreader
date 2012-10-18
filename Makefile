@@ -112,13 +112,14 @@ POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 all: kpdfview
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
+		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
@@ -154,6 +155,9 @@ ft.o: %.o: %.c $(THIRDPARTYLIBS)
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
+
+k2pdfopt.o: %.o: %.c
+	$(CC) -c -I$(MUPDFDIR)/ -I$(DJVUDIR)/ $(CFLAGS) $< -o $@
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
@@ -257,7 +261,7 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
-LUA_FILES=alt_getopt.lua commands.lua crereader.lua dialog.lua djvureader.lua extentions.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua picviewer.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
+LUA_FILES=alt_getopt.lua commands.lua crereader.lua dialog.lua djvureader.lua extentions.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua koptreader.lua picviewer.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
 
 customupdate: all
 	# ensure that build binary is for ARM

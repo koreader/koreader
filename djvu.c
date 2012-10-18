@@ -470,6 +470,54 @@ static int closePage(lua_State *L) {
 	return 0;
 }
 
+static int reflowPage(lua_State *L) {
+
+	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	ddjvu_render_mode_t mode = (int) luaL_checkint(L, 3);
+
+	double dpi = 250*(dc->zoom);
+
+	int width, height;
+	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat, dpi);
+	k2pdfopt_rfbmp_size(&width, &height);
+
+	lua_pushnumber(L, (double)width);
+	lua_pushnumber(L, (double)height);
+
+	return 2;
+}
+
+static int drawReflowedPage(lua_State *L) {
+	uint8_t *pmptr = NULL;
+
+	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
+	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
+
+	uint8_t *bbptr = bb->data;
+	k2pdfopt_rfbmp_ptr(&pmptr);
+
+	int x_offset = 0;
+	int y_offset = 0;
+
+	bbptr += bb->pitch * y_offset;
+	int x, y;
+	for(y = y_offset; y < bb->h; y++) {
+		for(x = x_offset/2; x < (bb->w/2); x++) {
+			int p = x*2 - x_offset;
+			bbptr[x] = (((pmptr[p + 1] & 0xF0) >> 4) | (pmptr[p] & 0xF0)) ^ 0xFF;
+		}
+		bbptr += bb->pitch;
+		pmptr += bb->w;
+		if (bb->w & 1) {
+			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+		}
+	}
+
+	return 0;
+}
+
 static int drawPage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
@@ -597,6 +645,8 @@ static const struct luaL_Reg djvupage_meth[] = {
 	{"getUsedBBox", getUsedBBox},
 	{"close", closePage},
 	{"__gc", closePage},
+	{"reflow", reflowPage},
+	{"rfdraw", drawReflowedPage},
 	{"draw", drawPage},
 	{NULL, NULL}
 };
