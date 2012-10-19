@@ -63,15 +63,6 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	local dc = self:setzoom(page, preCache)
-
-	-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
-	-- they are always positive.
-	-- you can see self.offset_x_& self.offset_y as the offset within
-	-- draw space, which includes the page. So it can be negative and positive.
-	local offset_x_in_page = -self.offset_x
-	local offset_y_in_page = -self.offset_y
-	if offset_x_in_page < 0 then offset_x_in_page = 0 end
-	if offset_y_in_page < 0 then offset_y_in_page = 0 end
 	
 	-- check if we have relevant cache contents
 	local pagehash = no..'_'..(self.reflow_mode_enable and 1 or 0)..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
@@ -81,6 +72,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		-- requested part is within cached tile
 		-- ...so properly clean page
 		page:close()
+		
 		self.min_offset_x = fb.bb:getWidth() - self.cache[pagehash].w
 		self.min_offset_y = fb.bb:getHeight() - self.cache[pagehash].h
 		if(self.min_offset_x > 0) then
@@ -90,9 +82,22 @@ function KOPTReader:drawOrCache(no, preCache)
 			self.min_offset_y = 0
 		end
 		
+		if self.offset_x < self.min_offset_x then
+			self.offset_x = self.min_offset_x
+		end
+		
 		if self.offset_y < self.min_offset_y then
 			self.offset_y = self.min_offset_y
 		end
+		
+		-- offset_x_in_page & offset_y_in_page is the offset within zoomed page
+		-- they are always positive.
+		-- you can see self.offset_x_& self.offset_y as the offset within
+		-- draw space, which includes the page. So it can be negative and positive.
+		local offset_x_in_page = -self.offset_x
+		local offset_y_in_page = -self.offset_y
+		if offset_x_in_page < 0 then offset_x_in_page = 0 end
+		if offset_y_in_page < 0 then offset_y_in_page = 0 end
 		
 		Debug("cached page offset_x",self.offset_x,"offset_y",self.offset_y,"min_offset_x",self.min_offset_x,"min_offset_y",self.min_offset_y)
 		-- ...and give it more time to live (ttl), except if we're precaching
@@ -102,8 +107,8 @@ function KOPTReader:drawOrCache(no, preCache)
 		-- ...and return blitbuffer plus offset into it
 
 		return pagehash,
-			-self.offset_x - self.cache[pagehash].x,
-			-self.offset_y - self.cache[pagehash].y
+			offset_x_in_page - self.cache[pagehash].x,
+			offset_y_in_page - self.cache[pagehash].y
 	end
 	
 	-- okay, we do not have it in cache yet.
@@ -147,7 +152,29 @@ function KOPTReader:drawOrCache(no, preCache)
 	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
 	page:rfdraw(dc, self.cache[pagehash].bb)
 	page:close()
-
+	
+	self.min_offset_x = fb.bb:getWidth() - self.cache[pagehash].w
+	self.min_offset_y = fb.bb:getHeight() - self.cache[pagehash].h
+	if(self.min_offset_x > 0) then
+			self.min_offset_x = 0
+		end
+	if(self.min_offset_y > 0) then
+		self.min_offset_y = 0
+	end
+	
+	if self.offset_x < self.min_offset_x then
+		self.offset_x = self.min_offset_x
+	end
+	
+	if self.offset_y < self.min_offset_y then
+		self.offset_y = self.min_offset_y
+	end
+	
+	local offset_x_in_page = -self.offset_x
+	local offset_y_in_page = -self.offset_y
+	if offset_x_in_page < 0 then offset_x_in_page = 0 end
+	if offset_y_in_page < 0 then offset_y_in_page = 0 end
+	
 	-- return hash and offset within blitbuffer
 	return pagehash,
 		offset_x_in_page - tile.x,
@@ -176,6 +203,19 @@ function KOPTReader:setzoom(page, preCache)
 	
 	return dc
 end	
+
+-- adjust zoom state and trigger re-rendering
+function KOPTReader:setGlobalZoom(zoom)
+	if self.globalzoom ~= zoom then
+		local last_zoom = self.globalzoom
+		self.globalzoom = zoom
+		-- we will guess the offset_y in zoomed view.
+		-- it is not a good enough guess but simple enough.
+		self.offset_x = 0
+		self.offset_y = self.offset_y*zoom/last_zoom
+		self:redrawCurrentPage()
+	end
+end
 
 function KOPTReader:nextView()
 	local pageno = self.pageno
@@ -229,6 +269,8 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_A, MOD_SHIFT, "A")
 	self.commands:del(KEY_D, nil,"D")
 	self.commands:del(KEY_D, MOD_SHIFT, "D")
+	self.commands:del(KEY_S, nil,"S")
+	self.commands:del(KEY_S, MOD_SHIFT, "S")
 	self.commands:del(KEY_F, nil,"F")
 	self.commands:del(KEY_F, MOD_SHIFT, "F")
 	self.commands:del(KEY_Z, nil,"Z")
@@ -240,4 +282,5 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_L, nil, "L")
 	self.commands:del(KEY_L, MOD_SHIFT, "L")
+	self.commands:del(KEY_M, nil, "M")
 end
