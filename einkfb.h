@@ -27,6 +27,7 @@ struct fb_var_screeninfo {
 #else
 #include <linux/fb.h>
 #include "include/einkfb.h"
+#include "include/mxcfb.h"
 #endif
 
 #include <lua.h>
