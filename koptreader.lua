@@ -240,14 +240,4 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_L, nil, "L")
 	self.commands:del(KEY_L, MOD_SHIFT, "L")
-	--self.commands:delGroup("< >")
-	self.commands:addGroup("< >",{
-		Keydef:new(KEY_PGBCK,nil),Keydef:new(KEY_LPGBCK,nil),
-		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
-		"previous/next page",
-		function(koptreader,keydef)
-			koptreader:goto(
-			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
-			and koptreader:prevView() or koptreader:nextView())
-		end)
 end
