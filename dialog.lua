@@ -168,8 +168,8 @@ function InfoMessage:chooseMethodForEvent(event)
 	if item_no then
 		self.InfoMethod[event] = item_no - 1
 		-- just to illustrate the way how the selected method works; might be removed
-		self:inform("Event = "..event..", Method = "..self.InfoMethod[event], -1500, 1, event,
-			"You have chosen the method number "..self.InfoMethod[event].." for the event item number "..event)
+		-- self:inform("Event = "..event..", Method = "..self.InfoMethod[event], -1500, 1, event,
+		--	"You have chosen the method number "..self.InfoMethod[event].." for the event item number "..event)
 	end
 end
 
