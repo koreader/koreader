@@ -1,7 +1,6 @@
 -- List of acceptable extensions
 
 ext = {
-	koptRead = ";djvu;pdf;",
 	djvuRead = ";djvu;",
 	pdfRead  = ";pdf;xps;cbz;",
 	creRead  = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;",
@@ -10,17 +9,22 @@ ext = {
 }
 
 
-function ext:getReader(ftype)
+function ext:getReader(ftype, oldreader)
 	local s = ";"
 	if ftype == "" then
 		return nil
-	-- for testing use koptreader for djvu/pdf files by default
-	elseif string.find(self.koptRead,s..ftype..s) then
-		return KOPTReader
 	elseif string.find(self.pdfRead,s..ftype..s) then
-		return PDFReader
+		if oldreader and oldreader.use_koptreader then
+			return KOPTReader
+		else
+			return PDFReader
+		end
 	elseif string.find(self.djvuRead,s..ftype..s) then
-		return DJVUReader
+		if oldreader and oldreader.use_koptreader then
+			return KOPTReader
+		else
+			return DJVUReader
+		end
 	elseif string.find(self.picRead,s..ftype..s) then
 		return PICViewer
 	elseif FileChooser.filemanager_expert_mode > FileChooser.BEGINNERS_MODE
