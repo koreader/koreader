@@ -65,7 +65,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	local dc = self:setzoom(page, preCache)
 	
 	-- check if we have relevant cache contents
-	local pagehash = no..'_'..(self.reflow_mode_enable and 1 or 0)..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
+	local pagehash = no..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
