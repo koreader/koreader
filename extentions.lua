@@ -14,7 +14,7 @@ function ext:getReader(ftype, oldreader)
 	if ftype == "" then
 		return nil
 	elseif string.find(self.pdfRead,s..ftype..s) then
-		if oldreader and oldreader.use_koptreader == true then
+		if oldreader and oldreader.use_koptreader then
 			return KOPTReader
 		else
 			return PDFReader
