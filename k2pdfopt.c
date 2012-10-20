@@ -90,18 +90,10 @@
  ** Constants from the front of the CRC standard math tables
  ** (Accuracy = 50 digits)
  */
-/* The 50 digits cause problems with MPW's Mr. C on the Macintosh, */
-/* so I've truncated to 20 digits.                                 */
-/*
- #define PI      3.14159265358979323846264338327950288419716939937511
- #define SQRT2   1.41421356237309504880168872420969807856967187537695
- #define SQRT3   1.73205080756887729352744634150587236694280525381039
- #define LOG10E  0.43429448190325182765112891891660508229439700580367
- */
-#define PI      3.1415926535897932384
-#define SQRT2   1.4142135623730950488
-#define SQRT3   1.7320508075688772935
-#define LOG10E  0.4342944819032518276
+#define PI      3.14159265358979323846264338327950288419716939937511
+#define SQRT2   1.41421356237309504880168872420969807856967187537695
+#define SQRT3   1.73205080756887729352744634150587236694280525381039
+#define LOG10E  0.43429448190325182765112891891660508229439700580367
 #define DBPERNEP    (20.*LOG10E)
 
 #define SRC_TYPE_PDF     1
@@ -414,6 +406,9 @@ static MASTERINFO _masterinfo, *masterinfo;
 static int master_bmp_inited = 0;
 static int master_bmp_width = 0;
 static int master_bmp_height = 0;
+static int max_page_width_pix = 3000;
+static int max_page_height_pix = 4000;
+static double shrink_factor = 0.9;
 
 static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	PAGEINFO _pageinfo, *pageinfo;
@@ -475,14 +470,62 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	bmp_free(srcgrey);
 }
 
-void k2pdfopt_mupdf_reflow(fz_context *ctx, fz_pixmap *pix, double rot_deg) {
+void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
+		double dpi, double gamma, double rot_deg) {
+	fz_device *dev;
+	fz_pixmap *pix;
+	fz_rect bounds,bounds2;
+	fz_matrix ctm;
+	fz_bbox bbox;
 	WILLUSBITMAP _src, *src;
+
+	double dpp;
+	do {
+		dpp = dpi / 72.;
+		pix = NULL;
+		fz_var(pix);
+		bounds = fz_bound_page(doc, page);
+		ctm = fz_scale(dpp, dpp);
+		//    ctm=fz_concat(ctm,fz_rotate(rotation));
+		bounds2 = fz_transform_rect(ctm, bounds);
+		bbox = fz_round_rect(bounds2);
+		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,dpi);
+		dpi = dpi*shrink_factor;
+	} while (bbox.x1 > max_page_width_pix | bbox.y1 > max_page_height_pix);
+	//    ctm=fz_translate(0,-page->mediabox.y1);
+	//    ctm=fz_concat(ctm,fz_scale(dpp,-dpp));
+	//    ctm=fz_concat(ctm,fz_rotate(page->rotate));
+	//    ctm=fz_concat(ctm,fz_rotate(0));
+	//    bbox=fz_round_rect(fz_transform_rect(ctm,page->mediabox));
+	//    pix=fz_new_pixmap_with_rect(colorspace,bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_gray, bbox);
+	fz_clear_pixmap_with_value(ctx, pix, 0xff);
+	dev = fz_new_draw_device(ctx, pix);
+#ifdef MUPDF_TRACE
+	fz_device *tdev;
+	fz_try(ctx) {
+		tdev = fz_new_trace_device(ctx);
+		fz_run_page(doc, page, tdev, ctm, NULL);
+	}
+	fz_always(ctx) {
+		fz_free_device(tdev);
+	}
+#endif
+	fz_run_page(doc, page, dev, ctm, NULL);
+	fz_free_device(dev);
+
+	if(gamma >= 0.0) {
+		fz_gamma_pixmap(ctx, pix, gamma);
+	}
+
 	src = &_src;
 	masterinfo = &_masterinfo;
 	bmp_init(src);
 	int status = bmpmupdf_pixmap_to_bmp(src, ctx, pix);
 	k2pdfopt_reflow_bmp(masterinfo, src);
 	bmp_free(src);
+
+	fz_drop_pixmap(ctx, pix);
 }
 
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
@@ -499,8 +542,12 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 	ih = ddjvu_page_get_height(page);
 	idpi = ddjvu_page_get_resolution(page);
 	prect.x = prect.y = 0;
-	prect.w = iw * dpi / idpi;
-	prect.h = ih * dpi / idpi;
+	do {
+		prect.w = iw * dpi / idpi;
+		prect.h = ih * dpi / idpi;
+		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",prect.x,prect.y,prect.w,prect.h,dpi);
+		dpi = dpi*shrink_factor;
+	} while (prect.w > max_page_width_pix | prect.h > max_page_height_pix);
 	rrect = prect;
 
 	src = &_src;
