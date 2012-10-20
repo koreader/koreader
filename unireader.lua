@@ -954,7 +954,6 @@ function UniReader:preLoadSettings(filename)
 	local tmp = self.settings:readSetting("use_koptreader")
 	if tmp ~= nil then
 		self.use_koptreader = tmp
-		print("set use_koptreader=", self.use_koptreader)
 	end
 end
 
