@@ -108,8 +108,8 @@ function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, cface)
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
 	fb.bb:paintRect(xpos, ypos, width, 2, barcolor)
 	fb.bb:paintRect(xpos+(width-2)/2, ypos, 2, self.options_H, barcolor)
-	fb.bb:paintRect(xpos, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.always_default and 1 or 0))
-	fb.bb:paintRect(xpos+(width-2)/2, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.always_default and 0 or 1))
+	fb.bb:paintRect(xpos, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.remember_reader and 1 or 0))
+	fb.bb:paintRect(xpos+(width-2)/2, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.remember_reader and 0 or 1))
 	-- draw option text
 	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, cface, "Always(A)", true)
 	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, cface, "Just once(O)", true)
@@ -224,8 +224,8 @@ function ReaderChooser:addAllCommands()
 	self.commands:add(KEY_A, nil, "A",
 		"remember reader choice",
 		function(self)
-			if not self.always_default then
-				self.always_default = true
+			if not self.remember_reader then
+				self.remember_reader = true
 				self.optiondirty = true
 			end
 		end
@@ -234,8 +234,8 @@ function ReaderChooser:addAllCommands()
 	self.commands:add(KEY_O, nil, "O",
 		"forget reader choice",
 		function(self)
-			if self.always_default then
-				self.always_default = false
+			if self.remember_reader then
+				self.remember_reader = false
 				self.optiondirty = true
 			end
 		end
