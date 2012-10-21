@@ -68,7 +68,6 @@ UniReader = {
 	show_overlap = 0,
 	show_overlap_enable,
 	show_links_enable,
-	use_koptreader,
 
 	-- the document:
 	doc = nil,
@@ -950,11 +949,6 @@ end
 function UniReader:preLoadSettings(filename)
 	self.settings = DocSettings:open(filename)
 	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
-
-	local tmp = self.settings:readSetting("use_koptreader")
-	if tmp ~= nil then
-		self.use_koptreader = tmp
-	end
 end
 
 -- all defaults which can be overriden by reader objects
@@ -962,7 +956,6 @@ end
 function UniReader:setDefaults()
 	self.show_overlap_enable = true
 	self.show_links_enable = true
-	self.use_koptreader = false
 end
 
 -- This is a low-level method that can be shared with all readers.
@@ -2628,19 +2621,15 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end)
 
-	self.commands:add(KEY_R, MOD_ALT, "R",
-		"toggle between standard and koptreader",
+	self.commands:add(KEY_C, nil, "C",
+		"clear reader association with this doc",
 		function(unireader)
-			unireader.use_koptreader = not unireader.use_koptreader
-			if unireader.use_koptreader then
-				InfoMessage:inform("Switching to KOPTReader", 1000, 1, MSG_AUX)
+			if self.settings:readSetting("last_reader") then
+				InfoMessage:inform("Clearing reader association", nil, 1, MSG_AUX)
+				self.settings:delSetting("last_reader")
 			else
-				InfoMessage:inform("Switching to STANDARD Reader", 1000, 1, MSG_AUX)
+				InfoMessage:inform("This doc has not been associated with a reader yet", nil, 1, MSG_AUX)
 			end
-			self.settings:saveSetting("use_koptreader", unireader.use_koptreader)
-			self.doc:close()
-			self.doc = nil
-			return "break"
 		end)
 
 	self.commands:add(KEY_R, MOD_SHIFT, "R",

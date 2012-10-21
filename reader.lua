@@ -26,18 +26,24 @@ require "settings"
 require "screen"
 require "commands"
 require "dialog"
-require "extentions"
+require "readerchooser"
+
+-- option parsing:
+longopts = {
+	password = "p",
+	goto = "g",
+	gamma = "G",
+	debug = "d",
+	help = "h"
+}
 
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local reader = nil
 
-	reader = ext:getReader(file_type)
+	reader = ReaderChooser:getReader(filename)
 	if reader then
 		InfoMessage:inform("Opening document... ", nil, 0, MSG_AUX)
-		reader:preLoadSettings(filename)
-		-- re-establish the reader due to use_koptreader setting
-		reader = ext:getReader(file_type, reader)
 		reader:preLoadSettings(filename)
 		local ok, err = reader:open(filename)
 		if ok then
