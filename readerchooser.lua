@@ -8,11 +8,13 @@ require "picviewer"
 require "crereader"
 
 registry = {
-	PDFReader  = {PDFReader, ";pdf;xps;cbz;"},
-	DJVUReader = {DJVUReader, ";djvu;"},
-	KOPTReader = {KOPTReader, ";djvu;pdf;"},
-	CREReader  = {CREReader, ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;"},
-	PICViewer = {PICViewer, ";jpg;jpeg;"},
+	-- registry format:
+	-- reader_name = {reader_object, supported_formats, priority}
+	PDFReader  = {PDFReader, ";pdf;xps;cbz;", 1},
+	DJVUReader = {DJVUReader, ";djvu;", 1},
+	KOPTReader = {KOPTReader, ";djvu;pdf;", 2},
+	CREReader  = {CREReader, ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;", 1},
+	PICViewer = {PICViewer, ";jpg;jpeg;", 1},
 	-- seems to accept pdb-files for PalmDoc only
 }
 
@@ -21,15 +23,16 @@ ReaderChooser = {
 	title_H = 35,	-- title height
 	title_bar_H = 15, -- title bar height
 	options_H = 35, -- options height
+	options_bar_T = 2, -- options bar thickness
 	spacing = 35,	-- spacing between lines
-	margin_H = 150,	-- horisontal margin
+	margin_H = 120,	-- horisontal margin
 	margin_V = 300, -- vertical margin
-	margin_I = 30,  -- reader item margin
+	margin_I = 50,  -- reader item margin
 	margin_O = 10,  -- option margin
 	
 	-- options text
-	ALWAYS = "Always(A)",
-	ONCE = "Just once(O)",
+	OPTION_TYPE = "Remember this type(T)",
+	OPTION_FILE = "Remember this file(F)",
 	
 	-- data variables
 	readers = {},
@@ -40,7 +43,8 @@ ReaderChooser = {
 	dialogdirty = true,
 	markerdirty = false,
 	optiondirty = true,
-	remember_reader = false,
+	remember_default = false,
+	remember_last = false,
 }
 
 function GetRegisteredReaders(ftype)
@@ -51,13 +55,14 @@ function GetRegisteredReaders(ftype)
 			table.insert(readers,key)
 		end
 	end
+	table.sort(readers, function(a,b) return registry[a][3]<registry[b][3] end)
 	return readers
 end
 
 -- find the first reader registered with this file type
 function ReaderChooser:getReaderByType(ftype)
 	local readers = GetRegisteredReaders(ftype)
-	if readers[1] then
+	if #readers > 1 then
 		return registry[readers[1]][1]
 	else
 		return nil
@@ -68,23 +73,39 @@ function ReaderChooser:getReaderByName(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local readers = GetRegisteredReaders(file_type)
 	if #readers > 1 then -- more than one reader are registered with this file type
-		local settings = DocSettings:open(filename)
-		local last_reader = settings:readSetting("last_reader")
+		local default_readers = G_reader_settings:readSetting("default_readers")
+		
+		if default_readers then
+			default_reader = default_readers[file_type]
+			if default_reader then
+				return registry[default_reader][1]
+			end
+		end
+		
+		local file_settings = DocSettings:open(filename)
+		local last_reader = file_settings:readSetting("last_reader")
 		Debug("Reading saved preference:", last_reader)
 		if last_reader then
-			settings:close()
+			file_settings:close()
 			return registry[last_reader][1]
 		else
 			local name = self:choose(readers)
 			if name then
-				if self.remember_reader then
-					Debug("Saving last reader:", name)
-					settings:saveSetting("last_reader", name)
+				if self.remember_default then
+					if not default_readers then
+						default_readers = {}
+					end
+					default_readers[file_type] = name
+					G_reader_settings:saveSetting("default_readers", default_readers)
 				end
-				settings:close()
+				if self.remember_last then
+					Debug("Saving last reader:", name)
+					file_settings:saveSetting("last_reader", name)
+				end
+				file_settings:close()
 				return registry[name][1]
 			else
-				settings:close()
+				file_settings:close()
 				return nil
 			end
 		end
@@ -118,16 +139,18 @@ function ReaderChooser:drawReaderItem(name, xpos, ypos, cface)
 end
 
 function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, cface)
-	-- draw option box
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
-	fb.bb:paintRect(xpos, ypos, width, 2, barcolor)
-	fb.bb:paintRect(xpos+(width-2)/2, ypos, 2, self.options_H, barcolor)
-	fb.bb:paintRect(xpos, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.remember_reader and 1 or 0))
-	fb.bb:paintRect(xpos+(width-2)/2, ypos+2, (width-2)/2, self.options_H-2, bgcolor+3*(self.remember_reader and 0 or 1))
+	local optbar_T = self.options_bar_T
+	-- draw option border
+	fb.bb:paintRect(xpos, ypos, width, self.options_bar_T, barcolor)
+	fb.bb:paintRect(xpos+(width-optbar_T)/2, ypos, optbar_T, self.options_H, barcolor)
+	-- draw option cell
+	fb.bb:paintRect(xpos, ypos+self.options_bar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_default and 1 or 0))
+	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+2, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_last and 1 or 0))
 	-- draw option text
-	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, cface, "Always(A)", true)
-	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, cface, "Just once(O)", true)
-	fb:refresh(1, xpos, ypos, width, self.options_H-2)
+	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, cface, self.OPTION_TYPE, true)
+	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, cface, self.OPTION_FILE, true)
+	fb:refresh(1, xpos, ypos, width, self.options_H-optbar_T)
 end
 
 function ReaderChooser:choose(readers)
@@ -140,8 +163,8 @@ function ReaderChooser:choose(readers)
 	self:addAllCommands()
 	
 	local tface = Font:getFace("tfont", 23)
+	local cface = Font:getFace("cfont", 20)
 	local fface = Font:getFace("ffont", 16)
-	local cface = Font:getFace("cfont", 22)
 	
 	local topleft_x, topleft_y = self.margin_H, self.margin_V
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
@@ -177,7 +200,7 @@ function ReaderChooser:choose(readers)
 		end
 		
 		if self.optiondirty then
-			self:drawOptions(botleft_x, botleft_y-self.options_H, 5, 3, cface)
+			self:drawOptions(botleft_x, botleft_y-self.options_H, 5, 3, fface)
 			self.optiondirty = false
 		end
 			
@@ -233,23 +256,19 @@ function ReaderChooser:addAllCommands()
 		end
 	)
 	
-	self.commands:add(KEY_A, nil, "A",
-		"remember reader choice",
+	self.commands:add(KEY_T, nil, "T",
+		"remember reader choice for this type",
 		function(self)
-			if not self.remember_reader then
-				self.remember_reader = true
-				self.optiondirty = true
-			end
+			self.remember_default = not self.remember_default
+			self.optiondirty = true
 		end
 	)
 	
-	self.commands:add(KEY_O, nil, "O",
-		"forget reader choice",
+	self.commands:add(KEY_F, nil, "F",
+		"remember reader choice for this file",
 		function(self)
-			if self.remember_reader then
-				self.remember_reader = false
-				self.optiondirty = true
-			end
+			self.remember_last = not self.remember_last
+			self.optiondirty = true
 		end
 	)
 	
@@ -260,7 +279,7 @@ function ReaderChooser:addAllCommands()
 			return "break"
 		end
 	)
-	self.commands:add(KEY_BACK, nil, "Back",
+	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, Home",
 		"back",
 		function(self)
 			return "break"
