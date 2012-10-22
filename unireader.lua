@@ -3155,6 +3155,7 @@ function UniReader:addAllCommands()
 
 				local shortcut_offset = 0
 				local shortcut_map
+				local num_shortcuts = #SelectMenu.item_shortcuts-1
 
 				local render_shortcuts = function()
 					if need_refresh then
@@ -3164,7 +3165,7 @@ function UniReader:addAllCommands()
 					local shortcut_nr = 1
 					shortcut_map = {}
 
-					for i = 1, #SelectMenu.item_shortcuts, 1 do
+					for i = 1, num_shortcuts, 1 do
 						local link = visible_links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
@@ -3179,6 +3180,9 @@ function UniReader:addAllCommands()
 						if x and y and h then
 							local face = Font:getFace("rifont", h)
 							Debug("shortcut position:", x,y, "letter=", SelectMenu.item_shortcuts[shortcut_nr], "for", shortcut_nr)
+							if shortcut_nr == 29 then -- skip KEY_SLASH as not available on Kindle 3
+								shortcut_nr = shortcut_nr + 1
+							end
 							renderUtf8Text(fb.bb, x, y + h - 1, face, SelectMenu.item_shortcuts[shortcut_nr])
 							shortcut_map[shortcut_nr] = i + shortcut_offset
 							shortcut_nr = shortcut_nr + 1
@@ -3208,23 +3212,21 @@ function UniReader:addAllCommands()
 							link = ev.code - KEY_Q + 1
 						elseif ev.code >= KEY_A and ev.code <= KEY_L then
 							link = ev.code - KEY_A + 11
-						elseif ev.code == KEY_SLASH then
-							link = 20
 						elseif ev.code >= KEY_Z and ev.code <= KEY_M then
 							link = ev.code - KEY_Z + 21
 						elseif ev.code == KEY_DOT then
 							link = 28
 						elseif ev.code == KEY_SYM then
-							link = 29
+							link = 20
 						elseif ev.code == KEY_ENTER then
 							link = 30
 						elseif ev.code == KEY_BACK then
 							goto_page = unireader.pageno
-						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #visible_links - 30 then
-							shortcut_offset = shortcut_offset + 30
+						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #visible_links - num_shortcuts then
+							shortcut_offset = shortcut_offset + num_shortcuts
 							render_shortcuts()
-						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
-							shortcut_offset = shortcut_offset - 30
+						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= num_shortcuts then
+							shortcut_offset = shortcut_offset - num_shortcuts
 							render_shortcuts()
 						else
 							need_refresh = false
