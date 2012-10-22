@@ -3155,6 +3155,7 @@ function UniReader:addAllCommands()
 
 				local shortcut_offset = 0
 				local shortcut_map
+				local num_shortcuts = #SelectMenu.item_shortcuts-1
 
 				local render_shortcuts = function()
 					if need_refresh then
@@ -3164,7 +3165,7 @@ function UniReader:addAllCommands()
 					local shortcut_nr = 1
 					shortcut_map = {}
 
-					for i = 1, #SelectMenu.item_shortcuts-1, 1 do
+					for i = 1, num_shortcuts, 1 do
 						local link = visible_links[ i + shortcut_offset ]
 						if link == nil then break end
 						Debug("link", i, shortcut_offset, link)
@@ -3221,11 +3222,11 @@ function UniReader:addAllCommands()
 							link = 30
 						elseif ev.code == KEY_BACK then
 							goto_page = unireader.pageno
-						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #visible_links - 30 then
-							shortcut_offset = shortcut_offset + 30
+						elseif ( ev.code == KEY_FW_RIGHT or ev.code == KEY_FW_DOWN ) and shortcut_offset <= #visible_links - num_shortcuts then
+							shortcut_offset = shortcut_offset + num_shortcuts
 							render_shortcuts()
-						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= 30 then
-							shortcut_offset = shortcut_offset - 30
+						elseif ( ev.code == KEY_FW_LEFT or ev.code == KEY_FW_UP ) and shortcut_offset >= num_shortcuts then
+							shortcut_offset = shortcut_offset - num_shortcuts
 							render_shortcuts()
 						else
 							need_refresh = false
