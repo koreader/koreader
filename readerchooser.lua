@@ -71,16 +71,21 @@ function ReaderChooser:getReaderByName(filename)
 	if readers[2] then -- more than 2 readers registered with this file type
 		local settings = DocSettings:open(filename)
 		local last_reader = settings:readSetting("last_reader")
+		Debug("Reading saved preference:", last_reader)
 		if last_reader then
+			settings:close()
 			return registry[last_reader][1]
 		else
 			local name = self:choose(readers)
 			if name then
 				if self.remember_reader then
+					Debug("Saving last reader:", name)
 					settings:saveSetting("last_reader", name)
 				end
+				settings:close()
 				return registry[name][1]
 			else
+				settings:close()
 				return nil
 			end
 		end

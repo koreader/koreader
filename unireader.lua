@@ -2621,14 +2621,14 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end)
 
-	self.commands:add(KEY_C, nil, "C",
+	self.commands:add(KEY_C, MOD_ALT, "C",
 		"clear reader association with this doc",
 		function(unireader)
 			if self.settings:readSetting("last_reader") then
-				InfoMessage:inform("Clearing reader association", nil, 1, MSG_AUX)
+				InfoMessage:inform("Clearing reader association", 1000, 1, MSG_AUX)
 				self.settings:delSetting("last_reader")
 			else
-				InfoMessage:inform("This doc has not been associated with a reader yet", nil, 1, MSG_AUX)
+				InfoMessage:inform("This doc has not been associated with a reader yet", 1000, 1, MSG_AUX)
 			end
 		end)
 
