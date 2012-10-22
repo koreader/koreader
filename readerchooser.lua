@@ -62,7 +62,7 @@ end
 -- find the first reader registered with this file type
 function ReaderChooser:getReaderByType(ftype)
 	local readers = GetRegisteredReaders(ftype)
-	if #readers > 1 then
+	if #readers >= 1 then
 		return registry[readers[1]][1]
 	else
 		return nil
