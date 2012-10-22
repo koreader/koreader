@@ -8,7 +8,7 @@ require "fileinfo"
 require "inputbox"
 require "selectmenu"
 require "dialog"
-require "extentions"
+require "readerchooser"
 
 FileChooser = {
 	title_H = 40,	-- title height
@@ -141,7 +141,7 @@ function FileChooser:readDir()
 		elseif lfs.attributes(self.path.."/"..f, "mode") == "file"
 			and not string.match(f, "^%.[^.]") then
 			local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-			if ext:getReader(file_type) then
+			if ReaderChooser:getReaderByType(file_type) then
 				table.insert(self.files, f)
 			end
 		end

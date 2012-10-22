@@ -35,12 +35,12 @@ ReaderChooser = {
 	readers = {},
 	n_readers = 0,
 	final_choice = nil,
+	last_item = 0,
+	current_item = 1,
 	-- state variables
 	dialogdirty = true,
 	markerdirty = false,
 	optiondirty = true,
-	last_item = 0,
-	current_item = 1,
 	remember_reader = false,
 }
 
@@ -55,7 +55,17 @@ function GetRegisteredReaders(ftype)
 	return readers
 end
 
-function ReaderChooser:getReader(filename)
+-- find the first reader registered with this file type
+function ReaderChooser:getReaderByType(ftype)
+	local readers = GetRegisteredReaders(ftype)
+	if readers[1] then
+		return registry[readers[1]][1]
+	else
+		return nil
+	end
+end
+
+function ReaderChooser:getReaderByName(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local readers = GetRegisteredReaders(file_type)
 	if readers[2] then -- more than 2 readers registered with this file type

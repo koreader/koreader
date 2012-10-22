@@ -70,7 +70,7 @@ function CREReader:open(filename)
 		return false, "Error unzipping file. "
 	end
 	-- if the zip entry is not cre-document
-	if ext:getReader(file_type) ~= CREReader then
+	if ReaderChooser:getReaderByType(file_type) ~= CREReader then
 		return false, "Zip contains improper content. "
 	end
 	-- these two format use the same css file

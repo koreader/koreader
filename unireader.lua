@@ -1007,7 +1007,7 @@ function UniReader:loadSettings(filename)
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
 		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
 		local ftype = string.lower(string.match(filename, ".+%.([^.]+)") or "")
-		if ext:getReader(ftype) ~= CREReader then
+		if ReaderChooser:getReaderByType(ftype) ~= CREReader then
 			self.globalgamma = self.settings:readSetting("gamma") or self.globalgamma
 			local bbox = self.settings:readSetting("bbox")
 			Debug("bbox loaded ", bbox)

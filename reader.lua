@@ -41,7 +41,7 @@ function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local reader = nil
 
-	reader = ReaderChooser:getReader(filename)
+	reader = ReaderChooser:getReaderByName(filename)
 	if reader then
 		InfoMessage:inform("Opening document... ", nil, 0, MSG_AUX)
 		reader:preLoadSettings(filename)
