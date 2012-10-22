@@ -279,7 +279,7 @@ function ReaderChooser:addAllCommands()
 			return "break"
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"back",
 		function(self)
 			return "break"
