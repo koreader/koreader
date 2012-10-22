@@ -33,7 +33,6 @@ ReaderChooser = {
 	
 	-- data variables
 	readers = {},
-	n_readers = 0,
 	final_choice = nil,
 	last_item = 0,
 	current_item = 1,
@@ -68,7 +67,7 @@ end
 function ReaderChooser:getReaderByName(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local readers = GetRegisteredReaders(file_type)
-	if readers[2] then -- more than 2 readers registered with this file type
+	if #readers > 1 then -- more than one reader are registered with this file type
 		local settings = DocSettings:open(filename)
 		local last_reader = settings:readSetting("last_reader")
 		Debug("Reading saved preference:", last_reader)
@@ -89,7 +88,7 @@ function ReaderChooser:getReaderByName(filename)
 				return nil
 			end
 		end
-	elseif readers[1] then
+	elseif #readers == 1 then
 		return registry[readers[1]][1]
 	else
 		return nil
@@ -133,7 +132,6 @@ end
 
 function ReaderChooser:choose(readers)
 	self.readers = {}
-	self.n_readers = 0
 	self.final_choice = nil
 	self.readers = readers
 	self.dialogdirty = true
@@ -153,12 +151,11 @@ function ReaderChooser:choose(readers)
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 3)
 	Debug("Drawing title")
 	self:drawTitle("Complete action using", topleft_x, topleft_y, width, tface)
-	self.n_readers = 0
+	
 	local reader_text_width = {}
 	for index,name in ipairs(self.readers) do
 		Debug("Drawing reader:",index,name)
 		reader_text_width[index] = self:drawReaderItem(name, topleft_x, topleft_y+self.title_H+self.spacing*index+10, cface)
-		self.n_readers = self.n_readers + 1
 	end
 	
 	fb:refresh(1, topleft_x, topleft_y, width, height)
@@ -215,11 +212,11 @@ function ReaderChooser:addAllCommands()
 		"next item",
 		function(self)
 			self.last_item = self.current_item
-			self.current_item = (self.current_item + self.n_readers + 1)%self.n_readers
+			self.current_item = (self.current_item + #self.readers + 1)%#self.readers
 			if self.current_item == 0 then
-				self.current_item = self.current_item + self.n_readers
+				self.current_item = self.current_item + #self.readers
 			end
-			Debug("Last item:", self.last_item, "Current item:", self.current_item, "N items:", self.n_readers)
+			Debug("Last item:", self.last_item, "Current item:", self.current_item, "N items:", #self.readers)
 			self.markerdirty = true
 		end
 	)
@@ -227,11 +224,11 @@ function ReaderChooser:addAllCommands()
 		"previous item",
 		function(self)
 			self.last_item = self.current_item
-			self.current_item = (self.current_item + self.n_readers - 1)%self.n_readers
+			self.current_item = (self.current_item + #self.readers - 1)%#self.readers
 			if self.current_item == 0 then
-				self.current_item = self.current_item + self.n_readers
+				self.current_item = self.current_item + #self.readers
 			end
-			Debug("Last item:", self.last_item, "Current item:", self.current_item, "N items:", self.n_readers)
+			Debug("Last item:", self.last_item, "Current item:", self.current_item, "N items:", #self.readers)
 			self.markerdirty = true
 		end
 	)
@@ -263,7 +260,7 @@ function ReaderChooser:addAllCommands()
 			return "break"
 		end
 	)
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"back",
 		function(self)
 			return "break"
