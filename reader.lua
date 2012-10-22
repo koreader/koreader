@@ -28,15 +28,6 @@ require "commands"
 require "dialog"
 require "readerchooser"
 
--- option parsing:
-longopts = {
-	password = "p",
-	goto = "g",
-	gamma = "G",
-	debug = "d",
-	help = "h"
-}
-
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local reader = nil
