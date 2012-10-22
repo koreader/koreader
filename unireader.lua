@@ -2234,7 +2234,7 @@ function UniReader:inputLoop()
 		local ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
 		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
-			local secs, usecs = util.gettime()
+			--local secs, usecs = util.gettime()
 			keydef = Keydef:new(ev.code, getKeyModifier())
 			Debug("key pressed:", tostring(keydef))
 			command = self.commands:getByKeydef(keydef)
@@ -2248,9 +2248,9 @@ function UniReader:inputLoop()
 				Debug("command not found:", tostring(command))
 			end
 
-			local nsecs, nusecs = util.gettime()
-			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			Debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
+			--local nsecs, nusecs = util.gettime()
+			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			--Debug("E: T="..ev.type, " V="..ev.value, " C="..ev.code, " DUR=", dur)
 
 			if ev.value == EVENT_VALUE_KEY_REPEAT then
 				self.rcount = 0
