@@ -2625,7 +2625,7 @@ function UniReader:addAllCommands()
 		"reset default reader preferences",
 		function(unireader)
 			G_reader_settings:delSetting("default_readers")
-			InfoMessage:inform("Reseting default reader preferences", 1000, 1, MSG_AUX)
+			InfoMessage:inform("Reseting reader preferences", 1000, 1, MSG_AUX)
 		end)
 	
 	self.commands:add(KEY_C, MOD_ALT, "C",
@@ -2635,7 +2635,7 @@ function UniReader:addAllCommands()
 				InfoMessage:inform("Clearing reader association", 1000, 1, MSG_AUX)
 				self.settings:delSetting("last_reader")
 			else
-				InfoMessage:inform("This doc has not been associated with a reader yet", 1000, 1, MSG_AUX)
+				InfoMessage:inform("No reader associated", 1000, 1, MSG_AUX)
 			end
 		end)
 
