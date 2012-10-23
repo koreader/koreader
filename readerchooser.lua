@@ -12,7 +12,8 @@ registry = {
 	-- reader_name = {reader_object, supported_formats, priority}
 	PDFReader  = {PDFReader, ";pdf;xps;cbz;", 1},
 	DJVUReader = {DJVUReader, ";djvu;", 1},
-	KOPTReader = {KOPTReader, ";djvu;pdf;", 2},
+	PDFReflow = {KOPTReader, ";pdf;", 2},
+	DJVUReflow = {KOPTReader, ";djvu;", 2},
 	CREReader  = {CREReader, ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;", 1},
 	PICViewer = {PICViewer, ";jpg;jpeg;", 1},
 	-- seems to accept pdb-files for PalmDoc only
@@ -25,11 +26,16 @@ ReaderChooser = {
 	options_H = 35, -- options height
 	options_bar_T = 2, -- options bar thickness
 	spacing = 35,	-- spacing between lines
-	margin_H = 120,	-- horisontal margin
+	margin_H = 115,	-- horisontal margin
 	margin_V = 300, -- vertical margin
 	margin_I = 50,  -- reader item margin
 	margin_O = 10,  -- option margin
+	title_font_size = 23,  -- title font size
+	item_font_size = 20,   -- reader item font size
+	option_font_size = 17, -- option font size
 	
+	-- title text
+	TITLE = "Complete action using",
 	-- options text
 	OPTION_TYPE = "Remember this type(T)",
 	OPTION_FILE = "Remember this file(F)",
@@ -132,13 +138,13 @@ function ReaderChooser:drawTitle(text, xpos, ypos, w, font_face)
 	
 end
 
-function ReaderChooser:drawReaderItem(name, xpos, ypos, cface)
+function ReaderChooser:drawReaderItem(name, xpos, ypos, font_face)
 	-- draw reader name
-	renderUtf8Text(fb.bb, xpos+self.margin_I, ypos, cface, name, true)
-	return sizeUtf8Text(0, G_width, cface, name, true).x
+	renderUtf8Text(fb.bb, xpos+self.margin_I, ypos, font_face, name, true)
+	return sizeUtf8Text(0, G_width, font_face, name, true).x
 end
 
-function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, cface)
+function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, font_face)
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
 	local optbar_T = self.options_bar_T
 	-- draw option border
@@ -148,8 +154,8 @@ function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, cface)
 	fb.bb:paintRect(xpos, ypos+self.options_bar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_default and 1 or 0))
 	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+2, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_last and 1 or 0))
 	-- draw option text
-	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, cface, self.OPTION_TYPE, true)
-	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, cface, self.OPTION_FILE, true)
+	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_TYPE, true)
+	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_FILE, true)
 	fb:refresh(1, xpos, ypos, width, self.options_H-optbar_T)
 end
 
@@ -162,9 +168,9 @@ function ReaderChooser:choose(readers)
 	self.optiondirty = true
 	self:addAllCommands()
 	
-	local tface = Font:getFace("tfont", 23)
-	local cface = Font:getFace("cfont", 20)
-	local fface = Font:getFace("ffont", 16)
+	local tface = Font:getFace("tfont", self.title_font_size)
+	local cface = Font:getFace("cfont", self.item_font_size)
+	local fface = Font:getFace("ffont", self.option_font_size)
 	
 	local topleft_x, topleft_y = self.margin_H, self.margin_V
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
@@ -173,7 +179,7 @@ function ReaderChooser:choose(readers)
 	Debug("Drawing box")
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 3)
 	Debug("Drawing title")
-	self:drawTitle("Complete action using", topleft_x, topleft_y, width, tface)
+	self:drawTitle(self.TITLE, topleft_x, topleft_y, width, tface)
 	
 	local reader_text_width = {}
 	for index,name in ipairs(self.readers) do
