@@ -5,6 +5,7 @@ require "font"
 require "inputbox"
 require "dialog"
 require "settings"
+require "readerchooser"
 
 FileInfo = {
 	title_H = 40,	-- title height
@@ -74,7 +75,7 @@ function FileInfo:getFolderContent()
 		if j == "file" then
 			files = files + 1
 			ftype = string.match(name, ".+%.([^.]+)")
-			if ftype and ext:getReader(string.lower(ftype)) then
+			if ftype and ReaderChooser:getReaderByType(string.lower(ftype)) then
 				books = books + 1
 			end
 		elseif j == "directory" then
@@ -146,7 +147,7 @@ function FileInfo:init(path, fname)
 			table.insert(self.result, {dir = "Last read", name = self:FileCreated(history, "change")})
 			local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
 			local to_search, add, factor = "[\"last_percent\"]", "%", 100
-			if ext:getReader(file_type) ~= CREReader then
+			if ReaderChooser:getReaderByType(file_type) ~= CREReader then
 				to_search = "[\"last_page\"]"
 				add = " pages"
 				factor = 1

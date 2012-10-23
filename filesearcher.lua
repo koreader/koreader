@@ -4,7 +4,7 @@ require "graphics"
 require "font"
 require "inputbox"
 require "dialog"
-require "extentions"
+require "readerchooser"
 
 FileSearcher = {
 	title_H = 40,	-- title height
@@ -35,7 +35,7 @@ function FileSearcher:readDir()
 				local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
 				if lfs.attributes(d.."/"..f, "mode") == "directory" and f ~= "." and f~= ".." then
 					table.insert(new_dirs, d.."/"..f)
-				elseif ext:getReader(file_type) then
+				elseif ReaderChooser:getReaderByType(file_type) then
 					file_entry = {dir=d, name=f,}
 					table.insert(self.files, file_entry)
 					--Debug("file:"..d.."/"..f)
