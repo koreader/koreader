@@ -148,11 +148,11 @@ function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, font_face)
 	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
 	local optbar_T = self.options_bar_T
 	-- draw option border
-	fb.bb:paintRect(xpos, ypos, width, self.options_bar_T, barcolor)
+	fb.bb:paintRect(xpos, ypos, width, optbar_T, barcolor)
 	fb.bb:paintRect(xpos+(width-optbar_T)/2, ypos, optbar_T, self.options_H, barcolor)
 	-- draw option cell
-	fb.bb:paintRect(xpos, ypos+self.options_bar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_default and 1 or 0))
-	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+2, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_last and 1 or 0))
+	fb.bb:paintRect(xpos, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_default and 1 or 0))
+	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_last and 1 or 0))
 	-- draw option text
 	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_TYPE, true)
 	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_FILE, true)
