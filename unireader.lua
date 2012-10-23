@@ -2791,7 +2791,7 @@ function UniReader:addAllCommands()
 						factor = ev.code - KEY_Z + 20
 						x_direction = last_direction["x"]
 						y_direction = last_direction["y"]
-					elseif ev.code == KEY_BACK or ev.code == KEY_HOME then
+					elseif ev.code == KEY_BACK then
 						running_corner = false
 					end
 

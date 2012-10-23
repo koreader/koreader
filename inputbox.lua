@@ -475,7 +475,7 @@ function InputBox:addAllCommands()
 	-- NuPogodi, 02.06.12: inputmode-dependent commands are collected
 	self:ModeDependentCommands() -- here
 
-	self.commands:add({KEY_BACK, KEY_HOME}, nil, "Back, Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"back",
 		function(self)
 			self.input_string = nil

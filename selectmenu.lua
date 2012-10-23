@@ -238,7 +238,7 @@ function SelectMenu:addAllCommands()
 		HelpPage:show(0, G_height, sm.commands)
 		sm.pagedirty = true
 	end)
-	self.commands:add({KEY_BACK,KEY_HOME}, nil, "Back, Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"exit menu",
 		function(sm)
 			return "break"
@@ -249,7 +249,7 @@ end
 function SelectMenu:clearCommands()
 	self.commands = Commands:new{}
 
-	self.commands:add({KEY_BACK,KEY_HOME}, nil, "Back, Home",
+	self.commands:add(KEY_BACK, nil, "Back",
 		"exit menu",
 		function(sm)
 			return "break"
