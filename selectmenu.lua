@@ -73,6 +73,17 @@ end
 function SelectMenu:addAllCommands()
 	self.commands = Commands:new{}
 
+	local numeric_keydefs, i = {}
+	for i=1, 10 do numeric_keydefs[i]=Keydef:new(KEY_1+i-1, nil, tostring(i%10)) end
+	self.commands:addGroup("[1, 2 .. 9, 0]", numeric_keydefs,
+		"item at position 0%, 10% .. 90%, 100%",
+		function(sm)
+			local target_item = math.ceil(sm.items * (keydef.keycode-KEY_1) / 9)
+			sm.current, sm.page, sm.markerdirty, sm.pagedirty =
+				gotoTargetItem(target_item, sm.items, sm.current, sm.page, sm.perpage)
+		end
+	)
+
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"previous item",
 		function(sm)
