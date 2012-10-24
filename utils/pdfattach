@@ -12,30 +12,34 @@ progname=$(basename $0)
 
 function usage()
 {
-	echo "Usage: $progname -o file.pdf -i file1.djvu [-i file2.mp3] ..."
+	echo "Usage: $progname -o file.pdf file1.djvu [file2.mp3] ..."
 	exit 1
 }
 
-if (! getopts ":o:i:" opt); then
+if (! getopts ":o:" opt); then
 	echo "$progname: Missing options." >&2
 	usage
+fi
+
+if ! type pdflatex > /dev/null 2>&1 ; then
+	echo "$progname: pdfLaTeX program is required." >&2
+	exit 1
+fi
+
+if ! kpsewhich attachfile.sty > /dev/null 2>&1 ; then
+	echo "$progname: attachfile.sty package is required." >&2
+	exit 1
 fi
 
 declare outfile=""
 declare -a infiles=()
 declare -i infcount=0 outfcount=0
 
-while getopts ":i:o:" opt; do
+while getopts ":o:" opt; do
 	case $opt in
 	o)
-		outfile="$OPTARG"
-		outbase=$(basename $outfile | cut -d'.' -f1)
-		targetdir=$(dirname $outfile)
+		outfile=$(readlink -f "$OPTARG")
 		((outfcount++))
-		;;
-	i)
-		infiles[$infcount]=$(readlink -f "$OPTARG")
-		((infcount++))
 		;;
 	\?)
 		echo "$progname: Invalid option: -$OPTARG" >&2
@@ -48,6 +52,21 @@ while getopts ":i:o:" opt; do
 	esac
 done
 
+shift $((OPTIND-1))
+
+numargs=$#
+for ((i=1 ; i <= $numargs ; i++))
+do
+	fullname=$(readlink -f "$1")
+	if [ ! -f "$fullname" ] ; then
+		echo "$progname: file \"$fullname\" does not exist" >&2
+		usage
+	fi
+	infiles[$infcount]="$fullname"
+	((infcount++))
+	shift
+done
+
 if ((infcount == 0)) ; then
 	echo "$progname: No input file(s) specified." >&2
 	usage
@@ -58,19 +77,18 @@ if ((outfcount != 1)) ; then
 	usage
 fi
 
-
 workdir=$(mktemp --tmpdir -d pdfattach.XXXXXX)
 cd $workdir
-> ${outbase}.tex
-echo -E "\documentclass{book}" >> ${outbase}.tex
-echo -E "\usepackage{attachfile}" >> ${outbase}.tex
-echo -E "\begin{document}" >> ${outbase}.tex
-echo -E "\pagestyle{empty}" >> ${outbase}.tex
+> tmp.tex
+echo -E "\documentclass{book}" >> tmp.tex
+echo -E "\usepackage{attachfile}" >> tmp.tex
+echo -E "\begin{document}" >> tmp.tex
+echo -E "\pagestyle{empty}" >> tmp.tex
 for ((i = 0 ; i < ${#infiles[*]} ; i++));
 do
-	echo "\attachfile{${infiles[$i]}}" >> ${outbase}.tex
+	echo "\attachfile{${infiles[$i]}}" >> tmp.tex
 done
-echo -E "\end{document}" >> ${outbase}.tex
-pdflatex -halt-on-error ${outbase} > /dev/null && mv ${outbase}.pdf $targetdir
+echo -E "\end{document}" >> tmp.tex
+pdflatex -halt-on-error tmp.tex > /dev/null && mv tmp.pdf "$outfile"
 cd - > /dev/null
 rm -rf $workdir
