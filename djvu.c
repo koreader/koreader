@@ -476,16 +476,16 @@ static int reflowPage(lua_State *L) {
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 	ddjvu_render_mode_t mode = (int) luaL_checkint(L, 3);
 
-	double dpi = 250*(dc->zoom);
-
 	int width, height;
-	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat, dpi);
+	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat, dc->zoom);
 	k2pdfopt_rfbmp_size(&width, &height);
+	k2pdfopt_rfbmp_zoom(&dc->zoom);
 
 	lua_pushnumber(L, (double)width);
 	lua_pushnumber(L, (double)height);
+	lua_pushnumber(L, (double)dc->zoom);
 
-	return 2;
+	return 3;
 }
 
 static int drawReflowedPage(lua_State *L) {
