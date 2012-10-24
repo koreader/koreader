@@ -122,7 +122,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	self.fullwidth, self.fullheight = page:reflow(dc, self.render_mode)
+	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode)
 	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
