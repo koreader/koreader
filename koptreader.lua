@@ -65,7 +65,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	local dc = self:setzoom(page, preCache)
 	
 	-- check if we have relevant cache contents
-	local pagehash = no..'_'..self.globalzoom..'_'..self.globalrotate..'_'..self.globalgamma..'K'
+	local pagehash = no..'_'..self.kopt_zoom..'_'..self.globalrotate..'_'..self.kopt_gamma..'K'
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -184,8 +184,7 @@ end
 -- set viewer state according to zoom state
 function KOPTReader:setzoom(page, preCache)
 	local dc = DrawContext.new()
-	self.globalzoom_mode = self.ZOOM_BY_VALUE
-	
+		
 	if(self.min_offset_x > 0) then
 		self.min_offset_x = 0
 	end
@@ -193,12 +192,12 @@ function KOPTReader:setzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 	
-	dc:setZoom(self.globalzoom)
-	self.globalzoom_orig = self.globalzoom
+	dc:setZoom(self.kopt_zoom)
+	self.globalzoom_orig = self.kopt_zoom
 	
-	if self.globalgamma ~= self.GAMMA_NO_GAMMA then
-		Debug("gamma correction: ", self.globalgamma)
-		dc:setGamma(self.globalgamma)
+	if self.kopt_gamma ~= self.GAMMA_NO_GAMMA then
+		Debug("gamma correction: ", self.kopt_gamma)
+		dc:setGamma(self.kopt_gamma)
 	end
 	
 	return dc
@@ -206,9 +205,9 @@ end
 
 -- adjust zoom state and trigger re-rendering
 function KOPTReader:setGlobalZoom(zoom)
-	if self.globalzoom ~= zoom then
-		local last_zoom = self.globalzoom
-		self.globalzoom = zoom
+	if self.kopt_zoom ~= zoom then
+		local last_zoom = self.kopt_zoom
+		self.kopt_zoom = zoom
 		-- we will guess the offset_y in zoomed view.
 		-- it is not a good enough guess but simple enough.
 		self.offset_x = 0
@@ -217,10 +216,17 @@ function KOPTReader:setGlobalZoom(zoom)
 	end
 end
 
+-- adjust global gamma setting
+function KOPTReader:modifyGamma(factor)
+	Debug("modifyGamma, gamma=", self.kopt_gamma, " factor=", factor)
+	self.kopt_gamma = self.kopt_gamma * factor * factor;
+	InfoMessage:inform(string.format("New gamma is %.2f", self.kopt_gamma), nil, 1, MSG_AUX)
+	self:redrawCurrentPage()
+end
+
 function KOPTReader:nextView()
 	local pageno = self.pageno
 
-	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
 	Debug("nextView offset_y", self.offset_y, "min_offset_y", self.min_offset_y)
 	if self.offset_y <= self.min_offset_y then
 		-- hit content bottom, turn to next page top
@@ -238,8 +244,8 @@ end
 
 function KOPTReader:prevView()
 	local pageno = self.pageno
-
-	Debug("prevView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
+	
+	Debug("preView offset_y", self.offset_y, "min_offset_y", self.min_offset_y)
 	if self.offset_y >= 0 then
 		-- hit content top, turn to previous page bottom
 		self.offset_x = 0
@@ -257,6 +263,18 @@ end
 function KOPTReader:setDefaults()
     self.show_overlap_enable = true
     self.show_links_enable = false
+end
+
+-- backup global variables from UniReader
+function KOPTReader:loadSettings(filename)
+	UniReader.loadSettings(self,filename)
+	self.kopt_zoom = self.settings:readSetting("kopt_zoom") or 1.0
+	self.kopt_gamma = self.settings:readSetting("kopt_gamma") or 1.0
+end
+
+function KOPTReader:saveSpecialSettings()
+	self.settings:saveSetting("kopt_zoom", self.kopt_zoom)
+	self.settings:saveSetting("kopt_gamma", self.kopt_gamma)
 end
 
 function KOPTReader:init()
