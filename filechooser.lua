@@ -294,9 +294,10 @@ end
 function FileChooser:addAllCommands()
 	self.commands = Commands:new{}
 
-	self.commands:add({KEY_SPACE}, nil, "Space",
-		"refresh page manually",
+	self.commands:add(KEY_SPACE, nil, "Space",
+		"refresh file list",
 		function(self)
+			self:setPath(self.path)
 			self.pagedirty = true
 		end
 	)
