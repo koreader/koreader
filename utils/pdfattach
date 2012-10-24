@@ -68,7 +68,7 @@ for ((i=1 ; i <= $numargs ; i++))
 do
 	fullname=$(readlink -f "$1")
 	if [ ! -r "$fullname" ] ; then
-		echo "$progname: file \"$fullname\" does not exist" >&2
+		echo "$progname: cannot access the file \"$fullname\"" >&2
 		usage
 	fi
 	infiles[$infcount]="$fullname"
