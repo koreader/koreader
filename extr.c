@@ -59,7 +59,7 @@ int save_attachments(int pageno, char *targetdir)
 					sprintf(pathname, "%s/%s", targetdir, name);
 					FILE *fout = fopen(pathname, "w");
 					if (!fout) {
-						fprintf(stderr, "extr: cannot write to file %s\n", name);
+						fprintf(stderr, "extr: cannot write to file %s\n", pathname);
 						exit(1);
 					}
 					dump_stream(pdf_to_num(f_obj), fout);
