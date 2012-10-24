@@ -109,7 +109,7 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-all: kpdfview
+all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
 kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
@@ -143,6 +143,12 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		-lm -ldl -lpthread -ljpeg -L$(MUPDFLIBDIR) \
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
+
+extr:	extr.o
+	$(CC) $(CFLAGS) extr.o $(MUPDFLIBS) $(THIRDPARTYLIBS) -lm -o extr
+
+extr.o:	%.o: %.c
+	$(CC) -c -I$(MUPDFDIR)/pdf -I$(MUPDFDIR)/fitz $< -o $@
 
 slider_watcher.o: %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -203,7 +209,7 @@ fetchthirdparty:
 	cd popen-noshell && test -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
-	rm -f *.o kpdfview slider_watcher
+	rm -f *.o kpdfview slider_watcher extr
 
 cleanthirdparty:
 	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" CFLAGS="$(BASE_CFLAGS)" clean
@@ -264,13 +270,14 @@ INSTALL_DIR=kindlepdfviewer
 LUA_FILES=commands.lua crereader.lua dialog.lua djvureader.lua readerchooser.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua koptreader.lua picviewer.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
 
 customupdate: all
-	# ensure that build binary is for ARM
+	# ensure that the binaries were built for ARM
 	file kpdfview | grep ARM || exit 1
-	$(STRIP) --strip-unneeded kpdfview
+	file extr | grep ARM || exit 1
+	$(STRIP) --strip-unneeded kpdfview extr
 	rm -f kindlepdfviewer-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots}
-	cp -p README.md COPYING kpdfview kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)

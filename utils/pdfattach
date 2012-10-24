@@ -1,0 +1,118 @@
+#!/bin/bash
+
+#
+# pdfattach --- embed specified file(s) in a specified PDF file
+# Requires pdfLaTeX and attachfile.sty package to run
+# Returns 0 on success or >0 on error
+#
+# Written by Tigran Aivazian <tigran@bibles.org.uk>
+#
+
+progname=$(basename $0)
+
+function escape_tex_specialchars()
+{
+	local txt=$1
+	local res=$(echo "$txt" | sed -e "s%_%\\\_%g" -e "s%&%\\\&%g")
+	echo "$res"
+}
+
+function usage()
+{
+	echo "Usage: $progname -o file.pdf file1.djvu [file2.mp3] ..."
+	exit 1
+}
+
+if (! getopts ":o:" opt); then
+	echo "$progname: Missing options." >&2
+	usage
+fi
+
+if ! type pdflatex > /dev/null 2>&1 ; then
+	echo "$progname: pdfLaTeX program is required." >&2
+	exit 1
+fi
+
+if ! kpsewhich attachfile.sty > /dev/null 2>&1 ; then
+	echo "$progname: attachfile.sty package is required." >&2
+	exit 1
+fi
+
+declare outfile=""
+declare -a infiles=()
+declare -a infiles_texclean=()
+declare -a infilesize=()
+declare -i infcount=0 outfcount=0 totalsize=0
+
+while getopts ":o:" opt; do
+	case $opt in
+	o)
+		outfile=$(readlink -f "$OPTARG")
+		((outfcount++))
+		;;
+	\?)
+		echo "$progname: Invalid option: -$OPTARG" >&2
+		usage
+		;;
+	:)
+		echo "$progname: Option -$OPTARG requires an argument." >&2
+		usage
+		;;
+	esac
+done
+
+shift $((OPTIND-1))
+
+numargs=$#
+for ((i=1 ; i <= $numargs ; i++))
+do
+	fullname=$(readlink -f "$1")
+	if [ ! -f "$fullname" ] ; then
+		echo "$progname: file \"$fullname\" does not exist" >&2
+		usage
+	fi
+	infiles[$infcount]="$fullname"
+	infiles_texclean[$infcount]=$(escape_tex_specialchars $(basename "${infiles[$infcount]}"))
+	infilesize[$infcount]=$(stat --print="%s" "$fullname")
+	((totalsize=totalsize+${infilesize[$infcount]}))
+	((infcount++))
+	shift
+done
+
+if ((infcount == 0)) ; then
+	echo "$progname: No input file(s) specified." >&2
+	usage
+fi
+
+if ((outfcount != 1)) ; then
+	echo "$progname: One (and only one) output file must be specified." >&2
+	usage
+fi
+
+workdir=$(mktemp --tmpdir -d pdfattach.XXXXXX)
+cd $workdir
+> tmp.tex
+# emit TeX preamble
+echo -E "\documentclass{book}" >> tmp.tex
+echo -E "\usepackage[margin={1mm},papersize={9cm,12cm}]{geometry}" >> tmp.tex
+echo -E "\usepackage{hyperref,attachfile}" >> tmp.tex
+echo -E "\begin{document}" >> tmp.tex
+echo -E "\tolerance=10000\pagestyle{empty}\fontsize{7}{13}\selectfont" >> tmp.tex
+
+# emit the list of all files
+for ((i = 0 ; i < ${#infiles[*]} ; i++));
+do
+	echo -E "\noindent \hyperlink{L$i}{$((i+1))/${infcount}} \texttt{${infiles_texclean[$i]}} (${infilesize[$i]} bytes)" >> tmp.tex
+	echo >> tmp.tex
+done
+echo -E "\noindent Total size $totalsize bytes\newpage" >> tmp.tex
+
+# now emit all the attachments, one per page
+for ((i = 0 ; i < ${#infiles[*]} ; i++));
+do
+	echo -E "\noindent\hypertarget{L$i}$((i+1))/${infcount}\\\\\texttt{${infiles_texclean[$i]}} (\textattachfile[color={0 0 0}]{${infiles[$i]}}{${infilesize[$i]} bytes})\newpage" >> tmp.tex
+done
+echo -E "\end{document}" >> tmp.tex
+pdflatex -halt-on-error tmp.tex > /dev/null && mv tmp.pdf "$outfile"
+cd - > /dev/null
+rm -rf $workdir

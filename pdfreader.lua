@@ -1,7 +1,9 @@
 require "unireader"
 require "inputbox"
 
-PDFReader = UniReader:new{}
+PDFReader = UniReader:new{
+	filename -- stores the absolute pathname of the open file
+}
 
 -- open a PDF file and its settings store
 function PDFReader:open(filename)
@@ -28,6 +30,7 @@ function PDFReader:open(filename)
 		self.doc = nil
 		return false, "damaged page tree"
 	end
+	self.filename = filename
 	return true
 end
 
@@ -58,3 +61,37 @@ function PDFReader:getPageLinks(pageno)
 	return links
 end
 
+function PDFReader:init()
+	self:addAllCommands()
+	self:adjustCommands()
+end
+
+function PDFReader:adjustCommands()
+	self.commands:add(KEY_S, MOD_ALT, "S",
+		"save all attachments on this page",
+		function(self)
+			self:saveAttachments()
+	end) 
+end
+
+-- saves all attachments on the current page in the same directory
+-- as the file itself (see extr.c utility)
+function PDFReader:saveAttachments()
+	InfoMessage:inform("Saving attachments...", nil, 1, MSG_AUX)
+	local p = io.popen('./extr "'..self.filename..'" '..tostring(self.pageno), "r")
+	local count = p:read("*a")
+	p:close()
+	if count ~= "" then
+		-- double braces are needed because string.gsub() returns more than one value
+		count = tonumber((string.gsub(count, "[\n\r]+", "")))
+		if count == 0 then
+			InfoMessage:inform("No attachments found ", 1000, 1, MSG_WARN)
+		else
+			InfoMessage:inform(count.." attachment"..(count > 1 and "s" or "").." saved ",
+				1500, 1, MSG_AUX)
+		end
+	else
+		InfoMessage:inform("Failed to save attachments ", 1000, 1, MSG_WARN)
+	end
+	self:redrawCurrentPage()
+end
