@@ -50,7 +50,7 @@ int save_attachments(int pageno, char *targetdir)
 		pdf_obj *fs_obj = pdf_dict_gets(annot->obj, "FS");
 		if (fs_obj) {
 			pdf_obj *ef_obj;
-			char *name = pdf_to_str_buf(pdf_dict_gets(fs_obj, "F"));
+			char *name = basename(strdup(pdf_to_str_buf(pdf_dict_gets(fs_obj, "F"))));
 			ef_obj = pdf_dict_gets(fs_obj, "EF");
 			if (ef_obj) {
 				pdf_obj *f_obj = pdf_dict_gets(ef_obj, "F");
