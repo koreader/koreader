@@ -13,7 +13,7 @@ progname=$(basename $0)
 function escape_tex_specialchars()
 {
 	local txt=$1
-	local res=$(echo "$txt" | sed -e "s%_%\\\_%g")
+	local res=$(echo "$txt" | sed -e "s%_%\\\_%g" -e "s%&%\\\&%g")
 	echo "$res"
 }
 
