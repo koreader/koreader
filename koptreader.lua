@@ -123,7 +123,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode)
-	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight)
+	self.globalzoom_orig = self.kopt_zoom
+	Debug("page::reflowPage:", "width:", self.fullwidth, "height:", self.fullheight, "zoom:", self.kopt_zoom)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
 		-- yes we can, so do this with offset 0, 0
@@ -193,7 +194,7 @@ function KOPTReader:setzoom(page, preCache)
 	end
 	
 	dc:setZoom(self.kopt_zoom)
-	self.globalzoom_orig = self.kopt_zoom
+	Debug("setzoom:", "globalzoom_orig", self.globalzoom_orig)
 	
 	if self.kopt_gamma ~= self.GAMMA_NO_GAMMA then
 		Debug("gamma correction: ", self.kopt_gamma)

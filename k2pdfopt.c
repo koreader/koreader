@@ -218,7 +218,7 @@ static double dst_min_figure_height_in = 0.75;
 static int dst_fulljustify = -1; // 0 = no, 1 = yes
 static int dst_color = 0;
 static int dst_landscape = 0;
-static double dst_mar = 0.02;
+static double dst_mar = 0.06;
 static double dst_martop = -1.0;
 static double dst_marbot = -1.0;
 static double dst_marleft = -1.0;
@@ -491,10 +491,10 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 		//    ctm=fz_concat(ctm,fz_rotate(rotation));
 		bounds2 = fz_transform_rect(ctm, bounds);
 		bbox = fz_round_rect(bounds2);
-		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,dpi);
+		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
 		zoom_value = zoom;
 		zoom *= shrink_factor;
-		dpi *= zoom;
+		dpi *= shrink_factor;
 	} while (bbox.x1 > max_page_width_pix | bbox.y1 > max_page_height_pix);
 	//    ctm=fz_translate(0,-page->mediabox.y1);
 	//    ctm=fz_concat(ctm,fz_scale(dpp,-dpp));
@@ -553,7 +553,7 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",prect.x,prect.y,prect.w,prect.h,dpi);
 		zoom_value = zoom;
 		zoom *= shrink_factor;
-		dpi *= zoom;
+		dpi *= shrink_factor;
 	} while (prect.w > max_page_width_pix | prect.h > max_page_height_pix);
 	rrect = prect;
 
