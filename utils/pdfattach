@@ -40,6 +40,7 @@ fi
 
 declare outfile=""
 declare -a infiles=()
+declare -a infiles_texclean=()
 declare -a infilesize=()
 declare -i infcount=0 outfcount=0 totalsize=0
 
@@ -71,6 +72,7 @@ do
 		usage
 	fi
 	infiles[$infcount]="$fullname"
+	infiles_texclean[$infcount]=$(escape_tex_specialchars $(basename "${infiles[$infcount]}"))
 	infilesize[$infcount]=$(stat --print="%s" "$fullname")
 	((totalsize=totalsize+${infilesize[$infcount]}))
 	((infcount++))
@@ -90,18 +92,26 @@ fi
 workdir=$(mktemp --tmpdir -d pdfattach.XXXXXX)
 cd $workdir
 > tmp.tex
+# emit TeX preamble
 echo -E "\documentclass{book}" >> tmp.tex
 echo -E "\usepackage[margin={1mm},papersize={9cm,12cm}]{geometry}" >> tmp.tex
-echo -E "\usepackage{attachfile}" >> tmp.tex
+echo -E "\usepackage{hyperref,attachfile}" >> tmp.tex
 echo -E "\begin{document}" >> tmp.tex
-echo -E "\pagestyle{empty}\small" >> tmp.tex
+echo -E "\tolerance=10000\pagestyle{empty}\fontsize{7}{13}\selectfont" >> tmp.tex
+
+# emit the list of all files
 for ((i = 0 ; i < ${#infiles[*]} ; i++));
 do
-	descr=$(escape_tex_specialchars $(basename "${infiles[$i]}"))
-	echo -E "\noindent $((i+1)): $descr (\textattachfile[color={0 0 0}]{${infiles[$i]}}{${infilesize[$i]} bytes})" >> tmp.tex
+	echo -E "\noindent \hyperlink{L$i}{$((i+1))/${infcount}} \texttt{${infiles_texclean[$i]}} (${infilesize[$i]} bytes)" >> tmp.tex
 	echo >> tmp.tex
 done
-echo -E "\noindent Total size $totalsize bytes" >> tmp.tex
+echo -E "\noindent Total size $totalsize bytes\newpage" >> tmp.tex
+
+# now emit all the attachments, one per page
+for ((i = 0 ; i < ${#infiles[*]} ; i++));
+do
+	echo -E "\noindent\hypertarget{L$i}$((i+1))/${infcount}\\\\\texttt{${infiles_texclean[$i]}} (\textattachfile[color={0 0 0}]{${infiles[$i]}}{${infilesize[$i]} bytes})\newpage" >> tmp.tex
+done
 echo -E "\end{document}" >> tmp.tex
 pdflatex -halt-on-error tmp.tex > /dev/null && mv tmp.pdf "$outfile"
 cd - > /dev/null
