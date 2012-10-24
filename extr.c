@@ -25,7 +25,6 @@
 #include "mupdf-internal.h"
 #include <libgen.h>
 
-/* doc is shared between save_attachments() and dump_stream() */
 static pdf_document *doc;
 
 void dump_stream(int i, FILE *fout)
