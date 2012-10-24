@@ -32,6 +32,7 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double dpi);
 void k2pdfopt_rfbmp_size(int *width, int *height);
 void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr);
+void k2pdfopt_rfbmp_zoom(double *zoom);
 
 #endif
 

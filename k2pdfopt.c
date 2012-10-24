@@ -218,7 +218,7 @@ static double dst_min_figure_height_in = 0.75;
 static int dst_fulljustify = -1; // 0 = no, 1 = yes
 static int dst_color = 0;
 static int dst_landscape = 0;
-static double dst_mar = 0.02;
+static double dst_mar = 0.06;
 static double dst_martop = -1.0;
 static double dst_marbot = -1.0;
 static double dst_marleft = -1.0;
@@ -409,6 +409,7 @@ static int master_bmp_height = 0;
 static int max_page_width_pix = 3000;
 static int max_page_height_pix = 4000;
 static double shrink_factor = 0.9;
+static double zoom_value = 1.0;
 
 static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	PAGEINFO _pageinfo, *pageinfo;
@@ -471,7 +472,7 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 }
 
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
-		double dpi, double gamma, double rot_deg) {
+		double zoom, double gamma, double rot_deg) {
 	fz_device *dev;
 	fz_pixmap *pix;
 	fz_rect bounds,bounds2;
@@ -480,6 +481,7 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 	WILLUSBITMAP _src, *src;
 
 	double dpp;
+	double dpi = 250*zoom;
 	do {
 		dpp = dpi / 72.;
 		pix = NULL;
@@ -489,8 +491,10 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 		//    ctm=fz_concat(ctm,fz_rotate(rotation));
 		bounds2 = fz_transform_rect(ctm, bounds);
 		bbox = fz_round_rect(bounds2);
-		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,dpi);
-		dpi = dpi*shrink_factor;
+		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
+		zoom_value = zoom;
+		zoom *= shrink_factor;
+		dpi *= shrink_factor;
 	} while (bbox.x1 > max_page_width_pix | bbox.y1 > max_page_height_pix);
 	//    ctm=fz_translate(0,-page->mediabox.y1);
 	//    ctm=fz_concat(ctm,fz_scale(dpp,-dpp));
@@ -529,11 +533,12 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 }
 
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
-		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double dpi) {
+		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom) {
 	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
 	int i, iw, ih, idpi, status;
+	double dpi = 250*zoom;
 
 	while (!ddjvu_page_decoding_done(page))
 			handle(1, ctx);
@@ -546,7 +551,9 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		prect.w = iw * dpi / idpi;
 		prect.h = ih * dpi / idpi;
 		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",prect.x,prect.y,prect.w,prect.h,dpi);
-		dpi = dpi*shrink_factor;
+		zoom_value = zoom;
+		zoom *= shrink_factor;
+		dpi *= shrink_factor;
 	} while (prect.w > max_page_width_pix | prect.h > max_page_height_pix);
 	rrect = prect;
 
@@ -581,6 +588,10 @@ void k2pdfopt_rfbmp_size(int *width, int *height) {
 
 void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr) {
 	*bmp_ptr_ptr = masterinfo->bmp.data;
+}
+
+void k2pdfopt_rfbmp_zoom(double *zoom) {
+	*zoom = zoom_value;
 }
 
 /* ansi.c */

@@ -516,16 +516,16 @@ static int reflowPage(lua_State *L) {
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
 	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
 
-	double dpi = 250*(dc->zoom);
-
 	int width, height;
-	k2pdfopt_mupdf_reflow(page->doc->xref, page->page, page->doc->context, dpi, dc->gamma, 0);
+	k2pdfopt_mupdf_reflow(page->doc->xref, page->page, page->doc->context, dc->zoom, dc->gamma, 0);
 	k2pdfopt_rfbmp_size(&width, &height);
+	k2pdfopt_rfbmp_zoom(&dc->zoom);
 
 	lua_pushnumber(L, (double)width);
 	lua_pushnumber(L, (double)height);
+	lua_pushnumber(L, (double)dc->zoom);
 
-	return 2;
+	return 3;
 }
 
 static int drawReflowedPage(lua_State *L) {
