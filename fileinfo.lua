@@ -52,7 +52,7 @@ function getUnpackedZipSize(zipfile)
 	-- adding quotes allows us to avoid crash on zips which filename contains space(s)
 	local cmd='unzip -l \"'..zipfile..'\" | tail -1 | sed -e "s/^ *\\([0-9][0-9]*\\) *.*/\\1/"'
 	local p = io.popen(cmd, "r")
-	local res = assert(p:read("*a"))
+	local res = p:read("*a")
 	p:close()
 	res = string.gsub(res, "[\n\r]+", "")
 	return tonumber(res)
