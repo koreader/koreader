@@ -10,6 +10,13 @@
 
 progname=$(basename $0)
 
+function escape_tex_specialchars()
+{
+	local txt=$1
+	local res=$(echo "$txt" | sed -e "s%_%\\\_%g")
+	echo "$res"
+}
+
 function usage()
 {
 	echo "Usage: $progname -o file.pdf file1.djvu [file2.mp3] ..."
@@ -33,7 +40,8 @@ fi
 
 declare outfile=""
 declare -a infiles=()
-declare -i infcount=0 outfcount=0
+declare -a infilesize=()
+declare -i infcount=0 outfcount=0 totalsize=0
 
 while getopts ":o:" opt; do
 	case $opt in
@@ -63,6 +71,8 @@ do
 		usage
 	fi
 	infiles[$infcount]="$fullname"
+	infilesize[$infcount]=$(stat --print="%s" "$fullname")
+	((totalsize=totalsize+${infilesize[$infcount]}))
 	((infcount++))
 	shift
 done
@@ -81,13 +91,17 @@ workdir=$(mktemp --tmpdir -d pdfattach.XXXXXX)
 cd $workdir
 > tmp.tex
 echo -E "\documentclass{book}" >> tmp.tex
+echo -E "\usepackage[margin={1mm},papersize={9cm,12cm}]{geometry}" >> tmp.tex
 echo -E "\usepackage{attachfile}" >> tmp.tex
 echo -E "\begin{document}" >> tmp.tex
-echo -E "\pagestyle{empty}" >> tmp.tex
+echo -E "\pagestyle{empty}\small" >> tmp.tex
 for ((i = 0 ; i < ${#infiles[*]} ; i++));
 do
-	echo "\attachfile{${infiles[$i]}}" >> tmp.tex
+	descr=$(escape_tex_specialchars $(basename "${infiles[$i]}"))
+	echo -E "\noindent $((i+1)): $descr (\textattachfile[color={0 0 0}]{${infiles[$i]}}{${infilesize[$i]} bytes})" >> tmp.tex
+	echo >> tmp.tex
 done
+echo -E "\noindent Total size $totalsize bytes" >> tmp.tex
 echo -E "\end{document}" >> tmp.tex
 pdflatex -halt-on-error tmp.tex > /dev/null && mv tmp.pdf "$outfile"
 cd - > /dev/null
