@@ -472,13 +472,22 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 }
 
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
-		double zoom, double gamma, double rot_deg) {
+		double zoom, double gamma, double rot_deg, \
+		int bb_width, int bb_height, double line_space, double word_space) {
 	fz_device *dev;
 	fz_pixmap *pix;
 	fz_rect bounds,bounds2;
 	fz_matrix ctm;
 	fz_bbox bbox;
 	WILLUSBITMAP _src, *src;
+
+	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
+	dst_userheight = bb_height;
+	vertical_line_spacing = line_space;
+	word_spacing = word_space;
+
+	printf("k2pdfopt_mupdf_reflow width:%d height:%d, line space:%.2f, word space:%.2f\n", \
+			bb_width,bb_height,vertical_line_spacing,word_spacing);
 
 	double dpp;
 	double dpi = 250*zoom;
@@ -533,11 +542,18 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 }
 
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
-		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom) {
+		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom, \
+		int bb_width, int bb_height, double line_space, double word_space) {
 	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
 	int i, iw, ih, idpi, status;
+
+	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
+	dst_userheight = bb_height;
+	vertical_line_spacing = line_space;
+	word_spacing = word_space;
+
 	double dpi = 250*zoom;
 
 	while (!ddjvu_page_decoding_done(page))
