@@ -144,7 +144,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
-extr:	extr.o
+extr:	extr.o $(MUPDFLIBS) $(THIRDPARTYLIBS)
 	$(CC) $(CFLAGS) extr.o $(MUPDFLIBS) $(THIRDPARTYLIBS) -lm -o extr
 
 extr.o:	%.o: %.c
