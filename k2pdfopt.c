@@ -218,7 +218,7 @@ static double dst_min_figure_height_in = 0.75;
 static int dst_fulljustify = -1; // 0 = no, 1 = yes
 static int dst_color = 0;
 static int dst_landscape = 0;
-static double dst_mar = 0.2;
+static double dst_mar = 0.06;
 static double dst_martop = -1.0;
 static double dst_marbot = -1.0;
 static double dst_marleft = -1.0;
