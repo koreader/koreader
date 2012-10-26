@@ -26,10 +26,10 @@ KOPTConfig = {
 	HEIGHT = 200,  -- height
 	MARGIN_BOTTOM = 20,  -- window bottom margin
 	MARGIN_HORISONTAL = 75, -- window horisontal margin
-	OPTION_PADDING_T = 50, -- options top padding
-	OPTION_PADDING_H = 50,  -- options horisontal padding
+	NAME_PADDING_T = 50, -- option name top padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
-	ITEM_PADDING_H = 150,  -- items horisontal padding
+	NAME_ALIGN_RIGHT = 0.4, -- align name right to the window width
+	ITEM_ALIGN_LEFT = 0.45,	-- align item left to the window width
 	ITEM_SPACING_H = 10,   -- items horisontal spacing
 	OPT_NAME_FONT_SIZE = 20,  -- option name font size
 	OPT_ITEM_FONT_SIZE = 16, -- option item font size
@@ -58,20 +58,20 @@ function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
 end
 
 function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, refresh)
-	local xpos, ypos = xpos+self.OPTION_PADDING_H, ypos+self.OPTION_PADDING_T
+	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
+	local xpos, ypos = xpos+self.NAME_ALIGN_RIGHT*width, ypos+self.NAME_PADDING_T
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option name:", KOPTOptions[option_index].option_text)
-		renderUtf8Text(fb.bb, xpos, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
+		local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
+		renderUtf8Text(fb.bb, xpos-text_len, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
 	end
 end
 
 function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, font_face, refresh)
-	if item_index == 1 then
-		self.text_pos = 0
-	end
-	
-	local xpos = xpos+self.OPTION_PADDING_H+self.ITEM_PADDING_H+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
-	local ypos = ypos+self.OPTION_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
+	self.text_pos = (item_index == 1) and 0 or self.text_pos
+	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
+	local xpos = xpos+self.ITEM_ALIGN_LEFT*width+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
+	local ypos = ypos+self.NAME_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
 	
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "item:", text)
