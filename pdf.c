@@ -521,9 +521,11 @@ static int reflowPage(lua_State *L) {
 	double line_spacing = luaL_checknumber(L, 7);
 	double word_spacing = luaL_checknumber(L, 8);
 	int text_wrap = luaL_checkint(L, 9);
-	double contrast = luaL_checknumber(L, 10);
+	int justification = luaL_checkint(L, 10);
+	int full_just = luaL_checkint(L, 11);
+	double contrast = luaL_checknumber(L, 12);
 
-	k2pdfopt_set_params(width, height, page_margin, line_spacing, word_spacing, text_wrap, contrast);
+	k2pdfopt_set_params(width, height, page_margin, line_spacing, word_spacing, text_wrap, justification, full_just, contrast);
 	k2pdfopt_mupdf_reflow(page->doc->xref, page->page, page->doc->context, dc->zoom, dc->gamma, 0.0);
 	k2pdfopt_rfbmp_size(&width, &height);
 	k2pdfopt_rfbmp_zoom(&dc->zoom);

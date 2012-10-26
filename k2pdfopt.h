@@ -28,7 +28,7 @@
 
 void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, double contrast);
+		int wrapping, int justification, int full_just, double contrast);
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 		double zoom, double gamma, double rot_deg);
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \

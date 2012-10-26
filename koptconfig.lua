@@ -26,7 +26,7 @@ KOPTOptions =  {
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.2, 0.375, 0.5}},
+	value={0.02, 0.375, 0.5}},
 	{
 	name="text_wrap",
 	option_text="Text Wrap",
@@ -35,6 +35,22 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true},
 	value={0, 1}},
+	{
+	name="justification",
+	option_text="Justification",
+	items_text={"default","left","center","right"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	value={-1,0,1,2}},
+	{
+	name="full_just",
+	option_text="Full Justification",
+	items_text={"default","no","yes"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	value={-1,0,1}},
 	{
 	name="contrast",
 	option_text="Contrast",
@@ -47,9 +63,9 @@ KOPTOptions =  {
 
 KOPTConfig = {
 	-- UI constants
-	HEIGHT = 220,  -- height
-	MARGIN_BOTTOM = 20,  -- window bottom margin
-	MARGIN_HORISONTAL = 50, -- window horisontal margin
+	HEIGHT = 300,  -- height
+	MARGIN_BOTTOM = 30,  -- window bottom margin
+	MARGIN_HORISONTAL = 35, -- window horisontal margin
 	NAME_PADDING_T = 50, -- option name top padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
 	NAME_ALIGN_RIGHT = 0.3, -- align name right to the window width
@@ -98,7 +114,7 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
 	self.text_pos = self.text_pos + text_len
 	
-	if KOPTOptions[option_index].marker_dirty[item_index] then
+	if KOPTOptions[option_index].marker_dirty[item_index] or refresh then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "marker:", text)
 		if item_index == KOPTOptions[option_index].current_item then
 			fb.bb:paintRect(xpos, ypos+5, text_len, 3,(option_index == self.current_option) and 15 or 5)
