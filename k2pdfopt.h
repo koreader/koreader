@@ -26,12 +26,13 @@
 #include <fitz/fitz-internal.h>
 #include <libdjvu/ddjvuapi.h>
 
+void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
+		double line_space, double word_space, \
+		int wrapping, double contrast);
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
-		double zoom, double gamma, double rot_deg, int bb_width, int bb_height, \
-		double line_spacing, double word_spacing);
+		double zoom, double gamma, double rot_deg);
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
-		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom, int bb_width, int bb_height, \
-		double line_spacing, double word_spacing);
+		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom);
 void k2pdfopt_rfbmp_size(int *width, int *height);
 void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr);
 void k2pdfopt_rfbmp_zoom(double *zoom);

@@ -2,14 +2,21 @@ require "unireader"
 require "inputbox"
 require "koptconfig"
 
-konfig = {
-	width = G_width,
-	height = G_height,
+Configurable = {
 	font_size = 1.0,
 	page_margin = 0.06,
 	line_spacing = 1.2,
 	word_spacing = 0.375,
+	text_wrap = 1,
+	contrast = 1.0,
 }
+
+function Configurable:hash()
+	hash = self.font_size..'_'..self.page_margin
+	hash = hash..'_'..self.line_spacing..'_'..self.word_spacing
+	hash = hash..'_'..self.text_wrap..'_'..self.contrast
+	return hash
+end
 
 KOPTReader = UniReader:new{}
 
@@ -66,7 +73,7 @@ function KOPTReader:drawOrCache(no, preCache)
 
 	-- ideally, this should be factored out and only be called when needed (TODO)
 	local ok, page = pcall(self.doc.openPage, self.doc, no)
-	local width, height = fb.bb:getWidth(), fb.bb:getHeight()
+	local width, height = G_width, G_height
 	if not ok then
 		-- TODO: error handling
 		return nil
@@ -75,7 +82,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	local dc = self:setzoom(page, preCache)
 	
 	-- check if we have relevant cache contents
-	local pagehash = no..'_'..self.kopt_zoom..'_'..self.globalrotate..'_'..self.kopt_gamma..'_'..konfig.line_spacing..'_'..konfig.word_spacing..'K'
+	local pagehash = no..'_'..self.kopt_zoom..'_'..self.globalrotate..'_'..self.kopt_gamma..'_'..Configurable:hash()
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -133,7 +140,10 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	Debug("page::reflowPage:", "width:", width, "height:", height)
-	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, konfig.line_spacing, konfig.word_spacing)
+	local page_margin = Configurable.page_margin
+	local line_spacing, word_spacing = Configurable.line_spacing, Configurable.word_spacing
+	local text_wrap, contrast = Configurable.text_wrap, Configurable.contrast
+	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, page_margin, line_spacing, word_spacing, text_wrap, contrast)
 	self.globalzoom_orig = self.kopt_zoom
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight, "zoom:", self.kopt_zoom)
 	
@@ -294,14 +304,6 @@ function KOPTReader:init()
 	self:adjustCommands()
 end
 
-function KOPTReader:reconfigure(configurable)
-	konfig.font_size = configurable.font_size
-	konfig.page_margin = configurable.page_margin
-	konfig.line_spacing = configurable.line_spacing
-	konfig.word_spacing = configurable.word_spacing
-	self:redrawCurrentPage()
-end
-
 function KOPTReader:adjustCommands()
 	self.commands:del(KEY_A, nil,"A")
 	self.commands:del(KEY_A, MOD_SHIFT, "A")
@@ -324,7 +326,7 @@ function KOPTReader:adjustCommands()
 	self.commands:add({KEY_F,KEY_AA}, nil, "F",
 		"change koptreader configuration",
 		function(self)
-			KOPTConfig:config(KOPTReader.reconfigure, self)
+			KOPTConfig:config(KOPTReader.redrawCurrentPage, self, Configurable)
 			self:redrawCurrentPage()
 		end
 	)
