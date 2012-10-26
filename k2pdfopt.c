@@ -474,12 +474,14 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 
 void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, double contrast) {
+		int wrapping, int justification, int full_just, double contrast) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
 	vertical_line_spacing = line_space;
 	word_spacing = word_space;
 	text_wrap = wrapping;
+	dst_justify = justification;
+	dst_fulljustify = full_just;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 
 	dst_mar = page_margin;
