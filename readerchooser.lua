@@ -26,8 +26,8 @@ ReaderChooser = {
 	options_H = 35, -- options height
 	options_bar_T = 2, -- options bar thickness
 	spacing = 35,	-- spacing between lines
-	margin_H = 115,	-- horisontal margin
-	margin_V = 300, -- vertical margin
+	WIDTH = 380,    -- window width
+	HEIGHT = 220,   -- window height
 	margin_I = 50,  -- reader item margin
 	margin_O = 10,  -- option margin
 	title_font_size = 23,  -- title font size
@@ -145,7 +145,7 @@ function ReaderChooser:drawReaderItem(name, xpos, ypos, font_face)
 end
 
 function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, font_face)
-	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
+	local width, height = self.WIDTH, self.HEIGHT
 	local optbar_T = self.options_bar_T
 	-- draw option border
 	fb.bb:paintRect(xpos, ypos, width, optbar_T, barcolor)
@@ -172,9 +172,9 @@ function ReaderChooser:choose(readers)
 	local cface = Font:getFace("cfont", self.item_font_size)
 	local fface = Font:getFace("ffont", self.option_font_size)
 	
-	local topleft_x, topleft_y = self.margin_H, self.margin_V
-	local width, height = fb.bb:getWidth()-2*self.margin_H, fb.bb:getHeight()-2*self.margin_V
-	local botleft_x, botleft_y = self.margin_H, topleft_y+height
+	local width, height = self.WIDTH, self.HEIGHT
+	local topleft_x, topleft_y = (fb.bb:getWidth()-width)/2, (fb.bb:getHeight()-height)/2
+	local botleft_x, botleft_y = topleft_x, topleft_y+height
 	
 	Debug("Drawing box")
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 3)

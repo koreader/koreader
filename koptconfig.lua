@@ -26,13 +26,13 @@ KOPTConfig = {
 	HEIGHT = 200,  -- height
 	MARGIN_BOTTOM = 20,  -- window bottom margin
 	MARGIN_HORISONTAL = 75, -- window horisontal margin
-	OPTION_PADDING_T = 50, -- options top padding
-	OPTION_PADDING_H = 50,  -- options horisontal padding
+	NAME_PADDING_T = 50, -- option name top padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
-	VALUE_PADDING_H = 150,  -- values horisontal padding
-	VALUE_SPACING_H = 10,   -- values horisontal spacing
+	NAME_ALIGN_RIGHT = 0.4, -- align name right to the window width
+	ITEM_ALIGN_LEFT = 0.45,	-- align item left to the window width
+	ITEM_SPACING_H = 10,   -- items horisontal spacing
 	OPT_NAME_FONT_SIZE = 20,  -- option name font size
-	OPT_VALUE_FONT_SIZE = 16, -- option value font size
+	OPT_ITEM_FONT_SIZE = 16, -- option item font size
 	
 	-- last pos text is drawn
 	text_pos = 0,
@@ -58,20 +58,20 @@ function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
 end
 
 function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, refresh)
-	local xpos, ypos = xpos+self.OPTION_PADDING_H, ypos+self.OPTION_PADDING_T
+	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
+	local xpos, ypos = xpos+self.NAME_ALIGN_RIGHT*width, ypos+self.NAME_PADDING_T
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option name:", KOPTOptions[option_index].option_text)
-		renderUtf8Text(fb.bb, xpos, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
+		local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
+		renderUtf8Text(fb.bb, xpos-text_len, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
 	end
 end
 
 function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, font_face, refresh)
-	if item_index == 1 then
-		self.text_pos = 0
-	end
-	
-	local xpos = xpos+self.OPTION_PADDING_H+self.VALUE_PADDING_H+self.VALUE_SPACING_H*(item_index-1)+self.text_pos
-	local ypos = ypos+self.OPTION_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
+	self.text_pos = (item_index == 1) and 0 or self.text_pos
+	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
+	local xpos = xpos+self.ITEM_ALIGN_LEFT*width+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
+	local ypos = ypos+self.NAME_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
 	
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "item:", text)
@@ -94,24 +94,35 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	end
 end
 
-function KOPTConfig:drawOptions(xpos, ypos, name_font, value_font, refresh)
+function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, refresh)
 	local width, height = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL, self.HEIGHT
 	for i=1,#KOPTOptions do
 		self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, refresh)
 		for j=1,#KOPTOptions[i].items_text do
-			self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], value_font, refresh)
+			self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], item_font, refresh)
 		end
 		KOPTOptions[i].text_dirty = false
+	end
+end
+
+function KOPTConfig:makeDefault()
+	for i=1,#KOPTOptions do
+		KOPTOptions[i].text_dirty = true
+		for j=1,#KOPTOptions[i].items_text do
+			KOPTOptions[i].marker_dirty[j] = true
+		end
 	end
 end
 
 function KOPTConfig:config(callback, reader)
 	local kopt_callback = callback
 	local koptreader = reader
+	
+	self:makeDefault()
 	self:addAllCommands()
 	
 	local name_font = Font:getFace("tfont", self.OPT_NAME_FONT_SIZE)
-	local value_font = Font:getFace("cfont", self.OPT_VALUE_FONT_SIZE)
+	local item_font = Font:getFace("cfont", self.OPT_ITEM_FONT_SIZE)
 	
 	-- base window coordinates 
 	local width, height = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL, self.HEIGHT
@@ -119,7 +130,7 @@ function KOPTConfig:config(callback, reader)
 	local botleft_x, botleft_y = self.MARGIN_HORISONTAL, topleft_y+height
 	
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
-	self:drawOptions(topleft_x, topleft_y, name_font, value_font)
+	self:drawOptions(topleft_x, topleft_y, name_font, item_font)
 	fb:refresh(1, topleft_x, topleft_y, width, height)
 	
 	local ev, keydef, command, ret_code
@@ -130,11 +141,11 @@ function KOPTConfig:config(callback, reader)
 		if self.page_dirty then
 			kopt_callback(koptreader, configurable)
 			self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
-			self:drawOptions(topleft_x, topleft_y, name_font, value_font, true)
+			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true)
 			fb:refresh(1, topleft_x, topleft_y, width, height)
 			self.page_dirty = false
 		end
-		self:drawOptions(topleft_x, topleft_y, name_font, value_font)
+		self:drawOptions(topleft_x, topleft_y, name_font, item_font)
 		
 		ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
