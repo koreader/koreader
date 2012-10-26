@@ -4,13 +4,21 @@ require "settings"
 
 KOPTOptions =  {
 	{
+	name="page_margin",
+	option_text="Page Margin",
+	items_text={"small","medium","large"},
+	current_item=2,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	value={0.02, 0.06, 0.10}},
+	{
 	name="line_spacing",
 	option_text="Line Spacing",
 	items_text={"small","medium","large"},
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	space={1.0, 1.2, 1.4}},
+	value={1.0, 1.2, 1.4}},
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
@@ -18,18 +26,50 @@ KOPTOptions =  {
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	space={0.2, 0.375, 0.5}},
+	value={0.02, 0.375, 0.5}},
+	{
+	name="text_wrap",
+	option_text="Text Wrap",
+	items_text={"fitting","reflowing"},
+	current_item=2,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={0, 1}},
+	{
+	name="justification",
+	option_text="Justification",
+	items_text={"default","left","center","right"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	value={-1,0,1,2}},
+	{
+	name="full_just",
+	option_text="Full Justification",
+	items_text={"default","no","yes"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	value={-1,0,1}},
+	{
+	name="contrast",
+	option_text="Contrast",
+	items_text={"lightest","lighter","default","darker","darkest"},
+	current_item=3,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true},
+	value={0.2, 0.4, 1.0, 1.8, 2.6}},
 }
 
 KOPTConfig = {
 	-- UI constants
-	HEIGHT = 200,  -- height
-	MARGIN_BOTTOM = 20,  -- window bottom margin
-	MARGIN_HORISONTAL = 75, -- window horisontal margin
+	HEIGHT = 300,  -- height
+	MARGIN_BOTTOM = 30,  -- window bottom margin
+	MARGIN_HORISONTAL = 35, -- window horisontal margin
 	NAME_PADDING_T = 50, -- option name top padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
-	NAME_ALIGN_RIGHT = 0.4, -- align name right to the window width
-	ITEM_ALIGN_LEFT = 0.45,	-- align item left to the window width
+	NAME_ALIGN_RIGHT = 0.3, -- align name right to the window width
+	ITEM_ALIGN_LEFT = 0.35,	-- align item left to the window width
 	ITEM_SPACING_H = 10,   -- items horisontal spacing
 	OPT_NAME_FONT_SIZE = 20,  -- option name font size
 	OPT_ITEM_FONT_SIZE = 16, -- option item font size
@@ -40,13 +80,6 @@ KOPTConfig = {
 	current_option = 1,
 	-- page dirty
 	page_dirty = false,
-}
-
-configurable = {
-	font_size = 1.0,
-	page_margin = 0.06,
-	line_spacing = 1.2,
-	word_spacing = 0.375,
 }
 
 function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
@@ -81,7 +114,7 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
 	self.text_pos = self.text_pos + text_len
 	
-	if KOPTOptions[option_index].marker_dirty[item_index] then
+	if KOPTOptions[option_index].marker_dirty[item_index] or refresh then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "marker:", text)
 		if item_index == KOPTOptions[option_index].current_item then
 			fb.bb:paintRect(xpos, ypos+5, text_len, 3,(option_index == self.current_option) and 15 or 5)
@@ -114,9 +147,17 @@ function KOPTConfig:makeDefault()
 	end
 end
 
-function KOPTConfig:config(callback, reader)
+function KOPTConfig:reconfigure(configurable)
+	for i=1,#KOPTOptions do
+		option = KOPTOptions[i].name
+		configurable[option] = KOPTOptions[i].value[KOPTOptions[i].current_item]
+	end
+end
+
+function KOPTConfig:config(callback, reader, configurable)
 	local kopt_callback = callback
 	local koptreader = reader
+	local configurable = configurable
 	
 	self:makeDefault()
 	self:addAllCommands()
@@ -135,11 +176,11 @@ function KOPTConfig:config(callback, reader)
 	
 	local ev, keydef, command, ret_code
 	while true do
-		configurable.line_spacing = KOPTOptions[1].space[KOPTOptions[1].current_item]
-		configurable.word_spacing = KOPTOptions[2].space[KOPTOptions[2].current_item]
-		--Debug("Line spacing:", configurable.line_spacing, "Word spacing:", configurable.word_spacing)
+	
+		self:reconfigure(configurable)
+		
 		if self.page_dirty then
-			kopt_callback(koptreader, configurable)
+			kopt_callback(koptreader)
 			self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
 			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true)
 			fb:refresh(1, topleft_x, topleft_y, width, height)
@@ -161,11 +202,7 @@ function KOPTConfig:config(callback, reader)
 			end
 			if ret_code == "break" then
 				ret_code = nil
-				if self.final_choice then
-					return self.readers[self.final_choice]
-				else
-					return nil
-				end
+				return nil
 			end
 		end -- if
 	end -- while
