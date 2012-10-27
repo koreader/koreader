@@ -12,6 +12,7 @@ Configurable = {
 	justification = -1,
 	max_columns = 2,
 	contrast = 1.0,
+	screen_rotation = 0,
 }
 
 function Configurable:hash(sep)
@@ -181,7 +182,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	local text_wrap, justification = self.configurable.text_wrap, self.configurable.justification
 	local max_columns, contrast = self.configurable.max_columns, self.configurable.contrast
 	local auto_straighten = self.configurable.auto_straighten
-	self.fullwidth, self.fullheight, self.reflow_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, max_columns, contrast)
+	local screen_rotation = self.configurable.screen_rotation
+	self.fullwidth, self.fullheight, self.reflow_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, max_columns, contrast, screen_rotation)
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then

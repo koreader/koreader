@@ -12,7 +12,7 @@ KOPTOptions =  {
 	current_item=6,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true, true, true, true, true},
-	value={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6}},
+	value={0.2, 0.3, 0.4, 0.6, 1.0, 1.2, 1.6, 2.0, 2.6}},
 	{
 	name="page_margin",
 	option_text="Page Margin",
@@ -34,12 +34,12 @@ KOPTOptions =  {
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
-	items_text={"small","medium","large"},
-	default_item=2,
-	current_item=2,
+	items_text={"smallest","smaller","small","medium","large"},
+	default_item=4,
+	current_item=4,
 	text_dirty=true,
-	marker_dirty={true, true, true},
-	value={0.02, 0.375, 0.5}},
+	marker_dirty={true, true, true, true, true},
+	value={0.005, 0.01, 0.02, 0.375, 0.5}},
 	{
 	name="text_wrap",
 	option_text="Text Wrap",
@@ -85,6 +85,15 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
 	value={0.2, 0.4, 1.0, 1.8, 2.6}},
+	{
+	name="screen_rotation",
+	option_text="Screen Rotation",
+	items_text={"0","90","180","270"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	value={0, 90, 180, 270}},
 }
 
 KOPTConfig = {
