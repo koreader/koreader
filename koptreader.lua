@@ -3,7 +3,7 @@ require "inputbox"
 require "koptconfig"
 
 Configurable = {
-	font_size = 1.0,
+	font_size = 1.2,
 	page_margin = 0.06,
 	line_spacing = 1.2,
 	word_spacing = 0.375,
@@ -19,7 +19,9 @@ function Configurable:hash()
 	return hash
 end
 
-KOPTReader = UniReader:new{}
+KOPTReader = UniReader:new{
+	last_font_size = Configurable.font_size
+}
 
 -- open a PDF/DJVU file and its settings store
 function KOPTReader:open(filename)
@@ -83,7 +85,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	local dc = self:setzoom(page, preCache)
 	
 	-- check if we have relevant cache contents
-	local pagehash = no..'_'..self.kopt_zoom..'_'..self.globalrotate..'_'..self.kopt_gamma..'_'..Configurable:hash()
+	local pagehash = no..'_'..Configurable:hash()
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -141,11 +143,11 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	Debug("page::reflowPage:", "width:", width, "height:", height)
-	local page_margin = Configurable.page_margin
+	local font_size, page_margin = Configurable.font_size, Configurable.page_margin
 	local line_spacing, word_spacing = Configurable.line_spacing, Configurable.word_spacing
 	local text_wrap, justification = Configurable.text_wrap, Configurable.justification
 	local contrast = Configurable.contrast
-	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, page_margin, line_spacing, word_spacing, text_wrap, justification, contrast)
+	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, justification, contrast)
 	self.globalzoom_orig = self.kopt_zoom
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight, "zoom:", self.kopt_zoom)
 	
@@ -216,6 +218,11 @@ function KOPTReader:setzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 	
+	-- we will guess the offset_y when font_size is changed.
+	-- it is not a good enough guess but simple enough.
+	self.offset_y = self.offset_y*Configurable.font_size/self.last_font_size
+	self.last_font_size = Configurable.font_size
+	
 	dc:setZoom(self.kopt_zoom)
 	Debug("setzoom:", "globalzoom_orig", self.globalzoom_orig)
 	
@@ -225,27 +232,6 @@ function KOPTReader:setzoom(page, preCache)
 	end
 	
 	return dc
-end	
-
--- adjust zoom state and trigger re-rendering
-function KOPTReader:setGlobalZoom(zoom)
-	if self.kopt_zoom ~= zoom then
-		local last_zoom = self.kopt_zoom
-		self.kopt_zoom = zoom
-		-- we will guess the offset_y in zoomed view.
-		-- it is not a good enough guess but simple enough.
-		self.offset_x = 0
-		self.offset_y = self.offset_y*zoom/last_zoom
-		self:redrawCurrentPage()
-	end
-end
-
--- adjust global gamma setting
-function KOPTReader:modifyGamma(factor)
-	Debug("modifyGamma, gamma=", self.kopt_gamma, " factor=", factor)
-	self.kopt_gamma = self.kopt_gamma * factor * factor;
-	InfoMessage:inform(string.format("New gamma is %.2f", self.kopt_gamma), nil, 1, MSG_AUX)
-	self:redrawCurrentPage()
 end
 
 function KOPTReader:nextView()

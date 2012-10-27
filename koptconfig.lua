@@ -4,6 +4,15 @@ require "settings"
 
 KOPTOptions =  {
 	{
+	name="font_size",
+	option_text="",
+	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+	text_font_size={16,18,22,26,30,34,38,42,46},
+	current_item=6,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true, true, true, true, true},
+	value={0.5, 0.7, 0.8, 0.9, 1.0, 1.2, 1.6, 2.0, 2.6}},
+	{
 	name="page_margin",
 	option_text="Page Margin",
 	items_text={"small","medium","large"},
@@ -30,7 +39,7 @@ KOPTOptions =  {
 	{
 	name="text_wrap",
 	option_text="Text Wrap",
-	items_text={"fitting","reflowing"},
+	items_text={"page fit","page reflow"},
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true},
@@ -55,13 +64,14 @@ KOPTOptions =  {
 
 KOPTConfig = {
 	-- UI constants
+	WIDTH = 550,   -- width
 	HEIGHT = 300,  -- height
-	MARGIN_BOTTOM = 30,  -- window bottom margin
-	MARGIN_HORISONTAL = 35, -- window horisontal margin
-	NAME_PADDING_T = 50, -- option name top padding
+	MARGIN_BOTTOM = 25,  -- window bottom margin
+	OPTION_PADDING_T = 70, -- option top padding
+	OPTION_PADDING_H = 50, -- option horizontal padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
-	NAME_ALIGN_RIGHT = 0.3, -- align name right to the window width
-	ITEM_ALIGN_LEFT = 0.35,	-- align item left to the window width
+	NAME_ALIGN_RIGHT = 0.28, -- align name right to the window width
+	ITEM_ALIGN_LEFT = 0.30,	-- align item left to the window width
 	ITEM_SPACING_H = 10,   -- items horisontal spacing
 	OPT_NAME_FONT_SIZE = 20,  -- option name font size
 	OPT_ITEM_FONT_SIZE = 16, -- option item font size
@@ -83,8 +93,8 @@ function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
 end
 
 function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, refresh)
-	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
-	local xpos, ypos = xpos+self.NAME_ALIGN_RIGHT*width, ypos+self.NAME_PADDING_T
+	local width = self.WIDTH
+	local xpos, ypos = xpos+self.OPTION_PADDING_H+self.NAME_ALIGN_RIGHT*(width-2*self.OPTION_PADDING_H), ypos+self.OPTION_PADDING_T
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option name:", KOPTOptions[option_index].option_text)
 		local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
@@ -94,10 +104,15 @@ end
 
 function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, font_face, refresh)
 	self.text_pos = (item_index == 1) and 0 or self.text_pos
-	local width = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL
-	local xpos = xpos+self.ITEM_ALIGN_LEFT*width+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
-	local ypos = ypos+self.NAME_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
+	local width = self.WIDTH
+	local offset = self.OPTION_PADDING_H+self.ITEM_ALIGN_LEFT*(width-2*self.OPTION_PADDING_H)
+	local item_x_offset = (KOPTOptions[option_index].option_text == "") and self.OPTION_PADDING_H or offset
+	local xpos = xpos+item_x_offset+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
+	local ypos = ypos+self.OPTION_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
 	
+	if KOPTOptions[option_index].text_font_size then
+		font_face = Font:getFace("cfont", KOPTOptions[option_index].text_font_size[item_index])
+	end
 	if KOPTOptions[option_index].text_dirty or refresh then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "item:", text)
 		renderUtf8Text(fb.bb, xpos, ypos, font_face, text, true)
@@ -120,7 +135,7 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 end
 
 function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, refresh)
-	local width, height = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL, self.HEIGHT
+	local width, height = self.WIDTH, self.HEIGHT
 	for i=1,#KOPTOptions do
 		self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, refresh)
 		for j=1,#KOPTOptions[i].items_text do
@@ -158,9 +173,9 @@ function KOPTConfig:config(callback, reader, configurable)
 	local item_font = Font:getFace("cfont", self.OPT_ITEM_FONT_SIZE)
 	
 	-- base window coordinates 
-	local width, height = fb.bb:getWidth()-2*self.MARGIN_HORISONTAL, self.HEIGHT
-	local topleft_x, topleft_y = self.MARGIN_HORISONTAL, fb.bb:getHeight()-self.MARGIN_BOTTOM-height
-	local botleft_x, botleft_y = self.MARGIN_HORISONTAL, topleft_y+height
+	local width, height = self.WIDTH, self.HEIGHT
+	local topleft_x, topleft_y = (fb.bb:getWidth()-width)/2, fb.bb:getHeight()-self.MARGIN_BOTTOM-height
+	local botleft_x, botleft_y = topleft_x, topleft_y+height
 	
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
 	self:drawOptions(topleft_x, topleft_y, name_font, item_font)
