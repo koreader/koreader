@@ -82,6 +82,7 @@
 /* bmp.c */
 #define WILLUSBITMAP_TYPE_NATIVE       0
 #define WILLUSBITMAP_TYPE_WIN32        1
+#define BOUND(x,xmin,xmax)  if ((x)<(xmin)) (x)=(xmin); else { if ((x)>(xmax)) (x)=(xmax); }
 
 #ifdef PI
 #undef PI
@@ -218,6 +219,7 @@ static double dst_min_figure_height_in = 0.75;
 static int dst_fulljustify = -1; // 0 = no, 1 = yes
 static int dst_color = 0;
 static int dst_landscape = 0;
+static int src_autostraighten = 0;
 static double dst_mar = 0.06;
 static double dst_martop = -1.0;
 static double dst_marbot = -1.0;
@@ -398,6 +400,8 @@ static int bmp_resample(WILLUSBITMAP *dest, WILLUSBITMAP *src, double x1,
 		double y1, double x2, double y2, int newwidth, int newheight);
 static void bmp_contrast_adjust(WILLUSBITMAP *dest,WILLUSBITMAP *src,double contrast);
 static void bmp_convert_to_greyscale_ex(WILLUSBITMAP *dst, WILLUSBITMAP *src);
+static double bmp_autostraighten(WILLUSBITMAP *src, WILLUSBITMAP *srcgrey, int white,
+		double maxdegrees, double mindegrees, int debug);
 static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx,
 		fz_pixmap *pixmap);
 static void handle(int wait, ddjvu_context_t *ctx);
@@ -453,6 +457,15 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	adjust_contrast(src, srcgrey, &white);
 	white_margins(src, srcgrey);
 
+	if (erase_vertical_lines > 0)
+		bmp_detect_vertical_lines(srcgrey, src, (double) src_dpi, 0.005, 0.25,
+				min_column_height_inches, src_autostraighten, white);
+	if (src_autostraighten > 0.) {
+		double rot;
+		rot = bmp_autostraighten(src, srcgrey, white, src_autostraighten, 0.1, debug);
+		pageinfo->page_rot_deg += rot;
+	}
+
 	region.r1 = 0;
 	region.r2 = srcgrey->height - 1;
 	region.c1 = 0;
@@ -472,27 +485,44 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	bmp_free(srcgrey);
 }
 
-void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
+void k2pdfopt_set_params(int bb_width, int bb_height, \
+		double font_size, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, int justification, int full_just, double contrast) {
+		int wrapping, int straighten, int justification, \
+		int columns, double contrast) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
+	zoom_value = font_size;
 	vertical_line_spacing = line_space;
 	word_spacing = word_space;
 	text_wrap = wrapping;
-	dst_justify = justification;
-	dst_fulljustify = full_just;
+	src_autostraighten = straighten;
+	max_columns = columns;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 
+	// margin
 	dst_mar = page_margin;
 	dst_martop = -1.0;
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
+
+	// justification
+	if (justification < 0) {
+		dst_justify = -1;
+		dst_fulljustify = -1;
+	}
+	else if (justification <= 2) {
+		dst_justify = justification;
+		dst_fulljustify = 0;
+	}
+	else {
+		dst_justify = -1;
+		dst_fulljustify = 1;
+	}
 }
 
-void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
-		double zoom, double gamma, double rot_deg) {
+void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_device *dev;
 	fz_pixmap *pix;
 	fz_rect bounds,bounds2;
@@ -500,7 +530,8 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 	fz_bbox bbox;
 	WILLUSBITMAP _src, *src;
 
-	double dpp;
+	double dpp,zoom;
+	zoom = zoom_value;
 	double dpi = 250*zoom;
 	do {
 		dpp = dpi / 72.;
@@ -553,11 +584,12 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \
 }
 
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
-		ddjvu_render_mode_t mode, ddjvu_format_t *fmt, double zoom) {
+		ddjvu_render_mode_t mode, ddjvu_format_t *fmt) {
 	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
 	int i, iw, ih, idpi, status;
+	double zoom = zoom_value;
 	double dpi = 250*zoom;
 
 	while (!ddjvu_page_decoding_done(page))
@@ -6406,6 +6438,371 @@ static void bmp_convert_to_greyscale_ex(WILLUSBITMAP *dst, WILLUSBITMAP *src)
 		}
 	}
 	dst->bpp = 8; /* Possibly restore dst->bpp to 8 since src & dst may be the same. */
+}
+
+/*
+ ** Bitmap is assumed to be grayscale
+ */
+static double bmp_row_by_row_stdev(WILLUSBITMAP *bmp, int ccount,
+		int whitethresh, double theta_radians)
+
+{
+	int dc1, dc2, c1, c2;
+	int r, n, nn, dw;
+	double tanth, csum, csumsq, stdev;
+
+	c1 = bmp->width / 15.;
+	c2 = bmp->width - c1;
+	dw = (int) ((c2 - c1) / ccount + .5);
+	if (dw < 1)
+		dw = 1;
+	tanth = -tan(theta_radians);
+	dc1 = (int) (tanth * bmp->width);
+	if (dc1 < 0) {
+		dc1 = 1 - dc1;
+		dc2 = 0;
+	} else {
+		dc2 = -dc1 - 1;
+		dc1 = 0;
+	}
+	dc1 += bmp->height / 15.;
+	dc2 -= bmp->height / 15.;
+	csum = csumsq = 0.;
+	n = 0;
+	for (r = dc1 + 1; r < bmp->height + dc2 - 1; r++) {
+		int c, count, r0last;
+		double dcount;
+		unsigned char *p;
+
+		r0last = 0;
+		p = bmp_rowptr_from_top(bmp, r0last);
+		for (nn = count = 0, c = c1; c < c2; c += dw) {
+			int r0;
+
+			r0 = r + tanth * c;
+			if (r0 < 0 || r0 >= bmp->height)
+				continue;
+			if (r0 != r0last) {
+				r0last = r0;
+				p = bmp_rowptr_from_top(bmp, r0last);
+			}
+			nn++;
+			if (p[c] < whitethresh)
+				count++;
+		}
+		dcount = 100. * count / nn;
+		csum += dcount;
+		csumsq += dcount * dcount;
+		n++;
+	}
+	stdev = sqrt(fabs((csum / n) * (csum / n) - csumsq / n));
+	return (stdev);
+}
+
+/*
+ ** y0 = 0 ==> bottom row!
+ */
+static void bmp_pix_vali(WILLUSBITMAP *bmp, int x0, int y0, int *r, int *g, int *b)
+
+{
+	unsigned char *p;
+	int rr, gg, bb;
+
+	p = bmp_rowptr_from_top(bmp, bmp->height - 1 - y0);
+	p = &p[x0 * (bmp->bpp >> 3)];
+	RGBGET(bmp, p, rr, gg, bb);
+	(*r) = rr;
+	(*g) = gg;
+	(*b) = bb;
+}
+
+/*
+ ** y0 = 0 ==> bottom row!
+ */
+static int bmp_grey_pix_vali(WILLUSBITMAP *bmp, int x0, int y0)
+
+{
+	unsigned char *p;
+	int r, g, b;
+
+	p = bmp_rowptr_from_top(bmp, bmp->height - 1 - y0);
+	p = &p[x0 * (bmp->bpp >> 3)];
+	RGBGET(bmp, p, r, g, b);
+	return (bmp8_greylevel_convert(r, g, b));
+}
+
+/*
+ ** Return pix value (0.0 - 255.0) in double precision given
+ ** a double precision position.  Bitmap is assumed to be 8-bit greyscale.
+ **
+ ** x0,y0 are from bottom corner.
+ ** x0=0.5, y0=0.5 would give exactly the value of the pixel
+ **                in the lower left corner of the bitmap.
+ */
+double bmp_grey_pix_vald(WILLUSBITMAP *bmp, double x0, double y0)
+
+{
+	int ix0, iy0, ix1, iy1;
+	double fx0, fx1, fy0, fy1;
+
+	ix0 = (int) (x0 - .5);
+	ix1 = ix0 + 1;
+	iy0 = (int) (y0 - .5);
+	iy1 = iy0 + 1;
+	BOUND(ix0, 0, bmp->width - 1);
+	BOUND(ix1, 0, bmp->width - 1);
+	BOUND(iy0, 0, bmp->height - 1);
+	BOUND(iy1, 0, bmp->height - 1);
+	fx0 = 1. - fabs(ix0 + 0.5 - x0);
+	if (fx0 < 0.)
+		fx0 = 0.;
+	fx1 = 1. - fabs(ix1 + 0.5 - x0);
+	if (fx1 < 0.)
+		fx1 = 0.;
+	fy0 = 1. - fabs(iy0 + 0.5 - y0);
+	if (fy0 < 0.)
+		fy0 = 0.;
+	fy1 = 1. - fabs(iy1 + 0.5 - y0);
+	if (fy1 < 0.)
+		fy1 = 0.;
+	if ((fx0 == 0. && fx1 == 0.) || (fy0 == 0. && fy1 == 0.))
+		return (-1.);
+	return ((fy0
+			* (fx0 * bmp_grey_pix_vali(bmp, ix0, iy0)
+					+ fx1 * bmp_grey_pix_vali(bmp, ix1, iy0))
+			+ fy1
+					* (fx0 * bmp_grey_pix_vali(bmp, ix0, iy1)
+							+ fx1 * bmp_grey_pix_vali(bmp, ix1, iy1)))
+			/ ((fx0 + fx1) * (fy0 + fy1)));
+}
+
+
+/*
+ ** Return pix values (0.0 - 255.0) in double precision given
+ ** a double precision position.
+ **
+ ** x0,y0 are from BOTTOM CORNER.
+ ** x0=0.5, y0=0.5 would give exactly the value of the pixel
+ **                in the lower left corner of the bitmap.
+ */
+static void bmp_pix_vald(WILLUSBITMAP *bmp, double x0, double y0, double *r, double *g,
+		double *b)
+
+{
+	int ix0, iy0, ix1, iy1;
+	double fx0, fx1, fy0, fy1;
+	int r00, r10, r01, r11;
+	int g00, g10, g01, g11;
+	int b00, b10, b01, b11;
+
+	ix0 = (int) (x0 - .5);
+	ix1 = ix0 + 1;
+	iy0 = (int) (y0 - .5);
+	iy1 = iy0 + 1;
+	BOUND(ix0, 0, bmp->width - 1);
+	BOUND(ix1, 0, bmp->width - 1);
+	BOUND(iy0, 0, bmp->height - 1);
+	BOUND(iy1, 0, bmp->height - 1);
+	fx0 = 1. - fabs(ix0 + 0.5 - x0);
+	if (fx0 < 0.)
+		fx0 = 0.;
+	fx1 = 1. - fabs(ix1 + 0.5 - x0);
+	if (fx1 < 0.)
+		fx1 = 0.;
+	fy0 = 1. - fabs(iy0 + 0.5 - y0);
+	if (fy0 < 0.)
+		fy0 = 0.;
+	fy1 = 1. - fabs(iy1 + 0.5 - y0);
+	if (fy1 < 0.)
+		fy1 = 0.;
+	if ((fx0 == 0. && fx1 == 0.) || (fy0 == 0. && fy1 == 0.)) {
+		(*r) = (*g) = (*b) = -1.;
+		return;
+	}
+	bmp_pix_vali(bmp, ix0, iy0, &r00, &g00, &b00);
+	bmp_pix_vali(bmp, ix1, iy0, &r10, &g10, &b10);
+	bmp_pix_vali(bmp, ix0, iy1, &r01, &g01, &b01);
+	bmp_pix_vali(bmp, ix1, iy1, &r11, &g11, &b11);
+	(*r) = ((fy0 * (fx0 * r00 + fx1 * r10) + fy1 * (fx0 * r01 + fx1 * r11))
+			/ ((fx0 + fx1) * (fy0 + fy1)));
+	(*g) = ((fy0 * (fx0 * g00 + fx1 * g10) + fy1 * (fx0 * g01 + fx1 * g11))
+			/ ((fx0 + fx1) * (fy0 + fy1)));
+	(*b) = ((fy0 * (fx0 * b00 + fx1 * b10) + fy1 * (fx0 * b01 + fx1 * b11))
+			/ ((fx0 + fx1) * (fy0 + fy1)));
+}
+
+static void bmp_rotate_fast(WILLUSBITMAP *bmp, double degrees, int expand)
+
+{
+	WILLUSBITMAP _dst, *dst;
+	double th, sth, cth;
+	int i, r, g, b, w, h, row, col;
+
+	dst = &_dst;
+	th = degrees * PI / 180.;
+	sth = sin(th);
+	cth = cos(th);
+	if (expand) {
+		w = (int) (fabs(bmp->width * cth) + fabs(bmp->height * sth) + .5);
+		h = (int) (fabs(bmp->height * cth) + fabs(bmp->width * sth) + .5);
+	} else {
+		w = bmp->width;
+		h = bmp->height;
+	}
+	dst = &_dst;
+	bmp_init(dst);
+	dst->width = w;
+	dst->height = h;
+	dst->bpp = bmp->bpp;
+	if (dst->bpp == 8)
+		for (i = 0; i <= 255; i++)
+			dst->red[i] = dst->green[i] = dst->blue[i] = i;
+	bmp_alloc(dst);
+	bmp_pix_vali(bmp, 0, 0, &r, &g, &b);
+	bmp_fill(dst, r, g, b);
+	if (dst->bpp == 8)
+		for (row = 0; row < dst->height; row++) {
+			unsigned char *p;
+			double x1, y1, x2, y2;
+
+			y2 = dst->height / 2. - row;
+			p = bmp_rowptr_from_top(dst, row);
+			for (x2 = -dst->width / 2., col = 0; col < dst->width;
+					col++, p++, x2 += 1.0) {
+				double g;
+				x1 = -.5 + bmp->width / 2. + x2 * cth + y2 * sth;
+				y1 = -.5 + bmp->height / 2. + y2 * cth - x2 * sth;
+				if (x1 < 0. || x1 >= bmp->width || y1 < 0. || y1 >= bmp->height)
+					continue;
+				g = bmp_grey_pix_vald(bmp, x1, y1);
+				if (g >= 0.)
+					p[0] = g;
+			}
+		}
+	else
+		for (row = 0; row < dst->height; row++) {
+			unsigned char *p;
+			double x1, y1, x2, y2;
+
+			y2 = dst->height / 2. - row;
+			p = bmp_rowptr_from_top(dst, row);
+			for (x2 = -dst->width / 2., col = 0; col < dst->width; col++, p +=
+					3, x2 += 1.0) {
+				double rr, gg, bb;
+				x1 = -.5 + bmp->width / 2. + x2 * cth + y2 * sth;
+				y1 = -.5 + bmp->height / 2. + y2 * cth - x2 * sth;
+				if (x1 < 0. || x1 >= bmp->width || y1 < 0. || y1 >= bmp->height)
+					continue;
+				bmp_pix_vald(bmp, x1, y1, &rr, &gg, &bb);
+				if (rr < 0.)
+					continue;
+				p[0] = rr;
+				p[1] = gg;
+				p[2] = bb;
+			}
+		}
+	bmp_copy(bmp, dst);
+	bmp_free(dst);
+}
+
+static double bmp_autostraighten(WILLUSBITMAP *src, WILLUSBITMAP *srcgrey, int white,
+		double maxdegrees, double mindegrees, int debug)
+
+{
+	int i, na, n, imax;
+	double stepsize, sdmin, sdmax, rotdeg;
+	double *sdev;
+	static int rpc = 0;
+	static char *funcname = "bmp_autostraighten";
+
+	rpc++;
+	stepsize = .5;
+	na = (int) (maxdegrees / stepsize + .5);
+	if (na < 1)
+		na = 1;
+	n = 1 + na * 2;
+	sdmin = 999.;
+	sdmax = -999.;
+	imax = 0;
+	willus_mem_alloc_warn((void **) &sdev, n * sizeof(double), funcname, 10);
+	for (i = 0; i < n; i++) {
+		double theta, sdev0;
+
+		theta = (i - na) * stepsize * PI / 180.;
+		sdev0 = bmp_row_by_row_stdev(srcgrey, 400, white, theta);
+		if (sdmin > sdev0)
+			sdmin = sdev0;
+		if (sdmax < sdev0) {
+			imax = i;
+			sdmax = sdev0;
+		}
+		sdev[i] = sdev0;
+	}
+	if (sdmax <= 0.) {
+		willus_mem_free((double **) &sdev, funcname);
+		return (0.);
+	}
+	for (i = 0; i < n; i++)
+		sdev[i] /= sdmax;
+	sdmin /= sdmax;
+	rotdeg = -(imax - na) * stepsize;
+	if (sdmin > 0.95 || fabs(rotdeg) <= mindegrees
+			|| fabs(fabs(rotdeg) - fabs(maxdegrees)) < 0.25) {
+		willus_mem_free((double **) &sdev, funcname);
+		return (0.);
+	}
+	if (imax >= 3 && imax <= n - 4) {
+		double sd1min, sd2min, sdthresh;
+
+		for (sd1min = sdev[imax - 1], i = imax - 2; i >= 0; i--)
+			if (sd1min > sdev[i])
+				sd1min = sdev[i];
+		for (sd2min = sdev[imax + 1], i = imax + 2; i < n; i++)
+			if (sd2min > sdev[i])
+				sd2min = sdev[i];
+		sdthresh = sd1min > sd2min ? sd1min * 1.01 : sd2min * 1.01;
+		if (sdthresh < 0.9)
+			sdthresh = 0.9;
+		if (sdthresh < 0.95) {
+			double deg1, deg2;
+
+			for (i = imax - 1; i >= 0; i--)
+				if (sdev[i] < sdthresh)
+					break;
+			deg1 =
+					stepsize
+							* ((i - na)
+									+ (sdthresh - sdev[i])
+											/ (sdev[i + 1] - sdev[i]));
+			for (i = imax + 1; i < n - 1; i++)
+				if (sdev[i] < sdthresh)
+					break;
+			deg2 =
+					stepsize
+							* ((i - na)
+									- (sdthresh - sdev[i])
+											/ (sdev[i - 1] - sdev[i]));
+			if (deg2 - deg1 < 2.5) {
+				rotdeg = -(deg1 + deg2) / 2.;
+				if (debug)
+					printf("/sa l \"srcpage %d, %.1f%% line\" 2\n/sa m 2 2\n"
+									"%g 0\n%g 1\n//nc\n"
+									"/sa l \"srcpage %d, %.1f%% line\" 2\n/sa m 2 2\n"
+									"%g 0\n%g 1\n//nc\n", rpc, sdthresh * 100.,
+							deg1, deg1, rpc, sdthresh * 100., deg2, deg2);
+			}
+		}
+	}
+	printf("\n(Straightening page:  rotating cc by %.2f deg.)\n", rotdeg);
+	/* BMP rotation fills with pixel value at (0,0) */
+	srcgrey->data[0] = 255;
+	bmp_rotate_fast(srcgrey, rotdeg, 0);
+	if (src != NULL) {
+		src->data[0] = src->data[1] = src->data[2] = 255;
+		bmp_rotate_fast(src, rotdeg, 0);
+	}
+	willus_mem_free((double **) &sdev, funcname);
+	return (rotdeg);
 }
 
 /* bmpmupdf.c */
