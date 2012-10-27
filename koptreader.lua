@@ -9,13 +9,15 @@ Configurable = {
 	word_spacing = 0.375,
 	text_wrap = 1,
 	justification = -1,
+	max_columns = 2,
 	contrast = 1.0,
 }
 
 function Configurable:hash()
 	hash = self.font_size..'_'..self.page_margin
 	hash = hash..'_'..self.line_spacing..'_'..self.word_spacing
-	hash = hash..'_'..self.text_wrap..'_'..self.justification..'_'..self.contrast
+	hash = hash..'_'..self.text_wrap..'_'..self.justification
+	hash = hash..'_'..self.max_columns..'_'..self.contrast
 	return hash
 end
 
@@ -146,8 +148,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	local font_size, page_margin = Configurable.font_size, Configurable.page_margin
 	local line_spacing, word_spacing = Configurable.line_spacing, Configurable.word_spacing
 	local text_wrap, justification = Configurable.text_wrap, Configurable.justification
-	local contrast = Configurable.contrast
-	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, justification, contrast)
+	local max_columns, contrast = Configurable.max_columns, Configurable.contrast
+	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, justification, max_columns, contrast)
 	self.globalzoom_orig = self.kopt_zoom
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight, "zoom:", self.kopt_zoom)
 	

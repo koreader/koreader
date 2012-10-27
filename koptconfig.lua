@@ -11,7 +11,7 @@ KOPTOptions =  {
 	current_item=6,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true, true, true, true, true},
-	value={0.5, 0.7, 0.8, 0.9, 1.0, 1.2, 1.6, 2.0, 2.6}},
+	value={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6}},
 	{
 	name="page_margin",
 	option_text="Page Margin",
@@ -53,6 +53,14 @@ KOPTOptions =  {
 	marker_dirty={true, true, true, true, true},
 	value={-1,0,1,2,3}},
 	{
+	name="max_columns",
+	option_text="Columns",
+	items_text={"auto","1","2","3","4"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true},
+	value={2,1,2,3,4}},
+	{
 	name="contrast",
 	option_text="Contrast",
 	items_text={"lightest","lighter","default","darker","darkest"},
@@ -65,7 +73,7 @@ KOPTOptions =  {
 KOPTConfig = {
 	-- UI constants
 	WIDTH = 550,   -- width
-	HEIGHT = 300,  -- height
+	HEIGHT = 350,  -- height
 	MARGIN_BOTTOM = 25,  -- window bottom margin
 	OPTION_PADDING_T = 70, -- option top padding
 	OPTION_PADDING_H = 50, -- option horizontal padding
