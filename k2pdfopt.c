@@ -474,21 +474,35 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 
 void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, int justification, int full_just, double contrast) {
+		int wrapping, int justification, double contrast) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
 	vertical_line_spacing = line_space;
 	word_spacing = word_space;
 	text_wrap = wrapping;
 	dst_justify = justification;
-	dst_fulljustify = full_just;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 
+	// margin
 	dst_mar = page_margin;
 	dst_martop = -1.0;
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
+
+	// justification
+	if (justification < 0) {
+		dst_justify = -1;
+		dst_fulljustify = -1;
+	}
+	else if (justification <= 2) {
+		dst_justify = justification;
+		dst_fulljustify = 0;
+	}
+	else {
+		dst_justify = -1;
+		dst_fulljustify = 1;
+	}
 }
 
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx, \

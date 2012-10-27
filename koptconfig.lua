@@ -38,19 +38,11 @@ KOPTOptions =  {
 	{
 	name="justification",
 	option_text="Justification",
-	items_text={"default","left","center","right"},
+	items_text={"default","left","center","right","full"},
 	current_item=1,
 	text_dirty=true,
-	marker_dirty={true, true, true, true},
-	value={-1,0,1,2}},
-	{
-	name="full_just",
-	option_text="Full Justification",
-	items_text={"default","no","yes"},
-	current_item=1,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	value={-1,0,1}},
+	marker_dirty={true, true, true, true, true},
+	value={-1,0,1,2,3}},
 	{
 	name="contrast",
 	option_text="Contrast",
