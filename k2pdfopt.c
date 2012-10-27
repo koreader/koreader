@@ -200,6 +200,7 @@ static int debug = 0;
  ** Blank Area Threshold Widths--average black pixel width, in inches, that
  ** prevents a region from being determined as "blank" or clear.
  */
+static int src_rot = 0;
 static double gtc_in = .005; // detecting gap between columns
 static double gtr_in = .006; // detecting gap between rows
 static double gtw_in = .0015; // detecting gap between words
@@ -402,6 +403,7 @@ static void bmp_contrast_adjust(WILLUSBITMAP *dest,WILLUSBITMAP *src,double cont
 static void bmp_convert_to_greyscale_ex(WILLUSBITMAP *dst, WILLUSBITMAP *src);
 static double bmp_autostraighten(WILLUSBITMAP *src, WILLUSBITMAP *srcgrey, int white,
 		double maxdegrees, double mindegrees, int debug);
+static int bmp_rotate_right_angle(WILLUSBITMAP *bmp, int degrees);
 static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx,
 		fz_pixmap *pixmap);
 static void handle(int wait, ddjvu_context_t *ctx);
@@ -452,6 +454,10 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	bmp_alloc(&masterinfo->bmp);
 	bmp_fill(&masterinfo->bmp, 255, 255, 255);
 
+	if (src_rot != 0) {
+		bmp_rotate_right_angle(src, src_rot);
+	}
+
 	BMPREGION region;
 	bmp_copy(srcgrey, src);
 	adjust_contrast(src, srcgrey, &white);
@@ -489,7 +495,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 		double font_size, double page_margin, \
 		double line_space, double word_space, \
 		int wrapping, int straighten, int justification, \
-		int columns, double contrast) {
+		int columns, double contrast, int rotation) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
 	zoom_value = font_size;
@@ -499,6 +505,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	src_autostraighten = straighten;
 	max_columns = columns;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
+	src_rot = rotation;
 
 	// margin
 	dst_mar = page_margin;
@@ -6803,6 +6810,137 @@ static double bmp_autostraighten(WILLUSBITMAP *src, WILLUSBITMAP *srcgrey, int w
 	}
 	willus_mem_free((double **) &sdev, funcname);
 	return (rotdeg);
+}
+
+static void bmp_flip_horizontal(WILLUSBITMAP *bmp)
+
+{
+	int i, j, bpp;
+
+	bpp = bmp->bpp / 8;
+	for (i = 0; i < bmp->height; i++) {
+		unsigned char *p, *p2;
+
+		p = bmp_rowptr_from_top(bmp, i);
+		p2 = &p[(bmp->width - 1) * bpp];
+		for (; p < p2; p += bpp, p2 -= bpp)
+			for (j = 0; j < bpp; j++) {
+				unsigned char t;
+				t = p[j];
+				p[j] = p2[j];
+				p2[j] = t;
+			}
+	}
+}
+
+static void bmp_flip_vertical(WILLUSBITMAP *bmp)
+
+{
+	int i, bw, n;
+
+	bw = bmp_bytewidth(bmp);
+	n = bmp->height / 2;
+	for (i = 0; i < n; i++) {
+		unsigned char *p, *p2;
+		int j;
+
+		p = bmp_rowptr_from_top(bmp, i);
+		p2 = bmp_rowptr_from_top(bmp, bmp->height - i - 1);
+		for (j = bw; j > 0; j--, p++, p2++) {
+			unsigned char t;
+			t = p[0];
+			p[0] = p2[0];
+			p2[0] = t;
+		}
+	}
+}
+
+static int bmp_rotate_90(WILLUSBITMAP *bmp)
+
+{
+	WILLUSBITMAP *sbmp, _sbmp;
+	int bpp, dbw, sr;
+
+	sbmp = &_sbmp;
+	bmp_init(sbmp);
+	if (!bmp_copy(sbmp, bmp))
+		return (0);
+	bmp->width = sbmp->height;
+	bmp->height = sbmp->width;
+	bpp = bmp->bpp / 8;
+	if (!bmp_alloc(bmp)) {
+		bmp_free(sbmp);
+		return (0);
+	}
+	dbw = (int) (bmp_rowptr_from_top(bmp, 1) - bmp_rowptr_from_top(bmp, 0));
+	for (sr = 0; sr < sbmp->height; sr++) {
+		unsigned char *sp, *dp;
+		int j, sc;
+
+		sp = bmp_rowptr_from_top(sbmp, sr);
+		dp = bmp_rowptr_from_top(bmp, bmp->height - 1) + bpp * sr;
+		for (sc = sbmp->width; sc > 0; sc--, dp -= dbw)
+			for (j = 0; j < bpp; j++, sp++)
+				dp[j] = sp[0];
+	}
+	bmp_free(sbmp);
+	return (1);
+}
+
+static int bmp_rotate_270(WILLUSBITMAP *bmp)
+
+{
+	WILLUSBITMAP *sbmp, _sbmp;
+	int bpp, dbw, sr;
+
+	sbmp = &_sbmp;
+	bmp_init(sbmp);
+	if (!bmp_copy(sbmp, bmp))
+		return (0);
+	bmp->width = sbmp->height;
+	bmp->height = sbmp->width;
+	bpp = bmp->bpp / 8;
+	if (!bmp_alloc(bmp)) {
+		bmp_free(sbmp);
+		return (0);
+	}
+	dbw = (int) (bmp_rowptr_from_top(bmp, 1) - bmp_rowptr_from_top(bmp, 0));
+	for (sr = 0; sr < sbmp->height; sr++) {
+		unsigned char *sp, *dp;
+		int j, sc;
+
+		sp = bmp_rowptr_from_top(sbmp, sr);
+		dp = bmp_rowptr_from_top(bmp, 0) + bpp * (sbmp->height - 1 - sr);
+		for (sc = sbmp->width; sc > 0; sc--, dp += dbw)
+			for (j = 0; j < bpp; j++, sp++)
+				dp[j] = sp[0];
+	}
+	bmp_free(sbmp);
+	return (1);
+}
+
+/*
+ ** 1 = okay, 0 = fail
+ */
+static int bmp_rotate_right_angle(WILLUSBITMAP *bmp, int degrees)
+
+{
+	int d;
+
+	d = degrees % 360;
+	if (d < 0)
+		d += 360;
+	d = (d + 45) / 90;
+	if (d == 1)
+		return (bmp_rotate_90(bmp));
+	if (d == 2) {
+		bmp_flip_horizontal(bmp);
+		bmp_flip_vertical(bmp);
+		return (1);
+	}
+	if (d == 3)
+		return (bmp_rotate_270(bmp));
+	return (1);
 }
 
 /* bmpmupdf.c */
