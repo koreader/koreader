@@ -5,6 +5,7 @@ PICViewer = UniReader:new{}
 function PICViewer:setDefaults()
 	self.show_overlap_enable = false
 	self.show_links_enable = false
+  self.comics_mode_enable = false
 end
 
 function PICViewer:open(filename)

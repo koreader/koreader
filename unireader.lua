@@ -68,6 +68,7 @@ UniReader = {
 	show_overlap = 0,
 	show_overlap_enable,
 	show_links_enable,
+	comics_mode_enable,
 
 	-- the document:
 	doc = nil,
@@ -956,6 +957,7 @@ end
 function UniReader:setDefaults()
 	self.show_overlap_enable = true
 	self.show_links_enable = true
+	self.comics_mode_enable = false
 end
 
 -- This is a low-level method that can be shared with all readers.
@@ -1002,6 +1004,10 @@ function UniReader:loadSettings(filename)
 		tmp = self.settings:readSetting("show_links_enable")
 		if tmp ~= nil then
 			self.show_links_enable = tmp
+		end
+		tmp = self.settings:readSetting("comics_mode_enable")
+		if tmp ~= nil then
+			self.comics_mode_enable = tmp
 		end
 
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
@@ -1413,10 +1419,12 @@ function UniReader:show(no)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
 	Debug("self.show_overlap", self.show_overlap)
-	if self.show_overlap < 0 and self.show_overlap_enable then
-		fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
-	elseif self.show_overlap > 0 and self.show_overlap_enable then
-		fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
+       if self.show_overlap_enable and not self.comics_mode_enable then
+               if self.show_overlap < 0 then
+                       fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
+               elseif self.show_overlap > 0 then
+                       fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
+               end
 	end
 	self.show_overlap = 0
 
@@ -1604,6 +1612,13 @@ function UniReader:nextView()
 			-- goto next view of current page
 			self.offset_y = self.offset_y - G_height
 							+ self.pan_overlap_vertical
+
+			if self.comics_mode_enable then
+				if self.offset_y < self.min_offset_y then
+					self.offset_y = self.min_offset_y - 0
+				end
+			end
+
 			self.show_overlap = -self.pan_overlap_vertical -- top < 0
 		end
 	else
@@ -1634,6 +1649,13 @@ function UniReader:prevView()
 			-- goto previous view of current page
 			self.offset_y = self.offset_y + G_height
 							- self.pan_overlap_vertical
+
+			if self.comics_mode_enable then
+				if self.offset_y > self.content_top then
+					self.offset_y = self.content_top + 0
+				end
+			end
+
 			self.show_overlap = self.pan_overlap_vertical -- bottom > 0
 		end
 	else
@@ -2618,6 +2640,19 @@ function UniReader:addAllCommands()
 				InfoMessage:inform("Turning overlap OFF", nil, 1, MSG_AUX)
 			end
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
+			self:redrawCurrentPage()
+		end)
+
+	self.commands:add(KEY_C, nil, "C",
+		"toggle comics mode on/off",
+		function(unireader)
+			unireader.comics_mode_enable = not unireader.comics_mode_enable
+			if unireader.comics_mode_enable then
+				InfoMessage:inform("Comics mode ON", nil, 1, MSG_AUX)
+			else
+				InfoMessage:inform("Comics mode OFF", nil, 1, MSG_AUX)
+			end
+			self.settings:saveSetting("comics_mode_enable", unireader.comics_mode_enable)
 			self:redrawCurrentPage()
 		end)
 
