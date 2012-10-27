@@ -315,6 +315,10 @@ function KOPTReader:init()
 	self:adjustCommands()
 end
 
+function KOPTReader:redrawWithoutPrecache()
+	self:show(self.pageno)
+end
+
 function KOPTReader:adjustCommands()
 	self.commands:del(KEY_A, nil,"A")
 	self.commands:del(KEY_A, MOD_SHIFT, "A")
@@ -341,7 +345,7 @@ function KOPTReader:adjustCommands()
 	self.commands:add({KEY_F,KEY_AA}, nil, "F",
 		"change koptreader configuration",
 		function(self)
-			KOPTConfig:config(KOPTReader.redrawCurrentPage, self, self.configurable)
+			KOPTConfig:config(KOPTReader.redrawWithoutPrecache, self, self.configurable)
 			self:redrawCurrentPage()
 		end
 	)
