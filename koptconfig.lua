@@ -8,14 +8,16 @@ KOPTOptions =  {
 	option_text="",
 	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
 	text_font_size={16,18,22,26,30,34,38,42,46},
+	default_item=6,
 	current_item=6,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true, true, true, true, true},
-	value={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6}},
+	value={0.2, 0.3, 0.4, 0.6, 1.0, 1.2, 1.6, 2.0, 2.6}},
 	{
 	name="page_margin",
 	option_text="Page Margin",
 	items_text={"small","medium","large"},
+	default_item=2,
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
@@ -24,6 +26,7 @@ KOPTOptions =  {
 	name="line_spacing",
 	option_text="Line Spacing",
 	items_text={"small","medium","large"},
+	default_item=2,
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
@@ -31,15 +34,17 @@ KOPTOptions =  {
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
-	items_text={"small","medium","large"},
-	current_item=2,
+	items_text={"smallest","smaller","small","medium","large"},
+	default_item=4,
+	current_item=4,
 	text_dirty=true,
-	marker_dirty={true, true, true},
-	value={0.02, 0.375, 0.5}},
+	marker_dirty={true, true, true, true, true},
+	value={0.005, 0.01, 0.02, 0.375, 0.5}},
 	{
 	name="text_wrap",
 	option_text="Text Wrap",
 	items_text={"page fit","page reflow"},
+	default_item=2,
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true},
@@ -48,6 +53,7 @@ KOPTOptions =  {
 	name="auto_straighten",
 	option_text="Auto Straighten",
 	items_text={"default","0","5","10"},
+	default_item=1,
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
@@ -56,6 +62,7 @@ KOPTOptions =  {
 	name="justification",
 	option_text="Justification",
 	items_text={"default","left","center","right","full"},
+	default_item=1,
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
@@ -64,6 +71,7 @@ KOPTOptions =  {
 	name="max_columns",
 	option_text="Columns",
 	items_text={"auto","1","2","3","4"},
+	default_item=1,
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
@@ -72,10 +80,20 @@ KOPTOptions =  {
 	name="contrast",
 	option_text="Contrast",
 	items_text={"lightest","lighter","default","darker","darkest"},
+	default_item=3,
 	current_item=3,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
 	value={0.2, 0.4, 1.0, 1.8, 2.6}},
+	{
+	name="screen_rotation",
+	option_text="Screen Rotation",
+	items_text={"0","90","180","270"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	value={0, 90, 180, 270}},
 }
 
 KOPTConfig = {
@@ -161,11 +179,20 @@ function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, refresh)
 	end
 end
 
-function KOPTConfig:makeDefault()
+function KOPTConfig:makeDefault(configurable)
 	for i=1,#KOPTOptions do
 		KOPTOptions[i].text_dirty = true
 		for j=1,#KOPTOptions[i].items_text do
 			KOPTOptions[i].marker_dirty[j] = true
+		end
+		local option = KOPTOptions[i].name
+		local value = configurable[option]
+		KOPTOptions[i].current_item = KOPTOptions[i].default_item
+		for index, val in pairs(KOPTOptions[i].value) do
+			if val == value then
+				KOPTOptions[i].current_item = index
+				break
+			end
 		end
 	end
 end
@@ -180,9 +207,9 @@ end
 function KOPTConfig:config(callback, reader, configurable)
 	local kopt_callback = callback
 	local koptreader = reader
-	local configurable = configurable
+	--local configurable = configurable
 	
-	self:makeDefault()
+	self:makeDefault(configurable)
 	self:addAllCommands()
 	
 	local name_font = Font:getFace("tfont", self.OPT_NAME_FONT_SIZE)
