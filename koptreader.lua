@@ -295,6 +295,7 @@ end
 function KOPTReader:setDefaults()
     self.show_overlap_enable = true
     self.show_links_enable = false
+    self.comics_mode_enable = false
 end
 
 -- backup global variables from UniReader
