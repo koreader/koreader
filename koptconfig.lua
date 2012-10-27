@@ -45,6 +45,14 @@ KOPTOptions =  {
 	marker_dirty={true, true},
 	value={0, 1}},
 	{
+	name="auto_straighten",
+	option_text="Auto Straighten",
+	items_text={"0","5","10"},
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={0, 5, 10}},
+	{
 	name="justification",
 	option_text="Justification",
 	items_text={"default","left","center","right","full"},
@@ -73,7 +81,7 @@ KOPTOptions =  {
 KOPTConfig = {
 	-- UI constants
 	WIDTH = 550,   -- width
-	HEIGHT = 350,  -- height
+	HEIGHT = 400,  -- height
 	MARGIN_BOTTOM = 25,  -- window bottom margin
 	OPTION_PADDING_T = 70, -- option top padding
 	OPTION_PADDING_H = 50, -- option horizontal padding

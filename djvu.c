@@ -482,12 +482,13 @@ static int reflowPage(lua_State *L) {
 	double line_spacing = luaL_checknumber(L, 8);
 	double word_spacing = luaL_checknumber(L, 9);
 	int text_wrap = luaL_checkint(L, 10);
-	int justification = luaL_checkint(L, 11);
-	int columns = luaL_checkint(L, 12);
-	double contrast = luaL_checknumber(L, 13);
+	int straighten = luaL_checkint(L, 11);
+	int justification = luaL_checkint(L, 12);
+	int columns = luaL_checkint(L, 13);
+	double contrast = luaL_checknumber(L, 14);
 
 	k2pdfopt_set_params(width, height, font_size, page_margin, line_spacing, word_spacing, \
-			text_wrap, justification, columns, contrast);
+			text_wrap, straighten, justification, columns, contrast);
 	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat);
 	k2pdfopt_rfbmp_size(&width, &height);
 	k2pdfopt_rfbmp_zoom(&dc->zoom);

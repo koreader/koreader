@@ -8,6 +8,7 @@ Configurable = {
 	line_spacing = 1.2,
 	word_spacing = 0.375,
 	text_wrap = 1,
+	auto_straighten = 0,
 	justification = -1,
 	max_columns = 2,
 	contrast = 1.0,
@@ -16,7 +17,7 @@ Configurable = {
 function Configurable:hash()
 	hash = self.font_size..'_'..self.page_margin
 	hash = hash..'_'..self.line_spacing..'_'..self.word_spacing
-	hash = hash..'_'..self.text_wrap..'_'..self.justification
+	hash = hash..'_'..self.text_wrap..'_'..self.auto_straighten..'_'..self.justification
 	hash = hash..'_'..self.max_columns..'_'..self.contrast
 	return hash
 end
@@ -149,7 +150,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	local line_spacing, word_spacing = Configurable.line_spacing, Configurable.word_spacing
 	local text_wrap, justification = Configurable.text_wrap, Configurable.justification
 	local max_columns, contrast = Configurable.max_columns, Configurable.contrast
-	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, justification, max_columns, contrast)
+	local auto_straighten = Configurable.auto_straighten
+	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, max_columns, contrast)
 	self.globalzoom_orig = self.kopt_zoom
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight, "zoom:", self.kopt_zoom)
 	
@@ -219,11 +221,6 @@ function KOPTReader:setzoom(page, preCache)
 	if(self.min_offset_y > 0) then
 		self.min_offset_y = 0
 	end
-	
-	-- we will guess the offset_y when font_size is changed.
-	-- it is not a good enough guess but simple enough.
-	self.offset_y = self.offset_y*Configurable.font_size/self.last_font_size
-	self.last_font_size = Configurable.font_size
 	
 	dc:setZoom(self.kopt_zoom)
 	Debug("setzoom:", "globalzoom_orig", self.globalzoom_orig)

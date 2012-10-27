@@ -29,7 +29,7 @@
 void k2pdfopt_set_params(int bb_width, int bb_height, \
 		double font_size, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, int justification, \
+		int wrapping, int straighten, int justification, \
 		int columns, double contrast);
 void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx);
 void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, ddjvu_render_mode_t mode, ddjvu_format_t *fmt);
