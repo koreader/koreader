@@ -1419,10 +1419,12 @@ function UniReader:show(no)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
 	Debug("self.show_overlap", self.show_overlap)
-	if self.show_overlap < 0 and self.show_overlap_enable and not self.comics_mode_enable then
-		fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
-	elseif self.show_overlap > 0 and self.show_overlap_enable and not self.comics_mode_enable then
-		fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
+       if self.show_overlap_enable and not self.comics_mode_enable then
+               if self.show_overlap < 0 then
+                       fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
+               elseif self.show_overlap > 0 then
+                       fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
+               end
 	end
 	self.show_overlap = 0
 
