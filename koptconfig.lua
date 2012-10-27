@@ -47,11 +47,11 @@ KOPTOptions =  {
 	{
 	name="auto_straighten",
 	option_text="Auto Straighten",
-	items_text={"0","5","10"},
+	items_text={"default","0","5","10"},
 	current_item=1,
 	text_dirty=true,
-	marker_dirty={true, true},
-	value={0, 5, 10}},
+	marker_dirty={true, true, true, true},
+	value={0, 0, 5, 10}},
 	{
 	name="justification",
 	option_text="Justification",
