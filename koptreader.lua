@@ -14,16 +14,46 @@ Configurable = {
 	contrast = 1.0,
 }
 
-function Configurable:hash()
-	hash = self.font_size..'_'..self.page_margin
-	hash = hash..'_'..self.line_spacing..'_'..self.word_spacing
-	hash = hash..'_'..self.text_wrap..'_'..self.auto_straighten..'_'..self.justification
-	hash = hash..'_'..self.max_columns..'_'..self.contrast
+function Configurable:hash(sep)
+	local hash = ""
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			hash = hash..sep..value
+		end
+	end
 	return hash
 end
 
+function Configurable:loadDefaults()
+	-- Configurable = {}
+	for i=1,#KOPTOptions do
+		local key = KOPTOptions[i].name
+		local default_item = KOPTOptions[i].default_item
+		self[key] = KOPTOptions[i].value[default_item]
+	end
+end
+
+function Configurable:loadSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			saved_value = settings:readSetting(prefix..key)
+			self[key] = (saved_value == nil) and self[key] or saved_value
+			--Debug("Configurable:loadSettings", "key", key, "saved value", saved_value,"Configurable.key", self[key])
+		end
+	end
+	--Debug("loaded config:", dump(Configurable))
+end
+
+function Configurable:saveSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			settings:saveSetting(prefix..key, value)
+		end
+	end
+end
+
 KOPTReader = UniReader:new{
-	last_font_size = Configurable.font_size
+	configurable = {}
 }
 
 -- open a PDF/DJVU file and its settings store
@@ -88,7 +118,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	local dc = self:setzoom(page, preCache)
 	
 	-- check if we have relevant cache contents
-	local pagehash = no..'_'..Configurable:hash()
+	local pagehash = no..self.configurable:hash('_')
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -146,14 +176,13 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	Debug("page::reflowPage:", "width:", width, "height:", height)
-	local font_size, page_margin = Configurable.font_size, Configurable.page_margin
-	local line_spacing, word_spacing = Configurable.line_spacing, Configurable.word_spacing
-	local text_wrap, justification = Configurable.text_wrap, Configurable.justification
-	local max_columns, contrast = Configurable.max_columns, Configurable.contrast
-	local auto_straighten = Configurable.auto_straighten
-	self.fullwidth, self.fullheight, self.kopt_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, max_columns, contrast)
-	self.globalzoom_orig = self.kopt_zoom
-	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight, "zoom:", self.kopt_zoom)
+	local font_size, page_margin = self.configurable.font_size, self.configurable.page_margin
+	local line_spacing, word_spacing = self.configurable.line_spacing, self.configurable.word_spacing
+	local text_wrap, justification = self.configurable.text_wrap, self.configurable.justification
+	local max_columns, contrast = self.configurable.max_columns, self.configurable.contrast
+	local auto_straighten = self.configurable.auto_straighten
+	self.fullwidth, self.fullheight, self.reflow_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, max_columns, contrast)
+	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
 		-- yes we can, so do this with offset 0, 0
@@ -222,14 +251,6 @@ function KOPTReader:setzoom(page, preCache)
 		self.min_offset_y = 0
 	end
 	
-	dc:setZoom(self.kopt_zoom)
-	Debug("setzoom:", "globalzoom_orig", self.globalzoom_orig)
-	
-	if self.kopt_gamma ~= self.GAMMA_NO_GAMMA then
-		Debug("gamma correction: ", self.kopt_gamma)
-		dc:setGamma(self.kopt_gamma)
-	end
-	
 	return dc
 end
 
@@ -277,13 +298,16 @@ end
 -- backup global variables from UniReader
 function KOPTReader:loadSettings(filename)
 	UniReader.loadSettings(self,filename)
-	self.kopt_zoom = self.settings:readSetting("kopt_zoom") or 1.0
-	self.kopt_gamma = self.settings:readSetting("kopt_gamma") or 1.0
+	self.configurable = Configurable
+	self.configurable:loadDefaults()
+    --Debug("default configurable:", dump(self.configurable))
+	self.configurable:loadSettings(self.settings, 'kopt_')
+	--Debug("loaded configurable:", dump(self.configurable))
 end
 
 function KOPTReader:saveSpecialSettings()
-	self.settings:saveSetting("kopt_zoom", self.kopt_zoom)
-	self.settings:saveSetting("kopt_gamma", self.kopt_gamma)
+	self.configurable:saveSettings(self.settings, 'kopt_')
+	--Debug("saved configurable:", dump(self.configurable))
 end
 
 function KOPTReader:init()
@@ -310,10 +334,14 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_L, nil, "L")
 	self.commands:del(KEY_L, MOD_SHIFT, "L")
 	self.commands:del(KEY_M, nil, "M")
+	self.commands:delGroup(MOD_ALT.."< >")
+	self.commands:delGroup(MOD_SHIFT.."< >")
+	self.commands:delGroup("vol-/+")
+	
 	self.commands:add({KEY_F,KEY_AA}, nil, "F",
 		"change koptreader configuration",
 		function(self)
-			KOPTConfig:config(KOPTReader.redrawCurrentPage, self, Configurable)
+			KOPTConfig:config(KOPTReader.redrawCurrentPage, self, self.configurable)
 			self:redrawCurrentPage()
 		end
 	)
