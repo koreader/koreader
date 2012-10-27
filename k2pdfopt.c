@@ -480,7 +480,6 @@ void k2pdfopt_set_params(int bb_width, int bb_height, double page_margin, \
 	vertical_line_spacing = line_space;
 	word_spacing = word_space;
 	text_wrap = wrapping;
-	dst_justify = justification;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 
 	// margin
