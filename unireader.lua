@@ -1599,7 +1599,6 @@ end
 
 function UniReader:nextView()
 	local pageno = self.pageno
-	local numpages = self.doc:getPages()
 
 	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
 
@@ -1607,7 +1606,7 @@ function UniReader:nextView()
 	or self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y <= self.min_offset_y then
 			-- hit content bottom, turn to next page
-			if pageno < numpages then
+			if pageno < self.doc:getPages() then
 				self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
 			end
 			pageno = pageno + 1
