@@ -283,8 +283,10 @@ function KOPTReader:prevView()
 	Debug("preView offset_y", self.offset_y, "min_offset_y", self.min_offset_y)
 	if self.offset_y >= 0 then
 		-- hit content top, turn to previous page bottom
-		self.offset_x = 0
-		self.offset_y = -2012534
+		if pageno > 1 then
+			self.offset_x = 0
+			self.offset_y = -2012534
+		end
 		pageno = pageno - 1
 	else
 		-- goto previous view of current page
