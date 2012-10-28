@@ -262,8 +262,11 @@ function KOPTReader:nextView()
 	Debug("nextView offset_y", self.offset_y, "min_offset_y", self.min_offset_y)
 	if self.offset_y <= self.min_offset_y then
 		-- hit content bottom, turn to next page top
-		self.offset_x = 0
-		self.offset_y = 0
+		local numpages = self.doc:getPages()
+		if pageno < numpages then
+			self.offset_x = 0
+			self.offset_y = 0
+		end
 		pageno = pageno + 1
 	else
 		-- goto next view of current page
@@ -301,6 +304,7 @@ end
 -- backup global variables from UniReader
 function KOPTReader:loadSettings(filename)
 	UniReader.loadSettings(self,filename)
+	self.offset_y = self.settings:readSetting("kopt_offset_y") or 0
 	self.configurable = Configurable
 	self.configurable:loadDefaults()
     --Debug("default configurable:", dump(self.configurable))
@@ -309,6 +313,7 @@ function KOPTReader:loadSettings(filename)
 end
 
 function KOPTReader:saveSpecialSettings()
+	self.settings:saveSetting("kopt_offset_y", self.offset_y)
 	self.configurable:saveSettings(self.settings, 'kopt_')
 	--Debug("saved configurable:", dump(self.configurable))
 end
