@@ -1599,6 +1599,7 @@ end
 
 function UniReader:nextView()
 	local pageno = self.pageno
+	local numpages = self.doc:getPages()
 
 	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
 
@@ -1606,7 +1607,9 @@ function UniReader:nextView()
 	or self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		if self.offset_y <= self.min_offset_y then
 			-- hit content bottom, turn to next page
-			self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+			if pageno < numpages then
+				self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+			end
 			pageno = pageno + 1
 		else
 			-- goto next view of current page
@@ -1643,7 +1646,9 @@ function UniReader:prevView()
 		if self.offset_y >= self.content_top then
 			-- hit content top, turn to previous page
 			-- set self.content_top with magic num to signal self:setZoom
-			self.content_top = -2012
+			if pageno > 1 then
+				self.content_top = -2012
+			end
 			pageno = pageno - 1
 		else
 			-- goto previous view of current page
