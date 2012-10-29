@@ -126,17 +126,17 @@ function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
 	blitbuffer.paintBorder(fb.bb, xpos, ypos+hight-2*r, width, r, r, bgcolor, r)
 end
 
-function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, refresh)
+function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, redraw)
 	local width = self.WIDTH
 	local xpos, ypos = xpos+self.OPTION_PADDING_H+self.NAME_ALIGN_RIGHT*(width-2*self.OPTION_PADDING_H), ypos+self.OPTION_PADDING_T
-	if KOPTOptions[option_index].text_dirty or refresh then
+	if KOPTOptions[option_index].text_dirty or redraw then
 		--Debug("drawing option name:", KOPTOptions[option_index].option_text)
 		local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
 		renderUtf8Text(fb.bb, xpos-text_len, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
 	end
 end
 
-function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, font_face, refresh)
+function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, font_face, redraw, refresh)
 	self.text_pos = (item_index == 1) and 0 or self.text_pos
 	local width = self.WIDTH
 	local offset = self.OPTION_PADDING_H+self.ITEM_ALIGN_LEFT*(width-2*self.OPTION_PADDING_H)
@@ -147,7 +147,7 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	if KOPTOptions[option_index].text_font_size then
 		font_face = Font:getFace("cfont", KOPTOptions[option_index].text_font_size[item_index])
 	end
-	if KOPTOptions[option_index].text_dirty or refresh then
+	if KOPTOptions[option_index].text_dirty or redraw then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "item:", text)
 		renderUtf8Text(fb.bb, xpos, ypos, font_face, text, true)
 	end
@@ -155,25 +155,29 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
 	self.text_pos = self.text_pos + text_len
 	
-	if KOPTOptions[option_index].marker_dirty[item_index] or refresh then
+	if KOPTOptions[option_index].marker_dirty[item_index] or redraw then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "marker:", text)
 		if item_index == KOPTOptions[option_index].current_item then
 			fb.bb:paintRect(xpos, ypos+5, text_len, 3,(option_index == self.current_option) and 15 or 5)
-			fb:refresh(1, xpos, ypos+5, text_len, 3)
+			if refresh then 
+				fb:refresh(1, xpos, ypos+5, text_len, 3)
+			end
 		else
 			fb.bb:paintRect(xpos, ypos+5, text_len, 3, 3)
-			fb:refresh(1, xpos, ypos+5, text_len, 3)
+			if refresh then
+				fb:refresh(1, xpos, ypos+5, text_len, 3)
+			end
 		end
 		KOPTOptions[option_index].marker_dirty[item_index] = false
 	end
 end
 
-function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, refresh)
+function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, redraw, refresh)
 	local width, height = self.WIDTH, self.HEIGHT
 	for i=1,#KOPTOptions do
-		self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, refresh)
+		self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, redraw)
 		for j=1,#KOPTOptions[i].items_text do
-			self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], item_font, refresh)
+			self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], item_font, redraw, refresh)
 		end
 		KOPTOptions[i].text_dirty = false
 	end
@@ -221,7 +225,7 @@ function KOPTConfig:config(callback, reader, configurable)
 	local botleft_x, botleft_y = topleft_x, topleft_y+height
 	
 	self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
-	self:drawOptions(topleft_x, topleft_y, name_font, item_font)
+	self:drawOptions(topleft_x, topleft_y, name_font, item_font, true, false)
 	fb:refresh(1, topleft_x, topleft_y, width, height)
 	
 	local ev, keydef, command, ret_code
@@ -232,11 +236,11 @@ function KOPTConfig:config(callback, reader, configurable)
 		if self.page_dirty then
 			kopt_callback(koptreader)
 			self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
-			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true)
+			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true, false)
 			fb:refresh(1, topleft_x, topleft_y, width, height)
 			self.page_dirty = false
 		end
-		self:drawOptions(topleft_x, topleft_y, name_font, item_font)
+		self:drawOptions(topleft_x, topleft_y, name_font, item_font, false, true)
 		
 		ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
