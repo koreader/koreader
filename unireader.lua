@@ -1987,7 +1987,7 @@ function UniReader:showBookMarks()
 	-- build menu items
 	for k,v in ipairs(self.bookmarks) do
 		table.insert(menu_items,
-			"Page "..v.page.." "..v.notes.." @ "..v.datetime)
+			"p."..v.page.." "..v.notes.." @ "..v.datetime)
 	end
 	if #menu_items == 0 then
 		return InfoMessage:inform("No bookmarks found ", 1500, 1, MSG_WARN)
@@ -2187,7 +2187,8 @@ end
 -- used in UniReader:showMenu()
 function UniReader:_drawReadingInfo()
 	local width, height = G_width, G_height
-	local load_percent = (self.pageno / self.doc:getPages())
+	local numpages = self.doc:getPages()
+	local load_percent = (self.pageno / numpages)
 	-- changed to be the same font group as originaly intended
 	local face = Font:getFace("rifont", 20)
 
@@ -2210,8 +2211,7 @@ function UniReader:_drawReadingInfo()
 		cur_section = "Sec: "..cur_section
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face,
-		"Page: "..self.pageno.."/"..self.doc:getPages()..
-		"    "..cur_section, true)
+		"p."..self.pageno.."/"..numpages.."   "..cur_section, true)
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,
@@ -2541,13 +2541,14 @@ function UniReader:addAllCommands()
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)
 	self.commands:add(KEY_G,nil,"G",
-		"open 'go to page' input box",
+		"go to page",
 		function(unireader)
+			local numpages = unireader.doc:getPages()
 			local page = NumInputBox:input(G_height-100, 100,
-				"Page:", "current page "..self.pageno, true)
+				"Page:", "current page "..self.pageno.." of "..numpages, true)
 			-- convert string to number
 			if not pcall(function () page = math.floor(page) end)
-			or page < 1 or page > unireader.doc:getPages() then
+			or page < 1 or page > numpages then
 				page = unireader.pageno
 			end
 			unireader:goto(page)
