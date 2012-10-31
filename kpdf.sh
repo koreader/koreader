@@ -21,6 +21,7 @@ fi
 # stop cvm
 killall -stop cvm
 
+export LD_LIBRARY_PATH=`pwd`/libs
 # finally call reader
 ./reader.lua "$1" 2> /mnt/us/kindlepdfviewer/crash.log || cat /mnt/us/kindlepdfviewer/crash.log
 

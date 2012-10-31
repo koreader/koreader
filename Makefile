@@ -90,7 +90,8 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
-DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
+DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so
+DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
@@ -132,7 +133,6 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
 		djvu.o \
-		$(DJVULIBS) \
 		pic.o \
 		pic_jpeg.o \
 		cre.o \
@@ -140,7 +140,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread -ljpeg -L$(MUPDFLIBDIR) \
+		-lm -ldl -lpthread -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(DJVULIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -212,6 +212,11 @@ clean:
 	rm -f *.o kpdfview slider_watcher extr
 
 cleanthirdparty:
+ifdef EMULATE_READER
+	rm -rf libs-emu ; mkdir libs-emu
+else
+	rm -rf libs ; mkdir libs
+endif
 	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" CFLAGS="$(BASE_CFLAGS)" clean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
@@ -241,11 +246,14 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
-else
-	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
-endif
+	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --disable-xmltools --disable-largefile
 	$(MAKE) -C $(DJVUDIR)/build
+	cp -a $(DJVULIBDIR)/libdjvulibre.so* libs-emu
+else
+	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --host=$(CHOST) --disable-xmltools --disable-largefile
+	$(MAKE) -C $(DJVUDIR)/build
+	cp $(DJVULIBDIR)/libdjvulibre.so.21 libs
+endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
@@ -276,9 +284,11 @@ customupdate: all
 	$(STRIP) --strip-unneeded kpdfview extr
 	rm -f kindlepdfviewer-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
-	mkdir -p $(INSTALL_DIR)/{history,screenshots}
+	mkdir -p $(INSTALL_DIR)/{history,screenshots,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
+	cp libs/* $(INSTALL_DIR)/libs
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
 	cp -r git-rev resources $(INSTALL_DIR)
