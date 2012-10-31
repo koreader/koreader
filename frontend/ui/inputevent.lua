@@ -1,10 +1,25 @@
 require "ui/event"
 require "ui/device"
+require "settings"
 
 -- constants from <linux/input.h>
+EV_SYN = 0
 EV_KEY = 1
+EV_ABS = 3
 
--- event values
+-- Synchronization events (SYN.code).
+SYN_REPORT = 0
+SYN_CONFIG = 1
+SYN_MT_REPORT = 2
+
+-- For multi-touch events (ABS.code).
+ABS_MT_SLOT = 47
+ABS_MT_POSITION_X = 53
+ABS_MT_POSITION_Y = 54
+ABS_MT_TRACKING_ID = 57
+ABS_MT_PRESSURE = 58
+
+-- key press event values (KEY.value)
 EVENT_VALUE_KEY_PRESS = 1
 EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
@@ -219,7 +234,7 @@ Input = {
 			"Back", "Enter", "Sym", "AA", "Menu", "Home", "Del",
 			"LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
 		}
-	}
+	},
 }
 
 function Input:init()
@@ -324,6 +339,29 @@ function Input:waitEvent(timeout_us, timeout_s)
 				return Event:new("KeyPress", key)
 			elseif ev.value == EVENT_VALUE_KEY_RELEASE then
 				return Event:new("KeyRelease", key)
+			end
+		elseif ev.type == EV_ABS then
+			if ev.code == ABS_MT_SLOT then
+				DEBUG("MT_SLOT:", ev.value)
+			elseif ev.code == ABS_MT_TRACKING_ID then
+				DEBUG("MT_TRACK_ID:", ev.value)
+			elseif ev.code == ABS_MT_POSITION_X then
+				DEBUG("MT_X:", ev.value)
+			elseif ev.code == ABS_MT_POSITION_Y then
+				DEBUG("MT_Y:", ev.value)
+			else
+				DEBUG("unknown touch event!", ev)
+				return Event:new("UnkonwnTouchEvent", ev)
+			end
+		elseif ev.type == EV_SYN then
+			if ev.code == SYN_REPORT then
+				DEBUG("SYN REPORT")
+			elseif ev.code == SYN_MT_REPORT then
+				DEBUG("SYN MT_REPORT")
+			elseif ev.code == SYN_CONFIG then
+				DEBUG("SYN CONFIG")
+			else
+				DEBUG(ev)
 			end
 		else
 			-- some other kind of event that we do not know yet
