@@ -623,7 +623,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getPosFromXPointer", getPosFromXPointer},
 	{"getCurrentPos", getCurrentPos},
 	{"getCurrentPercent", getCurrentPercent},
-	{"getCurrentXPointer", getCurrentXPointer},
+	{"getXPointer", getXPointer},
 	{"getFullHeight", getFullHeight},
 	{"getFontSize", getFontSize},
 	{"getFontFace", getFontFace},
