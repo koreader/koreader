@@ -245,6 +245,7 @@ static int column_fitted = 0;
 static double lm_org, bm_org, tm_org, rm_org, dpi_org;
 static double contrast_max = 2.0;
 static int show_marked_source = 0;
+static int preserve_indentation = 1;
 static double defect_size_pts = 1.0;
 static double max_vertical_gap_inches = 0.25;
 static double vertical_multiplier = 1.0;
@@ -494,7 +495,8 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 void k2pdfopt_set_params(int bb_width, int bb_height, \
 		double font_size, double page_margin, \
 		double line_space, double word_space, \
-		int wrapping, int straighten, int justification, \
+		int wrapping, int straighten, \
+		int justification, int detect_indent,\
 		int columns, double contrast, int rotation) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
@@ -503,6 +505,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	word_spacing = word_space;
 	text_wrap = wrapping;
 	src_autostraighten = straighten;
+	preserve_indentation = detect_indent;
 	max_columns = columns;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 	src_rot = rotation;
@@ -513,7 +516,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
-
+	printf("justification:%d", justification);
 	// justification
 	if (justification < 0) {
 		dst_justify = -1;
@@ -3155,6 +3158,7 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 			indent1 = (double) (c1[i - i1] - region->c1) / textheight;
 		else
 			indent1 = (double) (region->c2 - c2[i - i1]) / textheight;
+		if (preserve_indentation == 0) indent1 = 0;
 // printf("    row %2d:  indent1=%g\n",i-i1,indent1);
 		if (!breakinfo->centered) {
 			indented[i - i1] = (indent1 > 0.5 && ilfi < 1.2 && ilf < .25);
