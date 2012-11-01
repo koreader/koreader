@@ -4,8 +4,6 @@ lua-*
 .reader.kpdfview.lua
 mupdf-thirdparty.zip
 djvulibre*
-<<<<<<< HEAD
-=======
 crash.log
 .vimrc
 git-rev
