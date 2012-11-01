@@ -2188,29 +2188,31 @@ end
 function memUsage()
 	local rss, data, stack, lib, totalvm = -1, -1, -1, -1, -1
 	local file = io.open("/proc/self/status", "r")
-	for line in file:lines() do
-		local s, n
-		s, n = line:gsub("VmRSS:%s-(%d+) kB", "%1")	
-		if n ~= 0 then rss = tonumber(s) end
+	if file then
+		for line in file:lines() do
+			local s, n
+			s, n = line:gsub("VmRSS:%s-(%d+) kB", "%1")	
+			if n ~= 0 then rss = tonumber(s) end
 
-		s, n = line:gsub("VmData:%s-(%d+) kB", "%1")	
-		if n ~= 0 then data = tonumber(s) end
+			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")	
+			if n ~= 0 then data = tonumber(s) end
 
-		s, n = line:gsub("VmStk:%s-(%d+) kB", "%1")	
-		if n ~= 0 then stack = tonumber(s) end
+			s, n = line:gsub("VmStk:%s-(%d+) kB", "%1")	
+			if n ~= 0 then stack = tonumber(s) end
 
-		s, n = line:gsub("VmLib:%s-(%d+) kB", "%1")	
-		if n ~= 0 then lib = tonumber(s) end
+			s, n = line:gsub("VmLib:%s-(%d+) kB", "%1")	
+			if n ~= 0 then lib = tonumber(s) end
 
-		s, n = line:gsub("VmSize:%s-(%d+) kB", "%1")	
-		if n ~= 0 then totalvm = tonumber(s) end
+			s, n = line:gsub("VmSize:%s-(%d+) kB", "%1")	
+			if n ~= 0 then totalvm = tonumber(s) end
 
-		if rss ~= -1 and data ~= -1 and stack ~= -1 
-		  and lib ~= -1 and totalvm ~= -1 then
-			break
-		end
-	end
-	file:close()
+			if rss ~= -1 and data ~= -1 and stack ~= -1 
+			  and lib ~= -1 and totalvm ~= -1 then
+				break
+			end
+		end -- for line in file:lines()
+		file:close()
+	end -- if file
 	return rss, data, stack, lib, totalvm
 end
 
