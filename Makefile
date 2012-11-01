@@ -253,6 +253,7 @@ ifdef EMULATE_READER
 else
 	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --host=$(CHOST) --disable-xmltools --disable-largefile
 	$(MAKE) -C $(DJVUDIR)/build
+	test -d libs || mkdir libs
 	cp $(DJVULIBDIR)/libdjvulibre.so.21 libs
 endif
 
