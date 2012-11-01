@@ -61,7 +61,8 @@ for this. It allows to develop on a standard PC and saves precious development
 time. It might also compose the most unfriendly desktop PDF reader, depending
 on your view.
 
-If you are using Ubuntu, simply install `libsdl-dev1.2` package.
+If you are using Fedora Core Linux, do `yum install SDL SDL-devel`.
+If you are using Ubuntu, install `libsdl-dev1.2` package.
 
 To build in "emulation mode", you need to run make like this:
 	make clean cleanthirdparty

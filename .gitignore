@@ -4,6 +4,9 @@ lua-*
 .reader.kpdfview.lua
 mupdf-thirdparty.zip
 djvulibre*
+crash.log
+.vimrc
+git-rev
 kpdfview
 slider_watcher
 *.o

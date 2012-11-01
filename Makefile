@@ -9,6 +9,7 @@ KPVCRLIBDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
 FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
+JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
@@ -18,6 +19,7 @@ TTF_FONTS_DIR=$(MUPDFDIR)/fonts
 
 # set this to your ARM cross compiler:
 
+SHELL:=/bin/bash
 CHOST?=arm-none-linux-gnueabi
 CC:=$(CHOST)-gcc
 CXX:=$(CHOST)-g++
@@ -88,7 +90,8 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
-DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.a
+DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so
+DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
@@ -107,16 +110,17 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-all: kpdfview
+all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS)
+kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
+		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
 		input.o \
@@ -129,15 +133,22 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o input.o $(POPENNS
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
 		djvu.o \
-		$(DJVULIBS) \
+		pic.o \
+		pic_jpeg.o \
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread \
+		-lm -ldl -lpthread -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(DJVULIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
+
+extr:	extr.o $(MUPDFLIBS) $(THIRDPARTYLIBS)
+	$(CC) $(CFLAGS) extr.o $(MUPDFLIBS) $(THIRDPARTYLIBS) -lm -o extr
+
+extr.o:	%.o: %.c
+	$(CC) -c -I$(MUPDFDIR)/pdf -I$(MUPDFDIR)/fitz $< -o $@
 
 slider_watcher.o: %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -151,8 +162,17 @@ ft.o: %.o: %.c $(THIRDPARTYLIBS)
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
+k2pdfopt.o: %.o: %.c
+	$(CC) -c -I$(MUPDFDIR)/ -I$(DJVUDIR)/ $(CFLAGS) $< -o $@
+
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
+
+pic.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) $< -o $@
+
+pic_jpeg.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) -I$(JPEGDIR)/ -I$(MUPDFDIR)/scripts/ $< -o $@
 
 cre.o: %.o: %.cpp
 	$(CC) -c $(CFLAGS) -I$(CRENGINEDIR)/crengine/include/ -I$(LUADIR)/src $< -o $@
@@ -175,7 +195,8 @@ fetchthirdparty:
 	# CREngine patch: change child nodes' type face
 	# @TODO replace this dirty hack  24.04 2012 (houqp)
 	cd kpvcrlib/crengine/crengine/src && \
-		patch -N -p0 < ../../../lvrend_node_type_face.patch || true
+		patch -N -p0 < ../../../lvrend_node_type_face.patch && \
+		patch -N -p3 < ../../../lvdocview-getCurrentPageLinks.patch || true
 	unzip mupdf-thirdparty.zip -d mupdf
 	# check mupdf's thirdparty libs' version, if not matched, remove the old one
 	# run make fetchthirdparty again to get the latest thirdparty libs.
@@ -192,10 +213,15 @@ fetchthirdparty:
 	cd popen-noshell && test -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
-	rm -f *.o kpdfview slider_watcher
+	rm -f *.o kpdfview slider_watcher extr
 
 cleanthirdparty:
-	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" CFLAGS="$(BASE_CFLAGS)" distclean
+ifdef EMULATE_READER
+	rm -rf libs-emu ; mkdir libs-emu
+else
+	rm -rf libs ; mkdir libs
+endif
+	$(MAKE) -C $(LUADIR) CC="$(HOSTCC)" CFLAGS="$(BASE_CFLAGS)" clean
 	$(MAKE) -C $(MUPDFDIR) build="release" clean
 	$(MAKE) -C $(CRENGINEDIR)/thirdparty/antiword clean
 	test -d $(CRENGINEDIR)/thirdparty/chmlib && $(MAKE) -C $(CRENGINEDIR)/thirdparty/chmlib clean || echo warn: chmlib folder not found
@@ -224,11 +250,15 @@ $(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.h
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
 ifdef EMULATE_READER
-	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --disable-xmltools --disable-largefile
-else
-	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-shared --enable-static --host=$(CHOST) --disable-xmltools --disable-largefile
-endif
+	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --disable-xmltools --disable-largefile
 	$(MAKE) -C $(DJVUDIR)/build
+	test -d libs-emu || mkdir libs-emu
+	cp -a $(DJVULIBDIR)/libdjvulibre.so* libs-emu
+else
+	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --host=$(CHOST) --disable-xmltools --disable-largefile
+	$(MAKE) -C $(DJVUDIR)/build
+	cp $(DJVULIBDIR)/libdjvulibre.so.21 libs
+endif
 
 $(CRENGINELIBS):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
@@ -253,14 +283,17 @@ INSTALL_DIR=kindlepdfviewer
 LUA_FILES=reader.lua
 
 customupdate: all
-	# ensure that build binary is for ARM
+	# ensure that the binaries were built for ARM
 	file kpdfview | grep ARM || exit 1
-	$(STRIP) --strip-unneeded kpdfview
+	file extr | grep ARM || exit 1
+	$(STRIP) --strip-unneeded kpdfview extr
 	rm -f kindlepdfviewer-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
-	mkdir -p $(INSTALL_DIR)/{history,screenshots}
-	cp -p README.md COPYING kpdfview kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
+	mkdir -p $(INSTALL_DIR)/{history,screenshots,libs}
+	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
+	cp libs/* $(INSTALL_DIR)/libs
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
 	cp -r git-rev resources $(INSTALL_DIR)
