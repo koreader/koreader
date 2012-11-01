@@ -2187,7 +2187,8 @@ end
 -- returns five numbers (in KB): rss, data, stack, lib, totalvm
 function memUsage()
 	local rss, data, stack, lib, totalvm = -1, -1, -1, -1, -1
-	for line in io.lines("/proc/self/status") do
+	local file = io.open("/proc/self/status", "r")
+	for line in file:lines() do
 		local s, n
 		s, n = line:gsub("VmRSS:%s-(%d+) kB", "%1")	
 		if n ~= 0 then rss = tonumber(s) end
@@ -2209,6 +2210,7 @@ function memUsage()
 			break
 		end
 	end
+	file:close()
 	return rss, data, stack, lib, totalvm
 end
 
