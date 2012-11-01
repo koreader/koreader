@@ -19,10 +19,11 @@ end
 function PICViewer:_drawReadingInfo()
 	local width = G_width
 	local face = Font:getFace("rifont", 20)
+	local rss, data, stack, lib, totalvm = memUsage()
 	local page_width, page_height, page_components = self.doc:getOriginalPageSize()
 
 	-- display memory, time, battery and image info on top of page
-	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
+	fb.bb:paintRect(0, 0, width, 60+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face,
 		"M: "..
 		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k", true)
@@ -34,6 +35,8 @@ function PICViewer:_drawReadingInfo()
 		tostring(page_width).."x"..tostring(page_height).."x"..tostring(page_components)..
 		" ("..tostring(math.ceil(page_width*page_height*page_components/1024)).."k), "..
 		string.format("%.1fx", self.globalzoom), true)
+	renderUtf8Text(fb.bb, 10, 15+6+44, face,
+	"RSS:"..rss.." DAT:"..data.." STK:"..stack.." LIB:"..lib.." TOT:"..totalvm.."k", true)
 end
 
 function PICViewer:init()
