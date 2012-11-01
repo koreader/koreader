@@ -2664,7 +2664,7 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end)
 
-	self.commands:add(KEY_R, MOD_ALT, "R",
+	self.commands:add(KEY_U, nil, "U",
 		"toggle right-to-left mode on/off",
 		function(unireader)
 			unireader.rtl_mode_enable = not unireader.rtl_mode_enable
