@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "pic.h"
@@ -86,6 +87,11 @@ static int openDocument(lua_State *L) {
 	} else {
 		free(raw_image);
 		return luaL_error(L, "Unsupported image format");
+	}
+
+	doc->width = width;
+	doc->height = height;
+	doc->components = components;
 	return 1;
 }
 
@@ -165,6 +171,26 @@ static int drawPage(lua_State *L) {
 
 	scaleImage(scaled_image, page->image, img_width, img_height, img_new_width, img_new_height);
 
+	uint8_t *bbptr = bb->data;
+	uint8_t *pmptr = scaled_image;
+	bbptr += bb->pitch * y_offset;
+	for(y = y_offset; y < img_new_height; y++) {
+		for(x = x_offset/2; x < (img_new_width / 2); x++) {
+			int p = x*2 - x_offset;
+			unsigned char low = 15 - (pmptr[p + 1] >> 4);
+			unsigned char high = 15 - (pmptr[p] >> 4);
+			if (adjust_pixels)
+				bbptr[x] = adjusted_high[high] | adjusted_low[low];
+			else
+				bbptr[x] = (high << 4) | low;
+		}
+		if (img_new_width & 1)
+			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+		bbptr += bb->pitch;
+		pmptr += img_new_width;
+	}
+
+	free(scaled_image);
 	return 0;
 }
 
