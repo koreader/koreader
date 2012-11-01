@@ -113,18 +113,21 @@ function DJVUReader:_drawReadingInfo()
 	local numpages = self.doc:getPages()
 	local load_percent = self.pageno/numpages
 	local face = Font:getFace("rifont", 20)
+	local rss, data, stack, lib, totalvm = memUsage()
 	local page_width, page_height, page_dpi, page_gamma, page_type = self.doc:getPageInfo(self.pageno)
 
 	-- display memory, time, battery and DjVu info on top of page
-	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
+	fb.bb:paintRect(0, 0, width, 60+6*2, 0)
 	renderUtf8Text(fb.bb, 10, 15+6, face,
 		"M: "..
-		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k, "..
+		math.ceil( self.cache_current_memsize / 1024 ).."/"..math.ceil( self.cache_max_memsize / 1024 ).."k "..
 		math.ceil( self.doc:getCacheSize() / 1024 ).."/"..math.ceil( self.cache_document_size / 1024 ).."k", true)
 	local txt = os.date("%a %d %b %Y %T").." ["..BatteryLevel().."]"
 	local w = sizeUtf8Text(0, width, face, txt, true).x
 	renderUtf8Text(fb.bb, width - w - 10, 15+6, face, txt, true)
 	renderUtf8Text(fb.bb, 10, 15+6+22, face,
+	"RSS:"..rss.." DAT:"..data.." STK:"..stack.." LIB:"..lib.." TOT:"..totalvm.."k", true)
+	renderUtf8Text(fb.bb, 10, 15+6+44, face,
 		"Gm:"..string.format("%.1f",self.globalgamma).." ["..tostring(page_gamma).."], "..
 		tostring(page_width).."x"..tostring(page_height)..", "..
 		string.format("%.1fx, ", self.globalzoom)..
@@ -140,7 +143,7 @@ function DJVUReader:_drawReadingInfo()
 		cur_section = "Sec: "..cur_section
 	end
 	renderUtf8Text(fb.bb, 10, ypos+6, face,
-		"Page: "..self.pageno.."/"..numpages.."   "..cur_section, true)
+		"p."..self.pageno.."/"..numpages.."   "..cur_section, true)
 
 	ypos = ypos + 15
 	blitbuffer.progressBar(fb.bb, 10, ypos, width-20, 15,

@@ -384,22 +384,31 @@ end
 ----------------------------------------------------
 -- used in CREReader:showMenu()
 function CREReader:_drawReadingInfo()
-	local ypos = G_height - 50
+	local width = G_width
 	local load_percent = self.percent/100
+	local rss, data, stack, lib, totalvm = memUsage()
+	local face = Font:getFace("rifont", 20)
 
-	fb.bb:paintRect(0, ypos, G_width, 50, 0)
+	-- display page number, date and memory stats at the top
+	fb.bb:paintRect(0, 0, width, 40+6*2, 0)
+	renderUtf8Text(fb.bb, 10, 15+6, face, "p."..self.pageno.."/"..self.doc:getPages(), true)
+	local txt = os.date("%a %d %b %Y %T").." ["..BatteryLevel().."]"
+	local w = sizeUtf8Text(0, width, face, txt, true).x
+	renderUtf8Text(fb.bb, width - w - 10, 15+6, face, txt, true)
+	renderUtf8Text(fb.bb, 10, 15+6+22, face,
+		"RSS:"..rss.." DAT:"..data.." STK:"..stack.." LIB:"..lib.." TOT:"..totalvm.."k", true)
+
+	-- display reading progress at the bottom
+	local ypos = G_height - 50
+	fb.bb:paintRect(0, ypos, width, 50, 0)
 
 	ypos = ypos + 15
-	local face = Font:getFace("rifont", 20)
 
 	local cur_section = self:getTocTitleOfCurrentPage()
 	if cur_section ~= "" then
-		cur_section = "  Section: "..cur_section
+		cur_section = "  Sec: "..cur_section
 	end
-	--[[ NuPogodi, 30.08.12: to show or not to show (page numbers in info message)?
-		"  Page: "..self.pageno.." of "..self.doc:getPages()
-	TODO: similar bar at the page top with the book author, book title, etc. ]]
-	local footer = "Position: "..load_percent.."%"..cur_section
+	local footer = load_percent.."%"..cur_section
 	if sizeUtf8Text(10, fb.bb:getWidth(), face, footer, true).x < (fb.bb:getWidth() - 20) then
 		renderUtf8Text(fb.bb, 10, ypos+6, face, footer, true)
 	else
@@ -408,7 +417,7 @@ function CREReader:_drawReadingInfo()
 		renderUtf8Text(fb.bb, gapx, ypos+6, face, "...", true)
 	end
 	ypos = ypos + 15
-	blitbuffer.progressBar(fb.bb, 10, ypos, G_width - 20, 15, 5, 4, load_percent/100, 8)
+	blitbuffer.progressBar(fb.bb, 10, ypos, width - 20, 15, 5, 4, load_percent/100, 8)
 end
 
 function CREReader:showMenu()
