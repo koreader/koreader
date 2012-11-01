@@ -6,7 +6,6 @@ require "ui/readerui"
 require "ui/filechooser"
 require "ui/infomessage"
 require "document/document"
-require "alt_getopt"
 
 function showReader(file, pass)
 	local document = DocumentRegistry:openDocument(file)
@@ -86,8 +85,6 @@ function showusage()
 	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
 	return
 end
-
-optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:dg:", longopts)
 
 if ARGV[1] == "-h" then
 	return showusage()
