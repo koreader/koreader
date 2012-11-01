@@ -252,6 +252,7 @@ $(DJVULIBS):
 ifdef EMULATE_READER
 	cd $(DJVUDIR)/build && CC="$(HOSTCC)" CXX="$(HOSTCXX)" CFLAGS="$(HOSTCFLAGS)" CXXFLAGS="$(HOSTCFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --disable-xmltools --disable-largefile
 	$(MAKE) -C $(DJVUDIR)/build
+	test -d libs-emu || mkdir libs-emu
 	cp -a $(DJVULIBDIR)/libdjvulibre.so* libs-emu
 else
 	cd $(DJVUDIR)/build && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ../configure --disable-desktopfiles --disable-static --enable-shared --host=$(CHOST) --disable-xmltools --disable-largefile
