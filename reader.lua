@@ -74,11 +74,8 @@ function showusage()
 	print("usage: ./reader.lua [OPTION] ... path")
 	print("Read all the books on your E-Ink reader")
 	print("")
-	print("-p, --password=PASSWORD   set password for reading PDF document")
-	print("-G, --gamma=GAMMA         set gamma correction")
-	print("                          (floating point notation, e.g. \"1.5\")")
-	print("-d, --debug               start in debug mode")
-	print("-h, --help                show this usage help")
+	print("-d               start in debug mode")
+	print("-h               show this usage help")
 	print("")
 	print("If you give the name of a directory instead of a file path, a file")
 	print("chooser will show up and let you select a file")
@@ -92,18 +89,16 @@ end
 
 optarg, optind = alt_getopt.get_opts(ARGV, "p:G:hg:dg:", longopts)
 
-if optarg["h"] then
+if ARGV[1] == "-h" then
 	return showusage()
 end
 
-if not optarg["d"] then
+local argidx = 1
+if ARGV[1] == "-d" then
+	argidx = argidx + 1	
+else
 	DEBUG = function() end
 end
-
-if optarg["G"] ~= nil then
-	globalgamma = optarg["G"]
-end
-
 
 if Device.isKindle4() then
 	-- remove menu item shortcut for K4
@@ -125,11 +120,11 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 --87712cf0e43fed624f8a9f610be42b1fe174b9fe
 
 
-if ARGV[optind] then
-	if lfs.attributes(ARGV[optind], "mode") == "directory" then
-		showFileManager(ARGV[optind])
-	elseif lfs.attributes(ARGV[optind], "mode") == "file" then
-		showReader(ARGV[optind], optarg["p"])
+if ARGV[argidx] then
+	if lfs.attributes(ARGV[argidx], "mode") == "directory" then
+		showFileManager(ARGV[argidx])
+	elseif lfs.attributes(ARGV[argidx], "mode") == "file" then
+		showReader(ARGV[argidx], optarg["p"])
 	end
 	UIManager:run()
 elseif last_file and lfs.attributes(last_file, "mode") == "file" then
