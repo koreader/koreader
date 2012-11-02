@@ -63,7 +63,7 @@ UniReader = {
 	pan_by_page = false, -- using shift_[xy] or width/height
 	pan_x = 0, -- top-left offset of page when pan activated
 	pan_y = 0,
-	pan_margin = 50, -- horizontal margin for two-column zoom (in pixels)
+	pan_margin = 5, -- horizontal margin for two-column zoom (in pixels)
 	pan_overlap_vertical = 30,
 	show_overlap = 0,
 	show_overlap_enable,
@@ -1344,7 +1344,7 @@ function UniReader:setzoom(page, preCache)
 		end
 		self.globalzoom = width / ( (x1 - x0) / ( 1 - ( margin / G_width ) ) ) -- decrease zoom for margin factor
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + margin
-		self.offset_y = -1 * y0 * self.globalzoom * 2
+		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
 		self.globalzoom = self.globalzoom * 2
 		if self.rtl_mode_enable then self.offset_x = width - (self.globalzoom * x1) - margin end
 		Debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom, " margin:", margin);
