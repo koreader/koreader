@@ -286,7 +286,7 @@ customupdate: all
 	$(STRIP) --strip-unneeded kpdfview extr
 	rm -f kindlepdfviewer-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
-	mkdir -p $(INSTALL_DIR)/{history,screenshots,libs}
+	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp libs/* $(INSTALL_DIR)/libs
