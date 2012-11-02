@@ -556,7 +556,6 @@ function FileChooser:addAllCommands()
 			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
-				lfs.mkdir(self.clipboard)
 				os.execute("cp "..self:InQuotes(file).." "..self.clipboard)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..self:InQuotes(DocToHistory(file)).." "
@@ -572,7 +571,6 @@ function FileChooser:addAllCommands()
 			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
-				lfs.mkdir(self.clipboard)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
@@ -608,7 +606,6 @@ function FileChooser:addAllCommands()
 			-- save the current directory in order to
 			-- return from clipboard via ".." entry
 			local current_path = self.path
-			lfs.mkdir(self.clipboard)
 			if self.clipboard ~= self.path then
 				self:setPath(self.clipboard)
 				self.before_clipboard = current_path
