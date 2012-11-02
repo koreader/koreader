@@ -92,7 +92,8 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 # for now, all dependencies except for the libc are compiled into the final binary:
 
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
-DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so
+DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so \
+			$(LIBDIR)/libdjvulibre.so
 DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
