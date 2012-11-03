@@ -109,7 +109,8 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(MUPDFLIBDIR)/libjpeg.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
-LUALIB := $(LIBDIR)/libluajit-5.1.so
+LUALIB := $(LIBDIR)/libluajit-5.1.so.2
+LUALIBCOMPAT := $(LIBDIR)/libluajit-5.1.so
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
@@ -256,6 +257,8 @@ else
 endif
 	test -d $(LIBDIR) || mkdir $(LIBDIR)
 	cp -a $(LUADIR)/src/libluajit.so $(LUALIB)
+	# old linker would not find a libluajit-5.1.so.2
+	cp -a $(LUADIR)/src/libluajit.so $(LUALIBCOMPAT)
 
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
