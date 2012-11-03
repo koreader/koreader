@@ -100,7 +100,7 @@ KOPTOptions =  {
 	current_item=3,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.2, 0.6, 1.0},
+	value={0.5, 0.8, 1.0},
 	show = true,
 	draw_index = nil,},
 	{
