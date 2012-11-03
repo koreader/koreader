@@ -498,7 +498,8 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 		int wrapping, int straighten, \
 		int justification, int detect_indent,\
 		int columns, double contrast, \
-		int rotation, double quality) {
+		int rotation, double quality, \
+		double defect_size) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
 	zoom_value = font_size;
@@ -511,6 +512,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 	src_rot = rotation;
 	src_dpi = (int)300*quality;
+	defect_size_pts = defect_size;
 
 	// margin
 	dst_mar = page_margin;
