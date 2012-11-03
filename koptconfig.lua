@@ -38,6 +38,17 @@ KOPTOptions =  {
 	show = true,
 	draw_index = nil,},
 	{
+	name="defect_size",
+	option_text="Defect Size",
+	items_text={"small","medium","large"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	value={1.0, 2.0, 5.0},
+	show = true,
+	draw_index = nil,},
+	{
 	name="page_margin",
 	option_text="Page Margin",
 	items_text={"small","medium","large"},

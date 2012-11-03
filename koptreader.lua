@@ -9,6 +9,7 @@ Configurable = {
 	word_spacing = 0.375,
 	quality = 1.0,
 	text_wrap = 1,
+	defect_size = 1.0,
 	detect_indent = 1,
 	auto_straighten = 0,
 	justification = -1,
@@ -187,7 +188,12 @@ function KOPTReader:drawOrCache(no, preCache)
 	local screen_rotation = self.configurable.screen_rotation
 	local detect_indent = self.configurable.detect_indent
 	local quality = self.configurable.quality
-	self.fullwidth, self.fullheight, self.reflow_zoom = page:reflow(dc, self.render_mode, width, height, font_size, page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, justification, detect_indent, max_columns, contrast, screen_rotation, quality)
+	local defect_size = self.configurable.defect_size
+	local fullwidth, fullheight, zoom = page:reflow(dc, self.render_mode, width, height, font_size, 
+										 page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, 
+										 justification, detect_indent, max_columns, contrast, screen_rotation, 
+										 quality, defect_size)
+	self.fullwidth, self.fullheight, self.reflow_zoom = fullwidth, fullheight, zoom
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
