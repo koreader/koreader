@@ -2616,7 +2616,7 @@ function UniReader:addAllCommands()
 		end)
 	self.commands:addGroup(MOD_ALT.."K/L",{
 		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
-		"Jump between bookmarks",
+		"jump between bookmarks",
 		function(unireader,keydef)
 			local bm = nil
 			if keydef.keycode == KEY_K then
@@ -2634,15 +2634,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate 10° clockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 10° clockwise...", nil, 1, MSG_AUX)
-			unireader:setRotate( unireader.globalrotate + 10 )
+			unireader:setRotate(unireader.globalrotate + 10)
 		end)
 	self.commands:add(KEY_J,nil,"J",
 		"rotate screen 90° clockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 90° clockwise...", nil, 1, MSG_AUX)
 			unireader:screenRotate("clockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -2653,15 +2649,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate 10° counterclockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 10° counterclockwise", nil, 1, MSG_AUX)
-			unireader:setRotate( unireader.globalrotate - 10 )
+			unireader:setRotate(unireader.globalrotate - 10)
 		end)
 	self.commands:add(KEY_K,nil,"K",
 		"rotate screen 90° counterclockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 90° counterclockwise", nil, 1, MSG_AUX)
 			unireader:screenRotate("anticlockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -2674,11 +2666,7 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
-			if unireader.show_overlap_enable then
-				InfoMessage:inform("Turning overlap ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Turning overlap OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
@@ -2687,11 +2675,7 @@ function UniReader:addAllCommands()
 		"toggle comics mode on/off",
 		function(unireader)
 			unireader.comics_mode_enable = not unireader.comics_mode_enable
-			if unireader.comics_mode_enable then
-				InfoMessage:inform("Comics mode ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Comics mode OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Comics mode "..(unireader.comics_mode_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("comics_mode_enable", unireader.comics_mode_enable)
 			self:redrawCurrentPage()
 		end)
@@ -3164,11 +3148,7 @@ function UniReader:addAllCommands()
 		"show/hide link underlines",
 		function(unireader)
 			unireader.show_links_enable = not unireader.show_links_enable
-			if unireader.show_links_enable then
-				InfoMessage:inform("Link underlines ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Link underlines OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Link underlines "..(unireader.show_links_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("show_links_enable", unireader.show_links_enable)
 			self:redrawCurrentPage()
 		end
