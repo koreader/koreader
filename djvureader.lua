@@ -6,6 +6,7 @@ function DJVUReader:setDefaults()
 	self.show_overlap_enable = true
 	self.show_links_enable = false
 	self.comics_mode_enable = false
+	self.rtl_mode_enable = false
 end
 
 -- check DjVu magic string to validate

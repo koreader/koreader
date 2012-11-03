@@ -303,6 +303,7 @@ function KOPTReader:setDefaults()
     self.show_overlap_enable = true
     self.show_links_enable = false
     self.comics_mode_enable = false
+    self.rtl_mode_enable = false
 end
 
 -- backup global variables from UniReader
@@ -335,6 +336,7 @@ function KOPTReader:adjustCommands()
 	self.commands:del(KEY_A, nil,"A")
 	self.commands:del(KEY_A, MOD_SHIFT, "A")
 	self.commands:del(KEY_C, nil,"C")
+	self.commands:del(KEY_U, nil,"U")
 	self.commands:del(KEY_D, nil,"D")
 	self.commands:del(KEY_D, MOD_SHIFT, "D")
 	self.commands:del(KEY_S, nil,"S")

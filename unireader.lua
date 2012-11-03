@@ -69,6 +69,7 @@ UniReader = {
 	show_overlap_enable,
 	show_links_enable,
 	comics_mode_enable,
+	rtl_mode_enable, -- rtl = right-to-left
 
 	-- the document:
 	doc = nil,
@@ -958,6 +959,7 @@ function UniReader:setDefaults()
 	self.show_overlap_enable = true
 	self.show_links_enable = true
 	self.comics_mode_enable = false
+	self.rtl_mode_enable = false
 end
 
 -- This is a low-level method that can be shared with all readers.
@@ -1009,6 +1011,11 @@ function UniReader:loadSettings(filename)
 		if tmp ~= nil then
 			self.comics_mode_enable = tmp
 		end
+		tmp = self.settings:readSetting("rtl_mode_enable")
+		if tmp ~= nil then
+			self.rtl_mode_enable = tmp
+		end
+
 
 		-- other parameters are reader-specific --> @TODO: move to proper place, like loadSpecialSettings()
 		-- since DJVUReader still has no loadSpecialSettings(), just a quick solution is
@@ -1206,7 +1213,12 @@ function UniReader:setzoom(page, preCache)
 	local dc = DrawContext.new()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	local width, height = G_width, G_height
+	-- rounds down pwidth and pheight to 2 decimals, because page:getUsedBBox() returns only 2 decimals.
+	-- without it, later check whether to use margins will fail for some documents
+	pwidth = math.floor(pwidth * 100) / 100
+	pheight = math.floor(pheight * 100) / 100
 	Debug("page::getSize",pwidth,pheight)
+	
 	local x0, y0, x1, y1 = page:getUsedBBox()
 	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
 		x0 = 0
@@ -1270,12 +1282,20 @@ function UniReader:setzoom(page, preCache)
 		self.offset_x = 0
 		self.offset_y = (height - (self.globalzoom * pheight)) / 2
 		self.pan_by_page = false
+		if self.comics_mode_enable then self.offset_y = 0 end
 	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_PAGE_HEIGHT
 	or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HEIGHT then
 		self.globalzoom = height / pheight
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
 		self.pan_by_page = false
+		if self.comics_mode_enable then 
+			if self.rtl_mode_enable then
+				self.offset_x = width - (self.globalzoom * pwidth)
+			else
+				self.offset_x = 0
+			end
+		end
 	end
 
 	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT then
@@ -1318,12 +1338,16 @@ function UniReader:setzoom(page, preCache)
 		or self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN then
 		local margin = self.pan_margin
 		if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_HALF_WIDTH then margin = 0 end
-		self.globalzoom = width / (x1 - x0 + margin)
+		if x0 == 0 and y0 == 0 and x1 == pwidth and y1 == pheight then
+			margin = 0
+			Debug("page doesn't have bbox, disabling margin")
+		end
+		self.globalzoom = width / ( (x1 - x0) / ( 1 - ( margin / G_width ) ) ) -- decrease zoom for margin factor
 		self.offset_x = -1 * x0 * self.globalzoom * 2 + margin
-		self.globalzoom = height / (y1 - y0 + margin)
 		self.offset_y = -1 * y0 * self.globalzoom * 2 + margin
-		self.globalzoom = width / (x1 - x0 + margin) * 2
-		Debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom);
+		self.globalzoom = self.globalzoom * 2
+		if self.rtl_mode_enable then self.offset_x = width - (self.globalzoom * x1) - margin end
+		Debug("column mode offset:", self.offset_x, self.offset_y, " zoom:", self.globalzoom, " margin:", margin);
 		self.pan_by_page = self.globalzoom_mode -- store for later and enable pan_by_page
 		self.globalzoom_mode = self.ZOOM_BY_VALUE -- enable pan mode
 		self.pan_x = self.offset_x
@@ -2616,7 +2640,7 @@ function UniReader:addAllCommands()
 		end)
 	self.commands:addGroup(MOD_ALT.."K/L",{
 		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
-		"Jump between bookmarks",
+		"jump between bookmarks",
 		function(unireader,keydef)
 			local bm = nil
 			if keydef.keycode == KEY_K then
@@ -2634,15 +2658,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate 10° clockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 10° clockwise...", nil, 1, MSG_AUX)
-			unireader:setRotate( unireader.globalrotate + 10 )
+			unireader:setRotate(unireader.globalrotate + 10)
 		end)
 	self.commands:add(KEY_J,nil,"J",
 		"rotate screen 90° clockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 90° clockwise...", nil, 1, MSG_AUX)
 			unireader:screenRotate("clockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -2653,15 +2673,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate 10° counterclockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 10° counterclockwise", nil, 1, MSG_AUX)
-			unireader:setRotate( unireader.globalrotate - 10 )
+			unireader:setRotate(unireader.globalrotate - 10)
 		end)
 	self.commands:add(KEY_K,nil,"K",
 		"rotate screen 90° counterclockwise",
 		function(unireader)
-			-- NuPogodi, 29.09.12: added MSG_AUX -- not sure
-			InfoMessage:inform("Rotating 90° counterclockwise", nil, 1, MSG_AUX)
 			unireader:screenRotate("anticlockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -2674,12 +2690,21 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
-			if unireader.show_overlap_enable then
-				InfoMessage:inform("Turning overlap ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Turning overlap OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
+			self:redrawCurrentPage()
+		end)
+
+	self.commands:add(KEY_U, nil, "U",
+		"toggle right-to-left mode on/off",
+		function(unireader)
+			unireader.rtl_mode_enable = not unireader.rtl_mode_enable
+			if unireader.rtl_mode_enable then
+				InfoMessage:inform("Right-To-Left mode ON", nil, 1, MSG_AUX)
+			else
+				InfoMessage:inform("Right-To-Left mode OFF", nil, 1, MSG_AUX)
+			end
+			self.settings:saveSetting("rtl_mode_enable", unireader.rtl_mode_enable)
 			self:redrawCurrentPage()
 		end)
 
@@ -2687,11 +2712,7 @@ function UniReader:addAllCommands()
 		"toggle comics mode on/off",
 		function(unireader)
 			unireader.comics_mode_enable = not unireader.comics_mode_enable
-			if unireader.comics_mode_enable then
-				InfoMessage:inform("Comics mode ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Comics mode OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Comics mode "..(unireader.comics_mode_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("comics_mode_enable", unireader.comics_mode_enable)
 			self:redrawCurrentPage()
 		end)
@@ -3001,43 +3022,113 @@ function UniReader:addAllCommands()
 				Debug("offset", unireader.offset_x, unireader.offset_x, " shift", x, y, " globalzoom", unireader.globalzoom)
 				local old_offset_x = unireader.offset_x
 				local old_offset_y = unireader.offset_y
-
+				
 				if keydef.keycode == KEY_FW_LEFT then
 					Debug("KEY_FW_LEFT", unireader.offset_x, "+", x, "> 0");
 					unireader.offset_x = unireader.offset_x + x
-					if unireader.pan_by_page then
-						if unireader.offset_x > 0 and unireader.pageno > 1 then
-							unireader.adjust_offset = function(unireader)
-								local columns = math.floor( math.abs( unireader.min_offset_x - unireader.pan_x ) / G_width + 0.5 ) -- round for thin columns
-								unireader.offset_x = unireader.pan_x - columns * G_width -- move to last column
-								unireader.offset_y = unireader.min_offset_y
-								Debug("pan to right-bottom of previous page")
+
+					if self.rtl_mode_enable then	-- rtl_mode enabled				
+						if unireader.pan_by_page then
+							if unireader.offset_x > unireader.pan_margin then 
+								-- leftmost column
+								if unireader.pageno < unireader.doc:getPages() then
+									self.globalzoom_mode = self.pan_by_page
+									Debug("recalculate top-right of next page")
+									unireader:goto(unireader.pageno + 1)
+								else
+									unireader.offset_x = unireader.offset_x - x
+									Debug("end of document - do nothing")
+								end
+							else
+							-- rightmost column
+								unireader.show_overlap = 0
+								unireader.offset_y = 0
+--								if unireader.offset_x < unireader.pan_margin then unireader.offset_x = unireader.pan_margin end
 							end
-							self.globalzoom_mode = self.pan_by_page
-							Debug("recalculate top-left of previous page")
-							unireader:goto(unireader.pageno - 1)
-						else
-							unireader.show_overlap = 0
-							unireader.offset_y = unireader.min_offset_y
+						elseif unireader.offset_x > 0 then
+							unireader.offset_x = 0
 						end
-					elseif unireader.offset_x > 0 then
-						unireader.offset_x = 0
+
+					else -- rtl_mode disabled
+						if unireader.pan_by_page then
+							if unireader.offset_x > unireader.pan_margin then 
+								-- leftmost column
+								if unireader.pageno > 1 then
+									unireader.adjust_offset = function(unireader)
+										local columns = math.floor( math.abs( unireader.min_offset_x - unireader.pan_x ) / G_width + 0.5 ) -- round for thin columns
+										unireader.offset_x = unireader.pan_x - columns * G_width -- move to last column
+										unireader.offset_y = unireader.min_offset_y
+										Debug("pan to right-bottom of previous page")
+									end
+									self.globalzoom_mode = self.pan_by_page
+									Debug("recalculate top-left of previous page")
+									unireader:goto(unireader.pageno - 1)
+								else
+									unireader.offset_x = unireader.offset_x - x
+									Debug("first page - can't go any more left")
+								end	
+							else
+							-- rightmost column
+								unireader.show_overlap = 0
+								unireader.offset_y = unireader.min_offset_y
+							end
+						elseif unireader.offset_x > 0 then
+							unireader.offset_x = 0
+						end
 					end
+
 				elseif keydef.keycode == KEY_FW_RIGHT then
 					Debug("KEY_FW_RIGHT", unireader.offset_x, "-", x, "<", unireader.min_offset_x, "-", unireader.pan_margin);
 					unireader.offset_x = unireader.offset_x - x
-					if unireader.pan_by_page then
-						if unireader.offset_x < unireader.min_offset_x - unireader.pan_margin and unireader.pageno < unireader.doc:getPages() then
-							Debug("pan to top-left of next page")
-							self.globalzoom_mode = self.pan_by_page
-							unireader:goto(unireader.pageno + 1)
-						else
-							unireader.show_overlap = 0
-							unireader.offset_y = unireader.pan_y
+
+					if self.rtl_mode_enable then -- rtl_mode enabled
+						if unireader.pan_by_page then
+							if unireader.offset_x < unireader.min_offset_x - unireader.pan_margin then
+								-- rightmost column
+								if unireader.pageno > 1 then
+									unireader.adjust_offset = function(unireader)
+										unireader.offset_x = unireader.pan_x + G_width
+										unireader.offset_y = unireader.min_offset_y
+										Debug("pan to bottom-left of previous page")
+									end
+									self.globalzoom_mode = self.pan_by_page
+									Debug("recalculate top-left of previous page")
+									unireader:goto(unireader.pageno - 1)
+								else
+									unireader.offset_x = unireader.offset_x + x
+									Debug("first page - can't go any more right")
+								end	
+							else -- left column
+								unireader.show_overlap = 0
+								unireader.offset_y = unireader.min_offset_y
+							end
+						elseif unireader.offset_x < unireader.min_offset_x then
+							unireader.offset_x = unireader.min_offset_x
 						end
-					elseif unireader.offset_x < unireader.min_offset_x then
-						unireader.offset_x = unireader.min_offset_x
+
+					else -- rtl_mode disabled
+						if unireader.pan_by_page then
+							if unireader.offset_x < unireader.min_offset_x - unireader.pan_margin then
+								-- rightmost column
+								if unireader.pageno < unireader.doc:getPages() then
+									Debug("pan to top-left of next page")
+									Debug("My option 1")
+									self.globalzoom_mode = self.pan_by_page
+									unireader:goto(unireader.pageno + 1)
+								else
+									unireader.offset_x = unireader.offset_x + x
+									Debug("end of document - do nothing")
+								end	
+							else
+							-- leftmost column
+								unireader.show_overlap = 0
+								unireader.offset_y = unireader.pan_y
+							end
+						elseif unireader.offset_x < unireader.min_offset_x then
+							unireader.offset_x = unireader.min_offset_x
+						end
 					end
+
 				elseif keydef.keycode == KEY_FW_UP then
 					unireader.offset_y = unireader.offset_y + y
 					if unireader.offset_y > 0 then
@@ -3164,11 +3255,7 @@ function UniReader:addAllCommands()
 		"show/hide link underlines",
 		function(unireader)
 			unireader.show_links_enable = not unireader.show_links_enable
-			if unireader.show_links_enable then
-				InfoMessage:inform("Link underlines ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Link underlines OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Link underlines "..(unireader.show_links_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("show_links_enable", unireader.show_links_enable)
 			self:redrawCurrentPage()
 		end

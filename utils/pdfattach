@@ -19,7 +19,7 @@ function escape_tex_specialchars()
 
 function usage()
 {
-	echo "Usage: $progname -o file.pdf file1.djvu [file2.mp3] ..."
+	echo "Usage: $progname -o file.pdf [-a author] file1.djvu [file2.mp3] ..."
 	exit 1
 }
 
@@ -43,9 +43,13 @@ declare -a infiles=()
 declare -a infiles_texclean=()
 declare -a infilesize=()
 declare -i infcount=0 outfcount=0 totalsize=0
+declare author=""
 
-while getopts ":o:" opt; do
+while getopts ":o:a:" opt; do
 	case $opt in
+	a)
+		author="$OPTARG"
+		;;
 	o)
 		outfile=$(readlink -f "$OPTARG")
 		((outfcount++))
@@ -96,6 +100,9 @@ cd $workdir
 echo -E "\documentclass{book}" >> tmp.tex
 echo -E "\usepackage[margin={1mm},papersize={9cm,12cm}]{geometry}" >> tmp.tex
 echo -E "\usepackage{hyperref,attachfile}" >> tmp.tex
+if [ ! -z "$author" ] ; then
+	echo -E "\AtBeginDocument{\hypersetup{pdfauthor={$author}}}" >> tmp.tex
+fi
 echo -E "\begin{document}" >> tmp.tex
 echo -E "\tolerance=10000\pagestyle{empty}\fontsize{7}{13}\selectfont" >> tmp.tex
 
