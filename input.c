@@ -201,6 +201,19 @@ static int closeInputDevices(lua_State *L) {
 #endif
 }
 
+static inline void createInputEvent(lua_State *L, int type, int code, int value) {
+	lua_newtable(L);
+	lua_pushstring(L, "type");
+	lua_pushinteger(L, type);
+	lua_settable(L, -3);
+	lua_pushstring(L, "code");
+	lua_pushinteger(L, code);
+	lua_settable(L, -3);
+	lua_pushstring(L, "value");
+	lua_pushinteger(L, value);
+	lua_settable(L, -3);
+}
+
 static int waitForInput(lua_State *L) {
 	int usecs = luaL_optint(L, 1, -1); // we check for <0 later
 
@@ -238,16 +251,7 @@ static int waitForInput(lua_State *L) {
 
 			n = read(inputfds[i], &input, sizeof(struct input_event));
 			if(n == sizeof(struct input_event)) {
-				lua_newtable(L);
-				lua_pushstring(L, "type");
-				lua_pushinteger(L, (int) input.type);
-				lua_settable(L, -3);
-				lua_pushstring(L, "code");
-				lua_pushinteger(L, (int) input.code);
-				lua_settable(L, -3);
-				lua_pushstring(L, "value");
-				lua_pushinteger(L, (int) input.value);
-				lua_settable(L, -3);
+				createInputEvent(L, input.type, input.code, input.value);
 				return 1;
 			}
 		}
@@ -269,28 +273,10 @@ static int waitForInput(lua_State *L) {
 		}
 		switch(event.type) {
 			case SDL_KEYDOWN:
-				lua_newtable(L);
-				lua_pushstring(L, "type");
-				lua_pushinteger(L, EV_KEY);
-				lua_settable(L, -3);
-				lua_pushstring(L, "code");
-				lua_pushinteger(L, event.key.keysym.scancode);
-				lua_settable(L, -3);
-				lua_pushstring(L, "value");
-				lua_pushinteger(L, 1);
-				lua_settable(L, -3);
+				createInputEvent(L, EV_KEY, event.key.keysym.scancode, 1);
 				return 1;
 			case SDL_KEYUP:
-				lua_newtable(L);
-				lua_pushstring(L, "type");
-				lua_pushinteger(L, EV_KEY);
-				lua_settable(L, -3);
-				lua_pushstring(L, "code");
-				lua_pushinteger(L, event.key.keysym.scancode);
-				lua_settable(L, -3);
-				lua_pushstring(L, "value");
-				lua_pushinteger(L, 0);
-				lua_settable(L, -3);
+				createInputEvent(L, EV_KEY, event.key.keysym.scancode, 0);
 				return 1;
 			case SDL_QUIT:
 				return luaL_error(L, "application forced to quit");
