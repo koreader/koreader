@@ -8,8 +8,8 @@ DJVUDIR=djvulibre
 KPVCRLIBDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
-JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype
+JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
@@ -186,7 +186,7 @@ lfs.o: $(LFSDIR)/src/lfs.c
 
 fetchthirdparty:
 	rm -rf mupdf/thirdparty
-	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
+	test -d mupdf && (cd mupdf; git checkout .; cd thirdparty; git submodule init; git submodule update)  || echo warn: mupdf folder not found
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
@@ -195,15 +195,13 @@ fetchthirdparty:
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
-	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	# CREngine patch: change child nodes' type face
 	# @TODO replace this dirty hack  24.04 2012 (houqp)
 	cd kpvcrlib/crengine/crengine/src && \
 		patch -N -p0 < ../../../lvrend_node_type_face.patch && \
 		patch -N -p3 < ../../../lvdocview-getCurrentPageLinks.patch || true
-	unzip mupdf-thirdparty.zip -d mupdf
 	# dirty patch in MuPDF's thirdparty liby for CREngine
-	cd mupdf/thirdparty/jpeg-*/ && \
+	cd mupdf/thirdparty/jpeg*/ && \
 		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
 		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
@@ -225,23 +223,17 @@ cleanthirdparty:
 	test -d $(CRENGINEDIR)/crengine && ($(MAKE) -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
 	test -d $(KPVCRLIBDIR) && ($(MAKE) -C $(KPVCRLIBDIR) clean) || echo warn: chmlib folder not found
 	rm -rf $(DJVUDIR)/build
-	rm -f $(MUPDFDIR)/fontdump.host
-	rm -f $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C $(POPENNSDIR) clean
 
-$(MUPDFDIR)/fontdump.host:
-	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
-	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
-	$(MAKE) -C mupdf clean
-
-$(MUPDFDIR)/cmapdump.host:
-	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
-	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
-	$(MAKE) -C mupdf clean
-
-$(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
+$(MUPDFLIBS) $(THIRDPARTYLIBS):
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" $(MAKE) -C mupdf build="release" CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
+ifdef EMULATE_READER
+	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes
+else
+	# generate data headers
+	$(MAKE) -C mupdf generate
+	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes CROSSCOMPILE=yes OS=Kindle
+endif
 
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
