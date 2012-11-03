@@ -12,7 +12,31 @@ KOPTOptions =  {
 	current_item=5,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true, true, true, true, true},
-	value={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6}},
+	value={0.2, 0.3, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6},
+	show = true,
+	draw_index = nil,},
+	{
+	name="text_wrap",
+	option_text="Text Wrap",
+	items_text={"enable","disable"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={1, 0},
+	show = true,
+	draw_index = nil,},
+	{
+	name="detect_indent",
+	option_text="Indentation",
+	items_text={"enable","disable"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={1, 0},
+	show = true,
+	draw_index = nil,},
 	{
 	name="page_margin",
 	option_text="Page Margin",
@@ -21,7 +45,9 @@ KOPTOptions =  {
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.02, 0.06, 0.10}},
+	value={0.02, 0.06, 0.10},
+	show = false,
+	draw_index = nil,},
 	{
 	name="line_spacing",
 	option_text="Line Spacing",
@@ -30,34 +56,20 @@ KOPTOptions =  {
 	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={1.0, 1.2, 1.4}},
+	value={1.0, 1.2, 1.4},
+	show = false,
+	draw_index = nil,},
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
-	items_text={"smallest","smaller","small","medium","large"},
-	default_item=4,
-	current_item=4,
+	items_text={"smaller","small","medium","large"},
+	default_item=3,
+	current_item=3,
 	text_dirty=true,
-	marker_dirty={true, true, true, true, true},
-	value={0.05, 0.1, 0.2, 0.375, 0.5}},
-	{
-	name="text_wrap",
-	option_text="Text Wrap",
-	items_text={"disable","enable"},
-	default_item=2,
-	current_item=2,
-	text_dirty=true,
-	marker_dirty={true, true},
-	value={0, 1}},
-	{
-	name="detect_indent",
-	option_text="Indentation",
-	items_text={"disable","enable"},
-	default_item=2,
-	current_item=2,
-	text_dirty=true,
-	marker_dirty={true, true},
-	value={0, 1}},
+	marker_dirty={true, true, true, true},
+	value={0.1, 0.2, 0.375, 0.5},
+	show = true,
+	draw_index = nil,},
 	{
 	name="auto_straighten",
 	option_text="Auto Straighten",
@@ -66,7 +78,9 @@ KOPTOptions =  {
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
-	value={0, 0, 5, 10}},
+	value={0, 0, 5, 10},
+	show = true,
+	draw_index = nil,},
 	{
 	name="justification",
 	option_text="Justification",
@@ -75,7 +89,9 @@ KOPTOptions =  {
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
-	value={-1,0,1,2,3}},
+	value={-1,0,1,2,3},
+	show = true,
+	draw_index = nil,},
 	{
 	name="max_columns",
 	option_text="Columns",
@@ -84,7 +100,9 @@ KOPTOptions =  {
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
-	value={2,1,2,3,4}},
+	value={2,1,2,3,4},
+	show = true,
+	draw_index = nil,},
 	{
 	name="contrast",
 	option_text="Contrast",
@@ -93,7 +111,9 @@ KOPTOptions =  {
 	current_item=3,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
-	value={0.2, 0.4, 1.0, 1.8, 2.6}},
+	value={0.2, 0.4, 1.0, 1.8, 2.6},
+	show = true,
+	draw_index = nil,},
 	{
 	name="screen_rotation",
 	option_text="Screen Rotation",
@@ -102,15 +122,17 @@ KOPTOptions =  {
 	current_item=1,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
-	value={0, 90, 180, 270}},
+	value={0, 90, 180, 270},
+	show = true,
+	draw_index = nil,},
 }
 
 KOPTConfig = {
 	-- UI constants
 	WIDTH = 550,   -- width
-	HEIGHT = 420,  -- height
+	HEIGHT = nil,  -- height, updated in run time
 	MARGIN_BOTTOM = 25,  -- window bottom margin
-	OPTION_PADDING_T = 50, -- option top padding
+	OPTION_PADDING_T = 60, -- option top padding
 	OPTION_PADDING_H = 50, -- option horizontal padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
 	NAME_ALIGN_RIGHT = 0.28, -- align name right to the window width
@@ -141,7 +163,8 @@ function KOPTConfig:drawOptionName(xpos, ypos, option_index, text, font_face, re
 	if KOPTOptions[option_index].text_dirty or redraw then
 		--Debug("drawing option name:", KOPTOptions[option_index].option_text)
 		local text_len = sizeUtf8Text(0, G_width, font_face, text, true).x
-		renderUtf8Text(fb.bb, xpos-text_len, ypos+self.OPTION_SPACING_V*(option_index-1), font_face, text, true)
+		local draw_index = KOPTOptions[option_index].draw_index
+		renderUtf8Text(fb.bb, xpos-text_len, ypos+self.OPTION_SPACING_V*(draw_index-1), font_face, text, true)
 	end
 end
 
@@ -150,8 +173,9 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	local width = self.WIDTH
 	local offset = self.OPTION_PADDING_H+self.ITEM_ALIGN_LEFT*(width-2*self.OPTION_PADDING_H)
 	local item_x_offset = (KOPTOptions[option_index].option_text == "") and self.OPTION_PADDING_H or offset
+	local draw_index = KOPTOptions[option_index].draw_index
 	local xpos = xpos+item_x_offset+self.ITEM_SPACING_H*(item_index-1)+self.text_pos
-	local ypos = ypos+self.OPTION_PADDING_T+self.OPTION_SPACING_V*(option_index-1)
+	local ypos = ypos+self.OPTION_PADDING_T+self.OPTION_SPACING_V*(draw_index-1)
 	
 	if KOPTOptions[option_index].text_font_size then
 		font_face = Font:getFace("cfont", KOPTOptions[option_index].text_font_size[item_index])
@@ -184,27 +208,49 @@ end
 function KOPTConfig:drawOptions(xpos, ypos, name_font, item_font, redraw, refresh)
 	local width, height = self.WIDTH, self.HEIGHT
 	for i=1,#KOPTOptions do
-		self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, redraw)
-		for j=1,#KOPTOptions[i].items_text do
-			self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], item_font, redraw, refresh)
+		if KOPTOptions[i].show then
+			self:drawOptionName(xpos, ypos, i, KOPTOptions[i].option_text, name_font, redraw)
+			for j=1,#KOPTOptions[i].items_text do
+				self:drawOptionItem(xpos, ypos, i, j, KOPTOptions[i].items_text[j], item_font, redraw, refresh)
+			end
+			KOPTOptions[i].text_dirty = false
 		end
-		KOPTOptions[i].text_dirty = false
 	end
 end
 
 function KOPTConfig:makeDefault(configurable)
+	local draw_index = 1
+	self.HEIGHT = self.OPTION_PADDING_T
 	for i=1,#KOPTOptions do
+		-- update draw index of each option in run time
+		if KOPTOptions[i].show then
+			KOPTOptions[i].draw_index = draw_index
+			draw_index = draw_index + 1
+		end
+		-- update window height
+		if KOPTOptions[i].show then
+			self.HEIGHT = self.HEIGHT + self.OPTION_SPACING_V
+		end
+		-- make each option and marker dirty
 		KOPTOptions[i].text_dirty = true
 		for j=1,#KOPTOptions[i].items_text do
 			KOPTOptions[i].marker_dirty[j] = true
 		end
+		-- make current index according to configurable table
 		local option = KOPTOptions[i].name
 		local value = configurable[option]
+		local min_diff = math.abs(value - KOPTOptions[i].value[1])
 		KOPTOptions[i].current_item = KOPTOptions[i].default_item
 		for index, val in pairs(KOPTOptions[i].value) do
 			if val == value then
 				KOPTOptions[i].current_item = index
 				break
+			else
+				diff = math.abs(value - val)
+				if diff <= min_diff then
+					min_diff = diff
+					KOPTOptions[i].current_item = index
+				end
 			end
 		end
 	end
@@ -278,8 +324,10 @@ function KOPTConfig:addAllCommands()
 		"next item",
 		function(self)
 			local last_option = self.current_option
-			self.current_option = (self.current_option + #KOPTOptions + 1)%#KOPTOptions
-			self.current_option = (self.current_option == 0) and #KOPTOptions or self.current_option
+			repeat
+				self.current_option = (self.current_option + #KOPTOptions + 1)%#KOPTOptions
+				self.current_option = (self.current_option == 0) and #KOPTOptions or self.current_option
+			until KOPTOptions[self.current_option].show
 			
 			last_option_item = KOPTOptions[last_option].current_item
 			KOPTOptions[last_option].marker_dirty[last_option_item] = true
@@ -291,8 +339,10 @@ function KOPTConfig:addAllCommands()
 		"previous item",
 		function(self)
 			local last_option = self.current_option
-			self.current_option = (self.current_option + #KOPTOptions - 1)%#KOPTOptions
-			self.current_option = (self.current_option == 0) and #KOPTOptions or self.current_option
+			repeat
+				self.current_option = (self.current_option + #KOPTOptions - 1)%#KOPTOptions
+				self.current_option = (self.current_option == 0) and #KOPTOptions or self.current_option
+			until KOPTOptions[self.current_option].show
 			
 			last_option_item = KOPTOptions[last_option].current_item
 			KOPTOptions[last_option].marker_dirty[last_option_item] = true
