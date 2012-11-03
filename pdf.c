@@ -530,9 +530,11 @@ static int reflowPage(lua_State *L) {
 	int rotation = luaL_checkint(L, 16);
 	double quality = luaL_checknumber(L, 17);
 	double defect_size = luaL_checknumber(L, 18);
+	int trim_page = luaL_checkint(L, 19);
 
 	k2pdfopt_set_params(width, height, font_size, page_margin, line_spacing, word_spacing, \
-			text_wrap, straighten, justification, detect_indent, columns, contrast, rotation, quality, defect_size);
+			text_wrap, straighten, justification, detect_indent, columns, contrast, rotation, \
+			quality, defect_size, trim_page);
 	k2pdfopt_mupdf_reflow(page->doc->xref, page->page, page->doc->context);
 	k2pdfopt_rfbmp_size(&width, &height);
 	k2pdfopt_rfbmp_zoom(&dc->zoom);
