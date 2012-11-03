@@ -487,10 +487,11 @@ static int reflowPage(lua_State *L) {
 	int detect_indent = luaL_checkint(L, 13);
 	int columns = luaL_checkint(L, 14);
 	double contrast = luaL_checknumber(L, 15);
-	int rotation = luaL_checknumber(L, 16);
+	int rotation = luaL_checkint(L, 16);
+	double quality = luaL_checknumber(L, 17);
 
 	k2pdfopt_set_params(width, height, font_size, page_margin, line_spacing, word_spacing, \
-			text_wrap, straighten, justification, detect_indent, columns, contrast, rotation);
+			text_wrap, straighten, justification, detect_indent, columns, contrast, rotation, quality);
 	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat);
 	k2pdfopt_rfbmp_size(&width, &height);
 	k2pdfopt_rfbmp_zoom(&dc->zoom);

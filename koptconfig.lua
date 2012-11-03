@@ -6,13 +6,13 @@ KOPTOptions =  {
 	{
 	name="font_size",
 	option_text="",
-	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
-	text_font_size={16,18,22,26,30,34,38,42,46},
-	default_item=5,
-	current_item=5,
+	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+	text_font_size={14,16,20,23,26,30,34,38,42,46},
+	default_item=6,
+	current_item=6,
 	text_dirty=true,
-	marker_dirty={true, true, true, true, true, true, true, true, true},
-	value={0.2, 0.3, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.6},
+	marker_dirty={true, true, true, true, true, true, true, true, true, true},
+	value={0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
 	show = true,
 	draw_index = nil,},
 	{
@@ -68,6 +68,17 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
 	value={0.1, 0.2, 0.375, 0.5},
+	show = true,
+	draw_index = nil,},
+	{
+	name="quality",
+	option_text="Render Quality",
+	items_text={"performance","balanced","quality"},
+	default_item=3,
+	current_item=3,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	value={0.2, 0.6, 1.0},
 	show = true,
 	draw_index = nil,},
 	{
@@ -133,7 +144,7 @@ KOPTConfig = {
 	HEIGHT = nil,  -- height, updated in run time
 	MARGIN_BOTTOM = 25,  -- window bottom margin
 	OPTION_PADDING_T = 60, -- option top padding
-	OPTION_PADDING_H = 50, -- option horizontal padding
+	OPTION_PADDING_H = 70, -- option horizontal padding
 	OPTION_SPACING_V = 35,	-- options vertical spacing
 	NAME_ALIGN_RIGHT = 0.28, -- align name right to the window width
 	ITEM_ALIGN_LEFT = 0.30,	-- align item left to the window width
@@ -191,7 +202,7 @@ function KOPTConfig:drawOptionItem(xpos, ypos, option_index, item_index, text, f
 	if KOPTOptions[option_index].marker_dirty[item_index] or redraw then
 		--Debug("drawing option:", KOPTOptions[option_index].option_text, "marker:", text)
 		if item_index == KOPTOptions[option_index].current_item then
-			fb.bb:paintRect(xpos, ypos+5, text_len, 3,(option_index == self.current_option) and 15 or 5)
+			fb.bb:paintRect(xpos, ypos+5, text_len, 3,(option_index == self.current_option) and 15 or 6)
 			if refresh then 
 				fb:refresh(1, xpos, ypos+5, text_len, 3)
 			end

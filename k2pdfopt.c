@@ -497,7 +497,8 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 		double line_space, double word_space, \
 		int wrapping, int straighten, \
 		int justification, int detect_indent,\
-		int columns, double contrast, int rotation) {
+		int columns, double contrast, \
+		int rotation, double quality) {
 	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
 	dst_userheight = bb_height;
 	zoom_value = font_size;
@@ -509,6 +510,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	max_columns = columns;
 	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
 	src_rot = rotation;
+	src_dpi = (int)300*quality;
 
 	// margin
 	dst_mar = page_margin;
@@ -516,7 +518,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
-	printf("justification:%d", justification);
+
 	// justification
 	if (justification < 0) {
 		dst_justify = -1;
@@ -542,7 +544,7 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 
 	double dpp,zoom;
 	zoom = zoom_value;
-	double dpi = 250*zoom;
+	double dpi = 250*zoom*src_dpi/300;
 	do {
 		dpp = dpi / 72.;
 		pix = NULL;
