@@ -1,62 +1,60 @@
 diff --git a/pdf/pdf_font.c b/pdf/pdf_font.c
-index 5e54e0b..38bd1d8 100644
+index 33a1a65..c2fdee3 100644
 --- a/pdf/pdf_font.c
 +++ b/pdf/pdf_font.c
-@@ -182,8 +182,13 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
+@@ -185,7 +185,12 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
  	if (!data)
  		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
-
+ 
 +#ifndef NOBUILTINFONT
- 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
- 	/* RJW: "cannot load freetype font from memory" */
+ 	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 +#else
-+	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 1);
++	fontdesc->font = fz_new_font_from_file(ctx, fontname, data, 0, 1);
 +	free(data);
 +#endif
-
+ 
  	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
  		fontdesc->flags |= PDF_FD_SYMBOLIC;
-@@ -199,8 +204,13 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
+@@ -201,7 +206,12 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
  	if (!data)
  		fz_throw(ctx, "cannot find substitute font");
-
+ 
 +#ifndef NOBUILTINFONT
- 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
- 	/* RJW: "cannot load freetype font from memory" */
+ 	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 +#else
-+	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 1);
++	fontdesc->font = fz_new_font_from_file(ctx, fontname, data, 0, 1);
 +	free(data);
 +#endif
-
+ 
  	fontdesc->font->ft_substitute = 1;
  	fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);
-@@ -218,7 +228,12 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros,
+@@ -219,7 +229,12 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fon
  		fz_throw(ctx, "cannot find builtin CJK font");
-
+ 
  	/* a glyph bbox cache is too big for droid sans fallback (51k glyphs!) */
 +#ifndef NOBUILTINFONT
- 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 0);
+ 	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 0);
 +#else
-+	fontdesc->font = fz_new_font_from_file(ctx, data, 0, 0);
++	fontdesc->font = fz_new_font_from_file(ctx, fontname, data, 0, 1);
 +	free(data);
 +#endif
- 	/* RJW: "cannot load builtin CJK font" */
-
+ 
  	fontdesc->font->ft_substitute = 1;
+ }
 diff --git a/pdf/pdf_fontfile.c b/pdf/pdf_fontfile.c
-index 543ce76..a076033 100644
+index 99565da..a91380f 100644
 --- a/pdf/pdf_fontfile.c
 +++ b/pdf/pdf_fontfile.c
-@@ -1,6 +1,8 @@
- #include "fitz.h"
- #include "mupdf.h"
-
+@@ -15,6 +15,8 @@
+ 	Set NODROIDFONT to use the base 14 fonts as substitute fonts.
+ */
+ 
 +#ifndef NOBUILTINFONT
 +
  #ifdef NOCJK
  #define NOCJKFONT
  #endif
-@@ -129,3 +131,112 @@ pdf_find_substitute_cjk_font(int ros, int serif, unsigned int *len)
+@@ -152,3 +154,112 @@ pdf_lookup_substitute_cjk_font(int ros, int serif, unsigned int *len)
  	return NULL;
  #endif
  }

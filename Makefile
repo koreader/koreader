@@ -188,7 +188,7 @@ lfs.o: $(LFSDIR)/src/lfs.c
 
 fetchthirdparty:
 	rm -rf mupdf/thirdparty
-	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
+	test -d mupdf && (cd mupdf; git checkout .; cd thirdparty; git submodule init; git submodule update)  || echo warn: mupdf folder not found
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
