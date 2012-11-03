@@ -27,6 +27,17 @@ KOPTOptions =  {
 	show = true,
 	draw_index = nil,},
 	{
+	name="trim_page",
+	option_text="Trim Page",
+	items_text={"enable","disable"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={1, 0},
+	show = true,
+	draw_index = nil,},
+	{
 	name="detect_indent",
 	option_text="Indentation",
 	items_text={"enable","disable"},
