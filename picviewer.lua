@@ -5,7 +5,8 @@ PICViewer = UniReader:new{}
 function PICViewer:setDefaults()
 	self.show_overlap_enable = false
 	self.show_links_enable = false
-  self.comics_mode_enable = false
+	self.comics_mode_enable = false
+	self.rtl_mode_enable = false
 end
 
 function PICViewer:open(filename)
@@ -58,7 +59,6 @@ function PICViewer:adjustCommands()
 	self.commands:del(KEY_N, MOD_SHIFT, "N")
 	self.commands:del(KEY_J, MOD_SHIFT,"J")
 	self.commands:del(KEY_K, MOD_SHIFT,"K")
-	self.commands:del(KEY_R, MOD_ALT,"R")
 	self.commands:del(KEY_BACK, nil,"Back")
 	self.commands:del(KEY_BACK, MOD_SHIFT,"Back")
 	self.commands:delGroup("[1, 2 .. 9, 0]")
