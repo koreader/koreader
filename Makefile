@@ -145,8 +145,13 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
+		-Wl,-rpath=$(LIBDIR)/ \
 		-o $@ \
+<<<<<<< HEAD
 		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+=======
+		-lm -ldl -lpthread -ldjvulibre -ljpeg -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+>>>>>>> 5c10908... disabled patching of libjpeg, restructured everything for mupdf subrepos
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -188,7 +193,7 @@ lfs.o: $(LFSDIR)/src/lfs.c
 
 fetchthirdparty:
 	rm -rf mupdf/thirdparty
-	test -d mupdf && (cd mupdf; git checkout .; cd thirdparty; git submodule init; git submodule update)  || echo warn: mupdf folder not found
+	test -d mupdf && (cd mupdf; git checkout .; git submodule init; git submodule update)  || echo warn: mupdf folder not found
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
@@ -204,6 +209,14 @@ fetchthirdparty:
 	cd kpvcrlib/crengine/crengine/src && \
 		patch -N -p0 < ../../../lvrend_node_type_face.patch && \
 		patch -N -p3 < ../../../lvdocview-getCurrentPageLinks.patch || true
+<<<<<<< HEAD
+=======
+	# dirty patch in MuPDF's thirdparty liby for CREngine
+	# still needed? excluded for now since they do not apply out of the box
+	#cd mupdf/thirdparty/jpeg*/ && \
+	#	patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
+	#	patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
+>>>>>>> 5c10908... disabled patching of libjpeg, restructured everything for mupdf subrepos
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
 	test -f popen-noshell/popen_noshell.c || svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
