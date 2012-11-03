@@ -109,7 +109,8 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(MUPDFLIBDIR)/libjpeg.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
-LUALIB := $(LUADIR)/src/libluajit.a
+#LUALIB := $(LUADIR)/src/libluajit.a
+LUALIB := $(LIBDIR)/libluajit-5.1.so.2
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
@@ -143,7 +144,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -ldjvulibre -ljpeg -lluajit -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -260,11 +261,13 @@ $(CRENGINELIBS):
 
 $(LUALIB):
 ifdef EMULATE_READER
-	$(MAKE) -C $(LUADIR) BUILDMODE=static
+	$(MAKE) -C $(LUADIR) BUILDMODE=shared
 else
 	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
-	$(MAKE) -C $(LUADIR) BUILDMODE=static CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	$(MAKE) -C $(LUADIR) BUILDMODE=shared CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(LUADIR)/src/libluajit.so $(LUALIB)
 
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
@@ -286,6 +289,7 @@ customupdate: all
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
 	cp -L libs/libdjvulibre.so.21 $(INSTALL_DIR)/libs
+	cp -L $(LUALIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
