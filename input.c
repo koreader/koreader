@@ -57,6 +57,8 @@ void slider_handler(int sig)
 	}
 }
 #else
+pid_t emu_event_pid = -1;
+
 static inline void genEmuEvent(lua_State *L, int fd, int type, int code, int value) {
 	struct input_event input;
 
@@ -84,19 +86,17 @@ int findFreeFdSlot() {
 }
 
 static int openInputDevice(lua_State *L) {
-#ifndef EMULATE_READER
 	int fd;
+	int childpid;
 	const char* inputdevice = luaL_checkstring(L, 1);
-
 	fd = findFreeFdSlot();
 	if(fd == -1) {
 		return luaL_error(L, "no free slot for new input device <%s>", inputdevice);
 	}
-
+#ifndef EMULATE_READER
 	if(!strcmp("fake_events", inputdevice)) {
 		/* special case: the power slider */
 		int pipefd[2];
-		int childpid;
 
 		pipe(pipefd);
 		if((childpid = fork()) == -1) {
@@ -179,18 +179,7 @@ static int openInputDevice(lua_State *L) {
 			inputfds[fd] = pipefd[0];
 			slider_pid = childpid;
 		}
-	} else {
-		inputfds[fd] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
-		if(inputfds[fd] != -1) {
-			ioctl(inputfds[fd], EVIOCGRAB, 1);
-			return 0;
-		} else {
-			return luaL_error(L, "error opening input device <%s>: %d", inputdevice, errno);
-		}
-	}
 #else
-	int pipefd[2];
-	int childpid;
 	int keep_waiting = 1;
 
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -198,7 +187,6 @@ static int openInputDevice(lua_State *L) {
 	}
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
-	pipe(pipefd);
 	if((childpid = fork()) == -1) {
 		return luaL_error(L, "cannot fork() emu event generator");
 	}
@@ -206,15 +194,16 @@ static int openInputDevice(lua_State *L) {
 		struct input_event ev;
 		SDL_Event event;
 
-		close(pipefd[0]);
+		/*close(pipefd[0]);*/
+		inputfds[fd] = open(inputdevice, O_RDWR | O_NONBLOCK);
 		while(keep_waiting) {
 			SDL_WaitEvent(&event);
 			switch(event.type) {
 				case SDL_KEYDOWN:
-					genEmuEvent(L, pipefd[1], EV_KEY, event.key.keysym.scancode, 1);
+					genEmuEvent(L, inputfds[fd], EV_KEY, event.key.keysym.scancode, 1);
 					break;
 				case SDL_KEYUP:
-					genEmuEvent(L, pipefd[1], EV_KEY, event.key.keysym.scancode, 0);
+					genEmuEvent(L, inputfds[fd], EV_KEY, event.key.keysym.scancode, 0);
 					break;
 				case SDL_MOUSEMOTION:
 					/* ignore move motion here, we might use it for other
@@ -225,41 +214,38 @@ static int openInputDevice(lua_State *L) {
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					/* use mouse click to simulate single tap */
-					genEmuEvent(L, pipefd[1], EV_ABS, ABS_MT_TRACKING_ID, 0);
-					genEmuEvent(L, pipefd[1], EV_ABS, ABS_MT_POSITION_X, event.button.x);
-					genEmuEvent(L, pipefd[1], EV_ABS, ABS_MT_POSITION_Y, event.button.y);
-					genEmuEvent(L, pipefd[1], EV_SYN, SYN_REPORT, 0);
-					genEmuEvent(L, pipefd[1], EV_ABS, ABS_MT_TRACKING_ID, -1);
-					genEmuEvent(L, pipefd[1], EV_SYN, SYN_REPORT, 0);
+					genEmuEvent(L, inputfds[fd], EV_ABS, ABS_MT_TRACKING_ID, 0);
+					genEmuEvent(L, inputfds[fd], EV_ABS, ABS_MT_POSITION_X, event.button.x);
+					genEmuEvent(L, inputfds[fd], EV_ABS, ABS_MT_POSITION_Y, event.button.y);
+					genEmuEvent(L, inputfds[fd], EV_SYN, SYN_REPORT, 0);
+					genEmuEvent(L, inputfds[fd], EV_ABS, ABS_MT_TRACKING_ID, -1);
+					genEmuEvent(L, inputfds[fd], EV_SYN, SYN_REPORT, 0);
 					/*printf("Mouse button %d pressed at (%d,%d)\n",*/
 						   /*event.button.button, event.button.x, event.button.y);*/
 					break;
 				case SDL_QUIT:
 					/* 3 byte is enough to signal waitForInput */
-					write(pipefd[1], "application forced to quit", 3);
+					write(inputfds[fd], "application forced to quit", 3);
 					keep_waiting = 0;
 			}
 		}
-		close(pipefd[1]);
+		close(inputfds[fd]);
 		// We're done, go away :).
 		_exit(EXIT_SUCCESS);
+#endif
 	} else {
-		int fd;
-		close(pipefd[1]);
-
-		if(pipefd[0] == -1) {
-			return luaL_error(L, "error opening emu event pipe");
+		inputfds[fd] = open(inputdevice, O_RDONLY | O_NONBLOCK, 0);
+		if(inputfds[fd] != -1) {
+			ioctl(inputfds[fd], EVIOCGRAB, 1);
+			return 0;
+		} else {
+			return luaL_error(L, "error opening input device <%s>: %d", inputdevice, errno);
 		}
-
-		inputfds[0] = pipefd[0];
-		/*emu_ev_pid = childpid;*/
 	}
 	return 0;
-#endif
 }
 
 static int closeInputDevices(lua_State *L) {
-#ifndef EMULATE_READER
 	int i;
 	for(i=0; i<NUM_FDS; i++) {
 		if(inputfds[i] != -1) {
@@ -267,6 +253,7 @@ static int closeInputDevices(lua_State *L) {
 			close(inputfds[i]);
 		}
 	}
+#ifndef EMULATE_READER
 	if(slider_pid != -1) {
 		/* kill and wait for child process */
 		kill(slider_pid, SIGTERM);
@@ -274,7 +261,12 @@ static int closeInputDevices(lua_State *L) {
 	}
 	return 0;
 #else
-	close(inputfds[0]);
+	if(emu_event_pid != -1) {
+		/* kill and wait for child process */
+		kill(emu_event_pid, SIGTERM);
+		waitpid(-1, NULL, 0);
+	}
+	SDL_Quit();
 	return 0;
 #endif
 }
