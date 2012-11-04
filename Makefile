@@ -187,10 +187,11 @@ lfs.o: $(LFSDIR)/src/lfs.c
 
 fetchthirdparty:
 	rm -rf mupdf/thirdparty
-	test -d mupdf && (cd mupdf; git checkout .; git submodule init; git submodule update)  || echo warn: mupdf folder not found
+	test -d mupdf && (cd mupdf; git checkout .)  || echo warn: mupdf folder not found
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
+	cd mupdf && (git submodule init; git submodule update)
 	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
@@ -228,7 +229,7 @@ ifdef EMULATE_READER
 	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes
 else
 	# generate data headers
-	$(MAKE) -C mupdf generate
+	$(MAKE) -C mupdf generate build="release"
 	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes CROSSCOMPILE=yes OS=Kindle
 endif
 
