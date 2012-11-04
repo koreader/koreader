@@ -1436,7 +1436,7 @@ function UniReader:show(no)
 	end
 
 	if self.dest_x or self.dest_y then
-		fb.bb:paintRect(0, 0, width, height, 8)
+		fb.bb:paintRect(0, 0, width, height, DBACKGROUND_COLOR)
 	end
 	Debug("blitFrom dest_off:", self.dest_x, self.dest_y,
 		"src_off:", offset_x, offset_y,

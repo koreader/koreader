@@ -36,6 +36,9 @@ DCACHE_MAX_TTL = 20 -- time to live
 -- renderer cache size
 DCACHE_DOCUMENT_SIZE = 1024*1024*8 -- FIXME random, needs testing
 
+-- background colour: 8 = gray, 0 = white, 15 = black
+DBACKGROUND_COLOR = 8
+
 -- toggle defaults
 DUNIREADER_SHOW_OVERLAP_ENABLE = true
 DUNIREADER_SHOW_LINKS_ENABLE = true
