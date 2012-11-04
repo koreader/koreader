@@ -121,26 +121,11 @@ if ARGV[argidx] then
 	if lfs.attributes(ARGV[argidx], "mode") == "directory" then
 		showFileManager(ARGV[argidx])
 	elseif lfs.attributes(ARGV[argidx], "mode") == "file" then
-		showReader(ARGV[argidx], optarg["p"])
+		showReader(ARGV[argidx])
 	end
 	UIManager:run()
 elseif last_file and lfs.attributes(last_file, "mode") == "file" then
-	showReader(last_file, optarg["p"])
-	UIManager:run()
-else
-	return showusage()
-end
-
-
-if ARGV[optind] then
-	if lfs.attributes(ARGV[optind], "mode") == "directory" then
-		showFileManager(ARGV[optind])
-	elseif lfs.attributes(ARGV[optind], "mode") == "file" then
-		showReader(ARGV[optind], optarg["p"])
-	end
-	UIManager:run()
-elseif last_file and lfs.attributes(last_file, "mode") == "file" then
-	showReader(last_file, optarg["p"])
+	showReader(last_file)
 	UIManager:run()
 else
 	return showusage()
