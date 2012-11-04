@@ -1,4 +1,114 @@
-require "unireader_h"
+require "keys"
+require "settings"
+require "selectmenu"
+require "commands"
+require "helppage"
+require "dialog"
+require "defaults"
+
+UniReader = {
+	-- "constants":
+	ZOOM_BY_VALUE = 0,
+	ZOOM_FIT_TO_PAGE = -1,
+	ZOOM_FIT_TO_PAGE_WIDTH = -2,
+	ZOOM_FIT_TO_PAGE_HEIGHT = -3,
+	ZOOM_FIT_TO_CONTENT = -4,
+	ZOOM_FIT_TO_CONTENT_WIDTH = -5,
+	ZOOM_FIT_TO_CONTENT_HEIGHT = -6,
+	ZOOM_FIT_TO_CONTENT_WIDTH_PAN = -7,
+	--ZOOM_FIT_TO_CONTENT_HEIGHT_PAN = -8,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN = -9,
+	ZOOM_FIT_TO_CONTENT_HALF_WIDTH = -10,
+
+	GAMMA_NO_GAMMA = 1.0,
+
+	-- framebuffer update policy state:
+	rcount = DRCOUNT,
+	-- default to full refresh on every page turn
+	rcountmax = DRCOUNTMAX,
+
+	-- zoom state:
+	globalzoom = DGLOBALZOOM,
+	globalzoom_orig = DGLOBALZOOM_ORIG,
+	globalzoom_mode = DGLOBALZOOM_MODE, -- ZOOM_FIT_TO_PAGE
+
+	globalrotate = DGLOBALROTATE,
+
+	-- gamma setting:
+	globalgamma = DGLOBALGAMMA,   -- GAMMA_NO_GAMMA
+
+	-- DjVu page rendering mode (used in djvu.c:drawPage())
+	-- See comments in djvureader.lua:DJVUReader:select_render_mode()
+	render_mode = DRENDER_MODE, -- COLOUR
+
+	-- cached tile size
+	fullwidth = 0,
+	fullheight = 0,
+	-- size of current page for current zoom level in pixels
+	cur_full_width = 0,
+	cur_full_height = 0,
+	cur_bbox = {}, -- current page bbox
+	offset_x = 0,
+	offset_y = 0,
+	dest_x = 0, -- real offset_x when it's smaller than screen, so it's centered
+	dest_y = 0,
+	min_offset_x = 0,
+	min_offset_y = 0,
+	content_top = 0, -- for ZOOM_FIT_TO_CONTENT_WIDTH_PAN (prevView)
+
+	-- set panning distance
+	shift_x = DSHIFT_X,
+	shift_y = DSHIFT_Y,
+	-- step to change zoom manually, default = 16%
+	step_manual_zoom = DSTEP_MANUAL_ZOOM,
+	pan_by_page = DPAN_BY_PAGE, -- using shift_[xy] or width/height
+	pan_x = DPAN_X, -- top-left offset of page when pan activated
+	pan_y = DPAN_Y,
+	pan_margin = DPAN_MARGIN, -- horizontal margin for two-column zoom (in pixels)
+	pan_overlap_vertical = DPAN_OVERLAP_VERTICAL,
+	show_overlap = DSHOW_OVERLAP,
+	show_overlap_enable,
+	show_links_enable,
+	comics_mode_enable,
+	rtl_mode_enable, -- rtl = right-to-left
+
+	-- the document:
+	doc = nil,
+	-- the document's setting store:
+	settings = nil,
+	-- list of available commands:
+	commands = nil,
+
+	-- we will use this one often, so keep it "static":
+	nulldc = DrawContext.new(),
+
+	-- tile cache configuration:
+	cache_max_memsize = DCACHE_MAX_MEMSIZE, -- 5MB tile cache
+	cache_max_ttl = DCACHE_MAX_TTL, -- time to live
+	-- tile cache state:
+	cache_current_memsize = 0,
+	cache = {},
+	-- renderer cache size
+	cache_document_size = DCACHE_DOCUMENT_SIZE, -- FIXME random, needs testing
+
+	pagehash = nil,
+
+	-- we use array to simluate two stacks,
+	-- one for backwards, one for forwards
+	jump_history = {cur = 1},
+	bookmarks = {},
+	highlight = {},
+	toc = nil,
+	toc_expandable = false, -- if true then TOC contains expandable/collapsible items
+	toc_children = nil, -- each element is the list of children for each TOC node (nil if none)
+	toc_xview = nil, -- fully expanded (and marked with '+') view of TOC
+	toc_cview = nil, -- current view of TOC
+	toc_curidx_to_x = nil, -- current view to expanded view map
+
+	bbox = {}, -- override getUsedBBox
+
+	last_search = {}
+}
 
 function UniReader:new(o)
 	o = o or {}
