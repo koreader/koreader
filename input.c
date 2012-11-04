@@ -306,13 +306,13 @@ static int waitForInput(lua_State *L) {
 			if(n == sizeof(struct input_event)) {
 				lua_newtable(L);
 				lua_pushstring(L, "type");
-				lua_pushinteger(L, input.type);
+				lua_pushinteger(L, (int) input.type);
 				lua_settable(L, -3);
 				lua_pushstring(L, "code");
-				lua_pushinteger(L, input.code);
+				lua_pushinteger(L, (int) input.code);
 				lua_settable(L, -3);
 				lua_pushstring(L, "value");
-				lua_pushinteger(L, input.value);
+				lua_pushinteger(L, (int) input.value);
 				lua_settable(L, -3);
 				return 1;
 			} else {
