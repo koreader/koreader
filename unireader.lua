@@ -4,6 +4,7 @@ require "selectmenu"
 require "commands"
 require "helppage"
 require "dialog"
+require "defaults"
 
 UniReader = {
 	-- "constants":
@@ -22,23 +23,23 @@ UniReader = {
 	GAMMA_NO_GAMMA = 1.0,
 
 	-- framebuffer update policy state:
-	rcount = 5,
+	rcount = DRCOUNT,
 	-- default to full refresh on every page turn
-	rcountmax = 0,
+	rcountmax = DRCOUNTMAX,
 
 	-- zoom state:
-	globalzoom = 1.0,
-	globalzoom_orig = 1.0,
-	globalzoom_mode = -1, -- ZOOM_FIT_TO_PAGE
+	globalzoom = DGLOBALZOOM,
+	globalzoom_orig = DGLOBALZOOM_ORIG,
+	globalzoom_mode = DGLOBALZOOM_MODE, -- ZOOM_FIT_TO_PAGE
 
-	globalrotate = 0,
+	globalrotate = DGLOBALROTATE,
 
 	-- gamma setting:
-	globalgamma = 1.0,   -- GAMMA_NO_GAMMA
+	globalgamma = DGLOBALGAMMA,   -- GAMMA_NO_GAMMA
 
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
 	-- See comments in djvureader.lua:DJVUReader:select_render_mode()
-	render_mode = 0, -- COLOUR
+	render_mode = DRENDER_MODE, -- COLOUR
 
 	-- cached tile size
 	fullwidth = 0,
@@ -56,16 +57,16 @@ UniReader = {
 	content_top = 0, -- for ZOOM_FIT_TO_CONTENT_WIDTH_PAN (prevView)
 
 	-- set panning distance
-	shift_x = 100,
-	shift_y = 50,
+	shift_x = DSHIFT_X,
+	shift_y = DSHIFT_Y,
 	-- step to change zoom manually, default = 16%
-	step_manual_zoom = 16,
-	pan_by_page = false, -- using shift_[xy] or width/height
-	pan_x = 0, -- top-left offset of page when pan activated
-	pan_y = 0,
-	pan_margin = 5, -- horizontal margin for two-column zoom (in pixels)
-	pan_overlap_vertical = 30,
-	show_overlap = 0,
+	step_manual_zoom = DSTEP_MANUAL_ZOOM,
+	pan_by_page = DPAN_BY_PAGE, -- using shift_[xy] or width/height
+	pan_x = DPAN_X, -- top-left offset of page when pan activated
+	pan_y = DPAN_Y,
+	pan_margin = DPAN_MARGIN, -- horizontal margin for two-column zoom (in pixels)
+	pan_overlap_vertical = DPAN_OVERLAP_VERTICAL,
+	show_overlap = DSHOW_OVERLAP,
 	show_overlap_enable,
 	show_links_enable,
 	comics_mode_enable,
@@ -82,13 +83,13 @@ UniReader = {
 	nulldc = DrawContext.new(),
 
 	-- tile cache configuration:
-	cache_max_memsize = 1024*1024*5, -- 5MB tile cache
-	cache_max_ttl = 20, -- time to live
+	cache_max_memsize = DCACHE_MAX_MEMSIZE, -- 5MB tile cache
+	cache_max_ttl = DCACHE_MAX_TTL, -- time to live
 	-- tile cache state:
 	cache_current_memsize = 0,
 	cache = {},
 	-- renderer cache size
-	cache_document_size = 1024*1024*8, -- FIXME random, needs testing
+	cache_document_size = DCACHE_DOCUMENT_SIZE, -- FIXME random, needs testing
 
 	pagehash = nil,
 
@@ -956,10 +957,10 @@ end
 -- all defaults which can be overriden by reader objects
 -- (PDFReader, DJVUReader, etc) must be initialized here.
 function UniReader:setDefaults()
-	self.show_overlap_enable = true
-	self.show_links_enable = true
-	self.comics_mode_enable = false
-	self.rtl_mode_enable = false
+	self.show_overlap_enable = DUNIREADER_SHOW_OVERLAP_ENABLE
+	self.show_links_enable = DUNIREADER_SHOW_LINKS_ENABLE
+	self.comics_mode_enable = DUNIREADER_COMICS_MODE_ENABLE
+	self.rtl_mode_enable = DUNIREADER_RTL_MODE_ENABLE
 end
 
 -- This is a low-level method that can be shared with all readers.
@@ -1435,7 +1436,7 @@ function UniReader:show(no)
 	end
 
 	if self.dest_x or self.dest_y then
-		fb.bb:paintRect(0, 0, width, height, 8)
+		fb.bb:paintRect(0, 0, width, height, DBACKGROUND_COLOR)
 	end
 	Debug("blitFrom dest_off:", self.dest_x, self.dest_y,
 		"src_off:", offset_x, offset_y,
