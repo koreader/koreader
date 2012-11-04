@@ -2699,11 +2699,7 @@ function UniReader:addAllCommands()
 		"toggle right-to-left mode on/off",
 		function(unireader)
 			unireader.rtl_mode_enable = not unireader.rtl_mode_enable
-			if unireader.rtl_mode_enable then
-				InfoMessage:inform("Right-To-Left mode ON", nil, 1, MSG_AUX)
-			else
-				InfoMessage:inform("Right-To-Left mode OFF", nil, 1, MSG_AUX)
-			end
+			InfoMessage:inform("Right-To-Left mode "..(unireader.rtl_mode_enable and "ON" or "OFF"), nil, 1, MSG_AUX)
 			self.settings:saveSetting("rtl_mode_enable", unireader.rtl_mode_enable)
 			self:redrawCurrentPage()
 		end)
