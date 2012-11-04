@@ -28,7 +28,6 @@
 #include <linux/input.h>
 #ifdef EMULATE_READER
 #include <SDL.h>
-#define EMU_EV_DEV "emu_event"
 #endif
 
 #include "input.h"
