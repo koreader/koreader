@@ -240,7 +240,8 @@ Input = {
 function Input:init()
 	if util.isEmulated()==1 then
 		-- dummy call that will initialize SDL input handling
-		input.open("")
+		os.execute("rm -f emu_event && mkfifo emu_event")
+		input.open("emu_event")
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
@@ -292,7 +293,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 		end
 		DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then
-			-- we abort if the error is not EINTR
+			-- we only abort if the error is not EINTR
 			break
 		end
 	end
