@@ -300,10 +300,10 @@ function KOPTReader:prevView()
 end
 
 function KOPTReader:setDefaults()
-    self.show_overlap_enable = true
-    self.show_links_enable = false
-    self.comics_mode_enable = false
-    self.rtl_mode_enable = false
+    self.show_overlap_enable = DKOPTREADER_SHOW_OVERLAP_ENABLE
+    self.show_links_enable = DKOPTREADER_SHOW_LINKS_ENABLE
+    self.comics_mode_enable = DKOPTREADER_COMICS_MODE_ENABLE
+    self.rtl_mode_enable = DKOPTREADER_RTL_MODE_ENABLE
 end
 
 -- backup global variables from UniReader

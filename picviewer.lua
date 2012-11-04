@@ -3,10 +3,10 @@ require "unireader"
 PICViewer = UniReader:new{}
 
 function PICViewer:setDefaults()
-	self.show_overlap_enable = false
-	self.show_links_enable = false
-	self.comics_mode_enable = false
-	self.rtl_mode_enable = false
+	self.show_overlap_enable = DPICVIEWER_SHOW_OVERLAP_ENABLE
+	self.show_links_enable = DPICVIEWER_SHOW_LINKS_ENABLE
+	self.comics_mode_enable = DPICVIEWER_COMICS_MODE_ENABLE
+	self.rtl_mode_enable = DPICVIEWER_RTL_MODE_ENABLE
 end
 
 function PICViewer:open(filename)

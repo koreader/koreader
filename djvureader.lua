@@ -3,10 +3,10 @@ require "unireader"
 DJVUReader = UniReader:new{}
 
 function DJVUReader:setDefaults()
-	self.show_overlap_enable = true
-	self.show_links_enable = false
-	self.comics_mode_enable = false
-	self.rtl_mode_enable = false
+	self.show_overlap_enable = DDJVUREADER_SHOW_OVERLAP_ENABLE
+	self.show_links_enable = DDJVUREADER_SHOW_LINKS_ENABLE
+	self.comics_mode_enable = DDJVUREADER_COMICS_MODE_ENABLE
+	self.rtl_mode_enable = DDJVUREADER_RTL_MODE_ENABLE
 end
 
 -- check DjVu magic string to validate
