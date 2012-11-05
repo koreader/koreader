@@ -473,18 +473,11 @@ function FileChooser:addAllCommands()
 			self:changeFileChooserMode()
 		end
 	)
--- NuPogodi, 25.09.12: new functions to tune the way how to inform user about the reader events
-	local popup_text = "Unstable... For experts only! "
-	local voice_text = "This function is still under development and available only for experts and beta testers."
-	self.commands:add(KEY_I, nil, "I",
-		"change the way to inform about events",
+	self.commands:add(KEY_E, nil, "E",
+		"configure event notifications",
 		function(self)
-			if self.filemanager_expert_mode == self.ROOT_MODE then
-				InfoMessage:chooseNotificatonMethods()
-				self.pagedirty = true
-			else
-				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
-			end
+			InfoMessage:chooseNotificatonMethods()
+			self.pagedirty = true
 		end
 	)
 	self.commands:addGroup("Vol-/+", {Keydef:new(KEY_VPLUS,nil), Keydef:new(KEY_VMINUS,nil)},
@@ -507,7 +500,6 @@ function FileChooser:addAllCommands()
 			end
 		end
 	)
------------- end of changes (NuPogodi, 25.09.12) ------------
 	self.commands:add({KEY_F, KEY_AA}, nil, "F, Aa",
 		"change font faces",
 		function(self)
