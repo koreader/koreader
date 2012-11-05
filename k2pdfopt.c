@@ -463,13 +463,9 @@ static void wpdfboxes_add_box(WPDFBOXES *boxes, WPDFBOX *box);
 
 static MASTERINFO _masterinfo, *masterinfo;
 static int master_bmp_inited = 0;
-static int master_bmp_width = 0;
-static int master_bmp_height = 0;
 static int max_page_width_pix = 3000;
 static int max_page_height_pix = 4000;
 static double shrink_factor = 0.9;
-static double zoom_value = 1.0;
-static double gamma_correction = 1.0;
 
 static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	WPDFPAGEINFO _pageinfo, *pageinfo;
@@ -545,37 +541,25 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	/* Check to see if master bitmap might need more room */
 	bmpregion_source_page_add(&region, masterinfo, 1, pageinfo, (int) (0.25 * src_dpi + .5));
 
-	master_bmp_width = masterinfo->bmp.width;
-	master_bmp_height = masterinfo->rows;
-
 	bmp_free(srcgrey);
 	if (pageinfo != NULL)
 		wpdfboxes_free(&pageinfo->boxes);
 }
 
-void k2pdfopt_set_params(int bb_width, int bb_height, \
-		double font_size, double page_margin, \
-		double line_space, double word_space, \
-		int wrapping, int straighten, \
-		int justification, int detect_indent,\
-		int columns, double contrast, \
-		int rotation, double quality, \
-		double defect_size, int trim_page) {
-	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
-	dst_userheight = bb_height;
-	zoom_value = font_size;
-	vertical_line_spacing = line_space;
-	word_spacing = word_space;
-	text_wrap = wrapping;
-	src_autostraighten = straighten;
-	preserve_indentation = detect_indent;
-	max_columns = columns;
-	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
-	src_rot = rotation;
-	src_dpi = (int)300*quality;
-	defect_size_pts = defect_size;
+static void k2pdfopt_init(KOPTContext *kctx) {
+	dst_userwidth  = kctx->dev_width; // dst_width is adjusted in adjust_params_init
+	dst_userheight = kctx->dev_height;
+	vertical_line_spacing = kctx->line_spacing;
+	word_spacing = kctx->word_spacing;
+	text_wrap = kctx->wrap;
+	src_autostraighten = kctx->straighten;
+	preserve_indentation = kctx->indent;
+	max_columns = kctx->columns;
+	src_rot = kctx->rotate;
+	src_dpi = (int)300*kctx->quality;
+	defect_size_pts = kctx->defect_size;
 
-	if (trim_page == 0) {
+	if (kctx->trim == 0) {
 		mar_left = 0;
 		mar_top = 0;
 		mar_right = 0;
@@ -588,19 +572,19 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	}
 
 	// margin
-	dst_mar = page_margin;
+	dst_mar = kctx->margin;
 	dst_martop = -1.0;
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
 
 	// justification
-	if (justification < 0) {
+	if (kctx->justification < 0) {
 		dst_justify = -1;
 		dst_fulljustify = -1;
 	}
-	else if (justification <= 2) {
-		dst_justify = justification;
+	else if (kctx->justification <= 2) {
+		dst_justify = kctx->justification;
 		dst_fulljustify = 0;
 	}
 	else {
@@ -609,7 +593,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	}
 }
 
-void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
+void k2pdfopt_mupdf_reflow(KOPTContext *kctx, fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_device *dev;
 	fz_pixmap *pix;
 	fz_rect bounds,bounds2;
@@ -617,8 +601,10 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_bbox bbox;
 	WILLUSBITMAP _src, *src;
 
+	k2pdfopt_init(kctx);
+
 	double dpp,zoom;
-	zoom = zoom_value;
+	zoom = kctx->zoom;
 	double dpi = 250*zoom*src_dpi/300;
 	do {
 		dpp = dpi / 72.;
@@ -630,7 +616,7 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 		bounds2 = fz_transform_rect(ctm, bounds);
 		bbox = fz_round_rect(bounds2);
 		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
-		zoom_value = zoom;
+		kctx->zoom = zoom;
 		zoom *= shrink_factor;
 		dpi *= shrink_factor;
 	} while (bbox.x1 > max_page_width_pix | bbox.y1 > max_page_height_pix);
@@ -656,8 +642,8 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_run_page(doc, page, dev, ctm, NULL);
 	fz_free_device(dev);
 
-	if(gamma_correction >= 0.0) {
-		fz_gamma_pixmap(ctx, pix, gamma_correction);
+	if(kctx->contrast >= 0.0) {
+		fz_gamma_pixmap(ctx, pix, kctx->contrast);
 	}
 
 	src = &_src;
@@ -668,15 +654,22 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	bmp_free(src);
 
 	fz_drop_pixmap(ctx, pix);
+
+	kctx->page_width = masterinfo->bmp.width;
+	kctx->page_height = masterinfo->rows;
+	kctx->data = masterinfo->bmp.data;
 }
 
-void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
+void k2pdfopt_djvu_reflow(KOPTContext *kctx, ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		ddjvu_render_mode_t mode, ddjvu_format_t *fmt) {
 	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
+
+	k2pdfopt_init(kctx);
+
 	int i, iw, ih, idpi, status;
-	double zoom = zoom_value;
+	double zoom = kctx->zoom;
 	double dpi = 250*zoom;
 
 	while (!ddjvu_page_decoding_done(page))
@@ -690,7 +683,7 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		prect.w = iw * dpi / idpi;
 		prect.h = ih * dpi / idpi;
 		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",prect.x,prect.y,prect.w,prect.h,dpi);
-		zoom_value = zoom;
+		kctx->zoom = zoom;
 		zoom *= shrink_factor;
 		dpi *= shrink_factor;
 	} while (prect.w > max_page_width_pix | prect.h > max_page_height_pix);
@@ -718,19 +711,10 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 
 	k2pdfopt_reflow_bmp(masterinfo, src);
 	bmp_free(src);
-}
 
-void k2pdfopt_rfbmp_size(int *width, int *height) {
-	*width = master_bmp_width;
-	*height = master_bmp_height;
-}
-
-void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr) {
-	*bmp_ptr_ptr = masterinfo->bmp.data;
-}
-
-void k2pdfopt_rfbmp_zoom(double *zoom) {
-	*zoom = zoom_value;
+	kctx->page_width = masterinfo->bmp.width;
+	kctx->page_height = masterinfo->rows;
+	kctx->data = masterinfo->bmp.data;
 }
 
 /* ansi.c */
