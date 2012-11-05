@@ -27,6 +27,7 @@ require "screen"
 require "commands"
 require "dialog"
 require "readerchooser"
+require "defaults"
 
 function openFile(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
@@ -137,6 +138,12 @@ end
 -- set up the mode to manage files
 FileChooser.filemanager_expert_mode = G_reader_settings:readSetting("filemanager_expert_mode") or 1
 InfoMessage:initInfoMessageSettings()
+local tmp = G_reader_settings:readSetting("G_battery_logging")
+if tmp ~= nil then
+	G_battery_logging = tmp
+else
+	G_battery_logging = DBATTERY_LOGGING
+end
 
 -- initialize global settings shared among all readers
 UniReader:initGlobalSettings(G_reader_settings)

@@ -593,6 +593,15 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end
 	)
+	self.commands:add(KEY_DOT, MOD_ALT, ".",
+		"toggle battery level logging",
+		function(self)
+			G_battery_logging = not G_battery_logging
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), 1000, 1, MSG_AUX)
+			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
+			self.pagedirty = true
+		end
+	)
 	self.commands:add(KEY_B, MOD_SHIFT, "B",
 		"show content of 'clipboard'",
 		function(self)
