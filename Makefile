@@ -96,6 +96,7 @@ K2PDFOPT_CFLAGS=-I$(K2PDFOPTLIBDIR)/willuslib -I$(K2PDFOPTLIBDIR)/k2pdfoptlib -I
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so \
 			$(LIBDIR)/libdjvulibre.so
+DJVULIB :=	$(LIBDIR)/libdjvulibre.so.21
 DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
