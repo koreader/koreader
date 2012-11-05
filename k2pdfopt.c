@@ -40,7 +40,7 @@
 
 #define HAVE_MUPDF
 
-#define VERSION "v1.51"
+#define VERSION "v1.60"
 #define GRAYLEVEL(r,g,b) ((int)(((r)*0.3+(g)*0.59+(b)*0.11)*1.002))
 #if (defined(WIN32) || defined(WIN64))
 #define TTEXT_BOLD    ANSI_WHITE
@@ -123,6 +123,48 @@ typedef struct {
 	double page_rot_deg; /* Source page rotation */
 	PDFBOXES boxes;
 } PAGEINFO;
+
+typedef struct {
+	int pageno;
+	double finerot_deg;
+	double rot_deg;
+	double page_width_pts;
+	double page_height_pts;
+	double x0_pts;
+	double y0_pts;
+	double crop_width_pts;
+	double crop_height_pts;
+} WPDFSRCBOX;
+
+typedef struct {
+	int dstpage; /* Dest page */
+	double x0, y0; /* x0,y0, in points, of lower left point on transformed source page */
+	double w, h; /* width and height of transformed source rectangle in points */
+	double x1, y1; /* (x,y) position of lower left source point on destination page, in points */
+	double scale; /* Scale rectangle by this factor on destination page */
+	double srcrot_deg; /* Rotation of source selection rectangle about x0,y0 */
+	double dstrot_deg; /* Rotation of destination rectangle about x1,y1 */
+	double userx, usery; /* For user use */
+	double src_width_pts, src_height_pts; /* Width/height of transformed source page in points */
+	double dst_width_pts, dst_height_pts; /* Width/height of device page in points */
+	WPDFSRCBOX srcbox;
+} WPDFBOX;
+
+typedef struct {
+	WPDFBOX *box;
+	int n;
+	int na;
+} WPDFBOXES;
+
+typedef struct {
+    char producer[128];  /* Producer */
+    double width_pts;    /* Destination page width in pts. */
+    double height_pts;   /* Destination page height in pts. */
+    int srcpage;                 /* Ignored by wmupdf_remake_pdf */
+    double srcpage_rot_deg;      /* Ignored by wmupdf_remake_pdf */
+    double srcpage_fine_rot_deg; /* Ignored by wmupdf_remake_pdf */
+    WPDFBOXES boxes;
+} WPDFPAGEINFO;
 
 typedef struct {
 	int ch; /* Hyphen starting point -- < 0 for no hyphen */
@@ -245,15 +287,21 @@ static int column_fitted = 0;
 static double lm_org, bm_org, tm_org, rm_org, dpi_org;
 static double contrast_max = 2.0;
 static int show_marked_source = 0;
+static int use_crop_boxes = 1;
 static int preserve_indentation = 1;
 static double defect_size_pts = 1.0;
 static double max_vertical_gap_inches = 0.25;
 static double vertical_multiplier = 1.0;
 static double vertical_line_spacing = -1.2;
 static double vertical_break_threshold = 1.75;
+static int src_trim = 1;
 static int erase_vertical_lines = 0;
 static int k2_hyphen_detect = 1;
 static int dst_fit_to_page = 0;
+static int src_grid_rows = -1;
+static int src_grid_cols = -1;
+static int src_grid_overlap_percentage = 2;
+static int src_grid_order = 0; /* 0=down then across, 1=across then down */
 /*
  ** Undocumented cmd-line args
  */
@@ -288,22 +336,23 @@ static int bmpregion_column_height_and_gap_test(BMPREGION *column,
 		int *rowcount);
 static int bmpregion_is_clear(BMPREGION *region, int *row_is_clear,
 		double gt_in);
-void bmpregion_multicolumn_add(BMPREGION *region, MASTERINFO *masterinfo,
-		int level, PAGEINFO *pageinfo, int colgap0_pixels);
+static void bmpregion_source_page_add(BMPREGION *region, MASTERINFO *masterinfo,
+		int level, WPDFPAGEINFO *pageinfo, int colgap0_pixels);
 static void bmpregion_vertically_break(BMPREGION *region,
 		MASTERINFO *masterinfo, int allow_text_wrapping, double force_scale,
-		int *colcount, int *rowcount, PAGEINFO *pageinfo, int colgap_pixels,
+		int *colcount, int *rowcount, WPDFPAGEINFO *pageinfo, int colgap_pixels,
 		int ncols);
 static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 		MASTERINFO *masterinfo, int allow_text_wrapping, int trim_flags,
 		int allow_vertical_breaks, double force_scale, int justify_flags,
-		int caller_id, int *colcount, int *rowcount, PAGEINFO *pageinfo,
+		int caller_id, int *colcount, int *rowcount, WPDFPAGEINFO *pageinfo,
 		int mark_flags, int rowbase_delta);
 static void dst_add_gap_src_pixels(char *caller, MASTERINFO *masterinfo,
 		int pixels);
 static void dst_add_gap(MASTERINFO *masterinfo, double inches);
 static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
-		int justification_flags, int whitethresh, int nocr, int dpi);
+		WPDFPAGEINFO *pageinfo, int justification_flags, int whitethresh,
+		int nocr, int dpi);
 static void bmp_fully_justify(WILLUSBITMAP *jbmp, WILLUSBITMAP *src, int nocr,
 		int whitethresh, int just);
 #ifdef HAVE_OCR
@@ -322,7 +371,7 @@ static int height2_calc(int *rc, int n);
 static void trim_to(int *count, int *i1, int i2, double gaplen);
 static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 		BREAKINFO *breakinfo, MASTERINFO *masterinfo, int *colcount,
-		int *rowcount, PAGEINFO *pageinfo, int allow_text_wrapping,
+		int *rowcount, WPDFPAGEINFO *pageinfo, int allow_text_wrapping,
 		double force_scale);
 static int bmpregion_is_centered(BMPREGION *region, BREAKINFO *breakinfo,
 		int i1, int i2, int *textheight);
@@ -352,11 +401,11 @@ static int wrapbmp_remaining(void);
 static void wrapbmp_add(BMPREGION *region, int gap, int line_spacing, int rbase,
 		int gio, int justification_flags);
 static void wrapbmp_flush(MASTERINFO *masterinfo, int allow_full_justify,
-		PAGEINFO *pageinfo, int use_bgi);
+		WPDFPAGEINFO *pageinfo, int use_bgi);
 static void wrapbmp_hyphen_erase(void);
 static void bmpregion_one_row_wrap_and_add(BMPREGION *region,
 		BREAKINFO *breakinfo, int index, int i0, int i1, MASTERINFO *masterinfo,
-		int justflags, int *colcount, int *rowcount, PAGEINFO *pageinfo,
+		int justflags, int *colcount, int *rowcount, WPDFPAGEINFO *pageinfo,
 		int rheight, int mean_row_gap, int rowbase, int marking_flags, int pi);
 static void white_margins(WILLUSBITMAP *src, WILLUSBITMAP *srcgrey);
 static void get_white_margins(BMPREGION *region);
@@ -408,22 +457,27 @@ static int bmp_rotate_right_angle(WILLUSBITMAP *bmp, int degrees);
 static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx,
 		fz_pixmap *pixmap);
 static void handle(int wait, ddjvu_context_t *ctx);
+static void wpdfboxes_init(WPDFBOXES *boxes);
+static void wpdfboxes_free(WPDFBOXES *boxes);
+static void wpdfboxes_add_box(WPDFBOXES *boxes, WPDFBOX *box);
 
 static MASTERINFO _masterinfo, *masterinfo;
 static int master_bmp_inited = 0;
-static int master_bmp_width = 0;
-static int master_bmp_height = 0;
 static int max_page_width_pix = 3000;
 static int max_page_height_pix = 4000;
 static double shrink_factor = 0.9;
-static double zoom_value = 1.0;
-static double gamma_correction = 1.0;
 
 static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
-	PAGEINFO _pageinfo, *pageinfo;
+	WPDFPAGEINFO _pageinfo, *pageinfo;
 	WILLUSBITMAP _srcgrey, *srcgrey;
 	int i, white, dpi;
 	double area_ratio;
+
+	if (use_crop_boxes) {
+		pageinfo = &_pageinfo;
+		wpdfboxes_init(&pageinfo->boxes);
+	} else
+		pageinfo = NULL;
 
 	masterinfo->debugfolder[0] = '\0';
 	white = src_whitethresh; /* Will be set by adjust_contrast() or set to src_whitethresh */
@@ -470,7 +524,8 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	if (src_autostraighten > 0.) {
 		double rot;
 		rot = bmp_autostraighten(src, srcgrey, white, src_autostraighten, 0.1, debug);
-		pageinfo->page_rot_deg += rot;
+		if (pageinfo != NULL)
+			pageinfo->srcpage_fine_rot_deg = rot;
 	}
 
 	region.r1 = 0;
@@ -484,46 +539,52 @@ static void k2pdfopt_reflow_bmp(MASTERINFO *masterinfo, WILLUSBITMAP *src) {
 	masterinfo->bgcolor = white;
 	masterinfo->fit_to_page = dst_fit_to_page;
 	/* Check to see if master bitmap might need more room */
-	bmpregion_multicolumn_add(&region, masterinfo, 1, pageinfo, (int) (0.25 * src_dpi + .5));
-
-	master_bmp_width = masterinfo->bmp.width;
-	master_bmp_height = masterinfo->rows;
+	bmpregion_source_page_add(&region, masterinfo, 1, pageinfo, (int) (0.25 * src_dpi + .5));
 
 	bmp_free(srcgrey);
+	if (pageinfo != NULL)
+		wpdfboxes_free(&pageinfo->boxes);
 }
 
-void k2pdfopt_set_params(int bb_width, int bb_height, \
-		double font_size, double page_margin, \
-		double line_space, double word_space, \
-		int wrapping, int straighten, \
-		int justification, int detect_indent,\
-		int columns, double contrast, int rotation) {
-	dst_userwidth  = bb_width; // dst_width is adjusted in adjust_params_init
-	dst_userheight = bb_height;
-	zoom_value = font_size;
-	vertical_line_spacing = line_space;
-	word_spacing = word_space;
-	text_wrap = wrapping;
-	src_autostraighten = straighten;
-	preserve_indentation = detect_indent;
-	max_columns = columns;
-	gamma_correction = contrast;  // contrast is only used by k2pdfopt_mupdf_reflow
-	src_rot = rotation;
+static void k2pdfopt_init(KOPTContext *kctx) {
+	dst_userwidth  = kctx->dev_width; // dst_width is adjusted in adjust_params_init
+	dst_userheight = kctx->dev_height;
+	vertical_line_spacing = kctx->line_spacing;
+	word_spacing = kctx->word_spacing;
+	text_wrap = kctx->wrap;
+	src_autostraighten = kctx->straighten;
+	preserve_indentation = kctx->indent;
+	max_columns = kctx->columns;
+	src_rot = kctx->rotate;
+	src_dpi = (int)300*kctx->quality;
+	defect_size_pts = kctx->defect_size;
+
+	if (kctx->trim == 0) {
+		mar_left = 0;
+		mar_top = 0;
+		mar_right = 0;
+		mar_bot = 0;
+	} else {
+		mar_left = -1;
+		mar_top = -1;
+		mar_right = -1;
+		mar_bot = -1;
+	}
 
 	// margin
-	dst_mar = page_margin;
+	dst_mar = kctx->margin;
 	dst_martop = -1.0;
 	dst_marbot = -1.0;
 	dst_marleft = -1.0;
 	dst_marright = -1.0;
-	printf("justification:%d", justification);
+
 	// justification
-	if (justification < 0) {
+	if (kctx->justification < 0) {
 		dst_justify = -1;
 		dst_fulljustify = -1;
 	}
-	else if (justification <= 2) {
-		dst_justify = justification;
+	else if (kctx->justification <= 2) {
+		dst_justify = kctx->justification;
 		dst_fulljustify = 0;
 	}
 	else {
@@ -532,7 +593,7 @@ void k2pdfopt_set_params(int bb_width, int bb_height, \
 	}
 }
 
-void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
+void k2pdfopt_mupdf_reflow(KOPTContext *kctx, fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_device *dev;
 	fz_pixmap *pix;
 	fz_rect bounds,bounds2;
@@ -540,9 +601,11 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_bbox bbox;
 	WILLUSBITMAP _src, *src;
 
+	k2pdfopt_init(kctx);
+
 	double dpp,zoom;
-	zoom = zoom_value;
-	double dpi = 250*zoom;
+	zoom = kctx->zoom;
+	double dpi = 250*zoom*src_dpi/300;
 	do {
 		dpp = dpi / 72.;
 		pix = NULL;
@@ -553,7 +616,7 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 		bounds2 = fz_transform_rect(ctm, bounds);
 		bbox = fz_round_rect(bounds2);
 		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
-		zoom_value = zoom;
+		kctx->zoom = zoom;
 		zoom *= shrink_factor;
 		dpi *= shrink_factor;
 	} while (bbox.x1 > max_page_width_pix | bbox.y1 > max_page_height_pix);
@@ -579,8 +642,8 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	fz_run_page(doc, page, dev, ctm, NULL);
 	fz_free_device(dev);
 
-	if(gamma_correction >= 0.0) {
-		fz_gamma_pixmap(ctx, pix, gamma_correction);
+	if(kctx->contrast >= 0.0) {
+		fz_gamma_pixmap(ctx, pix, kctx->contrast);
 	}
 
 	src = &_src;
@@ -591,15 +654,22 @@ void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx) {
 	bmp_free(src);
 
 	fz_drop_pixmap(ctx, pix);
+
+	kctx->page_width = masterinfo->bmp.width;
+	kctx->page_height = masterinfo->rows;
+	kctx->data = masterinfo->bmp.data;
 }
 
-void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
+void k2pdfopt_djvu_reflow(KOPTContext *kctx, ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		ddjvu_render_mode_t mode, ddjvu_format_t *fmt) {
 	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
+
+	k2pdfopt_init(kctx);
+
 	int i, iw, ih, idpi, status;
-	double zoom = zoom_value;
+	double zoom = kctx->zoom;
 	double dpi = 250*zoom;
 
 	while (!ddjvu_page_decoding_done(page))
@@ -613,7 +683,7 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 		prect.w = iw * dpi / idpi;
 		prect.h = ih * dpi / idpi;
 		printf("reading page:%d,%d,%d,%d dpi:%.0f\n",prect.x,prect.y,prect.w,prect.h,dpi);
-		zoom_value = zoom;
+		kctx->zoom = zoom;
 		zoom *= shrink_factor;
 		dpi *= shrink_factor;
 	} while (prect.w > max_page_width_pix | prect.h > max_page_height_pix);
@@ -641,19 +711,10 @@ void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, \
 
 	k2pdfopt_reflow_bmp(masterinfo, src);
 	bmp_free(src);
-}
 
-void k2pdfopt_rfbmp_size(int *width, int *height) {
-	*width = master_bmp_width;
-	*height = master_bmp_height;
-}
-
-void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr) {
-	*bmp_ptr_ptr = masterinfo->bmp.data;
-}
-
-void k2pdfopt_rfbmp_zoom(double *zoom) {
-	*zoom = zoom_value;
+	kctx->page_width = masterinfo->bmp.width;
+	kctx->page_height = masterinfo->rows;
+	kctx->data = masterinfo->bmp.data;
 }
 
 /* ansi.c */
@@ -746,11 +807,11 @@ void set_region_widths(void)
  ** level = recursion level.  First call = 1, then 2, ...
  **
  */
-void bmpregion_multicolumn_add(BMPREGION *region, MASTERINFO *masterinfo,
-		int level, PAGEINFO *pageinfo, int colgap0_pixels)
+static void bmpregion_source_page_add(BMPREGION *region, MASTERINFO *masterinfo,
+		int level, WPDFPAGEINFO *pageinfo, int colgap0_pixels)
 
 {
-	static char *funcname = "bmpregion_multicolumn_add";
+	static char *funcname = "bmpregion_source_page_add";
 	int *row_black_count;
 	int r2, rh, r0, cgr, maxlevel;
 	BMPREGION *srcregion, _srcregion;
@@ -766,15 +827,65 @@ void bmpregion_multicolumn_add(BMPREGION *region, MASTERINFO *masterinfo,
 			sizeof(int) * (region->r2 + 1), funcname, 10);
 	maxlevel = max_columns / 2;
 	if (debug)
-		printf("@bmpregion_multicolumn_add (%d,%d) - (%d,%d) lev=%d\n",
+		printf("@bmpregion_source_page_add (%d,%d) - (%d,%d) lev=%d\n",
 				region->c1, region->r1, region->c2, region->r2, level);
 	newregion = &_newregion;
 	(*newregion) = (*region);
 	/* Establish colcount, rowcount arrays */
-	bmpregion_trim_margins(newregion, colcount, rowcount, 0xf);
+	bmpregion_trim_margins(newregion, colcount, rowcount, src_trim ? 0xf : 0);
 	(*newregion) = (*region);
 	srcregion = &_srcregion;
 	(*srcregion) = (*region);
+	/* Blind Grid Output (no attempt to find breaks between rows or columns) */
+	if (src_grid_cols > 0 && src_grid_rows > 0) {
+		int i, nr;
+		nr = src_grid_cols * src_grid_rows;
+		for (i = 0; i < nr; i++) {
+			int r, c, gw, gh, gwo, gho;
+
+			gwo = (src_grid_overlap_percentage * region->bmp8->width
+					+ region->bmp8->width / 2) / 100;
+			gho = (src_grid_overlap_percentage * region->bmp8->height
+					+ region->bmp8->height / 2) / 100;
+			gw = region->bmp8->width / src_grid_cols + gwo;
+			gh = region->bmp8->height / src_grid_rows + gho;
+			if (src_grid_order == 0) {
+				r = i % src_grid_rows;
+				c = i / src_grid_rows;
+			} else {
+				r = i / src_grid_cols;
+				c = i % src_grid_cols;
+			}
+			srcregion->c1 = c * region->bmp8->width / src_grid_cols - gwo / 2;
+			if (srcregion->c1 < 0)
+				srcregion->c1 = 0;
+			srcregion->c2 = srcregion->c1 + gw - 1;
+			if (srcregion->c2 > region->bmp8->width - 1) {
+				srcregion->c2 = region->bmp8->width - 1;
+				srcregion->c1 = srcregion->c2 - gw + 1;
+				if (srcregion->c1 < 0)
+					srcregion->c1 = 0;
+			}
+			srcregion->r1 = r * region->bmp8->height / src_grid_rows - gho / 2;
+			if (srcregion->r1 < 0)
+				srcregion->r1 = 0;
+			srcregion->r2 = srcregion->r1 + gh - 1;
+			if (srcregion->r2 > region->bmp8->height - 1) {
+				srcregion->r2 = region->bmp8->height - 1;
+				srcregion->r1 = srcregion->r2 - gh + 1;
+				if (srcregion->r1 < 0)
+					srcregion->r1 = 0;
+			}
+			bmpregion_vertically_break(srcregion, masterinfo, text_wrap,
+					fit_columns ? -2.0 : -1.0, colcount, rowcount, pageinfo, 0,
+					2 * level);
+			if (masterinfo->fit_to_page == -2)
+				publish_master(masterinfo, pageinfo, 1);
+		}
+		willus_dmem_free(2, (double **) &rowcount, funcname);
+		willus_dmem_free(1, (double **) &colcount, funcname);
+		return;
+	}
 	/* How many page regions do we need? */
 	minh = min_column_height_inches;
 	if (minh < .01)
@@ -836,8 +947,19 @@ void bmpregion_multicolumn_add(BMPREGION *region, MASTERINFO *masterinfo,
 				aprintf("%s", ierr);
 				break;
 			}
+			/*
+			 if (maxlevel==1)
+			 */
 			rh = bmpregion_find_multicolumn_divider(srcregion, row_black_count,
 					pageregion, &npr, colcount, rowcount);
+			/*
+			 else
+			 {
+			 BMPREGIONS *subregion,_subregion;
+
+			 subregion=&_subregion;
+			 }
+			 */
 			if (verbose)
 				printf("rh=%d/%d\n", rh, region->r2 - region->r1 + 1);
 		}
@@ -891,7 +1013,7 @@ void bmpregion_multicolumn_add(BMPREGION *region, MASTERINFO *masterinfo,
 				else
 					colgap_pixels = colgap0_pixels;
 				if (level < maxlevel)
-					bmpregion_multicolumn_add(newregion, masterinfo, level + 1,
+					bmpregion_source_page_add(newregion, masterinfo, level + 1,
 							pageinfo, colgap_pixels);
 				else {
 					bmpregion_vertically_break(newregion, masterinfo, text_wrap,
@@ -1085,13 +1207,13 @@ static int bmpregion_find_multicolumn_divider(BMPREGION *region,
 	breakinfo_alloc(101, breakinfo, region->r2 - region->r1 + 1);
 	bmpregion_find_vertical_breaks(region, breakinfo, colcount, rowcount,
 			column_row_gap_height_in);
-	/*
-	 {
-	 printf("region (%d,%d)-(%d,%d) has %d breaks:\n",region->c1,region->r1,region->c2,region->r2,breakinfo->n);
-	 for (i=0;i<breakinfo->n;i++)
-	 printf("    Rows %d - %d\n",breakinfo->textrow[i].r1,breakinfo->textrow[i].r2);
-	 }
-	 */
+	if (debug) {
+		printf("region (%d,%d)-(%d,%d) has %d breaks:\n", region->c1,
+				region->r1, region->c2, region->r2, breakinfo->n);
+		for (i = 0; i < breakinfo->n; i++)
+			printf("    Rows %d - %d\n", breakinfo->textrow[i].r1,
+					breakinfo->textrow[i].r2);
+	}
 	newregion = &_newregion;
 	(*newregion) = (*region);
 	min_height_pixels = min_column_height_inches * src_dpi; /* src->height/15; */
@@ -1115,6 +1237,11 @@ static int bmpregion_find_multicolumn_divider(BMPREGION *region,
 	for (i = 0; i < region->c2 + 2; i++) {
 		rowmin[i] = region->r2 + 2;
 		rowmax[i] = -1;
+	}
+	/* Un-trim top/bottom rows if requested */
+	if (!src_trim && breakinfo->n > 0) {
+		breakinfo->textrow[0].r1 = region->r1;
+		breakinfo->textrow[breakinfo->n - 1].r2 = region->r2;
 	}
 
 	/* Start with top-most and bottom-most regions, look for column dividers */
@@ -1212,10 +1339,15 @@ static int bmpregion_find_multicolumn_divider(BMPREGION *region,
 							pageregion[(*npr)].r2 =
 									pageregion[(*npr)].bmp8->height - 1;
 						bmpregion_trim_margins(&pageregion[(*npr)], colcount,
-								rowcount, 0xf);
+								rowcount, src_trim ? 0xf : 0);
 						/* Special flag to indicate full-width region */
 						pageregion[(*npr)].c1 = -1 - pageregion[(*npr)].c1;
 						(*npr) = (*npr) + 1;
+					}
+					/* Un-trim columns if requested */
+					if (!src_trim) {
+						column[0].c1 = region->c1;
+						column[1].c2 = region->c2;
 					}
 					pageregion[(*npr)] = column[0];
 					(*npr) = (*npr) + 1;
@@ -1234,7 +1366,8 @@ static int bmpregion_find_multicolumn_divider(BMPREGION *region,
 	if (verbose)
 		printf("NO GOOD REGION FOUND.\n");
 	pageregion[(*npr)] = (*region);
-	bmpregion_trim_margins(&pageregion[(*npr)], colcount, rowcount, 0xf);
+	bmpregion_trim_margins(&pageregion[(*npr)], colcount, rowcount,
+			src_trim ? 0xf : 0);
 	/* Special flag to indicate full-width region */
 	pageregion[(*npr)].c1 = -1 - pageregion[(*npr)].c1;
 	(*npr) = (*npr) + 1;
@@ -1327,7 +1460,7 @@ static int bmpregion_is_clear(BMPREGION *region, int *row_black_count,
 	 printf("(%d,%d)-(%d,%d):  c=%d, pt=%d (gt_in=%g)\n",
 	 region->c1,region->r1,region->c2,region->r2,c,pt,gt_in);
 	 */
-	return (1 + (int) 10 * c / pt);
+	return (pt <= 0 ? 1 : 1 + (int) 10 * c / pt);
 }
 
 static void bmpregion_row_histogram(BMPREGION *region)
@@ -1546,7 +1679,7 @@ static void mark_source_page(BMPREGION *region0, int caller_id, int mark_flags)
  */
 static void bmpregion_vertically_break(BMPREGION *region,
 		MASTERINFO *masterinfo, int allow_text_wrapping, double force_scale,
-		int *colcount, int *rowcount, PAGEINFO *pageinfo, int colgap_pixels,
+		int *colcount, int *rowcount, WPDFPAGEINFO *pageinfo, int colgap_pixels,
 		int ncols)
 
 {
@@ -1560,9 +1693,10 @@ static void bmpregion_vertically_break(BMPREGION *region,
 
 #if (WILLUSDEBUGX & 1)
 	printf("\n\n@bmpregion_vertically_break.  colgap_pixels=%d\n\n",colgap_pixels);
+	printf("    region = (%d,%d) - (%d,%d)\n",region->c1,region->r1,region->c2,region->r2);
+	printf("    vertical_break_threshold=%g\n",vertical_break_threshold);
 #endif
-	trim_flags = 0xf;
-	allow_vertical_breaks = 1;
+	allow_vertical_breaks = (vertical_break_threshold > -1.5);
 	justification_flags = 0x8f; /* Don't know region justification status yet.  Use user settings. */
 	rbdelta = -1;
 	breakinfo = &_breakinfo;
@@ -1584,31 +1718,7 @@ static void bmpregion_vertically_break(BMPREGION *region,
 #if (WILLUSDEBUGX & 2)
 	breakinfo_echo(breakinfo);
 #endif
-	/*
-	 newregion=&_newregion;
-	 for (i=0;i<breakinfo->n;i++)
-	 {
-	 (*newregion)=(*region);
-	 newregion->r1=breakinfo->textrow[i].r1;
-	 newregion->r2=breakinfo->textrow[i].r2;
-	 bmpregion_add(newregion,breakinfo,masterinfo,allow_text_wrapping,force_scale,0,1,
-	 colcount,rowcount,pageinfo,0,0xf);
-	 }
-	 breakinfo_free(breakinfo);
-	 return;
-	 */
-	/*
-	 if (!vertical_breaks)
-	 {
-	 caller_id=100;
-	 marking_flags=0;
-	 bmpregion_add(region,breakinfo,masterinfo,allow_text_wrapping,trim_flags,
-	 allow_vertical_breaks,force_scale,justification_flags,
-	 caller_id,colcount,rowcount,pageinfo,marking_flags,rbdelta);
-	 breakinfo_free(breakinfo);
-	 return;
-	 }
-	 */
+
 	/* Red, numbered region */
 	mark_source_page(region, 1, 0xf);
 	bregion = &_bregion;
@@ -1676,15 +1786,20 @@ static void bmpregion_vertically_break(BMPREGION *region,
 		allow_text_wrapping = 0;
 	} else
 		revert = 0;
+#if (WILLUSDEBUGX & 1)
+	printf("Entering vert region loop, %d regions.\n",breakinfo->n);
+	printf("    region 1:  r1=%d, r2=%d\n",breakinfo->textrow[0].r1,breakinfo->textrow[0].r2);
+	printf("    region %d:  r1=%d, r2=%d\n",breakinfo->n,breakinfo->textrow[breakinfo->n-1].r1,breakinfo->textrow[breakinfo->n-1].r2);
+#endif
+	/* Un-trim top and bottom region if necessary */
+	if (!src_trim && breakinfo->n > 0) {
+		breakinfo->textrow[0].r1 = region->r1;
+		breakinfo->textrow[breakinfo->n - 1].r2 = region->r2;
+	}
+
 	/* Add the regions (broken vertically) */
 	caller_id = 1;
-	/*
-	 if (trim_left_and_right)
-	 trim_flags=0xf;
-	 else
-	 trim_flags=0xc;
-	 */
-	trim_flags = 0xf;
+	trim_flags = src_trim ? 0xf : 0x80;
 	for (regcount = i1 = i = 0; i1 < breakinfo->n; i++) {
 		int i2;
 
@@ -1818,7 +1933,7 @@ static void bmpregion_vertically_break(BMPREGION *region,
 static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 		MASTERINFO *masterinfo, int allow_text_wrapping, int trim_flags,
 		int allow_vertical_breaks, double force_scale, int justification_flags,
-		int caller_id, int *colcount, int *rowcount, PAGEINFO *pageinfo,
+		int caller_id, int *colcount, int *rowcount, WPDFPAGEINFO *pageinfo,
 		int mark_flags, int rowbase_delta)
 
 {
@@ -1832,6 +1947,8 @@ static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 #if (WILLUSDEBUGX & 1)
 	printf("@bmpregion_add (%d,%d) - (%d,%d)\n",region->c1,region->r1,region->c2,region->r2);
 	printf("    trimflags = %X\n",trim_flags);
+	printf("    allow_text_wrapping = %d\n",allow_text_wrapping);
+	printf("    allow_vert_breaks = %d\n",allow_vertical_breaks);
 #endif
 	if (debug) {
 		if (!allow_text_wrapping)
@@ -1911,6 +2028,9 @@ static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 	 allow_text_wrapping,region_width_inches,max_region_width_inches);
 	 */
 	/* New in v1.50, if allow_text_wrapping==2, unwrap short lines. */
+	/*
+	 printf("tw=%d, region_width_inches=%g, max_region_width_inches=%g\n",allow_text_wrapping,region_width_inches,max_region_width_inches);
+	 */
 	if (allow_text_wrapping == 2
 			|| (allow_text_wrapping == 1
 					&& region_width_inches > max_region_width_inches)) {
@@ -2031,23 +2151,22 @@ static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 	 */
 	if (w > 0 && h > 0) {
 		WILLUSBITMAP *tmp, _tmp;
-		int nocr;
+		int nocr, have_pagebox;
 
+		have_pagebox = 0;
 		last_scale_factor_internal = (double) w / bmp->width;
 #ifdef HAVE_OCR
-		if (dst_ocr)
-		{
-			nocr=(int)((double)bmp->width/w+0.5);
+		if (dst_ocr) {
+			nocr = (int) ((double) bmp->width / w + 0.5);
 			if (nocr < 1)
-			nocr=1;
+				nocr = 1;
 			if (nocr > 10)
-			nocr=10;
+				nocr = 10;
 			w *= nocr;
 			h *= nocr;
-		}
-		else
+		} else
 #endif
-		nocr = 1;
+			nocr = 1;
 		tmp = &_tmp;
 		bmp_init(tmp);
 		bmp_resample(tmp, bmp, (double) 0., (double) 0., (double) bmp->width,
@@ -2070,8 +2189,69 @@ static void bmpregion_add(BMPREGION *region, BREAKINFO *breakinfo,
 		/* Check special justification for tall regions */
 		if (tall_region && dst_figure_justify >= 0)
 			justification_flags = dst_figure_justify;
-		bmp_src_to_dst(masterinfo, tmp, justification_flags, region->bgcolor,
-				nocr, (int) ((double) src_dpi * tmp->width / bmp->width + .5));
+#ifdef HAVE_MUPDF
+		/* Add source region corresponding to "tmp" bitmap to pageinfo structure */
+		if (pageinfo != NULL) {
+			WPDFBOX _wpdfbox, *wpdfbox;
+			WPDFSRCBOX *srcbox;
+
+			wpdfbox = &_wpdfbox;
+			srcbox = &wpdfbox->srcbox;
+			wpdfbox->dstpage = -1; /* -1 while still on master bitmap */
+			wpdfbox->dst_width_pts = pageinfo->width_pts;
+			wpdfbox->dst_height_pts = pageinfo->height_pts;
+			srcbox->pageno = pageinfo->srcpage;
+			srcbox->finerot_deg = pageinfo->srcpage_fine_rot_deg;
+			srcbox->rot_deg = pageinfo->srcpage_rot_deg;
+			srcbox->page_width_pts = 72. * newregion->bmp8->width / src_dpi;
+			srcbox->page_height_pts = 72. * newregion->bmp8->height / src_dpi;
+			/* Clip the source crop box with the page crop margins */
+			{
+				BMPREGION *region, _region;
+				double x0, y0, w, h, mar;
+
+				region = &_region;
+				region->bmp = newregion->bmp;
+				get_white_margins(region);
+				x0 = 72. * newregion->c1 / src_dpi;
+				y0 = 72. * (newregion->bmp8->height - 1 - newregion->r2)
+						/ src_dpi;
+				w = 72. * (newregion->c2 - newregion->c1 + 1) / src_dpi;
+				h = 72. * (newregion->r2 - newregion->r1 + 1) / src_dpi;
+				mar = region->c1 * srcbox->page_width_pts
+						/ newregion->bmp->width;
+				if (mar > x0) {
+					w -= (mar - x0);
+					x0 = mar;
+				}
+				mar = (newregion->bmp->width - 1 - region->c2)
+						* srcbox->page_width_pts / newregion->bmp->width;
+				if (w > srcbox->page_width_pts - mar - x0)
+					w = srcbox->page_width_pts - mar - x0;
+				mar = (newregion->bmp->height - 1 - region->r2)
+						* srcbox->page_height_pts / newregion->bmp->height;
+				if (mar > y0) {
+					h -= (mar - y0);
+					y0 = mar;
+				}
+				mar = region->r1 * srcbox->page_height_pts
+						/ newregion->bmp->height;
+				if (h > srcbox->page_height_pts - mar - y0)
+					h = srcbox->page_height_pts - mar - y0;
+				srcbox->x0_pts = x0;
+				srcbox->y0_pts = y0;
+				srcbox->crop_width_pts = w;
+				srcbox->crop_height_pts = h;
+			}
+			if (srcbox->crop_width_pts > 0. && srcbox->crop_height_pts > 0.) {
+				wpdfboxes_add_box(&pageinfo->boxes, wpdfbox);
+				have_pagebox = 1;
+			}
+		}
+#endif /* HAVE_MUPDF */
+		bmp_src_to_dst(masterinfo, tmp, have_pagebox ? pageinfo : NULL,
+				justification_flags, region->bgcolor, nocr,
+				(int) ((double) src_dpi * tmp->width / bmp->width + .5));
 		bmp_free(tmp);
 	}
 
@@ -2133,14 +2313,15 @@ static void dst_add_gap(MASTERINFO *masterinfo, double inches)
  **
  */
 static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
-		int justification_flags, int whitethresh, int nocr, int dpi)
+		WPDFPAGEINFO *pageinfo, int justification_flags, int whitethresh,
+		int nocr, int dpi)
 
 {
 	WILLUSBITMAP *src1, _src1;
 	WILLUSBITMAP *tmp;
 #ifdef HAVE_OCR
 	WILLUSBITMAP _tmp;
-	OCRWORDS _words,*words;
+	OCRWORDS _words, *words;
 #endif
 	int dw, dw2;
 	int i, srcbytespp, srcbytewidth, go_full;
@@ -2195,6 +2376,10 @@ static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
 											&& (justification_flags & 0xc0)
 													== 0x40)))));
 
+	/* Cannot fully justify if using crop boxes */
+	if (pageinfo != NULL)
+		go_full = 0;
+
 	/* Put fully justified text into src1 bitmap */
 	if (go_full) {
 		src1 = &_src1;
@@ -2208,26 +2393,22 @@ static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
 	printf("    destx0=%d, destwidth=%d, src->width=%d\n",destx0,destwidth,src->width);
 #endif
 #ifdef HAVE_OCR
-	if (dst_ocr)
-	{
+	if (dst_ocr) {
 		/* Run OCR on the bitmap */
-		words=&_words;
+		words = &_words;
 		ocrwords_init(words);
-		ocrwords_fill_in(words,src1,whitethresh,dpi);
+		ocrwords_fill_in(words, src1, whitethresh, dpi);
 		/* Scale bitmap and word positions to destination size */
-		if (nocr>1)
-		{
-			tmp=&_tmp;
+		if (nocr > 1) {
+			tmp = &_tmp;
 			bmp_init(tmp);
-			bmp_integer_resample(tmp,src1,nocr);
-			ocrwords_int_scale(words,nocr);
-		}
-		else
-		tmp=src1;
-	}
-	else
+			bmp_integer_resample(tmp, src1, nocr);
+			ocrwords_int_scale(words, nocr);
+		} else
+			tmp = src1;
+	} else
 #endif
-	tmp = src1;
+		tmp = src1;
 	/*
 	 printf("writing...\n");
 	 ocrwords_box(words,tmp);
@@ -2245,11 +2426,27 @@ static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
 		dw = 0;
 	/* Add OCR words to destination list */
 #ifdef HAVE_OCR
-	if (dst_ocr)
-	{
-		ocrwords_offset(words,dw,masterinfo->rows);
-		ocrwords_concatenate(dst_ocrwords,words);
+	if (dst_ocr) {
+		ocrwords_offset(words, dw, masterinfo->rows);
+		ocrwords_concatenate(dst_ocrwords, words);
 		ocrwords_free(words);
+	}
+#endif
+
+	/*
+	 ** For now:  set destination position in pageinfo structure as pixel position
+	 ** relative to top of master bitmap.  scale = the height in pixels on the master bitmap.
+	 */
+#ifdef HAVE_MUPDF
+	if (pageinfo != NULL) {
+		WPDFBOX *box;
+
+		box = &pageinfo->boxes.box[pageinfo->boxes.n - 1];
+		/* These values will get adjusted in publish_master() */
+		box->x1 = dw;
+		box->y1 = masterinfo->rows;
+		box->userx = tmp->width;
+		box->usery = tmp->height;
 	}
 #endif
 
@@ -2272,8 +2469,8 @@ static void bmp_src_to_dst(MASTERINFO *masterinfo, WILLUSBITMAP *src,
 	}
 
 #ifdef HAVE_OCR
-	if (dst_ocr && nocr>1)
-	bmp_free(tmp);
+	if (dst_ocr && nocr > 1)
+		bmp_free(tmp);
 #endif
 	if (go_full)
 		bmp_free(src1);
@@ -2722,6 +2919,9 @@ static void bmpregion_hyphen_detect(BMPREGION *region)
 			region->hyphen.r2 = rmax;
 			if (region->hyphen.c2 < 0)
 				region->hyphen.c2 = j;
+#if (WILLUSDEBUGX & 16)
+			fprintf(out,"  Termination #2\n");
+#endif
 			break;
 		}
 		// rc=(r1[j-region->c1]+r2[j-region->c1])/2;
@@ -2730,14 +2930,22 @@ static void bmpregion_hyphen_detect(BMPREGION *region)
 			/* Too far away from last values? */
 			if ((double) (rmin - r1[j - region->c1]) / region->lcheight > .1
 					|| (double) (r2[j - region->c1] - rmax) / region->lcheight
-							> .1)
+							> .1) {
+#if (WILLUSDEBUGX & 16)
+				fprintf(out,"  Too far from last values.\n");
+#endif
 				break;
+			}
 			if ((double) nrmid / region->lcheight > .1 && nrmid > 1) {
 				if ((double) fabs(rmin - r1[j - region->c1]) / region->lcheight
 						> .1
 						|| (double) (rmax - r2[j - region->c1])
-								/ region->lcheight > .1)
+								/ region->lcheight > .1) {
+#if (WILLUSDEBUGX & 16)
+					fprintf(out,"  Too far from last values (2).\n");
+#endif
 					break;
+				}
 			}
 		}
 		if (nrmid == 1 || r1[j - region->c1] < rmin)
@@ -2748,19 +2956,32 @@ static void bmpregion_hyphen_detect(BMPREGION *region)
 			double rmean;
 
 			/* Can't be too thick */
-			if ((double) (rmax - rmin) / region->lcheight > .55
-					|| (double) (rmax - rmin) / region->lcheight < .08)
+			if ((double) (rmax - rmin + 1) / region->lcheight > .55
+					|| (double) (rmax - rmin + 1) / region->lcheight < .05) {
+#if (WILLUSDEBUGX & 16)
+				fprintf(out,"  Too thick or too thin:  rmax=%d, rmin=%d, lch=%d rat=%g (.05 - .55).\n",
+						rmax,rmin,region->lcheight,(double)(rmax-rmin+1)/region->lcheight);
+#endif
 				break;
+			}
 			/* Must be reasonably well centered above baseline */
 			rmean = (double) (rmax + rmin) / 2;
 			if ((double) (region->rowbase - rmean) / region->lcheight < 0.35
 					|| (double) (region->rowbase - rmean) / region->lcheight
-							> 0.85)
+							> 0.85) {
+#if (WILLUSDEBUGX & 16)
+				fprintf(out,"  Not well centered (1).\n");
+#endif
 				break;
+			}
 			if ((double) (region->rowbase - rmax) / region->lcheight < 0.2
 					|| (double) (region->rowbase - rmin) / region->lcheight
-							> 0.92)
+							> 0.92) {
+#if (WILLUSDEBUGX & 16)
+				fprintf(out,"  Not well centered (2).\n");
+#endif
 				break;
+			}
 		}
 	}
 #if (WILLUSDEBUGX & 16)
@@ -2932,7 +3153,7 @@ static void trim_to(int *count, int *i1, int i2, double gaplen)
  */
 static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 		BREAKINFO *breakinfo, MASTERINFO *masterinfo, int *colcount,
-		int *rowcount, PAGEINFO *pageinfo, int allow_text_wrapping,
+		int *rowcount, WPDFPAGEINFO *pageinfo, int allow_text_wrapping,
 		double force_scale)
 
 {
@@ -2941,7 +3162,7 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 	double *id, *c1, *c2, *ch, *lch, *ls;
 	int *just, *indented, *short_line;
 	double capheight, lcheight, fontsize;
-	int textheight, ragged_right, src_line_spacing;
+	int textheight, ragged_right, src_line_spacing, mingap;
 	static char *funcname = "bmpregion_analyze_justification_and_line_spacing";
 
 #if (WILLUSDEBUGX & 1)
@@ -3085,6 +3306,9 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 	mean_row_gap = line_spacing - textheight;
 	if (mean_row_gap <= 1)
 		mean_row_gap = 1;
+	mingap = mean_row_gap / 4;
+	if (mingap < 1)
+		mingap = 1;
 
 	/* Try to figure out if we have a ragged right edge */
 	if (ntr < 3)
@@ -3228,6 +3452,14 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 	 printf("textheight = %d, line_spacing = %d\n",textheight,line_spacing);
 	 }
 	 */
+
+#if (WILLUSDEBUGX & 1)
+	if (!allow_text_wrapping)
+	printf("Processing text row by row (no wrapping)...\n");
+#endif
+	/*
+	 ** Process row by row
+	 */
 	for (i = i1; i <= i2; i++) {
 		TEXTROW *textrow;
 		int justflags, trimflags, centered, marking_flags, gap;
@@ -3239,6 +3471,9 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 		(*newregion) = (*region);
 		newregion->r1 = textrow->r1;
 		newregion->r2 = textrow->r2;
+#if (WILLUSDEBUGX & 1)
+		printf("Row %2d:  r1=%4d, r2=%4d, linespacing=%3d\n",i,textrow->r1,textrow->r2,line_spacing);
+#endif
 
 		/* The |3 tells it to use the user settings for left/right/center */
 		justflags = just[i - i1] | 0x3;
@@ -3276,6 +3511,8 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 #ifdef WILLUSDEBUG
 		printf("wrapflush5a\n");
 #endif
+
+		/* No wrapping allowed:  process whole line as one region */
 		wrapbmp_flush(masterinfo, 0, pageinfo, 1);
 		/* If default justifications, ignore all analysis and just center it. */
 		if (dst_justify < 0 && dst_fulljustify < 0) {
@@ -3289,27 +3526,80 @@ static void bmpregion_analyze_justification_and_line_spacing(BMPREGION *region,
 		bmpregion_add(newregion, breakinfo, masterinfo, 0, trimflags, 0,
 				force_scale, justflags, 5, colcount, rowcount, pageinfo, 0,
 				textrow->r2 - textrow->rowbase);
-		if (vertical_line_spacing < 0) {
-			int gap1;
-			gap1 = line_spacing - (textrow->r2 - textrow->r1 + 1);
+		/* Compute line spacing between rows */
+		{
+			int thisgap, gap_allowed;
+			double fs, ls_allowed;
+
+			thisgap =
+					(i < i2) ?
+							textrow->gap :
+							textrow->rowheight
+									- (textrow->rowbase + last_rowbase_internal);
+#if (WILLUSDEBUGX & 1)
+			printf("    thisgap=%3d, vls = %g\n",thisgap,vertical_line_spacing);
+#endif
+			fs = (textrow->capheight + textrow->lcheight) / 1.17;
+			if (fs < fontsize / 4.) /* Probably not text?? */
+				fs = fontsize;
+			ls_allowed = fabs(vertical_line_spacing) * fs * 1.16;
+			/* If close to median line spacing, use median line spacing */
+			/* ... Good idea?? */
+			if (line_spacing > .5 && fabs(ls_allowed / line_spacing - 1.0) < .2)
+				ls_allowed = line_spacing;
+			gap_allowed = (int) (0.5 + ls_allowed
+					- (textrow->r2 - textrow->r1 + 1));
+#if (WILLUSDEBUGX & 1)
+			printf("    gap_allowed = %3d\n",gap_allowed);
+#endif
+			if (vertical_line_spacing < 0)
+				gap = thisgap > gap_allowed ? gap_allowed : thisgap;
+			else
+				gap = gap_allowed;
+			/*
+			 gap = gap1 < gap_allowed ? gap_allowed : gap1;
+			 if (i<i2)
+			 {
+			 if (textrow->gap > gap1)
+			 {
+			 int gap_allowed;
+			 srcls = (textrow->r2-textrow->r1+1)+textrow->gap;
+			 fs = (textrow->capheight+textrow->lcheight)/1.17;
+			 ls_allowed=fabs(vertical_line_spacing)*fs*1.16;
+			 gap_allowed=ls_allowed-(textrow->r2-textrow->r1+1);
+			 if (gap_allowed < textrow->gap)
+			 gap_allowed = textrow->gap;
+			 gap = gap1 > gap_allowed ? gap_allowed : gap1;
+			 }
+			 else
+			 gap = textrow->gap;
+			 }
+			 else
+			 {
+			 gap = textrow->rowheight - (textrow->rowbase + last_rowbase_internal);
+			 if (gap < mean_row_gap/2.)
+			 gap = mean_row_gap;
+			 }
+
+			 }
+			 else
+			 {
+			 gap = line_spacing - (textrow->r2-textrow->r1+1);
+			 if (gap < mean_row_gap/2.)
+			 gap = mean_row_gap;
+			 }
+			 */
+			if (gap < mingap)
+				gap = mingap;
+#if (WILLUSDEBUGX & 1)
+			printf("    gap = %3d (mingap=%d)\n",gap,mingap);
+#endif
 			if (i < i2)
-				gap = textrow->gap > gap1 ? gap1 : textrow->gap;
+				dst_add_gap_src_pixels("No-wrap line", masterinfo, gap);
 			else {
-				gap = textrow->rowheight
-						- (textrow->rowbase + last_rowbase_internal);
-				if (gap < mean_row_gap / 2.)
-					gap = mean_row_gap;
+				last_h5050_internal = textrow->h5050;
+				beginning_gap_internal = gap;
 			}
-		} else {
-			gap = line_spacing - (textrow->r2 - textrow->r1 + 1);
-			if (gap < mean_row_gap / 2.)
-				gap = mean_row_gap;
-		}
-		if (i < i2)
-			dst_add_gap_src_pixels("No-wrap line", masterinfo, gap);
-		else {
-			last_h5050_internal = textrow->h5050;
-			beginning_gap_internal = gap;
 		}
 	}
 	willus_dmem_free(14, (double **) &just, funcname);
@@ -3484,7 +3774,7 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 	max_fig_gap = 0.16;
 	max_label_height = 0.5;
 	/* Trim region and populate colcount/rowcount arrays */
-	bmpregion_trim_margins(region, colcount, rowcount, 0xf);
+	bmpregion_trim_margins(region, colcount, rowcount, src_trim ? 0xf : 0);
 	newregion = &_newregion;
 	(*newregion) = (*region);
 	if (debug)
@@ -3578,15 +3868,15 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 	/* multiple "rows".                                                */
 	breakinfo->n = 0;
 	for (labelrow = figrow = -1, dtrc = trc = brc = 0, i = region->r1;
-			i <= region->r2; i++) {
+			i <= region->r2 + 1; i++) {
 		/* Does row have few enough black pixels to be considered blank? */
-		if (rowthresh[i - region->r1] <= 10) {
+		if (i > region->r2 || rowthresh[i - region->r1] <= 10) {
 			trc = 0;
 			brc++;
 			/*
 			 ** Max allowed white space between rows = max_vertical_gap_inches
 			 */
-			if (dtrc == 0) {
+			if (dtrc == 0 && i <= region->r2) {
 				if (brc > brcmin)
 					newregion->r1++;
 				continue;
@@ -3594,7 +3884,7 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 			/*
 			 ** Big enough blank gap, so add one row / line
 			 */
-			if (dtrc + brc >= rhmin_pix) {
+			if (dtrc + brc >= rhmin_pix || i > region->r2) {
 				int i0, iopt;
 				double region_height_inches;
 				double gap_inches;
@@ -3604,27 +3894,30 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 				if (dtrc < 2)
 					dtrc = 2;
 				/* Look for more optimum point */
-				for (i0 = iopt = i; i <= region->r2 && i - i0 < dtrc; i++) {
-					if (rowthresh[i - region->r1]
-							< rowthresh[iopt - region->r1]) {
-						iopt = i;
-						if (rowthresh[i - region->r1] == 0)
+				if (i <= region->r2) {
+					for (i0 = iopt = i; i <= region->r2 && i - i0 < dtrc; i++) {
+						if (rowthresh[i - region->r1]
+								< rowthresh[iopt - region->r1]) {
+							iopt = i;
+							if (rowthresh[i - region->r1] == 0)
+								break;
+						}
+						if (rowthresh[i - region->r1] > 100)
 							break;
 					}
-					if (rowthresh[i - region->r1] > 100)
-						break;
+					/* If at end of region and haven't found perfect break, stay at end */
+					if (i > region->r2 && rowthresh[iopt - region->r1] > 0)
+						i = region->r2;
+					else
+						i = iopt;
 				}
-				/* If at end of region and haven't found perfect break, stay at end */
-				if (i > region->r2 && rowthresh[iopt - region->r1] > 0)
-					i = region->r2;
-				else
-					i = iopt;
 				newregion->r2 = i - 1;
 				region_height_inches = (double) (newregion->r2 - newregion->r1
 						+ 1) / src_dpi;
 
 				/* Could this region be a figure? */
-				if (figrow < 0 && region_height_inches >= min_fig_height) {
+				if (i <= region->r2 && figrow < 0
+						&& region_height_inches >= min_fig_height) {
 					/* If so, set figrow and don't process it yet. */
 					figrow = newregion->r1;
 					labelrow = -1;
@@ -3657,7 +3950,8 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 							textrow_assign_bmpregion(
 									&breakinfo->textrow[breakinfo->n++],
 									newregion);
-						if (gap_inches > 0. && gap_inches < max_fig_gap) {
+						if (i <= region->r2 && gap_inches > 0.
+								&& gap_inches < max_fig_gap) {
 							/* This new region might be a figure--set it as the new figure */
 							/* and don't dump it yet.                                      */
 							figrow = newregion->r2 + 1;
@@ -3697,18 +3991,22 @@ static void bmpregion_find_vertical_breaks(BMPREGION *region,
 			brc = 0;
 		}
 	}
-	newregion->r2 = region->r2;
-	if (dtrc > 0 && newregion->r2 - newregion->r1 + 1 > 0) {
+	/* Re-did logic in 1.52 so that this next part is no longer necessary */
+#ifdef COMMENT
+	newregion->r2=region->r2;
+	if (dtrc>0 && newregion->r2-newregion->r1+1 > 0)
+	{
 		/* If we were processing a figure, include it. */
-		if (figrow >= 0)
-			newregion->r1 = figrow;
-		newregion->c1 = region->c1;
-		newregion->c2 = region->c2;
-		bmpregion_trim_margins(newregion, colcount, rowcount, 0x1f);
-		if (newregion->r2 > newregion->r1)
-			textrow_assign_bmpregion(&breakinfo->textrow[breakinfo->n++],
-					newregion);
+		if (figrow>=0)
+		newregion->r1=figrow;
+		newregion->c1=region->c1;
+		newregion->c2=region->c2;
+		bmpregion_trim_margins(newregion,colcount,rowcount,0x1f);
+		printf("Final add:  %d - %d\n",newregion->r1,newregion->r2);
+		if (newregion->r2>newregion->r1)
+		textrow_assign_bmpregion(&breakinfo->textrow[breakinfo->n++],newregion);
 	}
+#endif
 	/* Compute gaps between rows and row heights */
 	breakinfo_compute_row_gaps(breakinfo, region->r2);
 	willus_dmem_free(15, (double **) &rowthresh, funcname);
@@ -3857,7 +4155,7 @@ static void breakinfo_remove_small_rows(BREAKINFO *breakinfo, double fracrh,
 			gs2 = breakinfo->textrow[i].gap;
 		}
 #if (WILLUSDEBUGX & 2)
-		printf("   rowheight[%d] = %d, mh=%d, gs1=%d, gs2=%d\n",i,trh,gs1,gs2);
+		printf("   rowheight[%d] = %d, mh=%d, gs1=%d, gs2=%d\n",i,trh,mh,gs1,gs2);
 #endif
 		gap_is_big = (trh >= mh || (gs1 >= mg && gs2 >= mg));
 		/*
@@ -4171,7 +4469,7 @@ static void bmpregion_one_row_find_breaks(BMPREGION *region,
 static void bmpregion_one_row_wrap_and_add(BMPREGION *region,
 		BREAKINFO *rowbreakinfo, int index, int i1, int i2,
 		MASTERINFO *masterinfo, int justflags, int *colcount, int *rowcount,
-		PAGEINFO *pageinfo, int line_spacing, int mean_row_gap, int rowbase,
+		WPDFPAGEINFO *pageinfo, int line_spacing, int mean_row_gap, int rowbase,
 		int marking_flags, int pi)
 
 {
@@ -4613,7 +4911,7 @@ static void wrapbmp_add(BMPREGION *region, int gap, int line_spacing, int rbase,
 }
 
 static void wrapbmp_flush(MASTERINFO *masterinfo, int allow_full_justification,
-		PAGEINFO *pageinfo, int use_bgi)
+		WPDFPAGEINFO *pageinfo, int use_bgi)
 
 {
 	BMPREGION region;
@@ -5262,10 +5560,11 @@ static void bmp_detect_vertical_lines(WILLUSBITMAP *bmp, WILLUSBITMAP *cbmp,
 	int tc, iangle, irow, icol;
 	int rowstep, na, angle_sign, ccthresh;
 	int pixmin, halfwidth, bytewidth;
-	int bs1, nrsteps, dp;
+	int bs1, nrsteps;
 	double anglestep;
 	WILLUSBITMAP *tmp, _tmp;
 	unsigned char *p0;
+	unsigned char *t0;
 
 	if (debug)
 		printf("At bmp_detect_vertical_lines...\n");
@@ -5277,7 +5576,8 @@ static void bmp_detect_vertical_lines(WILLUSBITMAP *bmp, WILLUSBITMAP *cbmp,
 	tmp = &_tmp;
 	bmp_init(tmp);
 	bmp_copy(tmp, bmp);
-	dp = bmp_rowptr_from_top(tmp, 0) - bmp_rowptr_from_top(bmp, 0);
+	p0 = bmp_rowptr_from_top(bmp, 0);
+	t0 = bmp_rowptr_from_top(tmp, 0);
 	bytewidth = bmp_bytewidth(bmp);
 	pixmin = (int) (minwidth_in * dpi + .5);
 	if (pixmin < 1)
@@ -5305,7 +5605,6 @@ static void bmp_detect_vertical_lines(WILLUSBITMAP *bmp, WILLUSBITMAP *cbmp,
 	 bmp_write(bmp,"out.png",stdout,97);
 	 wfile_written_info("out.png",stdout);
 	 */
-	p0 = bmp_rowptr_from_top(bmp, 0);
 	for (tc = 0; tc < 100; tc++) {
 		int ccmax, ic0max, ir0max;
 		double tanthmax;
@@ -5333,11 +5632,13 @@ static void bmp_detect_vertical_lines(WILLUSBITMAP *bmp, WILLUSBITMAP *cbmp,
 				}
 // printf("iangle=%2d, angle_sign=%2d, ic1=%4d, ic2=%4d\n",iangle,angle_sign,ic1,ic2);
 				for (icol = ic1; icol <= ic2; icol++) {
-					unsigned char *p;
+					unsigned char *p, *t;
 					int cc, ic0, ir0;
 					p = p0;
+					t = t0;
 					if (icol < 0 || icol > bmp->width - 1)
-						for (irow = 0; irow < nrsteps; irow++, p += bs1) {
+						for (irow = 0; irow < nrsteps; irow++, p += bs1, t +=
+								bs1) {
 							int ic;
 							ic = icol + irow * tanthx;
 							if (ic >= 0 && ic < bmp->width)
@@ -5345,15 +5646,16 @@ static void bmp_detect_vertical_lines(WILLUSBITMAP *bmp, WILLUSBITMAP *cbmp,
 						}
 					else
 						irow = 0;
-					for (ir0 = ic0 = cc = 0; irow < nrsteps; irow++, p += bs1) {
+					for (ir0 = ic0 = cc = 0; irow < nrsteps;
+							irow++, p += bs1, t += bs1) {
 						int ic;
 						ic = icol + irow * tanthx;
 						if (ic < 0 || ic >= bmp->width)
 							break;
 						if ((p[ic] < white_thresh
 								|| p[ic + bytewidth] < white_thresh)
-								&& (p[ic + dp] < white_thresh
-										|| p[ic + bytewidth + dp] < white_thresh)) {
+								&& (t[ic] < white_thresh
+										|| t[ic + bytewidth] < white_thresh)) {
 							if (cc == 0) {
 								ic0 = ic;
 								ir0 = irow * rowstep;
@@ -7015,5 +7317,37 @@ static void handle(int wait, ddjvu_context_t *ctx)
             }
         }
     ddjvu_message_pop(ctx);
+}
+
+/* wmupdf.c */
+static void wpdfboxes_init(WPDFBOXES *boxes)
+
+{
+	boxes->n = boxes->na = 0;
+	boxes->box = NULL;
+}
+
+static void wpdfboxes_free(WPDFBOXES *boxes)
+
+{
+	static char *funcname = "wpdfboxes_free";
+	willus_mem_free((double **) &boxes->box, funcname);
+}
+
+static void wpdfboxes_add_box(WPDFBOXES *boxes, WPDFBOX *box)
+
+{
+	static char *funcname = "wpdfboxes_add_box";
+
+	if (boxes->n >= boxes->na) {
+		int newsize;
+
+		newsize = boxes->na < 1024 ? 2048 : boxes->na * 2;
+		willus_mem_realloc_robust_warn((void **) &boxes->box,
+				newsize * sizeof(WPDFBOX), boxes->na * sizeof(WPDFBOX),
+				funcname, 10);
+		boxes->na = newsize;
+	}
+	boxes->box[boxes->n++] = (*box);
 }
 

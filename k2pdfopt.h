@@ -26,17 +26,35 @@
 #include <fitz/fitz-internal.h>
 #include <libdjvu/ddjvuapi.h>
 
-void k2pdfopt_set_params(int bb_width, int bb_height, \
-		double font_size, double page_margin, \
-		double line_space, double word_space, \
-		int wrapping, int straighten, \
-		int justification, int detect_indent, \
-		int columns, double contrast, int rotation);
-void k2pdfopt_mupdf_reflow(fz_document *doc, fz_page *page, fz_context *ctx);
-void k2pdfopt_djvu_reflow(ddjvu_page_t *page, ddjvu_context_t *ctx, ddjvu_render_mode_t mode, ddjvu_format_t *fmt);
-void k2pdfopt_rfbmp_size(int *width, int *height);
-void k2pdfopt_rfbmp_ptr(unsigned char** bmp_ptr_ptr);
-void k2pdfopt_rfbmp_zoom(double *zoom);
+typedef unsigned char  uint8_t;
+typedef struct KOPTContext {
+	int trim;
+	int wrap;
+	int indent;
+	int rotate;
+	int columns;
+	int offset_x;
+	int offset_y;
+	int dev_width;
+	int dev_height;
+	int page_width;
+	int page_height;
+	int straighten;
+	int justification;
+
+	double zoom;
+	double margin;
+	double quality;
+	double contrast;
+	double defect_size;
+	double line_spacing;
+	double word_spacing;
+
+	uint8_t *data;
+} KOPTContext;
+
+void k2pdfopt_mupdf_reflow(KOPTContext *kc, fz_document *doc, fz_page *page, fz_context *ctx);
+void k2pdfopt_djvu_reflow(KOPTContext *kc, ddjvu_page_t *page, ddjvu_context_t *ctx, ddjvu_render_mode_t mode, ddjvu_format_t *fmt);
 
 #endif
 
