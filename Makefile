@@ -94,6 +94,7 @@ KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so \
 			$(LIBDIR)/libdjvulibre.so
+DJVULIB :=	$(LIBDIR)/libdjvulibre.so.21
 DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
@@ -110,7 +111,6 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
 LUALIB := $(LIBDIR)/libluajit-5.1.so.2
-LUALIBCOMPAT := $(LIBDIR)/libluajit-5.1.so
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
@@ -135,7 +135,6 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		mupdfimg.o \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
-		$(LUALIB) \
 		djvu.o \
 		pic.o \
 		pic_jpeg.o \
@@ -257,9 +256,8 @@ else
 	$(MAKE) -C $(LUADIR) BUILDMODE=shared CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
 	test -d $(LIBDIR) || mkdir $(LIBDIR)
-	cp -a $(LUADIR)/src/libluajit.so $(LUALIB)
-	# old linker would not find a libluajit-5.1.so.2
-	cp -a $(LUADIR)/src/libluajit.so $(LUALIBCOMPAT)
+	cp -a $(LUADIR)/src/libluajit.so* $(LUALIB)
+	ln -s libluajit-5.1.so.2 $(LIBDIR)/libluajit-5.1.so
 
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
@@ -268,7 +266,7 @@ thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS)
 
 INSTALL_DIR=kindlepdfviewer
 
-LUA_FILES=battery.lua commands.lua crereader.lua dialog.lua djvureader.lua readerchooser.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua koptconfig.lua koptreader.lua picviewer.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
+LUA_FILES=battery.lua commands.lua crereader.lua defaults.lua dialog.lua djvureader.lua readerchooser.lua filechooser.lua filehistory.lua fileinfo.lua filesearcher.lua font.lua graphics.lua helppage.lua image.lua inputbox.lua keys.lua pdfreader.lua koptconfig.lua koptreader.lua picviewer.lua reader.lua rendertext.lua screen.lua selectmenu.lua settings.lua unireader.lua widget.lua
 
 customupdate: all
 	# ensure that the binaries were built for ARM
@@ -280,8 +278,7 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L libs/libdjvulibre.so.21 $(INSTALL_DIR)/libs
-	cp -L $(LUALIB) $(INSTALL_DIR)/libs
+	cp -L $(DJVULIB) $(LUALIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
