@@ -254,7 +254,7 @@ function FileHistory:addAllCommands()
 			else
 				InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM,
 					"Please, press key Y to delete the book history")
-				if FileChooser:ReturnKey() == KEY_Y then
+				if ReturnKey() == KEY_Y then
 					os.remove(DocToHistory(file_to_del))
 					self:init()
 					self:setSearchResult(self.keywords)

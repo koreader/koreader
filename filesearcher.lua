@@ -261,7 +261,7 @@ function FileSearcher:addAllCommands()
 			else
 				InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM,
 					"Press key Y to confirm deleting")
-				if FileChooser:ReturnKey() == KEY_Y then
+				if ReturnKey() == KEY_Y then
 					self:deleteFoundFile(file_to_del)
 				end
 			self.pagedirty = true

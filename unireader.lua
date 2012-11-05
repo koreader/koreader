@@ -2619,6 +2619,14 @@ function UniReader:addAllCommands()
 			HelpPage:show(0, G_height, unireader.commands)
 			unireader:redrawCurrentPage()
 		end)
+	self.commands:add(KEY_DOT,MOD_ALT,".",
+		"toggle battery level logging",
+		function(unireader)
+			G_battery_logging = not G_battery_logging
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), nil, 1, MSG_AUX)
+			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
+			self:redrawCurrentPage()
+		end)
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content (TOC)",
 		function(unireader)
