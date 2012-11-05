@@ -1,4 +1,5 @@
 require "keys"
+require "battery"
 
 Keydef = {
 	keycode = nil,
@@ -167,6 +168,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
+				logBatteryLevel("SLEEP")
 				Screen:saveCurrentBB()
 				InfoMessage:inform("Going into screensaver... ", nil, 0, MSG_AUX)
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
@@ -182,6 +184,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'screensaver out' >> /mnt/us/event_test.txt")
 			if G_screen_saver_mode == true and G_charging_mode == false then
+				logBatteryLevel("WAKEUP")
 				util.usleep(1500000)
 				os.execute("killall -stop cvm")
 				fb:setOrientation(Screen.kpv_rotation_mode)
@@ -196,6 +199,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
+				logBatteryLevel("USB PLUG")
 				Screen:saveCurrentBB()
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
@@ -216,6 +220,7 @@ function Commands:new(obj)
 				fb:setOrientation(Screen.kpv_rotation_mode)
 				Screen:restoreFromSavedBB()
 				fb:refresh(0)
+				logBatteryLevel("USB UNPLUG")
 			end
 			FileChooser:setPath(FileChooser.path)
 			FileChooser.pagedirty = true
@@ -226,6 +231,7 @@ function Commands:new(obj)
 	-- I suggest one should probably change the hotkey to, say, Alt+Space
 	obj:add(KEY_P, MOD_SHIFT, "P", "make screenshot",
 		function()
+			logBatteryLevel("SCREENSHOT")
 			Screen:screenshot()
 		end
 	)
