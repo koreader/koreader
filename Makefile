@@ -216,7 +216,7 @@ fetchthirdparty:
 	cd popen-noshell && test -f Makefile || patch -N -p0 < popen_noshell-buildfix.patch
 
 clean:
-	rm -f *.o kpdfview slider_watcher extr
+	rm -f *.o kpdfview slider_watcher extr emu_event
 
 cleanthirdparty:
 	rm -rf $(LIBDIR) ; mkdir $(LIBDIR)
