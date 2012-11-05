@@ -2623,7 +2623,7 @@ function UniReader:addAllCommands()
 		"toggle battery level logging",
 		function(unireader)
 			G_battery_logging = not G_battery_logging
-			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), 1000, 1, MSG_AUX)
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), nil, 1, MSG_AUX)
 			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
 			self:redrawCurrentPage()
 		end)
