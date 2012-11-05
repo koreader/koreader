@@ -483,21 +483,13 @@ function FileChooser:addAllCommands()
 	self.commands:addGroup("Vol-/+", {Keydef:new(KEY_VPLUS,nil), Keydef:new(KEY_VMINUS,nil)},
 		"decrease/increase sound volume",
 		function(self)
-			if self.filemanager_expert_mode == self.ROOT_MODE then
-				InfoMessage:incrSoundVolume(keydef.keycode == KEY_VPLUS and 1 or -1)
-			else
-				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
-			end
+			InfoMessage:incrSoundVolume(keydef.keycode == KEY_VPLUS and 1 or -1)
 		end
 	)
 	self.commands:addGroup(MOD_SHIFT.."Vol-/+", {Keydef:new(KEY_VPLUS,MOD_SHIFT), Keydef:new(KEY_VMINUS,MOD_SHIFT)},
 		"decrease/increase TTS-engine speed",
 		function(self)
-			if self.filemanager_expert_mode == self.ROOT_MODE then
-				InfoMessage:incrTTSspeed(keydef.keycode == KEY_VPLUS and 1 or -1)
-			else
-				InfoMessage:inform(popup_text, -1, 1, MSG_WARN, voice_text)
-			end
+			InfoMessage:incrTTSspeed(keydef.keycode == KEY_VPLUS and 1 or -1)
 		end
 	)
 	self.commands:add({KEY_F, KEY_AA}, nil, "F, Aa",
