@@ -3421,16 +3421,11 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_I, nil, "I",
-		"change the way to inform about events",
+	self.commands:add(KEY_E, nil, "E",
+		"configure event notifications",
 		function(unireader)
-			if FileChooser.filemanager_expert_mode == FileChooser.ROOT_MODE then
-				InfoMessage:chooseNotificatonMethods()
-				self:redrawCurrentPage()
-			else
-				InfoMessage:inform("Unstable... For experts only ", -1, 1, MSG_WARN,
-					"This function is still under development and available only for experts and beta testers.")
-			end
+			InfoMessage:chooseNotificatonMethods()
+			self:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",
