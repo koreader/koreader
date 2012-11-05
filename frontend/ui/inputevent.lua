@@ -240,7 +240,8 @@ Input = {
 function Input:init()
 	if util.isEmulated()==1 then
 		-- dummy call that will initialize SDL input handling
-		os.execute("rm -f emu_event && mkfifo emu_event")
+		os.remove("emu_event")
+		os.execute("mkfifo emu_event")
 		input.open("emu_event")
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
