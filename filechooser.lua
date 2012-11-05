@@ -426,7 +426,7 @@ function FileChooser:addAllCommands()
 					self:deleteFileAtPosition(pos)
 				else
 					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
-					if self:ReturnKey() == KEY_Y then self:deleteFileAtPosition(pos) end
+					if ReturnKey() == KEY_Y then self:deleteFileAtPosition(pos) end
 				end
 			elseif self.dirs[pos] == ".." then 
 				warningUnsupportedFunction()
@@ -435,7 +435,7 @@ function FileChooser:addAllCommands()
 					self:deleteFolderAtPosition(pos)
 				else
 					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
-					if self:ReturnKey() == KEY_Y then self:deleteFolderAtPosition(pos) end
+					if ReturnKey() == KEY_Y then self:deleteFolderAtPosition(pos) end
 				end
 			end
 			self.pagedirty = true
@@ -549,10 +549,10 @@ function FileChooser:addAllCommands()
 			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
-				os.execute("cp "..self:InQuotes(file).." "..self.clipboard)
+				os.execute("cp "..InQuotes(file).." "..self.clipboard)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
-				os.execute("cp "..self:InQuotes(DocToHistory(file)).." "
-					..self:InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
+				os.execute("cp "..InQuotes(DocToHistory(file)).." "
+					..InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
 				InfoMessage:inform("File copied to clipboard ", 1000, 1, MSG_WARN,
 					"The file has been copied to clipboard.")
 			end
@@ -649,7 +649,7 @@ function FileChooser:FullFileName()
 end
 
 -- returns the keycode of released key
-function FileChooser:ReturnKey()
+function ReturnKey()
 	while true do
 		ev = input.saveWaitForEvent()
 		ev.code = adjustKeyEvents(ev)
@@ -660,7 +660,7 @@ function FileChooser:ReturnKey()
 	return ev.code
 end
 
-function FileChooser:InQuotes(text)
+function InQuotes(text)
 	return "\""..text.."\""
 end
 
