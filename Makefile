@@ -115,7 +115,7 @@ POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
@@ -125,6 +125,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
+		koptcontext.o \
 		input.o \
 		$(POPENNSLIB) \
 		util.o \
@@ -161,7 +162,7 @@ slider_watcher: slider_watcher.o $(POPENNSLIB)
 ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
+kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o koptcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 k2pdfopt.o: %.o: %.c

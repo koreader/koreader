@@ -25,6 +25,7 @@
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
+#include "koptcontext.h"
 #include "pdf.h"
 #include "mupdfimg.h"
 #include "djvu.h"
@@ -54,6 +55,7 @@ int main(int argc, char **argv) {
 
 		luaopen_blitbuffer(L);
 		luaopen_drawcontext(L);
+		luaopen_koptcontext(L);
 		luaopen_einkfb(L);
 		luaopen_pdf(L);
 		luaopen_djvu(L);

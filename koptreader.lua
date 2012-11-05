@@ -61,6 +61,27 @@ KOPTReader = UniReader:new{
 	configurable = {}
 }
 
+function KOPTReader:makeContext()
+	local kc = KOPTContext.new()
+	kc:setTrim(self.configurable.trim_page)
+	kc:setWrap(self.configurable.text_wrap)
+	kc:setIndent(self.configurable.detect_indent)
+	kc:setRotate(self.configurable.screen_rotation)
+	kc:setColumns(self.configurable.max_columns)
+	kc:setDeviceDim(G_width, G_height)
+	kc:setStraighten(self.configurable.auto_straighten)
+	kc:setJustification(self.configurable.justification)
+	kc:setZoom(self.configurable.font_size)
+	kc:setMargin(self.configurable.page_margin)
+	kc:setQuality(self.configurable.quality)
+	kc:setContrast(self.configurable.contrast)
+	kc:setDefectSize(self.configurable.defect_size)
+	kc:setLineSpacing(self.configurable.line_spacing)
+	kc:setWordSpacing(self.configurable.word_spacing)
+	
+	return kc
+end
+
 -- open a PDF/DJVU file and its settings store
 function KOPTReader:open(filename)
 	-- muPDF manages its own cache, set second parameter
@@ -181,21 +202,10 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	Debug("page::reflowPage:", "width:", width, "height:", height)
-	local font_size, page_margin = self.configurable.font_size, self.configurable.page_margin
-	local line_spacing, word_spacing = self.configurable.line_spacing, self.configurable.word_spacing
-	local text_wrap, justification = self.configurable.text_wrap, self.configurable.justification
-	local max_columns, contrast = self.configurable.max_columns, self.configurable.contrast
-	local auto_straighten = self.configurable.auto_straighten
-	local screen_rotation = self.configurable.screen_rotation
-	local detect_indent = self.configurable.detect_indent
-	local quality = self.configurable.quality
-	local defect_size = self.configurable.defect_size
-	local trim_page = self.configurable.trim_page
-	local fullwidth, fullheight, zoom = page:reflow(dc, self.render_mode, width, height, font_size, 
-										 page_margin, line_spacing, word_spacing, text_wrap, auto_straighten, 
-										 justification, detect_indent, max_columns, contrast, screen_rotation, 
-										 quality, defect_size, trim_page)
-	self.fullwidth, self.fullheight, self.reflow_zoom = fullwidth, fullheight, zoom
+	local kc = self:makeContext()
+	page:reflow(kc, self.render_mode)
+	self.fullwidth, self.fullheight = kc:getPageDim()
+	self.reflow_zoom = kc:getZoom()
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
 	
 	if (self.fullwidth * self.fullheight / 2) <= max_cache then
@@ -223,7 +233,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	--Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
 	dc:setOffset(-tile.x, -tile.y)
 	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
-	page:rfdraw(dc, self.cache[pagehash].bb)
+	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
 	
 	self.min_offset_x = fb.bb:getWidth() - self.cache[pagehash].w
