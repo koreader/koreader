@@ -9,6 +9,7 @@ require "inputbox"
 require "selectmenu"
 require "dialog"
 require "readerchooser"
+require "battery"
 
 FileChooser = {
 	title_H = 40,	-- title height
@@ -47,14 +48,6 @@ function getProperTitleLength(txt, font_face, max_width)
 		txt = txt:sub(2, -1)
 	end
 	return txt
-end
-
-function BatteryLevel()
-	local p = io.popen("gasgauge-info -s 2> /dev/null", "r") -- io.popen() _never_ fails!
-	local battery = p:read("*a") or "?"
-	if battery == "" then battery = "?" end
-	p:close()
-	return string.gsub(battery, "[\n\r]+", "")
 end
 
 -- NuPogodi, 29.09.12: avoid using widgets
