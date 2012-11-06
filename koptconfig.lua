@@ -178,8 +178,9 @@ KOPTConfig = {
 	text_pos = 0,
 	-- current selected option
 	current_option = 1,
-	-- page dirty
-	page_dirty = false,
+	-- config change
+	config_change = false,
+	confirm_change = false,
 }
 
 function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
@@ -254,6 +255,7 @@ end
 function KOPTConfig:makeDefault(configurable)
 	local draw_index = 1
 	self.HEIGHT = self.OPTION_PADDING_T
+	self.current_option = 1
 	for i=1,#KOPTOptions do
 		-- update draw index of each option in run time
 		if KOPTOptions[i].show then
@@ -321,12 +323,13 @@ function KOPTConfig:config(callback, reader, configurable)
 	
 		self:reconfigure(configurable)
 		
-		if self.page_dirty then
+		if self.config_change and self.confirm_change then
 			kopt_callback(koptreader)
 			self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
 			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true, false)
 			fb:refresh(1, topleft_x, topleft_y, width, height)
-			self.page_dirty = false
+			self.config_change = false
+			self.confirm_change = false
 		end
 		self:drawOptions(topleft_x, topleft_y, name_font, item_font, false, true)
 		
@@ -394,7 +397,7 @@ function KOPTConfig:addAllCommands()
 			
 			KOPTOptions[self.current_option].marker_dirty[last_item] = true
 			KOPTOptions[self.current_option].marker_dirty[current_item] = true
-			self.page_dirty = true
+			self.config_change = true
 		end
 	)
 	self.commands:add(KEY_FW_RIGHT, nil, "joypad right",
@@ -408,13 +411,19 @@ function KOPTConfig:addAllCommands()
 			
 			KOPTOptions[self.current_option].marker_dirty[last_item] = true
 			KOPTOptions[self.current_option].marker_dirty[current_item] = true
-			self.page_dirty = true
+			self.config_change = true
 		end
 	)
 	self.commands:add({KEY_F,KEY_AA,KEY_BACK}, nil, "Back",
 		"back",
 		function(self)
 			return "break"
+		end
+	)
+	self.commands:add(KEY_FW_PRESS, nil, "joypad press",
+		"preview",
+		function(self)
+			self.confirm_change = true
 		end
 	)
 end
