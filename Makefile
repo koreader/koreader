@@ -85,6 +85,7 @@ endif
 
 # standard includes
 KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
+K2PDFOPT_CFLAGS=-I$(MUPDFDIR)/ -I$(DJVUDIR)/ -I$(K2PDFOPTLIBDIR)/
 
 # enable tracing output:
 
@@ -167,11 +168,14 @@ slider_watcher: slider_watcher.o $(POPENNSLIB)
 ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o koptcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
+blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
+kpdfview.o koptcontext.o pdf.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) $(K2PDFOPT_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
+
 djvu.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
+	$(CC) -c $(KPDFREADER_CFLAGS) $(K2PDFOPT_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 pic.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $< -o $@
