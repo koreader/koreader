@@ -13,6 +13,7 @@ JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
+K2PDFOPTLIBDIR=libk2pdfopt
 
 # must point to directory with *.ttf fonts for crengine
 TTF_FONTS_DIR=$(MUPDFDIR)/fonts
@@ -113,17 +114,18 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
+K2PDFOPTLIB := $(K2PDFOPTLIBDIR)/libk2pdfopt.a
+
 all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
-		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
 		koptcontext.o \
@@ -133,6 +135,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o koptco
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
+		$(K2PDFOPTLIB) \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
@@ -165,9 +168,6 @@ ft.o: %.o: %.c $(THIRDPARTYLIBS)
 
 kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o koptcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
-
-k2pdfopt.o: %.o: %.c
-	$(CC) -c -I$(MUPDFDIR)/ -I$(DJVUDIR)/ $(CFLAGS) $< -o $@
 
 djvu.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
@@ -232,6 +232,7 @@ cleanthirdparty:
 	rm -f $(MUPDFDIR)/fontdump.host
 	rm -f $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C $(POPENNSDIR) clean
+	$(MAKE) -C $(K2PDFOPTLIBDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
 	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
@@ -274,7 +275,10 @@ endif
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB)
+$(K2PDFOPTLIB):
+	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=static CC="$(CC)" CFLAGS="$(CFLAGS) -I../$(DJVUDIR)/ -I../$(MUPDFDIR)/" AR="$(AR)"
+
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
 
 INSTALL_DIR=kindlepdfviewer
 
