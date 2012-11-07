@@ -13,3 +13,6 @@
 [submodule "luajit-2.0"]
 	path = luajit-2.0
 	url = http://luajit.org/git/luajit-2.0.git
+[submodule "libk2pdfopt"]
+	path = libk2pdfopt
+	url = git://github.com/chrox/libk2pdfopt.git
