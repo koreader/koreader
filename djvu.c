@@ -24,6 +24,7 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "koptcontext.h"
+#include "k2pdfopt.h"
 #include "djvu.h"
 
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))

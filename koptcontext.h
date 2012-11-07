@@ -21,33 +21,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-
-typedef unsigned char  uint8_t;
-typedef struct KOPTContext {
-	int trim;
-	int wrap;
-	int indent;
-	int rotate;
-	int columns;
-	int offset_x;
-	int offset_y;
-	int dev_width;
-	int dev_height;
-	int page_width;
-	int page_height;
-	int straighten;
-	int justification;
-
-	double zoom;
-	double margin;
-	double quality;
-	double contrast;
-	double defect_size;
-	double line_spacing;
-	double word_spacing;
-
-	uint8_t *data;
-} KOPTContext;
+#include "k2pdfopt.h"
 
 int luaopen_koptcontext(lua_State *L);
 #endif

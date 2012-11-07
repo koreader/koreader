@@ -20,6 +20,7 @@
 #include "blitbuffer.h"
 #include "drawcontext.h"
 #include "koptcontext.h"
+#include "k2pdfopt.h"
 #include "pdf.h"
 #include <stdio.h>
 #include <math.h>
