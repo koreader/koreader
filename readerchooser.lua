@@ -49,8 +49,8 @@ ReaderChooser = {
 	dialogdirty = true,
 	markerdirty = false,
 	optiondirty = true,
-	remember_default = false,
-	remember_last = false,
+	remember_preference = false,
+	remember_association = false,
 }
 
 function GetRegisteredReaders(ftype)
@@ -79,42 +79,42 @@ function ReaderChooser:getReaderByName(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local readers = GetRegisteredReaders(file_type)
 	if #readers > 1 then -- more than one reader are registered with this file type
-		local default_readers = G_reader_settings:readSetting("default_readers")
+		local file_settings = DocSettings:open(filename)
+		local reader_association = file_settings:readSetting("reader_association")
+		local reader_preferences = G_reader_settings:readSetting("reader_preferences")
+		Debug("Reading saved association:", reader_association)
+		if reader_association and reader_association ~= "N/A" then
+			file_settings:close()
+			return registry[reader_association][1]
 		
-		if default_readers then
-			default_reader = default_readers[file_type]
+		elseif reader_preferences and reader_association ~= "N/A" then
+			default_reader = reader_preferences[file_type]
 			if default_reader then
 				return registry[default_reader][1]
 			end
 		end
-		
-		local file_settings = DocSettings:open(filename)
-		local last_reader = file_settings:readSetting("last_reader")
-		Debug("Reading saved preference:", last_reader)
-		if last_reader then
-			file_settings:close()
-			return registry[last_reader][1]
-		else
-			local name = self:choose(readers)
-			if name then
-				if self.remember_default then
-					if not default_readers then
-						default_readers = {}
-					end
-					default_readers[file_type] = name
-					G_reader_settings:saveSetting("default_readers", default_readers)
+		-- need to choose reader
+		local name = self:choose(readers)
+		if name then
+			if self.remember_preference then
+				if not reader_preferences then
+					reader_preferences = {}
 				end
-				if self.remember_last then
-					Debug("Saving last reader:", name)
-					file_settings:saveSetting("last_reader", name)
-				end
-				file_settings:close()
-				return registry[name][1]
-			else
-				file_settings:close()
-				return nil
+				reader_preferences[file_type] = name
+				G_reader_settings:saveSetting("reader_preferences", reader_preferences)
+				file_settings:delSetting("reader_association") --override reader association
 			end
+			if self.remember_association then
+				Debug("Saving last reader:", name)
+				file_settings:saveSetting("reader_association", name)
+			end
+			file_settings:close()
+			return registry[name][1]
+		else
+			file_settings:close()
+			return nil
 		end
+		
 	elseif #readers == 1 then
 		return registry[readers[1]][1]
 	else
@@ -151,8 +151,8 @@ function ReaderChooser:drawOptions(xpos, ypos, barcolor, bgcolor, font_face)
 	fb.bb:paintRect(xpos, ypos, width, optbar_T, barcolor)
 	fb.bb:paintRect(xpos+(width-optbar_T)/2, ypos, optbar_T, self.options_H, barcolor)
 	-- draw option cell
-	fb.bb:paintRect(xpos, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_default and 1 or 0))
-	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_last and 1 or 0))
+	fb.bb:paintRect(xpos, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_preference and 1 or 0))
+	fb.bb:paintRect(xpos+(width+optbar_T)/2, ypos+optbar_T, (width-optbar_T)/2, self.options_H-optbar_T, bgcolor+3*(self.remember_association and 1 or 0))
 	-- draw option text
 	renderUtf8Text(fb.bb, xpos+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_TYPE, true)
 	renderUtf8Text(fb.bb, xpos+width/2+self.margin_O, ypos+self.options_H/2+8, font_face, self.OPTION_FILE, true)
@@ -265,7 +265,7 @@ function ReaderChooser:addAllCommands()
 	self.commands:add(KEY_T, nil, "T",
 		"remember reader choice for this type",
 		function(self)
-			self.remember_default = not self.remember_default
+			self.remember_preference = not self.remember_preference
 			self.optiondirty = true
 		end
 	)
@@ -273,7 +273,7 @@ function ReaderChooser:addAllCommands()
 	self.commands:add(KEY_F, nil, "F",
 		"remember reader choice for this file",
 		function(self)
-			self.remember_last = not self.remember_last
+			self.remember_association = not self.remember_association
 			self.optiondirty = true
 		end
 	)
