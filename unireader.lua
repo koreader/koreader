@@ -2732,11 +2732,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_C, MOD_ALT, "C",
 		"clear reader association with this doc",
 		function(unireader)
-			if self.settings:readSetting("last_reader") then
-				InfoMessage:inform("Clearing reader association", 1000, 1, MSG_AUX)
-				self.settings:delSetting("last_reader")
-			else
+			if self.settings:readSetting("last_reader") == "N/A" then
 				InfoMessage:inform("No reader associated", 1000, 1, MSG_AUX)
+			else
+				self.settings:saveSetting("last_reader", "N/A")
+				InfoMessage:inform("Clearing reader association", 1000, 1, MSG_AUX)
 			end
 		end)
 

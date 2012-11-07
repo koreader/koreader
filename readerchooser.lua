@@ -79,21 +79,20 @@ function ReaderChooser:getReaderByName(filename)
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
 	local readers = GetRegisteredReaders(file_type)
 	if #readers > 1 then -- more than one reader are registered with this file type
+		local file_settings = DocSettings:open(filename)
+		local last_reader = file_settings:readSetting("last_reader")
 		local default_readers = G_reader_settings:readSetting("default_readers")
+		Debug("Reading saved preference:", last_reader)
+		if last_reader and last_reader ~= "N/A" then
+			file_settings:close()
+			return registry[last_reader][1]
 		
-		if default_readers then
+		elseif default_readers and last_reader ~= "N/A" then
 			default_reader = default_readers[file_type]
 			if default_reader then
 				return registry[default_reader][1]
 			end
-		end
-		
-		local file_settings = DocSettings:open(filename)
-		local last_reader = file_settings:readSetting("last_reader")
-		Debug("Reading saved preference:", last_reader)
-		if last_reader then
-			file_settings:close()
-			return registry[last_reader][1]
+
 		else
 			local name = self:choose(readers)
 			if name then
@@ -115,6 +114,7 @@ function ReaderChooser:getReaderByName(filename)
 				return nil
 			end
 		end
+		
 	elseif #readers == 1 then
 		return registry[readers[1]][1]
 	else
