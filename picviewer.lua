@@ -7,6 +7,7 @@ function PICViewer:setDefaults()
 	self.show_links_enable = DPICVIEWER_SHOW_LINKS_ENABLE
 	self.comics_mode_enable = DPICVIEWER_COMICS_MODE_ENABLE
 	self.rtl_mode_enable = DPICVIEWER_RTL_MODE_ENABLE
+	self.page_mode_enable = DPICVIEWER_PAGE_MODE_ENABLE
 end
 
 function PICViewer:open(filename)
@@ -64,4 +65,5 @@ function PICViewer:adjustCommands()
 	self.commands:delGroup("[1, 2 .. 9, 0]")
 	self.commands:delGroup(MOD_ALT.."H/J")
 	self.commands:delGroup(MOD_ALT.."K/L")
+	self.commands:del(KEY_P, nil, "P")	
 end

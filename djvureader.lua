@@ -7,6 +7,7 @@ function DJVUReader:setDefaults()
 	self.show_links_enable = DDJVUREADER_SHOW_LINKS_ENABLE
 	self.comics_mode_enable = DDJVUREADER_COMICS_MODE_ENABLE
 	self.rtl_mode_enable = DDJVUREADER_RTL_MODE_ENABLE
+	self.page_mode_enable = DDJVUREADER_PAGE_MODE_ENABLE
 end
 
 -- check DjVu magic string to validate

@@ -462,7 +462,8 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_M, nil, "M")
 	self.commands:del(KEY_U, nil,"U")
 	self.commands:del(KEY_C, nil, "C")
-
+	self.commands:del(KEY_P, nil, "P")
+	
 	-- CCW-rotation
 	self.commands:add(KEY_K, nil, "K",
 		"rotate screen counterclockwise",
