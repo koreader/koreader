@@ -117,7 +117,7 @@ LUALIB := $(LIBDIR)/libluajit-5.1.so.2
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so
+K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so.1
 
 all: kpdfview extr
 
@@ -289,7 +289,7 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L $(DJVULIB) $(LUALIB) $(INSTALL_DIR)/libs
+	cp -L $(DJVULIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
