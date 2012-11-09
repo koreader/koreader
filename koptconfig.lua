@@ -17,8 +17,8 @@ KOPTOptions =  {
 	draw_index = nil,},
 	{
 	name="text_wrap",
-	option_text="Text Wrap",
-	items_text={"enable","disable"},
+	option_text="Reflow",
+	items_text={"on","off"},
 	default_item=1,
 	current_item=1,
 	text_dirty=true,
@@ -46,17 +46,17 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true},
 	value={1, 0},
-	show = true,
+	show = false,
 	draw_index = nil,},
 	{
 	name="defect_size",
 	option_text="Defect Size",
 	items_text={"small","medium","large"},
-	default_item=1,
-	current_item=1,
+	default_item=2,
+	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={1.0, 2.0, 5.0},
+	value={0.5, 1.0, 2.0},
 	show = true,
 	draw_index = nil,},
 	{
@@ -68,7 +68,7 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true, true},
 	value={0.02, 0.06, 0.10},
-	show = false,
+	show = true,
 	draw_index = nil,},
 	{
 	name="line_spacing",
@@ -79,23 +79,23 @@ KOPTOptions =  {
 	text_dirty=true,
 	marker_dirty={true, true, true},
 	value={1.0, 1.2, 1.4},
-	show = false,
+	show = true,
 	draw_index = nil,},
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
-	items_text={"smaller","small","medium","large"},
-	default_item=3,
-	current_item=3,
+	items_text={"small","medium","large"},
+	default_item=2,
+	current_item=2,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
-	value={0.1, 0.2, 0.375, 0.5},
+	value={0.1, 0.375, 0.5},
 	show = true,
 	draw_index = nil,},
 	{
 	name="quality",
 	option_text="Render Quality",
-	items_text={"performance","balanced","quality"},
+	items_text={"low","medium","high"},
 	default_item=3,
 	current_item=3,
 	text_dirty=true,
@@ -106,18 +106,18 @@ KOPTOptions =  {
 	{
 	name="auto_straighten",
 	option_text="Auto Straighten",
-	items_text={"default","0","5","10"},
+	items_text={"0","5","10"},
 	default_item=1,
 	current_item=1,
 	text_dirty=true,
-	marker_dirty={true, true, true, true},
-	value={0, 0, 5, 10},
+	marker_dirty={true, true, true},
+	value={0, 5, 10},
 	show = true,
 	draw_index = nil,},
 	{
 	name="justification",
 	option_text="Justification",
-	items_text={"default","left","center","right","full"},
+	items_text={"auto","left","center","right","full"},
 	default_item=1,
 	current_item=1,
 	text_dirty=true,
@@ -128,12 +128,12 @@ KOPTOptions =  {
 	{
 	name="max_columns",
 	option_text="Columns",
-	items_text={"auto","1","2","3","4"},
+	items_text={"1","2","3","4"},
 	default_item=1,
 	current_item=1,
 	text_dirty=true,
-	marker_dirty={true, true, true, true, true},
-	value={2,1,2,3,4},
+	marker_dirty={true, true, true, true},
+	value={1,2,3,4},
 	show = true,
 	draw_index = nil,},
 	{
@@ -167,7 +167,7 @@ KOPTConfig = {
 	MARGIN_BOTTOM = 25,  -- window bottom margin
 	OPTION_PADDING_T = 60, -- option top padding
 	OPTION_PADDING_H = 70, -- option horizontal padding
-	OPTION_SPACING_V = 35,	-- options vertical spacing
+	OPTION_SPACING_V = 30,	-- options vertical spacing
 	NAME_ALIGN_RIGHT = 0.28, -- align name right to the window width
 	ITEM_ALIGN_LEFT = 0.30,	-- align item left to the window width
 	ITEM_SPACING_H = 10,   -- items horisontal spacing
@@ -287,8 +287,8 @@ function KOPTConfig:makeDefault(configurable)
 					KOPTOptions[i].current_item = index
 				end
 			end
-		end
-	end
+		end -- for index
+	end -- for i
 end
 
 function KOPTConfig:reconfigure(configurable)
