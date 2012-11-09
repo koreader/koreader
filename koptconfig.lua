@@ -29,7 +29,7 @@ KOPTOptions =  {
 	{
 	name="trim_page",
 	option_text="Trim Page",
-	items_text={"enable","disable"},
+	items_text={"auto","manual"},
 	default_item=1,
 	current_item=1,
 	text_dirty=true,

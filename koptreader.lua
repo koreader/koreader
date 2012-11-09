@@ -141,8 +141,6 @@ function KOPTReader:drawOrCache(no, preCache)
 		return nil
 	end
 	
-	local dc = self:setzoom(page, preCache)
-	
 	-- check if we have relevant cache contents
 	local pagehash = no..self.configurable:hash('_')
 	Debug('page hash', pagehash)
@@ -201,8 +199,8 @@ function KOPTReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	Debug("page::reflowPage:", "width:", width, "height:", height)
-	local kc = self:makeContext()
+	local kc = self:getContext(page, preCache)
+	
 	page:reflow(kc, self.render_mode)
 	self.fullwidth, self.fullheight = kc:getPageDim()
 	self.reflow_zoom = kc:getZoom()
@@ -231,7 +229,6 @@ function KOPTReader:drawOrCache(no, preCache)
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
 	--Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
-	dc:setOffset(-tile.x, -tile.y)
 	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
@@ -263,19 +260,69 @@ function KOPTReader:drawOrCache(no, preCache)
 		offset_x_in_page - tile.x,
 		offset_y_in_page - tile.y
 end
-
--- set viewer state according to zoom state
-function KOPTReader:setzoom(page, preCache)
-	local dc = DrawContext.new()
 		
-	if(self.min_offset_x > 0) then
-		self.min_offset_x = 0
-	end
-	if(self.min_offset_y > 0) then
-		self.min_offset_y = 0
-	end
+-- get reflow context
+function KOPTReader:getContext(page, preCache)
+	local kc = self:makeContext()
+	local pwidth, pheight = page:getSize(self.nulldc)
+	local width, height = G_width, G_height
+	-- rounds down pwidth and pheight to 2 decimals, because page:getUsedBBox() returns only 2 decimals.
+	-- without it, later check whether to use margins will fail for some documents
+	pwidth = math.floor(pwidth * 100) / 100
+	pheight = math.floor(pheight * 100) / 100
+	Debug("page::getSize",pwidth,pheight)
 	
-	return dc
+	local x0, y0, x1, y1 = page:getUsedBBox()
+	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
+		x0 = 0
+		y0 = 0
+		x1 = pwidth
+		y1 = pheight
+	end
+	if x1 == 0 then x1 = pwidth end
+	if y1 == 0 then y1 = pheight end
+	-- clamp to page BBox
+	if x0 < 0 then x0 = 0 end
+	if x1 > pwidth then x1 = pwidth end
+	if y0 < 0 then y0 = 0 end
+	if y1 > pheight then y1 = pheight end
+
+	if self.bbox.enabled then
+		Debug("ORIGINAL page::getUsedBBox", x0,y0, x1,y1 )
+		local bbox = self.bbox[self.pageno] -- exact
+
+		local oddEven = self:oddEven(self.pageno)
+		if bbox ~= nil then
+			Debug("bbox from", self.pageno)
+		else
+			bbox = self.bbox[oddEven] -- odd/even
+		end
+		if bbox ~= nil then -- last used up to this page
+			Debug("bbox from", oddEven)
+		else
+			for i = 0,self.pageno do
+				bbox = self.bbox[ self.pageno - i ]
+				if bbox ~= nil then
+					Debug("bbox from", self.pageno - i)
+					break
+				end
+			end
+		end
+		if bbox ~= nil then
+			x0 = bbox["x0"]
+			y0 = bbox["y0"]
+			x1 = bbox["x1"]
+			y1 = bbox["y1"]
+		end
+	end
+
+	Debug("page::getUsedBBox", x0, y0, x1, y1 ) 
+	if kc:getTrim() == 1 then
+		kc:setBBox(0, 0, pwidth, pheight)
+	else
+		kc:setBBox(x0, y0, x1, y1)
+	end
+	return kc
 end
 
 function KOPTReader:nextView()
