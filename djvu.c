@@ -473,12 +473,63 @@ static int closePage(lua_State *L) {
 }
 
 static int reflowPage(lua_State *L) {
-
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
+	KOPTContext *kctx = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
 	ddjvu_render_mode_t mode = (int) luaL_checkint(L, 3);
+	WILLUSBITMAP _src, *src;
+	ddjvu_rect_t prect;
+	ddjvu_rect_t rrect;
 
-	k2pdfopt_djvu_reflow(kc, page->page_ref, page->doc->context, mode, page->doc->pixelformat);
+	int px, py, pw, ph, rx, ry, rw, rh, idpi, status;
+	double zoom = kctx->zoom;
+	double dpi = 250*zoom;
+
+	px = 0;
+	py = 0;
+	pw = ddjvu_page_get_width(page->page_ref);
+	ph = ddjvu_page_get_height(page->page_ref);
+	idpi = ddjvu_page_get_resolution(page->page_ref);
+	prect.x = px;
+	prect.y = py;
+
+	rx = (int)kctx->bbox.x0;
+	ry = (int)kctx->bbox.y0;
+	rw = (int)(kctx->bbox.x1 - kctx->bbox.x0);
+	rh = (int)(kctx->bbox.y1 - kctx->bbox.y0);
+
+	do {
+		prect.w = pw * dpi / idpi;
+		prect.h = ph * dpi / idpi;
+		rrect.x = rx * dpi / idpi;
+		rrect.y = ry * dpi / idpi;
+		rrect.w = rw * dpi / idpi;
+		rrect.h = rh * dpi / idpi;
+		printf("rendering page:%d,%d,%d,%d dpi:%.0f idpi:%.0d\n",rrect.x,rrect.y,rrect.w,rrect.h,dpi,idpi);
+		kctx->zoom = zoom;
+		zoom *= kctx->shrink_factor;
+		dpi *= kctx->shrink_factor;
+	} while (rrect.w > kctx->read_max_width | rrect.h > kctx->read_max_height);
+
+	src = &_src;
+	bmp_init(src);
+	src->width = rrect.w;
+	src->height = rrect.h;
+	src->bpp = 8;
+
+	bmp_alloc(src);
+	if (src->bpp == 8) {
+		int ii;
+		for (ii = 0; ii < 256; ii++)
+		src->red[ii] = src->blue[ii] = src->green[ii] = ii;
+	}
+
+	ddjvu_format_set_row_order(page->doc->pixelformat, 1);
+
+	status = ddjvu_page_render(page->page_ref, mode, &prect, &rrect, page->doc->pixelformat,
+			bmp_bytewidth(src), (char *) src->data);
+
+	k2pdfopt_reflow_bmp(kctx, src);
+	bmp_free(src);
 
 	return 0;
 }

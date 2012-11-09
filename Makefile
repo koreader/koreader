@@ -115,7 +115,7 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-K2PDFOPTLIB := $(K2PDFOPTLIBDIR)/libk2pdfopt.a
+K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so
 
 all: kpdfview extr
 
@@ -136,7 +136,6 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
-		$(K2PDFOPTLIB) \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		$(LUALIB) \
@@ -148,7 +147,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -280,7 +279,9 @@ $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
 
 $(K2PDFOPTLIB):
-	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=static CC="$(CC)" CFLAGS="$(CFLAGS) -I../$(DJVUDIR)/ -I../$(MUPDFDIR)/" AR="$(AR)"
+	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=shared CC="$(CC)" CFLAGS="$(CFLAGS)" AR="$(AR)" all
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(K2PDFOPTLIBDIR)/libk2pdfopt.so* $(LIBDIR)
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
 
