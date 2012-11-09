@@ -42,6 +42,7 @@ static int newKOPTContext(lua_State *L) {
 	double word_spacing = luaL_optnumber(L, 20, (double) 1.375);
 
 	uint8_t *data = NULL;
+	fz_rect bbox = {0, 0, 0, 0};
 
 	KOPTContext *kc = (KOPTContext*) lua_newuserdata(L, sizeof(KOPTContext));
 
@@ -68,6 +69,7 @@ static int newKOPTContext(lua_State *L) {
 	kc->word_spacing = word_spacing;
 
 	kc->data = data;
+	kc->bbox = bbox;
 
 	luaL_getmetatable(L, "koptcontext");
 	lua_setmetatable(L, -2);
@@ -75,10 +77,25 @@ static int newKOPTContext(lua_State *L) {
 	return 1;
 }
 
+static int kcSetBBox(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	kc->bbox.x0 = luaL_checknumber(L, 2);
+	kc->bbox.y0 = luaL_checknumber(L, 3);
+	kc->bbox.x1 = luaL_checknumber(L, 4);
+	kc->bbox.y1 = luaL_checknumber(L, 5);
+	return 0;
+}
+
 static int kcSetTrim(lua_State *L) {
 	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
 	kc->trim = luaL_checkint(L, 2);
 	return 0;
+}
+
+static int kcGetTrim(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	lua_pushinteger(L, kc->trim);
+	return 1;
 }
 
 static int kcSetWrap(lua_State *L) {
@@ -194,7 +211,9 @@ static int kcSetWordSpacing(lua_State *L) {
 }
 
 static const struct luaL_Reg koptcontext_meth[] = {
+	{"setBBox", kcSetBBox},
 	{"setTrim", kcSetTrim},
+	{"getTrim", kcGetTrim},
 	{"setWrap", kcSetWrap},
 	{"setIndent", kcSetIndent},
 	{"setRotate", kcSetRotate},
