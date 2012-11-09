@@ -513,12 +513,111 @@ static int closePage(lua_State *L) {
 	return 0;
 }
 
+/* bmpmupdf.c from willuslib */
+static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx, fz_pixmap *pixmap) {
+	unsigned char *p;
+	int ncomp, i, row, col;
+
+	bmp->width = fz_pixmap_width(ctx, pixmap);
+	bmp->height = fz_pixmap_height(ctx, pixmap);
+	ncomp = fz_pixmap_components(ctx, pixmap);
+	/* Has to be 8-bit or RGB */
+	if (ncomp != 2 && ncomp != 4)
+		return (-1);
+	bmp->bpp = (ncomp == 2) ? 8 : 24;
+	bmp_alloc(bmp);
+	if (ncomp == 2)
+		for (i = 0; i < 256; i++)
+			bmp->red[i] = bmp->green[i] = bmp->blue[i] = i;
+	p = fz_pixmap_samples(ctx, pixmap);
+	if (ncomp == 1)
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			memcpy(dest, p, bmp->width);
+			p += bmp->width;
+		}
+	else if (ncomp == 2)
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			for (col = 0; col < bmp->width; col++, dest++, p += 2)
+				dest[0] = p[0];
+		}
+	else
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			for (col = 0; col < bmp->width;
+					col++, dest += ncomp - 1, p += ncomp)
+				memcpy(dest, p, ncomp - 1);
+		}
+	return (0);
+}
+
 static int reflowPage(lua_State *L) {
-
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
-	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
+	KOPTContext *kctx = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
+	fz_device *dev;
+	fz_pixmap *pix;
+	fz_rect bounds,bounds2;
+	fz_matrix ctm;
+	fz_bbox bbox;
+	WILLUSBITMAP _src, *src;
 
-	k2pdfopt_mupdf_reflow(kc, page->doc->xref, page->page, page->doc->context);
+	pix = NULL;
+	fz_var(pix);
+	bounds.x0 = kctx->bbox.x0;
+	bounds.y0 = kctx->bbox.y0;
+	bounds.x1 = kctx->bbox.x1;
+	bounds.y1 = kctx->bbox.y1;
+
+	double dpp,zoom;
+	zoom = kctx->zoom;
+	double dpi = 250*zoom*kctx->quality;
+
+	do {
+		dpp = dpi / 72.;
+		ctm = fz_scale(dpp, dpp);
+		//    ctm=fz_concat(ctm,fz_rotate(rotation));
+		bounds2 = fz_transform_rect(ctm, bounds);
+		bbox = fz_round_rect(bounds2);
+		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
+		kctx->zoom = zoom;
+		zoom *= kctx->shrink_factor;
+		dpi *= kctx->shrink_factor;
+	} while (bbox.x1 > kctx->read_max_width | bbox.y1 > kctx->read_max_height);
+
+	pix = fz_new_pixmap_with_bbox(page->doc->context, fz_device_gray, bbox);
+	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
+	dev = fz_new_draw_device(page->doc->context, pix);
+
+#ifdef MUPDF_TRACE
+	fz_device *tdev;
+	fz_try(page->doc->context) {
+		tdev = fz_new_trace_device(page->doc->context);
+		fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+	}
+	fz_always(page->doc->context) {
+		fz_free_device(tdev);
+	}
+#endif
+
+	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_free_device(dev);
+
+	if (kctx->contrast >= 0.0) {
+		fz_gamma_pixmap(page->doc->context, pix, kctx->contrast);
+	}
+
+	src = &_src;
+	bmp_init(src);
+
+	int status = bmpmupdf_pixmap_to_bmp(src, page->doc->context, pix);
+	fz_drop_pixmap(page->doc->context, pix);
+
+	k2pdfopt_reflow_bmp(kctx, src);
+	bmp_free(src);
 
 	return 0;
 }
