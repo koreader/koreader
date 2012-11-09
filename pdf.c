@@ -606,10 +606,6 @@ static int reflowPage(lua_State *L) {
 	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	fz_free_device(dev);
 
-	if (kctx->contrast >= 0.0) {
-		fz_gamma_pixmap(page->doc->context, pix, kctx->contrast);
-	}
-
 	src = &_src;
 	bmp_init(src);
 
