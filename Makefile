@@ -35,8 +35,8 @@ HOSTCXX:=g++
 HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
-BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
-KOPT_CFLAGS:=-O3 -ffast-math -pipe -fomit-frame-pointer
+BASE_CFLAGS:=-O2 -ffast-math -pipe
+KOPT_CFLAGS:=-O3 -ffast-math -pipe
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
 # Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
