@@ -35,8 +35,7 @@ HOSTCXX:=g++
 HOSTAR:=ar
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its Makefiles do some tricky stuff to differentiate HOST/TARGET
-BASE_CFLAGS:=-O2 -ffast-math -pipe
-KOPT_CFLAGS:=-O3 -ffast-math -fno-finite-math-only -pipe
+BASE_CFLAGS:=-O2 -ffast-math -pipe -fomit-frame-pointer
 # Use this for debugging:
 #BASE_CFLAGS:=-O0 -g
 # Misc GCC tricks to ensure backward compatibility with the K2, even when using a fairly recent TC (Linaro/MG).
@@ -269,7 +268,7 @@ $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
 
 $(K2PDFOPTLIB):
-	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=shared CC="$(CC)" CFLAGS="$(KOPT_CFLAGS)" AR="$(AR)" all
+	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=shared CC="$(CC)" CFLAGS="$(CFLAGS) -O3" AR="$(AR)" all
 	test -d $(LIBDIR) || mkdir $(LIBDIR)
 	cp -a $(K2PDFOPTLIBDIR)/libk2pdfopt.so* $(LIBDIR)
 
