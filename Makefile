@@ -116,7 +116,7 @@ LUALIB := $(LIBDIR)/libluajit-5.1.so.2
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
-K2PDFOPTLIB := $(K2PDFOPTLIBDIR)/libk2pdfopt.a
+K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so.1
 
 all: kpdfview extr
 
@@ -137,7 +137,6 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
-		$(K2PDFOPTLIB) \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		djvu.o \
@@ -149,7 +148,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		$(LDFLAGS) \
 		-Wl,-rpath=$(LIBDIR)/ \
 		-o $@ \
-		-lm -ldl -lpthread -ldjvulibre -ljpeg -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -ljpeg -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -269,7 +268,9 @@ $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
 
 $(K2PDFOPTLIB):
-	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=static CC="$(CC)" CFLAGS="$(CFLAGS) -I../$(DJVUDIR)/ -I../$(MUPDFDIR)/" AR="$(AR)"
+	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=shared CC="$(CC)" CFLAGS="$(CFLAGS) -O3" AR="$(AR)" all
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(K2PDFOPTLIBDIR)/libk2pdfopt.so* $(LIBDIR)
 
 thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
 
@@ -287,7 +288,7 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L $(DJVULIB) $(LUALIB) $(INSTALL_DIR)/libs
+	cp -L $(DJVULIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)

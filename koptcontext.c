@@ -19,29 +19,33 @@
 #include "koptcontext.h"
 
 static int newKOPTContext(lua_State *L) {
-	int trim = luaL_optint(L, 1, 1);
-	int wrap = luaL_optint(L, 2, 1);
-	int indent = luaL_optint(L, 3, 1);
-	int rotate = luaL_optint(L, 4, 0);
-	int columns = luaL_optint(L, 5, 2);
-	int offset_x = luaL_optint(L, 6, 0);
-	int offset_y = luaL_optint(L, 7, 0);
-	int dev_width = luaL_optint(L, 8, 600);
-	int dev_height = luaL_optint(L, 9, 800);
-	int page_width = luaL_optint(L, 10, 600);
-	int page_height = luaL_optint(L, 11, 800);
-	int straighten = luaL_optint(L, 12, 0);
-	int justification = luaL_optint(L, 13, -1);
+	int trim = 1;
+	int wrap = 1;
+	int indent = 1;
+	int rotate = 0;
+	int columns = 2;
+	int offset_x = 0;
+	int offset_y = 0;
+	int dev_width = 600;
+	int dev_height = 800;
+	int page_width = 600;
+	int page_height = 800;
+	int straighten = 0;
+	int justification = -1;
+	int read_max_width = 3000;
+	int read_max_height = 4000;
 
-	double zoom = luaL_optnumber(L, 14, (double) 1.0);
-	double margin = luaL_optnumber(L, 15, (double) 0.06);
-	double quality = luaL_optnumber(L, 16, (double) 1.0);
-	double contrast = luaL_optnumber(L, 17, (double) 1.0);
-	double defect_size = luaL_optnumber(L, 18, (double) 1.0);
-	double line_spacing = luaL_optnumber(L, 19, (double) 1.2);
-	double word_spacing = luaL_optnumber(L, 20, (double) 1.375);
+	double zoom = 1.0;
+	double margin = 0.06;
+	double quality = 1.0;
+	double contrast = 1.0;
+	double defect_size = 1.0;
+	double line_spacing = 1.2;
+	double word_spacing = 1.375;
+	double shrink_factor = 0.9;
 
 	uint8_t *data = NULL;
+	BBox bbox = {0, 0, 0, 0};
 
 	KOPTContext *kc = (KOPTContext*) lua_newuserdata(L, sizeof(KOPTContext));
 
@@ -58,6 +62,8 @@ static int newKOPTContext(lua_State *L) {
 	kc->page_height = page_height;
 	kc->straighten = straighten;
 	kc->justification = justification;
+	kc->read_max_width = read_max_width;
+	kc->read_max_height = read_max_height;
 
 	kc->zoom = zoom;
 	kc->margin = margin;
@@ -66,8 +72,10 @@ static int newKOPTContext(lua_State *L) {
 	kc->defect_size = defect_size;
 	kc->line_spacing = line_spacing;
 	kc->word_spacing = word_spacing;
+	kc->shrink_factor = shrink_factor;
 
 	kc->data = data;
+	kc->bbox = bbox;
 
 	luaL_getmetatable(L, "koptcontext");
 	lua_setmetatable(L, -2);
@@ -75,10 +83,25 @@ static int newKOPTContext(lua_State *L) {
 	return 1;
 }
 
+static int kcSetBBox(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	kc->bbox.x0 = luaL_checknumber(L, 2);
+	kc->bbox.y0 = luaL_checknumber(L, 3);
+	kc->bbox.x1 = luaL_checknumber(L, 4);
+	kc->bbox.y1 = luaL_checknumber(L, 5);
+	return 0;
+}
+
 static int kcSetTrim(lua_State *L) {
 	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
 	kc->trim = luaL_checkint(L, 2);
 	return 0;
+}
+
+static int kcGetTrim(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	lua_pushinteger(L, kc->trim);
+	return 1;
 }
 
 static int kcSetWrap(lua_State *L) {
@@ -194,7 +217,9 @@ static int kcSetWordSpacing(lua_State *L) {
 }
 
 static const struct luaL_Reg koptcontext_meth[] = {
+	{"setBBox", kcSetBBox},
 	{"setTrim", kcSetTrim},
+	{"getTrim", kcGetTrim},
 	{"setWrap", kcSetWrap},
 	{"setIndent", kcSetIndent},
 	{"setRotate", kcSetRotate},
