@@ -1,6 +1,7 @@
 require "font"
 require "keys"
 require "settings"
+require "screen"
 require "pdfreader"
 require "djvureader"
 require "koptreader"
@@ -94,6 +95,7 @@ function ReaderChooser:getReaderByName(filename)
 			end
 		end
 		-- need to choose reader
+		Screen:saveCurrentBB()
 		local name = self:choose(readers)
 		if name then
 			if self.remember_preference then
@@ -109,6 +111,7 @@ function ReaderChooser:getReaderByName(filename)
 				file_settings:saveSetting("reader_association", name)
 			end
 			file_settings:close()
+			Screen:restoreFromSavedBB()
 			return registry[name][1]
 		else
 			file_settings:close()
