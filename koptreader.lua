@@ -324,6 +324,7 @@ function KOPTReader:setDefaults()
     self.show_links_enable = DKOPTREADER_SHOW_LINKS_ENABLE
     self.comics_mode_enable = DKOPTREADER_COMICS_MODE_ENABLE
     self.rtl_mode_enable = DKOPTREADER_RTL_MODE_ENABLE
+    self.page_mode_enable = DKOPTREADER_PAGE_MODE_ENABLE
 end
 
 -- backup global variables from UniReader
@@ -376,6 +377,7 @@ function KOPTReader:adjustCommands()
 	self.commands:delGroup(MOD_ALT.."< >")
 	self.commands:delGroup(MOD_SHIFT.."< >")
 	self.commands:delGroup("vol-/+")
+	self.commands:del(KEY_P, nil, "P")
 	
 	self.commands:add({KEY_F,KEY_AA}, nil, "F",
 		"change koptreader configuration",
