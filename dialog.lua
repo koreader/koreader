@@ -136,6 +136,9 @@ function InfoMessage:inform(text, msec, refresh_mode, message_importance, altern
 	end
 	if not popup then return end -- to avoid drawing popup window
 	self.ImageFile = self.Images[message_importance] -- select proper image for window
+	if util.isEmulated()==1 then
+		msec = DINFO_TIMEOUT_SLOW
+	end
 	if not msec or msec == 0 then
 		InfoMessage:show(text, refresh_mode)
 	else

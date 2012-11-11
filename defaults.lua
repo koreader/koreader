@@ -23,11 +23,8 @@ DSHIFT_Y = 50
 -- step to change zoom manually, default = 16%
 DSTEP_MANUAL_ZOOM = 16
 DPAN_BY_PAGE = false -- using shift_[xy] or width/height
-DPAN_X = 0 -- top-left offset of page when pan activated
-DPAN_Y = 0
 DPAN_MARGIN = 5 -- horizontal margin for two-column zoom (in pixels)
 DPAN_OVERLAP_VERTICAL = 30
-DSHOW_OVERLAP = 0
 
 -- tile cache configuration:
 DCACHE_MAX_MEMSIZE = 1024*1024*5 -- 5MB tile cache
@@ -42,8 +39,9 @@ DBATTERY_LOGGING = false
 -- background colour: 8 = gray, 0 = white, 15 = black
 DBACKGROUND_COLOR = 8
 
--- page mode
-DPAGE_MODE_ENABLE = false
+-- timeout for info messages in ms
+DINFO_TIMEOUT_FAST=nil
+DINFO_TIMEOUT_SLOW=1000
 
 -- toggle defaults
 DUNIREADER_SHOW_OVERLAP_ENABLE = true
