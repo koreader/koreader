@@ -229,7 +229,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		return nil
 	end
 	
-	local kc = self:getContext(page, preCache)
+	local kc = self:getContext(page, no, preCache)
 	
 	-- check if we have relevant cache contents
 	local bbox = self.cur_bbox
@@ -351,7 +351,7 @@ function KOPTReader:drawOrCache(no, preCache)
 end
 		
 -- get reflow context
-function KOPTReader:getContext(page, preCache)
+function KOPTReader:getContext(page, pnumber, preCache)
 	local kc = self:makeContext()
 	local pwidth, pheight = page:getSize(self.nulldc)
 	local width, height = G_width, G_height
@@ -378,21 +378,21 @@ function KOPTReader:getContext(page, preCache)
 
 	if self.bbox.enabled then
 		Debug("ORIGINAL page::getUsedBBox", x0,y0, x1,y1 )
-		local bbox = self.bbox[self.pageno] -- exact
+		local bbox = self.bbox[pnumber] -- exact
 
-		local oddEven = self:oddEven(self.pageno)
+		local oddEven = self:oddEven(pnumber)
 		if bbox ~= nil then
-			Debug("bbox from", self.pageno)
+			Debug("bbox from", pnumber)
 		else
 			bbox = self.bbox[oddEven] -- odd/even
 		end
 		if bbox ~= nil then -- last used up to this page
 			Debug("bbox from", oddEven)
 		else
-			for i = 0,self.pageno do
-				bbox = self.bbox[ self.pageno - i ]
+			for i = 0,pnumber do
+				bbox = self.bbox[ pnumber - i ]
 				if bbox ~= nil then
-					Debug("bbox from", self.pageno - i)
+					Debug("bbox from", pnumber - i)
 					break
 				end
 			end
@@ -411,19 +411,14 @@ function KOPTReader:getContext(page, preCache)
 	else
 		kc:setBBox(x0, y0, x1, y1)
 	end
-	
-	if not preCache then -- save current page fullsize
-		self.cur_full_width = self.fullwidth
-		self.cur_full_height = self.fullheight
 
-		self.cur_bbox = {
-			["x0"] = x0,
-			["y0"] = y0,
-			["x1"] = x1,
-			["y1"] = y1,
-		}
-		Debug("cur_bbox", self.cur_bbox)
-	end
+	self.cur_bbox = {
+		["x0"] = x0,
+		["y0"] = y0,
+		["x1"] = x1,
+		["y1"] = y1,
+	}
+	Debug("cur_bbox", self.cur_bbox)
 	
 	return kc
 end
