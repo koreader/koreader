@@ -1455,7 +1455,7 @@ function UniReader:show(no)
 	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, offset_x, offset_y, width, height)
 
 	Debug("self.show_overlap", self.show_overlap)
-       if self.show_overlap_enable and not self.comics_mode_enable then
+       if self.show_overlap_enable then
                if self.show_overlap < 0 then
                        fb.bb:dimRect(0,0, width, self.dest_y - self.show_overlap)
                elseif self.show_overlap > 0 then
@@ -1634,6 +1634,8 @@ end
 
 function UniReader:nextView()
 	local pageno = self.pageno
+	local x = G_width
+	local y = G_height - self.pan_overlap_vertical -- overlap for lines which didn't fit
 
 	Debug("nextView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
 
@@ -1648,14 +1650,14 @@ function UniReader:nextView()
 		else
 			-- goto next view of current page
 			self.offset_y = self.offset_y - G_height + self.pan_overlap_vertical
+			self.show_overlap = -self.pan_overlap_vertical -- top < 0
 
 			if self.comics_mode_enable then
 				if self.offset_y < self.min_offset_y then
-					self.offset_y = self.min_offset_y - 0
+					self.show_overlap = self.offset_y + y - self.min_offset_y - G_height
+					self.offset_y = self.min_offset_y
 				end
 			end
-
-			self.show_overlap = -self.pan_overlap_vertical -- top < 0
 		end
 
 	-- page-buttons in 2 column mode	
@@ -1677,6 +1679,8 @@ end
 
 function UniReader:prevView()
 	local pageno = self.pageno
+	local x = G_width
+	local y = G_height - self.pan_overlap_vertical -- overlap for lines which didn't fit
 
 	Debug("prevView last_globalzoom_mode=", self.last_globalzoom_mode, " globalzoom_mode=", self.globalzoom_mode)
 
@@ -1695,14 +1699,14 @@ function UniReader:prevView()
 		else
 			-- goto previous view of current page
 			self.offset_y = self.offset_y + G_height - self.pan_overlap_vertical
+			self.show_overlap = self.pan_overlap_vertical -- bottom > 0
 
 			if self.comics_mode_enable then
 				if self.offset_y > self.content_top then
-					self.offset_y = self.content_top + 0
+					self.show_overlap = self.offset_y + self.pan_overlap_vertical
+					self.offset_y = self.content_top
 				end
 			end
-
-			self.show_overlap = self.pan_overlap_vertical -- bottom > 0
 		end
 
 	-- page-buttons in 2 column mode
@@ -2851,10 +2855,10 @@ function UniReader:addAllCommands()
 		end)
 
 	self.commands:add(KEY_C, nil, "C",
-		"toggle comics mode on/off",
+		"align the viewport to top/bottom",
 		function(unireader)
 			unireader.comics_mode_enable = not unireader.comics_mode_enable
-			InfoMessage:inform("Comics mode "..(unireader.comics_mode_enable and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+			InfoMessage:inform("Align the viewport to "..(unireader.comics_mode_enable and "BOTTOM" or "TOP"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("comics_mode_enable", unireader.comics_mode_enable)
 			self:redrawCurrentPage()
 		end)
