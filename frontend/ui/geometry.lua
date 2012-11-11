@@ -146,8 +146,8 @@ for points, it is basically an equality check
 function Geom:contains(rect_b)
 	if self.x <= rect_b.x
 	and self.y <= rect_b.y
-	and self.x + self.w <= rect_b.x + rect_b.w
-	and self.y + self.h <= rect_b.y + rect_b.h
+	and self.x + self.w >= rect_b.x + rect_b.w
+	and self.y + self.h >= rect_b.y + rect_b.h
 	then
 		return true
 	end
