@@ -4,6 +4,7 @@ require "ui/graphics"
 require "ui/image"
 require "ui/event"
 require "ui/inputevent"
+require "ui/gesturedetector"
 require "ui/font"
 
 --[[
@@ -60,7 +61,7 @@ function WidgetContainer:getSize()
 		-- return size of first child widget
 		return self[1]:getSize()
 	else
-		return { w = 0, h = 0 }
+		return Geom:new{ w = 0, h = 0 }
 	end
 end
 
@@ -513,8 +514,17 @@ it is suggested to reference configurable sequences from another table
 and store that table as configuration setting
 ]]
 InputContainer = WidgetContainer:new{
-	key_events = {}
+	key_events = {},
+	ges_events = {},
 }
+
+function InputContainer:paintTo(bb, x, y)
+	self.dimen.x = x
+	self.dimen.y = y
+	if self[1] then
+		return self[1]:paintTo(bb, x, y)
+	end
+end
 
 -- the following handler handles keypresses and checks
 -- if they lead to a command.
@@ -528,6 +538,18 @@ function InputContainer:onKeyPress(key)
 					local eventname = seq.event or name
 					return self:handleEvent(Event:new(eventname, seq.args, key))
 				end
+			end
+		end
+	end
+end
+
+function InputContainer:onGesture(ev)
+	for name, gsseq in pairs(self.ges_events) do
+		for _, gs_range in ipairs(gsseq) do
+			if gs_range:match(ev) then
+				--DEBUG(gs_range)
+				local eventname = gsseq.event or name
+				return self:handleEvent(Event:new(eventname, gsseq.args, ev))
 			end
 		end
 	end
