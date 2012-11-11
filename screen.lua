@@ -118,7 +118,7 @@ function Screen:screenshot()
 	--self:fb2bmp("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".bmp", true, "bzip2 ")
 	--self:fb2pgm("/dev/fb0", lfs.currentdir().."/screenshots/"..os.date("%Y%m%d%H%M%S")..".pgm", "bzip2 ", 4)
 	local msg = "Screenshot is ready in "
-	InfoMessage:inform(msg..string.format("%.2fs ", diff), 2000, 1, MSG_WARN, msg..math.ceil(diff*1000).." milliseconds")
+	InfoMessage:inform(msg..string.format("%.2fs ", diff), DINFO_TIMEOUT_SLOW, 1, MSG_WARN, msg..math.ceil(diff*1000).." milliseconds")
 end
 
 -- NuPogodi (02.07.2012): added the functions to save the fb-content in common graphic files - bmp & pgm.

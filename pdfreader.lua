@@ -77,7 +77,7 @@ end
 -- saves all attachments on the current page in the same directory
 -- as the file itself (see extr.c utility)
 function PDFReader:saveAttachments()
-	InfoMessage:inform("Saving attachments...", nil, 1, MSG_AUX)
+	InfoMessage:inform("Saving attachments...", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 	local p = io.popen('./extr "'..self.filename..'" '..tostring(self.pageno), "r")
 	local count = p:read("*a")
 	p:close()
@@ -85,13 +85,13 @@ function PDFReader:saveAttachments()
 		-- double braces are needed because string.gsub() returns more than one value
 		count = tonumber((string.gsub(count, "[\n\r]+", "")))
 		if count == 0 then
-			InfoMessage:inform("No attachments found ", 1000, 1, MSG_WARN)
+			InfoMessage:inform("No attachments found ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 		else
 			InfoMessage:inform(count.." attachment"..(count > 1 and "s" or "").." saved ",
-				1500, 1, MSG_AUX)
+				DINFO_TIMEOUT_SLOW, 1, MSG_AUX)
 		end
 	else
-		InfoMessage:inform("Failed to save attachments ", 1000, 1, MSG_WARN)
+		InfoMessage:inform("Failed to save attachments ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	end
 	self:redrawCurrentPage()
 end

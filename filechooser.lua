@@ -520,7 +520,7 @@ function FileChooser:addAllCommands()
 		function(self)
 			local keywords = InputBox:input(0, 0, "Search:")
 			if keywords then
-				InfoMessage:inform("Searching... ", nil, 1, MSG_AUX)
+				InfoMessage:inform("Searching... ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 				FileSearcher:init( self.path )
 				FileSearcher:choose(keywords)
 			end
@@ -537,7 +537,7 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..InQuotes(DocToHistory(file)).." "
 					..InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
-				InfoMessage:inform("File copied to clipboard ", 1000, 1, MSG_WARN,
+				InfoMessage:inform("File copied to clipboard ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
 					"The file has been copied to clipboard.")
 			end
 		end
@@ -551,7 +551,7 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
-				InfoMessage:inform("File moved to clipboard ", nil, 0, MSG_WARN,
+				InfoMessage:inform("File moved to clipboard ", DINFO_TIMEOUT_FAST, 0, MSG_WARN,
 					"The file has been moved to clipboard.")
 				local pos = self.perpage*(self.page-1)+self.current
 				table.remove(self.files, pos-#self.dirs)
@@ -566,7 +566,7 @@ function FileChooser:addAllCommands()
 		function(self)
 			-- TODO (NuPogodi, 27.09.12): first test whether the clipboard is empty & answer respectively
 			-- TODO (NuPogodi, 27.09.12): overwrite?
-			InfoMessage:inform("Moving files from clipboard...", nil, 0, MSG_AUX)
+			InfoMessage:inform("Moving files from clipboard...", DINFO_TIMEOUT_FAST, 0, MSG_AUX)
 			for f in lfs.dir(self.clipboard) do
 				if lfs.attributes(self.clipboard.."/"..f, "mode") == "file" then
 					os.rename(self.clipboard.."/"..f, self.path.."/"..f)
@@ -581,7 +581,7 @@ function FileChooser:addAllCommands()
 		"toggle battery level logging",
 		function(self)
 			G_battery_logging = not G_battery_logging
-			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), nil, 1, MSG_AUX)
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
 			self.pagedirty = true
 		end
@@ -684,7 +684,7 @@ function FileChooser:deleteFolderAtPosition(pos)
 		self.items = #self.dirs + #self.files
 		self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
 	else
-		InfoMessage:inform("Folder can't be deleted! ", 1500, 1, MSG_ERROR,
+		InfoMessage:inform("Folder can't be deleted! ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR,
 			"This folder can not be deleted! Please, make sure that it is empty.")
 	end
 end
@@ -715,7 +715,7 @@ function gotoTargetItem(target_item, all_items, current_item, current_page, perp
 end
 
 function warningUnsupportedFunction()
-	InfoMessage:inform("Unsupported function! ", 2000, 1, MSG_WARN,
+	InfoMessage:inform("Unsupported function! ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
 		"The requested function is not supported.")
 	return nil
 end

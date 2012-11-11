@@ -212,7 +212,7 @@ function FileSearcher:addAllCommands()
 				local old_page, old_current = self.page, self.current
 				self:setSearchResult(self.keywords)
 				if #self.result < 1 then
-					InfoMessage:inform("No search hits ", 2000, 1, MSG_WARN,
+					InfoMessage:inform("No search hits ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
 						"The search has given no results ")
 					-- restoring the original data
 					self.result = old_data
@@ -295,7 +295,7 @@ function FileSearcher:choose(keywords)
 	end
 	-- NuPogodi, 30.09.12: immediate quit (no redraw), if empty -- there is nothing to do in empty list anyway
 	if #self.result < 1 then
-		InfoMessage:inform("No search hits found ", nil, 1, MSG_WARN)
+		InfoMessage:inform("No search hits found ", DINFO_TIMEOUT_FAST, 1, MSG_WARN)
 		return nil
 	end
 

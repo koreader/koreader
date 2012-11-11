@@ -459,7 +459,7 @@ function KOPTConfig:modBBox(koptreader)
 
 	fb.bb:invertRect( 0,y_s, G_width,1 )
 	fb.bb:invertRect( x_s,0, 1,G_height )
-	InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
+	InfoMessage:inform(running_corner.." bbox ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
 		running_corner.." bounding box")
 	fb:refresh(1)
 
@@ -495,7 +495,7 @@ function KOPTConfig:modBBox(koptreader)
 					Debug("change top-left", bbox, "to", new_bbox)
 					running_corner = "bottom-right"
 					Screen:restoreFromSavedBB()
-					InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
+					InfoMessage:inform(running_corner.." bbox ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
 						running_corner.." bounding box")
 					fb:refresh(1)
 					x_s = x+w
@@ -610,7 +610,7 @@ function KOPTConfig:modBBox(koptreader)
 	x,y,w,h = koptreader:getRectInScreen( new_bbox["x0"], new_bbox["y0"], new_bbox["x1"], new_bbox["y1"] )
 	fb.bb:invertRect( x,y, w,h )
 	--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
-	InfoMessage:inform("New page bbox ", 1000, 1, MSG_WARN, "New page bounding box")
+	InfoMessage:inform("New page bbox ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN, "New page bounding box")
 	
 	-- restore variables changed in modBBox
 	koptreader.globalzoom = orig_globalzoom
