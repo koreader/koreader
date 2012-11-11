@@ -247,7 +247,7 @@ function CREReader:showJumpHist()
 	end
 
 	if #menu_items == 0 then
-		InfoMessage:inform("No jump history found ", 2000, 1, MSG_WARN)
+		InfoMessage:inform("No jump history found ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	else
 		-- if cur points to head, draw entry for current page
 		if self.jump_history.cur > #self.jump_history then
@@ -310,7 +310,7 @@ function CREReader:showBookMarks()
 			.." "..v.notes.." @ "..v.datetime)
 	end
 	if #menu_items == 0 then
-		InfoMessage:inform("No bookmark found ", 2000, 1, MSG_WARN)
+		InfoMessage:inform("No bookmark found ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	else
 		local bkmk_menu = SelectMenu:new{
 			menu_title = "Bookmarks",
@@ -352,7 +352,7 @@ function CREReader:gotoPrevNextTocEntry(direction)
 		self:fillToc()
 	end
 	if #self.toc == 0 then
-		InfoMessage:inform("No Table of Contents ", 1500, 1, MSG_WARN)
+		InfoMessage:inform("No Table of Contents ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 		return
 	end
 	-- search for current TOC-entry
@@ -523,7 +523,7 @@ function CREReader:adjustCreReaderCommands()
 				change = "Decreasing"
 			end
 			self.font_zoom = self.font_zoom + delta
-			InfoMessage:inform(change.." font size to "..self.font_zoom..". ", nil, 1, MSG_AUX)
+			InfoMessage:inform(change.." font size to "..self.font_zoom..". ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			Debug("font zoomed to", self.font_zoom)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:zoomFont(delta)
@@ -542,7 +542,7 @@ function CREReader:adjustCreReaderCommands()
 				self.line_space_percent = self.line_space_percent + 10
 				self.line_space_percent = math.min(self.line_space_percent, 200)
 			end
-			InfoMessage:inform("Changing line space to "..self.line_space_percent.."% ", nil, 1, MSG_AUX)
+			InfoMessage:inform("Changing line space to "..self.line_space_percent.."% ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			Debug("line spacing set to", self.line_space_percent)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
@@ -596,7 +596,7 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			if item_no then
 				Debug(face_list[item_no])
-				InfoMessage:inform("Redrawing with "..face_list[item_no].." ", nil, 1, MSG_AUX)
+				InfoMessage:inform("Redrawing with "..face_list[item_no].." ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 			end
@@ -608,7 +608,7 @@ function CREReader:adjustCreReaderCommands()
 		function(self)
 			self.default_font = self.font_face
 			G_reader_settings:saveSetting("cre_font", self.font_face)
-			InfoMessage:inform("Default document font set ", 2000, 1, MSG_WARN,
+			InfoMessage:inform("Default document font set ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
 				"Default document font is saved")
 		end
 	)
@@ -616,7 +616,7 @@ function CREReader:adjustCreReaderCommands()
 		"toggle font-weight: bold <> normal",
 		function(self)
 			
-			InfoMessage:inform("Changing font-weight...", nil, 1, MSG_AUX)
+			InfoMessage:inform("Changing font-weight...", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:toggleFontBolder()
 			self:goto(prev_xpointer, nil, "xpointer")
@@ -627,9 +627,9 @@ function CREReader:adjustCreReaderCommands()
 		function(self)
 			ok = self:addBookmark(self.doc:getXPointer())
 			if not ok then
-				InfoMessage:inform("Page already marked ", 1500, 1, MSG_WARN)
+				InfoMessage:inform("Page already marked ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			else
-				InfoMessage:inform("Page marked ", 1500, 1, MSG_WARN)
+				InfoMessage:inform("Page marked ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			end
 		end
 	)
@@ -661,7 +661,7 @@ function CREReader:adjustCreReaderCommands()
 				self.jump_history.cur = prev_jump_no
 				self:goto(self.jump_history[prev_jump_no].page, true, "xpointer")
 			else
-				InfoMessage:inform("Already first jump ", 2000, 1, MSG_WARN)
+				InfoMessage:inform("Already first jump ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			end
 		end
 	)
@@ -673,7 +673,7 @@ function CREReader:adjustCreReaderCommands()
 				self.jump_history.cur = next_jump_no
 				self:goto(self.jump_history[next_jump_no].page, true, "xpointer")
 			else
-				InfoMessage:inform("Already last jump ", 2000, 1, MSG_WARN)
+				InfoMessage:inform("Already last jump ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			end
 		end
 	)
@@ -687,7 +687,7 @@ function CREReader:adjustCreReaderCommands()
 			end
 			cre.setGammaIndex(self.gamma_index+delta)
 			self.gamma_index = cre.getGammaIndex()
-			InfoMessage:inform("Changing gamma to "..self.gamma_index..". ", nil, 1, MSG_AUX)
+			InfoMessage:inform("Changing gamma to "..self.gamma_index..". ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self:redrawCurrentPage()
 		end
 	)
@@ -732,9 +732,9 @@ function CREReader:searchHighLight(search)
 	if found then
 		self.pos = pos -- first metch position
 		self:redrawCurrentPage()
-		InfoMessage:inform( found.." hits '"..search.."' pos "..pos, 2000, 1, MSG_WARN)
+		InfoMessage:inform( found.." hits '"..search.."' pos "..pos, DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	else
-		InfoMessage:inform( "'"..search.."' not found in document ", 2000, 1, MSG_WARN)
+		InfoMessage:inform( "'"..search.."' not found in document ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	end
 
 	self.last_search.search = search

@@ -40,7 +40,7 @@ DBATTERY_LOGGING = false
 DBACKGROUND_COLOR = 8
 
 -- timeout for info messages in ms
-DINFO_TIMEOUT_FAST=nil
+DINFO_TIMEOUT_FAST=0
 DINFO_TIMEOUT_SLOW=1000
 
 -- toggle defaults
