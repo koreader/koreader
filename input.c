@@ -56,7 +56,7 @@ void slider_handler(int sig)
 	}
 }
 #else
-pid_t emu_event_pid = -1;
+int is_in_touch = 0;
 
 static inline void genEmuEvent(lua_State *L, int fd, int type, int code, int value) {
 	struct input_event input;
@@ -302,19 +302,25 @@ static int waitForInput(lua_State *L) {
 				genEmuEvent(L, inputfds[0], EV_KEY, event.key.keysym.scancode, 0);
 				break;
 			case SDL_MOUSEMOTION:
-				/* ignore move motion here, we might use it for other
-				 * gesture in future. */
-				/*printf("Mouse moved by %d,%d to (%d,%d)\n", */
-					   /*event.motion.xrel, event.motion.yrel,*/
-					   /*event.motion.x, event.motion.y);*/
+				if (is_in_touch) {
+					if (event.motion.xrel != 0)
+						genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_POSITION_X, event.button.x);
+					if (event.motion.yrel != 0)
+						genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_POSITION_Y, event.button.y);
+					genEmuEvent(L, inputfds[0], EV_SYN, SYN_REPORT, 0);
+				}
+				break;
+			case SDL_MOUSEBUTTONUP:
+				is_in_touch = 0;
+				genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_TRACKING_ID, -1);
+				genEmuEvent(L, inputfds[0], EV_SYN, SYN_REPORT, 0);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				/* use mouse click to simulate single tap */
+				is_in_touch = 1;
 				genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_TRACKING_ID, 0);
 				genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_POSITION_X, event.button.x);
 				genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_POSITION_Y, event.button.y);
-				genEmuEvent(L, inputfds[0], EV_SYN, SYN_REPORT, 0);
-				genEmuEvent(L, inputfds[0], EV_ABS, ABS_MT_TRACKING_ID, -1);
 				genEmuEvent(L, inputfds[0], EV_SYN, SYN_REPORT, 0);
 				/*printf("Mouse button %d pressed at (%d,%d)\n",*/
 					   /*event.button.button, event.button.x, event.button.y);*/
