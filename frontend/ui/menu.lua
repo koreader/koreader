@@ -85,12 +85,6 @@ function MenuItem:init()
 			GestureRange:new{
 				ges = "tap",
 				range = self.dimen,
-				--range = Geom:new{
-					--x = self.dimen.x,
-					--y = self.dimen.y,
-					--h = self.dimen.h,
-					--w = self.dimen.w,
-				--},
 			},
 			doc = "Select Menu Item",
 		},
