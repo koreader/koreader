@@ -1357,7 +1357,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_y = -1 * y0 * self.globalzoom + margin
 		self.pan_x = self.offset_x
 		self.pan_y = self.offset_y
-		self.pan_x1 = -1 * x1 * self.globalzoom - margin + G_width
+		self.pan_x1 = -1 * x1 * self.globalzoom - margin + G_width  -- sets pan_x1 to left edge of the right column
 		self.pan_y1 = -1 * y1 * self.globalzoom - margin + G_height
 		self.pan_by_page = self.globalzoom_mode -- store for later and enable pan_by_page
 		self.globalzoom_mode = self.ZOOM_BY_VALUE -- enable pan mode
@@ -1738,7 +1738,8 @@ function UniReader:twoColNextView()
 	-- can't go down anymore
 	else
 		if self.rtl_mode_enable then -- rtl_mode enabled
-		  if self.offset_x <= self.pan_x then
+			-- can go left?
+		  if self.offset_x + 0.01 < self.pan_x then
 				self.offset_x = self.offset_x + x
 				self.offset_y = self.pan_y
 				self.show_overlap = 0
@@ -1753,7 +1754,7 @@ function UniReader:twoColNextView()
 
 		else -- rtl_mode disabled
 			-- can go right?
-			if self.offset_x > self.pan_x - x then
+			if self.offset_x - 0.01 > self.pan_x1 then
 				self.offset_x = self.offset_x - x
 				self.offset_y = self.pan_y
 				self.show_overlap = 0
@@ -1788,7 +1789,7 @@ function UniReader:twoColPrevView()
 	else 	
 		if self.rtl_mode_enable then -- rtl_mode enabled
 			-- can go right?
-		  if self.offset_x > self.pan_x then
+		  if self.offset_x - 0.01 > self.pan_x1 then
 				self.offset_x = self.offset_x - x
 				self.offset_y = self.min_offset_y
 				self.show_overlap = 0
@@ -1806,7 +1807,7 @@ function UniReader:twoColPrevView()
 		  end
 		else -- rtl_mode disabled
 			-- can go left?
-		  if self.offset_x < self.pan_x then
+		  if self.offset_x + 0.01 < self.pan_x then
 				self.offset_x = self.offset_x + x
 				self.offset_y = self.pan_y1
 				self.show_overlap = 0
