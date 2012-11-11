@@ -336,29 +336,6 @@ function Input:waitEvent(timeout_us, timeout_s)
 			if touch_ges then
 				return Event:new("Gesture", touch_ges)
 			end
-		--elseif ev.type == EV_ABS then
-			--if ev.code == ABS_MT_SLOT then
-				--DEBUG("MT_SLOT:", ev.value)
-			--elseif ev.code == ABS_MT_TRACKING_ID then
-				--DEBUG("MT_TRACK_ID:", ev.value)
-			--elseif ev.code == ABS_MT_POSITION_X then
-				--DEBUG("MT_X:", ev.value)
-			--elseif ev.code == ABS_MT_POSITION_Y then
-				--DEBUG("MT_Y:", ev.value)
-			--else
-				--DEBUG("unknown touch event!", ev)
-				--return Event:new("UnkonwnTouchEvent", ev)
-			--end
-		--elseif ev.type == EV_SYN then
-			--if ev.code == SYN_REPORT then
-				--DEBUG("SYN REPORT")
-			--elseif ev.code == SYN_MT_REPORT then
-				--DEBUG("SYN MT_REPORT")
-			--elseif ev.code == SYN_CONFIG then
-				--DEBUG("SYN CONFIG")
-			--else
-				--DEBUG(ev)
-			--end
 		else
 			-- some other kind of event that we do not know yet
 			return Event:new("GenericInput", ev)
