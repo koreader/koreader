@@ -126,6 +126,94 @@ function KOPTReader:open(filename)
 	end
 end
 
+-- draw original page
+function KOPTReader:showOrigPage()
+	local no = self.pageno
+	local ok, page = pcall(self.doc.openPage, self.doc, no)
+	local width, height = G_width, G_height
+	local pwidth, pheight = page:getSize(self.nulldc)
+	if not ok then
+		-- TODO: error handling
+		return nil
+	end
+	
+	local dc = DrawContext.new()
+	self.globalzoom = width / pwidth
+	if height / pheight < self.globalzoom then
+		self.globalzoom = height / pheight
+	end
+	dc:setZoom(self.globalzoom)
+	
+	self.offset_x = 0
+	self.offset_y = 0
+	
+	local pagehash = no..'_orig_full_page'
+	if self.cache[pagehash] ~= nil then
+		page:close()
+		
+		local bb = self.cache[pagehash].bb
+		self.dest_x = 0
+		self.dest_y = 0
+		if bb:getWidth() < width then
+			self.dest_x = (width - (bb:getWidth())) / 2
+		end
+		if bb:getHeight() < height then
+			self.dest_y = (height - (bb:getHeight())) / 2
+		end
+		if self.dest_x or self.dest_y then
+			fb.bb:paintRect(0, 0, width, height, DBACKGROUND_COLOR)
+		end
+		fb.bb:blitFrom(self.cache[pagehash].bb, self.dest_x, self.dest_y, 0, 0, width, height)
+		fb:refresh(1)
+		return
+	end
+	
+	local tile = { x = 0, y = 0, w = width, h = height }
+	-- can we cache the full page?
+	local max_cache = self.cache_max_memsize
+	local fullwidth, fullheight = page:getSize(dc)
+	if (fullwidth * fullheight / 2) <= max_cache then
+		-- yes we can, so do this with offset 0, 0
+		tile.x = 0
+		tile.y = 0
+		tile.w = fullwidth
+		tile.h = fullheight
+	else
+		Debug("ERROR not enough memory in cache left, probably a bug.")
+		return nil
+	end
+	self:cacheClaim(tile.w * tile.h / 2);
+	self.cache[pagehash] = {
+		x = tile.x,
+		y = tile.y,
+		w = tile.w,
+		h = tile.h,
+		ttl = self.cache_max_ttl,
+		size = tile.w * tile.h / 2,
+		bb = Blitbuffer.new(tile.w, tile.h)
+	}
+	--debug ("# new biltbuffer:"..dump(self.cache[pagehash]))
+	dc:setOffset(-tile.x, -tile.y)
+	Debug("rendering page", no)
+	page:draw(dc, self.cache[pagehash].bb, 0, 0, self.render_mode)
+	page:close()
+	
+	local bb = self.cache[pagehash].bb
+	self.dest_x = 0
+	self.dest_y = 0
+	if bb:getWidth() < width then
+		self.dest_x = (width - (bb:getWidth())) / 2
+	end
+	if bb:getHeight() < height then
+		self.dest_y = (height - (bb:getHeight())) / 2
+	end
+	if self.dest_x or self.dest_y then
+		fb.bb:paintRect(0, 0, width, height, DBACKGROUND_COLOR)
+	end
+	fb.bb:blitFrom(bb, self.dest_x, self.dest_y, 0, 0, width, height)
+	fb:refresh(1)
+end
+
 function KOPTReader:drawOrCache(no, preCache)
 	-- our general caching strategy is as follows:
 	-- #1 goal: we must render the needed area.
@@ -141,8 +229,11 @@ function KOPTReader:drawOrCache(no, preCache)
 		return nil
 	end
 	
+	local kc = self:getContext(page, preCache)
+	
 	-- check if we have relevant cache contents
-	local pagehash = no..self.configurable:hash('_')
+	local bbox = self.cur_bbox
+	local pagehash = no..self.configurable:hash('_')..'_'..bbox.x0..'_'..bbox.y0..'_'..bbox.x1..'_'..bbox.y1
 	Debug('page hash', pagehash)
 	if self.cache[pagehash] ~= nil then
 		-- we have something in cache
@@ -198,8 +289,6 @@ function KOPTReader:drawOrCache(no, preCache)
 	if preCache then
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
-	
-	local kc = self:getContext(page, preCache)
 	
 	page:reflow(kc, self.render_mode)
 	self.fullwidth, self.fullheight = kc:getPageDim()
@@ -322,6 +411,20 @@ function KOPTReader:getContext(page, preCache)
 	else
 		kc:setBBox(x0, y0, x1, y1)
 	end
+	
+	if not preCache then -- save current page fullsize
+		self.cur_full_width = self.fullwidth
+		self.cur_full_height = self.fullheight
+
+		self.cur_bbox = {
+			["x0"] = x0,
+			["y0"] = y0,
+			["x1"] = x1,
+			["y1"] = y1,
+		}
+		Debug("cur_bbox", self.cur_bbox)
+	end
+	
 	return kc
 end
 
@@ -429,7 +532,7 @@ function KOPTReader:adjustCommands()
 	self.commands:add({KEY_F,KEY_AA}, nil, "F",
 		"change koptreader configuration",
 		function(self)
-			KOPTConfig:config(KOPTReader.redrawWithoutPrecache, self, self.configurable)
+			KOPTConfig:config(self)
 			self:redrawCurrentPage()
 		end
 	)
