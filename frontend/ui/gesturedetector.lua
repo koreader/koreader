@@ -85,22 +85,17 @@ end
 
 function GestureDetector:guessGesture()
 	local is_recognized = false
-	local result = nil
-	local last_ev = {pos = Geom:new{}}
+	local result = {ges = "tap", pos = Geom:new{w=0, h=0}}
 
 	for k,ev in ipairs(self.ev_stack) do
 		--@TODO do real recognization here    (houqp)
 		is_recognized = true
-		result = {
-			ges = "tap",
-			pos = Geom:new{
-				x = ev.x or last_ev.x,
-				y = ev.y or last_ev.x,
-				w = 0,
-				h = 0,
-			}
-		}
-		last_ev = ev
+		if ev.x then
+			result.pos.x = ev.x
+		end
+		if ev.y then
+			result.pos.y = ev.y
+		end
 	end
 
 	if is_recognized then
