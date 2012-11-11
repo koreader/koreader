@@ -230,7 +230,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	end
 	
 	local kc = self:getContext(page, no, preCache)
-	
+	self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
 	-- check if we have relevant cache contents
 	local bbox = self.cur_bbox
 	local pagehash = no..self.configurable:hash('_')..'_'..bbox.x0..'_'..bbox.y0..'_'..bbox.x1..'_'..bbox.y1
@@ -250,11 +250,7 @@ function KOPTReader:drawOrCache(no, preCache)
 			self.min_offset_y = 0
 		end
 		
-		if self.offset_x < self.min_offset_x then
-			self.offset_x = self.min_offset_x
-		end
-		
-		if self.offset_y < self.min_offset_y then
+		if self.offset_y == -2012534 then
 			self.offset_y = self.min_offset_y
 		end
 		
@@ -330,12 +326,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	if(self.min_offset_y > 0) then
 		self.min_offset_y = 0
 	end
-	
-	if self.offset_x < self.min_offset_x then
-		self.offset_x = self.min_offset_x
-	end
-	
-	if self.offset_y < self.min_offset_y then
+
+	if self.offset_y == -2012534 then
 		self.offset_y = self.min_offset_y
 	end
 	
@@ -437,8 +429,7 @@ function KOPTReader:nextView()
 		pageno = pageno + 1
 	else
 		-- goto next view of current page
-		local offset_y_dec = self.offset_y - G_height + self.pan_overlap_vertical
-		self.offset_y = offset_y_dec > self.min_offset_y and offset_y_dec or self.min_offset_y
+		self.offset_y = self.offset_y - G_height + self.pan_overlap_vertical
 	end
 	
 	return pageno
@@ -457,8 +448,7 @@ function KOPTReader:prevView()
 		pageno = pageno - 1
 	else
 		-- goto previous view of current page
-		local offset_y_inc = self.offset_y + G_height - self.pan_overlap_vertical
-		self.offset_y = offset_y_inc < 0 and offset_y_inc or 0
+		self.offset_y = self.offset_y + G_height - self.pan_overlap_vertical
 	end
 
 	return pageno
@@ -481,12 +471,16 @@ function KOPTReader:loadSettings(filename)
     --Debug("default configurable:", dump(self.configurable))
 	self.configurable:loadSettings(self.settings, 'kopt_')
 	--Debug("loaded configurable:", dump(self.configurable))
+	-- backup global variable that may be changed in koptreader
+	self.orig_globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
 end
 
 function KOPTReader:saveSpecialSettings()
 	self.settings:saveSetting("kopt_offset_y", self.offset_y)
 	self.configurable:saveSettings(self.settings, 'kopt_')
 	--Debug("saved configurable:", dump(self.configurable))
+	-- restore global variable from backups
+	self.settings:saveSetting("globalzoom_mode", self.orig_globalzoom_mode)
 end
 
 function KOPTReader:init()
