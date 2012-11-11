@@ -181,6 +181,9 @@ KOPTConfig = {
 	-- config change
 	config_change = false,
 	confirm_change = false,
+	
+	-- reader object
+	koptreader = nil
 }
 
 function KOPTConfig:drawBox(xpos, ypos, width, hight, bgcolor, bdcolor)
@@ -298,12 +301,10 @@ function KOPTConfig:reconfigure(configurable)
 	end
 end
 
-function KOPTConfig:config(callback, reader, configurable)
-	local kopt_callback = callback
-	local koptreader = reader
-	--local configurable = configurable
+function KOPTConfig:config(reader)
+	self.koptreader = reader
 	
-	self:makeDefault(configurable)
+	self:makeDefault(self.koptreader.configurable)
 	self:addAllCommands()
 	
 	local name_font = Font:getFace("tfont", self.OPT_NAME_FONT_SIZE)
@@ -320,11 +321,10 @@ function KOPTConfig:config(callback, reader, configurable)
 	
 	local ev, keydef, command, ret_code
 	while true do
-	
-		self:reconfigure(configurable)
+		self:reconfigure(self.koptreader.configurable)
 		
 		if self.config_change and self.confirm_change then
-			kopt_callback(koptreader)
+			self.koptreader:redrawWithoutPrecache()
 			self:drawBox(topleft_x, topleft_y, width, height, 3, 15)
 			self:drawOptions(topleft_x, topleft_y, name_font, item_font, true, false)
 			fb:refresh(1, topleft_x, topleft_y, width, height)
@@ -424,6 +424,199 @@ function KOPTConfig:addAllCommands()
 		"preview",
 		function(self)
 			self.confirm_change = true
+			if KOPTOptions[self.current_option].name == "trim_page" then
+				local option = KOPTOptions[self.current_option]
+				local trim_mode = option.current_item
+				if option.items_text[trim_mode] == 'manual' then
+					self:modBBox(self.koptreader)
+					self.config_change = true
+				end
+			end
 		end
 	)
+end
+
+function KOPTConfig:modBBox(koptreader)
+	-- save variables that will be changed in modBBox
+	local orig_globalzoom = koptreader.globalzoom
+	local orig_dest_x = koptreader.dest_x
+	local orig_dest_y = koptreader.dest_y
+	local orig_offset_x = koptreader.offset_x
+	local orig_offset_y = koptreader.offset_y
+	
+	koptreader:showOrigPage()
+	
+	local bbox = koptreader.cur_bbox
+	Debug("bbox", bbox)
+	x,y,w,h = koptreader:getRectInScreen( bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"] )
+	Debug("getRectInScreen",x,y,w,h)
+
+	local new_bbox = bbox
+	local x_s, y_s = x,y
+	local running_corner = "top-left"
+
+	Screen:saveCurrentBB()
+
+	fb.bb:invertRect( 0,y_s, G_width,1 )
+	fb.bb:invertRect( x_s,0, 1,G_height )
+	InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
+		running_corner.." bounding box")
+	fb:refresh(1)
+
+	local last_direction = { x = 0, y = 0 }
+
+	while running_corner do
+		local ev = input.saveWaitForEvent()
+		Debug("ev",ev)
+		ev.code = adjustKeyEvents(ev)
+
+		if ev.type == EV_KEY and ev.value ~= EVENT_VALUE_KEY_RELEASE then
+
+			fb.bb:invertRect( 0,y_s, G_width,1 )
+			fb.bb:invertRect( x_s,0, 1,G_height )
+
+			local step   = 10
+			local factor = 1
+
+			local x_direction, y_direction = 0,0
+			if ev.code == KEY_FW_LEFT then
+				x_direction = -1
+			elseif ev.code == KEY_FW_RIGHT then
+				x_direction =  1
+			elseif ev.code == KEY_FW_UP then
+				y_direction = -1
+			elseif ev.code == KEY_FW_DOWN then
+				y_direction =  1
+			elseif ev.code == KEY_FW_PRESS then
+				local p_x,p_y = koptreader:screenToPageTransform(x_s,y_s)
+				if running_corner == "top-left" then
+					new_bbox["x0"] = p_x
+					new_bbox["y0"] = p_y
+					Debug("change top-left", bbox, "to", new_bbox)
+					running_corner = "bottom-right"
+					Screen:restoreFromSavedBB()
+					InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
+						running_corner.." bounding box")
+					fb:refresh(1)
+					x_s = x+w
+					y_s = y+h
+				else
+					new_bbox["x1"] = p_x
+					new_bbox["y1"] = p_y
+					running_corner = false
+				end
+			elseif ev.code >= KEY_Q and ev.code <= KEY_P then
+				factor = ev.code - KEY_Q + 1
+				x_direction = last_direction["x"]
+				y_direction = last_direction["y"]
+				Debug("factor",factor,"deltas",x_direction,y_direction)
+			elseif ev.code >= KEY_A and ev.code <= KEY_L then
+				factor = ev.code - KEY_A + 11
+				x_direction = last_direction["x"]
+				y_direction = last_direction["y"]
+			elseif ev.code >= KEY_Z and ev.code <= KEY_M then
+				factor = ev.code - KEY_Z + 20
+				x_direction = last_direction["x"]
+				y_direction = last_direction["y"]
+			elseif ev.code == KEY_BACK then
+				running_corner = false
+			end
+
+			Debug("factor",factor,"deltas",x_direction,y_direction)
+
+			if running_corner then
+				local x_o = x_direction * step * factor
+				local y_o = y_direction * step * factor
+				Debug("move slider",x_o,y_o)
+				if x_s+x_o >= 0 and x_s+x_o <= G_width  then x_s = x_s + x_o end
+				if y_s+y_o >= 0 and y_s+y_o <= G_height then y_s = y_s + y_o end
+
+				if x_direction ~= 0 or y_direction ~= 0 then
+					Screen:restoreFromSavedBB()
+				end
+
+				fb.bb:invertRect( 0,y_s, G_width,1 )
+				fb.bb:invertRect( x_s,0, 1,G_height )
+
+				if x_direction or y_direction then
+					last_direction = { x = x_direction, y = y_direction }
+					Debug("last_direction",last_direction)
+
+					-- FIXME partial duplicate of SelectMenu.item_shortcuts
+					local keys = {
+						"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
+						"A", "S", "D", "F", "G", "H", "J", "K", "L",
+						"Z", "X", "C", "V", "B", "N", "M",
+					}
+
+					local max = 0
+					if x_direction == 1 then
+						max = G_width - x_s
+					elseif x_direction == -1 then
+						max = x_s
+					elseif y_direction == 1 then
+						max = G_height - y_s
+					elseif y_direction == -1 then
+						max = y_s
+					else
+						Debug("ERROR: unknown direction!")
+					end
+
+					max = max / step
+					if max > #keys then max = #keys end
+
+					local face = Font:getFace("hpkfont", 11)
+
+					for i = 1, max, 1 do
+						local key = keys[i]
+						local tick = i * step * x_direction
+						if x_direction ~= 0 then
+							local tick = i * step * x_direction
+							Debug("x tick",i,tick,key)
+							if running_corner == "top-left" then -- ticks must be inside page
+								fb.bb:invertRect(     x_s+tick, y_s, 1, math.abs(tick))
+							else
+								fb.bb:invertRect(     x_s+tick, y_s-math.abs(tick), 1, math.abs(tick))
+							end
+							if x_direction < 0 then tick = tick - step end
+							tick = tick - step * x_direction / 2
+							renderUtf8Text(fb.bb, x_s+tick+2, y_s+4, face, key)
+						else
+							local tick = i * step * y_direction
+							Debug("y tick",i,tick,key)
+							if running_corner == "top-left" then -- ticks must be inside page
+								fb.bb:invertRect(     x_s, y_s+tick, math.abs(tick),1)
+							else
+								fb.bb:invertRect(     x_s-math.abs(tick), y_s+tick, math.abs(tick),1)
+							end
+							if y_direction > 0 then tick = tick + step end
+							tick = tick - step * y_direction / 2
+							renderUtf8Text(fb.bb, x_s-3, y_s+tick-1, face, key)
+						end
+					end
+				end
+				fb:refresh(1)
+			end
+		end
+
+	end
+
+	koptreader.bbox[koptreader.pageno] = new_bbox
+	koptreader.bbox[koptreader:oddEven(koptreader.pageno)] = new_bbox
+	koptreader.bbox.enabled = true
+	Debug("crop bbox", bbox, "to", new_bbox)
+
+	Screen:restoreFromSavedBB()
+	x,y,w,h = koptreader:getRectInScreen( new_bbox["x0"], new_bbox["y0"], new_bbox["x1"], new_bbox["y1"] )
+	fb.bb:invertRect( x,y, w,h )
+	--fb.bb:invertRect( x+1,y+1, w-2,h-2 ) -- just border?
+	InfoMessage:inform("New page bbox ", 1000, 1, MSG_WARN, "New page bounding box")
+	
+	-- restore variables changed in modBBox
+	koptreader.globalzoom = orig_globalzoom
+	koptreader.dest_x = orig_dest_x
+	koptreader.dest_y = orig_dest_y
+	koptreader.offset_x = orig_offset_x
+	koptreader.offset_y = orig_offset_y
+	
 end
