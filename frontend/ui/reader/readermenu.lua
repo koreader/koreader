@@ -1,8 +1,25 @@
-ReaderMenu = InputContainer:new{
-	key_events = {
-		ShowMenu = { { "Menu" }, doc = "show menu" },
-	},
-}
+ReaderMenu = InputContainer:new{}
+
+function ReaderMenu:init()
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapShowMenu = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()/2
+					}
+				}
+			}
+		}
+	else
+		self.key_events = {
+			ShowMenu = { { "Menu" }, doc = "show menu" },
+		}
+	end
+end
 
 function ReaderMenu:onShowMenu()
 	local item_table = {}
@@ -49,7 +66,10 @@ function ReaderMenu:onShowMenu()
 	end
 
 	table.insert(item_table, {
-		text = "Return to file browser"
+		text = "Return to file browser",
+		callback = function()
+			self.ui:onClose()
+		end
 	})
 
 	local main_menu = Menu:new{
@@ -69,3 +89,9 @@ function ReaderMenu:onShowMenu()
 
 	return true
 end
+
+function ReaderMenu:onTapShowMenu()
+	self:onShowMenu()
+	return true
+end
+

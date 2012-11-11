@@ -97,7 +97,7 @@ else
 	DEBUG = function() end
 end
 
-if Device.isKindle4() then
+if Device.isKindle4() or Device:isTouchDevice() then
 	-- remove menu item shortcut for K4
 	Menu.is_enable_shortcut = false
 end

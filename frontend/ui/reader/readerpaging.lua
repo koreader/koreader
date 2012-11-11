@@ -1,24 +1,65 @@
 ReaderPaging = InputContainer:new{
-	key_events = {
-		GotoNextPage = { {Input.group.PgFwd}, doc = "go to next page", event = "GotoPageRel", args = 1 },
-		GotoPrevPage = { {Input.group.PgBack}, doc = "go to previous page", event = "GotoPageRel", args = -1 },
-
-		GotoFirst = { {"1"}, doc = "go to start", event = "GotoPercent", args = 0},
-		Goto11 = { {"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
-		Goto22 = { {"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
-		Goto33 = { {"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
-		Goto44 = { {"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
-		Goto55 = { {"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
-		Goto66 = { {"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
-		Goto77 = { {"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
-		Goto88 = { {"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
-		GotoLast = { {"0"}, doc = "go to end", event = "GotoPercent", args = 100},
-	},
 	current_page = 0,
 	number_of_pages = 0
 }
 
 function ReaderPaging:init()
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapForward = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = Screen:getWidth()/2,
+						y = Screen:getHeight()/2,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+			TapBackward = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, 
+						y = Screen:getHeight()/2,
+						w = Screen:getWidth()/2,
+						h = Screen:getHeight()/2,
+					}
+				}
+			}
+		}
+	else
+		self.key_events = {
+			GotoNextPage = { 
+				{Input.group.PgFwd}, doc = "go to next page",
+				event = "GotoPageRel", args = 1 },
+			GotoPrevPage = { 
+				{Input.group.PgBack}, doc = "go to previous page",
+				event = "GotoPageRel", args = -1 },
+
+			GotoFirst = { 
+				{"1"}, doc = "go to start", event = "GotoPercent", args = 0},
+			Goto11 = { 
+				{"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
+			Goto22 = { 
+				{"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
+			Goto33 = { 
+				{"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
+			Goto44 = { 
+				{"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
+			Goto55 = { 
+				{"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
+			Goto66 = { 
+				{"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
+			Goto77 = { 
+				{"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
+			Goto88 = { 
+				{"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
+			GotoLast = { 
+				{"0"}, doc = "go to end", event = "GotoPercent", args = 100},
+		}
+	end
 	self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
@@ -68,3 +109,15 @@ end
 function ReaderPaging:onCloseDocument()
 	self.ui.doc_settings:saveSetting("last_page", self.current_page)
 end
+
+function ReaderPaging:onTapForward()
+	self:onGotoPageRel(1)
+	return true
+end
+
+function ReaderPaging:onTapBackward()
+	self:onGotoPageRel(-1)
+	return true
+end
+
+

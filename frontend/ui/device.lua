@@ -58,6 +58,11 @@ function Device:isKindle2()
 	end
 end
 
+function Device:isTouchDevice()
+	local model = self:getModel()
+	return (model == "Kindle4") or (model == "KindlePaperWhite") or util.isEmulated()
+end
+
 function Device:intoScreenSaver()
 	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
