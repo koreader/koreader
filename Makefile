@@ -137,18 +137,18 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
+		pic.o \
+		pic_jpeg.o \
 		$(MUPDFLIBS) \
 		$(THIRDPARTYLIBS) \
 		djvu.o \
-		pic.o \
-		pic_jpeg.o \
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-Wl,-rpath=$(LIBDIR)/ \
 		-o $@ \
-		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -ljpeg -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
