@@ -110,11 +110,11 @@ Brief description of the function parameters
 	msec<0: autocalculated from the text length: one may eventually add user-configurable 
 		parameter 'reading_speed' that would define the popup exposition for this regime
 -- message_importance : parameter separating various messages on
-	1 - not obligatory messages that might be readily avoided
-	2 - warnings (important messages)
-	3 - errors
-	4 - confirmations
-	5 - bugs
+	MSG_AUX		- not obligatory messages that might be readily avoided
+	MSG_WARN	- warnings (important messages)
+	MSG_ERROR	- errors
+	MSG_CONFIRM	- confirmations
+	MSG_BUG		- bugs
 -- alternative_voice_message: not obligatory parameter that allows to send longer messages to TTS-engine
 	if not defined, the default 'text' will be TTS-voiced
 ]]
@@ -159,7 +159,7 @@ end
 function InfoMessage:chooseMethodForEvent(event)
 	local popup, voice = self:getMethodForEvent(event)
 	local items_menu = SelectMenu:new{
-		menu_title = "Choose the way how to inform you",
+		menu_title = "Event notifications",
 		item_array = {"Avoid any notifications", 
 					"Show popup window",
 					"Use TTS-voice",
@@ -190,7 +190,7 @@ function InfoMessage:chooseEventForMethod(event)
 		item_no = item_no + 1 
 	end
 	local event_menu = SelectMenu:new{
-		menu_title = "Select the event type to tune",
+		menu_title = "Select the event type",
 		item_array = event_list,
 		current_entry = item_no - 1,
 		}
@@ -273,21 +273,14 @@ function say(text)
 	end
 end
 
--- The read/write global InfoMessage settings. When properly tested, the
--- condition 'if FileChooser.filemanager_expert_mode == ...' might be deleted
-
 function InfoMessage:initInfoMessageSettings()
-	if FileChooser.filemanager_expert_mode == FileChooser.ROOT_MODE then
-		InfoMessage.InfoMethod = G_reader_settings:readSetting("info_message_methods") or InfoMessage.InfoMethod
-		InfoMessage.TTSspeed = G_reader_settings:readSetting("tts_speed") or InfoMessage:getTTSspeed()
-		InfoMessage.SoundVolume = G_reader_settings:readSetting("sound_volume") or InfoMessage:getSoundVolume()
-	end
+	self.InfoMethod = G_reader_settings:readSetting("info_message_methods") or self.InfoMethod
+	self.TTSspeed = G_reader_settings:readSetting("tts_speed") or self:getTTSspeed()
+	self.SoundVolume = G_reader_settings:readSetting("sound_volume") or self:getSoundVolume()
 end
 
 function InfoMessage:saveInfoMessageSettings()
-	if FileChooser.filemanager_expert_mode == FileChooser.ROOT_MODE then
-		G_reader_settings:saveSetting("info_message_methods", InfoMessage.InfoMethod)
-		G_reader_settings:saveSetting("sound_volume", InfoMessage.SoundVolume-1)
-		G_reader_settings:saveSetting("tts_speed", InfoMessage.TTSspeed)
-	end
+	G_reader_settings:saveSetting("info_message_methods", self.InfoMethod)
+	G_reader_settings:saveSetting("sound_volume", self.SoundVolume-1)
+	G_reader_settings:saveSetting("tts_speed", self.TTSspeed)
 end
