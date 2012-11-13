@@ -281,8 +281,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	-- okay, we do not have it in cache yet.
 	-- so render now.
 	-- start off with the requested area
-	
-	if preCache and self.configurable.multi_threads == 1 then
+	local use_threads = self.configurable.multi_threads == 1 and true or false
+	if use_threads and preCache then
 		Debug("start precache on page", no)
 		if self.precache_kc ~= nil then
 			if self.precache_kc:isPreCache() == 1 then
@@ -299,7 +299,7 @@ function KOPTReader:drawOrCache(no, preCache)
 			Debug("threaded preCache is returned.")
 		end
 	else
-		if self.precache_kc and self.cache[self.cached_pagehash] then
+		if use_threads and self.precache_kc and self.cache[self.cached_pagehash] then
 			Debug("How about stay here and wait?")
 			InfoMessage:inform("Rendering in background...", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
