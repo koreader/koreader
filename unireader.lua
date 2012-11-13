@@ -1324,7 +1324,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_y = -1 * y0 * self.globalzoom
 		self.content_top = self.offset_y
 		-- enable pan mode in ZOOM_FIT_TO_CONTENT_WIDTH
-		if self.globalzoom * pheight > G_height then
+		if self.globalzoom * pheight > height then
 			self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
 		end	
 	elseif self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
@@ -1333,7 +1333,7 @@ function UniReader:setzoom(page, preCache)
 			-- because we want to arrive at the bottom of previous page.
 			-- Since this a real page turn, we need to recalculate stuff.
 			self.globalzoom = width / (x1 - x0)
-			if self.globalzoom * pheight > G_height then
+			if self.globalzoom * pheight > height then
 				self.offset_x = -1 * x0 * self.globalzoom
 				self.content_top = -1 * y0 * self.globalzoom
 				self.offset_y = fb.bb:getHeight() - self.fullheight
