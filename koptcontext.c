@@ -46,6 +46,8 @@ static int newKOPTContext(lua_State *L) {
 
 	uint8_t *data = NULL;
 	BBox bbox = {0, 0, 0, 0};
+	WILLUSBITMAP *src;
+	int precache = 0;
 
 	KOPTContext *kc = (KOPTContext*) lua_newuserdata(L, sizeof(KOPTContext));
 
@@ -76,6 +78,8 @@ static int newKOPTContext(lua_State *L) {
 
 	kc->data = data;
 	kc->bbox = bbox;
+	kc->src = src;
+	kc->precache = precache;
 
 	luaL_getmetatable(L, "koptcontext");
 	lua_setmetatable(L, -2);
@@ -216,6 +220,18 @@ static int kcSetWordSpacing(lua_State *L) {
 	return 0;
 }
 
+static int kcSetPreCache(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	kc->precache = 1;
+	return 0;
+}
+
+static int kcIsPreCache(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	lua_pushinteger(L, kc->precache);
+	return 1;
+}
+
 static const struct luaL_Reg koptcontext_meth[] = {
 	{"setBBox", kcSetBBox},
 	{"setTrim", kcSetTrim},
@@ -239,6 +255,9 @@ static const struct luaL_Reg koptcontext_meth[] = {
 	{"setDefectSize", kcSetDefectSize},
 	{"setLineSpacing", kcSetLineSpacing},
 	{"setWordSpacing", kcSetWordSpacing},
+
+	{"setPreCache", kcSetPreCache},
+	{"isPreCache", kcIsPreCache},
 	{NULL, NULL}
 };
 

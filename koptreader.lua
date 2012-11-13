@@ -12,6 +12,7 @@ Configurable = {
 	defect_size = 1.0,
 	trim_page = 1,
 	detect_indent = 1,
+	multi_threads = 0,
 	auto_straighten = 0,
 	justification = -1,
 	max_columns = 2,
@@ -269,7 +270,9 @@ function KOPTReader:drawOrCache(no, preCache)
 			self.cache[pagehash].ttl = self.cache_max_ttl
 		end
 		-- ...and return blitbuffer plus offset into it
-
+		self.cached_pagehash = pagehash
+		self.cached_offset_x = offset_x_in_page - self.cache[pagehash].x
+		self.cached_offset_y = offset_y_in_page - self.cache[pagehash].y
 		return pagehash,
 			offset_x_in_page - self.cache[pagehash].x,
 			offset_y_in_page - self.cache[pagehash].y
@@ -278,6 +281,36 @@ function KOPTReader:drawOrCache(no, preCache)
 	-- okay, we do not have it in cache yet.
 	-- so render now.
 	-- start off with the requested area
+	local use_threads = self.configurable.multi_threads == 1 and true or false
+	if use_threads and preCache then
+		Debug("start precache on page", no)
+		if self.precache_kc ~= nil then
+			if self.precache_kc:isPreCache() == 1 then
+				Debug("waiting threaded precache to finish.")
+				return
+			else
+				Debug("threaded preCache is finished.")
+				return self:drawToCache(self.precache_kc, page, pagehash, preCache)
+			end
+		else
+			self.precache_kc = kc
+			self.precache_kc:setPreCache()
+			page:reflow(self.precache_kc, self.render_mode)
+			Debug("threaded preCache is returned.")
+		end
+	else
+		if use_threads and self.precache_kc and self.cache[self.cached_pagehash] then
+			Debug("How about stay here and wait?")
+			InfoMessage:inform("Rendering in background...", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
+			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
+		else
+			page:reflow(kc, self.render_mode)
+			return self:drawToCache(kc, page, pagehash, preCache)
+		end
+	end
+end
+
+function KOPTReader:drawToCache(kc, page, pagehash, preCache)
 	local tile = { x = offset_x_in_page, y = offset_y_in_page,
 					w = width, h = height }
 	-- can we cache the full page?
@@ -286,7 +319,6 @@ function KOPTReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	page:reflow(kc, self.render_mode)
 	self.fullwidth, self.fullheight = kc:getPageDim()
 	self.reflow_zoom = kc:getZoom()
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
@@ -318,6 +350,10 @@ function KOPTReader:drawOrCache(no, preCache)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
 	
+	if preCache then
+		self.precache_kc = nil
+	end
+	
 	self.min_offset_x = fb.bb:getWidth() - self.cache[pagehash].w
 	self.min_offset_y = fb.bb:getHeight() - self.cache[pagehash].h
 	if(self.min_offset_x > 0) then
@@ -341,7 +377,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		offset_x_in_page - tile.x,
 		offset_y_in_page - tile.y
 end
-		
+
 -- get reflow context
 function KOPTReader:getContext(page, pnumber, preCache)
 	local kc = self:makeContext()
@@ -351,6 +387,7 @@ function KOPTReader:getContext(page, pnumber, preCache)
 	-- without it, later check whether to use margins will fail for some documents
 	pwidth = math.floor(pwidth * 100) / 100
 	pheight = math.floor(pheight * 100) / 100
+	Debug("preCache:", preCache and "true" or "false")
 	Debug("page::getSize",pwidth,pheight)
 	
 	local x0, y0, x1, y1 = page:getUsedBBox()
