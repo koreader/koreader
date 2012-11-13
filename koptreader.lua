@@ -269,7 +269,9 @@ function KOPTReader:drawOrCache(no, preCache)
 			self.cache[pagehash].ttl = self.cache_max_ttl
 		end
 		-- ...and return blitbuffer plus offset into it
-
+		self.cached_pagehash = pagehash
+		self.cached_offset_x = offset_x_in_page - self.cache[pagehash].x
+		self.cached_offset_y = offset_y_in_page - self.cache[pagehash].y
 		return pagehash,
 			offset_x_in_page - self.cache[pagehash].x,
 			offset_y_in_page - self.cache[pagehash].y
@@ -281,27 +283,33 @@ function KOPTReader:drawOrCache(no, preCache)
 	
 	if preCache then
 		Debug("start precache on page", no)
+		
 		if self.precache_kc ~= nil then
 			if self.precache_kc:isPreCache() == 1 then
-				Debug("wait threaded precache to finish.")
+				Debug("waiting threaded precache to finish.")
 				return
 			else
-				Debug("reflow thread is finished.")
-				return self:drawAndCache(self.precache_kc, page, pagehash, preCache)
+				Debug("threaded preCache is finished.")
+				return self:drawToCache(self.precache_kc, page, pagehash, preCache)
 			end
 		else
 			self.precache_kc = kc
 			self.precache_kc:setPreCache()
 			page:reflow(self.precache_kc, self.render_mode)
-			Debug("threaded reflow is returned.")
+			Debug("threaded preCache is returned.")
 		end
 	else
-		page:reflow(kc, self.render_mode)
-		return self:drawAndCache(kc, page, pagehash, preCache)
+		if self.precache_kc and self.cache[self.cached_pagehash] then
+			Debug("How about stay here and wait?")
+			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
+		else
+			page:reflow(kc, self.render_mode)
+			return self:drawToCache(kc, page, pagehash, preCache)
+		end
 	end
 end
 
-function KOPTReader:drawAndCache(kc, page, pagehash, preCache)
+function KOPTReader:drawToCache(kc, page, pagehash, preCache)
 	local tile = { x = offset_x_in_page, y = offset_y_in_page,
 					w = width, h = height }
 	-- can we cache the full page?
