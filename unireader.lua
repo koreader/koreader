@@ -1332,9 +1332,7 @@ function UniReader:setzoom(page, preCache)
 			-- We must handle previous page turn as a special cases,
 			-- because we want to arrive at the bottom of previous page.
 			-- Since this a real page turn, we need to recalculate stuff.
---			if (x1 - x0) < pwidth then
-				self.globalzoom = width / (x1 - x0)
---			end
+			self.globalzoom = width / (x1 - x0)
 			if self.globalzoom * pheight > G_height then
 				self.offset_x = -1 * x0 * self.globalzoom
 				self.content_top = -1 * y0 * self.globalzoom
