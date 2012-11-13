@@ -2966,7 +2966,7 @@ function UniReader:addAllCommands()
 
 			fb.bb:invertRect( 0,y_s, G_width,1 )
 			fb.bb:invertRect( x_s,0, 1,G_height )
-			InfoMessage:inform(running_corner.." bbox ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
+			InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
 				running_corner.." bounding box")
 			fb:refresh(1)
 
@@ -3002,7 +3002,7 @@ function UniReader:addAllCommands()
 							Debug("change top-left", bbox, "to", new_bbox)
 							running_corner = "bottom-right"
 							Screen:restoreFromSavedBB()
-							InfoMessage:inform(running_corner.." bbox ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
+							InfoMessage:inform(running_corner.." bbox ", nil, 1, MSG_WARN,
 								running_corner.." bounding box")
 							fb:refresh(1)
 							x_s = x+w

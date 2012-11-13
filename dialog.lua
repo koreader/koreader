@@ -105,10 +105,10 @@ Adding new parameters -- 'message_importance' & 'alternative_voice_message' -- i
 Brief description of the function parameters
 -- text : is the text message for visual and (if 'alternative_voice_message' isn't defined) voice notification
 -- msec : parameter to define visual notification method
-	msec=0: one calls InfoMessage:show(), otherwise one calls showInfoMsgWithDelay()
-	msec>0: with either predefines msec-value or
-	msec<0: autocalculated from the text length: one may eventually add user-configurable 
-		parameter 'reading_speed' that would define the popup exposition for this regime
+    nil:	display the message immediately without slowing it down on the emulator
+    DINFO_TIMEOUT_FAST:	display the message immediately, but slow it down on the emulator
+	DINFO_TIMEOUT_SLOW: display the message with the 1500ms delay
+	msec<0: the delay is auto-calculated from the text length
 -- message_importance : parameter separating various messages on
 	MSG_AUX		- not obligatory messages that might be readily avoided
 	MSG_WARN	- warnings (important messages)
