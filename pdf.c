@@ -15,6 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include <stdio.h>
+#include <math.h>
+#include <stddef.h>
+#include <pthread.h>
 #include <fitz/fitz-internal.h>
 
 #include "blitbuffer.h"
@@ -22,10 +27,6 @@
 #include "koptcontext.h"
 #include "k2pdfopt.h"
 #include "pdf.h"
-#include <stdio.h>
-#include <math.h>
-#include <stddef.h>
-
 
 typedef struct PdfDocument {
 	fz_document *xref;
@@ -563,7 +564,6 @@ static int reflowPage(lua_State *L) {
 	fz_rect bounds,bounds2;
 	fz_matrix ctm;
 	fz_bbox bbox;
-	WILLUSBITMAP _src, *src;
 
 	pix = NULL;
 	fz_var(pix);
@@ -606,14 +606,19 @@ static int reflowPage(lua_State *L) {
 	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
 	fz_free_device(dev);
 
-	src = &_src;
+	WILLUSBITMAP *src = malloc(sizeof(WILLUSBITMAP));
 	bmp_init(src);
 
 	int status = bmpmupdf_pixmap_to_bmp(src, page->doc->context, pix);
 	fz_drop_pixmap(page->doc->context, pix);
 
-	k2pdfopt_reflow_bmp(kctx, src);
-	bmp_free(src);
+	kctx->src = src;
+	if (kctx->precache) {
+		pthread_t rf_thread;
+		pthread_create( &rf_thread, NULL, k2pdfopt_reflow_bmp, (void*) kctx);
+	} else {
+		k2pdfopt_reflow_bmp(kctx);
+	}
 
 	return 0;
 }
