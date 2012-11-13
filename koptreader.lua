@@ -12,6 +12,7 @@ Configurable = {
 	defect_size = 1.0,
 	trim_page = 1,
 	detect_indent = 1,
+	multi_threads = 1,
 	auto_straighten = 0,
 	justification = -1,
 	max_columns = 2,
@@ -281,9 +282,8 @@ function KOPTReader:drawOrCache(no, preCache)
 	-- so render now.
 	-- start off with the requested area
 	
-	if preCache then
+	if preCache and self.configurable.multi_threads == 1 then
 		Debug("start precache on page", no)
-		
 		if self.precache_kc ~= nil then
 			if self.precache_kc:isPreCache() == 1 then
 				Debug("waiting threaded precache to finish.")

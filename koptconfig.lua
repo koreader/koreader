@@ -93,6 +93,17 @@ KOPTOptions =  {
 	show = true,
 	draw_index = nil,},
 	{
+	name="multi_threads",
+	option_text="Multi Threads",
+	items_text={"on","off"},
+	default_item=1,
+	current_item=1,
+	text_dirty=true,
+	marker_dirty={true, true},
+	value={1, 0},
+	show = true,
+	draw_index = nil,},
+	{
 	name="quality",
 	option_text="Render Quality",
 	items_text={"low","medium","high"},
