@@ -278,6 +278,30 @@ function KOPTReader:drawOrCache(no, preCache)
 	-- okay, we do not have it in cache yet.
 	-- so render now.
 	-- start off with the requested area
+	
+	if preCache then
+		Debug("start precache on page", no)
+		if self.precache_kc ~= nil then
+			if self.precache_kc:isPreCache() == 1 then
+				Debug("wait threaded precache to finish.")
+				return
+			else
+				Debug("reflow thread is finished.")
+				return self:drawAndCache(self.precache_kc, page, pagehash, preCache)
+			end
+		else
+			self.precache_kc = kc
+			self.precache_kc:setPreCache()
+			page:reflow(self.precache_kc, self.render_mode)
+			Debug("threaded reflow is returned.")
+		end
+	else
+		page:reflow(kc, self.render_mode)
+		return self:drawAndCache(kc, page, pagehash, preCache)
+	end
+end
+
+function KOPTReader:drawAndCache(kc, page, pagehash, preCache)
 	local tile = { x = offset_x_in_page, y = offset_y_in_page,
 					w = width, h = height }
 	-- can we cache the full page?
@@ -286,7 +310,6 @@ function KOPTReader:drawOrCache(no, preCache)
 		max_cache = max_cache - self.cache[self.pagehash].size
 	end
 	
-	page:reflow(kc, self.render_mode)
 	self.fullwidth, self.fullheight = kc:getPageDim()
 	self.reflow_zoom = kc:getZoom()
 	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
@@ -318,6 +341,10 @@ function KOPTReader:drawOrCache(no, preCache)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
 	
+	if preCache then
+		self.precache_kc = nil
+	end
+	
 	self.min_offset_x = fb.bb:getWidth() - self.cache[pagehash].w
 	self.min_offset_y = fb.bb:getHeight() - self.cache[pagehash].h
 	if(self.min_offset_x > 0) then
@@ -341,7 +368,7 @@ function KOPTReader:drawOrCache(no, preCache)
 		offset_x_in_page - tile.x,
 		offset_y_in_page - tile.y
 end
-		
+
 -- get reflow context
 function KOPTReader:getContext(page, pnumber, preCache)
 	local kc = self:makeContext()
@@ -351,6 +378,7 @@ function KOPTReader:getContext(page, pnumber, preCache)
 	-- without it, later check whether to use margins will fail for some documents
 	pwidth = math.floor(pwidth * 100) / 100
 	pheight = math.floor(pheight * 100) / 100
+	Debug("preCache:", preCache and "true" or "false")
 	Debug("page::getSize",pwidth,pheight)
 	
 	local x0, y0, x1, y1 = page:getUsedBBox()

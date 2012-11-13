@@ -18,6 +18,7 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
@@ -476,7 +477,6 @@ static int reflowPage(lua_State *L) {
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
 	KOPTContext *kctx = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
 	ddjvu_render_mode_t mode = (int) luaL_checkint(L, 3);
-	WILLUSBITMAP _src, *src;
 	ddjvu_rect_t prect;
 	ddjvu_rect_t rrect;
 
@@ -510,7 +510,7 @@ static int reflowPage(lua_State *L) {
 		dpi *= kctx->shrink_factor;
 	} while (rrect.w > kctx->read_max_width | rrect.h > kctx->read_max_height);
 
-	src = &_src;
+	WILLUSBITMAP *src = malloc(sizeof(WILLUSBITMAP));
 	bmp_init(src);
 	src->width = rrect.w;
 	src->height = rrect.h;
@@ -528,8 +528,13 @@ static int reflowPage(lua_State *L) {
 	status = ddjvu_page_render(page->page_ref, mode, &prect, &rrect, page->doc->pixelformat,
 			bmp_bytewidth(src), (char *) src->data);
 
-	k2pdfopt_reflow_bmp(kctx, src);
-	bmp_free(src);
+	kctx->src = src;
+	if (kctx->precache) {
+		pthread_t rf_thread;
+		pthread_create(&rf_thread, NULL, k2pdfopt_reflow_bmp, (void*) kctx);
+	} else {
+		k2pdfopt_reflow_bmp(kctx);
+	}
 
 	return 0;
 }
