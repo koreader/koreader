@@ -105,8 +105,8 @@ Adding new parameters -- 'message_importance' & 'alternative_voice_message' -- i
 Brief description of the function parameters
 -- text : is the text message for visual and (if 'alternative_voice_message' isn't defined) voice notification
 -- msec : parameter to define visual notification method
-    nil:	display the message immediately without slowing it down on the emulator
-    DINFO_TIMEOUT_FAST:	display the message immediately, but slow it down on the emulator
+	nil:	display the message immediately without slowing it down on the emulator
+	DINFO_TIMEOUT_FAST:	display the message immediately, but slow it down on the emulator
 	DINFO_TIMEOUT_SLOW: display the message with the 1500ms delay
 	msec<0: the delay is auto-calculated from the text length
 -- message_importance : parameter separating various messages on
