@@ -106,8 +106,8 @@ Brief description of the function parameters
 -- text : is the text message for visual and (if 'alternative_voice_message' isn't defined) voice notification
 -- msec : parameter to define visual notification method
 	nil:	display the message immediately without slowing it down on the emulator
-	DINFO_TIMEOUT_FAST:	display the message immediately, but slow it down on the emulator
-	DINFO_TIMEOUT_SLOW: display the message with the 1500ms delay
+	DINFO_TIMEOUT_FAST:	display the message and return immediately on Kindle, but after a delay on the emulator
+	DINFO_TIMEOUT_SLOW: display the message and return after a delay
 	msec<0: the delay is auto-calculated from the text length
 -- message_importance : parameter separating various messages on
 	MSG_AUX		- not obligatory messages that might be readily avoided
