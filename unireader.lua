@@ -1586,11 +1586,9 @@ function UniReader:goto(no, is_ignore_jump, pos_type)
 	end
 
 	-- for jump_history
-	if pos_type == "link" then
-		self:addJump(self.pageno)
-	elseif not is_ignore_jump then
+	if not is_ignore_jump then
 		-- distinguish jump from normal page turn
-		if self.pageno and math.abs(self.pageno - no) > 1 then
+		if pos_type == "link" or (self.pageno and math.abs(self.pageno - no) > 1) then
 			self:addJump(self.pageno)
 		end
 	end
