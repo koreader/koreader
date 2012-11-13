@@ -37,11 +37,6 @@ function GestureRange:match(gs)
 	return false
 end
 
-GestureDetector = {
-	ev_stack = {},
-	cur_ev = {},
-}
-
 --[[
 MT_TRACK_ID: 0
 MT_X: 310
@@ -58,21 +53,27 @@ MT_TRACK_ID: -1
 SYN REPORT
 --]]
 
+GestureDetector = {
+	track_id = {},
+	ev_stack = {},
+	cur_ev = {},
+	state = function(self) 
+		self.state = self.initialState
+	end,
+}
+
 function GestureDetector:feedEvent(ev) 
 	if ev.type == EV_SYN then
 		if ev.code == SYN_REPORT then
-			-- end of one event or release touch?
-			if self.cur_ev.id == -1 then
-				-- touch release?
-				return self:guessGesture()
-			else
-				table.insert(self.ev_stack, self.cur_ev)
-				self.cur_ev = {}
-				--DEBUG(self.ev_stack)
+			local re = self.state(self, self.cur_ev)
+			if re ~= nil then
+				return re
 			end
+			self.cur_ev = {}
 		end
 	elseif ev.type == EV_ABS then
 		if ev.code == ABS_MT_SLOT then
+			self.cur_ev.slot = ev.value
 		elseif ev.code == ABS_MT_TRACKING_ID then
 			self.cur_ev.id = ev.value
 		elseif ev.code == ABS_MT_POSITION_X then
@@ -83,28 +84,48 @@ function GestureDetector:feedEvent(ev)
 	end
 end
 
-function GestureDetector:guessGesture()
-	local is_recognized = false
-	local result = {ges = "tap", pos = Geom:new{w=0, h=0}}
-
-	for k,ev in ipairs(self.ev_stack) do
-		--@TODO do real recognization here    (houqp)
-		is_recognized = true
-		if ev.x then
-			result.pos.x = ev.x
-		end
-		if ev.y then
-			result.pos.y = ev.y
-		end
+function GestureDetector:initialState(ev)
+	if ev.id then
+		self.track_id[ev.id] = ev.slot
 	end
-
-	if is_recognized then
-		self.ev_stack = {}
-		return result
-	else
-		DEBUG("Unknown gesture!!", self.ev_stack)
-		self.ev_stack = {}
+	-- default to hold state
+	if ev.x and ev.y then
+		self.hold_x = ev.x
+		self.hold_y = ev.y
+		self.state = self.holdState
 	end
 end
 
+function GestureDetector:holdState(ev)
+	-- hold release, we send a tap event?
+	if ev.id == -1 then
+		local hold_x, hold_y = self.hold_x, self.hold_y
+		self:clearState()
+		return {
+			ges = "tap", 
+			pos = Geom:new{
+				x = hold_x, 
+				y = hold_y,
+				w = 0, h = 0,
+			}
+		}
+	elseif ev.x and ev.y then
+		self.hold_x = ev.x
+		self.hold_y = ev.y
+		return {
+			ges = "hold", 
+			pos = Geom:new{
+				x = self.hold_x, 
+				y = self.hold_y,
+				w = 0, h = 0,
+			}
+		}
+	end
+end
 
+function GestureDetector:clearState()
+	self.hold_x = nil
+	self.hold_y = nil
+	self.state = self.initialState
+	self.cur_ev = {}
+end
