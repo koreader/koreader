@@ -1633,7 +1633,7 @@ function UniReader:goto(no, is_ignore_jump, pos_type)
 end
 
 function UniReader:redrawCurrentPage()
-	self:goto(self.pageno)
+	self:show(self.pageno)
 end
 
 function UniReader:nextView()
@@ -2744,10 +2744,11 @@ function UniReader:addAllCommands()
 				"Page:", "current page "..self.pageno.." of "..numpages, true)
 			-- convert string to number
 			if not pcall(function () page = math.floor(page) end)
-			or page < 1 or page > numpages then
-				page = unireader.pageno
+			or page < 1 or page > numpages or page == unireader.pageno then
+				unireader:redrawCurrentPage()
+			else
+				unireader:goto(page)
 			end
-			unireader:goto(page)
 		end)
 	self.commands:add(KEY_H,nil,"H",
 		"show help page",
