@@ -73,6 +73,6 @@ DPDFREADER_EXT = ";pdf;xps;cbz;zip;"
 DDJVUREADER_EXT = ";djvu;"
 DPDFREFLOW_EXT = ";pdf;"
 DDJVUREFLOW_EXT = ";djvu;"
-DCREREADER_EXT = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;"
+DCREREADER_EXT = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;" 	-- seems to accept pdb-files for PalmDoc only
 DPICVIEWER_EXT = ";jpg;jpeg;"
 

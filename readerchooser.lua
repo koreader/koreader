@@ -18,7 +18,6 @@ registry = {
 	DJVUReflow = {KOPTReader, DDJVUREFLOW_EXT, 2},
 	CREReader  = {CREReader, DCREREADER_EXT, 2},
 	PICViewer = {PICViewer, DPICVIEWER_EXT, 1},
-	-- seems to accept pdb-files for PalmDoc only
 }
 
 ReaderChooser = {
