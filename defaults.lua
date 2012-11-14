@@ -40,7 +40,7 @@ DBATTERY_LOGGING = false
 DBACKGROUND_COLOR = 8
 
 -- timeout for info messages in ms
-DINFO_TIMEOUT_FAST=0
+DINFO_TIMEOUT_FAST=1
 DINFO_TIMEOUT_SLOW=1500
 
 -- toggle defaults
@@ -75,4 +75,3 @@ DPDFREFLOW_EXT = ";pdf;"
 DDJVUREFLOW_EXT = ";djvu;"
 DCREREADER_EXT = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;" 	-- seems to accept pdb-files for PalmDoc only
 DPICVIEWER_EXT = ";jpg;jpeg;"
-
