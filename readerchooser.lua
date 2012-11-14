@@ -7,6 +7,7 @@ require "djvureader"
 require "koptreader"
 require "picviewer"
 require "crereader"
+require "defaults"
 
 registry = {
 	-- registry format:
