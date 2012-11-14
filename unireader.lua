@@ -2760,9 +2760,8 @@ function UniReader:addAllCommands()
 		"toggle battery level logging",
 		function(unireader)
 			G_battery_logging = not G_battery_logging
-			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON " or "OFF "), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
-			self:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_T,nil,"T",
 		"show table of content (TOC)",
@@ -2836,7 +2835,7 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
-			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "ON " or "OFF "), DINFO_TIMEOUT_SLOW, 1, MSG_AUX)
+			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
@@ -2845,27 +2844,24 @@ function UniReader:addAllCommands()
 		"toggle page-buttons mode: viewport/page",
 		function(unireader)
 			unireader.page_mode_enable = not unireader.page_mode_enable
-			InfoMessage:inform("Page-buttons move "..(unireader.page_mode_enable and "page" or "viewport"), DINFO_TIMEOUT_SLOW, 1, MSG_AUX)
+			InfoMessage:inform("Page-buttons move "..(unireader.page_mode_enable and "page" or "viewport"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("page_mode_enable", unireader.page_mode_enable)
-			self:redrawCurrentPage()
 		end)
 
 	self.commands:add(KEY_U, nil, "U",
 		"toggle right-to-left mode on/off",
 		function(unireader)
 			unireader.rtl_mode_enable = not unireader.rtl_mode_enable
-			InfoMessage:inform("Right-To-Left mode "..(unireader.rtl_mode_enable and "ON " or "OFF "), DINFO_TIMEOUT_SLOW, 1, MSG_AUX)
+			InfoMessage:inform("Right-To-Left mode "..(unireader.rtl_mode_enable and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("rtl_mode_enable", unireader.rtl_mode_enable)
-			self:redrawCurrentPage()
 		end)
 
 	self.commands:add(KEY_C, nil, "C",
 		"align the viewport to top/bottom",
 		function(unireader)
 			unireader.comics_mode_enable = not unireader.comics_mode_enable
-			InfoMessage:inform("Align the viewport to "..(unireader.comics_mode_enable and "BOTTOM " or "TOP "), DINFO_TIMEOUT_SLOW, 1, MSG_AUX)
+			InfoMessage:inform("Align the viewport to "..(unireader.comics_mode_enable and "BOTTOM" or "TOP"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("comics_mode_enable", unireader.comics_mode_enable)
-			self:redrawCurrentPage()
 		end)
 
 	self.commands:add(KEY_C, MOD_SHIFT, "C",
@@ -2946,9 +2942,8 @@ function UniReader:addAllCommands()
 		"toggle crop mode",
 		function(unireader)
 			unireader.bbox.enabled = not unireader.bbox.enabled;
-			InfoMessage:inform("Manual crop "..(unireader.bbox.enabled and "enabled " or "disabled "), DINFO_TIMEOUT_FAST, 1, MSG_WARN)
+			InfoMessage:inform("Manual crop "..(unireader.bbox.enabled and "enabled " or "disabled "), DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			Debug("bbox override", unireader.bbox.enabled);
-			self:redrawCurrentPage()
 		end)
 	self.commands:add(KEY_X,nil,"X",
 		"invert page bbox",
@@ -3408,7 +3403,7 @@ function UniReader:addAllCommands()
 		"show/hide link underlines",
 		function(unireader)
 			unireader.show_links_enable = not unireader.show_links_enable
-			InfoMessage:inform("Link underlines "..(unireader.show_links_enable and "ON " or "OFF "), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+			InfoMessage:inform("Link underlines "..(unireader.show_links_enable and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			self.settings:saveSetting("show_links_enable", unireader.show_links_enable)
 			self:redrawCurrentPage()
 		end
