@@ -68,3 +68,11 @@ DPICVIEWER_COMICS_MODE_ENABLE = true
 DPICVIEWER_RTL_MODE_ENABLE = false
 DPICVIEWER_PAGE_MODE_ENABLE = false
 
+-- supported extensions
+DPDFREADER_EXT = ";pdf;xps;cbz;zip;"
+DDJVUREADER_EXT = ";djvu;"
+DPDFREFLOW_EXT = ";pdf;"
+DDJVUREFLOW_EXT = ";djvu;"
+DCREREADER_EXT = ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;"
+DPICVIEWER_EXT = ";jpg;jpeg;"
+

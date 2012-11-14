@@ -11,12 +11,12 @@ require "crereader"
 registry = {
 	-- registry format:
 	-- reader_name = {reader_object, supported_formats, priority}
-	PDFReader  = {PDFReader, ";pdf;xps;cbz;", 1},
-	DJVUReader = {DJVUReader, ";djvu;", 1},
-	PDFReflow = {KOPTReader, ";pdf;", 2},
-	DJVUReflow = {KOPTReader, ";djvu;", 2},
-	CREReader  = {CREReader, ";epub;txt;rtf;htm;html;mobi;prc;azw;fb2;chm;pdb;doc;tcr;zip;", 1},
-	PICViewer = {PICViewer, ";jpg;jpeg;", 1},
+	PDFReader  = {PDFReader, DPDFREADER_EXT, 1},
+	DJVUReader = {DJVUReader, DDJVUREADER_EXT, 1},
+	PDFReflow = {KOPTReader, DPDFREFLOW_EXT, 2},
+	DJVUReflow = {KOPTReader, DDJVUREFLOW_EXT, 2},
+	CREReader  = {CREReader, DCREREADER_EXT, 2},
+	PICViewer = {PICViewer, DPICVIEWER_EXT, 1},
 	-- seems to accept pdb-files for PalmDoc only
 }
 
