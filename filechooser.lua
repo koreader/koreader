@@ -577,9 +577,8 @@ function FileChooser:addAllCommands()
 		"toggle battery level logging",
 		function(self)
 			G_battery_logging = not G_battery_logging
-			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON" or "OFF"), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON " or "OFF "), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
-			self.pagedirty = true
 		end
 	)
 	self.commands:add(KEY_B, MOD_SHIFT, "B",
