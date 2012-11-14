@@ -1579,7 +1579,7 @@ function UniReader:addBookmark(pageno)
 end
 
 -- change current page and cache next page after rendering
-function UniReader:goto(no, is_ignore_jump)
+function UniReader:goto(no, is_ignore_jump, pos_type)
 	local numpages = self.doc:getPages()
 	if no < 1 or no > numpages then
 		return
@@ -1588,7 +1588,7 @@ function UniReader:goto(no, is_ignore_jump)
 	-- for jump_history
 	if not is_ignore_jump then
 		-- distinguish jump from normal page turn
-		if self.pageno and math.abs(self.pageno - no) > 1 then
+		if pos_type == "link" or (self.pageno and math.abs(self.pageno - no) > 1) then
 			self:addJump(self.pageno)
 		end
 	end
