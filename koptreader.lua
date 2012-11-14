@@ -22,8 +22,9 @@ Configurable = {
 
 function Configurable:hash(sep)
 	local hash = ""
+	local excluded = {multi_threads = true,}
 	for key,value in pairs(self) do
-		if type(value) == "number" then
+		if type(value) == "number" and not excluded[key] then
 			hash = hash..sep..value
 		end
 	end
