@@ -420,12 +420,11 @@ function FileChooser:addAllCommands()
 		"delete selected item",
 		function(self)
 			local pos = self.perpage*(self.page-1)+self.current
-			local confirm = "Please, press key Y to confirm deleting"
 			if pos > #self.dirs then -- file
 				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then	-- silent regime
 					self:deleteFileAtPosition(pos)
 				else
-					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
+					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM)
 					if ReturnKey() == KEY_Y then self:deleteFileAtPosition(pos) end
 				end
 			elseif self.dirs[pos] == ".." then 
@@ -434,7 +433,7 @@ function FileChooser:addAllCommands()
 				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then -- silent regime
 					self:deleteFolderAtPosition(pos)
 				else
-					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM, confirm)
+					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM)
 					if ReturnKey() == KEY_Y then self:deleteFolderAtPosition(pos) end
 				end
 			end
@@ -530,15 +529,13 @@ function FileChooser:addAllCommands()
 	self.commands:add(KEY_C, MOD_SHIFT, "C",
 		"copy file to 'clipboard'",
 		function(self)
-			-- TODO (NuPogodi, 27.09.12): overwrite?
 			local file = self:FullFileName()
 			if file then
 				os.execute("cp "..InQuotes(file).." "..self.clipboard)
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..InQuotes(DocToHistory(file)).." "
 					..InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
-				InfoMessage:inform("File copied to clipboard ", DINFO_TIMEOUT_FAST, 1, MSG_WARN,
-					"The file has been copied to clipboard.")
+				InfoMessage:inform("File copied to clipboard ", DINFO_TIMEOUT_FAST, 1, MSG_WARN)
 			end
 		end
 	)
@@ -551,8 +548,7 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
-				InfoMessage:inform("File moved to clipboard ", DINFO_TIMEOUT_FAST, 0, MSG_WARN,
-					"The file has been moved to clipboard.")
+				InfoMessage:inform("File moved to clipboard ", DINFO_TIMEOUT_FAST, 0, MSG_WARN)
 				local pos = self.perpage*(self.page-1)+self.current
 				table.remove(self.files, pos-#self.dirs)
 				self.items = self.items - 1
@@ -684,8 +680,7 @@ function FileChooser:deleteFolderAtPosition(pos)
 		self.items = #self.dirs + #self.files
 		self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
 	else
-		InfoMessage:inform("Folder can't be deleted! ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR,
-			"This folder can not be deleted! Please, make sure that it is empty.")
+		InfoMessage:inform("Directory not empty ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR)
 	end
 end
 
@@ -715,7 +710,6 @@ function gotoTargetItem(target_item, all_items, current_item, current_page, perp
 end
 
 function warningUnsupportedFunction()
-	InfoMessage:inform("Unsupported function! ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
-		"The requested function is not supported.")
+	InfoMessage:inform("Unsupported function ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 	return nil
 end

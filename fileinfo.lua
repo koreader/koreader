@@ -64,7 +64,6 @@ function FileInfo:formatDiskSizeInfo()
 end
 
 function FileInfo:getFolderContent()
-	InfoMessage:inform("Scanning folder...", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
 	local tmp = io.popen('du -a \"'..self.pathfile..'\"', "r")
 	local dirs, files, books, size, name, output, ftype, j = -1, 0, 0, 0
 	for output in tmp:lines() do

@@ -35,7 +35,7 @@ function openFile(filename)
 
 	reader = ReaderChooser:getReaderByName(filename)
 	if reader then
-		InfoMessage:inform("Opening document... ", DINFO_TIMEOUT_FAST, 0, MSG_AUX)
+		InfoMessage:inform("Opening document... ", nil, 0, MSG_AUX)
 		reader:preLoadSettings(filename)
 		local ok, err = reader:open(filename)
 		if ok then
