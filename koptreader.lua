@@ -22,8 +22,9 @@ Configurable = {
 
 function Configurable:hash(sep)
 	local hash = ""
+	local excluded = {multi_threads = true,}
 	for key,value in pairs(self) do
-		if type(value) == "number" then
+		if type(value) == "number" and not excluded[key] then
 			hash = hash..sep..value
 		end
 	end
@@ -290,7 +291,7 @@ function KOPTReader:drawOrCache(no, preCache)
 				return
 			else
 				Debug("threaded preCache is finished.")
-				return self:drawToCache(self.precache_kc, page, pagehash, preCache)
+				return self:writeToCache(self.precache_kc, page, pagehash, preCache)
 			end
 		else
 			self.precache_kc = kc
@@ -305,12 +306,12 @@ function KOPTReader:drawOrCache(no, preCache)
 			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
 		else
 			page:reflow(kc, self.render_mode)
-			return self:drawToCache(kc, page, pagehash, preCache)
+			return self:writeToCache(kc, page, pagehash, preCache)
 		end
 	end
 end
 
-function KOPTReader:drawToCache(kc, page, pagehash, preCache)
+function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 	local tile = { x = offset_x_in_page, y = offset_y_in_page,
 					w = width, h = height }
 	-- can we cache the full page?
