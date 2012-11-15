@@ -88,6 +88,7 @@ end
 function KOPTReader:open(filename)
 	-- muPDF manages its own cache, set second parameter
 	-- to the maximum size you want it to grow
+	self.filename = filename
 	local file_type = string.lower(string.match(filename, ".+%.([^.]+)") or "")
 	
 	if file_type == "pdf" then
@@ -305,9 +306,25 @@ function KOPTReader:drawOrCache(no, preCache)
 			InfoMessage:inform("Rendering in background...", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
 			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
 		else
+			--local secs, usecs = util.gettime()
 			page:reflow(kc, self.render_mode)
+			--local nsecs, nusecs = util.gettime()
+			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			--Debug("Reflow duration:", dur)
+			--self:logReflowDuration(no, dur)
 			return self:writeToCache(kc, page, pagehash, preCache)
 		end
+	end
+end
+
+function KOPTReader:logReflowDuration(pageno, dur)
+	local file = io.open("reflowlog.txt", "a+")
+	if file then
+		if file:seek("end") == 0 then -- write the header only once
+			file:write(string.format("FILE\tPAGE\tDUR\n"))
+		end
+		file:write(string.format("%s\t%s\t%s\n", self.filename, pageno, dur))
+		file:close()
 	end
 end
 
