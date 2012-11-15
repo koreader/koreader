@@ -91,59 +91,36 @@ function showInfoMsgWithDelay(text, msec, refresh_mode)
 	fb:refresh(refresh_mode)
 end
 
---[[ Unified function to inform user about smth. It is generally intended to replace showInfoMsgWithDelay() & InfoMessage:show().
-Since the former function is used in Lua-code more often than the latter, I kept here the same sequence of parameters as used in
-showInfoMsgWithDelay() + added two not obligatory parameters (see description below).
-
-Thus, this trick allows multiple text replaces thoughout the whole Lua-code: 'showInfoMsgWithDelay(' to 'InfoMessage:inform('
-Yet, it would be much better to accompany such replaces by adding the 'message_importance' and, if needed, by
-'alternative_voice_message' that is not so restricted in length as 'text'
-
-But replacing InfoMessage:show(...) by InfoMessage:inform(...) MUST be accompanied by adding the 2nd parameter -- either msec=nil or msec=0.
-Adding new parameters -- 'message_importance' & 'alternative_voice_message' -- is also appreciated.
-
+--[[
 Brief description of the function parameters
 -- text : is the text message for visual and (if 'alternative_voice_message' isn't defined) voice notification
--- msec : parameter to define visual notification method
-	nil:	display the message immediately without slowing it down on the emulator
-	DINFO_TIMEOUT_FAST:	display the message and return immediately on Kindle, but after a delay on the emulator
-	DINFO_TIMEOUT_SLOW: display the message and return after a delay
-	msec<0: the delay is auto-calculated from the text length
--- message_importance : parameter separating various messages on
+-- delay : parameter to define visual notification method
+	DINFO_NODELAY:	display the message and return immediately (screen content not restored)
+	DINFO_DELAY:	display the message and return after a delay (screen content restored)
+-- msgtype : parameter separating various messages on
 	MSG_AUX		- not obligatory messages that might be readily avoided
 	MSG_WARN	- warnings (important messages)
 	MSG_ERROR	- errors
 	MSG_CONFIRM	- confirmations
 	MSG_BUG		- bugs
--- alternative_voice_message: not obligatory parameter that allows to send longer messages to TTS-engine
+-- tts_text: not obligatory parameter that allows to send longer messages to TTS-engine
 	if not defined, the default 'text' will be TTS-voiced
 ]]
 
-function InfoMessage:inform(text, msec, refresh_mode, message_importance, alternative_voice_message)
-	-- temporary test for 'message_importance'; it might be further removed as soon
-	-- as every message will be properly marked by 'importance'
-	if not message_importance then message_importance = 5 end
-	local popup, voice = InfoMessage:getMethodForEvent(message_importance)
+function InfoMessage:inform(text, delay, refresh_mode, msgtype, tts_text)
+	local popup, voice = InfoMessage:getMethodForEvent(msgtype)
 	if voice then
-		alternative_voice_message = alternative_voice_message or text
-		say(alternative_voice_message)
-		-- here one may set pause -- it might be useful only if one sound message
-		-- is directly followed by another, otherwise it's just wasting of time.
-		--[[ if msec and msec ~=0 then
-			-- pause = 0.5sec + 40ms/character * string.len() / normalized_voice_speed
-			util.usleep(500000 + 40*alternative_voice_message:len*10000/self.TTSspeed)
-		end ]]
+		say(tts_text or text)
 	end
-	if not popup then return end -- to avoid drawing popup window
-	self.ImageFile = self.Images[message_importance] -- select proper image for window
-	if util.isEmulated()==1 and msec == DINFO_TIMEOUT_FAST then
-		msec = 300
-	end
-	if not msec or msec == 0 then
+	if not popup then return end
+	self.ImageFile = self.Images[msgtype]
+	if delay == DINFO_NODELAY then
 		InfoMessage:show(text, refresh_mode)
+		if util.isEmulated() == 1 then util.usleep(500000) end
+	elseif delay == DINFO_DELAY then
+		showInfoMsgWithDelay(text, delay, refresh_mode)
 	else
-		if msec < 0 then msec = 500 + string.len(text) * 50 end
-		showInfoMsgWithDelay(text, msec, refresh_mode)
+		Debug("InfoMessage:inform(), unrecognized delay=", delay)
 	end
 end
 
@@ -180,10 +157,10 @@ function InfoMessage:chooseEventForMethod(event)
 	event = event or 0
 	local item_no = 0
 	local event_list = {
-		"Messages (e.g. 'Scanning folder...')",
+		"Messages (e.g. 'Battery logging on')",
 		"Warnings (e.g. 'Already first jump!')",
 		"Errors (e.g. 'Zip contains improper content!')",
-		"Confirmations (e.g. 'Press Y to confirm deleting')",
+		"Confirmations (e.g. 'Press Y to confirm')",
 		"Bugs",
 		}
 	while item_no ~= event and item_no < #event_list do

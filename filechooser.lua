@@ -424,7 +424,7 @@ function FileChooser:addAllCommands()
 				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then	-- silent regime
 					self:deleteFileAtPosition(pos)
 				else
-					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM)
+					InfoMessage:inform("Press 'Y' to confirm ", DINFO_NODELAY, 0, MSG_CONFIRM)
 					if ReturnKey() == KEY_Y then self:deleteFileAtPosition(pos) end
 				end
 			elseif self.dirs[pos] == ".." then 
@@ -433,7 +433,7 @@ function FileChooser:addAllCommands()
 				if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then -- silent regime
 					self:deleteFolderAtPosition(pos)
 				else
-					InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM)
+					InfoMessage:inform("Press 'Y' to confirm ", DINFO_NODELAY, 0, MSG_CONFIRM)
 					if ReturnKey() == KEY_Y then self:deleteFolderAtPosition(pos) end
 				end
 			end
@@ -515,11 +515,11 @@ function FileChooser:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_S, nil, "S",
-		"search among files",
+		"search files (single space matches all)",
 		function(self)
 			local keywords = InputBox:input(0, 0, "Search:")
 			if keywords then
-				InfoMessage:inform("Searching... ", DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+				InfoMessage:inform("Searching... ", DINFO_NODELAY, 1, MSG_AUX)
 				FileSearcher:init( self.path )
 				FileSearcher:choose(keywords)
 			end
@@ -535,7 +535,7 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.execute("cp "..InQuotes(DocToHistory(file)).." "
 					..InQuotes(DocToHistory(self.clipboard.."/"..fn)) )
-				InfoMessage:inform("File copied to clipboard ", DINFO_TIMEOUT_FAST, 1, MSG_WARN)
+				InfoMessage:inform("File copied to clipboard ", DINFO_DELAY, 1, MSG_WARN)
 			end
 		end
 	)
@@ -548,7 +548,7 @@ function FileChooser:addAllCommands()
 				local fn = self.files[self.perpage*(self.page-1)+self.current - #self.dirs]
 				os.rename(file, self.clipboard.."/"..fn)
 				os.rename(DocToHistory(file), DocToHistory(self.clipboard.."/"..fn))
-				InfoMessage:inform("File moved to clipboard ", DINFO_TIMEOUT_FAST, 0, MSG_WARN)
+				InfoMessage:inform("File moved to clipboard ", DINFO_DELAY, 0, MSG_WARN)
 				local pos = self.perpage*(self.page-1)+self.current
 				table.remove(self.files, pos-#self.dirs)
 				self.items = self.items - 1
@@ -562,7 +562,7 @@ function FileChooser:addAllCommands()
 		function(self)
 			-- TODO (NuPogodi, 27.09.12): first test whether the clipboard is empty & answer respectively
 			-- TODO (NuPogodi, 27.09.12): overwrite?
-			InfoMessage:inform("Moving files from clipboard...", DINFO_TIMEOUT_FAST, 0, MSG_AUX)
+			InfoMessage:inform("Moving files from clipboard...", DINFO_NODELAY, 0, MSG_AUX)
 			for f in lfs.dir(self.clipboard) do
 				if lfs.attributes(self.clipboard.."/"..f, "mode") == "file" then
 					os.rename(self.clipboard.."/"..f, self.path.."/"..f)
@@ -577,7 +577,7 @@ function FileChooser:addAllCommands()
 		"toggle battery level logging",
 		function(self)
 			G_battery_logging = not G_battery_logging
-			InfoMessage:inform("Battery logging "..(G_battery_logging and "ON " or "OFF "), DINFO_TIMEOUT_FAST, 1, MSG_AUX)
+			InfoMessage:inform("Battery logging "..(G_battery_logging and "on " or "off "), DINFO_DELAY, 1, MSG_AUX)
 			G_reader_settings:saveSetting("G_battery_logging", G_battery_logging)
 		end
 	)
@@ -679,7 +679,7 @@ function FileChooser:deleteFolderAtPosition(pos)
 		self.items = #self.dirs + #self.files
 		self.current, self.page = gotoTargetItem(pos, self.items, pos, self.page, self.perpage)
 	else
-		InfoMessage:inform("Directory not empty ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR)
+		InfoMessage:inform("Directory not empty ", DINFO_DELAY, 1, MSG_ERROR)
 	end
 end
 
@@ -709,6 +709,6 @@ function gotoTargetItem(target_item, all_items, current_item, current_page, perp
 end
 
 function warningUnsupportedFunction()
-	InfoMessage:inform("Unsupported function ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
+	InfoMessage:inform("Unsupported function ", DINFO_DELAY, 1, MSG_WARN)
 	return nil
 end

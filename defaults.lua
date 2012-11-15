@@ -39,9 +39,9 @@ DBATTERY_LOGGING = false
 -- background colour: 8 = gray, 0 = white, 15 = black
 DBACKGROUND_COLOR = 8
 
--- timeout for info messages in ms
-DINFO_TIMEOUT_FAST=1
-DINFO_TIMEOUT_SLOW=1500
+-- delay for info messages in ms
+DINFO_NODELAY=0
+DINFO_DELAY=1500
 
 -- toggle defaults
 DUNIREADER_SHOW_OVERLAP_ENABLE = true

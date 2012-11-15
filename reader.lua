@@ -35,7 +35,7 @@ function openFile(filename)
 
 	reader = ReaderChooser:getReaderByName(filename)
 	if reader then
-		InfoMessage:inform("Opening document... ", nil, 0, MSG_AUX)
+		InfoMessage:inform("Opening document... ", DINFO_NODELAY, 0, MSG_AUX)
 		reader:preLoadSettings(filename)
 		local ok, err = reader:open(filename)
 		if ok then
@@ -47,9 +47,9 @@ function openFile(filename)
 		else
 			if err then
 				Debug("openFile(): "..err)
-				InfoMessage:inform(err:sub(1,30), DINFO_TIMEOUT_SLOW, 1, MSG_ERROR)
+				InfoMessage:inform(err:sub(1,30), DINFO_DELAY, 1, MSG_ERROR)
 			else
-				InfoMessage:inform("Error opening document! ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR)
+				InfoMessage:inform("Error opening document ", DINFO_DELAY, 1, MSG_ERROR)
 			end
 		end
 	end

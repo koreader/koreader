@@ -205,8 +205,7 @@ function FileHistory:addAllCommands()
 				self.keywords = old_keywords
 			end
 			if #self.result < 1 then
-				InfoMessage:inform("No search hits ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
-					"The search has given no results")
+				InfoMessage:inform("No search hits ", DINFO_DELAY, 1, MSG_WARN)
 				-- restoring the original data
 				self.result = old_data
 				self.items = #self.result
@@ -238,7 +237,7 @@ function FileHistory:addAllCommands()
 				self.page = math.floor(item_no / self.perpage) + 1
 				self.pagedirty = true
 			else
-				InfoMessage:inform("File does not exist ", DINFO_TIMEOUT_SLOW, 1, MSG_ERROR)
+				InfoMessage:inform("File does not exist ", DINFO_DELAY, 1, MSG_ERROR)
 			end
 		end
 	)
@@ -252,8 +251,7 @@ function FileHistory:addAllCommands()
 				self:init()
 				self:setSearchResult(self.keywords)
 			else
-				InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM,
-					"Please, press key Y to delete the book history")
+				InfoMessage:inform("Press 'Y' to confirm ", DINFO_NODELAY, 0, MSG_CONFIRM)
 				if ReturnKey() == KEY_Y then
 					os.remove(DocToHistory(file_to_del))
 					self:init()
@@ -287,7 +285,7 @@ function FileHistory:choose(keywords)
 
 	-- NuPogodi, 30.09.12: immediate quit (no redraw), if empty
 	if self:setSearchResult(keywords) < 1 then
-		InfoMessage:inform("No reading history ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN, "The reading history is empty!")
+		InfoMessage:inform("No reading history ", DINFO_DELAY, 1, MSG_WARN)
 		return nil
 	end
 

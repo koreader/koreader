@@ -303,7 +303,7 @@ function KOPTReader:drawOrCache(no, preCache)
 	else
 		if use_threads and self.precache_kc and self.precache_kc:isPreCache() == 1 and self.cache[self.cached_pagehash] then
 			Debug("How about staying here and wait?")
-			InfoMessage:inform("Rendering in background...", DINFO_TIMEOUT_SLOW, 1, MSG_WARN)
+			InfoMessage:inform("Rendering in background...", DINFO_DELAY, 1, MSG_WARN)
 			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
 		else
 			--local secs, usecs = util.gettime()
