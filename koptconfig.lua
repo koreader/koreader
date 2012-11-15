@@ -88,8 +88,8 @@ KOPTOptions =  {
 	default_item=2,
 	current_item=2,
 	text_dirty=true,
-	marker_dirty={true, true, true, true},
-	value={0.1, 0.375, 0.5},
+	marker_dirty={true, true, true},
+	value={0.05, 0.15, 0.375},
 	show = true,
 	draw_index = nil,},
 	{
