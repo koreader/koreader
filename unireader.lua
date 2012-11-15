@@ -2858,7 +2858,6 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
---			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "on " or "off "), DINFO_DELAY, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
