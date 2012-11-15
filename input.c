@@ -224,6 +224,29 @@ static int closeInputDevices(lua_State *L) {
 #endif
 }
 
+static inline void set_event_table(lua_State *L, struct input_event input) {
+	lua_newtable(L);
+	lua_pushstring(L, "type");
+	lua_pushinteger(L, (int) input.type);
+	lua_settable(L, -3);
+	lua_pushstring(L, "code");
+	lua_pushinteger(L, (int) input.code);
+	lua_settable(L, -3);
+	lua_pushstring(L, "value");
+	lua_pushinteger(L, (int) input.value);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "time");
+	lua_newtable(L);
+	lua_pushstring(L, "sec");
+	lua_pushinteger(L, (int) input.time.tv_sec);
+	lua_settable(L, -3);
+	lua_pushstring(L, "usec");
+	lua_pushinteger(L, (int) input.time.tv_usec);
+	lua_settable(L, -3);
+	lua_settable(L, -3);
+}
+
 static int waitForInput(lua_State *L) {
 	struct input_event input;
 	int n;
@@ -259,16 +282,7 @@ static int waitForInput(lua_State *L) {
 		if(inputfds[i] != -1 && FD_ISSET(inputfds[i], &fds)) {
 			n = read(inputfds[i], &input, sizeof(struct input_event));
 			if(n == sizeof(struct input_event)) {
-				lua_newtable(L);
-				lua_pushstring(L, "type");
-				lua_pushinteger(L, (int) input.type);
-				lua_settable(L, -3);
-				lua_pushstring(L, "code");
-				lua_pushinteger(L, (int) input.code);
-				lua_settable(L, -3);
-				lua_pushstring(L, "value");
-				lua_pushinteger(L, (int) input.value);
-				lua_settable(L, -3);
+				set_event_table(L, input);
 				return 1;
 			}
 		}
@@ -280,16 +294,7 @@ static int waitForInput(lua_State *L) {
 		/* so far we only use inputfds[0] in emu mode */
 		n = read(inputfds[0], &input, sizeof(struct input_event));
 		if(n == sizeof(struct input_event)) {
-			lua_newtable(L);
-			lua_pushstring(L, "type");
-			lua_pushinteger(L, (int) input.type);
-			lua_settable(L, -3);
-			lua_pushstring(L, "code");
-			lua_pushinteger(L, (int) input.code);
-			lua_settable(L, -3);
-			lua_pushstring(L, "value");
-			lua_pushinteger(L, (int) input.value);
-			lua_settable(L, -3);
+			set_event_table(L, input);
 			return 1;
 		}
 
