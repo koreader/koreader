@@ -951,6 +951,7 @@ end
 
 -- Method to load settings before document open
 function UniReader:preLoadSettings(filename)
+	self.show_overlap = 0
 	self.settings = DocSettings:open(filename)
 	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
 end
@@ -1466,7 +1467,6 @@ function UniReader:show(no)
                        fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
                end
 	end
-	self.show_overlap = 0
 
 	-- render highlights to page
 	if self.highlight[no] then
@@ -2699,41 +2699,49 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_A,nil,"A",
 		"zoom to fit page",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE)
 		end)
 	self.commands:add(KEY_A,MOD_SHIFT,"A",
 		"zoom to fit content",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
 	self.commands:add(KEY_S,nil,"S",
 		"zoom to fit page width",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
 		end)
 	self.commands:add(KEY_S,MOD_SHIFT,"S",
 		"zoom to fit content width",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
 		end)
 	self.commands:add(KEY_D,nil,"D",
 		"zoom to fit page height",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
 		end)
 	self.commands:add(KEY_D,MOD_SHIFT,"D",
 		"zoom to fit content height",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
 		end)
 	self.commands:add(KEY_F,nil,"F",
 		"zoom to fit margin 2-column mode",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 		end)
 	self.commands:add(KEY_F,MOD_SHIFT,"F",
 		"zoom to fit content 2-column mode",
 		function(unireader)
+			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)
 	self.commands:add(KEY_G,nil,"G",
@@ -2747,6 +2755,7 @@ function UniReader:addAllCommands()
 			or page < 1 or page > numpages or page == unireader.pageno then
 				unireader:redrawCurrentPage()
 			else
+				unireader.show_overlap = 0
 				unireader:goto(page)
 			end
 		end)
@@ -2835,7 +2844,7 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
-			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "on " or "off "), DINFO_DELAY, 1, MSG_AUX)
+--			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "on " or "off "), DINFO_DELAY, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
