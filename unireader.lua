@@ -1321,6 +1321,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_x = -1 * x0 * self.globalzoom
 		self.offset_y = -1 * y0 * self.globalzoom
 		self.content_top = self.offset_y
+		self.pan_y1 = -1 * y1 * self.globalzoom + height
 		-- enable pan mode in ZOOM_FIT_TO_CONTENT_WIDTH
 		if self.globalzoom * pheight > height then
 			self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
@@ -1334,7 +1335,8 @@ function UniReader:setzoom(page, preCache)
 			if self.globalzoom * pheight > height then
 				self.offset_x = -1 * x0 * self.globalzoom
 				self.content_top = -1 * y0 * self.globalzoom
-				self.offset_y = fb.bb:getHeight() - self.fullheight
+				self.pan_y1 = -1 * y1 * self.globalzoom + height
+				self.offset_y = self.pan_y1
 			else
 				self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
 			end
@@ -1643,7 +1645,7 @@ function UniReader:nextView()
 
 	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN
 	or self.last_globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
-		if self.offset_y <= self.min_offset_y or self.page_mode_enable then
+		if self.offset_y <= self.pan_y1 or self.page_mode_enable then
 			-- hit content bottom, turn to next page
 			if pageno < self.doc:getPages() then
 				self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
@@ -1651,13 +1653,13 @@ function UniReader:nextView()
 			pageno = pageno + 1
 		else
 			-- goto next view of current page
-			self.offset_y = self.offset_y - G_height + self.pan_overlap_vertical
+			self.offset_y = self.offset_y - y
 			self.show_overlap = -self.pan_overlap_vertical -- top < 0
 
 			if self.comics_mode_enable then
-				if self.offset_y < self.min_offset_y then
-					self.show_overlap = self.offset_y + y - self.min_offset_y - G_height
-					self.offset_y = self.min_offset_y
+				if self.offset_y < self.pan_y1 then
+					self.show_overlap = self.offset_y + y - self.pan_y1 - G_height
+					self.offset_y = self.pan_y1
 				end
 			end
 		end
@@ -1705,7 +1707,7 @@ function UniReader:prevView()
 
 			if self.comics_mode_enable then
 				if self.offset_y > self.content_top then
-					self.show_overlap = self.offset_y + self.pan_overlap_vertical
+					self.show_overlap = self.offset_y + self.pan_overlap_vertical - self.content_top
 					self.offset_y = self.content_top
 				end
 			end
