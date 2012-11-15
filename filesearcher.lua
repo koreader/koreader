@@ -205,15 +205,13 @@ function FileSearcher:addAllCommands()
 		"invoke search inputbox",
 		function(self)
 			local old_keywords = self.keywords
-			self.keywords = InputBox:input(G_height - 100, 100,
-"Search:", old_keywords)
+			self.keywords = InputBox:input(G_height - 100, 100, "Search:", old_keywords)
 			if self.keywords then
 				local old_data = self.result -- be sure that something is found, otherwise restore
 				local old_page, old_current = self.page, self.current
 				self:setSearchResult(self.keywords)
 				if #self.result < 1 then
-					InfoMessage:inform("No search hits ", DINFO_TIMEOUT_SLOW, 1, MSG_WARN,
-						"The search has given no results ")
+					InfoMessage:inform("No search hits ", DINFO_DELAY, 1, MSG_WARN)
 					-- restoring the original data
 					self.result = old_data
 					self.items = #self.result
@@ -259,8 +257,7 @@ function FileSearcher:addAllCommands()
 			if InfoMessage.InfoMethod[MSG_CONFIRM] == 0 then -- silent regime
 				self:deleteFoundFile(file_to_del)
 			else
-				InfoMessage:inform("Press 'Y' to confirm ", nil, 0, MSG_CONFIRM,
-					"Press key Y to confirm deleting")
+				InfoMessage:inform("Press 'Y' to confirm ", DINFO_NODELAY, 0, MSG_CONFIRM)
 				if ReturnKey() == KEY_Y then
 					self:deleteFoundFile(file_to_del)
 				end
@@ -287,7 +284,6 @@ function FileSearcher:choose(keywords)
 	self.pagedirty = true
 	self.markerdirty = false
 
-	
 	-- if given keywords, set new result according to keywords.
 	-- Otherwise, display the previous search result.
 	if keywords then
@@ -295,7 +291,7 @@ function FileSearcher:choose(keywords)
 	end
 	-- NuPogodi, 30.09.12: immediate quit (no redraw), if empty -- there is nothing to do in empty list anyway
 	if #self.result < 1 then
-		InfoMessage:inform("No search hits found ", DINFO_TIMEOUT_FAST, 1, MSG_WARN)
+		InfoMessage:inform("No search hits found ", DINFO_DELAY, 1, MSG_WARN)
 		return nil
 	end
 

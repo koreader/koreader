@@ -170,7 +170,7 @@ function Commands:new(obj)
 			if G_charging_mode == false and G_screen_saver_mode == false then
 				if G_battery_logging then logBatteryLevel("SLEEP") end
 				Screen:saveCurrentBB()
-				InfoMessage:inform("Going into screensaver... ", DINFO_TIMEOUT_FAST, 0, MSG_AUX)
+				InfoMessage:inform("Going into screensaver... ", DINFO_NODELAY, 0, MSG_AUX)
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
 				util.sleep(1)
@@ -203,7 +203,7 @@ function Commands:new(obj)
 				Screen:saveCurrentBB()
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
-				InfoMessage:inform("Going into USB mode... ", DINFO_TIMEOUT_FAST, 0, MSG_AUX)
+				InfoMessage:inform("Going into USB mode... ", DINFO_NODELAY, 0, MSG_AUX)
 				util.sleep(1)
 				os.execute("killall -cont cvm")
 			end
