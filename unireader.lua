@@ -1466,7 +1466,6 @@ function UniReader:show(no)
                        fb.bb:dimRect(0,self.dest_y + height - self.show_overlap, width, self.show_overlap)
                end
 	end
-	self.show_overlap = 0
 
 	-- render highlights to page
 	if self.highlight[no] then
@@ -1848,6 +1847,7 @@ function UniReader:setglobalzoom_mode(newzoommode)
 	if self.globalzoom_mode ~= newzoommode then
 		self.last_globalzoom_mode = nil
 		self.globalzoom_mode = newzoommode
+		self.show_overlap = 0
 		self:redrawCurrentPage()
 	end
 end
@@ -2484,6 +2484,7 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
+	self.show_overlap = 0
 	self:setDefaults()
 	if self.doc ~= nil then
 		self.doc:close()
@@ -2543,6 +2544,7 @@ function UniReader:gotoPrevNextTocEntry(direction)
 			end
 			local toc_entry = self.toc[k + direction]
 			if toc_entry then
+				self.show_overlap = 0
 				return self:goto(toc_entry.page, true)	
 			end
 			break
@@ -2551,11 +2553,14 @@ function UniReader:gotoPrevNextTocEntry(direction)
 
 	if not found_curr_toc then
 		if direction == 1 and self.pageno ~= numpages then
+			self.show_overlap = 0
 			return self:goto(numpages, true)
 		elseif direction == -1 then
 			if self.pageno == numpages then
+				self.show_overlap = 0
 				return self:goto(last_toc_page, true)
 			else
+				self.show_overlap = 0
 				return self:goto(penul_toc_page, true)
 			end
 		end
@@ -2628,6 +2633,7 @@ function UniReader:addAllCommands()
 			end
 
 			if prev_jump_no >= 1 then
+				unireader.show_overlap = 0
 				unireader.jump_history.cur = prev_jump_no
 				unireader:goto(unireader.jump_history[prev_jump_no].page, true)
 			else
@@ -2639,6 +2645,7 @@ function UniReader:addAllCommands()
 		function(unireader)
 			local next_jump_no = unireader.jump_history.cur + 1
 			if next_jump_no <= #self.jump_history then
+				unireader.show_overlap = 0
 				unireader.jump_history.cur = next_jump_no
 				unireader:goto(unireader.jump_history[next_jump_no].page, true)
 				-- set new head if we reached the top of backward stack
@@ -2793,7 +2800,10 @@ function UniReader:addAllCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then self:goto(bm.page, true) end
+			if bm then 
+				self.show_overlap = 0
+				self:goto(bm.page, true) 
+			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
 		"show jump history",
@@ -2835,7 +2845,6 @@ function UniReader:addAllCommands()
 		"toggle showing page overlap areas",
 		function(unireader)
 			unireader.show_overlap_enable = not unireader.show_overlap_enable
-			InfoMessage:inform("Turning overlap "..(unireader.show_overlap_enable and "on " or "off "), DINFO_DELAY, 1, MSG_AUX)
 			self.settings:saveSetting("show_overlap_enable", unireader.show_overlap_enable)
 			self:redrawCurrentPage()
 		end)
