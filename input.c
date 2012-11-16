@@ -227,8 +227,8 @@ static int closeInputDevices(lua_State *L) {
 static int waitForInput(lua_State *L) {
 	struct input_event input;
 	int n;
-#ifndef EMULATE_READER
 	int usecs = luaL_optint(L, 1, -1); // we check for <0 later
+#ifndef EMULATE_READER
 	fd_set fds;
 	struct timeval timeout;
 	int i, num, nfds;
@@ -293,7 +293,17 @@ static int waitForInput(lua_State *L) {
 			return 1;
 		}
 
-		SDL_WaitEvent(&event);
+		int ticks = SDL_GetTicks();
+		if (usecs < 0)
+			SDL_WaitEvent(&event);
+		else {
+			while (SDL_GetTicks()-ticks <= usecs/1000) {
+				if (SDL_PollEvent(&event)) break;
+				SDL_Delay(10);
+			}
+			if (SDL_GetTicks()-ticks > usecs/1000)
+				return luaL_error(L, "Waiting for input failed: timeout\n");
+		}
 		switch(event.type) {
 			case SDL_KEYDOWN:
 				genEmuEvent(L, inputfds[0], EV_KEY, event.key.keysym.scancode, 1);
