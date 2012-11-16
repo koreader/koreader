@@ -1,4 +1,3 @@
-require "ui/inputevent"
 require "ui/geometry"
 
 -- Synchronization events (SYN.code).
@@ -51,8 +50,8 @@ SYN REPORT
 --]]
 
 GestureDetector = {
-	-- all the time parameters are in ms
-	DOUBLE_TAP_TIME = 500,
+	-- all the time parameters are in us
+	DOUBLE_TAP_TIME = 500 * 1000,
 	-- distance parameters
 	DOUBLE_TAP_DISTANCE = 50,
 	PAN_THRESHOLD = 50,
@@ -62,21 +61,22 @@ GestureDetector = {
 	cur_ev = {},
 	ev_start = false,
 	state = function(self, ev) 
-		self.switchState("initialState", ev)
+		self:switchState("initialState", ev)
 	end,
 	
-	last_ev_time = nil,
+	last_ev_timev = nil,
 
 	-- for tap
 	last_tap = nil,
 }
 
 function GestureDetector:feedEvent(ev) 
+	--DEBUG(ev.type, ev.code, ev.value, ev.time)
 	if ev.type == EV_SYN then
 		if ev.code == SYN_REPORT then
-			self.cur_ev.time = ev.time
+			self.cur_ev.timev = TimeVal:new(ev.time)
 			local re = self.state(self, self.cur_ev)
-			self.last_ev_time = ev.time
+			self.last_ev_timev = self.cur_ev.timev
 			if re ~= nil then
 				return re
 			end
@@ -99,12 +99,11 @@ end
 tap2 is the later tap
 ]]
 function GestureDetector:isDoubleTap(tap1, tap2)
-	--@TODO this is a bug    (houqp)
-	local msec_diff = (tap2.time.usec - tap1.time.usec) * 1000
+	local tv_diff = tap2.timev - tap1.timev
 	return (
 		math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
 		math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-		msec_diff < self.DOUBLE_TAP_TIME
+		(tv_diff.sec == 0 and (tv_diff.usec) < self.DOUBLE_TAP_TIME)
 	)
 end
 
@@ -159,22 +158,29 @@ function GestureDetector:tapState(ev)
 		local cur_tap = {
 			x = self.cur_x,
 			y = self.cur_y,
-			time = ev.time,
+			timev = ev.timev,
 		}
 
 		if self.last_tap and 
 		self:isDoubleTap(self.last_tap, cur_tap) then
 			ges_ev.ges = "double_tap"
 			self.last_tap = nil
+			return ges_ev
 		end
 
-		if ges_ev.ges == "tap" then
-			-- set current tap to last tap
-			self.last_tap = cur_tap
-		end
+		-- set current tap to last tap
+		self.last_tap = cur_tap
+		Input:setTimeOut(function()
+			-- double tap will set last_tap to nil
+			-- so if it is not, then user must only
+			-- tapped once
+			if self.last_tap then
+				self.last_tap = nil
+				self:clearState()
+				return ges_ev
+			end
+		end, self.cur_ev.timev+TimeVal:new{sec=0, usec=DOUBLE_TAP_TIME})
 	
-		self:clearState()
-		return ges_ev
 	elseif self.state ~= self.tapState then
 		-- switched from other state, probably from initialState
 		-- we return nil in this case
@@ -182,21 +188,18 @@ function GestureDetector:tapState(ev)
 		self.cur_x = ev.x
 		self.cur_y = ev.y
 		--@TODO set up hold timer    (houqp)
-		table.insert(Input.timer_callbacks, {
-			callback = function()
-				if self.state == self.tapState then
-					-- timer set in tapState, so we switch to hold
-					return self.switchState("holdState")
-				end
-			end, 
-			time = ev.time, 
-			time_out = HOLD_TIME
-		})
+		Input:setTimeOut(function()
+			if self.state == self.tapState then
+				-- timer set in tapState, so we switch to hold
+				return self:switchState("holdState")
+			end
+		end, 
+		self.cur_ev.timev + TimeVal:new{sec = 0, usec = HOLD_TIME})
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
-		if math.abs(ev.x - self.cur_x) >= self.PAN_THRESHOLD or
-		math.abs(ev.y - self.cur_y) >= self.PAN_THRESHOLD then
+		if (ev.x and math.abs(ev.x - self.cur_x) >= self.PAN_THRESHOLD) or
+		(ev.y and math.abs(ev.y - self.cur_y) >= self.PAN_THRESHOLD) then
 			-- if user's finger moved long enough in X or
 			-- Y distance, we switch to pan state 
 			return self:switchState("panState", ev)

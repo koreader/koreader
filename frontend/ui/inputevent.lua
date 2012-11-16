@@ -1,5 +1,6 @@
 require "ui/event"
 require "ui/device"
+require "ui/time"
 require "ui/gesturedetector"
 require "settings"
 
@@ -224,6 +225,8 @@ Input = {
 			"LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
 		}
 	},
+
+	timer_callbacks = {},
 }
 
 function Input:init()
@@ -265,18 +268,46 @@ function Input:adjustKindle4EventMap()
 	self.event_map[104] = "LPgFwd"
 end
 
+function Input:setTimeOut(cb, tv_out)
+	table.insert(self.timer_callbacks, {
+		callback = cb, 
+		dead_line = tv_out,
+	})
+end
+
 function Input:waitEvent(timeout_us, timeout_s)
 	-- wrapper for input.waitForEvents that will retry for some cases
 	local ok, ev
+	local wait_deadline = TimeVal:now() + TimeVal:new{
+			sec = timeout_s, 
+			usec = timeout_us
+		}
 	while true do
-		ok, ev = pcall(input.waitForEvent, timeout_us, timeout_s)
+		if #self.timer_callbacks then
+			-- we don't block if there is any timer, set wait to 10us
+			ok, ev = pcall(input.waitForEvent, 10)
+		else
+			ok, ev = pcall(input.waitForEvent, timeout_us)
+		end
 		if ok then
 			break
 		end
 		if ev == "Waiting for input failed: timeout\n" then
-			-- don't report an error on timeout
-			ev = nil
-			break
+			local tv_now = TimeVal:now()
+			if #self.timer_thread and tv_now < wait_deadline then
+				-- check whether timer is up
+				if tv_now >= timer_thread[1].dead_line then
+					local ges = self.timer_callbacks[1].callback()
+					table.remove(self.timer_callbacks, 1)
+					if ges then
+						return Event:new("Gesture", ges)
+					end
+				end
+			else
+				-- don't report an error on timeout
+				ev = nil
+				break
+			end
 		elseif ev == "application forced to quit" then
 			os.exit(0)
 		end
