@@ -951,7 +951,6 @@ end
 
 -- Method to load settings before document open
 function UniReader:preLoadSettings(filename)
-	self.show_overlap = 0
 	self.settings = DocSettings:open(filename)
 	self.cache_document_size = self.settings:readSetting("cache_document_size") or self.cache_document_size
 end
@@ -1848,6 +1847,7 @@ function UniReader:setglobalzoom_mode(newzoommode)
 	if self.globalzoom_mode ~= newzoommode then
 		self.last_globalzoom_mode = nil
 		self.globalzoom_mode = newzoommode
+		self.show_overlap = 0
 		self:redrawCurrentPage()
 	end
 end
@@ -2078,7 +2078,6 @@ function UniReader:showToc()
 				InfoMessage:inform("External links unsupported ", DINFO_DELAY, 1, MSG_WARN)
 				toc_curitem = ret_code
 			else
-				self.show_overlap = 0
 				return self:gotoTocEntry(toc_entry)
 			end
 		elseif item_no then -- expand or collapse item
@@ -2131,7 +2130,6 @@ function UniReader:showJumpHist()
 		if item_no and item_no <= #self.jump_history then
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
-			self.show_overlap = 0
 			self:goto(jump_item.page, true)
 			-- set new head if we reached the top of backward stack
 			if self.jump_history.cur == #self.jump_history then
@@ -2163,7 +2161,6 @@ function UniReader:showBookMarks()
 		}
 		ret_code, item_no = bm_menu:choose(0, fb.bb:getHeight())
 		if ret_code then -- normal item selection
-			self.show_overlap = 0
 			return self:goto(self.bookmarks[ret_code].page)
 		elseif item_no then -- delete item
 			table.remove(menu_items, item_no)
@@ -2487,6 +2484,7 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
+	self.show_overlap = 0
 	self:setDefaults()
 	if self.doc ~= nil then
 		self.doc:close()
@@ -2546,6 +2544,7 @@ function UniReader:gotoPrevNextTocEntry(direction)
 			end
 			local toc_entry = self.toc[k + direction]
 			if toc_entry then
+				self.show_overlap = 0
 				return self:goto(toc_entry.page, true)	
 			end
 			break
@@ -2554,11 +2553,14 @@ function UniReader:gotoPrevNextTocEntry(direction)
 
 	if not found_curr_toc then
 		if direction == 1 and self.pageno ~= numpages then
+			self.show_overlap = 0
 			return self:goto(numpages, true)
 		elseif direction == -1 then
 			if self.pageno == numpages then
+				self.show_overlap = 0
 				return self:goto(last_toc_page, true)
 			else
+				self.show_overlap = 0
 				return self:goto(penul_toc_page, true)
 			end
 		end
@@ -2571,7 +2573,6 @@ function UniReader:addAllCommands()
 	self.commands:addGroup(MOD_ALT.."H/J", {Keydef:new(KEY_H,MOD_ALT), Keydef:new(KEY_J,MOD_ALT)},
 		"go to prev/next TOC entry",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			if keydef.keycode == KEY_H then
 				self:gotoPrevNextTocEntry(-1)
 			else
@@ -2584,7 +2585,6 @@ function UniReader:addAllCommands()
 		Keydef:new(KEY_PGFWD,nil),Keydef:new(KEY_LPGFWD,nil)},
 		"previous/next page",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			unireader:goto(
 			(keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			and unireader:prevView() or unireader:nextView())
@@ -2594,7 +2594,6 @@ function UniReader:addAllCommands()
 		Keydef:new(KEY_LPGBCK,MOD_ALT),Keydef:new(KEY_LPGFWD,MOD_ALT)},
 		"zoom out/in ".. self.step_manual_zoom .."% ",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			local is_zoom_out = (keydef.keycode == KEY_PGBCK or keydef.keycode == KEY_LPGBCK)
 			local new_zoom = unireader.globalzoom_orig * (1 + (is_zoom_out and -1 or 1)*unireader.step_manual_zoom/100)
 			InfoMessage:inform(string.format("New zoom is %.2f ", new_zoom), DINFO_NODELAY, 1, MSG_WARN)
@@ -2624,7 +2623,6 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_BACK,nil,"Back",
 		"go backward in jump history",
 		function(unireader)
-			unireader.show_overlap = 0
 			local prev_jump_no = 0
 			if unireader.jump_history.cur > #unireader.jump_history then
 				-- if cur points to head, put current page in history
@@ -2635,6 +2633,7 @@ function UniReader:addAllCommands()
 			end
 
 			if prev_jump_no >= 1 then
+				unireader.show_overlap = 0
 				unireader.jump_history.cur = prev_jump_no
 				unireader:goto(unireader.jump_history[prev_jump_no].page, true)
 			else
@@ -2644,9 +2643,9 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_BACK,MOD_SHIFT,"Back",
 		"go forward in jump history",
 		function(unireader)
-			unireader.show_overlap = 0
 			local next_jump_no = unireader.jump_history.cur + 1
 			if next_jump_no <= #self.jump_history then
+				unireader.show_overlap = 0
 				unireader.jump_history.cur = next_jump_no
 				unireader:goto(unireader.jump_history[next_jump_no].page, true)
 				-- set new head if we reached the top of backward stack
@@ -2668,7 +2667,6 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 0%, 10% .. 90%, 100% of document",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			--Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
@@ -2708,49 +2706,41 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_A,nil,"A",
 		"zoom to fit page",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE)
 		end)
 	self.commands:add(KEY_A,MOD_SHIFT,"A",
 		"zoom to fit content",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT)
 		end)
 	self.commands:add(KEY_S,nil,"S",
 		"zoom to fit page width",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_WIDTH)
 		end)
 	self.commands:add(KEY_S,MOD_SHIFT,"S",
 		"zoom to fit content width",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_WIDTH)
 		end)
 	self.commands:add(KEY_D,nil,"D",
 		"zoom to fit page height",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_PAGE_HEIGHT)
 		end)
 	self.commands:add(KEY_D,MOD_SHIFT,"D",
 		"zoom to fit content height",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HEIGHT)
 		end)
 	self.commands:add(KEY_F,nil,"F",
 		"zoom to fit margin 2-column mode",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH_MARGIN)
 		end)
 	self.commands:add(KEY_F,MOD_SHIFT,"F",
 		"zoom to fit content 2-column mode",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setglobalzoom_mode(unireader.ZOOM_FIT_TO_CONTENT_HALF_WIDTH)
 		end)
 	self.commands:add(KEY_G,nil,"G",
@@ -2764,7 +2754,6 @@ function UniReader:addAllCommands()
 			or page < 1 or page > numpages or page == unireader.pageno then
 				unireader:redrawCurrentPage()
 			else
-				unireader.show_overlap = 0
 				unireader:goto(page)
 			end
 		end)
@@ -2805,14 +2794,16 @@ function UniReader:addAllCommands()
 		Keydef:new(KEY_K,MOD_ALT), Keydef:new(KEY_L,MOD_ALT)},
 		"jump between bookmarks",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			local bm = nil
 			if keydef.keycode == KEY_K then
 				bm = self:prevBookMarkedPage()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then self:goto(bm.page, true) end
+			if bm then 
+				self.show_overlap = 0
+				self:goto(bm.page, true) 
+			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
 		"show jump history",
@@ -2822,13 +2813,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_J,MOD_SHIFT,"J",
 		"rotate 10° clockwise",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setRotate(unireader.globalrotate + 10)
 		end)
 	self.commands:add(KEY_J,nil,"J",
 		"rotate screen 90° clockwise",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:screenRotate("clockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -2839,13 +2828,11 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_K,MOD_SHIFT,"K",
 		"rotate 10° counterclockwise",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:setRotate(unireader.globalrotate - 10)
 		end)
 	self.commands:add(KEY_K,nil,"K",
 		"rotate screen 90° counterclockwise",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:screenRotate("anticlockwise")
 			if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 				self:setglobalzoom_mode(self.ZOOM_FIT_TO_CONTENT_WIDTH)
@@ -3225,7 +3212,6 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_N, nil, "N",
 		"enter highlight mode",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:startHighLightMode()
 			unireader:goto(unireader.pageno)
 		end
@@ -3233,7 +3219,6 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_N, MOD_SHIFT, "N",
 		"show all highlights",
 		function(unireader)
-			unireader.show_overlap = 0
 			unireader:showHighLight()
 			unireader:goto(unireader.pageno)
 		end
@@ -3436,7 +3421,6 @@ function UniReader:addAllCommands()
 	self.commands:add(KEY_BACK,MOD_ALT,"Back",
 		"close document",
 		function(unireader)
-			unireader.show_overlap = 0
 			return "break"
 		end)
 	self.commands:add(KEY_HOME,nil,"Home",
