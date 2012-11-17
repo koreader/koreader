@@ -85,7 +85,7 @@ endif
 
 # standard includes
 KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
-K2PDFOPT_CFLAGS=-I$(MUPDFDIR)/ -I$(DJVUDIR)/ -I$(K2PDFOPTLIBDIR)/
+K2PDFOPT_CFLAGS=-I$(K2PDFOPTLIBDIR)/willuslib -I$(K2PDFOPTLIBDIR)/k2pdfoptlib -I$(K2PDFOPTLIBDIR)/
 
 # enable tracing output:
 
