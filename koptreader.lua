@@ -321,11 +321,11 @@ function KOPTReader:drawOrCache(no, preCache)
 				return nil
 			end
 		else
-			local secs, usecs = util.gettime()
+			--local secs, usecs = util.gettime()
 			page:reflow(kc, self.render_mode)
-			local nsecs, nusecs = util.gettime()
-			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			Debug("Reflow duration:", dur)
+			--local nsecs, nusecs = util.gettime()
+			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			--Debug("Reflow duration:", dur)
 			--self:logReflowDuration(no, dur)
 			return self:writeToCache(kc, page, pagehash, preCache)
 		end
@@ -378,7 +378,7 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 		size = tile.w * tile.h / 2,
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
-	Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
+	--Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
 	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
