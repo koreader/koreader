@@ -1648,6 +1648,7 @@ function UniReader:nextView()
 			-- hit content bottom, turn to next page
 			if pageno < self.doc:getPages() then
 				self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+				self.show_overlap = 0
 			end
 			pageno = pageno + 1
 		else
@@ -1692,6 +1693,7 @@ function UniReader:prevView()
 		if self.offset_y >= self.content_top or self.page_mode_enable then
 			-- hit content top, turn to previous page
 			-- set self.content_top with magic num to signal self:setZoom
+			self.show_overlap = 0
 			if pageno > 1 then
 				self.content_top = -2012
 			end
