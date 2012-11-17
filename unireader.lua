@@ -3033,6 +3033,7 @@ function UniReader:addAllCommands()
 								if unireader.pageno < unireader.doc:getPages() then
 									self.globalzoom_mode = self.pan_by_page
 									Debug("recalculate top-right of next page")
+									unireader.show_overlap = 0
 									unireader:goto(unireader.pageno + 1)
 								else
 									unireader.offset_x = unireader.offset_x - x
@@ -3059,6 +3060,7 @@ function UniReader:addAllCommands()
 									end
 									self.globalzoom_mode = self.pan_by_page
 									Debug("recalculate top-left of previous page")
+									unireader.show_overlap = 0
 									unireader:goto(unireader.pageno - 1)
 								else
 									unireader.offset_x = unireader.offset_x - x
@@ -3090,6 +3092,7 @@ function UniReader:addAllCommands()
 									end
 									self.globalzoom_mode = self.pan_by_page
 									Debug("recalculate top-left of previous page")
+									unireader.show_overlap = 0
 									unireader:goto(unireader.pageno - 1)
 								else
 									unireader.offset_x = unireader.offset_x + x
@@ -3110,6 +3113,7 @@ function UniReader:addAllCommands()
 								if unireader.pageno < unireader.doc:getPages() then
 									Debug("pan to top-left of next page")
 									self.globalzoom_mode = self.pan_by_page
+									unireader.show_overlap = 0
 									unireader:goto(unireader.pageno + 1)
 								else
 									unireader.offset_x = unireader.offset_x + x
