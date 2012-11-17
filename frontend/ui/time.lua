@@ -10,6 +10,9 @@ function TimeVal:new(o)
 	end
 	if o.usec == nil then
 		o.usec = 0
+	elseif o.usec > 1000000 then
+		o.sec = o.sec + maht.floor(o.usec/1000000)
+		o.usec = o.usec % 1000000
 	end
 	setmetatable(o, self)
 	self.__index = self

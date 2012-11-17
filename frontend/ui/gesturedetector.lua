@@ -51,7 +51,8 @@ SYN REPORT
 
 GestureDetector = {
 	-- all the time parameters are in us
-	DOUBLE_TAP_TIME = 500 * 1000,
+	DOUBLE_TAP_INTERVAL = 300 * 1000,
+	HOLD_INTERVAL = 1000 * 1000,
 	-- distance parameters
 	DOUBLE_TAP_DISTANCE = 50,
 	PAN_THRESHOLD = 50,
@@ -103,13 +104,17 @@ function GestureDetector:isDoubleTap(tap1, tap2)
 	return (
 		math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
 		math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-		(tv_diff.sec == 0 and (tv_diff.usec) < self.DOUBLE_TAP_TIME)
+		(tv_diff.sec == 0 and (tv_diff.usec) < self.DOUBLE_TAP_INTERVAL)
 	)
 end
 
-function GestureDetector:switchState(state, ev)
+--[[
+Warning! this method won't update self.state, you need to do it
+in each state method!
+--]]
+function GestureDetector:switchState(state_new, ev)
 	--@TODO do we need to check whether state is valid?    (houqp)
-	return self[state](self, ev)
+	return self[state_new](self, ev)
 end
 
 function GestureDetector:clearState()
@@ -130,7 +135,7 @@ function GestureDetector:initialState(ev)
 		end
 	end
 	if ev.x and ev.y then
-		-- a new event has just started
+		-- user starts a new touch motion
 		if not self.ev_start then
 			self.ev_start = true
 			-- default to tap state
@@ -141,8 +146,9 @@ end
 
 --[[
 this method handles both single and double tap
-]]
+--]]
 function GestureDetector:tapState(ev)
+	DEBUG("in tap state...", ev)
 	if ev.id == -1 then
 		-- end of tap event
 		local ges_ev = {
@@ -161,8 +167,10 @@ function GestureDetector:tapState(ev)
 			timev = ev.timev,
 		}
 
-		if self.last_tap and 
+		if self.last_tap ~= nil and 
 		self:isDoubleTap(self.last_tap, cur_tap) then
+			-- it is a double tap
+			self:clearState()
 			ges_ev.ges = "double_tap"
 			self.last_tap = nil
 			return ges_ev
@@ -170,31 +178,42 @@ function GestureDetector:tapState(ev)
 
 		-- set current tap to last tap
 		self.last_tap = cur_tap
+
+		local dead_line = self.cur_ev.timev + TimeVal:new{
+				sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
+			}
+		DEBUG("set up tap timer")
 		Input:setTimeOut(function()
+			print("in tap timer", self.last_tap ~= nil)
 			-- double tap will set last_tap to nil
 			-- so if it is not, then user must only
 			-- tapped once
-			if self.last_tap then
+			if self.last_tap ~= nil then
 				self.last_tap = nil
-				self:clearState()
+				-- we are using closure here
 				return ges_ev
 			end
-		end, self.cur_ev.timev+TimeVal:new{sec=0, usec=DOUBLE_TAP_TIME})
-	
+		end, dead_line)
+		-- we are already at the end of touch event
+		-- so reset the state
+		self:clearState()
 	elseif self.state ~= self.tapState then
 		-- switched from other state, probably from initialState
 		-- we return nil in this case
 		self.state = self.tapState
 		self.cur_x = ev.x
 		self.cur_y = ev.y
-		--@TODO set up hold timer    (houqp)
+		DEBUG("set up hold timer")
+		local dead_line = self.cur_ev.timev + TimeVal:new{
+				sec = 0, usec = self.HOLD_INTERVAL
+			}
 		Input:setTimeOut(function()
+			print("hold timer", self.state == self.tapState)
 			if self.state == self.tapState then
 				-- timer set in tapState, so we switch to hold
 				return self:switchState("holdState")
 			end
-		end, 
-		self.cur_ev.timev + TimeVal:new{sec = 0, usec = HOLD_TIME})
+		end, dead_line)
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
@@ -208,8 +227,10 @@ function GestureDetector:tapState(ev)
 end
 
 function GestureDetector:panState(ev)
+	DEBUG("in pan state...")
 	if ev.id == -1 then
 		-- end of pan, signal swipe gesture
+		self:clearState()
 	elseif self.state ~= self.panState then
 		self.state = self.panState
 		--@TODO calculate direction here    (houqp)
@@ -220,7 +241,11 @@ function GestureDetector:panState(ev)
 end
 
 function GestureDetector:holdState(ev)
+	DEBUG("in hold state...")
+	-- when we switch to hold state, we pass no ev
+	-- so ev = nil
 	if not ev and self.cur_x and self.cur_y then
+		self.state = self.holdState
 		return {
 			ges = "hold", 
 			pos = Geom:new{
@@ -231,7 +256,16 @@ function GestureDetector:holdState(ev)
 		}
 	end
 	if ev.id == -1 then
-		-- end of hold, signal hold release?
+		-- end of hold, signal hold release
+		self:clearState()
+		return {
+			ges = "hold_release", 
+			pos = Geom:new{
+				x = self.cur_x, 
+				y = self.cur_y,
+				w = 0, h = 0,
+			}
+		}
 	end
 end
 

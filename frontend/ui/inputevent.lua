@@ -269,10 +269,19 @@ function Input:adjustKindle4EventMap()
 end
 
 function Input:setTimeOut(cb, tv_out)
-	table.insert(self.timer_callbacks, {
+	local item = {
 		callback = cb, 
 		dead_line = tv_out,
-	})
+	}
+	for k,v in ipairs(self.timer_callbacks) do
+		if v.dead_line > tv_out then
+			table.insert(self.timer_callbacks, k, item)
+			break
+		end
+	end
+	if #self.timer_callbacks <= 0 then
+		self.timer_callbacks[1] = item
+	end
 end
 
 function Input:waitEvent(timeout_us, timeout_s)
@@ -283,9 +292,26 @@ function Input:waitEvent(timeout_us, timeout_s)
 			usec = timeout_us
 		}
 	while true do
-		if #self.timer_callbacks then
+		if #self.timer_callbacks > 0 then
 			-- we don't block if there is any timer, set wait to 10us
-			ok, ev = pcall(input.waitForEvent, 10)
+			while #self.timer_callbacks > 0 do
+				ok, ev = pcall(input.waitForEvent, 100)
+				if ok then break end
+				local tv_now = TimeVal:now()
+				if ((not timeout_us and not timeout_s) or tv_now < wait_deadline) then
+					-- check whether timer is up
+					if tv_now >= self.timer_callbacks[1].dead_line then
+						local ges = self.timer_callbacks[1].callback()
+						table.remove(self.timer_callbacks, 1)
+						if ges then
+							-- Do we really need to clear all setTimeOut after
+							-- decided a gesture? FIXME
+							Input.timer_callbacks = {}
+							return Event:new("Gesture", ges)
+						end
+					end
+				end
+			end
 		else
 			ok, ev = pcall(input.waitForEvent, timeout_us)
 		end
@@ -293,25 +319,13 @@ function Input:waitEvent(timeout_us, timeout_s)
 			break
 		end
 		if ev == "Waiting for input failed: timeout\n" then
-			local tv_now = TimeVal:now()
-			if #self.timer_thread and tv_now < wait_deadline then
-				-- check whether timer is up
-				if tv_now >= timer_thread[1].dead_line then
-					local ges = self.timer_callbacks[1].callback()
-					table.remove(self.timer_callbacks, 1)
-					if ges then
-						return Event:new("Gesture", ges)
-					end
-				end
-			else
-				-- don't report an error on timeout
-				ev = nil
-				break
-			end
+			-- don't report an error on timeout
+			ev = nil
+			break
 		elseif ev == "application forced to quit" then
 			os.exit(0)
 		end
-		DEBUG("got error waiting for events:", ev)
+		--DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then
 			-- we only abort if the error is not EINTR
 			break
@@ -363,7 +377,6 @@ function Input:waitEvent(timeout_us, timeout_s)
 			end
 		elseif ev.type == EV_ABS or ev.type == EV_SYN then
 			local touch_ges = GestureDetector:feedEvent(ev)
-			DEBUG(touch_ges)
 			if touch_ges then
 				return Event:new("Gesture", touch_ges)
 			end

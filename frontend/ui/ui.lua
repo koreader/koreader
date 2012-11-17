@@ -200,6 +200,7 @@ function UIManager:run()
 
 		-- delegate input_event to handler
 		if input_event then
+			DEBUG(input_event)
 			self:sendEvent(input_event)
 		end
 	end
