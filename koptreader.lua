@@ -326,7 +326,7 @@ function KOPTReader:drawOrCache(no, preCache)
 			local nsecs, nusecs = util.gettime()
 			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			Debug("Reflow duration:", dur)
-			self:logReflowDuration(no, dur)
+			--self:logReflowDuration(no, dur)
 			return self:writeToCache(kc, page, pagehash, preCache)
 		end
 	end
