@@ -271,10 +271,10 @@ end
 function Input:setTimeOut(cb, tv_out)
 	local item = {
 		callback = cb, 
-		dead_line = tv_out,
+		deadline = tv_out,
 	}
 	for k,v in ipairs(self.timer_callbacks) do
-		if v.dead_line > tv_out then
+		if v.deadline > tv_out then
 			table.insert(self.timer_callbacks, k, item)
 			break
 		end
@@ -300,7 +300,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 				local tv_now = TimeVal:now()
 				if ((not timeout_us and not timeout_s) or tv_now < wait_deadline) then
 					-- check whether timer is up
-					if tv_now >= self.timer_callbacks[1].dead_line then
+					if tv_now >= self.timer_callbacks[1].deadline then
 						local ges = self.timer_callbacks[1].callback()
 						table.remove(self.timer_callbacks, 1)
 						if ges then
@@ -308,13 +308,15 @@ function Input:waitEvent(timeout_us, timeout_s)
 							-- decided a gesture? FIXME
 							Input.timer_callbacks = {}
 							return Event:new("Gesture", ges)
-						end
-					end
-				end
-			end
+						end -- EOF if ges
+					end -- EOF if deadline reached
+				else
+					break
+				end -- EOF if not exceed wait timeout
+			end -- while #timer_callbacks > 0
 		else
 			ok, ev = pcall(input.waitForEvent, timeout_us)
-		end
+		end -- EOF if #timer_callbacks > 0
 		if ok then
 			break
 		end

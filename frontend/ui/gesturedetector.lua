@@ -179,12 +179,12 @@ function GestureDetector:tapState(ev)
 		-- set current tap to last tap
 		self.last_tap = cur_tap
 
-		local dead_line = self.cur_ev.timev + TimeVal:new{
+		DEBUG("set up tap timer")
+		local deadline = self.cur_ev.timev + TimeVal:new{
 				sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
 			}
-		DEBUG("set up tap timer")
 		Input:setTimeOut(function()
-			print("in tap timer", self.last_tap ~= nil)
+			DEBUG("in tap timer", self.last_tap ~= nil)
 			-- double tap will set last_tap to nil
 			-- so if it is not, then user must only
 			-- tapped once
@@ -193,7 +193,7 @@ function GestureDetector:tapState(ev)
 				-- we are using closure here
 				return ges_ev
 			end
-		end, dead_line)
+		end, deadline)
 		-- we are already at the end of touch event
 		-- so reset the state
 		self:clearState()
@@ -204,7 +204,7 @@ function GestureDetector:tapState(ev)
 		self.cur_x = ev.x
 		self.cur_y = ev.y
 		DEBUG("set up hold timer")
-		local dead_line = self.cur_ev.timev + TimeVal:new{
+		local deadline = self.cur_ev.timev + TimeVal:new{
 				sec = 0, usec = self.HOLD_INTERVAL
 			}
 		Input:setTimeOut(function()
@@ -213,7 +213,7 @@ function GestureDetector:tapState(ev)
 				-- timer set in tapState, so we switch to hold
 				return self:switchState("holdState")
 			end
-		end, dead_line)
+		end, deadline)
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
