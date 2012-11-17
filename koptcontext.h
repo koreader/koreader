@@ -21,7 +21,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include "k2pdfopt.h"
+#include "koptreflow.h"
 
 int luaopen_koptcontext(lua_State *L);
 #endif

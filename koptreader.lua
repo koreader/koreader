@@ -253,7 +253,7 @@ function KOPTReader:drawOrCache(no, preCache)
 			self.min_offset_y = 0
 		end
 		
-		if self.offset_y == -2012534 then
+		if self.offset_y <= -201253 then
 			self.offset_y = self.min_offset_y
 		end
 		
@@ -289,29 +289,44 @@ function KOPTReader:drawOrCache(no, preCache)
 		if self.precache_kc ~= nil then
 			if self.precache_kc:isPreCache() == 1 then
 				Debug("waiting threaded precache to finish.")
-				return
+				return nil
 			else
 				Debug("threaded preCache is finished.")
-				return self:writeToCache(self.precache_kc, page, pagehash, preCache)
+				Debug("current pagehash", pagehash)
+				Debug("precache pagehash", self.precache_pagehash)
+				if self.precache_pagehash == pagehash then
+					Debug("write cache ", self.precache_pagehash)
+					return self:writeToCache(self.precache_kc, page, self.precache_pagehash, preCache)
+				else
+					self.precache_kc = nil
+					self.precache_pagehash = nil
+					Debug("discard cache ", self.precache_pagehash)
+					return nil
+				end
 			end
 		else
 			self.precache_kc = kc
+			self.precache_pagehash = pagehash
 			self.precache_kc:setPreCache()
 			page:reflow(self.precache_kc, self.render_mode)
 			Debug("threaded preCache is returned.")
 		end
 	else
-		if use_threads and self.precache_kc and self.precache_kc:isPreCache() == 1 and self.cache[self.cached_pagehash] then
-			Debug("How about staying here and wait?")
-			InfoMessage:inform("Rendering in background...", DINFO_DELAY, 1, MSG_WARN)
-			return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
+		if use_threads and self.precache_kc ~= nil and self.precache_kc:isPreCache() == 1 then
+			if self.cache[self.cached_pagehash] then
+				InfoMessage:inform("Rendering in background...", DINFO_DELAY, 1, MSG_WARN)
+				return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
+			else 
+				Debug("ERROR something wrong happens .. why cached page is missing?")
+				return nil
+			end
 		else
-			--local secs, usecs = util.gettime()
+			local secs, usecs = util.gettime()
 			page:reflow(kc, self.render_mode)
-			--local nsecs, nusecs = util.gettime()
-			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
-			--Debug("Reflow duration:", dur)
-			--self:logReflowDuration(no, dur)
+			local nsecs, nusecs = util.gettime()
+			local dur = (nsecs - secs) * 1000000 + nusecs - usecs
+			Debug("Reflow duration:", dur)
+			self:logReflowDuration(no, dur)
 			return self:writeToCache(kc, page, pagehash, preCache)
 		end
 	end
@@ -333,9 +348,6 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 					w = width, h = height }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
-	if preCache then
-		max_cache = max_cache - self.cache[self.pagehash].size
-	end
 	
 	self.fullwidth, self.fullheight = kc:getPageDim()
 	self.reflow_zoom = kc:getZoom()
@@ -348,12 +360,15 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 		tile.w = self.fullwidth
 		tile.h = self.fullheight
 	else
-		if not preCache then
-			Debug("ERROR not enough memory in cache left, probably a bug.")
-		end
+		Debug("ERROR not enough memory in cache left, reflowed page is too large.")
 		return nil
 	end
-	self:cacheClaim(tile.w * tile.h / 2);
+	if not self:cacheClaim(tile.w * tile.h / 2) then
+		Debug("ERROR not enough memory in cache left, cache claim failed.")
+		return nil
+	else
+		Debug("Cache claim succeed.")
+	end
 	self.cache[pagehash] = {
 		x = tile.x,
 		y = tile.y,
@@ -363,7 +378,7 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 		size = tile.w * tile.h / 2,
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
-	--Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
+	Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
 	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
@@ -381,7 +396,7 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 		self.min_offset_y = 0
 	end
 
-	if self.offset_y == -2012534 then
+	if self.offset_y <= -201253 then
 		self.offset_y = self.min_offset_y
 	end
 	
@@ -528,6 +543,8 @@ function KOPTReader:loadSettings(filename)
 	--Debug("loaded configurable:", dump(self.configurable))
 	-- backup global variable that may be changed in koptreader
 	self.orig_globalzoom_mode = self.settings:readSetting("globalzoom_mode") or -1
+	self.orig_dbackground_color = DBACKGROUND_COLOR
+	DBACKGROUND_COLOR = 0
 end
 
 function KOPTReader:saveSpecialSettings()
@@ -536,6 +553,7 @@ function KOPTReader:saveSpecialSettings()
 	--Debug("saved configurable:", dump(self.configurable))
 	-- restore global variable from backups
 	self.settings:saveSetting("globalzoom_mode", self.orig_globalzoom_mode)
+	DBACKGROUND_COLOR = self.orig_dbackground_color
 end
 
 function KOPTReader:init()
