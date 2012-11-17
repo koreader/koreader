@@ -2861,7 +2861,7 @@ function UniReader:addAllCommands()
 		end)
 
 	self.commands:add(KEY_P, nil, "P",
-		"toggle page-buttons mode: viewport/page",
+		"toggle page-keys mode: viewport/page",
 		function(unireader)
 			unireader.page_mode_enable = not unireader.page_mode_enable
 			InfoMessage:inform("Page-buttons move "..(unireader.page_mode_enable and "page " or "viewport "), DINFO_DELAY, 1, MSG_AUX)
