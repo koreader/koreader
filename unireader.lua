@@ -2145,6 +2145,7 @@ function UniReader:showJumpHist()
 		if item_no and item_no <= #self.jump_history then
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
+			self.show_overlap = 0
 			self:goto(jump_item.page, true)
 			-- set new head if we reached the top of backward stack
 			if self.jump_history.cur == #self.jump_history then
@@ -2771,6 +2772,7 @@ function UniReader:addAllCommands()
 			or page < 1 or page > numpages or page == unireader.pageno then
 				unireader:redrawCurrentPage()
 			else
+				unireader.show_overlap = 0
 				unireader:goto(page)
 			end
 		end)
@@ -3255,6 +3257,7 @@ function UniReader:addAllCommands()
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
 			else
+				unireader.show_overlap = 0
 				unireader:goto(unireader.pageno)
 			end
 		end
@@ -3418,7 +3421,7 @@ function UniReader:addAllCommands()
 				end
 
 				unireader:clearSelection()
-
+				unireader.show_overlap = 0
 				unireader:goto(goto_page, false, "link")
 
 			end
