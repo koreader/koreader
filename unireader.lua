@@ -1693,8 +1693,8 @@ function UniReader:prevView()
 		if self.offset_y >= self.content_top or self.page_mode_enable then
 			-- hit content top, turn to previous page
 			-- set self.content_top with magic num to signal self:setZoom
-			self.show_overlap = 0
 			if pageno > 1 then
+				self.show_overlap = 0
 				self.content_top = -2012
 			end
 			if self.page_mode_enable then
@@ -1756,6 +1756,7 @@ function UniReader:twoColNextView()
 			-- can't go left -> end of page -> go to next one
 			else
 				if pageno < self.doc:getPages() then
+					self.show_overlap = 0
 					self.globalzoom_mode = self.pan_by_page
 					self.pageno = self.pageno + 1
 				end	
@@ -1771,6 +1772,7 @@ function UniReader:twoColNextView()
 			-- can't go right -> end of page -> go to next one
 			else
 				if pageno < self.doc:getPages() then
+					self.show_overlap = 0
 					self.globalzoom_mode = self.pan_by_page
 					self.pageno = self.pageno + 1
 				end	
@@ -1809,6 +1811,7 @@ function UniReader:twoColPrevView()
 					self.adjust_offset = function(unireader)
 						self.offset_x = self.pan_x -- move to first column
 						self.offset_y = self.min_offset_y
+						self.show_overlap = 0
 					end
 					self.globalzoom_mode = self.pan_by_page
 					self.pageno = self.pageno - 1
@@ -1827,6 +1830,7 @@ function UniReader:twoColPrevView()
 					self.adjust_offset = function(unireader)
 						self.offset_x = self.pan_x - G_width -- move to last column
 						self.offset_y = self.pan_y1
+						self.show_overlap = 0
 					end
 					self.globalzoom_mode = self.pan_by_page
 					self.pageno = self.pageno - 1
@@ -1980,6 +1984,7 @@ function UniReader:getTocTitleOfCurrentPage()
 end
 
 function UniReader:gotoTocEntry(entry)
+	self.show_overlap = 0
 	self:goto(entry.page)
 end
 
@@ -2678,6 +2683,7 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 0%, 10% .. 90%, 100% of document",
 		function(unireader,keydef)
+			unireader.show_overlap = 0
 			--Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
 			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
