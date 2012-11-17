@@ -47,6 +47,19 @@ Screen = {
 	saved_bb = nil,
 }
 
+function Screen:setRotationMode(mode)
+	if mode < 0 or mode > 3 then
+		Debug("Illegal mode parameter to Screen:setRotatonMode()!")
+		return
+	end
+
+	self.cur_rotation_mode = mode
+	-- you have to reopen framebuffer after rotate
+	fb:setOrientation(self.cur_rotation_mode)
+	fb:close()
+	fb = einkfb.open("/dev/fb0")
+end
+
 -- @orien: 1 for clockwise rotate, -1 for anti-clockwise
 -- Remember to reread screen resolution after this function call
 function Screen:screenRotate(orien)

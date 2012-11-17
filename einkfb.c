@@ -23,6 +23,11 @@
 
 #include "einkfb.h"
 
+#ifdef EMULATE_READER
+	int emu_w = EMULATE_READER_W;
+	int emu_h = EMULATE_READER_H;
+#endif	
+
 static int openFrameBuffer(lua_State *L) {
 	const char *fb_device = luaL_checkstring(L, 1);
 	FBInfo *fb = (FBInfo*) lua_newuserdata(L, sizeof(FBInfo));
@@ -89,14 +94,14 @@ static int openFrameBuffer(lua_State *L) {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return luaL_error(L, "cannot initialize SDL.");
 	}
-	if(!(fb->screen = SDL_SetVideoMode(EMULATE_READER_W, EMULATE_READER_H, 32, SDL_HWSURFACE))) {
+	if(!(fb->screen = SDL_SetVideoMode(emu_w, emu_h, 32, SDL_HWSURFACE))) {
 		return luaL_error(L, "can't get video surface %dx%d for 32bpp.",
-				EMULATE_READER_W, EMULATE_READER_H);
+				emu_w, emu_h);
 	}
-	fb->vinfo.xres = EMULATE_READER_W;
-	fb->vinfo.yres = EMULATE_READER_H;
-	fb->buf->pitch = (EMULATE_READER_W + 1) / 2;
-	fb->buf->data = calloc(fb->buf->pitch * EMULATE_READER_H, sizeof(char));
+	fb->vinfo.xres = emu_w;
+	fb->vinfo.yres = emu_h;
+	fb->buf->pitch = (emu_w + 1) / 2;
+	fb->buf->data = calloc(fb->buf->pitch * emu_h, sizeof(char));
 	if(fb->buf->data == NULL) {
 		return luaL_error(L, "cannot get framebuffer emu memory");
 	}
@@ -191,7 +196,6 @@ static int einkUpdate(lua_State *L) {
 /* NOTICE!!! You must close and reopen framebuffer after called this method.
  * Otherwise, screen resolution will not be updated! */
 static int einkSetOrientation(lua_State *L) {
-#ifndef EMULATE_READER
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 	int mode = luaL_optint(L, 2, 0);
 
@@ -199,6 +203,7 @@ static int einkSetOrientation(lua_State *L) {
 		return luaL_error(L, "Wrong rotation mode %d given!", mode);
 	}
 
+#ifndef EMULATE_READER
 	/* ioctl has a different definition for rotation mode. */
 	if (mode == 1) 
 		mode = 2;
@@ -206,6 +211,15 @@ static int einkSetOrientation(lua_State *L) {
 		mode = 1;
 
 	ioctl(fb->fd, FBIO_EINK_SET_DISPLAY_ORIENTATION, mode);
+#else
+	if (mode == 0 || mode == 2) {
+		emu_w = EMULATE_READER_W;
+		emu_h = EMULATE_READER_H;
+	}	
+	else if (mode == 1 || mode == 3) {
+		emu_w = EMULATE_READER_H;
+		emu_h = EMULATE_READER_W;
+	}
 #endif
 	return 0;
 }
