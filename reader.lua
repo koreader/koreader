@@ -116,10 +116,13 @@ end
 G_screen_saver_mode = false
 G_charging_mode = false
 fb = einkfb.open("/dev/fb0")
-G_width, G_height = fb:getSize()
 -- read current rotation mode
 Screen:updateRotationMode()
 Screen.native_rotation_mode = Screen.cur_rotation_mode
+
+-- force portrait mode
+Screen:setRotationMode(0)
+G_width, G_height = fb:getSize()
 
 -- set up reader's setting: font
 G_reader_settings = DocSettings:open(".reader")
