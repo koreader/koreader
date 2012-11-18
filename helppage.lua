@@ -26,7 +26,7 @@ function HelpPage:show(ypos, height, commands, title)
 	local fface = Font:getFace("ffont", 16)
 	local tface = Font:getFace("tfont", 25)
 
-	self.commands = {}
+	self.commands = Commands:new()
 	self.items = 0
 	local keys = {}
 	for k,v in pairs(commands.map) do
@@ -118,7 +118,13 @@ function HelpPage:show(ypos, height, commands, title)
 				end
 			elseif ev.code == KEY_BACK then
 				return nil
+			elseif ev.code == KEY_INTO_SCREEN_SAVER or ev.code == KEY_OUTOF_SCREEN_SAVER then
+				command = self.commands:get(ev.code, nil)
+				ret_code = command.func(self)
+				if ret_code == "break" then
+					break;
+				end
 			end
-		end
-	end
+		end -- ev.type == EV_KEY...
+	end -- while
 end
