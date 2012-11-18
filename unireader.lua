@@ -2500,7 +2500,6 @@ function UniReader:inputLoop()
 	self.toc_xview = nil
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
-	self.bbox.enabled = false
 	self.show_overlap = 0
 	self:setRotationMode(0)
 	self:setDefaults()
@@ -2527,6 +2526,7 @@ function UniReader:inputLoop()
 		self:saveSpecialSettings()
 		self.settings:close()
 	end
+	self.bbox.enabled = false
 
 	return keep_running
 end
