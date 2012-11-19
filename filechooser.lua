@@ -215,7 +215,7 @@ function FileChooser:choose(ypos, height)
 		local cface = Font:getFace("cfont", 22)
 
 		if self.pagedirty then
-			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), height, 0)
+			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), fb.bb:getHeight(), 0)
 			local c
 			for c = 1, self.perpage do
 				local i = (self.page - 1) * self.perpage + c
@@ -254,7 +254,7 @@ function FileChooser:choose(ypos, height)
 		end
 
 		if self.pagedirty then
-			fb:refresh(0, 0, ypos, fb.bb:getWidth(), height)
+			fb:refresh(0, 0, ypos, fb.bb:getWidth(), fb.bb:getHeight())
 			self.pagedirty = false
 		end
 
