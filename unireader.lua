@@ -1631,6 +1631,19 @@ function UniReader:goto(no, is_ignore_jump, pos_type)
 	end
 end
 
+-- same as goto, but recalculates offsets, when you know you'll end up on a new page
+function UniReader:gotoJump(no, is_ignore_jump, pos_type)
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		self.last_globalzoom_mode = nil
+		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+	elseif self.pan_by_page then
+		self.last_globalzoom_mode = nil
+		self.globalzoom_mode = self.pan_by_page
+	end	
+	self.show_overlap = 0
+	self:goto(no, is_ignore_jump, pos_type)	
+end
+
 function UniReader:redrawCurrentPage()
 	self:show(self.pageno)
 end
@@ -1984,8 +1997,7 @@ function UniReader:getTocTitleOfCurrentPage()
 end
 
 function UniReader:gotoTocEntry(entry)
-	self.show_overlap = 0
-	self:goto(entry.page)
+	self:gotoJump(entry.page)
 end
 
 -- expand TOC item to one level down
@@ -2145,8 +2157,7 @@ function UniReader:showJumpHist()
 		if item_no and item_no <= #self.jump_history then
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
-			self.show_overlap = 0
-			self:goto(jump_item.page, true)
+			self:gotoJump(jump_item.page, true)
 			-- set new head if we reached the top of backward stack
 			if self.jump_history.cur == #self.jump_history then
 				self.jump_history.cur = self.jump_history.cur + 1
@@ -2506,6 +2517,11 @@ function UniReader:inputLoop()
 	if self.doc ~= nil then
 		self.doc:close()
 	end
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+	elseif self.pan_by_page then
+		self.globalzoom_mode = self.pan_by_page	
+	end	
 	if self.settings ~= nil then
 		self:saveLastPageOrPos()
 		self.settings:saveSetting("jump_history", self.jump_history)
@@ -2562,8 +2578,7 @@ function UniReader:gotoPrevNextTocEntry(direction)
 			end
 			local toc_entry = self.toc[k + direction]
 			if toc_entry then
-				self.show_overlap = 0
-				return self:goto(toc_entry.page, true)	
+				return self:gotoJump(toc_entry.page, true)	
 			end
 			break
 		end
@@ -2571,15 +2586,12 @@ function UniReader:gotoPrevNextTocEntry(direction)
 
 	if not found_curr_toc then
 		if direction == 1 and self.pageno ~= numpages then
-			self.show_overlap = 0
-			return self:goto(numpages, true)
+			return self:gotoJump(numpages, true)
 		elseif direction == -1 then
 			if self.pageno == numpages then
-				self.show_overlap = 0
-				return self:goto(last_toc_page, true)
+				return self:gotoJump(last_toc_page, true)
 			else
-				self.show_overlap = 0
-				return self:goto(penul_toc_page, true)
+				return self:gotoJump(penul_toc_page, true)
 			end
 		end
 	end
@@ -2685,9 +2697,8 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 0%, 10% .. 90%, 100% of document",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			--Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
-			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
+			unireader:gotoJump(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
 	-- end numeric keys
 
@@ -2773,8 +2784,7 @@ function UniReader:addAllCommands()
 			or page < 1 or page > numpages or page == unireader.pageno then
 				unireader:redrawCurrentPage()
 			else
-				unireader.show_overlap = 0
-				unireader:goto(page)
+				unireader:gotoJump(page)
 			end
 		end)
 	self.commands:add(KEY_H,nil,"H",
@@ -2821,8 +2831,7 @@ function UniReader:addAllCommands()
 				bm = self:nextBookMarkedPage()
 			end
 			if bm then 
-				self.show_overlap = 0
-				self:goto(bm.page, true) 
+				self:gotoJump(bm.page, true) 
 			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
@@ -3258,8 +3267,7 @@ function UniReader:addAllCommands()
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
 			else
-				unireader.show_overlap = 0
-				unireader:goto(unireader.pageno)
+				unireader:gotoJump(unireader.pageno)
 			end
 		end
 	)
@@ -3422,8 +3430,7 @@ function UniReader:addAllCommands()
 				end
 
 				unireader:clearSelection()
-				unireader.show_overlap = 0
-				unireader:goto(goto_page, false, "link")
+				unireader:gotoJump(goto_page, false, "link")
 
 			end
 		end
