@@ -122,7 +122,6 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- force portrait mode
 Screen:setRotationMode(0)
-G_width, G_height = fb:getSize()
 
 -- set up reader's setting: font
 G_reader_settings = DocSettings:open(".reader")

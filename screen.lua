@@ -58,6 +58,7 @@ function Screen:setRotationMode(mode)
 	fb:setOrientation(self.cur_rotation_mode)
 	fb:close()
 	fb = einkfb.open("/dev/fb0")
+	G_width, G_height = fb:getSize()
 end
 
 -- @orien: 1 for clockwise rotate, -1 for anti-clockwise
