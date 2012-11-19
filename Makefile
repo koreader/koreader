@@ -198,6 +198,8 @@ fetchthirdparty:
 	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
+	test -d history || mkdir history
+	test -d clipboard || mkdir clipboard
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
 	# CREngine patch: change child nodes' type face
@@ -292,6 +294,7 @@ customupdate: all
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
+	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallback.ttf
 	cp -r git-rev resources $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/

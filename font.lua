@@ -1,6 +1,6 @@
 Font = {
 	fontmap = {
-		cfont = "droid/DroidSansFallback.ttf",		-- filemanager: for menu contents
+		cfont = "droid/DroidSansFallbackFull.ttf",		-- filemanager: for menu contents
 		tfont = "droid/DroidSans.ttf",		-- filemanager: for title
 		ffont = "droid/DroidSans.ttf",		-- filemanager: for footer
 		infofont = "droid/DroidSans.ttf",	-- info messages
