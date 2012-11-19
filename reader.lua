@@ -159,7 +159,7 @@ CREReader:init()
 local patharg = G_reader_settings:readSetting("lastfile")
 if ARGV[argidx] and lfs.attributes(ARGV[argidx], "mode") == "directory" then
 	FileChooser:setPath(ARGV[argidx])
-	FileChooser:choose(0, G_height)
+	FileChooser:choose()
 elseif ARGV[argidx] and lfs.attributes(ARGV[argidx], "mode") == "file" then
 	openFile(ARGV[argidx])
 elseif patharg and lfs.attributes(patharg, "mode") == "file" then
