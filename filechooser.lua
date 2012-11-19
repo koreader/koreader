@@ -204,10 +204,7 @@ end
 
 function FileChooser:choose()
 	local ypos = 0
-	local width, height = G_width, G_height
-	local wlen = width - 2*self.margin_H
 
-	self.perpage = math.floor(height / self.spacing) - 2
 	self.pagedirty = true
 	self.markerdirty = false
 
@@ -217,9 +214,11 @@ function FileChooser:choose()
 		local tface = Font:getFace("tfont", 25)
 		local fface = Font:getFace("ffont", 16)
 		local cface = Font:getFace("cfont", 22)
+		local wlen = G_width - 2*self.margin_H
+		self.perpage = math.floor(G_height / self.spacing) - 2
 
 		if self.pagedirty then
-			fb.bb:paintRect(0, ypos, width, height, 0)
+			fb.bb:paintRect(0, ypos, G_width, G_height, 0)
 			local c
 			for c = 1, self.perpage do
 				local i = (self.page - 1) * self.perpage + c
@@ -258,7 +257,7 @@ function FileChooser:choose()
 		end
 
 		if self.pagedirty then
-			fb:refresh(0, 0, ypos, width, height)
+			fb:refresh(0, 0, ypos, G_width, G_height)
 			self.pagedirty = false
 		end
 
