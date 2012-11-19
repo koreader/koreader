@@ -2815,9 +2815,9 @@ function UniReader:addAllCommands()
 		function(unireader)
 			ok = unireader:addBookmark(self.pageno)
 			if not ok then
-				InfoMessage:inform("Page already marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark already exists")
 			else
-				InfoMessage:inform("Page marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark added")
 			end
 		end)
 	self.commands:addGroup(MOD_ALT.."K/L",{
