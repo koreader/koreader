@@ -2181,7 +2181,7 @@ function UniReader:showBookMarks()
 		return InfoMessage:inform("No bookmarks found ", DINFO_DELAY, 1, MSG_WARN)
 	end
 	while true do
-		bm_menu = SelectMenu:new{
+		local bm_menu = SelectMenu:new{
 			menu_title = "Bookmarks ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
 			deletable = true,
