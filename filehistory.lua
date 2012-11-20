@@ -239,6 +239,9 @@ function FileHistory:addAllCommands()
 			else
 				InfoMessage:inform("File does not exist ", DINFO_DELAY, 1, MSG_ERROR)
 			end
+			self:init()
+			self:setSearchResult(self.keywords)
+			self.pagedirty = true
 		end
 	)
 	self.commands:add(KEY_DEL, nil, "Del",
