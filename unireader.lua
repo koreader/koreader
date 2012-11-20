@@ -3245,7 +3245,6 @@ function UniReader:addAllCommands()
 		"show all highlights",
 		function(unireader)
 			unireader:showHighLight()
-			unireader:goto(unireader.pageno)
 		end
 	)
 	self.commands:add(KEY_DOT, nil, ".",
