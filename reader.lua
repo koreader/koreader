@@ -30,10 +30,7 @@ require "readerchooser"
 require "defaults"
 
 function openFile(filename)
-	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
-	local reader = nil
-
-	reader = ReaderChooser:getReaderByName(filename)
+	local reader = ReaderChooser:getReaderByName(filename)
 	if reader then
 		InfoMessage:inform("Opening document... ", DINFO_NODELAY, 0, MSG_AUX)
 		reader:preLoadSettings(filename)
