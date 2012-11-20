@@ -1893,14 +1893,6 @@ function UniReader:screenRotate(orien)
 	self:clearCache()
 end
 
-function UniReader:setRotationMode(mode)
-	Screen:setRotationMode(mode)
-	-- update global width and height variable
-	G_width, G_height = fb:getSize()
-	self:clearCache()
-end
-
-
 function UniReader:cleanUpTocTitle(title)
 	return (title:gsub("\13", ""))
 end
@@ -2512,7 +2504,7 @@ function UniReader:inputLoop()
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
 	self.show_overlap = 0
-	self:setRotationMode(0)
+	Screen:setRotationMode(0)
 	self:setDefaults()
 	if self.doc ~= nil then
 		self.doc:close()

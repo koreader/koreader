@@ -202,8 +202,9 @@ function FileChooser:setPath(newPath)
 	end
 end
 
-function FileChooser:choose(ypos, height)
-	self.perpage = math.floor(height / self.spacing) - 2
+function FileChooser:choose()
+	local ypos = 0
+
 	self.pagedirty = true
 	self.markerdirty = false
 
@@ -213,9 +214,11 @@ function FileChooser:choose(ypos, height)
 		local tface = Font:getFace("tfont", 25)
 		local fface = Font:getFace("ffont", 16)
 		local cface = Font:getFace("cfont", 22)
+		local wlen = G_width - 2*self.margin_H
+		self.perpage = math.floor(G_height / self.spacing) - 2
 
 		if self.pagedirty then
-			fb.bb:paintRect(0, ypos, fb.bb:getWidth(), fb.bb:getHeight(), 0)
+			fb.bb:paintRect(0, ypos, G_width, G_height, 0)
 			local c
 			for c = 1, self.perpage do
 				local i = (self.page - 1) * self.perpage + c
@@ -241,20 +244,20 @@ function FileChooser:choose(ypos, height)
 			local ymarker = ypos + 8 + self.title_H
 			if not self.pagedirty then
 				if self.oldcurrent > 0 then
-					fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.oldcurrent, fb.bb:getWidth()-2*self.margin_H, 3, 0)
-					fb:refresh(1, self.margin_H, ymarker+self.spacing*self.oldcurrent, fb.bb:getWidth() - 2*self.margin_H, 3)
+					fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.oldcurrent, wlen, 3, 0)
+					fb:refresh(1, self.margin_H, ymarker+self.spacing*self.oldcurrent, wlen, 3)
 				end
 			end
-			fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.current, fb.bb:getWidth()-2*self.margin_H, 3, 15)
+			fb.bb:paintRect(self.margin_H, ymarker+self.spacing*self.current, wlen, 3, 15)
 			if not self.pagedirty then
-				fb:refresh(1, self.margin_H, ymarker+self.spacing*self.current, fb.bb:getWidth()-2*self.margin_H, 3)
+				fb:refresh(1, self.margin_H, ymarker+self.spacing*self.current, wlen, 3)
 			end
 			self.oldcurrent = self.current
 			self.markerdirty = false
 		end
 
 		if self.pagedirty then
-			fb:refresh(0, 0, ypos, fb.bb:getWidth(), fb.bb:getHeight())
+			fb:refresh(0, 0, ypos, G_width, G_height)
 			self.pagedirty = false
 		end
 

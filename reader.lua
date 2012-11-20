@@ -122,7 +122,6 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 -- force portrait mode
 Screen:setRotationMode(0)
-G_width, G_height = fb:getSize()
 
 -- set up reader's setting: font
 G_reader_settings = DocSettings:open(".reader")
@@ -160,7 +159,7 @@ CREReader:init()
 local patharg = G_reader_settings:readSetting("lastfile")
 if ARGV[argidx] and lfs.attributes(ARGV[argidx], "mode") == "directory" then
 	FileChooser:setPath(ARGV[argidx])
-	FileChooser:choose(0, G_height)
+	FileChooser:choose()
 elseif ARGV[argidx] and lfs.attributes(ARGV[argidx], "mode") == "file" then
 	openFile(ARGV[argidx])
 elseif patharg and lfs.attributes(patharg, "mode") == "file" then
