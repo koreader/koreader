@@ -3450,15 +3450,9 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_BACK,MOD_ALT,"Back",
+	self.commands:addGroup(MOD_ALT.."Back, Home", {Keydef:new(KEY_BACK,MOD_ALT),Keydef:new(KEY_HOME,nil)},
 		"close document",
 		function(unireader)
-			return "break"
-		end)
-	self.commands:add(KEY_HOME,nil,"Home",
-		"exit application",
-		function(unireader)
-			keep_running = false
 			return "break"
 		end)
 	-- commands.map is very large, impacts startup performance on device
