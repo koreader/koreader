@@ -296,7 +296,7 @@ function KOPTReader:drawOrCache(no, preCache)
 				Debug("precache pagehash", self.precache_pagehash)
 				if self.precache_pagehash == pagehash then
 					Debug("write cache ", self.precache_pagehash)
-					return self:writeToCache(self.precache_kc, page, self.precache_pagehash, preCache)
+					return self:writeToCache(self.precache_kc, page, self.precache_pagehash, true)
 				else
 					self.precache_kc = nil
 					self.precache_pagehash = nil
@@ -312,22 +312,31 @@ function KOPTReader:drawOrCache(no, preCache)
 			Debug("threaded preCache is returned.")
 		end
 	else
-		if use_threads and self.precache_kc ~= nil and self.precache_kc:isPreCache() == 1 then
-			if self.cache[self.cached_pagehash] then
+		if use_threads and self.precache_kc ~= nil then
+			if self.precache_kc:isPreCache() == 1 and self.cache[self.cached_pagehash] then
 				InfoMessage:inform("Rendering in background...", DINFO_DELAY, 1, MSG_WARN)
 				return self.cached_pagehash, self.cached_offset_x, self.cached_offset_y
+			elseif self.precache_kc:isPreCache() == 0 then -- cache is ready to be written
+				Debug("write cache", self.precache_pagehash)
+				self:writeToCache(self.precache_kc, page, self.precache_pagehash, true)
+				Debug("reflow page", pagehash)
+				local ok, page = pcall(self.doc.openPage, self.doc, no) -- reopen current page
+				kc = self:getContext(page, no, true)
+				page:reflow(kc, self.render_mode)
+				return self:writeToCache(kc, page, pagehash, false)
 			else 
 				Debug("ERROR something wrong happens .. why cached page is missing?")
 				return nil
 			end
 		else
 			--local secs, usecs = util.gettime()
+			Debug("reflow page", pagehash)
 			page:reflow(kc, self.render_mode)
 			--local nsecs, nusecs = util.gettime()
 			--local dur = (nsecs - secs) * 1000000 + nusecs - usecs
 			--Debug("Reflow duration:", dur)
 			--self:logReflowDuration(no, dur)
-			return self:writeToCache(kc, page, pagehash, preCache)
+			return self:writeToCache(kc, page, pagehash, false)
 		end
 	end
 end
@@ -344,25 +353,24 @@ function KOPTReader:logReflowDuration(pageno, dur)
 end
 
 function KOPTReader:writeToCache(kc, page, pagehash, preCache)
-	local tile = { x = offset_x_in_page, y = offset_y_in_page,
-					w = width, h = height }
+	local tile = { x = 0, y = 0, w = G_width, h = G_height }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
-	
-	self.fullwidth, self.fullheight = kc:getPageDim()
+	local fullwidth, fullheight = kc:getPageDim()
 	self.reflow_zoom = kc:getZoom()
-	Debug("page::reflowPage:", "fullwidth:", self.fullwidth, "fullheight:", self.fullheight)
+	Debug("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
 	
-	if (self.fullwidth * self.fullheight / 2) <= max_cache then
+	if (fullwidth * fullheight / 2) <= max_cache then
 		-- yes we can, so do this with offset 0, 0
 		tile.x = 0
 		tile.y = 0
-		tile.w = self.fullwidth
-		tile.h = self.fullheight
+		tile.w = fullwidth
+		tile.h = fullheight
 	else
 		Debug("ERROR not enough memory in cache left, reflowed page is too large.")
 		return nil
 	end
+	Debug("cache capacity", max_cache, "cache claim", tile.w * tile.h / 2, "cache current", self.cache_current_memsize)
 	if not self:cacheClaim(tile.w * tile.h / 2) then
 		Debug("ERROR not enough memory in cache left, cache claim failed.")
 		return nil
@@ -379,7 +387,7 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 		bb = Blitbuffer.new(tile.w, tile.h)
 	}
 	--Debug ("new biltbuffer:"..dump(self.cache[pagehash]))
-	Debug("page::drawReflowedPage:", "rendering page:", no, "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
+	Debug("page::drawReflowedPage", "width:", self.cache[pagehash].w, "height:", self.cache[pagehash].h)
 	page:rfdraw(kc, self.cache[pagehash].bb)
 	page:close()
 	
@@ -391,7 +399,7 @@ function KOPTReader:writeToCache(kc, page, pagehash, preCache)
 	self.min_offset_y = fb.bb:getHeight() - self.cache[pagehash].h
 	if(self.min_offset_x > 0) then
 			self.min_offset_x = 0
-		end
+	end
 	if(self.min_offset_y > 0) then
 		self.min_offset_y = 0
 	end
@@ -420,8 +428,8 @@ function KOPTReader:getContext(page, pnumber, preCache)
 	-- without it, later check whether to use margins will fail for some documents
 	pwidth = math.floor(pwidth * 100) / 100
 	pheight = math.floor(pheight * 100) / 100
-	Debug("preCache:", preCache and "true" or "false")
-	Debug("page::getSize",pwidth,pheight)
+	Debug("Context preCache:", preCache and "true" or "false")
+	Debug("Context page::getSize",pwidth,pheight)
 	
 	local x0, y0, x1, y1 = page:getUsedBBox()
 	if x0 == 0.01 and y0 == 0.01 and x1 == -0.01 and y1 == -0.01 then
@@ -467,7 +475,7 @@ function KOPTReader:getContext(page, pnumber, preCache)
 		end
 	end
 
-	Debug("page::getUsedBBox", x0, y0, x1, y1 ) 
+	Debug("Context page::getUsedBBox", x0, y0, x1, y1 ) 
 	if kc:getTrim() == 1 then
 		kc:setBBox(0, 0, pwidth, pheight)
 	else
@@ -480,7 +488,7 @@ function KOPTReader:getContext(page, pnumber, preCache)
 		["x1"] = x1,
 		["y1"] = y1,
 	}
-	Debug("cur_bbox", self.cur_bbox)
+	Debug("Context cur_bbox", self.cur_bbox)
 	
 	return kc
 end
