@@ -352,7 +352,29 @@ function KOPTReader:logReflowDuration(pageno, dur)
 	end
 end
 
+function KOPTReader:logMemoryUsage(pageno)
+	local status_file = io.open("/proc/self/status", "r")
+	local log_file = io.open("reflow_mem_log.txt", "a+")
+	local data = -1
+	if status_file then
+		for line in status_file:lines() do
+			local s, n
+			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")	
+			if n ~= 0 then data = tonumber(s) end
+			if data ~= -1 then break end
+		end
+	end
+	if log_file then
+		if log_file:seek("end") == 0 then -- write the header only once
+			log_file:write(string.format("PAGE\tMEM\n"))
+		end
+		log_file:write(string.format("%s\t%s\n", pageno, data))
+		log_file:close()
+	end
+end
+
 function KOPTReader:writeToCache(kc, page, pagehash, preCache)
+	--self:logMemoryUsage(self.pageno)
 	local tile = { x = 0, y = 0, w = G_width, h = G_height }
 	-- can we cache the full page?
 	local max_cache = self.cache_max_memsize
