@@ -345,7 +345,7 @@ function KOPTReader:logReflowDuration(pageno, dur)
 	local file = io.open("reflowlog.txt", "a+")
 	if file then
 		if file:seek("end") == 0 then -- write the header only once
-			file:write(string.format("FILE\tPAGE\tDUR\n"))
+			file:write("FILE\tPAGE\tDUR\n")
 		end
 		file:write(string.format("%s\t%s\t%s\n", self.filename, pageno, dur))
 		file:close()
@@ -359,14 +359,15 @@ function KOPTReader:logMemoryUsage(pageno)
 	if status_file then
 		for line in status_file:lines() do
 			local s, n
-			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")	
+			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")
 			if n ~= 0 then data = tonumber(s) end
 			if data ~= -1 then break end
 		end
+		status_file:close()
 	end
 	if log_file then
 		if log_file:seek("end") == 0 then -- write the header only once
-			log_file:write(string.format("PAGE\tMEM\n"))
+			log_file:write("PAGE\tMEM\n")
 		end
 		log_file:write(string.format("%s\t%s\n", pageno, data))
 		log_file:close()
