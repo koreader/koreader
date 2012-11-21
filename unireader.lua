@@ -3238,7 +3238,7 @@ function UniReader:addAllCommands()
 		"enter highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_N, MOD_SHIFT, "N",
