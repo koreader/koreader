@@ -3238,14 +3238,13 @@ function UniReader:addAllCommands()
 		"enter highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_N, MOD_SHIFT, "N",
 		"show all highlights",
 		function(unireader)
 			unireader:showHighLight()
-			unireader:goto(unireader.pageno)
 		end
 	)
 	self.commands:add(KEY_DOT, nil, ".",

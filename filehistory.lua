@@ -230,11 +230,16 @@ function FileHistory:addAllCommands()
 			file_full_path = file_entry.dir .. "/" .. file_entry.name
 			if FileExists(file_full_path) then
 				openFile(file_full_path)
-				--reset height and item index if screen has been rotated
+				--[[
+				-- reset height and item index if screen has been rotated
+				-- not needed because we force portrait mode on document close
 				local item_no = self.perpage * (self.page - 1) + self.current
 				self.perpage = math.floor(G_height / self.spacing) - 2
 				self.current = item_no % self.perpage
 				self.page = math.floor(item_no / self.perpage) + 1
+				--]]
+				self:init()
+				self:setSearchResult(self.keywords)
 				self.pagedirty = true
 			else
 				InfoMessage:inform("File does not exist ", DINFO_DELAY, 1, MSG_ERROR)
