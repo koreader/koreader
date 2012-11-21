@@ -1296,7 +1296,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
 		self.pan_by_page = false
-		if self.comics_mode_enable then 
+		if self.comics_mode_enable then
 			if self.rtl_mode_enable then
 				self.offset_x = width - (self.globalzoom * pwidth)
 			else
@@ -2218,45 +2218,48 @@ function UniReader:prevBookMarkedPage()
 end
 
 function UniReader:showHighLight()
-	local menu_items, highlight_page, highlight_num = {}, {}, {}
-	local ret_code, item_no = -1, -1
+	local menu_items, highlight_page, highlight_num
+	local ret_code, item_no, height = -1, -1, G_height
 
-	-- build menu items
-	for k,v in pairs(self.highlight) do
-		if type(k) == "number" then
-			for k1,v1 in ipairs(v) do
-				table.insert(menu_items, v1.text)
-				table.insert(highlight_page, k)
-				table.insert(highlight_num, k1)
+	local function rebuild_menu()
+		menu_items, highlight_page, highlight_num = {}, {}, {}
+		for page,highlights in pairs(self.highlight) do -- iterate all pages with highlights
+			if type(page) == "number" then
+				for num,highlight in ipairs(highlights) do -- iterate all highlights on this page
+					table.insert(menu_items, highlight.text)
+					table.insert(highlight_page, page)
+					table.insert(highlight_num, num)
+				end
 			end
 		end
 	end
+
+	rebuild_menu()
 
 	if #menu_items == 0 then
 		return InfoMessage:inform("No HighLights found ", DINFO_DELAY, 1, MSG_WARN)
 	end
 
 	while true do
-		hl_menu = SelectMenu:new{
+		local hl_menu = SelectMenu:new{
 			menu_title = "HighLights ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
 			deletable = true,
 		}
-		ret_code, item_no = hl_menu:choose(0, fb.bb:getHeight())
+		ret_code, item_no = hl_menu:choose(0, height)
 		if ret_code then
 			return self:goto(highlight_page[ret_code])
 		elseif item_no then -- delete item
-			local hpage = highlight_page[item_no]
-			local hnum = highlight_num[item_no]
-			table.remove(self.highlight[hpage], hnum)
-			if #self.highlight[hpage] == 0 then
-				table.remove(self.highlight, hpage)
+			local page, num = highlight_page[item_no], highlight_num[item_no]
+			table.remove(self.highlight[page], num)
+			if #self.highlight[page] == 0 then
+				table.remove(self.highlight, page)
 			end
-			table.remove(menu_items, item_no)
+			rebuild_menu()
 			if #menu_items == 0 then
 				return self:redrawCurrentPage()
 			end
-		else
+		else -- return via Back
 			return self:redrawCurrentPage()
 		end
 	end
@@ -2386,7 +2389,7 @@ function memUsage()
 			s, n = line:gsub("VmSize:%s-(%d+) kB", "%1")	
 			if n ~= 0 then totalvm = tonumber(s) end
 
-			if rss ~= -1 and data ~= -1 and stack ~= -1 
+			if rss ~= -1 and data ~= -1 and stack ~= -1
 			  and lib ~= -1 and totalvm ~= -1 then
 				break
 			end
@@ -2822,8 +2825,8 @@ function UniReader:addAllCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then 
-				self:gotoJump(bm.page, true) 
+			if bm then
+				self:gotoJump(bm.page, true)
 			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
@@ -3032,7 +3035,7 @@ function UniReader:addAllCommands()
 
 					if self.rtl_mode_enable then	-- rtl_mode enabled				
 						if unireader.pan_by_page then
-							if unireader.offset_x - 0.01 > unireader.pan_x then 
+							if unireader.offset_x - 0.01 > unireader.pan_x then
 								-- leftmost column
 								if unireader.pageno < unireader.doc:getPages() then
 									self.globalzoom_mode = self.pan_by_page
@@ -3054,7 +3057,7 @@ function UniReader:addAllCommands()
 
 					else -- rtl_mode disabled
 						if unireader.pan_by_page then
-							if unireader.offset_x - 0.01 > unireader.pan_x then 
+							if unireader.offset_x - 0.01 > unireader.pan_x then
 								-- leftmost column
 								if unireader.pageno > 1 then
 									unireader.adjust_offset = function(unireader)
@@ -3156,7 +3159,7 @@ function UniReader:addAllCommands()
 							unireader.show_overlap = -unireader.pan_overlap_vertical -- top
 						end
 					else
-						if unireader.offset_y < unireader.min_offset_y then 
+						if unireader.offset_y < unireader.min_offset_y then
 							unireader.offset_y = unireader.min_offset_y
 						end
 					end	
