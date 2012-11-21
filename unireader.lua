@@ -1062,21 +1062,31 @@ function UniReader:cacheClaim(size)
 		error("too much memory claimed")
 		return false
 	end
-	while self.cache_current_memsize + size > self.cache_max_memsize do
-		-- repeat this until we have enough free memory
+	-- reduce ttl of each cache
+	local calculated_size = 0
+	for k, _ in pairs(self.cache) do
+		self.cache[k].ttl = self.cache[k].ttl - 1
+		calculated_size = calculated_size + self.cache[k].size
+	end
+	-- free oldest cache until we have free memory
+	while calculated_size + size > self.cache_max_memsize do
+		local oldest_cache_ttl = self.cache_max_ttl
+		local oldest_cache_key = nil
 		for k, _ in pairs(self.cache) do
-			if self.cache[k].ttl > 0 then
-				-- reduce ttl
-				self.cache[k].ttl = self.cache[k].ttl - 1
-			else
-				-- cache slot is at end of life, so kick it out
-				self.cache_current_memsize = self.cache_current_memsize - self.cache[k].size
-				self.cache[k].bb:free()
-				self.cache[k] = nil
+			if self.cache[k].ttl <= oldest_cache_ttl then
+				oldest_cache_ttl = self.cache[k].ttl
+				oldest_cache_key = k
 			end
 		end
+		-- cache slot is at end of life, so kick it out
+		if oldest_cache_key then
+			Debug("free cache:", oldest_cache_key, "ttl:", self.cache[oldest_cache_key].ttl)
+			calculated_size = calculated_size - self.cache[oldest_cache_key].size
+			self.cache[oldest_cache_key].bb:free()
+			self.cache[oldest_cache_key] = nil
+		end
 	end
-	self.cache_current_memsize = self.cache_current_memsize + size
+	self.cache_current_memsize = calculated_size + size
 	return true
 end
 
