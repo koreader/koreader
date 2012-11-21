@@ -531,7 +531,10 @@ static int reflowPage(lua_State *L) {
 	kctx->src = src;
 	if (kctx->precache) {
 		pthread_t rf_thread;
-		pthread_create(&rf_thread, NULL, k2pdfopt_reflow_bmp, (void*) kctx);
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_create(&rf_thread, &attr, k2pdfopt_reflow_bmp, (void*) kctx);
 	} else {
 		k2pdfopt_reflow_bmp(kctx);
 	}
