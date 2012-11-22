@@ -1,6 +1,7 @@
 require "font"
 require "keys"
 require "settings"
+require "defaults"
 
 KOPTOptions =  {
 	{
@@ -8,165 +9,165 @@ KOPTOptions =  {
 	option_text="",
 	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
 	text_font_size={14,16,20,23,26,30,34,38,42,46},
-	default_item=6,
-	current_item=6,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true, true, true, true, true, true},
-	value={0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
+	values={0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
+	default_value=DKOPTREADER_CONFIG_FONT_SIZE,
 	show = true,
 	draw_index = nil,},
 	{
 	name="text_wrap",
 	option_text="Reflow",
 	items_text={"on","off"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true},
-	value={1, 0},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_TEXT_WRAP,
 	show = true,
 	draw_index = nil,},
 	{
 	name="trim_page",
 	option_text="Trim Page",
 	items_text={"auto","manual"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true},
-	value={1, 0},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_TRIM_PAGE,
 	show = true,
 	draw_index = nil,},
 	{
 	name="detect_indent",
 	option_text="Indentation",
 	items_text={"enable","disable"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true},
-	value={1, 0},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_DETECT_INDENT,
 	show = false,
 	draw_index = nil,},
 	{
 	name="defect_size",
 	option_text="Defect Size",
 	items_text={"small","medium","large"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.5, 1.0, 2.0},
+	values={0.5, 1.0, 2.0},
+	default_value=DKOPTREADER_CONFIG_DEFECT_SIZE,
 	show = true,
 	draw_index = nil,},
 	{
 	name="page_margin",
 	option_text="Page Margin",
 	items_text={"small","medium","large"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.02, 0.06, 0.10},
+	values={0.02, 0.06, 0.10},
+	default_value=DKOPTREADER_CONFIG_PAGE_MARGIN,
 	show = true,
 	draw_index = nil,},
 	{
 	name="line_spacing",
 	option_text="Line Spacing",
 	items_text={"small","medium","large"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={1.0, 1.2, 1.4},
+	values={1.0, 1.2, 1.4},
+	default_value=DKOPTREADER_CONFIG_LINE_SPACING,
 	show = true,
 	draw_index = nil,},
 	{
 	name="word_spacing",
 	option_text="Word Spacing",
 	items_text={"small","medium","large"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.05, 0.15, 0.375},
+	values={0.05, 0.15, 0.375},
+	default_value=DKOPTREADER_CONFIG_WORD_SAPCING,
 	show = true,
 	draw_index = nil,},
 	{
 	name="multi_threads",
 	option_text="Multi Threads",
 	items_text={"on","off"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true},
-	value={1, 0},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_MULTI_THREADS,
 	show = true,
 	draw_index = nil,},
 	{
 	name="quality",
 	option_text="Render Quality",
 	items_text={"low","medium","high"},
-	default_item=3,
-	current_item=3,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0.5, 0.8, 1.0},
+	values={0.5, 0.8, 1.0},
+	default_value=DKOPTREADER_CONFIG_RENDER_QUALITY,
 	show = true,
 	draw_index = nil,},
 	{
 	name="auto_straighten",
 	option_text="Auto Straighten",
 	items_text={"0","5","10"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true},
-	value={0, 5, 10},
+	values={0, 5, 10},
+	default_value=DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
 	show = true,
 	draw_index = nil,},
 	{
 	name="justification",
 	option_text="Justification",
 	items_text={"auto","left","center","right","full"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
-	value={-1,0,1,2,3},
+	values={-1,0,1,2,3},
+	default_value=DKOPTREADER_CONFIG_JUSTIFICATION,
 	show = true,
 	draw_index = nil,},
 	{
 	name="max_columns",
 	option_text="Columns",
 	items_text={"1","2","3","4"},
-	default_item=2,
-	current_item=2,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
-	value={1,2,3,4},
+	values={1,2,3,4},
+	default_value=DKOPTREADER_CONFIG_MAX_COLUMNS,
 	show = true,
 	draw_index = nil,},
 	{
 	name="contrast",
 	option_text="Contrast",
 	items_text={"lightest","lighter","default","darker","darkest"},
-	default_item=3,
-	current_item=3,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true, true, true},
-	value={2.0, 1.5, 1.0, 0.5, 0.2},
+	values={2.0, 1.5, 1.0, 0.5, 0.2},
+	default_value=DKOPTREADER_CONFIG_CONTRAST,
 	show = true,
 	draw_index = nil,},
 	{
 	name="screen_rotation",
 	option_text="Screen Rotation",
 	items_text={"0","90","180","270"},
-	default_item=1,
-	current_item=1,
+	current_item=nil,
 	text_dirty=true,
 	marker_dirty={true, true, true, true},
-	value={0, 90, 180, 270},
+	values={0, 90, 180, 270},
+	default_value=DKOPTREADER_CONFIG_SCREEN_ROTATION,
 	show = true,
 	draw_index = nil,},
 }
@@ -287,15 +288,15 @@ function KOPTConfig:makeDefault(configurable)
 		end
 		-- make current index according to configurable table
 		local option = KOPTOptions[i].name
-		local value = configurable[option]
-		local min_diff = math.abs(value - KOPTOptions[i].value[1])
-		KOPTOptions[i].current_item = KOPTOptions[i].default_item
-		for index, val in pairs(KOPTOptions[i].value) do
-			if val == value then
+		local val = configurable[option]
+		local min_diff = math.abs(val - KOPTOptions[i].values[1])
+		KOPTOptions[i].current_item = 1
+		for index, val_ in pairs(KOPTOptions[i].values) do
+			if val == val_ then
 				KOPTOptions[i].current_item = index
 				break
 			else
-				diff = math.abs(value - val)
+				diff = math.abs(val - val_)
 				if diff <= min_diff then
 					min_diff = diff
 					KOPTOptions[i].current_item = index
@@ -308,7 +309,7 @@ end
 function KOPTConfig:reconfigure(configurable)
 	for i=1,#KOPTOptions do
 		option = KOPTOptions[i].name
-		configurable[option] = KOPTOptions[i].value[KOPTOptions[i].current_item]
+		configurable[option] = KOPTOptions[i].values[KOPTOptions[i].current_item]
 	end
 end
 

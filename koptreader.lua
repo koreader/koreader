@@ -2,23 +2,7 @@ require "unireader"
 require "inputbox"
 require "koptconfig"
 
-Configurable = {
-	font_size = 1.2,
-	page_margin = 0.06,
-	line_spacing = 1.2,
-	word_spacing = 0.15,
-	quality = 1.0,
-	text_wrap = 1,
-	defect_size = 1.0,
-	trim_page = 1,
-	detect_indent = 1,
-	multi_threads = 0,
-	auto_straighten = 0,
-	justification = -1,
-	max_columns = 2,
-	contrast = 1.0,
-	screen_rotation = 0,
-}
+Configurable = {}
 
 function Configurable:hash(sep)
 	local hash = ""
@@ -32,11 +16,9 @@ function Configurable:hash(sep)
 end
 
 function Configurable:loadDefaults()
-	-- Configurable = {}
 	for i=1,#KOPTOptions do
 		local key = KOPTOptions[i].name
-		local default_item = KOPTOptions[i].default_item
-		self[key] = KOPTOptions[i].value[default_item]
+		self[key] = KOPTOptions[i].default_value
 	end
 end
 
