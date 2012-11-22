@@ -68,6 +68,23 @@ DPICVIEWER_COMICS_MODE_ENABLE = true
 DPICVIEWER_RTL_MODE_ENABLE = false
 DPICVIEWER_PAGE_MODE_ENABLE = false
 
+-- koptreader config defaults
+DKOPTREADER_CONFIG_FONT_SIZE = 1.0		-- range from 0.1 to 3.0
+DKOPTREADER_CONFIG_TEXT_WRAP = 1		-- 1 = on, 0 = off
+DKOPTREADER_CONFIG_TRIM_PAGE = 1		-- 1 = auto, 0 = manual
+DKOPTREADER_CONFIG_DETECT_INDENT = 1	-- 1 = enable, 0 = disable
+DKOPTREADER_CONFIG_DEFECT_SIZE = 1.0	-- range from 0.0 to 3.0
+DKOPTREADER_CONFIG_PAGE_MARGIN = 0.06	-- range from 0.0 to 1.0
+DKOPTREADER_CONFIG_LINE_SPACING = 1.2	-- range from 0.5 to 2.0
+DKOPTREADER_CONFIG_WORD_SAPCING = 0.15	-- range from 0.05 to 0.5
+DKOPTREADER_CONFIG_MULTI_THREADS = 1	-- 1 = on, 0 = off
+DKOPTREADER_CONFIG_RENDER_QUALITY = 1.0	-- range from 0.5 to 1.0
+DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0	-- range from 0 to 10
+DKOPTREADER_CONFIG_JUSTIFICATION = -1	-- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
+DKOPTREADER_CONFIG_MAX_COLUMNS = 2		-- range from 1 to 4
+DKOPTREADER_CONFIG_CONTRAST = 1.0		-- range from 0.2 to 2.0
+DKOPTREADER_CONFIG_SCREEN_ROTATION = 0	-- 0, 90, 180, 270 degrees
+
 -- supported extensions
 DPDFREADER_EXT = ";pdf;xps;cbz;zip;"
 DDJVUREADER_EXT = ";djvu;"
