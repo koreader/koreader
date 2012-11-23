@@ -81,7 +81,7 @@ function TimeVal:__add(time_b)
 	sum.sec = self.sec + time_b.sec
 	sum.usec = self.usec + time_b.usec
 	if sum.usec > 1000000 then
-		sum.usec = sum.sec - 1000000
+		sum.usec = sum.usec - 1000000
 		sum.sec = sum.sec + 1
 	end
 

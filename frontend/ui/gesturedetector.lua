@@ -185,9 +185,8 @@ function GestureDetector:tapState(ev)
 			}
 		Input:setTimeOut(function()
 			DEBUG("in tap timer", self.last_tap ~= nil)
-			-- double tap will set last_tap to nil
-			-- so if it is not, then user must only
-			-- tapped once
+			-- double tap will set last_tap to nil so if it is not, then
+			-- user must only tapped once
 			if self.last_tap ~= nil then
 				self.last_tap = nil
 				-- we are using closure here
