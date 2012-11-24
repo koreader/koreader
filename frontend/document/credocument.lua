@@ -34,7 +34,7 @@ function CreDocument:engineInit()
 			if _v ~= "Dingbats.cff" and _v ~= "StandardSymL.cff" then
 				local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
 				if not ok then
-					Debug(err)
+					DEBUG(err)
 				end
 			end
 		end

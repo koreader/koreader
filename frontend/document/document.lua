@@ -203,7 +203,7 @@ end
 function Document:drawCurrentView(target, x, y, rect, pos)
 	self._document:gotoPos(pos)
 	tile_bb = Blitbuffer.new(rect.w, rect.h)
-	self._document:drawCurrentView(tile_bb)
+	self._document:drawCurrentPage(tile_bb)
 	target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
 end
 
