@@ -183,7 +183,7 @@ function GestureDetector:tapState(ev)
 		local deadline = self.cur_ev.timev + TimeVal:new{
 				sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
 			}
-		Input:setTimeOut(function()
+		Input:setTimeout(function()
 			DEBUG("in tap timer", self.last_tap ~= nil)
 			-- double tap will set last_tap to nil so if it is not, then
 			-- user must only tapped once
@@ -206,7 +206,7 @@ function GestureDetector:tapState(ev)
 		local deadline = self.cur_ev.timev + TimeVal:new{
 				sec = 0, usec = self.HOLD_INTERVAL
 			}
-		Input:setTimeOut(function()
+		Input:setTimeout(function()
 			print("hold timer", self.state == self.tapState)
 			if self.state == self.tapState then
 				-- timer set in tapState, so we switch to hold

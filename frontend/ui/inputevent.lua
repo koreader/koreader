@@ -268,7 +268,7 @@ function Input:adjustKindle4EventMap()
 	self.event_map[104] = "LPgFwd"
 end
 
-function Input:setTimeOut(cb, tv_out)
+function Input:setTimeout(cb, tv_out)
 	local item = {
 		callback = cb, 
 		deadline = tv_out,
@@ -304,7 +304,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 						local ges = self.timer_callbacks[1].callback()
 						table.remove(self.timer_callbacks, 1)
 						if ges then
-							-- Do we really need to clear all setTimeOut after
+							-- Do we really need to clear all setTimeout after
 							-- decided a gesture? FIXME
 							Input.timer_callbacks = {}
 							return Event:new("Gesture", ges)
