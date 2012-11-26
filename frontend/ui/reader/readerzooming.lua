@@ -1,13 +1,37 @@
 ReaderZooming = InputContainer:new{
 	key_events = {
-		ZoomIn = { { "Shift", Input.group.PgFwd }, doc = "zoom in", event = "Zoom", args = "in" },
-		ZoomOut = { { "Shift", Input.group.PgBack }, doc = "zoom out", event = "Zoom", args = "out" },
-		ZoomToFitPage = { {"A"}, doc = "zoom to fit page", event = "SetZoomMode", args = "page" },
-		ZoomToFitContent = { {"Shift", "A"}, doc = "zoom to fit content", event = "SetZoomMode", args = "content" },
-		ZoomToFitPageWidth = { {"S"}, doc = "zoom to fit page width", event = "SetZoomMode", args = "pagewidth" },
-		ZoomToFitContentWidth = { {"Shift", "S"}, doc = "zoom to fit content width", event = "SetZoomMode", args = "contentwidth" },
-		ZoomToFitPageHeight = { {"D"}, doc = "zoom to fit page height", event = "SetZoomMode", args = "pageheight" },
-		ZoomToFitContentHeight = { {"Shift", "D"}, doc = "zoom to fit content height", event = "SetZoomMode", args = "contentheight" },
+		ZoomIn = {
+			{ "Shift", Input.group.PgFwd }, 
+			doc = "zoom in", event = "Zoom", args = "in" 
+		},
+		ZoomOut = {
+			{ "Shift", Input.group.PgBack }, 
+			doc = "zoom out", event = "Zoom", args = "out" 
+		},
+		ZoomToFitPage = {
+			{ "A" }, 
+			doc = "zoom to fit page", event = "SetZoomMode", args = "page" 
+		},
+		ZoomToFitContent = {
+			{ "Shift", "A" }, 
+			doc = "zoom to fit content", event = "SetZoomMode", args = "content" 
+		},
+		ZoomToFitPageWidth = {
+			{ "S" }, 
+			doc = "zoom to fit page width", event = "SetZoomMode", args = "pagewidth" 
+		},
+		ZoomToFitContentWidth = {
+			{ "Shift", "S" },
+			doc = "zoom to fit content width", event = "SetZoomMode", args = "contentwidth"
+		},
+		ZoomToFitPageHeight = {
+			{ "D" }, 
+			doc = "zoom to fit page height", event = "SetZoomMode", args = "pageheight" 
+		},
+		ZoomToFitContentHeight = {
+			{ "Shift", "D" },
+			doc = "zoom to fit content height", event = "SetZoomMode", args = "contentheight"
+		},
 	},
 	zoom = 1.0,
 	zoom_mode = "free",
@@ -32,7 +56,9 @@ function ReaderZooming:setZoom()
 	end
 	-- check if we're in bbox mode and work on bbox if that's the case
 	local page_size = {}
-	if self.zoom_mode == "content" or self.zoom_mode == "contentwidth" or self.zoom_mode == "content_height" then
+	if self.zoom_mode == "content" 
+	or self.zoom_mode == "contentwidth"
+	or self.zoom_mode == "contentheight" then
 		-- TODO: enable this, still incomplete
 		page_size = self.ui.document:getUsedBBox(self.current_page)
 		self.view:handleEvent(Event:new("BBoxUpdate", page_size))
@@ -59,7 +85,7 @@ function ReaderZooming:setZoom()
 	elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
 		self.zoom = zoom_h
 	end
-	self.view:ZoomUpdate(self.zoom)
+	self.view:onZoomUpdate(self.zoom)
 end
 
 function ReaderZooming:onZoom(direction)
@@ -71,7 +97,7 @@ function ReaderZooming:onZoom(direction)
 	end
 	DEBUG("zoom is now at", self.zoom)
 	self:onSetZoomMode("free")
-	self.view:ZoomUpdate(self.zoom)
+	self.view:onZoomUpdate(self.zoom)
 	return true
 end
 
