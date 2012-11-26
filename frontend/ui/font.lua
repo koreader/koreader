@@ -3,7 +3,7 @@ require "settings" -- for DEBUG()
 Font = {
 	fontmap = {
 		-- default font for menu contents
-		cfont = "droid/DroidSans.ttf",
+		cfont = "droid/DroidSansFallbackFull.ttf",
 		-- default font for title
 		tfont = "NimbusSanL-BoldItal.cff",
 		-- default font for footer
