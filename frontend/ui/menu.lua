@@ -80,6 +80,15 @@ function MenuItem:init()
 	self.active_key_events = {
 		Select = { {"Press"}, doc = "chose selected item" },
 	}
+	self.ges_events = {
+		TapSelect = {
+			GestureRange:new{
+				ges = "tap",
+				range = self.dimen,
+			},
+			doc = "Select Menu Item",
+		},
+	}
 
 	w = sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
 	if w >= self.content_width then
@@ -133,6 +142,11 @@ function MenuItem:onShowItemDetail()
 	UIManager:show(InfoMessage:new{
 		text=self.detail,
 	})
+	return true
+end
+
+function MenuItem:onTapSelect()
+	self.menu:onMenuSelect(self.table)
 	return true
 end
 
@@ -265,9 +279,11 @@ function Menu:updateItems(select_number)
 			local item_tmp = MenuItem:new{
 				text = self.item_table[i].text,
 				face = self.cface,
-				dimen = self.item_dimen,
+				dimen = self.item_dimen:new(),
 				shortcut = item_shortcut,
 				shortcut_style = shortcut_style,
+				table = self.item_table[i],
+				menu = self,
 			}
 			table.insert(self.item_group, item_tmp)
 			table.insert(self.layout, {item_tmp})

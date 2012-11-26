@@ -299,8 +299,9 @@ static int waitForInput(lua_State *L) {
 		}
 
 		int ticks = SDL_GetTicks();
-		if (usecs < 0)
+		if (usecs < 0) {
 			SDL_WaitEvent(&event);
+		}
 		else {
 			while (SDL_GetTicks()-ticks <= usecs/1000) {
 				if (SDL_PollEvent(&event)) break;

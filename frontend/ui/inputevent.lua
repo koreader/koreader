@@ -1,23 +1,13 @@
 require "ui/event"
 require "ui/device"
+require "ui/time"
+require "ui/gesturedetector"
 require "settings"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
 EV_KEY = 1
 EV_ABS = 3
-
--- Synchronization events (SYN.code).
-SYN_REPORT = 0
-SYN_CONFIG = 1
-SYN_MT_REPORT = 2
-
--- For multi-touch events (ABS.code).
-ABS_MT_SLOT = 47
-ABS_MT_POSITION_X = 53
-ABS_MT_POSITION_Y = 54
-ABS_MT_TRACKING_ID = 57
-ABS_MT_PRESSURE = 58
 
 -- key press event values (KEY.value)
 EVENT_VALUE_KEY_PRESS = 1
@@ -235,6 +225,8 @@ Input = {
 			"LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
 		}
 	},
+
+	timer_callbacks = {},
 }
 
 function Input:init()
@@ -276,11 +268,55 @@ function Input:adjustKindle4EventMap()
 	self.event_map[104] = "LPgFwd"
 end
 
+function Input:setTimeout(cb, tv_out)
+	local item = {
+		callback = cb, 
+		deadline = tv_out,
+	}
+	for k,v in ipairs(self.timer_callbacks) do
+		if v.deadline > tv_out then
+			table.insert(self.timer_callbacks, k, item)
+			break
+		end
+	end
+	if #self.timer_callbacks <= 0 then
+		self.timer_callbacks[1] = item
+	end
+end
+
 function Input:waitEvent(timeout_us, timeout_s)
 	-- wrapper for input.waitForEvents that will retry for some cases
 	local ok, ev
+	local wait_deadline = TimeVal:now() + TimeVal:new{
+			sec = timeout_s, 
+			usec = timeout_us
+		}
 	while true do
-		ok, ev = pcall(input.waitForEvent, timeout_us, timeout_s)
+		if #self.timer_callbacks > 0 then
+			-- we don't block if there is any timer, set wait to 10us
+			while #self.timer_callbacks > 0 do
+				ok, ev = pcall(input.waitForEvent, 100)
+				if ok then break end
+				local tv_now = TimeVal:now()
+				if ((not timeout_us and not timeout_s) or tv_now < wait_deadline) then
+					-- check whether timer is up
+					if tv_now >= self.timer_callbacks[1].deadline then
+						local ges = self.timer_callbacks[1].callback()
+						table.remove(self.timer_callbacks, 1)
+						if ges then
+							-- Do we really need to clear all setTimeout after
+							-- decided a gesture? FIXME
+							Input.timer_callbacks = {}
+							return Event:new("Gesture", ges)
+						end -- EOF if ges
+					end -- EOF if deadline reached
+				else
+					break
+				end -- EOF if not exceed wait timeout
+			end -- while #timer_callbacks > 0
+		else
+			ok, ev = pcall(input.waitForEvent, timeout_us)
+		end -- EOF if #timer_callbacks > 0
 		if ok then
 			break
 		end
@@ -291,7 +327,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 		elseif ev == "application forced to quit" then
 			os.exit(0)
 		end
-		DEBUG("got error waiting for events:", ev)
+		--DEBUG("got error waiting for events:", ev)
 		if ev ~= "Waiting for input failed: 4\n" then
 			-- we only abort if the error is not EINTR
 			break
@@ -341,28 +377,10 @@ function Input:waitEvent(timeout_us, timeout_s)
 			elseif ev.value == EVENT_VALUE_KEY_RELEASE then
 				return Event:new("KeyRelease", key)
 			end
-		elseif ev.type == EV_ABS then
-			if ev.code == ABS_MT_SLOT then
-				DEBUG("MT_SLOT:", ev.value)
-			elseif ev.code == ABS_MT_TRACKING_ID then
-				DEBUG("MT_TRACK_ID:", ev.value)
-			elseif ev.code == ABS_MT_POSITION_X then
-				DEBUG("MT_X:", ev.value)
-			elseif ev.code == ABS_MT_POSITION_Y then
-				DEBUG("MT_Y:", ev.value)
-			else
-				DEBUG("unknown touch event!", ev)
-				return Event:new("UnkonwnTouchEvent", ev)
-			end
-		elseif ev.type == EV_SYN then
-			if ev.code == SYN_REPORT then
-				DEBUG("SYN REPORT")
-			elseif ev.code == SYN_MT_REPORT then
-				DEBUG("SYN MT_REPORT")
-			elseif ev.code == SYN_CONFIG then
-				DEBUG("SYN CONFIG")
-			else
-				DEBUG(ev)
+		elseif ev.type == EV_ABS or ev.type == EV_SYN then
+			local touch_ges = GestureDetector:feedEvent(ev)
+			if touch_ges then
+				return Event:new("Gesture", touch_ges)
 			end
 		else
 			-- some other kind of event that we do not know yet
