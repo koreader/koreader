@@ -13,6 +13,7 @@ JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
+K2PDFOPTLIBDIR=libk2pdfopt
 
 # must point to directory with *.ttf fonts for crengine
 TTF_FONTS_DIR=$(MUPDFDIR)/fonts
@@ -84,6 +85,7 @@ endif
 
 # standard includes
 KPDFREADER_CFLAGS=$(CFLAGS) -I$(LUADIR)/src -I$(MUPDFDIR)/
+K2PDFOPT_CFLAGS=-I$(K2PDFOPTLIBDIR)/willuslib -I$(K2PDFOPTLIBDIR)/k2pdfoptlib -I$(K2PDFOPTLIBDIR)/
 
 # enable tracing output:
 
@@ -113,19 +115,21 @@ LUALIB := $(LUADIR)/src/libluajit.a
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
+K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so.1
+
 all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
 		kpdfview.o \
 		einkfb.o \
 		pdf.o \
-		k2pdfopt.o \
 		blitbuffer.o \
 		drawcontext.o \
+		koptcontext.o \
 		input.o \
 		$(POPENNSLIB) \
 		util.o \
@@ -143,7 +147,7 @@ kpdfview: kpdfview.o einkfb.o pdf.o k2pdfopt.o blitbuffer.o drawcontext.o input.
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-o $@ \
-		-lm -ldl -lpthread -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -162,14 +166,14 @@ slider_watcher: slider_watcher.o $(POPENNSLIB)
 ft.o: %.o: %.c $(THIRDPARTYLIBS)
 	$(CC) -c $(KPDFREADER_CFLAGS) -I$(FREETYPEDIR)/include -I$(MUPDFDIR)/fitz $< -o $@
 
-kpdfview.o pdf.o blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
+blitbuffer.o util.o drawcontext.o einkfb.o input.o mupdfimg.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
-k2pdfopt.o: %.o: %.c
-	$(CC) -c -I$(MUPDFDIR)/ -I$(DJVUDIR)/ $(CFLAGS) $< -o $@
+kpdfview.o koptcontext.o pdf.o: %.o: %.c
+	$(CC) -c $(KPDFREADER_CFLAGS) $(K2PDFOPT_CFLAGS) $(EMU_CFLAGS) -I$(LFSDIR)/src $< -o $@
 
 djvu.o: %.o: %.c
-	$(CC) -c $(KPDFREADER_CFLAGS) -I$(DJVUDIR)/ $< -o $@
+	$(CC) -c $(KPDFREADER_CFLAGS) $(K2PDFOPT_CFLAGS) -I$(DJVUDIR)/ $< -o $@
 
 pic.o: %.o: %.c
 	$(CC) -c $(KPDFREADER_CFLAGS) $< -o $@
@@ -231,6 +235,7 @@ cleanthirdparty:
 	rm -f $(MUPDFDIR)/fontdump.host
 	rm -f $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C $(POPENNSDIR) clean
+	$(MAKE) -C $(K2PDFOPTLIBDIR) clean
 
 $(MUPDFDIR)/fontdump.host:
 	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
@@ -273,7 +278,12 @@ endif
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB)
+$(K2PDFOPTLIB):
+	$(MAKE) -C $(K2PDFOPTLIBDIR) BUILDMODE=shared CC="$(CC)" CFLAGS="$(CFLAGS) -O3" AR="$(AR)" all
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(K2PDFOPTLIBDIR)/libk2pdfopt.so* $(LIBDIR)
+
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
 
 INSTALL_DIR=kindlepdfviewer
 
@@ -289,7 +299,7 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L libs/libdjvulibre.so.21 $(INSTALL_DIR)/libs
+	cp -L libs/libdjvulibre.so.21 $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)

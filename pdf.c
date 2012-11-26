@@ -15,15 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include <stdio.h>
+#include <math.h>
+#include <stddef.h>
+#include <pthread.h>
 #include <fitz/fitz-internal.h>
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
+#include "koptcontext.h"
+#include "k2pdfopt.h"
 #include "pdf.h"
-#include <stdio.h>
-#include <math.h>
-#include <stddef.h>
-
 
 typedef struct PdfDocument {
 	fz_document *xref;
@@ -511,45 +514,126 @@ static int closePage(lua_State *L) {
 	return 0;
 }
 
+/* bmpmupdf.c from willuslib */
+static int bmpmupdf_pixmap_to_bmp(WILLUSBITMAP *bmp, fz_context *ctx, fz_pixmap *pixmap) {
+	unsigned char *p;
+	int ncomp, i, row, col;
+
+	bmp->width = fz_pixmap_width(ctx, pixmap);
+	bmp->height = fz_pixmap_height(ctx, pixmap);
+	ncomp = fz_pixmap_components(ctx, pixmap);
+	/* Has to be 8-bit or RGB */
+	if (ncomp != 2 && ncomp != 4)
+		return (-1);
+	bmp->bpp = (ncomp == 2) ? 8 : 24;
+	bmp_alloc(bmp);
+	if (ncomp == 2)
+		for (i = 0; i < 256; i++)
+			bmp->red[i] = bmp->green[i] = bmp->blue[i] = i;
+	p = fz_pixmap_samples(ctx, pixmap);
+	if (ncomp == 1)
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			memcpy(dest, p, bmp->width);
+			p += bmp->width;
+		}
+	else if (ncomp == 2)
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			for (col = 0; col < bmp->width; col++, dest++, p += 2)
+				dest[0] = p[0];
+		}
+	else
+		for (row = 0; row < bmp->height; row++) {
+			unsigned char *dest;
+			dest = bmp_rowptr_from_top(bmp, row);
+			for (col = 0; col < bmp->width;
+					col++, dest += ncomp - 1, p += ncomp)
+				memcpy(dest, p, ncomp - 1);
+		}
+	return (0);
+}
+
 static int reflowPage(lua_State *L) {
-
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
-	int width  = luaL_checkint(L, 4); // framebuffer size
-	int height = luaL_checkint(L, 5);
-	double font_size = luaL_checknumber(L, 6);
-	double page_margin = luaL_checknumber(L, 7);
-	double line_spacing = luaL_checknumber(L, 8);
-	double word_spacing = luaL_checknumber(L, 9);
-	int text_wrap = luaL_checkint(L, 10);
-	int straighten = luaL_checkint(L, 11);
-	int justification = luaL_checkint(L, 12);
-	int columns = luaL_checkint(L, 13);
-	double contrast = luaL_checknumber(L, 14);
-	int rotation = luaL_checknumber(L, 15);
+	KOPTContext *kctx = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
+	fz_device *dev;
+	fz_pixmap *pix;
+	fz_rect bounds,bounds2;
+	fz_matrix ctm;
+	fz_bbox bbox;
 
-	k2pdfopt_set_params(width, height, font_size, page_margin, line_spacing, word_spacing, \
-			text_wrap, straighten, justification, columns, contrast, rotation);
-	k2pdfopt_mupdf_reflow(page->doc->xref, page->page, page->doc->context);
-	k2pdfopt_rfbmp_size(&width, &height);
-	k2pdfopt_rfbmp_zoom(&dc->zoom);
+	pix = NULL;
+	fz_var(pix);
+	bounds.x0 = kctx->bbox.x0;
+	bounds.y0 = kctx->bbox.y0;
+	bounds.x1 = kctx->bbox.x1;
+	bounds.y1 = kctx->bbox.y1;
 
-	lua_pushnumber(L, (double)width);
-	lua_pushnumber(L, (double)height);
-	lua_pushnumber(L, (double)dc->zoom);
+	double dpp,zoom;
+	zoom = kctx->zoom;
+	double dpi = 250*zoom*kctx->quality;
 
-	return 3;
+	do {
+		dpp = dpi / 72.;
+		ctm = fz_scale(dpp, dpp);
+		//    ctm=fz_concat(ctm,fz_rotate(rotation));
+		bounds2 = fz_transform_rect(ctm, bounds);
+		bbox = fz_round_rect(bounds2);
+		printf("reading page:%d,%d,%d,%d zoom:%.2f dpi:%.0f\n",bbox.x0,bbox.y0,bbox.x1,bbox.y1,zoom,dpi);
+		kctx->zoom = zoom;
+		zoom *= kctx->shrink_factor;
+		dpi *= kctx->shrink_factor;
+	} while (bbox.x1 > kctx->read_max_width | bbox.y1 > kctx->read_max_height);
+
+	pix = fz_new_pixmap_with_bbox(page->doc->context, fz_device_gray, bbox);
+	fz_clear_pixmap_with_value(page->doc->context, pix, 0xff);
+	dev = fz_new_draw_device(page->doc->context, pix);
+
+#ifdef MUPDF_TRACE
+	fz_device *tdev;
+	fz_try(page->doc->context) {
+		tdev = fz_new_trace_device(page->doc->context);
+		fz_run_page(page->doc->xref, page->page, tdev, ctm, NULL);
+	}
+	fz_always(page->doc->context) {
+		fz_free_device(tdev);
+	}
+#endif
+
+	fz_run_page(page->doc->xref, page->page, dev, ctm, NULL);
+	fz_free_device(dev);
+
+	WILLUSBITMAP *src = malloc(sizeof(WILLUSBITMAP));
+	bmp_init(src);
+
+	int status = bmpmupdf_pixmap_to_bmp(src, page->doc->context, pix);
+	fz_drop_pixmap(page->doc->context, pix);
+
+	kctx->src = src;
+	if (kctx->precache) {
+		pthread_t rf_thread;
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_create( &rf_thread, &attr, k2pdfopt_reflow_bmp, (void*) kctx);
+		pthread_attr_destroy(&attr);
+	} else {
+		k2pdfopt_reflow_bmp(kctx);
+	}
+
+	return 0;
 }
 
 static int drawReflowedPage(lua_State *L) {
-	uint8_t *pmptr = NULL;
-
 	PdfPage *page = (PdfPage*) luaL_checkudata(L, 1, "pdfpage");
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
 
+	uint8_t *koptr = kc->data;
 	uint8_t *bbptr = bb->data;
-	k2pdfopt_rfbmp_ptr(&pmptr);
 
 	int x_offset = 0;
 	int y_offset = 0;
@@ -559,12 +643,12 @@ static int drawReflowedPage(lua_State *L) {
 	for(y = y_offset; y < bb->h; y++) {
 		for(x = x_offset/2; x < (bb->w/2); x++) {
 			int p = x*2 - x_offset;
-			bbptr[x] = (((pmptr[p + 1] & 0xF0) >> 4) | (pmptr[p] & 0xF0)) ^ 0xFF;
+			bbptr[x] = (((koptr[p + 1] & 0xF0) >> 4) | (koptr[p] & 0xF0)) ^ 0xFF;
 		}
 		bbptr += bb->pitch;
-		pmptr += bb->w;
+		koptr += bb->w;
 		if (bb->w & 1) {
-			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+			bbptr[x] = 255 - (koptr[x*2] & 0xF0);
 		}
 	}
 

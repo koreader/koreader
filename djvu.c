@@ -18,11 +18,14 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 #include <libdjvu/miniexp.h>
 #include <libdjvu/ddjvuapi.h>
 
 #include "blitbuffer.h"
 #include "drawcontext.h"
+#include "koptcontext.h"
+#include "k2pdfopt.h"
 #include "djvu.h"
 
 #define MIN(a, b)      ((a) < (b) ? (a) : (b))
@@ -471,46 +474,82 @@ static int closePage(lua_State *L) {
 }
 
 static int reflowPage(lua_State *L) {
-
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	KOPTContext *kctx = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
 	ddjvu_render_mode_t mode = (int) luaL_checkint(L, 3);
-	int width  = luaL_checkint(L, 4); // framebuffer size
-	int height = luaL_checkint(L, 5);
-	double font_size = luaL_checknumber(L, 6);
-	double page_margin = luaL_checknumber(L, 7);
-	double line_spacing = luaL_checknumber(L, 8);
-	double word_spacing = luaL_checknumber(L, 9);
-	int text_wrap = luaL_checkint(L, 10);
-	int straighten = luaL_checkint(L, 11);
-	int justification = luaL_checkint(L, 12);
-	int columns = luaL_checkint(L, 13);
-	double contrast = luaL_checknumber(L, 14);
-	int rotation = luaL_checknumber(L, 15);
+	ddjvu_rect_t prect;
+	ddjvu_rect_t rrect;
 
-	k2pdfopt_set_params(width, height, font_size, page_margin, line_spacing, word_spacing, \
-			text_wrap, straighten, justification, columns, contrast, rotation);
+	int px, py, pw, ph, rx, ry, rw, rh, idpi, status;
+	double zoom = kctx->zoom;
+	double dpi = 250*zoom;
 
-	k2pdfopt_djvu_reflow(page->page_ref, page->doc->context, mode, page->doc->pixelformat);
-	k2pdfopt_rfbmp_size(&width, &height);
-	k2pdfopt_rfbmp_zoom(&dc->zoom);
+	px = 0;
+	py = 0;
+	pw = ddjvu_page_get_width(page->page_ref);
+	ph = ddjvu_page_get_height(page->page_ref);
+	idpi = ddjvu_page_get_resolution(page->page_ref);
+	prect.x = px;
+	prect.y = py;
 
-	lua_pushnumber(L, (double)width);
-	lua_pushnumber(L, (double)height);
-	lua_pushnumber(L, (double)dc->zoom);
+	rx = (int)kctx->bbox.x0;
+	ry = (int)kctx->bbox.y0;
+	rw = (int)(kctx->bbox.x1 - kctx->bbox.x0);
+	rh = (int)(kctx->bbox.y1 - kctx->bbox.y0);
 
-	return 3;
+	do {
+		prect.w = pw * dpi / idpi;
+		prect.h = ph * dpi / idpi;
+		rrect.x = rx * dpi / idpi;
+		rrect.y = ry * dpi / idpi;
+		rrect.w = rw * dpi / idpi;
+		rrect.h = rh * dpi / idpi;
+		printf("rendering page:%d,%d,%d,%d dpi:%.0f idpi:%.0d\n",rrect.x,rrect.y,rrect.w,rrect.h,dpi,idpi);
+		kctx->zoom = zoom;
+		zoom *= kctx->shrink_factor;
+		dpi *= kctx->shrink_factor;
+	} while (rrect.w > kctx->read_max_width | rrect.h > kctx->read_max_height);
+
+	WILLUSBITMAP *src = malloc(sizeof(WILLUSBITMAP));
+	bmp_init(src);
+	src->width = rrect.w;
+	src->height = rrect.h;
+	src->bpp = 8;
+
+	bmp_alloc(src);
+	if (src->bpp == 8) {
+		int ii;
+		for (ii = 0; ii < 256; ii++)
+		src->red[ii] = src->blue[ii] = src->green[ii] = ii;
+	}
+
+	ddjvu_format_set_row_order(page->doc->pixelformat, 1);
+
+	status = ddjvu_page_render(page->page_ref, mode, &prect, &rrect, page->doc->pixelformat,
+			bmp_bytewidth(src), (char *) src->data);
+
+	kctx->src = src;
+	if (kctx->precache) {
+		pthread_t rf_thread;
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_create(&rf_thread, &attr, k2pdfopt_reflow_bmp, (void*) kctx);
+		pthread_attr_destroy(&attr);
+	} else {
+		k2pdfopt_reflow_bmp(kctx);
+	}
+
+	return 0;
 }
 
 static int drawReflowedPage(lua_State *L) {
-	uint8_t *pmptr = NULL;
-
 	DjvuPage *page = (DjvuPage*) luaL_checkudata(L, 1, "djvupage");
-	DrawContext *dc = (DrawContext*) luaL_checkudata(L, 2, "drawcontext");
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 2, "koptcontext");
 	BlitBuffer *bb = (BlitBuffer*) luaL_checkudata(L, 3, "blitbuffer");
 
+	uint8_t *koptr = kc->data;
 	uint8_t *bbptr = bb->data;
-	k2pdfopt_rfbmp_ptr(&pmptr);
 
 	int x_offset = 0;
 	int y_offset = 0;
@@ -520,12 +559,12 @@ static int drawReflowedPage(lua_State *L) {
 	for(y = y_offset; y < bb->h; y++) {
 		for(x = x_offset/2; x < (bb->w/2); x++) {
 			int p = x*2 - x_offset;
-			bbptr[x] = (((pmptr[p + 1] & 0xF0) >> 4) | (pmptr[p] & 0xF0)) ^ 0xFF;
+			bbptr[x] = (((koptr[p + 1] & 0xF0) >> 4) | (koptr[p] & 0xF0)) ^ 0xFF;
 		}
 		bbptr += bb->pitch;
-		pmptr += bb->w;
+		koptr += bb->w;
 		if (bb->w & 1) {
-			bbptr[x] = 255 - (pmptr[x*2] & 0xF0);
+			bbptr[x] = 255 - (koptr[x*2] & 0xF0);
 		}
 	}
 
