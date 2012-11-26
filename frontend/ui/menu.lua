@@ -200,17 +200,21 @@ function Menu:init()
 		text = self.title,
 		face = self.tface,
 	}
+
 	-- group for items
 	self.item_group = VerticalGroup:new{}
 	self.page_info = TextWidget:new{
 		face = self.fface,
-	}
+	} -- VerticalGroup
 
+	-- group for menu layout
 	local content = VerticalGroup:new{
+				name = "haha",
 		self.menu_title,
 		self.item_group,
 		self.page_info,
 	} -- VerticalGroup
+	self.content_group = content
 
 	if not self.is_borderless then
 		self[1] = CenterContainer:new{
@@ -242,8 +246,8 @@ function Menu:init()
 end
 
 function Menu:updateItems(select_number)
-	self.layout = {}
 	self.item_group:clear()
+	self.content_group:resetLayout()
 
 	for c = 1, self.perpage do
 		local i = (self.page - 1) * self.perpage + c 
@@ -270,8 +274,6 @@ function Menu:updateItems(select_number)
 				shortcut_style = shortcut_style,
 			}
 			table.insert(self.item_group, item_tmp)
-			table.insert(self.layout, {item_tmp})
-			--self.last_shortcut = c
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
