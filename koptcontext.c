@@ -26,6 +26,7 @@ static int newKOPTContext(lua_State *L) {
 	int columns = 2;
 	int offset_x = 0;
 	int offset_y = 0;
+	int dev_dpi = 167;
 	int dev_width = 600;
 	int dev_height = 800;
 	int page_width = 600;
@@ -58,6 +59,7 @@ static int newKOPTContext(lua_State *L) {
 	kc->columns = columns;
 	kc->offset_x = offset_x;
 	kc->offset_y = offset_y;
+	kc->dev_dpi = dev_dpi;
 	kc->dev_width = dev_width;
 	kc->dev_height = dev_height;
 	kc->page_width = page_width;
@@ -144,6 +146,12 @@ static int kcGetOffset(lua_State *L) {
 	lua_pushinteger(L, kc->offset_x);
 	lua_pushinteger(L, kc->offset_y);
 	return 2;
+}
+
+static int kcSetDeviceDPI(lua_State *L) {
+	KOPTContext *kc = (KOPTContext*) luaL_checkudata(L, 1, "koptcontext");
+	kc->dev_dpi = luaL_checkint(L, 2);
+	return 0;
 }
 
 static int kcSetDeviceDim(lua_State *L) {
@@ -243,6 +251,7 @@ static const struct luaL_Reg koptcontext_meth[] = {
 	{"setOffset", kcSetOffset},
 	{"getOffset", kcGetOffset},
 	{"setDeviceDim", kcSetDeviceDim},
+	{"setDeviceDPI", kcSetDeviceDPI},
 	{"getPageDim", kcGetPageDim},
 	{"setStraighten", kcSetStraighten},
 	{"setJustification", kcSetJustification},
