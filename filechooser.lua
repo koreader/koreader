@@ -35,11 +35,10 @@ FileChooser = {
 	before_clipboard, -- NuPogodi, 30.09.12: to store the path where jump to clipboard was made from
 
 	-- modes that configures the filechoser for users with various purposes & skills
-	filemanager_expert_mode, -- default value is defined in reader.lua
-	-- the definitions
-	BEGINNERS_MODE = 1, -- the filemanager content is restricted by files with reader-related extensions; safe renaming (no extension)
-	ADVANCED_MODE = 2, -- no extension-based filtering; renaming with extensions; appreciable danger to crash crengine by improper docs
-	ROOT_MODE = 3, -- TODO: all functions (including non-stable and dangerous)
+	filemanager_mode, -- the value is set in reader.lua
+	-- symbolc definitions for filemanager_mode
+	RESTRICTED = 1, -- the filemanager content is restricted by files with reader-related extensions; safe renaming (no extension)
+	UNRESTRICTED = 2, -- no extension-based filtering; renaming with extensions; appreciable danger to crash crengine by improper docs
 }
 
 -- NuPogodi, 29.09.12: simplified the code
@@ -144,7 +143,7 @@ function FileChooser:readDir()
 	table.sort(self.files)
 end
 
-function FileChooser:setPath(newPath)
+function FileChooser:setPath(newPath, reset_pos)
 	local oldPath = self.path
 	local search_position = false
 
@@ -178,8 +177,11 @@ function FileChooser:setPath(newPath)
 	else
 		self.items = #self.dirs + #self.files
 
-		-- Dijkstra will hate me for this...
 		if newPath == oldPath then
+			if reset_pos then
+				self.page = 1
+				self.current = 1
+			end
 			return
 		end
 
@@ -443,18 +445,15 @@ function FileChooser:addAllCommands()
 			self.pagedirty = true
 		end -- function
 	)
-	-- make renaming flexible: it either keeps old extension (BEGINNERS_MODE) or
-	-- allows to rename the whole filename including the extension
 	self.commands:add(KEY_R, MOD_SHIFT, "R",
 		"rename file",
 		function(self)
 			local oldname = self:FullFileName()
 			if oldname then
-				-- NuPogodi, 04.09.2012: safe mode (keep old extensions)
-				-- Tigran, 18/08/12: corrected the rename operation to include extension.)
 				local name_we = self.files[self.perpage*(self.page-1)+self.current-#self.dirs]
 				local ext = ""
-				if self.filemanager_expert_mode <= self.BEGINNERS_MODE then
+				-- in RESTRICTED mode don't allow renaming extension
+				if self.filemanager_mode == self.RESTRICTED then
 					ext = "."..string.lower(string.match(oldname, ".+%.([^.]+)") or "")
 					name_we = string.sub(name_we, 1, -1-string.len(ext))
 				end
@@ -470,9 +469,9 @@ function FileChooser:addAllCommands()
 		end
 	)
 	self.commands:add(KEY_M, MOD_ALT, "M",
-		"set user privilege level",
+		"set file manager mode",
 		function(self)
-			self:changeFileChooserMode()
+			self:setFileManagerMode()
 		end
 	)
 	self.commands:add(KEY_E, nil, "E",
@@ -646,32 +645,18 @@ function InQuotes(text)
 	return "\""..text.."\""
 end
 
---[[ NuPogodi, 04.09.2012: to make it more easy for users with various purposes and skills.
-ATM, one may leave only silent toggling between BEGINNERS_MODE <> ADVANCED_MODE
--- But, in future, one more (the so called ROOT_MODE) might also be rather useful.
-Switching this mode on should allow developers & beta-testers to use some unstable
-and/or dangerous functions able to crash the reader. ]]
-
-function FileChooser:changeFileChooserMode()
-	local face_list = { "Safe mode for beginners", "Advanced mode for experienced users", "Expert mode for beta-testers & developers" }
+function FileChooser:setFileManagerMode()
 	local modes_menu = SelectMenu:new{
-		menu_title = "Set user privilege level",
-		item_array = face_list,
-		current_entry = self.filemanager_expert_mode - 1,
+		menu_title = "Set file manager mode",
+		item_array = {"Restricted", "Unrestricted"},
+		current_entry = self.filemanager_mode - 1,
 		}
 	local m = modes_menu:choose(0, G_height)
-	if m and m ~= self.filemanager_expert_mode then
-			if (self.filemanager_expert_mode == self.BEGINNERS_MODE and m > self.BEGINNERS_MODE)
-			or (m == self.BEGINNERS_MODE and self.filemanager_expert_mode > self.BEGINNERS_MODE) then
-				self.filemanager_expert_mode = m	-- make sure that new mode is set before...
-				self:setPath(self.path)			-- refreshing the folder content
-			else
-				self.filemanager_expert_mode = m
-			end
-			G_reader_settings:saveSetting("filemanager_expert_mode", self.filemanager_expert_mode)
+	if m and m ~= self.filemanager_mode then
+		self.filemanager_mode = m
+		self:setPath(self.path,true)
+		G_reader_settings:saveSetting("filemanager_mode", self.filemanager_mode)
 	end
-	-- NuPogodi, 26.09.2012: temporary place; when properly tested, might be commented / deleted the following line
-	InfoMessage:initInfoMessageSettings()
 	self.pagedirty = true
 end
 

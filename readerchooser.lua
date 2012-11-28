@@ -72,7 +72,7 @@ function ReaderChooser:getReaderByType(ftype)
 	if #readers >= 1 then
 		return registry[readers[1]][1]
 	else
-		if FileChooser.filemanager_expert_mode  > FileChooser.BEGINNERS_MODE then
+		if FileChooser.filemanager_mode == FileChooser.UNRESTRICTED then
 			return CREReader
 		else
 			return nil
@@ -126,7 +126,7 @@ function ReaderChooser:getReaderByName(filename)
 	elseif #readers == 1 then
 		return registry[readers[1]][1]
 	else
-		if FileChooser.filemanager_expert_mode  > FileChooser.BEGINNERS_MODE then
+		if FileChooser.filemanager_mode == FileChooser.UNRESTRICTED then
 			return CREReader
 		else
 			return nil
