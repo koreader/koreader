@@ -36,7 +36,7 @@ FileChooser = {
 
 	-- modes that configures the filechoser for users with various purposes & skills
 	filemanager_mode, -- the value is set in reader.lua
-	-- symbolc definitions for filemanager_mode
+	-- symbolic definitions for filemanager_mode
 	RESTRICTED = 1, -- the filemanager content is restricted by files with reader-related extensions; safe renaming (no extension)
 	UNRESTRICTED = 2, -- no extension-based filtering; renaming with extensions; appreciable danger to crash crengine by improper docs
 }
