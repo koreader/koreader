@@ -135,7 +135,7 @@ if fontmap ~= nil then
 end
 
 -- set up the mode to manage files
-FileChooser.filemanager_expert_mode = G_reader_settings:readSetting("filemanager_expert_mode") or 1
+FileChooser.filemanager_mode = G_reader_settings:readSetting("filemanager_mode") or FileChooser.RESTRICTED
 InfoMessage:initInfoMessageSettings()
 local tmp = G_reader_settings:readSetting("G_battery_logging")
 if tmp ~= nil then
