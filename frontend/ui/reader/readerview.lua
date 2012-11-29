@@ -44,6 +44,7 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.zoom,
 			self.state.rotation,
 			self.render_mode)
+		self:recalculate()
 	else
 		self.ui.document:drawCurrentView(
 			bb,
