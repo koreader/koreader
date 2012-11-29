@@ -140,6 +140,7 @@ FrameContainer = WidgetContainer:new{
 
 function FrameContainer:getSize()
 	local content_size = WidgetContainer.getSize(self)
+
 	return {
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
@@ -394,9 +395,18 @@ function HorizontalGroup:paintTo(bb, x, y)
 	end
 end
 
-function HorizontalGroup:free()
+function HorizontalGroup:clear()
+	self:free()
+	WidgetContainer.clear(self)
+end
+
+function HorizontalGroup:resetLayout()
 	self._size = nil
 	self._offsets = {}
+end
+
+function HorizontalGroup:free()
+	self:resetLayout()
 	WidgetContainer.free(self)
 end
 
@@ -453,9 +463,18 @@ function VerticalGroup:paintTo(bb, x, y)
 	end
 end
 
-function VerticalGroup:free()
+function VerticalGroup:clear()
+	self:free()
+	WidgetContainer.clear(self)
+end
+
+function VerticalGroup:resetLayout()
 	self._size = nil
 	self._offsets = {}
+end
+
+function VerticalGroup:free()
+	self:resetLayout()
 	WidgetContainer.free(self)
 end
 

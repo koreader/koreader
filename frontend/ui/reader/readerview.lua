@@ -57,7 +57,8 @@ end
 
 function ReaderView:recalculate()
 	if self.ui.document.info.has_pages then
-		local page_size = self.ui.document:getPageDimensions(self.state.page, self.state.zoom, self.state.rotation)
+		local page_size = self.ui.document:getPageDimensions(
+			self.state.page, self.state.zoom, self.state.rotation)
 		-- TODO: bbox
 		self.page_area = page_size
 
@@ -68,7 +69,7 @@ function ReaderView:recalculate()
 	else
 		self.visible_area:setSizeTo(self.dimen)
 	end
-	-- flag a repaint
+	-- flag a repaint so self:paintTo will be called
 	UIManager:setDirty(self.dialog)
 end
 
@@ -105,7 +106,7 @@ function ReaderView:onPosUpdate(new_pos)
 	self:recalculate()
 end
 
-function ReaderView:ZoomUpdate(zoom)
+function ReaderView:onZoomUpdate(zoom)
 	self.state.zoom = zoom
 	self:recalculate()
 end
