@@ -8,8 +8,8 @@ DJVUDIR=djvulibre
 KPVCRLIBDIR=kpvcrlib
 CRENGINEDIR=$(KPVCRLIBDIR)/crengine
 
-FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype-2.4.10
-JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg-9
+FREETYPEDIR=$(MUPDFDIR)/thirdparty/freetype
+JPEGDIR=$(MUPDFDIR)/thirdparty/jpeg
 LFSDIR=luafilesystem
 
 POPENNSDIR=popen-noshell
@@ -96,6 +96,7 @@ K2PDFOPT_CFLAGS=-I$(K2PDFOPTLIBDIR)/willuslib -I$(K2PDFOPTLIBDIR)/k2pdfoptlib -I
 MUPDFLIBS := $(MUPDFLIBDIR)/libfitz.a
 DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so \
 			$(LIBDIR)/libdjvulibre.so
+DJVULIB :=	$(LIBDIR)/libdjvulibre.so.21
 DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
 CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
 			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
@@ -111,7 +112,7 @@ THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
 			#$(MUPDFLIBDIR)/libjpeg.a \
 			#$(CRENGINEDIR)/thirdparty/libjpeg/libjpeg.a \
 
-LUALIB := $(LUADIR)/src/libluajit.a
+LUALIB := $(LIBDIR)/libluajit-5.1.so.2
 
 POPENNSLIB := $(POPENNSDIR)/libpopen_noshell.a
 
@@ -136,18 +137,18 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		ft.o \
 		lfs.o \
 		mupdfimg.o \
-		$(MUPDFLIBS) \
-		$(THIRDPARTYLIBS) \
-		$(LUALIB) \
-		djvu.o \
 		pic.o \
 		pic_jpeg.o \
+		$(MUPDFLIBS) \
+		$(THIRDPARTYLIBS) \
+		djvu.o \
 		cre.o \
 		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
+		-Wl,-rpath=$(LIBDIR)/ \
 		-o $@ \
-		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -ljpeg -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -193,26 +194,19 @@ fetchthirdparty:
 	test -d $(LUADIR) && (cd $(LUADIR); git checkout .)  || echo warn: $(LUADIR) folder not found
 	git submodule init
 	git submodule update
+	cd mupdf && (git submodule init; git submodule update)
 	ln -sf kpvcrlib/crengine/cr3gui/data data
 	test -e data/cr3.css || ln kpvcrlib/cr3.css data/
 	test -d fonts || ln -sf $(TTF_FONTS_DIR) fonts
+	test -d history || mkdir history
+	test -d clipboard || mkdir clipboard
 	# CREngine patch: disable fontconfig
 	grep USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h && grep -v USE_FONTCONFIG $(CRENGINEDIR)/crengine/include/crsetup.h > /tmp/new && mv /tmp/new $(CRENGINEDIR)/crengine/include/crsetup.h || echo "USE_FONTCONFIG already disabled"
-	test -f mupdf-thirdparty.zip || wget http://www.mupdf.com/download/mupdf-thirdparty.zip
 	# CREngine patch: change child nodes' type face
 	# @TODO replace this dirty hack  24.04 2012 (houqp)
 	cd kpvcrlib/crengine/crengine/src && \
 		patch -N -p0 < ../../../lvrend_node_type_face.patch && \
 		patch -N -p3 < ../../../lvdocview-getCurrentPageLinks.patch || true
-	unzip mupdf-thirdparty.zip -d mupdf
-	# check mupdf's thirdparty libs' version, if not matched, remove the old one
-	# run make fetchthirdparty again to get the latest thirdparty libs.
-	test -d $(FREETYPEDIR) || ( echo "error: mupdf's thirdparty libs' version not match" ; \
-		rm -rf mupdf-thirdparty.zip ; exit 1 )
-	# dirty patch in MuPDF's thirdparty lib for CREngine
-	cd mupdf/thirdparty/jpeg-*/ && \
-		patch -N -p0 < ../../../kpvcrlib/jpeg_compress_struct_size.patch &&\
-		patch -N -p0 < ../../../kpvcrlib/jpeg_decompress_struct_size.patch
 	# MuPDF patch: use external fonts
 	cd mupdf && patch -N -p1 < ../mupdf.patch
 	test -f popen-noshell/popen_noshell.c || svn co http://popen-noshell.googlecode.com/svn/trunk/ popen-noshell
@@ -232,24 +226,18 @@ cleanthirdparty:
 	test -d $(CRENGINEDIR)/crengine && ($(MAKE) -C $(CRENGINEDIR)/crengine clean) || echo warn: chmlib folder not found
 	test -d $(KPVCRLIBDIR) && ($(MAKE) -C $(KPVCRLIBDIR) clean) || echo warn: chmlib folder not found
 	rm -rf $(DJVUDIR)/build
-	rm -f $(MUPDFDIR)/fontdump.host
-	rm -f $(MUPDFDIR)/cmapdump.host
 	$(MAKE) -C $(POPENNSDIR) clean
 	$(MAKE) -C $(K2PDFOPTLIBDIR) clean
 
-$(MUPDFDIR)/fontdump.host:
-	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/fontdump
-	cp -a $(MUPDFLIBDIR)/fontdump $(MUPDFDIR)/fontdump.host
-	$(MAKE) -C mupdf clean
-
-$(MUPDFDIR)/cmapdump.host:
-	CFLAGS="$(HOSTCFLAGS)" $(MAKE) -C mupdf build="release" CC="$(HOSTCC)" $(MUPDFTARGET)/cmapdump
-	cp -a $(MUPDFLIBDIR)/cmapdump $(MUPDFDIR)/cmapdump.host
-	$(MAKE) -C mupdf clean
-
-$(MUPDFLIBS) $(THIRDPARTYLIBS): $(MUPDFDIR)/cmapdump.host $(MUPDFDIR)/fontdump.host
+$(MUPDFLIBS) $(THIRDPARTYLIBS):
 	# build only thirdparty libs, libfitz and pdf utils, which will care for libmupdf.a being built
-	CFLAGS="$(CFLAGS) -DNOBUILTINFONT" $(MAKE) -C mupdf build="release" CC="$(CC)" CMAPDUMP=cmapdump.host FONTDUMP=fontdump.host MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1
+ifdef EMULATE_READER
+	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes
+else
+	# generate data headers
+	$(MAKE) -C mupdf generate build="release"
+	$(MAKE) -C mupdf XCFLAGS="$(CFLAGS) -DNOBUILTINFONT" build="release" CC="$(CC)" MUPDF= MU_APPS= BUSY_APP= XPS_APPS= verbose=1 NOX11=yes CROSSCOMPILE=yes OS=Kindle
+endif
 
 $(DJVULIBS):
 	mkdir -p $(DJVUDIR)/build
@@ -269,11 +257,14 @@ $(CRENGINELIBS):
 
 $(LUALIB):
 ifdef EMULATE_READER
-	$(MAKE) -C $(LUADIR) BUILDMODE=static
+	$(MAKE) -C $(LUADIR) BUILDMODE=shared
 else
 	# To recap: build its TARGET_CC from CROSS+CC, so we need HOSTCC in CC. Build its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral CFLAGS without arch
-	$(MAKE) -C $(LUADIR) BUILDMODE=static CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
+	$(MAKE) -C $(LUADIR) BUILDMODE=shared CC="$(HOSTCC)" HOST_CC="$(HOSTCC) -m32" CFLAGS="$(BASE_CFLAGS)" HOST_CFLAGS="$(HOSTCFLAGS)" TARGET_CFLAGS="$(CFLAGS)" CROSS="$(CHOST)-" TARGET_FLAGS="-DLUAJIT_NO_LOG2 -DLUAJIT_NO_EXP2"
 endif
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(LUADIR)/src/libluajit.so* $(LUALIB)
+	ln -s libluajit-5.1.so.2 $(LIBDIR)/libluajit-5.1.so
 
 $(POPENNSLIB):
 	$(MAKE) -C $(POPENNSDIR) CC="$(CC)" AR="$(AR)"
@@ -299,10 +290,11 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L libs/libdjvulibre.so.21 $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
+	cp -L $(DJVULIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
+	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallback.ttf
 	cp -r git-rev resources $(INSTALL_DIR)
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host

@@ -21,9 +21,8 @@ fi
 # stop cvm
 killall -stop cvm
 
-export LD_LIBRARY_PATH=`pwd`/libs
 # finally call reader
-./reader.lua "$1" 2> /mnt/us/kindlepdfviewer/crash.log || cat /mnt/us/kindlepdfviewer/crash.log
+./reader.lua "$1" 2> crash.log
 
 # unmount system fonts
 if grep /mnt/us/kindlepdfviewer/fonts/host /proc/mounts; then
