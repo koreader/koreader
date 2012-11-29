@@ -223,7 +223,6 @@ function Menu:init()
 
 	-- group for menu layout
 	local content = VerticalGroup:new{
-				name = "haha",
 		self.menu_title,
 		self.item_group,
 		self.page_info,
@@ -260,6 +259,8 @@ function Menu:init()
 end
 
 function Menu:updateItems(select_number)
+	-- self.layout must be updated for focusmanager
+	self.layout = {}
 	self.item_group:clear()
 	self.content_group:resetLayout()
 
@@ -290,6 +291,7 @@ function Menu:updateItems(select_number)
 				menu = self,
 			}
 			table.insert(self.item_group, item_tmp)
+			table.insert(self.layout, {item_tmp})
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
