@@ -134,8 +134,15 @@ end
 
 -- calculates page dimensions
 function KoptDocument:getPageDimensions(pageno, zoom, rotation)
-	DEBUG("Warnning: cannot determine page size before reflowing.")
-	return Screen:getSize()
+	-- check cached page size
+	local hash = "pgrfsize|"..self.file.."|"..pageno
+	local cached = Cache:check(hash)
+	if not cached then
+		DEBUG("Warnning: cannot determine page size before reflowing.")
+		return Screen:getSize()
+	end
+	DEBUG("Found cached page size on page", pageno, cached[1])
+	return cached[1]
 end
 
 function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
@@ -148,6 +155,11 @@ function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
 	local fullwidth, fullheight = kc:getPageDim()
 	DEBUG("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
 	local page_size = Geom:new{ w = fullwidth, h = fullheight }
+	-- cache reflowed page size
+	local pgrfsize_hash = "pgrfsize|"..self.file.."|"..pageno
+	if not Cache:check(pgrfsize_hash) then
+		Cache:insert(pgrfsize_hash, CacheItem:new{ page_size })
+	end
 	-- this will be the size we actually render
 	local size = page_size
 	-- we prefer to render the full page, if it fits into cache
