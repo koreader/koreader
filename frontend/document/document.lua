@@ -124,6 +124,20 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 	return native_dimen
 end
 
+function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
+	ubbox = self:getUsedBBox(pageno)
+	ubbox_dimen = Geom:new{
+		x = ubbox.x0,
+		y = ubbox.y0,
+		w = ubbox.x1 - ubbox.x0,
+		h = ubbox.y1 - ubbox.y0,
+	}
+	if zoom ~= 1 then
+		ubbox_dimen:transformByScale(zoom)
+	end
+	return ubbox_dimen
+end
+
 function Document:getToc()
 	return self._document:getToc()
 end
@@ -185,6 +199,14 @@ function Document:hintPage(pageno, zoom, rotation)
 	self:renderPage(pageno, nil, zoom, rotation)
 end
 
+--[[
+Draw page content to blitbuffer.
+1. find tile in cache
+2. if not found, call renderPage
+
+@target: target blitbuffer
+@rect: visible_area inside document page
+--]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
 	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
 	local hash_excerpt = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
@@ -196,8 +218,12 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mo
 			tile = self:renderPage(pageno, rect, zoom, rotation, render_mode)
 		end
 	end
-	DEBUG("now painting", tile)
-	target:blitFrom(tile.bb, x, y, rect.x - tile.excerpt.x, rect.y - tile.excerpt.y, rect.w, rect.h)
+	DEBUG("now painting", tile, rect)
+	target:blitFrom(tile.bb,
+		x, y, 
+		rect.x - tile.excerpt.x,
+		rect.y - tile.excerpt.y,
+		rect.w, rect.h)
 end
 
 function Document:drawCurrentView(target, x, y, rect, pos)

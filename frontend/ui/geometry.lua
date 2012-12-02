@@ -66,6 +66,15 @@ function Geom:scaleBy(zx, zy)
 end
 
 --[[
+this method also takes care of x and y
+]]--
+function Geom:transformByScale(zx, zy)
+	self.x = self.x * zx
+	self.y = self.y * (zx or zy)
+	self:scaleBy(zx, zy)
+end
+
+--[[
 enlarges or shrinks dimensions or rectangles
 
 note that for rectangles the offset stays the same

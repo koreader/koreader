@@ -59,11 +59,13 @@ function ReaderZooming:setZoom()
 	if self.zoom_mode == "content" 
 	or self.zoom_mode == "contentwidth"
 	or self.zoom_mode == "contentheight" then
-		-- TODO: enable this, still incomplete
-		page_size = self.ui.document:getUsedBBox(self.current_page)
-		self.view:handleEvent(Event:new("BBoxUpdate", page_size))
+		ubbox_dimen = self.ui.document:getUsedBBoxDimensions(self.current_page, 1)
+		--self.view:handleEvent(Event:new("BBoxUpdate", page_size))
+		self.view:onBBoxUpdate(ubbox_dimen)
+		page_size = ubbox_dimen
 	else
 		-- otherwise, operate on full page
+		self.view:onBBoxUpdate(nil)
 		page_size = self.ui.document:getNativePageDimensions(self.current_page)
 	end
 	-- calculate zoom value:
