@@ -37,12 +37,15 @@ function PdfDocument:getUsedBBox(pageno)
 	local hash = "pgubbox|"..self.file.."|"..pageno
 	local cached = Cache:check(hash)
 	if cached then
-		return cached.data
+		return cached.ubbox
 	end
 	local page = self._document:openPage(pageno)
 	local used = {}
 	used.x, used.y, used.w, used.h = page:getUsedBBox()
-	Cache:insert(hash, CacheItem:new{ used })
+	--@TODO give size for cacheitem?  02.12 2012 (houqp)
+	Cache:insert(hash, CacheItem:new{ 
+		ubbox = used,
+	})
 	page:close()
 	return used
 end
