@@ -138,6 +138,19 @@ function Geom:intersect(rect_b)
 end
 
 --[[
+return true if self does not share any area with rect_b
+]]--
+function Geom:notIntersectWith(rect_b)
+	if (self.x >= (rect_b.x + rect_b.w)) 
+	or (self.y >= (rect_b.y + rect_b.h)) 
+	or (rect_b.x >= (self.x + self.w)) 
+	or (rect_b.y >= (self.y + self.h)) then
+		return true
+	end
+	return false
+end
+
+--[[
 set size of dimension or rectangle to size of given dimension/rectangle
 ]]--
 function Geom:setSizeTo(rect_b)
@@ -245,3 +258,20 @@ function Geom:offsetWithin(rect_b, dx, dy)
 		self.y = rect_b.y + rect_b.h - self.h
 	end
 end
+
+
+
+
+--[[
+Simple math helper function
+]]--
+
+function math.roundAwayFromZero(num)
+	if num > 0 then
+		return math.ceil(num)
+	else
+		return math.floor(num)
+	end
+end
+
+

@@ -1,6 +1,8 @@
 ReaderPaging = InputContainer:new{
 	current_page = 0,
-	number_of_pages = 0
+	number_of_pages = 0,
+	visible_area = nil,
+	page_area = nil,
 }
 
 function ReaderPaging:init()
@@ -85,8 +87,19 @@ function ReaderPaging:onReadSettings(config)
 	self:gotoPage(config:readSetting("last_page") or 1)
 end
 
+function ReaderPaging:onZoomModeUpdate(new_mode)
+	-- we need to remember zoom mode to handle page turn event
+	self.zoom_mode = new_mode
+end
+
 function ReaderPaging:onPageUpdate(new_page_no)
 	self.current_page = new_page_no
+end
+
+function ReaderPaging:onViewRecalculate(visible_area, page_area)
+	-- we need to remember areas to handle page turn event
+	self.visible_area = visible_area
+	self.page_area = page_area
 end
 
 function ReaderPaging:onGotoPercent(percent)
@@ -102,7 +115,47 @@ end
 
 function ReaderPaging:onGotoPageRel(diff)
 	DEBUG("goto relative page:", diff)
-	self:gotoPage(self.current_page + diff)
+	local new_va = self.visible_area:copy()
+	local x_pan_off, y_pan_off = 0, 0
+
+	if self.zoom_mode:find("width") then
+		y_pan_off = self.visible_area.h * diff
+	elseif self.zoom_mode:find("height") then
+		x_pan_off = self.visible_area.w * diff
+	else
+		-- must be fit content or page zoom mode
+		if self.visible_area.w == self.page_area.w then
+			y_pan_off = self.visible_area.h * diff
+		else
+			x_pan_off = self.visible_area.w * diff
+		end
+	end
+
+	-- adjust offset to help with page turn decision
+	x_pan_off = math.roundAwayFromZero(x_pan_off)
+	y_pan_off = math.roundAwayFromZero(y_pan_off)
+	new_va.x = math.roundAwayFromZero(self.visible_area.x+x_pan_off)
+	new_va.y = math.roundAwayFromZero(self.visible_area.y+y_pan_off)
+
+	if (new_va:notIntersectWith(self.page_area)) then
+		self:gotoPage(self.current_page + diff)
+		-- if we are going back to previous page, reset
+		-- view to bottom of previous page
+		if x_pan_off < 0 then
+			self.view:PanningUpdate(self.page_area.w, 0)
+		elseif y_pan_off < 0 then
+			self.view:PanningUpdate(0, self.page_area.h)
+		end
+	else
+		-- fit new view area into page area
+		new_va:offsetWithin(self.page_area, 0, 0)
+		self.view:PanningUpdate(
+			new_va.x - self.visible_area.x,
+			new_va.y - self.visible_area.y)
+		-- update self.visible_area
+		self.visible_area = new_va
+	end
+
 	return true
 end
 

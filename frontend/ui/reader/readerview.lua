@@ -46,7 +46,6 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.zoom,
 			self.state.rotation,
 			self.render_mode)
-		self:recalculate()
 	else
 		self.ui.document:drawCurrentView(
 			bb,
@@ -81,6 +80,8 @@ function ReaderView:recalculate()
 	else
 		self.visible_area:setSizeTo(self.dimen)
 	end
+	self.ui:handleEvent(
+		Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	-- flag a repaint so self:paintTo will be called
 	UIManager:setDirty(self.dialog)
 end
