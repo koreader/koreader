@@ -13,7 +13,9 @@ ReaderView = WidgetContainer:new{
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
 	render_mode = 0, -- default to COLOR
 
+	-- visible area within current viewing page
 	visible_area = Geom:new{x = 0, y = 0},
+	-- dimen for current viewing page
 	page_area = Geom:new{},
 }
 
@@ -44,7 +46,6 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.zoom,
 			self.state.rotation,
 			self.render_mode)
-		self:recalculate()
 	else
 		self.ui.document:drawCurrentView(
 			bb,
@@ -56,12 +57,22 @@ function ReaderView:paintTo(bb, x, y)
 end
 
 function ReaderView:recalculate()
+	local page_size = nil
 	if self.ui.document.info.has_pages then
-		local page_size = self.ui.document:getPageDimensions(
-			self.state.page, self.state.zoom, self.state.rotation)
-		-- TODO: bbox
-		self.page_area = page_size
-
+		if not self.bbox then
+			self.page_area = self.ui.document:getPageDimensions(
+				self.state.page,
+				self.state.zoom,
+				self.state.rotation)
+		else
+			self.page_area = self.ui.document:getUsedBBoxDimensions(
+				self.state.page,
+				self.state.zoom,
+				self.state.rotation)
+		end
+		-- starts from left top of page_area
+		self.visible_area.x = self.page_area.x
+		self.visible_area.y = self.page_area.y
 		-- reset our size
 		self.visible_area:setSizeTo(self.dimen)
 		-- and recalculate it according to page size
@@ -69,6 +80,8 @@ function ReaderView:recalculate()
 	else
 		self.visible_area:setSizeTo(self.dimen)
 	end
+	self.ui:handleEvent(
+		Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	-- flag a repaint so self:paintTo will be called
 	UIManager:setDirty(self.dialog)
 end
@@ -80,8 +93,8 @@ function ReaderView:PanningUpdate(dx, dy)
 	if self.visible_area ~= old then
 		-- flag a repaint
 		UIManager:setDirty(self.dialog)
-		DEBUG(self.page_area)
-		DEBUG(self.visible_area)
+		DEBUG("on pan: page_area", self.page_area)
+		DEBUG("on pan: visible_area", self.visible_area)
 	end
 	return true
 end
@@ -109,6 +122,10 @@ end
 function ReaderView:onZoomUpdate(zoom)
 	self.state.zoom = zoom
 	self:recalculate()
+end
+
+function ReaderView:onBBoxUpdate(bbox)
+	self.bbox = bbox
 end
 
 function ReaderView:onRotationUpdate(rotation)
