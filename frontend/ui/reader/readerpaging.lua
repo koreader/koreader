@@ -73,6 +73,16 @@ function ReaderPaging:onCloseDocument()
 	self.ui.doc_settings:saveSetting("last_page", self.current_page)
 end
 
+function ReaderPaging:onTapForward()
+	self:onGotoPageRel(1)
+	return true
+end
+
+function ReaderPaging:onTapBackward()
+	self:onGotoPageRel(-1)
+	return true
+end
+
 -- wrapper for bounds checking
 function ReaderPaging:gotoPage(number)
 	if number == self.current_page then
@@ -163,14 +173,5 @@ function ReaderPaging:onGotoPageRel(diff)
 	return true
 end
 
-function ReaderPaging:onTapForward()
-	self:onGotoPageRel(1)
-	return true
-end
-
-function ReaderPaging:onTapBackward()
-	self:onGotoPageRel(-1)
-	return true
-end
 
 
