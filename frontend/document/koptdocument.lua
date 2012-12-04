@@ -13,14 +13,14 @@ KoptDocument = Document:new{
 	screen_size = Screen:getSize(),
 	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
 	configurable = {
-		font_size = 1.2,
+		font_size = 1.0,
 		page_margin = 0.06,
 		line_spacing = 1.2,
 		word_spacing = 0.15,
 		quality = 1.0,
 		text_wrap = 1,
 		defect_size = 1.0,
-		trim_page = 1,
+		trim_page = 0,
 		detect_indent = 1,
 		multi_threads = 0,
 		auto_straighten = 0,
@@ -90,20 +90,31 @@ function KoptDocument:getUsedBBox(pageno)
 		local hash = "pgubbox|"..self.file.."|"..pageno
 		local cached = Cache:check(hash)
 		if cached then
-			return cached.data
+			return cached.ubbox
 		end
 		local page = self._document:openPage(pageno)
 		local used = {}
-		local native_dim = self:getNativePageDimensions(pageno)
-		used.x, used.y, used.w, used.h = 0, 0, native_dim.w, native_dim.h
-		Cache:insert(hash, CacheItem:new{ used })
+		used.x0, used.y0, used.x1, used.y1 = page:getUsedBBox()
+		local pwidth, pheight = page:getSize(self.dc_null)
+		if used.x1 == 0 then used.x1 = pwidth end
+		if used.y1 == 0 then used.y1 = pheight end
+		-- clamp to page BBox
+		if used.x0 < 0 then used.x0 = 0 end;
+		if used.y0 < 0 then used.y0 = 0 end;
+		if used.x1 > pwidth then used.x1 = pwidth end
+		if used.y1 > pheight then used.y1 = pheight end
+		--@TODO give size for cacheitem?  02.12 2012 (houqp)
+		Cache:insert(hash, CacheItem:new{ 
+			ubbox = used,
+		})
 		page:close()
+		DEBUG("UsedBBox", used)
 		return used
 	elseif self.file_type == "djvu" then
 		-- djvu does not support usedbbox, so fake it.
 		local used = {}
 		local native_dim = self:getNativePageDimensions(pageno)
-		used.x, used.y, used.w, used.h = 0, 0, native_dim.w, native_dim.h
+		used.x0, used.y0, used.x1, used.y1 = 0, 0, native_dim.w, native_dim.h
 		return used
 	end
 end
@@ -128,38 +139,38 @@ function KoptDocument:getKOPTContext(pageno)
 	kc:setLineSpacing(self.configurable.line_spacing)
 	kc:setWordSpacing(self.configurable.word_spacing)
 	local bbox = self:getUsedBBox(pageno)
-	kc:setBBox(bbox.x, bbox.y, bbox.w, bbox.h)
+	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
 	return kc
 end
 
 -- calculates page dimensions
 function KoptDocument:getPageDimensions(pageno, zoom, rotation)
 	-- check cached page size
-	local hash = "pgrfsize|"..self.file.."|"..pageno
+	local hash = "kctx|"..self.file.."|"..pageno
 	local cached = Cache:check(hash)
 	if not cached then
-		DEBUG("Warnning: cannot determine page size before reflowing.")
-		return Screen:getSize()
+		local kc = self:getKOPTContext(pageno)
+		local page = self._document:openPage(pageno)
+		-- reflow page
+		page:reflow(kc, 0)
+		page:close()
+		local fullwidth, fullheight = kc:getPageDim()
+		DEBUG("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
+		local page_size = Geom:new{ w = fullwidth, h = fullheight }
+		-- cache reflowed page size and kc
+		Cache:insert(hash, CacheItem:new{ kctx = kc })
+		return page_size
 	end
-	DEBUG("Found cached page size on page", pageno, cached[1])
-	return cached[1]
+	DEBUG("Found cached koptcontex on page", pageno, cached)
+	local fullwidth, fullheight = cached.kctx:getPageDim()
+	local page_size = Geom:new{ w = fullwidth, h = fullheight }
+	return page_size
 end
 
 function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
+	self.render_mode = render_mode
 	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
-	--local page_size = self:getPageDimensions(pageno, zoom, rotation)
-	local kc = self:getKOPTContext(pageno)
-	local page = self._document:openPage(pageno)
-	-- reflow page
-	page:reflow(kc, render_mode)
-	local fullwidth, fullheight = kc:getPageDim()
-	DEBUG("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
-	local page_size = Geom:new{ w = fullwidth, h = fullheight }
-	-- cache reflowed page size
-	local pgrfsize_hash = "pgrfsize|"..self.file.."|"..pageno
-	if not Cache:check(pgrfsize_hash) then
-		Cache:insert(pgrfsize_hash, CacheItem:new{ page_size })
-	end
+	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
 	-- we prefer to render the full page, if it fits into cache
@@ -186,11 +197,16 @@ function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
 	}
 
 	-- draw to blitbuffer
-	page:rfdraw(kc, tile.bb)
-	page:close()
-	Cache:insert(hash, tile)
-
-	return tile
+	local kc_hash = "kctx|"..self.file.."|"..pageno
+	local page = self._document:openPage(pageno)
+	local cached = Cache:check(kc_hash)
+	if cached then
+		page:rfdraw(cached.kctx, tile.bb)
+		page:close()
+		Cache:insert(hash, tile)
+		return tile
+	end
+	DEBUG("Error: cannot render page before reflowing.")
 end
 
 DocumentRegistry:addProvider("pdf", "application/pdf", KoptDocument)
