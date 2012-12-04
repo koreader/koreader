@@ -27,42 +27,101 @@ ReaderRolling = InputContainer:new{
 }
 
 function ReaderRolling:init()
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapForward = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = Screen:getWidth()/2,
+						y = Screen:getHeight()/2,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+			TapBackward = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, 
+						y = Screen:getHeight()/2,
+						w = Screen:getWidth()/2,
+						h = Screen:getHeight()/2,
+					}
+				}
+			}
+		}
+	else
+		self.key_events = {
+			GotoNextView = {
+				{ Input.group.PgFwd },
+				doc = "go to next view",
+				event = "GotoViewRel", args = 1
+			},
+			GotoPrevView = {
+				{ Input.group.PgBack },
+				doc = "go to previous view",
+				event = "GotoViewRel", args = -1
+			},
+			MoveUp = {
+				{ "Up" },
+				doc = "move view up",
+				event = "Panning", args = {0, -1}
+			},
+			MoveDown = {
+				{ "Down" },
+				doc = "move view down",
+				event = "Panning", args = {0,  1}
+			},
+			GotoFirst = { 
+				{"1"}, doc = "go to start", event = "GotoPercent", args = 0},
+			Goto11 = { 
+				{"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
+			Goto22 = { 
+				{"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
+			Goto33 = { 
+				{"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
+			Goto44 = { 
+				{"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
+			Goto55 = { 
+				{"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
+			Goto66 = { 
+				{"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
+			Goto77 = { 
+				{"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
+			Goto88 = { 
+				{"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
+			GotoLast = { 
+				{"0"}, doc = "go to end", event = "GotoPercent", args = 100},
+		}
+	end
+
 	self.doc_height = self.ui.document.info.doc_height
 	self.old_doc_height = self.doc_height
-end
-
-function ReaderRolling:gotoPos(new_pos)
-	if new_pos == self.current_pos then return end
-	if new_pos < 0 then new_pos = 0 end
-	if new_pos > self.doc_height then new_pos = self.doc_height end
-	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
-end
-
-function ReaderRolling:gotoPercent(new_percent)
-	self:gotoPos(new_percent * self.doc_height / 10000)
 end
 
 function ReaderRolling:onReadSettings(config)
 	self:gotoPercent(config:readSetting("last_percent") or 0)
 end
 
-function ReaderRolling:onPosUpdate(new_pos)
-	self.current_pos = new_pos
+function ReaderRolling:onCloseDocument()
+	self.ui.doc_settings:saveSetting("last_percent", 
+		10000 * self.current_pos / self.doc_height)
 end
 
--- remember to signal this event the document has been zoomed,
--- font has been changed, or line height has been changed.
-function ReaderRolling:onUpdatePos()
-	-- reread document height
-	self.ui.document:_readMetadata()
-	-- update self.current_pos if the height of document has been changed.
-	if self.old_doc_height ~= self.ui.document.info.doc_height then
-		self:gotoPos(self.current_pos * 
-			(self.ui.document.info.doc_height - self.dialog.dimen.h) / 
-			(self.old_doc_height - self.dialog.dimen.h))
-		self.old_doc_height = self.ui.document.info.doc_height
-	end
+function ReaderRolling:onTapForward()
+	self:onGotoViewRel(1)
 	return true
+end
+
+function ReaderRolling:onTapBackward()
+	self:onGotoViewRel(-1)
+	return true
+end
+
+function ReaderRolling:onPosUpdate(new_pos)
+	self.current_pos = new_pos
 end
 
 function ReaderRolling:onGotoPercent(percent)
@@ -89,7 +148,30 @@ function ReaderRolling:onZoom()
 	self:onUpdatePos()
 end
 
-function ReaderRolling:onCloseDocument()
-	self.ui.doc_settings:saveSetting("last_percent", 
-		10000 * self.current_pos / self.doc_height)
+-- remember to signal this event the document has been zoomed,
+-- font has been changed, or line height has been changed.
+function ReaderRolling:onUpdatePos()
+	-- reread document height
+	self.ui.document:_readMetadata()
+	-- update self.current_pos if the height of document has been changed.
+	if self.old_doc_height ~= self.ui.document.info.doc_height then
+		self:gotoPos(self.current_pos * 
+			(self.ui.document.info.doc_height - self.dialog.dimen.h) / 
+			(self.old_doc_height - self.dialog.dimen.h))
+		self.old_doc_height = self.ui.document.info.doc_height
+	end
+	return true
 end
+
+function ReaderRolling:gotoPos(new_pos)
+	if new_pos == self.current_pos then return end
+	if new_pos < 0 then new_pos = 0 end
+	if new_pos > self.doc_height then new_pos = self.doc_height end
+	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
+end
+
+function ReaderRolling:gotoPercent(new_percent)
+	self:gotoPos(new_percent * self.doc_height / 10000)
+end
+
+
