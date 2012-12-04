@@ -65,6 +65,14 @@ function ReaderPaging:init()
 	self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
+function ReaderPaging:onReadSettings(config)
+	self:gotoPage(config:readSetting("last_page") or 1)
+end
+
+function ReaderPaging:onCloseDocument()
+	self.ui.doc_settings:saveSetting("last_page", self.current_page)
+end
+
 -- wrapper for bounds checking
 function ReaderPaging:gotoPage(number)
 	if number == self.current_page then
@@ -81,10 +89,6 @@ function ReaderPaging:gotoPage(number)
 	self.ui:handleEvent(Event:new("PageUpdate", number))
 
 	return true
-end
-
-function ReaderPaging:onReadSettings(config)
-	self:gotoPage(config:readSetting("last_page") or 1)
 end
 
 function ReaderPaging:onZoomModeUpdate(new_mode)
@@ -157,10 +161,6 @@ function ReaderPaging:onGotoPageRel(diff)
 	end
 
 	return true
-end
-
-function ReaderPaging:onCloseDocument()
-	self.ui.doc_settings:saveSetting("last_page", self.current_page)
 end
 
 function ReaderPaging:onTapForward()

@@ -69,6 +69,13 @@ function ReaderUI:init()
 	if self.document.info.has_pages then
 		-- for page specific controller
 		
+		-- if needed, insert a paging container
+		local pager = ReaderPaging:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, pager)
 		-- zooming controller
 		local zoomer = ReaderZooming:new{
 			dialog = self.dialog,
@@ -83,13 +90,6 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, panner)
-		-- if needed, insert a paging container
-		local pager = ReaderPaging:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		}
-		table.insert(self, pager)
 	else
 		-- rolling controller
 		local roller = ReaderRolling:new{

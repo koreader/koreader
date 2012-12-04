@@ -42,14 +42,32 @@ ReaderZooming = InputContainer:new{
 		},
 	},
 	zoom = 1.0,
-	zoom_mode = "free",
+	-- default to nil so we can trigger ZoomModeUpdate events on start up
+	zoom_mode = nil,
+	DEFAULT_ZOOM_MODE = "page",
 	current_page = 1,
 	rotation = 0
 }
 
+function ReaderZooming:onReadSettings(config)
+	-- @TODO config file from old code base uses globalzoom_mode
+	-- instead of zoom_mode, we need to handle this imcompatibility 
+	-- 04.12 2012 (houqp)
+	local zoom_mode = config:readSetting("zoom_mode")
+	if not zoom_mode then
+		zoom_mode = self.DEFAULT_ZOOM_MODE
+	end
+	self:onSetZoomMode(zoom_mode)
+end
+
+function ReaderZooming:onCloseDocument()
+	self.ui.doc_settings:saveSetting("zoom_mode", self.zoom_mode)
+end
+
 function ReaderZooming:onSetDimensions(dimensions)
 	-- we were resized
 	self.dimen = dimensions
+	self:setZoom()
 end
 
 function ReaderZooming:onRotationUpdate(rotation)
@@ -57,10 +75,41 @@ function ReaderZooming:onRotationUpdate(rotation)
 	self:setZoom()
 end
 
+function ReaderZooming:onZoom(direction)
+	DEBUG("zoom", direction)
+	if direction == "in" then
+		self.zoom = self.zoom * 1.333333
+	elseif direction == "out" then
+		self.zoom = self.zoom * 0.75
+	end
+	DEBUG("zoom is now at", self.zoom)
+	self:onSetZoomMode("free")
+	self.view:onZoomUpdate(self.zoom)
+	return true
+end
+
+function ReaderZooming:onSetZoomMode(new_mode)
+	if self.zoom_mode ~= new_mode then
+		DEBUG("setting zoom mode to", new_mode)
+		self.zoom_mode = new_mode
+		self:setZoom()
+		self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
+	end
+	return true
+end
+
+function ReaderZooming:onPageUpdate(new_page_no)
+	self.current_page = new_page_no
+	self:setZoom()
+end
+
 function ReaderZooming:setZoom()
 	-- nothing to do in free zoom mode
 	if self.zoom_mode == "free" then
 		return
+	end
+	if not self.dimen then
+		self.dimen = self.ui.dimen
 	end
 	-- check if we're in bbox mode and work on bbox if that's the case
 	local page_size = {}
@@ -98,30 +147,4 @@ function ReaderZooming:setZoom()
 	self.view:onZoomUpdate(self.zoom)
 end
 
-function ReaderZooming:onZoom(direction)
-	DEBUG("zoom", direction)
-	if direction == "in" then
-		self.zoom = self.zoom * 1.333333
-	elseif direction == "out" then
-		self.zoom = self.zoom * 0.75
-	end
-	DEBUG("zoom is now at", self.zoom)
-	self:onSetZoomMode("free")
-	self.view:onZoomUpdate(self.zoom)
-	return true
-end
 
-function ReaderZooming:onSetZoomMode(new_mode)
-	if self.zoom_mode ~= new_mode then
-		DEBUG("setting zoom mode to", new_mode)
-		self.zoom_mode = new_mode
-		self:setZoom()
-		self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
-	end
-	return true
-end
-
-function ReaderZooming:onPageUpdate(new_page_no)
-	self.current_page = new_page_no
-	self:setZoom()
-end
