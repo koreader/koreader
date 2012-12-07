@@ -50,11 +50,42 @@ function ItemShortCutIcon:init()
 	}
 end
 
+--[[
+NOTICE:
+@menu entry must be provided in order to close the menu
+--]]
+MenuCloseButton = InputContainer:new{
+	align = "right",
+	menu = nil,
+	dimen = Geom:new{},
+}
+
+function MenuCloseButton:init()
+	self[1] = TextWidget:new{
+		text = "x  ",
+		face = Font:getFace("cfont", 22),
+	}
+
+	local text_size = self[1]:getSize()
+	self.dimen.w, self.dimen.h = text_size.w, text_size.h
+
+	self.ges_events.Close = {
+		GestureRange:new{
+			ges = "tap",
+			range = self.dimen,
+		},
+		doc = "Close menu",
+	}
+end
+
+function MenuCloseButton:onClose()
+	self.menu:onClose()
+	return true
+end
 
 --[[
 Widget that displays an item for menu
-
-]]
+--]]
 MenuItem = InputContainer:new{
 	text = nil,
 	detail = nil,
@@ -77,22 +108,30 @@ function MenuItem:init()
 	self.content_width = self.dimen.w - shortcut_icon_dimen.w - 15
 
 	-- we need this table per-instance, so we declare it here
-	self.active_key_events = {
-		Select = { {"Press"}, doc = "chose selected item" },
-	}
-	self.ges_events = {
-		TapSelect = {
-			GestureRange:new{
-				ges = "tap",
-				range = self.dimen,
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapSelect = {
+				GestureRange:new{
+					ges = "tap",
+					range = self.dimen,
+				},
+				doc = "Select Menu Item",
 			},
-			doc = "Select Menu Item",
-		},
-	}
+		}
+	else
+		self.active_key_events = {
+			Select = { {"Press"}, doc = "chose selected item" },
+		}
+	end
 
 	w = sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
 	if w >= self.content_width then
-		self.active_key_events.ShowItemDetail = { {"Right"}, doc = "show item detail" }
+		if Device:isTouchDevice() then
+		else
+			self.active_key_events.ShowItemDetail = {
+				{"Right"}, doc = "show item detail" 
+			}
+		end
 		indicator = "  >>"
 		indicator_w = sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
 		self.text = getSubTextByWidth(self.text, self.face,
@@ -153,7 +192,7 @@ end
 
 --[[
 Widget that displays menu
-]]
+--]]
 Menu = FocusManager:new{
 	-- face for displaying item contents
 	cface = Font:getFace("cfont", 22),
@@ -195,38 +234,31 @@ function Menu:init()
 	self.page = 1
 	self.page_num = math.ceil(#self.item_table / self.perpage)
 
-	-- set up keyboard events
-	self.key_events.Close = { {"Back"}, doc = "close menu" }
-	self.key_events.NextPage = {
-		{Input.group.PgFwd}, doc = "goto next page of the menu"
-	}
-	self.key_events.PrevPage = {
-		{Input.group.PgBack}, doc = "goto previous page of the menu"
-	}
-	-- we won't catch presses to "Right"
-	self.key_events.FocusRight = nil
-	if self.is_enable_shortcut then
-		self.key_events.SelectByShortCut = { {self.item_shortcuts} }
-	end
-	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
-
+	-----------------------------------
+	-- start to set up widget layout --
+	-----------------------------------
 	self.menu_title = TextWidget:new{
+		align = "center",
 		text = self.title,
 		face = self.tface,
 	}
-
+	-- group for title bar
+	self.title_bar = OverlapGroup:new{
+		dimen = {w = self.dimen.w},
+		self.menu_title,
+	}
 	-- group for items
 	self.item_group = VerticalGroup:new{}
-	self.page_info = TextWidget:new{
-		face = self.fface,
-	} -- VerticalGroup
-
+		self.page_info = TextWidget:new{
+			face = self.fface,
+	}
 	-- group for menu layout
 	local content = VerticalGroup:new{
-		self.menu_title,
+		self.title_bar,
 		self.item_group,
 		self.page_info,
-	} -- VerticalGroup
+	}
+	-- maintain reference to content so we can change it later
 	self.content_group = content
 
 	if not self.is_borderless then
@@ -241,6 +273,7 @@ function Menu:init()
 		-- we need to substract border, margin and padding
 		self.item_dimen.w = self.item_dimen.w - 14
 	else
+		-- no border for the menu
 		self[1] = FrameContainer:new{
 			background = 0,
 			bordersize = 0,
@@ -250,6 +283,33 @@ function Menu:init()
 			content
 		}
 	end
+
+	------------------------------------------
+	-- start to set up input event callback --
+	------------------------------------------
+	if Device:isTouchDevice() then
+		table.insert(self.title_bar,
+			MenuCloseButton:new{
+				menu = self,
+			})
+	else
+		-- set up keyboard events
+		self.key_events.Close = { {"Back"}, doc = "close menu" }
+		self.key_events.NextPage = {
+			{Input.group.PgFwd}, doc = "goto next page of the menu"
+		}
+		self.key_events.PrevPage = {
+			{Input.group.PgBack}, doc = "goto previous page of the menu"
+		}
+		-- we won't catch presses to "Right"
+		self.key_events.FocusRight = nil
+		-- shortcut icon is not needed for touch device
+		if self.is_enable_shortcut then
+			self.key_events.SelectByShortCut = { {self.item_shortcuts} }
+		end
+	end
+	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
+
 
 	if #self.item_table > 0 then
 		-- if the table is not yet initialized, this call
@@ -305,7 +365,9 @@ function Menu:updateItems(select_number)
 		self.page_info.text = "no choices available"
 	end
 
-	UIManager:setDirty(self)
+	-- FIXME: this is a dirty hack to clear the previous menu
+	UIManager.repaint_all = true
+	--UIManager:setDirty(self)
 end
 
 function Menu:swithItemTable(new_title, new_item_table)

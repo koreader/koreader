@@ -14,7 +14,11 @@ Input:init()
 -- there is only one instance of this
 UIManager = {
 	-- change this to set refresh type for next refresh
-	refresh_type = 1, -- defaults to 1 initially and will be set to 1 after each refresh
+	-- defaults to 1 initially and will be set to 1 after each refresh
+	refresh_type = 1,
+	-- force to repaint all the widget is stack, will be reset to false
+	-- after each ui loop
+	repaint_all = false,
 
 	_running = true,
 	_window_stack = {},
@@ -153,7 +157,7 @@ function UIManager:run()
 		local dirty = false
 		local update_area = Geom:new{}
 		for _, widget in ipairs(self._window_stack) do
-			if self._dirty[widget.widget] then
+			if self.repaint_all or self._dirty[widget.widget] then
 				widget_dimen = widget.widget:getSize()
 				if widget_dimen then
 					widget_area = Geom:new{
@@ -171,6 +175,7 @@ function UIManager:run()
 				dirty = true
 			end
 		end
+		self.repaint_all = false
 		-- @TODO make use of update_area on refresh  19.06 2012 (houqp)
 		--DEBUG(update_area)
 
