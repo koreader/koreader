@@ -155,16 +155,8 @@ function UIManager:run()
 
 		-- repaint dirty widgets
 		local dirty = false
-		local update_area = Geom:new{}
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
-				widget_dimen = widget.widget:getSize()
-				if widget_dimen then
-					widget_area = Geom:new{
-										x = widget.x, y = widget.y,
-										w = widget_dimen.w, h = widget_dimen.h}
-					update_area = update_area:combine(widget_area)
-				end
 				widget.widget:paintTo(Screen.fb.bb, widget.x, widget.y)
 				if self._dirty[widget.widget] == "full" then
 					self.refresh_type = 0
@@ -176,8 +168,6 @@ function UIManager:run()
 			end
 		end
 		self.repaint_all = false
-		-- @TODO make use of update_area on refresh  19.06 2012 (houqp)
-		--DEBUG(update_area)
 
 		if dirty then
 			-- refresh FB
