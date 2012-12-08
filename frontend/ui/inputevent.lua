@@ -239,13 +239,17 @@ function Input:init()
 	else
 		input.open("fake_events")
 		local dev_mod = Device:getModel()
-
+		-- open event0 for all models
 		input.open("/dev/input/event0")
 		if dev_mod ~= "KindlePaperWhite" then
 			-- we don't have event1 in KindlePaperWhite
 			input.open("/dev/input/event1")
 		elseif dev_mod == "KindlePaperWhite" then
 			print("Auto-detected Kindle PaperWhite")
+		elseif dev_mod == "KindleTouch" then
+			input.open("/dev/input/event2")
+			input.open("/dev/input/event3")
+			print("Auto-detected Kindle Touch")
 		elseif dev_mod == "Kindle4" then
 			print("Auto-detected Kindle 4")
 			self:adjustKindle4EventMap()

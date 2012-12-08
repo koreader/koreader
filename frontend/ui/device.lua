@@ -15,9 +15,16 @@ function Device:getModel()
 		end
 	end
 	if cpu_mod == "MX50" then
-		local f = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
-		if f then
+		-- for KPW
+		local pw_test_fd = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
+		-- for KT
+		local kt_test_fd = lfs.attributes("/sys/devices/platform/whitney-button")
+		-- another special file for KT is Neonode zForce touchscreen:
+		-- /sys/devices/platform/zforce.0/
+		if pw_test_fd then
 			return "KindlePaperWhite"
+		elseif kt_test_fd then
+			return "KindleTouch"
 		else
 			return "Kindle4"
 		end
