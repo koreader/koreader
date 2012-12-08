@@ -46,9 +46,9 @@ static int initCache(lua_State *L) {
 static int openDocument(lua_State *L) {
 	const char *file_name = luaL_checkstring(L, 1);
 	const char *style_sheet = luaL_checkstring(L, 2);
-
 	int width = luaL_checkint(L, 3);
 	int height = luaL_checkint(L, 4);
+	LVDocViewMode view_mode = (LVDocViewMode)luaL_checkint(L, 5);
 	lString8 css;
 
 	CreDocument *doc = (CreDocument*) lua_newuserdata(L, sizeof(CreDocument));
@@ -63,7 +63,7 @@ static int openDocument(lua_State *L) {
 			doc->text_view->setStyleSheet(css);
 		}
 	}
-	doc->text_view->setViewMode(DVM_SCROLL, -1);
+	doc->text_view->setViewMode(view_mode, -1);
 	doc->text_view->Resize(width, height);
 	doc->text_view->LoadDocument(file_name);
 	doc->dom_doc = doc->text_view->getDocument();
