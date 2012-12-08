@@ -1,29 +1,12 @@
 require "ui/reader/readerpanning"
 
 ReaderRolling = InputContainer:new{
-	key_events = {
-		GotoNextView = { {Input.group.PgFwd}, doc = "go to next view", event = "GotoViewRel", args = 1 },
-		GotoPrevView = { {Input.group.PgBack}, doc = "go to previous view", event = "GotoViewRel", args = -1 },
-
-		MoveUp = { {"Up"}, doc = "move view up", event = "Panning", args = {0, -1} },
-		MoveDown = { {"Down"}, doc = "move view down", event = "Panning", args = {0,  1} },
-
-		GotoFirst = { {"1"}, doc = "go to start", event = "GotoPercent", args = 0},
-		Goto11 = { {"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
-		Goto22 = { {"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
-		Goto33 = { {"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
-		Goto44 = { {"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
-		Goto55 = { {"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
-		Goto66 = { {"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
-		Goto77 = { {"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
-		Goto88 = { {"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
-		GotoLast = { {"0"}, doc = "go to end", event = "GotoPercent", args = 100},
-	},
-
 	old_doc_height = nil,
 	current_pos = 0,
 	doc_height = nil,
 	panning_steps = ReaderPanning.panning_steps,
+	show_overlap_enable = true,
+	overlap = 20,
 }
 
 function ReaderRolling:init()
@@ -103,6 +86,10 @@ end
 
 function ReaderRolling:onReadSettings(config)
 	self:gotoPercent(config:readSetting("last_percent") or 0)
+	local soe = config:readSetting("show_overlap_enable")
+	if not soe then
+		self.show_overlap_enable = soe
+	end
 end
 
 function ReaderRolling:onCloseDocument()
@@ -132,7 +119,15 @@ end
 
 function ReaderRolling:onGotoViewRel(diff)
 	DEBUG("goto relative screen:", diff)
-	self:gotoPos(self.current_pos + diff * self.ui.dimen.h)
+	local pan_diff = diff * self.ui.dimen.h
+	if self.show_overlap_enable then
+		if pan_diff > self.overlap then
+			pan_diff = pan_diff - self.overlap
+		elseif pan_diff < -self.overlap then
+			pan_diff = pan_diff + self.overlap
+		end
+	end
+	self:gotoPos(self.current_pos + pan_diff)
 	return true
 end
 
@@ -167,6 +162,18 @@ function ReaderRolling:gotoPos(new_pos)
 	if new_pos == self.current_pos then return end
 	if new_pos < 0 then new_pos = 0 end
 	if new_pos > self.doc_height then new_pos = self.doc_height end
+	-- adjust dim_area according to new_pos
+	if self.show_overlap_enable then
+		local panned_step = new_pos - self.current_pos
+		self.view.dim_area.x = 0
+		self.view.dim_area.h = self.ui.dimen.h - math.abs(panned_step)
+		self.view.dim_area.w = self.ui.dimen.w
+		if panned_step < 0 then
+			self.view.dim_area.y = self.ui.dimen.h - self.view.dim_area.h
+		elseif panned_step > 0 then
+			self.view.dim_area.y = 0
+		end
+	end
 	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
 end
 
