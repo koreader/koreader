@@ -57,7 +57,7 @@ function DocSettings:open(docfile)
 			end
 
 			if stored.highlight ~= nil then
-				local file_type = string.lower(string.match(docfile, ".+%.([^.]+)"))
+				local file_type = string.lower(string.match(docfile, ".+%.([^.]+)") or "")
 				if file_type == "djvu" then
 					stored.highlight.to_fix = {"djvu invert y axle"}
 				end

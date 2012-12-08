@@ -1062,18 +1062,26 @@ function UniReader:cacheClaim(size)
 		error("too much memory claimed")
 		return false
 	end
+	-- reduce ttl of each cache
+	for k, _ in pairs(self.cache) do
+		self.cache[k].ttl = self.cache[k].ttl - 1
+	end
+	-- free oldest cache until we have free memory
 	while self.cache_current_memsize + size > self.cache_max_memsize do
-		-- repeat this until we have enough free memory
+		local oldest_cache_ttl = self.cache_max_ttl
+		local oldest_cache_key = nil
 		for k, _ in pairs(self.cache) do
-			if self.cache[k].ttl > 0 then
-				-- reduce ttl
-				self.cache[k].ttl = self.cache[k].ttl - 1
-			else
-				-- cache slot is at end of life, so kick it out
-				self.cache_current_memsize = self.cache_current_memsize - self.cache[k].size
-				self.cache[k].bb:free()
-				self.cache[k] = nil
+			if self.cache[k].ttl <= oldest_cache_ttl then
+				oldest_cache_ttl = self.cache[k].ttl
+				oldest_cache_key = k
 			end
+		end
+		-- cache slot is at end of life, so kick it out
+		if oldest_cache_key then
+			Debug("free cache:", oldest_cache_key, "ttl:", self.cache[oldest_cache_key].ttl)
+			self.cache_current_memsize = self.cache_current_memsize - self.cache[oldest_cache_key].size
+			self.cache[oldest_cache_key].bb:free()
+			self.cache[oldest_cache_key] = nil
 		end
 	end
 	self.cache_current_memsize = self.cache_current_memsize + size
@@ -1296,7 +1304,7 @@ function UniReader:setzoom(page, preCache)
 		self.offset_x = (width - (self.globalzoom * pwidth)) / 2
 		self.offset_y = 0
 		self.pan_by_page = false
-		if self.comics_mode_enable then 
+		if self.comics_mode_enable then
 			if self.rtl_mode_enable then
 				self.offset_x = width - (self.globalzoom * pwidth)
 			else
@@ -1631,6 +1639,19 @@ function UniReader:goto(no, is_ignore_jump, pos_type)
 	end
 end
 
+-- same as goto, but recalculates offsets, when you know you'll end up on a new page
+function UniReader:gotoJump(no, is_ignore_jump, pos_type)
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		self.last_globalzoom_mode = nil
+		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+	elseif self.pan_by_page then
+		self.last_globalzoom_mode = nil
+		self.globalzoom_mode = self.pan_by_page
+	end	
+	self.show_overlap = 0
+	self:goto(no, is_ignore_jump, pos_type)	
+end
+
 function UniReader:redrawCurrentPage()
 	self:show(self.pageno)
 end
@@ -1880,14 +1901,6 @@ function UniReader:screenRotate(orien)
 	self:clearCache()
 end
 
-function UniReader:setRotationMode(mode)
-	Screen:setRotationMode(mode)
-	-- update global width and height variable
-	G_width, G_height = fb:getSize()
-	self:clearCache()
-end
-
-
 function UniReader:cleanUpTocTitle(title)
 	return (title:gsub("\13", ""))
 end
@@ -1984,8 +1997,7 @@ function UniReader:getTocTitleOfCurrentPage()
 end
 
 function UniReader:gotoTocEntry(entry)
-	self.show_overlap = 0
-	self:goto(entry.page)
+	self:gotoJump(entry.page)
 end
 
 -- expand TOC item to one level down
@@ -2145,8 +2157,7 @@ function UniReader:showJumpHist()
 		if item_no and item_no <= #self.jump_history then
 			local jump_item = self.jump_history[item_no]
 			self.jump_history.cur = item_no
-			self.show_overlap = 0
-			self:goto(jump_item.page, true)
+			self:gotoJump(jump_item.page, true)
 			-- set new head if we reached the top of backward stack
 			if self.jump_history.cur == #self.jump_history then
 				self.jump_history.cur = self.jump_history.cur + 1
@@ -2170,7 +2181,7 @@ function UniReader:showBookMarks()
 		return InfoMessage:inform("No bookmarks found ", DINFO_DELAY, 1, MSG_WARN)
 	end
 	while true do
-		bm_menu = SelectMenu:new{
+		local bm_menu = SelectMenu:new{
 			menu_title = "Bookmarks ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
 			deletable = true,
@@ -2215,45 +2226,48 @@ function UniReader:prevBookMarkedPage()
 end
 
 function UniReader:showHighLight()
-	local menu_items, highlight_page, highlight_num = {}, {}, {}
-	local ret_code, item_no = -1, -1
+	local menu_items, highlight_page, highlight_num
+	local ret_code, item_no, height = -1, -1, G_height
 
-	-- build menu items
-	for k,v in pairs(self.highlight) do
-		if type(k) == "number" then
-			for k1,v1 in ipairs(v) do
-				table.insert(menu_items, v1.text)
-				table.insert(highlight_page, k)
-				table.insert(highlight_num, k1)
+	local function rebuild_menu()
+		menu_items, highlight_page, highlight_num = {}, {}, {}
+		for page,highlights in pairs(self.highlight) do -- iterate all pages with highlights
+			if type(page) == "number" then
+				for num,highlight in ipairs(highlights) do -- iterate all highlights on this page
+					table.insert(menu_items, highlight.text)
+					table.insert(highlight_page, page)
+					table.insert(highlight_num, num)
+				end
 			end
 		end
 	end
+
+	rebuild_menu()
 
 	if #menu_items == 0 then
 		return InfoMessage:inform("No HighLights found ", DINFO_DELAY, 1, MSG_WARN)
 	end
 
 	while true do
-		hl_menu = SelectMenu:new{
+		local hl_menu = SelectMenu:new{
 			menu_title = "HighLights ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
 			deletable = true,
 		}
-		ret_code, item_no = hl_menu:choose(0, fb.bb:getHeight())
+		ret_code, item_no = hl_menu:choose(0, height)
 		if ret_code then
 			return self:goto(highlight_page[ret_code])
 		elseif item_no then -- delete item
-			local hpage = highlight_page[item_no]
-			local hnum = highlight_num[item_no]
-			table.remove(self.highlight[hpage], hnum)
-			if #self.highlight[hpage] == 0 then
-				table.remove(self.highlight, hpage)
+			local page, num = highlight_page[item_no], highlight_num[item_no]
+			table.remove(self.highlight[page], num)
+			if #self.highlight[page] == 0 then
+				table.remove(self.highlight, page)
 			end
-			table.remove(menu_items, item_no)
+			rebuild_menu()
 			if #menu_items == 0 then
 				return self:redrawCurrentPage()
 			end
-		else
+		else -- return via Back
 			return self:redrawCurrentPage()
 		end
 	end
@@ -2383,7 +2397,7 @@ function memUsage()
 			s, n = line:gsub("VmSize:%s-(%d+) kB", "%1")	
 			if n ~= 0 then totalvm = tonumber(s) end
 
-			if rss ~= -1 and data ~= -1 and stack ~= -1 
+			if rss ~= -1 and data ~= -1 and stack ~= -1
 			  and lib ~= -1 and totalvm ~= -1 then
 				break
 			end
@@ -2501,11 +2515,16 @@ function UniReader:inputLoop()
 	self.toc_cview = nil
 	self.toc_curidx_to_x = nil
 	self.show_overlap = 0
-	self:setRotationMode(0)
+	Screen:setRotationMode(0)
 	self:setDefaults()
 	if self.doc ~= nil then
 		self.doc:close()
 	end
+	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
+		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
+	elseif self.pan_by_page then
+		self.globalzoom_mode = self.pan_by_page	
+	end	
 	if self.settings ~= nil then
 		self:saveLastPageOrPos()
 		self.settings:saveSetting("jump_history", self.jump_history)
@@ -2562,8 +2581,7 @@ function UniReader:gotoPrevNextTocEntry(direction)
 			end
 			local toc_entry = self.toc[k + direction]
 			if toc_entry then
-				self.show_overlap = 0
-				return self:goto(toc_entry.page, true)	
+				return self:gotoJump(toc_entry.page, true)	
 			end
 			break
 		end
@@ -2571,15 +2589,12 @@ function UniReader:gotoPrevNextTocEntry(direction)
 
 	if not found_curr_toc then
 		if direction == 1 and self.pageno ~= numpages then
-			self.show_overlap = 0
-			return self:goto(numpages, true)
+			return self:gotoJump(numpages, true)
 		elseif direction == -1 then
 			if self.pageno == numpages then
-				self.show_overlap = 0
-				return self:goto(last_toc_page, true)
+				return self:gotoJump(last_toc_page, true)
 			else
-				self.show_overlap = 0
-				return self:goto(penul_toc_page, true)
+				return self:gotoJump(penul_toc_page, true)
 			end
 		end
 	end
@@ -2685,9 +2700,8 @@ function UniReader:addAllCommands()
 	self.commands:addGroup("[1, 2 .. 9, 0]",numeric_keydefs,
 		"jump to 0%, 10% .. 90%, 100% of document",
 		function(unireader,keydef)
-			unireader.show_overlap = 0
 			--Debug('jump to page:', math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1), '/', unireader.doc:getPages())
-			unireader:goto(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
+			unireader:gotoJump(math.max(math.floor(unireader.doc:getPages()*(keydef.keycode-KEY_1)/9),1))
 		end)
 	-- end numeric keys
 
@@ -2773,8 +2787,7 @@ function UniReader:addAllCommands()
 			or page < 1 or page > numpages or page == unireader.pageno then
 				unireader:redrawCurrentPage()
 			else
-				unireader.show_overlap = 0
-				unireader:goto(page)
+				unireader:gotoJump(page)
 			end
 		end)
 	self.commands:add(KEY_H,nil,"H",
@@ -2805,9 +2818,9 @@ function UniReader:addAllCommands()
 		function(unireader)
 			ok = unireader:addBookmark(self.pageno)
 			if not ok then
-				InfoMessage:inform("Page already marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark already exists")
 			else
-				InfoMessage:inform("Page marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark added")
 			end
 		end)
 	self.commands:addGroup(MOD_ALT.."K/L",{
@@ -2820,9 +2833,8 @@ function UniReader:addAllCommands()
 			else
 				bm = self:nextBookMarkedPage()
 			end
-			if bm then 
-				self.show_overlap = 0
-				self:goto(bm.page, true) 
+			if bm then
+				self:gotoJump(bm.page, true)
 			end
 		end)
 	self.commands:add(KEY_B,MOD_SHIFT,"B",
@@ -3031,7 +3043,7 @@ function UniReader:addAllCommands()
 
 					if self.rtl_mode_enable then	-- rtl_mode enabled				
 						if unireader.pan_by_page then
-							if unireader.offset_x - 0.01 > unireader.pan_x then 
+							if unireader.offset_x - 0.01 > unireader.pan_x then
 								-- leftmost column
 								if unireader.pageno < unireader.doc:getPages() then
 									self.globalzoom_mode = self.pan_by_page
@@ -3053,7 +3065,7 @@ function UniReader:addAllCommands()
 
 					else -- rtl_mode disabled
 						if unireader.pan_by_page then
-							if unireader.offset_x - 0.01 > unireader.pan_x then 
+							if unireader.offset_x - 0.01 > unireader.pan_x then
 								-- leftmost column
 								if unireader.pageno > 1 then
 									unireader.adjust_offset = function(unireader)
@@ -3155,7 +3167,7 @@ function UniReader:addAllCommands()
 							unireader.show_overlap = -unireader.pan_overlap_vertical -- top
 						end
 					else
-						if unireader.offset_y < unireader.min_offset_y then 
+						if unireader.offset_y < unireader.min_offset_y then
 							unireader.offset_y = unireader.min_offset_y
 						end
 					end	
@@ -3237,14 +3249,13 @@ function UniReader:addAllCommands()
 		"enter highlight mode",
 		function(unireader)
 			unireader:startHighLightMode()
-			unireader:goto(unireader.pageno)
+			unireader:redrawCurrentPage()
 		end
 	)
 	self.commands:add(KEY_N, MOD_SHIFT, "N",
 		"show all highlights",
 		function(unireader)
 			unireader:showHighLight()
-			unireader:goto(unireader.pageno)
 		end
 	)
 	self.commands:add(KEY_DOT, nil, ".",
@@ -3258,8 +3269,7 @@ function UniReader:addAllCommands()
 			if search ~= nil and string.len( search ) > 0 then
 				unireader:searchHighLight(search)
 			else
-				unireader.show_overlap = 0
-				unireader:goto(unireader.pageno)
+				unireader:gotoJump(unireader.pageno)
 			end
 		end
 	)
@@ -3422,8 +3432,7 @@ function UniReader:addAllCommands()
 				end
 
 				unireader:clearSelection()
-				unireader.show_overlap = 0
-				unireader:goto(goto_page, false, "link")
+				unireader:gotoJump(goto_page, false, "link")
 
 			end
 		end
@@ -3443,15 +3452,9 @@ function UniReader:addAllCommands()
 			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add(KEY_BACK,MOD_ALT,"Back",
+	self.commands:addGroup(MOD_ALT.."Back, Home", {Keydef:new(KEY_BACK,MOD_ALT),Keydef:new(KEY_HOME,nil)},
 		"close document",
 		function(unireader)
-			return "break"
-		end)
-	self.commands:add(KEY_HOME,nil,"Home",
-		"exit application",
-		function(unireader)
-			keep_running = false
 			return "break"
 		end)
 	-- commands.map is very large, impacts startup performance on device

@@ -304,6 +304,8 @@ end
 
 function CREReader:showBookMarks()
 	local menu_items = {}
+	local ret_code, item_no = -1, -1
+
 	-- build menu items
 	for k,v in ipairs(self.bookmarks) do
 		table.insert(menu_items,
@@ -311,17 +313,25 @@ function CREReader:showBookMarks()
 			.." "..v.notes.." @ "..v.datetime)
 	end
 	if #menu_items == 0 then
-		InfoMessage:inform("No bookmark found ", DINFO_DELAY, 1, MSG_WARN)
-	else
+		return InfoMessage:inform("No bookmark found ", DINFO_DELAY, 1, MSG_WARN)
+	end
+	while true do
 		local bkmk_menu = SelectMenu:new{
-			menu_title = "Bookmarks",
+			menu_title = "Bookmarks ("..tostring(#menu_items).." items)",
 			item_array = menu_items,
+			deletable = true,
 		}
-		item_no = bkmk_menu:choose(0, G_height)
-		if item_no then
-			self:goto(self.bookmarks[item_no].page, nil, "xpointer")
-		else
-			self:redrawCurrentPage()
+		ret_code, item_no = bkmk_menu:choose(0, G_height)
+		if ret_code then -- normal item selection
+			return self:goto(self.bookmarks[ret_code].page, nil, "xpointer")
+		elseif item_no then -- delete item
+			table.remove(menu_items, item_no)
+			table.remove(self.bookmarks, item_no)
+			if #menu_items == 0 then
+				return self:redrawCurrentPage()
+			end
+		else -- return via Back
+			return self:redrawCurrentPage()
 		end
 	end
 end
@@ -626,9 +636,9 @@ function CREReader:adjustCreReaderCommands()
 		function(self)
 			ok = self:addBookmark(self.doc:getXPointer())
 			if not ok then
-				InfoMessage:inform("Page already marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark already exists")
 			else
-				InfoMessage:inform("Page marked ", DINFO_DELAY, 1, MSG_WARN)
+				InfoMessage:drawTopMsg("Bookmark added")
 			end
 		end
 	)

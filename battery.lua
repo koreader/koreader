@@ -9,10 +9,12 @@ end
 
 -- log battery level in "batlog.txt" file, blevent can be any string
 function logBatteryLevel(blevent)
+	if not G_battery_logging then return end
+
 	local file = io.open("batlog.txt", "a+")
 	if file then
 		if file:seek("end") == 0 then -- write the header only once
-			file:write(string.format("DATE\t\tTIME\t\tBATTERY\tEVENT\n"))
+			file:write("DATE\t\tTIME\t\tBATTERY\tEVENT\n")
 		end
 		file:write(string.format("%s\t%s\t%s\t%s\n",
 			os.date("%d-%b-%y"), os.date("%T"),

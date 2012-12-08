@@ -168,7 +168,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
-				if G_battery_logging then logBatteryLevel("SLEEP") end
+				logBatteryLevel("SLEEP")
 				Screen:saveCurrentBB()
 				InfoMessage:inform("Going into screensaver... ", DINFO_NODELAY, 0, MSG_AUX)
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
@@ -184,7 +184,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'screensaver out' >> /mnt/us/event_test.txt")
 			if G_screen_saver_mode == true and G_charging_mode == false then
-				if G_battery_logging then logBatteryLevel("WAKEUP") end
+				logBatteryLevel("WAKEUP")
 				util.usleep(1500000)
 				os.execute("killall -stop cvm")
 				fb:setOrientation(Screen.kpv_rotation_mode)
@@ -199,7 +199,7 @@ function Commands:new(obj)
 		function()
 			--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 			if G_charging_mode == false and G_screen_saver_mode == false then
-				if G_battery_logging then logBatteryLevel("USB PLUG") end
+				logBatteryLevel("USB PLUG")
 				Screen:saveCurrentBB()
 				Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 				fb:setOrientation(Screen.native_rotation_mode)
@@ -220,7 +220,7 @@ function Commands:new(obj)
 				fb:setOrientation(Screen.kpv_rotation_mode)
 				Screen:restoreFromSavedBB()
 				fb:refresh(0)
-				if G_battery_logging then logBatteryLevel("USB UNPLUG") end
+				logBatteryLevel("USB UNPLUG")
 			end
 			FileChooser:setPath(FileChooser.path)
 			FileChooser.pagedirty = true
@@ -231,7 +231,7 @@ function Commands:new(obj)
 	-- I suggest one should probably change the hotkey to, say, Alt+Space
 	obj:add(KEY_P, MOD_SHIFT, "P", "make screenshot",
 		function()
-			if G_battery_logging then logBatteryLevel("SCREENSHOT") end
+			logBatteryLevel("SCREENSHOT")
 			Screen:screenshot()
 		end
 	)

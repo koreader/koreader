@@ -72,12 +72,17 @@ function ReaderChooser:getReaderByType(ftype)
 	if #readers >= 1 then
 		return registry[readers[1]][1]
 	else
-		return nil
+		if FileChooser.filemanager_expert_mode  > FileChooser.BEGINNERS_MODE then
+			return CREReader
+		else
+			return nil
+		end
 	end
 end
 
 function ReaderChooser:getReaderByName(filename)
-	local file_type = string.lower(string.match(filename, ".+%.([^.]+)"))
+	local ext = string.match(filename, ".+%.([^.]+)")
+	local file_type = ext and ext:lower() or "txt"
 	local readers = GetRegisteredReaders(file_type)
 	if #readers > 1 then -- more than one reader are registered with this file type
 		local file_settings = DocSettings:open(filename)
@@ -121,7 +126,11 @@ function ReaderChooser:getReaderByName(filename)
 	elseif #readers == 1 then
 		return registry[readers[1]][1]
 	else
-		return nil
+		if FileChooser.filemanager_expert_mode  > FileChooser.BEGINNERS_MODE then
+			return CREReader
+		else
+			return nil
+		end
 	end
 end
 

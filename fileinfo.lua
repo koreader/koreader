@@ -144,7 +144,8 @@ function FileInfo:init(path, fname)
 			table.insert(self.result, {dir = "Last read", name = "Never"})
 		else
 			table.insert(self.result, {dir = "Last read", name = self:FileCreated(history, "change")})
-			local file_type = string.lower(string.match(self.pathfile, ".+%.([^.]+)"))
+			local ext = string.match(self.pathfile, ".+%.([^.]+)")
+			local file_type = ext and ext:lower() or "txt"
 			local to_search, add, factor = "[\"last_percent\"]", "%", 100
 			if ReaderChooser:getReaderByType(file_type) ~= CREReader then
 				to_search = "[\"last_page\"]"

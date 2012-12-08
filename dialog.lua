@@ -261,3 +261,11 @@ function InfoMessage:saveInfoMessageSettings()
 	G_reader_settings:saveSetting("sound_volume", self.SoundVolume-1)
 	G_reader_settings:saveSetting("tts_speed", self.TTSspeed)
 end
+
+function InfoMessage:drawTopMsg(msg)
+	local face = Font:getFace("rifont", 18)
+	local len = sizeUtf8Text(0, G_width, face, msg, true).x + 20
+	fb.bb:paintRect(0, 0, len, 15+6*2, 4)
+	renderUtf8Text(fb.bb, 10, 15+6, face, msg, true)
+	fb:refresh(1)
+end
