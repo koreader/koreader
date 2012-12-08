@@ -68,6 +68,9 @@ DPICVIEWER_COMICS_MODE_ENABLE = true
 DPICVIEWER_RTL_MODE_ENABLE = false
 DPICVIEWER_PAGE_MODE_ENABLE = false
 
+-- 0 for scroll mode, 1 for page mode
+DCREREADER_VIEW_MODE = 1
+
 -- supported extensions
 DPDFREADER_EXT = ";pdf;xps;cbz;zip;"
 DDJVUREADER_EXT = ";djvu;"

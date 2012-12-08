@@ -14,6 +14,7 @@ CREReader = UniReader:new{
 	font_zoom = 0,
 
 	line_space_percent = 100,
+	view_mode = DCREREADER_VIEW_MODE,
 }
 
 function CREReader:init()
@@ -82,7 +83,7 @@ function CREReader:open(filename)
 		file_type = "cr3"
 	end
 	local style_sheet = "./data/"..file_type..".css"
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height)
+	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, self.view_mode)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
