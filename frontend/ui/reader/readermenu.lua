@@ -12,7 +12,7 @@ function ReaderMenu:init()
 						h = Screen:getHeight()/2
 					}
 				}
-			}
+			},
 		}
 	else
 		self.key_events = {
@@ -94,6 +94,7 @@ function ReaderMenu:onShowMenu()
 	table.insert(item_table, {
 		text = "Return to file browser",
 		callback = function()
+			UIManager:close(self.menu_container)
 			self.ui:onClose()
 		end
 	})
@@ -101,17 +102,25 @@ function ReaderMenu:onShowMenu()
 	local main_menu = Menu:new{
 		title = "Document menu",
 		item_table = item_table,
-		width = 300,
-		height = #item_table + 3 * 28
+		width = Screen:getWidth() - 100,
 	}
-
 	function main_menu:onMenuChoice(item)
 		if item.callback then
 			item.callback()
 		end
 	end
 
-	UIManager:show(main_menu)
+	local menu_container = CenterContainer:new{
+		main_menu,
+		dimen = Screen:getSize(),
+	}
+	main_menu.close_callback = function () 
+		UIManager:close(menu_container)
+	end
+	-- maintain a reference to menu_container
+	self.menu_container = menu_container
+
+	UIManager:show(menu_container)
 
 	return true
 end
@@ -119,5 +128,10 @@ end
 function ReaderMenu:onTapShowMenu()
 	self:onShowMenu()
 	return true
+end
+
+function ReaderMenu:onSetDimensions(dimen)
+	-- update gesture listenning range according to new screen orientation
+	self:init()
 end
 
