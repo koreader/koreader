@@ -204,7 +204,7 @@ Menu = FocusManager:new{
 	sface = Font:getFace("scfont", 20),
 
 	title = "No Title",
-	dimen = Geom:new{ w = 500, h = 500 },
+	dimen = Geom:new{},
 	item_table = {},
 	item_shortcuts = {
 		"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
@@ -222,17 +222,29 @@ Menu = FocusManager:new{
 
 	-- set this to true to not paint as popup menu
 	is_borderless = false,
+	-- close_callback is a function, which is executed when menu is closed
+	-- it is usually set by the widget which creates the menu
+	close_callback = nil
 }
 
-function Menu:init()
+function Menu:_recalculateDimen()
+	self.dimen.w = self.width
+	self.dimen.h = (#self.item_table + 2) * 36
 	self.item_dimen = Geom:new{
 		w = self.dimen.w,
 		h = 36, -- hardcoded for now
 	}
-
+	if not self.is_borderless then
+		-- we need to substract border, margin and padding
+		self.item_dimen.w = self.item_dimen.w - 14
+	end
 	self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - 2
-	self.page = 1
 	self.page_num = math.ceil(#self.item_table / self.perpage)
+end
+
+function Menu:init()
+	self:_recalculateDimen()
+	self.page = 1
 
 	-----------------------------------
 	-- start to set up widget layout --
@@ -262,16 +274,12 @@ function Menu:init()
 	self.content_group = content
 
 	if not self.is_borderless then
-		self[1] = CenterContainer:new{
-			FrameContainer:new{
-				background = 0,
-				radius = math.floor(self.dimen.w/20),
-				content
-			},
-			dimen = Screen:getSize(),
+		self[1] = FrameContainer:new{
+			dimen = self.dimen,
+			background = 0,
+			radius = math.floor(self.dimen.w/20),
+			content
 		}
-		-- we need to substract border, margin and padding
-		self.item_dimen.w = self.item_dimen.w - 14
 	else
 		-- no border for the menu
 		self[1] = FrameContainer:new{
@@ -279,7 +287,7 @@ function Menu:init()
 			bordersize = 0,
 			padding = 0,
 			margin = 0,
-			dimen = Screen:getSize(),
+			dimen = self.dimen,
 			content
 		}
 	end
@@ -292,6 +300,16 @@ function Menu:init()
 			MenuCloseButton:new{
 				menu = self,
 			})
+		self.ges_events.TapCloseAllMenus = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		}
 	else
 		-- set up keyboard events
 		self.key_events.Close = { {"Back"}, doc = "close menu" }
@@ -323,6 +341,7 @@ function Menu:updateItems(select_number)
 	self.layout = {}
 	self.item_group:clear()
 	self.content_group:resetLayout()
+	self:_recalculateDimen()
 
 	for c = 1, self.perpage do
 		local i = (self.page - 1) * self.perpage + c 
@@ -365,7 +384,7 @@ function Menu:updateItems(select_number)
 		self.page_info.text = "no choices available"
 	end
 
-	-- FIXME: this is a dirty hack to clear the previous menu
+	-- FIXME: this is a dirty hack to clear previous menus
 	UIManager.repaint_all = true
 	--UIManager:setDirty(self)
 end
@@ -465,7 +484,7 @@ end
 function Menu:onClose()
 	local table_length = #self.item_table_stack
 	if table_length == 0 then
-		UIManager:close(self)
+		self:onCloseAllMenus()
 	else
 		-- back to parent menu
 		parent_item_table = table.remove(self.item_table_stack, table_length)
@@ -473,4 +492,20 @@ function Menu:onClose()
 	end
 	return true
 end
+
+function Menu:onCloseAllMenus()
+	UIManager:close(self)
+	if self.close_callback then
+		self.close_callback()
+	end
+	return true
+end
+
+function Menu:onTapCloseAllMenus(arg, ges_ev)
+	if ges_ev.pos:notIntersectWith(self.dimen) then
+		self:onCloseAllMenus()
+		return true
+	end
+end
+
 
