@@ -235,6 +235,9 @@ function Menu:_recalculateDimen()
 	self.dimen.w = self.width
 	-- if height not given, dynamically calculate it
 	self.dimen.h = self.height or (#self.item_table + 2) * 36
+	if self.dimen.h > Screen:getHeight() then
+		self.dimen.h = Screen:getHeight()
+	end
 	self.item_dimen = Geom:new{
 		w = self.dimen.w,
 		h = 36, -- hardcoded for now
