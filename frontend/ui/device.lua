@@ -67,7 +67,7 @@ end
 
 function Device:isTouchDevice()
 	local model = self:getModel()
-	return (model == "Kindle4") or (model == "KindlePaperWhite") or util.isEmulated()
+	return (model == "Kindle4") or (model == "KindlePaperWhite") or (model == "KindleTouch") or util.isEmulated()
 end
 
 function Device:intoScreenSaver()
