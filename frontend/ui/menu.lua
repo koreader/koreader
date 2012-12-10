@@ -204,6 +204,10 @@ Menu = FocusManager:new{
 	sface = Font:getFace("scfont", 20),
 
 	title = "No Title",
+	-- default width and height
+	width = 500,
+	-- height will be calculated according to item number if not given
+	height = nil,
 	dimen = Geom:new{},
 	item_table = {},
 	item_shortcuts = {
@@ -229,7 +233,8 @@ Menu = FocusManager:new{
 
 function Menu:_recalculateDimen()
 	self.dimen.w = self.width
-	self.dimen.h = (#self.item_table + 2) * 36
+	-- if height not given, dynamically calculate it
+	self.dimen.h = self.height or (#self.item_table + 2) * 36
 	self.item_dimen = Geom:new{
 		w = self.dimen.w,
 		h = 36, -- hardcoded for now
@@ -344,6 +349,7 @@ function Menu:updateItems(select_number)
 	self:_recalculateDimen()
 
 	for c = 1, self.perpage do
+		-- calculate index in item_table
 		local i = (self.page - 1) * self.perpage + c 
 		if i <= #self.item_table then
 			local item_shortcut = nil
@@ -370,7 +376,15 @@ function Menu:updateItems(select_number)
 				menu = self,
 			}
 			table.insert(self.item_group, item_tmp)
+			-- this is for focus manager
 			table.insert(self.layout, {item_tmp})
+		else
+			-- item not enough to fill the whole page, break out of loop
+			table.insert(self.item_group, 
+				VerticalSpan:new{
+					width = (self.item_dimen.h * (self.perpage - c + 1))
+				})
+			break
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
