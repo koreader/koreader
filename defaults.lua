@@ -68,8 +68,8 @@ DPICVIEWER_COMICS_MODE_ENABLE = true
 DPICVIEWER_RTL_MODE_ENABLE = false
 DPICVIEWER_PAGE_MODE_ENABLE = false
 
--- 0 for scroll mode, 1 for page mode
-DCREREADER_VIEW_MODE = 1
+-- supported view mode includes: "scroll" and "page"
+DCREREADER_VIEW_MODE = "scroll"
 
 -- koptreader config defaults
 DKOPTREADER_CONFIG_FONT_SIZE = 1.0		-- range from 0.1 to 3.0

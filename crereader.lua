@@ -83,7 +83,12 @@ function CREReader:open(filename)
 		file_type = "cr3"
 	end
 	local style_sheet = "./data/"..file_type..".css"
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, self.view_mode)
+	-- default to scroll mode, which is 0
+	local view_mode = 0
+	if self.view_mode == "page" then
+		view_mode = 1
+	end
+	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, view_mode)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
