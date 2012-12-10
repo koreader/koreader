@@ -84,6 +84,7 @@ function CREReader:open(filename)
 	end
 	local style_sheet = "./data/"..file_type..".css"
 	-- default to scroll mode, which is 0
+	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
 	local view_mode = 0
 	if self.view_mode == "page" then
 		view_mode = 1
