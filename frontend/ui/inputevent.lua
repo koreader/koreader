@@ -269,6 +269,8 @@ function Input:init()
 			-- update event hook
 			function Input:eventAdjustHook(ev)
 				if ev.type == EV_ABS then
+					--@TODO handle coordinates properly after
+					--screen rotate.    (houqp)
 					if ev.code == ABS_MT_POSITION_X then
 						ev.code = math.round(ev.code * (600/4095))
 					elseif ev.code == ABS_MT_POSITION_Y then
