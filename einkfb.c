@@ -108,7 +108,7 @@ inline void fillMxcfbUpdateData51(mxcfb_update_data51 *myarea, FBInfo *fb, lua_S
 	myarea->hist_gray_waveform_mode = 0;
 	myarea->temp = 0x1001;
 	myarea->flags = 0;
-	myarea->alt_buffer_data.virt_addr = NULL;
+	/*myarea->alt_buffer_data.virt_addr = NULL;*/
 	myarea->alt_buffer_data.phys_addr = NULL;
 	myarea->alt_buffer_data.width = 0;
 	myarea->alt_buffer_data.height = 0;
@@ -141,7 +141,7 @@ void kindle51einkUpdate(FBInfo *fb, lua_State *L) {
 	fb4BppTo8Bpp(fb);
 	fillMxcfbUpdateData51(&myarea, fb, L);
 
-	ioctl(fb->fd, 0x4048462e, &myarea);
+	ioctl(fb->fd, MXCFB_SEND_UPDATE51, &myarea);
 }
 #endif	
 

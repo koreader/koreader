@@ -1,12 +1,15 @@
 /*
  * Copyright 2004-2011 Freescale Semiconductor, Inc. All Rights Reserved.
  *
- * Modified by houqp, added mxcfb_update_data51 struct from GeekMaster's video
- * player, refer to:
- * http://www.mobileread.com/forums/showthread.php?t=177455&page=10
- */
-
-/*
+ * - Modified by houqp, added mxcfb_update_data51 struct from GeekMaster's
+ *   video player, refer to:
+ *   http://www.mobileread.com/forums/showthread.php?t=177455&page=10
+ *
+ * - Modified mxcfb_alt_buffer_data struct according to include/linux/mxcfb.h
+ *   from Kindle 5.3.0 firmware. Thanks to eureka@mobileread.
+ *   http://www.mobileread.com/forums/showpost.php?p=2337118&postcount=818
+ *
+ *
  * The code contained herein is licensed under the GNU Lesser General
  * Public License.  You may obtain a copy of the GNU Lesser General
  * Public License Version 2.1 or later at the following locations:
@@ -96,7 +99,8 @@ struct mxcfb_rect {
 #define FB_TEMP_AUTO_UPDATE_DISABLE     -1
 
 struct mxcfb_alt_buffer_data {
-	void *virt_addr;
+	/* virt_addr is not included in amazon's source */
+	/* void *virt_addr; */
 	__u32 phys_addr;
 	__u32 width;	/* width of entire buffer */
 	__u32 height;	/* height of entire buffer */
@@ -167,6 +171,9 @@ struct mxcfb_waveform_modes {
 #define MXCFB_SET_EPD_PWR2_CTRL		_IOR('F', 0x35, int32_t)
 #define MXCFB_SET_TEMP_AUTO_UPDATE_PERIOD     _IOR('F', 0x36, int32_t)
 #define MXCFB_SET_MERGE_ON_WAVEFORM_MISMATCH	_IOW('F', 0x37, int32_t)
+
+/* IOCTLs for E-ink panel updates, kindle firmware version >= 5.1 */
+#define MXCFB_SEND_UPDATE51 _IOW('F', 0x2E, struct mxcfb_update_data51)
 
 #ifdef __KERNEL__
 
