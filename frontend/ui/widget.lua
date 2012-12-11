@@ -24,6 +24,11 @@ function Widget:new(o)
 	local o = o or {}
 	setmetatable(o, self)
 	self.__index = self
+	-- Both o._init and o.init are called on object create. But o._init is used
+	-- for base widget initialization (basic component used to build other
+	-- widgets). While o.init is for higher level widgets, for example Menu
+	-- Widget
+	if o._init then o:_init() end
 	if o.init then o:init() end
 	return o
 end
@@ -92,7 +97,7 @@ end
 
 --[[
 Containers will pass events to children or react on them themselves
-]]
+]]--
 function WidgetContainer:handleEvent(event)
 	if not self:propagateEvent(event) then
 		-- call our own standard event handler
@@ -582,10 +587,12 @@ an example for a key_event is this:
 it is suggested to reference configurable sequences from another table
 and store that table as configuration setting
 ]]
-InputContainer = WidgetContainer:new{
-	key_events = {},
-	ges_events = {},
-}
+InputContainer = WidgetContainer:new{}
+
+function InputContainer:_init()
+	self.key_events = {}
+	self.ges_events = {}
+end
 
 function InputContainer:paintTo(bb, x, y)
 	self.dimen.x = x
