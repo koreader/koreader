@@ -1,6 +1,8 @@
 require "ui/menu"
 
 FileChooser = Menu:new{
+	height = Screen:getHeight(),
+	width = Screen:getWidth(),
 	path = ".",
 	parent = nil,
 	show_hidden = false,
