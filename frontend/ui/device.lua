@@ -1,6 +1,7 @@
 Device = {
 	screen_saver_mode = false,
 	charging_mode = false,
+	model = nil,
 }
 
 function Device:getModel()
@@ -65,9 +66,18 @@ function Device:isKindle2()
 	end
 end
 
+function Device:hasNoKeyboard()
+	if not self.model then
+		self.model = self:getModel()
+	end
+	return self:isTouchDevice() or (self.model == "Kindle4")
+end
+
 function Device:isTouchDevice()
-	local model = self:getModel()
-	return (model == "Kindle4") or (model == "KindlePaperWhite") or (model == "KindleTouch") or util.isEmulated()
+	if not self.model then
+		self.model = self:getModel()
+	end
+	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or util.isEmulated()
 end
 
 function Device:intoScreenSaver()
