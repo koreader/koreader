@@ -96,7 +96,7 @@ inline void fillUpdateAreaT(update_area_t *myarea, FBInfo *fb, lua_State *L) {
 	myarea->which_fx = fxtype ? fx_update_partial : fx_update_full;
 }
 
-inline void fillMxcfbUpdateData51(mxcfb_update_data51 *myarea, FBInfo *fb, lua_State *L) {
+inline void fillMxcfbUpdateData(mxcfb_update_data *myarea, FBInfo *fb, lua_State *L) {
 	myarea->update_region.top = luaL_optint(L, 3, 0);
 	myarea->update_region.left = luaL_optint(L, 4, 0);
 	myarea->update_region.width = luaL_optint(L, 5, fb->vinfo.xres);
@@ -135,13 +135,14 @@ void kindle4einkUpdate(FBInfo *fb, lua_State *L) {
 	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
 }
 
+/* for kindle firmware with version >= 5.1, 5.0 is not supported for now */
 void kindle51einkUpdate(FBInfo *fb, lua_State *L) {
-	mxcfb_update_data51 myarea;
+	mxcfb_update_data myarea;
 
 	fb4BppTo8Bpp(fb);
-	fillMxcfbUpdateData51(&myarea, fb, L);
+	fillMxcfbUpdateData(&myarea, fb, L);
 
-	ioctl(fb->fd, MXCFB_SEND_UPDATE51, &myarea);
+	ioctl(fb->fd, MXCFB_SEND_UPDATE, &myarea);
 }
 #endif	
 
