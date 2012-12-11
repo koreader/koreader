@@ -272,11 +272,12 @@ function Input:init()
 					--@TODO handle coordinates properly after
 					--screen rotate.    (houqp)
 					if ev.code == ABS_MT_POSITION_X then
-						ev.code = math.round(ev.code * (600/4095))
+						ev.value = math.round(ev.value * (600/4095))
 					elseif ev.code == ABS_MT_POSITION_Y then
-						ev.code = math.round(ev.code * (800/4095))
+						ev.value = math.round(ev.value * (800/4095))
 					end
 				end
+				return ev
 			end
 			print("Auto-detected Kindle Touch")
 		elseif dev_mod == "Kindle4" then
