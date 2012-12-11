@@ -124,6 +124,13 @@ function CREReader:loadSpecialSettings()
 			i=i-1
 		end
 	end
+
+	local view_mode = self.settings:readSetting("view_mode")
+	if view_mode == "page" then
+		self.view_mode = "page"
+	else
+		self.view_mode = "scroll"
+	end
 end
 
 function CREReader:getLastPageOrPos()
@@ -140,6 +147,7 @@ function CREReader:saveSpecialSettings()
 	self.settings:saveSetting("gamma_index", self.gamma_index)
 	self.settings:saveSetting("line_space_percent", self.line_space_percent)
 	self.settings:saveSetting("font_zoom", self.font_zoom)
+	self.settings:saveSetting("view_mode", self.view_mode)
 end
 
 function CREReader:saveLastPageOrPos()
@@ -193,9 +201,13 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	Debug("## self.show_overlap "..self.show_overlap)
-	if self.show_overlap < 0 and self.show_overlap_enable then
+	if self.show_overlap < 0
+	and self.show_overlap_enable
+	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
-	elseif self.show_overlap > 0 and self.show_overlap_enable then
+	elseif self.show_overlap > 0
+	and self.show_overlap_enable 
+	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
@@ -716,6 +728,19 @@ function CREReader:adjustCreReaderCommands()
 		"pan "..self.shift_y.." pixels downwards",
 		function(self)
 			self:goto(self.pos + self.shift_y)
+		end
+	)
+	self.commands:add(KEY_V, nil, "V",
+		"toggle view mode (requires re-open)",
+		function(self)
+			if self.view_mode == "page" then
+				self.view_mode = "scroll"
+			else
+				self.view_mode = "page"
+			end
+			self.settings:saveSetting("view_mode", self.view_mode)
+			InfoMessage:inform("Changed to "..self.view_mode.." mode.", DINFO_DELAY, 1, MSG_AUX)
+			InfoMessage:inform("Please reopen the document.", DINFO_NODELAY, 1, MSG_AUX)
 		end
 	)
 end
