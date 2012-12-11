@@ -14,6 +14,19 @@ EVENT_VALUE_KEY_PRESS = 1
 EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
 
+-- Synchronization events (SYN.code).
+SYN_REPORT = 0
+SYN_CONFIG = 1
+SYN_MT_REPORT = 2
+
+-- For multi-touch events (ABS.code).
+ABS_MT_SLOT = 47
+ABS_MT_POSITION_X = 53
+ABS_MT_POSITION_Y = 54
+ABS_MT_TRACKING_ID = 57
+ABS_MT_PRESSURE = 58
+
+
 
 --[[
 an interface for key presses
@@ -253,6 +266,16 @@ function Input:init()
 		elseif dev_mod == "KindleTouch" then
 			input.open("/dev/input/event2") -- Home button
 			input.open("/dev/input/event3") -- touchscreen
+			-- update event hook
+			function Input:eventAdjustHook(ev)
+				if ev.type == EV_ABS then
+					if ev.code == ABS_MT_POSITION_X then
+						ev.code = math.round(ev.code * (600/4095))
+					elseif ev.code == ABS_MT_POSITION_Y then
+						ev.code = math.round(ev.code * (800/4095))
+					end
+				end
+			end
 			print("Auto-detected Kindle Touch")
 		elseif dev_mod == "Kindle4" then
 			print("Auto-detected Kindle 4")
@@ -269,6 +292,15 @@ function Input:init()
 			os.exit(-1)
 		end
 	end
+end
+
+--[[
+different device models shoudl overload this method if
+necessary to make event compatible to KPV.
+--]]
+function Input:eventAdjustHook(ev)
+	-- do nothing by default
+	return ev
 end
 
 function Input:adjustKindle4EventMap()
@@ -342,6 +374,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 		end
 	end
 	if ok and ev then
+		ev = self:eventAdjustHook(ev)
 		if ev.type == EV_KEY then
 			local keycode = self.event_map[ev.code]
 			if not keycode then

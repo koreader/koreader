@@ -1,18 +1,5 @@
 require "ui/geometry"
 
--- Synchronization events (SYN.code).
-SYN_REPORT = 0
-SYN_CONFIG = 1
-SYN_MT_REPORT = 2
-
--- For multi-touch events (ABS.code).
-ABS_MT_SLOT = 47
-ABS_MT_POSITION_X = 53
-ABS_MT_POSITION_Y = 54
-ABS_MT_TRACKING_ID = 57
-ABS_MT_PRESSURE = 58
-
-
 GestureRange = {
 	ges = nil,
 	range = nil,
@@ -207,7 +194,6 @@ function GestureDetector:tapState(ev)
 				sec = 0, usec = self.HOLD_INTERVAL
 			}
 		Input:setTimeout(function()
-			print("hold timer", self.state == self.tapState)
 			if self.state == self.tapState then
 				-- timer set in tapState, so we switch to hold
 				return self:switchState("holdState")
