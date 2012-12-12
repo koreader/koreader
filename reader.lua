@@ -136,6 +136,8 @@ Screen:setRotationMode(Screen.native_rotation_mode)
 input.closeAll()
 if util.isEmulated()==0 then
 	os.execute("killall -cont cvm")
-	-- send double menu key press events to trigger screen refresh
-	os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+	if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
+		-- send double menu key press events to trigger screen refresh
+		os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+	end
 end

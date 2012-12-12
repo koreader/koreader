@@ -1,8 +1,10 @@
 #!/bin/sh
 export LC_ALL="en_US.UTF-8"
 
-echo unlock > /proc/keypad
-echo unlock > /proc/fiveway
+PROC_KEYPAD="/proc/keypad"
+PROC_FIVEWAY="/proc/fiveway"
+test -e $PROC_KEYPAD && echo unlock > $PROC_KEYPAD
+test -e $PROC_FIVEWAY && echo unlock > $PROC_FIVEWAY
 
 # we're always starting from our working directory
 cd /mnt/us/kindlepdfviewer/
