@@ -19,13 +19,131 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-//#include <stdio.h>
+#include <stdlib.h>
 
 #include "einkfb.h"
 
 #ifdef EMULATE_READER
-	int emu_w = EMULATE_READER_W;
-	int emu_h = EMULATE_READER_H;
+int emu_w = EMULATE_READER_W;
+int emu_h = EMULATE_READER_H;
+#else
+static void (*einkUpdateFunc)(FBInfo *fb, lua_State *L) = NULL;
+
+inline void fbInvert4BppTo8Bpp(FBInfo *fb) {
+	int i = 0, j = 0, h = 0, w = 0, pitch = 0, fb_pitch = 0;
+	uint8_t *shadow_buf = NULL, *fb_buf = NULL;
+
+	shadow_buf = fb->buf->data;
+	fb_buf = fb->real_buf->data;
+	h = fb->buf->h;
+	w = fb->buf->w;
+	pitch = fb->buf->pitch;
+	fb_pitch = fb->real_buf->pitch;
+
+	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
+	for (i = (h-1); i > 0; i--) {
+		for (j = (w-1)/2; j > 0; j--) {
+			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
+			fb_buf[i*fb_pitch + j*2] &= 0xF0;
+			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
+
+			fb_buf[i*fb_pitch + j*2 + 1] = shadow_buf[i*pitch + j];
+			fb_buf[i*fb_pitch + j*2 + 1] &= 0x0F;
+			fb_buf[i*fb_pitch + j*2 + 1] |= shadow_buf[i*pitch + j]<<4 & 0xF0;
+		}
+	}
+}
+
+inline void fb4BppTo8Bpp(FBInfo *fb) {
+	int i = 0, j = 0, h = 0, w = 0, pitch = 0, fb_pitch = 0;
+	uint8_t *shadow_buf = NULL, *fb_buf = NULL;
+
+	shadow_buf = fb->buf->data;
+	fb_buf = fb->real_buf->data;
+	/* h is 1024 for PaperWhite */
+	h = fb->buf->h;
+	/* w is 758 for PaperWhite */
+	w = fb->buf->w;
+	/* pitch is 384 for shadow buffer */
+	pitch = fb->buf->pitch;
+	/* pitch is 768 for PaperWhite */
+	fb_pitch = fb->real_buf->pitch;
+
+	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
+	for (i = (h-1); i > 0; i--) {
+		for (j = (w-1)/2; j > 0; j--) {
+			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
+			fb_buf[i*fb_pitch + j*2] &= 0xF0;
+			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
+			fb_buf[i*fb_pitch + j*2] = ~fb_buf[i*fb_pitch + j*2];
+
+			fb_buf[i*fb_pitch + j*2 + 1] = shadow_buf[i*pitch + j];
+			fb_buf[i*fb_pitch + j*2 + 1] &= 0x0F;
+			fb_buf[i*fb_pitch + j*2 + 1] |= shadow_buf[i*pitch + j]<<4 & 0xF0;
+			fb_buf[i*fb_pitch + j*2 + 1] = ~fb_buf[i*fb_pitch + j*2 + 1];
+		}
+	}
+}
+
+inline void fillUpdateAreaT(update_area_t *myarea, FBInfo *fb, lua_State *L) {
+	int fxtype = luaL_optint(L, 2, 0);
+
+	myarea->x1 = luaL_optint(L, 3, 0);
+	myarea->y1 = luaL_optint(L, 4, 0);
+	myarea->x2 = myarea->x1 + luaL_optint(L, 5, fb->vinfo.xres);
+	myarea->y2 = myarea->y1 + luaL_optint(L, 6, fb->vinfo.yres);
+	myarea->buffer = NULL;
+	myarea->which_fx = fxtype ? fx_update_partial : fx_update_full;
+}
+
+inline void fillMxcfbUpdateData(mxcfb_update_data *myarea, FBInfo *fb, lua_State *L) {
+	myarea->update_region.top = luaL_optint(L, 3, 0);
+	myarea->update_region.left = luaL_optint(L, 4, 0);
+	myarea->update_region.width = luaL_optint(L, 5, fb->vinfo.xres);
+	myarea->update_region.height = luaL_optint(L, 6, fb->vinfo.yres);
+	myarea->waveform_mode = 257;
+	myarea->update_mode = 0;
+	myarea->update_marker = 1;
+	myarea->hist_bw_waveform_mode = 0;
+	myarea->hist_gray_waveform_mode = 0;
+	myarea->temp = 0x1001;
+	myarea->flags = 0;
+	/*myarea->alt_buffer_data.virt_addr = NULL;*/
+	myarea->alt_buffer_data.phys_addr = NULL;
+	myarea->alt_buffer_data.width = 0;
+	myarea->alt_buffer_data.height = 0;
+	myarea->alt_buffer_data.alt_update_region.top = 0;
+	myarea->alt_buffer_data.alt_update_region.left = 0;
+	myarea->alt_buffer_data.alt_update_region.width = 0;
+	myarea->alt_buffer_data.alt_update_region.height = 0;
+}
+
+void kindle3einkUpdate(FBInfo *fb, lua_State *L) {
+	update_area_t myarea;
+
+	fillUpdateAreaT(&myarea, fb, L);
+
+	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
+}
+
+void kindle4einkUpdate(FBInfo *fb, lua_State *L) {
+	update_area_t myarea;
+
+	fbInvert4BppTo8Bpp(fb);
+	fillUpdateAreaT(&myarea, fb, L);
+
+	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
+}
+
+/* for kindle firmware with version >= 5.1, 5.0 is not supported for now */
+void kindle51einkUpdate(FBInfo *fb, lua_State *L) {
+	mxcfb_update_data myarea;
+
+	fb4BppTo8Bpp(fb);
+	fillMxcfbUpdateData(&myarea, fb, L);
+
+	ioctl(fb->fd, MXCFB_SEND_UPDATE, &myarea);
+}
 #endif	
 
 static int openFrameBuffer(lua_State *L) {
@@ -63,6 +181,22 @@ static int openFrameBuffer(lua_State *L) {
 	if (fb->finfo.type != FB_TYPE_PACKED_PIXELS) {
 		return luaL_error(L, "video type %x not supported",
 				fb->finfo.type);
+	}
+
+	if (strncmp(fb->finfo.id, "mxc_epdc_fb", 11) == 0) {
+		/* Kindle PaperWhite and KT with 5.1 or later firmware */
+		einkUpdateFunc = &kindle51einkUpdate;
+	} else if (strncmp(fb->finfo.id, "eink_fb", 7) == 0) {
+		if (fb->vinfo.bits_per_pixel == 8) {
+			/* kindle4 */
+			einkUpdateFunc = &kindle4einkUpdate;
+		} else {
+			/* kindle2, 3, DXG */
+			einkUpdateFunc = &kindle3einkUpdate;
+		}
+	} else {
+		return luaL_error(L, "eink model %s not supported",
+				fb->finfo.id);
 	}
 
 	if (ioctl(fb->fd, FBIOGET_VSCREENINFO, &fb->vinfo)) {
@@ -167,139 +301,11 @@ static int closeFrameBuffer(lua_State *L) {
 	return 0;
 }
 
-#ifndef EMULATE_READER
-inline void fbInvert4BppTo8Bpp(FBInfo *fb) {
-	int i = 0, j = 0, h = 0, w = 0, pitch = 0, fb_pitch = 0;
-	uint8_t *shadow_buf = NULL, *fb_buf = NULL;
-
-	shadow_buf = fb->buf->data;
-	fb_buf = fb->real_buf->data;
-	h = fb->buf->h;
-	w = fb->buf->w;
-	pitch = fb->buf->pitch;
-	fb_pitch = fb->real_buf->pitch;
-
-	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
-	for (i = (h-1); i > 0; i--) {
-		for (j = (w-1)/2; j > 0; j--) {
-			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
-			fb_buf[i*fb_pitch + j*2] &= 0xF0;
-			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
-
-			fb_buf[i*fb_pitch + j*2 + 1] = shadow_buf[i*pitch + j];
-			fb_buf[i*fb_pitch + j*2 + 1] &= 0x0F;
-			fb_buf[i*fb_pitch + j*2 + 1] |= shadow_buf[i*pitch + j]<<4 & 0xF0;
-		}
-	}
-}
-
-inline void fb4BppTo8Bpp(FBInfo *fb) {
-	int i = 0, j = 0, h = 0, w = 0, pitch = 0, fb_pitch = 0;
-	uint8_t *shadow_buf = NULL, *fb_buf = NULL;
-
-	shadow_buf = fb->buf->data;
-	fb_buf = fb->real_buf->data;
-	/* h is 1024 for PaperWhite */
-	h = fb->buf->h;
-	/* w is 758 for PaperWhite */
-	w = fb->buf->w;
-	/* pitch is 384 for shadow buffer */
-	pitch = fb->buf->pitch;
-	/* pitch is 768 for PaperWhite */
-	fb_pitch = fb->real_buf->pitch;
-
-	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
-	for (i = (h-1); i > 0; i--) {
-		for (j = (w-1)/2; j > 0; j--) {
-			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
-			fb_buf[i*fb_pitch + j*2] &= 0xF0;
-			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
-			fb_buf[i*fb_pitch + j*2] = ~fb_buf[i*fb_pitch + j*2];
-
-			fb_buf[i*fb_pitch + j*2 + 1] = shadow_buf[i*pitch + j];
-			fb_buf[i*fb_pitch + j*2 + 1] &= 0x0F;
-			fb_buf[i*fb_pitch + j*2 + 1] |= shadow_buf[i*pitch + j]<<4 & 0xF0;
-			fb_buf[i*fb_pitch + j*2 + 1] = ~fb_buf[i*fb_pitch + j*2 + 1];
-		}
-	}
-}
-
-inline void fillUpdateAreaT(update_area_t *myarea, FBInfo *fb, lua_State *L) {
-	int fxtype = luaL_optint(L, 2, 0);
-
-	myarea->x1 = luaL_optint(L, 3, 0);
-	myarea->y1 = luaL_optint(L, 4, 0);
-	myarea->x2 = myarea->x1 + luaL_optint(L, 5, fb->vinfo.xres);
-	myarea->y2 = myarea->y1 + luaL_optint(L, 6, fb->vinfo.yres);
-	myarea->buffer = NULL;
-	myarea->which_fx = fxtype ? fx_update_partial : fx_update_full;
-}
-
-inline void fillMxcfbUpdateData51(mxcfb_update_data51 *myarea, FBInfo *fb, lua_State *L) {
-	myarea->update_region.top = luaL_optint(L, 3, 0);
-	myarea->update_region.left = luaL_optint(L, 4, 0);
-	myarea->update_region.width = luaL_optint(L, 5, fb->vinfo.xres);
-	myarea->update_region.height = luaL_optint(L, 6, fb->vinfo.yres);
-	myarea->waveform_mode = 257;
-	myarea->update_mode = 0;
-	myarea->update_marker = 1;
-	myarea->hist_bw_waveform_mode = 0;
-	myarea->hist_gray_waveform_mode = 0;
-	myarea->temp = 0x1001;
-	myarea->flags = 0;
-	myarea->alt_buffer_data.virt_addr = NULL;
-	myarea->alt_buffer_data.phys_addr = NULL;
-	myarea->alt_buffer_data.width = 0;
-	myarea->alt_buffer_data.height = 0;
-	myarea->alt_buffer_data.alt_update_region.top = 0;
-	myarea->alt_buffer_data.alt_update_region.left = 0;
-	myarea->alt_buffer_data.alt_update_region.width = 0;
-	myarea->alt_buffer_data.alt_update_region.height = 0;
-}
-
-inline void Kindle3einkUpdate(FBInfo *fb, lua_State *L) {
-	update_area_t myarea;
-
-	fillUpdateAreaT(&myarea, fb, L);
-
-	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
-}
-
-inline void kindle4einkUpdate(FBInfo *fb, lua_State *L) {
-	update_area_t myarea;
-
-	fbInvert4BppTo8Bpp(fb);
-	fillUpdateAreaT(&myarea, fb, L);
-
-	ioctl(fb->fd, FBIO_EINK_UPDATE_DISPLAY_AREA, &myarea);
-}
-
-inline void kindlePWeinkUpdate(FBInfo *fb, lua_State *L) {
-	mxcfb_update_data51 myarea;
-
-	fb4BppTo8Bpp(fb);
-	fillMxcfbUpdateData51(&myarea, fb, L);
-
-	ioctl(fb->fd, 0x4048462e, &myarea);
-}
-#endif
-
 static int einkUpdate(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 	// for Kindle e-ink display
 #ifndef EMULATE_READER
-	if (fb->vinfo.bits_per_pixel == 8) {
-		if (fb->buf->h == 1024) {
-			/* Kindle PaperWhite */
-			kindlePWeinkUpdate(fb, L);
-		} else {
-			/* kindle4 */
-			kindle4einkUpdate(fb, L);
-		}
-	} else {
-		/* kindle2, 3, DXG */
-		Kindle3einkUpdate(fb, L);
-	}
+	einkUpdateFunc(fb, L);
 #else
 	int fxtype = luaL_optint(L, 2, 0);
 	// for now, we only do fullscreen blits in emulation mode

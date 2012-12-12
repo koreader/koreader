@@ -14,6 +14,19 @@ EVENT_VALUE_KEY_PRESS = 1
 EVENT_VALUE_KEY_REPEAT = 2
 EVENT_VALUE_KEY_RELEASE = 0
 
+-- Synchronization events (SYN.code).
+SYN_REPORT = 0
+SYN_CONFIG = 1
+SYN_MT_REPORT = 2
+
+-- For multi-touch events (ABS.code).
+ABS_MT_SLOT = 47
+ABS_MT_POSITION_X = 53
+ABS_MT_POSITION_Y = 54
+ABS_MT_TRACKING_ID = 57
+ABS_MT_PRESSURE = 58
+
+
 
 --[[
 an interface for key presses
@@ -239,13 +252,34 @@ function Input:init()
 	else
 		input.open("fake_events")
 		local dev_mod = Device:getModel()
-
-		input.open("/dev/input/event0")
-		if dev_mod ~= "KindlePaperWhite" then
-			-- we don't have event1 in KindlePaperWhite
+		if dev_mod ~= "KindleTouch" then
+			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
+			input.open("/dev/input/event0")
+		end
+		if dev_mod ~= "KindleTouch" and dev_mod ~= "KindlePaperWhite" then
+			-- event1 in KindleTouch is "imx-yoshi Headset" (useless)
+			-- and we don't have event1 in KindlePaperWhite
 			input.open("/dev/input/event1")
-		elseif dev_mod == "KindlePaperWhite" then
+		end
+		if dev_mod == "KindlePaperWhite" then
 			print("Auto-detected Kindle PaperWhite")
+		elseif dev_mod == "KindleTouch" then
+			input.open("/dev/input/event2") -- Home button
+			input.open("/dev/input/event3") -- touchscreen
+			-- update event hook
+			function Input:eventAdjustHook(ev)
+				if ev.type == EV_ABS then
+					--@TODO handle coordinates properly after
+					--screen rotate.    (houqp)
+					if ev.code == ABS_MT_POSITION_X then
+						ev.value = math.round(ev.value * (600/4095))
+					elseif ev.code == ABS_MT_POSITION_Y then
+						ev.value = math.round(ev.value * (800/4095))
+					end
+				end
+				return ev
+			end
+			print("Auto-detected Kindle Touch")
 		elseif dev_mod == "Kindle4" then
 			print("Auto-detected Kindle 4")
 			self:adjustKindle4EventMap()
@@ -261,6 +295,15 @@ function Input:init()
 			os.exit(-1)
 		end
 	end
+end
+
+--[[
+different device models shoudl overload this method if
+necessary to make event compatible to KPV.
+--]]
+function Input:eventAdjustHook(ev)
+	-- do nothing by default
+	return ev
 end
 
 function Input:adjustKindle4EventMap()
@@ -334,6 +377,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 		end
 	end
 	if ok and ev then
+		ev = self:eventAdjustHook(ev)
 		if ev.type == EV_KEY then
 			local keycode = self.event_map[ev.code]
 			if not keycode then

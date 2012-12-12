@@ -3,6 +3,8 @@ ReaderPaging = InputContainer:new{
 	number_of_pages = 0,
 	visible_area = nil,
 	page_area = nil,
+	show_overlap_enable = true,
+	overlap = 20,
 }
 
 function ReaderPaging:init()
@@ -67,6 +69,10 @@ end
 
 function ReaderPaging:onReadSettings(config)
 	self:gotoPage(config:readSetting("last_page") or 1)
+	local soe = config:readSetting("show_overlap_enable")
+	if not soe then
+		self.show_overlap_enable = soe
+	end
 end
 
 function ReaderPaging:onCloseDocument()
@@ -112,7 +118,7 @@ end
 
 function ReaderPaging:onViewRecalculate(visible_area, page_area)
 	-- we need to remember areas to handle page turn event
-	self.visible_area = visible_area
+	self.visible_area = visible_area:copy()
 	self.page_area = page_area
 end
 
@@ -144,28 +150,76 @@ function ReaderPaging:onGotoPageRel(diff)
 			x_pan_off = self.visible_area.w * diff
 		end
 	end
-
 	-- adjust offset to help with page turn decision
+	-- we dont take overlap into account here yet, otherwise new_va will
+	-- always intersect with page_area
 	x_pan_off = math.roundAwayFromZero(x_pan_off)
 	y_pan_off = math.roundAwayFromZero(y_pan_off)
 	new_va.x = math.roundAwayFromZero(self.visible_area.x+x_pan_off)
 	new_va.y = math.roundAwayFromZero(self.visible_area.y+y_pan_off)
 
-	if (new_va:notIntersectWith(self.page_area)) then
+	if new_va:notIntersectWith(self.page_area) then
+		-- view area out of page area, do a page turn
 		self:gotoPage(self.current_page + diff)
 		-- if we are going back to previous page, reset
-		-- view to bottom of previous page
+		-- view area to bottom of previous page
 		if x_pan_off < 0 then
 			self.view:PanningUpdate(self.page_area.w, 0)
 		elseif y_pan_off < 0 then
 			self.view:PanningUpdate(0, self.page_area.h)
 		end
+		-- reset dim_area
+		--self.view.dim_area.h = 0
+		--self.view.dim_area.w = 0
+		--
 	else
+		-- not end of page yet, goto next view
+		-- adjust panning step according to overlap
+		if self.show_overlap_enable then
+			if x_pan_off > self.overlap then
+				-- moving to next view, move view
+				x_pan_off = x_pan_off - self.overlap
+			elseif x_pan_off < -self.overlap then
+				x_pan_off = x_pan_off + self.overlap
+			end
+			if y_pan_off > self.overlap then
+				y_pan_off = y_pan_off - self.overlap
+			elseif y_pan_off < -self.overlap then
+				y_pan_off = y_pan_off + self.overlap
+			end
+			-- we have to calculate again to count into overlap
+			new_va.x = math.roundAwayFromZero(self.visible_area.x+x_pan_off)
+			new_va.y = math.roundAwayFromZero(self.visible_area.y+y_pan_off)
+		end
 		-- fit new view area into page area
 		new_va:offsetWithin(self.page_area, 0, 0)
-		self.view:PanningUpdate(
-			new_va.x - self.visible_area.x,
-			new_va.y - self.visible_area.y)
+		-- calculate panning offsets
+		local panned_x = new_va.x - self.visible_area.x
+		local panned_y = new_va.y - self.visible_area.y
+		-- adjust for crazy float point overflow...
+		if math.abs(panned_x) < 1 then
+			panned_x = 0
+		end
+		if math.abs(panned_y) < 1 then
+			panned_y = 0
+		end
+		-- singal panning update
+		self.view:PanningUpdate(panned_x, panned_y)
+		-- update dime area in ReaderView
+		if self.show_overlap_enable then
+			self.view.dim_area.h = new_va.h - math.abs(panned_y)
+			self.view.dim_area.w = new_va.w - math.abs(panned_x)
+			if panned_y < 0 then
+				self.view.dim_area.y = new_va.y - panned_y
+			else
+				self.view.dim_area.y = 0
+			end
+			if panned_x < 0 then
+				self.view.dim_area.x = new_va.x - panned_x
+			else
+				self.view.dim_area.x = 0
+			end
+		end
 		-- update self.visible_area
 		self.visible_area = new_va
 	end

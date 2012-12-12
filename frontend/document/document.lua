@@ -124,16 +124,24 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 	return native_dimen
 end
 
+--[[
+This method returns pagesize if bbox is corrupted
+--]]
 function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
 	ubbox = self:getUsedBBox(pageno)
-	ubbox_dimen = Geom:new{
-		x = ubbox.x0,
-		y = ubbox.y0,
-		w = ubbox.x1 - ubbox.x0,
-		h = ubbox.y1 - ubbox.y0,
-	}
-	if zoom ~= 1 then
-		ubbox_dimen:transformByScale(zoom)
+	if ubbox.x0 < 0 or ubbox.y0 < 0 or ubbox.x1 < 0 or ubbox.y1 < 0 then
+		-- if document's bbox info is corrupted, we use the page size
+		ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
+	else
+		ubbox_dimen = Geom:new{
+			x = ubbox.x0,
+			y = ubbox.y0,
+			w = ubbox.x1 - ubbox.x0,
+			h = ubbox.y1 - ubbox.y0,
+		}
+		if zoom ~= 1 then
+			ubbox_dimen:transformByScale(zoom)
+		end
 	end
 	return ubbox_dimen
 end

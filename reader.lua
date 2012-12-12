@@ -62,9 +62,6 @@ end
 
 -- option parsing:
 longopts = {
-	password = "p",
-	goto = "g",
-	gamma = "G",
 	debug = "d",
 	help = "h",
 }
@@ -97,7 +94,7 @@ else
 	DEBUG = function() end
 end
 
-if Device.isKindle4() or Device:isTouchDevice() then
+if Device:hasNoKeyboard() then
 	-- remove menu item shortcut for K4
 	Menu.is_enable_shortcut = false
 end

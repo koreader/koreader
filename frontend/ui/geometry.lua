@@ -274,4 +274,8 @@ function math.roundAwayFromZero(num)
 	end
 end
 
+function math.round(num)
+	return math.floor(num + 0.5)
+end
+
 

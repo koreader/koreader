@@ -1,12 +1,15 @@
 /*
  * Copyright 2004-2011 Freescale Semiconductor, Inc. All Rights Reserved.
  *
- * Modified by houqp, added mxcfb_update_data51 struct from GeekMaster's video
- * player, refer to:
- * http://www.mobileread.com/forums/showthread.php?t=177455&page=10
- */
-
-/*
+ * - Modified by houqp, added mxcfb_update_data struct from GeekMaster's
+ *   video player, refer to:
+ *   http://www.mobileread.com/forums/showthread.php?t=177455&page=10
+ *
+ * - Modified mxcfb_alt_buffer_data struct according to include/linux/mxcfb.h
+ *   from Kindle 5.3.0 firmware. Thanks to eureka@mobileread.
+ *   http://www.mobileread.com/forums/showpost.php?p=2337118&postcount=818
+ *
+ *
  * The code contained herein is licensed under the GNU Lesser General
  * Public License.  You may obtain a copy of the GNU Lesser General
  * Public License Version 2.1 or later at the following locations:
@@ -96,14 +99,15 @@ struct mxcfb_rect {
 #define FB_TEMP_AUTO_UPDATE_DISABLE     -1
 
 struct mxcfb_alt_buffer_data {
-	void *virt_addr;
+	/* virt_addr is not included in amazon's source */
+	/* void *virt_addr; */
 	__u32 phys_addr;
 	__u32 width;	/* width of entire buffer */
 	__u32 height;	/* height of entire buffer */
 	struct mxcfb_rect alt_update_region;	/* region within buffer to update */
 };
 
-struct mxcfb_update_data51 {
+struct mxcfb_update_data {
 	struct mxcfb_rect update_region;
 	__u32 waveform_mode;
 	__u32 update_mode;
@@ -114,9 +118,11 @@ struct mxcfb_update_data51 {
 	uint flags;
 	struct mxcfb_alt_buffer_data alt_buffer_data;
 };
-typedef struct mxcfb_update_data51 mxcfb_update_data51;
+typedef struct mxcfb_update_data mxcfb_update_data;
 
-struct mxcfb_update_data {
+/* this is only used in kindle firmware 5.0, later version (5.1) has changed
+ * the struct to mxcfb_update_data (see above) */
+struct mxcfb_update_data_50x {
 	struct mxcfb_rect update_region;
 	__u32 waveform_mode;
 	__u32 update_mode;
@@ -156,7 +162,7 @@ struct mxcfb_waveform_modes {
 #define MXCFB_SET_WAVEFORM_MODES	_IOW('F', 0x2B, struct mxcfb_waveform_modes)
 #define MXCFB_SET_TEMPERATURE		_IOW('F', 0x2C, int32_t)
 #define MXCFB_SET_AUTO_UPDATE_MODE	_IOW('F', 0x2D, __u32)
-#define MXCFB_SEND_UPDATE		_IOW('F', 0x2E, struct mxcfb_update_data)
+#define MXCFB_SEND_UPDATE_50X		_IOW('F', 0x2E, struct mxcfb_update_data_50x)
 #define MXCFB_WAIT_FOR_UPDATE_COMPLETE	_IOW('F', 0x2F, __u32)
 #define MXCFB_SET_PWRDOWN_DELAY		_IOW('F', 0x30, int32_t)
 #define MXCFB_GET_PWRDOWN_DELAY		_IOR('F', 0x31, int32_t)
@@ -167,6 +173,9 @@ struct mxcfb_waveform_modes {
 #define MXCFB_SET_EPD_PWR2_CTRL		_IOR('F', 0x35, int32_t)
 #define MXCFB_SET_TEMP_AUTO_UPDATE_PERIOD     _IOR('F', 0x36, int32_t)
 #define MXCFB_SET_MERGE_ON_WAVEFORM_MISMATCH	_IOW('F', 0x37, int32_t)
+
+/* IOCTLs for E-ink panel updates, kindle firmware version >= 5.1 */
+#define MXCFB_SEND_UPDATE _IOW('F', 0x2E, struct mxcfb_update_data)
 
 #ifdef __KERNEL__
 

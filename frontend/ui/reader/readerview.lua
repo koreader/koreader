@@ -17,6 +17,8 @@ ReaderView = WidgetContainer:new{
 	visible_area = Geom:new{x = 0, y = 0},
 	-- dimen for current viewing page
 	page_area = Geom:new{},
+	-- dimen for area to dim
+	dim_area = Geom:new{w = 0, h = 0},
 }
 
 function ReaderView:paintTo(bb, x, y)
@@ -54,8 +56,18 @@ function ReaderView:paintTo(bb, x, y)
 			self.visible_area,
 			self.state.pos)
 	end
+	-- dim last read area
+	if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+		bb:dimRect(
+			self.dim_area.x, self.dim_area.y,
+			self.dim_area.w, self.dim_area.h
+		)
+	end
 end
 
+--[[
+This method is supposed to be only used by ReaderPaging
+--]]
 function ReaderView:recalculate()
 	local page_size = nil
 	if self.ui.document.info.has_pages then
@@ -77,11 +89,14 @@ function ReaderView:recalculate()
 		self.visible_area:setSizeTo(self.dimen)
 		-- and recalculate it according to page size
 		self.visible_area:offsetWithin(self.page_area, 0, 0)
+		-- clear dim area
+		self.dim_area.w = 0
+		self.dim_area.h = 0
+		self.ui:handleEvent(
+			Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	else
 		self.visible_area:setSizeTo(self.dimen)
 	end
-	self.ui:handleEvent(
-		Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	-- flag a repaint so self:paintTo will be called
 	UIManager:setDirty(self.dialog)
 end

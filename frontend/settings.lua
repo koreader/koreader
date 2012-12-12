@@ -1,8 +1,36 @@
 DocSettings = {}
 
+function DocSettings:getHistoryPath(fullpath)
+	local i = #fullpath - 1
+	-- search for last slash
+	while i > 0 do
+		if fullpath:sub(i,i) == "/" then
+			break
+		end
+		i = i - 1
+	end
+	-- construct path to configuration file in history dir
+	local filename = fullpath:sub(i+1, -1)
+	local basename = fullpath:sub(1, i)
+	return "./history/["..basename:gsub("/","#").."] "..filename..".lua"
+end
+
 function DocSettings:open(docfile)
-	local new = { file = docfile..".kpdfview.lua", data = {} }
-	local ok, stored = pcall(dofile,new.file)
+	local conf_path = nil
+	if docfile == ".reader" then
+		-- we handle reader setting as special case
+		conf_path = "settings.reader.lua"
+	else
+		conf_path = self:getHistoryPath(docfile)
+	end
+	-- construct settings obj
+	local new = { file = conf_path, data = {} }
+	local ok, stored = pcall(dofile, new.file)
+	if not ok then
+		-- try legacy conf path, for backward compatibility. this also
+		-- takes care of reader legacy setting
+		ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+	end
 	if ok then
 		new.data = stored
 	end
