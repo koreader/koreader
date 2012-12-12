@@ -742,8 +742,7 @@ function CREReader:adjustCreReaderCommands()
 				self.view_mode = "page"
 			end
 			self.settings:saveSetting("view_mode", self.view_mode)
-			InfoMessage:inform("Changed to "..self.view_mode.." mode.", DINFO_DELAY, 1, MSG_AUX)
-			InfoMessage:inform("Please reopen the document.", DINFO_NODELAY, 1, MSG_AUX)
+			InfoMessage:inform("Viewmode: "..self.view_mode.." (needs re-open)", DINFO_DELAY, 1, MSG_AUX)
 		end
 	)
 end
