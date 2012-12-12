@@ -3,7 +3,7 @@ require "ui/menu"
 FileChooser = Menu:new{
 	height = Screen:getHeight(),
 	width = Screen:getWidth(),
-	path = ".",
+	path = lfs.currentdir(),
 	parent = nil,
 	show_hidden = false,
 	filter = function(filename) return true end,
