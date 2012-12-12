@@ -103,10 +103,10 @@ end
 function CREReader:preLoadSettings(filename)
 	self.settings = DocSettings:open(filename)
 	local view_mode = self.settings:readSetting("view_mode")
-	if view_mode == "page" then
-		self.view_mode = "page"
-	else
+	if view_mode == "scroll" then
 		self.view_mode = "scroll"
+	else
+		self.view_mode = "page"
 	end
 end
 
