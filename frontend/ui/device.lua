@@ -40,12 +40,7 @@ function Device:getModel()
 end
 
 function Device:isKindle4()
-	re_val = os.execute("cat /proc/cpuinfo | grep MX50")
-	if re_val == 0 then
-		return true
-	else
-		return false
-	end
+	return (self:getModel() == "Kindle4")
 end
 
 function Device:isKindle3()
