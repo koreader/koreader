@@ -14,6 +14,7 @@ CREReader = UniReader:new{
 	font_zoom = 0,
 
 	line_space_percent = 100,
+	view_mode = DCREREADER_VIEW_MODE,
 }
 
 function CREReader:init()
@@ -82,7 +83,13 @@ function CREReader:open(filename)
 		file_type = "cr3"
 	end
 	local style_sheet = "./data/"..file_type..".css"
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height)
+	-- default to scroll mode, which is 0
+	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
+	local view_mode = 0
+	if self.view_mode == "page" then
+		view_mode = 1
+	end
+	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, view_mode)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
@@ -93,6 +100,16 @@ end
 ----------------------------------------------------
 -- setting related methods
 ----------------------------------------------------
+function CREReader:preLoadSettings(filename)
+	self.settings = DocSettings:open(filename)
+	local view_mode = self.settings:readSetting("view_mode")
+	if view_mode == "scroll" then
+		self.view_mode = "scroll"
+	else
+		self.view_mode = "page"
+	end
+end
+
 function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
 	if not font_face then
@@ -133,6 +150,7 @@ function CREReader:saveSpecialSettings()
 	self.settings:saveSetting("gamma_index", self.gamma_index)
 	self.settings:saveSetting("line_space_percent", self.line_space_percent)
 	self.settings:saveSetting("font_zoom", self.font_zoom)
+	self.settings:saveSetting("view_mode", self.view_mode)
 end
 
 function CREReader:saveLastPageOrPos()
@@ -186,9 +204,13 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	self.doc:drawCurrentPage(self.nulldc, fb.bb)
 
 	Debug("## self.show_overlap "..self.show_overlap)
-	if self.show_overlap < 0 and self.show_overlap_enable then
+	if self.show_overlap < 0
+	and self.show_overlap_enable
+	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
-	elseif self.show_overlap > 0 and self.show_overlap_enable then
+	elseif self.show_overlap > 0
+	and self.show_overlap_enable 
+	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
 	end
 	self.show_overlap = 0
@@ -709,6 +731,18 @@ function CREReader:adjustCreReaderCommands()
 		"pan "..self.shift_y.." pixels downwards",
 		function(self)
 			self:goto(self.pos + self.shift_y)
+		end
+	)
+	self.commands:add(KEY_V, nil, "V",
+		"toggle view mode (requires re-open)",
+		function(self)
+			if self.view_mode == "page" then
+				self.view_mode = "scroll"
+			else
+				self.view_mode = "page"
+			end
+			self.settings:saveSetting("view_mode", self.view_mode)
+			InfoMessage:inform("Viewmode: "..self.view_mode.." (needs re-open)", DINFO_DELAY, 1, MSG_AUX)
 		end
 	)
 end
