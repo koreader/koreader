@@ -294,7 +294,7 @@ customupdate: all
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
-	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallback.ttf
+	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	cp -r git-rev resources $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ kite/

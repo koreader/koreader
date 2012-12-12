@@ -74,7 +74,8 @@ function FileInfo:getFolderContent()
 		if j == "file" then
 			files = files + 1
 			ftype = string.match(name, ".+%.([^.]+)")
-			if ftype and ReaderChooser:getReaderByType(string.lower(ftype)) then
+			if FileChooser.filemanager_mode == FileChooser.UNRESTRICTED or 
+				(ftype and ReaderChooser:getReaderByType(string.lower(ftype))) then
 				books = books + 1
 			end
 		elseif j == "directory" then
