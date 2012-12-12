@@ -100,6 +100,16 @@ end
 ----------------------------------------------------
 -- setting related methods
 ----------------------------------------------------
+function CREReader:preLoadSettings(filename)
+	self.settings = DocSettings:open(filename)
+	local view_mode = self.settings:readSetting("view_mode")
+	if view_mode == "page" then
+		self.view_mode = "page"
+	else
+		self.view_mode = "scroll"
+	end
+end
+
 function CREReader:loadSpecialSettings()
 	local font_face = self.settings:readSetting("font_face")
 	if not font_face then
@@ -123,13 +133,6 @@ function CREReader:loadSpecialSettings()
 			self.doc:zoomFont(step)
 			i=i-1
 		end
-	end
-
-	local view_mode = self.settings:readSetting("view_mode")
-	if view_mode == "page" then
-		self.view_mode = "page"
-	else
-		self.view_mode = "scroll"
 	end
 end
 
