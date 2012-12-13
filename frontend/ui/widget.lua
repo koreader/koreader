@@ -590,8 +590,22 @@ and store that table as configuration setting
 InputContainer = WidgetContainer:new{}
 
 function InputContainer:_init()
-	self.key_events = {}
-	self.ges_events = {}
+	-- we need to do deep copy here
+	local new_key_events = {}
+	if self.key_events then
+		for k,v in pairs(self.key_events) do
+			new_key_events[k] = v
+		end
+	end
+	self.key_events = new_key_events
+
+	local new_ges_events = {}
+	if self.ges_events then
+		for k,v in pairs(self.ges_events) do
+			new_ges_events[k] = v
+		end
+	end
+	self.ges_events = new_ges_events
 end
 
 function InputContainer:paintTo(bb, x, y)
