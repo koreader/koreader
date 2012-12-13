@@ -47,7 +47,8 @@ function ReaderUI:init()
 	self[1] = ReaderView:new{
 		dialog = self.dialog,
 		dimen = self.dimen,
-		ui = self
+		ui = self,
+		document = self.document,
 	}
 	-- rotation controller
 	self[2] = ReaderRotation:new{

@@ -57,7 +57,8 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.pos)
 	end
 	-- dim last read area
-	if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+	if self.document.view_mode ~= "page" 
+	and self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
 		bb:dimRect(
 			self.dim_area.x, self.dim_area.y,
 			self.dim_area.w, self.dim_area.h
