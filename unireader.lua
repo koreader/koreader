@@ -3303,6 +3303,10 @@ function UniReader:addAllCommands()
 							fb.bb:invertRect(x,    y, w,1)
 							fb.bb:invertRect(x,    y, 1,h-2)
 							fb.bb:invertRect(x+w-2,y, 1,h-2)
+							-- if link underlining is turned off, we still need to draw the bottom line
+							if not unireader.show_links_enable then
+								fb.bb:invertRect(x, y+h-2, w, 1)
+							end	
 
 							fb.bb:dimRect(x,y,w,h) -- black 50%
 							fb.bb:dimRect(x,y,w,h) -- black 25%
