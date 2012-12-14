@@ -8,6 +8,7 @@ require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
 require "ui/reader/readerfont"
 require "ui/reader/readermenu"
+require "ui/reader/readerconfig"
 
 --[[
 This is an abstraction for a reader interface
@@ -112,6 +113,17 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, font_menu)
+	end
+	if self.document.info.configurable then
+		-- configurable controller
+		local config_dialog = ReaderConfig:new{
+			configurable = self.document.configurable,
+			options = self.document.options,
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, config_dialog)
 	end
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized

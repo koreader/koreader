@@ -14,10 +14,10 @@ function ReaderPaging:init()
 				GestureRange:new{
 					ges = "tap",
 					range = Geom:new{
-						x = Screen:getWidth()/2,
-						y = Screen:getHeight()/2,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
+						x = Screen:getWidth()/4,
+						y = Screen:getHeight()/4,
+						w = 3*Screen:getWidth()/4,
+						h = 5*Screen:getHeight()/8,
 					}
 				}
 			},
@@ -26,9 +26,9 @@ function ReaderPaging:init()
 					ges = "tap",
 					range = Geom:new{
 						x = 0, 
-						y = Screen:getHeight()/2,
-						w = Screen:getWidth()/2,
-						h = Screen:getHeight()/2,
+						y = Screen:getHeight()/4,
+						w = Screen:getWidth()/4,
+						h = 5*Screen:getHeight()/8,
 					}
 				}
 			}

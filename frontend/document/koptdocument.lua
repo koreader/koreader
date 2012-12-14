@@ -3,6 +3,175 @@ require "ui/geometry"
 require "ui/screen"
 require "ui/device"
 
+KOPTOptions =  {
+	{
+	name="font_size",
+	option_text="",
+	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+	text_font_size={14,16,20,23,26,30,34,38,42,46},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true, true, true, true, true, true},
+	values={0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
+	default_value=DKOPTREADER_CONFIG_FONT_SIZE,
+	show = true,
+	draw_index = nil,},
+	{
+	name="text_wrap",
+	option_text="Reflow",
+	items_text={"on","off"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_TEXT_WRAP,
+	show = true,
+	draw_index = nil,},
+	{
+	name="trim_page",
+	option_text="Trim Page",
+	items_text={"auto","manual"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_TRIM_PAGE,
+	show = true,
+	draw_index = nil,},
+	{
+	name="detect_indent",
+	option_text="Indentation",
+	items_text={"enable","disable"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_DETECT_INDENT,
+	show = false,
+	draw_index = nil,},
+	{
+	name="defect_size",
+	option_text="Defect Size",
+	items_text={"small","medium","large"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={0.5, 1.0, 2.0},
+	default_value=DKOPTREADER_CONFIG_DEFECT_SIZE,
+	show = true,
+	draw_index = nil,},
+	{
+	name="page_margin",
+	option_text="Page Margin",
+	items_text={"small","medium","large"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={0.02, 0.06, 0.10},
+	default_value=DKOPTREADER_CONFIG_PAGE_MARGIN,
+	show = true,
+	draw_index = nil,},
+	{
+	name="line_spacing",
+	option_text="Line Spacing",
+	items_text={"small","medium","large"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={1.0, 1.2, 1.4},
+	default_value=DKOPTREADER_CONFIG_LINE_SPACING,
+	show = true,
+	draw_index = nil,},
+	{
+	name="word_spacing",
+	option_text="Word Spacing",
+	items_text={"small","medium","large"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={0.05, 0.15, 0.375},
+	default_value=DKOPTREADER_CONFIG_WORD_SAPCING,
+	show = true,
+	draw_index = nil,},
+	{
+	name="multi_threads",
+	option_text="Multi Threads",
+	items_text={"on","off"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true},
+	values={1, 0},
+	default_value=DKOPTREADER_CONFIG_MULTI_THREADS,
+	show = true,
+	draw_index = nil,},
+	{
+	name="quality",
+	option_text="Render Quality",
+	items_text={"low","medium","high"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={0.5, 0.8, 1.0},
+	default_value=DKOPTREADER_CONFIG_RENDER_QUALITY,
+	show = true,
+	draw_index = nil,},
+	{
+	name="auto_straighten",
+	option_text="Auto Straighten",
+	items_text={"0","5","10"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true},
+	values={0, 5, 10},
+	default_value=DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+	show = true,
+	draw_index = nil,},
+	{
+	name="justification",
+	option_text="Justification",
+	items_text={"auto","left","center","right","full"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true},
+	values={-1,0,1,2,3},
+	default_value=DKOPTREADER_CONFIG_JUSTIFICATION,
+	show = true,
+	draw_index = nil,},
+	{
+	name="max_columns",
+	option_text="Columns",
+	items_text={"1","2","3","4"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	values={1,2,3,4},
+	default_value=DKOPTREADER_CONFIG_MAX_COLUMNS,
+	show = true,
+	draw_index = nil,},
+	{
+	name="contrast",
+	option_text="Contrast",
+	items_text={"lightest","lighter","default","darker","darkest"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true, true, true},
+	values={2.0, 1.5, 1.0, 0.5, 0.2},
+	default_value=DKOPTREADER_CONFIG_CONTRAST,
+	show = true,
+	draw_index = nil,},
+	{
+	name="screen_rotation",
+	option_text="Screen Rotation",
+	items_text={"0","90","180","270"},
+	current_item=nil,
+	text_dirty=true,
+	marker_dirty={true, true, true, true},
+	values={0, 90, 180, 270},
+	default_value=DKOPTREADER_CONFIG_SCREEN_ROTATION,
+	show = true,
+	draw_index = nil,},
+}
+
 -- Any document processed by K2pdfopt is called a koptdocument
 KoptDocument = Document:new{
 	_document = false,
@@ -12,6 +181,7 @@ KoptDocument = Document:new{
 	dc_null = DrawContext.new(),
 	screen_size = Screen:getSize(),
 	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
+	options = KOPTOptions,
 	configurable = {
 		font_size = 1.0,
 		page_margin = 0.06,
@@ -28,7 +198,7 @@ KoptDocument = Document:new{
 		max_columns = 2,
 		contrast = 1.0,
 		screen_rotation = 0,
-	}
+	},
 }
 
 function KoptDocument:init()
@@ -42,6 +212,7 @@ function KoptDocument:init()
 		end
 		self.is_open = true
 		self.info.has_pages = true
+		self.info.configurable = true
 		if self._document:needsPassword() then
 			self.is_locked = true
 		else
@@ -62,6 +233,7 @@ function KoptDocument:init()
 		end
 		self.is_open = true
 		self.info.has_pages = true
+		self.info.configurable = true
 		self:_readMetadata()
 	end
 end
@@ -161,7 +333,7 @@ function KoptDocument:getPageDimensions(pageno, zoom, rotation)
 		Cache:insert(hash, CacheItem:new{ kctx = kc })
 		return page_size
 	end
-	DEBUG("Found cached koptcontex on page", pageno, cached)
+	--DEBUG("Found cached koptcontex on page", pageno, cached)
 	local fullwidth, fullheight = cached.kctx:getPageDim()
 	local page_size = Geom:new{ w = fullwidth, h = fullheight }
 	return page_size

@@ -252,7 +252,7 @@ end
 
 -- load implementations:
 
-require "document/pdfdocument"
-require "document/djvudocument"
+--require "document/pdfdocument"
+--require "document/djvudocument"
 require "document/koptdocument"
 require "document/credocument"

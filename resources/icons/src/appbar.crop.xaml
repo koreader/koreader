@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Canvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="appbar_crop" Width="48" Height="48" Clip="F1 M 0,0L 48,0L 48,48L 0,48L 0,0" UseLayoutRounding="False">
+	<Path Width="25" Height="25" Canvas.Left="11" Canvas.Top="12" Stretch="Fill" Fill="#FF000000" Data="F1 M 11,34L 11,31L 14,31L 14,18L 11,18L 11,15L 14,15L 14,12L 17,12L 17,15L 30.75,15L 33.75,12L 36,14.25L 33,17.25L 33,31L 36,31L 36,34L 33,34L 33,37L 30,37L 30,34L 17,34L 17,37L 14,37L 14,34L 11,34 Z M 19.25,31L 30,31L 30,20.25L 19.25,31 Z M 17,28.75L 27.75,18L 17,18L 17,28.75 Z "/>
+</Canvas>
