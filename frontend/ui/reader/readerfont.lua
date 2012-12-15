@@ -1,9 +1,9 @@
 ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
-	face_table = {},
 	line_space_percent = 100,
 	font_menu_title = "Font Menu",
+	face_table = nil,
 }
 
 function ReaderFont:init()
@@ -29,7 +29,8 @@ function ReaderFont:init()
 				event = "ChangeLineSpace", args = "decrease" },
 		}
 	end
-	-- build menu item_table
+	-- build face_table for menu
+	self.face_table = {}
 	local face_list = cre.getFontFaces()
 	for k,v in ipairs(face_list) do
 		table.insert(self.face_table, {
@@ -40,11 +41,7 @@ function ReaderFont:init()
 		})
 		face_list[k] = {text = v}
 	end
-	-- insert table to main reader menu
-	table.insert(self.ui.menu.item_table, {
-		text = self.font_menu_title,
-		sub_item_table = self.face_table,
-	})
+	self.ui.menu:addToMainMenuCallback(self)
 end
 
 function ReaderFont:onSetDimensions(dimen)
@@ -138,4 +135,10 @@ function ReaderFont:setFont(face)
 	end
 end
 
-
+function ReaderFont:addToMainMenu(item_table)
+	-- insert table to main reader menu
+	table.insert(item_table, {
+		text = self.font_menu_title,
+		sub_item_table = self.face_table,
+	})
+end
