@@ -147,4 +147,42 @@ function ReaderZooming:setZoom()
 	self.view:onZoomUpdate(self.zoom)
 end
 
+function ReaderZooming:genSetZoomModeCallBack(mode)
+	return function()
+		self.ui:handleEvent(Event:new("SetZoomMode", mode))
+	end
+end
 
+function ReaderZooming:addToMainMenu(item_table)
+	if self.ui.document.info.has_pages then
+		table.insert(item_table, {
+			text = "Switch zoom mode",
+			sub_item_table = {
+				{
+					text = "Zoom to fit content width",
+					callback = self:genSetZoomModeCallBack("contentwidth")
+				},
+				{
+					text = "Zoom to fit content height",
+					callback = self:genSetZoomModeCallBack("contentheight")
+				},
+				{
+					text = "Zoom to fit page width",
+					callback = self:genSetZoomModeCallBack("pagewidth")
+				},
+				{
+					text = "Zoom to fit page height",
+					callback = self:genSetZoomModeCallBack("pageheight")
+				},
+				{
+					text = "Zoom to fit content",
+					callback = self:genSetZoomModeCallBack("content")
+				},
+				{
+					text = "Zoom to fit page",
+					callback = self:genSetZoomModeCallBack("page")
+				},
+			}
+		})
+	end
+end

@@ -27,12 +27,6 @@ function ReaderMenu:init()
 	end
 end
 
-function ReaderMenu:genSetZoomModeCallBack(mode)
-	return function()
-		self.ui:handleEvent(Event:new("SetZoomMode", mode))
-	end
-end
-
 function ReaderMenu:setUpdateItemTable()
 	table.insert(self.item_table, {
 		text = "Screen rotate",
@@ -55,38 +49,6 @@ function ReaderMenu:setUpdateItemTable()
 			},
 		}
 	})
-
-	if self.ui.document.info.has_pages then
-		table.insert(self.item_table, {
-			text = "Switch zoom mode",
-			sub_item_table = {
-				{
-					text = "Zoom to fit content width",
-					callback = self:genSetZoomModeCallBack("contentwidth")
-				},
-				{
-					text = "Zoom to fit content height",
-					callback = self:genSetZoomModeCallBack("contentheight")
-				},
-				{
-					text = "Zoom to fit page width",
-					callback = self:genSetZoomModeCallBack("pagewidth")
-				},
-				{
-					text = "Zoom to fit page height",
-					callback = self:genSetZoomModeCallBack("pageheight")
-				},
-				{
-					text = "Zoom to fit content",
-					callback = self:genSetZoomModeCallBack("content")
-				},
-				{
-					text = "Zoom to fit page",
-					callback = self:genSetZoomModeCallBack("page")
-				},
-			}
-		})
-	end
 
 	for _, widget in pairs(self.registered_widgets) do
 		widget:addToMainMenu(self.item_table)
