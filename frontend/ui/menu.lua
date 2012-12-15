@@ -173,7 +173,7 @@ end
 
 function MenuItem:onUnfocus()
 	self._underline_container.color = 0
-	self.key_events = { }
+	self.key_events = {}
 	return true
 end
 
@@ -327,14 +327,16 @@ function Menu:init()
 		self.key_events.PrevPage = {
 			{Input.group.PgBack}, doc = "goto previous page of the menu"
 		}
-		-- we won't catch presses to "Right"
+		-- we won't catch presses to "Right", leave that to MenuItem.
 		self.key_events.FocusRight = nil
 		-- shortcut icon is not needed for touch device
 		if self.is_enable_shortcut then
 			self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 		end
+		self.key_events.Select = { 
+			{"Press"}, doc = "select current menu item"
+		}
 	end
-	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 
 
 	if #self.item_table > 0 then

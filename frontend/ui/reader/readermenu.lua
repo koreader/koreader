@@ -1,6 +1,12 @@
-ReaderMenu = InputContainer:new{}
+ReaderMenu = InputContainer:new{
+	item_table = {},
+	registered_widgets = {},
+}
 
 function ReaderMenu:init()
+	self.item_table = {}
+	self.registered_widgets = {}
+
 	if Device:isTouchDevice() then
 		self.ges_events = {
 			TapShowMenu = {
@@ -27,10 +33,8 @@ function ReaderMenu:genSetZoomModeCallBack(mode)
 	end
 end
 
-function ReaderMenu:onShowMenu()
-	local item_table = {}
-
-	table.insert(item_table, {
+function ReaderMenu:setUpdateItemTable()
+	table.insert(self.item_table, {
 		text = "Screen rotate",
 		sub_item_table = {
 			{
@@ -53,7 +57,7 @@ function ReaderMenu:onShowMenu()
 	})
 
 	if self.ui.document.info.has_pages then
-		table.insert(item_table, {
+		table.insert(self.item_table, {
 			text = "Switch zoom mode",
 			sub_item_table = {
 				{
@@ -82,26 +86,29 @@ function ReaderMenu:onShowMenu()
 				},
 			}
 		})
-	else
-		table.insert(item_table, {
-			text = "Font menu",
-			callback = function()
-				self.ui:handleEvent(Event:new("ShowFontMenu"))
-			end
-		})
 	end
 
-	table.insert(item_table, {
+	for _, widget in pairs(self.registered_widgets) do
+		widget:addToMainMenu(self.item_table)
+	end
+
+	table.insert(self.item_table, {
 		text = "Return to file browser",
 		callback = function()
 			UIManager:close(self.menu_container)
 			self.ui:onClose()
 		end
 	})
+end
+
+function ReaderMenu:onShowMenu()
+	if #self.item_table == 0 then
+		self:setUpdateItemTable()
+	end
 
 	local main_menu = Menu:new{
 		title = "Document menu",
-		item_table = item_table,
+		item_table = self.item_table,
 		width = Screen:getWidth() - 100,
 	}
 	function main_menu:onMenuChoice(item)
@@ -131,7 +138,14 @@ function ReaderMenu:onTapShowMenu()
 end
 
 function ReaderMenu:onSetDimensions(dimen)
-	-- update gesture listenning range according to new screen orientation
-	self:init()
+	-- @TODO  update gesture listenning range according to new screen
+	-- orientation 15.12 2012 (houqp)
+end
+
+function ReaderMenu:onCloseDocument()
+end
+
+function ReaderMenu:addToMainMenuCallback(widget)
+	table.insert(self.registered_widgets, widget)
 end
 
