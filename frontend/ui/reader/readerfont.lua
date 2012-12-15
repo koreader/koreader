@@ -41,7 +41,7 @@ function ReaderFont:init()
 		})
 		face_list[k] = {text = v}
 	end
-	self.ui.menu:addToMainMenuCallback(self)
+	self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderFont:onSetDimensions(dimen)

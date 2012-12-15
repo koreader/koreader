@@ -107,7 +107,7 @@ end
 function ReaderMenu:onCloseDocument()
 end
 
-function ReaderMenu:addToMainMenuCallback(widget)
+function ReaderMenu:registerToMainMenu(widget)
 	table.insert(self.registered_widgets, widget)
 end
 

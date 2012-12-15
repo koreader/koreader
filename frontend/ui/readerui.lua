@@ -67,6 +67,8 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
+	self.menu = self[4] -- hold reference to menu widget
+
 	if self.document.info.has_pages then
 		-- for page specific controller
 		
@@ -126,9 +128,10 @@ function ReaderUI:onClose()
 	DEBUG("closing reader")
 	self:handleEvent(Event:new("CloseDocument"))
 	self.doc_settings:flush()
-	if self.document then
+	if self.document ~= nil then
 		self.document:close()
-		self.document = false
+		self.document = nil
+		self.start_pos = nil
 	end
 	UIManager:close(self.dialog)
 	return true

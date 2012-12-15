@@ -49,6 +49,10 @@ ReaderZooming = InputContainer:new{
 	rotation = 0
 }
 
+function ReaderZooming:init()
+	self.ui.menu:registerToMainMenu(self)
+end
+
 function ReaderZooming:onReadSettings(config)
 	-- @TODO config file from old code base uses globalzoom_mode
 	-- instead of zoom_mode, we need to handle this imcompatibility 
