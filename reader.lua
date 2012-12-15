@@ -14,23 +14,13 @@ function showReader(file, pass)
 		return
 	end
 
-	local readerwindow = FrameContainer:new{
-		dimen = Screen:getSize(),
-		background = 0,
-		margin = 0,
-		padding = 0,
-		bordersize = 0
-	}
 	local reader = ReaderUI:new{
 		dialog = readerwindow,
 		dimen = Screen:getSize(),
 		document = document,
 		password = pass
 	}
-
-	readerwindow[1] = reader
-
-	UIManager:show(readerwindow)
+	UIManager:show(reader)
 end
 
 function showFileManager(path)
