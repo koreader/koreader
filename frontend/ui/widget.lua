@@ -144,8 +144,7 @@ FrameContainer = WidgetContainer:new{
 }
 
 function FrameContainer:getSize()
-	local content_size = WidgetContainer.getSize(self)
-
+	local content_size =self[1]:getSize()
 	return {
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
