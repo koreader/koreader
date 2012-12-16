@@ -267,6 +267,9 @@ function Menu:init()
 		dimen = {w = self.dimen.w},
 		self.menu_title,
 	}
+	if not self.is_borderless then
+		self.title_bar.dimen.w = self.title_bar.dimen.w - 14
+	end
 	-- group for items
 	self.item_group = VerticalGroup:new{}
 		self.page_info = TextWidget:new{

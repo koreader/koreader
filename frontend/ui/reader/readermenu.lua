@@ -80,8 +80,8 @@ function ReaderMenu:onShowMenu()
 	end
 
 	local menu_container = CenterContainer:new{
-		main_menu,
 		dimen = Screen:getSize(),
+		main_menu,
 	}
 	main_menu.close_callback = function () 
 		UIManager:close(menu_container)
