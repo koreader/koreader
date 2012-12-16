@@ -393,10 +393,13 @@ function Menu:updateItems(select_number)
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
-		-- reset focus manager accordingly
-		self.selected = { x = 1, y = select_number }
-		-- set focus to requested menu item
-		self.item_group[select_number]:onFocus()
+		if not Device:isTouchDevice() then
+			-- only draw underline for nontouch device
+			-- reset focus manager accordingly
+			self.selected = { x = 1, y = select_number }
+			-- set focus to requested menu item
+			self.item_group[select_number]:onFocus()
+		end
 		-- update page information
 		self.page_info.text = "page "..self.page.."/"..self.page_num
 	else
