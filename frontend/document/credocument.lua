@@ -111,6 +111,12 @@ function CreDocument:getFontSize()
 	return self._document:getFontSize()
 end
 
+function CreDocument:setFontSize(new_font_size)
+	if new_font_size  then
+		self._document:setFontSize(new_font_size)
+	end
+end
+
 function CreDocument:zoomFont(delta)
 	self._document:zoomFont(delta)
 end
