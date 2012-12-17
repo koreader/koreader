@@ -4,7 +4,6 @@ ReaderFont = InputContainer:new{
 	line_space_percent = 100,
 	font_menu_title = "Font Menu",
 	face_table = nil,
-	default_font = "DroidSansFallback",
 }
 
 function ReaderFont:init()
@@ -52,7 +51,7 @@ end
 function ReaderFont:onReadSettings(config)
 	self.font_face = config:readSetting("font_face")
 	if not self.font_face then 
-		self.font_face = self.default_font
+		self.font_face = self.ui.document.default_font
 	end
 	self.ui.document:setFontFace(self.font_face)
 
