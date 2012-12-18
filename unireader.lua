@@ -3436,7 +3436,11 @@ function UniReader:addAllCommands()
 				end
 
 				unireader:clearSelection()
-				unireader:gotoJump(goto_page, false, "link")
+				if goto_page ~= unireader.pageno then
+					unireader:gotoJump(goto_page, false, "link")
+				else
+					unireader:redrawCurrentPage()
+				end		
 
 			end
 		end
