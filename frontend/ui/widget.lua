@@ -146,6 +146,22 @@ function CenterContainer:paintTo(bb, x, y)
 end
 
 --[[
+RightContainer aligns its content (1 widget) at the right of its own dimensions
+]]
+RightContainer = WidgetContainer:new()
+
+function RightContainer:paintTo(bb, x, y)
+	local contentSize = self[1]:getSize()
+	if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
+		-- throw error? paint to scrap buffer and blit partially?
+		-- for now, we ignore this
+	end
+	self[1]:paintTo(bb,
+		x + (self.dimen.w - contentSize.w),
+		y + (self.dimen.h - contentSize.h)/2)
+end
+
+--[[
 A FrameContainer is some graphics content (1 widget) that is surrounded by a frame
 ]]
 FrameContainer = WidgetContainer:new{
@@ -374,6 +390,24 @@ function ImageWidget:free()
 		self._bb:free()
 		self._bb = nil
 	end
+end
+
+--[[
+ProgressWidget shows a progress bar
+]]
+ProgressWidget = Widget:new{
+	width = nil,
+	height = nil,
+	pecentage = nil,
+}
+
+function ProgressWidget:getSize()
+	return { w = self.width, h = self.height }
+end
+
+function ProgressWidget:paintTo(bb, x, y)
+	local size = self:getSize()
+	bb:progressBar(x, y, self.width, self.height, size.w, size.h, 2, 2, self.percentage, 15)
 end
 
 --[[
