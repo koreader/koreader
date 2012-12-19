@@ -15,6 +15,7 @@ CREReader = UniReader:new{
 
 	line_space_percent = 100,
 	view_mode = DCREREADER_VIEW_MODE,
+	view_pan_step = nil,
 }
 
 function CREReader:init()
@@ -37,6 +38,13 @@ function CREReader:init()
 	local default_font = G_reader_settings:readSetting("cre_font")
 	if default_font then
 		self.default_font = default_font
+	end
+
+	if G_width > G_height then
+		-- in landscape mode, crengine will render in two column mode
+		self.view_pan_step = G_height * 2
+	else
+		self.view_pan_step = G_height
 	end
 end
 
@@ -240,12 +248,12 @@ end
 
 function CREReader:nextView()
 	self.show_overlap = -self.pan_overlap_vertical
-	return self.pos + G_height - self.pan_overlap_vertical
+	return self.pos + self.view_pan_step - self.pan_overlap_vertical
 end
 
 function CREReader:prevView()
 	self.show_overlap = self.pan_overlap_vertical
-	return self.pos - G_height + self.pan_overlap_vertical
+	return self.pos - self.view_pan_step + self.pan_overlap_vertical
 end
 
 ----------------------------------------------------
@@ -505,6 +513,12 @@ function CREReader:adjustCreReaderCommands()
 			G_width, G_height = fb:getSize()
 			self:goto(prev_xpointer, nil, "xpointer")
 			self.pos = self.doc:getCurrentPos()
+			if G_width > G_height then
+				-- in landscape mode, crengine will render in two column mode
+				self.view_pan_step = G_height * 2
+			else
+				self.view_pan_step = G_height
+			end
 		end
 	)
 	-- CW-rotation
