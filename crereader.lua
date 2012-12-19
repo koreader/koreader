@@ -22,7 +22,7 @@ function CREReader:init()
 	self:addAllCommands()
 	self:adjustCreReaderCommands()
 
-	-- initialize cache
+	-- initialize cache and hyphenation engine
 	cre.initCache(1024*1024*64)
 	-- we need to initialize the CRE font list
 	local fonts = Font:getFontList()
