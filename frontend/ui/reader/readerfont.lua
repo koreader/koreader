@@ -60,6 +60,11 @@ function ReaderFont:onReadSettings(config)
 		self.font_size = self.ui.document:getFontSize()
 	end
 	self.ui.document:setFontSize(self.font_size)
+	-- Dirty hack: we have to add folloing call in order to set
+	-- m_is_rendered(member of LVDocView) to true. Otherwise position inside
+	-- document will be reset to 0 on first view render.
+	-- So far, I don't know why this call will alter the value of m_is_rendered.
+	self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderFont:onShowFontMenu()

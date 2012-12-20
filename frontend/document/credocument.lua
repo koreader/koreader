@@ -102,7 +102,7 @@ function CreDocument:getFontFace()
 end
 
 function CreDocument:setFontFace(new_font_face)
-	if new_font_face  then
+	if new_font_face then
 		self._document:setFontFace(new_font_face)
 	end
 end
@@ -112,7 +112,7 @@ function CreDocument:getFontSize()
 end
 
 function CreDocument:setFontSize(new_font_size)
-	if new_font_size  then
+	if new_font_size then
 		self._document:setFontSize(new_font_size)
 	end
 end
