@@ -173,7 +173,7 @@ end
 
 function MenuItem:onUnfocus()
 	self._underline_container.color = 0
-	self.key_events = { }
+	self.key_events = {}
 	return true
 end
 
@@ -267,6 +267,9 @@ function Menu:init()
 		dimen = {w = self.dimen.w},
 		self.menu_title,
 	}
+	if not self.is_borderless then
+		self.title_bar.dimen.w = self.title_bar.dimen.w - 14
+	end
 	-- group for items
 	self.item_group = VerticalGroup:new{}
 		self.page_info = TextWidget:new{
@@ -327,14 +330,16 @@ function Menu:init()
 		self.key_events.PrevPage = {
 			{Input.group.PgBack}, doc = "goto previous page of the menu"
 		}
-		-- we won't catch presses to "Right"
+		-- we won't catch presses to "Right", leave that to MenuItem.
 		self.key_events.FocusRight = nil
 		-- shortcut icon is not needed for touch device
 		if self.is_enable_shortcut then
 			self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 		end
+		self.key_events.Select = { 
+			{"Press"}, doc = "select current menu item"
+		}
 	end
-	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 
 
 	if #self.item_table > 0 then
@@ -391,10 +396,13 @@ function Menu:updateItems(select_number)
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
-		-- reset focus manager accordingly
-		self.selected = { x = 1, y = select_number }
-		-- set focus to requested menu item
-		self.item_group[select_number]:onFocus()
+		if not Device:isTouchDevice() then
+			-- only draw underline for nontouch device
+			-- reset focus manager accordingly
+			self.selected = { x = 1, y = select_number }
+			-- set focus to requested menu item
+			self.item_group[select_number]:onFocus()
+		end
 		-- update page information
 		self.page_info.text = "page "..self.page.."/"..self.page_num
 	else

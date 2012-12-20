@@ -144,8 +144,7 @@ FrameContainer = WidgetContainer:new{
 }
 
 function FrameContainer:getSize()
-	local content_size = WidgetContainer.getSize(self)
-
+	local content_size =self[1]:getSize()
 	return {
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
@@ -590,8 +589,22 @@ and store that table as configuration setting
 InputContainer = WidgetContainer:new{}
 
 function InputContainer:_init()
-	self.key_events = {}
-	self.ges_events = {}
+	-- we need to do deep copy here
+	local new_key_events = {}
+	if self.key_events then
+		for k,v in pairs(self.key_events) do
+			new_key_events[k] = v
+		end
+	end
+	self.key_events = new_key_events
+
+	local new_ges_events = {}
+	if self.ges_events then
+		for k,v in pairs(self.ges_events) do
+			new_ges_events[k] = v
+		end
+	end
+	self.ges_events = new_ges_events
 end
 
 function InputContainer:paintTo(bb, x, y)

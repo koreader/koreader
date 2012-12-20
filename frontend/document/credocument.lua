@@ -6,6 +6,7 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
+	view_mode = "page",
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -68,8 +69,13 @@ function CreDocument:init()
 	end
 	local style_sheet = "./data/"..file_type..".css"
 
+	-- view_mode default to page mode
+	local view_mode = 1
+	if self.view_mode == "scroll" then
+		view_mode = 0
+	end
 	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
-				Screen:getWidth(), Screen:getHeight())
+				Screen:getWidth(), Screen:getHeight(), view_mode)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
@@ -103,6 +109,12 @@ end
 
 function CreDocument:getFontSize()
 	return self._document:getFontSize()
+end
+
+function CreDocument:setFontSize(new_font_size)
+	if new_font_size  then
+		self._document:setFontSize(new_font_size)
+	end
 end
 
 function CreDocument:zoomFont(delta)

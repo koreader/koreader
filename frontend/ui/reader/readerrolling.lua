@@ -85,11 +85,11 @@ function ReaderRolling:init()
 end
 
 function ReaderRolling:onReadSettings(config)
-	self:gotoPercent(config:readSetting("last_percent") or 0)
 	local soe = config:readSetting("show_overlap_enable")
 	if not soe then
 		self.show_overlap_enable = soe
 	end
+	self:gotoPercent(config:readSetting("last_percent") or 0)
 end
 
 function ReaderRolling:onCloseDocument()
@@ -120,7 +120,7 @@ end
 function ReaderRolling:onGotoViewRel(diff)
 	DEBUG("goto relative screen:", diff)
 	local pan_diff = diff * self.ui.dimen.h
-	if self.show_overlap_enable then
+	if self.ui.document.view_mode ~= "page" and self.show_overlap_enable then
 		if pan_diff > self.overlap then
 			pan_diff = pan_diff - self.overlap
 		elseif pan_diff < -self.overlap then
@@ -163,7 +163,7 @@ function ReaderRolling:gotoPos(new_pos)
 	if new_pos < 0 then new_pos = 0 end
 	if new_pos > self.doc_height then new_pos = self.doc_height end
 	-- adjust dim_area according to new_pos
-	if self.show_overlap_enable then
+	if self.ui.document.view_mode ~= "page" and self.show_overlap_enable then
 		local panned_step = new_pos - self.current_pos
 		self.view.dim_area.x = 0
 		self.view.dim_area.h = self.ui.dimen.h - math.abs(panned_step)

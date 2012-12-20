@@ -98,8 +98,8 @@ DJVULIBS := $(DJVUDIR)/build/libdjvu/.libs/libdjvulibre.so \
 			$(LIBDIR)/libdjvulibre.so
 DJVULIB :=	$(LIBDIR)/libdjvulibre.so.21
 DJVULIBDIR := $(DJVUDIR)/build/libdjvu/.libs/
-CRENGINELIBS := $(CRENGINEDIR)/crengine/libcrengine.a \
-			$(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
+CRELIB = $(LIBDIR)/libcrengine.so
+CRE_3RD_LIBS := $(CRENGINEDIR)/thirdparty/chmlib/libchmlib.a \
 			$(CRENGINEDIR)/thirdparty/libpng/libpng.a \
 			$(CRENGINEDIR)/thirdparty/antiword/libantiword.a
 THIRDPARTYLIBS := $(MUPDFLIBDIR)/libfreetype.a \
@@ -121,7 +121,7 @@ K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so.1
 all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRENGINELIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRELIB) $(CRE_3RD_LIBS) pic.o pic_jpeg.o
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
@@ -143,12 +143,13 @@ kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o inp
 		$(THIRDPARTYLIBS) \
 		djvu.o \
 		cre.o \
-		$(CRENGINELIBS) \
 		$(STATICLIBSTDCPP) \
 		$(LDFLAGS) \
 		-Wl,-rpath=$(LIBDIR)/ \
 		-o $@ \
-		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -lluajit-5.1 -L$(MUPDFLIBDIR) -L$(LIBDIR)\
+		-lm -ldl -lpthread -lk2pdfopt -ldjvulibre -lluajit-5.1 -lcrengine \
+		-L$(MUPDFLIBDIR) -L$(LIBDIR) \
+		$(CRE_3RD_LIBS) \
 		$(EMU_LDFLAGS) \
 		$(DYNAMICLIBSTDCPP)
 
@@ -250,10 +251,12 @@ endif
 	test -d $(LIBDIR) || mkdir $(LIBDIR)
 	cp -a $(DJVULIBDIR)/libdjvulibre.so* $(LIBDIR)
 
-$(CRENGINELIBS):
+$(CRE_3RD_LIBS) $(CRELIB):
 	cd $(KPVCRLIBDIR) && rm -rf CMakeCache.txt CMakeFiles && \
-		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" cmake . && \
-		$(MAKE)
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS)" cmake -D CMAKE_BUILD_TYPE=Release . && \
+		$(MAKE) VERBOSE=1
+	test -d $(LIBDIR) || mkdir $(LIBDIR)
+	cp -a $(KPVCRLIBDIR)/libcrengine.so $(CRELIB)
 
 $(LUALIB):
 ifdef EMULATE_READER
@@ -274,7 +277,7 @@ $(K2PDFOPTLIB):
 	test -d $(LIBDIR) || mkdir $(LIBDIR)
 	cp -a $(K2PDFOPTLIBDIR)/libk2pdfopt.so* $(LIBDIR)
 
-thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRENGINELIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
+thirdparty: $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) $(DJVULIBS) $(CRELIB) $(CRE_3RD_LIBS) $(POPENNSLIB) $(K2PDFOPTLIB)
 
 INSTALL_DIR=kindlepdfviewer
 
@@ -290,11 +293,11 @@ customupdate: all
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/data
-	cp -L $(DJVULIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
+	cp -L $(DJVULIB) $(CRELIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL data/*.css $(INSTALL_DIR)/data
 	cp -rpL fonts $(INSTALL_DIR)
-	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallback.ttf
+	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	cp -r git-rev resources $(INSTALL_DIR)
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host

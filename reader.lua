@@ -14,23 +14,13 @@ function showReader(file, pass)
 		return
 	end
 
-	local readerwindow = FrameContainer:new{
-		dimen = Screen:getSize(),
-		background = 0,
-		margin = 0,
-		padding = 0,
-		bordersize = 0
-	}
 	local reader = ReaderUI:new{
 		dialog = readerwindow,
 		dimen = Screen:getSize(),
 		document = document,
 		password = pass
 	}
-
-	readerwindow[1] = reader
-
-	UIManager:show(readerwindow)
+	UIManager:show(reader)
 end
 
 function showFileManager(path)
@@ -136,6 +126,8 @@ Screen:setRotationMode(Screen.native_rotation_mode)
 input.closeAll()
 if util.isEmulated()==0 then
 	os.execute("killall -cont cvm")
-	-- send double menu key press events to trigger screen refresh
-	os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+	if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
+		-- send double menu key press events to trigger screen refresh
+		os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+	end
 end
