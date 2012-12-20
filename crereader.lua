@@ -256,6 +256,20 @@ function CREReader:prevView()
 	return self.pos - self.view_pan_step + self.pan_overlap_vertical
 end
 
+function CREReader:screenRotate(orien)
+	local prev_xpointer = self.doc:getXPointer()
+	Screen:screenRotate(orien)
+	G_width, G_height = fb:getSize()
+	self:goto(prev_xpointer, nil, "xpointer")
+	self.pos = self.doc:getCurrentPos()
+	if G_width > G_height then
+		-- in landscape mode, crengine will render in two column mode
+		self.view_pan_step = G_height * 2
+	else
+		self.view_pan_step = G_height
+	end
+end
+
 ----------------------------------------------------
 -- jump history related methods
 ----------------------------------------------------
@@ -508,28 +522,14 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_K, nil, "K",
 		"rotate screen counterclockwise",
 		function(self)
-			local prev_xpointer = self.doc:getXPointer()
-			Screen:screenRotate("anticlockwise")
-			G_width, G_height = fb:getSize()
-			self:goto(prev_xpointer, nil, "xpointer")
-			self.pos = self.doc:getCurrentPos()
-			if G_width > G_height then
-				-- in landscape mode, crengine will render in two column mode
-				self.view_pan_step = G_height * 2
-			else
-				self.view_pan_step = G_height
-			end
+			self:screenRotate("anticlockwise")
 		end
 	)
 	-- CW-rotation
 	self.commands:add(KEY_J, nil, "J",
 		"rotate screen clockwise",
 		function(self)
-			local prev_xpointer = self.doc:getXPointer()
-			Screen:screenRotate("clockwise")
-			G_width, G_height = fb:getSize()
-			self:goto(prev_xpointer, nil, "xpointer")
-			self.pos = self.doc:getCurrentPos()
+			self:screenRotate("clockwise")
 		end
 	)
 	-- navigate between chapters by Shift+Up & Shift-Down
