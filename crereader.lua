@@ -118,7 +118,7 @@ function CREReader:preLoadSettings(filename)
 			self.view_mode = "page"
 		end
 	else
-		view_mode = DCREREADER_VIEW_MODE
+		self.view_mode = DCREREADER_VIEW_MODE
 	end	
 end
 
