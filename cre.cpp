@@ -68,7 +68,6 @@ static int openDocument(lua_State *L) {
 	doc->text_view->Resize(width, height);
 	doc->text_view->LoadDocument(file_name);
 	doc->text_view->setPageHeaderInfo(PGHDR_AUTHOR|PGHDR_TITLE|PGHDR_PAGE_NUMBER|PGHDR_PAGE_COUNT|PGHDR_CHAPTER_MARKS|PGHDR_CLOCK);
-	doc->text_view->setStatusFontFace(lString8("Droid Sans"));
 	doc->dom_doc = doc->text_view->getDocument();
 	doc->text_view->Render();
 

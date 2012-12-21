@@ -105,6 +105,7 @@ function CREReader:open(filename)
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
+	self.doc:setHeaderFont("Droid Sans")
 	return true
 end
 
