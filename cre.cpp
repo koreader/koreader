@@ -278,6 +278,33 @@ static int getFontFaces(lua_State *L) {
 	return 1;
 }
 
+static int setViewMode(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	LVDocViewMode view_mode = (LVDocViewMode)luaL_checkint(L, 2);
+
+	doc->text_view->setViewMode(view_mode, -1);
+
+	return 0;
+}
+
+static int setHeaderInfo(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int info = luaL_checkint(L, 2);
+
+	doc->text_view->setPageHeaderInfo(info);
+
+	return 0;
+}
+
+static int setHeaderFont(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *face = luaL_checkstring(L, 2);
+
+	doc->text_view->setStatusFontFace(lString8(face));
+
+	return 0;
+}
+
 static int setFontFace(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	const char *face = luaL_checkstring(L, 2);
@@ -611,6 +638,9 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
+	{"setViewMode", setViewMode},
+	{"setHeaderInfo", setHeaderInfo},
+	{"setHeaderFont", setHeaderFont},
 	{"setFontFace", setFontFace},
 	{"setFontSize", setFontSize},
 	{"setDefaultInterlineSpace", setDefaultInterlineSpace},
