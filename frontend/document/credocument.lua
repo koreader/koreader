@@ -1,6 +1,10 @@
 require "ui/geometry"
 
 CreDocument = Document:new{
+	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
+	SCROLL_VIEW_MODE = 0,
+	PAGE_VIEW_MODE = 1,
+
 	_document = false,
 	engine_initilized = false,
 
@@ -70,9 +74,9 @@ function CreDocument:init()
 	local style_sheet = "./data/"..file_type..".css"
 
 	-- view_mode default to page mode
-	local view_mode = 1
+	local view_mode = self.PAGE_VIEW_MODE
 	if self.view_mode == "scroll" then
-		view_mode = 0
+		view_mode = self.SCROLL_VIEW_MODE
 	end
 	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
 				Screen:getWidth(), Screen:getHeight(), view_mode)
