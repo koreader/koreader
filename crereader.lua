@@ -13,6 +13,7 @@ CREReader = UniReader:new{
 	percent = 0,
 
 	gamma_index = 15,
+	header_font = "Droid Sans",
 	font_face = nil,
 	default_font = "Droid Sans",
 	font_zoom = 0,
@@ -42,6 +43,11 @@ function CREReader:init()
 	local default_font = G_reader_settings:readSetting("cre_font")
 	if default_font then
 		self.default_font = default_font
+	end
+
+	local header_font = G_reader_settings:readSetting("header_font")
+	if header_font then
+		self.header_font = header_font
 	end
 
 	if G_width > G_height then
@@ -105,7 +111,7 @@ function CREReader:open(filename)
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
-	self.doc:setHeaderFont("Droid Sans")
+	self.doc:setHeaderFont(self.header_font)
 	return true
 end
 
@@ -642,7 +648,7 @@ function CREReader:adjustCreReaderCommands()
 				item_no = item_no + 1 
 			end
 			local fonts_menu = SelectMenu:new{
-				menu_title = "Fonts Menu ",
+				menu_title = "Text Font",
 				item_array = face_list, 
 				current_entry = item_no - 1,
 			}
@@ -650,9 +656,35 @@ function CREReader:adjustCreReaderCommands()
 			local prev_xpointer = self.doc:getXPointer()
 			if item_no then
 				Debug(face_list[item_no])
-				InfoMessage:inform("Redrawing with "..face_list[item_no].." ", DINFO_NODELAY, 1, MSG_AUX)
+				InfoMessage:inform("Formatting with "..face_list[item_no].." ", DINFO_NODELAY, 1, MSG_AUX)
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
+			end
+			self:goto(prev_xpointer, nil, "xpointer")
+		end
+	)
+	self.commands:add(KEY_H, MOD_SHIFT, "H",
+		"change header font",
+		function(self)
+			local face_list = cre.getFontFaces()
+			-- define the current font in face_list 
+			local item_no = 0
+			while face_list[item_no] ~= self.header_font and item_no < #face_list do 
+				item_no = item_no + 1 
+			end
+			local fonts_menu = SelectMenu:new{
+				menu_title = "Header Font ",
+				item_array = face_list, 
+				current_entry = item_no - 1,
+			}
+			item_no = fonts_menu:choose(0, G_height)
+			local prev_xpointer = self.doc:getXPointer()
+			if item_no then
+				Debug(face_list[item_no])
+				InfoMessage:inform("Formatting with "..face_list[item_no].." ", DINFO_NODELAY, 1, MSG_AUX)
+				self.header_font = face_list[item_no]
+				G_reader_settings:saveSetting("header_font", self.header_font)
+				self.doc:setHeaderFont(self.header_font)
 			end
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
@@ -756,7 +788,7 @@ function CREReader:adjustCreReaderCommands()
 		end
 	)
 	self.commands:add(KEY_V, nil, "V",
-		"toggle view mode (requires re-open)",
+		"toggle view mode",
 		function(self)
 			local view_mode_code = self.PAGE_VIEW_MODE
 			if self.view_mode == "page" then
