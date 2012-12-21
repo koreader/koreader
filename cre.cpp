@@ -68,7 +68,6 @@ static int openDocument(lua_State *L) {
 	doc->text_view->Resize(width, height);
 	doc->text_view->LoadDocument(file_name);
 	doc->text_view->setPageHeaderInfo(PGHDR_AUTHOR|PGHDR_TITLE|PGHDR_PAGE_NUMBER|PGHDR_PAGE_COUNT|PGHDR_CHAPTER_MARKS|PGHDR_CLOCK);
-	doc->text_view->setStatusFontFace(lString8("Droid Sans"));
 	doc->dom_doc = doc->text_view->getDocument();
 	doc->text_view->Render();
 
@@ -276,6 +275,33 @@ static int getFontFaces(lua_State *L) {
 	}
 
 	return 1;
+}
+
+static int setViewMode(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	LVDocViewMode view_mode = (LVDocViewMode)luaL_checkint(L, 2);
+
+	doc->text_view->setViewMode(view_mode, -1);
+
+	return 0;
+}
+
+static int setHeaderInfo(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	int info = luaL_checkint(L, 2);
+
+	doc->text_view->setPageHeaderInfo(info);
+
+	return 0;
+}
+
+static int setHeaderFont(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+	const char *face = luaL_checkstring(L, 2);
+
+	doc->text_view->setStatusFontFace(lString8(face));
+
+	return 0;
 }
 
 static int setFontFace(lua_State *L) {
@@ -611,6 +637,9 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"getFullHeight", getFullHeight},
 	{"getToc", getTableOfContent},
 	/*--- set methods ---*/
+	{"setViewMode", setViewMode},
+	{"setHeaderInfo", setHeaderInfo},
+	{"setHeaderFont", setHeaderFont},
 	{"setFontFace", setFontFace},
 	{"setFontSize", setFontSize},
 	{"setDefaultInterlineSpace", setDefaultInterlineSpace},

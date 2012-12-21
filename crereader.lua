@@ -5,6 +5,10 @@ require "selectmenu"
 require "dialog"
 
 CREReader = UniReader:new{
+	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
+	SCROLL_VIEW_MODE = 0,
+	PAGE_VIEW_MODE = 1,
+
 	pos = nil,
 	percent = 0,
 
@@ -91,17 +95,17 @@ function CREReader:open(filename)
 		file_type = "cr3"
 	end
 	local style_sheet = "./data/"..file_type..".css"
-	-- default to scroll mode, which is 0
-	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
-	local view_mode = 0
+	-- default to scroll mode
+	local view_mode = self.SCROLL_VIEW_MODE
 	if self.view_mode == "page" then
-		view_mode = 1
+		view_mode = self.PAGE_VIEW_MODE
 	end
 	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, view_mode)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
+	self.doc:setHeaderFont("Droid Sans")
 	return true
 end
 
@@ -111,11 +115,15 @@ end
 function CREReader:preLoadSettings(filename)
 	self.settings = DocSettings:open(filename)
 	local view_mode = self.settings:readSetting("view_mode")
-	if view_mode == "scroll" then
-		self.view_mode = "scroll"
+	if view_mode then
+		if view_mode == "scroll" then
+			self.view_mode = "scroll"
+		else
+			self.view_mode = "page"
+		end
 	else
-		self.view_mode = "page"
-	end
+		self.view_mode = DCREREADER_VIEW_MODE
+	end	
 end
 
 function CREReader:loadSpecialSettings()
@@ -254,6 +262,20 @@ end
 function CREReader:prevView()
 	self.show_overlap = self.pan_overlap_vertical
 	return self.pos - self.view_pan_step + self.pan_overlap_vertical
+end
+
+function CREReader:screenRotate(orien)
+	local prev_xpointer = self.doc:getXPointer()
+	Screen:screenRotate(orien)
+	G_width, G_height = fb:getSize()
+	self:goto(prev_xpointer, nil, "xpointer")
+	self.pos = self.doc:getCurrentPos()
+	if G_width > G_height then
+		-- in landscape mode, crengine will render in two column mode
+		self.view_pan_step = G_height * 2
+	else
+		self.view_pan_step = G_height
+	end
 end
 
 ----------------------------------------------------
@@ -508,28 +530,14 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_K, nil, "K",
 		"rotate screen counterclockwise",
 		function(self)
-			local prev_xpointer = self.doc:getXPointer()
-			Screen:screenRotate("anticlockwise")
-			G_width, G_height = fb:getSize()
-			self:goto(prev_xpointer, nil, "xpointer")
-			self.pos = self.doc:getCurrentPos()
-			if G_width > G_height then
-				-- in landscape mode, crengine will render in two column mode
-				self.view_pan_step = G_height * 2
-			else
-				self.view_pan_step = G_height
-			end
+			self:screenRotate("anticlockwise")
 		end
 	)
 	-- CW-rotation
 	self.commands:add(KEY_J, nil, "J",
 		"rotate screen clockwise",
 		function(self)
-			local prev_xpointer = self.doc:getXPointer()
-			Screen:screenRotate("clockwise")
-			G_width, G_height = fb:getSize()
-			self:goto(prev_xpointer, nil, "xpointer")
-			self.pos = self.doc:getCurrentPos()
+			self:screenRotate("clockwise")
 		end
 	)
 	-- navigate between chapters by Shift+Up & Shift-Down
@@ -750,13 +758,17 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_V, nil, "V",
 		"toggle view mode (requires re-open)",
 		function(self)
+			local view_mode_code = self.PAGE_VIEW_MODE
 			if self.view_mode == "page" then
 				self.view_mode = "scroll"
+				view_mode_code = self.SCROLL_VIEW_MODE
 			else
 				self.view_mode = "page"
 			end
 			self.settings:saveSetting("view_mode", self.view_mode)
-			InfoMessage:inform("Viewmode: "..self.view_mode.." (needs re-open)", DINFO_DELAY, 1, MSG_AUX)
+			InfoMessage:inform("Changing to "..self.view_mode.." mode...", DINFO_DELAY, 1, MSG_AUX)
+			self.doc:setViewMode(view_mode_code)
+			self:redrawCurrentPage()
 		end
 	)
 end
