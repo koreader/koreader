@@ -121,7 +121,7 @@ K2PDFOPTLIB := $(LIBDIR)/libk2pdfopt.so.1
 all: kpdfview extr
 
 VERSION?=$(shell git describe HEAD)
-kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRELIB) $(CRE_3RD_LIBS) pic.o pic_jpeg.o
+kpdfview: kpdfview.o einkfb.o pdf.o blitbuffer.o drawcontext.o koptcontext.o input.o $(POPENNSLIB) util.o ft.o lfs.o mupdfimg.o $(MUPDFLIBS) $(THIRDPARTYLIBS) $(LUALIB) djvu.o $(DJVULIBS) cre.o $(CRELIB) $(CRE_3RD_LIBS) pic.o pic_jpeg.o $(K2PDFOPTLIB)
 	echo $(VERSION) > git-rev
 	$(CC) \
 		$(CFLAGS) \
