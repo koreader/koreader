@@ -12,6 +12,8 @@ ReaderView = WidgetContainer:new{
 	outer_page_color = 7,
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
 	render_mode = 0, -- default to COLOR
+	-- Crengine view mode
+	view_mode = "page", -- default to page mode
 
 	-- visible area within current viewing page
 	visible_area = Geom:new{x = 0, y = 0},
@@ -49,12 +51,21 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.rotation,
 			self.render_mode)
 	else
-		self.ui.document:drawCurrentView(
-			bb,
-			x + inner_offset.x,
-			y + inner_offset.y,
-			self.visible_area,
-			self.state.pos)
+		if self.view_mode == "page" then
+			self.ui.document:drawCurrentViewByPage(
+				bb,
+				x + inner_offset.x,
+				y + inner_offset.y,
+				self.visible_area,
+				self.state.page)
+		else
+			self.ui.document:drawCurrentViewByPos(
+				bb,
+				x + inner_offset.x,
+				y + inner_offset.y,
+				self.visible_area,
+				self.state.pos)
+		end
 	end
 	-- dim last read area
 	if self.document.view_mode ~= "page" 

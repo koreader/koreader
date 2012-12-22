@@ -2,7 +2,10 @@ require "ui/reader/readerpanning"
 
 ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
+	view_mode = "page",
 	current_pos = 0,
+	-- only used for page view mode
+	current_page= nil,
 	doc_height = nil,
 	panning_steps = ReaderPanning.panning_steps,
 	show_overlap_enable = true,
@@ -90,11 +93,18 @@ function ReaderRolling:onReadSettings(config)
 		self.show_overlap_enable = soe
 	end
 	self:gotoPercent(config:readSetting("last_percent") or 0)
+	-- we have to do a real pos change in self.ui.document._document to
+	-- update status information in CREngine.
+	self.ui.document:gotoPos(self.current_pos)
+	if self.view_mode == "page" then
+		self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+	end
 end
 
 function ReaderRolling:onCloseDocument()
+	local cur_xp = self.ui.document:getXPointer()
 	self.ui.doc_settings:saveSetting("last_percent", 
-		10000 * self.current_pos / self.doc_height)
+		10000 * self.ui.document:getPosFromXPointer(cur_xp) / self.doc_height)
 end
 
 function ReaderRolling:onTapForward()
@@ -111,6 +121,10 @@ function ReaderRolling:onPosUpdate(new_pos)
 	self.current_pos = new_pos
 end
 
+function ReaderRolling:onPageUpdate(new_page)
+	self.current_page = new_page
+end
+
 function ReaderRolling:onGotoPercent(percent)
 	DEBUG("goto document offset in percent:", percent)
 	self:gotoPercent(percent)
@@ -119,19 +133,24 @@ end
 
 function ReaderRolling:onGotoViewRel(diff)
 	DEBUG("goto relative screen:", diff)
-	local pan_diff = diff * self.ui.dimen.h
-	if self.ui.document.view_mode ~= "page" and self.show_overlap_enable then
-		if pan_diff > self.overlap then
-			pan_diff = pan_diff - self.overlap
-		elseif pan_diff < -self.overlap then
-			pan_diff = pan_diff + self.overlap
+	if self.ui.document.view_mode ~= "page" then
+		local pan_diff = diff * self.ui.dimen.h
+		if self.show_overlap_enable then
+			if pan_diff > self.overlap then
+				pan_diff = pan_diff - self.overlap
+			elseif pan_diff < -self.overlap then
+				pan_diff = pan_diff + self.overlap
+			end
 		end
+		self:gotoPos(self.current_pos + pan_diff)
+	else
+		self:gotoPage(self.current_page + diff)
 	end
-	self:gotoPos(self.current_pos + pan_diff)
 	return true
 end
 
 function ReaderRolling:onPanning(args, key)
+	--@TODO disable panning in page view_mode?  22.12 2012 (houqp)
 	local _, dy = unpack(args)
 	DEBUG("key =", key)
 	self:gotoPos(self.current_pos + dy * self.panning_steps.normal)
@@ -143,21 +162,25 @@ function ReaderRolling:onZoom()
 	self:onUpdatePos()
 end
 
--- remember to signal this event the document has been zoomed,
--- font has been changed, or line height has been changed.
+--[[
+	remember to signal this event the document has been zoomed,
+	font has been changed, or line height has been changed.
+--]]
 function ReaderRolling:onUpdatePos()
 	-- reread document height
 	self.ui.document:_readMetadata()
 	-- update self.current_pos if the height of document has been changed.
-	if self.old_doc_height ~= self.ui.document.info.doc_height then
-		self:gotoPos(self.current_pos * 
-			(self.ui.document.info.doc_height - self.dialog.dimen.h) / 
-			(self.old_doc_height - self.dialog.dimen.h))
-		self.old_doc_height = self.ui.document.info.doc_height
+	local new_height = self.ui.document.info.doc_height
+	if self.old_doc_height ~= new_height then
+		self:gotoXPointer(self.ui.document:getXPointer())
+		self.old_doc_height = new_height
 	end
 	return true
 end
 
+--[[
+	PosUpdate event is used to signal other widgets that pos has been changed.
+--]]
 function ReaderRolling:gotoPos(new_pos)
 	if new_pos == self.current_pos then return end
 	if new_pos < 0 then new_pos = 0 end
@@ -175,6 +198,19 @@ function ReaderRolling:gotoPos(new_pos)
 		end
 	end
 	self.ui:handleEvent(Event:new("PosUpdate", new_pos))
+end
+
+function ReaderRolling:gotoPage(new_page)
+	self.ui.document:gotoPage(new_page)
+	self.ui:handleEvent(Event:new("PageUpdate", new_page))
+end
+
+function ReaderRolling:gotoXPointer(xpointer)
+	if self.view_mode == "page" then
+		self:gotoPage(self.ui.document:getPageFromXPointer(xpointer))
+	else
+		self:gotoPos(self.ui.document:getPosFromXPointer(xpointer))
+	end
 end
 
 function ReaderRolling:gotoPercent(new_percent)

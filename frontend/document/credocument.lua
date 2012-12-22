@@ -10,7 +10,6 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
-	view_mode = "page",
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -73,13 +72,10 @@ function CreDocument:init()
 	end
 	local style_sheet = "./data/"..file_type..".css"
 
-	-- view_mode default to page mode
-	local view_mode = self.PAGE_VIEW_MODE
-	if self.view_mode == "scroll" then
-		view_mode = self.SCROLL_VIEW_MODE
-	end
+	-- @TODO check the default view_mode to a global user configurable
+	-- variable  22.12 2012 (houqp)
 	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
-				Screen:getWidth(), Screen:getHeight(), view_mode)
+				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
@@ -92,6 +88,22 @@ function CreDocument:init()
 	--self._document:setDefaultInterlineSpace(self.line_space_percent)
 end
 
+function CreDocument:drawCurrentView(target, x, y, rect, pos)
+	tile_bb = Blitbuffer.new(rect.w, rect.h)
+	self._document:drawCurrentPage(tile_bb)
+	target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
+end
+
+function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
+	self._document:gotoPos(pos)
+	self:drawCurrentView(target, x, y, rect)
+end
+
+function CreDocument:drawCurrentViewByPage(target, x, y, rect, page)
+	self._document:gotoPage(page)
+	self:drawCurrentView(target, x, y, rect)
+end
+
 function CreDocument:hintPage(pageno, zoom, rotation)
 end
 
@@ -101,8 +113,40 @@ end
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
+function CreDocument:gotoXPointer(xpointer)
+	self._document:gotoXPointer(xpointer)
+end
+
+function CreDocument:getXPointer()
+	return self._document:getXPointer()
+end
+
+function CreDocument:getPosFromXPointer(xp)
+	return self._document:getPosFromXPointer(xp)
+end
+
+function CreDocument:getPageFromXPointer(xp)
+	return self._document:getPageFromXPointer(xp)
+end
+
 function CreDocument:getFontFace()
 	return self._document:getFontFace()
+end
+
+function CreDocument:getCurrentPos()
+	return self._document:getCurrentPos()
+end
+
+function Document:gotoPos(pos)
+	self._document:gotoPos(pos)
+end
+
+function CreDocument:gotoPage(page)
+	self._document:gotoPage(page)
+end
+
+function CreDocument:getCurrentPage()
+	return self._document:getCurrentPage()
 end
 
 function CreDocument:setFontFace(new_font_face)

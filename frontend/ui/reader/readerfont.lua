@@ -92,6 +92,9 @@ function ReaderFont:onShowFontMenu()
 	return true
 end
 
+--[[
+	UpdatePos event is used to tell ReaderRolling to update pos.
+--]]
 function ReaderFont:onChangeSize(direction)
 	local delta = 1
 	if direction == "decrease" then

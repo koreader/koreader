@@ -234,13 +234,6 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mo
 		rect.w, rect.h)
 end
 
-function Document:drawCurrentView(target, x, y, rect, pos)
-	self._document:gotoPos(pos)
-	tile_bb = Blitbuffer.new(rect.w, rect.h)
-	self._document:drawCurrentPage(tile_bb)
-	target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
-end
-
 function Document:getPageText(pageno)
 	-- is this worth caching? not done yet.
 	local page = self._document:openPage(pageno)
