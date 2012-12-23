@@ -374,7 +374,7 @@ function ImageWidget:getSize()
 	if not self._bb then
 		self:_render()
 	end
-	return { w = self._bb:getWidth(), h = self._bb:getHeight() }
+	return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
 end
 
 function ImageWidget:paintTo(bb, x, y)

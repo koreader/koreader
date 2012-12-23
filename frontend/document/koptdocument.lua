@@ -2,175 +2,41 @@ require "cache"
 require "ui/geometry"
 require "ui/screen"
 require "ui/device"
+require "ui/reader/readerconfig"
 
-KOPTOptions =  {
-	{
-	name="font_size",
-	option_text="",
-	items_text={"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
-	text_font_size={14,16,20,23,26,30,34,38,42,46},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true, true, true, true, true, true, true, true},
-	values={0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
-	default_value=DKOPTREADER_CONFIG_FONT_SIZE,
-	show = true,
-	draw_index = nil,},
-	{
-	name="text_wrap",
-	option_text="Reflow",
-	items_text={"on","off"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true},
-	values={1, 0},
-	default_value=DKOPTREADER_CONFIG_TEXT_WRAP,
-	show = true,
-	draw_index = nil,},
-	{
-	name="trim_page",
-	option_text="Trim Page",
-	items_text={"auto","manual"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true},
-	values={1, 0},
-	default_value=DKOPTREADER_CONFIG_TRIM_PAGE,
-	show = true,
-	draw_index = nil,},
-	{
-	name="detect_indent",
-	option_text="Indentation",
-	items_text={"enable","disable"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true},
-	values={1, 0},
-	default_value=DKOPTREADER_CONFIG_DETECT_INDENT,
-	show = false,
-	draw_index = nil,},
-	{
-	name="defect_size",
-	option_text="Defect Size",
-	items_text={"small","medium","large"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={0.5, 1.0, 2.0},
-	default_value=DKOPTREADER_CONFIG_DEFECT_SIZE,
-	show = true,
-	draw_index = nil,},
-	{
-	name="page_margin",
-	option_text="Page Margin",
-	items_text={"small","medium","large"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={0.02, 0.06, 0.10},
-	default_value=DKOPTREADER_CONFIG_PAGE_MARGIN,
-	show = true,
-	draw_index = nil,},
-	{
-	name="line_spacing",
-	option_text="Line Spacing",
-	items_text={"small","medium","large"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={1.0, 1.2, 1.4},
-	default_value=DKOPTREADER_CONFIG_LINE_SPACING,
-	show = true,
-	draw_index = nil,},
-	{
-	name="word_spacing",
-	option_text="Word Spacing",
-	items_text={"small","medium","large"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={0.05, 0.15, 0.375},
-	default_value=DKOPTREADER_CONFIG_WORD_SAPCING,
-	show = true,
-	draw_index = nil,},
-	{
-	name="multi_threads",
-	option_text="Multi Threads",
-	items_text={"on","off"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true},
-	values={1, 0},
-	default_value=DKOPTREADER_CONFIG_MULTI_THREADS,
-	show = true,
-	draw_index = nil,},
-	{
-	name="quality",
-	option_text="Render Quality",
-	items_text={"low","medium","high"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={0.5, 0.8, 1.0},
-	default_value=DKOPTREADER_CONFIG_RENDER_QUALITY,
-	show = true,
-	draw_index = nil,},
-	{
-	name="auto_straighten",
-	option_text="Auto Straighten",
-	items_text={"0","5","10"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true},
-	values={0, 5, 10},
-	default_value=DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
-	show = true,
-	draw_index = nil,},
-	{
-	name="justification",
-	option_text="Justification",
-	items_text={"auto","left","center","right","full"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true, true, true},
-	values={-1,0,1,2,3},
-	default_value=DKOPTREADER_CONFIG_JUSTIFICATION,
-	show = true,
-	draw_index = nil,},
-	{
-	name="max_columns",
-	option_text="Columns",
-	items_text={"1","2","3","4"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true, true},
-	values={1,2,3,4},
-	default_value=DKOPTREADER_CONFIG_MAX_COLUMNS,
-	show = true,
-	draw_index = nil,},
-	{
-	name="contrast",
-	option_text="Contrast",
-	items_text={"lightest","lighter","default","darker","darkest"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true, true, true},
-	values={2.0, 1.5, 1.0, 0.5, 0.2},
-	default_value=DKOPTREADER_CONFIG_CONTRAST,
-	show = true,
-	draw_index = nil,},
-	{
-	name="screen_rotation",
-	option_text="Screen Rotation",
-	items_text={"0","90","180","270"},
-	current_item=nil,
-	text_dirty=true,
-	marker_dirty={true, true, true, true},
-	values={0, 90, 180, 270},
-	default_value=DKOPTREADER_CONFIG_SCREEN_ROTATION,
-	show = true,
-	draw_index = nil,},
-}
+Configurable = {}
+
+function Configurable:hash(sep)
+	local hash = ""
+	local excluded = {multi_threads = true,}
+	for key,value in pairs(self) do
+		if type(value) == "number" and not excluded[key] then
+			hash = hash..sep..value
+		end
+	end
+	return hash
+end
+
+function Configurable:loadDefaults()
+	for i=1,#KOPTOptions do
+		local options = KOPTOptions[i].options
+		for j=1,#KOPTOptions[i].options do
+			local key = KOPTOptions[i].options[j].name
+			self[key] = KOPTOptions[i].options[j].default_value
+		end
+	end
+end
+
+function Configurable:loadSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			saved_value = settings:readSetting(prefix..key)
+			self[key] = (saved_value == nil) and self[key] or saved_value
+			--Debug("Configurable:loadSettings", "key", key, "saved value", saved_value,"Configurable.key", self[key])
+		end
+	end
+	--Debug("loaded config:", dump(Configurable))
+end
 
 -- Any document processed by K2pdfopt is called a koptdocument
 KoptDocument = Document:new{
@@ -181,27 +47,11 @@ KoptDocument = Document:new{
 	dc_null = DrawContext.new(),
 	screen_size = Screen:getSize(),
 	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
-	options = KOPTOptions,
-	configurable = {
-		font_size = 1.0,
-		page_margin = 0.06,
-		line_spacing = 1.2,
-		word_spacing = 0.15,
-		quality = 1.0,
-		text_wrap = 1,
-		defect_size = 1.0,
-		trim_page = 0,
-		detect_indent = 1,
-		multi_threads = 0,
-		auto_straighten = 0,
-		justification = -1,
-		max_columns = 2,
-		contrast = 1.0,
-		screen_rotation = 0,
-	},
+	configurable = Configurable,
 }
 
 function KoptDocument:init()
+	self.configurable:loadDefaults()
 	self.file_type = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
 	if self.file_type == "pdf" then
 		local ok
@@ -318,7 +168,7 @@ end
 -- calculates page dimensions
 function KoptDocument:getPageDimensions(pageno, zoom, rotation)
 	-- check cached page size
-	local hash = "kctx|"..self.file.."|"..pageno
+	local hash = "kctx|"..self.file.."|"..pageno.."|"..self.configurable:hash('|')
 	local cached = Cache:check(hash)
 	if not cached then
 		local kc = self:getKOPTContext(pageno)
@@ -341,7 +191,7 @@ end
 
 function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
 	self.render_mode = render_mode
-	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
+	local hash = "renderpg|"..self.file.."|"..pageno.."|"..self.configurable:hash('|')
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -356,9 +206,12 @@ function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
 			return
 		end
 		-- only render required part
-		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
+		hash = "renderpg|"..self.file.."|"..pageno.."|"..self.configurable:hash('|').."|"..tostring(rect)
 		size = rect
 	end
+	
+	local cached = Cache:check(hash)
+	if cached then return cached end
 
 	-- prepare cache item with contained blitbuffer	
 	local tile = CacheItem:new{
@@ -369,13 +222,16 @@ function KoptDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
 	}
 
 	-- draw to blitbuffer
-	local kc_hash = "kctx|"..self.file.."|"..pageno
+	local kc_hash = "kctx|"..self.file.."|"..pageno.."|"..self.configurable:hash('|')
 	local page = self._document:openPage(pageno)
 	local cached = Cache:check(kc_hash)
 	if cached then
 		page:rfdraw(cached.kctx, tile.bb)
 		page:close()
-		Cache:insert(hash, tile)
+		DEBUG("cached hash", hash)
+		if not Cache:check(hash) then
+			Cache:insert(hash, tile)
+		end
 		return tile
 	end
 	DEBUG("Error: cannot render page before reflowing.")

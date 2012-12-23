@@ -21,12 +21,10 @@ function FixedTextWidget:paintTo(bb, x, y)
 	renderUtf8Text(bb, x, y+self._height, self.face, self.text, true)
 end
 
-ConfigMenuItem = InputContainer:new{
-	dimen = nil,
-}
-
-function ConfigMenuItem:init()
--- we need this table per-instance, so we declare it here
+MenuBarItem = InputContainer:new{}
+function MenuBarItem:init()
+	self.dimen = self[1]:getSize()
+	-- we need this table per-instance, so we declare it here
 	if Device:isTouchDevice() then
 		self.ges_events = {
 			TapSelect = {
@@ -44,8 +42,8 @@ function ConfigMenuItem:init()
 	end
 end
 
-function ConfigMenuItem:onTapSelect()
-	for _, item in pairs(self.config.menu_items) do
+function MenuBarItem:onTapSelect()
+	for _, item in pairs(self.items) do
 		item[1].invert = false
 	end
 	self[1].invert = true
@@ -54,12 +52,46 @@ function ConfigMenuItem:onTapSelect()
 	return true
 end
 
-MenuItemDialog = FocusManager:new{
-	dimen = nil,
-	menu_item = nil,
-	title = nil,
-	is_borderless = false,
-}
+OptionTextItem = InputContainer:new{}
+function OptionTextItem:init()
+	local text_widget = self[1]
+	self.dimen = text_widget:getSize()
+	self[1] = UnderlineContainer:new{
+		text_widget,
+		padding = self.padding,
+		color = self.color,
+		}
+	-- we need this table per-instance, so we declare it here
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapSelect = {
+				GestureRange:new{
+					ges = "tap",
+					range = self.dimen,
+				},
+				doc = "Select Option Item",
+			},
+		}
+	else
+		self.active_key_events = {
+			Select = { {"Press"}, doc = "chose selected item" },
+		}
+	end
+end
+
+function OptionTextItem:onTapSelect()
+	for _, item in pairs(self.items) do
+		item[1].color = 0
+	end
+	self[1].color = 15
+	local option_value = nil
+	if type(self.values) == "table" then
+		option_value = self.values[self.current_item]
+		self.config:onConfigChoice(self.name, option_value)
+	end
+	UIManager.repaint_all = true
+	return true
+end
 
 ConfigIcons = HorizontalGroup:new{}
 function ConfigIcons:init()
@@ -70,282 +102,191 @@ function ConfigIcons:init()
 	table.insert(self, self.spacing)
 end
 
-ConfigOption = CenterContainer:new{dimen = Geom:new{ w = Screen:getWidth(), h = 100},}
+ConfigOption = CenterContainer:new{dimen = Geom:new{ w = Screen:getWidth(), h = math.floor(150*Screen:getWidth()/600)}}
 function ConfigOption:init()
+	local default_name_font_size = math.floor(20*Screen:getWidth()/600)
+	local default_item_font_size = math.floor(16*Screen:getWidth()/600)
+	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
+	local default_option_height = math.floor(30*Screen:getWidth()/600)
 	local vertical_group = VerticalGroup:new{}
 	for c = 1, #self.options do
-		local name_align = self.options[c].name_align_right
-		local item_align = self.options[c].item_align_center
-		local horizontal_group = HorizontalGroup:new{}
-		local option_name_container = RightContainer:new{
-			dimen = Geom:new{ w = Screen:getWidth()*(name_align and name_align or 0.33), h = 30},
-		}
-		local option_name =	TextWidget:new{
-				text = self.options[c].name,
-				face = self.options[c].name_face,
-		}
-		table.insert(option_name_container, option_name)
-		table.insert(horizontal_group, option_name_container)
-		local option_items_container = CenterContainer:new{
-			dimen = Geom:new{w = Screen:getWidth()*(item_align and item_align or 0.66), h = 30}
-		}
-		local option_items_group = HorizontalGroup:new{}
-		for d = 1, #self.options[c].items do
-			local option_item = TextWidget:new{
-				text = self.options[c].items[d],
-				face = self.options[c].item_face,
+		if self.options[c].show ~= false then
+			local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
+			local item_align = self.options[c].item_align_center and self.options[c].item_align_center or 0.66
+			local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "tfont"
+			local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
+			local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
+			local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
+			local option_height = self.options[c].height and self.options[c].height or default_option_height
+			local items_spacing = HorizontalSpan:new{ width = self.options[c].spacing and self.options[c].spacing or default_items_spacing}
+			
+			local horizontal_group = HorizontalGroup:new{}
+			if self.options[c].name_text then
+				local option_name_container = RightContainer:new{
+					dimen = Geom:new{ w = Screen:getWidth()*name_align, h = option_height},
+				}
+				local option_name =	TextWidget:new{
+						text = self.options[c].name_text,
+						face = Font:getFace(name_font_face, name_font_size),
+				}
+				table.insert(option_name_container, option_name)
+				table.insert(horizontal_group, option_name_container)
+			end
+			
+			if self.options[c].widget == "ProgressWidget" then
+				local widget_container = CenterContainer:new{
+					dimen = Geom:new{w = Screen:getWidth()*self.options[c].widget_align_center, h = option_height}
+				}
+				local widget = ProgressWidget:new{
+					width = self.options[c].width,
+					height = self.options[c].height,
+					percentage = self.options[c].percentage,
+				}
+				table.insert(widget_container, widget)
+				table.insert(horizontal_group, widget_container)
+			end
+			
+			local option_items_container = CenterContainer:new{
+				dimen = Geom:new{w = Screen:getWidth()*item_align, h = option_height}
 			}
-			table.insert(option_items_group, option_item)
-			table.insert(option_items_group, self.options[c].spacing)
-		end
-		table.insert(option_items_container, option_items_group)
-		table.insert(horizontal_group, option_items_container)
-		table.insert(vertical_group, horizontal_group)
-	end
+			local option_items_group = HorizontalGroup:new{}
+			local option_items_fixed = false
+			local option_items = {}
+			if type(self.options[c].item_font_size) == "table" then
+				option_items_group.align = "bottom"
+				option_items_fixed = true
+			end
+			-- make current index according to configurable table
+			local current_item = nil
+			if self.options[c].name then
+				local val = self.config.configurable[self.options[c].name]
+				local min_diff = math.abs(val - self.options[c].values[1])
+				local diff = nil
+				for index, val_ in pairs(self.options[c].values) do
+					if val == val_ then
+						current_item = index
+						break
+					end
+					diff = math.abs(val - val_)
+					if diff <= min_diff then
+						min_diff = diff
+						current_item = index
+					end
+				end
+			end
+			
+			for d = 1, #self.options[c].item_text do
+				local option_item = nil
+				if option_items_fixed then
+					option_item = OptionTextItem:new{
+						FixedTextWidget:new{
+							text = self.options[c].item_text[d],
+							face = Font:getFace(item_font_face, item_font_size[d]),
+						},
+						padding = 3,
+						color = d == current_item and 15 or 0,
+					}
+				else
+					option_item = OptionTextItem:new{
+						TextWidget:new{
+							text = self.options[c].item_text[d],
+							face = Font:getFace(item_font_face, item_font_size),
+						},
+						padding = -3,
+						color = d == current_item and 15 or 0,
+					}
+				end
+				option_items[d] = option_item
+				option_item.items = option_items
+				option_item.name = self.options[c].name
+				option_item.values = self.options[c].values
+				option_item.current_item = d
+				option_item.config = self.config
+				table.insert(option_items_group, option_item)
+				table.insert(option_items_group, items_spacing)
+			end
+			table.insert(option_items_container, option_items_group)
+			table.insert(horizontal_group, option_items_container)
+			table.insert(vertical_group, horizontal_group)
+		end -- if
+	end -- for
 	self[1] = vertical_group
 end
 
-ConfigFontSize = CenterContainer:new{dimen = Geom:new{ w = Screen:getWidth(), h = 100},}
-function ConfigFontSize:init()
-	local vertical_group = VerticalGroup:new{}
-	local horizontal_group = HorizontalGroup:new{align = "bottom"}
-	for c = 1, #self.items do
-		local widget = FixedTextWidget:new{
-			text = self.items[c],
-			face = Font:getFace(self.item_font_face, self.item_font_size[c]),
+ConfigPanel = VerticalGroup:new{}
+function ConfigPanel:init()
+	local default_option = ConfigOption:new{
+		options = self.config_options.default_options
+	}
+	local menu_bar = FrameContainer:new{
+		background = 0,
+	}
+	local menu_items = {}
+	local icons_width = 0
+	local icons_height = 0
+	for c = 1, #self.config_options do
+		local menu_icon = ImageWidget:new{
+			file = self.config_options[c].icon
 		}
-		table.insert(horizontal_group, self.spacing)
-		table.insert(horizontal_group, widget)
+		local icon_dimen = menu_icon:getSize()
+		icons_width = icons_width + icon_dimen.w
+		icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
+		
+		menu_items[c] = MenuBarItem:new{
+			menu_icon,
+			options = ConfigOption:new{
+				options = self.config_options[c].options,
+				config = self.config_dialog,
+			},
+			config = self.config_dialog,
+			items = menu_items,
+		}
 	end
-	table.insert(vertical_group, horizontal_group)
-	self[1] = vertical_group
+	menu_bar[1] = ConfigIcons:new{
+		icons = menu_items,
+		spacing = HorizontalSpan:new{
+			width = (Screen:getWidth() - icons_width) / (#menu_items+1)
+		}
+	}
+	menu_bar.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
+	
+	self[1] = default_option
+	self[2] = menu_bar
 end
 
 --[[
 Widget that displays config menu
 --]]
-ConfigDialog = FocusManager:new{
-	-- face for option names
-	tface = Font:getFace("tfont", 20),
-	-- face for option items
-	cface = Font:getFace("cfont", 16),
-	is_borderless = false,
+ConfigDialog = InputContainer:new{
+	--is_borderless = false,
 }
 
-function ConfigDialog:init()	
-	self.menu_dimen = self.dimen:copy()
-	-----------------------------------
-	-- start to set up widget layout --
-	-----------------------------------
-	self.screen_rotate_icon = ImageWidget:new{
-		file = "resources/icons/appbar.transform.rotate.right.large.png"
-	}
-	self.screen_rotate_options = ConfigOption:new{
-		options = {
-			{
-				name = "Screen Rotation",
-				name_face = Font:getFace("tfont", 20),
-				items = {"portrait", "landscape"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			}
-		},
-	}
-
-	self.page_crop_icon = ImageWidget:new{
-		file = "resources/icons/appbar.crop.large.png"
-	}
-	self.page_crop_options = ConfigOption:new{
-		options = {
-			{
-				name = "Page Crop",
-				name_face = Font:getFace("tfont", 20),
-				items = {"auto", "manual"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			}
-		},
-	}
-
-	self.page_layout_icon = ImageWidget:new{
-		file = "resources/icons/appbar.column.two.large.png"
-	}
-	self.page_layout_options = ConfigOption:new{
-		options = {
-			{
-				name = "Page Margin",
-				name_face = Font:getFace("tfont", 20),
-				items = {"small", "medium", "large"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			},
-			{
-				name = "Line Spacing",
-				name_face = Font:getFace("tfont", 20),
-				items = {"small", "medium", "large"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			},
-			{
-				name = "Word Spacing",
-				name_face = Font:getFace("tfont", 20),
-				items = {"small", "medium", "large"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			},
-		},
-	}
-
-	self.text_font_icon = ImageWidget:new{
-		file = "resources/icons/appbar.text.size.large.png"
-	}
-	self.text_font_options = ConfigFontSize:new{
-		items = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
-		item_font_face = "cfont",
-		item_font_size={14,16,20,23,26,30,34,38,42,46},
-		spacing = HorizontalSpan:new{ width = Screen:getWidth()*0.03 },
-	}
-
-	self.contrast_icon = ImageWidget:new{
-		file = "resources/icons/appbar.grade.b.large.png"
-	}
-	self.contrast_options = ConfigOption:new{
-		options = {
-			{
-				name = "Contrast",
-				name_face = Font:getFace("tfont", 20),
-				name_align_right = 0.2,
-				items = {"lightest", "lighter", "default", "darker", "darkest"},
-				item_align_center = 0.8,
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 30 },
-			}
-		},
-	}
-
-	self.more_options_icon = ImageWidget:new{
-		file = "resources/icons/appbar.settings.large.png"
-	}
-	self.more_options = ConfigOption:new{
-		options = {
-			{
-				name = "Render Quality",
-				name_face = Font:getFace("tfont", 20),
-				items = {"low", "default", "high"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 20 },
-			},
-			{
-				name = "Auto Straighten",
-				name_face = Font:getFace("tfont", 20),
-				items = {"0 deg", "5 deg", "10 deg"},
-				item_face = Font:getFace("cfont", 16),
-				spacing = HorizontalSpan:new{ width = 20 },
-			},
-		}
+function ConfigDialog:init()
+	------------------------------------------
+	-- start to set up widget layout ---------
+	------------------------------------------
+	self.config_panel = ConfigPanel:new{ 
+		config_options = self.config_options,
+		config_dialog = self,
 	}
 	
-	self.icon_dimen = Geom:new{
-		w = 64,
-		h = 64, -- hardcoded for now
-	}
+	local config_panel_size = self.config_panel:getSize()
 	
-	self.reading_progress = VerticalGroup:new{
-		ProgressWidget:new{
-			width = Screen:getWidth()*0.7,
-			height = 5,
-			percentage = 0.0,
-		}
+	self.menu_dimen = Geom:new{
+		x = (Screen:getWidth() - config_panel_size.w)/2,
+		y = Screen:getHeight() - config_panel_size.h,
+		w = config_panel_size.w,
+		h = config_panel_size.h,
 	}
-	local default_options = CenterContainer:new{
-		HorizontalGroup:new{
-			CenterContainer:new{
-				VerticalGroup:new{
-					align = "center",
-					self.reading_progress,
-				},
-				dimen = Geom:new{ w = Screen:getWidth()*0.8, h = 100},
-			},
-			CenterContainer:new{
-				TextWidget:new{
-					text = "Goto",
-					face = self.tface,
-				},
-				dimen = Geom:new{ w = Screen:getWidth()*0.2, h = 100},
-			},
-		},
-		dimen = Geom:new{ w = Screen:getWidth(), h = 100},
-	}
-	
-	self.menu_items = {
-		ConfigMenuItem:new{
-			self.screen_rotate_icon,
-			options = self.screen_rotate_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-		ConfigMenuItem:new{
-			self.page_crop_icon,
-			options = self.page_crop_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-		ConfigMenuItem:new{
-			self.page_layout_icon,
-			options = self.page_layout_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-		ConfigMenuItem:new{
-			self.text_font_icon,
-			options = self.text_font_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-		ConfigMenuItem:new{
-			self.contrast_icon,
-			options = self.contrast_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-		ConfigMenuItem:new{
-			self.more_options_icon,
-			options = self.more_options,
-			dimen = self.icon_dimen:new(),
-			config = self,
-		},
-	}
-	
-	local config_icons = ConfigIcons:new{
-		icons = self.menu_items,
-		spacing = HorizontalSpan:new{
-			width = (Screen:getWidth() - self.icon_dimen.w * #self.menu_items - 20) / (#self.menu_items+1)
-		},
-	}
-	
-	local config_menu = FrameContainer:new{
-		dimen = config_icons:getSize(),
-		background = 0,
-		config_icons,
-	}
-	
-	-- group for config layout
-	local config_layout = VerticalGroup:new{
-		default_options,
-		config_menu,
-	}
-	-- maintain reference to content so we can change it later
-	self.config_layout = config_layout
 
 	self[1] = BottomContainer:new{
 		dimen = Screen:getSize(),
 		FrameContainer:new{
-			dimen = config_layout:getSize(),
+			dimen = self.config_panel:getSize(),
 			background = 0,
-			config_layout,
+			self.config_panel,
 		}
 	}
-
 	------------------------------------------
 	-- start to set up input event callback --
 	------------------------------------------
@@ -372,7 +313,7 @@ function ConfigDialog:init()
 end
 
 function ConfigDialog:onShowOptions(options)
-	self.config_layout[1] = options
+	self.config_panel[1] = options
 	UIManager.repaint_all = true
 	return true
 end
@@ -388,6 +329,7 @@ end
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.menu_dimen) then
 		self:onCloseMenu()
+		--self.ui:handleEvent(Event:new("GotoPageRel", 0))
 		return true
 	end
 end
