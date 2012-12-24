@@ -216,3 +216,12 @@ function ReaderConfig:onSetDimensions(dimen)
 	-- update gesture listenning range according to new screen orientation
 	self:init()
 end
+
+function ReaderConfig:onReadSettings(config)
+	DEBUG("read setting", config)
+	self.configurable:loadSettings(config, 'kopt_')
+end
+
+function ReaderConfig:onCloseDocument()
+	self.configurable:saveSettings(self.ui.doc_settings, 'kopt_')
+end

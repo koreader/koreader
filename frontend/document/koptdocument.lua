@@ -38,6 +38,14 @@ function Configurable:loadSettings(settings, prefix)
 	--Debug("loaded config:", dump(Configurable))
 end
 
+function Configurable:saveSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			settings:saveSetting(prefix..key, value)
+		end
+	end
+end
+
 -- Any document processed by K2pdfopt is called a koptdocument
 KoptDocument = Document:new{
 	_document = false,
