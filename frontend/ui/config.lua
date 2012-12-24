@@ -105,7 +105,7 @@ end
 ConfigOption = CenterContainer:new{dimen = Geom:new{ w = Screen:getWidth(), h = math.floor(150*Screen:getWidth()/600)}}
 function ConfigOption:init()
 	local default_name_font_size = math.floor(20*Screen:getWidth()/600)
-	local default_item_font_size = math.floor(16*Screen:getWidth()/600)
+	local default_item_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
 	local default_option_height = math.floor(30*Screen:getWidth()/600)
 	local vertical_group = VerticalGroup:new{}
@@ -203,7 +203,9 @@ function ConfigOption:init()
 				option_item.current_item = d
 				option_item.config = self.config
 				table.insert(option_items_group, option_item)
-				table.insert(option_items_group, items_spacing)
+				if d ~= #self.options[c].item_text then
+					table.insert(option_items_group, items_spacing)
+				end
 			end
 			table.insert(option_items_container, option_items_group)
 			table.insert(horizontal_group, option_items_container)
