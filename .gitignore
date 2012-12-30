@@ -1,4 +1,8 @@
 *.swp
+*.swo
+cscope.*
+libs-emu
+*.orig
 lua
 lua-*
 .reader.kpdfview.lua
