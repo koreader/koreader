@@ -269,7 +269,16 @@ function GestureDetector:panState(ev)
 	DEBUG("in pan state...")
 	if ev.id == -1 then
 		-- end of pan, signal swipe gesture if necessary
-		swipe_direct = self:isSwipe(ev)
+		-- we need to construct a complete_last_ev because
+		-- the x or y of ev might be nil.
+		local complete_last_ev = self:deepCopyEv(ev)
+		if not complete_last_ev.x then
+			complete_last_ev.x = self.cur_x
+		end
+		if not complete_last_ev.y then
+			complete_last_ev.y = self.cur_y
+		end
+		swipe_direct = self:isSwipe(complete_last_ev)
 		if swipe_direct then
 			local start_pos = Geom:new{
 					x = self.first_ev.x, 
