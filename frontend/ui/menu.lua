@@ -540,9 +540,9 @@ function Menu:onTapCloseAllMenus(arg, ges_ev)
 end
 
 function Menu:onSwipe(arg, ges_ev)
-	if ges_ev.direction == "right" then
+	if ges_ev.direction == "left" then
 		self:onNextPage()
-	elseif ges_ev.direction == "left" then
+	elseif ges_ev.direction == "right" then
 		self:onPrevPage()
 	end
 end
