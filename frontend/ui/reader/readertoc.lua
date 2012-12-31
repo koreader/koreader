@@ -69,10 +69,8 @@ function ReaderToc:onShowToc()
 		title = "Table of Contents",
 		item_table = items,
 		ui = self.ui,
-		dimen = Geom:new{ 
-			w = Screen:getWidth()-20, 
-			h = Screen:getHeight()-20
-		},
+		width = Screen:getWidth()-20, 
+		height = Screen:getHeight(),
 	}
 	function toc_menu:onMenuChoice(item)
 		self.ui:handleEvent(Event:new("PageUpdate", item.page))
