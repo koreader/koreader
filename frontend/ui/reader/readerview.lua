@@ -122,6 +122,8 @@ function ReaderView:PanningUpdate(dx, dy)
 		UIManager:setDirty(self.dialog)
 		DEBUG("on pan: page_area", self.page_area)
 		DEBUG("on pan: visible_area", self.visible_area)
+		self.ui:handleEvent(
+			Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	end
 	return true
 end
