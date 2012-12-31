@@ -56,18 +56,18 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
+	-- reader menu controller
+	self[3] = ReaderMenu:new{
+		view = self[1],
+		ui = self
+	}
+	self.menu = self[3] -- hold reference to menu widget
 	-- Toc menu controller
-	self[3] = ReaderToc:new{
+	self[4] = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	-- reader menu controller
-	self[4] = ReaderMenu:new{
-		view = self[1],
-		ui = self
-	}
-	self.menu = self[4] -- hold reference to menu widget
 
 	if self.document.info.has_pages then
 		-- for page specific controller
