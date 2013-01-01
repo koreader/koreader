@@ -6,6 +6,7 @@ require "ui/reader/readerrotation"
 require "ui/reader/readerpaging"
 require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
+require "ui/reader/readerbookmark"
 require "ui/reader/readerfont"
 require "ui/reader/readermenu"
 
@@ -18,7 +19,6 @@ it works using data gathered from a document interface
 ReaderUI = InputContainer:new{
 	key_events = {
 		Close = { {"Home"}, doc = "close document", event = "Close" },
-		Back = { {"Back"}, doc = "close document", event = "Close" },
 	},
 
 	-- our own size
@@ -39,6 +39,12 @@ function ReaderUI:init()
 	-- if we are not the top level dialog ourselves, it must be given in the table
 	if not self.dialog then
 		self.dialog = self
+	end
+
+	if Device:hasKeyboard() then
+		self.key_events.Back = { 
+			{ "Back" }, doc = "close document",
+			event = "Close" }
 	end
 
 	self.doc_settings = DocSettings:open(self.document.file)
@@ -68,6 +74,12 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
+	local reader_bm = ReaderBookmark:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	}
+	table.insert(self, reader_bm)
 
 	if self.document.info.has_pages then
 		-- for page specific controller
