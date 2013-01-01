@@ -1,3 +1,5 @@
+require "ui/notification"
+
 ReaderBookmark = InputContainer:new{
 	bm_menu_title = "Bookmarks",
 	bookmarks = nil,
@@ -51,7 +53,7 @@ function ReaderBookmark:onAddBookmark()
 	if not self:addBookmark(pn_or_xp) then
 		noti_text = "Page already marked!"
 	end
-	UIManager:show(InfoMessage:new{
+	UIManager:show(Notification:new{
 		text = noti_text,
 		timeout = 3
 	})
