@@ -21,20 +21,24 @@ function ReaderToc:onSetDimensions(dimen)
 	self.dimen = dimen
 end
 
---function ReaderToc:fillToc()
-	--self.toc = self.doc:getToc()
---end
+function ReaderToc:fillToc()
+	self.toc = self.ui.document:getToc()
+end
 
--- getTocTitleByPage wrapper, so specific reader
+-- _getTocTitleByPage wrapper, so specific reader
 -- can tranform pageno according its need
-function ReaderToc:getTocTitleByPage(pageno)
-	return self:_getTocTitleByPage(pageno)
+function ReaderToc:getTocTitleByPage(pn_or_xp)
+	local page = pn_or_xp
+	if type(pn_or_xp) == "string" then
+		page = self.ui.document:getPageFromXPointer(pn_or_xp)
+	end
+	return self:_getTocTitleByPage(page)
 end
 
 function ReaderToc:_getTocTitleByPage(pageno)
 	if not self.toc then
-	-- build toc when needed.
-	self:fillToc()
+		-- build toc when needed.
+		self:fillToc()
 	end
 
 	-- no table of content
@@ -83,6 +87,7 @@ function ReaderToc:onShowToc()
 	end
 
 	UIManager:show(menu_container)
+	return true
 end
 
 function ReaderToc:addToMainMenu(item_table)
