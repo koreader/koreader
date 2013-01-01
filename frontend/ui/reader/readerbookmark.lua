@@ -46,7 +46,15 @@ function ReaderBookmark:onAddBookmark()
 	else
 		pn_or_xp = self.view.state.page
 	end
-	self:addBookmark(pn_or_xp)
+
+	local noti_text = "Bookmark added."
+	if not self:addBookmark(pn_or_xp) then
+		noti_text = "Page already marked!"
+	end
+	UIManager:show(InfoMessage:new{
+		text = noti_text,
+		timeout = 3
+	})
 	return true
 end
 
