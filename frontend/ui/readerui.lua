@@ -68,12 +68,14 @@ function ReaderUI:init()
 		ui = self
 	}
 	self.menu = self[3] -- hold reference to menu widget
-	-- Toc menu controller
+	-- Table of content controller
 	self[4] = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
+	self.toc = self[4] -- hold reference to bm widget
+	-- bookmark controller
 	local reader_bm = ReaderBookmark:new{
 		dialog = self.dialog,
 		view = self[1],
