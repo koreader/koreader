@@ -1,14 +1,23 @@
 require "cache"
 require "ui/geometry"
+require "ui/screen"
+require "ui/device"
+require "ui/reader/readerconfig"
+require "document/koptinterface"
 
 DjvuDocument = Document:new{
 	_document = false,
 	-- libdjvulibre manages its own additional cache, default value is hard written in c module.
 	djvulibre_cache_size = nil,
-	dc_null = DrawContext.new()
+	dc_null = DrawContext.new(),
+	screen_size = Screen:getSize(),
+	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
+	configurable = Configurable,
+	koptinterface = KoptInterface,
 }
 
 function DjvuDocument:init()
+	self.configurable:loadDefaults()
 	if not validDjvuFile(self.file) then
 		self.error_message = "Not a valid DjVu file"
 		return
@@ -22,6 +31,7 @@ function DjvuDocument:init()
 	end
 	self.is_open = true
 	self.info.has_pages = true
+	self.info.configurable = true
 	self:_readMetadata()
 end
 
@@ -38,7 +48,8 @@ end
 function DjvuDocument:getUsedBBox(pageno)
 	-- djvu does not support usedbbox, so fake it.
 	local used = {}
-	used.x, used.y, used.w, used.h = 0.01, 0.01, -0.01, -0.01
+	local native_dim = self:getNativePageDimensions(pageno)
+	used.x0, used.y0, used.x1, used.y1 = 0, 0, native_dim.w, native_dim.h
 	return used
 end
 
@@ -50,6 +61,30 @@ function DjvuDocument:invertTextYAxel(pageno, text_table)
 		end
 	end
 	return text_table
+end
+
+function DjvuDocument:getPageDimensions(pageno, zoom, rotation)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
+	else
+		return Document.getPageDimensions(self, pageno, zoom, rotation)
+	end
+end
+
+function DjvuDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, render_mode)
+	else
+		return Document.renderPage(self, pageno, rect, zoom, rotation, render_mode)
+	end
+end
+
+function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
+	if self.configurable.text_wrap == 1 then
+		self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, render_mode)
+	else
+		Document.drawPage(self, target, x, y, rect, pageno, zoom, rotation, render_mode)
+	end
 end
 
 DocumentRegistry:addProvider("djvu", "application/djvu", DjvuDocument)

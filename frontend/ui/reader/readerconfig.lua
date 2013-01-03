@@ -46,8 +46,8 @@ KOPTOptions = {
 				name_text = "Reflow",
 				item_text = {"on","off"},
 				values = {1, 0},
-				default_value = 1,
-				show = false
+				default_value = 0,
+				show = true
 			},
 			{
 				name = "max_columns",
@@ -153,6 +153,48 @@ KOPTOptions = {
 	},
 }
 
+Configurable = {}
+
+function Configurable:hash(sep)
+	local hash = ""
+	local excluded = {multi_threads = true,}
+	for key,value in pairs(self) do
+		if type(value) == "number" and not excluded[key] then
+			hash = hash..sep..value
+		end
+	end
+	return hash
+end
+
+function Configurable:loadDefaults()
+	for i=1,#KOPTOptions do
+		local options = KOPTOptions[i].options
+		for j=1,#KOPTOptions[i].options do
+			local key = KOPTOptions[i].options[j].name
+			self[key] = KOPTOptions[i].options[j].default_value
+		end
+	end
+end
+
+function Configurable:loadSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			saved_value = settings:readSetting(prefix..key)
+			self[key] = (saved_value == nil) and self[key] or saved_value
+			--Debug("Configurable:loadSettings", "key", key, "saved value", saved_value,"Configurable.key", self[key])
+		end
+	end
+	--Debug("loaded config:", dump(Configurable))
+end
+
+function Configurable:saveSettings(settings, prefix)
+	for key,value in pairs(self) do
+		if type(value) == "number" then
+			settings:saveSetting(prefix..key, value)
+		end
+	end
+end
+
 ReaderConfig = InputContainer:new{
 	dimen = Geom:new{
 		x = 0, 
@@ -189,7 +231,9 @@ function ReaderConfig:onShowConfigMenu()
 
 	function config_dialog:onConfigChoice(option_name, option_value)
 		self.configurable[option_name] = option_value
-		--DEBUG("configurable", self.configurable)
+		if option_name == "text_wrap" then
+			self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+		end
 	end
 	
 	local dialog_container = CenterContainer:new{
@@ -199,7 +243,7 @@ function ReaderConfig:onShowConfigMenu()
 	config_dialog.close_callback = function () 
 		UIManager:close(menu_container)
 	end
-	-- maintain a reference to menu_container
+
 	self.dialog_container = dialog_container
 
 	UIManager:show(config_dialog)
@@ -218,7 +262,6 @@ function ReaderConfig:onSetDimensions(dimen)
 end
 
 function ReaderConfig:onReadSettings(config)
-	DEBUG("read setting", config)
 	self.configurable:loadSettings(config, 'kopt_')
 end
 

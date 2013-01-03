@@ -227,5 +227,6 @@ function ReaderPaging:onGotoPageRel(diff)
 	return true
 end
 
-
-
+function ReaderPaging:onRedrawCurrentPage()
+	self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+end
