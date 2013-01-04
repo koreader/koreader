@@ -611,6 +611,10 @@ function InputContainer:_init()
 		end
 	end
 	self.ges_events = new_ges_events
+
+	if not self.dimen then
+		self.dimen = Geom:new{}
+	end
 end
 
 function InputContainer:paintTo(bb, x, y)
