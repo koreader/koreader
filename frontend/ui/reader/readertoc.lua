@@ -1,11 +1,17 @@
 ReaderToc = InputContainer:new{
-	key_events = {
-		ShowToc = { {"T"}, doc = "show Table of Content menu"},
-	},
-	dimen = Geom:new{ w = Screen:getWidth()-20, h = Screen:getHeight()-20},
-	current_page = 0,
-	current_pos = 0,
+	toc_menu_title = "Table of contents",
 }
+
+function ReaderToc:init()
+	if not Device:hasNoKeyboard() then
+		self.key_events = {
+			ShowToc = {
+				{ "T" },
+				doc = "show Table of Content menu" },
+		}
+	end
+	self.ui.menu:registerToMainMenu(self)
+end
 
 function ReaderToc:cleanUpTocTitle(title)
 	return (title:gsub("\13", ""))
@@ -15,20 +21,24 @@ function ReaderToc:onSetDimensions(dimen)
 	self.dimen = dimen
 end
 
---function ReaderToc:fillToc()
-	--self.toc = self.doc:getToc()
---end
+function ReaderToc:fillToc()
+	self.toc = self.ui.document:getToc()
+end
 
--- getTocTitleByPage wrapper, so specific reader
+-- _getTocTitleByPage wrapper, so specific reader
 -- can tranform pageno according its need
-function ReaderToc:getTocTitleByPage(pageno)
-	return self:_getTocTitleByPage(pageno)
+function ReaderToc:getTocTitleByPage(pn_or_xp)
+	local page = pn_or_xp
+	if type(pn_or_xp) == "string" then
+		page = self.ui.document:getPageFromXPointer(pn_or_xp)
+	end
+	return self:_getTocTitleByPage(page)
 end
 
 function ReaderToc:_getTocTitleByPage(pageno)
 	if not self.toc then
-	-- build toc when needed.
-	self:fillToc()
+		-- build toc when needed.
+		self:fillToc()
 	end
 
 	-- no table of content
@@ -56,29 +66,36 @@ function ReaderToc:onShowToc()
 	for _,v in ipairs(items) do
 		v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
 	end
+
 	local toc_menu = Menu:new{
 		title = "Table of Contents",
 		item_table = items,
-		dimen = self.dimen,
-		ui = self.ui
+		ui = self.ui,
+		width = Screen:getWidth()-20, 
+		height = Screen:getHeight(),
 	}
 	function toc_menu:onMenuChoice(item)
 		self.ui:handleEvent(Event:new("PageUpdate", item.page))
 	end
 
-	UIManager:show(toc_menu)
+	local menu_container = CenterContainer:new{
+		dimen = Screen:getSize(),
+		toc_menu,
+	}
+	toc_menu.close_callback = function() 
+		UIManager:close(menu_container)
+	end
+
+	UIManager:show(menu_container)
+	return true
 end
 
-function ReaderToc:onSetDimensions(dimen)
-	self.dimen = dimen
+function ReaderToc:addToMainMenu(item_table)
+	-- insert table to main reader menu
+	table.insert(item_table, {
+		text = self.toc_menu_title,
+		callback = function()
+			self:onShowToc()
+		end,
+	})
 end
-
-function ReaderToc:onPageUpdate(new_page_no)
-	self.current_page = new_page_no
-end
-
-function ReaderToc:onPosUpdate(new_pos)
-	self.current_pos = new_pos
-end
-
-

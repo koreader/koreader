@@ -458,7 +458,7 @@ override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
 	if item.sub_item_table == nil then
-		UIManager:close(self)
+		self.close_callback() 
 		self:onMenuChoice(item)
 	else
 		-- save menu title for later resume

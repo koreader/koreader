@@ -68,6 +68,10 @@ function Device:hasNoKeyboard()
 	return self:isTouchDevice() or (self.model == "Kindle4")
 end
 
+function Device:hasKeyboard()
+	return not self:hasNoKeyboard()
+end
+
 function Device:isTouchDevice()
 	if not self.model then
 		self.model = self:getModel()

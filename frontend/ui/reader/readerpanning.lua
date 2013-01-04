@@ -1,12 +1,4 @@
 ReaderPanning = InputContainer:new{
-	key_events = {
-		-- these will all generate the same event, just with different arguments
-		MoveUp = { {"Up"}, doc = "move visible area up", event = "Panning", args = {0, -1} },
-		MoveDown = { {"Down"}, doc = "move visible area down", event = "Panning", args = {0,  1} },
-		MoveLeft = { {"Left"}, doc = "move visible area left", event = "Panning", args = {-1, 0} },
-		MoveRight = { {"Right"}, doc = "move visible area right", event = "Panning", args = {1,  0} },
-	},
-
 	-- defaults
 	panning_steps = {
 		normal = 50,
@@ -15,6 +7,27 @@ ReaderPanning = InputContainer:new{
 		altshift = 5
 	},
 }
+
+function ReaderPanning:init()
+	if Device:isTouchDevice() then
+	else
+		self.key_events = {
+			-- these will all generate the same event, just with different arguments
+			MoveUp = {
+				{ "Up" }, doc = "move visible area up",
+				event = "Panning", args = {0, -1} },
+			MoveDown = {
+				{ "Down" }, doc = "move visible area down",
+				event = "Panning", args = {0,  1} },
+			MoveLeft = {
+				{ "Left" }, doc = "move visible area left",
+				event = "Panning", args = {-1, 0} },
+			MoveRight = {
+				{ "Right" }, doc = "move visible area right",
+				event = "Panning", args = {1,  0} },
+		}
+	end
+end
 
 function ReaderPanning:onSetDimensions(dimensions)
 	self.dimen = dimensions

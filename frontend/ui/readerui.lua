@@ -6,6 +6,7 @@ require "ui/reader/readerrotation"
 require "ui/reader/readerpaging"
 require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
+require "ui/reader/readerbookmark"
 require "ui/reader/readerfont"
 require "ui/reader/readermenu"
 
@@ -18,7 +19,6 @@ it works using data gathered from a document interface
 ReaderUI = InputContainer:new{
 	key_events = {
 		Close = { {"Home"}, doc = "close document", event = "Close" },
-		Back = { {"Back"}, doc = "close document", event = "Close" },
 	},
 
 	-- our own size
@@ -41,6 +41,12 @@ function ReaderUI:init()
 		self.dialog = self
 	end
 
+	if Device:hasKeyboard() then
+		self.key_events.Back = { 
+			{ "Back" }, doc = "close document",
+			event = "Close" }
+	end
+
 	self.doc_settings = DocSettings:open(self.document.file)
 
 	-- a view container (so it must be child #1!)
@@ -56,18 +62,26 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
-	-- Toc menu controller
-	self[3] = ReaderToc:new{
+	-- reader menu controller
+	self[3] = ReaderMenu:new{
+		view = self[1],
+		ui = self
+	}
+	self.menu = self[3] -- hold reference to menu widget
+	-- Table of content controller
+	self[4] = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	-- reader menu controller
-	self[4] = ReaderMenu:new{
+	self.toc = self[4] -- hold reference to bm widget
+	-- bookmark controller
+	local reader_bm = ReaderBookmark:new{
+		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	self.menu = self[4] -- hold reference to menu widget
+	table.insert(self, reader_bm)
 
 	if self.document.info.has_pages then
 		-- for page specific controller

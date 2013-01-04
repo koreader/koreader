@@ -126,9 +126,15 @@ function CenterContainer:paintTo(bb, x, y)
 		-- throw error? paint to scrap buffer and blit partially?
 		-- for now, we ignore this
 	end
-	self[1]:paintTo(bb,
-		x + (self.dimen.w - contentSize.w)/2,
-		y + (self.dimen.h - contentSize.h)/2)
+	local x_pos = x
+	local y_pos = y
+	if self.ignore ~= "height" then
+		y_pos = y + (self.dimen.h - contentSize.h)/2
+	end
+	if self.ignore ~= "width" then
+		x_pos = x + (self.dimen.w - contentSize.w)/2
+	end
+	self[1]:paintTo(bb, x_pos, y_pos)
 end
 
 --[[
@@ -605,6 +611,10 @@ function InputContainer:_init()
 		end
 	end
 	self.ges_events = new_ges_events
+
+	if not self.dimen then
+		self.dimen = Geom:new{}
+	end
 end
 
 function InputContainer:paintTo(bb, x, y)

@@ -80,6 +80,7 @@ function ReaderMenu:onShowMenu()
 	end
 
 	local menu_container = CenterContainer:new{
+		ignore = "height",
 		dimen = Screen:getSize(),
 		main_menu,
 	}
