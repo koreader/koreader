@@ -15,7 +15,7 @@ function ReaderMenu:init()
 					range = Geom:new{
 						x = 0, y = 0,
 						w = Screen:getWidth(),
-						h = Screen:getHeight()/2
+						h = Screen:getHeight()/4,
 					}
 				}
 			},

@@ -247,5 +247,4 @@ end
 
 require "document/pdfdocument"
 require "document/djvudocument"
-require "document/koptdocument"
 require "document/credocument"

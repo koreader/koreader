@@ -113,7 +113,21 @@ function WidgetContainer:free()
 	end
 end
 
+--[[
+BottomContainer contains its content (1 widget) at the bottom of its own dimensions
+]]
+BottomContainer = WidgetContainer:new()
 
+function BottomContainer:paintTo(bb, x, y)
+	local contentSize = self[1]:getSize()
+	if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
+		-- throw error? paint to scrap buffer and blit partially?
+		-- for now, we ignore this
+	end
+	self[1]:paintTo(bb,
+		x + (self.dimen.w - contentSize.w)/2,
+		y + (self.dimen.h - contentSize.h))
+end
 
 --[[
 CenterContainer centers its content (1 widget) within its own dimensions
@@ -135,6 +149,22 @@ function CenterContainer:paintTo(bb, x, y)
 		x_pos = x + (self.dimen.w - contentSize.w)/2
 	end
 	self[1]:paintTo(bb, x_pos, y_pos)
+end
+
+--[[
+RightContainer aligns its content (1 widget) at the right of its own dimensions
+]]
+RightContainer = WidgetContainer:new()
+
+function RightContainer:paintTo(bb, x, y)
+	local contentSize = self[1]:getSize()
+	if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
+		-- throw error? paint to scrap buffer and blit partially?
+		-- for now, we ignore this
+	end
+	self[1]:paintTo(bb,
+		x + (self.dimen.w - contentSize.w),
+		y + (self.dimen.h - contentSize.h)/2)
 end
 
 --[[
@@ -332,6 +362,7 @@ end
 ImageWidget shows an image from a file
 ]]
 ImageWidget = Widget:new{
+	invert = nil,
 	file = nil,
 	_bb = nil
 }
@@ -349,12 +380,15 @@ function ImageWidget:getSize()
 	if not self._bb then
 		self:_render()
 	end
-	return { w = self._bb:getWidth(), h = self._bb:getHeight() }
+	return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
 end
 
 function ImageWidget:paintTo(bb, x, y)
 	local size = self:getSize()
 	bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+	if self.invert then
+		bb:invertRect(x, y, size.w, size.h)
+	end
 end
 
 function ImageWidget:free()
@@ -362,6 +396,24 @@ function ImageWidget:free()
 		self._bb:free()
 		self._bb = nil
 	end
+end
+
+--[[
+ProgressWidget shows a progress bar
+]]
+ProgressWidget = Widget:new{
+	width = nil,
+	height = nil,
+	pecentage = nil,
+}
+
+function ProgressWidget:getSize()
+	return { w = self.width, h = self.height }
+end
+
+function ProgressWidget:paintTo(bb, x, y)
+	local size = self:getSize()
+	bb:progressBar(x, y, self.width, self.height, size.w, size.h, 2, 2, self.percentage, 15)
 end
 
 --[[
@@ -645,8 +697,8 @@ end
 function InputContainer:onGesture(ev)
 	for name, gsseq in pairs(self.ges_events) do
 		for _, gs_range in ipairs(gsseq) do
+			--DEBUG("gs_range", gs_range)
 			if gs_range:match(ev) then
-				--DEBUG(gs_range)
 				local eventname = gsseq.event or name
 				return self:handleEvent(Event:new(eventname, gsseq.args, ev))
 			end
