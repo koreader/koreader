@@ -42,14 +42,6 @@ KOPTOptions = {
 		icon = "resources/icons/appbar.column.two.large.png",
 		options = {
 			{
-				name = "text_wrap",
-				name_text = "Reflow",
-				item_text = {"on","off"},
-				values = {1, 0},
-				default_value = 0,
-				show = true
-			},
-			{
 				name = "max_columns",
 				name_text = "Columns",
 				item_text = {"1","2","3","4"},
@@ -70,13 +62,6 @@ KOPTOptions = {
 				item_text = {"small", "medium", "large"},
 				values = {1.0, 1.2, 1.4},
 				default_value = 1.2,
-			},
-			{
-				name = "word_spacing",
-				name_text = "Word Spacing",
-				item_text = {"small", "medium", "large"},
-				values = {0.05, 0.15, 0.375},
-				default_value = 0.15,
 			},
 			{
 				name = "justification",
@@ -120,11 +105,26 @@ KOPTOptions = {
 		icon = "resources/icons/appbar.settings.large.png",
 		options = {
 			{
+				name = "text_wrap",
+				name_text = "Reflow",
+				item_text = {"on","off"},
+				values = {1, 0},
+				default_value = 0,
+			},
+			{
+				name = "word_spacing",
+				name_text = "Word Gap",
+				item_text = {"small", "medium", "large"},
+				values = {0.05, 0.15, 0.375},
+				default_value = 0.15,
+			},
+			{
 				name = "quality",
 				name_text = "Render Quality",
 				item_text = {"low", "default", "high"},
 				values={0.5, 0.8, 1.0},
-				default_value = 1.0,
+				default_value = 0.8,
+				show = false,
 			},
 			{
 				name = "auto_straighten",
