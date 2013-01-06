@@ -1,158 +1,5 @@
 require "ui/config"
 
-KOPTOptions = {
-	default_options = {
-		{
-			widget = "ProgressWidget",
-			widget_align_center = 0.8,
-			width = Screen:getWidth()*0.7,
-			height = 5,
-			percentage = 0.0,
-			item_text = {"Goto"},
-			item_align_center = 0.2,
-			item_font_face = "tfont",
-			item_font_size = 20,
-		}
-	},
-	{
-		icon = "resources/icons/appbar.transform.rotate.right.large.png",
-		options = {
-			{
-				name="screen_rotation",
-				name_text = "Screen Rotation",
-				item_text = {"portrait", "landscape"},
-				values = {0, 90},
-				default_value = 0,
-			}
-		}
-	},
-	{
-		icon = "resources/icons/appbar.crop.large.png",
-		options = {
-			{
-				name="trim_page",
-				name_text = "Page Crop",
-				item_text = {"auto", "manual"},
-				values = {1, 0},
-				default_value = 1,
-			}
-		}
-	},
-	{
-		icon = "resources/icons/appbar.column.two.large.png",
-		options = {
-			{
-				name = "max_columns",
-				name_text = "Columns",
-				item_text = {"1","2","3","4"},
-				values = {1,2,3,4},
-				default_value = 2,
-				show = false
-			},
-			{
-				name = "page_margin",
-				name_text = "Page Margin",
-				item_text = {"small", "medium", "large"},
-				values = {0.02, 0.06, 0.10},
-				default_value = 0.06,
-			},
-			{
-				name = "line_spacing",
-				name_text = "Line Spacing",
-				item_text = {"small", "medium", "large"},
-				values = {1.0, 1.2, 1.4},
-				default_value = 1.2,
-			},
-			{
-				name = "justification",
-				name_text = "Justification",
-				item_text = {"auto","left","center","right","full"},
-				values = {-1,0,1,2,3},
-				default_value = -1,
-			},
-		}
-	},
-	{
-		icon = "resources/icons/appbar.text.size.large.png",
-		options = {
-			{
-				name = "font_size",
-				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
-				item_align_center = 1.0,
-				spacing = Screen:getWidth()*0.03,
-				item_font_size = {20,24,28,32,36,38,40,42,46,50},
-				values = {0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
-				default_value = 1.0,
-			},
-		}
-	},
-	{
-		icon = "resources/icons/appbar.grade.b.large.png",
-		options = {
-			{
-				name = "contrast",
-				name_text = "Contrast",
-				name_align_right = 0.2,
-				item_text = {"lightest", "lighter", "default", "darker", "darkest"},
-				item_font_size = math.floor(18*Screen:getWidth()/600),
-				item_align_center = 0.8,
-				values = {2.0, 1.5, 1.0, 0.5, 0.2},
-				default_value = 1.0,
-			}
-		}
-	},
-	{
-		icon = "resources/icons/appbar.settings.large.png",
-		options = {
-			{
-				name = "text_wrap",
-				name_text = "Reflow",
-				item_text = {"on","off"},
-				values = {1, 0},
-				default_value = 0,
-			},
-			{
-				name = "word_spacing",
-				name_text = "Word Gap",
-				item_text = {"small", "medium", "large"},
-				values = {0.05, 0.15, 0.375},
-				default_value = 0.15,
-			},
-			{
-				name = "quality",
-				name_text = "Render Quality",
-				item_text = {"low", "default", "high"},
-				values={0.5, 0.8, 1.0},
-				default_value = 0.8,
-				show = false,
-			},
-			{
-				name = "auto_straighten",
-				name_text = "Auto Straighten",
-				item_text = {"0 deg", "5 deg", "10 deg"},
-				values = {0, 5, 10},
-				default_value = 0,
-			},
-			{
-				name = "detect_indent",
-				name_text = "Indentation",
-				item_text = {"enable","disable"},
-				values = {1, 0},
-				default_value = 1,
-				show = false,
-			},
-			{
-				name = "defect_size",
-				name_text = "Defect Size",
-				item_text = {"small","medium","large"},
-				values = {0.5, 1.0, 2.0},
-				default_value = 1.0,
-				show = false,
-			},
-		}
-	},
-}
-
 Configurable = {}
 
 function Configurable:hash(sep)
@@ -166,12 +13,12 @@ function Configurable:hash(sep)
 	return hash
 end
 
-function Configurable:loadDefaults()
-	for i=1,#KOPTOptions do
-		local options = KOPTOptions[i].options
-		for j=1,#KOPTOptions[i].options do
-			local key = KOPTOptions[i].options[j].name
-			self[key] = KOPTOptions[i].options[j].default_value
+function Configurable:loadDefaults(config_options)
+	for i=1,#config_options do
+		local options = config_options[i].options
+		for j=1,#config_options[i].options do
+			local key = config_options[i].options[j].name
+			self[key] = config_options[i].options[j].default_value
 		end
 	end
 end
@@ -226,13 +73,13 @@ function ReaderConfig:onShowConfigMenu()
 		dimen = self.dimen:copy(),
 		ui = self.ui,
 		configurable = self.configurable,
-		config_options = KOPTOptions,
+		config_options = self.options,
 	}
 
-	function config_dialog:onConfigChoice(option_name, option_value)
+	function config_dialog:onConfigChoice(option_name, option_value, event)
 		self.configurable[option_name] = option_value
-		if option_name == "text_wrap" then
-			self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+		if event then
+			self.ui:handleEvent(Event:new(event, option_value))
 		end
 	end
 	
@@ -262,9 +109,9 @@ function ReaderConfig:onSetDimensions(dimen)
 end
 
 function ReaderConfig:onReadSettings(config)
-	self.configurable:loadSettings(config, 'kopt_')
+	self.configurable:loadSettings(config, self.options.prefix..'_')
 end
 
 function ReaderConfig:onCloseDocument()
-	self.configurable:saveSettings(self.ui.doc_settings, 'kopt_')
+	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix..'_')
 end

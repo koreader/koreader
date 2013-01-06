@@ -12,12 +12,13 @@ PdfDocument = Document:new{
 	dc_null = DrawContext.new(),
 	screen_size = Screen:getSize(),
 	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
+	options = KoptOptions,
 	configurable = Configurable,
 	koptinterface = KoptInterface,
 }
 
 function PdfDocument:init()
-	self.configurable:loadDefaults()
+	self.configurable:loadDefaults(self.options)
 	local ok
 	ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)
 	if not ok then

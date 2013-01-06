@@ -12,12 +12,13 @@ DjvuDocument = Document:new{
 	dc_null = DrawContext.new(),
 	screen_size = Screen:getSize(),
 	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
+	options = KoptOptions,
 	configurable = Configurable,
 	koptinterface = KoptInterface,
 }
 
 function DjvuDocument:init()
-	self.configurable:loadDefaults()
+	self.configurable:loadDefaults(self.options)
 	if not validDjvuFile(self.file) then
 		self.error_message = "Not a valid DjVu file"
 		return
