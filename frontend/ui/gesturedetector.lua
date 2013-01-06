@@ -26,6 +26,13 @@ end
 
 
 --[[
+Currently supported gestures:
+	* single tap
+	* double tap
+	* hold
+	* pan
+	* swipe
+
 Single tap event from kernel example:
 
 MT_TRACK_ID: 0
@@ -40,6 +47,7 @@ GestureDetector = {
 	-- all the time parameters are in us
 	DOUBLE_TAP_INTERVAL = 300 * 1000,
 	HOLD_INTERVAL = 1000 * 1000,
+	SWIPE_INTERVAL = 900 * 1000,
 	-- distance parameters
 	DOUBLE_TAP_DISTANCE = 50,
 	PAN_THRESHOLD = 50,
@@ -47,15 +55,15 @@ GestureDetector = {
 	track_id = {},
 	ev_stack = {},
 	cur_ev = {},
-	ev_start = false,
+	is_ev_start = false,
+	first_ev = nil,
 	state = function(self, ev) 
 		self:switchState("initialState", ev)
 	end,
 	
 	last_ev_timev = nil,
 
-	-- for tap
-	last_tap = nil,
+	last_tap = nil, -- for single/double tap
 }
 
 function GestureDetector:feedEvent(ev) 
@@ -83,9 +91,22 @@ function GestureDetector:feedEvent(ev)
 	end
 end
 
+function GestureDetector:deepCopyEv(ev)
+	return {
+		x = ev.x,
+		y = ev.y,
+		id = ev.id,
+		slot = ev.slot,
+		timev = TimeVal:new{
+			sec = ev.timev.sec,
+			usec = ev.timev.usec,
+		}
+	}
+end
+
 --[[
 tap2 is the later tap
-]]
+--]]
 function GestureDetector:isDoubleTap(tap1, tap2)
 	local tv_diff = tap2.timev - tap1.timev
 	return (
@@ -93,6 +114,37 @@ function GestureDetector:isDoubleTap(tap1, tap2)
 		math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
 		(tv_diff.sec == 0 and (tv_diff.usec) < self.DOUBLE_TAP_INTERVAL)
 	)
+end
+
+--[[
+compare last_pan with self.first_ev
+if it is a swipe, return direction of swipe gesture.
+--]]
+function GestureDetector:isSwipe(last_pan_ev)
+	local tv_diff = self.first_ev.timev - last_pan_ev.timev
+	if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
+		x_diff = last_pan_ev.x - self.first_ev.x
+		y_diff = last_pan_ev.y - self.first_ev.y
+		if x_diff == 0 and y_diff == 0 then
+			return nil
+		end
+
+		if (math.abs(x_diff) > math.abs(y_diff)) then
+			-- left or right
+			if x_diff < 0 then
+				return "left"
+			else
+				return "right"
+			end
+		else
+			-- up or down
+			if y_diff < 0 then
+				return "up"
+			else
+				return "down"
+			end
+		end
+	end
 end
 
 --[[
@@ -109,22 +161,24 @@ function GestureDetector:clearState()
 	self.cur_y = nil
 	self.state = self.initialState
 	self.cur_ev = {}
-	self.ev_start = false
+	self.is_ev_start = false
+	self.first_ev = nil
 end
 
 function GestureDetector:initialState(ev)
 	if ev.id then
 		-- a event ends
 		if ev.id == -1 then
-			self.ev_start = false
+			self.is_ev_start = false
 		else
 			self.track_id[ev.id] = ev.slot
 		end
 	end
 	if ev.x and ev.y then
 		-- user starts a new touch motion
-		if not self.ev_start then
-			self.ev_start = true
+		if not self.is_ev_start then
+			self.is_ev_start = true
+			self.first_ev = self:deepCopyEv(ev)
 			-- default to tap state
 			return self:switchState("tapState", ev)
 		end
@@ -202,8 +256,8 @@ function GestureDetector:tapState(ev)
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
-		if (ev.x and math.abs(ev.x - self.cur_x) >= self.PAN_THRESHOLD) or
-		(ev.y and math.abs(ev.y - self.cur_y) >= self.PAN_THRESHOLD) then
+		if (ev.x and math.abs(ev.x - self.first_ev.x) >= self.PAN_THRESHOLD) or
+		(ev.y and math.abs(ev.y - self.first_ev.y) >= self.PAN_THRESHOLD) then
 			-- if user's finger moved long enough in X or
 			-- Y distance, we switch to pan state 
 			return self:switchState("panState", ev)
@@ -214,15 +268,62 @@ end
 function GestureDetector:panState(ev)
 	DEBUG("in pan state...")
 	if ev.id == -1 then
-		-- end of pan, signal swipe gesture
+		-- end of pan, signal swipe gesture if necessary
+		-- we need to construct a complete_last_ev because
+		-- the x or y of ev might be nil.
+		local complete_last_ev = self:deepCopyEv(ev)
+		if not complete_last_ev.x then
+			complete_last_ev.x = self.cur_x
+		end
+		if not complete_last_ev.y then
+			complete_last_ev.y = self.cur_y
+		end
+		swipe_direct = self:isSwipe(complete_last_ev)
+		if swipe_direct then
+			local start_pos = Geom:new{
+					x = self.first_ev.x, 
+					y = self.first_ev.y,
+					w = 0, h = 0,
+			}
+			self:clearState()
+			return {
+				ges = "swipe", 
+				direction = swipe_direct,
+				-- use first pan ev coordination as swipe start point
+				pos = start_pos,
+				--@TODO add start and end points?    (houqp)
+			}
+		end
 		self:clearState()
-	elseif self.state ~= self.panState then
-		self.state = self.panState
-		--@TODO calculate direction here    (houqp)
 	else
+		if self.state ~= self.panState then
+			self.state = self.panState
+		end
+
+		local pan_ev = {
+			ges = "pan",
+			relative = {
+				-- default to pan 0
+				x = 0,
+				y = 0,
+			},
+			pos = nil,
+		}
+		if ev.x then
+			pan_ev.relative.x = ev.x - self.cur_x
+			self.cur_x = ev.x
+		end
+		if ev.y then
+			pan_ev.relative.y = ev.y - self.cur_y
+			self.cur_y = ev.y
+		end
+		pan_ev.pos = Geom:new{
+			x = self.cur_x, 
+			y = self.cur_y,
+			w = 0, h = 0,
+		}
+		return pan_ev
 	end
-	self.cur_x = ev.x
-	self.cur_y = ev.y
 end
 
 function GestureDetector:holdState(ev)
