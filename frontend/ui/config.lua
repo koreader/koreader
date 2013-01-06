@@ -87,7 +87,7 @@ function OptionTextItem:onTapSelect()
 	local option_value = nil
 	if type(self.values) == "table" then
 		option_value = self.values[self.current_item]
-		self.config:onConfigChoice(self.name, option_value)
+		self.config:onConfigChoice(self.name, option_value, self.event)
 	end
 	UIManager.repaint_all = true
 	return true
