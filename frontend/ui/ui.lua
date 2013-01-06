@@ -106,6 +106,39 @@ function UIManager:sendEvent(event)
 	end
 end
 
+function UIManager:checkTasks()
+	local now = { util.gettime() }
+
+	-- check if we have timed events in our queue and search next one
+	local wait_until = nil
+	local all_tasks_checked
+	repeat
+		all_tasks_checked = true
+		for i = #self._execution_stack, 1, -1 do
+			local task = self._execution_stack[i]
+			if not task.time
+				or task.time[1] < now[1]
+				or task.time[1] == now[1] and task.time[2] < now[2] then
+				-- task is pending to be executed right now. do it.
+				task.action()
+				-- and remove from table
+				table.remove(self._execution_stack, i)
+				-- start loop again, since new tasks might be on the
+				-- queue now
+				all_tasks_checked = false
+			elseif not wait_until
+				or wait_until[1] > task.time[1]
+				or wait_until[1] == task.time[1] and wait_until[2] > task.time[2] then
+				-- task is to be run in the future _and_ is scheduled
+				-- earlier than the tasks we looked at already
+				-- so adjust to the currently examined task instead.
+				wait_until = task.time
+			end
+		end
+	until all_tasks_checked
+	return wait_until
+end
+
 -- this is the main loop of the UI controller
 -- it is intended to manage input events and delegate
 -- them to dialogs
@@ -113,35 +146,8 @@ function UIManager:run()
 	self._running = true
 	while self._running do
 		local now = { util.gettime() }
-
-		-- check if we have timed events in our queue and search next one
-		local wait_until = nil
-		local all_tasks_checked
-		repeat
-			all_tasks_checked = true
-			for i = #self._execution_stack, 1, -1 do
-				local task = self._execution_stack[i]
-				if not task.time
-					or task.time[1] < now[1]
-					or task.time[1] == now[1] and task.time[2] < now[2] then
-					-- task is pending to be executed right now. do it.
-					task.action()
-					-- and remove from table
-					table.remove(self._execution_stack, i)
-					-- start loop again, since new tasks might be on the
-					-- queue now
-					all_tasks_checked = false
-				elseif not wait_until
-					or wait_until[1] > task.time[1]
-					or wait_until[1] == task.time[1] and wait_until[2] > task.time[2] then
-					-- task is to be run in the future _and_ is scheduled
-					-- earlier than the tasks we looked at already
-					-- so adjust to the currently examined task instead.
-					wait_until = task.time
-				end
-			end
-		until all_tasks_checked
-
+		local wait_until = self:checkTasks()
+		
 		--DEBUG("---------------------------------------------------")
 		--DEBUG("exec stack", self._execution_stack)
 		--DEBUG("window stack", self._window_stack)
@@ -175,7 +181,9 @@ function UIManager:run()
 			-- reset refresh_type
 			self.refresh_type = 1
 		end
-
+		
+		self:checkTasks()
+		
 		-- wait for next event
 		-- note that we will skip that if in the meantime we have tasks that are ready to run
 		local input_event = nil

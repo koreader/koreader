@@ -50,6 +50,7 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.zoom,
 			self.state.rotation,
 			self.render_mode)
+		UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
 	else
 		if self.view_mode == "page" then
 			self.ui.document:drawCurrentViewByPage(
@@ -160,6 +161,10 @@ end
 function ReaderView:onRotationUpdate(rotation)
 	self.state.rotation = rotation
 	self:recalculate()
+end
+
+function ReaderView:onHintPage()
+	self.ui.document:hintPage(self.state.page+1, self.state.zoom, self.state.rotation)
 end
 
 function ReaderView:onCloseDocument()
