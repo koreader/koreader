@@ -321,6 +321,12 @@ function Menu:init()
 				}
 			}
 		}
+		self.ges_events.Swipe = {
+			GestureRange:new{
+				ges = "swipe",
+				range = self.dimen,
+			}
+		}
 	else
 		-- set up keyboard events
 		self.key_events.Close = { {"Back"}, doc = "close menu" }
@@ -530,6 +536,14 @@ function Menu:onTapCloseAllMenus(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.dimen) then
 		self:onCloseAllMenus()
 		return true
+	end
+end
+
+function Menu:onSwipe(arg, ges_ev)
+	if ges_ev.direction == "left" then
+		self:onNextPage()
+	elseif ges_ev.direction == "right" then
+		self:onPrevPage()
 	end
 end
 
