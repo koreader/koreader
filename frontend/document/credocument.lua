@@ -188,6 +188,10 @@ function CreDocument:setInterlineSpacePercent(percent)
 	self._document:setDefaultInterlineSpace(percent)
 end
 
+function CreDocument:toggleFontBolder()
+	self._document:toggleFontBolder()
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
 DocumentRegistry:addProvider("html", "application/html", CreDocument)
