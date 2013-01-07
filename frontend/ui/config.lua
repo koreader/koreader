@@ -85,9 +85,13 @@ function OptionTextItem:onTapSelect()
 	end
 	self[1].color = 15
 	local option_value = nil
+	local option_arg = nil
 	if type(self.values) == "table" then
 		option_value = self.values[self.current_item]
 		self.config:onConfigChoice(self.name, option_value, self.event)
+	elseif type(self.args) == "table" then
+		option_arg = self.args[self.current_item]
+		self.config:onConfigChoice(self.name, option_arg, self.event)
 	end
 	UIManager.repaint_all = true
 	return true
@@ -159,18 +163,28 @@ function ConfigOption:init()
 			-- make current index according to configurable table
 			local current_item = nil
 			if self.options[c].name then
-				local val = self.config.configurable[self.options[c].name]
-				local min_diff = math.abs(val - self.options[c].values[1])
-				local diff = nil
-				for index, val_ in pairs(self.options[c].values) do
-					if val == val_ then
-						current_item = index
-						break
+				if self.options[c].values then
+					local val = self.config.configurable[self.options[c].name]
+					local min_diff = math.abs(val - self.options[c].values[1])
+					local diff = nil
+					for index, val_ in pairs(self.options[c].values) do
+						if val == val_ then
+							current_item = index
+							break
+						end
+						diff = math.abs(val - val_)
+						if diff <= min_diff then
+							min_diff = diff
+							current_item = index
+						end
 					end
-					diff = math.abs(val - val_)
-					if diff <= min_diff then
-						min_diff = diff
-						current_item = index
+				elseif self.options[c].args then
+					local arg = self.config.configurable[self.options[c].name]
+					for idx, arg_ in pairs(self.options[c].args) do
+						if arg_ == arg then
+							current_item = idx
+							break
+						end
 					end
 				end
 			end
@@ -200,6 +214,7 @@ function ConfigOption:init()
 				option_item.items = option_items
 				option_item.name = self.options[c].name
 				option_item.values = self.options[c].values
+				option_item.args = self.options[c].args
 				option_item.event = self.options[c].event
 				option_item.current_item = d
 				option_item.config = self.config
