@@ -183,6 +183,15 @@ function ReaderRolling:onSetViewMode(new_mode)
 	self.ui.view_mode = new_mode
 end
 
+function ReaderRolling:onRedrawCurrentView()
+	if self.view_mode == "page" then
+		self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+	else
+		self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
+	end
+	return true
+end
+
 --[[
 	PosUpdate event is used to signal other widgets that pos has been changed.
 --]]
