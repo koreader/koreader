@@ -110,6 +110,17 @@ function ReaderFont:onChangeSize(direction)
 	return true
 end
 
+function ReaderFont:onSetFontSize(new_size)
+	if new_size > 44 then new_size = 44 end
+	if new_size < 18 then new_size = 18 end
+
+	self.font_size = new_size
+	self.ui.document:setFontSize(new_size)
+	self.ui:handleEvent(Event:new("UpdatePos"))
+
+	return true
+end
+
 function ReaderFont:onChangeLineSpace(direction)
 	if direction == "decrease" then
 		self.line_space_percent = self.line_space_percent - 10

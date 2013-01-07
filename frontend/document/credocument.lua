@@ -1,4 +1,5 @@
 require "ui/geometry"
+require "ui/creoptions"
 
 CreDocument = Document:new{
 	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
@@ -10,6 +11,8 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
+	options = CreOptions,
+	configurable = Configurable,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -54,6 +57,7 @@ end
 
 function CreDocument:init()
 	self:engineInit()
+	self.configurable:loadDefaults(self.options)
 
 	local ok
 	local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
@@ -83,6 +87,7 @@ function CreDocument:init()
 	self.is_open = true
 	self.info.has_pages = false
 	self:_readMetadata()
+	self.info.configurable = true
 
 	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
 	--self._document:setDefaultInterlineSpace(self.line_space_percent)
