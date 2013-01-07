@@ -103,8 +103,9 @@ end
 
 function ReaderRolling:onCloseDocument()
 	local cur_xp = self.ui.document:getXPointer()
-	self.ui.doc_settings:saveSetting("last_percent", 
-		10000 * self.ui.document:getPosFromXPointer(cur_xp) / self.doc_height)
+	local cur_pos = self.ui.document:getPosFromXPointer(cur_xp)
+	self.ui.doc_settings:saveSetting("last_percent", 10000 * cur_pos / self.doc_height)
+	self.ui.doc_settings:saveSetting("percent_finished", cur_pos / self.doc_height)
 end
 
 function ReaderRolling:onTapForward()
