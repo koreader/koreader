@@ -44,6 +44,14 @@ CreOptions = {
 				args = {1},
 				default_arg = nil,
 				event = "ToggleFontBolder",
+			},
+			{
+				name = "font_gamma",
+				name_text = "Gamma",
+				item_text = {"decrease", "increase"},
+				args = {"decrease", "increase"},
+				default_arg = nil,
+				event = "ChangeFontGamma",
 			}
 		}
 	},
