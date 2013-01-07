@@ -137,7 +137,13 @@ function ReaderFont:onChangeLineSpace(direction)
 	return true
 end
 
+function ReaderFont:onToggleFontBolder()
+	self.ui.document:toggleFontBolder()
+	self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
 function ReaderFont:onCloseDocument()
+	--@TODO save line spacing and other configs    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)
 end
@@ -148,9 +154,12 @@ function ReaderFont:setFont(face)
 		msg = InfoMessage:new{ text = "Redrawing with "..face }
 		UIManager:show(msg)
 
+		DEBUG("-----------", self.ui.document:getXPointer())
 		self.ui.document:setFontFace(face)
+		DEBUG("1111-----------", self.ui.document:getXPointer())
 		-- signal readerrolling to update pos in new height
 		self.ui:handleEvent(Event:new("UpdatePos"))
+		DEBUG("2222-----------", self.ui.document:getXPointer())
 
 		UIManager:close(msg)
 	end
