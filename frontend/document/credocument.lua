@@ -170,6 +170,16 @@ function CreDocument:setFontSize(new_font_size)
 	end
 end
 
+function CreDocument:setViewMode(new_mode)
+	if new_mode then
+		if new_mode == "scroll" then
+			self._document:setViewMode(self.SCROLL_VIEW_MODE)
+		else
+			self._document:setViewMode(self.PAGE_VIEW_MODE)
+		end
+	end
+end
+
 function CreDocument:zoomFont(delta)
 	self._document:zoomFont(delta)
 end
