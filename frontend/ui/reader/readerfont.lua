@@ -103,8 +103,10 @@ function ReaderFont:onChangeSize(direction)
 	   delta = -1
 	end
 	self.font_size = self.font_size + delta
-	msg = InfoMessage:new{text = direction.." font size to "..self.font_size}
-	UIManager:show(msg)
+	UIManager:show(Notification:new{
+		text = direction.." font size to "..self.font_size,
+		timeout = 1,
+	})
 	self.ui.document:zoomFont(delta)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 	UIManager:close(msg)
@@ -117,6 +119,10 @@ function ReaderFont:onSetFontSize(new_size)
 	if new_size < 18 then new_size = 18 end
 
 	self.font_size = new_size
+	UIManager:show(Notification:new{
+		text = "Set font size to "..self.font_size,
+		timeout = 1,
+	})
 	self.ui.document:setFontSize(new_size)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 
@@ -132,7 +138,10 @@ function ReaderFont:onChangeLineSpace(direction)
 		self.line_space_percent = self.line_space_percent + 10
 		self.line_space_percent = math.min(self.line_space_percent, 200)
 	end
-	msg = InfoMessage:new{"line spacing "..self.line_space_percent.."%"}
+	UIManager:show(Notification:new{
+		text = direction.." line space to "..self.line_space_percent.."%",
+		timeout = 1,
+	})
 	self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 
@@ -153,7 +162,7 @@ function ReaderFont:onChangeFontGamma(direction)
 	end
 	self.gamma_index = cre.getGammaIndex()
 	UIManager:show(Notification:new{
-		text = "Changing gamma to "..self.gamma_index..".",
+		text = direction.." gamma to "..self.gamma_index,
 		timeout = 1
 	})
 	self.ui:handleEvent(Event:new("RedrawCurrentView"))
@@ -169,8 +178,10 @@ end
 function ReaderFont:setFont(face)
 	if face and self.font_face ~= face then
 		self.font_face = face
-		msg = InfoMessage:new{ text = "Redrawing with "..face }
-		UIManager:show(msg)
+		UIManager:show(Notification:new{
+			text = "redrawing with font "..face,
+			timeout = 1,
+		})
 
 		self.ui.document:setFontFace(face)
 		-- signal readerrolling to update pos in new height
