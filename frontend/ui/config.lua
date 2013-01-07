@@ -200,6 +200,7 @@ function ConfigOption:init()
 				option_item.items = option_items
 				option_item.name = self.options[c].name
 				option_item.values = self.options[c].values
+				option_item.event = self.options[c].event
 				option_item.current_item = d
 				option_item.config = self.config
 				table.insert(option_items_group, option_item)
