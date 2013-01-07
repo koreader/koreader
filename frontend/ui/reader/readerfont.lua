@@ -4,6 +4,8 @@ ReaderFont = InputContainer:new{
 	line_space_percent = 100,
 	font_menu_title = "Font Menu",
 	face_table = nil,
+	-- default gamma from crengine's lvfntman.cpp
+	gamma_index = 15,
 }
 
 function ReaderFont:init()
@@ -143,6 +145,21 @@ function ReaderFont:onToggleFontBolder()
 	return true
 end
 
+function ReaderFont:onChangeFontGamma(direction)
+	if direction == "increase" then
+		cre.setGammaIndex(self.gamma_index+2)
+	elseif direction == "decrease" then
+		cre.setGammaIndex(self.gamma_index-2)
+	end
+	self.gamma_index = cre.getGammaIndex()
+	UIManager:show(Notification:new{
+		text = "Changing gamma to "..self.gamma_index..".",
+		timeout = 1
+	})
+	self.ui:handleEvent(Event:new("RedrawCurrentView"))
+	return true
+end
+
 function ReaderFont:onCloseDocument()
 	--@TODO save line spacing and other configs    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
@@ -155,12 +172,9 @@ function ReaderFont:setFont(face)
 		msg = InfoMessage:new{ text = "Redrawing with "..face }
 		UIManager:show(msg)
 
-		DEBUG("-----------", self.ui.document:getXPointer())
 		self.ui.document:setFontFace(face)
-		DEBUG("1111-----------", self.ui.document:getXPointer())
 		-- signal readerrolling to update pos in new height
 		self.ui:handleEvent(Event:new("UpdatePos"))
-		DEBUG("2222-----------", self.ui.document:getXPointer())
 
 		UIManager:close(msg)
 	end
