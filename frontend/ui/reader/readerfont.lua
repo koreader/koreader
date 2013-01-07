@@ -140,6 +140,7 @@ end
 function ReaderFont:onToggleFontBolder()
 	self.ui.document:toggleFontBolder()
 	self.ui:handleEvent(Event:new("UpdatePos"))
+	return true
 end
 
 function ReaderFont:onCloseDocument()
