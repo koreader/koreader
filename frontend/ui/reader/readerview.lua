@@ -167,6 +167,11 @@ function ReaderView:onHintPage()
 	self.ui.document:hintPage(self.state.page+1, self.state.zoom, self.state.rotation)
 end
 
+function ReaderView:onSetViewMode(new_mode)
+	self.ui.view_mode = new_mode
+	self.ui.document:setViewMode(new_mode)
+end
+
 function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 end

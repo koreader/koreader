@@ -163,7 +163,7 @@ function ReaderRolling:onZoom()
 end
 
 --[[
-	remember to signal this event the document has been zoomed,
+	remember to signal this event when the document has been zoomed,
 	font has been changed, or line height has been changed.
 --]]
 function ReaderRolling:onUpdatePos()
@@ -176,6 +176,10 @@ function ReaderRolling:onUpdatePos()
 		self.old_doc_height = new_height
 	end
 	return true
+end
+
+function ReaderRolling:onSetViewMode(new_mode)
+	self.ui.view_mode = new_mode
 end
 
 --[[
