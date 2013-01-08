@@ -203,8 +203,8 @@ end
 
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
-function Document:hintPage(pageno, zoom, rotation)
-	self:renderPage(pageno, nil, zoom, rotation)
+function Document:hintPage(pageno, zoom, rotation, render_mode)
+	self:renderPage(pageno, nil, zoom, rotation, render_mode)
 end
 
 --[[
