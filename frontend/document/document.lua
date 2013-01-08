@@ -204,7 +204,11 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation)
-	self:renderPage(pageno, nil, zoom, rotation)
+	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
+	local tile = Cache:check(hash_full_page)
+	if not tile then
+		self:renderPage(pageno, nil, zoom, rotation)
+	end
 end
 
 --[[
