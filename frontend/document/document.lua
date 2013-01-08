@@ -151,7 +151,7 @@ function Document:getToc()
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
-	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
+	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -166,7 +166,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
 			return
 		end
 		-- only render required part
-		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
+		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode.."|"..tostring(rect)
 		size = rect
 	end
 
