@@ -129,7 +129,7 @@ function CREReader:preLoadSettings(filename)
 		end
 	else
 		self.view_mode = DCREREADER_VIEW_MODE
-	end	
+	end
 end
 
 function CREReader:loadSpecialSettings()
@@ -161,9 +161,13 @@ end
 function CREReader:getLastPageOrPos()
 	local last_percent = self.settings:readSetting("last_percent")
 	if last_percent then
-		return math.floor((last_percent * self.doc:getFullHeight()) / 10000)
+		if self.view_mode == "scroll" then
+			return math.floor((last_percent * self.doc:getFullHeight()) / 10000)
+		else
+			return math.floor((last_percent * self.doc:getPages()) / 10000)
+		end
 	else
-		return 0
+		return (self.view_mode == "scroll" and 0) or 1
 	end
 end
 
@@ -202,13 +206,16 @@ end
 function CREReader:goto(pos, is_ignore_jump, pos_type)
 	local prev_xpointer = self.doc:getXPointer()
 	local width, height = G_width, G_height
-	
+
 	if pos_type == "xpointer" then
 		self.doc:gotoXPointer(pos)
 		pos = self.doc:getCurrentPos()
 	elseif pos_type == "link" then
 		self.doc:gotoLink(pos)
 		pos = self.doc:getCurrentPos()
+	elseif self.view_mode == "page" then
+		pos = math.max(pos,1)
+		self.doc:gotoPage(pos)
 	else -- pos_type is position within document
 		pos = math.min(pos, self.doc:getFullHeight() - height)
 		pos = math.max(pos, 0)
@@ -231,7 +238,7 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,0, width, -self.show_overlap)
 	elseif self.show_overlap > 0
-	and self.show_overlap_enable 
+	and self.show_overlap_enable
 	and self.view_mode ~= "page" then
 		fb.bb:dimRect(0,height - self.show_overlap, width, self.show_overlap)
 	end
@@ -257,17 +264,29 @@ function CREReader:gotoPercent(percent)
 end
 
 function CREReader:gotoTocEntry(entry)
-	self:goto(entry.xpointer, nil, "xpointer")
+	if self.view == "scroll" then
+		self:goto(entry.xpointer, nil, "xpointer")
+	else
+		self:goto(entry.page, nil, "xpage")
+	end
 end
 
 function CREReader:nextView()
-	self.show_overlap = -self.pan_overlap_vertical
-	return self.pos + self.view_pan_step - self.pan_overlap_vertical
+	if self.view_mode == "scroll" then
+		self.show_overlap = -self.pan_overlap_vertical
+		return self.pos + self.view_pan_step - self.pan_overlap_vertical
+	else
+		return self.pageno + ((G_width > G_height) and 2 or 1)
+	end
 end
 
 function CREReader:prevView()
-	self.show_overlap = self.pan_overlap_vertical
-	return self.pos - self.view_pan_step + self.pan_overlap_vertical
+	if self.view_mode == "scroll" then
+		self.show_overlap = self.pan_overlap_vertical
+		return self.pos - self.view_pan_step + self.pan_overlap_vertical
+	else
+		return self.pageno - 1
+	end
 end
 
 function CREReader:screenRotate(orien)
@@ -282,6 +301,7 @@ function CREReader:screenRotate(orien)
 	else
 		self.view_pan_step = G_height
 	end
+	self.toc = nil
 end
 
 ----------------------------------------------------
@@ -425,21 +445,29 @@ function CREReader:gotoPrevNextTocEntry(direction)
 	end
 	-- search for current TOC-entry
 	local item_no = 0
+	local right_pageno = self.pageno
+	if self.view_mode == "page" and G_width > G_height then
+		right_pageno = right_pageno + 1
+	end
 	for k,v in ipairs(self.toc) do
-		if v.page <= self.pageno then
+		if v.page <=right_pageno then
 			item_no = item_no + 1
 		else
 			break
 		end
 	end
 	-- minor correction when current page is not the page opening current chapter
-	if self.pageno > self.toc[item_no].page and direction < 0 then
+	if right_pageno > self.toc[item_no].page and direction < 0 then
 		direction = direction + 1
 	end
 	-- define the jump target
 	item_no = item_no + direction
 	if item_no > #self.toc then -- jump to last page
-		self:goto(self.doc:getFullHeight()-G_height)
+		if self.view_mode == "scroll" then
+			self:goto(self.doc:getFullHeight()-G_height)
+		else
+			self:goto(self.doc:getPages())
+		end
 	elseif item_no > 0 then
 		self:gotoTocEntry(self.toc[item_no])
 	else
@@ -531,7 +559,7 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:del(KEY_U, nil,"U")
 	self.commands:del(KEY_C, nil, "C")
 	self.commands:del(KEY_P, nil, "P")
-	
+
 	-- CCW-rotation
 	self.commands:add(KEY_K, nil, "K",
 		"rotate screen counterclockwise",
@@ -551,12 +579,21 @@ function CREReader:adjustCreReaderCommands()
 		Keydef:new(KEY_FW_UP,MOD_SHIFT), Keydef:new(KEY_FW_DOWN,MOD_SHIFT)},
 		"scroll to previous/next chapter",
 		function(self)
-			if keydef.keycode == KEY_FW_UP then
-				self:gotoPrevNextTocEntry(-1)
-			else
-				self:gotoPrevNextTocEntry(1)
+				if keydef.keycode == KEY_FW_UP then
+					local toc_no = -1
+					if G_width > G_height and G_width > G_height then
+						for k,v in ipairs(self.toc) do
+							if v.page == self.pageno then
+								toc_no = -2
+								break
+							end
+						end
+					end
+					self:gotoPrevNextTocEntry(toc_no)
+				else
+					self:gotoPrevNextTocEntry(1)
+				end
 			end
-		end
 	)
 	-- fast navigation by Shift+Left & Shift-Right
 	local scrollpages = 10
@@ -564,13 +601,22 @@ function CREReader:adjustCreReaderCommands()
 		{Keydef:new(KEY_FW_LEFT,MOD_SHIFT),Keydef:new(KEY_FW_RIGHT,MOD_SHIFT)},
 		"scroll "..scrollpages.." pages backwards/forward",
 		function(self)
-			if keydef.keycode == KEY_FW_LEFT then
-				self:goto(math.max(0, self.pos - scrollpages*G_height))
+			if self.view_mode == "scroll" then
+				if keydef.keycode == KEY_FW_LEFT then
+					self:goto(math.max(0, self.pos - scrollpages*G_height))
+				else
+					self:goto(math.min(self.pos + scrollpages*G_height, self.doc:getFullHeight()-G_height))
+				end
 			else
-				self:goto(math.min(self.pos + scrollpages*G_height, self.doc:getFullHeight()-G_height))
+				if keydef.keycode == KEY_FW_LEFT then
+					self:goto(math.max(0, self.pageno - scrollpages))
+				else
+					self:goto(math.min(self.pageno + scrollpages, self.doc:getPages()))
+				end
 			end
 		end
 	)
+
 	self.commands:addGroup(MOD_SHIFT.."< >",{
 		Keydef:new(KEY_PGBCK,MOD_SHIFT),Keydef:new(KEY_PGFWD,MOD_SHIFT),
 		Keydef:new(KEY_LPGBCK,MOD_SHIFT),Keydef:new(KEY_LPGFWD,MOD_SHIFT)},
@@ -619,7 +665,11 @@ function CREReader:adjustCreReaderCommands()
 			Debug('jump to position: '..
 				math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9)..
 				'/'..self.doc:getFullHeight())
-			self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
+			if self.view_mode == "scroll" then
+				self:goto(math.floor(self.doc:getFullHeight()*(keydef.keycode-KEY_1)/9))
+			else
+				self:goto(math.floor(self.doc:getPages()*(keydef.keycode-KEY_1)/9))
+			end
 		end
 	)
 	self.commands:add(KEY_G,nil,"G",
@@ -638,18 +688,18 @@ function CREReader:adjustCreReaderCommands()
 			self:redrawCurrentPage()
 		end
 	)
-	self.commands:add({KEY_F, KEY_AA}, nil, "F",
+	self.commands:add(KEY_F, nil, "F",
 		"change document font",
 		function(self)
 			local face_list = cre.getFontFaces()
-			-- define the current font in face_list 
+			-- define the current font in face_list
 			local item_no = 0
-			while face_list[item_no] ~= self.font_face and item_no < #face_list do 
-				item_no = item_no + 1 
+			while face_list[item_no] ~= self.font_face and item_no < #face_list do
+				item_no = item_no + 1
 			end
 			local fonts_menu = SelectMenu:new{
 				menu_title = "Text Font",
-				item_array = face_list, 
+				item_array = face_list,
 				current_entry = item_no - 1,
 			}
 			item_no = fonts_menu:choose(0, G_height)
@@ -667,14 +717,14 @@ function CREReader:adjustCreReaderCommands()
 		"change header font",
 		function(self)
 			local face_list = cre.getFontFaces()
-			-- define the current font in face_list 
+			-- define the current font in face_list
 			local item_no = 0
-			while face_list[item_no] ~= self.header_font and item_no < #face_list do 
-				item_no = item_no + 1 
+			while face_list[item_no] ~= self.header_font and item_no < #face_list do
+				item_no = item_no + 1
 			end
 			local fonts_menu = SelectMenu:new{
 				menu_title = "Header Font ",
-				item_array = face_list, 
+				item_array = face_list,
 				current_entry = item_no - 1,
 			}
 			item_no = fonts_menu:choose(0, G_height)
@@ -778,13 +828,17 @@ function CREReader:adjustCreReaderCommands()
 	self.commands:add(KEY_FW_UP, nil, "joypad up",
 		"pan "..self.shift_y.." pixels upwards",
 		function(self)
-			self:goto(self.pos - self.shift_y)
+			if self.view_mode == "scroll" then
+				self:goto(self.pos - self.shift_y)
+			end
 		end
 	)
 	self.commands:add(KEY_FW_DOWN, nil, "joypad down",
 		"pan "..self.shift_y.." pixels downwards",
 		function(self)
-			self:goto(self.pos + self.shift_y)
+			if self.view_mode == "scroll" then
+				self:goto(self.pos + self.shift_y)
+			end
 		end
 	)
 	self.commands:add(KEY_V, nil, "V",
