@@ -1,7 +1,7 @@
 ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
-	line_space_percent = 100,
+	line_space_percent = nil,
 	font_menu_title = "Font Menu",
 	face_table = nil,
 	-- default gamma from crengine's lvfntman.cpp
@@ -62,6 +62,12 @@ function ReaderFont:onReadSettings(config)
 		self.font_size = self.ui.document:getFontSize()
 	end
 	self.ui.document:setFontSize(self.font_size)
+
+	self.line_space_percent = config:readSetting("line_space_percent")
+	if not self.line_space_percent then 
+		self.line_space_percent = 100
+	end
+
 	-- Dirty hack: we have to add folloing call in order to set
 	-- m_is_rendered(member of LVDocView) to true. Otherwise position inside
 	-- document will be reset to 0 on first view render.
@@ -170,9 +176,10 @@ function ReaderFont:onChangeFontGamma(direction)
 end
 
 function ReaderFont:onCloseDocument()
-	--@TODO save line spacing and other configs    (houqp)
+	--@TODO save gamma index    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)
+	self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
 end
 
 function ReaderFont:setFont(face)
