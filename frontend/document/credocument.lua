@@ -1,5 +1,75 @@
 require "ui/geometry"
 
+CreOptions = {
+	prefix = 'copt',
+	default_options = {
+	},
+	{
+		icon = "resources/icons/appbar.column.two.large.png",
+		options = {
+			{
+				name = "line_spacing",
+				name_text = "Line Spacing",
+				item_text = {"decrease", "increase"},
+				args = {"decrease", "increase"},
+				default_arg = nil,
+				event = "ChangeLineSpace",
+			},
+		}
+	},
+	{
+		icon = "resources/icons/appbar.text.size.large.png",
+		options = {
+			{
+				name = "font_size",
+				item_text = {"Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa"},
+				item_align_center = 1.0,
+				spacing = Screen:getWidth()*0.03,
+				item_font_size = {18, 20, 22, 24, 29, 33, 39, 44},
+				values = {18, 20, 22, 24, 29, 33, 39, 44},
+				default_value = 1,
+				event = "SetFontSize",
+			},
+		}
+	},
+	{
+		icon = "resources/icons/appbar.grade.b.large.png",
+		options = {
+			{
+				name = "font_weight",
+				name_text = "Font weight",
+				item_text = {"toggle bolder"},
+				-- args is indeed not used, we put here just to keep the
+				-- UI happy.
+				args = {1},
+				default_arg = nil,
+				event = "ToggleFontBolder",
+			},
+			{
+				name = "font_gamma",
+				name_text = "Gamma",
+				item_text = {"decrease", "increase"},
+				args = {"decrease", "increase"},
+				default_arg = nil,
+				event = "ChangeFontGamma",
+			}
+		}
+	},
+	{
+		icon = "resources/icons/appbar.settings.large.png",
+		options = {
+			{
+				name = "view_mode",
+				name_text = "View mode",
+				item_text = {"scroll", "page"},
+				args = {"scroll", "page"},
+				default_arg = "page",
+				event = "SetViewMode",
+			},
+		}
+	},
+}
+
 CreDocument = Document:new{
 	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
 	SCROLL_VIEW_MODE = 0,
@@ -10,6 +80,8 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
+	options = CreOptions,
+	configurable = Configurable,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -54,6 +126,7 @@ end
 
 function CreDocument:init()
 	self:engineInit()
+	self.configurable:loadDefaults(self.options)
 
 	local ok
 	local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
@@ -83,6 +156,7 @@ function CreDocument:init()
 	self.is_open = true
 	self.info.has_pages = false
 	self:_readMetadata()
+	self.info.configurable = true
 
 	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
 	--self._document:setDefaultInterlineSpace(self.line_space_percent)
@@ -165,12 +239,26 @@ function CreDocument:setFontSize(new_font_size)
 	end
 end
 
+function CreDocument:setViewMode(new_mode)
+	if new_mode then
+		if new_mode == "scroll" then
+			self._document:setViewMode(self.SCROLL_VIEW_MODE)
+		else
+			self._document:setViewMode(self.PAGE_VIEW_MODE)
+		end
+	end
+end
+
 function CreDocument:zoomFont(delta)
 	self._document:zoomFont(delta)
 end
 
 function CreDocument:setInterlineSpacePercent(percent)
 	self._document:setDefaultInterlineSpace(percent)
+end
+
+function CreDocument:toggleFontBolder()
+	self._document:toggleFontBolder()
 end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
