@@ -107,6 +107,8 @@ inline void fillMxcfbUpdateData(mxcfb_update_data *myarea, FBInfo *fb, lua_State
 	myarea->hist_bw_waveform_mode = 0;
 	myarea->hist_gray_waveform_mode = 0;
 	myarea->temp = 0x1001;
+	/*@TODO make the flag configurable from UI,
+	 * this flag invert all the pixels on display  09.01 2013 (houqp)*/
 	myarea->flags = 0;
 	/*myarea->alt_buffer_data.virt_addr = NULL;*/
 	myarea->alt_buffer_data.phys_addr = NULL;
