@@ -97,12 +97,12 @@ inline void fillUpdateAreaT(update_area_t *myarea, FBInfo *fb, lua_State *L) {
 }
 
 inline void fillMxcfbUpdateData(mxcfb_update_data *myarea, FBInfo *fb, lua_State *L) {
+	myarea->update_mode = luaL_optint(L, 2, 0);
 	myarea->update_region.top = luaL_optint(L, 3, 0);
 	myarea->update_region.left = luaL_optint(L, 4, 0);
 	myarea->update_region.width = luaL_optint(L, 5, fb->vinfo.xres);
 	myarea->update_region.height = luaL_optint(L, 6, fb->vinfo.yres);
 	myarea->waveform_mode = 257;
-	myarea->update_mode = 0;
 	myarea->update_marker = 1;
 	myarea->hist_bw_waveform_mode = 0;
 	myarea->hist_gray_waveform_mode = 0;
