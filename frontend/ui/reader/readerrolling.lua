@@ -179,6 +179,7 @@ function ReaderRolling:onUpdatePos()
 		self:gotoXPointer(self.ui.document:getXPointer())
 		self.old_doc_height = new_height
 		self.old_page = new_page
+		self.ui:handleEvent(Event:new("UpdateToc"))
 	end
 	return true
 end
