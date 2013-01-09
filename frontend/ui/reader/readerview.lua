@@ -164,7 +164,7 @@ function ReaderView:onRotationUpdate(rotation)
 end
 
 function ReaderView:onHintPage()
-	self.ui.document:hintPage(self.state.page+1, self.state.zoom, self.state.rotation)
+	self.ui.document:hintPage(self.state.page+1, self.state.zoom, self.state.rotation, self.render_mode)
 	return true
 end
 

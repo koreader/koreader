@@ -151,7 +151,7 @@ function Document:getToc()
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
-	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
+	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -166,7 +166,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
 			return
 		end
 		-- only render required part
-		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
+		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode.."|"..tostring(rect)
 		size = rect
 	end
 
@@ -203,11 +203,10 @@ end
 
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
-function Document:hintPage(pageno, zoom, rotation)
-	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
-	local tile = Cache:check(hash_full_page)
-	if not tile then
-		self:renderPage(pageno, nil, zoom, rotation)
+function Document:hintPage(pageno, zoom, rotation, render_mode)
+	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
+	if not Cache:check(hash_full_page) then
+		self:renderPage(pageno, nil, zoom, rotation, render_mode)
 	end
 end
 
@@ -220,8 +219,8 @@ Draw page content to blitbuffer.
 @rect: visible_area inside document page
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
-	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation
-	local hash_excerpt = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..tostring(rect)
+	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
+	local hash_excerpt = hash_full_page.."|"..tostring(rect)
 	local tile = Cache:check(hash_full_page)
 	if not tile then
 		tile = Cache:check(hash_excerpt)
