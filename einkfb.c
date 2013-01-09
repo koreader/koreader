@@ -97,7 +97,7 @@ inline void fillUpdateAreaT(update_area_t *myarea, FBInfo *fb, lua_State *L) {
 }
 
 inline void fillMxcfbUpdateData(mxcfb_update_data *myarea, FBInfo *fb, lua_State *L) {
-	myarea->update_mode = luaL_optint(L, 2, 0);
+	myarea->update_mode = ((luaL_optint(L, 2, 0) == 0)? 1:0);
 	myarea->update_region.top = luaL_optint(L, 3, 0);
 	myarea->update_region.left = luaL_optint(L, 4, 0);
 	myarea->update_region.width = luaL_optint(L, 5, fb->vinfo.xres);
