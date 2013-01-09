@@ -103,8 +103,9 @@ end
 
 function ReaderRolling:onCloseDocument()
 	local cur_xp = self.ui.document:getXPointer()
-	self.ui.doc_settings:saveSetting("last_percent", 
-		10000 * self.ui.document:getPosFromXPointer(cur_xp) / self.doc_height)
+	local cur_pos = self.ui.document:getPosFromXPointer(cur_xp)
+	self.ui.doc_settings:saveSetting("last_percent", 10000 * cur_pos / self.doc_height)
+	self.ui.doc_settings:saveSetting("percent_finished", cur_pos / self.doc_height)
 end
 
 function ReaderRolling:onTapForward()
@@ -133,7 +134,7 @@ end
 
 function ReaderRolling:onGotoViewRel(diff)
 	DEBUG("goto relative screen:", diff)
-	if self.ui.document.view_mode ~= "page" then
+	if self.view_mode ~= "page" then
 		local pan_diff = diff * self.ui.dimen.h
 		if self.show_overlap_enable then
 			if pan_diff > self.overlap then
@@ -186,7 +187,7 @@ function ReaderRolling:gotoPos(new_pos)
 	if new_pos < 0 then new_pos = 0 end
 	if new_pos > self.doc_height then new_pos = self.doc_height end
 	-- adjust dim_area according to new_pos
-	if self.ui.document.view_mode ~= "page" and self.show_overlap_enable then
+	if self.view_mode ~= "page" and self.show_overlap_enable then
 		local panned_step = new_pos - self.current_pos
 		self.view.dim_area.x = 0
 		self.view.dim_area.h = self.ui.dimen.h - math.abs(panned_step)

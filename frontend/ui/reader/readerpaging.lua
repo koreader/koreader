@@ -77,6 +77,7 @@ end
 
 function ReaderPaging:onCloseDocument()
 	self.ui.doc_settings:saveSetting("last_page", self.current_page)
+	self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)
 end
 
 function ReaderPaging:onTapForward()
