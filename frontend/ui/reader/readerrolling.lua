@@ -2,6 +2,7 @@ require "ui/reader/readerpanning"
 
 ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
+	old_page = nil,
 	view_mode = "page",
 	current_pos = 0,
 	-- only used for page view mode
@@ -85,6 +86,7 @@ function ReaderRolling:init()
 
 	self.doc_height = self.ui.document.info.doc_height
 	self.old_doc_height = self.doc_height
+	self.old_page = self.ui.document.info.number_of_pages
 end
 
 function ReaderRolling:onReadSettings(config)
@@ -172,9 +174,11 @@ function ReaderRolling:onUpdatePos()
 	self.ui.document:_readMetadata()
 	-- update self.current_pos if the height of document has been changed.
 	local new_height = self.ui.document.info.doc_height
-	if self.old_doc_height ~= new_height then
+	local new_page = self.ui.document.info.number_of_pages
+	if self.old_doc_height ~= new_height or self.old_page ~= new_page then
 		self:gotoXPointer(self.ui.document:getXPointer())
 		self.old_doc_height = new_height
+		self.old_page = new_page
 	end
 	return true
 end
