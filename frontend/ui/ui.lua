@@ -154,9 +154,10 @@ function UIManager:run()
 		--DEBUG("dirty stack", self._dirty)
 		--DEBUG("---------------------------------------------------")
 
-		-- stop when we have no window to show (bug)
+		-- stop when we have no window to show
 		if #self._window_stack == 0 then
-			error("no dialog left to show, would loop endlessly")
+			DEBUG("no dialog left to show, would loop endlessly")
+			return nil
 		end
 
 		-- repaint dirty widgets
