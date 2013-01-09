@@ -230,4 +230,5 @@ end
 
 function ReaderPaging:onRedrawCurrentPage()
 	self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+	return true
 end

@@ -19,10 +19,10 @@ function ReaderRolling:init()
 				GestureRange:new{
 					ges = "tap",
 					range = Geom:new{
-						x = Screen:getWidth()/2,
-						y = Screen:getHeight()/2,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
+						x = Screen:getWidth()/4,
+						y = Screen:getHeight()/4,
+						w = 3*Screen:getWidth()/4,
+						h = 5*Screen:getHeight()/8,
 					}
 				}
 			},
@@ -31,9 +31,9 @@ function ReaderRolling:init()
 					ges = "tap",
 					range = Geom:new{
 						x = 0, 
-						y = Screen:getHeight()/2,
-						w = Screen:getWidth()/2,
-						h = Screen:getHeight()/2,
+						y = Screen:getHeight()/4,
+						w = Screen:getWidth()/4,
+						h = 5*Screen:getHeight()/8,
 					}
 				}
 			}
@@ -164,7 +164,7 @@ function ReaderRolling:onZoom()
 end
 
 --[[
-	remember to signal this event the document has been zoomed,
+	remember to signal this event when the document has been zoomed,
 	font has been changed, or line height has been changed.
 --]]
 function ReaderRolling:onUpdatePos()
@@ -175,6 +175,19 @@ function ReaderRolling:onUpdatePos()
 	if self.old_doc_height ~= new_height then
 		self:gotoXPointer(self.ui.document:getXPointer())
 		self.old_doc_height = new_height
+	end
+	return true
+end
+
+function ReaderRolling:onSetViewMode(new_mode)
+	self.ui.view_mode = new_mode
+end
+
+function ReaderRolling:onRedrawCurrentView()
+	if self.view_mode == "page" then
+		self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+	else
+		self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
 	end
 	return true
 end

@@ -19,6 +19,9 @@ function Configurable:loadDefaults(config_options)
 		for j=1,#config_options[i].options do
 			local key = config_options[i].options[j].name
 			self[key] = config_options[i].options[j].default_value
+			if not self[key] then
+				self[key] = config_options[i].options[j].default_arg
+			end
 		end
 	end
 end

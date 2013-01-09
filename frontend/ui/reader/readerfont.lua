@@ -1,9 +1,11 @@
 ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
-	line_space_percent = 100,
+	line_space_percent = nil,
 	font_menu_title = "Font Menu",
 	face_table = nil,
+	-- default gamma from crengine's lvfntman.cpp
+	gamma_index = 15,
 }
 
 function ReaderFont:init()
@@ -60,6 +62,12 @@ function ReaderFont:onReadSettings(config)
 		self.font_size = self.ui.document:getFontSize()
 	end
 	self.ui.document:setFontSize(self.font_size)
+
+	self.line_space_percent = config:readSetting("line_space_percent")
+	if not self.line_space_percent then 
+		self.line_space_percent = 100
+	end
+
 	-- Dirty hack: we have to add folloing call in order to set
 	-- m_is_rendered(member of LVDocView) to true. Otherwise position inside
 	-- document will be reset to 0 on first view render.
@@ -101,11 +109,28 @@ function ReaderFont:onChangeSize(direction)
 	   delta = -1
 	end
 	self.font_size = self.font_size + delta
-	msg = InfoMessage:new{text = direction.." font size to "..self.font_size}
-	UIManager:show(msg)
+	UIManager:show(Notification:new{
+		text = direction.." font size to "..self.font_size,
+		timeout = 1,
+	})
 	self.ui.document:zoomFont(delta)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 	UIManager:close(msg)
+
+	return true
+end
+
+function ReaderFont:onSetFontSize(new_size)
+	if new_size > 44 then new_size = 44 end
+	if new_size < 18 then new_size = 18 end
+
+	self.font_size = new_size
+	UIManager:show(Notification:new{
+		text = "Set font size to "..self.font_size,
+		timeout = 1,
+	})
+	self.ui.document:setFontSize(new_size)
+	self.ui:handleEvent(Event:new("UpdatePos"))
 
 	return true
 end
@@ -119,23 +144,51 @@ function ReaderFont:onChangeLineSpace(direction)
 		self.line_space_percent = self.line_space_percent + 10
 		self.line_space_percent = math.min(self.line_space_percent, 200)
 	end
-	msg = InfoMessage:new{"line spacing "..self.line_space_percent.."%"}
+	UIManager:show(Notification:new{
+		text = direction.." line space to "..self.line_space_percent.."%",
+		timeout = 1,
+	})
 	self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 
 	return true
 end
 
+function ReaderFont:onToggleFontBolder()
+	self.ui.document:toggleFontBolder()
+	self.ui:handleEvent(Event:new("UpdatePos"))
+	return true
+end
+
+function ReaderFont:onChangeFontGamma(direction)
+	if direction == "increase" then
+		cre.setGammaIndex(self.gamma_index+2)
+	elseif direction == "decrease" then
+		cre.setGammaIndex(self.gamma_index-2)
+	end
+	self.gamma_index = cre.getGammaIndex()
+	UIManager:show(Notification:new{
+		text = direction.." gamma to "..self.gamma_index,
+		timeout = 1
+	})
+	self.ui:handleEvent(Event:new("RedrawCurrentView"))
+	return true
+end
+
 function ReaderFont:onCloseDocument()
+	--@TODO save gamma index    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)
+	self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
 end
 
 function ReaderFont:setFont(face)
 	if face and self.font_face ~= face then
 		self.font_face = face
-		msg = InfoMessage:new{ text = "Redrawing with "..face }
-		UIManager:show(msg)
+		UIManager:show(Notification:new{
+			text = "redrawing with font "..face,
+			timeout = 1,
+		})
 
 		self.ui.document:setFontFace(face)
 		-- signal readerrolling to update pos in new height
