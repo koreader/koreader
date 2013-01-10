@@ -84,6 +84,10 @@ function Screen:getHeight()
 	return h
 end
 
+function Screen:getPitch()
+	return self.fb:getPitch()
+end
+
 function Screen:updateRotationMode()
 	-- in EMU mode, you will always get 0 from getOrientation()
 	self.cur_rotation_mode = self.fb:getOrientation()
