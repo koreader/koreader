@@ -101,11 +101,11 @@ function Screen:saveCurrentBB()
 	local width, height = self:getWidth(), self:getHeight()
 
 	if not self.saved_bb then
-		self.saved_bb = Blitbuffer.new(width, height)
+		self.saved_bb = Blitbuffer.new(width, height, self:getPitch())
 	end
 	if self.saved_bb:getWidth() ~= width then
 		self.saved_bb:free()
-		self.saved_bb = Blitbuffer.new(width, height)
+		self.saved_bb = Blitbuffer.new(width, height, self:getPitch())
 	end
 	self.saved_bb:blitFullFrom(self.fb.bb)
 end
