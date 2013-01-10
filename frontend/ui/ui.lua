@@ -205,7 +205,17 @@ function UIManager:run()
 		-- delegate input_event to handler
 		if input_event then
 			DEBUG(input_event)
-			self:sendEvent(input_event)
+			if input_event == "IntoSS" then
+				Device:intoScreenSaver()
+			elseif input_event == "OutOfSS" then
+				Device:outofScreenSaver()
+			elseif input_event == "Charging" then
+				Device:usbPlugIn()
+			elseif input_event == "NotCharging" then
+				Device:usbPlugOut()
+			else
+				self:sendEvent(input_event)
+			end
 		end
 	end
 end
