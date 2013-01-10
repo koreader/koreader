@@ -279,6 +279,16 @@ static int getSize(lua_State *L) {
 	return 2;
 }
 
+static int getPitch(lua_State *L) {
+	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
+#ifndef EMULATE_READER
+	lua_pushinteger(L, fb->finfo.line_length);
+#else
+	lua_pushinteger(L, fb->buf->pitch);
+#endif
+	return 1;
+}
+
 static int closeFrameBuffer(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
 	// should be save if called twice
@@ -432,6 +442,7 @@ static const struct luaL_Reg einkfb_meth[] = {
 	{"getOrientation", einkGetOrientation},
 	{"setOrientation", einkSetOrientation},
 	{"getSize", getSize},
+	{"getPitch", getPitch},
 	{NULL, NULL}
 };
 
