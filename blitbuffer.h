@@ -31,7 +31,7 @@ typedef struct BlitBuffer {
 	uint8_t allocated;
 } BlitBuffer;
 
-int newBlitBufferNative(lua_State *L, int w, int h, BlitBuffer **newBuffer);
+int newBlitBufferNative(lua_State *L, int w, int h, int pitch, BlitBuffer **newBuffer);
 int luaopen_blitbuffer(lua_State *L);
 
 #endif
