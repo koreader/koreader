@@ -34,7 +34,7 @@ function ReaderMenu:setUpdateItemTable()
 			{
 				text = "rotate 90 degree clockwise",
 				callback = function()
-					Screen:screenRotate("clockwise")
+					--Screen:screenRotate("clockwise")
 					self.ui:handleEvent(
 						Event:new("SetDimensions", Screen:getSize()))
 				end
@@ -42,7 +42,7 @@ function ReaderMenu:setUpdateItemTable()
 			{
 				text = "rotate 90 degree anticlockwise",
 				callback = function()
-					Screen:screenRotate("anticlockwise")
+					--Screen:screenRotate("anticlockwise")
 					self.ui:handleEvent(
 						Event:new("SetDimensions", Screen:getSize()))
 				end

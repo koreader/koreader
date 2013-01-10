@@ -93,7 +93,7 @@ static int toBlitBuffer(lua_State *L) {
 		}
 	}
 
-	ret = newBlitBufferNative(L, img->pixmap->w, img->pixmap->h, &bb);
+	ret = newBlitBufferNative(L, img->pixmap->w, img->pixmap->h, 0, &bb);
 	if(ret != 1) {
 		// TODO (?): fail more gracefully, clean up mem?
 		return ret;

@@ -83,16 +83,16 @@ function Device:intoScreenSaver()
 	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
 		Screen:saveCurrentBB()
-		msg = InfoMessage:new{"Going into screensaver... "}
-		UIManager:show(msg)
+		--msg = InfoMessage:new{"Going into screensaver... "}
+		--UIManager:show(msg)
 
 		Screen.kpv_rotation_mode = Screen.cur_rotation_mode
 		Screen.fb:setOrientation(Screen.native_rotation_mode)
-		util.sleep(1)
-		os.execute("killall -cont cvm")
+		--util.sleep(1)
+		--os.execute("killall -cont cvm")
 		self.screen_saver_mode = true
 
-		UIManager:close(msg)
+		--UIManager:close(msg)
 	end
 end
 
@@ -100,7 +100,7 @@ function Device:outofScreenSaver()
 	--os.execute("echo 'screensaver out' >> /mnt/us/event_test.txt")
 	if self.screen_saver_mode == true and self.charging_mode == false then
 		util.usleep(1500000)
-		os.execute("killall -stop cvm")
+		--os.execute("killall -stop cvm")
 		Screen.fb:setOrientation(Screen.kpv_rotation_mode)
 		Screen:restoreFromSavedBB()
 		Screen.fb:refresh(0)
