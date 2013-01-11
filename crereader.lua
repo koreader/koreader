@@ -264,7 +264,7 @@ function CREReader:gotoPercent(percent)
 end
 
 function CREReader:gotoTocEntry(entry)
-	if self.view == "scroll" then
+	if self.view_mode == "scroll" then
 		self:goto(entry.xpointer, nil, "xpointer")
 	else
 		self:goto(entry.page, nil, "xpage")
