@@ -160,12 +160,14 @@ end
 
 function CREReader:getLastPageOrPos()
 	local last_percent = self.settings:readSetting("last_percent")
+	local last_xp = self.settings:readSetting("last_xpointer")
+
+	if last_xp then
+		return last_xp
+	end
+	-- read last_percent for backward compatibility
 	if last_percent then
-		if self.view_mode == "scroll" then
-			return math.floor((last_percent * self.doc:getFullHeight()) / 10000)
-		else
-			return math.floor((last_percent * self.doc:getPages()) / 10000)
-		end
+		return math.floor((last_percent * self.doc:getPages()) / 10000)
 	else
 		return (self.view_mode == "scroll" and 0) or 1
 	end
@@ -180,7 +182,9 @@ function CREReader:saveSpecialSettings()
 end
 
 function CREReader:saveLastPageOrPos()
-	self.settings:saveSetting("last_percent", self.percent)
+	-- last_percent is deprecated
+	self.settings:saveSetting("last_percent", nil)
+	self.settings:saveSetting("last_xpointer", self.doc:getXPointer())
 end
 
 ----------------------------------------------------

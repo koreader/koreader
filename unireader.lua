@@ -2517,9 +2517,6 @@ function UniReader:inputLoop()
 	self.show_overlap = 0
 	Screen:setRotationMode(0)
 	self:setDefaults()
-	if self.doc ~= nil then
-		self.doc:close()
-	end
 	if self.globalzoom_mode == self.ZOOM_FIT_TO_CONTENT_WIDTH_PAN then
 		self.globalzoom_mode = self.ZOOM_FIT_TO_CONTENT_WIDTH
 	elseif self.pan_by_page then
@@ -2546,6 +2543,10 @@ function UniReader:inputLoop()
 		self.settings:close()
 	end
 	self.bbox.enabled = false
+
+	if self.doc ~= nil then
+		self.doc:close()
+	end
 
 	return keep_running
 end

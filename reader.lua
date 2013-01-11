@@ -38,7 +38,11 @@ function openFile(filename)
 		if ok then
 			reader:loadSettings(filename)
 			page_num = reader:getLastPageOrPos()
-			reader:goto(tonumber(page_num), true)
+			if type(page_num) == "string" then
+				reader:goto(page_num, true, "xpointer")
+			else
+				reader:goto(page_num, true)
+			end
 			G_reader_settings:saveSetting("lastfile", filename)
 			return reader:inputLoop()
 		else
