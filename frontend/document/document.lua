@@ -104,9 +104,8 @@ function Document:getNativePageDimensions(pageno)
 end
 
 function Document:_readMetadata()
-	if self.info.has_pages then
-		self.info.number_of_pages = self._document:getPages()
-	else
+	self.info.number_of_pages = self._document:getPages()
+	if not self.info.has_pages then
 		self.info.doc_height = self._document:getFullHeight()
 	end
 	return true

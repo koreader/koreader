@@ -171,6 +171,7 @@ end
 function ReaderView:onSetViewMode(new_mode)
 	self.ui.view_mode = new_mode
 	self.ui.document:setViewMode(new_mode)
+	self.ui:handleEvent(Event:new("UpdatePos"))
 	return true
 end
 

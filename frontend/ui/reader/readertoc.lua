@@ -1,4 +1,5 @@
 ReaderToc = InputContainer:new{
+	toc = nil,
 	toc_menu_title = "Table of contents",
 }
 
@@ -19,6 +20,11 @@ end
 
 function ReaderToc:onSetDimensions(dimen)
 	self.dimen = dimen
+end
+
+function ReaderToc:onUpdateToc()
+	self.toc = nil
+	return true
 end
 
 function ReaderToc:fillToc()
@@ -61,15 +67,19 @@ function ReaderToc:getTocTitleOfCurrentPage()
 end
 
 function ReaderToc:onShowToc()
-	local items = self.ui.document:getToc()
+	if not self.toc then
+		self:fillToc()
+	end
 	-- build menu items
-	for _,v in ipairs(items) do
-		v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
+	if self.toc and not self.toc[1].text then
+		for _,v in ipairs(self.toc) do
+			v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
+		end
 	end
 
 	local toc_menu = Menu:new{
 		title = "Table of Contents",
-		item_table = items,
+		item_table = self.toc,
 		ui = self.ui,
 		width = Screen:getWidth()-20, 
 		height = Screen:getHeight(),
