@@ -260,7 +260,11 @@ function CREReader:goto(pos, is_ignore_jump, pos_type)
 end
 
 function CREReader:gotoPercent(percent)
-	self:goto(percent * self.doc:getFullHeight() / 10000)
+	if self.view_mode == "page" then
+		self:goto(percent * self.doc:getPages() / 10000)
+	else
+		self:goto(percent * self.doc:getFullHeight() / 10000)
+	end
 end
 
 function CREReader:gotoTocEntry(entry)
@@ -681,7 +685,11 @@ function CREReader:adjustCreReaderCommands()
 			-- convert string to number
 			if position and pcall(function () position = position + 0 end) then
 				if position >= 0 and position <= 100 then
-					self:goto(math.floor(height * position / 100))
+					if self.view_mode == "page" then
+						self:goto(math.floor(self.doc:getPages() * position / 100))
+					else
+						self:goto(math.floor(height * position / 100))
+					end
 					return
 				end
 			end
