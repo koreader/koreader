@@ -183,7 +183,7 @@ end
 
 function CREReader:saveLastPageOrPos()
 	-- last_percent is deprecated
-	self.settings:saveSetting("last_percent", nil)
+	self.settings:saveSetting("last_percent", self.percent)
 	self.settings:saveSetting("last_xpointer", self.doc:getXPointer())
 end
 
