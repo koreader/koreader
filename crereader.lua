@@ -573,6 +573,7 @@ function CREReader:adjustCreReaderCommands()
 		"rotate screen counterclockwise",
 		function(self)
 			self:screenRotate("anticlockwise")
+			self.toc = nil
 		end
 	)
 	-- CW-rotation
@@ -580,6 +581,7 @@ function CREReader:adjustCreReaderCommands()
 		"rotate screen clockwise",
 		function(self)
 			self:screenRotate("clockwise")
+			self.toc = nil
 		end
 	)
 	-- navigate between chapters by Shift+Up & Shift-Down
@@ -641,6 +643,7 @@ function CREReader:adjustCreReaderCommands()
 			Debug("font zoomed to", self.font_zoom)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:zoomFont(delta)
+			self.toc = nil
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
@@ -660,6 +663,7 @@ function CREReader:adjustCreReaderCommands()
 			Debug("line spacing set to", self.line_space_percent)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:setDefaultInterlineSpace(self.line_space_percent)
+			self.toc = nil
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
@@ -722,6 +726,7 @@ function CREReader:adjustCreReaderCommands()
 				self.doc:setFontFace(face_list[item_no])
 				self.font_face = face_list[item_no]
 			end
+			self.toc = nil
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
@@ -748,6 +753,7 @@ function CREReader:adjustCreReaderCommands()
 				G_reader_settings:saveSetting("header_font", self.header_font)
 				self.doc:setHeaderFont(self.header_font)
 			end
+			self.toc = nil
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
@@ -765,6 +771,7 @@ function CREReader:adjustCreReaderCommands()
 			InfoMessage:inform("Changing font-weight...", DINFO_NODELAY, 1, MSG_AUX)
 			local prev_xpointer = self.doc:getXPointer()
 			self.doc:toggleFontBolder()
+			self.toc = nil
 			self:goto(prev_xpointer, nil, "xpointer")
 		end
 	)
@@ -866,6 +873,7 @@ function CREReader:adjustCreReaderCommands()
 			self.settings:saveSetting("view_mode", self.view_mode)
 			InfoMessage:inform("Changing to "..self.view_mode.." mode...", DINFO_DELAY, 1, MSG_AUX)
 			self.doc:setViewMode(view_mode_code)
+			self.toc = nil
 			self:redrawCurrentPage()
 		end
 	)
