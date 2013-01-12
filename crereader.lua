@@ -106,12 +106,13 @@ function CREReader:open(filename)
 	if self.view_mode == "page" then
 		view_mode = self.PAGE_VIEW_MODE
 	end
-	ok, self.doc = pcall(cre.openDocument, filename, style_sheet, G_width, G_height, view_mode)
+	ok, self.doc = pcall(cre.newDocView, style_sheet, G_width, G_height, view_mode)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
 	self.doc:setDefaultInterlineSpace(self.line_space_percent)
 	self.doc:setHeaderFont(self.header_font)
+	self.filename = filename
 	return true
 end
 
@@ -156,6 +157,7 @@ function CREReader:loadSpecialSettings()
 			i=i-1
 		end
 	end
+	self.doc:loadDocument(self.filename)
 end
 
 function CREReader:getLastPageOrPos()
