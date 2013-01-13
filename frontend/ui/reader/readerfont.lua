@@ -74,7 +74,7 @@ function ReaderFont:onReadSettings(config)
 	if not self.line_space_percent then 
 		self.line_space_percent = 100
 	else
-		--@TODO set line space here  13.01 2013 (houqp)
+		self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 	end
 
 	-- Dirty hack: we have to add folloing call in order to set
