@@ -94,20 +94,26 @@ function ReaderRolling:onReadSettings(config)
 	if not soe then
 		self.show_overlap_enable = soe
 	end
-	-- we read last_percent just for backward compatibility
-	local last_per = config:readSetting("last_percent")
-	if last_per then
-		self:gotoPercent(last_per)
-		-- we have to do a real pos change in self.ui.document._document to
-		-- update status information in CREngine.
-		self.ui.document:gotoPos(self.current_pos)
-	end
 	local last_xp = config:readSetting("last_xpointer")
 	if last_xp then
-		self:gotoXPointer(last_xp)
-		-- we have to do a real jump in self.ui.document._document to
-		-- update status information in CREngine.
-		self.ui.document:gotoXPointer(last_xp)
+		table.insert(self.ui.postInitCallback, function()
+			self:gotoXPointer(last_xp)
+			-- we have to do a real jump in self.ui.document._document to
+			-- update status information in CREngine.
+			self.ui.document:gotoXPointer(last_xp)
+		end)
+	end
+	-- we read last_percent just for backward compatibility
+	if not last_xp then
+		local last_per = config:readSetting("last_percent")
+		if last_per then
+			table.insert(self.ui.postInitCallback, function()
+				self:gotoPercent(last_per)
+				-- we have to do a real pos change in self.ui.document._document
+				-- to update status information in CREngine.
+				self.ui.document:gotoPos(self.current_pos)
+			end)
+		end
 	end
 	if self.view_mode == "page" then
 		self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))

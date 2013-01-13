@@ -147,7 +147,7 @@ function CreDocument:init()
 
 	-- @TODO check the default view_mode to a global user configurable
 	-- variable  22.12 2012 (houqp)
-	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
+	ok, self._document = pcall(cre.newDocView, style_sheet,
 				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
@@ -160,6 +160,10 @@ function CreDocument:init()
 
 	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
 	--self._document:setDefaultInterlineSpace(self.line_space_percent)
+end
+
+function CreDocument:loadDocument()
+	self._document:loadDocument(self.file)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)

@@ -59,20 +59,25 @@ function ReaderFont:onReadSettings(config)
 
 	self.font_size = config:readSetting("font_size")
 	if not self.font_size then 
-		self.font_size = self.ui.document:getFontSize()
+		--@TODO change this!  12.01 2013 (houqp)
+		self.font_size = 29
 	end
 	self.ui.document:setFontSize(self.font_size)
 
 	self.line_space_percent = config:readSetting("line_space_percent")
 	if not self.line_space_percent then 
 		self.line_space_percent = 100
+	else
+		--@TODO set line space here  13.01 2013 (houqp)
 	end
 
 	-- Dirty hack: we have to add folloing call in order to set
 	-- m_is_rendered(member of LVDocView) to true. Otherwise position inside
 	-- document will be reset to 0 on first view render.
 	-- So far, I don't know why this call will alter the value of m_is_rendered.
-	self.ui:handleEvent(Event:new("UpdatePos"))
+	table.insert(self.ui.postInitCallback, function()
+		self.ui:handleEvent(Event:new("UpdatePos"))
+	end)
 end
 
 function ReaderFont:onShowFontMenu()

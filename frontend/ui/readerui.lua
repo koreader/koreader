@@ -34,6 +34,8 @@ ReaderUI = InputContainer:new{
 	start_pos = nil,
 	-- password for document unlock
 	password = nil,
+
+	postInitCallback = {},
 }
 
 function ReaderUI:init()
@@ -109,6 +111,10 @@ function ReaderUI:init()
 		}
 		table.insert(self, panner)
 	else
+		-- make sure we load document first before calling any callback
+		table.insert(self.postInitCallback, function()
+			self.document:loadDocument()
+		end)
 		-- rolling controller
 		local roller = ReaderRolling:new{
 			dialog = self.dialog,
@@ -144,6 +150,11 @@ function ReaderUI:init()
 	self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 	-- notify childs of dimensions
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
+
+	for _,v in ipairs(self.postInitCallback) do
+		v()
+	end
+	self.postInitCallback = {}
 end
 
 function ReaderUI:onSetDimensions(dimen)
