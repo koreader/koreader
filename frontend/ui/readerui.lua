@@ -35,10 +35,11 @@ ReaderUI = InputContainer:new{
 	-- password for document unlock
 	password = nil,
 
-	postInitCallback = {},
+	postInitCallback = nil,
 }
 
 function ReaderUI:init()
+	self.postInitCallback = {}
 	-- if we are not the top level dialog ourselves, it must be given in the table
 	if not self.dialog then
 		self.dialog = self
@@ -154,7 +155,6 @@ function ReaderUI:init()
 	for _,v in ipairs(self.postInitCallback) do
 		v()
 	end
-	self.postInitCallback = {}
 end
 
 function ReaderUI:onSetDimensions(dimen)
