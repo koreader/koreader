@@ -198,7 +198,11 @@ function CREReader:setzoom(page, preCache)
 end
 
 function CREReader:redrawCurrentPage()
-	self:goto(self.pos)
+	if self.view_mode == "page" then
+		self:goto(self.pageno)
+	else
+		self:goto(self.pos)
+	end
 end
 
 -- there is no zoom mode in CREReader
