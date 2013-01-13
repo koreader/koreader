@@ -189,6 +189,7 @@ end
 function ReaderFont:onCloseDocument()
 	--@TODO save gamma index    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
+	self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)
 	self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
 end
