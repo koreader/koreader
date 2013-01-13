@@ -277,6 +277,10 @@ function CreDocument:toggleFontBolder()
 	self._document:toggleFontBolder()
 end
 
+function CreDocument:setGammaIndex(index)
+	cre.setGammaIndex(index)
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
 DocumentRegistry:addProvider("html", "application/html", CreDocument)
