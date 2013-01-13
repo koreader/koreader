@@ -139,7 +139,7 @@ function CreDocument:init()
 	if file_type == "zip" then
 		-- NuPogodi, 20.05.12: read the content of zip-file
 		-- and return extention of the 1st file
-		file_type = self:zipContentExt(filename)
+		file_type = self:zipContentExt(self.file)
 	end
 	-- these two format use the same css file
 	if file_type == "html" then
