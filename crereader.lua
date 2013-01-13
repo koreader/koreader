@@ -110,7 +110,6 @@ function CREReader:open(filename)
 	if not ok then
 		return false, "Error opening cre-document. " -- self.doc, will contain error message
 	end
-	self.doc:setDefaultInterlineSpace(self.line_space_percent)
 	self.doc:setHeaderFont(self.header_font)
 	self.filename = filename
 	return true
@@ -147,6 +146,7 @@ function CREReader:loadSpecialSettings()
 
 	local line_space_percent = self.settings:readSetting("line_space_percent")
 	self.line_space_percent = line_space_percent or self.line_space_percent
+	self.doc:setDefaultInterlineSpace(self.line_space_percent)
 
 	self.font_zoom = self.settings:readSetting("font_zoom") or 0
 	if self.font_zoom ~= 0 then
@@ -198,7 +198,11 @@ function CREReader:setzoom(page, preCache)
 end
 
 function CREReader:redrawCurrentPage()
-	self:goto(self.pos)
+	if self.view_mode == "page" then
+		self:goto(self.pageno)
+	else
+		self:goto(self.pos)
+	end
 end
 
 -- there is no zoom mode in CREReader
