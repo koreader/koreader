@@ -57,6 +57,12 @@ function ReaderFont:onReadSettings(config)
 	end
 	self.ui.document:setFontFace(self.font_face)
 
+	self.header_font_face = config:readSetting("header_font_face")
+	if not self.header_font_face then 
+		self.header_font_face = self.ui.document.header_font
+	end
+	self.ui.document:setHeaderFont(self.header_font_face)
+
 	self.font_size = config:readSetting("font_size")
 	if not self.font_size then 
 		--@TODO change this!  12.01 2013 (houqp)

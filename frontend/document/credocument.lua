@@ -80,6 +80,7 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
+	header_font = "Droid Sans Fallback",
 	options = CreOptions,
 	configurable = Configurable,
 }
@@ -118,6 +119,11 @@ function CreDocument:engineInit()
 		local default_font = G_reader_settings:readSetting("cre_font")
 		if default_font then
 			self.default_font = default_font
+		end
+
+		local header_font = G_reader_settings:readSetting("header_font")
+		if header_font then
+			self.header_font = header_font
 		end
 
 		engine_initilized = true
@@ -250,6 +256,12 @@ function CreDocument:setViewMode(new_mode)
 		else
 			self._document:setViewMode(self.PAGE_VIEW_MODE)
 		end
+	end
+end
+
+function CreDocument:setHeaderFont(new_font)
+	if new_font then
+		self._document:setHeaderFont(new_font)
 	end
 end
 
