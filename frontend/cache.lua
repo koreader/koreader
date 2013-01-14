@@ -30,6 +30,7 @@ Cache = {
 }
 
 function Cache:insert(key, object)
+	--@TODO add cache for different types of item  09.01 2013 (houqp)
 	-- guarantee that we have enough memory in cache
 	if(object.size > self.max_memsize) then
 		-- we're not allowed to claim this much at all

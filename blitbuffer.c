@@ -44,13 +44,16 @@ inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
 	return 0;
 }
 
-int newBlitBufferNative(lua_State *L, int w, int h, BlitBuffer **newBuffer) {
+/*
+ * if ptich equals zero, we calculate it as (w + 1) / 2
+ */
+int newBlitBufferNative(lua_State *L, int w, int h, int pitch, BlitBuffer **newBuffer) {
 	BlitBuffer *bb = (BlitBuffer*) lua_newuserdata(L, sizeof(BlitBuffer));
 	luaL_getmetatable(L, "blitbuffer");
 	lua_setmetatable(L, -2);
 
 	bb->w = w;
-	bb->pitch = (w + 1) / 2;
+	bb->pitch = ((pitch == 0) ? ((w + 1) / 2) : pitch);
 	bb->h = h;
 	bb->data = malloc(bb->pitch * h);
 	if(bb->data == NULL) {
@@ -67,7 +70,8 @@ int newBlitBufferNative(lua_State *L, int w, int h, BlitBuffer **newBuffer) {
 static int newBlitBuffer(lua_State *L) {
 	int w = luaL_checkint(L, 1);
 	int h = luaL_checkint(L, 2);
-	return newBlitBufferNative(L, w, h, NULL);
+	int pitch = luaL_optint(L, 3, 0);
+	return newBlitBufferNative(L, w, h, pitch, NULL);
 }
 
 static int getWidth(lua_State *L) {
@@ -98,7 +102,7 @@ static int blitFullToBuffer(lua_State *L) {
 	BlitBuffer *src = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
 
 	if(src->w != dst->w || src->h != dst->h || src->pitch != dst->pitch) {
-		return luaL_error(L, "blitbuffer size must be framebuffer size!");
+		return luaL_error(L, "dst and src blitbuffer size not match!");
 	}
 
 	memcpy(dst->data, src->data, src->pitch * src->h);

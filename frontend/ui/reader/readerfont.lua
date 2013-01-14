@@ -5,7 +5,7 @@ ReaderFont = InputContainer:new{
 	font_menu_title = "Font Menu",
 	face_table = nil,
 	-- default gamma from crengine's lvfntman.cpp
-	gamma_index = 15,
+	gamma_index = nil,
 }
 
 function ReaderFont:init()
@@ -57,22 +57,39 @@ function ReaderFont:onReadSettings(config)
 	end
 	self.ui.document:setFontFace(self.font_face)
 
+	self.header_font_face = config:readSetting("header_font_face")
+	if not self.header_font_face then 
+		self.header_font_face = self.ui.document.header_font
+	end
+	self.ui.document:setHeaderFont(self.header_font_face)
+
 	self.font_size = config:readSetting("font_size")
 	if not self.font_size then 
-		self.font_size = self.ui.document:getFontSize()
+		--@TODO change this!  12.01 2013 (houqp)
+		self.font_size = 29
 	end
 	self.ui.document:setFontSize(self.font_size)
 
 	self.line_space_percent = config:readSetting("line_space_percent")
 	if not self.line_space_percent then 
 		self.line_space_percent = 100
+	else
+		self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 	end
+
+	self.gamma_index = config:readSetting("gamma_index")
+	if not self.gamma_index then 
+		self.gamma_index = 15
+	end
+	self.ui.document:setGammaIndex(self.gamma_index)
 
 	-- Dirty hack: we have to add folloing call in order to set
 	-- m_is_rendered(member of LVDocView) to true. Otherwise position inside
 	-- document will be reset to 0 on first view render.
 	-- So far, I don't know why this call will alter the value of m_is_rendered.
-	self.ui:handleEvent(Event:new("UpdatePos"))
+	table.insert(self.ui.postInitCallback, function()
+		self.ui:handleEvent(Event:new("UpdatePos"))
+	end)
 end
 
 function ReaderFont:onShowFontMenu()
@@ -176,10 +193,11 @@ function ReaderFont:onChangeFontGamma(direction)
 end
 
 function ReaderFont:onCloseDocument()
-	--@TODO save gamma index    (houqp)
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
+	self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)
 	self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
+	self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end
 
 function ReaderFont:setFont(face)

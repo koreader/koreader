@@ -78,7 +78,7 @@ static int renderGlyph(lua_State *L) {
 	lua_newtable(L);
 
 	BlitBuffer *bb;
-	int result = newBlitBufferNative(L, w, h, &bb);
+	int result = newBlitBufferNative(L, w, h, 0, &bb);
 	if(result != 1) {
 		return result;
 	}

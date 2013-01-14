@@ -2,6 +2,7 @@ require "ui/reader/readerpanning"
 
 ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
+	old_page = nil,
 	view_mode = "page",
 	current_pos = 0,
 	-- only used for page view mode
@@ -85,6 +86,7 @@ function ReaderRolling:init()
 
 	self.doc_height = self.ui.document.info.doc_height
 	self.old_doc_height = self.doc_height
+	self.old_page = self.ui.document.info.number_of_pages
 end
 
 function ReaderRolling:onReadSettings(config)
@@ -92,10 +94,27 @@ function ReaderRolling:onReadSettings(config)
 	if not soe then
 		self.show_overlap_enable = soe
 	end
-	self:gotoPercent(config:readSetting("last_percent") or 0)
-	-- we have to do a real pos change in self.ui.document._document to
-	-- update status information in CREngine.
-	self.ui.document:gotoPos(self.current_pos)
+	local last_xp = config:readSetting("last_xpointer")
+	if last_xp then
+		table.insert(self.ui.postInitCallback, function()
+			self:gotoXPointer(last_xp)
+			-- we have to do a real jump in self.ui.document._document to
+			-- update status information in CREngine.
+			self.ui.document:gotoXPointer(last_xp)
+		end)
+	end
+	-- we read last_percent just for backward compatibility
+	if not last_xp then
+		local last_per = config:readSetting("last_percent")
+		if last_per then
+			table.insert(self.ui.postInitCallback, function()
+				self:gotoPercent(last_per)
+				-- we have to do a real pos change in self.ui.document._document
+				-- to update status information in CREngine.
+				self.ui.document:gotoPos(self.current_pos)
+			end)
+		end
+	end
 	if self.view_mode == "page" then
 		self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
 	end
@@ -104,7 +123,9 @@ end
 function ReaderRolling:onCloseDocument()
 	local cur_xp = self.ui.document:getXPointer()
 	local cur_pos = self.ui.document:getPosFromXPointer(cur_xp)
-	self.ui.doc_settings:saveSetting("last_percent", 10000 * cur_pos / self.doc_height)
+	-- remove last_percent config since its deprecated
+	self.ui.doc_settings:saveSetting("last_percent", nil)
+	self.ui.doc_settings:saveSetting("last_xpointer", self.ui.document:getXPointer())
 	self.ui.doc_settings:saveSetting("percent_finished", cur_pos / self.doc_height)
 end
 
@@ -172,9 +193,12 @@ function ReaderRolling:onUpdatePos()
 	self.ui.document:_readMetadata()
 	-- update self.current_pos if the height of document has been changed.
 	local new_height = self.ui.document.info.doc_height
-	if self.old_doc_height ~= new_height then
+	local new_page = self.ui.document.info.number_of_pages
+	if self.old_doc_height ~= new_height or self.old_page ~= new_page then
 		self:gotoXPointer(self.ui.document:getXPointer())
 		self.old_doc_height = new_height
+		self.old_page = new_page
+		self.ui:handleEvent(Event:new("UpdateToc"))
 	end
 	return true
 end

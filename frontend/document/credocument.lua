@@ -80,6 +80,7 @@ CreDocument = Document:new{
 
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
+	header_font = "Droid Sans Fallback",
 	options = CreOptions,
 	configurable = Configurable,
 }
@@ -120,6 +121,11 @@ function CreDocument:engineInit()
 			self.default_font = default_font
 		end
 
+		local header_font = G_reader_settings:readSetting("header_font")
+		if header_font then
+			self.header_font = header_font
+		end
+
 		engine_initilized = true
 	end
 end
@@ -133,7 +139,7 @@ function CreDocument:init()
 	if file_type == "zip" then
 		-- NuPogodi, 20.05.12: read the content of zip-file
 		-- and return extention of the 1st file
-		file_type = self:zipContentExt(filename)
+		file_type = self:zipContentExt(self.file)
 	end
 	-- these two format use the same css file
 	if file_type == "html" then
@@ -147,7 +153,7 @@ function CreDocument:init()
 
 	-- @TODO check the default view_mode to a global user configurable
 	-- variable  22.12 2012 (houqp)
-	ok, self._document = pcall(cre.openDocument, self.file, style_sheet,
+	ok, self._document = pcall(cre.newDocView, style_sheet,
 				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
@@ -160,6 +166,10 @@ function CreDocument:init()
 
 	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
 	--self._document:setDefaultInterlineSpace(self.line_space_percent)
+end
+
+function CreDocument:loadDocument()
+	self._document:loadDocument(self.file)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
@@ -249,6 +259,12 @@ function CreDocument:setViewMode(new_mode)
 	end
 end
 
+function CreDocument:setHeaderFont(new_font)
+	if new_font then
+		self._document:setHeaderFont(new_font)
+	end
+end
+
 function CreDocument:zoomFont(delta)
 	self._document:zoomFont(delta)
 end
@@ -259,6 +275,10 @@ end
 
 function CreDocument:toggleFontBolder()
 	self._document:toggleFontBolder()
+end
+
+function CreDocument:setGammaIndex(index)
+	cre.setGammaIndex(index)
 end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)

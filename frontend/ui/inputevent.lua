@@ -390,18 +390,9 @@ function Input:waitEvent(timeout_us, timeout_s)
 				keycode = self.rotation_map[self.rotation][keycode]
 			end
 
-			if keycode == "IntoSS" then
-				Device:intoScreenSaver()
-				return
-			elseif keycode == "OutOfSS" then
-				Device:outofScreenSaver()
-				return
-			elseif keycode == "Charging" then
-				Device:usbPlugIn()
-				return
-			elseif keycode == "NotCharging" then
-				Device:usbPlugOut()
-				return
+			if keycode == "IntoSS" or keycode == "OutOfSS"
+			or keycode == "Charging" or keycode == "NotCharging" then
+				return keycode
 			end
 
 			-- handle modifier keys

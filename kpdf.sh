@@ -21,7 +21,7 @@ if test "$1" == "--framework_stop"; then
 fi
 
 # stop cvm
-killall -stop cvm
+#killall -stop cvm
 
 # finally call reader
 ./reader.lua "$1" 2> crash.log
