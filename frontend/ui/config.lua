@@ -43,12 +43,7 @@ function MenuBarItem:init()
 end
 
 function MenuBarItem:onTapSelect()
-	for _, item in pairs(self.items) do
-		item[1].invert = false
-	end
-	self[1].invert = true
-	self.config:onShowOptions(self.options)
-	UIManager.repaint_all = true
+	self.config:onShowOptions(self.options, self.index)
 	return true
 end
 
@@ -93,12 +88,12 @@ function OptionTextItem:onTapSelect()
 		option_arg = self.args[self.current_item]
 		self.config:onConfigChoice(self.name, option_arg, self.event)
 	end
-	UIManager.repaint_all = true
+	UIManager:setDirty(self, "partial")
 	return true
 end
 
-ConfigIcons = HorizontalGroup:new{}
-function ConfigIcons:init()
+MenuBar = HorizontalGroup:new{}
+function MenuBar:init()
 	for c = 1, #self.icons do
 		table.insert(self, self.spacing)
 		table.insert(self, self.icons[c])
@@ -106,13 +101,19 @@ function ConfigIcons:init()
 	table.insert(self, self.spacing)
 end
 
-ConfigOption = CenterContainer:new{dimen = Geom:new{ w = Screen:getWidth(), h = math.floor(150*Screen:getWidth()/600)}}
+function MenuBar:invert(index)
+	self.icons[index][1].invert = true
+end
+
+ConfigOption = CenterContainer:new{}
 function ConfigOption:init()
 	local default_name_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_item_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
-	local default_option_height = math.floor(30*Screen:getWidth()/600)
+	local default_option_height = math.floor(40*Screen:getWidth()/600)
+	local default_option_padding = math.floor(50*Screen:getWidth()/600)
 	local vertical_group = VerticalGroup:new{}
+	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	for c = 1, #self.options do
 		if self.options[c].show ~= false then
 			local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
@@ -228,16 +229,15 @@ function ConfigOption:init()
 			table.insert(vertical_group, horizontal_group)
 		end -- if
 	end -- for
+	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	self[1] = vertical_group
+	self.dimen = vertical_group:getSize()
 end
 
 ConfigPanel = VerticalGroup:new{}
 function ConfigPanel:init()
 	local default_option = ConfigOption:new{
 		options = self.config_options.default_options
-	}
-	local menu_bar = FrameContainer:new{
-		background = 0,
 	}
 	local menu_items = {}
 	local icons_width = 0
@@ -252,24 +252,30 @@ function ConfigPanel:init()
 		
 		menu_items[c] = MenuBarItem:new{
 			menu_icon,
+			index = c,
 			options = ConfigOption:new{
 				options = self.config_options[c].options,
 				config = self.config_dialog,
 			},
 			config = self.config_dialog,
-			items = menu_items,
 		}
 	end
-	menu_bar[1] = ConfigIcons:new{
-		icons = menu_items,
-		spacing = HorizontalSpan:new{
-			width = (Screen:getWidth() - icons_width) / (#menu_items+1)
+	local menu_bar = FrameContainer:new{
+		background = 0,
+		dimen = Geom:new{ w = Screen:getWidth(), h = icons_height},
+		MenuBar:new{
+			icons = menu_items,
+			spacing = HorizontalSpan:new{
+				width = (Screen:getWidth() - icons_width) / (#menu_items+1)
+			}
 		}
-	}
-	menu_bar.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
-	
+	}	
 	self[1] = default_option
 	self[2] = menu_bar
+end
+
+function ConfigPanel:getMenuBar()
+	return self[2][1]
 end
 
 --[[
@@ -283,28 +289,7 @@ function ConfigDialog:init()
 	------------------------------------------
 	-- start to set up widget layout ---------
 	------------------------------------------
-	self.config_panel = ConfigPanel:new{ 
-		config_options = self.config_options,
-		config_dialog = self,
-	}
-	
-	local config_panel_size = self.config_panel:getSize()
-	
-	self.menu_dimen = Geom:new{
-		x = (Screen:getWidth() - config_panel_size.w)/2,
-		y = Screen:getHeight() - config_panel_size.h,
-		w = config_panel_size.w,
-		h = config_panel_size.h,
-	}
-
-	self[1] = BottomContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			dimen = self.config_panel:getSize(),
-			background = 0,
-			self.config_panel,
-		}
-	}
+	self:updateDialog()
 	------------------------------------------
 	-- start to set up input event callback --
 	------------------------------------------
@@ -327,11 +312,41 @@ function ConfigDialog:init()
 	end
 	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
 	
-	UIManager.repaint_all = true
+	UIManager:setDirty(self, "partial")
 end
 
-function ConfigDialog:onShowOptions(options)
-	self.config_panel[1] = options
+function ConfigDialog:updateDialog(panel_options)
+	self.config_panel = ConfigPanel:new{ 
+		config_options = self.config_options,
+		config_dialog = self,
+	}
+	
+	if panel_options then
+		self.config_panel[1] = panel_options
+	end
+		
+	local config_panel_size = self.config_panel:getSize()
+	
+	self.menu_dimen = Geom:new{
+		x = (Screen:getWidth() - config_panel_size.w)/2,
+		y = Screen:getHeight() - config_panel_size.h,
+		w = config_panel_size.w,
+		h = config_panel_size.h,
+	}
+
+	self[1] = BottomContainer:new{
+		dimen = Screen:getSize(),
+		FrameContainer:new{
+			dimen = self.config_panel:getSize(),
+			background = 0,
+			self.config_panel,
+		}
+	}
+end
+
+function ConfigDialog:onShowOptions(options, index)
+	self:updateDialog(options)
+	self.config_panel:getMenuBar():invert(index)
 	UIManager.repaint_all = true
 	return true
 end
@@ -347,7 +362,6 @@ end
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.menu_dimen) then
 		self:onCloseMenu()
-		--self.ui:handleEvent(Event:new("GotoPageRel", 0))
 		return true
 	end
 end
