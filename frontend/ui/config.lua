@@ -43,8 +43,15 @@ function MenuBarItem:init()
 end
 
 function MenuBarItem:onTapSelect()
-	self.config:onShowOptions(self.options, self.index)
+	self[1].invert = true
+	self.config:onShowConfigPanel(self.index)
+	UIManager:scheduleIn(1.0, function() self:invert(false) end)
 	return true
+end
+
+function MenuBarItem:invert(invert)
+	self[1].invert = invert
+	UIManager:setDirty(self.config, "partial")
 end
 
 OptionTextItem = InputContainer:new{}
@@ -90,19 +97,6 @@ function OptionTextItem:onTapSelect()
 	end
 	UIManager.repaint_all = true
 	return true
-end
-
-MenuBar = HorizontalGroup:new{}
-function MenuBar:init()
-	for c = 1, #self.icons do
-		table.insert(self, self.spacing)
-		table.insert(self, self.icons[c])
-	end
-	table.insert(self, self.spacing)
-end
-
-function MenuBar:invert(index)
-	self.icons[index][1].invert = true
 end
 
 ConfigOption = CenterContainer:new{}
@@ -234,17 +228,28 @@ function ConfigOption:init()
 	self.dimen = vertical_group:getSize()
 end
 
-ConfigPanel = VerticalGroup:new{}
+ConfigPanel = FrameContainer:new{ background = 0, bordersize = 0, }
 function ConfigPanel:init()
-	local default_option = ConfigOption:new{
-		options = self.config_options.default_options
+	local config_options = self.config_dialog.config_options
+	local default_option = config_options.default_options and config_options.default_options 
+							or config_options[1].options
+	local panel = ConfigOption:new{
+		options = self.index and config_options[self.index].options or default_option,
+		config = self.config_dialog,
 	}
+	self.dimen = panel:getSize()
+	table.insert(self, panel)
+end
+
+MenuBar = FrameContainer:new{ background = 0, }
+function MenuBar:init()
+	local config_options = self.config_dialog.config_options
 	local menu_items = {}
 	local icons_width = 0
 	local icons_height = 0
-	for c = 1, #self.config_options do
+	for c = 1, #config_options do
 		local menu_icon = ImageWidget:new{
-			file = self.config_options[c].icon
+			file = config_options[c].icon
 		}
 		local icon_dimen = menu_icon:getSize()
 		icons_width = icons_width + icon_dimen.w
@@ -253,34 +258,45 @@ function ConfigPanel:init()
 		menu_items[c] = MenuBarItem:new{
 			menu_icon,
 			index = c,
-			options = ConfigOption:new{
-				options = self.config_options[c].options,
-				config = self.config_dialog,
-			},
 			config = self.config_dialog,
 		}
 	end
-	local menu_bar = FrameContainer:new{
-		background = 0,
-		dimen = Geom:new{ w = Screen:getWidth(), h = icons_height},
-		MenuBar:new{
-			icons = menu_items,
-			spacing = HorizontalSpan:new{
-				width = (Screen:getWidth() - icons_width) / (#menu_items+1)
-			}
-		}
-	}	
-	self[1] = default_option
-	self[2] = menu_bar
-end
-
-function ConfigPanel:getMenuBar()
-	return self[2][1]
+	
+	local spacing = HorizontalSpan:new{
+		width = (Screen:getWidth() - icons_width) / (#menu_items+1)
+	}
+	
+	local menu_bar = HorizontalGroup:new{}
+	
+	for c = 1, #menu_items do
+		table.insert(menu_bar, spacing)
+		table.insert(menu_bar, menu_items[c])
+	end
+	table.insert(menu_bar, spacing)
+	
+	self.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
+	table.insert(self, menu_bar)
 end
 
 --[[
-Widget that displays config menu
+Widget that displays config menubar and config panel
+
+ +----------------+
+ |                |
+ |                |
+ |                |
+ |                |
+ |                |
+ +----------------+
+ |                |
+ |  Config Panel  |
+ |                |
+ +----------------+
+ |    Menu Bar    |
+ +----------------+
+ 
 --]]
+
 ConfigDialog = InputContainer:new{
 	--is_borderless = false,
 }
@@ -289,7 +305,13 @@ function ConfigDialog:init()
 	------------------------------------------
 	-- start to set up widget layout ---------
 	------------------------------------------
-	self:updateDialog()
+	self.config_panel = ConfigPanel:new{
+		config_dialog = self,
+	}
+	self.config_menubar = MenuBar:new{ 
+		config_dialog = self,
+	}
+	self:makeDialog()
 	------------------------------------------
 	-- start to set up input event callback --
 	------------------------------------------
@@ -315,38 +337,41 @@ function ConfigDialog:init()
 	UIManager:setDirty(self, "partial")
 end
 
-function ConfigDialog:updateDialog(panel_options)
-	self.config_panel = ConfigPanel:new{ 
-		config_options = self.config_options,
+function ConfigDialog:updateConfigPanel(index)
+	self.config_panel = ConfigPanel:new{
+		index = index,
 		config_dialog = self,
-	}
-	
-	if panel_options then
-		self.config_panel[1] = panel_options
-	end
-		
-	local config_panel_size = self.config_panel:getSize()
-	
-	self.menu_dimen = Geom:new{
-		x = (Screen:getWidth() - config_panel_size.w)/2,
-		y = Screen:getHeight() - config_panel_size.h,
-		w = config_panel_size.w,
-		h = config_panel_size.h,
-	}
-
-	self[1] = BottomContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			dimen = self.config_panel:getSize(),
-			background = 0,
-			self.config_panel,
-		}
 	}
 end
 
-function ConfigDialog:onShowOptions(options, index)
-	self:updateDialog(options)
-	self.config_panel:getMenuBar():invert(index)
+function ConfigDialog:makeDialog()
+	local dialog = VerticalGroup:new{
+		self.config_panel,
+		self.config_menubar,
+	}
+	
+	local dialog_size = dialog:getSize()
+	
+	self[1] = BottomContainer:new{
+		dimen = Screen:getSize(),
+		FrameContainer:new{
+			dimen = dialog_size,
+			background = 0,
+			dialog,
+		}
+	}
+	
+	self.dialog_dimen = Geom:new{
+		x = (Screen:getWidth() - dialog_size.w)/2,
+		y = Screen:getHeight() - dialog_size.h,
+		w = dialog_size.w,
+		h = dialog_size.h,
+	}	
+end
+
+function ConfigDialog:onShowConfigPanel(index)
+	self:updateConfigPanel(index)
+	self:makeDialog()
 	UIManager.repaint_all = true
 	return true
 end
@@ -360,7 +385,7 @@ function ConfigDialog:onCloseMenu()
 end
 
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
-	if ges_ev.pos:notIntersectWith(self.menu_dimen) then
+	if ges_ev.pos:notIntersectWith(self.dialog_dimen) then
 		self:onCloseMenu()
 		return true
 	end
