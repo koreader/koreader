@@ -23,11 +23,10 @@ KoptOptions = {
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
-				name="screen_rotation",
-				name_text = "Screen Rotation",
+				name="screen_mode",
+				name_text = "Screen Mode",
 				item_text = {"portrait", "landscape"},
-				values = {0, 90},
-				default_value = 0,
+				-- TODO: add screen mode changing command
 			}
 		}
 	},
@@ -115,6 +114,13 @@ KoptOptions = {
 				item_text = {"1","2","3","4"},
 				values = {1,2,3,4},
 				default_value = 2,
+			},
+			{
+				name="screen_rotation",
+				name_text = "Vertical Text",
+				item_text = {"true", "false"},
+				values = {90, 0},
+				default_value = 0,
 			},
 			{
 				name = "quality",
