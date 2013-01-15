@@ -23,11 +23,10 @@ KoptOptions = {
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
-				name="screen_rotation",
-				name_text = "Screen Rotation",
+				name="screen_mode",
+				name_text = "Screen Mode",
 				item_text = {"portrait", "landscape"},
-				values = {0, 90},
-				default_value = 0,
+				-- TODO: add screen mode changing command
 			}
 		}
 	},
@@ -46,14 +45,6 @@ KoptOptions = {
 	{
 		icon = "resources/icons/appbar.column.two.large.png",
 		options = {
-			{
-				name = "max_columns",
-				name_text = "Columns",
-				item_text = {"1","2","3","4"},
-				values = {1,2,3,4},
-				default_value = 2,
-				show = false
-			},
 			{
 				name = "page_margin",
 				name_text = "Page Margin",
@@ -118,11 +109,18 @@ KoptOptions = {
 				event = "RedrawCurrentPage",
 			},
 			{
-				name = "word_spacing",
-				name_text = "Word Gap",
-				item_text = {"small", "medium", "large"},
-				values = {0.05, 0.15, 0.375},
-				default_value = 0.15,
+				name = "max_columns",
+				name_text = "Columns",
+				item_text = {"1","2","3","4"},
+				values = {1,2,3,4},
+				default_value = 2,
+			},
+			{
+				name="screen_rotation",
+				name_text = "Vertical Text",
+				item_text = {"true", "false"},
+				values = {90, 0},
+				default_value = 0,
 			},
 			{
 				name = "quality",
@@ -130,7 +128,6 @@ KoptOptions = {
 				item_text = {"low", "default", "high"},
 				values={0.5, 0.8, 1.0},
 				default_value = 0.8,
-				show = false,
 			},
 			{
 				name = "auto_straighten",
@@ -140,12 +137,11 @@ KoptOptions = {
 				default_value = 0,
 			},
 			{
-				name = "detect_indent",
-				name_text = "Indentation",
-				item_text = {"enable","disable"},
-				values = {1, 0},
-				default_value = 1,
-				show = false,
+				name = "word_spacing",
+				name_text = "Word Gap",
+				item_text = {"small", "medium", "large"},
+				values = {0.05, 0.15, 0.375},
+				default_value = 0.15,
 			},
 			{
 				name = "defect_size",
@@ -153,6 +149,13 @@ KoptOptions = {
 				item_text = {"small","medium","large"},
 				values = {0.5, 1.0, 2.0},
 				default_value = 1.0,
+			},
+			{
+				name = "detect_indent",
+				name_text = "Indentation",
+				item_text = {"enable","disable"},
+				values = {1, 0},
+				default_value = 1,
 				show = false,
 			},
 		}
