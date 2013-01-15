@@ -45,7 +45,7 @@ end
 function MenuBarItem:onTapSelect()
 	self[1].invert = true
 	self.config:onShowConfigPanel(self.index)
-	UIManager:scheduleIn(1.0, function() self:invert(false) end)
+	UIManager:scheduleIn(0.5, function() self:invert(false) end)
 	return true
 end
 
@@ -105,7 +105,7 @@ function ConfigOption:init()
 	local default_item_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
 	local default_option_height = math.floor(40*Screen:getWidth()/600)
-	local default_option_padding = math.floor(50*Screen:getWidth()/600)
+	local default_option_padding = math.floor(40*Screen:getWidth()/600)
 	local vertical_group = VerticalGroup:new{}
 	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	for c = 1, #self.options do
