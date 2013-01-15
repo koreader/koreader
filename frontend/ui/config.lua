@@ -88,7 +88,7 @@ function OptionTextItem:onTapSelect()
 		option_arg = self.args[self.current_item]
 		self.config:onConfigChoice(self.name, option_arg, self.event)
 	end
-	UIManager:setDirty(self, "partial")
+	UIManager.repaint_all = true
 	return true
 end
 
