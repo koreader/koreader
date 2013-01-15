@@ -209,7 +209,7 @@ static int walkTableOfContent(lua_State *L, LVTocItem *toc, int *count) {
 	int i = 0,
 		nr_child = toc->getChildCount();
 
-	for(i = 0; i < nr_child; i++)  {
+	for (i = 0; i < nr_child; i++)  {
 		toc_tmp = toc->getChild(i);
 		lua_pushnumber(L, (*count)++);
 
@@ -266,7 +266,7 @@ static int getTableOfContent(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 	
 	LVTocItem * toc = doc->text_view->getToc();
-	int count = 0;
+	int count = 1;
 
 	lua_newtable(L);
 	walkTableOfContent(L, toc, &count);
