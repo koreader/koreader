@@ -8,6 +8,7 @@ require "ui/reader/readerrolling"
 require "ui/reader/readertoc"
 require "ui/reader/readerbookmark"
 require "ui/reader/readerfont"
+require "ui/reader/readertypeset"
 require "ui/reader/readermenu"
 require "ui/reader/readerconfig"
 
@@ -123,10 +124,6 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, roller)
-		--if not self.start_pos then
-			--self.start_pos = 0
-		--end
-		--roller:gotoPercent(self.start_pos)
 		-- font menu
 		local font_menu = ReaderFont:new{
 			dialog = self.dialog,
@@ -134,6 +131,13 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, font_menu)
+		-- typeset controller
+		local typeset = ReaderTypeset:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, typeset)
 	end
 	if self.document.info.configurable then
 		-- configurable controller
