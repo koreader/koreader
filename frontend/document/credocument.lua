@@ -281,6 +281,10 @@ function CreDocument:setGammaIndex(index)
 	cre.setGammaIndex(index)
 end
 
+function CreDocument:setStyleSheet(new_css)
+	self._document:setStyleSheet(new_css);
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
 DocumentRegistry:addProvider("html", "application/html", CreDocument)
