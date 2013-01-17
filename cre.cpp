@@ -408,9 +408,13 @@ static int setDefaultInterlineSpace(lua_State *L) {
 
 static int setStyleSheet(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
-	const char* style_sheet_data = luaL_checkstring(L, 2);
+	const char* style_sheet = luaL_checkstring(L, 2);
+	lString8 css;
 
-	doc->text_view->setStyleSheet(lString8(style_sheet_data));
+	if (LVLoadStylesheetFile(lString16(style_sheet), css)){
+		doc->text_view->setStyleSheet(css);
+	}
+
 	return 0;
 }
 
