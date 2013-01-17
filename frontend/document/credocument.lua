@@ -81,6 +81,7 @@ CreDocument = Document:new{
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
 	header_font = "Droid Sans Fallback",
+	default_css = "./data/cr3.css",
 	options = CreOptions,
 	configurable = Configurable,
 }
@@ -149,11 +150,11 @@ function CreDocument:init()
 	if not io.open("./data/"..file_type..".css") then
 		file_type = "cr3"
 	end
-	local style_sheet = "./data/"..file_type..".css"
+	self.default_css = "./data/"..file_type..".css"
 
 	-- @TODO check the default view_mode to a global user configurable
 	-- variable  22.12 2012 (houqp)
-	ok, self._document = pcall(cre.newDocView, style_sheet,
+	ok, self._document = pcall(cre.newDocView, self.default_css,
 				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
