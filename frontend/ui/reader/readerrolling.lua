@@ -121,12 +121,19 @@ function ReaderRolling:onReadSettings(config)
 end
 
 function ReaderRolling:onCloseDocument()
-	local cur_xp = self.ui.document:getXPointer()
-	local cur_pos = self.ui.document:getPosFromXPointer(cur_xp)
 	-- remove last_percent config since its deprecated
 	self.ui.doc_settings:saveSetting("last_percent", nil)
 	self.ui.doc_settings:saveSetting("last_xpointer", self.ui.document:getXPointer())
-	self.ui.doc_settings:saveSetting("percent_finished", cur_pos / self.doc_height)
+	self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+end
+
+function ReaderRolling:getLastPercent()
+	if self.view_mode == "page" then
+		return self.current_page / self.old_page
+	else
+		-- FIXME: the calculated percent is not accurate in "scroll" mode.
+		return self.ui.document:getPosFromXPointer(self.ui.document:getXPointer()) / self.doc_height
+	end
 end
 
 function ReaderRolling:onTapForward()
