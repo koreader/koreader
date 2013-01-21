@@ -45,11 +45,9 @@ static int initCache(lua_State *L) {
 }
 
 static int newDocView(lua_State *L) {
-	const char *style_sheet = luaL_checkstring(L, 1);
-	int width = luaL_checkint(L, 2);
-	int height = luaL_checkint(L, 3);
-	LVDocViewMode view_mode = (LVDocViewMode)luaL_checkint(L, 4);
-	lString8 css;
+	int width = luaL_checkint(L, 1);
+	int height = luaL_checkint(L, 2);
+	LVDocViewMode view_mode = (LVDocViewMode)luaL_checkint(L, 3);
 
 	CreDocument *doc = (CreDocument*) lua_newuserdata(L, sizeof(CreDocument));
 	luaL_getmetatable(L, "credocument");
@@ -58,11 +56,8 @@ static int newDocView(lua_State *L) {
 	doc->text_view = new LVDocView();
 	//doc->text_view->setBackgroundColor(0xFFFFFF);
 	//doc->text_view->setTextColor(0x000000);
-	if (LVLoadStylesheetFile(lString16(style_sheet), css)){
-		if (!css.empty()){
-			doc->text_view->setStyleSheet(css);
-		}
-	}
+	//doc->text_view->doCommand(DCMD_SET_DOC_FONTS, 1);
+	//doc->text_view->doCommand(DCMD_SET_INTERNAL_STYLES, 1);
 	doc->text_view->setViewMode(view_mode, -1);
 	doc->text_view->Resize(width, height);
 	doc->text_view->setPageHeaderInfo(PGHDR_AUTHOR|PGHDR_TITLE|PGHDR_PAGE_NUMBER|PGHDR_PAGE_COUNT|PGHDR_CHAPTER_MARKS|PGHDR_CLOCK);
@@ -98,7 +93,7 @@ static int loadDocument(lua_State *L) {
 static int closeDocument(lua_State *L) {
 	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
 
-	// should be save if called twice
+	/* should be save if called twice */
 	if(doc->text_view != NULL) {
 		delete doc->text_view;
 		doc->text_view = NULL;
@@ -413,7 +408,17 @@ static int setStyleSheet(lua_State *L) {
 
 	if (LVLoadStylesheetFile(lString16(style_sheet), css)){
 		doc->text_view->setStyleSheet(css);
+	} else {
+		doc->text_view->setStyleSheet(lString8());
 	}
+
+	return 0;
+}
+
+static int setEmbeddedStyleSheet(lua_State *L) {
+	CreDocument *doc = (CreDocument*) luaL_checkudata(L, 1, "credocument");
+
+	doc->text_view->doCommand(DCMD_SET_INTERNAL_STYLES, luaL_checkint(L, 2));
 
 	return 0;
 }
@@ -677,6 +682,7 @@ static const struct luaL_Reg credocument_meth[] = {
 	{"setFontSize", setFontSize},
 	{"setDefaultInterlineSpace", setDefaultInterlineSpace},
 	{"setStyleSheet", setStyleSheet},
+	{"setEmbeddedStyleSheet", setEmbeddedStyleSheet},
 	/* --- control methods ---*/
 	{"gotoPage", gotoPage},
 	{"gotoPercent", gotoPercent},
@@ -704,7 +710,6 @@ int luaopen_cre(lua_State *L) {
 	luaL_register(L, NULL, credocument_meth);
 	lua_pop(L, 1);
 	luaL_register(L, "cre", cre_func);
-
 
 	/* initialize font manager for CREngine */
 	InitFontManager(lString8());
