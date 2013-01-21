@@ -1,5 +1,5 @@
 ReaderTypeset = InputContainer:new{
-	css_menu_title = "CSS Menu",
+	css_menu_title = "Set render style",
 	css = nil,
 	internal_css = true,
 }
@@ -39,7 +39,7 @@ end
 function ReaderTypeset:genStyleSheetMenu()
 	local file_list = {
 		{
-			text = "clear all styles",
+			text = "clear all external styles",
 			callback = function()
 				self:setStyleSheet("")
 			end
