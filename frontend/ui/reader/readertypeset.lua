@@ -1,6 +1,7 @@
 ReaderTypeset = InputContainer:new{
 	css_menu_title = "CSS Menu",
 	css = nil,
+	internal_css = true,
 }
 
 function ReaderTypeset:init()
@@ -9,18 +10,47 @@ end
 
 function ReaderTypeset:onReadSettings(config)
 	self.css = config:readSetting("css")
-	if not self.css then 
-		self.css = self.ui.document.default_css
+	if self.css and self.css ~= "" then 
+		self.ui.document:setStyleSheet(self.css)
+	else
+		self.ui.document:setStyleSheet("")
 	end
-	self.ui.document:setStyleSheet(self.css)
+
+	self.embedded_css = config:readSetting("embedded_css")
+	-- default to enable embedded css
+	if self.embedded_css == nil then
+		self.embedded_css = true
+	end
+	if not self.embedded_css then
+		self.ui.document:setEmbeddedStyleSheet(0)
+	end
 end
 
 function ReaderTypeset:onCloseDocument()
 	self.ui.doc_settings:saveSetting("css", self.css)
+	self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
+end
+
+function ReaderTypeset:onToggleEmbeddedStyleSheet()
+	self:toggleEmbeddedStyleSheet()
+	return true
 end
 
 function ReaderTypeset:genStyleSheetMenu()
-	local file_list = {}
+	local file_list = {
+		{
+			text = "clear all styles",
+			callback = function()
+				self:setStyleSheet("")
+			end
+		},
+		{
+			text = "Auto",
+			callback = function()
+				self:setStyleSheet(self.ui.document.default_css)
+			end
+		},
+	}
 	for f in lfs.dir("./data") do
 		if lfs.attributes("./data/"..f, "mode") == "file" and string.match(f, "%.css$") then
 			table.insert(file_list, {
@@ -36,10 +66,32 @@ end
 
 function ReaderTypeset:setStyleSheet(new_css)
 	if new_css ~= self.css then
+		--DEBUG("setting css to ", new_css)
 		self.ui.document:setStyleSheet(new_css)
 		self.css = new_css
 		self.ui:handleEvent(Event:new("UpdatePos"))
 	end
+end
+
+function ReaderTypeset:setEmbededStyleSheetOnly()
+	if self.css ~= nil then
+		-- clear applied css
+		self.ui.document:setStyleSheet("")
+		self.ui.document:setEmbeddedStyleSheet(1)
+		self.css = nil
+		self.ui:handleEvent(Event:new("UpdatePos"))
+	end
+end
+
+function ReaderTypeset:toggleEmbeddedStyleSheet()
+	if self.embedded_css then
+		self.ui.document:setEmbeddedStyleSheet(0)
+		self.embedded_css = false
+	else
+		self.ui.document:setEmbeddedStyleSheet(1)
+		self.embedded_css = true
+	end
+	self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderTypeset:addToMainMenu(item_table)
