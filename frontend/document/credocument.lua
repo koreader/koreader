@@ -66,7 +66,15 @@ CreOptions = {
 				default_arg = "page",
 				event = "SetViewMode",
 			},
-		}
+			{
+				name = "embedded_css",
+				name_text = "Embedded style",
+				item_text = {"toggle"},
+				args = {1},
+				default_arg = nil,
+				event = "ToggleEmbeddedStyleSheet",
+			},
+		},
 	},
 }
 
@@ -154,8 +162,9 @@ function CreDocument:init()
 
 	-- @TODO check the default view_mode to a global user configurable
 	-- variable  22.12 2012 (houqp)
-	ok, self._document = pcall(cre.newDocView, self.default_css,
-				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
+	ok, self._document = pcall(cre.newDocView,
+		Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
+	)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
@@ -164,9 +173,6 @@ function CreDocument:init()
 	self.info.has_pages = false
 	self:_readMetadata()
 	self.info.configurable = true
-
-	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
-	--self._document:setDefaultInterlineSpace(self.line_space_percent)
 end
 
 function CreDocument:loadDocument()
@@ -283,7 +289,11 @@ function CreDocument:setGammaIndex(index)
 end
 
 function CreDocument:setStyleSheet(new_css)
-	self._document:setStyleSheet(new_css);
+	self._document:setStyleSheet(new_css)
+end
+
+function CreDocument:setEmbeddedStyleSheet(toggle)
+	self._document:setEmbeddedStyleSheet(toggle)
 end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
