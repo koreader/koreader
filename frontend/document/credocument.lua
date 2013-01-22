@@ -66,7 +66,15 @@ CreOptions = {
 				default_arg = "page",
 				event = "SetViewMode",
 			},
-		}
+			{
+				name = "embedded_css",
+				name_text = "Embedded style",
+				item_text = {"toggle"},
+				args = {1},
+				default_arg = nil,
+				event = "ToggleEmbeddedStyleSheet",
+			},
+		},
 	},
 }
 
@@ -81,6 +89,7 @@ CreDocument = Document:new{
 	line_space_percent = 100,
 	default_font = "Droid Sans Fallback",
 	header_font = "Droid Sans Fallback",
+	default_css = "./data/cr3.css",
 	options = CreOptions,
 	configurable = Configurable,
 }
@@ -149,12 +158,13 @@ function CreDocument:init()
 	if not io.open("./data/"..file_type..".css") then
 		file_type = "cr3"
 	end
-	local style_sheet = "./data/"..file_type..".css"
+	self.default_css = "./data/"..file_type..".css"
 
 	-- @TODO check the default view_mode to a global user configurable
 	-- variable  22.12 2012 (houqp)
-	ok, self._document = pcall(cre.newDocView, style_sheet,
-				Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE)
+	ok, self._document = pcall(cre.newDocView,
+		Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
+	)
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
@@ -163,9 +173,6 @@ function CreDocument:init()
 	self.info.has_pages = false
 	self:_readMetadata()
 	self.info.configurable = true
-
-	-- @TODO read line_space_percent from setting file  12.06 2012 (houqp)
-	--self._document:setDefaultInterlineSpace(self.line_space_percent)
 end
 
 function CreDocument:loadDocument()
@@ -279,6 +286,14 @@ end
 
 function CreDocument:setGammaIndex(index)
 	cre.setGammaIndex(index)
+end
+
+function CreDocument:setStyleSheet(new_css)
+	self._document:setStyleSheet(new_css)
+end
+
+function CreDocument:setEmbeddedStyleSheet(toggle)
+	self._document:setEmbeddedStyleSheet(toggle)
 end
 
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
