@@ -30,7 +30,18 @@
 #define ASSERT_BLITBUFFER_BOUNDARIES(bb,bb_ptr) {}
 #endif // DEBUG
 
-inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
+inline int getPixel(BlitBuffer *bb, int x, int y) {
+	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
+	ASSERT_BLITBUFFER_BOUNDARIES(bb, dstptr);
+
+	if(x % 2 == 0) {
+		return (*dstptr & 0xF0) >> 4;
+	} else {
+		return *dstptr & 0x0F;
+	}
+}
+
+inline void setPixel(BlitBuffer *bb, int x, int y, int c) {
 	uint8_t *dstptr = (uint8_t*)(bb->data) + (y * bb->pitch) + (x / 2);
 	ASSERT_BLITBUFFER_BOUNDARIES(bb, dstptr);
 
@@ -41,7 +52,6 @@ inline int setPixel(BlitBuffer *bb, int x, int y, int c) {
 		*dstptr &= 0xF0;
 		*dstptr |= c;
 	}
-	return 0;
 }
 
 /*
@@ -249,6 +259,64 @@ static int blitToBuffer(lua_State *L) {
 			srcptr += src->pitch;
 		}
 	}
+	return 0;
+}
+
+static int rotate_table[3][2] = {
+	/* cos, sin */
+	{0, 1}, /* 90 degree */
+	{-1, 0}, /* 180 degree */
+	{0, -1}, /* 270 degree */
+};
+
+/** @brief rotate and blit to buffer
+ *
+ *  Currently, only support rotation of 90, 180, 270 degree.
+ * */
+static int blitToBufferRotate(lua_State *L) {
+	BlitBuffer *dst = (BlitBuffer*) luaL_checkudata(L, 1, "blitbuffer");
+	BlitBuffer *src = (BlitBuffer*) luaL_checkudata(L, 2, "blitbuffer");
+	int degree = luaL_checkint(L, 3);
+	int i, j, x, y, /* src and dst coordinate */
+		x_adj = 0, y_adj = 0; /* value for translation after rotatation */
+	int cosT = rotate_table[degree/90-1][0],
+		sinT = rotate_table[degree/90-1][1],
+		u, v;
+
+	switch (degree) {
+		case 180:
+			y_adj = dst->h;
+		case 90:
+			x_adj = dst->w;
+			break;
+		case 270:
+			y_adj = dst->h;
+			break;
+	}
+
+	u = x_adj;
+	v = y_adj;
+	for (j = 0; j < src->h; j++) {
+		/*
+		 * x = -sinT * j + x_adj;
+		 * y = cosT * j + y_adj;
+		 */
+		x = u;
+		y = v;
+		for (i = 0; i < src->w; i++) {
+			/* 
+			 * each (i, j) maps to (x, y)
+			 * x = cosT * i - sinT * j + x_adj;
+			 * y = cosT * j + sinT * i + y_adj;
+			 */
+			setPixel(dst, x, y, getPixel(src, i, j));
+			x += cosT;
+			y += sinT;
+		}
+		u -= sinT;
+		v += cosT;
+	}
+
 	return 0;
 }
 
@@ -772,6 +840,7 @@ static const struct luaL_Reg blitbuffer_meth[] = {
 	{"getWidth", getWidth},
 	{"getHeight", getHeight},
 	{"blitFrom", blitToBuffer},
+	{"blitFromRotate", blitToBufferRotate},
 	{"addblitFrom", addblitToBuffer},
 	{"blitFullFrom", blitFullToBuffer},
 	{"paintRect", paintRect},
