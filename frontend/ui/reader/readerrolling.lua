@@ -14,32 +14,7 @@ ReaderRolling = InputContainer:new{
 }
 
 function ReaderRolling:init()
-	if Device:isTouchDevice() then
-		self.ges_events = {
-			TapForward = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = Screen:getWidth()/4,
-						y = Screen:getHeight()/4,
-						w = 3*Screen:getWidth()/4,
-						h = 5*Screen:getHeight()/8,
-					}
-				}
-			},
-			TapBackward = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = 0, 
-						y = Screen:getHeight()/4,
-						w = Screen:getWidth()/4,
-						h = 5*Screen:getHeight()/8,
-					}
-				}
-			}
-		}
-	else
+	if Device:hasKeyboard() then
 		self.key_events = {
 			GotoNextView = {
 				{ Input.group.PgFwd },
@@ -87,6 +62,34 @@ function ReaderRolling:init()
 	self.doc_height = self.ui.document.info.doc_height
 	self.old_doc_height = self.doc_height
 	self.old_page = self.ui.document.info.number_of_pages
+end
+
+-- This method will  be called in onSetDimensions handler
+function ReaderRolling:initGesListener()
+	self.ges_events = {
+		TapForward = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = Screen:getWidth()/4,
+					y = Screen:getHeight()/4,
+					w = 3*Screen:getWidth()/4,
+					h = 5*Screen:getHeight()/8,
+				}
+			}
+		},
+		TapBackward = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, 
+					y = Screen:getHeight()/4,
+					w = Screen:getWidth()/4,
+					h = 5*Screen:getHeight()/8,
+				}
+			}
+		}
+	}
 end
 
 function ReaderRolling:onReadSettings(config)
@@ -221,6 +224,13 @@ function ReaderRolling:onRedrawCurrentView()
 		self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
 	end
 	return true
+end
+
+function ReaderRolling:onSetDimensions()
+	-- update listening according to new screen dimen
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
 end
 
 --[[

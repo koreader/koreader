@@ -5,9 +5,9 @@ require "ui/widget"
 require "ui/screen"
 require "settings" -- for DEBUG(), TODO: put DEBUG() somewhere else
 
-
+-- initialize output module, this must be initialized before Input
+Screen:init()
 -- initialize the input handling
-
 Input:init()
 
 
@@ -164,7 +164,7 @@ function UIManager:run()
 		local dirty = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
-				widget.widget:paintTo(Screen.fb.bb, widget.x, widget.y)
+				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
 				if self._dirty[widget.widget] == "full" then
 					self.refresh_type = 0
 				end
@@ -178,7 +178,7 @@ function UIManager:run()
 
 		if dirty then
 			-- refresh FB
-			Screen.fb:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
+			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
 			-- reset refresh_type
 			self.refresh_type = 1
 		end
@@ -204,7 +204,7 @@ function UIManager:run()
 
 		-- delegate input_event to handler
 		if input_event then
-			DEBUG(input_event)
+			DEBUG("in ui.lua:", input_event)
 			if input_event == "IntoSS" then
 				Device:intoScreenSaver()
 			elseif input_event == "OutOfSS" then

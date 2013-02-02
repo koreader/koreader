@@ -55,20 +55,25 @@ ReaderConfig = InputContainer:new{
 }
 
 function ReaderConfig:init()
-	if Device:isTouchDevice() then
-		self.ges_events = {
-			TapShowConfigMenu = {
-				GestureRange:new{
-					ges = "tap",
-					range = self.dimen:copy(),
-				}
-			}
-		}
-	else
+	if Device:hasKeyboard() then
 		self.key_events = {
 			ShowConfigMenu = { { "AA" }, doc = "show config dialog" },
 		}
 	end
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
+end
+
+function ReaderConfig:initGesListener()
+	self.ges_events = {
+		TapShowConfigMenu = {
+			GestureRange:new{
+				ges = "tap",
+				range = self.dimen:copy(),
+			}
+		}
+	}
 end
 
 function ReaderConfig:onShowConfigMenu()
@@ -107,8 +112,15 @@ function ReaderConfig:onTapShowConfigMenu()
 end
 
 function ReaderConfig:onSetDimensions(dimen)
-	-- update gesture listenning range according to new screen orientation
-	self:init()
+	-- update listening according to new screen dimen
+	--@TODO do we really need to new a Geom everytime?  02.02 2013 (houqp)
+	self.dimen = Geom:new{
+		x = 0, 
+		y = 7*Screen:getHeight()/8,
+		w = Screen:getWidth(),
+		h = Screen:getHeight()/8,
+	}
+	self:initGesListener()
 end
 
 function ReaderConfig:onReadSettings(config)

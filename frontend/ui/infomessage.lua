@@ -9,14 +9,15 @@ it vanishes on key press or after a given timeout
 InfoMessage = InputContainer:new{
 	face = Font:getFace("infofont", 25),
 	text = "",
-	timeout = nil,
-
-	key_events = {
-		AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
-	}
+	timeout = nil, -- in seconds
 }
 
 function InfoMessage:init()
+	if Device:hasKeyboard() then
+		key_events = {
+			AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
+		}
+	end
 	-- we construct the actual content here because self.text is only available now
 	self[1] = CenterContainer:new{
 		dimen = Screen:getSize(),

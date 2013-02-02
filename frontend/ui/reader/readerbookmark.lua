@@ -12,21 +12,23 @@ function ReaderBookmark:init()
 				{ "B" },
 				doc = "show bookmarks" },
 		}
-	elseif Device:isTouchDevice() then
-		self.ges_events = {
-			AddBookmark = {
-				GestureRange:new{
-					ges = "double_tap",
-					range = Geom:new{
-						x = Screen:getWidth()/2, y = 0,
-						w = Screen:getWidth()/2,
-						h = Screen:getHeight()/2
-					}
-				}
-			},
-		}
 	end
 	self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderBookmark:initGesListener()
+	self.ges_events = {
+		AddBookmark = {
+			GestureRange:new{
+				ges = "double_tap",
+				range = Geom:new{
+					x = Screen:getWidth()/2, y = 0,
+					w = Screen:getWidth()/2,
+					h = Screen:getHeight()/2
+				}
+			}
+		},
+	}
 end
 
 function ReaderBookmark:onReadSettings(config)
@@ -38,7 +40,10 @@ function ReaderBookmark:onCloseDocument()
 end
 
 function ReaderBookmark:onSetDimensions(dimen)
-	self.dimen = dimen
+	-- update listening according to new screen dimen
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
 end
 
 function ReaderBookmark:onAddBookmark()

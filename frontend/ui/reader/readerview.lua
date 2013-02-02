@@ -1,4 +1,5 @@
 ReaderView = WidgetContainer:new{
+	_name = "ReaderView",
 	document = nil,
 
 	state = {

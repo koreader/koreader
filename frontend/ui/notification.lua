@@ -8,13 +8,14 @@ Notification = InputContainer:new{
 	face = Font:getFace("infofont", 20),
 	text = "Null Message",
 	timeout = nil,
-
-	key_events = {
-		AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
-	}
 }
 
 function Notification:init()
+	if Device:hasKeyboard() then
+		key_events = {
+			AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
+		}
+	end
 	-- we construct the actual content here because self.text is only available now
 	self[1] = CenterContainer:new{
 		dimen = Geom:new{

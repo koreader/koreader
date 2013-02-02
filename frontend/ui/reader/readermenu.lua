@@ -1,4 +1,5 @@
 ReaderMenu = InputContainer:new{
+	_name = "ReaderMenu",
 	item_table = {},
 	registered_widgets = {},
 }
@@ -7,24 +8,26 @@ function ReaderMenu:init()
 	self.item_table = {}
 	self.registered_widgets = {}
 
-	if Device:isTouchDevice() then
-		self.ges_events = {
-			TapShowMenu = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()/4,
-					}
-				}
-			},
-		}
-	else
+	if Device:hasKeyboard() then
 		self.key_events = {
 			ShowMenu = { { "Menu" }, doc = "show menu" },
 		}
 	end
+end
+
+function ReaderMenu:initGesListener()
+	self.ges_events = {
+		TapShowMenu = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight()/4,
+				}
+			}
+		},
+	}
 end
 
 function ReaderMenu:setUpdateItemTable()
@@ -32,17 +35,17 @@ function ReaderMenu:setUpdateItemTable()
 		text = "Screen rotate",
 		sub_item_table = {
 			{
-				text = "rotate 90 degree clockwise",
+				text = "landscape",
 				callback = function()
-					--Screen:screenRotate("clockwise")
+					Screen:setViewMode("landscape")
 					self.ui:handleEvent(
 						Event:new("SetDimensions", Screen:getSize()))
 				end
 			},
 			{
-				text = "rotate 90 degree anticlockwise",
+				text = "portrait",
 				callback = function()
-					--Screen:screenRotate("anticlockwise")
+					Screen:setViewMode("portrait")
 					self.ui:handleEvent(
 						Event:new("SetDimensions", Screen:getSize()))
 				end
@@ -101,8 +104,10 @@ function ReaderMenu:onTapShowMenu()
 end
 
 function ReaderMenu:onSetDimensions(dimen)
-	-- @TODO  update gesture listenning range according to new screen
-	-- orientation 15.12 2012 (houqp)
+	-- update listening according to new screen dimen
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
 end
 
 function ReaderMenu:onCloseDocument()
