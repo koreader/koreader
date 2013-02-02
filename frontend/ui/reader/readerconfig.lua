@@ -91,15 +91,10 @@ function ReaderConfig:onShowConfigMenu()
 		end
 	end
 	
-	local dialog_container = CenterContainer:new{
-		config_dialog,
-		dimen = self.dimen:copy(),
-	}
 	config_dialog.close_callback = function () 
-		UIManager:close(menu_container)
+		UIManager:close(config_dialog)
 	end
-
-	self.dialog_container = dialog_container
+	self.config_dialog = config_dialog
 
 	UIManager:show(config_dialog)
 
@@ -116,6 +111,11 @@ function ReaderConfig:onSetDimensions(dimen)
 	self.dimen.y = 7 * Screen:getHeight() / 8
 	self.dimen.w = Screen:getWidth()
 	self.dimen.h = Screen:getHeight() / 8
+	-- since we cannot redraw config_dialog with new size, we close the old
+	-- one it on screen size change
+	if self.config_dialog then
+		self.config_dialog.close_callback()
+	end
 end
 
 function ReaderConfig:onReadSettings(config)

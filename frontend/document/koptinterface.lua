@@ -26,7 +26,9 @@ KoptOptions = {
 				name="screen_mode",
 				name_text = "Screen Mode",
 				item_text = {"portrait", "landscape"},
-				-- TODO: add screen mode changing command
+				args = {"portrait", "landscape"},
+				default_arg = nil,
+				event = "SetScreenViewMode",
 			}
 		}
 	},

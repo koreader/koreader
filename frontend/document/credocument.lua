@@ -5,6 +5,19 @@ CreOptions = {
 	default_options = {
 	},
 	{
+		icon = "resources/icons/appbar.transform.rotate.right.large.png",
+		options = {
+			{
+				name="screen_mode",
+				name_text = "Screen Mode",
+				item_text = {"portrait", "landscape"},
+				args = {"portrait", "landscape"},
+				default_arg = nil,
+				event = "SetScreenViewMode",
+			}
+		}
+	},
+	{
 		icon = "resources/icons/appbar.column.two.large.png",
 		options = {
 			{
