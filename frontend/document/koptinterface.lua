@@ -39,8 +39,11 @@ KoptOptions = {
 				name="trim_page",
 				name_text = "Page Crop",
 				toggle = {"auto", "manual"},
+				alternate = false,
 				values = {1, 0},
 				default_value = 1,
+				event = "PageCrop",
+				args = {"auto", "manual"},
 			}
 		}
 	},
@@ -115,7 +118,15 @@ KoptOptions = {
 				toggle = {"On", "Off"},
 				values = {1, 0},
 				default_value = 0,
-				event = "RedrawCurrentPage",
+				events = {
+					{	
+						event = "RedrawCurrentPage",
+					},
+					{
+						event = "SetZoomMode", 
+						args = {"page", nil},
+					},
+				}
 			},
 			{
 				name="screen_rotation",
@@ -185,7 +196,7 @@ function KoptInterface:getKOPTContext(doc, pageno)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
-	local bbox = doc:getUsedBBox(pageno)
+	local bbox = doc:getPageBBox(pageno)
 	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
 	return kc
 end

@@ -88,12 +88,22 @@ function OptionTextItem:onTapSelect()
 	self[1].color = 15
 	local option_value = nil
 	local option_arg = nil
-	if type(self.values) == "table" then
+	if self.values then
+		self.values = self.values or {}
 		option_value = self.values[self.current_item]
-		self.config:onConfigChoice(self.name, option_value, self.event)
-	elseif type(self.args) == "table" then
+		self.config:onConfigChoice(self.name, option_value)
+	end
+	if self.event then
+		self.args = self.args or {}
 		option_arg = self.args[self.current_item]
-		self.config:onConfigChoice(self.name, option_arg, self.event)
+		self.config:onConfigEvent(self.event, option_arg)
+	end
+	if self.events then
+		for i=0,#self.events do
+			self.events[i].args = self.events[i].args or {}
+			option_arg = self.events[i].args[self.current_item]
+			self.config:onConfigEvent(self.events[i].event, option_arg)
+		end
 	end
 	UIManager.repaint_all = true
 	return true
@@ -234,7 +244,7 @@ function ToggleSwitch:setPosition(position)
 end
 
 function ToggleSwitch:togglePosition(position)
-	if self.n_pos == 2 then
+	if self.n_pos == 2 and self.alternate ~= false then
 		self.position = (self.position+1)%self.n_pos
 		self.position = self.position == 0 and self.n_pos or self.position
 	else
@@ -248,12 +258,22 @@ function ToggleSwitch:onTapSelect(position)
 	self:togglePosition(position)
 	local option_value = nil
 	local option_arg = nil
-	if type(self.values) == "table" then
+	if self.values then
+		self.values = self.values or {}
 		option_value = self.values[self.position]
-		self.config:onConfigChoice(self.name, option_value, self.event)
-	elseif type(self.args) == "table" then
+		self.config:onConfigChoice(self.name, option_value)
+	end
+	if self.event then
+		self.args = self.args or {}
 		option_arg = self.args[self.position]
-		self.config:onConfigChoice(self.name, option_arg, self.event)
+		self.config:onConfigEvent(self.event, option_arg)
+	end
+	if self.events then
+		for i=1,#self.events do
+			self.events[i].args = self.events[i].args or {}
+			option_arg = self.events[i].args[self.position]
+			self.config:onConfigEvent(self.events[i].event, option_arg)
+		end
 	end
 	UIManager.repaint_all = true
 end
@@ -319,6 +339,7 @@ function ConfigOption:init()
 			if self.options[c].name then
 				if self.options[c].values then
 					local val = self.config.configurable[self.options[c].name]
+					DEBUG("val", val)
 					local min_diff = math.abs(val - self.options[c].values[1])
 					local diff = nil
 					for index, val_ in pairs(self.options[c].values) do
@@ -384,9 +405,11 @@ function ConfigOption:init()
 				local switch = ToggleSwitch:new{
 					name = self.options[c].name,
 					toggle = self.options[c].toggle,
+					alternate = self.options[c].alternate,
 					values = self.options[c].values,
 					args = self.options[c].args,
 					event = self.options[c].event,
+					events = self.options[c].events,
 					config = self.config,
 				}
 				local position = current_item
@@ -552,7 +575,18 @@ function ConfigDialog:onShowConfigPanel(index)
 	return true
 end
 
-function ConfigDialog:onCloseMenu()
+function ConfigDialog:onConfigChoice(option_name, option_value)
+	DEBUG("config option value", option_name, option_value)
+	self.configurable[option_name] = option_value
+end
+
+function ConfigDialog:onConfigEvent(option_event, option_arg)
+	DEBUG("config option event", option_event, option_arg)
+	self.ui:handleEvent(Event:new(option_event, option_arg))
+end
+
+function ConfigDialog:closeDialog()
+	DEBUG("closing config dialog")
 	UIManager:close(self)
 	if self.close_callback then
 		self.close_callback()
@@ -562,7 +596,7 @@ end
 
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.dialog_dimen) then
-		self:onCloseMenu()
+		self:closeDialog()
 		return true
 	end
 end

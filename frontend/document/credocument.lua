@@ -26,7 +26,7 @@ CreOptions = {
 				item_align_center = 1.0,
 				spacing = Screen:getWidth()*0.03,
 				item_font_size = {18, 20, 22, 24, 29, 33, 39, 44},
-				values = {18, 20, 22, 24, 29, 33, 39, 44},
+				args = {18, 20, 22, 24, 29, 33, 39, 44},
 				default_value = 1,
 				event = "SetFontSize",
 			},

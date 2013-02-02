@@ -72,31 +72,14 @@ function ReaderConfig:init()
 end
 
 function ReaderConfig:onShowConfigMenu()
-	local config_dialog = ConfigDialog:new{
+	self.config_dialog = ConfigDialog:new{
 		dimen = self.dimen:copy(),
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
 	}
 
-	function config_dialog:onConfigChoice(option_name, option_value, event)
-		self.configurable[option_name] = option_value
-		if event then
-			self.ui:handleEvent(Event:new(event, option_value))
-		end
-	end
-	
-	local dialog_container = CenterContainer:new{
-		config_dialog,
-		dimen = self.dimen:copy(),
-	}
-	config_dialog.close_callback = function () 
-		UIManager:close(menu_container)
-	end
-
-	self.dialog_container = dialog_container
-
-	UIManager:show(config_dialog)
+	UIManager:show(self.config_dialog)
 
 	return true
 end
@@ -109,6 +92,10 @@ end
 function ReaderConfig:onSetDimensions(dimen)
 	-- update gesture listenning range according to new screen orientation
 	self:init()
+end
+
+function ReaderConfig:onCloseConfig()
+	self.config_dialog:closeDialog()
 end
 
 function ReaderConfig:onReadSettings(config)
