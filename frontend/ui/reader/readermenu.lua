@@ -55,7 +55,7 @@ function ReaderMenu:setUpdateItemTable()
 	end
 
 	table.insert(self.item_table, {
-		text = "Return to file browser",
+		text = "Return to file manager",
 		callback = function()
 			UIManager:close(self.menu_container)
 			self.ui:onClose()
