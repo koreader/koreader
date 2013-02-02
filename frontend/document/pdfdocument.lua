@@ -1,7 +1,6 @@
 require "cache"
 require "ui/geometry"
 require "ui/screen"
-require "ui/device"
 require "ui/reader/readerconfig"
 require "document/koptinterface"
 
@@ -11,7 +10,7 @@ PdfDocument = Document:new{
 	mupdf_cache_size = 5 * 1024 * 1024,
 	dc_null = DrawContext.new(),
 	screen_size = Screen:getSize(),
-	screen_dpi = Device:getModel() == "KindlePaperWhite" and 212 or 167,
+	screen_dpi = Screen:getDPI(),
 	options = KoptOptions,
 	configurable = Configurable,
 	koptinterface = KoptInterface,

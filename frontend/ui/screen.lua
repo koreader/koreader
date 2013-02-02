@@ -84,6 +84,10 @@ function Screen:getHeight()
 	return h
 end
 
+function Screen:getDPI()
+	return Device:getModel() == "KindlePaperWhite" and 212 or 167
+end
+
 function Screen:getPitch()
 	return self.fb:getPitch()
 end

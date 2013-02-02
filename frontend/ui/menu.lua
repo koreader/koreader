@@ -195,13 +195,13 @@ Widget that displays menu
 --]]
 Menu = FocusManager:new{
 	-- face for displaying item contents
-	cface = Font:getFace("cfont", 22),
+	cface = Font:getFace("cfont", math.floor(22*Screen:getDPI()/167)),
 	-- face for menu title
-	tface = Font:getFace("tfont", 25),
+	tface = Font:getFace("tfont", math.floor(25*Screen:getDPI()/167)),
 	-- face for paging info display
-	fface = Font:getFace("ffont", 16),
+	fface = Font:getFace("ffont", math.floor(16*Screen:getDPI()/167)),
 	-- font for item shortcut
-	sface = Font:getFace("scfont", 20),
+	sface = Font:getFace("scfont", math.floor(20*Screen:getDPI()/167)),
 
 	title = "No Title",
 	-- default width and height

@@ -129,7 +129,7 @@ function ToggleSwitch:init()
 	self.position = nil
 	
 	local label_font_face = "cfont"
-	local label_font_size = math.floor(20*Screen:getWidth()/600)
+	local label_font_size = math.floor(16*Screen:getDPI()/167)
 	
 	self.toggle_frame = FrameContainer:new{background = 0, color = 7, radius = 7, bordersize = 1, padding = 2,}
 	self.toggle_content = HorizontalGroup:new{}
@@ -260,18 +260,19 @@ end
 
 ConfigOption = CenterContainer:new{}
 function ConfigOption:init()
-	local default_name_font_size = math.floor(20*Screen:getWidth()/600)
-	local default_item_font_size = math.floor(20*Screen:getWidth()/600)
-	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
-	local default_option_height = math.floor(50*Screen:getWidth()/600)
-	local default_option_padding = math.floor(30*Screen:getWidth()/600)
+	local mag_ratio = Screen:getDPI()/167
+	local default_name_font_size = math.floor(20*mag_ratio)
+	local default_item_font_size = math.floor(16*mag_ratio)
+	local default_items_spacing = math.floor(30*mag_ratio)
+	local default_option_height = math.floor(50*mag_ratio)
+	local default_option_padding = math.floor(30*mag_ratio)
 	local vertical_group = VerticalGroup:new{}
 	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	for c = 1, #self.options do
 		if self.options[c].show ~= false then
 			local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
 			local item_align = self.options[c].item_align_center and self.options[c].item_align_center or 0.66
-			local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "tfont"
+			local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
 			local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
 			local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
 			local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
