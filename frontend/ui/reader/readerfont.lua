@@ -2,7 +2,7 @@ ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
 	line_space_percent = nil,
-	font_menu_title = "Font Menu",
+	font_menu_title = "Change font",
 	face_table = nil,
 	-- default gamma from crengine's lvfntman.cpp
 	gamma_index = nil,

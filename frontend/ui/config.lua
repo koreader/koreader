@@ -99,13 +99,172 @@ function OptionTextItem:onTapSelect()
 	return true
 end
 
+--[[
+Dummy Widget that reserves vertical and horizontal space
+]]
+RectSpan = Widget:new{
+	width = 0,
+	hright = 0,
+}
+
+function RectSpan:getSize()
+	return {w = self.width, h = self.height}
+end
+
+ToggleLabel = TextWidget:new{}
+function ToggleLabel:paintTo(bb, x, y)
+	if self.color == 0 then
+		return
+	end
+	renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true)
+end
+
+ToggleSwitch = InputContainer:new{}
+function ToggleSwitch:init()
+	self.n_pos = #self.toggle
+	if self.n_pos ~= 2 and self.n_pos ~= 3 then
+		-- currently only support options with two or three items.
+		error("items number not supported")
+	end
+	self.position = nil
+	
+	local label_font_face = "cfont"
+	local label_font_size = math.floor(20*Screen:getWidth()/600)
+	
+	self.toggle_frame = FrameContainer:new{background = 0, color = 7, radius = 7, bordersize = 1, padding = 2,}
+	self.toggle_content = HorizontalGroup:new{}
+	
+	self.left_label = ToggleLabel:new{
+		align = "center",
+		color = 0,
+		text = self.toggle[self.n_pos],
+		face = Font:getFace(label_font_face, label_font_size),
+	}
+	self.left_button = FrameContainer:new{
+		background = 0,
+		color = 7,
+		margin = 0,
+		radius = 5,
+		bordersize = 1,
+		padding = 2,
+		self.left_label,
+	}
+	self.middle_label = ToggleLabel:new{
+		align = "center",
+		color = 0,
+		text = self.n_pos > 2 and self.toggle[2] or "",
+		face = Font:getFace(label_font_face, label_font_size),
+	}
+	self.middle_button = FrameContainer:new{
+		background = 0,
+		color = 7,
+		margin = 0,
+		radius = 5,
+		bordersize = 1,
+		padding = 2,
+		self.middle_label,
+	}
+	self.right_label = ToggleLabel:new{
+		align = "center",
+		color = 0,
+		text = self.toggle[1],
+		face = Font:getFace(label_font_face, label_font_size),
+	}
+	self.right_button = FrameContainer:new{
+		background = 0,
+		color = 7,
+		margin = 0,
+		radius = 5,
+		bordersize = 1,
+		padding = 2,
+		self.right_label,
+	}
+	
+	table.insert(self.toggle_content, self.left_button)
+  	table.insert(self.toggle_content, self.middle_button)
+  	table.insert(self.toggle_content, self.right_button)
+  	
+	self.toggle_frame[1] = self.toggle_content
+	self[1] = self.toggle_frame
+	self.dimen = Geom:new(self.toggle_frame:getSize())
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapSelect = {
+				GestureRange:new{
+					ges = "tap",
+					range = self.dimen,
+				},
+				doc = "Toggle switch",
+			},
+		}
+	end
+end
+
+function ToggleSwitch:onGesture(ev)
+	for name, gsseq in pairs(self.ges_events) do
+		for _, gs_range in ipairs(gsseq) do
+			--DEBUG("gs_range", gs_range)
+			if gs_range:match(ev) then
+				local eventname = gsseq.event or name
+				local position = math.ceil((ev.pos.x-gs_range.range.x)/gs_range.range.w*self.n_pos)
+				return self:handleEvent(Event:new(eventname, position))
+			end
+		end
+	end
+end
+
+function ToggleSwitch:update()
+	local left_pos = self.position == 1
+	local right_pos = self.position == self.n_pos
+	local middle_pos = not left_pos and not right_pos
+	self.left_label.color = right_pos and 15 or 0
+	self.left_button.color = left_pos and 7 or 0
+	self.left_button.background = left_pos and 7 or 0
+	self.middle_label.color = middle_pos and 15 or 0
+	self.middle_button.color = middle_pos and 0 or 0
+	self.middle_button.background = middle_pos and 0 or 0
+	self.right_label.color = left_pos and 15 or 0
+	self.right_button.color = right_pos and 7 or 0
+	self.right_button.background = right_pos and 7 or 0
+end
+
+function ToggleSwitch:setPosition(position)
+	self.position = position
+	self:update()
+end
+
+function ToggleSwitch:togglePosition(position)
+	if self.n_pos == 2 then
+		self.position = (self.position+1)%self.n_pos
+		self.position = self.position == 0 and self.n_pos or self.position
+	else
+		self.position = position
+	end
+	self:update()
+end
+
+function ToggleSwitch:onTapSelect(position)
+	DEBUG("toggle position:", position)
+	self:togglePosition(position)
+	local option_value = nil
+	local option_arg = nil
+	if type(self.values) == "table" then
+		option_value = self.values[self.position]
+		self.config:onConfigChoice(self.name, option_value, self.event)
+	elseif type(self.args) == "table" then
+		option_arg = self.args[self.position]
+		self.config:onConfigChoice(self.name, option_arg, self.event)
+	end
+	UIManager.repaint_all = true
+end
+
 ConfigOption = CenterContainer:new{}
 function ConfigOption:init()
 	local default_name_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_item_font_size = math.floor(20*Screen:getWidth()/600)
 	local default_items_spacing = math.floor(30*Screen:getWidth()/600)
-	local default_option_height = math.floor(40*Screen:getWidth()/600)
-	local default_option_padding = math.floor(40*Screen:getWidth()/600)
+	local default_option_height = math.floor(50*Screen:getWidth()/600)
+	local default_option_padding = math.floor(30*Screen:getWidth()/600)
 	local vertical_group = VerticalGroup:new{}
 	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	for c = 1, #self.options do
@@ -184,40 +343,57 @@ function ConfigOption:init()
 				end
 			end
 			
-			for d = 1, #self.options[c].item_text do
-				local option_item = nil
-				if option_items_fixed then
-					option_item = OptionTextItem:new{
-						FixedTextWidget:new{
-							text = self.options[c].item_text[d],
-							face = Font:getFace(item_font_face, item_font_size[d]),
-						},
-						padding = 3,
-						color = d == current_item and 15 or 0,
-					}
-				else
-					option_item = OptionTextItem:new{
-						TextWidget:new{
-							text = self.options[c].item_text[d],
-							face = Font:getFace(item_font_face, item_font_size),
-						},
-						padding = -3,
-						color = d == current_item and 15 or 0,
-					}
-				end
-				option_items[d] = option_item
-				option_item.items = option_items
-				option_item.name = self.options[c].name
-				option_item.values = self.options[c].values
-				option_item.args = self.options[c].args
-				option_item.event = self.options[c].event
-				option_item.current_item = d
-				option_item.config = self.config
-				table.insert(option_items_group, option_item)
-				if d ~= #self.options[c].item_text then
-					table.insert(option_items_group, items_spacing)
+			if self.options[c].item_text then
+				for d = 1, #self.options[c].item_text do
+					local option_item = nil
+					if option_items_fixed then
+						option_item = OptionTextItem:new{
+							FixedTextWidget:new{
+								text = self.options[c].item_text[d],
+								face = Font:getFace(item_font_face, item_font_size[d]),
+							},
+							padding = 3,
+							color = d == current_item and 15 or 0,
+						}
+					else
+						option_item = OptionTextItem:new{
+							TextWidget:new{
+								text = self.options[c].item_text[d],
+								face = Font:getFace(item_font_face, item_font_size),
+							},
+							padding = -3,
+							color = d == current_item and 15 or 0,
+						}
+					end
+					option_items[d] = option_item
+					option_item.items = option_items
+					option_item.name = self.options[c].name
+					option_item.values = self.options[c].values
+					option_item.args = self.options[c].args
+					option_item.event = self.options[c].event
+					option_item.current_item = d
+					option_item.config = self.config
+					table.insert(option_items_group, option_item)
+					if d ~= #self.options[c].item_text then
+						table.insert(option_items_group, items_spacing)
+					end
 				end
 			end
+			
+			if self.options[c].toggle then
+				local switch = ToggleSwitch:new{
+					name = self.options[c].name,
+					toggle = self.options[c].toggle,
+					values = self.options[c].values,
+					args = self.options[c].args,
+					event = self.options[c].event,
+					config = self.config,
+				}
+				local position = current_item
+				switch:setPosition(position)
+				table.insert(option_items_group, switch)
+			end
+			
 			table.insert(option_items_container, option_items_group)
 			table.insert(horizontal_group, option_items_container)
 			table.insert(vertical_group, horizontal_group)
