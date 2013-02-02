@@ -70,7 +70,7 @@ function ReaderConfig:initGesListener()
 		TapShowConfigMenu = {
 			GestureRange:new{
 				ges = "tap",
-				range = self.dimen:copy(),
+				range = self.dimen,
 			}
 		}
 	}
@@ -112,15 +112,10 @@ function ReaderConfig:onTapShowConfigMenu()
 end
 
 function ReaderConfig:onSetDimensions(dimen)
-	-- update listening according to new screen dimen
-	--@TODO do we really need to new a Geom everytime?  02.02 2013 (houqp)
-	self.dimen = Geom:new{
-		x = 0, 
-		y = 7*Screen:getHeight()/8,
-		w = Screen:getWidth(),
-		h = Screen:getHeight()/8,
-	}
-	self:initGesListener()
+	self.dimen.x = 0
+	self.dimen.y = 7 * Screen:getHeight() / 8
+	self.dimen.w = Screen:getWidth()
+	self.dimen.h = Screen:getHeight() / 8
 end
 
 function ReaderConfig:onReadSettings(config)
