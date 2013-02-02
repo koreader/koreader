@@ -68,6 +68,8 @@ function Screen:refresh(refesh_type)
 		self.fb.bb:blitFrom(self.bb, 0, 0, 0, 0, self.width, self.height)
 	elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then
 		self.fb.bb:blitFromRotate(self.bb, 270)
+	elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 0 then
+		self.fb.bb:blitFromRotate(self.bb, 90)
 	end
 	self.fb:refresh(refesh_type)
 end
@@ -139,7 +141,7 @@ function Screen:adjustGesCoordinate(ges)
 		return ges
 	end
 
-	if self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then
+	if self.cur_rotation_mode == 1 then
 		ges.pos.x, ges.pos.y = (self.width - ges.pos.y), (ges.pos.x)
 	end
 
