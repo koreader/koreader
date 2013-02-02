@@ -37,17 +37,15 @@ function ReaderMenu:setUpdateItemTable()
 			{
 				text = "landscape",
 				callback = function()
-					Screen:setViewMode("landscape")
 					self.ui:handleEvent(
-						Event:new("SetDimensions", Screen:getSize()))
+						Event:new("SetScreenViewMode", "landscape"))
 				end
 			},
 			{
 				text = "portrait",
 				callback = function()
-					Screen:setViewMode("portrait")
 					self.ui:handleEvent(
-						Event:new("SetDimensions", Screen:getSize()))
+						Event:new("SetScreenViewMode", "portrait"))
 				end
 			},
 		}

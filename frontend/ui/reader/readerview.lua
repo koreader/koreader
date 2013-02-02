@@ -130,6 +130,14 @@ function ReaderView:PanningUpdate(dx, dy)
 	return true
 end
 
+function ReaderView:onSetScreenViewMode(new_mode)
+	if new_mode == "landscape" or new_mode == "portrait" then
+		Screen:setViewMode(new_mode)
+		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
+	end
+	return true
+end
+
 function ReaderView:onSetDimensions(dimensions)
 	self.dimen = dimensions
 	-- recalculate view
