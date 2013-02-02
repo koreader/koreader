@@ -72,27 +72,6 @@ function Screen:refresh(refesh_type)
 	self.fb:refresh(refesh_type)
 end
 
--- @orien: 1 for clockwise rotate, -1 for anti-clockwise
--- Remember to reread screen resolution after this function call
--- WARNING: this method is deprecated!!! use setRotationMode() or
--- setViewMode() instead.
-function Screen:screenRotate(orien)
-	if orien == "clockwise" then
-		orien = -1
-	elseif orien == "anticlockwise" then
-		orien = 1
-	else
-		return
-	end
-
-	self.cur_rotation_mode = (self.cur_rotation_mode + orien) % 4
-	-- you have to reopen framebuffer after rotate
-	self.fb:setOrientation(self.cur_rotation_mode)
-	self.fb:close()
-	self.fb = einkfb.open("/dev/fb0")
-	Input.rotation = self.cur_rotation_mode
-end
-
 function Screen:getSize()
 	return Geom:new{w = self.width, h = self.height}
 end
@@ -109,12 +88,20 @@ function Screen:getPitch()
 	return self.ptich
 end
 
-function Screen:updateRotationMode()
+function Screen:getNativeRotationMode()
 	-- in EMU mode, you will always get 0 from getOrientation()
-	self.cur_rotation_mode = self.fb:getOrientation()
+	return self.fb:getOrientation()
+end
+
+function Screen:getRotationMode()
+	return self.cur_rotation_mode
 end
 
 function Screen:setRotationMode(mode)
+	if mode > 3 or mode < 0 then
+		return
+	end
+
 	-- mode 0 and mode 2 has the same width and height, so do mode 1 and 3
 	if (self.cur_rotation_mode % 2) ~= (mode % 2) then
 		self.width, self.height = self.height, self.width
@@ -123,6 +110,8 @@ function Screen:setRotationMode(mode)
 	self.bb:free()
 	self.pitch = self.width/2
 	self.bb = Blitbuffer.new(self.width, self.height, self.pitch)
+	-- update mode for input module
+	Input.rotation = mode
 end
 
 function Screen:setViewMode(mode)
@@ -167,7 +156,7 @@ function Screen:saveCurrentBB()
 		self.saved_bb:free()
 		self.saved_bb = Blitbuffer.new(width, height, self:getPitch())
 	end
-	self.saved_bb:blitFullFrom(self.fb.bb)
+	self.saved_bb:blitFullFrom(self.bb)
 end
 
 function Screen:restoreFromSavedBB()
@@ -176,13 +165,13 @@ end
 
 function Screen:getCurrentScreenBB()
 	local bb = Blitbuffer.new(self:getWidth(), self:getHeight())
-	bb:blitFullFrom(self.fb.bb)
+	bb:blitFullFrom(self.bb)
 	return bb
 end
 
 function Screen:restoreFromBB(bb)
 	if bb then
-		self.fb.bb:blitFullFrom(bb)
+		self.bb:blitFullFrom(bb)
 	else
 		DEBUG("Got nil bb in restoreFromSavedBB!")
 	end

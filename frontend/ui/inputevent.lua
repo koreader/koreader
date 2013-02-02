@@ -123,6 +123,12 @@ an interface to get input events
 ]]
 Input = {
 	event_map = {},
+	rotation_map = {
+		[0] = {},
+		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
+		[2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right" },
+		[3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
+	},
 	rotation = 0,
 	timer_callbacks = {},
 }
@@ -194,12 +200,6 @@ function Input:initKeyMap()
 		[117] = "RPgFwd", -- normal PageDown
 		[119] = "Del", -- Delete
 	}
-	self.rotation_map = {
-		[0] = {},
-		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
-		[2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right" },
-		[3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
-	}
 	self.modifiers = {
 		Alt = false,
 		Shift = false
@@ -245,7 +245,7 @@ end
 
 function Input:init()
 	-- Screen module must have been initilized by now.
-	self.rotation = Screen.fb:getOrientation()
+	self.rotation = Screen:getRotationMode()
 
 	if Device:hasKeyboard() then
 		self:initKeyMap()
