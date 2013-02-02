@@ -226,6 +226,8 @@ Menu = FocusManager:new{
 
 	-- set this to true to not paint as popup menu
 	is_borderless = false,
+	-- set this to true to add close button
+	has_close_button = true,
 	-- close_callback is a function, which is executed when menu is closed
 	-- it is usually set by the widget which creates the menu
 	close_callback = nil
@@ -307,10 +309,12 @@ function Menu:init()
 	-- start to set up input event callback --
 	------------------------------------------
 	if Device:isTouchDevice() then
-		table.insert(self.title_bar,
-			MenuCloseButton:new{
-				menu = self,
-			})
+		if self.has_close_button then
+			table.insert(self.title_bar,
+				MenuCloseButton:new{
+					menu = self,
+				})
+		end
 		self.ges_events.TapCloseAllMenus = {
 			GestureRange:new{
 				ges = "tap",
