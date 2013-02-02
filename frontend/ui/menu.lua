@@ -480,9 +480,13 @@ function Menu:onMenuSelect(item)
 end
 
 --[[
-override this function to handle the choice
-]]--
+	default to call item callback
+	override this function to handle the choice
+--]]
 function Menu:onMenuChoice(item)
+	if item.callback then
+		item.callback()
+	end
 	return true
 end
 
