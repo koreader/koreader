@@ -339,7 +339,6 @@ function ConfigOption:init()
 			if self.options[c].name then
 				if self.options[c].values then
 					local val = self.config.configurable[self.options[c].name]
-					DEBUG("val", val)
 					local min_diff = math.abs(val - self.options[c].values[1])
 					local diff = nil
 					for index, val_ in pairs(self.options[c].values) do
@@ -576,17 +575,16 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-	DEBUG("config option value", option_name, option_value)
+	--DEBUG("config option value", option_name, option_value)
 	self.configurable[option_name] = option_value
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg)
-	DEBUG("config option event", option_event, option_arg)
+	--DEBUG("config option event", option_event, option_arg)
 	self.ui:handleEvent(Event:new(option_event, option_arg))
 end
 
 function ConfigDialog:closeDialog()
-	DEBUG("closing config dialog")
 	UIManager:close(self)
 	if self.close_callback then
 		self.close_callback()
