@@ -124,7 +124,7 @@ function Screen:setRotationMode(mode)
 	Input.rotation = mode
 end
 
-function Screen:setViewMode(mode)
+function Screen:setScreenMode(mode)
 	if mode == "portrait" then
 		if self.cur_rotation_mode ~= 0 then
 			self:setRotationMode(0)

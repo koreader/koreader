@@ -13,7 +13,7 @@ CreOptions = {
 				item_text = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
 				default_arg = nil,
-				event = "SetScreenViewMode",
+				event = "SetScreenMode",
 			}
 		}
 	},

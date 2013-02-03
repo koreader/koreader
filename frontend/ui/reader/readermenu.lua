@@ -38,14 +38,14 @@ function ReaderMenu:setUpdateItemTable()
 				text = "landscape",
 				callback = function()
 					self.ui:handleEvent(
-						Event:new("SetScreenViewMode", "landscape"))
+						Event:new("SetScreenMode", "landscape"))
 				end
 			},
 			{
 				text = "portrait",
 				callback = function()
 					self.ui:handleEvent(
-						Event:new("SetScreenViewMode", "portrait"))
+						Event:new("SetScreenMode", "portrait"))
 				end
 			},
 		}

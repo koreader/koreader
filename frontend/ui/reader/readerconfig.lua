@@ -111,8 +111,8 @@ function ReaderConfig:onSetDimensions(dimen)
 	self.dimen.y = 7 * Screen:getHeight() / 8
 	self.dimen.w = Screen:getWidth()
 	self.dimen.h = Screen:getHeight() / 8
-	-- since we cannot redraw config_dialog with new size, we close the old
-	-- one it on screen size change
+	-- since we cannot redraw config_dialog with new size, we close
+	-- the old one on screen size change
 	if self.config_dialog then
 		self.config_dialog.close_callback()
 	end
