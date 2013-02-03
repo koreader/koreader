@@ -259,8 +259,12 @@ function Geom:offsetWithin(rect_b, dx, dy)
 	end
 end
 
-
-
+--[[
+return the Euclidean distance between two geoms
+]]--
+function Geom:distance(geom)
+	return math.sqrt(math.pow(self.x - geom.x, 2) + math.pow(self.y - geom.y, 2))
+end
 
 --[[
 Simple math helper function

@@ -47,13 +47,16 @@ Document = {
 		number_of_pages = 0,
 		-- if not pageable, length of the document in pixels
 		doc_height = 0,
-
+		
 		-- other metadata
 		title = "",
 		author = "",
 		date = ""
 	},
-
+	
+	-- override bbox from orignal page's getUsedBBox
+	bbox = {},
+		
 	-- flag to show whether the document was opened successfully
 	is_open = false,
 	error_message = nil,
@@ -123,20 +126,56 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 	return native_dimen
 end
 
+function Document:oddEven(number)
+	if number % 2 == 1 then
+		return "odd"
+	else
+		return "even"
+	end
+end
+
+function Document:getPageBBox(pageno)
+	local bbox = self.bbox[pageno] -- exact
+	local oddEven = self:oddEven(pageno)
+	if bbox ~= nil then
+		DEBUG("bbox from", pageno)
+	else
+		bbox = self.bbox[oddEven] -- odd/even
+	end
+	if bbox ~= nil then -- last used up to this page
+		DEBUG("bbox from", oddEven)
+	else
+		for i = 0,pageno do
+			bbox = self.bbox[ pageno - i ]
+			if bbox ~= nil then
+				DEBUG("bbox from", pageno - i)
+				break
+			end
+		end
+	end
+	if bbox == nil then -- fallback bbox
+		bbox = self:getUsedBBox(pageno)
+		DEBUG("bbox from ORIGINAL page")
+	end
+	DEBUG("final bbox", bbox)
+	return bbox
+end
+
 --[[
 This method returns pagesize if bbox is corrupted
 --]]
 function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
-	ubbox = self:getUsedBBox(pageno)
-	if ubbox.x0 < 0 or ubbox.y0 < 0 or ubbox.x1 < 0 or ubbox.y1 < 0 then
+	local bbox = self:getPageBBox(pageno)
+	local ubbox_dimen = nil
+	if bbox.x0 < 0 or bbox.y0 < 0 or bbox.x1 < 0 or bbox.y1 < 0 then
 		-- if document's bbox info is corrupted, we use the page size
 		ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
 	else
 		ubbox_dimen = Geom:new{
-			x = ubbox.x0,
-			y = ubbox.y0,
-			w = ubbox.x1 - ubbox.x0,
-			h = ubbox.y1 - ubbox.y0,
+			x = bbox.x0,
+			y = bbox.y0,
+			w = bbox.x1 - bbox.x0,
+			h = bbox.y1 - bbox.y0,
 		}
 		if zoom ~= 1 then
 			ubbox_dimen:transformByScale(zoom)

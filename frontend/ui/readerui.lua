@@ -11,6 +11,7 @@ require "ui/reader/readerfont"
 require "ui/reader/readertypeset"
 require "ui/reader/readermenu"
 require "ui/reader/readerconfig"
+require "ui/reader/readercropping"
 
 --[[
 This is an abstraction for a reader interface
@@ -112,6 +113,14 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, panner)
+		-- cropping controller
+		local cropper = ReaderCropping:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self,
+			document = self.document,
+		}
+		table.insert(self, cropper)
 	else
 		-- make sure we load document first before calling any callback
 		table.insert(self.postInitCallback, function()
