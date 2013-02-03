@@ -99,6 +99,48 @@ function OptionTextItem:onTapSelect()
 	return true
 end
 
+OptionIconItem = InputContainer:new{}
+function OptionIconItem:init()
+	self.dimen = self.icon:getSize()
+	self[1] = UnderlineContainer:new{
+		self.icon,
+		padding = self.padding,
+		color = self.color,
+	}
+	-- we need this table per-instance, so we declare it here
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapSelect = {
+				GestureRange:new{
+					ges = "tap",
+					range = self.dimen,
+				},
+				doc = "Select Option Item",
+			},
+		}
+	end
+end
+
+function OptionIconItem:onTapSelect()
+	for _, item in pairs(self.items) do
+		--item[1][1].invert = false
+		item[1].color = 0
+	end
+	--self[1][1].invert = true
+	self[1].color = 15
+	local option_value = nil
+	local option_arg = nil
+	if type(self.values) == "table" then
+		option_value = self.values[self.current_item]
+		self.config:onConfigChoice(self.name, option_value, self.event)
+	elseif type(self.args) == "table" then
+		option_arg = self.args[self.current_item]
+		self.config:onConfigChoice(self.name, option_arg, self.event)
+	end
+	UIManager.repaint_all = true
+	return true
+end
+
 --[[
 Dummy Widget that reserves vertical and horizontal space
 ]]
@@ -265,7 +307,7 @@ function ConfigOption:init()
 	local default_item_font_size = math.floor(16*mag_ratio)
 	local default_items_spacing = math.floor(30*mag_ratio)
 	local default_option_height = math.floor(50*mag_ratio)
-	local default_option_padding = math.floor(30*mag_ratio)
+	local default_option_padding = math.floor(15*mag_ratio)
 	local vertical_group = VerticalGroup:new{}
 	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
 	for c = 1, #self.options do
@@ -376,6 +418,30 @@ function ConfigOption:init()
 					option_item.config = self.config
 					table.insert(option_items_group, option_item)
 					if d ~= #self.options[c].item_text then
+						table.insert(option_items_group, items_spacing)
+					end
+				end
+			end
+			
+			if self.options[c].item_icons then
+				for d = 1, #self.options[c].item_icons do
+					local option_item = OptionIconItem:new{
+						icon = ImageWidget:new{
+							file = self.options[c].item_icons[d]
+						},
+						padding = -2,
+						color = d == current_item and 15 or 0,
+					}
+					option_items[d] = option_item
+					option_item.items = option_items
+					option_item.name = self.options[c].name
+					option_item.values = self.options[c].values
+					option_item.args = self.options[c].args
+					option_item.event = self.options[c].event
+					option_item.current_item = d
+					option_item.config = self.config
+					table.insert(option_items_group, option_item)
+					if d ~= #self.options[c].item_icons then
 						table.insert(option_items_group, items_spacing)
 					end
 				end
