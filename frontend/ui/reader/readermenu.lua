@@ -55,7 +55,7 @@ function ReaderMenu:setUpdateItemTable()
 	end
 
 	table.insert(self.item_table, {
-		text = "Return to file browser",
+		text = "Return to file manager",
 		callback = function()
 			UIManager:close(self.menu_container)
 			self.ui:onClose()
@@ -73,11 +73,6 @@ function ReaderMenu:onShowMenu()
 		item_table = self.item_table,
 		width = Screen:getWidth() - 100,
 	}
-	function main_menu:onMenuChoice(item)
-		if item.callback then
-			item.callback()
-		end
-	end
 
 	local menu_container = CenterContainer:new{
 		ignore = "height",

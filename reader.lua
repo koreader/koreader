@@ -5,7 +5,61 @@ require "ui/ui"
 require "ui/readerui"
 require "ui/filechooser"
 require "ui/infomessage"
+require "ui/button"
 require "document/document"
+
+
+
+HomeMenu = InputContainer:new{
+	item_table = {},
+	ges_events = {
+		TapShowMenu = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = 25,
+				}
+			}
+		},
+	},
+}
+
+function HomeMenu:setUpdateItemTable()
+	table.insert(self.item_table, {
+		text = "Exit",
+		callback = function()
+			os.exit(0)
+		end
+	})
+end
+
+function HomeMenu:onTapShowMenu()
+	if #self.item_table == 0 then
+		self:setUpdateItemTable()
+	end
+
+	local home_menu = Menu:new{
+		title = "Home menu",
+		item_table = self.item_table,
+		width = Screen:getWidth() - 100,
+	}
+
+	local menu_container = CenterContainer:new{
+		ignore = "height",
+		dimen = Screen:getSize(),
+		home_menu,
+	}
+	home_menu.close_callback = function () 
+		UIManager:close(menu_container)
+	end
+
+	UIManager:show(menu_container)
+
+	return true
+end
+
 
 function showReader(file, pass)
 	local document = DocumentRegistry:openDocument(file)
@@ -23,16 +77,24 @@ function showReader(file, pass)
 	UIManager:show(reader)
 end
 
-function showFileManager(path)
+function showHomePage(path)
 	local FileManager = FileChooser:new{
+		title = "FileManager",
 		path = path,
-		dimen = Screen:getSize(),
+		width = Screen:getWidth(),
+		height = Screen:getHeight(),
 		is_borderless = true,
+		has_close_button = false,
 		filter = function(filename) 
 			if DocumentRegistry:getProvider(filename) then
 				return true
 			end
 		end
+	}
+
+	local HomePage = InputContainer:new{
+			FileManager,
+			HomeMenu,
 	}
 
 	function FileManager:onFileSelect(file)
@@ -41,11 +103,11 @@ function showFileManager(path)
 	end
 
 	function FileManager:onClose()
-		UIManager:quit()
+		--UIManager:quit()
 		return true
 	end
 
-	UIManager:show(FileManager)
+	UIManager:show(HomePage)
 end
 
 
@@ -106,7 +168,7 @@ Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 if ARGV[argidx] then
 	if lfs.attributes(ARGV[argidx], "mode") == "directory" then
-		showFileManager(ARGV[argidx])
+		showHomePage(ARGV[argidx])
 	elseif lfs.attributes(ARGV[argidx], "mode") == "file" then
 		showReader(ARGV[argidx])
 	end

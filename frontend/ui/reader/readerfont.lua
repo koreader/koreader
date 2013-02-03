@@ -99,11 +99,6 @@ function ReaderFont:onShowFontMenu()
 		item_table = self.face_table,
 		width = Screen:getWidth() - 100,
 	}
-	function main_menu:onMenuChoice(item)
-		if item.callback then
-			item.callback()
-		end
-	end
 	-- build container
 	local menu_container = CenterContainer:new{
 		main_menu,
