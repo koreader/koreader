@@ -204,7 +204,8 @@ end
 function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
 	-- check cached page size
 	self.cur_bbox = doc:getPageBBox(pageno)
-	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(self.cur_bbox)
+	local bbox = self.cur_bbox
+	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local cached = Cache:check(hash)
 	if not cached then
 		local kc = self:getKOPTContext(doc, pageno, self.cur_bbox)
@@ -228,7 +229,8 @@ end
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
 	doc.render_mode = render_mode
 	self.cur_bbox = doc:getPageBBox(pageno)
-	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(self.cur_bbox)
+	local bbox = self.cur_bbox
+	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local page_size = self:getPageDimensions(doc, pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -259,7 +261,7 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 	}
 
 	-- draw to blitbuffer
-	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(self.cur_bbox)
+	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local page = doc._document:openPage(pageno)
 	local cached = Cache:check(kc_hash)
 	if cached then
