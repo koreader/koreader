@@ -99,6 +99,14 @@ function Screen:getRotationMode()
 	return self.cur_rotation_mode
 end
 
+function Screen:getScreenMode()
+	if self.width > self.height then
+		return "landscape"
+	else
+		return "portrait"
+	end
+end
+
 function Screen:setRotationMode(mode)
 	if mode > 3 or mode < 0 then
 		return
@@ -128,7 +136,6 @@ function Screen:setViewMode(mode)
 	end
 end
 
-
 --[[
   @brief change gesture's x and y coordinates according to screen view mode
 
@@ -142,6 +149,7 @@ function Screen:adjustGesCoordinate(ges)
 	end
 
 	if self.cur_rotation_mode == 1 then
+		--@TODO fix wipe direction  03.02 2013 (houqp)
 		ges.pos.x, ges.pos.y = (self.width - ges.pos.y), (ges.pos.x)
 	end
 
