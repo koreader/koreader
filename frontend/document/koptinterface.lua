@@ -27,7 +27,7 @@ KoptOptions = {
 				name_text = "Screen Mode",
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
-				default_arg = nil,
+				default_arg = Screen:getScreenMode(),
 				event = "SetScreenMode",
 			}
 		}

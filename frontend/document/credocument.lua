@@ -8,11 +8,11 @@ CreOptions = {
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
-				name="screen_mode",
+				name = "screen_mode",
 				name_text = "Screen Mode",
-				item_text = {"portrait", "landscape"},
+				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
-				default_arg = nil,
+				default_arg = Screen:getScreenMode(),
 				event = "SetScreenMode",
 			}
 		}
