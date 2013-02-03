@@ -142,6 +142,13 @@ function BBoxWidget:onConfirmCrop()
 	UIManager.repaint_all = true
 end
 
+function BBoxWidget:onCancelCrop()
+	UIManager:close(self)
+	self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
+	self.document.configurable.text_wrap = self.orig_reflow_mode
+	UIManager.repaint_all = true
+end
+
 ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
