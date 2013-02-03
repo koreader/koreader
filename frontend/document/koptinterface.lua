@@ -64,19 +64,17 @@ KoptOptions = {
 			{
 				name = "max_columns",
 				name_text = "Columns",
-				--item_text = {"1","2","3","4"},
 				item_icons = {
 					"resources/icons/appbar.column.one.png",
 					"resources/icons/appbar.column.two.png",
 					"resources/icons/appbar.column.three.png",
 				},
-				values = {1,2,3,4},
+				values = {1,2,3},
 				default_value = 2,
 			},
 			{
 				name = "justification",
 				name_text = "Text Align",
-				--item_text = {"auto","left","center","right","full"},
 				item_icons = {
 					"resources/icons/appbar.align.auto.png",
 					"resources/icons/appbar.align.left.png",
