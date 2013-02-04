@@ -63,7 +63,7 @@ function ReaderZooming:onReadSettings(config)
 	if not zoom_mode then
 		zoom_mode = self.DEFAULT_ZOOM_MODE
 	end
-	self:onSetZoomMode(zoom_mode)
+	self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
 
 function ReaderZooming:onCloseDocument()
@@ -101,7 +101,6 @@ function ReaderZooming:onSetZoomMode(new_mode)
 		self:setZoom()
 		self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
 	end
-	return true
 end
 
 function ReaderZooming:onPageUpdate(new_page_no)
@@ -150,7 +149,7 @@ function ReaderZooming:setZoom()
 	elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
 		self.zoom = zoom_h
 	end
-	self.view:onZoomUpdate(self.zoom)
+	self.ui:handleEvent(Event:new("ZoomUpdate", self.zoom))
 end
 
 function ReaderZooming:genSetZoomModeCallBack(mode)

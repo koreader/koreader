@@ -39,7 +39,7 @@ function ReaderView:paintTo(bb, x, y)
 		bb:paintRect(x, y, inner_offset.x, self.ui.dimen.h, self.outer_page_color)
 		bb:paintRect(x + self.ui.dimen.w - inner_offset.x - 1, y, inner_offset.x + 1, self.ui.dimen.h, self.outer_page_color)
 	end
-
+	self.ui:handleEvent(Event:new("ScreenOffsetUpdate", inner_offset))
 	-- draw content
 	if self.ui.document.info.has_pages then
 		self.ui.document:drawPage(

@@ -77,26 +77,14 @@ function ReaderConfig:initGesListener()
 end
 
 function ReaderConfig:onShowConfigMenu()
-	local config_dialog = ConfigDialog:new{
+	self.config_dialog = ConfigDialog:new{
 		dimen = self.dimen:copy(),
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
 	}
 
-	function config_dialog:onConfigChoice(option_name, option_value, event)
-		self.configurable[option_name] = option_value
-		if event then
-			self.ui:handleEvent(Event:new(event, option_value))
-		end
-	end
-	
-	config_dialog.close_callback = function () 
-		UIManager:close(config_dialog)
-	end
-	self.config_dialog = config_dialog
-
-	UIManager:show(config_dialog)
+	UIManager:show(self.config_dialog)
 
 	return true
 end
@@ -116,6 +104,10 @@ function ReaderConfig:onSetDimensions(dimen)
 	if self.config_dialog then
 		self.config_dialog.close_callback()
 	end
+end
+
+function ReaderConfig:onCloseConfig()
+	self.config_dialog:closeDialog()
 end
 
 function ReaderConfig:onReadSettings(config)

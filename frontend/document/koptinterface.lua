@@ -39,8 +39,11 @@ KoptOptions = {
 				name = "trim_page",
 				name_text = "Page Crop",
 				toggle = {"auto", "manual"},
+				alternate = false,
 				values = {1, 0},
 				default_value = 1,
+				event = "PageCrop",
+				args = {"auto", "manual"},
 			}
 		}
 	},
@@ -115,7 +118,15 @@ KoptOptions = {
 				toggle = {"On", "Off"},
 				values = {1, 0},
 				default_value = 0,
-				event = "RedrawCurrentPage",
+				events = {
+					{	
+						event = "RedrawCurrentPage",
+					},
+					{
+						event = "SetZoomMode", 
+						args = {"page", nil},
+					},
+				}
 			},
 			{
 				name="screen_rotation",
@@ -167,7 +178,7 @@ KoptOptions = {
 KoptInterface = {}
 
 -- get reflow context
-function KoptInterface:getKOPTContext(doc, pageno)
+function KoptInterface:getKOPTContext(doc, pageno, bbox)
 	local kc = KOPTContext.new()
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
@@ -185,7 +196,6 @@ function KoptInterface:getKOPTContext(doc, pageno)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
-	local bbox = doc:getUsedBBox(pageno)
 	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
 	return kc
 end
@@ -193,10 +203,12 @@ end
 -- calculates page dimensions
 function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
 	-- check cached page size
-	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash('|')
+	self.cur_bbox = doc:getPageBBox(pageno)
+	local bbox = self.cur_bbox
+	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local cached = Cache:check(hash)
 	if not cached then
-		local kc = self:getKOPTContext(doc, pageno)
+		local kc = self:getKOPTContext(doc, pageno, self.cur_bbox)
 		local page = doc._document:openPage(pageno)
 		-- reflow page
 		page:reflow(kc, 0)
@@ -216,7 +228,9 @@ end
 
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
 	doc.render_mode = render_mode
-	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash('|')
+	self.cur_bbox = doc:getPageBBox(pageno)
+	local bbox = self.cur_bbox
+	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local page_size = self:getPageDimensions(doc, pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -231,7 +245,7 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 			return
 		end
 		-- only render required part
-		hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash('|').."|"..tostring(rect)
+		hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(rect)
 		size = rect
 	end
 	
@@ -247,7 +261,7 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 	}
 
 	-- draw to blitbuffer
-	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash('|')
+	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
 	local page = doc._document:openPage(pageno)
 	local cached = Cache:check(kc_hash)
 	if cached then
