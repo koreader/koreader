@@ -102,7 +102,7 @@ function ReaderConfig:onSetDimensions(dimen)
 	-- since we cannot redraw config_dialog with new size, we close
 	-- the old one on screen size change
 	if self.config_dialog then
-		self.config_dialog.close_callback()
+		self.config_dialog:closeDialog()
 	end
 end
 
