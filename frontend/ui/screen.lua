@@ -56,10 +56,21 @@ function Screen:init()
 	_, self.height = self.fb:getSize()
 	-- for unknown strange reason, pitch*2 is less than screen width in KPW
 	-- so we need to calculate width by pitch here
-	self.width = self.fb:getPitch()*2
-	self.pitch = self:getPitch()
+	self.pitch = self.fb:getPitch()
+	self.width = self.pitch * 2
 	self.bb = Blitbuffer.new(self.width, self.height, self.pitch)
-	self.native_rotation_mode = self.fb:getOrientation()
+	if self.width > self.height then
+		-- For another unknown strange reason, self.fb:getOrientation always
+		-- return 0 in KPW, even though we are in landscape mode.
+		-- Seems like the native framework change framebuffer on the fly when
+		-- starting booklet. Starting KPV from ssh and KPVBooklet will get
+		-- different framebuffer height and width.
+		--
+		--self.native_rotation_mode = self.fb:getOrientation()
+		self.native_rotation_mode = 1
+	else
+		self.native_rotation_mode = 0
+	end
 	self.cur_rotation_mode = self.native_rotation_mode
 end
 
@@ -143,11 +154,6 @@ end
   @return adjusted gesture.
 --]]
 function Screen:adjustGesCoordinate(ges)
-	-- we do nothing is screen is not rotated
-	if self.native_rotation_mode == self.cur_rotation_mode then
-		return ges
-	end
-
 	if self.cur_rotation_mode == 1 then
 		--@TODO fix wipe direction  03.02 2013 (houqp)
 		ges.pos.x, ges.pos.y = (self.width - ges.pos.y), (ges.pos.x)
