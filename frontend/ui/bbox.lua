@@ -85,7 +85,7 @@ function BBoxWidget:init()
 			},
 			CancelCrop = {
 				GestureRange:new{
-					ges = "hold_release",
+					ges = "hold",
 					range = Geom:new{
 						x = 0, y = 0,
 						w = Screen:getWidth(),
