@@ -122,7 +122,19 @@ end
 an interface to get input events
 ]]
 Input = {
-	event_map = {
+	event_map = {},
+	rotation_map = {
+		[0] = {},
+		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
+		[2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right" },
+		[3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
+	},
+	rotation = 0,
+	timer_callbacks = {},
+}
+
+function Input:initKeyMap()
+	self.event_map = {
 		[2]  = "1", [3]  = "2", [4]  = "3", [5]  = "4", [6]  = "5", [7]  = "6", [8]  = "7", [9]  = "8", [10] = "9", [11] = "0",
 		[16] = "Q", [17] = "W", [18] = "E", [19] = "R", [20] = "T", [21] = "Y", [22] = "U", [23] = "I", [24] = "O", [25] = "P",
 		[30] = "A", [31] = "S", [32] = "D", [33] = "F", [34] = "G", [35] = "H", [36] = "J", [37] = "K", [38] = "L", [14] = "Del",
@@ -157,13 +169,8 @@ Input = {
 		[191] = "RPgFwd", -- K[3] & k[4]
 		[193] = "LPgFwd", -- K[3] only
 		[194] = "Press", -- K[3] & k[4]
-
-		[10000] = "IntoSS", -- go into screen saver
-		[10001] = "OutOfSS", -- go out of screen saver
-		[10020] = "Charging",
-		[10021] = "NotCharging",
-	},
-	sdl_event_map = {
+	}
+	self.sdl_event_map = {
 		[10] = "1", [11] = "2", [12] = "3", [13] = "4", [14] = "5", [15] = "6", [16] = "7", [17] = "8", [18] = "9", [19] = "0",
 		[24] = "Q", [25] = "W", [26] = "E", [27] = "R", [28] = "T", [29] = "Y", [30] = "U", [31] = "I", [32] = "O", [33] = "P",
 		[38] = "A", [39] = "S", [40] = "D", [41] = "F", [42] = "G", [43] = "H", [44] = "J", [45] = "K", [46] = "L",
@@ -192,21 +199,13 @@ Input = {
 		[116] = "Down", -- arrow down
 		[117] = "RPgFwd", -- normal PageDown
 		[119] = "Del", -- Delete
-	},
-	rotation = 0,
-	rotation_map = {
-		[0] = {},
-		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
-		[2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right" },
-		[3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
-	},
-	modifiers = {
+	}
+	self.modifiers = {
 		Alt = false,
 		Shift = false
-	},
-
+	}
 	-- these groups are just helpers:
-	group = {
+	self.group = {
 		Cursor = { "Up", "Down", "Left", "Right" },
 		PgFwd = { "RPgFwd", "LPgFwd" },
 		PgBack = { "RPgBack", "LPgBack" },
@@ -237,13 +236,31 @@ Input = {
 			"Back", "Enter", "Sym", "AA", "Menu", "Home", "Del",
 			"LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
 		}
-	},
+	}
+end
 
-	timer_callbacks = {},
-}
+function Input:initTouchState()
+	self.cur_ev = {}
+end
 
 function Input:init()
+	-- Screen module must have been initilized by now.
+	self.rotation = Screen:getRotationMode()
+
+	if Device:hasKeyboard() then
+		self:initKeyMap()
+	end
+	if Device:isTouchDevice() then
+		self:initTouchState()
+	end
+	-- set up fake event map
+	self.event_map[10000] = "IntoSS" -- go into screen saver
+	self.event_map[10001] = "OutOfSS" -- go out of screen saver
+	self.event_map[10020] = "Charging"
+	self.event_map[10021] = "NotCharging"
+
 	if util.isEmulated()==1 then
+		self:initKeyMap()
 		os.remove("emu_event")
 		os.execute("mkfifo emu_event")
 		input.open("emu_event")
@@ -327,6 +344,86 @@ function Input:setTimeout(cb, tv_out)
 	end
 end
 
+function Input:handleKeyBoardEv(ev)
+	local keycode = self.event_map[ev.code]
+	if not keycode then
+		-- do not handle keypress for keys we don't know
+		return
+	end
+
+	-- take device rotation into account
+	if self.rotation_map[self.rotation][keycode] then
+		keycode = self.rotation_map[self.rotation][keycode]
+	end
+
+	if keycode == "IntoSS" or keycode == "OutOfSS"
+	or keycode == "Charging" or keycode == "NotCharging" then
+		return keycode
+	end
+
+	-- handle modifier keys
+	if self.modifiers[keycode] ~= nil then
+		if ev.value == EVENT_VALUE_KEY_PRESS then
+			self.modifiers[keycode] = true
+		elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+			self.modifiers[keycode] = false
+		end
+		return
+	end
+
+	local key = Key:new(keycode, self.modifiers)
+
+	if ev.value == EVENT_VALUE_KEY_PRESS then
+		return Event:new("KeyPress", key)
+	elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+		return Event:new("KeyRelease", key)
+	end
+end
+
+--[[
+parse each touch ev from kernel and build up tev.
+tev will be sent to GestureDetector:feedEvent
+
+Events for a single tap motion from Linux kernel (MT protocol B):
+
+	MT_TRACK_ID: 0
+	MT_X: 222
+	MT_Y: 207
+	SYN REPORT
+	MT_TRACK_ID: -1
+	SYN REPORT
+
+Notice that each line is a single event.
+--]]
+function Input:handleTouchEv(ev)
+	if ev.type == EV_SYN then
+		if ev.code == SYN_REPORT then
+			self.cur_ev.timev = TimeVal:new(ev.time)
+			--self.cur_x = self.cur_ev.x or self.cur_x
+			--self.cur_y = self.cur_ev.y or self.cur_y
+			-- send ev to state machine
+			local touch_ges = GestureDetector:feedEvent(self.cur_ev)
+			--self.last_ev_timev = self.cur_ev.timev
+			--self.cur_ev = {}
+			if touch_ges then
+				return Event:new("Gesture", 
+					Screen:adjustGesCoordinate(touch_ges)
+				)
+			end
+		end
+	elseif ev.type == EV_ABS then
+		if ev.code == ABS_MT_SLOT then
+			self.cur_ev.slot = ev.value
+		elseif ev.code == ABS_MT_TRACKING_ID then
+			self.cur_ev.id = ev.value
+		elseif ev.code == ABS_MT_POSITION_X then
+			self.cur_ev.x = ev.value
+		elseif ev.code == ABS_MT_POSITION_Y then
+			self.cur_ev.y = ev.value
+		end
+	end
+end
+
 function Input:waitEvent(timeout_us, timeout_s)
 	-- wrapper for input.waitForEvents that will retry for some cases
 	local ok, ev
@@ -344,14 +441,16 @@ function Input:waitEvent(timeout_us, timeout_s)
 				if ((not timeout_us and not timeout_s) or tv_now < wait_deadline) then
 					-- check whether timer is up
 					if tv_now >= self.timer_callbacks[1].deadline then
-						local ges = self.timer_callbacks[1].callback()
+						local touch_ges = self.timer_callbacks[1].callback()
 						table.remove(self.timer_callbacks, 1)
-						if ges then
+						if touch_ges then
 							-- Do we really need to clear all setTimeout after
 							-- decided a gesture? FIXME
 							Input.timer_callbacks = {}
-							return Event:new("Gesture", ges)
-						end -- EOF if ges
+							return Event:new("Gesture", 
+								Screen:adjustGesCoordinate(touch_ges)
+							)
+						end -- EOF if touch_ges
 					end -- EOF if deadline reached
 				else
 					break
@@ -376,47 +475,13 @@ function Input:waitEvent(timeout_us, timeout_s)
 			break
 		end
 	end
+
 	if ok and ev then
 		ev = self:eventAdjustHook(ev)
 		if ev.type == EV_KEY then
-			local keycode = self.event_map[ev.code]
-			if not keycode then
-				-- do not handle keypress for keys we don't know
-				return
-			end
-
-			-- take device rotation into account
-			if self.rotation_map[self.rotation][keycode] then
-				keycode = self.rotation_map[self.rotation][keycode]
-			end
-
-			if keycode == "IntoSS" or keycode == "OutOfSS"
-			or keycode == "Charging" or keycode == "NotCharging" then
-				return keycode
-			end
-
-			-- handle modifier keys
-			if self.modifiers[keycode] ~= nil then
-				if ev.value == EVENT_VALUE_KEY_PRESS then
-					self.modifiers[keycode] = true
-				elseif ev.value == EVENT_VALUE_KEY_RELEASE then
-					self.modifiers[keycode] = false
-				end
-				return
-			end
-
-			local key = Key:new(keycode, self.modifiers)
-
-			if ev.value == EVENT_VALUE_KEY_PRESS then
-				return Event:new("KeyPress", key)
-			elseif ev.value == EVENT_VALUE_KEY_RELEASE then
-				return Event:new("KeyRelease", key)
-			end
+			return self:handleKeyBoardEv(ev)
 		elseif ev.type == EV_ABS or ev.type == EV_SYN then
-			local touch_ges = GestureDetector:feedEvent(ev)
-			if touch_ges then
-				return Event:new("Gesture", touch_ges)
-			end
+			return self:handleTouchEv(ev)
 		else
 			-- some other kind of event that we do not know yet
 			return Event:new("GenericInput", ev)

@@ -1,4 +1,5 @@
 ReaderView = WidgetContainer:new{
+	_name = "ReaderView",
 	document = nil,
 
 	state = {
@@ -125,6 +126,14 @@ function ReaderView:PanningUpdate(dx, dy)
 		DEBUG("on pan: visible_area", self.visible_area)
 		self.ui:handleEvent(
 			Event:new("ViewRecalculate", self.visible_area, self.page_area))
+	end
+	return true
+end
+
+function ReaderView:onSetScreenMode(new_mode)
+	if new_mode == "landscape" or new_mode == "portrait" then
+		Screen:setScreenMode(new_mode)
+		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 	end
 	return true
 end

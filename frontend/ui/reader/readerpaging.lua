@@ -8,32 +8,7 @@ ReaderPaging = InputContainer:new{
 }
 
 function ReaderPaging:init()
-	if Device:isTouchDevice() then
-		self.ges_events = {
-			TapForward = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = Screen:getWidth()/4,
-						y = Screen:getHeight()/4,
-						w = 3*Screen:getWidth()/4,
-						h = 5*Screen:getHeight()/8,
-					}
-				}
-			},
-			TapBackward = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = 0, 
-						y = Screen:getHeight()/4,
-						w = Screen:getWidth()/4,
-						h = 5*Screen:getHeight()/8,
-					}
-				}
-			}
-		}
-	else
+	if Device:hasKeyboard() then
 		self.key_events = {
 			GotoNextPage = { 
 				{Input.group.PgFwd}, doc = "go to next page",
@@ -67,6 +42,34 @@ function ReaderPaging:init()
 	self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
+-- This method will  be called in onSetDimensions handler
+function ReaderPaging:initGesListener()
+	self.ges_events = {
+		TapForward = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = Screen:getWidth()/4,
+					y = Screen:getHeight()/4,
+					w = 3*Screen:getWidth()/4,
+					h = 5*Screen:getHeight()/8,
+				}
+			}
+		},
+		TapBackward = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, 
+					y = Screen:getHeight()/4,
+					w = Screen:getWidth()/4,
+					h = 5*Screen:getHeight()/8,
+				}
+			}
+		}
+	}
+end
+
 function ReaderPaging:onReadSettings(config)
 	self:gotoPage(config:readSetting("last_page") or 1)
 	local soe = config:readSetting("show_overlap_enable")
@@ -87,24 +90,6 @@ end
 
 function ReaderPaging:onTapBackward()
 	self:onGotoPageRel(-1)
-	return true
-end
-
--- wrapper for bounds checking
-function ReaderPaging:gotoPage(number)
-	if number == self.current_page then
-		return true
-	end
-	if number > self.number_of_pages
-	or number < 1 then
-		DEBUG("wrong page number: "..number.."!")
-		return false
-	end
-	DEBUG("going to page number", number)
-
-	-- this is an event to allow other controllers to be aware of this change
-	self.ui:handleEvent(Event:new("PageUpdate", number))
-
 	return true
 end
 
@@ -232,3 +217,30 @@ function ReaderPaging:onRedrawCurrentPage()
 	self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
 	return true
 end
+
+function ReaderPaging:onSetDimensions()
+	-- update listening according to new screen dimen
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
+end
+
+-- wrapper for bounds checking
+function ReaderPaging:gotoPage(number)
+	if number == self.current_page then
+		return true
+	end
+	if number > self.number_of_pages
+	or number < 1 then
+		DEBUG("wrong page number: "..number.."!")
+		return false
+	end
+	DEBUG("going to page number", number)
+
+	-- this is an event to allow other controllers to be aware of this change
+	self.ui:handleEvent(Event:new("PageUpdate", number))
+
+	return true
+end
+
+

@@ -1,46 +1,4 @@
 ReaderZooming = InputContainer:new{
-	key_events = {
-		ZoomIn = {
-			{ "Shift", Input.group.PgFwd }, 
-			doc = "zoom in",
-			event = "Zoom", args = "in" 
-		},
-		ZoomOut = {
-			{ "Shift", Input.group.PgBack }, 
-			doc = "zoom out",
-			event = "Zoom", args = "out" 
-		},
-		ZoomToFitPage = {
-			{ "A" }, 
-			doc = "zoom to fit page",
-			event = "SetZoomMode", args = "page" 
-		},
-		ZoomToFitContent = {
-			{ "Shift", "A" }, 
-			doc = "zoom to fit content",
-			event = "SetZoomMode", args = "content" 
-		},
-		ZoomToFitPageWidth = {
-			{ "S" }, 
-			doc = "zoom to fit page width",
-			event = "SetZoomMode", args = "pagewidth" 
-		},
-		ZoomToFitContentWidth = {
-			{ "Shift", "S" },
-			doc = "zoom to fit content width",
-			event = "SetZoomMode", args = "contentwidth"
-		},
-		ZoomToFitPageHeight = {
-			{ "D" }, 
-			doc = "zoom to fit page height",
-			event = "SetZoomMode", args = "pageheight" 
-		},
-		ZoomToFitContentHeight = {
-			{ "Shift", "D" },
-			doc = "zoom to fit content height",
-			event = "SetZoomMode", args = "contentheight"
-		},
-	},
 	zoom = 1.0,
 	-- default to nil so we can trigger ZoomModeUpdate events on start up
 	zoom_mode = nil,
@@ -50,6 +8,50 @@ ReaderZooming = InputContainer:new{
 }
 
 function ReaderZooming:init()
+	if Device:hasKeyboard() then
+		self.key_events = {
+			ZoomIn = {
+				{ "Shift", Input.group.PgFwd }, 
+				doc = "zoom in",
+				event = "Zoom", args = "in" 
+			},
+			ZoomOut = {
+				{ "Shift", Input.group.PgBack }, 
+				doc = "zoom out",
+				event = "Zoom", args = "out" 
+			},
+			ZoomToFitPage = {
+				{ "A" }, 
+				doc = "zoom to fit page",
+				event = "SetZoomMode", args = "page" 
+			},
+			ZoomToFitContent = {
+				{ "Shift", "A" }, 
+				doc = "zoom to fit content",
+				event = "SetZoomMode", args = "content" 
+			},
+			ZoomToFitPageWidth = {
+				{ "S" }, 
+				doc = "zoom to fit page width",
+				event = "SetZoomMode", args = "pagewidth" 
+			},
+			ZoomToFitContentWidth = {
+				{ "Shift", "S" },
+				doc = "zoom to fit content width",
+				event = "SetZoomMode", args = "contentwidth"
+			},
+			ZoomToFitPageHeight = {
+				{ "D" }, 
+				doc = "zoom to fit page height",
+				event = "SetZoomMode", args = "pageheight" 
+			},
+			ZoomToFitContentHeight = {
+				{ "Shift", "D" },
+				doc = "zoom to fit content height",
+				event = "SetZoomMode", args = "contentheight"
+			},
+		}
+	end
 	self.ui.menu:registerToMainMenu(self)
 end
 

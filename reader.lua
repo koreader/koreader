@@ -159,8 +159,6 @@ if fontmap ~= nil then
 end
 local last_file = G_reader_settings:readSetting("lastfile")
 
-Screen:updateRotationMode()
-Screen.native_rotation_mode = Screen.cur_rotation_mode
 
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
 --87712cf0e43fed624f8a9f610be42b1fe174b9fe
@@ -180,14 +178,9 @@ else
 	return showusage()
 end
 
-
--- @TODO dirty workaround, find a way to force native system poll
--- screen orientation and upside down mode 09.03 2012
-Screen:setRotationMode(Screen.native_rotation_mode)
-
 input.closeAll()
+
 if util.isEmulated()==0 then
-	os.execute("killall -cont cvm")
 	if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
 		-- send double menu key press events to trigger screen refresh
 		os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")

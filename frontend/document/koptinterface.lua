@@ -23,12 +23,12 @@ KoptOptions = {
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
-				name="screen_mode",
+				name = "screen_mode",
 				name_text = "Screen Mode",
 				toggle = {"portrait", "landscape"},
-				values = {1, 0},
-				default_value = 1,
-				-- TODO: add screen mode changing command
+				args = {"portrait", "landscape"},
+				default_arg = Screen:getScreenMode(),
+				event = "SetScreenMode",
 			}
 		}
 	},
@@ -36,7 +36,7 @@ KoptOptions = {
 		icon = "resources/icons/appbar.crop.large.png",
 		options = {
 			{
-				name="trim_page",
+				name = "trim_page",
 				name_text = "Page Crop",
 				toggle = {"auto", "manual"},
 				alternate = false,
