@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Canvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="appbar_align_right" Width="48.0067" Height="48.0067" Clip="F1 M 0,0L 48.0067,0L 48.0067,48.0067L 0,48.0067L 0,0">
+	<Path Width="16.0023" Height="2.00033" Canvas.Left="20.0027" Canvas.Top="13.0018" Stretch="Fill" Fill="#FF000000" Data="F1 M 36.005,13.0018L 20.0027,13.0019L 20.0027,15.0021L 36.005,15.0021L 36.005,13.0018 Z "/>
+	<Path Width="19.0023" Height="2.0003" Canvas.Left="17.0027" Canvas.Top="17.0024" Stretch="Fill" Fill="#FF000000" Data="F1 M 36.005,17.0024L 17.0027,17.0024L 17.0027,19.0027L 36.005,19.0026L 36.005,17.0024 Z "/>
+	<Path Width="15.0023" Height="2.00034" Canvas.Left="21.0027" Canvas.Top="21.0029" Stretch="Fill" Fill="#FF000000" Data="F1 M 36.005,21.0029L 21.0027,21.003L 21.0027,23.0033L 36.005,23.0032L 36.005,21.0029 Z "/>
+	<Path Width="21.0023" Height="2.00032" Canvas.Left="15.0027" Canvas.Top="25.0035" Stretch="Fill" Fill="#FF000000" Data="F1 M 36.005,25.0035L 15.0027,25.0035L 15.0027,27.0038L 36.005,27.0038L 36.005,25.0035 Z "/>
+	<Path Width="17.0023" Height="2.00032" Canvas.Left="19.0027" Canvas.Top="29.004" Stretch="Fill" Fill="#FF000000" Data="F1 M 36.005,29.004L 19.0027,29.0041L 19.0027,31.0044L 36.005,31.0043L 36.005,29.004 Z "/>
+	<Rectangle Width="20.0023" Height="2.00028" Canvas.Left="16.0027" Canvas.Top="33.0046" Stretch="Fill" Fill="#FF000000"/>
+</Canvas>

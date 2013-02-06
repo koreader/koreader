@@ -97,6 +97,10 @@ function Screen:getHeight()
 	return self.height
 end
 
+function Screen:getDPI()
+	return Device:getModel() == "KindlePaperWhite" and 212 or 167
+end
+
 function Screen:getPitch()
 	return self.ptich
 end
