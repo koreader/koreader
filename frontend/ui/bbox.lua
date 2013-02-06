@@ -85,7 +85,7 @@ function BBoxWidget:init()
 			},
 			CancelCrop = {
 				GestureRange:new{
-					ges = "hold_release",
+					ges = "hold",
 					range = Geom:new{
 						x = 0, y = 0,
 						w = Screen:getWidth(),
@@ -113,12 +113,22 @@ function BBoxWidget:onAdjustCrop(pos)
 	DEBUG("adjusting crop bbox with pos", pos)
 	local bbox = self.screen_bbox
 	local upper_left = Geom:new{ x = bbox.x0, y = bbox.y0}
+	local upper_right = Geom:new{ x = bbox.x1, y = bbox.y0}
+	local bottom_left = Geom:new{ x = bbox.x0, y = bbox.y1}
 	local bottom_right = Geom:new{ x = bbox.x1, y = bbox.y1}
-	if upper_left:distance(pos) < bottom_right:distance(pos) then
+	local corners = {upper_left, upper_right, bottom_left, bottom_right}
+	table.sort(corners, function(a,b) return a:distance(pos) < b:distance(pos) end)
+	if corners[1] == upper_left then
 		upper_left.x = pos.x
 		upper_left.y = pos.y
-	else
+	elseif corners[1] == bottom_right then
 		bottom_right.x = pos.x
+		bottom_right.y = pos.y
+	elseif corners[1] == upper_right then
+		bottom_right.x = pos.x
+		upper_left.y = pos.y
+	elseif corners[1] == bottom_left then
+		upper_left.x = pos.x
 		bottom_right.y = pos.y
 	end
 	self.screen_bbox = {
