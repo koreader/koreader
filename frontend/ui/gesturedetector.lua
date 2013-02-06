@@ -61,13 +61,13 @@ GestureDetector = {
 	PAN_THRESHOLD = 50,
 
 	track_id = {},
-	ev_stack = {},
+	tev_stack = {},
 	-- latest feeded touch event
-	last_ev = {},
-	is_ev_start = false,
-	first_ev = nil,
-	state = function(self, ev) 
-		self:switchState("initialState", ev)
+	last_tev = {},
+	is_on_detecting = false,
+	first_tev = nil,
+	state = function(self, tev) 
+		self:switchState("initialState", tev)
 	end,
 	
 	last_tap = nil, -- for single/double tap
@@ -75,20 +75,20 @@ GestureDetector = {
 
 function GestureDetector:feedEvent(tev) 
 	if tev.id ~= -1 then
-		self.last_ev = tev
+		self.last_tev = tev
 	end
 	return self.state(self, tev)
 end
 
-function GestureDetector:deepCopyEv(ev)
+function GestureDetector:deepCopyEv(tev)
 	return {
-		x = ev.x,
-		y = ev.y,
-		id = ev.id,
-		slot = ev.slot,
+		x = tev.x,
+		y = tev.y,
+		id = tev.id,
+		slot = tev.slot,
 		timev = TimeVal:new{
-			sec = ev.timev.sec,
-			usec = ev.timev.usec,
+			sec = tev.timev.sec,
+			usec = tev.timev.usec,
 		}
 	}
 end
@@ -106,14 +106,14 @@ function GestureDetector:isDoubleTap(tap1, tap2)
 end
 
 --[[
-compare last_pan with self.first_ev
+compare last_pan with self.first_tev
 if it is a swipe, return direction of swipe gesture.
 --]]
 function GestureDetector:isSwipe()
-	local tv_diff = self.first_ev.timev - self.last_ev.timev
+	local tv_diff = self.first_tev.timev - self.last_tev.timev
 	if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
-		x_diff = self.last_ev.x - self.first_ev.x
-		y_diff = self.last_ev.y - self.first_ev.y
+		x_diff = self.last_tev.x - self.first_tev.x
+		y_diff = self.last_tev.y - self.first_tev.y
 		if x_diff == 0 and y_diff == 0 then
 			return nil
 		end
@@ -140,34 +140,34 @@ end
 Warning! this method won't update self.state, you need to do it
 in each state method!
 --]]
-function GestureDetector:switchState(state_new, ev)
+function GestureDetector:switchState(state_new, tev)
 	--@TODO do we need to check whether state is valid?    (houqp)
-	return self[state_new](self, ev)
+	return self[state_new](self, tev)
 end
 
 function GestureDetector:clearState()
 	self.state = self.initialState
-	self.last_ev = {}
-	self.is_ev_start = false
-	self.first_ev = nil
+	self.last_tev = {}
+	self.is_on_detecting = false
+	self.first_tev = nil
 end
 
-function GestureDetector:initialState(ev)
-	if ev.id then
+function GestureDetector:initialState(tev)
+	if tev.id then
 		-- a event ends
-		if ev.id == -1 then
-			self.is_ev_start = false
+		if tev.id == -1 then
+			self.is_on_detecting = false
 		else
-			self.track_id[ev.id] = ev.slot
+			self.track_id[tev.id] = tev.slot
 		end
 	end
-	if ev.x and ev.y then
+	if tev.x and tev.y then
 		-- user starts a new touch motion
-		if not self.is_ev_start then
-			self.is_ev_start = true
-			self.first_ev = self:deepCopyEv(ev)
+		if not self.is_on_detecting then
+			self.is_on_detecting = true
+			self.first_tev = self:deepCopyEv(tev)
 			-- default to tap state
-			return self:switchState("tapState", ev)
+			return self:switchState("tapState", tev)
 		end
 	end
 end
@@ -175,24 +175,24 @@ end
 --[[
 this method handles both single and double tap
 --]]
-function GestureDetector:tapState(ev)
-	DEBUG("in tap state...", ev)
-	if ev.id == -1 then
+function GestureDetector:tapState(tev)
+	DEBUG("in tap state...", tev)
+	if tev.id == -1 then
 		-- end of tap event
 		local ges_ev = {
 			-- default to single tap
 			ges = "tap", 
 			pos = Geom:new{
-				x = self.last_ev.x, 
-				y = self.last_ev.y,
+				x = self.last_tev.x, 
+				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
 		}
 		-- cur_tap is used for double tap detection
 		local cur_tap = {
-			x = self.last_ev.x,
-			y = self.last_ev.y,
-			timev = ev.timev,
+			x = self.last_tev.x,
+			y = self.last_tev.y,
+			timev = tev.timev,
 		}
 
 		if self.last_tap ~= nil and 
@@ -208,7 +208,7 @@ function GestureDetector:tapState(ev)
 		self.last_tap = cur_tap
 
 		DEBUG("set up tap timer")
-		local deadline = self.last_ev.timev + TimeVal:new{
+		local deadline = self.last_tev.timev + TimeVal:new{
 				sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
 			}
 		Input:setTimeout(function()
@@ -229,7 +229,7 @@ function GestureDetector:tapState(ev)
 		-- we return nil in this case
 		self.state = self.tapState
 		DEBUG("set up hold timer")
-		local deadline = self.last_ev.timev + TimeVal:new{
+		local deadline = self.last_tev.timev + TimeVal:new{
 				sec = 0, usec = self.HOLD_INTERVAL
 			}
 		Input:setTimeout(function()
@@ -241,31 +241,31 @@ function GestureDetector:tapState(ev)
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
-		if (ev.x and math.abs(ev.x - self.first_ev.x) >= self.PAN_THRESHOLD) or
-		(ev.y and math.abs(ev.y - self.first_ev.y) >= self.PAN_THRESHOLD) then
+		if (tev.x and math.abs(tev.x - self.first_tev.x) >= self.PAN_THRESHOLD) or
+		(tev.y and math.abs(tev.y - self.first_tev.y) >= self.PAN_THRESHOLD) then
 			-- if user's finger moved long enough in X or
 			-- Y distance, we switch to pan state 
-			return self:switchState("panState", ev)
+			return self:switchState("panState", tev)
 		end
 	end
 end
 
-function GestureDetector:panState(ev)
+function GestureDetector:panState(tev)
 	DEBUG("in pan state...")
-	if ev.id == -1 then
+	if tev.id == -1 then
 		-- end of pan, signal swipe gesture if necessary
 		swipe_direct = self:isSwipe()
 		if swipe_direct then
 			local start_pos = Geom:new{
-					x = self.first_ev.x, 
-					y = self.first_ev.y,
+					x = self.first_tev.x, 
+					y = self.first_tev.y,
 					w = 0, h = 0,
 			}
 			self:clearState()
 			return {
 				ges = "swipe", 
 				direction = swipe_direct,
-				-- use first pan ev coordination as swipe start point
+				-- use first pan tev coordination as swipe start point
 				pos = start_pos,
 				--@TODO add start and end points?    (houqp)
 			}
@@ -285,41 +285,41 @@ function GestureDetector:panState(ev)
 			},
 			pos = nil,
 		}
-		pan_ev.relative.x = ev.x - self.last_ev.x
-		pan_ev.relative.y = ev.y - self.last_ev.y
+		pan_ev.relative.x = tev.x - self.last_tev.x
+		pan_ev.relative.y = tev.y - self.last_tev.y
 		pan_ev.pos = Geom:new{
-			x = self.last_ev.x, 
-			y = self.last_ev.y,
+			x = self.last_tev.x, 
+			y = self.last_tev.y,
 			w = 0, h = 0,
 		}
-		self.last_ev = ev
+		self.last_tev = tev
 		return pan_ev
 	end
 end
 
-function GestureDetector:holdState(ev)
+function GestureDetector:holdState(tev)
 	DEBUG("in hold state...")
 	-- when we switch to hold state, we pass no ev
 	-- so ev = nil
-	if not ev and self.last_ev.x and self.last_ev.y then
+	if not tev and self.last_tev.x and self.last_tev.y then
 		self.state = self.holdState
 		return {
 			ges = "hold", 
 			pos = Geom:new{
-				x = self.last_ev.x, 
-				y = self.last_ev.y,
+				x = self.last_tev.x, 
+				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
 		}
 	end
-	if ev.id == -1 then
+	if tev.id == -1 then
 		-- end of hold, signal hold release
 		self:clearState()
 		return {
 			ges = "hold_release", 
 			pos = Geom:new{
-				x = self.last_ev.x, 
-				y = self.last_ev.y,
+				x = self.last_tev.x, 
+				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
 		}
