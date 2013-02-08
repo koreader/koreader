@@ -7,7 +7,10 @@ function ReaderCropping:onPageCrop(mode)
 	local orig_reflow_mode = self.document.configurable.text_wrap
 	self.document.configurable.text_wrap = 0
 	self.ui:handleEvent(Event:new("CloseConfig"))
+	self.cropping_zoommode = true
+	self.cropping_offset = true
 	self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+	self.cropping_zoommode = false
 	local ubbox = self.document:getPageBBox(self.current_page)
 	--DEBUG("used page bbox", ubbox)
 	self.crop_bbox = BBoxWidget:new{
@@ -34,12 +37,15 @@ function ReaderCropping:onZoomUpdate(zoom)
 end
 
 function ReaderCropping:onScreenOffsetUpdate(screen_offset)
-	--DEBUG("offset updated to", screen_offset)
-	self.screen_offset = screen_offset
+	if self.cropping_offset then
+		DEBUG("offset updated to", screen_offset)
+		self.screen_offset = screen_offset
+		self.cropping_offset = false
+	end
 end
 
 function ReaderCropping:onSetZoomMode(mode)
-	if self.orig_zoom_mode == nil then
+	if not self.cropping_zoommode then
 		--DEBUG("backup zoom mode", mode)
 		self.orig_zoom_mode = mode
 	end
@@ -48,7 +54,7 @@ end
 function ReaderCropping:onReadSettings(config)
 	local bbox = config:readSetting("bbox")
 	self.document.bbox = bbox
-	DEBUG("read document bbox", self.document.bbox)
+	--DEBUG("read document bbox", self.document.bbox)
 end
 
 function ReaderCropping:onCloseDocument()

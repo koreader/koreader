@@ -45,10 +45,10 @@ function BBoxWidget:screen_to_page()
 	local scale = self.crop.zoom
 	local screen_offset = self.crop.screen_offset
 	DEBUG("screen offset in screen_to_page", screen_offset)
-	bbox.x0 = self.screen_bbox.x0 / scale - screen_offset.x
-	bbox.y0 = self.screen_bbox.y0 / scale - screen_offset.y
-	bbox.x1 = self.screen_bbox.x1 / scale - screen_offset.x
-	bbox.y1 = self.screen_bbox.y1 / scale - screen_offset.y
+	bbox.x0 = (self.screen_bbox.x0 - screen_offset.x) / scale
+	bbox.y0 = (self.screen_bbox.y0 - screen_offset.y) / scale
+	bbox.x1 = (self.screen_bbox.x1 - screen_offset.x) / scale
+	bbox.y1 = (self.screen_bbox.y1 - screen_offset.y) / scale
 	return bbox
 end
 
