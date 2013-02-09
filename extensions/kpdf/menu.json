@@ -1,0 +1,12 @@
+{
+	"items": [
+		{
+		"name": "KPDF",
+		"priority": 0,
+		"items": [
+			{"name": "Start in documents", "priority": 1, "action": "bin/kpdf.sh", "params": "/mnt/us/documents"},
+			{"name": "Open last document", "priority": 2, "action": "bin/kpdf.sh"}
+		]
+		}
+	]
+}
