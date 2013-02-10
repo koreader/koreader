@@ -380,7 +380,9 @@ function ConfigOption:init()
 			local current_item = nil
 			if self.options[c].name then
 				if self.options[c].values then
-					local val = self.config.configurable[self.options[c].name]
+					-- check if current value is stored in configurable or calculated in runtime
+					local val = self.options[c].current_func and self.options[c].current_func()
+								or self.config.configurable[self.options[c].name]
 					local min_diff = math.abs(val - self.options[c].values[1])
 					local diff = nil
 					for index, val_ in pairs(self.options[c].values) do
@@ -395,7 +397,9 @@ function ConfigOption:init()
 						end
 					end
 				elseif self.options[c].args then
-					local arg = self.config.configurable[self.options[c].name]
+					-- check if current arg is stored in configurable or calculated in runtime
+					local arg = self.options[c].current_func and self.options[c].current_func()
+								or self.config.configurable[self.options[c].name]
 					for idx, arg_ in pairs(self.options[c].args) do
 						if arg_ == arg then
 							current_item = idx
