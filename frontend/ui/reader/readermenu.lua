@@ -58,6 +58,8 @@ function ReaderMenu:setUpdateItemTable()
 	table.insert(self.item_table, {
 		text = "Return to file manager",
 		callback = function()
+			self.ui:handleEvent(Event:new("RestoreScreenMode", 
+				G_reader_settings:readSetting("screen_mode") or "portrait"))
 			UIManager:close(self.menu_container)
 			self.ui:onClose()
 		end
