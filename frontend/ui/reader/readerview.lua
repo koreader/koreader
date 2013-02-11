@@ -132,7 +132,16 @@ end
 
 function ReaderView:onSetScreenMode(new_mode)
 	if new_mode == "landscape" or new_mode == "portrait" then
+		self.screen_mode = new_mode
 		Screen:setScreenMode(new_mode)
+		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
+	end
+	return true
+end
+
+function ReaderView:onRestoreScreenMode(old_mode)
+	if old_mode == "landscape" or old_mode == "portrait" then
+		Screen:setScreenMode(old_mode)
 		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 	end
 	return true
@@ -146,6 +155,11 @@ end
 
 function ReaderView:onReadSettings(config)
 	self.render_mode = config:readSetting("render_mode") or 0
+	local screen_mode = config:readSetting("screen_mode")
+	if screen_mode then
+	    table.insert(self.ui.postInitCallback, function()
+	        self:onSetScreenMode(screen_mode) end)
+	end
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -192,4 +206,5 @@ end
 
 function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
+	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
 end

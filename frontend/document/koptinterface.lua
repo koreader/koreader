@@ -28,6 +28,7 @@ KoptOptions = {
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
 				default_arg = Screen:getScreenMode(),
+				current_func = function() return Screen:getScreenMode() end,
 				event = "SetScreenMode",
 			}
 		}
@@ -188,14 +189,14 @@ KoptOptions = {
 KoptInterface = {}
 
 -- get reflow context
-function KoptInterface:getKOPTContext(doc, pageno, bbox)
+function KoptInterface:getKOPTContext(doc, pageno, bbox, screen_size)
 	local kc = KOPTContext.new()
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
 	kc:setIndent(doc.configurable.detect_indent)
 	kc:setRotate(doc.configurable.screen_rotation)
 	kc:setColumns(doc.configurable.max_columns)
-	kc:setDeviceDim(doc.screen_size.w, doc.screen_size.h)
+	kc:setDeviceDim(screen_size.w, screen_size.h)
 	kc:setDeviceDPI(doc.screen_dpi)
 	kc:setStraighten(doc.configurable.auto_straighten)
 	kc:setJustification(doc.configurable.justification)
@@ -213,12 +214,14 @@ end
 -- calculates page dimensions
 function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
 	-- check cached page size
-	self.cur_bbox = doc:getPageBBox(pageno)
-	local bbox = self.cur_bbox
-	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
+	local bbox = doc:getPageBBox(pageno)
+	local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
+	local screen_size = Screen:getSize()
+	local screen_size_hash = screen_size.w.."|"..screen_size.h
+	local hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
 	local cached = Cache:check(hash)
 	if not cached then
-		local kc = self:getKOPTContext(doc, pageno, self.cur_bbox)
+		local kc = self:getKOPTContext(doc, pageno, bbox, screen_size)
 		local page = doc._document:openPage(pageno)
 		-- reflow page
 		page:reflow(kc, 0)
@@ -238,9 +241,11 @@ end
 
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
 	doc.render_mode = render_mode
-	self.cur_bbox = doc:getPageBBox(pageno)
-	local bbox = self.cur_bbox
-	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
+	local bbox = doc:getPageBBox(pageno)
+	local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
+	local screen_size = Screen:getSize()
+	local screen_size_hash = screen_size.w.."|"..screen_size.h
+	local hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
 	local page_size = self:getPageDimensions(doc, pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -271,13 +276,13 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 	}
 
 	-- draw to blitbuffer
-	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
+	local kc_hash = "kctx|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
 	local page = doc._document:openPage(pageno)
 	local cached = Cache:check(kc_hash)
 	if cached then
 		page:rfdraw(cached.kctx, tile.bb)
 		page:close()
-		DEBUG("cached hash", hash)
+		--DEBUG("cached hash", hash)
 		if not Cache:check(hash) then
 			Cache:insert(hash, tile)
 		end
@@ -288,7 +293,7 @@ end
 
 function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
 	local tile = self:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
-	DEBUG("now painting", tile, rect)
+	--DEBUG("now painting", tile, rect)
 	target:blitFrom(tile.bb,
 		x, y, 
 		rect.x - tile.excerpt.x,
