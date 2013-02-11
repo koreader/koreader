@@ -155,24 +155,20 @@ end
 
 function ReaderView:onReadSettings(config)
 	self.render_mode = config:readSetting("render_mode") or 0
-	self.init_screen_mode = config:readSetting("screen_mode") or "portrait"
+	local screen_mode = config:readSetting("screen_mode")
+	if screen_mode then
+	    table.insert(self.ui.postInitCallback, function()
+	        self:onSetScreenMode(screen_mode) end)
+	end
 end
 
 function ReaderView:onPageUpdate(new_page_no)
 	self.state.page = new_page_no
-	if self.init_screen_mode then
-		self.ui:handleEvent(Event:new("SetScreenMode", self.init_screen_mode))
-		self.init_screen_mode = nil
-	end
 	self:recalculate()
 end
 
 function ReaderView:onPosUpdate(new_pos)
 	self.state.pos = new_pos
-	if self.init_screen_mode then
-		self.ui:handleEvent(Event:new("SetScreenMode", self.init_screen_mode))
-		self.init_screen_mode = nil
-	end
 	self:recalculate()
 end
 
