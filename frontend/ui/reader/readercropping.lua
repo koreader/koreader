@@ -9,7 +9,9 @@ function ReaderCropping:onPageCrop(mode)
 	self.ui:handleEvent(Event:new("CloseConfig"))
 	self.cropping_zoommode = true
 	self.cropping_offset = true
-	self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+	-- we are already in page mode, tell ReaderView to recalculate stuff
+	-- for non-reflow mode
+	self.view:recalculate()
 	self.cropping_zoommode = false
 	local ubbox = self.document:getPageBBox(self.current_page)
 	--DEBUG("used page bbox", ubbox)
