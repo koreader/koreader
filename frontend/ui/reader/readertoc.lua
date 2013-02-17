@@ -71,7 +71,7 @@ function ReaderToc:onShowToc()
 		self:fillToc()
 	end
 	-- build menu items
-	if self.toc and not self.toc[1].text then
+	if #self.toc > 0 and not self.toc[1].text then
 		for _,v in ipairs(self.toc) do
 			v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
 		end
