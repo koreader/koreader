@@ -222,8 +222,14 @@ static int openFrameBuffer(lua_State *L) {
 	}
 	
 	if (fb->vinfo.bits_per_pixel == 8) {
-		/* for 8bpp K4, PaperWhite, we create a shadow 4bpp blitbuffer. These
-		 * models use 16 scale 8bpp framebuffer, so we still cheat it as 4bpp
+		/* for 8bpp K4, PaperWhite, we create a shadow 4bpp blitbuffer.
+		 * These models use 16 scale 8bpp framebuffer, so they are
+		 * actually fake 8bpp FB. Therefore, we still treat them as 4bpp
+		 *
+		 * For PaperWhite, the screen width is 758, but FB's line_length
+		 * is 768. So when doing the screen update, you still need to
+		 * fill 768 pixels per line, but the trailing 10 px for each
+		 * line is actually ignored by driver.
 		 * */
 		fb->buf->pitch = fb->vinfo.xres / 2;
 
