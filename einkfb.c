@@ -281,11 +281,9 @@ static int getSize(lua_State *L) {
 
 static int getPitch(lua_State *L) {
 	FBInfo *fb = (FBInfo*) luaL_checkudata(L, 1, "einkfb");
-#ifndef EMULATE_READER
-	lua_pushinteger(L, fb->finfo.line_length/2);
-#else
+	/* for 8bpp devices, the pitch here is line_length/2, not
+	 * the original pitch, i.e. fb->real_buf->pitch */
 	lua_pushinteger(L, fb->buf->pitch);
-#endif
 	return 1;
 }
 
