@@ -42,7 +42,6 @@ Codes for rotation modes:
 Screen = {
 	width = 0,
 	height = 0,
-	pitch = 0,
 	native_rotation_mode = nil,
 	cur_rotation_mode = 0,
 
@@ -53,12 +52,11 @@ Screen = {
 }
 
 function Screen:init()
-	_, self.height = self.fb:getSize()
-	-- for unknown strange reason, pitch*2 is less than screen width in KPW
-	-- so we need to calculate width by pitch here
-	self.pitch = self.fb:getPitch()
-	self.width = self.pitch * 2
-	self.bb = Blitbuffer.new(self.width, self.height, self.pitch)
+	-- for unknown strange reason, pitch*2 is 10 px more than screen width in KPW
+	self.width, self.height = self.fb:getSize()
+	-- Blitbuffer still uses inverted 4bpp bitmap, so pitch should be
+	-- (self.width / 2)
+	self.bb = Blitbuffer.new(self.width, self.height, self.width/2)
 	if self.width > self.height then
 		-- For another unknown strange reason, self.fb:getOrientation always
 		-- return 0 in KPW, even though we are in landscape mode.
@@ -102,7 +100,7 @@ function Screen:getDPI()
 end
 
 function Screen:getPitch()
-	return self.ptich
+	return self.fb:getPitch()
 end
 
 function Screen:getNativeRotationMode()
@@ -133,8 +131,7 @@ function Screen:setRotationMode(mode)
 	end
 	self.cur_rotation_mode = mode
 	self.bb:free()
-	self.pitch = self.width/2
-	self.bb = Blitbuffer.new(self.width, self.height, self.pitch)
+	self.bb = Blitbuffer.new(self.width, self.height, self.width/2)
 	-- update mode for input module
 	Input.rotation = mode
 end
@@ -170,11 +167,11 @@ function Screen:saveCurrentBB()
 	local width, height = self:getWidth(), self:getHeight()
 
 	if not self.saved_bb then
-		self.saved_bb = Blitbuffer.new(width, height, self:getPitch())
+		self.saved_bb = Blitbuffer.new(width, height, self.width/2)
 	end
 	if self.saved_bb:getWidth() ~= width then
 		self.saved_bb:free()
-		self.saved_bb = Blitbuffer.new(width, height, self:getPitch())
+		self.saved_bb = Blitbuffer.new(width, height, self.width/2)
 	end
 	self.saved_bb:blitFullFrom(self.bb)
 end
