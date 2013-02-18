@@ -285,12 +285,12 @@ static int blitToBufferRotate(lua_State *L) {
 
 	switch (degree) {
 		case 180:
-			y_adj = dst->h;
+			y_adj = dst->h-1;
 		case 90:
-			x_adj = dst->w;
+			x_adj = dst->w-1;
 			break;
 		case 270:
-			y_adj = dst->h;
+			y_adj = dst->h-1;
 			break;
 	}
 
