@@ -41,8 +41,8 @@ inline void fbInvert4BppTo8Bpp(FBInfo *fb) {
 	fb_pitch = fb->real_buf->pitch;
 
 	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
-	for (i = (h-1); i > 0; i--) {
-		for (j = (w-1)/2; j > 0; j--) {
+	for (i = (h-1); i >= 0; i--) {
+		for (j = (w-1)/2; j >= 0; j--) {
 			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
 			fb_buf[i*fb_pitch + j*2] &= 0xF0;
 			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
@@ -60,18 +60,18 @@ inline void fb4BppTo8Bpp(FBInfo *fb) {
 
 	shadow_buf = fb->buf->data;
 	fb_buf = fb->real_buf->data;
-	/* h is 1024 for PaperWhite */
+	/* h is 1024 for PaperWhite's shadow buffer */
 	h = fb->buf->h;
-	/* w is 758 for PaperWhite */
+	/* w is 758 for PaperWhite's shadow buffer */
 	w = fb->buf->w;
-	/* pitch is 384 for shadow buffer */
+	/* pitch is 376 for shadow buffer */
 	pitch = fb->buf->pitch;
-	/* pitch is 768 for PaperWhite */
+	/* pitch is 768 for PaperWhite's framebuffer */
 	fb_pitch = fb->real_buf->pitch;
 
 	/* copy bitmap from 4bpp shadow blitbuffer to framebuffer */
-	for (i = (h-1); i > 0; i--) {
-		for (j = (w-1)/2; j > 0; j--) {
+	for (i = (h-1); i >= 0; i--) {
+		for (j = (w-1)/2; j >= 0; j--) {
 			fb_buf[i*fb_pitch + j*2] = shadow_buf[i*pitch + j];
 			fb_buf[i*fb_pitch + j*2] &= 0xF0;
 			fb_buf[i*fb_pitch + j*2] |= shadow_buf[i*pitch + j]>>4 & 0x0F;
@@ -225,7 +225,7 @@ static int openFrameBuffer(lua_State *L) {
 		/* for 8bpp K4, PaperWhite, we create a shadow 4bpp blitbuffer. These
 		 * models use 16 scale 8bpp framebuffer, so we still cheat it as 4bpp
 		 * */
-		fb->buf->pitch = fb->finfo.line_length / 2;
+		fb->buf->pitch = fb->vinfo.xres / 2;
 
 		fb->buf->data = (uint8_t *)calloc(fb->buf->pitch * fb->vinfo.yres, sizeof(uint8_t));
 		if (!fb->buf->data) {
