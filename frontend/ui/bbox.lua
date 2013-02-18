@@ -147,14 +147,10 @@ function BBoxWidget:onConfirmCrop()
 	self.ui:handleEvent(Event:new("BBoxUpdate"), self.page_bbox)
 	self.document.bbox[self.pageno] = self.page_bbox
 	self.document.bbox[self:oddEven(self.pageno)] = self.page_bbox
-	self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
-	self.document.configurable.text_wrap = self.orig_reflow_mode
-	UIManager.repaint_all = true
+	self.ui:handleEvent(Event:new("ExitPageCrop"))
 end
 
 function BBoxWidget:onCancelCrop()
 	UIManager:close(self)
-	self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
-	self.document.configurable.text_wrap = self.orig_reflow_mode
-	UIManager.repaint_all = true
+	self.ui:handleEvent(Event:new("ExitPageCrop"))
 end
