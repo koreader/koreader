@@ -12,6 +12,7 @@ require "ui/reader/readertypeset"
 require "ui/reader/readermenu"
 require "ui/reader/readerconfig"
 require "ui/reader/readercropping"
+require "ui/reader/readerkopt"
 
 --[[
 This is an abstraction for a reader interface
@@ -158,6 +159,14 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, config_dialog)
+		-- koptinterface controller
+		local koptinterface = ReaderKoptinterface:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self,
+			document = self.document,
+		}
+		table.insert(self, koptinterface)
 	end
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized
