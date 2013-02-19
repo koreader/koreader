@@ -78,6 +78,7 @@ function showReader(file, pass)
 end
 
 function showHomePage(path)
+	local exclude_dirs = {"%.sdr$"}
 	local FileManager = FileChooser:new{
 		title = "FileManager",
 		path = path,
@@ -85,7 +86,13 @@ function showHomePage(path)
 		height = Screen:getHeight(),
 		is_borderless = true,
 		has_close_button = false,
-		filter = function(filename) 
+		dir_filter = function(dirname)
+			for _, pattern in ipairs(exclude_dirs) do
+				if dirname:match(pattern) then return end
+			end
+			return true
+		end,
+		file_filter = function(filename) 
 			if DocumentRegistry:getProvider(filename) then
 				return true
 			end
