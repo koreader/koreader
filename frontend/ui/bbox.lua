@@ -131,7 +131,7 @@ function BBoxWidget:onConfirmCrop()
 	self.ui:handleEvent(Event:new("BBoxUpdate"), self.page_bbox)
 	self.document.bbox[self.pageno] = self.page_bbox
 	self.document.bbox[math.oddEven(self.pageno)] = self.page_bbox
-	self.ui:handleEvent(Event:new("ExitPageCrop"))
+	self.ui:handleEvent(Event:new("ExitPageCrop", true))
 end
 
 function BBoxWidget:onCancelCrop()

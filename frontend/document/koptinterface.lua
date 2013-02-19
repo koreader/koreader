@@ -134,7 +134,7 @@ KoptOptions = {
 						event = "RedrawCurrentPage",
 					},
 					{
-						event = "SetZoomMode", 
+						event = "RestoreZoomMode",
 						args = {"page", nil},
 					},
 				}
