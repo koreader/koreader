@@ -1,3 +1,5 @@
+require "../math"
+
 --[[
 This is a registry for document providers
 ]]--
@@ -126,17 +128,9 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 	return native_dimen
 end
 
-function Document:oddEven(number)
-	if number % 2 == 1 then
-		return "odd"
-	else
-		return "even"
-	end
-end
-
 function Document:getPageBBox(pageno)
 	local bbox = self.bbox[pageno] -- exact
-	local oddEven = self:oddEven(pageno)
+	local oddEven = math.oddEven(pageno)
 	if bbox ~= nil then
 		DEBUG("bbox from", pageno)
 	else
