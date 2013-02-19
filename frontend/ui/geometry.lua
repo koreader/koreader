@@ -265,21 +265,3 @@ return the Euclidean distance between two geoms
 function Geom:distance(geom)
 	return math.sqrt(math.pow(self.x - geom.x, 2) + math.pow(self.y - geom.y, 2))
 end
-
---[[
-Simple math helper function
-]]--
-
-function math.roundAwayFromZero(num)
-	if num > 0 then
-		return math.ceil(num)
-	else
-		return math.floor(num)
-	end
-end
-
-function math.round(num)
-	return math.floor(num + 0.5)
-end
-
-

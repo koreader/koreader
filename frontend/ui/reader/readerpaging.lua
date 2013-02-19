@@ -1,3 +1,5 @@
+require "math"
+
 ReaderPaging = InputContainer:new{
 	current_page = 0,
 	number_of_pages = 0,

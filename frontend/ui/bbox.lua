@@ -1,3 +1,5 @@
+require "math"
+
 --[[
 BBoxWidget shows a bbox for page cropping
 ]]
@@ -89,14 +91,6 @@ function BBoxWidget:screen_to_page()
 	return bbox
 end
 
-function BBoxWidget:oddEven(number)
-	if number % 2 == 1 then
-		return "odd"
-	else
-		return "even"
-	end
-end
-
 function BBoxWidget:onAdjustCrop(arg, ges)
 	DEBUG("adjusting crop bbox with pos", ges.pos)
 	local bbox = self.screen_bbox
@@ -136,7 +130,7 @@ function BBoxWidget:onConfirmCrop()
 	UIManager:close(self)
 	self.ui:handleEvent(Event:new("BBoxUpdate"), self.page_bbox)
 	self.document.bbox[self.pageno] = self.page_bbox
-	self.document.bbox[self:oddEven(self.pageno)] = self.page_bbox
+	self.document.bbox[math.oddEven(self.pageno)] = self.page_bbox
 	self.ui:handleEvent(Event:new("ExitPageCrop"))
 end
 
