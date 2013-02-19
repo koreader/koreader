@@ -124,7 +124,7 @@ function Document:getPageDimensions(pageno, zoom, rotation)
 		native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
 	end
 	native_dimen:scaleBy(zoom)
-	DEBUG("dimen for pageno", pageno, "zoom", zoom, "rotation", rotation, "is", native_dimen)
+	--DEBUG("dimen for pageno", pageno, "zoom", zoom, "rotation", rotation, "is", native_dimen)
 	return native_dimen
 end
 
@@ -132,26 +132,26 @@ function Document:getPageBBox(pageno)
 	local bbox = self.bbox[pageno] -- exact
 	local oddEven = math.oddEven(pageno)
 	if bbox ~= nil then
-		DEBUG("bbox from", pageno)
+		--DEBUG("bbox from", pageno)
 	else
 		bbox = self.bbox[oddEven] -- odd/even
 	end
 	if bbox ~= nil then -- last used up to this page
-		DEBUG("bbox from", oddEven)
+		--DEBUG("bbox from", oddEven)
 	else
 		for i = 0,pageno do
 			bbox = self.bbox[ pageno - i ]
 			if bbox ~= nil then
-				DEBUG("bbox from", pageno - i)
+				--DEBUG("bbox from", pageno - i)
 				break
 			end
 		end
 	end
 	if bbox == nil then -- fallback bbox
 		bbox = self:getUsedBBox(pageno)
-		DEBUG("bbox from ORIGINAL page")
+		--DEBUG("bbox from ORIGINAL page")
 	end
-	DEBUG("final bbox", bbox)
+	--DEBUG("final bbox", bbox)
 	return bbox
 end
 
