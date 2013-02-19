@@ -7,6 +7,43 @@ BBoxWidget = InputContainer:new{
 	linesize = 2,
 }
 
+function BBoxWidget:init()
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			AdjustCrop = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+			ConfirmCrop = {
+				GestureRange:new{
+					ges = "double_tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+			CancelCrop = {
+				GestureRange:new{
+					ges = "hold",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+		}
+	end
+end
+
 function BBoxWidget:getSize()
 	return Geom:new{
 		x = 0, y = 0,
@@ -60,76 +97,29 @@ function BBoxWidget:oddEven(number)
 	end
 end
 
-function BBoxWidget:init()
-	if Device:isTouchDevice() then
-		self.ges_events = {
-			AdjustCrop = {
-				GestureRange:new{
-					ges = "tap",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
-				}
-			},
-			ConfirmCrop = {
-				GestureRange:new{
-					ges = "double_tap",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
-				}
-			},
-			CancelCrop = {
-				GestureRange:new{
-					ges = "hold",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
-				}
-			},
-		}
-	end
-end
-
-function BBoxWidget:onGesture(ev)
-	for name, gsseq in pairs(self.ges_events) do
-		for _, gs_range in ipairs(gsseq) do
-			--DEBUG("gs_range", gs_range)
-			if gs_range:match(ev) then
-				local eventname = gsseq.event or name
-				return self:handleEvent(Event:new(eventname, ev.pos))
-			end
-		end
-	end
-end
-
-function BBoxWidget:onAdjustCrop(pos)
-	DEBUG("adjusting crop bbox with pos", pos)
+function BBoxWidget:onAdjustCrop(arg, ges)
+	DEBUG("adjusting crop bbox with pos", ges.pos)
 	local bbox = self.screen_bbox
 	local upper_left = Geom:new{ x = bbox.x0, y = bbox.y0}
 	local upper_right = Geom:new{ x = bbox.x1, y = bbox.y0}
 	local bottom_left = Geom:new{ x = bbox.x0, y = bbox.y1}
 	local bottom_right = Geom:new{ x = bbox.x1, y = bbox.y1}
 	local corners = {upper_left, upper_right, bottom_left, bottom_right}
-	table.sort(corners, function(a,b) return a:distance(pos) < b:distance(pos) end)
+	table.sort(corners, function(a,b)
+		return a:distance(ges.pos) < b:distance(ges.pos)
+	end)
 	if corners[1] == upper_left then
-		upper_left.x = pos.x
-		upper_left.y = pos.y
+		upper_left.x = ges.pos.x
+		upper_left.y = ges.pos.y
 	elseif corners[1] == bottom_right then
-		bottom_right.x = pos.x
-		bottom_right.y = pos.y
+		bottom_right.x = ges.pos.x
+		bottom_right.y = ges.pos.y
 	elseif corners[1] == upper_right then
-		bottom_right.x = pos.x
-		upper_left.y = pos.y
+		bottom_right.x = ges.pos.x
+		upper_left.y = ges.pos.y
 	elseif corners[1] == bottom_left then
-		upper_left.x = pos.x
-		bottom_right.y = pos.y
+		upper_left.x = ges.pos.x
+		bottom_right.y = ges.pos.y
 	end
 	self.screen_bbox = {
 		x0 = upper_left.x, 
