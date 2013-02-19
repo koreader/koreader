@@ -22,9 +22,11 @@ function FileChooser:changeToPath(path)
 			local filename = self.path.."/"..f
 			local filemode = lfs.attributes(filename, "mode")
 			if filemode == "directory" and f ~= "." and f~=".." then
-				table.insert(dirs, f)
+				if self.dir_filter(filename) then
+					table.insert(dirs, f)
+				end
 			elseif filemode == "file" then
-				if self.filter(filename) then
+				if self.file_filter(filename) then
 					table.insert(files, f)
 				end
 			end
