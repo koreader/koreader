@@ -6,7 +6,6 @@ function ReaderCropping:onPageCrop(mode)
 	if mode == "auto" then return end
 	self.orig_reflow_mode = self.document.configurable.text_wrap
 	self.ui:handleEvent(Event:new("CloseConfig"))
-	self.cropping_zoommode = true
 	self.cropping_offset = true
 	if self.orig_reflow_mode == 1 then
 		self.document.configurable.text_wrap = 0
@@ -14,9 +13,8 @@ function ReaderCropping:onPageCrop(mode)
 		-- mode, just force readerview to recalculate visible_area
 		self.view:recalculate()
 	else
-		self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+		self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
 	end
-	self.cropping_zoommode = false
 	local ubbox = self.document:getPageBBox(self.current_page)
 	--DEBUG("used page bbox", ubbox)
 	self.crop_bbox = BBoxWidget:new{
@@ -67,8 +65,8 @@ function ReaderCropping:onScreenOffsetUpdate(screen_offset)
 	end
 end
 
-function ReaderCropping:onSetZoomMode(mode)
-	if not self.cropping_zoommode and mode then
+function ReaderCropping:onSetZoomMode(mode, orig)
+	if orig ~= "cropping" and mode then
 		--DEBUG("backup zoom mode", mode)
 		self.orig_zoom_mode = mode
 	end
