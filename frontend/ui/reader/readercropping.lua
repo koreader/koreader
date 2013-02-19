@@ -69,7 +69,7 @@ end
 
 function ReaderCropping:onSetZoomMode(mode)
 	if not self.cropping_zoommode and mode then
-		DEBUG("backup zoom mode", mode)
+		--DEBUG("backup zoom mode", mode)
 		self.orig_zoom_mode = mode
 	end
 end
