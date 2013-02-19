@@ -30,7 +30,7 @@ function ReaderCropping:onPageCrop(mode)
 	return true
 end
 
-function ReaderCropping:onExitPageCrop()
+function ReaderCropping:onExitPageCrop(confirmed)
 	self.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
@@ -38,7 +38,12 @@ function ReaderCropping:onExitPageCrop()
 		self.document.configurable.text_wrap = 1
 		self.view:recalculate()
 	else
-		self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
+		if confirmed then
+			-- if original zoom mode is not "content", set zoom mode to "content"
+			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "content"))
+		else
+			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
+		end
 	end
 	UIManager.repaint_all = true
 	return true
@@ -63,8 +68,8 @@ function ReaderCropping:onScreenOffsetUpdate(screen_offset)
 end
 
 function ReaderCropping:onSetZoomMode(mode)
-	if not self.cropping_zoommode then
-		--DEBUG("backup zoom mode", mode)
+	if not self.cropping_zoommode and mode then
+		DEBUG("backup zoom mode", mode)
 		self.orig_zoom_mode = mode
 	end
 end
