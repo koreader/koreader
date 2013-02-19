@@ -148,21 +148,6 @@ function Screen:setScreenMode(mode)
 	end
 end
 
---[[
-  @brief change gesture's x and y coordinates according to screen view mode
-
-  @param ges gesture that you want to adjust
-  @return adjusted gesture.
---]]
-function Screen:adjustGesCoordinate(ges)
-	if self.cur_rotation_mode == 1 then
-		--@TODO fix wipe direction  03.02 2013 (houqp)
-		ges.pos.x, ges.pos.y = (self.width - ges.pos.y), (ges.pos.x)
-	end
-
-	return ges
-end
-
 function Screen:saveCurrentBB()
 	local width, height = self:getWidth(), self:getHeight()
 

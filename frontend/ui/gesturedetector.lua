@@ -326,4 +326,29 @@ function GestureDetector:holdState(tev)
 	end
 end
 
+--[[
+  @brief change gesture's x and y coordinates according to screen view mode
+
+  @param ges gesture that you want to adjust
+  @return adjusted gesture.
+--]]
+function GestureDetector:adjustGesCoordinate(ges)
+	if Screen.cur_rotation_mode == 1 then
+		-- in landscape mode
+		ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
+		if ges.ges == "swipe" then
+			if ges.direction == "down" then
+				ges.direction = "left"
+			elseif ges.direction == "up" then
+				ges.direction = "right"
+			elseif ges.direction == "right" then
+				ges.direction = "down"
+			elseif ges.direction == "left" then
+				ges.direction = "up"
+			end
+		end
+	end
+
+	return ges
+end
 

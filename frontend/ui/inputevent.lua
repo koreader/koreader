@@ -407,7 +407,7 @@ function Input:handleTouchEv(ev)
 			--self.cur_ev = {}
 			if touch_ges then
 				return Event:new("Gesture", 
-					Screen:adjustGesCoordinate(touch_ges)
+					GestureDetector:adjustGesCoordinate(touch_ges)
 				)
 			end
 		end
@@ -448,7 +448,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 							-- decided a gesture? FIXME
 							Input.timer_callbacks = {}
 							return Event:new("Gesture", 
-								Screen:adjustGesCoordinate(touch_ges)
+								GestureDetector:adjustGesCoordinate(touch_ges)
 							)
 						end -- EOF if touch_ges
 					end -- EOF if deadline reached
