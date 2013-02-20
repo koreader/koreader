@@ -14,9 +14,19 @@ function BBoxWidget:init()
 	--DEBUG("used page bbox on page", self.view.state.page, self.page_bbox)
 	if Device:isTouchDevice() then
 		self.ges_events = {
-			AdjustCrop = {
+			TapAdjust = {
 				GestureRange:new{
 					ges = "tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight()
+					}
+				}
+			},
+			PanAdjust = {
+				GestureRange:new{
+					ges = "pan",
 					range = Geom:new{
 						x = 0, y = 0,
 						w = Screen:getWidth(),
@@ -93,7 +103,7 @@ function BBoxWidget:screen_to_page()
 	return bbox
 end
 
-function BBoxWidget:onAdjustCrop(arg, ges)
+function BBoxWidget:onAdjustScreenBBox(ges, rate)
 	--DEBUG("adjusting crop bbox with pos", ges.pos)
 	local bbox = self.screen_bbox
 	local upper_left = Geom:new{ x = bbox.x0, y = bbox.y0}
@@ -123,7 +133,28 @@ function BBoxWidget:onAdjustCrop(arg, ges)
 		x1 = bottom_right.x,
 		y1 = bottom_right.y
 	}
-	UIManager.repaint_all = true
+	if rate then
+		local last_time = self.last_time or {0, 0}
+		local this_time = { util.gettime() }
+		local elap_time = (this_time[1] - last_time[1]) * 1000 + (this_time[2] - last_time[2]) / 1000  -- in millisec
+		if elap_time > 1000 / rate then
+			UIManager.repaint_all = true
+			self.last_time = this_time
+		end
+	else
+		UIManager.repaint_all = true
+	end
+end
+
+function BBoxWidget:onTapAdjust(arg, ges)
+	self:onAdjustScreenBBox(ges)
+	return true
+end
+
+function BBoxWidget:onPanAdjust(arg, ges)
+	-- up to 3 updates per second
+	self:onAdjustScreenBBox(ges, 3.0)
+	return true
 end
 
 function BBoxWidget:onConfirmCrop()
