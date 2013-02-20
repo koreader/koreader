@@ -4,9 +4,11 @@ ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
 	if mode == "auto" then return end
-	self.orig_reflow_mode = self.document.configurable.text_wrap
 	self.ui:handleEvent(Event:new("CloseConfig"))
-	self.cropping_offset = true
+	-- backup original zoom mode as cropping use "page" zoom mode
+	self.orig_zoom_mode = self.view.zoom_mode
+	-- backup original reflow mode as cropping use non-reflow mode
+	self.orig_reflow_mode = self.document.configurable.text_wrap
 	if self.orig_reflow_mode == 1 then
 		self.document.configurable.text_wrap = 0
 		-- if we are in reflow mode, then we are already in page
@@ -15,24 +17,38 @@ function ReaderCropping:onPageCrop(mode)
 	else
 		self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
 	end
-	local ubbox = self.document:getPageBBox(self.current_page)
-	--DEBUG("used page bbox", ubbox)
 	self.crop_bbox = BBoxWidget:new{
-		page_bbox = ubbox,
 		ui = self.ui,
-		crop = self,
+		view = self.view,
 		document = self.document,
-		pageno = self.current_page,
 	}
 	UIManager:show(self.crop_bbox)
 	return true
 end
 
-function ReaderCropping:onExitPageCrop(confirmed)
+function ReaderCropping:onConfirmPageCrop(new_bbox)
+	--DEBUG("new bbox", new_bbox)
+	UIManager:close(self.crop_bbox)
+	self.ui:handleEvent(Event:new("BBoxUpdate"), new_bbox)
+	local pageno = self.view.state.page
+	self.document.bbox[pageno] = new_bbox
+	self.document.bbox[math.oddEven(pageno)] = new_bbox
+	self:exitPageCrop(true)
+	return true
+end
+
+function ReaderCropping:onCancelPageCrop()
+	UIManager:close(self.crop_bbox)
+	self:exitPageCrop(false)
+	return true
+end
+
+function ReaderCropping:exitPageCrop(confirmed)
 	self.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
 	if self.orig_reflow_mode == 1 then
+		-- restore original reflow mode
 		self.document.configurable.text_wrap = 1
 		self.view:recalculate()
 	else
@@ -44,32 +60,6 @@ function ReaderCropping:onExitPageCrop(confirmed)
 		end
 	end
 	UIManager.repaint_all = true
-	return true
-end
-
-function ReaderCropping:onPageUpdate(page_no)
-	--DEBUG("page updated to", page_no)
-	self.current_page = page_no
-end
-
-function ReaderCropping:onZoomUpdate(zoom)
-	--DEBUG("zoom updated to", zoom)
-	self.zoom = zoom
-end
-
-function ReaderCropping:onScreenOffsetUpdate(screen_offset)
-	if self.cropping_offset then
-		--DEBUG("offset updated to", screen_offset)
-		self.screen_offset = screen_offset
-		self.cropping_offset = false
-	end
-end
-
-function ReaderCropping:onSetZoomMode(mode, orig)
-	if orig ~= "cropping" and mode then
-		--DEBUG("backup zoom mode", mode)
-		self.orig_zoom_mode = mode
-	end
 end
 
 function ReaderCropping:onReadSettings(config)

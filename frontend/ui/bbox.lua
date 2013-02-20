@@ -10,6 +10,8 @@ BBoxWidget = InputContainer:new{
 }
 
 function BBoxWidget:init()
+	self.page_bbox = self.document:getPageBBox(self.view.state.page)
+	--DEBUG("used page bbox on page", self.view.state.page, self.page_bbox)
 	if Device:isTouchDevice() then
 		self.ges_events = {
 			AdjustCrop = {
@@ -68,9 +70,9 @@ end
 -- transform page bbox to screen bbox
 function BBoxWidget:page_to_screen()
 	local bbox = {}
-	local scale = self.crop.zoom
-	local screen_offset = self.crop.screen_offset
-	DEBUG("screen offset in page_to_screen", screen_offset)
+	local scale = self.view.state.zoom
+	local screen_offset = self.view.state.offset
+	--DEBUG("screen offset in page_to_screen", screen_offset)
 	bbox.x0 = self.page_bbox.x0 * scale + screen_offset.x
 	bbox.y0 = self.page_bbox.y0 * scale + screen_offset.y
 	bbox.x1 = self.page_bbox.x1 * scale + screen_offset.x
@@ -81,9 +83,9 @@ end
 -- transform screen bbox to page bbox
 function BBoxWidget:screen_to_page()
 	local bbox = {}
-	local scale = self.crop.zoom
-	local screen_offset = self.crop.screen_offset
-	DEBUG("screen offset in screen_to_page", screen_offset)
+	local scale = self.view.state.zoom
+	local screen_offset = self.view.state.offset
+	--DEBUG("screen offset in screen_to_page", screen_offset)
 	bbox.x0 = (self.screen_bbox.x0 - screen_offset.x) / scale
 	bbox.y0 = (self.screen_bbox.y0 - screen_offset.y) / scale
 	bbox.x1 = (self.screen_bbox.x1 - screen_offset.x) / scale
@@ -92,7 +94,7 @@ function BBoxWidget:screen_to_page()
 end
 
 function BBoxWidget:onAdjustCrop(arg, ges)
-	DEBUG("adjusting crop bbox with pos", ges.pos)
+	--DEBUG("adjusting crop bbox with pos", ges.pos)
 	local bbox = self.screen_bbox
 	local upper_left = Geom:new{ x = bbox.x0, y = bbox.y0}
 	local upper_right = Geom:new{ x = bbox.x1, y = bbox.y0}
@@ -125,16 +127,13 @@ function BBoxWidget:onAdjustCrop(arg, ges)
 end
 
 function BBoxWidget:onConfirmCrop()
-	self.page_bbox = self:screen_to_page()
-	--DEBUG("new bbox", self.page_bbox)
-	UIManager:close(self)
-	self.ui:handleEvent(Event:new("BBoxUpdate"), self.page_bbox)
-	self.document.bbox[self.pageno] = self.page_bbox
-	self.document.bbox[math.oddEven(self.pageno)] = self.page_bbox
-	self.ui:handleEvent(Event:new("ExitPageCrop", true))
+	local new_bbox = self:screen_to_page()
+	self.ui:handleEvent(Event:new("ConfirmPageCrop", new_bbox))
+	return true
 end
 
 function BBoxWidget:onCancelCrop()
-	UIManager:close(self)
-	self.ui:handleEvent(Event:new("ExitPageCrop"))
+	UIManager:close(self.crop_bbox)
+	self.ui:handleEvent(Event:new("CancelPageCrop"))
+	return true
 end

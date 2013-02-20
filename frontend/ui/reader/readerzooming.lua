@@ -95,6 +95,7 @@ function ReaderZooming:onZoom(direction)
 end
 
 function ReaderZooming:onSetZoomMode(new_mode)
+	self.view.zoom_mode = new_mode
 	if self.zoom_mode ~= new_mode then
 		DEBUG("setting zoom mode to", new_mode)
 		self.zoom_mode = new_mode
