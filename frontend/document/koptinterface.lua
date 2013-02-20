@@ -6,19 +6,6 @@ require "ui/reader/readerconfig"
 
 KoptOptions = {
 	prefix = 'kopt',
-	default_options = {
-		{
-			widget = "ProgressWidget",
-			widget_align_center = 0.8,
-			width = Screen:getWidth()*0.7,
-			height = 5,
-			percentage = 0.0,
-			item_text = {"Goto"},
-			item_align_center = 0.2,
-			item_font_face = "tfont",
-			item_font_size = 20,
-		}
-	},
 	{
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {

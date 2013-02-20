@@ -2,8 +2,6 @@ require "ui/geometry"
 
 CreOptions = {
 	prefix = 'copt',
-	default_options = {
-	},
 	{
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
