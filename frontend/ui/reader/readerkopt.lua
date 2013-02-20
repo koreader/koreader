@@ -1,22 +1,26 @@
 
-ReaderKoptinterface = InputContainer:new{}
+ReaderKoptListener = EventListener:new{}
 
-function ReaderKoptinterface:onReadSettings(config)
-	self.normal_zoom_mode = config:readSetting("zoom_mode") or "page"
+function ReaderKoptListener:onReadSettings(config)
+	self.normal_zoom_mode = config:readSetting("normal_zoom_mode") or "page"
 	if self.document.configurable.text_wrap == 1 then
-		self.ui:handleEvent(Event:new("SetZoomMode", "page", "koptinterface"))
+		self.ui:handleEvent(Event:new("SetZoomMode", "page", "koptlistener"))
 	else
-		self.ui:handleEvent(Event:new("SetZoomMode", self.normal_zoom_mode, "koptinterface"))
+		self.ui:handleEvent(Event:new("SetZoomMode", self.normal_zoom_mode, "koptlistener"))
 	end
 end
 
-function ReaderKoptinterface:onRestoreZoomMode(zoom_mode)
-	self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode or self.normal_zoom_mode, "koptinterface"))
+function ReaderKoptListener:onCloseDocument()
+	self.ui.doc_settings:saveSetting("normal_zoom_mode", self.normal_zoom_mode)
+end
+
+function ReaderKoptListener:onRestoreZoomMode(zoom_mode)
+	self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode or self.normal_zoom_mode, "koptlistener"))
 	return true
 end
 
-function ReaderKoptinterface:onSetZoomMode(zoom_mode, orig)
-	if orig ~= "koptinterface" then
+function ReaderKoptListener:onSetZoomMode(zoom_mode, orig)
+	if orig ~= "koptlistener" then
 		self.normal_zoom_mode = zoom_mode
 	end
 end
