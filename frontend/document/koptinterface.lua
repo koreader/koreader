@@ -124,7 +124,6 @@ KoptOptions = {
 					},
 					{
 						event = "RestoreZoomMode",
-						args = {"page", nil},
 					},
 				}
 			},
