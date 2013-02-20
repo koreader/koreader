@@ -56,6 +56,8 @@ Document = {
 		date = ""
 	},
 	
+	GAMMA_NO_GAMMA = 1.0,
+	
 	-- override bbox from orignal page's getUsedBBox
 	bbox = {},
 		
@@ -182,8 +184,8 @@ function Document:getToc()
 	return self._document:getToc()
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
-	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
+	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)
 	-- this will be the size we actually render
 	local size = page_size
@@ -198,7 +200,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
 			return
 		end
 		-- only render required part
-		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode.."|"..tostring(rect)
+		hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode.."|"..tostring(rect)
 		size = rect
 	end
 
@@ -223,6 +225,11 @@ function Document:renderPage(pageno, rect, zoom, rotation, render_mode)
 		dc:setOffset(0, page_size.h)
 	end
 	dc:setZoom(zoom)
+	
+	if gamma ~= self.GAMMA_NO_GAMMA then
+		--DEBUG("gamma correction: ", gamma)
+		dc:setGamma(gamma)
+	end
 
 	-- render
 	local page = self._document:openPage(pageno)
@@ -235,10 +242,11 @@ end
 
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
-function Document:hintPage(pageno, zoom, rotation, render_mode)
-	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
+function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
+	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
 	if not Cache:check(hash_full_page) then
-		self:renderPage(pageno, nil, zoom, rotation, render_mode)
+		--DEBUG("hinting page", pageno)
+		self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
 	end
 end
 
@@ -250,15 +258,15 @@ Draw page content to blitbuffer.
 @target: target blitbuffer
 @rect: visible_area inside document page
 --]]
-function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
-	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..render_mode
+function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
+	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
 	local hash_excerpt = hash_full_page.."|"..tostring(rect)
 	local tile = Cache:check(hash_full_page)
 	if not tile then
 		tile = Cache:check(hash_excerpt)
 		if not tile then
 			DEBUG("rendering")
-			tile = self:renderPage(pageno, rect, zoom, rotation, render_mode)
+			tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 		end
 	end
 	DEBUG("now painting", tile, rect)

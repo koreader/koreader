@@ -68,19 +68,19 @@ function PdfDocument:getPageDimensions(pageno, zoom, rotation)
 	end
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation, render_mode)
+function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 	if self.configurable.text_wrap == 1 then
 		return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, render_mode)
 	else
-		return Document.renderPage(self, pageno, rect, zoom, rotation, render_mode)
+		return Document.renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
 	end
 end
 
-function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, render_mode)
+function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
 	if self.configurable.text_wrap == 1 then
 		self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, render_mode)
 	else
-		Document.drawPage(self, target, x, y, rect, pageno, zoom, rotation, render_mode)
+		Document.drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
 	end
 end
 

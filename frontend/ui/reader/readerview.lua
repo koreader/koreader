@@ -7,6 +7,7 @@ ReaderView = WidgetContainer:new{
 		pos = 0,
 		zoom = 1.0,
 		rotation = 0,
+		gamma = 1.0,
 		offset = {},
 		bbox = nil,
 	},
@@ -50,6 +51,7 @@ function ReaderView:paintTo(bb, x, y)
 			self.state.page,
 			self.state.zoom,
 			self.state.rotation,
+			self.state.gamma,
 			self.render_mode)
 		UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
 	else
@@ -160,6 +162,7 @@ function ReaderView:onReadSettings(config)
 	    table.insert(self.ui.postInitCallback, function()
 	        self:onSetScreenMode(screen_mode) end)
 	end
+	self.state.gamma = config:readSetting("gamma") or 1.0
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -186,12 +189,17 @@ function ReaderView:onRotationUpdate(rotation)
 	self:recalculate()
 end
 
+function ReaderView:onGammaUpdate(gamma)
+	self.state.gamma = gamma
+end
+
 function ReaderView:onHintPage()
 	if self.state.page < self.ui.document.info.number_of_pages then
 		self.ui.document:hintPage(
 			self.state.page+1, 
 			self.state.zoom, 
 			self.state.rotation, 
+			self.state.gamma, 
 			self.render_mode)
 	end
 	return true
@@ -207,4 +215,5 @@ end
 function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
+	self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
 end

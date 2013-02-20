@@ -104,6 +104,8 @@ KoptOptions = {
 				item_align_center = 0.8,
 				values = {2.0, 1.5, 1.0, 0.5, 0.2},
 				default_value = 1.0,
+				event = "GammaUpdate",
+				args = {0.5, 0.8, 1.0, 2.0, 4.0},
 			}
 		}
 	},
