@@ -17,41 +17,25 @@ function BBoxWidget:init()
 			TapAdjust = {
 				GestureRange:new{
 					ges = "tap",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
+					range = self.view.dimen,
 				}
 			},
 			PanAdjust = {
 				GestureRange:new{
 					ges = "pan",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
+					range = self.view.dimen,
 				}
 			},
-			ConfirmCrop = {
+			Confirm = {
 				GestureRange:new{
 					ges = "double_tap",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
+					range = self.view.dimen,
 				}
 			},
-			CancelCrop = {
+			Cancel = {
 				GestureRange:new{
 					ges = "hold",
-					range = Geom:new{
-						x = 0, y = 0,
-						w = Screen:getWidth(),
-						h = Screen:getHeight()
-					}
+					range = self.view.dimen,
 				}
 			},
 		}
@@ -67,7 +51,8 @@ function BBoxWidget:getSize()
 end
 
 function BBoxWidget:paintTo(bb, x, y)
-	self.screen_bbox = self.screen_bbox or self:page_to_screen()
+	-- As getScreenBBox uses view states, screen_bbox initialization is postponed.
+	self.screen_bbox = self.screen_bbox or self:getScreenBBox(self.page_bbox)
 	local bbox = self.screen_bbox
 	-- upper_left
 	bb:invertRect(bbox.x0 + self.linesize, bbox.y0, bbox.x1 - bbox.x0, self.linesize)
@@ -78,33 +63,41 @@ function BBoxWidget:paintTo(bb, x, y)
 end
 
 -- transform page bbox to screen bbox
-function BBoxWidget:page_to_screen()
+function BBoxWidget:getScreenBBox(page_bbox)
 	local bbox = {}
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in page_to_screen", screen_offset)
-	bbox.x0 = self.page_bbox.x0 * scale + screen_offset.x
-	bbox.y0 = self.page_bbox.y0 * scale + screen_offset.y
-	bbox.x1 = self.page_bbox.x1 * scale + screen_offset.x
-	bbox.y1 = self.page_bbox.y1 * scale + screen_offset.y
+	bbox.x0 = page_bbox.x0 * scale + screen_offset.x
+	bbox.y0 = page_bbox.y0 * scale + screen_offset.y
+	bbox.x1 = page_bbox.x1 * scale + screen_offset.x
+	bbox.y1 = page_bbox.y1 * scale + screen_offset.y
 	return bbox
 end
 
 -- transform screen bbox to page bbox
-function BBoxWidget:screen_to_page()
+function BBoxWidget:getPageBBox(screen_bbox)
 	local bbox = {}
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in screen_to_page", screen_offset)
-	bbox.x0 = (self.screen_bbox.x0 - screen_offset.x) / scale
-	bbox.y0 = (self.screen_bbox.y0 - screen_offset.y) / scale
-	bbox.x1 = (self.screen_bbox.x1 - screen_offset.x) / scale
-	bbox.y1 = (self.screen_bbox.y1 - screen_offset.y) / scale
+	bbox.x0 = (screen_bbox.x0 - screen_offset.x) / scale
+	bbox.y0 = (screen_bbox.y0 - screen_offset.y) / scale
+	bbox.x1 = (screen_bbox.x1 - screen_offset.x) / scale
+	bbox.y1 = (screen_bbox.y1 - screen_offset.y) / scale
 	return bbox
 end
 
-function BBoxWidget:onAdjustScreenBBox(ges, rate)
+function BBoxWidget:inPageArea(ges)
+	local offset = self.view.state.offset
+	local page_area = self.view.page_area
+	local page_dimen = Geom:new{ x = offset.x, y = offset.y, h = page_area.h, w = page_area.w}
+	return not ges.pos:notIntersectWith(page_dimen)
+end
+
+function BBoxWidget:adjustScreenBBox(ges, rate)
 	--DEBUG("adjusting crop bbox with pos", ges.pos)
+	if not self:inPageArea(ges) then return end
 	local bbox = self.screen_bbox
 	local upper_left = Geom:new{ x = bbox.x0, y = bbox.y0}
 	local upper_right = Geom:new{ x = bbox.x1, y = bbox.y0}
@@ -163,24 +156,28 @@ function BBoxWidget:onAdjustScreenBBox(ges, rate)
 	end
 end
 
+function BBoxWidget:getModifiedPageBBox()
+	return self:getPageBBox(self.screen_bbox)
+end
+
 function BBoxWidget:onTapAdjust(arg, ges)
-	self:onAdjustScreenBBox(ges)
+	self:adjustScreenBBox(ges)
 	return true
 end
 
 function BBoxWidget:onPanAdjust(arg, ges)
 	-- up to 3 updates per second
-	self:onAdjustScreenBBox(ges, 3.0)
+	self:adjustScreenBBox(ges, 3.0)
 	return true
 end
 
-function BBoxWidget:onConfirmCrop()
-	local new_bbox = self:screen_to_page()
+function BBoxWidget:onConfirm()
+	local new_bbox = self:getModifiedPageBBox()
 	self.ui:handleEvent(Event:new("ConfirmPageCrop", new_bbox))
 	return true
 end
 
-function BBoxWidget:onCancelCrop()
+function BBoxWidget:onCancel()
 	UIManager:close(self.crop_bbox)
 	self.ui:handleEvent(Event:new("CancelPageCrop"))
 	return true
