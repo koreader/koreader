@@ -164,6 +164,20 @@ function CenterContainer:paintTo(bb, x, y)
 end
 
 --[[
+LeftContainer aligns its content (1 widget) at the left of its own dimensions
+]]
+LeftContainer = WidgetContainer:new()
+
+function LeftContainer:paintTo(bb, x, y)
+	local contentSize = self[1]:getSize()
+	if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
+		-- throw error? paint to scrap buffer and blit partially?
+		-- for now, we ignore this
+	end
+	self[1]:paintTo(bb, x , y + (self.dimen.h - contentSize.h)/2)
+end
+
+--[[
 RightContainer aligns its content (1 widget) at the right of its own dimensions
 ]]
 RightContainer = WidgetContainer:new()
@@ -193,7 +207,7 @@ FrameContainer = WidgetContainer:new{
 
 function FrameContainer:getSize()
 	local content_size =self[1]:getSize()
-	return {
+	return Geom:new{
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
 	}

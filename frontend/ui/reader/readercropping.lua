@@ -1,4 +1,51 @@
+require "ui/widget"
 require "ui/bbox"
+
+PageCropDialog = VerticalGroup:new{
+	ok_text = "OK",
+	cancel_text = "Cancel",
+	ok_callback = function() end,
+	cancel_callback = function() end,
+	button_width = math.floor(70*Screen:getDPI()/167),
+}
+
+function PageCropDialog:init()
+	local horizontal_group = HorizontalGroup:new{}
+	local ok_button = Button:new{
+		text = self.ok_text,
+		callback = self.ok_callback,
+		width = self.button_width,
+		bordersize = 2,
+		radius = 7,
+		text_font_face = "cfont",
+		text_font_size = 20,
+	}
+	local cancel_button = Button:new{
+		text = self.cancel_text,
+		callback = self.cancel_callback,
+		width = self.button_width,
+		bordersize = 2,
+		radius = 7,
+		text_font_face = "cfont",
+		text_font_size = 20,
+	}
+	local ok_container = RightContainer:new{
+		dimen = Geom:new{ w = Screen:getWidth()*0.33, h = Screen:getHeight()/12},
+		ok_button,
+	}
+	local cancel_container = LeftContainer:new{
+		dimen = Geom:new{ w = Screen:getWidth()*0.33, h = Screen:getHeight()/12},
+		cancel_button,
+	}
+	table.insert(horizontal_group, ok_container)
+	table.insert(horizontal_group, HorizontalSpan:new{ width = Screen:getWidth()*0.34})
+	table.insert(horizontal_group, cancel_container)
+	self[2] = FrameContainer:new{
+		background = 0,
+		bordersize = 0,
+		horizontal_group,
+	}
+end
 
 ReaderCropping = InputContainer:new{}
 
@@ -17,18 +64,28 @@ function ReaderCropping:onPageCrop(mode)
 	else
 		self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
 	end
-	self.crop_bbox = BBoxWidget:new{
+	self.orig_view_dimen = self.view.dimen:copy()
+	self.ui:handleEvent(Event:new("SetDimensions", 
+		Geom:new{w = Screen:getWidth(), h = Screen:getHeight()*11/12})
+	)
+	self.bbox_widget = BBoxWidget:new{
 		ui = self.ui,
 		view = self.view,
 		document = self.document,
 	}
-	UIManager:show(self.crop_bbox)
+	self.crop_dialog = PageCropDialog:new{
+		self.bbox_widget,
+		ok_callback = function() self:confirmPageCrop() end,
+		cancel_callback = function() self:cancelPageCrop() end,
+	}
+	UIManager:show(self.crop_dialog)
 	return true
 end
 
-function ReaderCropping:onConfirmPageCrop(new_bbox)
+function ReaderCropping:confirmPageCrop()
 	--DEBUG("new bbox", new_bbox)
-	UIManager:close(self.crop_bbox)
+	UIManager:close(self.crop_dialog)
+	local new_bbox = self.bbox_widget:getModifiedPageBBox()
 	self.ui:handleEvent(Event:new("BBoxUpdate"), new_bbox)
 	local pageno = self.view.state.page
 	self.document.bbox[pageno] = new_bbox
@@ -37,13 +94,14 @@ function ReaderCropping:onConfirmPageCrop(new_bbox)
 	return true
 end
 
-function ReaderCropping:onCancelPageCrop()
-	UIManager:close(self.crop_bbox)
+function ReaderCropping:cancelPageCrop()
+	UIManager:close(self.crop_dialog)
 	self:exitPageCrop(false)
 	return true
 end
 
 function ReaderCropping:exitPageCrop(confirmed)
+	self.ui:handleEvent(Event:new("SetDimensions", self.orig_view_dimen))
 	self.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
@@ -63,9 +121,7 @@ function ReaderCropping:exitPageCrop(confirmed)
 end
 
 function ReaderCropping:onReadSettings(config)
-	local bbox = config:readSetting("bbox")
-	self.document.bbox = bbox
-	--DEBUG("read document bbox", self.document.bbox)
+	self.document.bbox = config:readSetting("bbox")
 end
 
 function ReaderCropping:onCloseDocument()

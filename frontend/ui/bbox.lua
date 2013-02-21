@@ -26,28 +26,12 @@ function BBoxWidget:init()
 					range = self.view.dimen,
 				}
 			},
-			Confirm = {
-				GestureRange:new{
-					ges = "double_tap",
-					range = self.view.dimen,
-				}
-			},
-			Cancel = {
-				GestureRange:new{
-					ges = "hold",
-					range = self.view.dimen,
-				}
-			},
 		}
 	end
 end
 
 function BBoxWidget:getSize()
-	return Geom:new{
-		x = 0, y = 0,
-		w = Screen:getWidth(),
-		h = Screen:getHeight()
-	}
+	return self.view.dimen
 end
 
 function BBoxWidget:paintTo(bb, x, y)
@@ -168,17 +152,5 @@ end
 function BBoxWidget:onPanAdjust(arg, ges)
 	-- up to 3 updates per second
 	self:adjustScreenBBox(ges, 3.0)
-	return true
-end
-
-function BBoxWidget:onConfirm()
-	local new_bbox = self:getModifiedPageBBox()
-	self.ui:handleEvent(Event:new("ConfirmPageCrop", new_bbox))
-	return true
-end
-
-function BBoxWidget:onCancel()
-	UIManager:close(self.crop_bbox)
-	self.ui:handleEvent(Event:new("CancelPageCrop"))
 	return true
 end
