@@ -6,19 +6,6 @@ require "ui/reader/readerconfig"
 
 KoptOptions = {
 	prefix = 'kopt',
-	default_options = {
-		{
-			widget = "ProgressWidget",
-			widget_align_center = 0.8,
-			width = Screen:getWidth()*0.7,
-			height = 5,
-			percentage = 0.0,
-			item_text = {"Goto"},
-			item_align_center = 0.2,
-			item_font_face = "tfont",
-			item_font_size = 20,
-		}
-	},
 	{
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
@@ -117,6 +104,8 @@ KoptOptions = {
 				item_align_center = 0.8,
 				values = {2.0, 1.5, 1.0, 0.5, 0.2},
 				default_value = 1.0,
+				event = "GammaUpdate",
+				args = {0.5, 0.8, 1.0, 2.0, 4.0},
 			}
 		}
 	},
@@ -135,7 +124,6 @@ KoptOptions = {
 					},
 					{
 						event = "RestoreZoomMode",
-						args = {"page", nil},
 					},
 				}
 			},

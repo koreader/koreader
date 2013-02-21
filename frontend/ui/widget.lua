@@ -8,6 +8,31 @@ require "ui/gesturedetector"
 require "ui/font"
 
 --[[
+The EventListener is an interface that handles events
+
+EventListeners have a rudimentary event handler/dispatcher that
+will call a method "onEventName" for an event with name
+"EventName"
+
+]]
+EventListener = {}
+
+function EventListener:new(o)
+	local o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	if o.init then o:init() end
+	return o
+end
+
+function EventListener:handleEvent(event)
+	if self[event.handler] then
+		return self[event.handler](self, unpack(event.args))
+	end
+end
+
+
+--[[
 This is a generic Widget interface
 
 widgets can be queried about their size and can be paint.
@@ -18,7 +43,7 @@ if the table that was given to us as parameter has an "init"
 method, it will be called. use this to set _instance_ variables
 rather than class variables.
 ]]
-Widget = {}
+Widget = EventListener:new()
 
 function Widget:new(o)
 	local o = o or {}
@@ -38,19 +63,6 @@ function Widget:getSize()
 end
 
 function Widget:paintTo(bb, x, y)
-end
-
---[[
-Widgets have a rudimentary event handler/dispatcher that
-will call a method "onEventName" for an event with name
-"EventName"
-
-These methods
-]]
-function Widget:handleEvent(event)
-	if self[event.handler] then
-		return self[event.handler](self, unpack(event.args))
-	end
 end
 
 --[[
@@ -152,6 +164,20 @@ function CenterContainer:paintTo(bb, x, y)
 end
 
 --[[
+LeftContainer aligns its content (1 widget) at the left of its own dimensions
+]]
+LeftContainer = WidgetContainer:new()
+
+function LeftContainer:paintTo(bb, x, y)
+	local contentSize = self[1]:getSize()
+	if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
+		-- throw error? paint to scrap buffer and blit partially?
+		-- for now, we ignore this
+	end
+	self[1]:paintTo(bb, x , y + (self.dimen.h - contentSize.h)/2)
+end
+
+--[[
 RightContainer aligns its content (1 widget) at the right of its own dimensions
 ]]
 RightContainer = WidgetContainer:new()
@@ -181,7 +207,7 @@ FrameContainer = WidgetContainer:new{
 
 function FrameContainer:getSize()
 	local content_size =self[1]:getSize()
-	return {
+	return Geom:new{
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
 	}

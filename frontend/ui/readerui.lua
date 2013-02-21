@@ -160,13 +160,13 @@ function ReaderUI:init()
 		}
 		table.insert(self, config_dialog)
 		-- koptinterface controller
-		local koptinterface = ReaderKoptinterface:new{
+		local koptlistener = ReaderKoptListener:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self,
 			document = self.document,
 		}
-		table.insert(self, koptinterface)
+		table.insert(self, koptlistener)
 	end
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized
