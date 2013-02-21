@@ -110,22 +110,39 @@ function BBoxWidget:onAdjustScreenBBox(ges, rate)
 	local upper_right = Geom:new{ x = bbox.x1, y = bbox.y0}
 	local bottom_left = Geom:new{ x = bbox.x0, y = bbox.y1}
 	local bottom_right = Geom:new{ x = bbox.x1, y = bbox.y1}
-	local corners = {upper_left, upper_right, bottom_left, bottom_right}
-	table.sort(corners, function(a,b)
-		return a:distance(ges.pos) < b:distance(ges.pos)
+	local upper_center = Geom:new{ x = (bbox.x0 + bbox.x1) / 2, y = bbox.y0}
+	local bottom_center = Geom:new{ x = (bbox.x0 + bbox.x1) / 2, y = bbox.y1}
+	local right_center = Geom:new{ x = bbox.x1, y = (bbox.y0 + bbox.y1) / 2}
+	local left_center = Geom:new{ x = bbox.x0, y = (bbox.y0 + bbox.y1) / 2}
+	local anchors = {
+		upper_left, upper_center, 	upper_right,
+		left_center, 				right_center,
+		bottom_left, bottom_center, bottom_right,
+	}
+	local _, nearest = math.tmin(anchors, function(a,b)
+		return a:distance(ges.pos) > b:distance(ges.pos)
 	end)
-	if corners[1] == upper_left then
+	--DEBUG("nearest anchor", nearest)
+	if nearest == upper_left then
 		upper_left.x = ges.pos.x
 		upper_left.y = ges.pos.y
-	elseif corners[1] == bottom_right then
+	elseif nearest == bottom_right then
 		bottom_right.x = ges.pos.x
 		bottom_right.y = ges.pos.y
-	elseif corners[1] == upper_right then
+	elseif nearest == upper_right then
 		bottom_right.x = ges.pos.x
 		upper_left.y = ges.pos.y
-	elseif corners[1] == bottom_left then
+	elseif nearest == bottom_left then
 		upper_left.x = ges.pos.x
 		bottom_right.y = ges.pos.y
+	elseif nearest == upper_center then
+		upper_left.y = ges.pos.y
+	elseif nearest == right_center then
+		bottom_right.x = ges.pos.x
+	elseif nearest == bottom_center then
+		bottom_right.y = ges.pos.y
+	elseif nearest == left_center then
+		upper_left.x = ges.pos.x
 	end
 	self.screen_bbox = {
 		x0 = upper_left.x, 
