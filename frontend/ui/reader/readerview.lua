@@ -1,3 +1,5 @@
+require "ui/footer"
+
 ReaderView = WidgetContainer:new{
 	_name = "ReaderView",
 	document = nil,
@@ -23,22 +25,36 @@ ReaderView = WidgetContainer:new{
 	page_area = Geom:new{},
 	-- dimen for area to dim
 	dim_area = Geom:new{w = 0, h = 0},
+	-- has footer 
+	footer_visible = nil,
 }
+
+function ReaderView:resetFooter()
+	if self.footer_visible then
+		self.footer = Footer:new{
+			view = self,
+		}
+		self[1] = self.footer
+	else
+		self.footer = nil
+		self[1] = nil
+	end
+end
 
 function ReaderView:paintTo(bb, x, y)
 	DEBUG("painting", self.visible_area, "to", x, y)
 	local inner_offset = Geom:new{x = 0, y = 0}
 
 	-- draw surrounding space, if any
-	if self.ui.dimen.h > self.visible_area.h then
-		inner_offset.y = (self.ui.dimen.h - self.visible_area.h) / 2
-		bb:paintRect(x, y, self.ui.dimen.w, inner_offset.y, self.outer_page_color)
-		bb:paintRect(x, y + self.ui.dimen.h - inner_offset.y - 1, self.ui.dimen.w, inner_offset.y + 1, self.outer_page_color)
+	if self.dimen.h > self.visible_area.h then
+		inner_offset.y = (self.dimen.h - self.visible_area.h) / 2
+		bb:paintRect(x, y, self.dimen.w, inner_offset.y, self.outer_page_color)
+		bb:paintRect(x, y + self.dimen.h - inner_offset.y - 1, self.dimen.w, inner_offset.y + 1, self.outer_page_color)
 	end
-	if self.ui.dimen.w > self.visible_area.w then
-		inner_offset.x = (self.ui.dimen.w - self.visible_area.w) / 2
-		bb:paintRect(x, y, inner_offset.x, self.ui.dimen.h, self.outer_page_color)
-		bb:paintRect(x + self.ui.dimen.w - inner_offset.x - 1, y, inner_offset.x + 1, self.ui.dimen.h, self.outer_page_color)
+	if self.dimen.w > self.visible_area.w then
+		inner_offset.x = (self.dimen.w - self.visible_area.w) / 2
+		bb:paintRect(x, y, inner_offset.x, self.dimen.h, self.outer_page_color)
+		bb:paintRect(x + self.dimen.w - inner_offset.x - 1, y, inner_offset.x + 1, self.dimen.h, self.outer_page_color)
 	end
 	self.state.offset = inner_offset
 	-- draw content
@@ -78,6 +94,10 @@ function ReaderView:paintTo(bb, x, y)
 			self.dim_area.x, self.dim_area.y,
 			self.dim_area.w, self.dim_area.h
 		)
+	end
+	-- paint footer
+	if self.footer then
+		self.footer:paintTo(bb, x, y)
 	end
 end
 
@@ -145,6 +165,7 @@ function ReaderView:onSetScreenMode(new_mode)
 	return true
 end
 
+-- for returning to FileManager
 function ReaderView:onRestoreScreenMode(old_mode)
 	if old_mode == "landscape" or old_mode == "portrait" then
 		Screen:setScreenMode(old_mode)
@@ -154,9 +175,27 @@ function ReaderView:onRestoreScreenMode(old_mode)
 end
 
 function ReaderView:onSetDimensions(dimensions)
+	--DEBUG("set dimen", dimensions)
+	self:resetFooter()
+	self.dimen = dimensions
+	if self.footer then
+		self.dimen.h = dimensions.h - self.footer.height
+	end
+	-- recalculate view
+	self:recalculate()
+end
+
+function ReaderView:onRestoreDimensions(dimensions)
+	--DEBUG("restore dimen", dimensions)
+	self:resetFooter()
 	self.dimen = dimensions
 	-- recalculate view
 	self:recalculate()
+end
+
+function ReaderView:onSetFullScreen(full_screen)
+	self.footer_visible = not full_screen
+	self:onSetDimensions(Screen:getSize())
 end
 
 function ReaderView:onReadSettings(config)
@@ -167,6 +206,14 @@ function ReaderView:onReadSettings(config)
 	        self:onSetScreenMode(screen_mode) end)
 	end
 	self.state.gamma = config:readSetting("gamma") or 1.0
+	local full_screen = config:readSetting("kopt_full_screen")
+	if full_screen == nil then
+		self.footer_visible = self.document.info.has_pages
+		self.document.configurable.full_screen = self.footer_visible and 0 or 1
+	else
+		self.footer_visible = full_screen == 0 and true or false
+	end
+	self:resetFooter()
 end
 
 function ReaderView:onPageUpdate(new_page_no)

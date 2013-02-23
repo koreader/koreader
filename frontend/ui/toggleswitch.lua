@@ -111,10 +111,10 @@ function ToggleSwitch:togglePosition(position)
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
-	DEBUG("toggle position:", position)
 	local position = math.ceil(
 		(gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
 	)
+	--DEBUG("toggle position:", position)
 	self:togglePosition(position)
 	local option_value = nil
 	local option_arg = nil
