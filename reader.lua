@@ -149,6 +149,10 @@ end
 local argidx = 1
 if ARGV[1] == "-d" then
 	argidx = argidx + 1	
+	G_debug_mode = true
+	os.execute("echo > ev.log")
+	-- create ev log file
+	G_ev_log = io.open("ev.log", "w")
 else
 	DEBUG = function() end
 end

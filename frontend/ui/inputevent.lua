@@ -478,6 +478,12 @@ function Input:waitEvent(timeout_us, timeout_s)
 
 	if ok and ev then
 		ev = self:eventAdjustHook(ev)
+		if G_debug_mode then
+			local log = ev.type.."|"..ev.code.."|"
+						..ev.value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
+			G_ev_log:write(log)
+			G_ev_log:flush()
+		end
 		if ev.type == EV_KEY then
 			return self:handleKeyBoardEv(ev)
 		elseif ev.type == EV_ABS or ev.type == EV_SYN then
