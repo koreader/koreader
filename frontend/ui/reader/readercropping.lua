@@ -41,9 +41,10 @@ function PageCropDialog:init()
 	table.insert(horizontal_group, HorizontalSpan:new{ width = Screen:getWidth()*0.34})
 	table.insert(horizontal_group, cancel_container)
 	self[2] = FrameContainer:new{
+		horizontal_group,
 		background = 0,
 		bordersize = 0,
-		horizontal_group,
+		padding = 0,
 	}
 end
 
@@ -52,6 +53,9 @@ ReaderCropping = InputContainer:new{}
 function ReaderCropping:onPageCrop(mode)
 	if mode == "auto" then return end
 	self.ui:handleEvent(Event:new("CloseConfig"))
+	-- backup original view dimen
+	self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
+	DEBUG("backup view dimen", self.orig_view_dimen)
 	-- backup original zoom mode as cropping use "page" zoom mode
 	self.orig_zoom_mode = self.view.zoom_mode
 	-- backup original reflow mode as cropping use non-reflow mode
@@ -64,7 +68,6 @@ function ReaderCropping:onPageCrop(mode)
 	else
 		self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
 	end
-	self.orig_view_dimen = self.view.dimen:copy()
 	self.ui:handleEvent(Event:new("SetDimensions", 
 		Geom:new{w = Screen:getWidth(), h = Screen:getHeight()*11/12})
 	)
@@ -102,7 +105,7 @@ function ReaderCropping:onCancelPageCrop()
 end
 
 function ReaderCropping:exitPageCrop(confirmed)
-	self.ui:handleEvent(Event:new("SetDimensions", self.orig_view_dimen))
+	self.ui:handleEvent(Event:new("RestoreDimensions", self.orig_view_dimen))
 	self.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
