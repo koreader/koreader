@@ -19,7 +19,10 @@ UIManager = {
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
 	repaint_all = false,
-
+	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
+	FULL_REFRESH_COUNT = 6,
+	refresh_count = 0,
+	
 	_running = true,
 	_window_stack = {},
 	_execution_stack = {},
@@ -162,11 +165,12 @@ function UIManager:run()
 
 		-- repaint dirty widgets
 		local dirty = false
+		local full_refresh = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
 				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
 				if self._dirty[widget.widget] == "full" then
-					self.refresh_type = 0
+					full_refresh = true
 				end
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
@@ -177,10 +181,17 @@ function UIManager:run()
 		self.repaint_all = false
 
 		if dirty then
+			if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+				self.refresh_type = 0
+			else
+				self.refresh_type = 1
+			end
 			-- refresh FB
 			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
 			-- reset refresh_type
 			self.refresh_type = 1
+			-- increase refresh_count only when full refresh is requested
+			self.refresh_count = (self.refresh_count + (full_refresh and 1 or 0))%self.FULL_REFRESH_COUNT
 		end
 		
 		self:checkTasks()

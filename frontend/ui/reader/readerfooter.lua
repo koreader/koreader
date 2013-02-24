@@ -43,21 +43,22 @@ function ReaderFooter:init()
 		}
 	}
 	self.dimen = self[1]:getSize()
-	self:update()
+	self.pageno = self.view.state.page
+	self.pages = self.view.document.info.number_of_pages
+	self:updateFooter()
 end
 
 function ReaderFooter:paintTo(bb, x, y)
 	self[1]:paintTo(bb, x, y)
 end
 
-function ReaderFooter:update()
-	self.pageno = self.view.state.page
-	self.pages = self.view.document.info.number_of_pages
+function ReaderFooter:updateFooter()
 	self.progress_bar.percentage = self.pageno / self.pages
 	self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
 	self.pageno = pageno
-	self:update()
+	self.pages = self.view.document.info.number_of_pages
+	self:updateFooter()
 end

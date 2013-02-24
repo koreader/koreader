@@ -22,7 +22,7 @@ function ReaderMenu:initGesListener()
 				ges = "tap",
 				range = Geom:new{
 					x = 0, y = 0,
-					w = Screen:getWidth(),
+					w = Screen:getWidth()*7/8,
 					h = Screen:getHeight()/4,
 				}
 			}
