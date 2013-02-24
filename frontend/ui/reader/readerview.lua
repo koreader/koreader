@@ -14,7 +14,7 @@ ReaderView = OverlapGroup:new{
 		offset = nil,
 		bbox = nil,
 	},
-	outer_page_color = 7,
+	outer_page_color = 0,
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
 	render_mode = 0, -- default to COLOR
 	-- Crengine view mode
