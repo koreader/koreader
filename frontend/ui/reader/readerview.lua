@@ -1,6 +1,7 @@
 require "ui/reader/readerfooter"
+require "ui/reader/readerdogear"
 
-ReaderView = WidgetContainer:new{
+ReaderView = OverlapGroup:new{
 	_name = "ReaderView",
 	document = nil,
 
@@ -26,19 +27,24 @@ ReaderView = WidgetContainer:new{
 	-- dimen for area to dim
 	dim_area = Geom:new{w = 0, h = 0},
 	-- has footer 
-	footer_visible = nil,
+	footer_visible = false,
+	-- has dogear
+	dogear_visible = false,
 }
 
-function ReaderView:resetFooter()
-	if self.footer_visible then
-		self.footer = ReaderFooter:new{
-			view = self,
-		}
-		self[1] = self.footer
-	else
-		self.footer = nil
-		self[1] = nil
-	end
+function ReaderView:init()
+	self:resetLayout()
+end
+
+function ReaderView:resetLayout()
+	self.dogear = ReaderDogear:new{
+		view = self,
+	}
+	self.footer = ReaderFooter:new{
+		view = self,
+	}
+	self[1] = self.dogear
+	self[2] = self.footer
 end
 
 function ReaderView:paintTo(bb, x, y)
@@ -95,8 +101,12 @@ function ReaderView:paintTo(bb, x, y)
 			self.dim_area.w, self.dim_area.h
 		)
 	end
+	-- paint dogear
+	if self.dogear_visible then
+		self.dogear:paintTo(bb, x, y)
+	end
 	-- paint footer
-	if self.footer then
+	if self.footer_visible then
 		self.footer:paintTo(bb, x, y)
 	end
 end
@@ -176,9 +186,9 @@ end
 
 function ReaderView:onSetDimensions(dimensions)
 	--DEBUG("set dimen", dimensions)
-	self:resetFooter()
+	self:resetLayout()
 	self.dimen = dimensions
-	if self.footer then
+	if self.footer_visible then
 		self.dimen.h = dimensions.h - self.footer.height
 	end
 	-- recalculate view
@@ -187,7 +197,7 @@ end
 
 function ReaderView:onRestoreDimensions(dimensions)
 	--DEBUG("restore dimen", dimensions)
-	self:resetFooter()
+	self:resetLayout()
 	self.dimen = dimensions
 	-- recalculate view
 	self:recalculate()
@@ -213,7 +223,7 @@ function ReaderView:onReadSettings(config)
 	else
 		self.footer_visible = full_screen == 0 and true or false
 	end
-	self:resetFooter()
+	self:resetLayout()
 end
 
 function ReaderView:onPageUpdate(new_page_no)

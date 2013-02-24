@@ -18,13 +18,13 @@ end
 
 function ReaderBookmark:initGesListener()
 	self.ges_events = {
-		AddBookmark = {
+		ToggleBookmark = {
 			GestureRange:new{
-				ges = "double_tap",
+				ges = "tap",
 				range = Geom:new{
-					x = Screen:getWidth()/2, y = 0,
-					w = Screen:getWidth()/2,
-					h = Screen:getHeight()/2
+					x = Screen:getWidth()*7/8, y = 0,
+					w = Screen:getWidth()/8,
+					h = Screen:getHeight()/8
 				}
 			}
 		},
@@ -46,24 +46,34 @@ function ReaderBookmark:onSetDimensions(dimen)
 	end
 end
 
-function ReaderBookmark:onAddBookmark()
+function ReaderBookmark:onToggleBookmark()
 	local pn_or_xp = nil
 	if self.ui.document.getXPointer then
 		pn_or_xp = self.ui.document:getXPointer()
 	else
 		pn_or_xp = self.view.state.page
 	end
-
-	local noti_text = "Bookmark added."
-	if not self:addBookmark(pn_or_xp) then
-		noti_text = "Page already marked!"
-	end
-	UIManager:show(Notification:new{
-		text = noti_text,
-		timeout = 3
-	})
-	return true
+	self:toggleBookmark(pn_or_xp)
+	self.view.dogear_visible = not self.view.dogear_visible
+	UIManager:setDirty(self.view.dialog, "partial")
 end
+
+function ReaderBookmark:setDogearVisibility(pn_or_xp)
+	if self:isBookmarked(pn_or_xp) then
+		self.ui:handleEvent(Event:new("SetDogearVisibility", true))
+	else
+		self.ui:handleEvent(Event:new("SetDogearVisibility", false))
+	end
+end
+
+function ReaderBookmark:onPageUpdate(pageno)
+	self:setDogearVisibility(pageno)
+end
+
+function ReaderBookmark:onPosUpdate(pos)
+	-- TODO: cannot check if this pos is bookmarked or not.
+end
+
 
 function ReaderBookmark:onShowBookmark()
 	-- build up item_table
@@ -119,16 +129,16 @@ function ReaderBookmark:addToMainMenu(item_table)
 	})
 end
 
---[[
-return nil if page already marked, otherwise, return true
-for CREngine, bookmark page is xpointer instead of page number
---]]
-function ReaderBookmark:addBookmark(pn_or_xp)
+function ReaderBookmark:isBookmarked(pn_or_xp)
 	for k,v in ipairs(self.bookmarks) do
 		if v.page == pn_or_xp then
-			return nil
+			return true
 		end
 	end
+	return false
+end
+
+function ReaderBookmark:addBookmark(pn_or_xp)
 	-- build notes from TOC
 	local notes = self.ui.toc:getTocTitleByPage(pn_or_xp)
 	if notes ~= "" then
@@ -144,10 +154,18 @@ function ReaderBookmark:addBookmark(pn_or_xp)
 		return self:isBookmarkInSequence(a, b)
 	end)
 	return true
-end
+end 
 
 function ReaderBookmark:isBookmarkInSequence(a, b)
 	return a.page < b.page
 end
 
-
+function ReaderBookmark:toggleBookmark(pn_or_xp)
+	for k,v in ipairs(self.bookmarks) do
+		if v.page == pn_or_xp then
+			table.remove(self.bookmarks, k)
+			return
+		end
+	end
+	self:addBookmark(pn_or_xp)
+end
