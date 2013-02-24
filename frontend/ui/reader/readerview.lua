@@ -1,4 +1,4 @@
-require "ui/footer"
+require "ui/reader/readerfooter"
 
 ReaderView = WidgetContainer:new{
 	_name = "ReaderView",
@@ -31,7 +31,7 @@ ReaderView = WidgetContainer:new{
 
 function ReaderView:resetFooter()
 	if self.footer_visible then
-		self.footer = Footer:new{
+		self.footer = ReaderFooter:new{
 			view = self,
 		}
 		self[1] = self.footer

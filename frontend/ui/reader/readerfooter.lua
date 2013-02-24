@@ -1,5 +1,5 @@
 
-Footer = InputContainer:new{
+ReaderFooter = InputContainer:new{
 	pageno = nil,
 	pages = nil,
 	progress_percentage = 0.0,
@@ -11,7 +11,7 @@ Footer = InputContainer:new{
 	height = 19,
 }
 
-function Footer:init()
+function ReaderFooter:init()
 	self.progress_bar = ProgressWidget:new{
 		width = math.floor(Screen:getWidth()*(self.bar_width-0.02)),
 		height = 7,
@@ -46,18 +46,18 @@ function Footer:init()
 	self:update()
 end
 
-function Footer:paintTo(bb, x, y)
+function ReaderFooter:paintTo(bb, x, y)
 	self[1]:paintTo(bb, x, y)
 end
 
-function Footer:update()
+function ReaderFooter:update()
 	self.pageno = self.view.state.page
 	self.pages = self.view.document.info.number_of_pages
 	self.progress_bar.percentage = self.pageno / self.pages
 	self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
 end
 
-function Footer:onPageUpdate(pageno)
+function ReaderFooter:onPageUpdate(pageno)
 	self.pageno = pageno
 	self:update()
 end
