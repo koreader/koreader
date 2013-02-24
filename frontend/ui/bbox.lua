@@ -26,6 +26,12 @@ function BBoxWidget:init()
 					range = self.view.dimen,
 				}
 			},
+			ConfirmAdjust = {
+				GestureRange:new{
+					ges = "double_tap",
+					range = self.view.dimen,
+				}
+			}
 		}
 	end
 end
@@ -38,11 +44,13 @@ function BBoxWidget:paintTo(bb, x, y)
 	-- As getScreenBBox uses view states, screen_bbox initialization is postponed.
 	self.screen_bbox = self.screen_bbox or self:getScreenBBox(self.page_bbox)
 	local bbox = self.screen_bbox
-	-- upper_left
+	-- top edge
 	bb:invertRect(bbox.x0 + self.linesize, bbox.y0, bbox.x1 - bbox.x0, self.linesize)
-	bb:invertRect(bbox.x0, bbox.y0, self.linesize, bbox.y1 - bbox.y0 + self.linesize)
-	-- bottom_right
+	-- bottom edge
 	bb:invertRect(bbox.x0 + self.linesize, bbox.y1, bbox.x1 - bbox.x0 - self.linesize, self.linesize)
+	-- left edge
+	bb:invertRect(bbox.x0, bbox.y0, self.linesize, bbox.y1 - bbox.y0 + self.linesize)
+	-- right edge
 	bb:invertRect(bbox.x1, bbox.y0 + self.linesize, self.linesize, bbox.y1 - bbox.y0)
 end
 
@@ -52,10 +60,10 @@ function BBoxWidget:getScreenBBox(page_bbox)
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in page_to_screen", screen_offset)
-	bbox.x0 = page_bbox.x0 * scale + screen_offset.x
-	bbox.y0 = page_bbox.y0 * scale + screen_offset.y
-	bbox.x1 = page_bbox.x1 * scale + screen_offset.x
-	bbox.y1 = page_bbox.y1 * scale + screen_offset.y
+	bbox.x0 = math.round(page_bbox.x0 * scale + screen_offset.x)
+	bbox.y0 = math.round(page_bbox.y0 * scale + screen_offset.y)
+	bbox.x1 = math.round(page_bbox.x1 * scale + screen_offset.x)
+	bbox.y1 = math.round(page_bbox.y1 * scale + screen_offset.y)
 	return bbox
 end
 
@@ -65,10 +73,10 @@ function BBoxWidget:getPageBBox(screen_bbox)
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in screen_to_page", screen_offset)
-	bbox.x0 = (screen_bbox.x0 - screen_offset.x) / scale
-	bbox.y0 = (screen_bbox.y0 - screen_offset.y) / scale
-	bbox.x1 = (screen_bbox.x1 - screen_offset.x) / scale
-	bbox.y1 = (screen_bbox.y1 - screen_offset.y) / scale
+	bbox.x0 = math.round((screen_bbox.x0 - screen_offset.x) / scale)
+	bbox.y0 = math.round((screen_bbox.y0 - screen_offset.y) / scale)
+	bbox.x1 = math.round((screen_bbox.x1 - screen_offset.x) / scale)
+	bbox.y1 = math.round((screen_bbox.y1 - screen_offset.y) / scale)
 	return bbox
 end
 
@@ -122,10 +130,10 @@ function BBoxWidget:adjustScreenBBox(ges, rate)
 		upper_left.x = ges.pos.x
 	end
 	self.screen_bbox = {
-		x0 = upper_left.x, 
-		y0 = upper_left.y,
-		x1 = bottom_right.x,
-		y1 = bottom_right.y
+		x0 = math.round(upper_left.x), 
+		y0 = math.round(upper_left.y),
+		x1 = math.round(bottom_right.x),
+		y1 = math.round(bottom_right.y)
 	}
 	if rate then
 		local last_time = self.last_time or {0, 0}
@@ -152,5 +160,12 @@ end
 function BBoxWidget:onPanAdjust(arg, ges)
 	-- up to 3 updates per second
 	self:adjustScreenBBox(ges, 3.0)
+	return true
+end
+
+function BBoxWidget:onConfirmAdjust(arg, ges)
+	if self:inPageArea(ges) then
+		self.ui:handleEvent(Event:new("ConfirmPageCrop"))
+	end
 	return true
 end

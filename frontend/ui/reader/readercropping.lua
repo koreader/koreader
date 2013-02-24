@@ -69,20 +69,21 @@ function ReaderCropping:onPageCrop(mode)
 		Geom:new{w = Screen:getWidth(), h = Screen:getHeight()*11/12})
 	)
 	self.bbox_widget = BBoxWidget:new{
+		crop = self,
 		ui = self.ui,
 		view = self.view,
 		document = self.document,
 	}
 	self.crop_dialog = PageCropDialog:new{
 		self.bbox_widget,
-		ok_callback = function() self:confirmPageCrop() end,
-		cancel_callback = function() self:cancelPageCrop() end,
+		ok_callback = function() self:onConfirmPageCrop() end,
+		cancel_callback = function() self:onCancelPageCrop() end,
 	}
 	UIManager:show(self.crop_dialog)
 	return true
 end
 
-function ReaderCropping:confirmPageCrop()
+function ReaderCropping:onConfirmPageCrop()
 	--DEBUG("new bbox", new_bbox)
 	UIManager:close(self.crop_dialog)
 	local new_bbox = self.bbox_widget:getModifiedPageBBox()
@@ -94,7 +95,7 @@ function ReaderCropping:confirmPageCrop()
 	return true
 end
 
-function ReaderCropping:cancelPageCrop()
+function ReaderCropping:onCancelPageCrop()
 	UIManager:close(self.crop_dialog)
 	self:exitPageCrop(false)
 	return true
