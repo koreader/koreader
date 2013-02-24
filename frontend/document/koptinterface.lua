@@ -39,6 +39,15 @@ KoptOptions = {
 		icon = "resources/icons/appbar.column.two.large.png",
 		options = {
 			{
+				name = "full_screen",
+				name_text = "Full Screen",
+				toggle = {"on", "off"},
+				values = {1, 0},
+				default_value = 0,
+				event = "SetFullScreen",
+				args = {true, false},
+			},
+			{
 				name = "page_margin",
 				name_text = "Page Margin",
 				toggle = {"small", "medium", "large"},
