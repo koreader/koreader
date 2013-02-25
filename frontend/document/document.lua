@@ -245,7 +245,7 @@ end
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
 	local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
 	if not Cache:check(hash_full_page) then
-		--DEBUG("hinting page", pageno)
+		DEBUG("hinting page", pageno)
 		self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
 	end
 end
