@@ -14,7 +14,7 @@ KoptOptions = {
 				name_text = "Screen Mode",
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
-				default_arg = Screen:getScreenMode(),
+				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
 				event = "SetScreenMode",
 			}
@@ -51,8 +51,8 @@ KoptOptions = {
 				name = "page_margin",
 				name_text = "Page Margin",
 				toggle = {"small", "medium", "large"},
-				values = {0.02, 0.06, 0.10},
-				default_value = 0.06,
+				values = {0.06, 0.10, 0.14},
+				default_value = 0.10,
 			},
 			{
 				name = "line_spacing",
@@ -92,11 +92,11 @@ KoptOptions = {
 		options = {
 			{
 				name = "font_size",
-				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
 				item_align_center = 1.0,
-				spacing = Screen:getWidth()*0.03,
-				item_font_size = {20,24,28,32,36,38,40,42,46,50},
-				values = {0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.2, 2.8},
+				spacing = 15,
+				item_font_size = {20,24,28,32,34,36,38,40,42,44,46},
+				values = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0, 4.0},
 				default_value = 1.0,
 			},
 		}
