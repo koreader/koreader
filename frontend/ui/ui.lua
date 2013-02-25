@@ -215,7 +215,7 @@ function UIManager:run()
 
 		-- delegate input_event to handler
 		if input_event then
-			DEBUG("in ui.lua:", input_event)
+			--DEBUG("in ui.lua:", input_event)
 			if input_event == "IntoSS" then
 				Device:intoScreenSaver()
 			elseif input_event == "OutOfSS" then

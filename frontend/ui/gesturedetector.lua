@@ -74,10 +74,11 @@ GestureDetector = {
 }
 
 function GestureDetector:feedEvent(tev) 
+	re = self.state(self, tev)
 	if tev.id ~= -1 then
 		self.last_tev = tev
 	end
-	return self.state(self, tev)
+	return re
 end
 
 function GestureDetector:deepCopyEv(tev)
@@ -190,8 +191,8 @@ function GestureDetector:tapState(tev)
 		}
 		-- cur_tap is used for double tap detection
 		local cur_tap = {
-			x = self.last_tev.x,
-			y = self.last_tev.y,
+			x = tev.x,
+			y = tev.y,
 			timev = tev.timev,
 		}
 
@@ -201,6 +202,7 @@ function GestureDetector:tapState(tev)
 			self:clearState()
 			ges_ev.ges = "double_tap"
 			self.last_tap = nil
+			DEBUG("double tap detected")
 			return ges_ev
 		end
 
@@ -218,6 +220,7 @@ function GestureDetector:tapState(tev)
 			if self.last_tap ~= nil then
 				self.last_tap = nil
 				-- we are using closure here
+				DEBUG("single tap detected")
 				return ges_ev
 			end
 		end, deadline)
@@ -229,12 +232,13 @@ function GestureDetector:tapState(tev)
 		-- we return nil in this case
 		self.state = self.tapState
 		DEBUG("set up hold timer")
-		local deadline = self.last_tev.timev + TimeVal:new{
+		local deadline = tev.timev + TimeVal:new{
 				sec = 0, usec = self.HOLD_INTERVAL
 			}
 		Input:setTimeout(function()
 			if self.state == self.tapState then
 				-- timer set in tapState, so we switch to hold
+				DEBUG("hold gesture detected")
 				return self:switchState("holdState")
 			end
 		end, deadline)
@@ -292,7 +296,6 @@ function GestureDetector:panState(tev)
 			y = self.last_tev.y,
 			w = 0, h = 0,
 		}
-		self.last_tev = tev
 		return pan_ev
 	end
 end
