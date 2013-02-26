@@ -36,7 +36,7 @@ Currently supported gestures:
 You change the state machine by feeding it touch events, i.e. calling
 GestureDetector:feedEvent(tev).
 
-a touch event should have following format: 
+a touch event should have following format:
 tev = {
 	slot = 1,
 	id = 46,
@@ -66,14 +66,14 @@ GestureDetector = {
 	last_tev = {},
 	is_on_detecting = false,
 	first_tev = nil,
-	state = function(self, tev) 
+	state = function(self, tev)
 		self:switchState("initialState", tev)
 	end,
-	
+
 	last_tap = nil, -- for single/double tap
 }
 
-function GestureDetector:feedEvent(tev) 
+function GestureDetector:feedEvent(tev)
 	re = self.state(self, tev)
 	if tev.id ~= -1 then
 		self.last_tev = tev
@@ -182,9 +182,9 @@ function GestureDetector:tapState(tev)
 		-- end of tap event
 		local ges_ev = {
 			-- default to single tap
-			ges = "tap", 
+			ges = "tap",
 			pos = Geom:new{
-				x = self.last_tev.x, 
+				x = self.last_tev.x,
 				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
@@ -196,7 +196,7 @@ function GestureDetector:tapState(tev)
 			timev = tev.timev,
 		}
 
-		if self.last_tap ~= nil and 
+		if self.last_tap ~= nil and
 		self:isDoubleTap(self.last_tap, cur_tap) then
 			-- it is a double tap
 			self:clearState()
@@ -248,7 +248,7 @@ function GestureDetector:tapState(tev)
 		if (tev.x and math.abs(tev.x - self.first_tev.x) >= self.PAN_THRESHOLD) or
 		(tev.y and math.abs(tev.y - self.first_tev.y) >= self.PAN_THRESHOLD) then
 			-- if user's finger moved long enough in X or
-			-- Y distance, we switch to pan state 
+			-- Y distance, we switch to pan state
 			return self:switchState("panState", tev)
 		end
 	end
@@ -261,13 +261,13 @@ function GestureDetector:panState(tev)
 		swipe_direct = self:isSwipe()
 		if swipe_direct then
 			local start_pos = Geom:new{
-					x = self.first_tev.x, 
+					x = self.first_tev.x,
 					y = self.first_tev.y,
 					w = 0, h = 0,
 			}
 			self:clearState()
 			return {
-				ges = "swipe", 
+				ges = "swipe",
 				direction = swipe_direct,
 				-- use first pan tev coordination as swipe start point
 				pos = start_pos,
@@ -292,7 +292,7 @@ function GestureDetector:panState(tev)
 		pan_ev.relative.x = tev.x - self.last_tev.x
 		pan_ev.relative.y = tev.y - self.last_tev.y
 		pan_ev.pos = Geom:new{
-			x = self.last_tev.x, 
+			x = self.last_tev.x,
 			y = self.last_tev.y,
 			w = 0, h = 0,
 		}
@@ -307,9 +307,9 @@ function GestureDetector:holdState(tev)
 	if not tev and self.last_tev.x and self.last_tev.y then
 		self.state = self.holdState
 		return {
-			ges = "hold", 
+			ges = "hold",
 			pos = Geom:new{
-				x = self.last_tev.x, 
+				x = self.last_tev.x,
 				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
@@ -319,9 +319,9 @@ function GestureDetector:holdState(tev)
 		-- end of hold, signal hold release
 		self:clearState()
 		return {
-			ges = "hold_release", 
+			ges = "hold_release",
 			pos = Geom:new{
-				x = self.last_tev.x, 
+				x = self.last_tev.x,
 				y = self.last_tev.y,
 				w = 0, h = 0,
 			}
