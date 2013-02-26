@@ -55,7 +55,9 @@ function ReaderCropping:onPageCrop(mode)
 	self.ui:handleEvent(Event:new("CloseConfig"))
 	-- backup original view dimen
 	self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
-	DEBUG("backup view dimen", self.orig_view_dimen)
+	-- backup original view bgcolor
+	self.orig_view_bgcolor = self.view.outer_page_color
+	self.view.outer_page_color = 7 -- gray bgcolor
 	-- backup original zoom mode as cropping use "page" zoom mode
 	self.orig_zoom_mode = self.view.zoom_mode
 	-- backup original reflow mode as cropping use non-reflow mode
@@ -105,7 +107,11 @@ function ReaderCropping:onCancelPageCrop()
 end
 
 function ReaderCropping:exitPageCrop(confirmed)
+	-- restore view bgcolor
+	self.view.outer_page_color = self.orig_view_bgcolor
+	-- restore view dimens
 	self.ui:handleEvent(Event:new("RestoreDimensions", self.orig_view_dimen))
+	-- restore reflow mode
 	self.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
