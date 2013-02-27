@@ -74,6 +74,10 @@ GestureDetector = {
 }
 
 function GestureDetector:feedEvent(tev)
+	-- for now, only handle single point touch
+	if tev.slot ~= 0 then
+		return nil
+	end
 	re = self.state(self, tev)
 	if tev.id ~= -1 then
 		self.last_tev = tev
@@ -260,6 +264,7 @@ function GestureDetector:panState(tev)
 		-- end of pan, signal swipe gesture if necessary
 		swipe_direct = self:isSwipe()
 		if swipe_direct then
+			DEBUG("swipe detected!")
 			local start_pos = Geom:new{
 					x = self.first_tev.x,
 					y = self.first_tev.y,
