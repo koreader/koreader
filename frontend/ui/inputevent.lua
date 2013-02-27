@@ -240,7 +240,12 @@ function Input:initKeyMap()
 end
 
 function Input:initTouchState()
-	self.cur_ev = {}
+	self.cur_slot = 0
+	self.ev_slots = {
+		[0] = {
+			slot = 0,
+		}
+	}
 end
 
 function Input:init()
@@ -380,6 +385,28 @@ function Input:handleKeyBoardEv(ev)
 	end
 end
 
+function Input:setMtSlot(slot, key, val)
+	if not self.ev_slots[slot] then
+		self.ev_slots[slot] = {
+			slot = slot
+		}
+	end
+
+	self.ev_slots[slot][key] = val
+end
+
+function Input:setCurrentMtSlot(key, val)
+	self:setMtSlot(self.cur_slot, key, val)
+end
+
+function Input:getMtSlot(slot)
+	return self.ev_slots[slot]
+end
+
+function Input:getCurrentMtSlot()
+	return self:getMtSlot(self.cur_slot)
+end
+
 --[[
 parse each touch ev from kernel and build up tev.
 tev will be sent to GestureDetector:feedEvent
@@ -394,17 +421,26 @@ Events for a single tap motion from Linux kernel (MT protocol B):
 	SYN REPORT
 
 Notice that each line is a single event.
+
+From kernel document:
+For type B devices, the kernel driver should associate a slot with each
+identified contact, and use that slot to propagate changes for the contact.
+Creation, replacement and destruction of contacts is achieved by modifying
+the ABS_MT_TRACKING_ID of the associated slot.  A non-negative tracking id
+is interpreted as a contact, and the value -1 denotes an unused slot.  A
+tracking id not previously present is considered new, and a tracking id no
+longer present is considered removed.  Since only changes are propagated,
+the full state of each initiated contact has to reside in the receiving
+end.  Upon receiving an MT event, one simply updates the appropriate
+attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
 	if ev.type == EV_SYN then
 		if ev.code == SYN_REPORT then
-			self.cur_ev.timev = TimeVal:new(ev.time)
-			--self.cur_x = self.cur_ev.x or self.cur_x
-			--self.cur_y = self.cur_ev.y or self.cur_y
+			self:setCurrentMtSlot("timev", TimeVal:new(ev.time))
 			-- send ev to state machine
-			local touch_ges = GestureDetector:feedEvent(self.cur_ev)
-			--self.last_ev_timev = self.cur_ev.timev
-			--self.cur_ev = {}
+			local touch_ges = GestureDetector:feedEvent(
+												self:getCurrentMtSlot())
 			if touch_ges then
 				return Event:new("Gesture", 
 					GestureDetector:adjustGesCoordinate(touch_ges)
@@ -413,13 +449,13 @@ function Input:handleTouchEv(ev)
 		end
 	elseif ev.type == EV_ABS then
 		if ev.code == ABS_MT_SLOT then
-			self.cur_ev.slot = ev.value
+			self.cur_slot = ev.value
 		elseif ev.code == ABS_MT_TRACKING_ID then
-			self.cur_ev.id = ev.value
+			self:setCurrentMtSlot("id", ev.value)
 		elseif ev.code == ABS_MT_POSITION_X then
-			self.cur_ev.x = ev.value
+			self:setCurrentMtSlot("x", ev.value)
 		elseif ev.code == ABS_MT_POSITION_Y then
-			self.cur_ev.y = ev.value
+			self:setCurrentMtSlot("y", ev.value)
 		end
 	end
 end
