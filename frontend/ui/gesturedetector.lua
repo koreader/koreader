@@ -2,7 +2,10 @@ require "ui/geometry"
 
 GestureRange = {
 	ges = nil,
+	-- spatial range limits the gesture emitting position
 	range = nil,
+	-- temproal range limits the gesture emitting rate
+	rate = nil,
 }
 
 function GestureRange:new(o)
@@ -18,6 +21,15 @@ function GestureRange:match(gs)
 	end
 
 	if self.range:contains(gs.pos) then
+		if self.rate then
+			local last_time = self.last_time or TimeVal:new{}
+			if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+				self.last_time = gs.time
+				return true
+			else
+				return false
+			end
+		end
 		return true
 	end
 
@@ -194,7 +206,8 @@ function GestureDetector:tapState(tev)
 				x = self.last_tevs[slot].x,
 				y = self.last_tevs[slot].y,
 				w = 0, h = 0,
-			}
+			},
+			time = tev.timev,
 		}
 		-- cur_tap is used for double tap detection
 		local cur_tap = {
@@ -281,6 +294,7 @@ function GestureDetector:panState(tev)
 				direction = swipe_direct,
 				-- use first pan tev coordination as swipe start point
 				pos = start_pos,
+				time = tev.timev,
 				--@TODO add start and end points?    (houqp)
 			}
 		end
@@ -298,6 +312,7 @@ function GestureDetector:panState(tev)
 				y = 0,
 			},
 			pos = nil,
+			time = tev.timev,
 		}
 		pan_ev.relative.x = tev.x - self.last_tevs[slot].x
 		pan_ev.relative.y = tev.y - self.last_tevs[slot].y
@@ -322,7 +337,8 @@ function GestureDetector:holdState(tev, hold)
 				x = self.last_tevs[slot].x,
 				y = self.last_tevs[slot].y,
 				w = 0, h = 0,
-			}
+			},
+			time = tev.timev,
 		}
 	end
 	if tev.id == -1 then
@@ -337,7 +353,8 @@ function GestureDetector:holdState(tev, hold)
 				x = last_x,
 				y = last_y,
 				w = 0, h = 0,
-			}
+			},
+			time = tev.timev,
 		}
 	end
 end
