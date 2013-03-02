@@ -24,6 +24,13 @@ function BBoxWidget:init()
 				GestureRange:new{
 					ges = "pan",
 					range = self.view.dimen,
+					rate = 3.0, -- emit up to 3 evs per second
+				}
+			},
+			HoldAdjust = {
+				GestureRange:new{
+					ges = "hold",
+					range = self.view.dimen,
 				}
 			},
 			ConfirmAdjust = {
@@ -87,7 +94,7 @@ function BBoxWidget:inPageArea(ges)
 	return not ges.pos:notIntersectWith(page_dimen)
 end
 
-function BBoxWidget:adjustScreenBBox(ges, rate)
+function BBoxWidget:adjustScreenBBox(ges)
 	--DEBUG("adjusting crop bbox with pos", ges.pos)
 	if not self:inPageArea(ges) then return end
 	local bbox = self.screen_bbox
@@ -135,17 +142,8 @@ function BBoxWidget:adjustScreenBBox(ges, rate)
 		x1 = math.round(bottom_right.x),
 		y1 = math.round(bottom_right.y)
 	}
-	if rate then
-		local last_time = self.last_time or {0, 0}
-		local this_time = { util.gettime() }
-		local elap_time = (this_time[1] - last_time[1]) * 1000 + (this_time[2] - last_time[2]) / 1000  -- in millisec
-		if elap_time > 1000 / rate then
-			UIManager.repaint_all = true
-			self.last_time = this_time
-		end
-	else
-		UIManager.repaint_all = true
-	end
+	
+	UIManager.repaint_all = true
 end
 
 function BBoxWidget:getModifiedPageBBox()
@@ -158,8 +156,12 @@ function BBoxWidget:onTapAdjust(arg, ges)
 end
 
 function BBoxWidget:onPanAdjust(arg, ges)
-	-- up to 3 updates per second
-	self:adjustScreenBBox(ges, 3.0)
+	self:adjustScreenBBox(ges)
+	return true
+end
+
+function BBoxWidget:onHoldAdjust(arg, ges)
+	self:adjustScreenBBox(ges)
 	return true
 end
 
