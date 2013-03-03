@@ -59,7 +59,7 @@ function TimeVal:__eq(time_b)
 end
 
 function TimeVal:__sub(time_b)
-	diff = TimeVal:new{}
+	local diff = TimeVal:new{}
 
 	diff.sec = self.sec - time_b.sec
 	diff.usec = self.usec - time_b.usec
@@ -76,7 +76,7 @@ function TimeVal:__sub(time_b)
 end
 
 function TimeVal:__add(time_b)
-	sum = TimeVal:new{}
+	local sum = TimeVal:new{}
 
 	sum.sec = self.sec + time_b.sec
 	sum.usec = self.usec + time_b.usec

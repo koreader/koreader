@@ -1,3 +1,4 @@
+require "ui/reader/readerflip"
 require "ui/reader/readerfooter"
 require "ui/reader/readerdogear"
 
@@ -30,6 +31,8 @@ ReaderView = OverlapGroup:new{
 	footer_visible = false,
 	-- has dogear
 	dogear_visible = false,
+	-- in flipping state
+	flipping_visible = false,
 }
 
 function ReaderView:init()
@@ -43,8 +46,12 @@ function ReaderView:resetLayout()
 	self.footer = ReaderFooter:new{
 		view = self,
 	}
+	self.flipping = ReaderFlipping:new{
+		view = self,
+	}
 	self[1] = self.dogear
 	self[2] = self.footer
+	self[3] = self.flipping
 end
 
 function ReaderView:paintTo(bb, x, y)
@@ -108,6 +115,10 @@ function ReaderView:paintTo(bb, x, y)
 	-- paint footer
 	if self.footer_visible then
 		self.footer:paintTo(bb, x, y)
+	end
+	-- paint flipping
+	if self.flipping_visible then
+		self.flipping:paintTo(bb, x, y)
 	end
 end
 

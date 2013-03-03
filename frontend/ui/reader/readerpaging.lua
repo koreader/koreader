@@ -68,7 +68,38 @@ function ReaderPaging:initGesListener()
 					h = 5*Screen:getHeight()/8,
 				}
 			}
-		}
+		},
+		ToggleFlipping = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth()/8,
+					h = Screen:getHeight()/8
+				}
+			}
+		},
+		Swipe = {
+			GestureRange:new{
+				ges = "swipe",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		},
+		Pan = {
+			GestureRange:new{
+				ges = "pan",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				},
+				rate = 4.0,
+			}
+		},
 	}
 end
 
@@ -92,6 +123,47 @@ end
 
 function ReaderPaging:onTapBackward()
 	self:onGotoPageRel(-1)
+	return true
+end
+
+function ReaderPaging:onToggleFlipping()
+	self.view.flipping_visible = not self.view.flipping_visible
+	self.flipping_page = self.view.flipping_visible and self.current_page or nil
+	UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderPaging:onSwipe(arg, ges)
+	if self.flipping_page == nil then
+		if ges.direction == "left" or ges.direction == "up" then
+			self:onGotoPageRel(1)
+		elseif ges.direction == "right" or ges.direction == "down" then
+			self:onGotoPageRel(-1)
+		end
+	elseif self.flipping_page then
+		self:gotoPage(self.flipping_page)
+	end
+	return true
+end
+
+function ReaderPaging:onPan(arg, ges)
+	if self.flipping_page then
+		local read = self.flipping_page - 1
+		local unread = self.number_of_pages - self.flipping_page
+		local whole = self.number_of_pages
+		local rel_proportion = ges.distance / Screen:getWidth()
+		local abs_proportion = ges.distance / Screen:getHeight()
+		if ges.direction == "right" then
+			self:gotoPage(self.flipping_page - math.floor(read*rel_proportion))
+		elseif ges.direction == "left" then
+			self:gotoPage(self.flipping_page + math.floor(unread*rel_proportion))
+		elseif ges.direction == "down" then
+			self:gotoPage(self.flipping_page - math.floor(whole*abs_proportion))
+		elseif ges.direction == "up" then
+			self:gotoPage(self.flipping_page + math.floor(whole*abs_proportion))
+		end
+		
+		UIManager:setDirty(self.view.dialog, "partial")
+	end
 	return true
 end
 
