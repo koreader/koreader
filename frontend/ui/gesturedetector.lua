@@ -124,32 +124,31 @@ end
 
 --[[
 compare last_pan with first_tev in this slot
-if it is a swipe, return direction of swipe gesture.
+return pan direction and distance
 --]]
+function GestureDetector:getPath(tev)
+	local slot = tev.slot
+	local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
+	local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
+	local direction = nil
+	local distance = math.sqrt(x_diff*x_diff + y_diff*y_diff)
+	if x_diff == 0 and y_diff == 0 then
+	elseif (math.abs(x_diff) > math.abs(y_diff)) then
+		direction = x_diff < 0 and "left" or "right"
+	else
+		direction = y_diff < 0 and "up" or "down"
+	end
+	return direction, distance
+end
+
 function GestureDetector:isSwipe(tev)
 	local slot = tev.slot
 	local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
 	if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
 		local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
 		local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
-		if x_diff == 0 and y_diff == 0 then
-			return nil
-		end
-
-		if (math.abs(x_diff) > math.abs(y_diff)) then
-			-- left or right
-			if x_diff < 0 then
-				return "left"
-			else
-				return "right"
-			end
-		else
-			-- up or down
-			if y_diff < 0 then
-				return "up"
-			else
-				return "down"
-			end
+		if x_diff ~= 0 or y_diff ~= 0 then
+			return true
 		end
 	end
 end
@@ -195,7 +194,7 @@ end
 this method handles both single and double tap
 --]]
 function GestureDetector:tapState(tev)
-	DEBUG("in tap state...", tev)
+	DEBUG("in tap state...")
 	local slot = tev.slot
 	if tev.id == -1 then
 		-- end of tap event
@@ -276,13 +275,13 @@ function GestureDetector:tapState(tev)
 end
 
 function GestureDetector:panState(tev)
-	DEBUG("in pan state...", tev)
+	DEBUG("in pan state...")
 	local slot = tev.slot
 	if tev.id == -1 then
 		-- end of pan, signal swipe gesture if necessary
-		local swipe_direct = self:isSwipe(tev)
-		if swipe_direct then
-			DEBUG("swipe", swipe_direct, "detected in slot", slot)
+		if self:isSwipe(tev) then
+			local swipe_direction, swipe_distance = self:getPath(tev)
+			DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
 			local start_pos = Geom:new{
 					x = self.first_tevs[slot].x,
 					y = self.first_tevs[slot].y,
@@ -291,11 +290,11 @@ function GestureDetector:panState(tev)
 			self:clearState(slot)
 			return {
 				ges = "swipe",
-				direction = swipe_direct,
 				-- use first pan tev coordination as swipe start point
 				pos = start_pos,
+				direction = swipe_direction,
+				distance = swipe_distance,
 				time = tev.timev,
-				--@TODO add start and end points?    (houqp)
 			}
 		end
 		self:clearState(slot)
@@ -303,7 +302,7 @@ function GestureDetector:panState(tev)
 		if self.states[slot] ~= self.panState then
 			self.states[slot] = self.panState
 		end
-
+		local pan_direction, pan_distance = self:getPath(tev)
 		local pan_ev = {
 			ges = "pan",
 			relative = {
@@ -312,6 +311,8 @@ function GestureDetector:panState(tev)
 				y = 0,
 			},
 			pos = nil,
+			direction = pan_direction,
+			distance = pan_distance,
 			time = tev.timev,
 		}
 		pan_ev.relative.x = tev.x - self.last_tevs[slot].x
@@ -326,7 +327,7 @@ function GestureDetector:panState(tev)
 end
 
 function GestureDetector:holdState(tev, hold)
-	DEBUG("in hold state...", tev, hold)
+	DEBUG("in hold state...")
 	local slot = tev.slot 
 	-- when we switch to hold state, we pass additional param "hold"
 	if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
