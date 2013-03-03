@@ -21,8 +21,9 @@ function ReaderMenu:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth()*7/8,
+					x = Screen:getWidth()/8,
+					y = 0,
+					w = Screen:getWidth()*3/4,
 					h = Screen:getHeight()/4,
 				}
 			}
