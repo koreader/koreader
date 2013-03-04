@@ -10,7 +10,8 @@ CreOptions = {
 				name_text = "Screen Mode",
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
-				default_arg = Screen:getScreenMode(),
+				default_arg = "portrait",
+				current_func = function() return Screen:getScreenMode() end,
 				event = "SetScreenMode",
 			}
 		}
@@ -35,10 +36,11 @@ CreOptions = {
 				name = "font_size",
 				item_text = {"Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa"},
 				item_align_center = 1.0,
-				spacing = Screen:getWidth()*0.03,
+				spacing = 15,
 				item_font_size = {18, 20, 22, 24, 29, 33, 39, 44},
+				values = {18, 20, 22, 24, 29, 33, 39, 44},
+				default_value = 22,
 				args = {18, 20, 22, 24, 29, 33, 39, 44},
-				default_value = 1,
 				event = "SetFontSize",
 			},
 		}
@@ -72,7 +74,9 @@ CreOptions = {
 			{
 				name = "view_mode",
 				name_text = "View mode",
-				item_text = {"scroll", "page"},
+				toggle = {"scroll", "page"},
+				values = {1, 0},
+				default_value = 0,
 				args = {"scroll", "page"},
 				default_arg = "page",
 				event = "SetViewMode",
@@ -80,8 +84,10 @@ CreOptions = {
 			{
 				name = "embedded_css",
 				name_text = "Embedded style",
-				item_text = {"toggle"},
-				args = {1},
+				toggle = {"on", "off"},
+				values = {1, 0},
+				default_value = 0,
+				args = {1, 0},
 				default_arg = nil,
 				event = "ToggleEmbeddedStyleSheet",
 			},
