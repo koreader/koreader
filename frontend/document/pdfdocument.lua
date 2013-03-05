@@ -52,6 +52,12 @@ function PdfDocument:getUsedBBox(pageno)
 	local page = self._document:openPage(pageno)
 	local used = {}
 	used.x0, used.y0, used.x1, used.y1 = page:getUsedBBox()
+	local pwidth, pheight = page:getSize(self.dc_null)
+	-- clamp to page BBox
+	if used.x0 < 0 then used.x0 = 0 end
+	if used.x1 > pwidth then used.x1 = pwidth end
+	if used.y0 < 0 then used.y0 = 0 end
+	if used.y1 > pheight then used.y1 = pheight end
 	--@TODO give size for cacheitem?  02.12 2012 (houqp)
 	Cache:insert(hash, CacheItem:new{ 
 		ubbox = used,
