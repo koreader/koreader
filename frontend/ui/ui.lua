@@ -78,12 +78,11 @@ end
 
 -- register a widget to be repainted
 function UIManager:setDirty(widget, refresh_type)
+	-- "auto": request full refresh
+	-- "full": force full refresh
+	-- "partial": partial refresh
 	if not refresh_type then
-		refresh_type = "full"
-	elseif refresh_type == 0 then
-		refresh_type = "full"
-	elseif refresh_type == 1 then
-		refresh_type = "partial"
+		refresh_type = "auto"
 	end
 	self._dirty[widget] = refresh_type
 end
@@ -165,13 +164,17 @@ function UIManager:run()
 
 		-- repaint dirty widgets
 		local dirty = false
-		local full_refresh = false
+		local request_full_refresh = false
+		local force_full_refresh = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
 				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
-				if self._dirty[widget.widget] == "full" then
-					full_refresh = true
+				if self._dirty[widget.widget] == "auto" then
+					request_full_refresh = true
 				end
+				if self._dirty[widget.widget] == "full" then
+					force_full_refresh = true
+				end 
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
 				-- trigger repaint
@@ -181,6 +184,9 @@ function UIManager:run()
 		self.repaint_all = false
 
 		if dirty then
+			if force_full_refresh then
+				self.refresh_count = self.FULL_REFRESH_COUNT - 1
+			end
 			if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
 				self.refresh_type = 0
 			else
@@ -189,7 +195,7 @@ function UIManager:run()
 			-- refresh FB
 			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
 			-- increase refresh_count only when full refresh is requested or performed
-			local refresh_increment = (full_refresh or self.refresh_type == 0) and 1 or 0
+			local refresh_increment = (request_full_refresh or self.refresh_type == 0) and 1 or 0
 			self.refresh_count = (self.refresh_count + refresh_increment)%self.FULL_REFRESH_COUNT
 			-- reset refresh_type
 			self.refresh_type = 1
