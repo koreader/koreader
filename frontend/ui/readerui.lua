@@ -14,6 +14,7 @@ require "ui/reader/readerconfig"
 require "ui/reader/readercropping"
 require "ui/reader/readerkopt"
 require "ui/reader/readercopt"
+require "ui/reader/readerscreenshot"
 
 --[[
 This is an abstraction for a reader interface
@@ -90,6 +91,13 @@ function ReaderUI:init()
 		ui = self
 	}
 	table.insert(self, reader_bm)
+	-- screenshot controller
+	local reader_ss = ReaderScreenshot:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	}
+	table.insert(self, reader_ss)
 
 	if self.document.info.has_pages then
 		-- for page specific controller

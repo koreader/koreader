@@ -7,7 +7,7 @@ GestureRange = {
 	-- temproal range limits the gesture emitting rate
 	rate = nil,
 	-- span limits of this gesture
-	span = nil,
+	scale = nil,
 }
 
 function GestureRange:new(o)
@@ -34,8 +34,8 @@ function GestureRange:match(gs)
 			return false
 		end
 	end
-	if self.span then
-		if self.span[1] > gs.span or self.span[2] < gs.span then
+	if self.scale then
+		if self.scale[1] > gs.span or self.scale[2] < gs.span then
 			return false
 		end
 	end
@@ -244,7 +244,7 @@ function GestureDetector:tapState(tev)
 					span = pos0:distance(pos1),
 					time = tev.timev,
 				}
-				DEBUG("two-finger tap detected")
+				DEBUG("two-finger tap detected with span", pos0:distance(pos1))
 				self:clearState(0)
 				self:clearState(1)
 				return ges_ev
