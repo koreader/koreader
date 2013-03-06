@@ -188,10 +188,11 @@ function UIManager:run()
 			end
 			-- refresh FB
 			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
+			-- increase refresh_count only when full refresh is requested or performed
+			local refresh_increment = (full_refresh or self.refresh_type == 0) and 1 or 0
+			self.refresh_count = (self.refresh_count + refresh_increment)%self.FULL_REFRESH_COUNT
 			-- reset refresh_type
 			self.refresh_type = 1
-			-- increase refresh_count only when full refresh is requested
-			self.refresh_count = (self.refresh_count + (full_refresh and 1 or 0))%self.FULL_REFRESH_COUNT
 		end
 		
 		self:checkTasks()
