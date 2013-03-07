@@ -19,6 +19,9 @@ UIManager = {
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
 	repaint_all = false,
+	-- force to do full refresh, will be reset to false
+	-- after each ui loop
+	full_refresh = false,
 	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
 	FULL_REFRESH_COUNT = 6,
 	refresh_count = 0,
@@ -95,15 +98,19 @@ end
 -- transmit an event to registered widgets
 function UIManager:sendEvent(event)
 	-- top level widget has first access to the event
-	local consumed = self._window_stack[#self._window_stack].widget:handleEvent(event)
+	if self._window_stack[#self._window_stack].widget:handleEvent(event) then
+		return
+	end
 
-	-- if the event is not consumed, always-active widgets can access it
+	-- if the event is not consumed, active widgets can access it
 	for _, widget in ipairs(self._window_stack) do
-		if consumed then
-			break
-		end
 		if widget.widget.is_always_active then
-			consumed = widget.widget:handleEvent(event)
+			if widget.widget:handleEvent(event) then return end
+		end
+		if widget.widget.active_widgets then
+			for _, active_widget in ipairs(widget.widget.active_widgets) do
+				if active_widget:handleEvent(event) then return end
+			end
 		end
 	end
 end
@@ -181,7 +188,14 @@ function UIManager:run()
 				dirty = true
 			end
 		end
+		
+		if self.full_refresh then
+			dirty = true
+			force_full_refresh = true
+		end
+		
 		self.repaint_all = false
+		self.full_refresh = false
 
 		if dirty then
 			if force_full_refresh then
