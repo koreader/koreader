@@ -19,7 +19,7 @@ end
 
 function ReaderScreenshot:onScreenshot()
 	os.execute("screenshot")
-	UIManager:setDirty(self.view.dialog, "full")
+	UIManager.full_refresh = true
 	return true
 end
 

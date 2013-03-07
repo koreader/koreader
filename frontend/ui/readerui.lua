@@ -26,6 +26,7 @@ ReaderUI = InputContainer:new{
 	key_events = {
 		Close = { {"Home"}, doc = "close document", event = "Close" },
 	},
+	active_widgets = {},
 
 	-- our own size
 	dimen = Geom:new{ w = 400, h = 600 },
@@ -97,7 +98,7 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
-	table.insert(self, reader_ss)
+	table.insert(self.active_widgets, reader_ss)
 
 	if self.document.info.has_pages then
 		-- for page specific controller
