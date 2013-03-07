@@ -26,8 +26,6 @@ ABS_MT_POSITION_Y = 54
 ABS_MT_TRACKING_ID = 57
 ABS_MT_PRESSURE = 58
 
-
-
 --[[
 an interface for key presses
 ]]
@@ -241,6 +239,7 @@ end
 
 function Input:initTouchState()
 	self.cur_slot = 0
+	self.MTSlots = {}
 	self.ev_slots = {
 		[0] = {
 			slot = 0,
@@ -437,10 +436,12 @@ attribute of the current slot.
 function Input:handleTouchEv(ev)
 	if ev.type == EV_SYN then
 		if ev.code == SYN_REPORT then
-			self:setCurrentMtSlot("timev", TimeVal:new(ev.time))
-			-- send ev to state machine
-			local touch_ges = GestureDetector:feedEvent(
-												self:getCurrentMtSlot())
+			for _, MTSlot in pairs(self.MTSlots) do
+				self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+			end
+			-- feed ev in all slots to state machine
+			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
+			self.MTSlots = {}
 			if touch_ges then
 				return Event:new("Gesture", 
 					GestureDetector:adjustGesCoordinate(touch_ges)
@@ -448,7 +449,13 @@ function Input:handleTouchEv(ev)
 			end
 		end
 	elseif ev.type == EV_ABS then
+			if #self.MTSlots == 0 then
+				table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
+			end 
 		if ev.code == ABS_MT_SLOT then
+			if self.cur_slot ~= ev.value then
+				table.insert(self.MTSlots, self:getMtSlot(ev.value))
+			end
 			self.cur_slot = ev.value
 		elseif ev.code == ABS_MT_TRACKING_ID then
 			self:setCurrentMtSlot("id", ev.value)

@@ -19,6 +19,9 @@ UIManager = {
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
 	repaint_all = false,
+	-- force to do full refresh, will be reset to false
+	-- after each ui loop
+	full_refresh = false,
 	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
 	FULL_REFRESH_COUNT = 6,
 	refresh_count = 0,
@@ -78,12 +81,11 @@ end
 
 -- register a widget to be repainted
 function UIManager:setDirty(widget, refresh_type)
+	-- "auto": request full refresh
+	-- "full": force full refresh
+	-- "partial": partial refresh
 	if not refresh_type then
-		refresh_type = "full"
-	elseif refresh_type == 0 then
-		refresh_type = "full"
-	elseif refresh_type == 1 then
-		refresh_type = "partial"
+		refresh_type = "auto"
 	end
 	self._dirty[widget] = refresh_type
 end
@@ -96,15 +98,19 @@ end
 -- transmit an event to registered widgets
 function UIManager:sendEvent(event)
 	-- top level widget has first access to the event
-	local consumed = self._window_stack[#self._window_stack].widget:handleEvent(event)
+	if self._window_stack[#self._window_stack].widget:handleEvent(event) then
+		return
+	end
 
-	-- if the event is not consumed, always-active widgets can access it
+	-- if the event is not consumed, active widgets can access it
 	for _, widget in ipairs(self._window_stack) do
-		if consumed then
-			break
-		end
 		if widget.widget.is_always_active then
-			consumed = widget.widget:handleEvent(event)
+			if widget.widget:handleEvent(event) then return end
+		end
+		if widget.widget.active_widgets then
+			for _, active_widget in ipairs(widget.widget.active_widgets) do
+				if active_widget:handleEvent(event) then return end
+			end
 		end
 	end
 end
@@ -165,22 +171,36 @@ function UIManager:run()
 
 		-- repaint dirty widgets
 		local dirty = false
-		local full_refresh = false
+		local request_full_refresh = false
+		local force_full_refresh = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
 				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
-				if self._dirty[widget.widget] == "full" then
-					full_refresh = true
+				if self._dirty[widget.widget] == "auto" then
+					request_full_refresh = true
 				end
+				if self._dirty[widget.widget] == "full" then
+					force_full_refresh = true
+				end 
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
 				-- trigger repaint
 				dirty = true
 			end
 		end
+		
+		if self.full_refresh then
+			dirty = true
+			force_full_refresh = true
+		end
+		
 		self.repaint_all = false
+		self.full_refresh = false
 
 		if dirty then
+			if force_full_refresh then
+				self.refresh_count = self.FULL_REFRESH_COUNT - 1
+			end
 			if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
 				self.refresh_type = 0
 			else
@@ -188,10 +208,11 @@ function UIManager:run()
 			end
 			-- refresh FB
 			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
+			-- increase refresh_count only when full refresh is requested or performed
+			local refresh_increment = (request_full_refresh or self.refresh_type == 0) and 1 or 0
+			self.refresh_count = (self.refresh_count + refresh_increment)%self.FULL_REFRESH_COUNT
 			-- reset refresh_type
 			self.refresh_type = 1
-			-- increase refresh_count only when full refresh is requested
-			self.refresh_count = (self.refresh_count + (full_refresh and 1 or 0))%self.FULL_REFRESH_COUNT
 		end
 		
 		self:checkTasks()
