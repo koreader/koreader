@@ -143,6 +143,9 @@ KoptOptions = {
 					{
 						event = "RestoreZoomMode",
 					},
+					{
+						event = "InitScrollPageStates",
+					},
 				}
 			},
 			{
