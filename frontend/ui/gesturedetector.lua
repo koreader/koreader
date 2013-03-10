@@ -224,7 +224,7 @@ end
 this method handles both single and double tap
 --]]
 function GestureDetector:tapState(tev)
-	DEBUG("in tap state...", tev)
+	DEBUG("in tap state...")
 	local slot = tev.slot
 	if slot == 1 then
 		if tev.id == -1 and self.last_tevs[0] ~= nil then
