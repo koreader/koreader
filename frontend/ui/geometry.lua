@@ -117,7 +117,8 @@ returns a rectangle for the part that we and a given rectangle share
 TODO: what happens if there is no rectangle shared? currently behaviour is undefined.
 ]]--
 function Geom:intersect(rect_b)
-	local intersected = Geom:new(self)
+	-- make a copy of self
+	local intersected = self:copy()
 	if self.x < rect_b.x then
 		intersected.x = rect_b.x
 	end
@@ -257,6 +258,11 @@ function Geom:offsetWithin(rect_b, dx, dy)
 	if self.y + self.h > rect_b.y + rect_b.h then
 		self.y = rect_b.y + rect_b.h - self.h
 	end
+end
+
+function Geom:shrinkInside(rect_b, dx, dy)
+	self:offsetBy(dx, dy)
+	return self:intersect(rect_b)
 end
 
 --[[
