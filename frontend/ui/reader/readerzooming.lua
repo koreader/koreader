@@ -109,27 +109,33 @@ function ReaderZooming:onPageUpdate(new_page_no)
 	self:setZoom()
 end
 
-function ReaderZooming:setZoom()
-	-- nothing to do in free zoom mode
-	if self.zoom_mode == "free" then
-		return
+function ReaderZooming:onHintPage()
+	if self.current_page < self.ui.document.info.number_of_pages then
+		self.ui.document:hintPage(
+			self.view.state.page + 1, 
+			self:getZoom(self.view.state.page + 1),
+			self.view.state.rotation, 
+			self.view.state.gamma, 
+			self.view.render_mode)
 	end
-	if not self.dimen then
-		self.dimen = self.ui.dimen
-	end
+	return true
+end
+
+function ReaderZooming:getZoom(pageno)
 	-- check if we're in bbox mode and work on bbox if that's the case
+	local zoom = nil
 	local page_size = {}
 	if self.zoom_mode == "content" 
 	or self.zoom_mode == "contentwidth"
 	or self.zoom_mode == "contentheight" then
-		ubbox_dimen = self.ui.document:getUsedBBoxDimensions(self.current_page, 1)
+		local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
 		--self.view:handleEvent(Event:new("BBoxUpdate", page_size))
 		self.view:onBBoxUpdate(ubbox_dimen)
 		page_size = ubbox_dimen
 	else
 		-- otherwise, operate on full page
 		self.view:onBBoxUpdate(nil)
-		page_size = self.ui.document:getNativePageDimensions(self.current_page)
+		page_size = self.ui.document:getNativePageDimensions(pageno)
 	end
 	-- calculate zoom value:
 	local zoom_w = self.dimen.w / page_size.w
@@ -141,15 +147,27 @@ function ReaderZooming:setZoom()
 	end
 	if self.zoom_mode == "content" or self.zoom_mode == "page" then
 		if zoom_w < zoom_h then
-			self.zoom = zoom_w
+			zoom = zoom_w
 		else
-			self.zoom = zoom_h
+			zoom = zoom_h
 		end
 	elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
-		self.zoom = zoom_w
+		zoom = zoom_w
 	elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
-		self.zoom = zoom_h
+		zoom = zoom_h
 	end
+	return zoom
+end
+
+function ReaderZooming:setZoom()
+	-- nothing to do in free zoom mode
+	if self.zoom_mode == "free" then
+		return
+	end
+	if not self.dimen then
+		self.dimen = self.ui.dimen
+	end
+	self.zoom = self:getZoom(self.current_page)
 	self.ui:handleEvent(Event:new("ZoomUpdate", self.zoom))
 end
 
