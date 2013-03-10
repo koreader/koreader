@@ -132,20 +132,22 @@ end
 
 function Document:getPageBBox(pageno)
 	local bbox = self.bbox[pageno] -- exact
-	local oddEven = math.oddEven(pageno)
 	if bbox ~= nil then
 		--DEBUG("bbox from", pageno)
+		return bbox
 	else
+		local oddEven = math.oddEven(pageno)
 		bbox = self.bbox[oddEven] -- odd/even
 	end
 	if bbox ~= nil then -- last used up to this page
 		--DEBUG("bbox from", oddEven)
+		return bbox
 	else
 		for i = 0,pageno do
 			bbox = self.bbox[ pageno - i ]
 			if bbox ~= nil then
 				--DEBUG("bbox from", pageno - i)
-				break
+				return bbox
 			end
 		end
 	end
