@@ -174,6 +174,7 @@ end
 function ReaderZooming:genSetZoomModeCallBack(mode)
 	return function()
 		self.ui:handleEvent(Event:new("SetZoomMode", mode))
+		self.ui:handleEvent(Event:new("InitScrollPageStates"))
 	end
 end
 

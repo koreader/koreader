@@ -6,7 +6,7 @@ ReaderPaging = InputContainer:new{
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = true,
-	overlap = 20,
+	overlap = 20 * Screen:getDPI()/167,
 }
 
 function ReaderPaging:init()
@@ -117,12 +117,12 @@ function ReaderPaging:onCloseDocument()
 end
 
 function ReaderPaging:onTapForward()
-	self:onGotoPageRel(1)
+	self:onPagingRel(1)
 	return true
 end
 
 function ReaderPaging:onTapBackward()
-	self:onGotoPageRel(-1)
+	self:onPagingRel(-1)
 	return true
 end
 
@@ -135,9 +135,9 @@ end
 function ReaderPaging:onSwipe(arg, ges)
 	if self.flipping_page == nil then
 		if ges.direction == "left" or ges.direction == "up" then
-			self:onGotoPageRel(1)
+			self:onPagingRel(1)
 		elseif ges.direction == "right" or ges.direction == "down" then
-			self:onGotoPageRel(-1)
+			self:onPagingRel(-1)
 		end
 	elseif self.flipping_page then
 		self:gotoPage(self.flipping_page)
@@ -172,8 +172,9 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
 	self.zoom_mode = new_mode
 end
 
-function ReaderPaging:onPageUpdate(new_page_no)
+function ReaderPaging:onPageUpdate(new_page_no, orig)
 	self.current_page = new_page_no
+	self.ui:handleEvent(Event:new("InitScrollPageStates", orig))
 end
 
 function ReaderPaging:onViewRecalculate(visible_area, page_area)
@@ -191,6 +192,172 @@ function ReaderPaging:onGotoPercent(percent)
 	end
 	self:gotoPage(dest)
 	return true
+end
+
+function ReaderPaging:onPagingRel(diff)
+	if self.view.page_scroll then
+		self:onScrollPageRel(diff)
+	else
+		self:onGotoPageRel(diff)
+	end
+	return true
+end
+
+function ReaderPaging:onInitScrollPageStates(orig)
+	DEBUG("init scroll page states")
+	if orig == "scrolling" then return true end
+	if self.view.page_scroll then
+		self.view.page_states = {}
+		local blank_area = Geom:new{}
+		blank_area:setSizeTo(self.view.dimen)
+		while blank_area.h > 0 do
+			local state = self:getNextPageState(blank_area, Geom:new{})
+			--DEBUG("init new state", state)
+			table.insert(self.view.page_states, state)
+			if blank_area.h > 0 then
+				blank_area.h = blank_area.h - self.view.page_gap.height
+			end
+			if blank_area.h > 0 then
+				self:gotoPage(self.current_page + 1, "scrolling")
+			end
+		end
+	end
+	return true
+end
+
+function ReaderPaging:onUpdateScrollPageRotation(rotation)
+	for _, state in ipairs(self.view.page_states) do
+		state.rotation = rotation
+	end
+	return true
+end
+
+function ReaderPaging:onUpdateScrollPageGamma(gamma)
+	for _, state in ipairs(self.view.page_states) do
+		state.gamma = gamma
+	end
+	return true
+end
+
+function ReaderPaging:getNextPageState(blank_area, offset)
+	local page_area = self.view:getPageArea(
+		self.view.state.page,
+		self.view.state.zoom,
+		self.view.state.rotation)
+	local visible_area = Geom:new{x = 0, y = 0}
+	visible_area.w, visible_area.h = blank_area.w, blank_area.h
+	visible_area.x, visible_area.y = page_area.x, page_area.y
+	visible_area = visible_area:shrinkInside(page_area, offset.x, offset.y)
+	-- shrink blank area by the height of visible area
+	blank_area.h = blank_area.h - visible_area.h
+	return {
+		page = self.view.state.page,
+		zoom = self.view.state.zoom,
+		rotation = self.view.state.rotation,
+		gamma = self.view.state.gamma,
+		offset = Geom:new{ x = self.view.state.offset.x, y = 0},
+		visible_area = visible_area,
+		page_area = page_area,
+	}
+end
+
+function ReaderPaging:getPrevPageState(blank_area, offset)
+	local page_area = self.view:getPageArea(
+		self.view.state.page,
+		self.view.state.zoom,
+		self.view.state.rotation)
+	local visible_area = Geom:new{x = 0, y = 0}
+	visible_area.w, visible_area.h = blank_area.w, blank_area.h
+	visible_area.x = page_area.x
+	visible_area.y = page_area.y + page_area.h - visible_area.h
+	visible_area = visible_area:shrinkInside(page_area, offset.x, offset.y)
+	-- shrink blank area by the height of visible area
+	blank_area.h = blank_area.h - visible_area.h
+	return {
+		page = self.view.state.page,
+		zoom = self.view.state.zoom,
+		rotation = self.view.state.rotation,
+		gamma = self.view.state.gamma,
+		offset = Geom:new{ x = self.view.state.offset.x, y = 0},
+		visible_area = visible_area,
+		page_area = page_area,
+	}
+end
+
+function ReaderPaging:updateLastPageState(state, blank_area, offset)
+	local visible_area = Geom:new{x = 0, y = 0}
+	visible_area.w, visible_area.h = blank_area.w, blank_area.h
+	visible_area.x, visible_area.y = state.visible_area.x, state.visible_area.y
+	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	-- shrink blank area by the height of visible area
+	blank_area.h = blank_area.h - visible_area.h
+	state.visible_area = visible_area
+	return state
+end
+
+function ReaderPaging:updateFirstPageState(state, blank_area, offset)
+	local visible_area = Geom:new{x = 0, y = 0}
+	visible_area.w, visible_area.h = blank_area.w, blank_area.h
+	visible_area.x = state.page_area.x
+	visible_area.y = state.visible_area.y + state.visible_area.h - visible_area.h
+	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	-- shrink blank area by the height of visible area
+	blank_area.h = blank_area.h - visible_area.h
+	state.visible_area = visible_area
+	return state
+end
+
+function ReaderPaging:onScrollPageRel(diff)
+	DEBUG("scroll relative page:", diff)
+	local blank_area = Geom:new{}
+	blank_area:setSizeTo(self.view.dimen)
+	if diff > 0 then
+		local last_page_state = table.remove(self.view.page_states)
+		local offset = Geom:new{
+			x = 0,
+			y = last_page_state.visible_area.h - self.overlap
+		}
+		local state = self:updateLastPageState(last_page_state, blank_area, offset)
+		--DEBUG("updated state", state)
+		self.view.page_states = {}
+		if state.visible_area.h > 0 then
+			table.insert(self.view.page_states, state)
+		end
+		--DEBUG("blank area", blank_area)
+		while blank_area.h > 0 do
+			blank_area.h = blank_area.h - self.view.page_gap.height
+			if blank_area.h > 0 then
+				self:gotoPage(state.page + 1, "scrolling")
+				local state = self:getNextPageState(blank_area, Geom:new{})
+				--DEBUG("new state", state)
+				table.insert(self.view.page_states, state)
+			end
+		end
+	end
+	if diff < 0 then
+		local first_page_state = table.remove(self.view.page_states, 1)
+		local offset = Geom:new{
+			x = 0,
+			y = -first_page_state.visible_area.h + self.overlap
+		}
+		local state = self:updateFirstPageState(first_page_state, blank_area, offset)
+		--DEBUG("updated state", state)
+		self.view.page_states = {}
+		if state.visible_area.h > 0 then
+			table.insert(self.view.page_states, state)
+		end
+		--DEBUG("blank area", blank_area)
+		while blank_area.h > 0 do
+			blank_area.h = blank_area.h - self.view.page_gap.height
+			if blank_area.h > 0 then
+				self:gotoPage(state.page - 1, "scrolling")
+				local state = self:getPrevPageState(blank_area, Geom:new{})
+				--DEBUG("new state", state)
+				table.insert(self.view.page_states, 1, state)
+			end
+		end
+	end
+	UIManager:setDirty(self.view.dialog)
 end
 
 function ReaderPaging:onGotoPageRel(diff)
@@ -300,7 +467,7 @@ function ReaderPaging:onSetDimensions()
 end
 
 -- wrapper for bounds checking
-function ReaderPaging:gotoPage(number)
+function ReaderPaging:gotoPage(number, orig)
 	if number == self.current_page then
 		return true
 	end
@@ -312,8 +479,7 @@ function ReaderPaging:gotoPage(number)
 	DEBUG("going to page number", number)
 
 	-- this is an event to allow other controllers to be aware of this change
-	self.ui:handleEvent(Event:new("PageUpdate", number))
-
+	self.ui:handleEvent(Event:new("PageUpdate", number, orig))
 	return true
 end
 

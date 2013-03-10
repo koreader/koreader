@@ -5,7 +5,8 @@ require "ui/reader/readerdogear"
 ReaderView = OverlapGroup:new{
 	_name = "ReaderView",
 	document = nil,
-
+	
+	-- single page state
 	state = {
 		page = 0,
 		pos = 0,
@@ -16,6 +17,16 @@ ReaderView = OverlapGroup:new{
 		bbox = nil,
 	},
 	outer_page_color = 0,
+	-- PDF/DjVu continuous paging
+	page_scroll = nil,
+	page_bgcolor = 0,
+	page_states = {},
+	scroll_mode = "vertical",
+	page_gap = {
+		width = 8 * Screen:getDPI()/167,
+		height = 8 * Screen:getDPI()/167,
+		color = 8,
+	},
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
 	render_mode = 0, -- default to COLOR
 	-- Crengine view mode
@@ -56,50 +67,27 @@ end
 
 function ReaderView:paintTo(bb, x, y)
 	DEBUG("painting", self.visible_area, "to", x, y)
-	local inner_offset = Geom:new{x = 0, y = 0}
-
-	-- draw surrounding space, if any
-	if self.dimen.h > self.visible_area.h then
-		inner_offset.y = (self.dimen.h - self.visible_area.h) / 2
-		bb:paintRect(x, y, self.dimen.w, inner_offset.y, self.outer_page_color)
-		bb:paintRect(x, y + self.dimen.h - inner_offset.y - 1, self.dimen.w, inner_offset.y + 1, self.outer_page_color)
+	if self.page_scroll then
+		self:drawPageBackground(bb, x, y)
+	else
+		self:drawPageSurround(bb, x, y)
 	end
-	if self.dimen.w > self.visible_area.w then
-		inner_offset.x = (self.dimen.w - self.visible_area.w) / 2
-		bb:paintRect(x, y, inner_offset.x, self.dimen.h, self.outer_page_color)
-		bb:paintRect(x + self.dimen.w - inner_offset.x - 1, y, inner_offset.x + 1, self.dimen.h, self.outer_page_color)
-	end
-	self.state.offset = inner_offset
-	-- draw content
+	
+	-- draw page content
 	if self.ui.document.info.has_pages then
-		self.ui.document:drawPage(
-			bb,
-			x + inner_offset.x,
-			y + inner_offset.y,
-			self.visible_area,
-			self.state.page,
-			self.state.zoom,
-			self.state.rotation,
-			self.state.gamma,
-			self.render_mode)
-		UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
+		if self.page_scroll then
+			self:drawScrollPages(bb, x, y)
+		else
+			self:drawSinglePage(bb, x, y)
+		end
 	else
 		if self.view_mode == "page" then
-			self.ui.document:drawCurrentViewByPage(
-				bb,
-				x + inner_offset.x,
-				y + inner_offset.y,
-				self.visible_area,
-				self.state.page)
-		else
-			self.ui.document:drawCurrentViewByPos(
-				bb,
-				x + inner_offset.x,
-				y + inner_offset.y,
-				self.visible_area,
-				self.state.pos)
+			self:drawPageView(bb, x, y)
+		elseif self.view_mode == "scroll" then
+			self:drawScrollView(bb, x, y)
 		end
 	end
+	
 	-- dim last read area
 	if self.document.view_mode ~= "page" 
 	and self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
@@ -108,6 +96,7 @@ function ReaderView:paintTo(bb, x, y)
 			self.dim_area.w, self.dim_area.h
 		)
 	end
+	
 	-- paint dogear
 	if self.dogear_visible then
 		self.dogear:paintTo(bb, x, y)
@@ -122,23 +111,104 @@ function ReaderView:paintTo(bb, x, y)
 	end
 end
 
+function ReaderView:drawPageBackground(bb, x, y)
+	bb:paintRect(x, y, self.dimen.w, self.dimen.h, self.page_bgcolor)
+end
+
+function ReaderView:drawPageSurround(bb, x, y)
+	if self.dimen.h > self.visible_area.h then
+		bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
+		bb:paintRect(x, y + self.dimen.h - self.state.offset.y - 1, 
+			self.dimen.w, self.state.offset.y + 1, self.outer_page_color)
+	end
+	if self.dimen.w > self.visible_area.w then
+		bb:paintRect(x, y, self.state.offset.x, self.dimen.h, self.outer_page_color)
+		bb:paintRect(x + self.dimen.w - self.state.offset.x - 1, y, 
+			self.state.offset.x + 1, self.dimen.h, self.outer_page_color)
+	end
+end
+
+function ReaderView:drawScrollPages(bb, x, y)
+	local pos = Geom:new{x = x , y = y}
+	for page, state in ipairs(self.page_states) do
+		self.ui.document:drawPage(
+			bb,
+			pos.x + state.offset.x,
+			pos.y + state.offset.y,
+			state.visible_area,
+			state.page,
+			state.zoom,
+			state.rotation,
+			state.gamma,
+			self.render_mode)
+		pos.y = pos.y + state.visible_area.h
+		-- draw page gap if not the last part 
+		if page ~= #self.page_states then
+			self:drawPageGap(bb, pos.x, pos.y)
+			pos.y = pos.y + self.page_gap.height
+		end
+	end
+	UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
+end
+
+function ReaderView:drawPageGap(bb, x, y)
+	if self.scroll_mode == "vertical" then
+		bb:paintRect(x, y, self.dimen.w, self.page_gap.height, self.page_gap.color)
+	elseif self.scroll_mode == "horizontal" then
+		bb:paintRect(x, y, self.page_gap.width, self.dimen.h, self.page_gap.color)
+	end
+end
+
+function ReaderView:drawSinglePage(bb, x, y)
+	self.ui.document:drawPage(
+		bb,
+		x + self.state.offset.x,
+		y + self.state.offset.y,
+		self.visible_area,
+		self.state.page,
+		self.state.zoom,
+		self.state.rotation,
+		self.state.gamma,
+		self.render_mode)
+	UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
+end
+
+function ReaderView:drawPageView(bb, x, y)
+	self.ui.document:drawCurrentViewByPage(
+		bb,
+		x + self.state.offset.x,
+		y + self.state.offset.y,
+		self.visible_area,
+		self.state.page)
+end
+
+function ReaderView:drawScrollView(bb, x, y)
+	self.ui.document:drawCurrentViewByPos(
+		bb,
+		x + self.state.offset.x,
+		y + self.state.offset.y,
+		self.visible_area,
+		self.state.pos)
+end
+
+function ReaderView:getPageArea(page, zoom, rotation)
+	if self.use_bbox then
+		return self.ui.document:getUsedBBoxDimensions(page, zoom, rotation)
+	else
+		return self.ui.document:getPageDimensions(page, zoom, rotation)
+	end
+end
+
 --[[
 This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
 	local page_size = nil
 	if self.ui.document.info.has_pages then
-		if not self.bbox then
-			self.page_area = self.ui.document:getPageDimensions(
-				self.state.page,
-				self.state.zoom,
-				self.state.rotation)
-		else
-			self.page_area = self.ui.document:getUsedBBoxDimensions(
-				self.state.page,
-				self.state.zoom,
-				self.state.rotation)
-		end
+		self.page_area = self:getPageArea(
+			self.state.page,
+			self.state.zoom,
+			self.state.rotation)
 		-- starts from left top of page_area
 		self.visible_area.x = self.page_area.x
 		self.visible_area.y = self.page_area.y
@@ -149,6 +219,13 @@ function ReaderView:recalculate()
 		-- clear dim area
 		self.dim_area.w = 0
 		self.dim_area.h = 0
+		self.state.offset = Geom:new{x = 0, y = 0}
+		if self.dimen.h > self.visible_area.h then
+			self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
+		end
+		if self.dimen.w > self.visible_area.w then
+			self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
+		end
 		self.ui:handleEvent(
 			Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	else
@@ -182,6 +259,7 @@ function ReaderView:onSetScreenMode(new_mode)
 
 	if new_mode == "landscape" and self.document.info.has_pages then
 		self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
+		self.ui:handleEvent(Event:new("InitScrollPageStates"))
 	end
 	return true
 end
@@ -219,6 +297,14 @@ function ReaderView:onSetFullScreen(full_screen)
 	self:onSetDimensions(Screen:getSize())
 end
 
+function ReaderView:onToggleScrollMode(page_scroll)
+	self.page_scroll = page_scroll
+	self:recalculate()
+	if self.page_scroll then
+		self.ui:handleEvent(Event:new("InitScrollPageStates"))
+	end
+end
+
 function ReaderView:onReadSettings(config)
 	self.render_mode = config:readSetting("render_mode") or 0
 	local screen_mode = config:readSetting("screen_mode")
@@ -235,6 +321,8 @@ function ReaderView:onReadSettings(config)
 		self.footer_visible = full_screen == 0 and true or false
 	end
 	self:resetLayout()
+	local page_scroll = config:readSetting("kopt_page_scroll")
+	self.page_scroll = (page_scroll == nil or page_scroll == 1) and true or false
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -253,7 +341,7 @@ function ReaderView:onZoomUpdate(zoom)
 end
 
 function ReaderView:onBBoxUpdate(bbox)
-	self.bbox = bbox
+	self.use_bbox = bbox and true or false
 end
 
 function ReaderView:onRotationUpdate(rotation)
@@ -263,18 +351,9 @@ end
 
 function ReaderView:onGammaUpdate(gamma)
 	self.state.gamma = gamma
-end
-
-function ReaderView:onHintPage()
-	if self.state.page < self.ui.document.info.number_of_pages then
-		self.ui.document:hintPage(
-			self.state.page+1, 
-			self.state.zoom, 
-			self.state.rotation, 
-			self.state.gamma, 
-			self.render_mode)
+	if self.page_scroll then
+		self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
 	end
-	return true
 end
 
 function ReaderView:onSetViewMode(new_mode)

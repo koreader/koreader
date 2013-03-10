@@ -32,3 +32,8 @@ function ReaderKoptListener:onSetZoomMode(zoom_mode, orig)
 	self.normal_zoom_mode = zoom_mode
 	self:setZoomMode(self.normal_zoom_mode)
 end
+
+function ReaderKoptListener:onSetDimensions(dimensions)
+	-- called later than reader zooming
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end

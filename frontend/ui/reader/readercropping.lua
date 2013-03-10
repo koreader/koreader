@@ -60,6 +60,9 @@ function ReaderCropping:onPageCrop(mode)
 	self.view.outer_page_color = 7 -- gray bgcolor
 	-- backup original zoom mode as cropping use "page" zoom mode
 	self.orig_zoom_mode = self.view.zoom_mode
+	-- backup original page scroll
+	self.orig_page_scroll = self.view.page_scroll
+	self.view.page_scroll = false
 	-- backup original reflow mode as cropping use non-reflow mode
 	self.orig_reflow_mode = self.document.configurable.text_wrap
 	if self.orig_reflow_mode == 1 then
@@ -107,6 +110,8 @@ function ReaderCropping:onCancelPageCrop()
 end
 
 function ReaderCropping:exitPageCrop(confirmed)
+	-- restore page scroll
+	self.view.page_scroll = self.orig_page_scroll
 	-- restore view bgcolor
 	self.view.outer_page_color = self.orig_view_bgcolor
 	-- restore view dimens
@@ -123,6 +128,7 @@ function ReaderCropping:exitPageCrop(confirmed)
 		if confirmed then
 			-- if original zoom mode is not "content", set zoom mode to "content"
 			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "content"))
+			self.ui:handleEvent(Event:new("InitScrollPageStates"))
 		else
 			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
 		end
