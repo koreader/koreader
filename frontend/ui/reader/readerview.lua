@@ -219,17 +219,17 @@ function ReaderView:recalculate()
 		-- clear dim area
 		self.dim_area.w = 0
 		self.dim_area.h = 0
-		self.state.offset = Geom:new{x = 0, y = 0}
-		if self.dimen.h > self.visible_area.h then
-			self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
-		end
-		if self.dimen.w > self.visible_area.w then
-			self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
-		end
 		self.ui:handleEvent(
 			Event:new("ViewRecalculate", self.visible_area, self.page_area))
 	else
 		self.visible_area:setSizeTo(self.dimen)
+	end
+	self.state.offset = Geom:new{x = 0, y = 0}
+	if self.dimen.h > self.visible_area.h then
+		self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
+	end
+	if self.dimen.w > self.visible_area.w then
+		self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
 	end
 	-- flag a repaint so self:paintTo will be called
 	UIManager:setDirty(self.dialog)
