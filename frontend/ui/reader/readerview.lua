@@ -294,7 +294,7 @@ end
 
 function ReaderView:onSetFullScreen(full_screen)
 	self.footer_visible = not full_screen
-	self:onSetDimensions(Screen:getSize())
+	self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 end
 
 function ReaderView:onToggleScrollMode(page_scroll)
