@@ -240,6 +240,17 @@ function KoptInterface:getContextHash(doc, pageno, bbox)
 	return doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
 end
 
+function KoptInterface:logReflowDuration(pageno, dur)
+	local file = io.open("reflowlog.txt", "a+")
+	if file then
+		if file:seek("end") == 0 then -- write the header only once
+			file:write("PAGE\tDUR\n")
+		end
+		file:write(string.format("%s\t%s\n", pageno, dur))
+		file:close()
+	end
+end
+
 -- calculates page dimensions
 function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
 	self:setTrimPage(doc, pageno)
@@ -251,7 +262,12 @@ function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
 		local kc = self:getKOPTContext(doc, pageno, bbox)
 		local page = doc._document:openPage(pageno)
 		-- reflow page
+		--local secs, usecs = util.gettime()
 		page:reflow(kc, 0)
+		--local nsecs, nusecs = util.gettime()
+		--local dur = nsecs - secs + (nusecs - usecs) / 1000000
+		--DEBUG("Reflow duration:", dur)
+		--self:logReflowDuration(pageno, dur)
 		page:close()
 		local fullwidth, fullheight = kc:getPageDim()
 		DEBUG("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
