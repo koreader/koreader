@@ -48,6 +48,15 @@ KoptOptions = {
 				args = {true, false},
 			},
 			{
+				name = "page_scroll",
+				name_text = "Scroll Mode",
+				toggle = {"on", "off"},
+				values = {1, 0},
+				default_value = 1,
+				event = "ToggleScrollMode",
+				args = {true, false},
+			},
+			{
 				name = "page_margin",
 				name_text = "Page Margin",
 				toggle = {"small", "medium", "large"},
@@ -133,6 +142,9 @@ KoptOptions = {
 					},
 					{
 						event = "RestoreZoomMode",
+					},
+					{
+						event = "InitScrollPageStates",
 					},
 				}
 			},
