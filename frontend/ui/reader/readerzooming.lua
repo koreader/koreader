@@ -110,6 +110,7 @@ function ReaderZooming:onPageUpdate(new_page_no)
 end
 
 function ReaderZooming:onHintPage()
+	if not self.view.hinting then return true end
 	if self.current_page < self.ui.document.info.number_of_pages then
 		self.ui.document:hintPage(
 			self.view.state.page + 1, 
