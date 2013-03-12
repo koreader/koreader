@@ -1,4 +1,4 @@
-require "ui/widget"
+require "ui/widget/container"
 
 --[[
 a button widget

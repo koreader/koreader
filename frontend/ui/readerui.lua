@@ -1,4 +1,3 @@
-require "ui/ui"
 require "ui/reader/readerview"
 require "ui/reader/readerzooming"
 require "ui/reader/readerpanning"

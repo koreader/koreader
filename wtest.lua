@@ -1,12 +1,11 @@
 print(package.path)
 package.path = "./frontend/?.lua"
-require "ui/widget"
-require "ui/ui"
-require "ui/readerui"
-require "ui/menu"
-require "ui/infomessage"
-require "ui/confirmbox"
+require "ui/uimanager"
+require "ui/widget/menu"
+require "ui/widget/infomessage"
+require "ui/widget/confirmbox"
 require "document/document"
+require "ui/readerui"
 
 
 -----------------------------------------------------

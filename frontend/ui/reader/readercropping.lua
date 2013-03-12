@@ -1,5 +1,5 @@
-require "ui/widget"
-require "ui/bbox"
+require "ui/widget/group"
+require "ui/widget/bbox"
 
 PageCropDialog = VerticalGroup:new{
 	ok_text = "OK",

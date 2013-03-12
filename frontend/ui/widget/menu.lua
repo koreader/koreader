@@ -1,6 +1,9 @@
-require "ui/widget"
-require "ui/focusmanager"
-require "ui/infomessage"
+require "ui/widget/container"
+require "ui/widget/focusmanager"
+require "ui/widget/infomessage"
+require "ui/widget/text"
+require "ui/widget/group"
+require "ui/widget/span"
 require "ui/font"
 
 --[[

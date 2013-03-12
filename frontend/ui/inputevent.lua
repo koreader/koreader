@@ -2,7 +2,6 @@ require "ui/event"
 require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
-require "settings"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -112,7 +111,7 @@ function Key:match(sequence)
 			return false
 		end
 	end
-	
+
 	return true
 end
 
@@ -334,7 +333,7 @@ end
 
 function Input:setTimeout(cb, tv_out)
 	local item = {
-		callback = cb, 
+		callback = cb,
 		deadline = tv_out,
 	}
 	for k,v in ipairs(self.timer_callbacks) do
@@ -443,7 +442,7 @@ function Input:handleTouchEv(ev)
 			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
 			self.MTSlots = {}
 			if touch_ges then
-				return Event:new("Gesture", 
+				return Event:new("Gesture",
 					GestureDetector:adjustGesCoordinate(touch_ges)
 				)
 			end
@@ -451,7 +450,7 @@ function Input:handleTouchEv(ev)
 	elseif ev.type == EV_ABS then
 			if #self.MTSlots == 0 then
 				table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
-			end 
+			end
 		if ev.code == ABS_MT_SLOT then
 			if self.cur_slot ~= ev.value then
 				table.insert(self.MTSlots, self:getMtSlot(ev.value))
@@ -471,7 +470,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 	-- wrapper for input.waitForEvents that will retry for some cases
 	local ok, ev
 	local wait_deadline = TimeVal:now() + TimeVal:new{
-			sec = timeout_s, 
+			sec = timeout_s,
 			usec = timeout_us
 		}
 	while true do
@@ -490,7 +489,7 @@ function Input:waitEvent(timeout_us, timeout_s)
 							-- Do we really need to clear all setTimeout after
 							-- decided a gesture? FIXME
 							Input.timer_callbacks = {}
-							return Event:new("Gesture", 
+							return Event:new("Gesture",
 								GestureDetector:adjustGesCoordinate(touch_ges)
 							)
 						end -- EOF if touch_ges
@@ -520,13 +519,10 @@ function Input:waitEvent(timeout_us, timeout_s)
 	end
 
 	if ok and ev then
-		ev = self:eventAdjustHook(ev)
-		if G_debug_mode then
-			local log = ev.type.."|"..ev.code.."|"
-						..ev.value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
-			G_ev_log:write(log)
-			G_ev_log:flush()
+		if Dbg.is_on and ev then
+			Dbg:logEv(ev)
 		end
+		ev = self:eventAdjustHook(ev)
 		if ev.type == EV_KEY then
 			return self:handleKeyBoardEv(ev)
 		elseif ev.type == EV_ABS or ev.type == EV_SYN then

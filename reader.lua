@@ -1,13 +1,13 @@
 #!./kpdfview
 
 package.path = "./frontend/?.lua"
-require "ui/ui"
+require "ui/uimanager"
+require "ui/widget/filechooser"
+require "ui/widget/infomessage"
 require "ui/readerui"
-require "ui/filechooser"
-require "ui/infomessage"
-require "ui/button"
 require "document/document"
-
+require "settings"
+require "dbg"
 
 
 HomeMenu = InputContainer:new{
@@ -79,7 +79,7 @@ function HomeMenu:onTapShowMenu()
 		dimen = Screen:getSize(),
 		home_menu,
 	}
-	home_menu.close_callback = function () 
+	home_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
 
@@ -120,7 +120,7 @@ function showHomePage(path)
 			end
 			return true
 		end,
-		file_filter = function(filename) 
+		file_filter = function(filename)
 			if DocumentRegistry:getProvider(filename) then
 				return true
 			end
@@ -176,11 +176,8 @@ end
 
 local argidx = 1
 if ARGV[1] == "-d" then
-	argidx = argidx + 1	
-	G_debug_mode = true
-	os.execute("echo > ev.log")
-	-- create ev log file
-	G_ev_log = io.open("ev.log", "w")
+	Dbg:turnOn()
+	argidx = argidx + 1
 else
 	DEBUG = function() end
 end
