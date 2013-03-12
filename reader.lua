@@ -27,6 +27,32 @@ HomeMenu = InputContainer:new{
 }
 
 function HomeMenu:setUpdateItemTable()
+	function readHistDir(order_arg, re)
+		local pipe_out = io.popen("ls "..order_arg.." -1 ./history")
+		for f in pipe_out:lines() do
+			table.insert(re, {
+				dir = DocSettings:getPathFromHistory(f),
+				name = DocSettings:getNameFromHistory(f),
+			})
+		end
+	end
+
+	local hist_sub_item_table = {}
+	local last_files = {}
+	readHistDir("-c", last_files)
+	for _,v in pairs(last_files) do
+		table.insert(hist_sub_item_table, {
+			text = v.name,
+			callback = function()
+				showReader(v.dir .. "/" .. v.name)
+			end
+		})
+	end
+	table.insert(self.item_table, {
+		text = "Last documents",
+		sub_item_table = hist_sub_item_table,
+	})
+
 	table.insert(self.item_table, {
 		text = "Exit",
 		callback = function()
@@ -36,9 +62,8 @@ function HomeMenu:setUpdateItemTable()
 end
 
 function HomeMenu:onTapShowMenu()
-	if #self.item_table == 0 then
-		self:setUpdateItemTable()
-	end
+	self.item_table = {}
+	self:setUpdateItemTable()
 
 	local home_menu = Menu:new{
 		title = "Home menu",
