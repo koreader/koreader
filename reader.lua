@@ -12,6 +12,9 @@ require "document/document"
 
 HomeMenu = InputContainer:new{
 	item_table = {},
+	key_events = {
+		TapShowMenu = { {"Home"}, doc = "Show Home Menu"},
+	},
 	ges_events = {
 		TapShowMenu = {
 			GestureRange:new{
