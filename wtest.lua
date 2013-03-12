@@ -8,6 +8,10 @@ require "ui/infomessage"
 require "ui/confirmbox"
 require "document/document"
 
+
+-----------------------------------------------------
+-- widget that paints the grid on the background
+-----------------------------------------------------
 TestGrid = Widget:new{}
 
 function TestGrid:paintTo(bb)
@@ -25,7 +29,9 @@ function TestGrid:paintTo(bb)
 	end
 end
 
+-----------------------------------------------------
 -- we create a widget that paints a background:
+-----------------------------------------------------
 Background = InputContainer:new{
 	is_always_active = true, -- receive events when other dialogs are active
 	key_events = {
@@ -37,7 +43,13 @@ Background = InputContainer:new{
 	FrameContainer:new{
 		background = 3,
 		bordersize = 0,
-		dimen = Screen:getSize()
+		dimen = Screen:getSize(),
+		Widget:new{
+			dimen = {
+				w = Screen:getWidth(),
+				h = Screen:getHeight(),
+			}
+		},
 	}
 }
 
@@ -64,7 +76,9 @@ end
 
 
 
+-----------------------------------------------------
 -- example widget: a clock
+-----------------------------------------------------
 Clock = FrameContainer:new{
 	background = 0,
 	bordersize = 1,
@@ -96,6 +110,9 @@ function Clock:getTextWidget()
 	}
 end
 
+-----------------------------------------------------
+-- a confirmbox box widget
+-----------------------------------------------------
 Quiz = ConfirmBox:new{
 	text = "Tell me the truth, isn't it COOL?!",
 	width = 300,
@@ -108,6 +125,9 @@ Quiz = ConfirmBox:new{
 	end,
 }
 
+-----------------------------------------------------
+-- a menu widget
+-----------------------------------------------------
 menu_items = {
 	{text = "item1"},
 	{text = "item2"},
@@ -136,6 +156,9 @@ M = Menu:new{
 }
 
 
+-----------------------------------------------------
+-- a reader view widget
+-----------------------------------------------------
 readerwindow = CenterContainer:new{
 	dimen = Screen:getSize(),
 	FrameContainer:new{
@@ -151,6 +174,10 @@ reader = ReaderUI:new{
 }
 readerwindow[1][1] = reader
 
+
+-----------------------------------------------------------------------
+-- you may want to uncomment following show calls to see the changes
+-----------------------------------------------------------------------
 UIManager:show(Background:new())
 UIManager:show(TestGrid)
 UIManager:show(Clock:new())

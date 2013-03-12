@@ -15,6 +15,21 @@ function DocSettings:getHistoryPath(fullpath)
 	return "./history/["..basename:gsub("/","#").."] "..filename..".lua"
 end
 
+function DocSettings:getPathFromHistory(hist_name)
+	-- 1. select everything included in brackets
+	local s = string.match(hist_name,"%b[]")
+	-- 2. crop the bracket-sign from both sides
+	-- 3. and finally replace decorative signs '#' to dir-char '/'
+	return string.gsub(string.sub(s,2,-3),"#","/")
+end
+
+function DocSettings:getNameFromHistory(hist_name)
+	-- at first, search for path length
+	local s = string.len(string.match(hist_name,"%b[]"))
+	-- and return the rest of string without 4 last characters (".lua")
+	return string.sub(hist_name, s+2, -5)
+end
+
 function DocSettings:open(docfile)
 	local conf_path = nil
 	if docfile == ".reader" then

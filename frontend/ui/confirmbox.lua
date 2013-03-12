@@ -25,10 +25,18 @@ function ConfirmBox:init()
 
 	local ok_button = Button:new{
 		text = self.ok_text,
+		callback = function()
+			self.ok_callback()
+			UIManager:close(self)
+		end,
 	}
 	local cancel_button = Button:new{
 		text = self.cancel_text,
-		preselect = true
+		preselect = true,
+		callback = function()
+			self.cancel_callback()
+			UIManager:close(self)
+		end,
 	}
 
 	self.layout = { { ok_button, cancel_button } }

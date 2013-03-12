@@ -206,7 +206,7 @@ FrameContainer = WidgetContainer:new{
 }
 
 function FrameContainer:getSize()
-	local content_size =self[1]:getSize()
+	local content_size = self[1]:getSize()
 	return Geom:new{
 		w = content_size.w + ( self.margin + self.bordersize + self.padding ) * 2,
 		h = content_size.h + ( self.margin + self.bordersize + self.padding ) * 2
