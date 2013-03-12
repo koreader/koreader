@@ -20,6 +20,9 @@ if test "$1" == "--framework_stop"; then
 	/etc/init.d/framework stop
 fi
 
+# dismiss chrome bar
+lipc-set-prop com.lab126.pillow disableEnablePillow disable
+
 # stop cvm
 #killall -stop cvm
 
@@ -33,3 +36,7 @@ fi
 
 # always try to continue cvm
 killall -cont cvm || /etc/init.d/framework start
+
+# display chrome bar
+lipc-set-prop com.lab126.pillow disableEnablePillow enable
+
