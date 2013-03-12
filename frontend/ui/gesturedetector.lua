@@ -455,7 +455,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 		if ges.pos then
 			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
 		end
-		if ges.ges == "swipe" then
+		if ges.ges == "swipe" or ges.ges == "pan" then
 			if ges.direction == "down" then
 				ges.direction = "left"
 			elseif ges.direction == "up" then
