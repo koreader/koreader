@@ -31,7 +31,8 @@ ReaderView = OverlapGroup:new{
 	render_mode = 0, -- default to COLOR
 	-- Crengine view mode
 	view_mode = "page", -- default to page mode
-
+	hinting = true,
+	
 	-- visible area within current viewing page
 	visible_area = Geom:new{x = 0, y = 0},
 	-- dimen for current viewing page
@@ -148,7 +149,9 @@ function ReaderView:drawScrollPages(bb, x, y)
 			pos.y = pos.y + self.page_gap.height
 		end
 	end
-	UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
+	UIManager:scheduleIn(0, function()
+		self.ui:handleEvent(Event:new("HintPage", self.hinting))
+	end)
 end
 
 function ReaderView:drawPageGap(bb, x, y)
@@ -170,7 +173,9 @@ function ReaderView:drawSinglePage(bb, x, y)
 		self.state.rotation,
 		self.state.gamma,
 		self.render_mode)
-	UIManager:scheduleIn(0, function() self.ui:handleEvent(Event:new("HintPage")) end)
+	UIManager:scheduleIn(0, function()
+		self.ui:handleEvent(Event:new("HintPage", self.hinting))
+	end)
 end
 
 function ReaderView:drawPageView(bb, x, y)

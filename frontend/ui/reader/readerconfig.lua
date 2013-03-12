@@ -82,8 +82,11 @@ function ReaderConfig:onShowConfigMenu()
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
+		close_callback = function() 
+			self.ui:handleEvent(Event:new("RestoreHinting"))
+		end,
 	}
-
+	self.ui:handleEvent(Event:new("DisableHinting"))
 	UIManager:show(self.config_dialog)
 
 	return true
