@@ -368,7 +368,19 @@ function GestureDetector:panState(tev)
 				time = tev.timev,
 			}
 		end
+		DEBUG("pan release detected in slot", slot)
+		local release_pos = Geom:new{
+			x = self.last_tevs[slot].x,
+			y = self.last_tevs[slot].y,
+			w = 0, h = 0,
+		}
+		local pan_release = {
+			ges = "pan_release",
+			pos = release_pos,
+			time = tev.timev,
+		}
 		self:clearState(slot)
+		return pan_release
 	else
 		if self.states[slot] ~= self.panState then
 			self.states[slot] = self.panState
