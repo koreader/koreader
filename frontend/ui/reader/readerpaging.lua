@@ -100,6 +100,16 @@ function ReaderPaging:initGesListener()
 				rate = 4.0,
 			}
 		},
+		PanRelease = {
+			GestureRange:new{
+				ges = "pan_release",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				},
+			}
+		},
 	}
 end
 
@@ -128,43 +138,66 @@ end
 
 function ReaderPaging:onToggleFlipping()
 	self.view.flipping_visible = not self.view.flipping_visible
-	self.flipping_page = self.view.flipping_visible and self.current_page or nil
+	self.flipping_mode = self.view.flipping_visible
+	self.flipping_page = self.current_page
+	if self.flipping_mode then
+		self:updateOriginalPage(self.current_page)
+	end
+	UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderPaging:updateOriginalPage(page)
+	self.original_page = page
+end
+
+function ReaderPaging:updateFlippingPage(page)
+	self.flipping_page = page
+end
+
+function ReaderPaging:flipping(flipping_page, flipping_ges)
+	local read = flipping_page - 1
+	local unread = self.number_of_pages - flipping_page
+	local whole = self.number_of_pages
+	local rel_proportion = flipping_ges.distance / Screen:getWidth()
+	local abs_proportion = flipping_ges.distance / Screen:getHeight()
+	if flipping_ges.direction == "right" then
+		self:gotoPage(flipping_page - math.floor(read*rel_proportion))
+	elseif flipping_ges.direction == "left" then
+		self:gotoPage(flipping_page + math.floor(unread*rel_proportion))
+	elseif flipping_ges.direction == "down" then
+		self:gotoPage(flipping_page - math.floor(whole*abs_proportion))
+	elseif flipping_ges.direction == "up" then
+		self:gotoPage(flipping_page + math.floor(whole*abs_proportion))
+	end
 	UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:onSwipe(arg, ges)
-	if self.flipping_page == nil then
-		if ges.direction == "left" or ges.direction == "up" then
-			self:onPagingRel(1)
-		elseif ges.direction == "right" or ges.direction == "down" then
-			self:onPagingRel(-1)
-		end
-	elseif self.flipping_page then
-		self:gotoPage(self.flipping_page)
+	if self.flipping_mode then
+		self:flipping(self.flipping_page, ges)
+		self:updateFlippingPage(self.current_page)
+	elseif self.original_page then
+		self:gotoPage(self.original_page)
+		self:updateOriginalPage(nil)
+	elseif ges.direction == "left" or ges.direction == "up" then
+		self:onPagingRel(1)
+	elseif ges.direction == "right" or ges.direction == "down" then
+		self:onPagingRel(-1)
 	end
 	return true
 end
 
 function ReaderPaging:onPan(arg, ges)
-	if self.flipping_page then
-		local read = self.flipping_page - 1
-		local unread = self.number_of_pages - self.flipping_page
-		local whole = self.number_of_pages
-		local rel_proportion = ges.distance / Screen:getWidth()
-		local abs_proportion = ges.distance / Screen:getHeight()
-		if ges.direction == "right" then
-			self:gotoPage(self.flipping_page - math.floor(read*rel_proportion))
-		elseif ges.direction == "left" then
-			self:gotoPage(self.flipping_page + math.floor(unread*rel_proportion))
-		elseif ges.direction == "down" then
-			self:gotoPage(self.flipping_page - math.floor(whole*abs_proportion))
-		elseif ges.direction == "up" then
-			self:gotoPage(self.flipping_page + math.floor(whole*abs_proportion))
-		end
-		
-		UIManager:setDirty(self.view.dialog, "partial")
+	if self.flipping_mode then
+		self:flipping(self.flipping_page, ges)
 	end
 	return true
+end
+
+function ReaderPaging:onPanRelease(arg, ges)
+	if self.flipping_mode then
+		self:updateFlippingPage(self.current_page)
+	end
 end
 
 function ReaderPaging:onZoomModeUpdate(new_mode)
