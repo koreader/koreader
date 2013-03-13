@@ -140,6 +140,9 @@ FrameContainer = WidgetContainer:new{
 	radius = 0,
 	bordersize = 2,
 	padding = 5,
+	width = nil,
+	height = nil,
+	invert = false,
 }
 
 function FrameContainer:getSize()
@@ -152,19 +155,27 @@ end
 
 function FrameContainer:paintTo(bb, x, y)
 	local my_size = self:getSize()
+	local container_width = self.width or my_size.w
+	local container_height = self.height or my_size.h
 
+	--@TODO get rid of margin here?  13.03 2013 (houqp)
 	if self.background then
-		bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.background, self.radius)
+		bb:paintRoundedRect(x, y, container_width, container_height,
+						self.background, self.radius)
 	end
 	if self.bordersize > 0 then
 		bb:paintBorder(x + self.margin, y + self.margin,
-			my_size.w - self.margin * 2, my_size.h - self.margin * 2,
+			container_width - self.margin * 2,
+			container_height - self.margin * 2,
 			self.bordersize, self.color, self.radius)
 	end
 	if self[1] then
 		self[1]:paintTo(bb,
 			x + self.margin + self.bordersize + self.padding,
 			y + self.margin + self.bordersize + self.padding)
+	end
+	if self.invert then
+		bb:invertRect(x, y, container_width, container_height)
 	end
 end
 
@@ -234,7 +245,9 @@ an example for a key_event is this:
 it is suggested to reference configurable sequences from another table
 and store that table as configuration setting
 --]]
-InputContainer = WidgetContainer:new{}
+InputContainer = WidgetContainer:new{
+	vertical_align = "top",
+}
 
 function InputContainer:_init()
 	-- we need to do deep copy here
@@ -263,7 +276,12 @@ function InputContainer:paintTo(bb, x, y)
 	self.dimen.x = x
 	self.dimen.y = y
 	if self[1] then
-		return self[1]:paintTo(bb, x, y)
+		if self.vertical_align == "center" then
+			local content_size = self[1]:getSize()
+			self[1]:paintTo(bb, x, y + (self.dimen.h - content_size.h)/2)
+		else
+			self[1]:paintTo(bb, x, y)
+		end
 	end
 end
 
