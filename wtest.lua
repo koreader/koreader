@@ -4,8 +4,10 @@ require "ui/uimanager"
 require "ui/widget/menu"
 require "ui/widget/infomessage"
 require "ui/widget/confirmbox"
+require "ui/widget/touchmenu"
 require "document/document"
 require "ui/readerui"
+require "dbg"
 
 
 -----------------------------------------------------
@@ -174,15 +176,39 @@ reader = ReaderUI:new{
 readerwindow[1][1] = reader
 
 
+main_menu = TouchMenu:new{
+	title = "Document menu",
+	item_table = {
+		{
+			text = "item1",
+			callback = function()
+			end,
+		},
+		{
+			text = "item2",
+			callback = function()
+			end,
+		},
+		{
+			text = "item3",
+			callback = function()
+			end,
+		},
+	},
+}
+
+
+
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
 UIManager:show(Background:new())
 UIManager:show(TestGrid)
 UIManager:show(Clock:new())
-UIManager:show(M)
-UIManager:show(Quiz)
-UIManager:show(readerwindow)
+--UIManager:show(M)
+--UIManager:show(Quiz)
+--UIManager:show(readerwindow)
+UIManager:show(TouchMenu:new())
 UIManager:run()
 
 
