@@ -1,3 +1,4 @@
+require "ui/widget/image"
 
 ReaderDogear = RightContainer:new{}
 

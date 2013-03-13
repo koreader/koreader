@@ -1,4 +1,4 @@
-require "ui/config"
+require "ui/widget/config"
 
 Configurable = {}
 

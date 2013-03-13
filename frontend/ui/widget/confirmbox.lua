@@ -1,6 +1,6 @@
-require "ui/widget"
-require "ui/focusmanager"
-require "ui/button"
+require "ui/widget/container"
+require "ui/widget/focusmanager"
+require "ui/widget/button"
 
 --[[
 Widget that shows a message and OK/Cancel buttons
