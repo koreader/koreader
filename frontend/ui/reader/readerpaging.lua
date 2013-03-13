@@ -361,7 +361,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				self:gotoPage(state.page + 1, "scrolling")
+				if self.view.state.page == self.number_of_pages then break end
+				self:gotoPage(self.view.state.page + 1, "scrolling")
 				local state = self:getNextPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, state)
@@ -384,7 +385,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				self:gotoPage(state.page - 1, "scrolling")
+				if self.view.state.page == 1 then break end
+				self:gotoPage(self.view.state.page - 1, "scrolling")
 				local state = self:getPrevPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, 1, state)
