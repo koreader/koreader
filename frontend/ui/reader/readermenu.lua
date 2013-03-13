@@ -32,26 +32,6 @@ function ReaderMenu:initGesListener()
 end
 
 function ReaderMenu:setUpdateItemTable()
-	table.insert(self.item_table, {
-		text = "Screen rotate",
-		sub_item_table = {
-			{
-				text = "landscape",
-				callback = function()
-					self.ui:handleEvent(
-						Event:new("SetScreenMode", "landscape"))
-				end
-			},
-			{
-				text = "portrait",
-				callback = function()
-					self.ui:handleEvent(
-						Event:new("SetScreenMode", "portrait"))
-				end
-			},
-		}
-	})
-
 	for _, widget in pairs(self.registered_widgets) do
 		widget:addToMainMenu(self.item_table)
 	end
@@ -59,7 +39,7 @@ function ReaderMenu:setUpdateItemTable()
 	table.insert(self.item_table, {
 		text = "Return to file manager",
 		callback = function()
-			self.ui:handleEvent(Event:new("RestoreScreenMode", 
+			self.ui:handleEvent(Event:new("RestoreScreenMode",
 				G_reader_settings:readSetting("screen_mode") or "portrait"))
 			UIManager:close(self.menu_container)
 			self.ui:onClose()
@@ -83,7 +63,7 @@ function ReaderMenu:onShowMenu()
 		dimen = Screen:getSize(),
 		main_menu,
 	}
-	main_menu.close_callback = function () 
+	main_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
 	-- maintain a reference to menu_container
