@@ -178,25 +178,37 @@ UnderlineContainer = WidgetContainer:new{
 	linesize = 2,
 	padding = 1,
 	color = 0,
+	vertical_align = "top",
 }
 
 function UnderlineContainer:getSize()
 	if self.dimen then
 		return { w = self.dimen.w, h = self.dimen.h }
 	else
-		local contentSize = self[1]:getSize()
-		return { 
-			w = contentSize.w, 
-			h = contentSize.h + self.linesize + self.padding
-		}
+		return self:getContentSize()
 	end
 end
 
+function UnderlineContainer:getContentSize()
+	local contentSize = self[1]:getSize()
+	return {
+		w = contentSize.w,
+		h = contentSize.h + self.linesize + self.padding
+	}
+end
+
 function UnderlineContainer:paintTo(bb, x, y)
-	local content_size = self:getSize()
-	self[1]:paintTo(bb, x, y)
-	bb:paintRect(x, y + content_size.h - self.linesize,
-		content_size.w, self.linesize, self.color)
+	local container_size = self:getSize()
+	local content_size = self:getContentSize()
+	local p_y = y
+	if self.vertical_align == "center" then
+		p_y = (container_size.h - content_size.h) / 2 + y
+	elseif self.vertical_align == "bottom" then
+		p_y = (container_size.h - content_size.h) + y
+	end
+	self[1]:paintTo(bb, x, p_y)
+	bb:paintRect(x, y + container_size.h - self.linesize,
+		container_size.w, self.linesize, self.color)
 end
 
 
