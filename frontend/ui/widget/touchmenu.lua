@@ -13,6 +13,7 @@ TouchMenuItem = InputContainer:new{
 	item = nil,
 	dimen = nil,
 	face = Font:getFace("cfont", 22),
+	parent = nil,
 }
 
 function TouchMenuItem:init()
@@ -44,10 +45,10 @@ end
 
 function TouchMenuItem:onTapSelect(arg, ges)
 	self.item_frame.invert = true
-	UIManager:setDirty(self.menu, "partial")
+	UIManager:setDirty(self.parent, "partial")
 	UIManager:scheduleIn(0.5, function()
 		self.item_frame.invert = false
-		UIManager:setDirty(self.menu, "partial")
+		UIManager:setDirty(self.parent, "partial")
 	end)
 	self.menu:onMenuSelect(self.item)
 	return true
@@ -60,7 +61,7 @@ TouchMenuBar widget
 TouchMenuBar = InputContainer:new{
 	height = 70,
 	width = Screen:getWidth(),
-	icon = {},
+	icons = {},
 	-- touch menu that holds the bar, used for trigger repaint on icons
 	parent = nil,
 	menu = nil,
@@ -73,13 +74,15 @@ function TouchMenuBar:init()
 		w = self.width,
 		h = self.height,
 	}
+
+	self.bar_icon_group = HorizontalGroup:new{}
+
 	local icon_sep = LineWidget:new{
 		dimen = Geom:new{
 			w = 2,
 			h = self.height,
 		}
 	}
-
 
 	local icon_span = HorizontalSpan:new{ width = 20 }
 
@@ -129,16 +132,12 @@ function TouchMenuBar:init()
 			self.menu:switchMenuTab(k)
 		end
 
+		table.insert(self.bar_icon_group, self.icon_widgets[k])
+		table.insert(self.bar_icon_group, icon_sep)
+
 		start_seg = _start_seg
 		end_seg = _end_seg
 	end
-
-	self.bar_icon_group = HorizontalGroup:new{
-		self.icon_widgets[1],
-		icon_sep,
-		self.icon_widgets[2],
-		icon_sep,
-	}
 
 	self[1] = FrameContainer:new{
 		bordersize = 0,
@@ -158,7 +157,6 @@ end
 TouchMenu widget
 --]]
 TouchMenu = InputContainer:new{
-	title = "Untitled",
 	item_table = {},
 	item_height = 50,
 	bordersize = 2,
@@ -253,6 +251,7 @@ function TouchMenu:updateItems()
 					w = item_width,
 					h = self.item_height,
 				},
+				parent = self.parent,
 			}
 			table.insert(self.item_group, item_tmp)
 			-- insert split line
