@@ -8,7 +8,7 @@ require "ui/font"
 
 --[[
 Widget that displays a shortcut icon for menu item
-]]
+--]]
 ItemShortCutIcon = WidgetContainer:new{
 	dimen = Geom:new{ w = 22, h = 22 },
 	key = nil,

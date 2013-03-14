@@ -40,7 +40,7 @@ function ConfirmBox:init()
 	}
 
 	self.layout = { { ok_button, cancel_button } }
-	self.selected.x = 2 -- Cancel is default 
+	self.selected.x = 2 -- Cancel is default
 
 	self[1] = CenterContainer:new{
 		dimen = Screen:getSize(),
