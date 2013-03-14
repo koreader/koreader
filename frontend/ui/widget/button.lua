@@ -2,7 +2,7 @@ require "ui/widget/container"
 
 --[[
 a button widget
-]]
+--]]
 Button = InputContainer:new{
 	text = nil, -- mandatory
 	preselect = false,
