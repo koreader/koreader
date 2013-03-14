@@ -59,7 +59,7 @@ end
 TouchMenuBar widget
 --]]
 TouchMenuBar = InputContainer:new{
-	height = 70,
+	height = 70 * Screen:getDPI()/167,
 	width = Screen:getWidth(),
 	icons = {},
 	-- touch menu that holds the bar, used for trigger repaint on icons
@@ -158,9 +158,9 @@ TouchMenu widget
 --]]
 TouchMenu = InputContainer:new{
 	item_table = {},
-	item_height = 50,
-	bordersize = 2,
-	padding = 5,
+	item_height = 50 * Screen:getDPI()/167,
+	bordersize = 2 * Screen:getDPI()/167,
+	padding = 5 * Screen:getDPI()/167,
 	width = Screen:getWidth(),
 	height = nil,
 	page = 1,
@@ -292,9 +292,13 @@ end
 
 function TouchMenu:onMenuSelect(item)
 	if item.sub_item_table == nil then
-		self:closeMenu()
 		if item.callback then
-			item.callback()
+			-- put stuff in scheduler so we can See
+			-- the effect of inverted menu item
+			UIManager:scheduleIn(0.1, function()
+				self:closeMenu()
+				item.callback()
+			end)
 		end
 	end
 	return true
