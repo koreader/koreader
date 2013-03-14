@@ -10,7 +10,7 @@ end
 
 function ReaderTypeset:onReadSettings(config)
 	self.css = config:readSetting("css")
-	if self.css and self.css ~= "" then 
+	if self.css and self.css ~= "" then
 		self.ui.document:setStyleSheet(self.css)
 	else
 		self.ui.document:setStyleSheet("")
@@ -56,7 +56,7 @@ function ReaderTypeset:genStyleSheetMenu()
 		if lfs.attributes("./data/"..f, "mode") == "file" and string.match(f, "%.css$") then
 			table.insert(file_list, {
 				text = f,
-				callback = function() 
+				callback = function()
 					self:setStyleSheet("./data/"..f)
 				end
 			})
@@ -98,9 +98,9 @@ function ReaderTypeset:toggleEmbeddedStyleSheet()
 	self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
-function ReaderTypeset:addToMainMenu(item_table)
+function ReaderTypeset:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
-	table.insert(item_table, {
+	table.insert(tab_item_table.typeset, {
 		text = self.css_menu_title,
 		sub_item_table = self:genStyleSheetMenu(),
 	})

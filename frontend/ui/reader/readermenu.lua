@@ -1,11 +1,24 @@
+require "ui/widget/menu"
+require "ui/widget/touchmenu"
+
 ReaderMenu = InputContainer:new{
 	_name = "ReaderMenu",
-	item_table = {},
+	tab_item_table = nil,
 	registered_widgets = {},
 }
 
 function ReaderMenu:init()
-	self.item_table = {}
+	self.tab_item_table = {
+		main = {
+			icon = "resources/icons/appbar.pokeball.png",
+		},
+		navi = {
+			icon = "resources/icons/appbar.page.corner.bookmark.png",
+		},
+		typeset = {
+			icon = "resources/icons/appbar.page.text.png",
+		},
+	}
 	self.registered_widgets = {}
 
 	if Device:hasKeyboard() then
@@ -33,10 +46,10 @@ end
 
 function ReaderMenu:setUpdateItemTable()
 	for _, widget in pairs(self.registered_widgets) do
-		widget:addToMainMenu(self.item_table)
+		widget:addToMainMenu(self.tab_item_table)
 	end
 
-	table.insert(self.item_table, {
+	table.insert(self.tab_item_table.main, {
 		text = "Return to file manager",
 		callback = function()
 			self.ui:handleEvent(Event:new("RestoreScreenMode",
@@ -48,21 +61,40 @@ function ReaderMenu:setUpdateItemTable()
 end
 
 function ReaderMenu:onShowMenu()
-	if #self.item_table == 0 then
+	if #self.tab_item_table.main == 0 then
 		self:setUpdateItemTable()
 	end
 
-	local main_menu = Menu:new{
-		title = "Document menu",
-		item_table = self.item_table,
-		width = Screen:getWidth() - 100,
-	}
+	local main_menu = nil
+	if Device:isTouchDevice() then
+		main_menu = TouchMenu:new{
+			item_table = {
+				self.tab_item_table.navi,
+				self.tab_item_table.typeset,
+				self.tab_item_table.main,
+			},
+		}
+	else
+		main_menu = Menu:new{
+			title = "Document menu",
+			item_table = {},
+			width = Screen:getWidth() - 100,
+		}
+
+		for _,item_table in pairs(self.tab_item_table) do
+			for k,v in ipairs(item_table) do
+				table.insert(main_menu.item_table, v)
+			end
+		end
+	end
 
 	local menu_container = CenterContainer:new{
 		ignore = "height",
 		dimen = Screen:getSize(),
 		main_menu,
 	}
+
+	main_menu.parent = menu_container
 	main_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end

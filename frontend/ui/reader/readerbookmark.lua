@@ -119,9 +119,9 @@ function ReaderBookmark:onShowBookmark()
 	return true
 end
 
-function ReaderBookmark:addToMainMenu(item_table)
+function ReaderBookmark:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
-	table.insert(item_table, {
+	table.insert(tab_item_table.navi, {
 		text = self.bm_menu_title,
 		callback = function()
 			self:onShowBookmark()
