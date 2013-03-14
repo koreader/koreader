@@ -322,7 +322,11 @@ function ReaderPaging:updateLastPageState(state, blank_area, offset)
 	local visible_area = Geom:new{x = 0, y = 0}
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x, visible_area.y = state.visible_area.x, state.visible_area.y
-	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	if state.page == self.number_of_pages then
+		visible_area:offsetWithin(state.page_area, offset.x, offset.y)
+	else
+		visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	end
 	-- shrink blank area by the height of visible area
 	blank_area.h = blank_area.h - visible_area.h
 	state.visible_area = visible_area
@@ -334,7 +338,11 @@ function ReaderPaging:updateFirstPageState(state, blank_area, offset)
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x = state.page_area.x
 	visible_area.y = state.visible_area.y + state.visible_area.h - visible_area.h
-	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	if state.page == 1 then
+		visible_area:offsetWithin(state.page_area, offset.x, offset.y)
+	else
+		visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	end
 	-- shrink blank area by the height of visible area
 	blank_area.h = blank_area.h - visible_area.h
 	state.visible_area = visible_area
@@ -361,8 +369,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				if self.view.state.page == self.number_of_pages then break end
-				self:gotoPage(self.view.state.page + 1, "scrolling")
+				if self.current_page == self.number_of_pages then break end
+				self:gotoPage(self.current_page + 1, "scrolling")
 				local state = self:getNextPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, state)
@@ -385,8 +393,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				if self.view.state.page == 1 then break end
-				self:gotoPage(self.view.state.page - 1, "scrolling")
+				if self.current_page == 1 then break end
+				self:gotoPage(self.current_page - 1, "scrolling")
 				local state = self:getPrevPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, 1, state)
