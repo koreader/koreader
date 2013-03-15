@@ -157,7 +157,11 @@ end
 TouchMenu widget
 --]]
 TouchMenu = InputContainer:new{
-	item_table = {},
+	tab_item_table = {},
+	-- for returnning in multi-level menus
+	item_table_stack = {},
+	item_table = nil,
+	--@TODO replace getDPI call    (houqp)
 	item_height = 50 * Screen:getDPI()/167,
 	bordersize = 2 * Screen:getDPI()/167,
 	padding = 5 * Screen:getDPI()/167,
@@ -167,7 +171,7 @@ TouchMenu = InputContainer:new{
 	max_per_page = 10,
 	-- for UIManager:setDirty
 	parent = nil,
-	cur_tab = 1,
+	cur_tab = -1,
 	close_callback = nil,
 }
 
@@ -191,7 +195,7 @@ function TouchMenu:init()
 	}
 
 	local icons = {}
-	for _,v in ipairs(self.item_table) do
+	for _,v in ipairs(self.tab_item_table) do
 		table.insert(icons, v.icon)
 	end
 	self.bar = TouchMenuBar:new{
@@ -210,6 +214,7 @@ function TouchMenu:init()
 		self.item_group
 	}
 
+	self:switchMenuTab(1)
 	self:updateItems()
 end
 
@@ -217,7 +222,7 @@ function TouchMenu:_recalculateDimen()
 	self.dimen.w = self.width
 	-- if height not given, dynamically calculate it
 	if not self.height then
-		self.dimen.h = (#self.item_table[self.cur_tab] + 2) * self.item_height
+		self.dimen.h = (#self.item_table + 2) * self.item_height
 						+ self.bar:getSize().h
 	else
 		self.dimen.h = self.height
@@ -238,14 +243,13 @@ function TouchMenu:updateItems()
 	table.insert(self.item_group, self.bar)
 
 	local item_width = self.dimen.w - self.padding*2 - self.bordersize*2
-	local item_table = self.item_table[self.cur_tab]
 
 	for c = 1, self.perpage do
 		-- calculate index in item_table
 		local i = (self.page - 1) * self.perpage + c
-		if i <= #item_table then
+		if i <= #self.item_table then
 			local item_tmp = TouchMenuItem:new{
-				item = item_table[i],
+				item = self.item_table[i],
 				menu = self,
 				dimen = Geom:new{
 					w = item_width,
@@ -281,6 +285,7 @@ end
 function TouchMenu:switchMenuTab(tab_num)
 	if self.cur_tab ~= tab_num then
 		self.cur_tab = tab_num
+		self.item_table = self.tab_item_table[tab_num]
 		self:updateItems()
 	end
 	return true
@@ -300,6 +305,10 @@ function TouchMenu:onMenuSelect(item)
 				item.callback()
 			end)
 		end
+	else
+		table.insert(self.item_table_stack, self.item_table)
+		self.item_table = item.sub_item_table
+		self:updateItems()
 	end
 	return true
 end

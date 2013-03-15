@@ -68,7 +68,7 @@ function ReaderMenu:onShowMenu()
 	local main_menu = nil
 	if Device:isTouchDevice() then
 		main_menu = TouchMenu:new{
-			item_table = {
+			tab_item_table = {
 				self.tab_item_table.navi,
 				self.tab_item_table.typeset,
 				self.tab_item_table.main,
