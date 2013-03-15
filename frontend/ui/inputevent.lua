@@ -120,6 +120,7 @@ an interface to get input events
 ]]
 Input = {
 	event_map = {},
+	modifiers = {},
 	rotation_map = {
 		[0] = {},
 		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
@@ -286,6 +287,8 @@ function Input:init()
 		elseif dev_mod == "KindleTouch" then
 			input.open("/dev/input/event2") -- Home button
 			input.open("/dev/input/event3") -- touchscreen
+			-- KT does have one key!
+			self.event_map[102] = "Home"
 			-- update event hook
 			function Input:eventAdjustHook(ev)
 				if ev.type == EV_ABS then
