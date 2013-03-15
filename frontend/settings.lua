@@ -64,14 +64,22 @@ function DocSettings:delSetting(key)
 	self.data[key] = nil
 end
 
-function dump(data)
+function dump(data, max_lv)
 	local out = {}
-	DocSettings:_serialize(data, out, 0)
+	DocSettings:_serialize(data, out, 0, max_lv)
 	return table.concat(out)
 end
 
 -- simple serialization function, won't do uservalues, functions, loops
-function DocSettings:_serialize(what, outt, indent)
+function DocSettings:_serialize(what, outt, indent, max_lv)
+	if not max_lv then
+		max_lv = math.huge
+	end
+
+	if indent > max_lv then
+		return
+	end
+
 	if type(what) == "table" then
 		local didrun = false
 		table.insert(outt, "{")
@@ -82,9 +90,9 @@ function DocSettings:_serialize(what, outt, indent)
 			table.insert(outt, "\n")
 			table.insert(outt, string.rep("\t", indent+1))
 			table.insert(outt, "[")
-			self:_serialize(k, outt, indent+1)
+			self:_serialize(k, outt, indent+1, max_lv)
 			table.insert(outt, "] = ")
-			self:_serialize(v, outt, indent+1)
+			self:_serialize(v, outt, indent+1, max_lv)
 			didrun = true
 		end
 		if didrun then
