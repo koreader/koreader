@@ -359,6 +359,8 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = last_page_state.visible_area.h - self.overlap
 		}
+		-- scroll down offset should always be greater than 0
+		if offset.y < 0 then offset.y = 0 end
 		local state = self:updateLastPageState(last_page_state, blank_area, offset)
 		--DEBUG("updated state", state)
 		self.view.page_states = {}
@@ -383,6 +385,8 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = -first_page_state.visible_area.h + self.overlap
 		}
+		-- scroll up offset should always be less than 0
+		if offset.y > 0 then offset.y = 0 end
 		local state = self:updateFirstPageState(first_page_state, blank_area, offset)
 		--DEBUG("updated state", state)
 		self.view.page_states = {}
