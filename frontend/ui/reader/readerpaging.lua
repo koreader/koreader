@@ -359,7 +359,11 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = last_page_state.visible_area.h - self.overlap
 		}
-		-- scroll down offset should always be greater than 0
+		-- Scroll down offset should always be greater than 0
+		-- otherwise if offset is less than 0 the height of blank area will be
+		-- larger than 0 even if page area is much larger than visible area, 
+		-- which will trigger the drawing of next page leaving part of current
+		-- page undrawn. This should also be true for scroll up offset.
 		if offset.y < 0 then offset.y = 0 end
 		local state = self:updateLastPageState(last_page_state, blank_area, offset)
 		--DEBUG("updated state", state)
