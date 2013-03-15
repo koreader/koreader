@@ -8,8 +8,8 @@ Button with a big icon image! Designed for touch device
 IconButton = InputContainer:new{
 	icon_file = "resources/info-confirm.png",
 	dimen = nil,
-	-- parent is used for UIManager:setDirty, so we can trigger repaint
-	parent = nil,
+	-- show_parent is used for UIManager:setDirty, so we can trigger repaint
+	show_parent = nil,
 	callback = function() end,
 }
 
@@ -18,7 +18,7 @@ function IconButton:init()
 		file = self.icon_file
 	}
 
-	self.parent = self.parent or self
+	self.show_parent = self.show_parent or self
 	self.dimen = self.image:getSize()
 
 	self:initGesListener()
@@ -39,12 +39,12 @@ end
 
 function IconButton:onTapClickButton()
 	self.image.invert = true
-	UIManager:setDirty(self.parent, "partial")
+	UIManager:setDirty(self.show_parent, "partial")
 	-- make sure button reacts before doing callback
 	UIManager:scheduleIn(0.1, function()
 		self.callback()
 		self.image.invert = false
-		UIManager:setDirty(self.parent, "partial")
+		UIManager:setDirty(self.show_parent, "partial")
 	end)
 	return true
 end

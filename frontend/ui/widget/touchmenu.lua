@@ -13,7 +13,7 @@ TouchMenuItem = InputContainer:new{
 	item = nil,
 	dimen = nil,
 	face = Font:getFace("cfont", 22),
-	parent = nil,
+	show_parent = nil,
 }
 
 function TouchMenuItem:init()
@@ -45,10 +45,10 @@ end
 
 function TouchMenuItem:onTapSelect(arg, ges)
 	self.item_frame.invert = true
-	UIManager:setDirty(self.parent, "partial")
+	UIManager:setDirty(self.show_parent, "partial")
 	UIManager:scheduleIn(0.5, function()
 		self.item_frame.invert = false
-		UIManager:setDirty(self.parent, "partial")
+		UIManager:setDirty(self.show_parent, "partial")
 	end)
 	self.menu:onMenuSelect(self.item)
 	return true
@@ -63,12 +63,12 @@ TouchMenuBar = InputContainer:new{
 	width = Screen:getWidth(),
 	icons = {},
 	-- touch menu that holds the bar, used for trigger repaint on icons
-	parent = nil,
+	show_parent = nil,
 	menu = nil,
 }
 
 function TouchMenuBar:init()
-	self.parent = self.parent or self
+	self.show_parent = self.show_parent or self
 
 	self.dimen = Geom:new{
 		w = self.width,
@@ -94,7 +94,7 @@ function TouchMenuBar:init()
 	end_seg = start_seg
 	for k, v in ipairs(self.icons) do
 		local ib = IconButton:new{
-			parent = self.parent,
+			show_parent = self.show_parent,
 			icon_file = v,
 			callback = nil,
 		}
@@ -170,16 +170,16 @@ TouchMenu = InputContainer:new{
 	page = 1,
 	max_per_page = 10,
 	-- for UIManager:setDirty
-	parent = nil,
+	show_parent = nil,
 	cur_tab = -1,
 	close_callback = nil,
 }
 
 function TouchMenu:init()
-	self.parent = self.parent or self
+	self.show_parent = self.show_parent or self
 	if not self.close_callback then
 		self.close_callback = function()
-			UIManager:close(self.parent)
+			UIManager:close(self.show_parent)
 		end
 	end
 
@@ -201,7 +201,7 @@ function TouchMenu:init()
 	self.bar = TouchMenuBar:new{
 		width = self.width - self.padding * 2 - self.bordersize * 2,
 		icons = icons,
-		parent = self.parent,
+		show_parent = self.show_parent,
 		menu = self,
 	}
 
@@ -213,7 +213,7 @@ function TouchMenu:init()
 		IconButton:new{
 			invert = true,
 			icon_file = "resources/icons/appbar.chevron.left.png",
-			parent = self.parent,
+			show_parent = self.show_parent,
 			callback = function()
 				self:backToUpperMenu()
 			end,
@@ -270,7 +270,7 @@ function TouchMenu:updateItems()
 					w = item_width,
 					h = self.item_height,
 				},
-				parent = self.parent,
+				show_parent = self.show_parent,
 			}
 			table.insert(self.item_group, item_tmp)
 			-- insert split line

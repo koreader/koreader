@@ -80,7 +80,7 @@ function ReaderMenu:onShowMenu()
 				self.tab_item_table.typeset,
 				self.tab_item_table.main,
 			},
-			parent = menu_container,
+			show_parent = menu_container,
 		}
 	else
 		main_menu = Menu:new{
