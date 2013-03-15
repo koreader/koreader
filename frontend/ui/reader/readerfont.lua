@@ -211,9 +211,9 @@ function ReaderFont:setFont(face)
 	end
 end
 
-function ReaderFont:addToMainMenu(item_table)
+function ReaderFont:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
-	table.insert(item_table, {
+	table.insert(tab_item_table.typeset, {
 		text = self.font_menu_title,
 		sub_item_table = self.face_table,
 	})

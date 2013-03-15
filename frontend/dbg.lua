@@ -21,16 +21,18 @@ function Dbg:logEv(ev)
 end
 
 function DEBUG(...)
+	LvDEBUG(math.huge, ...)
+end
+
+function LvDEBUG(lv, ...)
 	local line = ""
 	for i,v in ipairs({...}) do
 		if type(v) == "table" then
-			line = line .. " " .. dump(v)
+			line = line .. " " .. dump(v, lv)
 		else
 			line = line .. " " .. tostring(v)
 		end
 	end
 	print("#"..line)
 end
-
-
 

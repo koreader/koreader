@@ -176,24 +176,70 @@ reader = ReaderUI:new{
 readerwindow[1][1] = reader
 
 
-main_menu = TouchMenu:new{
+touch_menu = TouchMenu:new{
 	title = "Document menu",
-	item_table = {
+	tab_item_table = {
 		{
-			text = "item1",
-			callback = function()
-			end,
+			icon = "resources/icons/appbar.pokeball.png",
+			{
+				text = "item1",
+				callback = function()
+				end,
+			},
+			{
+				text = "item2",
+				callback = function()
+				end,
+			},
+			{
+				text = "item3",
+				callback = function()
+				end,
+			},
+			{
+				text = "item4",
+				callback = function()
+				end,
+			},
+			{
+				text = "item5",
+				callback = function()
+				end,
+			},
+			{
+				text = "item6",
+				callback = function()
+				end,
+			},
+			{
+				text = "item7",
+				callback = function()
+				end,
+			},
+			{
+				text = "item8",
+				callback = function()
+				end,
+			},
+			{
+				text = "item9",
+				callback = function()
+				end,
+			},
 		},
 		{
-			text = "item2",
-			callback = function()
-			end,
-		},
-		{
-			text = "item3",
-			callback = function()
-			end,
-		},
+			icon = "resources/icons/appbar.page.corner.bookmark.png",
+			{
+				text = "item10",
+				callback = function()
+				end,
+			},
+			{
+				text = "item11",
+				callback = function()
+				end,
+			},
+		}
 	},
 }
 
@@ -204,11 +250,11 @@ main_menu = TouchMenu:new{
 -----------------------------------------------------------------------
 UIManager:show(Background:new())
 UIManager:show(TestGrid)
-UIManager:show(Clock:new())
+--UIManager:show(Clock:new())
 --UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
-UIManager:show(TouchMenu:new())
+UIManager:show(touch_menu)
 UIManager:run()
 
 
