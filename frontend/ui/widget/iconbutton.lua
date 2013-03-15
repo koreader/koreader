@@ -40,11 +40,12 @@ end
 function IconButton:onTapClickButton()
 	self.image.invert = true
 	UIManager:setDirty(self.parent, "partial")
-	UIManager:scheduleIn(0.5, function()
+	-- make sure button reacts before doing callback
+	UIManager:scheduleIn(0.1, function()
+		self.callback()
 		self.image.invert = false
 		UIManager:setDirty(self.parent, "partial")
 	end)
-	self.callback()
 	return true
 end
 

@@ -205,13 +205,28 @@ function TouchMenu:init()
 		menu = self,
 	}
 
-	self.item_group = VerticalGroup:new{}
+	self.item_group = VerticalGroup:new{
+		align = "left",
+	}
+
+	self.footer = HorizontalGroup:new{
+		IconButton:new{
+			invert = true,
+			icon_file = "resources/icons/appbar.chevron.left.png",
+			parent = self.parent,
+			callback = function()
+				self:backToUpperMenu()
+			end,
+		}
+	}
 
 	self[1] = FrameContainer:new{
 		padding = self.padding,
 		bordersize = self.bordersize,
 		background = 0,
-		self.item_group
+		-- menubar and footer will be inserted in
+		-- item_group in updateItems
+		self.item_group,
 	}
 
 	self:switchMenuTab(1)
@@ -260,23 +275,30 @@ function TouchMenu:updateItems()
 			table.insert(self.item_group, item_tmp)
 			-- insert split line
 			if c ~= self.perpage then
-				table.insert(self.item_group, LineWidget:new{
-					style = "dashed",
-					dimen = Geom:new{
-						w = item_width - 20,
-						h = 1,
+				table.insert(self.item_group, HorizontalGroup:new{
+					-- pad with spacing
+					HorizontalSpan:new{width = 10},
+					LineWidget:new{
+						style = "dashed",
+						dimen = Geom:new{
+							w = item_width - 20,
+							h = 1,
+						}
 					}
 				})
 			end
 		else
 			-- item not enough to fill the whole page, break out of loop
-			table.insert(self.item_group,
-				VerticalSpan:new{
-					width = self.item_height
-				})
-			break
+			--table.insert(self.item_group,
+				--VerticalSpan:new{
+					--width = self.item_height
+				--})
+			--break
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
+
+	table.insert(self.item_group, VerticalSpan:new{width = 2})
+	table.insert(self.item_group, self.footer)
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664
 	UIManager.repaint_all = true
@@ -288,7 +310,13 @@ function TouchMenu:switchMenuTab(tab_num)
 		self.item_table = self.tab_item_table[tab_num]
 		self:updateItems()
 	end
-	return true
+end
+
+function TouchMenu:backToUpperMenu()
+	if #self.item_table_stack ~= 0 then
+		self.item_table = table.remove(self.item_table_stack)
+		self:updateItems()
+	end
 end
 
 function TouchMenu:closeMenu()

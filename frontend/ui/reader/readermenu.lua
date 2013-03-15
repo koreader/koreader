@@ -65,14 +65,22 @@ function ReaderMenu:onShowMenu()
 		self:setUpdateItemTable()
 	end
 
+	local menu_container = CenterContainer:new{
+		name = "haha",
+		ignore = "height",
+		dimen = Screen:getSize(),
+	}
+
 	local main_menu = nil
 	if Device:isTouchDevice() then
 		main_menu = TouchMenu:new{
+			name = "wocao",
 			tab_item_table = {
 				self.tab_item_table.navi,
 				self.tab_item_table.typeset,
 				self.tab_item_table.main,
 			},
+			parent = menu_container,
 		}
 	else
 		main_menu = Menu:new{
@@ -88,19 +96,13 @@ function ReaderMenu:onShowMenu()
 		end
 	end
 
-	local menu_container = CenterContainer:new{
-		ignore = "height",
-		dimen = Screen:getSize(),
-		main_menu,
-	}
-
-	main_menu.parent = menu_container
 	main_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
+
+	menu_container[1] = main_menu
 	-- maintain a reference to menu_container
 	self.menu_container = menu_container
-
 	UIManager:show(menu_container)
 
 	return true
