@@ -59,7 +59,7 @@ end
 TouchMenuBar widget
 --]]
 TouchMenuBar = InputContainer:new{
-	height = 70 * Screen:getDPI()/167,
+	height = scaleByDPI(70),
 	width = Screen:getWidth(),
 	icons = {},
 	-- touch menu that holds the bar, used for trigger repaint on icons
@@ -79,12 +79,12 @@ function TouchMenuBar:init()
 
 	local icon_sep = LineWidget:new{
 		dimen = Geom:new{
-			w = 2,
+			w = scaleByDPI(2),
 			h = self.height,
 		}
 	}
 
-	local icon_span = HorizontalSpan:new{ width = 20 }
+	local icon_span = HorizontalSpan:new{ width = scaleByDPI(20) }
 
 	-- build up image widget for menu icon bar
 	self.icon_widgets = {}
@@ -113,7 +113,7 @@ function TouchMenuBar:init()
 			self.bar_sep = LineWidget:new{
 				dimen = Geom:new{
 					w = self.width,
-					h = 2,
+					h = scaleByDPI(2),
 				},
 				empty_segments = {
 					{
@@ -162,9 +162,9 @@ TouchMenu = InputContainer:new{
 	item_table_stack = {},
 	item_table = nil,
 	--@TODO replace getDPI call    (houqp)
-	item_height = 50 * Screen:getDPI()/167,
-	bordersize = 2 * Screen:getDPI()/167,
-	padding = 5 * Screen:getDPI()/167,
+	item_height = scaleByDPI(50),
+	bordersize = scaleByDPI(2),
+	padding = scaleByDPI(5),
 	width = Screen:getWidth(),
 	height = nil,
 	page = 1,
@@ -277,7 +277,7 @@ function TouchMenu:updateItems()
 			if c ~= self.perpage then
 				table.insert(self.item_group, HorizontalGroup:new{
 					-- pad with spacing
-					HorizontalSpan:new{width = 10},
+					HorizontalSpan:new{width = scaleByDPI(10)},
 					LineWidget:new{
 						style = "dashed",
 						dimen = Geom:new{
@@ -297,7 +297,7 @@ function TouchMenu:updateItems()
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 
-	table.insert(self.item_group, VerticalSpan:new{width = 2})
+	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664
