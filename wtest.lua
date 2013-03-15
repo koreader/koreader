@@ -178,7 +178,7 @@ readerwindow[1][1] = reader
 
 touch_menu = TouchMenu:new{
 	title = "Document menu",
-	item_table = {
+	tab_item_table = {
 		{
 			icon = "resources/icons/appbar.pokeball.png",
 			{
