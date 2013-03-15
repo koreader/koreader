@@ -120,6 +120,7 @@ an interface to get input events
 ]]
 Input = {
 	event_map = {},
+	modifiers = {},
 	rotation_map = {
 		[0] = {},
 		[1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
