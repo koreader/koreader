@@ -5,7 +5,7 @@ require "ui/reader/readerdogear"
 ReaderView = OverlapGroup:new{
 	_name = "ReaderView",
 	document = nil,
-	
+
 	-- single page state
 	state = {
 		page = 0,
@@ -23,8 +23,8 @@ ReaderView = OverlapGroup:new{
 	page_states = {},
 	scroll_mode = "vertical",
 	page_gap = {
-		width = 8 * Screen:getDPI()/167,
-		height = 8 * Screen:getDPI()/167,
+		width = scaleByDPI(8),
+		height = scaleByDPI(8),
 		color = 8,
 	},
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
@@ -32,14 +32,14 @@ ReaderView = OverlapGroup:new{
 	-- Crengine view mode
 	view_mode = "page", -- default to page mode
 	hinting = true,
-	
+
 	-- visible area within current viewing page
 	visible_area = Geom:new{x = 0, y = 0},
 	-- dimen for current viewing page
 	page_area = Geom:new{},
 	-- dimen for area to dim
 	dim_area = Geom:new{w = 0, h = 0},
-	-- has footer 
+	-- has footer
 	footer_visible = false,
 	-- has dogear
 	dogear_visible = false,
@@ -73,7 +73,7 @@ function ReaderView:paintTo(bb, x, y)
 	else
 		self:drawPageSurround(bb, x, y)
 	end
-	
+
 	-- draw page content
 	if self.ui.document.info.has_pages then
 		if self.page_scroll then
@@ -88,16 +88,16 @@ function ReaderView:paintTo(bb, x, y)
 			self:drawScrollView(bb, x, y)
 		end
 	end
-	
+
 	-- dim last read area
-	if self.document.view_mode ~= "page" 
+	if self.document.view_mode ~= "page"
 	and self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
 		bb:dimRect(
 			self.dim_area.x, self.dim_area.y,
 			self.dim_area.w, self.dim_area.h
 		)
 	end
-	
+
 	-- paint dogear
 	if self.dogear_visible then
 		self.dogear:paintTo(bb, x, y)
@@ -119,12 +119,12 @@ end
 function ReaderView:drawPageSurround(bb, x, y)
 	if self.dimen.h > self.visible_area.h then
 		bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
-		bb:paintRect(x, y + self.dimen.h - self.state.offset.y - 1, 
+		bb:paintRect(x, y + self.dimen.h - self.state.offset.y - 1,
 			self.dimen.w, self.state.offset.y + 1, self.outer_page_color)
 	end
 	if self.dimen.w > self.visible_area.w then
 		bb:paintRect(x, y, self.state.offset.x, self.dimen.h, self.outer_page_color)
-		bb:paintRect(x + self.dimen.w - self.state.offset.x - 1, y, 
+		bb:paintRect(x + self.dimen.w - self.state.offset.x - 1, y,
 			self.state.offset.x + 1, self.dimen.h, self.outer_page_color)
 	end
 end
@@ -143,7 +143,7 @@ function ReaderView:drawScrollPages(bb, x, y)
 			state.gamma,
 			self.render_mode)
 		pos.y = pos.y + state.visible_area.h
-		-- draw page gap if not the last part 
+		-- draw page gap if not the last part
 		if page ~= #self.page_states then
 			self:drawPageGap(bb, pos.x, pos.y)
 			pos.y = pos.y + self.page_gap.height

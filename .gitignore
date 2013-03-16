@@ -14,6 +14,7 @@ git-rev
 kpdfview
 slider_watcher
 *.o
+tags
 
 kindlepdfviewer-*.zip
 
@@ -46,3 +47,4 @@ popen-noshell/popen_noshell_examples.c
 popen-noshell/popen_noshell_tests.c
 popen-noshell/popen_noshell_tests.cpp
 
+kpvcrlib/libcrengine.so

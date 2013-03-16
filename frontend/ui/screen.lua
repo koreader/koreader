@@ -18,7 +18,7 @@
 --[[
 Codes for rotation modes:
 
-1 for no rotation, 
+1 for no rotation,
 2 for landscape with bottom on the right side of screen, etc.
 
            2
@@ -26,8 +26,8 @@ Codes for rotation modes:
    | +----------+ |
    | |          | |
    | | Freedom! | |
-   | |          | |  
-   | |          | |  
+   | |          | |
+   | |          | |
  3 | |          | | 1
    | |          | |
    | |          | |
@@ -97,6 +97,15 @@ end
 
 function Screen:getDPI()
 	return Device:getModel() == "KindlePaperWhite" and 212 or 167
+end
+
+function Screen:scaleByDPI(px)
+	return (px * self:getDPI()/167)
+end
+
+-- make a shortcut to Screen:scaleByDPI
+function scaleByDPI(px)
+	return Screen:scaleByDPI(px)
 end
 
 function Screen:getPitch()

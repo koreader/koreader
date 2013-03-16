@@ -159,7 +159,9 @@ function ConfigOption:init()
 	local default_option_height = 50
 	local default_option_padding = 15
 	local vertical_group = VerticalGroup:new{}
-	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding * Screen:getDPI()/167 })
+	table.insert(vertical_group, VerticalSpan:new{
+		width = scaleByDPI(default_option_padding),
+	})
 	for c = 1, #self.options do
 		if self.options[c].show ~= false then
 			local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
@@ -168,9 +170,9 @@ function ConfigOption:init()
 			local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
 			local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
 			local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
-			local option_height = (self.options[c].height and self.options[c].height or default_option_height) * Screen:getDPI()/167
+			local option_height = scaleByDPI(self.options[c].height and self.options[c].height or default_option_height)
 			local items_spacing = HorizontalSpan:new{
-				width = (self.options[c].spacing and self.options[c].spacing or default_items_spacing) * Screen:getDPI()/167
+				width = scaleByDPI(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
 			}
 			local horizontal_group = HorizontalGroup:new{}
 			if self.options[c].name_text then
