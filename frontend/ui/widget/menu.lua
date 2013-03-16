@@ -218,7 +218,7 @@ Menu = FocusManager:new{
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Enter",
 	},
-	item_table_stack = {},
+	item_table_stack = nil,
 	is_enable_shortcut = true,
 
 	item_dimen = nil,
@@ -256,6 +256,7 @@ function Menu:_recalculateDimen()
 end
 
 function Menu:init()
+	self.item_table_stack = {}
 	self:_recalculateDimen()
 	self.page = 1
 
