@@ -29,6 +29,19 @@ HomeMenu = InputContainer:new{
 	},
 }
 
+function exitReader()
+	G_reader_settings:close()
+
+	input.closeAll()
+
+	if util.isEmulated() ==0 then
+		if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
+			-- send double menu key press events to trigger screen refresh
+			os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+		end
+	end
+end
+
 function HomeMenu:setUpdateItemTable()
 	function readHistDir(order_arg, re)
 		local pipe_out = io.popen("ls "..order_arg.." -1 ./history")
@@ -59,7 +72,7 @@ function HomeMenu:setUpdateItemTable()
 	table.insert(self.item_table, {
 		text = "Exit",
 		callback = function()
-			os.exit(0)
+			exitReader()
 		end
 	})
 end
@@ -96,6 +109,7 @@ function showReader(file, pass)
 		return
 	end
 
+	G_reader_settings:saveSetting("lastfile", file)
 	local reader = ReaderUI:new{
 		dialog = readerwindow,
 		dimen = Screen:getSize(),
@@ -214,11 +228,4 @@ else
 	return showusage()
 end
 
-input.closeAll()
 
-if util.isEmulated()==0 then
-	if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
-		-- send double menu key press events to trigger screen refresh
-		os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
-	end
-end
