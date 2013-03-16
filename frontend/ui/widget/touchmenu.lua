@@ -159,7 +159,7 @@ TouchMenu widget
 TouchMenu = InputContainer:new{
 	tab_item_table = {},
 	-- for returnning in multi-level menus
-	item_table_stack = {},
+	item_table_stack = nil,
 	item_table = nil,
 	--@TODO replace getDPI call    (houqp)
 	item_height = scaleByDPI(50),
@@ -215,15 +215,20 @@ function TouchMenu:init()
 		align = "left",
 	}
 
+	self.footer_page = TextWidget:new{
+		face = Font:getFace("ffont", 20),
+		text = "",
+	}
 	self.footer = HorizontalGroup:new{
 		IconButton:new{
 			invert = true,
-			icon_file = "resources/icons/appbar.chevron.left.png",
+			icon_file = "resources/icons/appbar.chevron.up.png",
 			show_parent = self.show_parent,
 			callback = function()
 				self:backToUpperMenu()
 			end,
-		}
+		},
+		self.footer_page,
 	}
 
 	self[1] = FrameContainer:new{
@@ -305,6 +310,7 @@ function TouchMenu:updateItems()
 
 	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
+	self.footer_page.text = "Page "..self.page.."/"..self.page_num
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664
 	UIManager.repaint_all = true
@@ -312,6 +318,10 @@ end
 
 function TouchMenu:switchMenuTab(tab_num)
 	if self.cur_tab ~= tab_num then
+		-- it's like getting a new menu everytime we switch tab!
+		self.page = 1
+		-- clear item table stack
+		self.item_table_stack = {}
 		self.cur_tab = tab_num
 		self.item_table = self.tab_item_table[tab_num]
 		self:updateItems()
