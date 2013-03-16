@@ -228,4 +228,4 @@ else
 	return showusage()
 end
 
-
+exitReader()
