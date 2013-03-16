@@ -193,6 +193,12 @@ function TouchMenu:init()
 			}
 		}
 	}
+	self.ges_events.Swipe = {
+		GestureRange:new{
+			ges = "swipe",
+			range = self.dimen,
+		}
+	}
 
 	local icons = {}
 	for _,v in ipairs(self.tab_item_table) do
@@ -321,6 +327,30 @@ end
 
 function TouchMenu:closeMenu()
 	self.close_callback()
+end
+
+function TouchMenu:onNextPage()
+	if self.page < self.page_num then
+		self.page = self.page + 1
+		self:updateItems()
+	end
+	return true
+end
+
+function TouchMenu:onPrevPage()
+	if self.page > 1 then
+		self.page = self.page - 1
+		self:updateItems()
+	end
+	return true
+end
+
+function TouchMenu:onSwipe(arg, ges_ev)
+	if ges_ev.direction == "left" then
+		self:onNextPage()
+	elseif ges_ev.direction == "right" then
+		self:onPrevPage()
+	end
 end
 
 function TouchMenu:onMenuSelect(item)
