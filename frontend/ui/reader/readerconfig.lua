@@ -1,4 +1,4 @@
-require "ui/config"
+require "ui/widget/config"
 
 Configurable = {}
 
@@ -47,7 +47,7 @@ end
 
 ReaderConfig = InputContainer:new{
 	dimen = Geom:new{
-		x = 0, 
+		x = 0,
 		y = 7*Screen:getHeight()/8,
 		w = Screen:getWidth(),
 		h = Screen:getHeight()/8,
@@ -82,8 +82,11 @@ function ReaderConfig:onShowConfigMenu()
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
+		close_callback = function()
+			self.ui:handleEvent(Event:new("RestoreHinting"))
+		end,
 	}
-
+	self.ui:handleEvent(Event:new("DisableHinting"))
 	UIManager:show(self.config_dialog)
 
 	return true

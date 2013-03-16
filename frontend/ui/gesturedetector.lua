@@ -78,7 +78,7 @@ GestureDetector = {
 	DOUBLE_TAP_DISTANCE = 50,
 	TWO_FINGER_TAP_REGION = 20,
 	PAN_THRESHOLD = 50,
-	
+
 	-- states are stored in separated slots
 	states = {},
 	track_ids = {},
@@ -272,7 +272,7 @@ function GestureDetector:tapState(tev)
 				y = tev.y,
 				timev = tev.timev,
 			}
-			
+
 			if self.last_taps[slot] ~= nil and
 			self:isDoubleTap(self.last_taps[slot], cur_tap) then
 				-- it is a double tap
@@ -282,10 +282,10 @@ function GestureDetector:tapState(tev)
 				DEBUG("double tap detected in slot", slot)
 				return ges_ev
 			end
-	
+
 			-- set current tap to last tap
 			self.last_taps[slot] = cur_tap
-	
+
 			DEBUG("set up tap timer")
 			-- deadline should be calculated by adding current tap time and the interval
 			local deadline = cur_tap.timev + TimeVal:new{
@@ -305,7 +305,7 @@ function GestureDetector:tapState(tev)
 			-- we are already at the end of touch event
 			-- so reset the state
 			self:clearState(slot)
-		else 
+		else
 			-- last tev in this slot is cleared by last two finger tap
 			self:clearState(slot)
 			return {
@@ -368,7 +368,19 @@ function GestureDetector:panState(tev)
 				time = tev.timev,
 			}
 		end
+		DEBUG("pan release detected in slot", slot)
+		local release_pos = Geom:new{
+			x = self.last_tevs[slot].x,
+			y = self.last_tevs[slot].y,
+			w = 0, h = 0,
+		}
+		local pan_release = {
+			ges = "pan_release",
+			pos = release_pos,
+			time = tev.timev,
+		}
 		self:clearState(slot)
+		return pan_release
 	else
 		if self.states[slot] ~= self.panState then
 			self.states[slot] = self.panState
@@ -399,7 +411,7 @@ end
 
 function GestureDetector:holdState(tev, hold)
 	DEBUG("in hold state...")
-	local slot = tev.slot 
+	local slot = tev.slot
 	-- when we switch to hold state, we pass additional param "hold"
 	if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
 		self.states[slot] = self.holdState
@@ -443,7 +455,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 		if ges.pos then
 			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
 		end
-		if ges.ges == "swipe" then
+		if ges.ges == "swipe" or ges.ges == "pan" then
 			if ges.direction == "down" then
 				ges.direction = "left"
 			elseif ges.direction == "up" then

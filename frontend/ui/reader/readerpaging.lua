@@ -6,38 +6,38 @@ ReaderPaging = InputContainer:new{
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = true,
-	overlap = 20 * Screen:getDPI()/167,
+	overlap = scaleByDPI(20),
 }
 
 function ReaderPaging:init()
 	if Device:hasKeyboard() then
 		self.key_events = {
-			GotoNextPage = { 
+			GotoNextPage = {
 				{Input.group.PgFwd}, doc = "go to next page",
 				event = "GotoPageRel", args = 1 },
-			GotoPrevPage = { 
+			GotoPrevPage = {
 				{Input.group.PgBack}, doc = "go to previous page",
 				event = "GotoPageRel", args = -1 },
 
-			GotoFirst = { 
+			GotoFirst = {
 				{"1"}, doc = "go to start", event = "GotoPercent", args = 0},
-			Goto11 = { 
+			Goto11 = {
 				{"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
-			Goto22 = { 
+			Goto22 = {
 				{"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
-			Goto33 = { 
+			Goto33 = {
 				{"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
-			Goto44 = { 
+			Goto44 = {
 				{"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
-			Goto55 = { 
+			Goto55 = {
 				{"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
-			Goto66 = { 
+			Goto66 = {
 				{"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
-			Goto77 = { 
+			Goto77 = {
 				{"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
-			Goto88 = { 
+			Goto88 = {
 				{"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
-			GotoLast = { 
+			GotoLast = {
 				{"0"}, doc = "go to end", event = "GotoPercent", args = 100},
 		}
 	end
@@ -62,7 +62,7 @@ function ReaderPaging:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = 0, 
+					x = 0,
 					y = Screen:getHeight()/4,
 					w = Screen:getWidth()/4,
 					h = 5*Screen:getHeight()/8,
@@ -100,6 +100,16 @@ function ReaderPaging:initGesListener()
 				rate = 4.0,
 			}
 		},
+		PanRelease = {
+			GestureRange:new{
+				ges = "pan_release",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				},
+			}
+		},
 	}
 end
 
@@ -128,43 +138,67 @@ end
 
 function ReaderPaging:onToggleFlipping()
 	self.view.flipping_visible = not self.view.flipping_visible
-	self.flipping_page = self.view.flipping_visible and self.current_page or nil
+	self.flipping_mode = self.view.flipping_visible
+	self.flipping_page = self.current_page
+	if self.flipping_mode then
+		self:updateOriginalPage(self.current_page)
+	end
+	self.ui:handleEvent(Event:new("SetHinting", not self.flipping_mode))
+	UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderPaging:updateOriginalPage(page)
+	self.original_page = page
+end
+
+function ReaderPaging:updateFlippingPage(page)
+	self.flipping_page = page
+end
+
+function ReaderPaging:flipping(flipping_page, flipping_ges)
+	local read = flipping_page - 1
+	local unread = self.number_of_pages - flipping_page
+	local whole = self.number_of_pages
+	local rel_proportion = flipping_ges.distance / Screen:getWidth()
+	local abs_proportion = flipping_ges.distance / Screen:getHeight()
+	if flipping_ges.direction == "right" then
+		self:gotoPage(flipping_page - math.floor(read*rel_proportion))
+	elseif flipping_ges.direction == "left" then
+		self:gotoPage(flipping_page + math.floor(unread*rel_proportion))
+	elseif flipping_ges.direction == "down" then
+		self:gotoPage(flipping_page - math.floor(whole*abs_proportion))
+	elseif flipping_ges.direction == "up" then
+		self:gotoPage(flipping_page + math.floor(whole*abs_proportion))
+	end
 	UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:onSwipe(arg, ges)
-	if self.flipping_page == nil then
-		if ges.direction == "left" or ges.direction == "up" then
-			self:onPagingRel(1)
-		elseif ges.direction == "right" or ges.direction == "down" then
-			self:onPagingRel(-1)
-		end
-	elseif self.flipping_page then
-		self:gotoPage(self.flipping_page)
+	if self.flipping_mode then
+		self:flipping(self.flipping_page, ges)
+		self:updateFlippingPage(self.current_page)
+	elseif self.original_page then
+		self:gotoPage(self.original_page)
+		self:updateOriginalPage(nil)
+	elseif ges.direction == "left" or ges.direction == "up" then
+		self:onPagingRel(1)
+	elseif ges.direction == "right" or ges.direction == "down" then
+		self:onPagingRel(-1)
 	end
 	return true
 end
 
 function ReaderPaging:onPan(arg, ges)
-	if self.flipping_page then
-		local read = self.flipping_page - 1
-		local unread = self.number_of_pages - self.flipping_page
-		local whole = self.number_of_pages
-		local rel_proportion = ges.distance / Screen:getWidth()
-		local abs_proportion = ges.distance / Screen:getHeight()
-		if ges.direction == "right" then
-			self:gotoPage(self.flipping_page - math.floor(read*rel_proportion))
-		elseif ges.direction == "left" then
-			self:gotoPage(self.flipping_page + math.floor(unread*rel_proportion))
-		elseif ges.direction == "down" then
-			self:gotoPage(self.flipping_page - math.floor(whole*abs_proportion))
-		elseif ges.direction == "up" then
-			self:gotoPage(self.flipping_page + math.floor(whole*abs_proportion))
-		end
-		
-		UIManager:setDirty(self.view.dialog, "partial")
+	if self.flipping_mode then
+		self:flipping(self.flipping_page, ges)
 	end
 	return true
+end
+
+function ReaderPaging:onPanRelease(arg, ges)
+	if self.flipping_mode then
+		self:updateFlippingPage(self.current_page)
+	end
 end
 
 function ReaderPaging:onZoomModeUpdate(new_mode)
@@ -288,7 +322,11 @@ function ReaderPaging:updateLastPageState(state, blank_area, offset)
 	local visible_area = Geom:new{x = 0, y = 0}
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x, visible_area.y = state.visible_area.x, state.visible_area.y
-	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	if state.page == self.number_of_pages then
+		visible_area:offsetWithin(state.page_area, offset.x, offset.y)
+	else
+		visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	end
 	-- shrink blank area by the height of visible area
 	blank_area.h = blank_area.h - visible_area.h
 	state.visible_area = visible_area
@@ -300,7 +338,11 @@ function ReaderPaging:updateFirstPageState(state, blank_area, offset)
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x = state.page_area.x
 	visible_area.y = state.visible_area.y + state.visible_area.h - visible_area.h
-	visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	if state.page == 1 then
+		visible_area:offsetWithin(state.page_area, offset.x, offset.y)
+	else
+		visible_area = visible_area:shrinkInside(state.page_area, offset.x, offset.y)
+	end
 	-- shrink blank area by the height of visible area
 	blank_area.h = blank_area.h - visible_area.h
 	state.visible_area = visible_area
@@ -317,6 +359,12 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = last_page_state.visible_area.h - self.overlap
 		}
+		-- Scroll down offset should always be greater than 0
+		-- otherwise if offset is less than 0 the height of blank area will be
+		-- larger than 0 even if page area is much larger than visible area,
+		-- which will trigger the drawing of next page leaving part of current
+		-- page undrawn. This should also be true for scroll up offset.
+		if offset.y < 0 then offset.y = 0 end
 		local state = self:updateLastPageState(last_page_state, blank_area, offset)
 		--DEBUG("updated state", state)
 		self.view.page_states = {}
@@ -327,7 +375,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				self:gotoPage(state.page + 1, "scrolling")
+				if self.current_page == self.number_of_pages then break end
+				self:gotoPage(self.current_page + 1, "scrolling")
 				local state = self:getNextPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, state)
@@ -340,6 +389,8 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = -first_page_state.visible_area.h + self.overlap
 		}
+		-- scroll up offset should always be less than 0
+		if offset.y > 0 then offset.y = 0 end
 		local state = self:updateFirstPageState(first_page_state, blank_area, offset)
 		--DEBUG("updated state", state)
 		self.view.page_states = {}
@@ -350,7 +401,8 @@ function ReaderPaging:onScrollPageRel(diff)
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
-				self:gotoPage(state.page - 1, "scrolling")
+				if self.current_page == 1 then break end
+				self:gotoPage(self.current_page - 1, "scrolling")
 				local state = self:getPrevPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, 1, state)

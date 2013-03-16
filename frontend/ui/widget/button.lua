@@ -1,8 +1,8 @@
-require "ui/widget"
+require "ui/widget/container"
 
 --[[
 a button widget
-]]
+--]]
 Button = InputContainer:new{
 	text = nil, -- mandatory
 	preselect = false,
@@ -23,6 +23,9 @@ function Button:init()
 		face = Font:getFace(self.text_font_face, self.text_font_size)
 	}
 	local text_size = text_widget:getSize()
+	if self.width == nil then
+		self.width = text_size.w
+	end
 	-- set FrameContainer content
 	self[1] = FrameContainer:new{
 		margin = self.margin,

@@ -1,4 +1,5 @@
 require "math"
+require "ui/widget/container"
 
 --[[
 BBoxWidget shows a bbox for page cropping

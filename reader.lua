@@ -1,17 +1,20 @@
 #!./kpdfview
 
 package.path = "./frontend/?.lua"
-require "ui/ui"
+require "ui/uimanager"
+require "ui/widget/filechooser"
+require "ui/widget/infomessage"
 require "ui/readerui"
-require "ui/filechooser"
-require "ui/infomessage"
-require "ui/button"
 require "document/document"
-
+require "settings"
+require "dbg"
 
 
 HomeMenu = InputContainer:new{
 	item_table = {},
+	key_events = {
+		TapShowMenu = { {"Home"}, doc = "Show Home Menu"},
+	},
 	ges_events = {
 		TapShowMenu = {
 			GestureRange:new{
@@ -26,19 +29,57 @@ HomeMenu = InputContainer:new{
 	},
 }
 
+function exitReader()
+	G_reader_settings:close()
+
+	input.closeAll()
+
+	if util.isEmulated() ==0 then
+		if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
+			-- send double menu key press events to trigger screen refresh
+			os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+		end
+	end
+end
+
 function HomeMenu:setUpdateItemTable()
+	function readHistDir(order_arg, re)
+		local pipe_out = io.popen("ls "..order_arg.." -1 ./history")
+		for f in pipe_out:lines() do
+			table.insert(re, {
+				dir = DocSettings:getPathFromHistory(f),
+				name = DocSettings:getNameFromHistory(f),
+			})
+		end
+	end
+
+	local hist_sub_item_table = {}
+	local last_files = {}
+	readHistDir("-c", last_files)
+	for _,v in pairs(last_files) do
+		table.insert(hist_sub_item_table, {
+			text = v.name,
+			callback = function()
+				showReader(v.dir .. "/" .. v.name)
+			end
+		})
+	end
+	table.insert(self.item_table, {
+		text = "Last documents",
+		sub_item_table = hist_sub_item_table,
+	})
+
 	table.insert(self.item_table, {
 		text = "Exit",
 		callback = function()
-			os.exit(0)
+			exitReader()
 		end
 	})
 end
 
 function HomeMenu:onTapShowMenu()
-	if #self.item_table == 0 then
-		self:setUpdateItemTable()
-	end
+	self.item_table = {}
+	self:setUpdateItemTable()
 
 	local home_menu = Menu:new{
 		title = "Home menu",
@@ -51,7 +92,7 @@ function HomeMenu:onTapShowMenu()
 		dimen = Screen:getSize(),
 		home_menu,
 	}
-	home_menu.close_callback = function () 
+	home_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
 
@@ -68,6 +109,7 @@ function showReader(file, pass)
 		return
 	end
 
+	G_reader_settings:saveSetting("lastfile", file)
 	local reader = ReaderUI:new{
 		dialog = readerwindow,
 		dimen = Screen:getSize(),
@@ -92,7 +134,7 @@ function showHomePage(path)
 			end
 			return true
 		end,
-		file_filter = function(filename) 
+		file_filter = function(filename)
 			if DocumentRegistry:getProvider(filename) then
 				return true
 			end
@@ -148,11 +190,8 @@ end
 
 local argidx = 1
 if ARGV[1] == "-d" then
-	argidx = argidx + 1	
-	G_debug_mode = true
-	os.execute("echo > ev.log")
-	-- create ev log file
-	G_ev_log = io.open("ev.log", "w")
+	Dbg:turnOn()
+	argidx = argidx + 1
 else
 	DEBUG = function() end
 end
@@ -175,7 +214,7 @@ local last_file = G_reader_settings:readSetting("lastfile")
 --87712cf0e43fed624f8a9f610be42b1fe174b9fe
 
 
-if ARGV[argidx] then
+if ARGV[argidx] and ARGV[argidx] ~= "" then
 	if lfs.attributes(ARGV[argidx], "mode") == "directory" then
 		showHomePage(ARGV[argidx])
 	elseif lfs.attributes(ARGV[argidx], "mode") == "file" then
@@ -189,11 +228,4 @@ else
 	return showusage()
 end
 
-input.closeAll()
-
-if util.isEmulated()==0 then
-	if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
-		-- send double menu key press events to trigger screen refresh
-		os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
-	end
-end
+exitReader()

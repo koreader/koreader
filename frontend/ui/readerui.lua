@@ -1,4 +1,3 @@
-require "ui/ui"
 require "ui/reader/readerview"
 require "ui/reader/readerzooming"
 require "ui/reader/readerpanning"
@@ -15,6 +14,7 @@ require "ui/reader/readercropping"
 require "ui/reader/readerkopt"
 require "ui/reader/readercopt"
 require "ui/reader/readerscreenshot"
+require "ui/reader/readerhinting"
 
 --[[
 This is an abstraction for a reader interface
@@ -132,6 +132,14 @@ function ReaderUI:init()
 			document = self.document,
 		}
 		table.insert(self, cropper)
+		-- hinting controller
+		local hinter = ReaderHinting:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self,
+			document = self.document,
+		}
+		table.insert(self, hinter)
 	else
 		-- make sure we load document first before calling any callback
 		table.insert(self.postInitCallback, function()

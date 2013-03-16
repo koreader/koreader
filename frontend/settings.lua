@@ -15,6 +15,21 @@ function DocSettings:getHistoryPath(fullpath)
 	return "./history/["..basename:gsub("/","#").."] "..filename..".lua"
 end
 
+function DocSettings:getPathFromHistory(hist_name)
+	-- 1. select everything included in brackets
+	local s = string.match(hist_name,"%b[]")
+	-- 2. crop the bracket-sign from both sides
+	-- 3. and finally replace decorative signs '#' to dir-char '/'
+	return string.gsub(string.sub(s,2,-3),"#","/")
+end
+
+function DocSettings:getNameFromHistory(hist_name)
+	-- at first, search for path length
+	local s = string.len(string.match(hist_name,"%b[]"))
+	-- and return the rest of string without 4 last characters (".lua")
+	return string.sub(hist_name, s+2, -5)
+end
+
 function DocSettings:open(docfile)
 	local conf_path = nil
 	if docfile == ".reader" then
@@ -49,26 +64,22 @@ function DocSettings:delSetting(key)
 	self.data[key] = nil
 end
 
-function dump(data)
+function dump(data, max_lv)
 	local out = {}
-	DocSettings:_serialize(data, out, 0)
+	DocSettings:_serialize(data, out, 0, max_lv)
 	return table.concat(out)
 end
 
-function DEBUG(...)
-	local line = ""
-	for i,v in ipairs({...}) do
-		if type(v) == "table" then
-			line = line .. " " .. dump(v)
-		else
-			line = line .. " " .. tostring(v)
-		end
-	end
-	print("#"..line)
-end
-
 -- simple serialization function, won't do uservalues, functions, loops
-function DocSettings:_serialize(what, outt, indent)
+function DocSettings:_serialize(what, outt, indent, max_lv)
+	if not max_lv then
+		max_lv = math.huge
+	end
+
+	if indent > max_lv then
+		return
+	end
+
 	if type(what) == "table" then
 		local didrun = false
 		table.insert(outt, "{")
@@ -79,9 +90,9 @@ function DocSettings:_serialize(what, outt, indent)
 			table.insert(outt, "\n")
 			table.insert(outt, string.rep("\t", indent+1))
 			table.insert(outt, "[")
-			self:_serialize(k, outt, indent+1)
+			self:_serialize(k, outt, indent+1, max_lv)
 			table.insert(outt, "] = ")
-			self:_serialize(v, outt, indent+1)
+			self:_serialize(v, outt, indent+1, max_lv)
 			didrun = true
 		end
 		if didrun then

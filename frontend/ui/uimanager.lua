@@ -1,9 +1,8 @@
 require "ui/geometry"
 require "ui/device"
 require "ui/inputevent"
-require "ui/widget"
 require "ui/screen"
-require "settings" -- for DEBUG(), TODO: put DEBUG() somewhere else
+require "debug"
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -25,7 +24,7 @@ UIManager = {
 	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
 	FULL_REFRESH_COUNT = 6,
 	refresh_count = 0,
-	
+
 	_running = true,
 	_window_stack = {},
 	_execution_stack = {},
@@ -156,7 +155,7 @@ function UIManager:run()
 	while self._running do
 		local now = { util.gettime() }
 		local wait_until = self:checkTasks()
-		
+
 		--DEBUG("---------------------------------------------------")
 		--DEBUG("exec stack", self._execution_stack)
 		--DEBUG("window stack", self._window_stack)
@@ -181,19 +180,19 @@ function UIManager:run()
 				end
 				if self._dirty[widget.widget] == "full" then
 					force_full_refresh = true
-				end 
+				end
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
 				-- trigger repaint
 				dirty = true
 			end
 		end
-		
+
 		if self.full_refresh then
 			dirty = true
 			force_full_refresh = true
 		end
-		
+
 		self.repaint_all = false
 		self.full_refresh = false
 
@@ -214,9 +213,9 @@ function UIManager:run()
 			-- reset refresh_type
 			self.refresh_type = 1
 		end
-		
+
 		self:checkTasks()
-		
+
 		-- wait for next event
 		-- note that we will skip that if in the meantime we have tasks that are ready to run
 		local input_event = nil

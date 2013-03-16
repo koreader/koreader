@@ -1,4 +1,4 @@
-require "ui/menu"
+require "ui/widget/menu"
 
 FileChooser = Menu:new{
 	height = Screen:getHeight(),

@@ -1,4 +1,4 @@
-require "ui/notification"
+require "ui/widget/notification"
 
 ReaderBookmark = InputContainer:new{
 	bm_menu_title = "Bookmarks",
@@ -89,7 +89,7 @@ function ReaderBookmark:onShowBookmark()
 	local bm_menu = Menu:new{
 		title = "Bookmarks",
 		item_table = self.bookmarks,
-		width = Screen:getWidth()-20, 
+		width = Screen:getWidth()-20,
 		height = Screen:getHeight(),
 	}
 	-- buid up menu widget method as closure
@@ -111,7 +111,7 @@ function ReaderBookmark:onShowBookmark()
 		dimen = Screen:getSize(),
 		bm_menu,
 	}
-	bm_menu.close_callback = function() 
+	bm_menu.close_callback = function()
 		UIManager:close(menu_container)
 	end
 
@@ -119,9 +119,9 @@ function ReaderBookmark:onShowBookmark()
 	return true
 end
 
-function ReaderBookmark:addToMainMenu(item_table)
+function ReaderBookmark:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
-	table.insert(item_table, {
+	table.insert(tab_item_table.navi, {
 		text = self.bm_menu_title,
 		callback = function()
 			self:onShowBookmark()
@@ -154,7 +154,7 @@ function ReaderBookmark:addBookmark(pn_or_xp)
 		return self:isBookmarkInSequence(a, b)
 	end)
 	return true
-end 
+end
 
 function ReaderBookmark:isBookmarkInSequence(a, b)
 	return a.page < b.page

@@ -81,7 +81,7 @@ function ReaderToc:onShowToc()
 		title = "Table of Contents",
 		item_table = self.toc,
 		ui = self.ui,
-		width = Screen:getWidth()-20, 
+		width = Screen:getWidth()-20,
 		height = Screen:getHeight(),
 	}
 	function toc_menu:onMenuChoice(item)
@@ -92,7 +92,7 @@ function ReaderToc:onShowToc()
 		dimen = Screen:getSize(),
 		toc_menu,
 	}
-	toc_menu.close_callback = function() 
+	toc_menu.close_callback = function()
 		UIManager:close(menu_container)
 	end
 
@@ -100,9 +100,9 @@ function ReaderToc:onShowToc()
 	return true
 end
 
-function ReaderToc:addToMainMenu(item_table)
+function ReaderToc:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
-	table.insert(item_table, {
+	table.insert(tab_item_table.navi, {
 		text = self.toc_menu_title,
 		callback = function()
 			self:onShowToc()

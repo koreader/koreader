@@ -130,7 +130,7 @@ function CreDocument:engineInit()
 	if not engine_initilized then
 		-- initialize cache
 		cre.initCache(1024*1024*64)
-		
+
 		-- we need to initialize the CRE font list
 		local fonts = Font:getFontList()
 		for _k, _v in ipairs(fonts) do

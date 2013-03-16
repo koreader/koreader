@@ -1,12 +1,13 @@
-require "ui/widget"
-require "ui/bbox"
+require "ui/widget/group"
+require "ui/widget/bbox"
+require "ui/widget/button"
 
 PageCropDialog = VerticalGroup:new{
 	ok_text = "OK",
 	cancel_text = "Cancel",
 	ok_callback = function() end,
 	cancel_callback = function() end,
-	button_width = math.floor(70*Screen:getDPI()/167),
+	button_width = math.floor(scaleByDPI(70)),
 }
 
 function PageCropDialog:init()
@@ -63,6 +64,8 @@ function ReaderCropping:onPageCrop(mode)
 	-- backup original page scroll
 	self.orig_page_scroll = self.view.page_scroll
 	self.view.page_scroll = false
+	-- backup and disable original hinting state 
+	self.ui:handleEvent(Event:new("DisableHinting"))
 	-- backup original reflow mode as cropping use non-reflow mode
 	self.orig_reflow_mode = self.document.configurable.text_wrap
 	if self.orig_reflow_mode == 1 then
@@ -110,6 +113,8 @@ function ReaderCropping:onCancelPageCrop()
 end
 
 function ReaderCropping:exitPageCrop(confirmed)
+	-- restore hinting state
+	self.ui:handleEvent(Event:new("RestoreHinting"))
 	-- restore page scroll
 	self.view.page_scroll = self.orig_page_scroll
 	-- restore view bgcolor

@@ -1,13 +1,18 @@
 print(package.path)
 package.path = "./frontend/?.lua"
-require "ui/widget"
-require "ui/ui"
-require "ui/readerui"
-require "ui/menu"
-require "ui/infomessage"
-require "ui/confirmbox"
+require "ui/uimanager"
+require "ui/widget/menu"
+require "ui/widget/infomessage"
+require "ui/widget/confirmbox"
+require "ui/widget/touchmenu"
 require "document/document"
+require "ui/readerui"
+require "dbg"
 
+
+-----------------------------------------------------
+-- widget that paints the grid on the background
+-----------------------------------------------------
 TestGrid = Widget:new{}
 
 function TestGrid:paintTo(bb)
@@ -25,7 +30,9 @@ function TestGrid:paintTo(bb)
 	end
 end
 
+-----------------------------------------------------
 -- we create a widget that paints a background:
+-----------------------------------------------------
 Background = InputContainer:new{
 	is_always_active = true, -- receive events when other dialogs are active
 	key_events = {
@@ -37,7 +44,13 @@ Background = InputContainer:new{
 	FrameContainer:new{
 		background = 3,
 		bordersize = 0,
-		dimen = Screen:getSize()
+		dimen = Screen:getSize(),
+		Widget:new{
+			dimen = {
+				w = Screen:getWidth(),
+				h = Screen:getHeight(),
+			}
+		},
 	}
 }
 
@@ -64,7 +77,9 @@ end
 
 
 
+-----------------------------------------------------
 -- example widget: a clock
+-----------------------------------------------------
 Clock = FrameContainer:new{
 	background = 0,
 	bordersize = 1,
@@ -96,6 +111,9 @@ function Clock:getTextWidget()
 	}
 end
 
+-----------------------------------------------------
+-- a confirmbox box widget
+-----------------------------------------------------
 Quiz = ConfirmBox:new{
 	text = "Tell me the truth, isn't it COOL?!",
 	width = 300,
@@ -108,6 +126,9 @@ Quiz = ConfirmBox:new{
 	end,
 }
 
+-----------------------------------------------------
+-- a menu widget
+-----------------------------------------------------
 menu_items = {
 	{text = "item1"},
 	{text = "item2"},
@@ -136,6 +157,9 @@ M = Menu:new{
 }
 
 
+-----------------------------------------------------
+-- a reader view widget
+-----------------------------------------------------
 readerwindow = CenterContainer:new{
 	dimen = Screen:getSize(),
 	FrameContainer:new{
@@ -151,12 +175,86 @@ reader = ReaderUI:new{
 }
 readerwindow[1][1] = reader
 
+
+touch_menu = TouchMenu:new{
+	title = "Document menu",
+	tab_item_table = {
+		{
+			icon = "resources/icons/appbar.pokeball.png",
+			{
+				text = "item1",
+				callback = function()
+				end,
+			},
+			{
+				text = "item2",
+				callback = function()
+				end,
+			},
+			{
+				text = "item3",
+				callback = function()
+				end,
+			},
+			{
+				text = "item4",
+				callback = function()
+				end,
+			},
+			{
+				text = "item5",
+				callback = function()
+				end,
+			},
+			{
+				text = "item6",
+				callback = function()
+				end,
+			},
+			{
+				text = "item7",
+				callback = function()
+				end,
+			},
+			{
+				text = "item8",
+				callback = function()
+				end,
+			},
+			{
+				text = "item9",
+				callback = function()
+				end,
+			},
+		},
+		{
+			icon = "resources/icons/appbar.page.corner.bookmark.png",
+			{
+				text = "item10",
+				callback = function()
+				end,
+			},
+			{
+				text = "item11",
+				callback = function()
+				end,
+			},
+		}
+	},
+}
+
+
+
+-----------------------------------------------------------------------
+-- you may want to uncomment following show calls to see the changes
+-----------------------------------------------------------------------
 UIManager:show(Background:new())
 UIManager:show(TestGrid)
-UIManager:show(Clock:new())
-UIManager:show(M)
-UIManager:show(Quiz)
-UIManager:show(readerwindow)
+--UIManager:show(Clock:new())
+--UIManager:show(M)
+--UIManager:show(Quiz)
+--UIManager:show(readerwindow)
+UIManager:show(touch_menu)
 UIManager:run()
 
 

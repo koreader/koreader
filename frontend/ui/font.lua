@@ -43,8 +43,8 @@ function Font:getFace(font, size)
 		-- default to content font
 		font = self.cfont
 	end
-	
-	local size = math.floor(size*Screen:getDPI()/167)
+
+	local size = math.floor(scaleByDPI(size))
 
 	local face = self.faces[font..size]
 	-- build face if not found

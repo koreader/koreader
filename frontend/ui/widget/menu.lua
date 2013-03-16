@@ -1,11 +1,14 @@
-require "ui/widget"
-require "ui/focusmanager"
-require "ui/infomessage"
+require "ui/widget/container"
+require "ui/widget/focusmanager"
+require "ui/widget/infomessage"
+require "ui/widget/text"
+require "ui/widget/group"
+require "ui/widget/span"
 require "ui/font"
 
 --[[
 Widget that displays a shortcut icon for menu item
-]]
+--]]
 ItemShortCutIcon = WidgetContainer:new{
 	dimen = Geom:new{ w = 22, h = 22 },
 	key = nil,
@@ -100,7 +103,7 @@ function MenuItem:init()
 	local shortcut_icon_dimen = Geom:new()
 	if self.shortcut then
 		shortcut_icon_dimen.w = math.floor(self.dimen.h*4/5)
-		shortcut_icon_dimen.h = shortcut_icon_dimen.w 
+		shortcut_icon_dimen.h = shortcut_icon_dimen.w
 	end
 
 	self.detail = self.text
@@ -129,7 +132,7 @@ function MenuItem:init()
 		if Device:isTouchDevice() then
 		else
 			self.active_key_events.ShowItemDetail = {
-				{"Right"}, doc = "show item detail" 
+				{"Right"}, doc = "show item detail"
 			}
 		end
 		indicator = "  >>"
@@ -346,7 +349,7 @@ function Menu:init()
 		if self.is_enable_shortcut then
 			self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 		end
-		self.key_events.Select = { 
+		self.key_events.Select = {
 			{"Press"}, doc = "select current menu item"
 		}
 	end
@@ -368,7 +371,7 @@ function Menu:updateItems(select_number)
 
 	for c = 1, self.perpage do
 		-- calculate index in item_table
-		local i = (self.page - 1) * self.perpage + c 
+		local i = (self.page - 1) * self.perpage + c
 		if i <= #self.item_table then
 			local item_shortcut = nil
 			local shortcut_style = "square"
@@ -398,7 +401,7 @@ function Menu:updateItems(select_number)
 			table.insert(self.layout, {item_tmp})
 		else
 			-- item not enough to fill the whole page, break out of loop
-			table.insert(self.item_group, 
+			table.insert(self.item_group,
 				VerticalSpan:new{
 					width = (self.item_dimen.h * (self.perpage - c + 1))
 				})
@@ -438,7 +441,7 @@ function Menu:onSelectByShortCut(_, keyevent)
 			if self.item_table[(self.page-1)*self.perpage + k] then
 				self:onMenuSelect(self.item_table[(self.page-1)*self.perpage + k])
 			end
-			break 
+			break
 		end
 	end
 	return true
@@ -468,7 +471,7 @@ override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
 	if item.sub_item_table == nil then
-		self.close_callback() 
+		self.close_callback()
 		self:onMenuChoice(item)
 	else
 		-- save menu title for later resume

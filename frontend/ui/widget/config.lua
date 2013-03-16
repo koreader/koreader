@@ -1,26 +1,5 @@
-require "ui/widget"
-require "ui/focusmanager"
-require "ui/infomessage"
-require "ui/font"
-require "ui/toggleswitch"
-
-FixedTextWidget = TextWidget:new{}
-function FixedTextWidget:getSize()
-	local tsize = sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true)
-	if not tsize then
-		return Geom:new{}
-	end
-	self._length = tsize.x
-	self._height = self.face.size
-	return Geom:new{
-		w = self._length,
-		h = self._height,
-	}
-end
-
-function FixedTextWidget:paintTo(bb, x, y)
-	renderUtf8Text(bb, x, y+self._height, self.face, self.text, true)
-end
+require "ui/widget/container"
+require "ui/widget/toggleswitch"
 
 MenuBarItem = InputContainer:new{}
 function MenuBarItem:init()
@@ -180,7 +159,9 @@ function ConfigOption:init()
 	local default_option_height = 50
 	local default_option_padding = 15
 	local vertical_group = VerticalGroup:new{}
-	table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding * Screen:getDPI()/167 })
+	table.insert(vertical_group, VerticalSpan:new{
+		width = scaleByDPI(default_option_padding),
+	})
 	for c = 1, #self.options do
 		if self.options[c].show ~= false then
 			local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
@@ -189,9 +170,9 @@ function ConfigOption:init()
 			local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
 			local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
 			local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
-			local option_height = (self.options[c].height and self.options[c].height or default_option_height) * Screen:getDPI()/167
-			local items_spacing = HorizontalSpan:new{ 
-				width = (self.options[c].spacing and self.options[c].spacing or default_items_spacing) * Screen:getDPI()/167
+			local option_height = scaleByDPI(self.options[c].height and self.options[c].height or default_option_height)
+			local items_spacing = HorizontalSpan:new{
+				width = scaleByDPI(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
 			}
 			local horizontal_group = HorizontalGroup:new{}
 			if self.options[c].name_text then
@@ -205,7 +186,7 @@ function ConfigOption:init()
 				table.insert(option_name_container, option_name)
 				table.insert(horizontal_group, option_name_container)
 			end
-			
+
 			if self.options[c].widget == "ProgressWidget" then
 				local widget_container = CenterContainer:new{
 					dimen = Geom:new{w = Screen:getWidth()*self.options[c].widget_align_center, h = option_height}
@@ -218,7 +199,7 @@ function ConfigOption:init()
 				table.insert(widget_container, widget)
 				table.insert(horizontal_group, widget_container)
 			end
-			
+
 			local option_items_container = CenterContainer:new{
 				dimen = Geom:new{w = Screen:getWidth()*item_align, h = option_height}
 			}
@@ -261,7 +242,7 @@ function ConfigOption:init()
 					end
 				end
 			end
-			
+
 			if self.options[c].item_text then
 				for d = 1, #self.options[c].item_text do
 					local option_item = nil
@@ -298,7 +279,7 @@ function ConfigOption:init()
 					end
 				end
 			end
-			
+
 			if self.options[c].item_icons then
 				for d = 1, #self.options[c].item_icons do
 					local option_item = OptionIconItem:new{
@@ -322,7 +303,7 @@ function ConfigOption:init()
 					end
 				end
 			end
-			
+
 			if self.options[c].toggle then
 				local switch = ToggleSwitch:new{
 					name = self.options[c].name,
@@ -338,7 +319,7 @@ function ConfigOption:init()
 				switch:setPosition(position)
 				table.insert(option_items_group, switch)
 			end
-			
+
 			table.insert(option_items_container, option_items_group)
 			table.insert(horizontal_group, option_items_container)
 			table.insert(vertical_group, horizontal_group)
@@ -352,7 +333,7 @@ end
 ConfigPanel = FrameContainer:new{ background = 0, bordersize = 0, }
 function ConfigPanel:init()
 	local config_options = self.config_dialog.config_options
-	local default_option = config_options.default_options and config_options.default_options 
+	local default_option = config_options.default_options and config_options.default_options
 							or config_options[1].options
 	local panel = ConfigOption:new{
 		options = self.index and config_options[self.index].options or default_option,
@@ -375,26 +356,26 @@ function MenuBar:init()
 		local icon_dimen = menu_icon:getSize()
 		icons_width = icons_width + icon_dimen.w
 		icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
-		
+
 		menu_items[c] = MenuBarItem:new{
 			menu_icon,
 			index = c,
 			config = self.config_dialog,
 		}
 	end
-	
+
 	local spacing = HorizontalSpan:new{
 		width = (Screen:getWidth() - icons_width) / (#menu_items+1)
 	}
-	
+
 	local menu_bar = HorizontalGroup:new{}
-	
+
 	for c = 1, #menu_items do
 		table.insert(menu_bar, spacing)
 		table.insert(menu_bar, menu_items[c])
 	end
 	table.insert(menu_bar, spacing)
-	
+
 	self.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
 	table.insert(self, menu_bar)
 end
@@ -415,7 +396,7 @@ Widget that displays config menubar and config panel
  +----------------+
  |    Menu Bar    |
  +----------------+
- 
+
 --]]
 
 ConfigDialog = InputContainer:new{
@@ -429,7 +410,7 @@ function ConfigDialog:init()
 	self.config_panel = ConfigPanel:new{
 		config_dialog = self,
 	}
-	self.config_menubar = MenuBar:new{ 
+	self.config_menubar = MenuBar:new{
 		config_dialog = self,
 	}
 	self:makeDialog()
@@ -454,7 +435,7 @@ function ConfigDialog:init()
 		self.key_events.FocusRight = nil
 	end
 	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
-	
+
 	UIManager:setDirty(self, "partial")
 end
 
@@ -470,9 +451,9 @@ function ConfigDialog:makeDialog()
 		self.config_panel,
 		self.config_menubar,
 	}
-	
+
 	local dialog_size = dialog:getSize()
-	
+
 	self[1] = BottomContainer:new{
 		dimen = Screen:getSize(),
 		FrameContainer:new{
@@ -481,13 +462,13 @@ function ConfigDialog:makeDialog()
 			dialog,
 		}
 	}
-	
+
 	self.dialog_dimen = Geom:new{
 		x = (Screen:getWidth() - dialog_size.w)/2,
 		y = Screen:getHeight() - dialog_size.h,
 		w = dialog_size.w,
 		h = dialog_size.h,
-	}	
+	}
 end
 
 function ConfigDialog:onShowConfigPanel(index)

@@ -1,6 +1,6 @@
-require "ui/widget"
-require "ui/focusmanager"
-require "ui/button"
+require "ui/widget/container"
+require "ui/widget/focusmanager"
+require "ui/widget/button"
 
 --[[
 Widget that shows a message and OK/Cancel buttons
@@ -25,14 +25,22 @@ function ConfirmBox:init()
 
 	local ok_button = Button:new{
 		text = self.ok_text,
+		callback = function()
+			self.ok_callback()
+			UIManager:close(self)
+		end,
 	}
 	local cancel_button = Button:new{
 		text = self.cancel_text,
-		preselect = true
+		preselect = true,
+		callback = function()
+			self.cancel_callback()
+			UIManager:close(self)
+		end,
 	}
 
 	self.layout = { { ok_button, cancel_button } }
-	self.selected.x = 2 -- Cancel is default 
+	self.selected.x = 2 -- Cancel is default
 
 	self[1] = CenterContainer:new{
 		dimen = Screen:getSize(),

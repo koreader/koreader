@@ -80,6 +80,14 @@ function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mod
 	end
 end
 
+function DjvuDocument:hintPage(pageno, zoom, rotation, gamma, render_mode)
+	if self.configurable.text_wrap == 1 then
+		self.koptinterface:hintPage(self, pageno, zoom, rotation, gamma, render_mode)
+	else
+		Document.hintPage(self, pageno, zoom, rotation, gamma, render_mode)
+	end
+end
+
 function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
 	if self.configurable.text_wrap == 1 then
 		self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, render_mode)

@@ -11,29 +11,29 @@ function ReaderZooming:init()
 	if Device:hasKeyboard() then
 		self.key_events = {
 			ZoomIn = {
-				{ "Shift", Input.group.PgFwd }, 
+				{ "Shift", Input.group.PgFwd },
 				doc = "zoom in",
-				event = "Zoom", args = "in" 
+				event = "Zoom", args = "in"
 			},
 			ZoomOut = {
-				{ "Shift", Input.group.PgBack }, 
+				{ "Shift", Input.group.PgBack },
 				doc = "zoom out",
-				event = "Zoom", args = "out" 
+				event = "Zoom", args = "out"
 			},
 			ZoomToFitPage = {
-				{ "A" }, 
+				{ "A" },
 				doc = "zoom to fit page",
-				event = "SetZoomMode", args = "page" 
+				event = "SetZoomMode", args = "page"
 			},
 			ZoomToFitContent = {
-				{ "Shift", "A" }, 
+				{ "Shift", "A" },
 				doc = "zoom to fit content",
-				event = "SetZoomMode", args = "content" 
+				event = "SetZoomMode", args = "content"
 			},
 			ZoomToFitPageWidth = {
-				{ "S" }, 
+				{ "S" },
 				doc = "zoom to fit page width",
-				event = "SetZoomMode", args = "pagewidth" 
+				event = "SetZoomMode", args = "pagewidth"
 			},
 			ZoomToFitContentWidth = {
 				{ "Shift", "S" },
@@ -41,9 +41,9 @@ function ReaderZooming:init()
 				event = "SetZoomMode", args = "contentwidth"
 			},
 			ZoomToFitPageHeight = {
-				{ "D" }, 
+				{ "D" },
 				doc = "zoom to fit page height",
-				event = "SetZoomMode", args = "pageheight" 
+				event = "SetZoomMode", args = "pageheight"
 			},
 			ZoomToFitContentHeight = {
 				{ "Shift", "D" },
@@ -57,7 +57,7 @@ end
 
 function ReaderZooming:onReadSettings(config)
 	-- @TODO config file from old code base uses globalzoom_mode
-	-- instead of zoom_mode, we need to handle this imcompatibility 
+	-- instead of zoom_mode, we need to handle this imcompatibility
 	-- 04.12 2012 (houqp)
 	local zoom_mode = config:readSetting("zoom_mode")
 	if not zoom_mode then
@@ -110,12 +110,13 @@ function ReaderZooming:onPageUpdate(new_page_no)
 end
 
 function ReaderZooming:onHintPage()
+	if not self.view.hinting then return true end
 	if self.current_page < self.ui.document.info.number_of_pages then
 		self.ui.document:hintPage(
-			self.view.state.page + 1, 
+			self.view.state.page + 1,
 			self:getZoom(self.view.state.page + 1),
-			self.view.state.rotation, 
-			self.view.state.gamma, 
+			self.view.state.rotation,
+			self.view.state.gamma,
 			self.view.render_mode)
 	end
 	return true
@@ -125,7 +126,7 @@ function ReaderZooming:getZoom(pageno)
 	-- check if we're in bbox mode and work on bbox if that's the case
 	local zoom = nil
 	local page_size = {}
-	if self.zoom_mode == "content" 
+	if self.zoom_mode == "content"
 	or self.zoom_mode == "contentwidth"
 	or self.zoom_mode == "contentheight" then
 		local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
@@ -178,9 +179,9 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 	end
 end
 
-function ReaderZooming:addToMainMenu(item_table)
+function ReaderZooming:addToMainMenu(tab_item_table)
 	if self.ui.document.info.has_pages then
-		table.insert(item_table, {
+		table.insert(tab_item_table.typeset, {
 			text = "Switch zoom mode",
 			sub_item_table = {
 				{

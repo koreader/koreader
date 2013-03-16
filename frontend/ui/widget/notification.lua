@@ -1,5 +1,4 @@
-require "ui/ui"
-require "ui/widget"
+require "ui/widget/container"
 
 --[[
 Widget that displays a tiny notification on top of screen

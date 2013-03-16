@@ -1,3 +1,4 @@
+require "ui/widget/progress"
 
 ReaderFooter = InputContainer:new{
 	pageno = nil,
