@@ -21,11 +21,10 @@ function BBoxWidget:init()
 					range = self.view.dimen,
 				}
 			},
-			PanAdjust = {
+			SwipeAdjust = {
 				GestureRange:new{
-					ges = "pan",
+					ges = "swipe",
 					range = self.view.dimen,
-					rate = 3.0, -- emit up to 3 evs per second
 				}
 			},
 			HoldAdjust = {
@@ -95,7 +94,7 @@ function BBoxWidget:inPageArea(ges)
 	return not ges.pos:notIntersectWith(page_dimen)
 end
 
-function BBoxWidget:adjustScreenBBox(ges)
+function BBoxWidget:adjustScreenBBox(ges, relative)
 	--DEBUG("adjusting crop bbox with pos", ges.pos)
 	if not self:inPageArea(ges) then return end
 	local bbox = self.screen_bbox
@@ -129,13 +128,53 @@ function BBoxWidget:adjustScreenBBox(ges)
 		upper_left.x = ges.pos.x
 		bottom_right.y = ges.pos.y
 	elseif nearest == upper_center then
-		upper_left.y = ges.pos.y
+		if relative then
+			local delta = 0
+			if ges.direction == "up" then
+				delta = -ges.distance / 5
+			elseif ges.direction == "down" then
+				delta = ges.distance / 5
+			end
+			upper_left.y = upper_left.y + delta
+		else
+			upper_left.y = ges.pos.y
+		end
 	elseif nearest == right_center then
-		bottom_right.x = ges.pos.x
+		if relative then
+			local delta = 0
+			if ges.direction == "left" then
+				delta = -ges.distance / 5
+			elseif ges.direction == "right" then
+				delta = ges.distance / 5
+			end
+			bottom_right.x = bottom_right.x + delta
+		else
+			bottom_right.x = ges.pos.x
+		end
 	elseif nearest == bottom_center then
-		bottom_right.y = ges.pos.y
+		if relative then
+			local delta = 0
+			if ges.direction == "up" then
+				delta = -ges.distance / 5
+			elseif ges.direction == "down" then
+				delta = ges.distance / 5
+			end
+			bottom_right.y = bottom_right.y + delta
+		else
+			bottom_right.y = ges.pos.y
+		end
 	elseif nearest == left_center then
-		upper_left.x = ges.pos.x
+		if relative then
+			local delta = 0
+			if ges.direction == "left" then
+				delta = -ges.distance / 5
+			elseif ges.direction == "right" then
+				delta = ges.distance / 5
+			end
+			upper_left.x = upper_left.x + delta
+		else
+			upper_left.x = ges.pos.x
+		end
 	end
 	self.screen_bbox = {
 		x0 = math.round(upper_left.x), 
@@ -156,8 +195,8 @@ function BBoxWidget:onTapAdjust(arg, ges)
 	return true
 end
 
-function BBoxWidget:onPanAdjust(arg, ges)
-	self:adjustScreenBBox(ges)
+function BBoxWidget:onSwipeAdjust(arg, ges)
+	self:adjustScreenBBox(ges, true)
 	return true
 end
 
