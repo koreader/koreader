@@ -6,38 +6,38 @@ ReaderPaging = InputContainer:new{
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = true,
-	overlap = 20 * Screen:getDPI()/167,
+	overlap = scaleByDPI(20),
 }
 
 function ReaderPaging:init()
 	if Device:hasKeyboard() then
 		self.key_events = {
-			GotoNextPage = { 
+			GotoNextPage = {
 				{Input.group.PgFwd}, doc = "go to next page",
 				event = "GotoPageRel", args = 1 },
-			GotoPrevPage = { 
+			GotoPrevPage = {
 				{Input.group.PgBack}, doc = "go to previous page",
 				event = "GotoPageRel", args = -1 },
 
-			GotoFirst = { 
+			GotoFirst = {
 				{"1"}, doc = "go to start", event = "GotoPercent", args = 0},
-			Goto11 = { 
+			Goto11 = {
 				{"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
-			Goto22 = { 
+			Goto22 = {
 				{"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
-			Goto33 = { 
+			Goto33 = {
 				{"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
-			Goto44 = { 
+			Goto44 = {
 				{"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
-			Goto55 = { 
+			Goto55 = {
 				{"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
-			Goto66 = { 
+			Goto66 = {
 				{"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
-			Goto77 = { 
+			Goto77 = {
 				{"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
-			Goto88 = { 
+			Goto88 = {
 				{"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
-			GotoLast = { 
+			GotoLast = {
 				{"0"}, doc = "go to end", event = "GotoPercent", args = 100},
 		}
 	end
@@ -62,7 +62,7 @@ function ReaderPaging:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = 0, 
+					x = 0,
 					y = Screen:getHeight()/4,
 					w = Screen:getWidth()/4,
 					h = 5*Screen:getHeight()/8,
@@ -361,7 +361,7 @@ function ReaderPaging:onScrollPageRel(diff)
 		}
 		-- Scroll down offset should always be greater than 0
 		-- otherwise if offset is less than 0 the height of blank area will be
-		-- larger than 0 even if page area is much larger than visible area, 
+		-- larger than 0 even if page area is much larger than visible area,
 		-- which will trigger the drawing of next page leaving part of current
 		-- page undrawn. This should also be true for scroll up offset.
 		if offset.y < 0 then offset.y = 0 end

@@ -13,11 +13,11 @@ function ReaderFont:init()
 		-- add shortcut for keyboard
 		self.key_events = {
 			ShowFontMenu = { {"F"}, doc = "show font menu" },
-			IncreaseSize = { 
-				{ "Shift", Input.group.PgFwd }, 
-				doc = "increase font size", 
+			IncreaseSize = {
+				{ "Shift", Input.group.PgFwd },
+				doc = "increase font size",
 				event = "ChangeSize", args = "increase" },
-			DecreaseSize = { 
+			DecreaseSize = {
 				{ "Shift", Input.group.PgBack },
 				doc = "decrease font size",
 				event = "ChangeSize", args = "decrease" },
@@ -52,33 +52,33 @@ end
 
 function ReaderFont:onReadSettings(config)
 	self.font_face = config:readSetting("font_face")
-	if not self.font_face then 
+	if not self.font_face then
 		self.font_face = self.ui.document.default_font
 	end
 	self.ui.document:setFontFace(self.font_face)
 
 	self.header_font_face = config:readSetting("header_font_face")
-	if not self.header_font_face then 
+	if not self.header_font_face then
 		self.header_font_face = self.ui.document.header_font
 	end
 	self.ui.document:setHeaderFont(self.header_font_face)
 
 	self.font_size = config:readSetting("font_size")
-	if not self.font_size then 
+	if not self.font_size then
 		--@TODO change this!  12.01 2013 (houqp)
 		self.font_size = 29
 	end
 	self.ui.document:setFontSize(self.font_size)
 
 	self.line_space_percent = config:readSetting("line_space_percent")
-	if not self.line_space_percent then 
+	if not self.line_space_percent then
 		self.line_space_percent = 100
 	else
 		self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 	end
 
 	self.gamma_index = config:readSetting("gamma_index")
-	if not self.gamma_index then 
+	if not self.gamma_index then
 		self.gamma_index = 15
 	end
 	self.ui.document:setGammaIndex(self.gamma_index)
@@ -104,7 +104,7 @@ function ReaderFont:onShowFontMenu()
 		main_menu,
 		dimen = Screen:getSize(),
 	}
-	main_menu.close_callback = function () 
+	main_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
 	-- show menu
