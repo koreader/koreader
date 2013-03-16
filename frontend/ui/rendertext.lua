@@ -4,14 +4,16 @@ require "cache"
 TODO: all these functions should probably be methods on Face objects
 ]]--
 
-function getGlyph(face, charcode)
-	local hash = "glyph|"..face.hash.."|"..charcode
+function getGlyph(face, charcode, bgcolor, fgcolor)
+	if bgcolor == nil then bgcolor = 0.0 end
+	if fgcolor == nil then fgcolor = 1.0 end
+	local hash = "glyph|"..face.hash.."|"..charcode.."|"..bgcolor.."|"..fgcolor
 	local glyph = Cache:check(hash)
 	if glyph then
 		-- cache hit
 		return glyph[1]
 	end
-	local rendered_glyph = face.ftface:renderGlyph(charcode)
+	local rendered_glyph = face.ftface:renderGlyph(charcode, bgcolor, fgcolor)
 	if not rendered_glyph then
 		DEBUG("error rendering glyph (charcode=", charcode, ") for face", face)
 		return
@@ -75,7 +77,7 @@ function sizeUtf8Text(x, width, face, text, kerning)
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
-function renderUtf8Text(buffer, x, y, face, text, kerning)
+function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 	if not text then
 		DEBUG("renderUtf8Text called without text");
 		return 0
@@ -89,7 +91,7 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
 		if pen_x < buffer_width then
 			local charcode = util.utf8charcode(uchar)
-			local glyph = getGlyph(face, charcode)
+			local glyph = getGlyph(face, charcode, bgcolor, fgcolor)
 			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
@@ -97,7 +99,7 @@ function renderUtf8Text(buffer, x, y, face, text, kerning)
 				glyph.bb,
 				x + pen_x + glyph.l, y - glyph.t,
 				0, 0,
-				glyph.bb:getWidth(), glyph.bb:getHeight())
+				glyph.bb:getWidth(), glyph.bb:getHeight(), 1)
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
 		end -- if pen_x < buffer_width
