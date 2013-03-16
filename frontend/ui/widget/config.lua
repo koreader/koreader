@@ -143,14 +143,6 @@ function RectSpan:getSize()
 	return {w = self.width, h = self.height}
 end
 
-ToggleLabel = TextWidget:new{}
-function ToggleLabel:paintTo(bb, x, y)
-	if self.color == 0 then
-		return
-	end
-	renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true)
-end
-
 ConfigOption = CenterContainer:new{}
 function ConfigOption:init()
 	local default_name_font_size = 20

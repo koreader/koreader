@@ -329,6 +329,7 @@ static int addblitToBuffer(lua_State *L) {
 	int yoffs = luaL_checkint(L, 6);
 	int w = luaL_checkint(L, 7);
 	int h = luaL_checkint(L, 8);
+	double p = luaL_checknumber(L, 9);
 	int x, y;
 
 	uint8_t *dstptr;
@@ -349,7 +350,7 @@ static int addblitToBuffer(lua_State *L) {
 			for(y = 0; y < h; y++) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint8_t v = (*dstptr & 0x0F) + (*srcptr & 0x0F);
+				uint8_t v = (int)((*dstptr & 0x0F)*(1-p) + (*srcptr & 0x0F)*p);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
 				srcptr += src->pitch;
@@ -358,7 +359,7 @@ static int addblitToBuffer(lua_State *L) {
 			for(y = 0; y < h; y++) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint8_t v = (*dstptr & 0x0F) + (*srcptr >> 4);
+				uint8_t v = (int)((*dstptr & 0x0F)*(1-p) + (*srcptr >> 4)*p);
 				*dstptr = (*dstptr & 0xF0) | (v < 0x0F ? v : 0x0F);
 				dstptr += dst->pitch;
 				srcptr += src->pitch;
@@ -381,14 +382,14 @@ static int addblitToBuffer(lua_State *L) {
 			for(x = 0; x < (w / 2); x++) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
-				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x+1] >> 4);
+				uint16_t v1 = (int)((dstptr[x] & 0xF0)*(1-p) + ((srcptr[x] & 0x0F) << 4)*p);
+				uint8_t v2 = (int)((dstptr[x] & 0x0F)*(1-p) + (srcptr[x+1] >> 4)*p);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint16_t v1 = (dstptr[x] & 0xF0) + ((srcptr[x] & 0x0F) << 4);
+				uint16_t v1 = (int)((dstptr[x] & 0xF0)*(1-p) + ((srcptr[x] & 0x0F) << 4)*p);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
 			dstptr += dst->pitch;
@@ -399,14 +400,14 @@ static int addblitToBuffer(lua_State *L) {
 			for(x = 0; x < (w / 2); x++) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
-				uint8_t v2 = (dstptr[x] & 0x0F) + (srcptr[x] & 0x0F);
+				uint16_t v1 = (int)((dstptr[x] & 0xF0)*(1-p) + (srcptr[x] & 0xF0)*p);
+				uint8_t v2 = (int)((dstptr[x] & 0x0F)*(1-p) + (srcptr[x] & 0x0F)*p);
 				dstptr[x] = (v1 < 0xF0 ? v1 : 0xF0) | (v2 < 0x0F ? v2 : 0x0F);
 			}
 			if(w & 1) {
 				ASSERT_BLITBUFFER_BOUNDARIES(dst, dstptr);
 				ASSERT_BLITBUFFER_BOUNDARIES(src, srcptr);
-				uint16_t v1 = (dstptr[x] & 0xF0) + (srcptr[x] & 0xF0);
+				uint16_t v1 = (int)((dstptr[x] & 0xF0)*(1-p) + (srcptr[x] & 0xF0)*p);
 				dstptr[x] = (dstptr[x] & 0x0F) | (v1 < 0xF0 ? v1 : 0xF0);
 			}
 			dstptr += dst->pitch;

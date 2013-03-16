@@ -1,11 +1,20 @@
-ToggleSwitch = InputContainer:new{}
+
+ToggleLabel = TextWidget:new{
+	bgcolor = 0,
+	fgcolor = 1,
+}
+
+function ToggleLabel:paintTo(bb, x, y)
+	renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bgcolor, self.fgcolor)
+end
+
+ToggleSwitch = InputContainer:new{
+	width = scaleByDPI(204),
+	height = scaleByDPI(30),
+}
 
 function ToggleSwitch:init()
 	self.n_pos = #self.toggle
-	if self.n_pos ~= 2 and self.n_pos ~= 3 then
-		-- currently only support options with two or three items.
-		error("items number not supported")
-	end
 	self.position = nil
 	
 	local label_font_face = "cfont"
@@ -14,55 +23,27 @@ function ToggleSwitch:init()
 	self.toggle_frame = FrameContainer:new{background = 0, color = 7, radius = 7, bordersize = 1, padding = 2,}
 	self.toggle_content = HorizontalGroup:new{}
 	
-	self.left_label = ToggleLabel:new{
-		align = "center",
-		color = 0,
-		text = self.toggle[self.n_pos],
-		face = Font:getFace(label_font_face, label_font_size),
-	}
-	self.left_button = FrameContainer:new{
-		background = 0,
-		color = 7,
-		margin = 0,
-		radius = 5,
-		bordersize = 1,
-		padding = 2,
-		self.left_label,
-	}
-	self.middle_label = ToggleLabel:new{
-		align = "center",
-		color = 0,
-		text = self.n_pos > 2 and self.toggle[2] or "",
-		face = Font:getFace(label_font_face, label_font_size),
-	}
-	self.middle_button = FrameContainer:new{
-		background = 0,
-		color = 7,
-		margin = 0,
-		radius = 5,
-		bordersize = 1,
-		padding = 2,
-		self.middle_label,
-	}
-	self.right_label = ToggleLabel:new{
-		align = "center",
-		color = 0,
-		text = self.toggle[1],
-		face = Font:getFace(label_font_face, label_font_size),
-	}
-	self.right_button = FrameContainer:new{
-		background = 0,
-		color = 7,
-		margin = 0,
-		radius = 5,
-		bordersize = 1,
-		padding = 2,
-		self.right_label,
-	}
-	
-	table.insert(self.toggle_content, self.left_button)
-  	table.insert(self.toggle_content, self.middle_button)
-  	table.insert(self.toggle_content, self.right_button)
+	for i=1,#self.toggle do
+		local label = ToggleLabel:new{
+			align = "center",
+			text = self.toggle[i],
+			face = Font:getFace(label_font_face, label_font_size),
+		}
+		local content = CenterContainer:new{
+			dimen = Geom:new{w = self.width/self.n_pos, h = self.height},
+			label,
+		}
+		local button = FrameContainer:new{
+			background = 0,
+			color = 7,
+			margin = 0,
+			radius = 5,
+			bordersize = 1,
+			padding = 0,
+			content,
+		}
+		table.insert(self.toggle_content, button)
+	end
   	
 	self.toggle_frame[1] = self.toggle_content
 	self[1] = self.toggle_frame
@@ -81,18 +62,20 @@ function ToggleSwitch:init()
 end
 
 function ToggleSwitch:update()
-	local left_pos = self.position == 1
-	local right_pos = self.position == self.n_pos
-	local middle_pos = not left_pos and not right_pos
-	self.left_label.color = right_pos and 15 or 0
-	self.left_button.color = left_pos and 7 or 0
-	self.left_button.background = left_pos and 7 or 0
-	self.middle_label.color = middle_pos and 15 or 0
-	self.middle_button.color = middle_pos and 0 or 0
-	self.middle_button.background = middle_pos and 0 or 0
-	self.right_label.color = left_pos and 15 or 0
-	self.right_button.color = right_pos and 7 or 0
-	self.right_button.background = right_pos and 7 or 0
+	local pos = self.position
+	for i=1,#self.toggle_content do
+		if pos == i then
+			self.toggle_content[i].color = 7
+			self.toggle_content[i].background = 7
+			self.toggle_content[i][1][1].bgcolor = 0.5
+			self.toggle_content[i][1][1].fgcolor = 0.0
+		else
+			self.toggle_content[i].color = 0
+			self.toggle_content[i].background = 0
+			self.toggle_content[i][1][1].bgcolor = 0.0
+			self.toggle_content[i][1][1].fgcolor = 1.0
+		end
+	end
 end
 
 function ToggleSwitch:setPosition(position)
