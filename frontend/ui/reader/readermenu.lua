@@ -2,7 +2,6 @@ require "ui/widget/menu"
 require "ui/widget/touchmenu"
 
 ReaderMenu = InputContainer:new{
-	_name = "ReaderMenu",
 	tab_item_table = nil,
 	registered_widgets = {},
 }
@@ -66,7 +65,6 @@ function ReaderMenu:onShowMenu()
 	end
 
 	local menu_container = CenterContainer:new{
-		name = "haha",
 		ignore = "height",
 		dimen = Screen:getSize(),
 	}
