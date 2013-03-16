@@ -84,7 +84,6 @@ function HomeMenu:onTapShowMenu()
 	local menu_container = CenterContainer:new{
 		ignore = "height",
 		dimen = Screen:getSize(),
-		name = "haha",
 	}
 
 	local home_menu = Menu:new{
