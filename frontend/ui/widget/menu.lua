@@ -5,7 +5,6 @@ require "ui/widget/text"
 require "ui/widget/group"
 require "ui/widget/span"
 require "ui/font"
-require "dbg"
 
 --[[
 Widget that displays a shortcut icon for menu item
@@ -191,7 +190,6 @@ end
 
 function MenuItem:onTapSelect()
 	self[1].invert = true
-	LvDEBUG(1, "----------------", self.show_parent, 3)
 	UIManager:setDirty(self.show_parent, "partial")
 	UIManager:scheduleIn(0.1, function()
 		self[1].invert = false
