@@ -161,7 +161,6 @@ TouchMenu = InputContainer:new{
 	-- for returnning in multi-level menus
 	item_table_stack = nil,
 	item_table = nil,
-	--@TODO replace getDPI call    (houqp)
 	item_height = scaleByDPI(50),
 	bordersize = scaleByDPI(2),
 	padding = scaleByDPI(5),
