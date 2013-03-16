@@ -240,6 +240,12 @@ touch_menu = TouchMenu:new{
 				callback = function()
 				end,
 			},
+		},
+		{
+			icon = "resources/icons/appbar.home.png",
+			callback = function()
+				DEBUG("hello world!")
+			end
 		}
 	},
 }
