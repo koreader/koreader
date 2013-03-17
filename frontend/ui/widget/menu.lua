@@ -91,6 +91,7 @@ Widget that displays an item for menu
 --]]
 MenuItem = InputContainer:new{
 	text = nil,
+	show_parent = nil,
 	detail = nil,
 	face = Font:getFace("cfont", 22),
 	dimen = nil,
@@ -188,7 +189,13 @@ function MenuItem:onShowItemDetail()
 end
 
 function MenuItem:onTapSelect()
-	self.menu:onMenuSelect(self.table)
+	self[1].invert = true
+	UIManager:setDirty(self.show_parent, "partial")
+	UIManager:scheduleIn(0.1, function()
+		self[1].invert = false
+		UIManager:setDirty(self.show_parent, "partial")
+		self.menu:onMenuSelect(self.table)
+	end)
 	return true
 end
 
@@ -197,6 +204,7 @@ end
 Widget that displays menu
 --]]
 Menu = FocusManager:new{
+	show_parent = nil,
 	-- face for displaying item contents
 	cface = Font:getFace("cfont", 22),
 	-- face for menu title
@@ -218,7 +226,7 @@ Menu = FocusManager:new{
 		"A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
 		"Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Enter",
 	},
-	item_table_stack = {},
+	item_table_stack = nil,
 	is_enable_shortcut = true,
 
 	item_dimen = nil,
@@ -256,6 +264,8 @@ function Menu:_recalculateDimen()
 end
 
 function Menu:init()
+	self.show_parent = self.show_parent or self
+	self.item_table_stack = {}
 	self:_recalculateDimen()
 	self.page = 1
 
@@ -388,6 +398,7 @@ function Menu:updateItems(select_number)
 				end
 			end
 			local item_tmp = MenuItem:new{
+				show_parent = self.show_parent,
 				text = self.item_table[i].text,
 				face = self.cface,
 				dimen = self.item_dimen:new(),

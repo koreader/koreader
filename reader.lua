@@ -81,17 +81,20 @@ function HomeMenu:onTapShowMenu()
 	self.item_table = {}
 	self:setUpdateItemTable()
 
+	local menu_container = CenterContainer:new{
+		ignore = "height",
+		dimen = Screen:getSize(),
+	}
+
 	local home_menu = Menu:new{
+		show_parent = menu_container,
 		title = "Home menu",
 		item_table = self.item_table,
 		width = Screen:getWidth() - 100,
 	}
 
-	local menu_container = CenterContainer:new{
-		ignore = "height",
-		dimen = Screen:getSize(),
-		home_menu,
-	}
+	menu_container[1] = home_menu
+
 	home_menu.close_callback = function ()
 		UIManager:close(menu_container)
 	end
@@ -121,7 +124,12 @@ end
 
 function showHomePage(path)
 	local exclude_dirs = {"%.sdr$"}
+
+	local HomePage = InputContainer:new{
+	}
+
 	local FileManager = FileChooser:new{
+		show_parent = HomePage,
 		title = "FileManager",
 		path = path,
 		width = Screen:getWidth(),
@@ -141,10 +149,8 @@ function showHomePage(path)
 		end
 	}
 
-	local HomePage = InputContainer:new{
-			FileManager,
-			HomeMenu,
-	}
+	table.insert(HomePage, FileManager)
+	table.insert(HomePage, HomeMenu)
 
 	function FileManager:onFileSelect(file)
 		showReader(file)
