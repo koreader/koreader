@@ -288,6 +288,8 @@ static int fakeTapInput(lua_State *L) {
 		ev.value = 0;
 		write(inputfd, &ev, sizeof(ev));
 	}
+	ioctl(inputfd, EVIOCGRAB, 0);
+	close(inputfd);
 	return 0;
 #else
 	return 0;
