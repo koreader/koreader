@@ -224,6 +224,78 @@ static int closeInputDevices(lua_State *L) {
 #endif
 }
 
+static int fakeTapInput(lua_State *L) {
+#ifndef EMULATE_READER
+	const char* inputdevice = luaL_checkstring(L, 1);
+	int x = luaL_checkint(L, 2);
+	int y = luaL_checkint(L, 3);
+	int i;
+	int inputfd = -1;
+	struct input_event ev;
+	inputfd = open(inputdevice, O_WRONLY | O_NDELAY);
+	if (inputfd == NULL) {
+		return luaL_error(L, "cannot open input device <%s>", inputdevice);
+	}
+	if(inputfd != -1) {
+		gettimeofday(&ev.time, NULL);
+		ev.type = 3;
+		ev.code = 57;
+		ev.value = 0;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 3;
+		ev.code = 53;
+		ev.value = x;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 3;
+		ev.code = 54;
+		ev.value = y;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 1;
+		ev.code = 330;
+		ev.value = 1;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 1;
+		ev.code = 325;
+		ev.value = 1;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 0;
+		ev.code = 0;
+		ev.value = 0;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 3;
+		ev.code = 57;
+		ev.value = -1;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 1;
+		ev.code = 330;
+		ev.value = 0;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 1;
+		ev.code = 325;
+		ev.value = 0;
+		write(inputfd, &ev, sizeof(ev));
+		gettimeofday(&ev.time, NULL);
+		ev.type = 0;
+		ev.code = 0;
+		ev.value = 0;
+		write(inputfd, &ev, sizeof(ev));
+	}
+	ioctl(inputfd, EVIOCGRAB, 0);
+	close(inputfd);
+	return 0;
+#else
+	return 0;
+#endif
+}
+
 static inline void set_event_table(lua_State *L, struct input_event input) {
 	lua_newtable(L);
 	lua_pushstring(L, "type");
@@ -355,6 +427,7 @@ static const struct luaL_Reg input_func[] = {
 	{"open", openInputDevice},
 	{"closeAll", closeInputDevices},
 	{"waitForEvent", waitForInput},
+	{"fakeTapInput", fakeTapInput},
 	{NULL, NULL}
 };
 

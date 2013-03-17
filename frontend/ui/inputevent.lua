@@ -275,6 +275,7 @@ function Input:init()
 		local dev_mod = Device:getModel()
 		if dev_mod ~= "KindleTouch" then
 			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
+			Device:setTouchInputDev("/dev/input/event0")
 			input.open("/dev/input/event0")
 		end
 		if dev_mod ~= "KindleTouch" and dev_mod ~= "KindlePaperWhite" then
@@ -285,6 +286,7 @@ function Input:init()
 		if dev_mod == "KindlePaperWhite" then
 			print("Auto-detected Kindle PaperWhite")
 		elseif dev_mod == "KindleTouch" then
+			Device:setTouchInputDev("/dev/input/event3")
 			input.open("/dev/input/event2") -- Home button
 			input.open("/dev/input/event3") -- touchscreen
 			-- KT does have one key!
