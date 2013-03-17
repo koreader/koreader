@@ -58,12 +58,11 @@ function ReaderMenu:setUpdateItemTable()
 	end
 
 	table.insert(self.tab_item_table.main, {
-		text = "Return to file manager",
+		text = "Help",
 		callback = function()
-			self.ui:handleEvent(Event:new("RestoreScreenMode",
-				G_reader_settings:readSetting("screen_mode") or "portrait"))
-			UIManager:close(self.menu_container)
-			self.ui:onClose()
+			UIManager:show(InfoMessage:new{
+				text = "Just kidding, this page is not implemented yet.",
+			})
 		end
 	})
 end
