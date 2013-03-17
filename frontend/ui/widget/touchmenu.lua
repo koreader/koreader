@@ -316,6 +316,9 @@ function TouchMenu:updateItems()
 end
 
 function TouchMenu:switchMenuTab(tab_num)
+	if self.tab_item_table[tab_num].callback then
+		self.tab_item_table[tab_num].callback()
+	end
 	if self.cur_tab ~= tab_num then
 		-- it's like getting a new menu everytime we switch tab!
 		self.page = 1
