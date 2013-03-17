@@ -17,6 +17,15 @@ function ReaderMenu:init()
 		typeset = {
 			icon = "resources/icons/appbar.page.text.png",
 		},
+		home = {
+			icon = "resources/icons/appbar.home.png",
+			callback = function()
+				self.ui:handleEvent(Event:new("RestoreScreenMode",
+					G_reader_settings:readSetting("screen_mode") or "portrait"))
+				UIManager:close(self.menu_container)
+				self.ui:onClose()
+			end,
+		},
 	}
 	self.registered_widgets = {}
 
@@ -78,6 +87,7 @@ function ReaderMenu:onShowMenu()
 				self.tab_item_table.navi,
 				self.tab_item_table.typeset,
 				self.tab_item_table.main,
+				self.tab_item_table.home,
 			},
 			show_parent = menu_container,
 		}
