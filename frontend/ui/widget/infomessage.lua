@@ -16,6 +16,17 @@ function InfoMessage:init()
 		key_events = {
 			AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
 		}
+	else
+		self.ges_events.TapClose = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		}
 	end
 	-- we construct the actual content here because self.text is only available now
 	self[1] = CenterContainer:new{
@@ -52,3 +63,7 @@ function InfoMessage:onAnyKeyPressed()
 	return true
 end
 
+function InfoMessage:onTapClose()
+	UIManager:close(self)
+	return true
+end
