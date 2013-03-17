@@ -10,7 +10,7 @@ function ReaderScreenshot:init()
 		Screenshot = {
 			GestureRange:new{
 				ges = "two_finger_tap",
-				scale = {diagonal - scaleByDPI(80), diagonal},
+				scale = {diagonal - scaleByDPI(100), diagonal},
 				rate = 1.0,
 			}
 		},

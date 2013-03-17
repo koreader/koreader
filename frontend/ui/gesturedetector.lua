@@ -224,87 +224,18 @@ end
 this method handles both single and double tap
 --]]
 function GestureDetector:tapState(tev)
-	DEBUG("in tap state...")
+	DEBUG("in tap state...", tev)
 	local slot = tev.slot
 	if slot == 1 then
-		if tev.id == -1 and self.last_tevs[0] ~= nil then
-			if self:isTwoFingerTap(self.last_tevs[0], tev) then
-				local pos0 = Geom:new{
-					x = self.last_tevs[0].x,
-					y = self.last_tevs[0].y,
-					w = 0, h = 0,
-				}
-				local pos1 = Geom:new{
-					x = tev.x,
-					y = tev.y,
-					w = 0, h = 0,
-				}
-				local ges_ev = {
-					ges = "two_finger_tap",
-					span = pos0:distance(pos1),
-					time = tev.timev,
-				}
-				DEBUG("two-finger tap detected with span", pos0:distance(pos1))
-				self:clearState(0)
-				self:clearState(1)
-				return ges_ev
-			else
-				self:clearState(0)
-				self:clearState(1)
-			end
+		if tev.id == -1 then
+			return self:handleTwoFingerTap(tev)
+		else
+			return self:handleNonTap(tev)
 		end
 	elseif tev.id == -1 then
 		-- end of tap event
 		if self.last_tevs[slot] ~= nil then
-			local ges_ev = {
-				-- default to single tap
-				ges = "tap",
-				pos = Geom:new{
-					x = self.last_tevs[slot].x,
-					y = self.last_tevs[slot].y,
-					w = 0, h = 0,
-				},
-				time = tev.timev,
-			}
-			-- cur_tap is used for double tap detection
-			local cur_tap = {
-				x = tev.x,
-				y = tev.y,
-				timev = tev.timev,
-			}
-
-			if self.last_taps[slot] ~= nil and
-			self:isDoubleTap(self.last_taps[slot], cur_tap) then
-				-- it is a double tap
-				self:clearState(slot)
-				ges_ev.ges = "double_tap"
-				self.last_taps[slot] = nil
-				DEBUG("double tap detected in slot", slot)
-				return ges_ev
-			end
-
-			-- set current tap to last tap
-			self.last_taps[slot] = cur_tap
-
-			DEBUG("set up tap timer")
-			-- deadline should be calculated by adding current tap time and the interval
-			local deadline = cur_tap.timev + TimeVal:new{
-				sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
-			}
-			Input:setTimeout(function()
-				DEBUG("in tap timer", self.last_taps[slot] ~= nil)
-				-- double tap will set last_tap to nil so if it is not, then
-				-- user must only tapped once
-				if self.last_taps[slot] ~= nil then
-					self.last_taps[slot] = nil
-					-- we are using closure here
-					DEBUG("single tap detected in slot", slot)
-					return ges_ev
-				end
-			end, deadline)
-			-- we are already at the end of touch event
-			-- so reset the state
-			self:clearState(slot)
+			return self:handleDoubleTap(tev)
 		else
 			-- last tev in this slot is cleared by last two finger tap
 			self:clearState(slot)
@@ -318,7 +249,95 @@ function GestureDetector:tapState(tev)
 				time = tev.timev,
 			}
 		end
-	elseif self.states[slot] ~= self.tapState then
+	else
+		return self:handleNonTap(tev)
+	end
+end
+
+function GestureDetector:handleTwoFingerTap(tev)
+	if self.last_tevs[0] ~= nil and self:isTwoFingerTap(self.last_tevs[0], tev) then
+		local pos0 = Geom:new{
+			x = self.last_tevs[0].x,
+			y = self.last_tevs[0].y,
+			w = 0, h = 0,
+		}
+		local pos1 = Geom:new{
+			x = tev.x,
+			y = tev.y,
+			w = 0, h = 0,
+		}
+		local ges_ev = {
+			ges = "two_finger_tap",
+			pos = pos0,
+			span = pos0:distance(pos1),
+			time = tev.timev,
+		}
+		DEBUG("two-finger tap detected with span", pos0:distance(pos1))
+		self:clearState(0)
+		self:clearState(1)
+		return ges_ev
+	else
+		self:clearState(0)
+		self:clearState(1)
+	end
+end
+
+function GestureDetector:handleDoubleTap(tev)
+	local slot = tev.slot
+	local ges_ev = {
+		-- default to single tap
+		ges = "tap",
+		pos = Geom:new{
+			x = self.last_tevs[slot].x,
+			y = self.last_tevs[slot].y,
+			w = 0, h = 0,
+		},
+		time = tev.timev,
+	}
+	-- cur_tap is used for double tap detection
+	local cur_tap = {
+		x = tev.x,
+		y = tev.y,
+		timev = tev.timev,
+	}
+
+	if self.last_taps[slot] ~= nil and
+	self:isDoubleTap(self.last_taps[slot], cur_tap) then
+		-- it is a double tap
+		self:clearState(slot)
+		ges_ev.ges = "double_tap"
+		self.last_taps[slot] = nil
+		DEBUG("double tap detected in slot", slot)
+		return ges_ev
+	end
+
+	-- set current tap to last tap
+	self.last_taps[slot] = cur_tap
+
+	DEBUG("set up tap timer")
+	-- deadline should be calculated by adding current tap time and the interval
+	local deadline = cur_tap.timev + TimeVal:new{
+		sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
+	}
+	Input:setTimeout(function()
+		DEBUG("in tap timer", self.last_taps[slot] ~= nil)
+		-- double tap will set last_tap to nil so if it is not, then
+		-- user must only tapped once
+		if self.last_taps[slot] ~= nil then
+			self.last_taps[slot] = nil
+			-- we are using closure here
+			DEBUG("single tap detected in slot", slot)
+			return ges_ev
+		end
+	end, deadline)
+	-- we are already at the end of touch event
+	-- so reset the state
+	self:clearState(slot)
+end
+
+function GestureDetector:handleNonTap(tev)
+	local slot = tev.slot
+	if self.states[slot] ~= self.tapState then
 		-- switched from other state, probably from initialState
 		-- we return nil in this case
 		self.states[slot] = self.tapState
@@ -405,6 +424,10 @@ function GestureDetector:panState(tev)
 			y = self.last_tevs[slot].y,
 			w = 0, h = 0,
 		}
+		if self.detectings[0] and self.detectings[1] then
+			pan_ev.ges = "two_finger_pan"
+			DEBUG("two finger pan detected")
+		end
 		return pan_ev
 	end
 end

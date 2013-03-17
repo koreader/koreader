@@ -67,6 +67,8 @@ static int newFace(lua_State *L) {
 static int renderGlyph(lua_State *L) {
 	KPVFace *face = (KPVFace*) luaL_checkudata(L, 1, "ft_face");
 	int ch = luaL_checkint(L, 2);
+	double bg = luaL_checknumber(L, 3);
+	double fg = luaL_checknumber(L, 4);
 	FT_Error error = FT_Load_Char(face->face, ch, FT_LOAD_RENDER);
 	if(error) {
 		return luaL_error(L, "freetype error");
@@ -91,12 +93,13 @@ static int renderGlyph(lua_State *L) {
 	for(y = 0; y < h; y++) {
 		uint8_t *src = face->face->glyph->bitmap.buffer + y * face->face->glyph->bitmap.pitch;
 		for(x = 0; x < (w/2); x++) {
-			*dst = (src[0] & 0xF0) | (src[1] >> 4);
+			*dst = (int)(0xFF * bg - src[0] * (bg - fg)) & 0xF0 |
+				   (int)(0xFF * bg - src[1] * (bg - fg)) >> 4;
 			src+=2;
 			dst++;
 		}
 		if(w & 1) {
-			*dst = *src & 0xF0;
+			*dst = (int)(0xFF * bg - *src * (bg - fg)) & 0xF0;
 			dst++;
 		}
 	}

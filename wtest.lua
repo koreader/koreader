@@ -178,6 +178,7 @@ readerwindow[1][1] = reader
 
 touch_menu = TouchMenu:new{
 	title = "Document menu",
+	width = Screen:getWidth(),
 	tab_item_table = {
 		{
 			icon = "resources/icons/appbar.pokeball.png",
@@ -239,6 +240,12 @@ touch_menu = TouchMenu:new{
 				callback = function()
 				end,
 			},
+		},
+		{
+			icon = "resources/icons/appbar.home.png",
+			callback = function()
+				DEBUG("hello world!")
+			end
 		}
 	},
 }

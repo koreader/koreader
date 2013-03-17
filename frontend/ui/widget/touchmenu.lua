@@ -164,7 +164,7 @@ TouchMenu = InputContainer:new{
 	item_height = scaleByDPI(50),
 	bordersize = scaleByDPI(2),
 	padding = scaleByDPI(5),
-	width = Screen:getWidth(),
+	width = nil,
 	height = nil,
 	page = 1,
 	max_per_page = 10,
@@ -316,6 +316,9 @@ function TouchMenu:updateItems()
 end
 
 function TouchMenu:switchMenuTab(tab_num)
+	if self.tab_item_table[tab_num].callback then
+		self.tab_item_table[tab_num].callback()
+	end
 	if self.cur_tab ~= tab_num then
 		-- it's like getting a new menu everytime we switch tab!
 		self.page = 1
