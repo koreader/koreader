@@ -1,6 +1,8 @@
 Device = {
 	screen_saver_mode = false,
 	charging_mode = false,
+	survive_screen_saver = false,
+	touch_dev = nil,
 	model = nil,
 }
 
@@ -79,6 +81,14 @@ function Device:isTouchDevice()
 	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or util.isEmulated()
 end
 
+function Device:setTouchInputDev(dev)
+	self.touch_dev = dev
+end
+
+function Device:getTouchInputDev()
+	return self.touch_dev
+end
+
 function Device:intoScreenSaver()
 	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
@@ -102,6 +112,7 @@ function Device:outofScreenSaver()
 		--os.execute("killall -stop cvm")
 		Screen:restoreFromSavedBB()
 		Screen:refresh(0)
+		self.survive_screen_saver = true
 	end
 	self.screen_saver_mode = false
 end

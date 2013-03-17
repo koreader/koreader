@@ -34,10 +34,21 @@ function exitReader()
 
 	input.closeAll()
 
-	if util.isEmulated() ==0 then
+	if util.isEmulated() == 0 then
 		if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
 			-- send double menu key press events to trigger screen refresh
 			os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
+		end
+		if Device:isTouchDevice() and Device.survive_screen_saver then
+			-- hack the swipe to unlock screen
+			local dev = Device:getTouchInputDev()
+			if dev then
+				local width, height = Screen:getWidth(), Screen:getHeight()
+				input.fakeTapInput(dev, 
+					math.min(width, height)/2,
+					math.max(width, height)-30
+				)
+			end
 		end
 	end
 end
