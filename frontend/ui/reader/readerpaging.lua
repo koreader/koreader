@@ -142,6 +142,8 @@ function ReaderPaging:onToggleFlipping()
 	self.flipping_page = self.current_page
 	if self.flipping_mode then
 		self:updateOriginalPage(self.current_page)
+	else
+		self:updateOriginalPage(nil)
 	end
 	self.ui:handleEvent(Event:new("SetHinting", not self.flipping_mode))
 	UIManager:setDirty(self.view.dialog, "partial")
