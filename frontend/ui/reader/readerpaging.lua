@@ -210,7 +210,9 @@ end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig)
 	self.current_page = new_page_no
-	self.ui:handleEvent(Event:new("InitScrollPageStates", orig))
+	if orig ~= "scrolling" then
+		self.ui:handleEvent(Event:new("InitScrollPageStates", orig))
+	end
 end
 
 function ReaderPaging:onViewRecalculate(visible_area, page_area)
@@ -241,8 +243,8 @@ end
 
 function ReaderPaging:onInitScrollPageStates(orig)
 	DEBUG("init scroll page states")
-	if orig == "scrolling" then return true end
 	if self.view.page_scroll then
+		self.orig_page = self.current_page
 		self.view.page_states = {}
 		local blank_area = Geom:new{}
 		blank_area:setSizeTo(self.view.dimen)
@@ -257,6 +259,7 @@ function ReaderPaging:onInitScrollPageStates(orig)
 				self:gotoPage(self.current_page + 1, "scrolling")
 			end
 		end
+		self:gotoPage(self.orig_page, "scrolling")
 	end
 	return true
 end
