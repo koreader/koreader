@@ -145,7 +145,7 @@ KoptOptions = {
 			{
 				name = "text_wrap",
 				name_text = "Reflow",
-				toggle = {"On", "Off"},
+				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 0,
 				events = {
@@ -163,8 +163,8 @@ KoptOptions = {
 			{
 				name="screen_rotation",
 				name_text = "Vertical Text",
-				toggle = {"Off", "On"},
-				values = {0, 90},
+				toggle = {"on", "off"},
+				values = {270, 0},
 				default_value = 0,
 			},
 			{
