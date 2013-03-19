@@ -101,13 +101,25 @@ KoptOptions = {
 		options = {
 			{
 				name = "font_size",
-				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
 				item_align_center = 1.0,
 				spacing = 15,
-				item_font_size = {20,24,28,32,34,36,38,40,42,44,46},
-				values = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0, 4.0},
+				item_font_size = {22,24,28,32,34,36,38,42,46,50},
+				values = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 4.0},
 				default_value = 1.0,
+				height = 60,
 			},
+			{
+				name = "font_fine_tune",
+				name_text = "Fine Tuning",
+				toggle = {"decrease","increase"},
+				values = {-0.05, 0.05},
+				default_value = 0.05,
+				event = "FineTuningFontSize",
+				args = {-0.05, 0.05},
+				alternate = false,
+				height = 60,
+			}
 		}
 	},
 	{
@@ -133,7 +145,7 @@ KoptOptions = {
 			{
 				name = "text_wrap",
 				name_text = "Reflow",
-				toggle = {"On", "Off"},
+				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 0,
 				events = {
@@ -151,8 +163,8 @@ KoptOptions = {
 			{
 				name="screen_rotation",
 				name_text = "Vertical Text",
-				toggle = {"Off", "On"},
-				values = {0, 90},
+				toggle = {"on", "off"},
+				values = {270, 0},
 				default_value = 0,
 			},
 			{
