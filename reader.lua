@@ -1,4 +1,4 @@
-#!./kpdfview
+#!./koreader-base
 
 package.path = "./frontend/?.lua"
 require "ui/uimanager"

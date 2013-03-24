@@ -1,6 +1,15 @@
-VERSION?=$(shell git describe HEAD)
-CHOST?=arm-none-linux-gnueabi
-STRIP:=$(CHOST)-strip
+# the repository might not have been checked out yet, so make this
+# able to fail:
+-include koreader-base/Makefile.defs
+
+# we want VERSION to carry the version of koreader, not koreader-base
+VERSION=$(shell git describe HEAD)
+
+# subdirectory we use to build the installation bundle
+INSTALL_DIR=kindlepdfviewer
+
+# files to copy from main directory
+LUA_FILES=reader.lua
 
 all: koreader-base/koreader-base koreader-base/extr
 
@@ -21,22 +30,22 @@ clean:
 cleanthirdparty:
 	cd koreader-base && make cleanthirdparty
 
-customupdate: all
+customupdate: koreader-base/koreader-base koreader-base/extr
 	# ensure that the binaries were built for ARM
 	file koreader-base/koreader-base | grep ARM || exit 1
 	file koreader-base/extr | grep ARM || exit 1
 	rm -f kindlepdfviewer-$(VERSION).zip
-	$(STRIP) --strip-unneeded koreader-base/kpdfview koreader-base/extr
 	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
-	cp -p README.md COPYING kpdfview extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING koreader-base/koreader-base koreader-base/extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr
 	mkdir $(INSTALL_DIR)/data
-	cp -L $(DJVULIB) $(CRELIB) $(LUALIB) $(K2PDFOPTLIB) $(INSTALL_DIR)/libs
+	cp -L koreader-base/$(DJVULIB) koreader-base/$(CRELIB) koreader-base/$(LUALIB) koreader-base/$(K2PDFOPTLIB) $(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
-	cp -rpL data/*.css $(INSTALL_DIR)/data
-	cp -rpL fonts $(INSTALL_DIR)
+	cp -rpL koreader-base/data/*.css $(INSTALL_DIR)/data
+	cp -rpL koreader-base/fonts $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
-	cp -r git-rev resources $(INSTALL_DIR)
+	cp -r koreader-base/git-rev resources $(INSTALL_DIR)
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
