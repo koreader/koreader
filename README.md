@@ -47,12 +47,15 @@ Follow these steps:
 * run `make thirdparty`. This will build MuPDF (plus the libraries it depends
   on), libDjvuLibre, CREngine, libk2pdfopt and Lua.
 
-* run `make`. This will build the koreader application
+* run `make`. This will build the koreader application (see below if you want
+  to build in emulation mode so you can test it on PC)
 
 
 Running
 =======
 
+In real eink devices
+---------------------
 The user interface is scripted in Lua. See "reader.lua".
 It uses the Linux feature to run scripts by using a corresponding line at its
 start.
@@ -66,3 +69,23 @@ usage notes.  The reader.lua script can also show a file chooser: it will do
 this when you call it with a directory (instead of a file) as first argument.
 
 
+In emulator
+-----------
+You need to first compile koreader-base in emulation mode.
+  * If you have built koreader in real mode before, you need to clean it up:
+```
+make clean && make cleanthirdparty
+```
+  * Then compile with emulation mode flag:
+```
+EMULATE_READER_W=600 EMULATE_READER_H=800 EMULATE_READER=1 make
+```
+  * You may want to see README.md in koreader-base for more information.
+
+Next run `make setupemu` to setup basic runtime environment needed by emulation
+mode.
+
+Last, run the emulator with following command:
+```
+./koreader-base/koreader-base reader.lua -d ./
+```
