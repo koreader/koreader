@@ -89,8 +89,8 @@ function ReaderBookmark:onShowBookmark()
 	local bm_menu = Menu:new{
 		title = "Bookmarks",
 		item_table = self.bookmarks,
-		width = Screen:getWidth()-20,
-		height = Screen:getHeight(),
+		width = Screen:getWidth()-50,
+		height = Screen:getHeight()-50,
 	}
 	-- buid up menu widget method as closure
 	local doc = self.ui.document
