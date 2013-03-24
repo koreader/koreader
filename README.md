@@ -36,6 +36,7 @@ Follow these steps:
 			* install CREngine sources into subfolder "kpvcrlib/crengine"
 			* install LuaJit sources into subfolder "luajit-2.0"
 			* install popen_noshell sources into subfolder "popen-noshell"
+			* install libk2pdfopt sources into subfolder "libk2pdfopt"
 
 	* automatically fetch thirdparty sources with Makefile:
 		* make sure you have patch, wget, unzip, git and svn installed
@@ -44,9 +45,9 @@ Follow these steps:
 * adapt Makefile to your needs - have a look at Makefile.defs in koreader-base
 
 * run `make thirdparty`. This will build MuPDF (plus the libraries it depends
-  on), libDjvuLibre, CREngine and Lua.
+  on), libDjvuLibre, CREngine, libk2pdfopt and Lua.
 
-* run `make`. This will build the kpdfview application
+* run `make`. This will build the koreader application
 
 
 Running

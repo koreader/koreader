@@ -1,4 +1,4 @@
-require "settings" -- for DEBUG()
+require "dbg" -- for DEBUG()
 
 Font = {
 	fontmap = {
