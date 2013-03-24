@@ -6,7 +6,7 @@
 VERSION=$(shell git describe HEAD)
 
 # subdirectory we use to build the installation bundle
-INSTALL_DIR=kindlepdfviewer
+INSTALL_DIR=koreader
 
 # files to copy from main directory
 LUA_FILES=reader.lua
@@ -34,7 +34,7 @@ customupdate: koreader-base/koreader-base koreader-base/extr
 	# ensure that the binaries were built for ARM
 	file koreader-base/koreader-base | grep ARM || exit 1
 	file koreader-base/extr | grep ARM || exit 1
-	rm -f kindlepdfviewer-$(VERSION).zip
+	rm -f koreader-$(VERSION).zip
 	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
 	cp -p README.md COPYING koreader-base/koreader-base koreader-base/extr kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
@@ -49,6 +49,6 @@ customupdate: koreader-base/koreader-base koreader-base/extr
 	cp -r git-rev resources $(INSTALL_DIR)
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
-	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
+	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
-	@echo "copy kindlepdfviewer-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
+	@echo "copy koreader-$(VERSION).zip to /mnt/us/customupdates and install with shift+shift+I"
