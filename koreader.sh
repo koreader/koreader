@@ -7,11 +7,11 @@ test -e $PROC_KEYPAD && echo unlock > $PROC_KEYPAD
 test -e $PROC_FIVEWAY && echo unlock > $PROC_FIVEWAY
 
 # we're always starting from our working directory
-cd /mnt/us/kindlepdfviewer/
+cd /mnt/us/koreader/
 
 # bind-mount system fonts
-if ! grep /mnt/us/kindlepdfviewer/fonts/host /proc/mounts; then
-	mount -o bind /usr/java/lib/fonts /mnt/us/kindlepdfviewer/fonts/host
+if ! grep /mnt/us/koreader/fonts/host /proc/mounts; then
+	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host
 fi
 
 # check if we are supposed to shut down the Amazon framework
@@ -30,8 +30,8 @@ lipc-set-prop com.lab126.pillow disableEnablePillow disable
 ./reader.lua "$1" 2> crash.log
 
 # unmount system fonts
-if grep /mnt/us/kindlepdfviewer/fonts/host /proc/mounts; then
-	umount /mnt/us/kindlepdfviewer/fonts/host
+if grep /mnt/us/koreader/fonts/host /proc/mounts; then
+	umount /mnt/us/koreader/fonts/host
 fi
 
 # always try to continue cvm
