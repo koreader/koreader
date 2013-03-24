@@ -67,5 +67,5 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
-	# @TODO write a installation script in KUAL   (houqp)
+	# @TODO write an installation script for KUAL   (houqp)
 
