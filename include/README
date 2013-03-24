@@ -1,5 +1,0 @@
-The include file "einkfb.h" is distributed with Amazons Linux kernel sources
-for the Kindle. It has no further copyright notice, so it's assumed to be
-released under the GPLv2 originally. Under the "any later version" clause, it
-should be OK to include it in this GPLv3 application.
-
