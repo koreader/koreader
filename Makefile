@@ -45,7 +45,8 @@ customupdate: koreader-base/koreader-base koreader-base/extr
 	cp -rpL koreader-base/data/*.css $(INSTALL_DIR)/data
 	cp -rpL koreader-base/fonts $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
-	cp -r koreader-base/git-rev resources $(INSTALL_DIR)
+	echo $(VERSION) > git-rev
+	cp -r git-rev resources $(INSTALL_DIR)
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r kindlepdfviewer-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
