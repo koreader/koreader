@@ -1,9 +1,9 @@
+# koreader-base directory
+KOR_BASE=koreader-base
+
 # the repository might not have been checked out yet, so make this
 # able to fail:
 -include $(KOR_BASE)/Makefile.defs
-
-# koreader-base directory
-KOR_BASE=koreader-base
 
 # we want VERSION to carry the version of koreader, not koreader-base
 VERSION=$(shell git describe HEAD)
