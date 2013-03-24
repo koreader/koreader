@@ -377,11 +377,13 @@ function ReaderPaging:onScrollPageRel(diff)
 			table.insert(self.view.page_states, state)
 		end
 		--DEBUG("blank area", blank_area)
+		local current_page = state.page
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
 				if self.current_page == self.number_of_pages then break end
-				self:gotoPage(self.current_page + 1, "scrolling")
+				self:gotoPage(current_page + 1, "scrolling")
+				current_page = current_page + 1
 				local state = self:getNextPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, state)
@@ -403,17 +405,21 @@ function ReaderPaging:onScrollPageRel(diff)
 			table.insert(self.view.page_states, state)
 		end
 		--DEBUG("blank area", blank_area)
+		local current_page = state.page
 		while blank_area.h > 0 do
 			blank_area.h = blank_area.h - self.view.page_gap.height
 			if blank_area.h > 0 then
 				if self.current_page == 1 then break end
-				self:gotoPage(self.current_page - 1, "scrolling")
+				self:gotoPage(current_page - 1, "scrolling")
+				current_page = current_page - 1
 				local state = self:getPrevPageState(blank_area, Geom:new{})
 				--DEBUG("new state", state)
 				table.insert(self.view.page_states, 1, state)
 			end
 		end
 	end
+	-- update current pageno to the very last part in current view
+	self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
 	UIManager:setDirty(self.view.dialog)
 end
 
