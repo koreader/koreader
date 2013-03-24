@@ -30,6 +30,11 @@ clean:
 cleanthirdparty:
 	cd koreader-base && make cleanthirdparty
 
+setupemu:
+	test -d libs-emu || ln -s koreader-base/libs-emu ./
+	test -d fonts || ln -s koreader-base/fonts ./
+	test -d data || ln -s koreader-base/data ./
+
 customupdate: koreader-base/koreader-base koreader-base/extr
 	# ensure that the binaries were built for ARM
 	file koreader-base/koreader-base | grep ARM || exit 1
