@@ -73,17 +73,23 @@ In emulator
 -----------
 You need to first compile koreader-base in emulation mode.
   * If you have built koreader in real mode before, you need to clean it up:
-```bash
+
+```
 make clean && make cleanthirdparty
 ```
+
   * Then compile with emulation mode flag:
-```bash
+
+```
 EMULATE_READER=1 make
 ```
+
   * You may want to see README.md in koreader-base for more information.
+
 
 Next run `make bootstrapemu` to setup basic runtime environment needed by
 emulation mode. A new emu directory will be created.
+
 
 Last, run the emulator with following command:
 ```
