@@ -199,7 +199,7 @@ function showusage()
 	print("If you don't pass any path, the last viewed document will be opened")
 	print("")
 	print("This software is licensed under the GPLv3.")
-	print("See http://github.com/hwhw/kindlepdfviewer for more info.")
+	print("See http://github.com/koreader/kindlepdfviewer for more info.")
 	return
 end
 

@@ -4,7 +4,7 @@ CONTAINS: KUAL files for installation in /mnt/us/extensions/
 
 REF: Main KUAL thread http://www.mobileread.com/forums/showthread.php?t=203326
 
-UPSTREAM SOURCE: https://github.com/hwhw/koreader
+UPSTREAM SOURCE: https://github.com/koreader/koreader
 
 SUPPORTS: 
 DX No
