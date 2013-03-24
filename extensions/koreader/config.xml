@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension>
 	<information>
-		<name>KPDF</name>
+		<name>Koreader</name>
 		<version>0.0</version>
-		<author>Hawhill</author>
+		<author>Koreader dev team</author>
 		<id>helper</id>
 	</information>
 	<menus>

@@ -1,0 +1,12 @@
+{
+	"items": [
+		{
+		"name": "Koreader",
+		"priority": 0,
+		"items": [
+			{"name": "Start in documents", "priority": 1, "action": "/mnt/us/koreader/koreader.sh", "params": "/mnt/us/documents"},
+			{"name": "Open last document", "priority": 2, "action": "/mnt/us/koreader/koreader.sh"}
+		]
+		}
+	]
+}
