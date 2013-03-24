@@ -16,3 +16,6 @@
 [submodule "libk2pdfopt"]
 	path = libk2pdfopt
 	url = git://github.com/chrox/libk2pdfopt.git
+[submodule "koreader-base"]
+	path = koreader-base
+	url = git://github.com/hwhw/koreader-base.git
