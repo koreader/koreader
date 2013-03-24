@@ -8,6 +8,9 @@ VERSION=$(shell git describe HEAD)
 # subdirectory we use to build the installation bundle
 INSTALL_DIR=koreader
 
+# subdirectory we use to setup emulation environment
+EMU_DIR=emu
+
 # files to copy from main directory
 LUA_FILES=reader.lua
 
@@ -30,10 +33,16 @@ clean:
 cleanthirdparty:
 	cd koreader-base && make cleanthirdparty
 
-setupemu:
-	test -d libs-emu || ln -s koreader-base/libs-emu ./
-	test -d fonts || ln -s koreader-base/fonts ./
-	test -d data || ln -s koreader-base/data ./
+bootstrapemu:
+	test -d $(EMU_DIR) || mkdir $(EMU_DIR)
+	test -d $(EMU_DIR)/libs-emu || (cd $(EMU_DIR) && ln -s ../koreader-base/libs-emu ./)
+	test -d $(EMU_DIR)/fonts || (cd $(EMU_DIR) && ln -s ../koreader-base/fonts ./)
+	test -d $(EMU_DIR)/data || (cd $(EMU_DIR) && ln -s ../koreader-base/data ./)
+	test -d $(EMU_DIR)/frontend || (cd $(EMU_DIR) && ln -s ../frontend ./)
+	test -d $(EMU_DIR)/resources || (cd $(EMU_DIR) && ln -s ../resources ./)
+	test -e $(EMU_DIR)/koreader-base || (cd $(EMU_DIR) && ln -s ../koreader-base/koreader-base ./)
+	test -e $(EMU_DIR)/extr || (cd $(EMU_DIR) && ln -s ../koreader-base/extr ./)
+	test -e $(EMU_DIR)/reader.lua || (cd $(EMU_DIR) && ln -s ../reader.lua ./)
 
 customupdate: koreader-base/koreader-base koreader-base/extr
 	# ensure that the binaries were built for ARM
