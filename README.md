@@ -74,8 +74,7 @@ In emulator
 You need to first compile koreader-base in emulation mode.
   * If you have built koreader in real mode before, you need to clean it up:
 ```
-make clean
-make cleanthirdparty
+make clean && make cleanthirdparty
 ```
   * Then compile with emulation mode flag:
 ```
