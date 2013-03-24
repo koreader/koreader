@@ -51,6 +51,8 @@ function exitReader()
 			end
 		end
 	end
+	
+	os.exit(0)
 end
 
 function HomeMenu:setUpdateItemTable()
