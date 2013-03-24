@@ -1,21 +1,3 @@
-[submodule "mupdf"]
-	path = mupdf
-	url = git://git.ghostscript.com/mupdf.git
-[submodule "luafilesystem"]
-	path = luafilesystem
-	url = git://github.com/keplerproject/luafilesystem.git
-[submodule "djvulibre"]
-	path = djvulibre
-	url = git://djvu.git.sourceforge.net/gitroot/djvu/djvulibre.git
-[submodule "kpvcrlib/crengine"]
-	path = kpvcrlib/crengine
-	url = git://crengine.git.sourceforge.net/gitroot/crengine/crengine
-[submodule "luajit-2.0"]
-	path = luajit-2.0
-	url = http://luajit.org/git/luajit-2.0.git
-[submodule "libk2pdfopt"]
-	path = libk2pdfopt
-	url = git://github.com/chrox/libk2pdfopt.git
 [submodule "koreader-base"]
 	path = koreader-base
 	url = git://github.com/hwhw/koreader-base.git
