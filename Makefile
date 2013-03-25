@@ -53,7 +53,7 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	rm -rf $(INSTALL_DIR)
 	# create new dir for package
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
-	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr} kpdf.sh $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr} koreader.sh $(LUA_FILES) $(INSTALL_DIR)
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr
 	mkdir $(INSTALL_DIR)/data
 	cp -L koreader-base/$(DJVULIB) $(KOR_BASE)/$(CRELIB) $(KOR_BASE)/$(LUALIB) $(KOR_BASE)/$(K2PDFOPTLIB) $(INSTALL_DIR)/libs
