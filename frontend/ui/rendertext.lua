@@ -4,11 +4,19 @@ require "cache"
 TODO: all these functions should probably be methods on Face objects
 ]]--
 
+GlyphCache = Cache:new{
+	max_memsize = 512*1024,
+	current_memsize = 0,
+	cache = {},
+	-- this will hold the LRU order of the cache
+	cache_order = {}
+}
+
 function getGlyph(face, charcode, bgcolor, fgcolor)
 	if bgcolor == nil then bgcolor = 0.0 end
 	if fgcolor == nil then fgcolor = 1.0 end
 	local hash = "glyph|"..face.hash.."|"..charcode.."|"..bgcolor.."|"..fgcolor
-	local glyph = Cache:check(hash)
+	local glyph = GlyphCache:check(hash)
 	if glyph then
 		-- cache hit
 		return glyph[1]
@@ -20,8 +28,8 @@ function getGlyph(face, charcode, bgcolor, fgcolor)
 	end
 	glyph = CacheItem:new{rendered_glyph}
 	glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
-	Cache:insert(hash, glyph)
-	return glyph[1]
+	GlyphCache:insert(hash, glyph)
+	return rendered_glyph
 end
 
 function getSubTextByWidth(text, face, width, kerning)
