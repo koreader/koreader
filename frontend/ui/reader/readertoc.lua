@@ -85,8 +85,8 @@ function ReaderToc:onShowToc()
 		title = "Table of Contents",
 		item_table = self.toc,
 		ui = self.ui,
-		width = Screen:getWidth()-20,
-		height = Screen:getHeight(),
+		width = Screen:getWidth()-50,
+		height = Screen:getHeight()-50,
 		show_parent = menu_container,
 	}
 
