@@ -5,6 +5,7 @@ This is a document viewer application, created for usage on the Kindle e-ink rea
 It currently supports Kindle 5 (Touch) and Kindle Paperwhite. The devices need
 to be jailbroken in order to install the application. Also, a kind of external
 launcher is needed.
+>本文档阅读软件为kindle电子墨水阅读器用户使用而创建。目前该软件支持Kindle 5 (Touch)和Kindle Paperwhite。这些设备首先需要通过越狱然后才能安装KOReader，同时还需要一种额外的启动器。
 
 Koreader started as the KindlePDFViewer application, but it supports much more
 formats than PDF now. Among them are DJVU, FB2, EPUB, TXT, CBZ, HTML.
