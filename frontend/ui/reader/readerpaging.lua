@@ -89,6 +89,16 @@ function ReaderPaging:initGesListener()
 				}
 			}
 		},
+		TwoFingerSwipe = {
+			GestureRange:new{
+				ges = "two_finger_swipe",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		},
 		Pan = {
 			GestureRange:new{
 				ges = "pan",
@@ -179,15 +189,18 @@ function ReaderPaging:onSwipe(arg, ges)
 	if self.flipping_mode then
 		self:flipping(self.flipping_page, ges)
 		self:updateFlippingPage(self.current_page)
-	elseif self.original_page then
-		self:gotoPage(self.original_page)
-		self:updateOriginalPage(nil)
 	elseif ges.direction == "left" or ges.direction == "up" then
 		self:onPagingRel(1)
 	elseif ges.direction == "right" or ges.direction == "down" then
 		self:onPagingRel(-1)
 	end
 	return true
+end
+
+function ReaderPaging:onTwoFingerSwipe(arg, ges)
+	if self.original_page then
+		self:gotoPage(self.original_page)
+	end
 end
 
 function ReaderPaging:onPan(arg, ges)

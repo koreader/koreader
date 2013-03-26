@@ -371,14 +371,12 @@ function GestureDetector:panState(tev)
 		-- end of pan, signal swipe gesture if necessary
 		if self:isSwipe(tev) then
 			local swipe_direction, swipe_distance = self:getPath(tev)
-			DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
 			local start_pos = Geom:new{
 					x = self.first_tevs[slot].x,
 					y = self.first_tevs[slot].y,
 					w = 0, h = 0,
 			}
-			self:clearState(slot)
-			return {
+			local swipe_ev = {
 				ges = "swipe",
 				-- use first pan tev coordination as swipe start point
 				pos = start_pos,
@@ -386,6 +384,16 @@ function GestureDetector:panState(tev)
 				distance = swipe_distance,
 				time = tev.timev,
 			}
+			if self.detectings[0] and self.detectings[1] then
+				DEBUG("two finger swipe", swipe_direction, swipe_distance, "detected")
+				swipe_ev.ges = "two_finger_swipe"
+				self:clearState(0)
+				self:clearState(1)
+			else
+				DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
+				self:clearState(slot)
+			end
+			return swipe_ev
 		end
 		DEBUG("pan release detected in slot", slot)
 		local release_pos = Geom:new{
