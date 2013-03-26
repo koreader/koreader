@@ -99,4 +99,4 @@ cd emu && reader.lua -d ./
 You can also specify size of emulator's screen via environment variables.
 For more information, please refer to [koreader-base's README][base-readme].
 
-[base-readme]:https://github.com/koreader/koreader-base
+[base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
