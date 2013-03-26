@@ -43,12 +43,17 @@ function GestureRange:match(gs)
 end
 
 --[[
-Currently supported gestures:
-	* single tap
-	* double tap
-	* hold
+Current detectable gestures:
+	* tap
 	* pan
+	* hold
 	* swipe
+	* double_tap
+	* pan_release
+	* two_finger_tap
+	* two_finger_pan
+	* two_finger_swipe
+	* two_finger_pan_release
 
 You change the state machine by feeding it touch events, i.e. calling
 GestureDetector:feedEvent(tev).
@@ -135,13 +140,16 @@ function GestureDetector:isDoubleTap(tap1, tap2)
 	)
 end
 
-function GestureDetector:isTwoFingerTap(tev0, tev1)
-	local x_diff0 = math.abs(tev0.x - self.first_tevs[0].x)
-	local x_diff1 = math.abs(tev1.x - self.first_tevs[1].x)
-	local y_diff0 = math.abs(tev0.y - self.first_tevs[0].y)
-	local y_diff1 = math.abs(tev1.y - self.first_tevs[1].y)
-	local tv_diff0 = tev0.timev - self.first_tevs[0].timev
-	local tv_diff1 = tev1.timev - self.first_tevs[1].timev
+function GestureDetector:isTwoFingerTap()
+	if self.last_tevs[0] == nil or self.last_tevs[1] == nil then 
+		return false
+	end
+	local x_diff0 = math.abs(self.last_tevs[0].x - self.first_tevs[0].x)
+	local x_diff1 = math.abs(self.last_tevs[1].x - self.first_tevs[1].x)
+	local y_diff0 = math.abs(self.last_tevs[0].y - self.first_tevs[0].y)
+	local y_diff1 = math.abs(self.last_tevs[1].y - self.first_tevs[1].y)
+	local tv_diff0 = self.last_tevs[0].timev - self.first_tevs[0].timev
+	local tv_diff1 = self.last_tevs[1].timev - self.first_tevs[1].timev
 	return (
 		x_diff0 < self.TWO_FINGER_TAP_REGION and
 		x_diff1 < self.TWO_FINGER_TAP_REGION and
@@ -199,6 +207,11 @@ function GestureDetector:clearState(slot)
 	self.last_tevs[slot] = nil
 end
 
+function GestureDetector:clearStates()
+	self:clearState(0)
+	self:clearState(1)
+end
+
 function GestureDetector:initialState(tev)
 	local slot = tev.slot
 	if tev.id then
@@ -224,17 +237,35 @@ end
 this method handles both single and double tap
 --]]
 function GestureDetector:tapState(tev)
-	DEBUG("in tap state...", tev)
+	DEBUG("in tap state...")
 	local slot = tev.slot
-	if slot == 1 then
-		if tev.id == -1 then
-			return self:handleTwoFingerTap(tev)
-		else
-			return self:handleNonTap(tev)
-		end
-	elseif tev.id == -1 then
+	if tev.id == -1 then
 		-- end of tap event
-		if self.last_tevs[slot] ~= nil then
+		if self.detectings[0] and self.detectings[1] then
+			if self:isTwoFingerTap() then
+				local pos0 = Geom:new{
+					x = self.last_tevs[0].x,
+					y = self.last_tevs[0].y,
+					w = 0, h = 0,
+				}
+				local pos1 = Geom:new{
+					x = self.last_tevs[1].x,
+					y = self.last_tevs[1].y,
+					w = 0, h = 0,
+				}
+				local tap_span = pos0:distance(pos1)
+				DEBUG("two-finger tap detected with span", tap_span)
+				self:clearStates()
+				return {
+					ges = "two_finger_tap",
+					pos = pos0:midpoint(pos1),
+					span = tap_span,
+					time = tev.timev,
+				}
+			else
+				self:clearState(slot)
+			end
+		elseif self.last_tevs[slot] ~= nil then
 			return self:handleDoubleTap(tev)
 		else
 			-- last tev in this slot is cleared by last two finger tap
@@ -251,34 +282,6 @@ function GestureDetector:tapState(tev)
 		end
 	else
 		return self:handleNonTap(tev)
-	end
-end
-
-function GestureDetector:handleTwoFingerTap(tev)
-	if self.last_tevs[0] ~= nil and self:isTwoFingerTap(self.last_tevs[0], tev) then
-		local pos0 = Geom:new{
-			x = self.last_tevs[0].x,
-			y = self.last_tevs[0].y,
-			w = 0, h = 0,
-		}
-		local pos1 = Geom:new{
-			x = tev.x,
-			y = tev.y,
-			w = 0, h = 0,
-		}
-		local ges_ev = {
-			ges = "two_finger_tap",
-			pos = pos0,
-			span = pos0:distance(pos1),
-			time = tev.timev,
-		}
-		DEBUG("two-finger tap detected with span", pos0:distance(pos1))
-		self:clearState(0)
-		self:clearState(1)
-		return ges_ev
-	else
-		self:clearState(0)
-		self:clearState(1)
 	end
 end
 
@@ -387,27 +390,33 @@ function GestureDetector:panState(tev)
 			if self.detectings[0] and self.detectings[1] then
 				DEBUG("two finger swipe", swipe_direction, swipe_distance, "detected")
 				swipe_ev.ges = "two_finger_swipe"
-				self:clearState(0)
-				self:clearState(1)
+				self:clearStates()
 			else
 				DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
 				self:clearState(slot)
 			end
 			return swipe_ev
+		else -- if end of pan is not swipe then it must be pan release.
+			local release_pos = Geom:new{
+				x = self.last_tevs[slot].x,
+				y = self.last_tevs[slot].y,
+				w = 0, h = 0,
+			}
+			local pan_ev = {
+				ges = "pan_release",
+				pos = release_pos,
+				time = tev.timev,
+			}
+			if self.detectings[0] and self.detectings[1] then
+				DEBUG("two finger pan release detected")
+				pan_ev.ges = "two_finger_pan_release"
+				self:clearStates()
+			else
+				DEBUG("pan release detected in slot", slot)
+				self:clearState(slot)
+			end
+			return pan_ev
 		end
-		DEBUG("pan release detected in slot", slot)
-		local release_pos = Geom:new{
-			x = self.last_tevs[slot].x,
-			y = self.last_tevs[slot].y,
-			w = 0, h = 0,
-		}
-		local pan_release = {
-			ges = "pan_release",
-			pos = release_pos,
-			time = tev.timev,
-		}
-		self:clearState(slot)
-		return pan_release
 	else
 		if self.states[slot] ~= self.panState then
 			self.states[slot] = self.panState

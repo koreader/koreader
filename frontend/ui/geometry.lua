@@ -271,3 +271,15 @@ return the Euclidean distance between two geoms
 function Geom:distance(geom)
 	return math.sqrt(math.pow(self.x - geom.x, 2) + math.pow(self.y - geom.y, 2))
 end
+
+--[[
+return the midpoint of two geoms
+]]--
+function Geom:midpoint(geom)
+	return Geom:new{
+		x = (self.x + geom.x) / 2,
+		y = (self.y + geom.y) / 2,
+		w = 0, h = 0,
+	}
+end
+
