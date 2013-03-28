@@ -412,8 +412,8 @@ function GestureDetector:panState(tev)
 					elseif ges_ev.ges == "outward_pan" then
 						ges_ev.ges = "spread"
 					end
+					DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
 				end
-				DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
 				return ges_ev
 			else
 				return self:handleSwipe(tev)
