@@ -618,11 +618,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 				ges.direction = "south"
 			elseif ges.direction == "west" then
 				ges.direction = "north"
-			end
-		elseif ges.ges == "pinch" or ges.ges == "spread"
-			or ges.ges == "inward_pan"
-			or ges.ges == "outward_pan" then
-			if ges.direction == "northeast" then
+			elseif ges.direction == "northeast" then
 				ges.direction = "southeast"
 			elseif ges.direction == "northwest" then
 				ges.direction = "northeast"
@@ -630,6 +626,14 @@ function GestureDetector:adjustGesCoordinate(ges)
 				ges.direction = "southwest"
 			elseif ges.direction == "southwest" then
 				ges.direction = "northwest"
+			end
+		elseif ges.ges == "pinch" or ges.ges == "spread"
+			or ges.ges == "inward_pan"
+			or ges.ges == "outward_pan" then
+			if ges.direction == "horizontal" then
+				ges.direction = "vertical"
+			elseif ges.direction == "vertical" then
+				ges.direction = "horizontal"
 			end
 		end
 	end
