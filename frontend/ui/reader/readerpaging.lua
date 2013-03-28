@@ -173,13 +173,13 @@ function ReaderPaging:flipping(flipping_page, flipping_ges)
 	local whole = self.number_of_pages
 	local rel_proportion = flipping_ges.distance / Screen:getWidth()
 	local abs_proportion = flipping_ges.distance / Screen:getHeight()
-	if flipping_ges.direction == "right" then
+	if flipping_ges.direction == "east" then
 		self:gotoPage(flipping_page - math.floor(read*rel_proportion))
-	elseif flipping_ges.direction == "left" then
+	elseif flipping_ges.direction == "west" then
 		self:gotoPage(flipping_page + math.floor(unread*rel_proportion))
-	elseif flipping_ges.direction == "down" then
+	elseif flipping_ges.direction == "south" then
 		self:gotoPage(flipping_page - math.floor(whole*abs_proportion))
-	elseif flipping_ges.direction == "up" then
+	elseif flipping_ges.direction == "north" then
 		self:gotoPage(flipping_page + math.floor(whole*abs_proportion))
 	end
 	UIManager:setDirty(self.view.dialog, "partial")
@@ -189,9 +189,9 @@ function ReaderPaging:onSwipe(arg, ges)
 	if self.flipping_mode then
 		self:flipping(self.flipping_page, ges)
 		self:updateFlippingPage(self.current_page)
-	elseif ges.direction == "left" or ges.direction == "up" then
+	elseif ges.direction == "west" or ges.direction == "north" then
 		self:onPagingRel(1)
-	elseif ges.direction == "right" or ges.direction == "down" then
+	elseif ges.direction == "east" or ges.direction == "south" then
 		self:onPagingRel(-1)
 	end
 	return true
