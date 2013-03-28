@@ -48,7 +48,12 @@ Current detectable gestures:
 	* pan
 	* hold
 	* swipe
+	* pinch
+	* spread
+	* rotate
 	* double_tap
+	* inward_pan
+	* outward_pan
 	* pan_release
 	* two_finger_tap
 	* two_finger_pan
@@ -83,7 +88,17 @@ GestureDetector = {
 	DOUBLE_TAP_DISTANCE = 50,
 	TWO_FINGER_TAP_REGION = 20,
 	PAN_THRESHOLD = 50,
-
+	-- pinch/spread direction table
+	DIRECTION_TABLE = {
+		east = "horizontal",
+		west = "horizontal",
+		north = "vertical",
+		south = "vertical",
+		northeast = "diagonal",
+		northwest = "diagonal",
+		southeast = "diagonal",
+		southwest = "diagonal",
+	},
 	-- states are stored in separated slots
 	states = {},
 	track_ids = {},
@@ -164,23 +179,29 @@ end
 compare last_pan with first_tev in this slot
 return pan direction and distance
 --]]
-function GestureDetector:getPath(tev)
-	local slot = tev.slot
+function GestureDetector:getPath(slot)
 	local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
 	local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
 	local direction = nil
 	local distance = math.sqrt(x_diff*x_diff + y_diff*y_diff)
 	if x_diff == 0 and y_diff == 0 then
-	elseif (math.abs(x_diff) > math.abs(y_diff)) then
-		direction = x_diff < 0 and "left" or "right"
 	else
-		direction = y_diff < 0 and "up" or "down"
+		local v_direction = y_diff < 0 and "north" or "south"
+		local h_direction = x_diff < 0 and "west" or "east"
+		if math.abs(y_diff) > 0.577*math.abs(x_diff)
+			and math.abs(y_diff) < 1.732*math.abs(x_diff) then
+			direction = v_direction..h_direction
+		elseif (math.abs(x_diff) > math.abs(y_diff)) then
+			direction = h_direction
+		else
+			direction = v_direction
+		end
 	end
 	return direction, distance
 end
 
-function GestureDetector:isSwipe(tev)
-	local slot = tev.slot
+function GestureDetector:isSwipe(slot)
+	if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
 	local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
 	if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
 		local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
@@ -189,6 +210,13 @@ function GestureDetector:isSwipe(tev)
 			return true
 		end
 	end
+end
+
+function GestureDetector:getRotate(orig_point, start_point, end_point)
+	local a = orig_point:distance(start_point)
+	local b = orig_point:distance(end_point)
+	local c = start_point:distance(end_point)
+	return math.acos((a*a + b*b - c*c)/(2*a*b))*180/math.pi
 end
 
 --[[
@@ -372,56 +400,61 @@ function GestureDetector:panState(tev)
 	local slot = tev.slot
 	if tev.id == -1 then
 		-- end of pan, signal swipe gesture if necessary
-		if self:isSwipe(tev) then
-			local swipe_direction, swipe_distance = self:getPath(tev)
-			local start_pos = Geom:new{
-					x = self.first_tevs[slot].x,
-					y = self.first_tevs[slot].y,
-					w = 0, h = 0,
-			}
-			local swipe_ev = {
-				ges = "swipe",
-				-- use first pan tev coordination as swipe start point
-				pos = start_pos,
-				direction = swipe_direction,
-				distance = swipe_distance,
-				time = tev.timev,
-			}
+		if self:isSwipe(slot) then
 			if self.detectings[0] and self.detectings[1] then
-				DEBUG("two finger swipe", swipe_direction, swipe_distance, "detected")
-				swipe_ev.ges = "two_finger_swipe"
+				local ges_ev = self:handleTwoFingerPan(tev)
 				self:clearStates()
+				if ges_ev then
+					if ges_ev.ges == "two_finger_pan" then
+						ges_ev.ges = "two_finger_swipe"
+					elseif ges_ev.ges == "inward_pan" then
+						ges_ev.ges = "pinch"
+					elseif ges_ev.ges == "outward_pan" then
+						ges_ev.ges = "spread"
+					end
+				end
+				DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+				return ges_ev
 			else
-				DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
-				self:clearState(slot)
+				return self:handleSwipe(tev)
 			end
-			return swipe_ev
 		else -- if end of pan is not swipe then it must be pan release.
-			local release_pos = Geom:new{
-				x = self.last_tevs[slot].x,
-				y = self.last_tevs[slot].y,
-				w = 0, h = 0,
-			}
-			local pan_ev = {
-				ges = "pan_release",
-				pos = release_pos,
-				time = tev.timev,
-			}
-			if self.detectings[0] and self.detectings[1] then
-				DEBUG("two finger pan release detected")
-				pan_ev.ges = "two_finger_pan_release"
-				self:clearStates()
-			else
-				DEBUG("pan release detected in slot", slot)
-				self:clearState(slot)
-			end
-			return pan_ev
+			return self:handlePanRelease(tev)
 		end
 	else
 		if self.states[slot] ~= self.panState then
 			self.states[slot] = self.panState
 		end
-		local pan_direction, pan_distance = self:getPath(tev)
+		return self:handlePan(tev)
+	end
+end
+
+function GestureDetector:handleSwipe(tev)
+	local slot = tev.slot
+	local swipe_direction, swipe_distance = self:getPath(slot)
+	local start_pos = Geom:new{
+		x = self.first_tevs[slot].x,
+		y = self.first_tevs[slot].y,
+		w = 0, h = 0,
+	}
+	DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
+	self:clearState(slot)
+	return {
+		ges = "swipe",
+		-- use first pan tev coordination as swipe start point
+		pos = start_pos,
+		direction = swipe_direction,
+		distance = swipe_distance,
+		time = tev.timev,
+	}
+end
+
+function GestureDetector:handlePan(tev)
+	local slot = tev.slot
+	if self.detectings[0] and self.detectings[1] then
+		return self:handleTwoFingerPan(tev)
+	else
+		local pan_direction, pan_distance = self:getPath(slot)
 		local pan_ev = {
 			ges = "pan",
 			relative = {
@@ -441,12 +474,91 @@ function GestureDetector:panState(tev)
 			y = self.last_tevs[slot].y,
 			w = 0, h = 0,
 		}
-		if self.detectings[0] and self.detectings[1] then
-			pan_ev.ges = "two_finger_pan"
-			DEBUG("two finger pan detected")
-		end
 		return pan_ev
 	end
+end
+
+function GestureDetector:handleTwoFingerPan(tev)
+	-- triggering slot
+	local tslot = tev.slot
+	-- reference slot
+	local rslot = tslot and 0 or 1
+	local tpan_dir, tpan_dis = self:getPath(tslot)
+	local tstart_pos = Geom:new{
+		x = self.first_tevs[tslot].x,
+		y = self.first_tevs[tslot].y,
+		w = 0, h = 0,
+	}
+	local tend_pos = Geom:new{
+		x = self.last_tevs[tslot].x,
+		y = self.last_tevs[tslot].y,
+		w = 0, h = 0,
+	}
+	local rstart_pos = Geom:new{
+		x = self.first_tevs[rslot].x,
+		y = self.first_tevs[rslot].y,
+		w = 0, h = 0,
+	}
+	if self.states[rslot] == self.panState then
+		local rpan_dir, rpan_dis = self:getPath(rslot)
+		local rend_pos = Geom:new{
+			x = self.last_tevs[rslot].x,
+			y = self.last_tevs[rslot].y,
+			w = 0, h = 0,
+		}
+		local start_distance = tstart_pos:distance(rstart_pos)
+		local end_distance = tend_pos:distance(rend_pos)
+		local ges_ev = {
+			ges = "two_finger_pan",
+			-- use midpoint of tstart and rstart as swipe start point
+			pos = tstart_pos:midpoint(rstart_pos),
+			distance = tpan_dis + rpan_dis,
+			direction = tpan_dir,
+			time = tev.timev,
+		}
+		if tpan_dir ~= rpan_dir then
+			if start_distance > end_distance then
+				ges_ev.ges = "inward_pan"
+			else
+				ges_ev.ges = "outward_pan"
+			end
+			ges_ev.direction = self.DIRECTION_TABLE[tpan_dir]
+		end
+		DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+		return ges_ev
+	elseif self.states[rslot] == self.holdState then
+		local angle = self:getRotate(rstart_pos, tstart_pos, tend_pos)
+		DEBUG("rotate", angle, "detected")
+		return {
+			ges = "rotate",
+			pos = rstart_pos,
+			angle = angle,
+			time = tev.timev,
+		}
+	end
+end
+
+function GestureDetector:handlePanRelease(tev)
+	local slot = tev.slot
+	local release_pos = Geom:new{
+		x = self.last_tevs[slot].x,
+		y = self.last_tevs[slot].y,
+		w = 0, h = 0,
+	}
+	local pan_ev = {
+		ges = "pan_release",
+		pos = release_pos,
+		time = tev.timev,
+	}
+	if self.detectings[0] and self.detectings[1] then
+		DEBUG("two finger pan release detected")
+		pan_ev.ges = "two_finger_pan_release"
+		self:clearStates()
+	else
+		DEBUG("pan release detected in slot", slot)
+		self:clearState(slot)
+	end
+	return pan_ev
 end
 
 function GestureDetector:holdState(tev, hold)
@@ -495,19 +607,31 @@ function GestureDetector:adjustGesCoordinate(ges)
 		if ges.pos then
 			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
 		end
-		if ges.ges == "swipe" or ges.ges == "pan" then
-			if ges.direction == "down" then
-				ges.direction = "left"
-			elseif ges.direction == "up" then
-				ges.direction = "right"
-			elseif ges.direction == "right" then
-				ges.direction = "down"
-			elseif ges.direction == "left" then
-				ges.direction = "up"
+		if ges.ges == "swipe" or ges.ges == "pan" 
+			or ges.ges == "two_finger_swipe"
+			or ges.ges == "two_finger_pan" then
+			if ges.direction == "north" then
+				ges.direction = "east"
+			elseif ges.direction == "south" then
+				ges.direction = "west"
+			elseif ges.direction == "east" then
+				ges.direction = "south"
+			elseif ges.direction == "west" then
+				ges.direction = "north"
+			end
+		elseif ges.ges == "pinch" or ges.ges == "spread"
+			or ges.ges == "inward_pan"
+			or ges.ges == "outward_pan" then
+			if ges.direction == "northeast" then
+				ges.direction = "southeast"
+			elseif ges.direction == "northwest" then
+				ges.direction = "northeast"
+			elseif ges.direction == "southeast" then
+				ges.direction = "southwest"
+			elseif ges.direction == "southwest" then
+				ges.direction = "northwest"
 			end
 		end
 	end
-
 	return ges
 end
-
