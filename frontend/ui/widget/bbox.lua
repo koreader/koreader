@@ -130,9 +130,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 	elseif nearest == upper_center then
 		if relative then
 			local delta = 0
-			if ges.direction == "up" then
+			if ges.direction == "north" then
 				delta = -ges.distance / 5
-			elseif ges.direction == "down" then
+			elseif ges.direction == "south" then
 				delta = ges.distance / 5
 			end
 			upper_left.y = upper_left.y + delta
@@ -142,9 +142,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 	elseif nearest == right_center then
 		if relative then
 			local delta = 0
-			if ges.direction == "left" then
+			if ges.direction == "west" then
 				delta = -ges.distance / 5
-			elseif ges.direction == "right" then
+			elseif ges.direction == "east" then
 				delta = ges.distance / 5
 			end
 			bottom_right.x = bottom_right.x + delta
@@ -154,9 +154,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 	elseif nearest == bottom_center then
 		if relative then
 			local delta = 0
-			if ges.direction == "up" then
+			if ges.direction == "north" then
 				delta = -ges.distance / 5
-			elseif ges.direction == "down" then
+			elseif ges.direction == "south" then
 				delta = ges.distance / 5
 			end
 			bottom_right.y = bottom_right.y + delta
@@ -166,9 +166,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 	elseif nearest == left_center then
 		if relative then
 			local delta = 0
-			if ges.direction == "left" then
+			if ges.direction == "west" then
 				delta = -ges.distance / 5
-			elseif ges.direction == "right" then
+			elseif ges.direction == "east" then
 				delta = ges.distance / 5
 			end
 			upper_left.x = upper_left.x + delta

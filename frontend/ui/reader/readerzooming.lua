@@ -52,6 +52,30 @@ function ReaderZooming:init()
 			},
 		}
 	end
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			Spread = {
+				GestureRange:new{
+					ges = "spread",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
+				}
+			},
+			Pinch = {
+				GestureRange:new{
+					ges = "pinch",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
+				}
+			},
+		}
+	end
 	self.ui.menu:registerToMainMenu(self)
 end
 
@@ -68,6 +92,28 @@ end
 
 function ReaderZooming:onCloseDocument()
 	self.ui.doc_settings:saveSetting("zoom_mode", self.zoom_mode)
+end
+
+function ReaderZooming:onSpread(arg, ges)
+	if ges.direction == "horizontal" then
+		self:setZoomMode("contentwidth")
+	elseif ges.direction == "vertical" then
+		self:setZoomMode("contentheight")
+	elseif ges.direction == "diagonal" then
+		self:setZoomMode("content")
+	end
+	return true
+end
+
+function ReaderZooming:onPinch(arg, ges)
+	if ges.direction == "diagonal" then
+		self:setZoomMode("page")
+	elseif ges.direction == "horizontal" then
+		self:setZoomMode("pagewidth")
+	elseif ges.direction == "vertical" then
+		self:setZoomMode("pageheight")
+	end
+	return true
 end
 
 function ReaderZooming:onSetDimensions(dimensions)
@@ -174,9 +220,13 @@ end
 
 function ReaderZooming:genSetZoomModeCallBack(mode)
 	return function()
-		self.ui:handleEvent(Event:new("SetZoomMode", mode))
-		self.ui:handleEvent(Event:new("InitScrollPageStates"))
+		self:setZoomMode(mode)
 	end
+end
+
+function ReaderZooming:setZoomMode(mode)
+	self.ui:handleEvent(Event:new("SetZoomMode", mode))
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderZooming:addToMainMenu(tab_item_table)
