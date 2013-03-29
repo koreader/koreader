@@ -164,6 +164,7 @@ TouchMenu = InputContainer:new{
 	item_height = scaleByDPI(50),
 	bordersize = scaleByDPI(2),
 	padding = scaleByDPI(5),
+	footer_height = scaleByDPI(50),
 	width = nil,
 	height = nil,
 	page = 1,
@@ -218,16 +219,31 @@ function TouchMenu:init()
 		face = Font:getFace("ffont", 20),
 		text = "",
 	}
+	self.time_info = TextWidget:new{
+		face = Font:getFace("ffont", 20),
+		text = "",
+	}
+	local footer_width = self.width - self.padding*2 - self.bordersize*2 - 20
 	self.footer = HorizontalGroup:new{
-		IconButton:new{
-			invert = true,
-			icon_file = "resources/icons/appbar.chevron.up.png",
-			show_parent = self.show_parent,
-			callback = function()
-				self:backToUpperMenu()
-			end,
+		LeftContainer:new{
+			dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
+			IconButton:new{
+				invert = true,
+				icon_file = "resources/icons/appbar.chevron.up.png",
+				show_parent = self.show_parent,
+				callback = function()
+					self:backToUpperMenu()
+				end,
+			},
 		},
-		self.footer_page,
+		CenterContainer:new{
+			dimen = Geom:new{ w = self.width*0.33, h = self.footer_height},
+			self.footer_page,
+		},
+		RightContainer:new{
+			dimen = Geom:new{ w = self.width*0.33, h = self.footer_height},
+			self.time_info,
+		}
 	}
 
 	self[1] = FrameContainer:new{
@@ -310,6 +326,7 @@ function TouchMenu:updateItems()
 	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
 	self.footer_page.text = "Page "..self.page.."/"..self.page_num
+	self.time_info.text = os.date(" %H:%M ")
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664
 	UIManager.repaint_all = true
