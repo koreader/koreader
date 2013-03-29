@@ -223,7 +223,7 @@ function TouchMenu:init()
 		face = Font:getFace("ffont", 20),
 		text = "",
 	}
-	local footer_width = self.width - self.padding*2 - self.bordersize*2 - 20
+	local footer_width = self.width - self.padding*2 - self.bordersize*2
 	self.footer = HorizontalGroup:new{
 		LeftContainer:new{
 			dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
@@ -237,11 +237,11 @@ function TouchMenu:init()
 			},
 		},
 		CenterContainer:new{
-			dimen = Geom:new{ w = self.width*0.33, h = self.footer_height},
+			dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
 			self.footer_page,
 		},
 		RightContainer:new{
-			dimen = Geom:new{ w = self.width*0.33, h = self.footer_height},
+			dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
 			self.time_info,
 		}
 	}
@@ -302,8 +302,8 @@ function TouchMenu:updateItems()
 			-- insert split line
 			if c ~= self.perpage then
 				table.insert(self.item_group, HorizontalGroup:new{
-					-- pad with spacing
-					HorizontalSpan:new{width = scaleByDPI(10)},
+					-- pad with 10 pixel to align with the up arrow in footer
+					HorizontalSpan:new{width = 10},
 					LineWidget:new{
 						style = "dashed",
 						dimen = Geom:new{
@@ -326,7 +326,7 @@ function TouchMenu:updateItems()
 	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
 	self.footer_page.text = "Page "..self.page.."/"..self.page_num
-	self.time_info.text = os.date(" %H:%M ")
+	self.time_info.text = os.date("%H:%M")
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664
 	UIManager.repaint_all = true
