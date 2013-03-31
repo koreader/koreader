@@ -45,14 +45,7 @@ function Configurable:saveSettings(settings, prefix)
 	end
 end
 
-ReaderConfig = InputContainer:new{
-	dimen = Geom:new{
-		x = 0,
-		y = 7*Screen:getHeight()/8,
-		w = Screen:getWidth(),
-		h = Screen:getHeight()/8,
-	}
-}
+ReaderConfig = InputContainer:new{}
 
 function ReaderConfig:init()
 	if Device:hasKeyboard() then
@@ -70,7 +63,12 @@ function ReaderConfig:initGesListener()
 		TapShowConfigMenu = {
 			GestureRange:new{
 				ges = "tap",
-				range = self.dimen,
+				range = Geom:new{
+					x = 0,
+					y = 11*Screen:getHeight()/12,
+					w = Screen:getWidth(),
+					h = Screen:getHeight()/12,
+				}
 			}
 		}
 	}
@@ -98,10 +96,9 @@ function ReaderConfig:onTapShowConfigMenu()
 end
 
 function ReaderConfig:onSetDimensions(dimen)
-	self.dimen.x = 0
-	self.dimen.y = 7 * Screen:getHeight() / 8
-	self.dimen.w = Screen:getWidth()
-	self.dimen.h = Screen:getHeight() / 8
+	if Device:isTouchDevice() then
+		self:initGesListener()
+	end
 	-- since we cannot redraw config_dialog with new size, we close
 	-- the old one on screen size change
 	if self.config_dialog then
