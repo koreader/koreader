@@ -8,6 +8,7 @@ BBoxWidget = InputContainer:new{
 	page_bbox = nil,
 	screen_bbox = nil,
 	linesize = 2,
+	fine_factor = 10,
 }
 
 function BBoxWidget:init()
@@ -131,9 +132,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		if relative then
 			local delta = 0
 			if ges.direction == "north" then
-				delta = -ges.distance / 5
+				delta = -ges.distance / self.fine_factor
 			elseif ges.direction == "south" then
-				delta = ges.distance / 5
+				delta = ges.distance / self.fine_factor
 			end
 			upper_left.y = upper_left.y + delta
 		else
@@ -143,9 +144,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		if relative then
 			local delta = 0
 			if ges.direction == "west" then
-				delta = -ges.distance / 5
+				delta = -ges.distance / self.fine_factor
 			elseif ges.direction == "east" then
-				delta = ges.distance / 5
+				delta = ges.distance / self.fine_factor
 			end
 			bottom_right.x = bottom_right.x + delta
 		else
@@ -155,9 +156,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		if relative then
 			local delta = 0
 			if ges.direction == "north" then
-				delta = -ges.distance / 5
+				delta = -ges.distance / self.fine_factor
 			elseif ges.direction == "south" then
-				delta = ges.distance / 5
+				delta = ges.distance / self.fine_factor
 			end
 			bottom_right.y = bottom_right.y + delta
 		else
@@ -167,9 +168,9 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		if relative then
 			local delta = 0
 			if ges.direction == "west" then
-				delta = -ges.distance / 5
+				delta = -ges.distance / self.fine_factor
 			elseif ges.direction == "east" then
-				delta = ges.distance / 5
+				delta = ges.distance / self.fine_factor
 			end
 			upper_left.x = upper_left.x + delta
 		else
