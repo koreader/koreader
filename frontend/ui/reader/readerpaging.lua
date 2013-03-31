@@ -54,7 +54,7 @@ function ReaderPaging:initGesListener()
 					x = Screen:getWidth()/4,
 					y = Screen:getHeight()/4,
 					w = 3*Screen:getWidth()/4,
-					h = 5*Screen:getHeight()/8,
+					h = 2*Screen:getHeight()/3,
 				}
 			}
 		},
@@ -65,7 +65,7 @@ function ReaderPaging:initGesListener()
 					x = 0,
 					y = Screen:getHeight()/4,
 					w = Screen:getWidth()/4,
-					h = 5*Screen:getHeight()/8,
+					h = 2*Screen:getHeight()/3,
 				}
 			}
 		},
