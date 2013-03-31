@@ -1,5 +1,7 @@
 
-ReaderFlipping = LeftContainer:new{}
+ReaderFlipping = LeftContainer:new{
+	orig_reflow_mode = 0,
+}
 
 function ReaderFlipping:init()
 	local widget = ImageWidget:new{
@@ -10,7 +12,12 @@ function ReaderFlipping:init()
 	self[1] = widget
 end
 
-function ReaderFlipping:onSetDogearVisibility(visible)
-	self.view.dogear_visible = visible
+function ReaderFlipping:onSetFlippingMode(flipping_mode)
+	if flipping_mode then
+		self.orig_reflow_mode = self.view.document.configurable.text_wrap
+		self.view.document.configurable.text_wrap = 0
+	else
+		self.view.document.configurable.text_wrap = self.orig_reflow_mode
+	end
 	return true
 end
