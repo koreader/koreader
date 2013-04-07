@@ -84,5 +84,12 @@ pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 
+mo:
+	for po in `find l10n -iname '*.po'`; do \
+		resource=`basename $$po .po` ; \
+		lingua=`dirname $$po | xargs basename` ; \
+		mkdir -p $(MO_DIR)/$$lingua/LC_MESSAGES/ ; \
+		msgfmt -o $(MO_DIR)/$$lingua/LC_MESSAGES/$$resource.mo $$po ; \
+		done
 
 
