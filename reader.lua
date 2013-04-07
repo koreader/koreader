@@ -148,7 +148,7 @@ function showHomePage(path)
 		width = Screen:getWidth(),
 		height = Screen:getHeight(),
 		is_borderless = true,
-		has_close_button = false,
+		has_close_button = true,
 		dir_filter = function(dirname)
 			for _, pattern in ipairs(exclude_dirs) do
 				if dirname:match(pattern) then return end
@@ -171,6 +171,7 @@ function showHomePage(path)
 	end
 
 	function FileManager:onClose()
+		exitReader()
 		--UIManager:quit()
 		return true
 	end
