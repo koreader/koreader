@@ -61,6 +61,7 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
 	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
+	cp -rp $(KOR_BASE)/i18n $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	echo $(VERSION) > git-rev
 	cp -r git-rev resources $(INSTALL_DIR)
