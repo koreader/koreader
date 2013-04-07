@@ -1,3 +1,9 @@
 [main]
 host = https://www.transifex.com
 
+[koreader.koreader]
+file_filter = <lang>/koreader.po
+source_file = templates/koreader.pot
+source_lang = en
+type = PO
+

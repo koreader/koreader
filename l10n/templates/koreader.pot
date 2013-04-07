@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-07 18:14+0000\n"
+"POT-Creation-Date: 2013-04-07 18:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,7 +31,7 @@ msgid ""
 "-h               show this usage help"
 msgstr ""
 
-#: frontend/ui/reader/readermenu.lua:107
+#: frontend/ui/reader/readermenu.lua:106
 msgid ""
 "Document menu"
 msgstr ""
@@ -129,11 +129,6 @@ msgstr ""
 #: reader.lua:200
 msgid ""
 "chooser will show up and let you select a file"
-msgstr ""
-
-#: frontend/ui/reader/readermenu.lua:95
-msgid ""
-"main_menu"
 msgstr ""
 
 #: frontend/ui/reader/readertoc.lua:13
