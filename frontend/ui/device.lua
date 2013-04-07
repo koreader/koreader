@@ -8,7 +8,7 @@ Device = {
 
 function Device:getModel()
 	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
-	local cpu_mod = std_out:read()	
+	local cpu_mod = std_out:read()
 	if not cpu_mod then
 		local ret = os.execute("grep 'Hardware : Mario Platform' /proc/cpuinfo", "r")
 		if ret ~= 0 then
@@ -122,7 +122,7 @@ function Device:usbPlugIn()
 	if self.charging_mode == false and self.screen_saver_mode == false then
 		Screen:saveCurrentBB()
 		--UIManager:show(InfoMessage:new{
-			--text = "Going into USB mode... ", 
+			--text = "Going into USB mode... ",
 			--timeout = 2,
 		--})
 		--util.sleep(1)

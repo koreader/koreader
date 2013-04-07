@@ -3,6 +3,7 @@ require "ui/device"
 require "ui/inputevent"
 require "ui/screen"
 require "debug"
+require "gettext"
 
 -- initialize output module, this must be initialized before Input
 Screen:init()

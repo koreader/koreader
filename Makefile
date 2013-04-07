@@ -17,6 +17,14 @@ EMU_DIR=emu
 # files to copy from main directory
 LUA_FILES=reader.lua
 
+# for gettext
+DOMAIN=koreader
+TEMPLATE_DIR=l10n/templates
+KOREADER_MISC_TOOL=../misc
+XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
+MO_DIR=i18n
+
+
 all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 
 $(KOR_BASE)/koreader-base $(KOR_BASE)/extr:
@@ -61,6 +69,7 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
 	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
+	cp -rp $(KOR_BASE)/i18n $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	echo $(VERSION) > git-rev
 	cp -r git-rev resources $(INSTALL_DIR)
@@ -69,4 +78,18 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
 	# @TODO write an installation script for KUAL   (houqp)
+
+
+pot:
+	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
+		> $(TEMPLATE_DIR)/$(DOMAIN).pot
+
+mo:
+	for po in `find l10n -iname '*.po'`; do \
+		resource=`basename $$po .po` ; \
+		lingua=`dirname $$po | xargs basename` ; \
+		mkdir -p $(MO_DIR)/$$lingua/LC_MESSAGES/ ; \
+		msgfmt -o $(MO_DIR)/$$lingua/LC_MESSAGES/$$resource.mo $$po ; \
+		done
+
 
