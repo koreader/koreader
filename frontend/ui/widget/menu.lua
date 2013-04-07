@@ -65,7 +65,7 @@ MenuCloseButton = InputContainer:new{
 
 function MenuCloseButton:init()
 	self[1] = TextWidget:new{
-		text = "x  ",
+		text = "-[ X ]-    ",
 		face = Font:getFace("cfont", 22),
 	}
 
