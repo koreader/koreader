@@ -17,6 +17,14 @@ EMU_DIR=emu
 # files to copy from main directory
 LUA_FILES=reader.lua
 
+# for gettext
+DOMAIN=koreader
+TEMPLATE_DIR=l10n/templates
+KOREADER_MISC_TOOL=../misc
+XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
+MO_DIR=i18n
+
+
 all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 
 $(KOR_BASE)/koreader-base $(KOR_BASE)/extr:
@@ -70,4 +78,11 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
 	# @TODO write an installation script for KUAL   (houqp)
+
+
+pot:
+	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
+		> $(TEMPLATE_DIR)/$(DOMAIN).pot
+
+
 
