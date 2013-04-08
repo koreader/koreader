@@ -52,7 +52,7 @@ bootstrapemu:
 	test -e $(EMU_DIR)/extr || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/extr ./)
 	test -e $(EMU_DIR)/reader.lua || (cd $(EMU_DIR) && ln -s ../reader.lua ./)
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
-	test -e $(EMU_DIR)/i18n || (mkdir $(EMU_DIR)/i18n)
+	test -e $(EMU_DIR)/i18n || (cd $(EMU_DIR) && ln -s ../i18n ./)
 
 customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	# ensure that the binaries were built for ARM
