@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-08 07:47+0000\n"
-"PO-Revision-Date: 2013-04-08 07:49+0000\n"
+"POT-Creation-Date: 2013-04-08 15:08+0000\n"
+"PO-Revision-Date: 2013-04-08 15:13+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/koreader/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -24,7 +24,7 @@ msgid ""
 "\n"
 "function ReaderConfig:onCloseDocument()\n"
 "\tself.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."
-msgstr ""
+msgstr ")\nend\n\nfunction ReaderConfig:onCloseDocument()\n\tself.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."
 
 #: reader.lua:197
 msgid "-d               start in debug mode"
@@ -34,71 +34,83 @@ msgstr "-d hata ayıklama modunda başlat"
 msgid "-h               show this usage help"
 msgstr "-h yardım sayfasını göster"
 
-#: frontend/ui/reader/readertypeset.lua:49
-msgid "Auto"
+#: frontend/ui/data/strings.lua:40
+msgid "0 deg"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:193
-msgid "Auto Straighten"
+#: frontend/ui/data/strings.lua:42
+msgid "10 deg"
 msgstr ""
+
+#: frontend/ui/data/strings.lua:41
+msgid "5 deg"
+msgstr ""
+
+#: frontend/ui/reader/readertypeset.lua:49
+msgid "Auto"
+msgstr "Otomatik"
+
+#: frontend/ui/data/strings.lua:17
+msgid "Auto Straighten"
+msgstr "Otomatik Düzeltme"
 
 #: frontend/ui/inputevent.lua:317
 msgid "Auto-detected Kindle 2"
-msgstr ""
+msgstr "Kindle-2 olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:313
 msgid "Auto-detected Kindle 3"
-msgstr ""
+msgstr "Kindle 3 olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:309
 msgid "Auto-detected Kindle 4"
-msgstr ""
+msgstr "Kindle 4 olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:315
 msgid "Auto-detected Kindle DXG"
-msgstr ""
+msgstr "Kindle DXG olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:287
 msgid "Auto-detected Kindle PaperWhite"
-msgstr ""
+msgstr "Kindle PaperWhite olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:307
 msgid "Auto-detected Kindle Touch"
-msgstr ""
+msgstr "Kindle Touch olarak belirlendi"
 
 #: frontend/ui/reader/readerbookmark.lua:4
 msgid "Bookmarks"
-msgstr ""
+msgstr "Yer imleri"
 
 #: frontend/ui/widget/confirmbox.lua:12
 msgid "Cancel"
-msgstr ""
+msgstr "İptal"
 
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
-msgstr ""
+msgstr "Fontu değiştir"
 
-#: frontend/document/koptinterface.lua:75
+#: frontend/ui/data/strings.lua:8
 msgid "Columns"
-msgstr ""
+msgstr "Sütunlar"
 
-#: frontend/document/koptinterface.lua:130
+#: frontend/ui/data/strings.lua:11
 msgid "Contrast"
-msgstr ""
+msgstr "Kontrast"
 
 #: frontend/ui/reader/readerfont.lua:124
 msgid "Decrease font size to "
-msgstr ""
+msgstr "Font boyutunu şuna düşür:"
 
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
-msgstr ""
+msgstr "Gama değerini şuna düşür:"
 
 #: frontend/ui/reader/readerfont.lua:163
 msgid "Decrease line space to "
-msgstr ""
+msgstr "Satır boşluğunu şuna düşür:"
 
-#: frontend/document/koptinterface.lua:179
+#: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
 msgstr ""
 
@@ -106,9 +118,9 @@ msgstr ""
 msgid "Document menu"
 msgstr "Belge menüsü"
 
-#: frontend/document/credocument.lua:86
+#: frontend/ui/data/strings.lua:22
 msgid "Embedded style"
-msgstr ""
+msgstr "Gömülü stil"
 
 #: reader.lua:87
 msgid "Exit"
@@ -118,21 +130,21 @@ msgstr "Çıkış"
 msgid "FileManager"
 msgstr "DosyaYöneticisi"
 
-#: frontend/document/koptinterface.lua:114
+#: frontend/ui/data/strings.lua:10
 msgid "Fine Tuning"
-msgstr ""
+msgstr "İnce Ayar"
 
-#: frontend/document/credocument.lua:53
+#: frontend/ui/data/strings.lua:19
 msgid "Font weight"
-msgstr ""
+msgstr "Font kalınlığı"
 
-#: frontend/document/koptinterface.lua:43
+#: frontend/ui/data/strings.lua:4
 msgid "Full Screen"
-msgstr ""
+msgstr "Tam Ekran"
 
-#: frontend/document/credocument.lua:63
+#: frontend/ui/data/strings.lua:20
 msgid "Gamma"
-msgstr ""
+msgstr "Gama"
 
 #: frontend/ui/reader/readermenu.lua:61
 msgid "Help"
@@ -152,19 +164,19 @@ msgstr ""
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
-msgstr ""
+msgstr "Font boyutunu şuna yükselt: "
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
-msgstr ""
+msgstr "Gama değerini şuna yükselt:"
 
 #: frontend/ui/reader/readerfont.lua:167
 msgid "Increase line space to "
-msgstr ""
+msgstr "Satır boşluğunu şuna yükselt:"
 
-#: frontend/document/koptinterface.lua:200
+#: frontend/ui/data/strings.lua:18
 msgid "Indentation"
-msgstr ""
+msgstr "Girinti"
 
 #: frontend/ui/reader/readermenu.lua:70
 msgid "Languages"
@@ -174,9 +186,9 @@ msgstr "Diller"
 msgid "Last documents"
 msgstr "Son görüntülenen belgeler"
 
-#: frontend/document/credocument.lua:24 frontend/document/koptinterface.lua:68
+#: frontend/ui/data/strings.lua:7
 msgid "Line Spacing"
-msgstr ""
+msgstr "Satır boşluğu"
 
 #: reader.lua:126
 msgid "No reader engine for this file"
@@ -184,27 +196,27 @@ msgstr "Bu dosya türü desteklenmiyor"
 
 #: frontend/ui/inputevent.lua:319
 msgid "Not supported device model!"
-msgstr ""
+msgstr "Cİhaz modeli desteklenmiyor"
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
-msgstr ""
+msgstr "Tamam"
 
 #: frontend/ui/widget/touchmenu.lua:328
 msgid "Page "
-msgstr ""
+msgstr "Sayfa"
 
-#: frontend/document/koptinterface.lua:28
+#: frontend/ui/data/strings.lua:3
 msgid "Page Crop"
-msgstr ""
+msgstr "Sayfa kesme"
 
-#: frontend/document/koptinterface.lua:61
+#: frontend/ui/data/strings.lua:6
 msgid "Page Margin"
-msgstr ""
+msgstr "Sayfa kenar boşlukları"
 
 #: frontend/ui/reader/readermenu.lua:64
 msgid "Please report bugs to https://github.com/koreader/ koreader/issues"
-msgstr ""
+msgstr "Liütfen hataları bu sayfada rapor edin: https://github.com/koreader/ koreader/issues"
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
@@ -212,23 +224,23 @@ msgstr "Tüm kitaplarınızı E-ink okuyucuda okuyun"
 
 #: frontend/ui/reader/readerfont.lua:215
 msgid "Redrawing with font "
-msgstr ""
+msgstr "Fon ile tekrar oluşturuluyor"
 
-#: frontend/document/koptinterface.lua:147
+#: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
 msgid "Reflow"
-msgstr ""
+msgstr "Yeniden düzenleme"
 
-#: frontend/document/koptinterface.lua:186
+#: frontend/ui/data/strings.lua:16
 msgid "Render Quality"
-msgstr ""
+msgstr "İşleme Kalitesi"
 
-#: frontend/document/credocument.lua:10 frontend/document/koptinterface.lua:14
+#: frontend/ui/data/strings.lua:2
 msgid "Screen Mode"
-msgstr ""
+msgstr "Ekran Modu"
 
-#: frontend/document/koptinterface.lua:52
+#: frontend/ui/data/strings.lua:5
 msgid "Scroll Mode"
-msgstr ""
+msgstr "Kaydırma Modu"
 
 #: reader.lua:206
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
@@ -236,19 +248,19 @@ msgstr "Daha fazla bilgi bu sayfada: http://github.com/koreader/kindlepdfviewer 
 
 #: frontend/ui/widget/config.lua:15 frontend/ui/widget/touchmenu.lua:26
 msgid "Select Menu Item"
-msgstr ""
+msgstr "Menü Ögesini Seçin"
 
 #: frontend/ui/widget/config.lua:54 frontend/ui/widget/config.lua:108
 msgid "Select Option Item"
-msgstr ""
+msgstr "Seçenek Ögesini Seçin"
 
 #: frontend/ui/reader/readerfont.lua:148
 msgid "Set font size to "
-msgstr ""
+msgstr "Font boyutunu şuna ayarla:"
 
 #: frontend/ui/reader/readertypeset.lua:2
 msgid "Set render style"
-msgstr ""
+msgstr "İşleme Stilini Ayarla"
 
 #: reader.lua:17
 msgid "Show Home Menu"
@@ -256,7 +268,7 @@ msgstr "Ana ekran menüsü görüntüle"
 
 #: frontend/ui/reader/readerzooming.lua:235
 msgid "Switch zoom mode"
-msgstr ""
+msgstr "Yakınlaştırma modunu değiştir"
 
 #: frontend/ui/reader/readertoc.lua:85
 msgid "Table of Contents"
@@ -270,9 +282,9 @@ msgstr "İçindekiler"
 msgid "Tap Button"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:86
+#: frontend/ui/data/strings.lua:9
 msgid "Text Align"
-msgstr ""
+msgstr "Yazı Hizalama"
 
 #: reader.lua:205
 msgid "This software is licensed under the GPLv3."
@@ -280,47 +292,51 @@ msgstr "Bu yazılım  GPLv3 ile lisanslanmıştır."
 
 #: frontend/ui/widget/toggleswitch.lua:58
 msgid "Toggle switch"
-msgstr ""
+msgstr "Geçiş yap"
 
-#: frontend/document/koptinterface.lua:165
+#: frontend/ui/data/strings.lua:13
 msgid "Vertical Text"
-msgstr ""
+msgstr "Dikey yazı"
 
-#: frontend/document/credocument.lua:76
+#: frontend/ui/data/strings.lua:21
 msgid "View mode"
-msgstr ""
+msgstr "Görüntüleme modu"
 
-#: frontend/document/koptinterface.lua:172
+#: frontend/ui/data/strings.lua:14
 msgid "Word Gap"
-msgstr ""
+msgstr "Kelime Boşluğu"
 
 #: frontend/ui/reader/readerzooming.lua:254
 msgid "Zoom to fit content"
-msgstr ""
+msgstr "İçeriği sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:242
 msgid "Zoom to fit content height"
-msgstr ""
+msgstr "İçeriğin genişliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:238
 msgid "Zoom to fit content width"
-msgstr ""
+msgstr "İçeriğin yüksekliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:258
 msgid "Zoom to fit page"
-msgstr ""
+msgstr "Sayfayı sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:250
 msgid "Zoom to fit page height"
-msgstr ""
+msgstr "Sayfa yüksekliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:246
 msgid "Zoom to fit page width"
+msgstr "Sayfa genişliğini sığdır"
+
+#: frontend/ui/data/strings.lua:26
+msgid "auto"
 msgstr ""
 
 #: frontend/ui/widget/confirmbox.lua:23
 msgid "cancel"
-msgstr ""
+msgstr "iptal"
 
 #: reader.lua:201
 msgid "chooser will show up and let you select a file"
@@ -328,151 +344,223 @@ msgstr "birazdan açılacak seçim ekranı ile  dosya seçebilirsiniz"
 
 #: frontend/ui/widget/config.lua:20 frontend/ui/widget/config.lua:59
 msgid "chose selected item"
-msgstr ""
+msgstr "işaretli ögeyi seç"
 
 #: frontend/ui/widget/confirmbox.lua:24
 msgid "chose selected option"
-msgstr ""
+msgstr "işaretli seçeneği seç"
 
 #: frontend/ui/reader/readertypeset.lua:43
 msgid "clear all external styles"
-msgstr ""
+msgstr "Harici stilleri temizle"
 
 #: frontend/ui/widget/config.lua:425
 msgid "close config menu"
-msgstr ""
+msgstr "Ayar menüsünü kapat"
 
 #: frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
-msgstr ""
+msgstr "Dialogu kapat"
 
 #: frontend/ui/readerui.lua:28 frontend/ui/readerui.lua:57
 msgid "close document"
-msgstr ""
+msgstr "belgeyi kapat"
 
 #: frontend/ui/widget/menu.lua:349
 msgid "close menu"
+msgstr "menüyü kapat"
+
+#: frontend/ui/data/strings.lua:36
+msgid "darker"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:37
+msgid "darkest"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:31
+msgid "decrease"
 msgstr ""
 
 #: frontend/ui/reader/readerfont.lua:22
 msgid "decrease font size"
-msgstr ""
+msgstr "font boyutunu azalt"
 
 #: frontend/ui/reader/readerfont.lua:30
 msgid "decrease line space"
+msgstr "satır boşluğunu azalt"
+
+#: frontend/ui/data/strings.lua:35
+msgid "default"
 msgstr ""
 
 #: frontend/ui/reader/readerrolling.lua:42
 msgid "go to 11%"
-msgstr ""
+msgstr "%11'e git"
 
 #: frontend/ui/reader/readerrolling.lua:44
 msgid "go to 22%"
-msgstr ""
+msgstr "%22'e git"
 
 #: frontend/ui/reader/readerrolling.lua:46
 msgid "go to 33%"
-msgstr ""
+msgstr "%33'e git"
 
 #: frontend/ui/reader/readerrolling.lua:48
 msgid "go to 44%"
-msgstr ""
+msgstr "%44'e git"
 
 #: frontend/ui/reader/readerrolling.lua:50
 msgid "go to 55%"
-msgstr ""
+msgstr "%55'e git"
 
 #: frontend/ui/reader/readerrolling.lua:52
 msgid "go to 66%"
-msgstr ""
+msgstr "%66'e git"
 
 #: frontend/ui/reader/readerrolling.lua:54
 msgid "go to 77%"
-msgstr ""
+msgstr "%77'e git"
 
 #: frontend/ui/reader/readerrolling.lua:56
 msgid "go to 88%"
-msgstr ""
+msgstr "%88'e git"
 
 #: frontend/ui/reader/readerrolling.lua:58
 msgid "go to end"
-msgstr ""
+msgstr "belge sonuna git"
 
 #: frontend/ui/reader/readerrolling.lua:21
 msgid "go to next view"
-msgstr ""
+msgstr "sonraki ekrana git"
 
 #: frontend/ui/reader/readerrolling.lua:26
 msgid "go to previous view"
-msgstr ""
+msgstr "önceki ekrana git"
 
 #: frontend/ui/reader/readerrolling.lua:40
 msgid "go to start"
-msgstr ""
+msgstr "başlangıca git"
 
 #: frontend/ui/widget/menu.lua:351
 msgid "goto next page of the menu"
-msgstr ""
+msgstr "menünün sonraki sayfasına git"
 
 #: frontend/ui/widget/menu.lua:354
 msgid "goto previous page of the menu"
+msgstr "menünün önceki sayfasına git"
+
+#: frontend/ui/data/strings.lua:39
+msgid "high"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:32
+msgid "increase"
 msgstr ""
 
 #: frontend/ui/reader/readerfont.lua:18
 msgid "increase font size"
-msgstr ""
+msgstr "font boyutunu arttır"
 
 #: frontend/ui/reader/readerfont.lua:26
 msgid "increase line space"
+msgstr "satır boşluğunu arttır"
+
+#: frontend/ui/data/strings.lua:44
+msgid "landscape"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:30
+msgid "large"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:34
+msgid "lighter"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:33
+msgid "lightest"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:38
+msgid "low"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:27
+msgid "manual"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:29
+msgid "medium"
 msgstr ""
 
 #: frontend/ui/reader/readerrolling.lua:36
 msgid "move view down"
-msgstr ""
+msgstr "görüntüyü aşağı kaydır"
 
 #: frontend/ui/reader/readerrolling.lua:31
 msgid "move view up"
-msgstr ""
+msgstr "görüntüyü yukarı kaydır"
 
 #: frontend/ui/reader/readerpanning.lua:20
 msgid "move visible area down"
-msgstr ""
+msgstr "görüntülenen alanı aşağı kaydır"
 
 #: frontend/ui/reader/readerpanning.lua:23
 msgid "move visible area left"
-msgstr ""
+msgstr "görüntülenen alanı sola kaydır"
 
 #: frontend/ui/reader/readerpanning.lua:26
 msgid "move visible area right"
-msgstr ""
+msgstr "görüntülenen alanı sağa kaydır"
 
 #: frontend/ui/reader/readerpanning.lua:17
 msgid "move visible area up"
-msgstr ""
+msgstr "görüntülenen alanı yukarı kaydır"
 
 #: frontend/ui/widget/menu.lua:433
 msgid "no choices available"
-msgstr ""
+msgstr "seçenek mevcut değil"
 
 #: frontend/ui/widget/confirmbox.lua:9
 msgid "no text"
+msgstr "yazı yok"
+
+#: frontend/ui/data/strings.lua:25
+msgid "off"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:24
+msgid "on"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:47
+msgid "page"
 msgstr ""
 
 #: frontend/ui/widget/menu.lua:431
 msgid "page "
+msgstr "sayfa"
+
+#: frontend/ui/data/strings.lua:43
+msgid "portrait"
 msgstr ""
 
 #: frontend/ui/reader/readerrotation.lua:12
 msgid "rotate left by 90 degrees"
-msgstr ""
+msgstr "sola 90 derece döndür"
 
 #: frontend/ui/reader/readerrotation.lua:16
 msgid "rotate right by 90 degrees"
+msgstr "sağa 90 derece döndür"
+
+#: frontend/ui/data/strings.lua:46
+msgid "scroll"
 msgstr ""
 
 #: frontend/ui/widget/config.lua:429 frontend/ui/widget/menu.lua:363
 msgid "select current menu item"
-msgstr ""
+msgstr "mevcut menü ögesini seç"
 
 #: frontend/ui/reader/readertoc.lua:11
 msgid "show Table of Content menu"
@@ -480,19 +568,27 @@ msgstr "İçindekileri görüntüle"
 
 #: frontend/ui/reader/readerbookmark.lua:13
 msgid "show bookmarks"
-msgstr ""
+msgstr "yerimlerini göster"
 
 #: frontend/ui/reader/readerconfig.lua:53
 msgid "show config dialog"
-msgstr ""
+msgstr "ayar diyalogunu göster"
 
 #: frontend/ui/reader/readerfont.lua:15
 msgid "show font menu"
-msgstr ""
+msgstr "font menüsünü göster"
 
 #: frontend/ui/reader/readermenu.lua:34
 msgid "show menu"
 msgstr "menüyü göster"
+
+#: frontend/ui/data/strings.lua:28
+msgid "small"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:45
+msgid "toggle bold"
+msgstr ""
 
 #: reader.lua:194
 msgid "usage: ./reader.lua [OPTION] ... path"
@@ -500,32 +596,32 @@ msgstr "kullanım şekli:  ./reader.lua [Seçenekler] ... dosyayolu"
 
 #: frontend/ui/reader/readerzooming.lua:15
 msgid "zoom in"
-msgstr ""
+msgstr "yakınlaştır"
 
 #: frontend/ui/reader/readerzooming.lua:20
 msgid "zoom out"
-msgstr ""
+msgstr "uzaklaştır"
 
 #: frontend/ui/reader/readerzooming.lua:30
 msgid "zoom to fit content"
-msgstr ""
+msgstr "içeriği sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:50
 msgid "zoom to fit content height"
-msgstr ""
+msgstr "içerik yüksekliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:40
 msgid "zoom to fit content width"
-msgstr ""
+msgstr "içerik genişliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:25
 msgid "zoom to fit page"
-msgstr ""
+msgstr "sayfayı sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:45
 msgid "zoom to fit page height"
-msgstr ""
+msgstr "sayfa yüksekliğini sığdır"
 
 #: frontend/ui/reader/readerzooming.lua:35
 msgid "zoom to fit page width"
-msgstr ""
+msgstr "sayfa genişliğini sığdır"
