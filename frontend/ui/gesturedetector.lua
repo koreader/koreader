@@ -156,7 +156,7 @@ function GestureDetector:isDoubleTap(tap1, tap2)
 end
 
 function GestureDetector:isTwoFingerTap()
-	if self.last_tevs[0] == nil or self.last_tevs[1] == nil then 
+	if self.last_tevs[0] == nil or self.last_tevs[1] == nil then
 		return false
 	end
 	local x_diff0 = math.abs(self.last_tevs[0].x - self.first_tevs[0].x)
@@ -607,7 +607,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 		if ges.pos then
 			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
 		end
-		if ges.ges == "swipe" or ges.ges == "pan" 
+		if ges.ges == "swipe" or ges.ges == "pan"
 			or ges.ges == "two_finger_swipe"
 			or ges.ges == "two_finger_pan" then
 			if ges.direction == "north" then

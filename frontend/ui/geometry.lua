@@ -142,9 +142,9 @@ end
 return true if self does not share any area with rect_b
 ]]--
 function Geom:notIntersectWith(rect_b)
-	if (self.x >= (rect_b.x + rect_b.w)) 
-	or (self.y >= (rect_b.y + rect_b.h)) 
-	or (rect_b.x >= (self.x + self.w)) 
+	if (self.x >= (rect_b.x + rect_b.w))
+	or (self.y >= (rect_b.y + rect_b.h))
+	or (rect_b.x >= (self.x + self.w))
 	or (rect_b.y >= (self.y + self.h)) then
 		return true
 	end
