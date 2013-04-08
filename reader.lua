@@ -14,7 +14,7 @@ require "gettext"
 HomeMenu = InputContainer:new{
 	item_table = {},
 	key_events = {
-		TapShowMenu = { {_("Home")}, doc = _("Show Home Menu")},
+		TapShowMenu = { {"Home"}, doc = _("Show Home Menu")},
 	},
 	ges_events = {
 		TapShowMenu = {

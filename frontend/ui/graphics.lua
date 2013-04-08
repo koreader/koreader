@@ -65,13 +65,13 @@ Draw a progress bar according to following args:
 @load_percent: progress in percent
 @c:  color for loading bar
 --]]
-function blitbuffer.progressBar(bb, x, y, w, h, 
+function blitbuffer.progressBar(bb, x, y, w, h,
 								load_m_w, load_m_h, load_percent, c)
 	if load_m_h*2 > h then
 		load_m_h = h/2
 	end
 	bb:paintBorder(x, y, w, h, 2, 15)
-	bb:paintRect(x+load_m_w, y+load_m_h, 
+	bb:paintRect(x+load_m_w, y+load_m_h,
 				(w-2*load_m_w)*load_percent, (h-2*load_m_h), c)
 end
 
@@ -93,8 +93,8 @@ Cursor = {
 
 function Cursor:new(o)
 	o = o or {}
-	o.x_pos = o.x_pos or self.x_pos 
-	o.y_pos = o.y_pos or self.y_pos 
+	o.x_pos = o.x_pos or self.x_pos
+	o.y_pos = o.y_pos or self.y_pos
 	o.line_width_factor = o.line_width_factor or 10
 
 	setmetatable(o, self)
@@ -116,7 +116,7 @@ function Cursor:_draw(x, y)
 	-- paint upper horizontal line
 	fb.bb:invertRect(x, y, self.w, up_down_width)
 	-- paint middle vertical line
-	fb.bb:invertRect(x + (self.w / 2) - up_down_width, y + up_down_width, 
+	fb.bb:invertRect(x + (self.w / 2) - up_down_width, y + up_down_width,
 							self.line_w, body_h)
 	-- paint lower horizontal line
 	fb.bb:invertRect(x, y + body_h + up_down_width, self.w, up_down_width)
