@@ -61,7 +61,7 @@ function ReaderMenu:setUpdateItemTable()
 		text = _("Help"),
 		callback = function()
 			UIManager:show(InfoMessage:new{
-				text = _("Just kidding, this page is not implemented yet."),
+				text = _("Please report bugs to https://github.com/koreader/ koreader/issues"),
 			})
 		end
 	})
