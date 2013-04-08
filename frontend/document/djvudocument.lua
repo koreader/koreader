@@ -3,6 +3,7 @@ require "ui/geometry"
 require "ui/screen"
 require "ui/device"
 require "ui/reader/readerconfig"
+require "ui/data/koptoptions"
 require "document/koptinterface"
 
 DjvuDocument = Document:new{

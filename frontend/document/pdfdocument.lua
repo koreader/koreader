@@ -2,6 +2,7 @@ require "cache"
 require "ui/geometry"
 require "ui/screen"
 require "ui/reader/readerconfig"
+require "ui/data/koptoptions"
 require "document/koptinterface"
 
 PdfDocument = Document:new{
