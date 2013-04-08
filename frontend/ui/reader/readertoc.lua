@@ -1,6 +1,6 @@
 ReaderToc = InputContainer:new{
 	toc = nil,
-	toc_menu_title = "Table of contents",
+	toc_menu_title = _("Table of contents"),
 }
 
 function ReaderToc:init()
@@ -8,7 +8,7 @@ function ReaderToc:init()
 		self.key_events = {
 			ShowToc = {
 				{ "T" },
-				doc = "show Table of Content menu" },
+				doc = _("show Table of Content menu") },
 		}
 	end
 	self.ui.menu:registerToMainMenu(self)
@@ -82,7 +82,7 @@ function ReaderToc:onShowToc()
 	}
 
 	local toc_menu = Menu:new{
-		title = "Table of Contents",
+		title = _("Table of Contents"),
 		item_table = self.toc,
 		ui = self.ui,
 		width = Screen:getWidth()-50,

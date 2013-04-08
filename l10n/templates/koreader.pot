@@ -1,0 +1,149 @@
+# KOReader PATH/TO/FILE.PO
+# Copyright (C) 2005-2013 KOReader Development Team
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
+"POT-Creation-Date: 2013-04-07 18:47+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: frontend/ui/reader/readerconfig.lua:117
+msgid ""
+")\n"
+"end\n"
+"\n"
+"function ReaderConfig:onCloseDocument()\n"
+"	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."
+msgstr ""
+
+#: reader.lua:196
+msgid ""
+"-d               start in debug mode"
+msgstr ""
+
+#: reader.lua:197
+msgid ""
+"-h               show this usage help"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:106
+msgid ""
+"Document menu"
+msgstr ""
+
+#: reader.lua:87
+msgid ""
+"Exit"
+msgstr ""
+
+#: reader.lua:149
+msgid ""
+"FileManager"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:61
+msgid ""
+"Help"
+msgstr ""
+
+#: reader.lua:17
+msgid ""
+"Home"
+msgstr ""
+
+#: reader.lua:105
+msgid ""
+"Home menu"
+msgstr ""
+
+#: reader.lua:202
+msgid ""
+"If you don't pass any path, the last viewed document will be opened"
+msgstr ""
+
+#: reader.lua:199
+msgid ""
+"If you give the name of a directory instead of a file path, a file"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:64
+msgid ""
+"Just kidding, this page is not implemented yet."
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:70
+msgid ""
+"Languages"
+msgstr ""
+
+#: reader.lua:82
+msgid ""
+"Last documents"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:34
+msgid ""
+"Menu"
+msgstr ""
+
+#: reader.lua:126
+msgid ""
+"No reader engine for this file"
+msgstr ""
+
+#: reader.lua:194
+msgid ""
+"Read all the books on your E-Ink reader"
+msgstr ""
+
+#: reader.lua:205
+msgid ""
+"See http://github.com/koreader/kindlepdfviewer for more info."
+msgstr ""
+
+#: reader.lua:17
+msgid ""
+"Show Home Menu"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:87
+msgid ""
+"Table of Contents"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:5
+msgid ""
+"Table of contents"
+msgstr ""
+
+#: reader.lua:204
+msgid ""
+"This software is licensed under the GPLv3."
+msgstr ""
+
+#: reader.lua:200
+msgid ""
+"chooser will show up and let you select a file"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:13
+msgid ""
+"show Table of Content menu"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:34
+msgid ""
+"show menu"
+msgstr ""
+
+#: reader.lua:193
+msgid ""
+"usage: ./reader.lua [OPTION] ... path"
+msgstr ""
+
+

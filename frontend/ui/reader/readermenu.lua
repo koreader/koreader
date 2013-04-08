@@ -31,7 +31,7 @@ function ReaderMenu:init()
 
 	if Device:hasKeyboard() then
 		self.key_events = {
-			ShowMenu = { { "Menu" }, doc = "show menu" },
+			ShowMenu = { { _("Menu") }, doc = _("show menu") },
 		}
 	end
 end
@@ -58,12 +58,24 @@ function ReaderMenu:setUpdateItemTable()
 	end
 
 	table.insert(self.tab_item_table.main, {
-		text = "Help",
+		text = _("Help"),
 		callback = function()
 			UIManager:show(InfoMessage:new{
-				text = "Just kidding, this page is not implemented yet.",
+				text = _("Just kidding, this page is not implemented yet."),
 			})
 		end
+	})
+
+	table.insert(self.tab_item_table.main, {
+		text = _("Languages"),
+		sub_item_table = {
+			{
+				text = "简体中文",
+				callback = function()
+					gettextChangeLang("zh_CN.UTF-8")
+				end,
+			},
+		}
 	})
 end
 
@@ -80,7 +92,6 @@ function ReaderMenu:onShowMenu()
 	local main_menu = nil
 	if Device:isTouchDevice() then
 		main_menu = TouchMenu:new{
-			name = "main_menu",
 			width = Screen:getWidth(),
 			tab_item_table = {
 				self.tab_item_table.navi,
@@ -92,7 +103,7 @@ function ReaderMenu:onShowMenu()
 		}
 	else
 		main_menu = Menu:new{
-			title = "Document menu",
+			title = _("Document menu"),
 			item_table = {},
 			width = Screen:getWidth() - 100,
 		}

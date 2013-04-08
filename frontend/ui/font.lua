@@ -5,9 +5,10 @@ Font = {
 		-- default font for menu contents
 		cfont = "droid/DroidSansFallback.ttf",
 		-- default font for title
-		tfont = "NimbusSanL-BoldItal.cff",
+		--tfont = "NimbusSanL-BoldItal.cff",
+		tfont = "droid/DroidSansFallback.ttf",
 		-- default font for footer
-		ffont = "droid/DroidSans.ttf",
+		ffont = "droid/DroidSansFallback.ttf",
 
 		-- default font for reading position info
 		rifont = "droid/DroidSans.ttf",
