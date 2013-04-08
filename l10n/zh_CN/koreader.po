@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-08 15:08+0000\n"
-"PO-Revision-Date: 2013-04-08 15:20+0000\n"
+"PO-Revision-Date: 2013-04-08 15:35+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -140,7 +140,7 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:4
 msgid "Full Screen"
-msgstr ""
+msgstr "全屏"
 
 #: frontend/ui/data/strings.lua:20
 msgid "Gamma"
@@ -236,11 +236,11 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:2
 msgid "Screen Mode"
-msgstr "卷轴模式"
+msgstr ""
 
 #: frontend/ui/data/strings.lua:5
 msgid "Scroll Mode"
-msgstr ""
+msgstr "卷轴模式"
 
 #: reader.lua:206
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
@@ -260,7 +260,7 @@ msgstr ""
 
 #: frontend/ui/reader/readertypeset.lua:2
 msgid "Set render style"
-msgstr ""
+msgstr "设置渲染样式"
 
 #: reader.lua:17
 msgid "Show Home Menu"
@@ -472,7 +472,7 @@ msgstr "横屏"
 
 #: frontend/ui/data/strings.lua:30
 msgid "large"
-msgstr ""
+msgstr "大"
 
 #: frontend/ui/data/strings.lua:34
 msgid "lighter"
@@ -492,7 +492,7 @@ msgstr "手动"
 
 #: frontend/ui/data/strings.lua:29
 msgid "medium"
-msgstr ""
+msgstr "中"
 
 #: frontend/ui/reader/readerrolling.lua:36
 msgid "move view down"
@@ -528,11 +528,11 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:25
 msgid "off"
-msgstr ""
+msgstr "关闭"
 
 #: frontend/ui/data/strings.lua:24
 msgid "on"
-msgstr ""
+msgstr "开启"
 
 #: frontend/ui/data/strings.lua:47
 msgid "page"
@@ -568,7 +568,7 @@ msgstr "显示目录菜单"
 
 #: frontend/ui/reader/readerbookmark.lua:13
 msgid "show bookmarks"
-msgstr ""
+msgstr "显示书签"
 
 #: frontend/ui/reader/readerconfig.lua:53
 msgid "show config dialog"
@@ -584,7 +584,7 @@ msgstr "显示菜单"
 
 #: frontend/ui/data/strings.lua:28
 msgid "small"
-msgstr ""
+msgstr "小"
 
 #: frontend/ui/data/strings.lua:45
 msgid "toggle bold"
