@@ -178,12 +178,12 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		end
 	end
 	self.screen_bbox = {
-		x0 = math.round(upper_left.x), 
+		x0 = math.round(upper_left.x),
 		y0 = math.round(upper_left.y),
 		x1 = math.round(bottom_right.x),
 		y1 = math.round(bottom_right.y)
 	}
-	
+
 	UIManager.repaint_all = true
 end
 

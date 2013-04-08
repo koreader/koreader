@@ -16,13 +16,13 @@ ToggleSwitch = InputContainer:new{
 function ToggleSwitch:init()
 	self.n_pos = #self.toggle
 	self.position = nil
-	
+
 	local label_font_face = "cfont"
 	local label_font_size = 16
-	
+
 	self.toggle_frame = FrameContainer:new{background = 0, color = 7, radius = 7, bordersize = 1, padding = 2,}
 	self.toggle_content = HorizontalGroup:new{}
-	
+
 	for i=1,#self.toggle do
 		local label = ToggleLabel:new{
 			align = "center",
@@ -44,7 +44,7 @@ function ToggleSwitch:init()
 		}
 		table.insert(self.toggle_content, button)
 	end
-  	
+
 	self.toggle_frame[1] = self.toggle_content
 	self[1] = self.toggle_frame
 	self.dimen = Geom:new(self.toggle_frame:getSize())
@@ -55,7 +55,7 @@ function ToggleSwitch:init()
 					ges = "tap",
 					range = self.dimen,
 				},
-				doc = "Toggle switch",
+				doc = _("Toggle switch"),
 			},
 		}
 	end

@@ -12,12 +12,12 @@ function MenuBarItem:init()
 					ges = "tap",
 					range = self.dimen,
 				},
-				doc = "Select Menu Item",
+				doc = _("Select Menu Item"),
 			},
 		}
 	else
 		self.active_key_events = {
-			Select = { {"Press"}, doc = "chose selected item" },
+			Select = { {"Press"}, doc = _("chose selected item") },
 		}
 	end
 end
@@ -51,12 +51,12 @@ function OptionTextItem:init()
 					ges = "tap",
 					range = self.dimen,
 				},
-				doc = "Select Option Item",
+				doc = _("Select Option Item"),
 			},
 		}
 	else
 		self.active_key_events = {
-			Select = { {"Press"}, doc = "chose selected item" },
+			Select = { {"Press"}, doc = _("chose selected item") },
 		}
 	end
 end
@@ -105,7 +105,7 @@ function OptionIconItem:init()
 					ges = "tap",
 					range = self.dimen,
 				},
-				doc = "Select Option Item",
+				doc = _("Select Option Item"),
 			},
 		}
 	end
@@ -422,11 +422,11 @@ function ConfigDialog:init()
 		}
 	else
 		-- set up keyboard events
-		self.key_events.Close = { {"Back"}, doc = "close config menu" }
+		self.key_events.Close = { {"Back"}, doc = _("close config menu") }
 		-- we won't catch presses to "Right"
 		self.key_events.FocusRight = nil
 	end
-	self.key_events.Select = { {"Press"}, doc = "select current menu item"}
+	self.key_events.Select = { {"Press"}, doc = _("select current menu item") }
 
 	UIManager:setDirty(self, "partial")
 end

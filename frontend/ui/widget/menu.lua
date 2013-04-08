@@ -346,12 +346,12 @@ function Menu:init()
 		}
 	else
 		-- set up keyboard events
-		self.key_events.Close = { {"Back"}, doc = "close menu" }
+		self.key_events.Close = { {"Back"}, doc = _("close menu") }
 		self.key_events.NextPage = {
-			{Input.group.PgFwd}, doc = "goto next page of the menu"
+			{Input.group.PgFwd}, doc = _("goto next page of the menu")
 		}
 		self.key_events.PrevPage = {
-			{Input.group.PgBack}, doc = "goto previous page of the menu"
+			{Input.group.PgBack}, doc = _("goto previous page of the menu")
 		}
 		-- we won't catch presses to "Right", leave that to MenuItem.
 		self.key_events.FocusRight = nil
@@ -360,7 +360,7 @@ function Menu:init()
 			self.key_events.SelectByShortCut = { {self.item_shortcuts} }
 		end
 		self.key_events.Select = {
-			{"Press"}, doc = "select current menu item"
+			{"Press"}, doc = _("select current menu item")
 		}
 	end
 
@@ -428,9 +428,9 @@ function Menu:updateItems(select_number)
 			self.item_group[select_number]:onFocus()
 		end
 		-- update page information
-		self.page_info.text = "page "..self.page.."/"..self.page_num
+		self.page_info.text = _("page ")..self.page.."/"..self.page_num
 	else
-		self.page_info.text = "no choices available"
+		self.page_info.text = _("no choices available")
 	end
 
 	-- FIXME: this is a dirty hack to clear previous menus
