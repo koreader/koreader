@@ -50,7 +50,7 @@ ReaderConfig = InputContainer:new{}
 function ReaderConfig:init()
 	if Device:hasKeyboard() then
 		self.key_events = {
-			ShowConfigMenu = { { "AA" }, doc = "show config dialog" },
+			ShowConfigMenu = { { "AA" }, doc = _("show config dialog") },
 		}
 	end
 	if Device:isTouchDevice() then

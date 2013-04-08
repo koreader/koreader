@@ -24,7 +24,8 @@ it works using data gathered from a document interface
 
 ReaderUI = InputContainer:new{
 	key_events = {
-		Close = { {"Home"}, doc = "close document", event = "Close" },
+		Close = { { "Home" },
+			doc = _("close document"), event = "Close" },
 	},
 	active_widgets = {},
 
@@ -52,8 +53,8 @@ function ReaderUI:init()
 	end
 
 	if Device:hasKeyboard() then
-		self.key_events.Back = { 
-			{ "Back" }, doc = "close document",
+		self.key_events.Back = {
+			{ "Back" }, doc = _("close document"),
 			event = "Close" }
 	end
 
@@ -102,7 +103,7 @@ function ReaderUI:init()
 
 	if self.document.info.has_pages then
 		-- for page specific controller
-		
+
 		-- if needed, insert a paging container
 		local pager = ReaderPaging:new{
 			dialog = self.dialog,
