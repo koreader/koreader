@@ -284,7 +284,7 @@ function Input:init()
 			input.open("/dev/input/event1")
 		end
 		if dev_mod == "KindlePaperWhite" then
-			print("Auto-detected Kindle PaperWhite")
+			print(_("Auto-detected Kindle PaperWhite"))
 		elseif dev_mod == "KindleTouch" then
 			Device:setTouchInputDev("/dev/input/event3")
 			input.open("/dev/input/event2") -- Home button
@@ -304,19 +304,19 @@ function Input:init()
 				end
 				return ev
 			end
-			print("Auto-detected Kindle Touch")
+			print(_("Auto-detected Kindle Touch"))
 		elseif dev_mod == "Kindle4" then
-			print("Auto-detected Kindle 4")
+			print(_("Auto-detected Kindle 4"))
 			self:adjustKindle4EventMap()
 		elseif dev_mod == "Kindle3" then
 			input.open("/dev/input/event2")
-			print("Auto-detected Kindle 3")
+			print(_("Auto-detected Kindle 3"))
 		elseif dev_mod == "KindleDXG" then
-			print("Auto-detected Kindle DXG")
+			print(_("Auto-detected Kindle DXG"))
 		elseif dev_mod == "Kindle2" then
-			print("Auto-detected Kindle 2")
+			print(_("Auto-detected Kindle 2"))
 		else
-			print("Not supported device model!")
+			print(_("Not supported device model!"))
 			os.exit(-1)
 		end
 	end
