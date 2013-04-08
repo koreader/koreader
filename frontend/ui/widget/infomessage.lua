@@ -14,7 +14,8 @@ InfoMessage = InputContainer:new{
 function InfoMessage:init()
 	if Device:hasKeyboard() then
 		key_events = {
-			AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
+			AnyKeyPressed = { { Input.group.Any },
+				seqtext = "any key", doc = _("close dialog") }
 		}
 	else
 		self.ges_events.TapClose = {

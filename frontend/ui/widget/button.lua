@@ -52,7 +52,7 @@ function Button:init()
 					ges = "tap",
 					range = self.dimen,
 				},
-				doc = "Tap Button",
+				doc = _("Tap Button"),
 			},
 		}
 	end

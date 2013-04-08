@@ -6,10 +6,10 @@ require "ui/widget/button"
 Widget that shows a message and OK/Cancel buttons
 ]]
 ConfirmBox = FocusManager:new{
-	text = "no text",
+	text = _("no text"),
 	width = nil,
-	ok_text = "OK",
-	cancel_text = "Cancel",
+	ok_text = _("OK"),
+	cancel_text = _("Cancel"),
 	ok_callback = function() end,
 	cancel_callback = function() end,
 }
@@ -20,8 +20,8 @@ function ConfirmBox:init()
 		self.width = Screen:getWidth() - 200
 	end
 	-- build bottons
-	self.key_events.Close = { {{"Home","Back"}}, doc = "cancel" }
-	self.key_events.Select = { {{"Enter","Press"}}, doc = "chose selected option" }
+	self.key_events.Close = { {{"Home","Back"}}, doc = _("cancel") }
+	self.key_events.Select = { {{"Enter","Press"}}, doc = _("chose selected option") }
 
 	local ok_button = Button:new{
 		text = self.ok_text,

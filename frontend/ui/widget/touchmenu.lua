@@ -23,7 +23,7 @@ function TouchMenuItem:init()
 				ges = "tap",
 				range = self.dimen,
 			},
-			doc = "Select Menu Item",
+			doc = _("Select Menu Item"),
 		},
 	}
 
@@ -325,7 +325,7 @@ function TouchMenu:updateItems()
 
 	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
-	self.footer_page.text = "Page "..self.page.."/"..self.page_num
+	self.footer_page.text = _("Page ")..self.page.."/"..self.page_num
 	self.time_info.text = os.date("%H:%M")
 	-- FIXME: this is a dirty hack to clear previous menus
 	-- refert to issue #664

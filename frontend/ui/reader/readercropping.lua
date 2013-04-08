@@ -64,7 +64,7 @@ function ReaderCropping:onPageCrop(mode)
 	-- backup original page scroll
 	self.orig_page_scroll = self.view.page_scroll
 	self.view.page_scroll = false
-	-- backup and disable original hinting state 
+	-- backup and disable original hinting state
 	self.ui:handleEvent(Event:new("DisableHinting"))
 	-- backup original reflow mode as cropping use non-reflow mode
 	self.orig_reflow_mode = self.document.configurable.text_wrap
@@ -76,7 +76,7 @@ function ReaderCropping:onPageCrop(mode)
 	else
 		self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
 	end
-	self.ui:handleEvent(Event:new("SetDimensions", 
+	self.ui:handleEvent(Event:new("SetDimensions",
 		Geom:new{w = Screen:getWidth(), h = Screen:getHeight()*11/12})
 	)
 	self.bbox_widget = BBoxWidget:new{
@@ -132,7 +132,8 @@ function ReaderCropping:exitPageCrop(confirmed)
 	else
 		if confirmed then
 			-- if original zoom mode is not "content", set zoom mode to "content"
-			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "content"))
+			self.ui:handleEvent(Event:new("SetZoomMode",
+				self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "content"))
 			self.ui:handleEvent(Event:new("InitScrollPageStates"))
 		else
 			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
