@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-08 15:08+0000\n"
-"PO-Revision-Date: 2013-04-08 15:13+0000\n"
-"Last-Translator: houqp <dave2008713@gmail.com>\n"
+"PO-Revision-Date: 2013-04-08 15:21+0000\n"
+"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/koreader/language/tr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -36,15 +36,15 @@ msgstr "-h yardım sayfasını göster"
 
 #: frontend/ui/data/strings.lua:40
 msgid "0 deg"
-msgstr ""
+msgstr "0 derece"
 
 #: frontend/ui/data/strings.lua:42
 msgid "10 deg"
-msgstr ""
+msgstr "10 derece"
 
 #: frontend/ui/data/strings.lua:41
 msgid "5 deg"
-msgstr ""
+msgstr "5 derece"
 
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
@@ -112,7 +112,7 @@ msgstr "Satır boşluğunu şuna düşür:"
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
-msgstr ""
+msgstr "Bozukluk Büyüklüğü"
 
 #: frontend/ui/reader/readermenu.lua:106
 msgid "Document menu"
@@ -160,7 +160,7 @@ msgstr "Eğer hiç bir dosya yolu belirtmezseniz en son görüntülenen belge a�
 
 #: reader.lua:200
 msgid "If you give the name of a directory instead of a file path, a file"
-msgstr ""
+msgstr "Dosya yolu yerine bir klasör ismi belirtmişseniz, bir dosya "
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
@@ -332,7 +332,7 @@ msgstr "Sayfa genişliğini sığdır"
 
 #: frontend/ui/data/strings.lua:26
 msgid "auto"
-msgstr ""
+msgstr "otomatik"
 
 #: frontend/ui/widget/confirmbox.lua:23
 msgid "cancel"
@@ -340,7 +340,7 @@ msgstr "iptal"
 
 #: reader.lua:201
 msgid "chooser will show up and let you select a file"
-msgstr "birazdan açılacak seçim ekranı ile  dosya seçebilirsiniz"
+msgstr "seçim ekranı açılacak ve bir dosya seçebileceksiniz"
 
 #: frontend/ui/widget/config.lua:20 frontend/ui/widget/config.lua:59
 msgid "chose selected item"
@@ -372,15 +372,15 @@ msgstr "menüyü kapat"
 
 #: frontend/ui/data/strings.lua:36
 msgid "darker"
-msgstr ""
+msgstr "daha koyu"
 
 #: frontend/ui/data/strings.lua:37
 msgid "darkest"
-msgstr ""
+msgstr "en koyu"
 
 #: frontend/ui/data/strings.lua:31
 msgid "decrease"
-msgstr ""
+msgstr "azalt"
 
 #: frontend/ui/reader/readerfont.lua:22
 msgid "decrease font size"
@@ -392,7 +392,7 @@ msgstr "satır boşluğunu azalt"
 
 #: frontend/ui/data/strings.lua:35
 msgid "default"
-msgstr ""
+msgstr "varsayılan"
 
 #: frontend/ui/reader/readerrolling.lua:42
 msgid "go to 11%"
@@ -452,11 +452,11 @@ msgstr "menünün önceki sayfasına git"
 
 #: frontend/ui/data/strings.lua:39
 msgid "high"
-msgstr ""
+msgstr "yüksek"
 
 #: frontend/ui/data/strings.lua:32
 msgid "increase"
-msgstr ""
+msgstr "arttır"
 
 #: frontend/ui/reader/readerfont.lua:18
 msgid "increase font size"
@@ -468,31 +468,31 @@ msgstr "satır boşluğunu arttır"
 
 #: frontend/ui/data/strings.lua:44
 msgid "landscape"
-msgstr ""
+msgstr "yatay mod"
 
 #: frontend/ui/data/strings.lua:30
 msgid "large"
-msgstr ""
+msgstr "geniş"
 
 #: frontend/ui/data/strings.lua:34
 msgid "lighter"
-msgstr ""
+msgstr "daha açık"
 
 #: frontend/ui/data/strings.lua:33
 msgid "lightest"
-msgstr ""
+msgstr "en açık"
 
 #: frontend/ui/data/strings.lua:38
 msgid "low"
-msgstr ""
+msgstr "düşük"
 
 #: frontend/ui/data/strings.lua:27
 msgid "manual"
-msgstr ""
+msgstr "el ile"
 
 #: frontend/ui/data/strings.lua:29
 msgid "medium"
-msgstr ""
+msgstr "orta"
 
 #: frontend/ui/reader/readerrolling.lua:36
 msgid "move view down"
@@ -528,15 +528,15 @@ msgstr "yazı yok"
 
 #: frontend/ui/data/strings.lua:25
 msgid "off"
-msgstr ""
+msgstr "kapalı"
 
 #: frontend/ui/data/strings.lua:24
 msgid "on"
-msgstr ""
+msgstr "açık"
 
 #: frontend/ui/data/strings.lua:47
 msgid "page"
-msgstr ""
+msgstr "sayfa"
 
 #: frontend/ui/widget/menu.lua:431
 msgid "page "
@@ -544,7 +544,7 @@ msgstr "sayfa"
 
 #: frontend/ui/data/strings.lua:43
 msgid "portrait"
-msgstr ""
+msgstr "dikey"
 
 #: frontend/ui/reader/readerrotation.lua:12
 msgid "rotate left by 90 degrees"
@@ -556,7 +556,7 @@ msgstr "sağa 90 derece döndür"
 
 #: frontend/ui/data/strings.lua:46
 msgid "scroll"
-msgstr ""
+msgstr "kaydırma"
 
 #: frontend/ui/widget/config.lua:429 frontend/ui/widget/menu.lua:363
 msgid "select current menu item"
@@ -584,11 +584,11 @@ msgstr "menüyü göster"
 
 #: frontend/ui/data/strings.lua:28
 msgid "small"
-msgstr ""
+msgstr "küçük"
 
 #: frontend/ui/data/strings.lua:45
 msgid "toggle bold"
-msgstr ""
+msgstr "kalınlığı değiştir"
 
 #: reader.lua:194
 msgid "usage: ./reader.lua [OPTION] ... path"

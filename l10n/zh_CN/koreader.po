@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-08 15:08+0000\n"
-"PO-Revision-Date: 2013-04-08 15:13+0000\n"
+"PO-Revision-Date: 2013-04-08 15:20+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -36,15 +36,15 @@ msgstr "-h 显示帮助信息"
 
 #: frontend/ui/data/strings.lua:40
 msgid "0 deg"
-msgstr ""
+msgstr "0度"
 
 #: frontend/ui/data/strings.lua:42
 msgid "10 deg"
-msgstr ""
+msgstr "10度"
 
 #: frontend/ui/data/strings.lua:41
 msgid "5 deg"
-msgstr ""
+msgstr "5度"
 
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
@@ -200,7 +200,7 @@ msgstr ""
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
-msgstr ""
+msgstr "确认"
 
 #: frontend/ui/widget/touchmenu.lua:328
 msgid "Page "
@@ -236,7 +236,7 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:2
 msgid "Screen Mode"
-msgstr ""
+msgstr "卷轴模式"
 
 #: frontend/ui/data/strings.lua:5
 msgid "Scroll Mode"
@@ -468,7 +468,7 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:44
 msgid "landscape"
-msgstr ""
+msgstr "横屏"
 
 #: frontend/ui/data/strings.lua:30
 msgid "large"
@@ -488,7 +488,7 @@ msgstr ""
 
 #: frontend/ui/data/strings.lua:27
 msgid "manual"
-msgstr ""
+msgstr "手动"
 
 #: frontend/ui/data/strings.lua:29
 msgid "medium"
