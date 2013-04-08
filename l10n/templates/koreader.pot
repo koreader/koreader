@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-08 07:47+0000\n"
+"POT-Creation-Date: 2013-04-08 15:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,12 +31,27 @@ msgid ""
 "-h               show this usage help"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:40
+msgid ""
+"0 deg"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:42
+msgid ""
+"10 deg"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:41
+msgid ""
+"5 deg"
+msgstr ""
+
 #: frontend/ui/reader/readertypeset.lua:49
 msgid ""
 "Auto"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:193
+#: frontend/ui/data/strings.lua:17
 msgid ""
 "Auto Straighten"
 msgstr ""
@@ -86,12 +101,12 @@ msgid ""
 "Change font"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:75
+#: frontend/ui/data/strings.lua:8
 msgid ""
 "Columns"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:130
+#: frontend/ui/data/strings.lua:11
 msgid ""
 "Contrast"
 msgstr ""
@@ -111,7 +126,7 @@ msgid ""
 "Decrease line space to "
 msgstr ""
 
-#: frontend/document/koptinterface.lua:179
+#: frontend/ui/data/strings.lua:15
 msgid ""
 "Defect Size"
 msgstr ""
@@ -121,7 +136,7 @@ msgid ""
 "Document menu"
 msgstr ""
 
-#: frontend/document/credocument.lua:86
+#: frontend/ui/data/strings.lua:22
 msgid ""
 "Embedded style"
 msgstr ""
@@ -136,22 +151,22 @@ msgid ""
 "FileManager"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:114
+#: frontend/ui/data/strings.lua:10
 msgid ""
 "Fine Tuning"
 msgstr ""
 
-#: frontend/document/credocument.lua:53
+#: frontend/ui/data/strings.lua:19
 msgid ""
 "Font weight"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:43
+#: frontend/ui/data/strings.lua:4
 msgid ""
 "Full Screen"
 msgstr ""
 
-#: frontend/document/credocument.lua:63
+#: frontend/ui/data/strings.lua:20
 msgid ""
 "Gamma"
 msgstr ""
@@ -191,7 +206,7 @@ msgid ""
 "Increase line space to "
 msgstr ""
 
-#: frontend/document/koptinterface.lua:200
+#: frontend/ui/data/strings.lua:18
 msgid ""
 "Indentation"
 msgstr ""
@@ -206,8 +221,7 @@ msgid ""
 "Last documents"
 msgstr ""
 
-#: frontend/document/credocument.lua:24
-#: frontend/document/koptinterface.lua:68
+#: frontend/ui/data/strings.lua:7
 msgid ""
 "Line Spacing"
 msgstr ""
@@ -232,12 +246,12 @@ msgid ""
 "Page "
 msgstr ""
 
-#: frontend/document/koptinterface.lua:28
+#: frontend/ui/data/strings.lua:3
 msgid ""
 "Page Crop"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:61
+#: frontend/ui/data/strings.lua:6
 msgid ""
 "Page Margin"
 msgstr ""
@@ -257,23 +271,23 @@ msgid ""
 "Redrawing with font "
 msgstr ""
 
-#: frontend/document/koptinterface.lua:147
+#: frontend/ui/data/koptoptions.lua:144
+#: frontend/ui/data/strings.lua:12
 msgid ""
 "Reflow"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:186
+#: frontend/ui/data/strings.lua:16
 msgid ""
 "Render Quality"
 msgstr ""
 
-#: frontend/document/credocument.lua:10
-#: frontend/document/koptinterface.lua:14
+#: frontend/ui/data/strings.lua:2
 msgid ""
 "Screen Mode"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:52
+#: frontend/ui/data/strings.lua:5
 msgid ""
 "Scroll Mode"
 msgstr ""
@@ -330,7 +344,7 @@ msgid ""
 "Tap Button"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:86
+#: frontend/ui/data/strings.lua:9
 msgid ""
 "Text Align"
 msgstr ""
@@ -345,17 +359,17 @@ msgid ""
 "Toggle switch"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:165
+#: frontend/ui/data/strings.lua:13
 msgid ""
 "Vertical Text"
 msgstr ""
 
-#: frontend/document/credocument.lua:76
+#: frontend/ui/data/strings.lua:21
 msgid ""
 "View mode"
 msgstr ""
 
-#: frontend/document/koptinterface.lua:172
+#: frontend/ui/data/strings.lua:14
 msgid ""
 "Word Gap"
 msgstr ""
@@ -388,6 +402,11 @@ msgstr ""
 #: frontend/ui/reader/readerzooming.lua:246
 msgid ""
 "Zoom to fit page width"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:26
+msgid ""
+"auto"
 msgstr ""
 
 #: frontend/ui/widget/confirmbox.lua:23
@@ -437,6 +456,21 @@ msgid ""
 "close menu"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:36
+msgid ""
+"darker"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:37
+msgid ""
+"darkest"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:31
+msgid ""
+"decrease"
+msgstr ""
+
 #: frontend/ui/reader/readerfont.lua:22
 msgid ""
 "decrease font size"
@@ -445,6 +479,11 @@ msgstr ""
 #: frontend/ui/reader/readerfont.lua:30
 msgid ""
 "decrease line space"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:35
+msgid ""
+"default"
 msgstr ""
 
 #: frontend/ui/reader/readerrolling.lua:42
@@ -517,6 +556,16 @@ msgid ""
 "goto previous page of the menu"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:39
+msgid ""
+"high"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:32
+msgid ""
+"increase"
+msgstr ""
+
 #: frontend/ui/reader/readerfont.lua:18
 msgid ""
 "increase font size"
@@ -525,6 +574,41 @@ msgstr ""
 #: frontend/ui/reader/readerfont.lua:26
 msgid ""
 "increase line space"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:44
+msgid ""
+"landscape"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:30
+msgid ""
+"large"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:34
+msgid ""
+"lighter"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:33
+msgid ""
+"lightest"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:38
+msgid ""
+"low"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:27
+msgid ""
+"manual"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:29
+msgid ""
+"medium"
 msgstr ""
 
 #: frontend/ui/reader/readerrolling.lua:36
@@ -567,9 +651,29 @@ msgid ""
 "no text"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:25
+msgid ""
+"off"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:24
+msgid ""
+"on"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:47
+msgid ""
+"page"
+msgstr ""
+
 #: frontend/ui/widget/menu.lua:431
 msgid ""
 "page "
+msgstr ""
+
+#: frontend/ui/data/strings.lua:43
+msgid ""
+"portrait"
 msgstr ""
 
 #: frontend/ui/reader/readerrotation.lua:12
@@ -580,6 +684,11 @@ msgstr ""
 #: frontend/ui/reader/readerrotation.lua:16
 msgid ""
 "rotate right by 90 degrees"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:46
+msgid ""
+"scroll"
 msgstr ""
 
 #: frontend/ui/widget/config.lua:429
@@ -611,6 +720,16 @@ msgstr ""
 #: frontend/ui/reader/readermenu.lua:34
 msgid ""
 "show menu"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:28
+msgid ""
+"small"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:45
+msgid ""
+"toggle bold"
 msgstr ""
 
 #: reader.lua:194
