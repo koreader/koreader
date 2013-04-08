@@ -12,42 +12,42 @@ function ReaderZooming:init()
 		self.key_events = {
 			ZoomIn = {
 				{ "Shift", Input.group.PgFwd },
-				doc = "zoom in",
+				doc = _("zoom in"),
 				event = "Zoom", args = "in"
 			},
 			ZoomOut = {
 				{ "Shift", Input.group.PgBack },
-				doc = "zoom out",
+				doc = _("zoom out"),
 				event = "Zoom", args = "out"
 			},
 			ZoomToFitPage = {
 				{ "A" },
-				doc = "zoom to fit page",
+				doc = _("zoom to fit page"),
 				event = "SetZoomMode", args = "page"
 			},
 			ZoomToFitContent = {
 				{ "Shift", "A" },
-				doc = "zoom to fit content",
+				doc = _("zoom to fit content"),
 				event = "SetZoomMode", args = "content"
 			},
 			ZoomToFitPageWidth = {
 				{ "S" },
-				doc = "zoom to fit page width",
+				doc = _("zoom to fit page width"),
 				event = "SetZoomMode", args = "pagewidth"
 			},
 			ZoomToFitContentWidth = {
 				{ "Shift", "S" },
-				doc = "zoom to fit content width",
+				doc = _("zoom to fit content width"),
 				event = "SetZoomMode", args = "contentwidth"
 			},
 			ZoomToFitPageHeight = {
 				{ "D" },
-				doc = "zoom to fit page height",
+				doc = _("zoom to fit page height"),
 				event = "SetZoomMode", args = "pageheight"
 			},
 			ZoomToFitContentHeight = {
 				{ "Shift", "D" },
-				doc = "zoom to fit content height",
+				doc = _("zoom to fit content height"),
 				event = "SetZoomMode", args = "contentheight"
 			},
 		}
@@ -232,30 +232,30 @@ end
 function ReaderZooming:addToMainMenu(tab_item_table)
 	if self.ui.document.info.has_pages then
 		table.insert(tab_item_table.typeset, {
-			text = "Switch zoom mode",
+			text = _("Switch zoom mode"),
 			sub_item_table = {
 				{
-					text = "Zoom to fit content width",
+					text = _("Zoom to fit content width"),
 					callback = self:genSetZoomModeCallBack("contentwidth")
 				},
 				{
-					text = "Zoom to fit content height",
+					text = _("Zoom to fit content height"),
 					callback = self:genSetZoomModeCallBack("contentheight")
 				},
 				{
-					text = "Zoom to fit page width",
+					text = _("Zoom to fit page width"),
 					callback = self:genSetZoomModeCallBack("pagewidth")
 				},
 				{
-					text = "Zoom to fit page height",
+					text = _("Zoom to fit page height"),
 					callback = self:genSetZoomModeCallBack("pageheight")
 				},
 				{
-					text = "Zoom to fit content",
+					text = _("Zoom to fit content"),
 					callback = self:genSetZoomModeCallBack("content")
 				},
 				{
-					text = "Zoom to fit page",
+					text = _("Zoom to fit page"),
 					callback = self:genSetZoomModeCallBack("page")
 				},
 			}

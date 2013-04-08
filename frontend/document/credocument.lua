@@ -7,7 +7,7 @@ CreOptions = {
 		options = {
 			{
 				name = "screen_mode",
-				name_text = "Screen Mode",
+				name_text = _("Screen Mode"),
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
@@ -21,7 +21,7 @@ CreOptions = {
 		options = {
 			{
 				name = "line_spacing",
-				name_text = "Line Spacing",
+				name_text = _("Line Spacing"),
 				item_text = {"decrease", "increase"},
 				args = {"decrease", "increase"},
 				default_arg = nil,
@@ -50,7 +50,7 @@ CreOptions = {
 		options = {
 			{
 				name = "font_weight",
-				name_text = "Font weight",
+				name_text = _("Font weight"),
 				item_text = {"toggle bolder"},
 				-- args is indeed not used, we put here just to keep the
 				-- UI happy.
@@ -60,7 +60,7 @@ CreOptions = {
 			},
 			{
 				name = "font_gamma",
-				name_text = "Gamma",
+				name_text = _("Gamma"),
 				item_text = {"decrease", "increase"},
 				args = {"decrease", "increase"},
 				default_arg = nil,
@@ -73,7 +73,7 @@ CreOptions = {
 		options = {
 			{
 				name = "view_mode",
-				name_text = "View mode",
+				name_text = _("View mode"),
 				toggle = {"scroll", "page"},
 				values = {1, 0},
 				default_value = 0,
@@ -83,7 +83,7 @@ CreOptions = {
 			},
 			{
 				name = "embedded_css",
-				name_text = "Embedded style",
+				name_text = _("Embedded style"),
 				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 0,

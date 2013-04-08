@@ -31,7 +31,7 @@ function ReaderMenu:init()
 
 	if Device:hasKeyboard() then
 		self.key_events = {
-			ShowMenu = { { _("Menu") }, doc = _("show menu") },
+			ShowMenu = { { "Menu" }, doc = _("show menu") },
 		}
 	end
 end

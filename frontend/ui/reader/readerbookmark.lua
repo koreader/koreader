@@ -1,7 +1,7 @@
 require "ui/widget/notification"
 
 ReaderBookmark = InputContainer:new{
-	bm_menu_title = "Bookmarks",
+	bm_menu_title = _("Bookmarks"),
 	bookmarks = nil,
 }
 
@@ -10,7 +10,7 @@ function ReaderBookmark:init()
 		self.key_events = {
 			ShowToc = {
 				{ "B" },
-				doc = "show bookmarks" },
+				doc = _("show bookmarks") },
 		}
 	end
 	self.ui.menu:registerToMainMenu(self)

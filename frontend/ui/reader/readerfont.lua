@@ -2,7 +2,7 @@ ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
 	line_space_percent = nil,
-	font_menu_title = "Change font",
+	font_menu_title = _("Change font"),
 	face_table = nil,
 	-- default gamma from crengine's lvfntman.cpp
 	gamma_index = nil,
@@ -12,22 +12,22 @@ function ReaderFont:init()
 	if not Device:hasNoKeyboard() then
 		-- add shortcut for keyboard
 		self.key_events = {
-			ShowFontMenu = { {"F"}, doc = "show font menu" },
+			ShowFontMenu = { {"F"}, doc = _("show font menu") },
 			IncreaseSize = {
 				{ "Shift", Input.group.PgFwd },
-				doc = "increase font size",
+				doc = _("increase font size"),
 				event = "ChangeSize", args = "increase" },
 			DecreaseSize = {
 				{ "Shift", Input.group.PgBack },
-				doc = "decrease font size",
+				doc = _("decrease font size"),
 				event = "ChangeSize", args = "decrease" },
 			IncreaseLineSpace = {
 				{ "Alt", Input.group.PgFwd },
-				doc = "increase line space",
+				doc = _("increase line space"),
 				event = "ChangeLineSpace", args = "increase" },
 			DecreaseLineSpace = {
 				{ "Alt", Input.group.PgBack },
-				doc = "decrease line space",
+				doc = _("decrease line space"),
 				event = "ChangeLineSpace", args = "decrease" },
 		}
 	end
@@ -117,12 +117,19 @@ end
 --]]
 function ReaderFont:onChangeSize(direction)
 	local delta = 1
+	local msg = ""
+
 	if direction == "decrease" then
 	   delta = -1
+	   msg = _("Decrease font size to ")
+	else
+	   msg = _("Increase font size to ")
 	end
+
 	self.font_size = self.font_size + delta
+
 	UIManager:show(Notification:new{
-		text = direction.." font size to "..self.font_size,
+		text = msg..self.font_size,
 		timeout = 1,
 	})
 	self.ui.document:zoomFont(delta)
@@ -138,7 +145,7 @@ function ReaderFont:onSetFontSize(new_size)
 
 	self.font_size = new_size
 	UIManager:show(Notification:new{
-		text = "Set font size to "..self.font_size,
+		text = _("Set font size to ")..self.font_size,
 		timeout = 1,
 	})
 	self.ui.document:setFontSize(new_size)
@@ -148,16 +155,19 @@ function ReaderFont:onSetFontSize(new_size)
 end
 
 function ReaderFont:onChangeLineSpace(direction)
+	local msg = ""
 	if direction == "decrease" then
 		self.line_space_percent = self.line_space_percent - 10
 		-- NuPogodi, 15.05.12: reduce lowest space_percent to 80
 		self.line_space_percent = math.max(self.line_space_percent, 80)
+		msg = _("Decrease line space to ")
 	else
 		self.line_space_percent = self.line_space_percent + 10
 		self.line_space_percent = math.min(self.line_space_percent, 200)
+		msg = _("Increase line space to ")
 	end
 	UIManager:show(Notification:new{
-		text = direction.." line space to "..self.line_space_percent.."%",
+		text = msg..self.line_space_percent.."%",
 		timeout = 1,
 	})
 	self.ui.document:setInterlineSpacePercent(self.line_space_percent)
@@ -173,14 +183,17 @@ function ReaderFont:onToggleFontBolder()
 end
 
 function ReaderFont:onChangeFontGamma(direction)
+	local msg = ""
 	if direction == "increase" then
 		cre.setGammaIndex(self.gamma_index+2)
+		msg = _("Increase gamma to ")
 	elseif direction == "decrease" then
 		cre.setGammaIndex(self.gamma_index-2)
+		msg = _("Decrease gamma to ")
 	end
 	self.gamma_index = cre.getGammaIndex()
 	UIManager:show(Notification:new{
-		text = direction.." gamma to "..self.gamma_index,
+		text = msg..self.gamma_index,
 		timeout = 1
 	})
 	self.ui:handleEvent(Event:new("RedrawCurrentView"))
@@ -199,7 +212,7 @@ function ReaderFont:setFont(face)
 	if face and self.font_face ~= face then
 		self.font_face = face
 		UIManager:show(Notification:new{
-			text = "redrawing with font "..face,
+			text = _("Redrawing with font ")..face,
 			timeout = 1,
 		})
 

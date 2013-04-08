@@ -11,7 +11,7 @@ KoptOptions = {
 		options = {
 			{
 				name = "screen_mode",
-				name_text = "Screen Mode",
+				name_text = _("Screen Mode"),
 				toggle = {"portrait", "landscape"},
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
@@ -25,7 +25,7 @@ KoptOptions = {
 		options = {
 			{
 				name = "trim_page",
-				name_text = "Page Crop",
+				name_text = _("Page Crop"),
 				toggle = {"auto", "manual"},
 				alternate = false,
 				values = {1, 0},
@@ -40,7 +40,7 @@ KoptOptions = {
 		options = {
 			{
 				name = "full_screen",
-				name_text = "Full Screen",
+				name_text = _("Full Screen"),
 				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 0,
@@ -49,7 +49,7 @@ KoptOptions = {
 			},
 			{
 				name = "page_scroll",
-				name_text = "Scroll Mode",
+				name_text = _("Scroll Mode"),
 				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 1,
@@ -58,21 +58,21 @@ KoptOptions = {
 			},
 			{
 				name = "page_margin",
-				name_text = "Page Margin",
+				name_text = _("Page Margin"),
 				toggle = {"small", "medium", "large"},
 				values = {0.06, 0.10, 0.14},
 				default_value = 0.10,
 			},
 			{
 				name = "line_spacing",
-				name_text = "Line Spacing",
+				name_text = _("Line Spacing"),
 				toggle = {"small", "medium", "large"},
 				values = {1.0, 1.2, 1.4},
 				default_value = 1.2,
 			},
 			{
 				name = "max_columns",
-				name_text = "Columns",
+				name_text = _("Columns"),
 				item_icons = {
 					"resources/icons/appbar.column.one.png",
 					"resources/icons/appbar.column.two.png",
@@ -83,7 +83,7 @@ KoptOptions = {
 			},
 			{
 				name = "justification",
-				name_text = "Text Align",
+				name_text = _("Text Align"),
 				item_icons = {
 					"resources/icons/appbar.align.auto.png",
 					"resources/icons/appbar.align.left.png",
@@ -111,7 +111,7 @@ KoptOptions = {
 			},
 			{
 				name = "font_fine_tune",
-				name_text = "Fine Tuning",
+				name_text = _("Fine Tuning"),
 				toggle = {"decrease","increase"},
 				values = {-0.05, 0.05},
 				default_value = 0.05,
@@ -127,7 +127,7 @@ KoptOptions = {
 		options = {
 			{
 				name = "contrast",
-				name_text = "Contrast",
+				name_text = _("Contrast"),
 				name_align_right = 0.2,
 				item_text = {"lightest", "lighter", "default", "darker", "darkest"},
 				item_font_size = 18,
@@ -144,12 +144,12 @@ KoptOptions = {
 		options = {
 			{
 				name = "text_wrap",
-				name_text = "Reflow",
+				name_text = _("Reflow"),
 				toggle = {"on", "off"},
 				values = {1, 0},
 				default_value = 0,
 				events = {
-					{	
+					{
 						event = "RedrawCurrentPage",
 					},
 					{
@@ -162,42 +162,42 @@ KoptOptions = {
 			},
 			{
 				name="screen_rotation",
-				name_text = "Vertical Text",
+				name_text = _("Vertical Text"),
 				toggle = {"on", "off"},
 				values = {270, 0},
 				default_value = 0,
 			},
 			{
 				name = "word_spacing",
-				name_text = "Word Gap",
+				name_text = _("Word Gap"),
 				toggle = {"small", "medium", "large"},
 				values = {0.05, 0.15, 0.375},
 				default_value = 0.15,
 			},
 			{
 				name = "defect_size",
-				name_text = "Defect Size",
+				name_text = _("Defect Size"),
 				toggle = {"small", "medium", "large"},
 				values = {0.5, 1.0, 2.0},
 				default_value = 1.0,
 			},
 			{
 				name = "quality",
-				name_text = "Render Quality",
+				name_text = _("Render Quality"),
 				toggle = {"low", "default", "high"},
 				values={0.5, 0.8, 1.0},
 				default_value = 0.8,
 			},
 			{
 				name = "auto_straighten",
-				name_text = "Auto Straighten",
+				name_text = _("Auto Straighten"),
 				toggle = {"0 deg", "5 deg", "10 deg"},
 				values = {0, 5, 10},
 				default_value = 0,
 			},
 			{
 				name = "detect_indent",
-				name_text = "Indentation",
+				name_text = _("Indentation"),
 				toggle = {"On", "Off"},
 				values = {1, 0},
 				default_value = 1,
@@ -217,7 +217,7 @@ KoptInterface = {
 }
 
 function KoptInterface:waitForContext(kc)
-	-- if koptcontext is being processed in background thread 
+	-- if koptcontext is being processed in background thread
 	-- the isPreCache will return 1.
 	while kc and kc:isPreCache() == 1 do
 		DEBUG("waiting for background rendering")
@@ -267,7 +267,7 @@ function KoptInterface:setTrimPage(doc, pageno)
 	--DEBUG("original page dimens", page_dimens)
 	local orig_bbox = doc:getUsedBBox(pageno)
 	--DEBUG("original bbox", orig_bbox)
-	if orig_bbox.x1 - orig_bbox.x0 < page_dimens.w 
+	if orig_bbox.x1 - orig_bbox.x0 < page_dimens.w
 		or orig_bbox.y1 - orig_bbox.y0 < page_dimens.h then
 		doc.configurable.trim_page = 0
 		--DEBUG("Set manual crop in koptengine")
@@ -336,7 +336,7 @@ function KoptInterface:makeCache(doc, pageno, context_hash)
 	local cached = Cache:check(kc_hash)
 	if cached then
 		local fullwidth, fullheight = self:getReflowedDim(cached.kctx)
-		-- prepare cache item with contained blitbuffer	
+		-- prepare cache item with contained blitbuffer
 		local tile = CacheItem:new{
 			size = fullwidth * fullheight / 2 + 64, -- estimation
 			excerpt = Geom:new{ w = fullwidth, h = fullheight },
@@ -377,7 +377,7 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 		hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(rect)
 		size = rect
 	end
-	
+
 	local cached = Cache:check(hash)
 	if cached then
 		return cached
@@ -412,7 +412,7 @@ function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation,
 	local tile = self:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
 	--DEBUG("now painting", tile, rect)
 	target:blitFrom(tile.bb,
-		x, y, 
+		x, y,
 		rect.x - tile.excerpt.x,
 		rect.y - tile.excerpt.y,
 		rect.w, rect.h)

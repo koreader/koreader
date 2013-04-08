@@ -3,7 +3,6 @@ require "ui/reader/readerfooter"
 require "ui/reader/readerdogear"
 
 ReaderView = OverlapGroup:new{
-	_name = "ReaderView",
 	document = nil,
 
 	-- single page state
