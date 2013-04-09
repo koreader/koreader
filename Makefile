@@ -25,7 +25,7 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 MO_DIR=i18n
 
 
-all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
+all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr mo
 
 $(KOR_BASE)/koreader-base $(KOR_BASE)/extr:
 	make -C $(KOR_BASE) koreader-base extr
@@ -54,7 +54,7 @@ bootstrapemu:
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
 	test -e $(EMU_DIR)/i18n || (cd $(EMU_DIR) && ln -s ../i18n ./)
 
-customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
+customupdate: all
 	# ensure that the binaries were built for ARM
 	file $(KOR_BASE)/koreader-base | grep ARM || exit 1
 	file $(KOR_BASE)/extr | grep ARM || exit 1
@@ -70,7 +70,7 @@ customupdate: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
 	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
-	cp -rp $(KOR_BASE)/i18n $(INSTALL_DIR)
+	cp -rp i18n $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	echo $(VERSION) > git-rev
 	cp -r git-rev resources $(INSTALL_DIR)
