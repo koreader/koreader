@@ -111,9 +111,11 @@ function ReaderConfig:onCloseConfig()
 end
 
 function ReaderConfig:onReadSettings(config)
-	self.configurable:loadSettings(config, self.options.prefix..'_')
+	-- use char(95)(underscore) to avoid conflict with gettext macro
+	self.configurable:loadSettings(config, self.options.prefix..string.char(95))
 end
 
 function ReaderConfig:onCloseDocument()
-	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix..'_')
+	-- use char(95)(underscore) to avoid conflict with gettext macro
+	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix..string.char(95))
 end
