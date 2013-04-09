@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-09 14:42+0000\n"
-"PO-Revision-Date: 2013-04-09 14:42+0000\n"
+"POT-Creation-Date: 2013-04-09 18:05+0000\n"
+"PO-Revision-Date: 2013-04-09 18:04+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -206,8 +206,10 @@ msgid "Page Margin"
 msgstr "页边距"
 
 #: frontend/ui/reader/readermenu.lua:64
-msgid "Please report bugs to https://github.com/koreader/ koreader/issues"
-msgstr "Bug反馈请访问https://github.com/koreader/ koreader/issues"
+msgid ""
+"Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
+" the bottom of the page for more options"
+msgstr ""
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
