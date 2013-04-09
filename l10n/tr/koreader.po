@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-08 15:08+0000\n"
-"PO-Revision-Date: 2013-04-08 15:21+0000\n"
-"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
+"POT-Creation-Date: 2013-04-09 14:42+0000\n"
+"PO-Revision-Date: 2013-04-09 14:42+0000\n"
+"Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/koreader/language/tr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,46 +17,37 @@ msgstr ""
 "Language: tr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: frontend/ui/reader/readerconfig.lua:114
-msgid ""
-")\n"
-"end\n"
-"\n"
-"function ReaderConfig:onCloseDocument()\n"
-"\tself.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."
-msgstr ")\nend\n\nfunction ReaderConfig:onCloseDocument()\n\tself.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."
-
 #: reader.lua:197
 msgid "-d               start in debug mode"
-msgstr "-d hata ayıklama modunda başlat"
+msgstr "-d               hata ayıklama modunda başlat"
 
 #: reader.lua:198
 msgid "-h               show this usage help"
-msgstr "-h yardım sayfasını göster"
+msgstr "-h               yardım sayfasını göster"
 
 #: frontend/ui/data/strings.lua:40
 msgid "0 deg"
-msgstr "0 derece"
+msgstr "0 °"
 
 #: frontend/ui/data/strings.lua:42
 msgid "10 deg"
-msgstr "10 derece"
+msgstr "10 °"
 
 #: frontend/ui/data/strings.lua:41
 msgid "5 deg"
-msgstr "5 derece"
+msgstr "5 °"
 
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
-msgstr "Otomatik"
+msgstr "Oto"
 
 #: frontend/ui/data/strings.lua:17
 msgid "Auto Straighten"
-msgstr "Otomatik Düzeltme"
+msgstr "Oto Doğrultma"
 
 #: frontend/ui/inputevent.lua:317
 msgid "Auto-detected Kindle 2"
-msgstr "Kindle-2 olarak belirlendi"
+msgstr "Kindle 2 olarak belirlendi"
 
 #: frontend/ui/inputevent.lua:313
 msgid "Auto-detected Kindle 3"
@@ -152,7 +143,7 @@ msgstr "Yardım"
 
 #: reader.lua:105
 msgid "Home menu"
-msgstr "Ana ekran menüsü"
+msgstr "Ana menü"
 
 #: reader.lua:203
 msgid "If you don't pass any path, the last viewed document will be opened"
@@ -196,7 +187,7 @@ msgstr "Bu dosya türü desteklenmiyor"
 
 #: frontend/ui/inputevent.lua:319
 msgid "Not supported device model!"
-msgstr "Cİhaz modeli desteklenmiyor"
+msgstr "Cihaz modeli desteklenmiyor!"
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
@@ -208,15 +199,15 @@ msgstr "Sayfa"
 
 #: frontend/ui/data/strings.lua:3
 msgid "Page Crop"
-msgstr "Sayfa kesme"
+msgstr "Sayfa Kırpma"
 
 #: frontend/ui/data/strings.lua:6
 msgid "Page Margin"
-msgstr "Sayfa kenar boşlukları"
+msgstr "Kenar Boşluğu"
 
 #: frontend/ui/reader/readermenu.lua:64
 msgid "Please report bugs to https://github.com/koreader/ koreader/issues"
-msgstr "Liütfen hataları bu sayfada rapor edin: https://github.com/koreader/ koreader/issues"
+msgstr "Lütfen hataları buraya bildirin: https://github.com/koreader/ koreader/issues"
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
@@ -228,7 +219,7 @@ msgstr "Fon ile tekrar oluşturuluyor"
 
 #: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
 msgid "Reflow"
-msgstr "Yeniden düzenleme"
+msgstr "Ekrana Uyarlama"
 
 #: frontend/ui/data/strings.lua:16
 msgid "Render Quality"
@@ -264,7 +255,7 @@ msgstr "İşleme Stilini Ayarla"
 
 #: reader.lua:17
 msgid "Show Home Menu"
-msgstr "Ana ekran menüsü görüntüle"
+msgstr "Ana menüyü görüntüle"
 
 #: frontend/ui/reader/readerzooming.lua:235
 msgid "Switch zoom mode"
@@ -280,7 +271,7 @@ msgstr "İçindekiler"
 
 #: frontend/ui/widget/button.lua:55
 msgid "Tap Button"
-msgstr ""
+msgstr "Butona Tıklayın"
 
 #: frontend/ui/data/strings.lua:9
 msgid "Text Align"
@@ -288,7 +279,7 @@ msgstr "Yazı Hizalama"
 
 #: reader.lua:205
 msgid "This software is licensed under the GPLv3."
-msgstr "Bu yazılım  GPLv3 ile lisanslanmıştır."
+msgstr "Bu yazılım GPLv3 ile lisanslanmıştır."
 
 #: frontend/ui/widget/toggleswitch.lua:58
 msgid "Toggle switch"
@@ -332,7 +323,7 @@ msgstr "Sayfa genişliğini sığdır"
 
 #: frontend/ui/data/strings.lua:26
 msgid "auto"
-msgstr "otomatik"
+msgstr "oto"
 
 #: frontend/ui/widget/confirmbox.lua:23
 msgid "cancel"
@@ -428,7 +419,7 @@ msgstr "%88'e git"
 
 #: frontend/ui/reader/readerrolling.lua:58
 msgid "go to end"
-msgstr "belge sonuna git"
+msgstr "en sona git"
 
 #: frontend/ui/reader/readerrolling.lua:21
 msgid "go to next view"
@@ -440,7 +431,7 @@ msgstr "önceki ekrana git"
 
 #: frontend/ui/reader/readerrolling.lua:40
 msgid "go to start"
-msgstr "başlangıca git"
+msgstr "en başa git"
 
 #: frontend/ui/widget/menu.lua:351
 msgid "goto next page of the menu"
@@ -520,7 +511,7 @@ msgstr "görüntülenen alanı yukarı kaydır"
 
 #: frontend/ui/widget/menu.lua:433
 msgid "no choices available"
-msgstr "seçenek mevcut değil"
+msgstr "hiçbir seçenek yok"
 
 #: frontend/ui/widget/confirmbox.lua:9
 msgid "no text"
