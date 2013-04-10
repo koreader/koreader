@@ -52,7 +52,7 @@ bootstrapemu:
 	test -e $(EMU_DIR)/extr || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/extr ./)
 	test -e $(EMU_DIR)/reader.lua || (cd $(EMU_DIR) && ln -s ../reader.lua ./)
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
-	test -e $(EMU_DIR)/i18n || (cd $(EMU_DIR) && ln -s ../i18n ./)
+	test -e $(EMU_DIR)/$(MO_DIR) || (cd $(EMU_DIR) && ln -s ../$(MO_DIR) ./)
 
 customupdate: all
 	# ensure that the binaries were built for ARM
@@ -70,7 +70,7 @@ customupdate: all
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
 	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
-	cp -rp i18n $(INSTALL_DIR)
+	cp -rp $(MO_DIR) $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	echo $(VERSION) > git-rev
 	cp -r git-rev resources $(INSTALL_DIR)
