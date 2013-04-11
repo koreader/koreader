@@ -182,7 +182,7 @@ KoptOptions = {
 				name = "quality",
 				name_text = RENDER_QUALITY_STR,
 				toggle = {LOW_STR, DEFAULT_STR, HIGH_STR},
-				values={0.5, 0.8, 1.0},
+				values={0.5, 1.0, 1.5},
 				default_value = 0.8,
 			},
 			{
