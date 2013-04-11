@@ -65,18 +65,6 @@ function ReaderMenu:setUpdateItemTable()
 			})
 		end
 	})
-
-	table.insert(self.tab_item_table.main, {
-		text = _("Languages"),
-		sub_item_table = {
-			{
-				text = "简体中文",
-				callback = function()
-					gettextChangeLang("zh_CN.UTF-8")
-				end,
-			},
-		}
-	})
 end
 
 function ReaderMenu:onShowMenu()
