@@ -161,7 +161,7 @@ KoptOptions = {
 				name="screen_rotation",
 				name_text = VERTICAL_TEXT_STR,
 				toggle = {ON_STR, OFF_STR},
-				values = {270, 0},
+				values = {90, 0},
 				default_value = 0,
 			},
 			{
