@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-09 18:05+0000\n"
-"PO-Revision-Date: 2013-04-11 15:13+0000\n"
+"PO-Revision-Date: 2013-04-12 11:17+0000\n"
 "Last-Translator: varnie <varnie29a@mail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/koreader/language/ru/)\n"
 "MIME-Version: 1.0\n"
@@ -43,7 +43,7 @@ msgstr "Авто"
 
 #: frontend/ui/data/strings.lua:17
 msgid "Auto Straighten"
-msgstr "Авто Straighten"
+msgstr ""
 
 #: frontend/ui/inputevent.lua:317
 msgid "Auto-detected Kindle 2"
@@ -123,7 +123,7 @@ msgstr "Менеджер файлов"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Fine Tuning"
-msgstr "Fine Tuning"
+msgstr ""
 
 #: frontend/ui/data/strings.lua:19
 msgid "Font weight"
@@ -147,11 +147,11 @@ msgstr "Меню"
 
 #: reader.lua:203
 msgid "If you don't pass any path, the last viewed document will be opened"
-msgstr "Если Вы не укажите путь, будет открыт последний просмотренный документ"
+msgstr "Если Вы не укажете путь, будет открыт последний просмотренный документ"
 
 #: reader.lua:200
 msgid "If you give the name of a directory instead of a file path, a file"
-msgstr "Если Вы укажите имя папки вместо пути до файла, файл"
+msgstr "Если Вы укажете имя папки вместо пути до файла, файл"
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
@@ -187,7 +187,7 @@ msgstr "Нет движка ридера для этого файла"
 
 #: frontend/ui/inputevent.lua:319
 msgid "Not supported device model!"
-msgstr "Режим устройства не поддерживается!"
+msgstr "Модель устройства не поддерживается!"
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
@@ -209,7 +209,7 @@ msgstr "Отступы Страницы"
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Пожалуйста, отправляйте багрепорты сюда: https://github.com/koreader/ koreader/issues . Кликнит внизу страницы для  подробной информации"
+msgstr "Пожалуйста, отправляйте багрепорты сюда: https://github.com/koreader/koreader/issues . Кликните внизу страницы для  подробной информации"
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
@@ -217,7 +217,7 @@ msgstr "Читать все книги на Вашем E-ink ридере"
 
 #: frontend/ui/reader/readerfont.lua:215
 msgid "Redrawing with font "
-msgstr "Перерисовать с шрифтом"
+msgstr "Перерисовка с шрифтом"
 
 #: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
 msgid "Reflow"
@@ -585,7 +585,7 @@ msgstr "выбрать жирный"
 
 #: reader.lua:194
 msgid "usage: ./reader.lua [OPTION] ... path"
-msgstr "использование: ./reader.lu [OPTION] ... путь"
+msgstr "использование: ./reader.lua [OPTION] ... путь"
 
 #: frontend/ui/reader/readerzooming.lua:15
 msgid "zoom in"
