@@ -360,6 +360,21 @@ function ReaderView:onGammaUpdate(gamma)
 	end
 end
 
+function ReaderView:onDefectSizeUpdate()
+	self.ui:handleEvent(Event:new("ReZoom"))
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end
+
+function ReaderView:onPageCrop()
+	self.ui:handleEvent(Event:new("ReZoom"))
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end
+
+function ReaderView:onMarginUpdate()
+	self.ui:handleEvent(Event:new("ReZoom"))
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end
+
 function ReaderView:onSetViewMode(new_mode)
 	self.ui.view_mode = new_mode
 	self.ui.document:setViewMode(new_mode)

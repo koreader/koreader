@@ -57,8 +57,9 @@ KoptOptions = {
 				name = "page_margin",
 				name_text = PAGE_MARGIN_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
-				values = {0.06, 0.10, 0.14},
+				values = {0.05, 0.10, 0.15},
 				default_value = 0.10,
+				event = "MarginUpdate",
 			},
 			{
 				name = "line_spacing",
@@ -175,8 +176,9 @@ KoptOptions = {
 				name = "defect_size",
 				name_text = DEFECT_SIZE_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
-				values = {0.5, 1.0, 2.0},
+				values = {1.0, 8.0, 15.0},
 				default_value = 1.0,
+				event = "DefectSizeUpdate",
 			},
 			{
 				name = "quality",

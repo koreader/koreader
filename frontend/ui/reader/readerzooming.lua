@@ -155,6 +155,11 @@ function ReaderZooming:onPageUpdate(new_page_no)
 	self:setZoom()
 end
 
+function ReaderZooming:onReZoom()
+	self:setZoom()
+	return true
+end
+
 function ReaderZooming:onHintPage()
 	if not self.view.hinting then return true end
 	if self.current_page < self.ui.document.info.number_of_pages then
