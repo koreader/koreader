@@ -190,9 +190,9 @@ function ReaderPaging:onSwipe(arg, ges)
 	if self.flipping_mode then
 		self:flipping(self.flipping_page, ges)
 		self:updateFlippingPage(self.current_page)
-	elseif ges.direction == "west" or ges.direction == "north" then
+	elseif ges.direction == "west" then
 		self:onPagingRel(1)
-	elseif ges.direction == "east" or ges.direction == "south" then
+	elseif ges.direction == "east" then
 		self:onPagingRel(-1)
 	end
 	return true
@@ -207,6 +207,10 @@ end
 function ReaderPaging:onPan(arg, ges)
 	if self.flipping_mode then
 		self:flipping(self.flipping_page, ges)
+	elseif ges.direction == "north" then
+		self:onPanningRel(ges.distance)
+	elseif ges.direction == "south" then
+		self:onPanningRel(-ges.distance)
 	end
 	return true
 end
@@ -251,6 +255,13 @@ function ReaderPaging:onPagingRel(diff)
 		self:onScrollPageRel(diff)
 	else
 		self:onGotoPageRel(diff)
+	end
+	return true
+end
+
+function ReaderPaging:onPanningRel(diff)
+	if self.view.page_scroll then
+		self:onScrollPanRel(diff)
 	end
 	return true
 end
@@ -337,7 +348,7 @@ function ReaderPaging:getPrevPageState(blank_area, offset)
 	}
 end
 
-function ReaderPaging:updateLastPageState(state, blank_area, offset)
+function ReaderPaging:updateTopPageState(state, blank_area, offset)
 	local visible_area = Geom:new{x = 0, y = 0}
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x, visible_area.y = state.visible_area.x, state.visible_area.y
@@ -352,7 +363,7 @@ function ReaderPaging:updateLastPageState(state, blank_area, offset)
 	return state
 end
 
-function ReaderPaging:updateFirstPageState(state, blank_area, offset)
+function ReaderPaging:updateBottomPageState(state, blank_area, offset)
 	local visible_area = Geom:new{x = 0, y = 0}
 	visible_area.w, visible_area.h = blank_area.w, blank_area.h
 	visible_area.x = state.page_area.x
@@ -368,6 +379,85 @@ function ReaderPaging:updateFirstPageState(state, blank_area, offset)
 	return state
 end
 
+function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
+	-- Offset should always be greater than 0
+	-- otherwise if offset is less than 0 the height of blank area will be
+	-- larger than 0 even if page area is much larger than visible area,
+	-- which will trigger the drawing of next page leaving part of current
+	-- page undrawn. This should also be true for generating from bottom.
+	if offset.y < 0 then offset.y = 0 end
+	local state = self:updateTopPageState(top_page_state, blank_area, offset)
+	--DEBUG("updated state", state)
+	local page_states = {}
+	if state.visible_area.h > 0 then
+		table.insert(page_states, state)
+	end
+	--DEBUG("blank area", blank_area)
+	local current_page = state.page
+	while blank_area.h > 0 do
+		blank_area.h = blank_area.h - self.view.page_gap.height
+		if blank_area.h > 0 then
+			if self.current_page == self.number_of_pages then break end
+			self:gotoPage(current_page + 1, "scrolling")
+			current_page = current_page + 1
+			local state = self:getNextPageState(blank_area, Geom:new{})
+			--DEBUG("new state", state)
+			table.insert(page_states, state)
+		end
+	end
+	return page_states
+end
+
+function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, offset)
+	-- scroll up offset should always be less than 0
+	if offset.y > 0 then offset.y = 0 end
+	local state = self:updateBottomPageState(bottom_page_state, blank_area, offset)
+	--DEBUG("updated state", state)
+	local page_states = {}
+	if state.visible_area.h > 0 then
+		table.insert(page_states, state)
+	end
+	--DEBUG("blank area", blank_area)
+	local current_page = state.page
+	while blank_area.h > 0 do
+		blank_area.h = blank_area.h - self.view.page_gap.height
+		if blank_area.h > 0 then
+			if self.current_page == 1 then break end
+			self:gotoPage(current_page - 1, "scrolling")
+			current_page = current_page - 1
+			local state = self:getPrevPageState(blank_area, Geom:new{})
+			--DEBUG("new state", state)
+			table.insert(page_states, 1, state)
+		end
+	end
+	return page_states
+end
+
+function ReaderPaging:onScrollPanRel(diff)
+	DEBUG("pan relative height:", diff)
+	local blank_area = Geom:new{}
+	blank_area:setSizeTo(self.view.dimen)
+	if diff > 0 then
+		local first_page_state = table.remove(self.view.page_states, 1)
+		local offset = Geom:new{
+			x = 0,
+			y = diff,
+		}
+		self.view.page_states = self:genPageStatesFromTop(first_page_state, blank_area, offset)
+	end
+	if diff < 0 then
+		local last_page_state = table.remove(self.view.page_states)
+		local offset = Geom:new{
+			x = 0,
+			y = diff
+		}
+		self.view.page_states = self:genPageStatesFromBottom(last_page_state, blank_area, offset)
+	end
+	-- update current pageno to the very last part in current view
+	self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
+	UIManager:setDirty(self.view.dialog)
+end
+
 function ReaderPaging:onScrollPageRel(diff)
 	DEBUG("scroll relative page:", diff)
 	local blank_area = Geom:new{}
@@ -378,31 +468,7 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = last_page_state.visible_area.h - self.overlap
 		}
-		-- Scroll down offset should always be greater than 0
-		-- otherwise if offset is less than 0 the height of blank area will be
-		-- larger than 0 even if page area is much larger than visible area,
-		-- which will trigger the drawing of next page leaving part of current
-		-- page undrawn. This should also be true for scroll up offset.
-		if offset.y < 0 then offset.y = 0 end
-		local state = self:updateLastPageState(last_page_state, blank_area, offset)
-		--DEBUG("updated state", state)
-		self.view.page_states = {}
-		if state.visible_area.h > 0 then
-			table.insert(self.view.page_states, state)
-		end
-		--DEBUG("blank area", blank_area)
-		local current_page = state.page
-		while blank_area.h > 0 do
-			blank_area.h = blank_area.h - self.view.page_gap.height
-			if blank_area.h > 0 then
-				if self.current_page == self.number_of_pages then break end
-				self:gotoPage(current_page + 1, "scrolling")
-				current_page = current_page + 1
-				local state = self:getNextPageState(blank_area, Geom:new{})
-				--DEBUG("new state", state)
-				table.insert(self.view.page_states, state)
-			end
-		end
+		self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
 	end
 	if diff < 0 then
 		local first_page_state = table.remove(self.view.page_states, 1)
@@ -410,27 +476,7 @@ function ReaderPaging:onScrollPageRel(diff)
 			x = 0,
 			y = -first_page_state.visible_area.h + self.overlap
 		}
-		-- scroll up offset should always be less than 0
-		if offset.y > 0 then offset.y = 0 end
-		local state = self:updateFirstPageState(first_page_state, blank_area, offset)
-		--DEBUG("updated state", state)
-		self.view.page_states = {}
-		if state.visible_area.h > 0 then
-			table.insert(self.view.page_states, state)
-		end
-		--DEBUG("blank area", blank_area)
-		local current_page = state.page
-		while blank_area.h > 0 do
-			blank_area.h = blank_area.h - self.view.page_gap.height
-			if blank_area.h > 0 then
-				if self.current_page == 1 then break end
-				self:gotoPage(current_page - 1, "scrolling")
-				current_page = current_page - 1
-				local state = self:getPrevPageState(blank_area, Geom:new{})
-				--DEBUG("new state", state)
-				table.insert(self.view.page_states, 1, state)
-			end
-		end
+		self.view.page_states = self:genPageStatesFromBottom(first_page_state, blank_area, offset)
 	end
 	-- update current pageno to the very last part in current view
 	self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
