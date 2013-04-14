@@ -13,8 +13,9 @@ require "ui/reader/readerconfig"
 require "ui/reader/readercropping"
 require "ui/reader/readerkopt"
 require "ui/reader/readercopt"
-require "ui/reader/readerscreenshot"
 require "ui/reader/readerhinting"
+require "ui/reader/readerscreenshot"
+require "ui/reader/readerfrontlight"
 
 --[[
 This is an abstraction for a reader interface
@@ -99,7 +100,14 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
+	-- frontlight controller
+	local reader_fl = ReaderFrontLight:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	}
 	table.insert(self.active_widgets, reader_ss)
+	table.insert(self.active_widgets, reader_fl)
 
 	if self.document.info.has_pages then
 		-- for page specific controller
