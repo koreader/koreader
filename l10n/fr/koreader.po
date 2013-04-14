@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-09 18:05+0000\n"
-"PO-Revision-Date: 2013-04-11 15:24+0000\n"
+"PO-Revision-Date: 2013-04-12 10:01+0000\n"
 "Last-Translator: Piperclassique <Transifex.piperclassique@xoxy.net>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/koreader/language/fr/)\n"
 "MIME-Version: 1.0\n"
@@ -104,7 +104,7 @@ msgstr "Reduire interligne à"
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
-msgstr ""
+msgstr "taille de défaut"
 
 #: frontend/ui/reader/readermenu.lua:106
 msgid "Document menu"
@@ -152,7 +152,7 @@ msgstr "Si vous n'indiquez aucun chemin d'accès le dernier document consulté s
 
 #: reader.lua:200
 msgid "If you give the name of a directory instead of a file path, a file"
-msgstr "Si vous indiquez le nom de dossier au lieu d'un chemin d'accès ou un fichier"
+msgstr "Si vous indiquez le nom de dossier au lieu d'un chemin d'accès ou un fichier, un fichier"
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
@@ -246,7 +246,7 @@ msgstr "sélectionner dans le menu"
 
 #: frontend/ui/widget/config.lua:54 frontend/ui/widget/config.lua:108
 msgid "Select Option Item"
-msgstr "choisir une"
+msgstr "choisir une option"
 
 #: frontend/ui/reader/readerfont.lua:148
 msgid "Set font size to "
@@ -338,7 +338,7 @@ msgstr "un sélecteur apparaîtra pour vous permettre de choisir un fichier"
 
 #: frontend/ui/widget/config.lua:20 frontend/ui/widget/config.lua:59
 msgid "chose selected item"
-msgstr "Chosir l'objét en surbrillance"
+msgstr "Choisir l'objet en surbrillance"
 
 #: frontend/ui/widget/confirmbox.lua:24
 msgid "chose selected option"
@@ -522,11 +522,11 @@ msgstr "pas de texte"
 
 #: frontend/ui/data/strings.lua:25
 msgid "off"
-msgstr "fermé"
+msgstr "désactiver"
 
 #: frontend/ui/data/strings.lua:24
 msgid "on"
-msgstr "allumé"
+msgstr "activer"
 
 #: frontend/ui/data/strings.lua:47
 msgid "page"
