@@ -88,7 +88,17 @@ function ReaderRolling:initGesListener()
 					h = 5*Screen:getHeight()/8,
 				}
 			}
-		}
+		},
+		Swipe = {
+			GestureRange:new{
+				ges = "swipe",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		},
 	}
 end
 
@@ -146,6 +156,15 @@ end
 
 function ReaderRolling:onTapBackward()
 	self:onGotoViewRel(-1)
+	return true
+end
+
+function ReaderRolling:onSwipe(arg, ges)
+	if ges.direction == "west" or ges.direction == "north" then
+		self:onGotoViewRel(1)
+	elseif ges.direction == "east" or ges.direction == "south" then
+		self:onGotoViewRel(-1)
+	end
 	return true
 end
 
