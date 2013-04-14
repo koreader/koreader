@@ -7,6 +7,7 @@ ReaderPaging = InputContainer:new{
 	page_area = nil,
 	show_overlap_enable = true,
 	overlap = scaleByDPI(20),
+	flip_steps = {0,1,2,5,10,20,50,100}
 }
 
 function ReaderPaging:init()
@@ -169,15 +170,14 @@ function ReaderPaging:updateFlippingPage(page)
 end
 
 function ReaderPaging:flipping(flipping_page, flipping_ges)
-	local read = flipping_page - 1
-	local unread = self.number_of_pages - flipping_page
 	local whole = self.number_of_pages
-	local rel_proportion = flipping_ges.distance / Screen:getWidth()
+	local steps = #self.flip_steps
+	local stp_proportion = flipping_ges.distance / Screen:getWidth()
 	local abs_proportion = flipping_ges.distance / Screen:getHeight()
 	if flipping_ges.direction == "east" then
-		self:gotoPage(flipping_page - math.floor(read*rel_proportion))
+		self:gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
 	elseif flipping_ges.direction == "west" then
-		self:gotoPage(flipping_page + math.floor(unread*rel_proportion))
+		self:gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
 	elseif flipping_ges.direction == "south" then
 		self:gotoPage(flipping_page - math.floor(whole*abs_proportion))
 	elseif flipping_ges.direction == "north" then
