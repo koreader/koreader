@@ -88,6 +88,27 @@ function KoptInterface:logReflowDuration(pageno, dur)
 	end
 end
 
+function KoptInterface:getAutoBBox(doc, pageno)
+	local bbox = {
+		x0 = 0, y0 = 0,
+		x1 = 0, y1 = 0,
+	}
+	local context_hash = self:getContextHash(doc, pageno, bbox)
+	local hash = "autobbox|"..context_hash
+	local cached = Cache:check(hash)
+	if not cached then
+		local page = doc._document:openPage(pageno)
+		local kc = self:getKOPTContext(doc, pageno, bbox)
+		bbox.x0, bbox.y0, bbox.x1, bbox.y1 = page:getAutoBBox(kc)
+		DEBUG("Auto detected bbox", bbox)
+		page:close()
+		Cache:insert(hash, CacheItem:new{ bbox = bbox })
+		return bbox
+	else
+		return cached.bbox
+	end
+end
+
 function KoptInterface:getReflowedDim(kc)
 	self:waitForContext(kc)
 	return kc:getPageDim()

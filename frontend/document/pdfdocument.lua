@@ -67,6 +67,14 @@ function PdfDocument:getUsedBBox(pageno)
 	return used
 end
 
+function PdfDocument:getPageBBox(pageno)
+	if self.configurable.text_wrap ~= 1 and self.configurable.trim_page == 1 then
+		return self.koptinterface:getAutoBBox(self, pageno)
+	else
+		return Document.getPageBBox(self, pageno)
+	end
+end
+
 function PdfDocument:getPageDimensions(pageno, zoom, rotation)
 	if self.configurable.text_wrap == 1 then
 		return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
