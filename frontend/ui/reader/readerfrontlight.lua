@@ -31,7 +31,7 @@ end
 function ReaderFrontLight:onAdjust(arg, ges)
 	if self.lipc_handle then
 		local rel_proportion = ges.distance / Screen:getWidth()
-		local delta_int = self.steps[math.floor(#self.steps*rel_proportion)]
+		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)]
 		local msg = ""
 		if ges.direction == "north" then
 			msg = _("Increase front light intensity to ")
