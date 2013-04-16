@@ -354,6 +354,7 @@ end
 function TouchMenu:backToUpperMenu()
 	if #self.item_table_stack ~= 0 then
 		self.item_table = table.remove(self.item_table_stack)
+		self.page = 1
 		self:updateItems()
 	end
 end
