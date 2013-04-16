@@ -16,6 +16,7 @@ require "ui/reader/readercopt"
 require "ui/reader/readerhinting"
 require "ui/reader/readerscreenshot"
 require "ui/reader/readerfrontlight"
+require "ui/reader/readerhyphenation"
 
 --[[
 This is an abstraction for a reader interface
@@ -175,6 +176,12 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, typeset)
+
+		table.insert(self, ReaderHyphenation:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		})
 	end
 	if self.document.info.configurable then
 		-- configurable controller
