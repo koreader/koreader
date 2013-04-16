@@ -261,6 +261,7 @@ end
 
 function TouchMenu:_recalculateDimen()
 	self.dimen.w = self.width
+
 	-- if height not given, dynamically calculate it
 	if not self.height then
 		self.dimen.h = (#self.item_table + 2) * self.item_height
@@ -268,13 +269,16 @@ function TouchMenu:_recalculateDimen()
 	else
 		self.dimen.h = self.height
 	end
+	-- make sure self.dimen.h does not overflow screen height
 	if self.dimen.h > Screen:getHeight() then
-		self.dimen.h = Screen:getHeight()
+		self.dimen.h = Screen:getHeight() - self.bar:getSize().h
 	end
+
 	self.perpage = math.floor(self.dimen.h / self.item_height) - 2
 	if self.perpage > self.max_per_page then
 		self.perpage = self.max_per_page
 	end
+
 	self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
@@ -350,6 +354,7 @@ end
 function TouchMenu:backToUpperMenu()
 	if #self.item_table_stack ~= 0 then
 		self.item_table = table.remove(self.item_table_stack)
+		self.page = 1
 		self:updateItems()
 	end
 end
