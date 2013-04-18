@@ -2,15 +2,15 @@
 # Copyright (C) 2005-2013 KOReader Development Team
 # 
 # Translators:
-# Barbara Reed <Transifex.piperclassique@xoxy.net>, 2013.
-#  <heliox17@hotmail.com>, 2013.
+# Piperclassique <Transifex.piperclassique@xoxy.net>, 2013
+# heliox <heliox17@hotmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-09 18:05+0000\n"
-"PO-Revision-Date: 2013-04-12 10:01+0000\n"
-"Last-Translator: Piperclassique <Transifex.piperclassique@xoxy.net>\n"
+"POT-Creation-Date: 2013-04-10 00:00+0000\n"
+"PO-Revision-Date: 2013-04-18 13:13+0000\n"
+"Last-Translator: heliox <heliox17@hotmail.com>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/koreader/language/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -96,15 +96,15 @@ msgstr "Réduire la taille de police à"
 
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
-msgstr "Reduire gamma à"
+msgstr "Réduire le gamma à"
 
 #: frontend/ui/reader/readerfont.lua:163
 msgid "Decrease line space to "
-msgstr "Reduire interligne à"
+msgstr "Réduire l'interligne à"
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
-msgstr "taille de défaut"
+msgstr "Taille du défaut"
 
 #: frontend/ui/reader/readermenu.lua:106
 msgid "Document menu"
@@ -112,7 +112,7 @@ msgstr "Menu des documents"
 
 #: frontend/ui/data/strings.lua:22
 msgid "Embedded style"
-msgstr "style de l'auteur"
+msgstr "Style interne"
 
 #: reader.lua:87
 msgid "Exit"
@@ -152,11 +152,11 @@ msgstr "Si vous n'indiquez aucun chemin d'accès le dernier document consulté s
 
 #: reader.lua:200
 msgid "If you give the name of a directory instead of a file path, a file"
-msgstr "Si vous indiquez le nom de dossier au lieu d'un chemin d'accès ou un fichier, un fichier"
+msgstr "Si vous indiquez le nom de dossier au lieu d'un chemin d'accès ou un fichier"
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
-msgstr "agrandir taille de police à"
+msgstr "Agrandir la taille de police à"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
@@ -168,7 +168,7 @@ msgstr "augmenter l'interligne à"
 
 #: frontend/ui/data/strings.lua:18
 msgid "Indentation"
-msgstr "retrait"
+msgstr "Retrait"
 
 #: frontend/ui/reader/readermenu.lua:70
 msgid "Languages"
@@ -188,7 +188,7 @@ msgstr "Pas de moteur de lecture pour ce fichier"
 
 #: frontend/ui/inputevent.lua:319
 msgid "Not supported device model!"
-msgstr " modèle d'appareil pas pris en charge"
+msgstr " Appareil non pris en charge"
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
