@@ -3,14 +3,7 @@ require "ui/geometry"
 require "ui/device"
 require "ui/reader/readerconfig"
 
-KoptInterface = {
-	bg_context = {
-		contex = nil,
-		pageno = nil,
-		hash = nil,
-		cached = false,
-	},
-}
+KoptInterface = {}
 
 function KoptInterface:waitForContext(kc)
 	-- if koptcontext is being processed in background thread
@@ -21,20 +14,10 @@ function KoptInterface:waitForContext(kc)
 	end
 end
 
-function KoptInterface:consumeBgContext(doc)
-	-- clear up background context
-	self:waitForContext(self.bg_context.context)
-	if self.bg_context.context and not self.bg_context.cached then
-		self:makeCache(doc, self.bg_context.pageno, self.bg_context.hash)
-		self.bg_context.cached = true
-	end
-end
-
 -- get reflow context
 function KoptInterface:getKOPTContext(doc, pageno, bbox)
-	-- since libk2pdfopt only has one bitmap buffer that holds reflowed page
-	-- we should consume background production before allocating new context.
-	self:consumeBgContext(doc)
+	-- Now koptcontext keeps track of its dst bitmap reflowed by libk2pdfopt.
+	-- So there is no need to check background context when creating new context.
 	local kc = KOPTContext.new()
 	local screen_size = Screen:getSize()
 	kc:setTrim(doc.configurable.trim_page)
@@ -55,19 +38,6 @@ function KoptInterface:getKOPTContext(doc, pageno, bbox)
 	kc:setWordSpacing(doc.configurable.word_spacing)
 	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
 	return kc
-end
-
-function KoptInterface:setTrimPage(doc, pageno)
-	if doc.configurable.trim_page == 0 then return end
-	local page_dimens = doc:getNativePageDimensions(pageno)
-	--DEBUG("original page dimens", page_dimens)
-	local orig_bbox = doc:getUsedBBox(pageno)
-	--DEBUG("original bbox", orig_bbox)
-	if orig_bbox.x1 - orig_bbox.x0 < page_dimens.w
-		or orig_bbox.y1 - orig_bbox.y0 < page_dimens.h then
-		doc.configurable.trim_page = 0
-		--DEBUG("Set manual crop in koptengine")
-	end
 end
 
 function KoptInterface:getContextHash(doc, pageno, bbox)
@@ -109,50 +79,66 @@ function KoptInterface:getAutoBBox(doc, pageno)
 	end
 end
 
-function KoptInterface:getReflowedDim(kc)
-	self:waitForContext(kc)
-	return kc:getPageDim()
+-- get reflowed page dimension from a cached context. wait for background thread
+-- if necessary.
+function KoptInterface:getReflowedDim(kctx)
+	self:waitForContext(kctx)
+	return kctx:getPageDim()
 end
 
--- calculates page dimensions
-function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
-	self:setTrimPage(doc, pageno)
+-- get cached koptcontext for centain page. if context doesn't exist in cache make
+-- new context and reflow the src page immediatly.
+function KoptInterface:getCachedContext(doc, pageno)
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
-	local hash = "kctx|"..context_hash
-	local cached = Cache:check(hash)
+	local kctx_hash = "kctx|"..context_hash
+	local cached = Cache:check(kctx_hash)
 	if not cached then
+		-- If kctx is not cached, create one and get reflowed bmp in foreground.
 		local kc = self:getKOPTContext(doc, pageno, bbox)
 		local page = doc._document:openPage(pageno)
 		-- reflow page
 		--local secs, usecs = util.gettime()
 		page:reflow(kc, 0)
+		page:close()
 		--local nsecs, nusecs = util.gettime()
 		--local dur = nsecs - secs + (nusecs - usecs) / 1000000
 		--DEBUG("Reflow duration:", dur)
 		--self:logReflowDuration(pageno, dur)
-		page:close()
 		local fullwidth, fullheight = kc:getPageDim()
-		DEBUG("page::reflowPage:", "fullwidth:", fullwidth, "fullheight:", fullheight)
-		local page_size = Geom:new{ w = fullwidth, h = fullheight }
-		-- cache reflowed page size and kc
-		Cache:insert(hash, CacheItem:new{ kctx = kc })
-		return page_size
+		DEBUG("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
+		Cache:insert(kctx_hash, CacheItem:new{ kctx = kc })
+		return kc
+	else
+		return cached.kctx
 	end
-	--DEBUG("Found cached koptcontex on page", pageno, cached)
-	local fullwidth, fullheight = self:getReflowedDim(cached.kctx)
-	local page_size = Geom:new{ w = fullwidth, h = fullheight }
-	return page_size
 end
 
-function KoptInterface:makeCache(doc, pageno, context_hash)
-	-- draw to blitbuffer
-	local kc_hash = "kctx|"..context_hash
-	local tile_hash = "renderpg|"..context_hash
-	local page = doc._document:openPage(pageno)
-	local cached = Cache:check(kc_hash)
-	if cached then
-		local fullwidth, fullheight = self:getReflowedDim(cached.kctx)
+-- get reflowed page dimensions
+function KoptInterface:getPageDimensions(doc, pageno, zoom, rotation)
+	local kctx = self:getCachedContext(doc, pageno)
+	local fullwidth, fullheight = self:getReflowedDim(kctx)
+	return Geom:new{ w = fullwidth, h = fullheight }
+end
+
+-- inherited from common document interface
+-- render reflowed page into tile cache. 
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
+	doc.render_mode = render_mode
+	local bbox = doc:getPageBBox(pageno)
+	local context_hash = self:getContextHash(doc, pageno, bbox)
+	local renderpg_hash = "renderpg|"..context_hash
+
+	local cached = Cache:check(renderpg_hash)
+	if not cached then
+		-- do the real reflowing if kctx is not been cached yet
+		local kctx = self:getCachedContext(doc, pageno)
+		local fullwidth, fullheight = self:getReflowedDim(kctx)
+		if not Cache:willAccept(fullwidth * fullheight / 2) then
+			-- whole page won't fit into cache
+			error("aborting, since we don't have enough cache for this page")
+		end
+		local page = doc._document:openPage(pageno)
 		-- prepare cache item with contained blitbuffer
 		local tile = CacheItem:new{
 			size = fullwidth * fullheight / 2 + 64, -- estimation
@@ -160,71 +146,40 @@ function KoptInterface:makeCache(doc, pageno, context_hash)
 			pageno = pageno,
 			bb = Blitbuffer.new(fullwidth, fullheight)
 		}
-		page:rfdraw(cached.kctx, tile.bb)
+		page:rfdraw(kctx, tile.bb)
 		page:close()
-		--DEBUG("cached hash", hash)
-		if not Cache:check(tile_hash) then
-			Cache:insert(tile_hash, tile)
-		end
+		-- free dst bitmap in kctx as soon as we draw the bitmap to blitbuffer
+		kctx:free()
+		Cache:insert(renderpg_hash, tile)
 		return tile
-	end
-	DEBUG("Error: cannot render page before reflowing.")
-end
-
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
-	self:setTrimPage(doc, pageno)
-	doc.render_mode = render_mode
-	local bbox = doc:getPageBBox(pageno)
-	local context_hash = self:getContextHash(doc, pageno, bbox)
-	local hash = "renderpg|"..context_hash
-	local page_size = self:getPageDimensions(doc, pageno, zoom, rotation)
-	-- this will be the size we actually render
-	local size = page_size
-	-- we prefer to render the full page, if it fits into cache
-	if not Cache:willAccept(size.w * size.h / 2) then
-		-- whole page won't fit into cache
-		DEBUG("rendering only part of the page")
-		-- TODO: figure out how to better segment the page
-		if not rect then
-			DEBUG("aborting, since we do not have a specification for that part")
-			-- required part not given, so abort
-			return
-		end
-		-- only render required part
-		hash = "renderpg|"..doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..tostring(rect)
-		size = rect
-	end
-
-	local cached = Cache:check(hash)
-	if cached then
-		return cached
 	else
-		return self:makeCache(doc, pageno, context_hash)
+		return cached
 	end
 end
 
+-- inherited from common document interface
+-- render reflowed page into cache in background thread. this method returns immediatly
+-- leaving the precache flag on in context. subsequent usage of this context should 
+-- wait for the precache flag off by calling self:waitForContext(kctx)
 function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
-	self:setTrimPage(doc, pageno)
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
-	local hash = "kctx|"..context_hash
-	local cached = Cache:check(hash)
+	local kctx_hash = "kctx|"..context_hash
+	local cached = Cache:check(kctx_hash)
 	if not cached then
 		local kc = self:getKOPTContext(doc, pageno, bbox)
 		local page = doc._document:openPage(pageno)
-		kc:setPreCache()
-		self.bg_context.context = kc
-		self.bg_context.pageno = pageno
-		self.bg_context.hash = context_hash
-		self.bg_context.cached = false
 		DEBUG("hinting page", pageno, "in background")
-		-- will return immediately
+		-- reflow will return immediately and running in background thread
+		kc:setPreCache()
 		page:reflow(kc, 0)
 		page:close()
-		Cache:insert(hash, CacheItem:new{ kctx = kc })
+		Cache:insert(kctx_hash, CacheItem:new{ kctx = kc })
 	end
 end
 
+-- inherited from common document interface
+-- draw cached tile pixels into target blitbuffer
 function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
 	local tile = self:renderPage(doc, pageno, rect, zoom, rotation, render_mode)
 	--DEBUG("now painting", tile, rect)
