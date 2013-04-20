@@ -11,7 +11,9 @@ function ReaderFrontLight:init()
 	if dev_mod == "KindlePaperWhite" then
 		require "liblipclua"
 		self.lipc_handle = lipc.init("com.github.koreader")
-		self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+		if self.lipc_handle then
+			self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+		end
 	end
 	self.ges_events = {
 		Adjust = {
@@ -29,7 +31,7 @@ function ReaderFrontLight:init()
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
-	if self.lipc_handle then
+	if self.lipc_handle and self.intensity ~=nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
 		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)]
 		local msg = ""

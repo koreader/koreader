@@ -304,9 +304,7 @@ end
 function ReaderView:onToggleScrollMode(page_scroll)
 	self.page_scroll = page_scroll
 	self:recalculate()
-	if self.page_scroll then
-		self.ui:handleEvent(Event:new("InitScrollPageStates"))
-	end
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderView:onReadSettings(config)
@@ -360,19 +358,20 @@ function ReaderView:onGammaUpdate(gamma)
 	end
 end
 
+function ReaderView:onFontSizeUpdate()
+	self.ui:handleEvent(Event:new("ReZoom"))
+end
+
 function ReaderView:onDefectSizeUpdate()
 	self.ui:handleEvent(Event:new("ReZoom"))
-	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderView:onPageCrop()
 	self.ui:handleEvent(Event:new("ReZoom"))
-	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderView:onMarginUpdate()
 	self.ui:handleEvent(Event:new("ReZoom"))
-	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderView:onSetViewMode(new_mode)
