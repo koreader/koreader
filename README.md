@@ -64,6 +64,9 @@ To run, you must call the script reader.lua. Run it without arguments to see
 usage notes. Note that the script and the koreader-base binary currently must
 be in the same directory.
 
+You may checkout our [nightlybuild script][nb-script] to see how to build a
+package from scratch.
+
 For emulating
 -----------
 
@@ -111,3 +114,4 @@ http://ccache.samba.org
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
+[nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
