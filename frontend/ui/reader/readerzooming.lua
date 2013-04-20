@@ -157,6 +157,7 @@ end
 
 function ReaderZooming:onReZoom()
 	self:setZoom()
+	self.ui:handleEvent(Event:new("InitScrollPageStates"))
 	return true
 end
 

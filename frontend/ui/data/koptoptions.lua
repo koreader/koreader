@@ -102,10 +102,11 @@ KoptOptions = {
 				item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
 				item_align_center = 1.0,
 				spacing = 15,
+				height = 60,
 				item_font_size = {22,24,28,32,34,36,38,42,46,50},
 				values = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 4.0},
 				default_value = 1.0,
-				height = 60,
+				event = "FontSizeUpdate",
 			},
 			{
 				name = "font_fine_tune",
