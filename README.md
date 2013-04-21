@@ -19,84 +19,99 @@ at its fork Librerator.
 The application is licensed under the GPLv3 (see COPYING file).
 
 
-Building
+Prerequisites
 ========
 
+Instructions about how to get and compile the source are intended for a *nix
+OS. Windows users are suggested to develop in a Linux VM or use
+andLinux, Wubi.
 
-Follow these steps:
+To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
+`svn` and `cmake` installed.
 
-* fetch thirdparty sources
-	* manually fetch all the thirdparty sources:
-		* init and update submodule koreader-base
-		* within koreader-base:
-			* install muPDF sources into subfolder "mupdf"
-			* install muPDF third-party sources (see muPDF homepage) into a new
-			  subfolder "mupdf/thirdparty"
-			* install libDjvuLibre sources into subfolder "djvulibre"
-			* install CREngine sources into subfolder "kpvcrlib/crengine"
-			* install LuaJit sources into subfolder "luajit-2.0"
-			* install popen_noshell sources into subfolder "popen-noshell"
-			* install libk2pdfopt sources into subfolder "libk2pdfopt"
-
-	* automatically fetch thirdparty sources with Makefile:
-		* make sure you have patch, wget, unzip, git and svn installed
-		* run `make fetchthirdparty`.
-
-* adapt Makefile to your needs - have a look at Makefile.defs in koreader-base
-
-* run `make thirdparty`. This will build MuPDF (plus the libraries it depends
-  on), libDjvuLibre, CREngine, libk2pdfopt and Lua.
-
-* run `make`. This will build the KOReader application (see below if you want
-  to build in emulation mode so you can test it on PC)
+You might also need SDL library packages if you want to compile and run the PC
+emulator. Fedora user can install `SDL` and `SDL-devel`. Ubuntu users can
+install `libsdl1.2-dev`.
 
 
-Running
-=======
+Getting the source
+========
 
-In real eink devices
+```
+git clone https://github.com/koreader/koreader.git
+cd koreader
+make fetchthirdparty
+```
+
+
+Building & Running
+========
+
+For real eink devices
 ---------------------
-The user interface is scripted in Lua. See "reader.lua".
-It uses the Linux feature to run scripts by using a corresponding line at its
-start.
 
-So you might just call that script. Note that the script and the koreader-base
-binary currently must be in the same directory.
-
-You would then just call reader.lua, giving the document file path, or any
-directory path, as its first argument. Run reader.lua without arguments to see
-usage notes.  The reader.lua script can also show a file chooser: it will do
-this when you call it with a directory (instead of a file) as first argument.
-
-
-In emulator
------------
-You need to first compile KOReader-base in emulation mode.
-  * If you have built KOReader in real mode before, you need to clean it up:
-
+If you already done an emulator build, you must do:
 ```
 make clean && make cleanthirdparty
 ```
 
-  * Then compile with emulation mode flag:
+To build:
+```
+make thirdparty && make
+```
+
+To run, you must call the script reader.lua. Run it without arguments to see
+usage notes. Note that the script and the koreader-base binary currently must
+be in the same directory.
+
+You may checkout our [nightlybuild script][nb-script] to see how to build a
+package from scratch.
+
+For emulating
+-----------
+
+If you already done a real device build, you must do:
+```
+make clean && make cleanthirdparty
+```
+
+To build
+```
+EMULATE_READER=1 make thirdparty koreader-base
+make bootstrapemu
+```
+
+To run:
 
 ```
-EMULATE_READER=1 make
-```
-
-  * You may want to see README.md in koreader-base for more information.
-
-
-Next run `make bootstrapemu` to setup basic runtime environment needed by
-emulation mode. A new emu directory will be created.
-
-
-Last, run the emulator with following command:
-```
-cd emu && reader.lua -d ./
+cd emu && ./reader.lua -d ./
 ```
 
 You can also specify size of emulator's screen via environment variables.
 For more information, please refer to [koreader-base's README][base-readme].
 
+
+Use ccache
+==========
+
+Ccache can speed up recompilation by caching previous compilations and detecting
+when the same compilation is being done again. In other words, it will decrease
+build time when the source have been built. Ccache support has been added to
+KOReader's build system. Before using it, you need to install a ccache in your
+system.
+
+* in ubuntu use:`sudo apt-get install ccache`
+* in fedora use:`sudo yum install ccache`
+* install from source:
+  * get latest ccache source from http://ccache.samba.org/download.html
+  * unarchieve the source package in a directory
+  * cd to that directory and use:`./configure && make && sudo make install`
+* after using ccache, make a clean build will only take 15sec. Enjoy!
+* to disable ccache, use `export USE_NO_CCACHE=1` before make.
+* for more detail about ccache. visit:
+
+http://ccache.samba.org
+
+
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
+[nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
