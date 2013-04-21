@@ -109,6 +109,8 @@ function ReaderView:paintTo(bb, x, y)
 	if self.flipping_visible then
 		self.flipping:paintTo(bb, x, y)
 	end
+	-- stop activity indicator
+	self.ui:handleEvent(Event:new("StopActivityIndicator"))
 end
 
 function ReaderView:drawPageBackground(bb, x, y)
