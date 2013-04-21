@@ -17,6 +17,7 @@ require "ui/reader/readerhinting"
 require "ui/reader/readerscreenshot"
 require "ui/reader/readerfrontlight"
 require "ui/reader/readerhyphenation"
+require "ui/reader/readeractivityindicator"
 
 --[[
 This is an abstraction for a reader interface
@@ -209,6 +210,14 @@ function ReaderUI:init()
 			document = self.document,
 		}
 		table.insert(self, coptlistener)
+		-- activity indicator
+		local activity_listener = ReaderActivityIndicator:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self,
+			document = self.document,
+		}
+		table.insert(self, activity_listener)
 	end
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized
