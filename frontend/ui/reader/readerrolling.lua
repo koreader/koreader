@@ -3,7 +3,6 @@ require "ui/reader/readerpanning"
 ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
 	old_page = nil,
-	view_mode = "page",
 	current_pos = 0,
 	-- only used for page view mode
 	current_page= nil,
@@ -59,9 +58,11 @@ function ReaderRolling:init()
 		}
 	end
 
-	self.doc_height = self.ui.document.info.doc_height
-	self.old_doc_height = self.doc_height
-	self.old_page = self.ui.document.info.number_of_pages
+	table.insert(self.ui.postInitCallback, function()
+		self.doc_height = self.ui.document.info.doc_height
+		self.old_doc_height = self.doc_height
+		self.old_page = self.ui.document.info.number_of_pages
+	end)
 end
 
 -- This method will  be called in onSetDimensions handler
@@ -99,6 +100,17 @@ function ReaderRolling:initGesListener()
 				}
 			}
 		},
+		Pan = {
+			GestureRange:new{
+				ges = "pan",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				},
+				rate = 4.0,
+			}
+		},
 	}
 end
 
@@ -128,7 +140,7 @@ function ReaderRolling:onReadSettings(config)
 			end)
 		end
 	end
-	if self.view_mode == "page" then
+	if self.view.view_mode == "page" then
 		self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
 	end
 end
@@ -141,11 +153,12 @@ function ReaderRolling:onCloseDocument()
 end
 
 function ReaderRolling:getLastPercent()
-	if self.view_mode == "page" then
+	if self.view.view_mode == "page" then
 		return self.current_page / self.old_page
 	else
 		-- FIXME: the calculated percent is not accurate in "scroll" mode.
-		return self.ui.document:getPosFromXPointer(self.ui.document:getXPointer()) / self.doc_height
+		return self.ui.document:getPosFromXPointer(
+			self.ui.document:getXPointer()) / self.doc_height
 	end
 end
 
@@ -168,6 +181,17 @@ function ReaderRolling:onSwipe(arg, ges)
 	return true
 end
 
+function ReaderRolling:onPan(arg, ges)
+	if self.view.view_mode == "scroll" then
+		if ges.direction == "north" then
+			self:gotoPos(self.current_pos + ges.distance)
+		elseif ges.direction == "south" then
+			self:gotoPos(self.current_pos - ges.distance)
+		end
+	end
+	return true
+end
+
 function ReaderRolling:onPosUpdate(new_pos)
 	self.current_pos = new_pos
 end
@@ -183,8 +207,8 @@ function ReaderRolling:onGotoPercent(percent)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
-	DEBUG("goto relative screen:", diff)
-	if self.view_mode ~= "page" then
+	DEBUG("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
+	if self.view.view_mode == "scroll" then
 		local pan_diff = diff * self.ui.dimen.h
 		if self.show_overlap_enable then
 			if pan_diff > self.overlap then
@@ -194,7 +218,7 @@ function ReaderRolling:onGotoViewRel(diff)
 			end
 		end
 		self:gotoPos(self.current_pos + pan_diff)
-	else
+	elseif self.view.view_mode == "page" then
 		self:gotoPage(self.current_page + diff)
 	end
 	return true
@@ -232,12 +256,8 @@ function ReaderRolling:onUpdatePos()
 	return true
 end
 
-function ReaderRolling:onSetViewMode(new_mode)
-	self.ui.view_mode = new_mode
-end
-
 function ReaderRolling:onRedrawCurrentView()
-	if self.view_mode == "page" then
+	if self.view.view_mode == "page" then
 		self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
 	else
 		self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
@@ -260,7 +280,7 @@ function ReaderRolling:gotoPos(new_pos)
 	if new_pos < 0 then new_pos = 0 end
 	if new_pos > self.doc_height then new_pos = self.doc_height end
 	-- adjust dim_area according to new_pos
-	if self.view_mode ~= "page" and self.show_overlap_enable then
+	if self.view.view_mode ~= "page" and self.show_overlap_enable then
 		local panned_step = new_pos - self.current_pos
 		self.view.dim_area.x = 0
 		self.view.dim_area.h = self.ui.dimen.h - math.abs(panned_step)
@@ -280,7 +300,7 @@ function ReaderRolling:gotoPage(new_page)
 end
 
 function ReaderRolling:gotoXPointer(xpointer)
-	if self.view_mode == "page" then
+	if self.view.view_mode == "page" then
 		self:gotoPage(self.ui.document:getPageFromXPointer(xpointer))
 	else
 		self:gotoPos(self.ui.document:getPosFromXPointer(xpointer))

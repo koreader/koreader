@@ -101,6 +101,9 @@ end
 
 function CreDocument:loadDocument()
 	self._document:loadDocument(self.file)
+	if not self.info.has_pages then
+		self.info.doc_height = self._document:getFullHeight()
+	end
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
