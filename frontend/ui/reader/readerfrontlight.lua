@@ -1,4 +1,3 @@
-package.cpath = package.cpath..";/usr/lib/lua/?.so"
 require "ui/device"
 
 ReaderFrontLight = InputContainer:new{
