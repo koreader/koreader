@@ -16,6 +16,10 @@ ReaderView = OverlapGroup:new{
 		bbox = nil,
 	},
 	outer_page_color = 0,
+	-- hightlight
+	highlight = {
+		drawer = "marker" -- show as inverted block instead of underline
+	},
 	-- PDF/DjVu continuous paging
 	page_scroll = nil,
 	page_bgcolor = 0,
@@ -96,6 +100,11 @@ function ReaderView:paintTo(bb, x, y)
 			self.dim_area.w, self.dim_area.h
 		)
 	end
+	
+	-- draw highlight
+	if self.highlight.rect then
+		self:drawHightlight(bb, x, y, self.highlight.rect)
+	end
 
 	-- paint dogear
 	if self.dogear_visible then
@@ -111,6 +120,32 @@ function ReaderView:paintTo(bb, x, y)
 	end
 	-- stop activity indicator
 	self.ui:handleEvent(Event:new("StopActivityIndicator"))
+end
+
+--[[
+Given coordinates on the screen return position in original page
+]]--
+function ReaderView:screenToPageTransform(pos)
+	if self.ui.document.info.has_pages then
+		if self.page_scroll then
+			return self:getScrollPagePosition(pos)
+		else
+			return self:getSinglePagePosition(pos)
+		end
+	end
+end
+
+--[[
+Given rectangle in original page return rectangle on the screen
+]]--
+function ReaderView:pageToScreenTransform(page, rect)
+	if self.ui.document.info.has_pages then
+		if self.page_scroll then
+			return self:getScrollPageRect(page, rect)
+		else
+			return self:getSinglePageRect(rect)
+		end
+	end
 end
 
 function ReaderView:drawPageBackground(bb, x, y)
@@ -155,6 +190,40 @@ function ReaderView:drawScrollPages(bb, x, y)
 	end)
 end
 
+function ReaderView:getScrollPagePosition(pos)
+	local x_s, y_s = pos.x, pos.y
+	local x_p, y_p = nil, nil
+	for _, state in ipairs(self.page_states) do
+		if y_s < state.visible_area.h + state.offset.y then
+			y_p = (state.visible_area.y + y_s - state.offset.y) / state.zoom
+			x_p = (state.visible_area.x + x_s - state.offset.x) / state.zoom
+			return {
+				x = x_p,
+				y = y_p,
+				page = state.page,
+				zoom = state.zoom,
+				rotation = state.rotation,
+			}
+		else
+			y_s = y_s - state.visible_area.h - self.page_gap.height
+		end
+	end
+end
+
+function ReaderView:getScrollPageRect(page, rect_p)
+	local rect_s = Geom:new{}
+	for _, state in ipairs(self.page_states) do
+		if page == state.page and state.visible_area:contains(rect_p) then
+			rect_s.x = rect_s.x + state.offset.x + rect_p.x*state.zoom - state.visible_area.x
+			rect_s.y = rect_s.y + state.offset.y + rect_p.y*state.zoom - state.visible_area.y
+			rect_s.w = rect_p.w * state.zoom
+			rect_s.h = rect_p.h * state.zoom
+			return rect_s
+		end
+		rect_s.y = rect_s.y + state.visible_area.h + self.page_gap.height
+	end
+end
+
 function ReaderView:drawPageGap(bb, x, y)
 	if self.scroll_mode == "vertical" then
 		bb:paintRect(x, y, self.dimen.w, self.page_gap.height, self.page_gap.color)
@@ -179,6 +248,28 @@ function ReaderView:drawSinglePage(bb, x, y)
 	end)
 end
 
+function ReaderView:getSinglePagePosition(pos)
+	local x_s, y_s = pos.x, pos.y
+	return {
+		x = (self.visible_area.x + x_s - self.state.offset.x) / self.state.zoom,
+		y = (self.visible_area.y + y_s - self.state.offset.y) / self.state.zoom,
+		page = self.state.page,
+		zoom = self.state.zoom,
+		rotation = self.state.rotation,
+	}
+end
+
+function ReaderView:getSinglePageRect(rect_p)
+	local rect_s = Geom:new{}
+	if self.visible_area:contains(rect_p) then
+		rect_s.x = self.state.offset.x + rect_p.x * self.state.zoom - self.visible_area.x
+		rect_s.y = self.state.offset.y + rect_p.y * self.state.zoom - self.visible_area.y
+		rect_s.w = rect_p.w * self.state.zoom
+		rect_s.h = rect_p.h * self.state.zoom
+		return rect_s
+	end
+end
+
 function ReaderView:drawPageView(bb, x, y)
 	self.ui.document:drawCurrentViewByPage(
 		bb,
@@ -195,6 +286,26 @@ function ReaderView:drawScrollView(bb, x, y)
 		y + self.state.offset.y,
 		self.visible_area,
 		self.state.pos)
+end
+
+function ReaderView:drawHightlight(bb, x, y, rect)
+	-- slightly enlarge the highlight box
+	-- for better viewing experience
+	local x = rect.x - rect.h * 0.01
+	local y = rect.y - rect.h * 0.01
+	local w = rect.w + rect.h * 0.02
+	local h = rect.h + rect.h * 0.02
+	
+	self.highlight.drawer = self.highlight.drawer or "underscore"
+	if self.highlight.drawer == "underscore" then
+		self.highlight.line_width = self.highlight.line_width or 2
+		self.highlight.line_color = self.highlight.line_color or 5
+		bb:paintRect(x, y+h-1, w,
+			self.highlight.line_width,
+			self.highlight.line_color)
+	elseif self.highlight.drawer == "marker" then
+		bb:invertRect(x, y, w, h)
+	end
 end
 
 function ReaderView:getPageArea(page, zoom, rotation)
