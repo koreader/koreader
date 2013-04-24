@@ -12,7 +12,7 @@ end
 
 function ReaderDictionary:onLookupWord(word)
 	DEBUG("lookup word:", word)
-	if self.lipc_handle then
+	if self.lipc_handle and word then
 		-- start indicator depends on pillow being enabled
 		self.lipc_handle:set_string_property(
 			"com.lab126.booklet.kpvbooklet.dict", "lookup", word)
