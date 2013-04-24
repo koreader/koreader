@@ -9,6 +9,9 @@ test -e $PROC_FIVEWAY && echo unlock > $PROC_FIVEWAY
 # we're always starting from our working directory
 cd /mnt/us/koreader/
 
+# export trained OCR data directory
+export TESSDATA_PREFIX="data"
+
 # bind-mount system fonts
 if ! grep /mnt/us/koreader/fonts/host /proc/mounts; then
 	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host

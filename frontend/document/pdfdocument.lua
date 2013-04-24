@@ -44,6 +44,28 @@ function PdfDocument:unlock(password)
 	return self:_readMetadata()
 end
 
+function PdfDocument:getPageText(pageno)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:getPageText(self, pageno)
+	else
+		local page = self._document:openPage(pageno)
+		local text = page:getPageText()
+		page:close()
+		return text
+	end
+end
+
+function PdfDocument:getOCRWord(pageno, rect)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:getOCRWord(self, pageno, rect)
+	else
+		--local page = self._document:openPage(pageno)
+		--local word = page:getOCRWord(rect)
+		--page:close()
+		--return word
+	end
+end
+
 function PdfDocument:getUsedBBox(pageno)
 	local hash = "pgubbox|"..self.file.."|"..pageno
 	local cached = Cache:check(hash)

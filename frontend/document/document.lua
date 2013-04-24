@@ -184,6 +184,14 @@ function Document:getToc()
 	return self._document:getToc()
 end
 
+function Document:getPageText(pageno)
+	return nil
+end
+
+function Document:getOCRWord(pageno, rect)
+	return nil
+end
+
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 	local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
 	local page_size = self:getPageDimensions(pageno, zoom, rotation)

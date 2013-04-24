@@ -14,8 +14,10 @@ require "ui/reader/readercropping"
 require "ui/reader/readerkopt"
 require "ui/reader/readercopt"
 require "ui/reader/readerhinting"
+require "ui/reader/readerhighlight"
 require "ui/reader/readerscreenshot"
 require "ui/reader/readerfrontlight"
+require "ui/reader/readerdictionary"
 require "ui/reader/readerhyphenation"
 require "ui/reader/readeractivityindicator"
 
@@ -96,6 +98,22 @@ function ReaderUI:init()
 		ui = self
 	}
 	table.insert(self, reader_bm)
+	-- text highlight 
+	local highlight = ReaderHighlight:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self,
+		document = self.document,
+	}
+	table.insert(self, highlight)
+	-- dictionary 
+	local dict = ReaderDictionary:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self,
+		document = self.document,
+	}
+	table.insert(self, dict)
 	-- screenshot controller
 	local reader_ss = ReaderScreenshot:new{
 		dialog = self.dialog,
