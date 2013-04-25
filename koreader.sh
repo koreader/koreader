@@ -25,6 +25,8 @@ fi
 
 # dismiss chrome bar
 lipc-set-prop com.lab126.pillow disableEnablePillow disable
+# notify kpvbooklet that pillow is disabled
+lipc-send-event com.github.koreader.kpvbooklet disablePillow
 
 # stop cvm
 #killall -stop cvm
