@@ -47,6 +47,25 @@ function validDjvuFile(filename)
 	return true
 end
 
+function DjvuDocument:getPageText(pageno)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:getPageText(self, pageno)
+	else
+		return self._document:getPageText(pageno)
+	end
+end
+
+function DjvuDocument:getOCRWord(pageno, rect)
+	if self.configurable.text_wrap == 1 then
+		return self.koptinterface:getOCRWord(self, pageno, rect)
+	else
+		--local page = self._document:openPage(pageno)
+		--local word = page:getOCRWord(rect)
+		--page:close()
+		--return word
+	end
+end
+
 function DjvuDocument:getUsedBBox(pageno)
 	-- djvu does not support usedbbox, so fake it.
 	local used = {}
