@@ -8,6 +8,7 @@ function ReaderDictionary:init()
 	if dev_mod == "KindlePaperWhite" or dev_mod == "KindleTouch" then
 		require("liblipclua")
 		JSON = require("JSON")
+		DEBUG("init lipc handler com.github.koreader.dictionary")
 		self.lipc_handle = lipc.init("com.github.koreader.dictionary")
 	end
 end
@@ -17,13 +18,13 @@ function ReaderDictionary:onLookupWord(word)
 	--self:quickLookup()
 	if self.lipc_handle and JSON and word then
 		self.lipc_handle:set_string_property(
-			"com.lab126.booklet.kpvbooklet.dict", "lookup", word)
+			"com.github.koreader.kpvbooklet.dict", "lookup", word)
 		local results_str = self.lipc_handle:get_string_property(
-			"com.lab126.booklet.kpvbooklet.word", word)
+			"com.github.koreader.kpvbooklet.word", word)
 		if results_str then
 			--DEBUG("def str:", word, definitions)
 			local ok, results_tab = pcall(JSON.decode, JSON, results_str)
-			--DEBUG("lookup result table:", word, results_tab)
+			DEBUG("lookup result table:", word, results_tab)
 			if results_tab[1] then
 				self:quickLookup(results_tab[1])
 			end
