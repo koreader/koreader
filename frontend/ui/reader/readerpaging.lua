@@ -125,6 +125,7 @@ function ReaderPaging:initGesListener()
 end
 
 function ReaderPaging:onReadSettings(config)
+	self.page_positions = config:readSetting("page_positions") or {}
 	self:gotoPage(config:readSetting("last_page") or 1)
 	local soe = config:readSetting("show_overlap_enable")
 	if not soe then
@@ -133,8 +134,33 @@ function ReaderPaging:onReadSettings(config)
 end
 
 function ReaderPaging:onCloseDocument()
-	self.ui.doc_settings:saveSetting("last_page", self.current_page)
+	self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
+	self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
 	self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)
+end
+
+--[[
+Set reading position on certain page
+Page position is a fractional number ranging from 0 to 1, indicating the read percentage on
+certain page. With the position information on each page whenever users change font size, 
+page margin or line spacing or close and reopen the book, the reading position will be 
+roughly the same.
+--]]
+function ReaderPaging:setPagePosition(page, pos)
+	DEBUG("set page position", pos)
+	self.page_positions[page] = pos
+end
+
+--[[
+Get reading position on certain page
+--]]
+function ReaderPaging:getPagePosition(page)
+	-- Page number ought to be integer, somehow I notice that with 
+	-- fractional page number the reader runs silently well, but the 
+	-- number won't fit to retrieve page position. 
+	page = math.floor(page)
+	DEBUG("get page position", self.page_positions[page])
+	return self.page_positions[page] or 0
 end
 
 function ReaderPaging:onTapForward()
@@ -257,6 +283,7 @@ function ReaderPaging:onPagingRel(diff)
 	else
 		self:onGotoPageRel(diff)
 	end
+	self:setPagePosition(self:getTopPage(), self:getTopPosition())
 	return true
 end
 
@@ -264,18 +291,52 @@ function ReaderPaging:onPanningRel(diff)
 	if self.view.page_scroll then
 		self:onScrollPanRel(diff)
 	end
+	self:setPagePosition(self:getTopPage(), self:getTopPosition())
 	return true
 end
 
+--[[
+Get read percentage on current page.
+--]]
+function ReaderPaging:getTopPosition()
+	if self.view.page_scroll then
+		local state = self.view.page_states[1]
+		return (state.visible_area.y - state.page_area.y)/state.page_area.h
+	else
+		return 0
+	end
+end
+
+--[[
+Get page number of the page drawn at the very top part of the screen.
+--]]
+function ReaderPaging:getTopPage()
+	if self.view.page_scroll then
+		local state = self.view.page_states[1]
+		return state.page
+	else
+		return self.current_page
+	end
+end
+
 function ReaderPaging:onInitScrollPageStates(orig)
-	DEBUG("init scroll page states")
+	DEBUG("init scroll page states", orig)
 	if self.view.page_scroll then
 		self.orig_page = self.current_page
 		self.view.page_states = {}
 		local blank_area = Geom:new{}
 		blank_area:setSizeTo(self.view.dimen)
 		while blank_area.h > 0 do
-			local state = self:getNextPageState(blank_area, Geom:new{})
+			local offset = Geom:new{}
+			-- caculate position in current page
+			if self.current_page == self.orig_page then
+				local page_area = self.view:getPageArea(
+					self.view.state.page,
+					self.view.state.zoom,
+					self.view.state.rotation)
+				offset.y = page_area.h * self:getPagePosition(self.current_page)
+			end
+			local state = self:getNextPageState(blank_area, offset)
 			--DEBUG("init new state", state)
 			table.insert(self.view.page_states, state)
 			if blank_area.h > 0 then
