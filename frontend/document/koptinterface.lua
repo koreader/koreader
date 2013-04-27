@@ -117,6 +117,7 @@ function KoptInterface:getOCRWord(doc, pageno, rect)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
 			local fullwidth, fullheight = kc:getPageDim()
+			--os.execute("echo 3 > /proc/sys/vm/drop_caches")
 			local ok, word = pcall(
 				kc.getOCRWord, kc,
 				self.tessocr_data,
