@@ -143,8 +143,7 @@ end
 Set reading position on certain page
 Page position is a fractional number ranging from 0 to 1, indicating the read percentage on
 certain page. With the position information on each page whenever users change font size, 
-page margin or line spacing or close and reopen the book, the reading position will be 
-roughly the same.
+page margin or line spacing or close and reopen the book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
 	DEBUG("set page position", pos)
