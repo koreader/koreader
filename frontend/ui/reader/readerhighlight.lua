@@ -68,6 +68,10 @@ function ReaderHighlight:onHold(arg, ges)
 		local screen_rect = self.view:pageToScreenTransform(self.pos.page, self.word_info.box)
 		DEBUG("highlight word rect", screen_rect)
 		if screen_rect then
+			screen_rect.x = screen_rect.x - screen_rect.h * 0.2
+			screen_rect.y = screen_rect.y - screen_rect.h * 0.2
+			screen_rect.w = screen_rect.w + screen_rect.h * 0.4
+			screen_rect.h = screen_rect.h + screen_rect.h * 0.4
 			self.view.highlight.rect = screen_rect
 			UIManager:setDirty(self.dialog, "partial")
 			-- if we extracted text directly
@@ -77,11 +81,11 @@ function ReaderHighlight:onHold(arg, ges)
 			else
 				UIManager:scheduleIn(0.1, function()
 					local word_box = self.word_info.box
-					word_box.x = word_box.x - math.floor(word_box.h * 0.1)
-					word_box.y = word_box.y - math.floor(word_box.h * 0.1)
-					word_box.w = word_box.w + math.floor(word_box.h * 0.2)
-					word_box.h = word_box.h + math.floor(word_box.h * 0.2)
-					--local word = self.ui.document:getOCRWord(self.pos.page, word_box)
+					word_box.x = word_box.x - math.floor(word_box.h * 0.2)
+					word_box.y = word_box.y - math.floor(word_box.h * 0.4)
+					word_box.w = word_box.w + math.floor(word_box.h * 0.4)
+					word_box.h = word_box.h + math.floor(word_box.h * 0.6)
+					local word = self.ui.document:getOCRWord(self.pos.page, word_box)
 					DEBUG("OCRed word:", word)
 					self.ui:handleEvent(Event:new("LookupWord", word))
 				end)
