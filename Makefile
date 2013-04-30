@@ -64,7 +64,7 @@ customupdate: all
 	rm -rf $(INSTALL_DIR)
 	# create new dir for package
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
-	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr} koreader.sh $(LUA_FILES) $(INSTALL_DIR)
+	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr,sdcv} koreader.sh $(LUA_FILES) $(INSTALL_DIR)
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr $(INSTALL_DIR)/sdcv
 	mkdir $(INSTALL_DIR)/data
 	cp -L koreader-base/$(DJVULIB) $(KOR_BASE)/$(CRELIB) \
