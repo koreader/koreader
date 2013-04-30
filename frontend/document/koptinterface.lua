@@ -7,7 +7,7 @@ require "ui/reader/readerconfig"
 KoptInterface = {
 	tessocr_data = "data",
 	ocr_lang = "eng",
-	ocr_type = 0, -- default, for more accuracy use 3
+	ocr_type = 3, -- default 0, for more accuracy use 3
 }
 
 ContextCacheItem = CacheItem:new{}
@@ -16,6 +16,15 @@ function ContextCacheItem:onFree()
 	if self.kctx.free then
 		DEBUG("free koptcontext", self.kctx)
 		self.kctx:free()
+	end
+end
+
+OCREngine = CacheItem:new{}
+
+function OCREngine:onFree()
+	if self.ocrengine.freeOCR then
+		DEBUG("free OCREngine", self.ocrengine)
+		self.ocrengine:freeOCR()
 	end
 end
 
@@ -107,6 +116,11 @@ function KoptInterface:getPageText(doc, pageno)
 end
 
 function KoptInterface:getOCRWord(doc, pageno, rect)
+	local ocrengine = "ocrengine"
+	if not Cache:check(ocrengine) then
+		local dummy = KOPTContext.new()
+		Cache:insert(ocrengine, OCREngine:new{ ocrengine = dummy })
+	end
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local hash = "ocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
@@ -117,14 +131,10 @@ function KoptInterface:getOCRWord(doc, pageno, rect)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
 			local fullwidth, fullheight = kc:getPageDim()
-			--os.execute("echo 3 > /proc/sys/vm/drop_caches")
 			local ok, word = pcall(
-				kc.getOCRWord, kc,
-				self.tessocr_data,
-				self.ocr_lang,
-				self.ocr_type, 
-				rect.x, rect.y,
-				rect.w, rect.h)
+				kc.getTOCRWord, kc,
+				rect.x, rect.y, rect.w, rect.h,
+				self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
 			Cache:insert(hash, CacheItem:new{ ocrword = word })
 			return word
 		end

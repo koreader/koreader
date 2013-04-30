@@ -7,14 +7,15 @@ Device = {
 }
 
 function Device:getModel()
+	if self.model then return self.model end
 	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
 	local cpu_mod = std_out:read()
 	if not cpu_mod then
 		local ret = os.execute("grep 'Hardware : Mario Platform' /proc/cpuinfo", "r")
 		if ret ~= 0 then
-			return nil
+			self.model = nil
 		else
-			return "KindleDXG"
+			self.model = "KindleDXG"
 		end
 	end
 	if cpu_mod == "MX50" then
@@ -25,20 +26,21 @@ function Device:getModel()
 		-- another special file for KT is Neonode zForce touchscreen:
 		-- /sys/devices/platform/zforce.0/
 		if pw_test_fd then
-			return "KindlePaperWhite"
+			self.model = "KindlePaperWhite"
 		elseif kt_test_fd then
-			return "KindleTouch"
+			self.model = "KindleTouch"
 		else
-			return "Kindle4"
+			self.model = "Kindle4"
 		end
 	elseif cpu_mod == "MX35" then
 		-- check if we are running on Kindle 3 (additional volume input)
-		return "Kindle3"
+		self.model = "Kindle3"
 	elseif cpu_mod == "MX3" then
-		return "Kindle2"
+		self.model = "Kindle2"
 	else
-		return nil
+		self.model = nil
 	end
+	return self.model
 end
 
 function Device:isKindle4()
