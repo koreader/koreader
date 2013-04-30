@@ -12,6 +12,9 @@ cd /mnt/us/koreader/
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
 
+# export dict directory
+export STARDICT_DATA_DIR="data/dict"
+
 # bind-mount system fonts
 if ! grep /mnt/us/koreader/fonts/host /proc/mounts; then
 	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host
