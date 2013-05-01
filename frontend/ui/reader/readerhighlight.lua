@@ -54,17 +54,34 @@ end
 function ReaderHighlight:onHold(arg, ges)
 	self.pos = self.view:screenToPageTransform(ges.pos)
 	DEBUG("hold position in page", self.pos)
-	local text = self.ui.document:getPageText(self.pos.page)
-	--DEBUG("page text", text)
+	local text_boxes = self.ui.document:getTextBoxes(self.pos.page)
+	--DEBUG("page text", text_boxes)
 	
-	if not text or #text == 0 then
-		DEBUG("no text extracted")
+	if not text_boxes or #text_boxes == 0 then
+		DEBUG("no text box detected")
 		return true
 	end
 	
-	self.word_info = self:getWordFromText(text, self.pos)
+	self.word_info = self:getWordFromBoxes(text_boxes, self.pos)
 	DEBUG("hold word info in page", self.word_info)
 	if self.word_info then
+		-- if we extracted text directly
+		if self.word_info.word then
+			self.ui:handleEvent(Event:new("LookupWord", self.word_info.word))
+		-- or we will do OCR
+		else
+			UIManager:scheduleIn(0.1, function()
+				local word_box = self.word_info.box
+				word_box.x = word_box.x - math.floor(word_box.h * 0.2)
+				word_box.y = word_box.y - math.floor(word_box.h * 0.4)
+				word_box.w = word_box.w + math.floor(word_box.h * 0.4)
+				word_box.h = word_box.h + math.floor(word_box.h * 0.6)
+				local word = self.ui.document:getOCRWord(self.pos.page, word_box)
+				DEBUG("OCRed word:", word)
+				self.ui:handleEvent(Event:new("LookupWord", word))
+			end)
+		end
+		
 		local screen_rect = self.view:pageToScreenTransform(self.pos.page, self.word_info.box)
 		DEBUG("highlight word rect", screen_rect)
 		if screen_rect then
@@ -74,28 +91,12 @@ function ReaderHighlight:onHold(arg, ges)
 			screen_rect.h = screen_rect.h + screen_rect.h * 0.4
 			self.view.highlight.rect = screen_rect
 			UIManager:setDirty(self.dialog, "partial")
-			-- if we extracted text directly
-			if self.word_info.word then
-				self.ui:handleEvent(Event:new("LookupWord", self.word_info.word))
-			-- or we will do OCR
-			else
-				UIManager:scheduleIn(0.1, function()
-					local word_box = self.word_info.box
-					word_box.x = word_box.x - math.floor(word_box.h * 0.2)
-					word_box.y = word_box.y - math.floor(word_box.h * 0.4)
-					word_box.w = word_box.w + math.floor(word_box.h * 0.4)
-					word_box.h = word_box.h + math.floor(word_box.h * 0.6)
-					local word = self.ui.document:getOCRWord(self.pos.page, word_box)
-					DEBUG("OCRed word:", word)
-					self.ui:handleEvent(Event:new("LookupWord", word))
-				end)
-			end
 		end
 	end
 	return true
 end
 
-function ReaderHighlight:getWordFromText(text, pos)
+function ReaderHighlight:getWordFromBoxes(boxes, pos)
 	local function ges_inside(x0, y0, x1, y1)
 		local x, y = pos.x, pos.y
 		if x0 ~= nil and y0 ~= nil and x1 ~= nil and y1 ~= nil then
@@ -106,12 +107,12 @@ function ReaderHighlight:getWordFromText(text, pos)
 		return false
 	end
 	
-	for i = 1, #text do
-		local l = text[i]
+	for i = 1, #boxes do
+		local l = boxes[i]
 		if ges_inside(l.x0, l.y0, l.x1, l.y1) then
 			--DEBUG("line box", l.x0, l.y0, l.x1, l.y1)
-			for j = 1, #text[i] do
-				local w = text[i][j]
+			for j = 1, #boxes[i] do
+				local w = boxes[i][j]
 				if ges_inside(w.x0, w.y0, w.x1, w.y1) then
 					local box = Geom:new{
 						x = w.x0, y = w.y0, 

@@ -44,25 +44,26 @@ function PdfDocument:unlock(password)
 	return self:_readMetadata()
 end
 
-function PdfDocument:getPageText(pageno)
+function PdfDocument:getTextBoxes(pageno)
 	if self.configurable.text_wrap == 1 then
-		return self.koptinterface:getPageText(self, pageno)
+		return self.koptinterface:getReflewTextBoxes(self, pageno)
 	else
 		local page = self._document:openPage(pageno)
 		local text = page:getPageText()
 		page:close()
-		return text
+		if not text or #text == 0 then
+			return self.koptinterface:getTextBoxes(self, pageno)
+		else
+			return text
+		end
 	end
 end
 
 function PdfDocument:getOCRWord(pageno, rect)
 	if self.configurable.text_wrap == 1 then
-		return self.koptinterface:getOCRWord(self, pageno, rect)
+		return self.koptinterface:getReflewOCRWord(self, pageno, rect)
 	else
-		--local page = self._document:openPage(pageno)
-		--local word = page:getOCRWord(rect)
-		--page:close()
-		--return word
+		return self.koptinterface:getOCRWord(self, pageno, rect)
 	end
 end
 

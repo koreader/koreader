@@ -213,11 +213,13 @@ end
 function ReaderView:getScrollPageRect(page, rect_p)
 	local rect_s = Geom:new{}
 	for _, state in ipairs(self.page_states) do
-		if page == state.page and state.visible_area:contains(rect_p) then
-			rect_s.x = rect_s.x + state.offset.x + rect_p.x*state.zoom - state.visible_area.x
-			rect_s.y = rect_s.y + state.offset.y + rect_p.y*state.zoom - state.visible_area.y
-			rect_s.w = rect_p.w * state.zoom
-			rect_s.h = rect_p.h * state.zoom
+		local trans_p = rect_p:copy()
+		trans_p:transformByScale(state.zoom, state.zoom)
+		if page == state.page and state.visible_area:contains(trans_p) then
+			rect_s.x = rect_s.x + state.offset.x + trans_p.x - state.visible_area.x
+			rect_s.y = rect_s.y + state.offset.y + trans_p.y - state.visible_area.y
+			rect_s.w = trans_p.w
+			rect_s.h = trans_p.h
 			return rect_s
 		end
 		rect_s.y = rect_s.y + state.visible_area.h + self.page_gap.height
@@ -261,11 +263,13 @@ end
 
 function ReaderView:getSinglePageRect(rect_p)
 	local rect_s = Geom:new{}
-	if self.visible_area:contains(rect_p) then
-		rect_s.x = self.state.offset.x + rect_p.x * self.state.zoom - self.visible_area.x
-		rect_s.y = self.state.offset.y + rect_p.y * self.state.zoom - self.visible_area.y
-		rect_s.w = rect_p.w * self.state.zoom
-		rect_s.h = rect_p.h * self.state.zoom
+	local trans_p = rect_p:copy()
+	trans_p:transformByScale(self.state.zoom, self.state.zoom)
+	if self.visible_area:contains(trans_p) then
+		rect_s.x = self.state.offset.x + trans_p.x - self.visible_area.x
+		rect_s.y = self.state.offset.y + trans_p.y - self.visible_area.y
+		rect_s.w = trans_p.w
+		rect_s.h = trans_p.h
 		return rect_s
 	end
 end
@@ -425,14 +429,15 @@ function ReaderView:onReadSettings(config)
 	self.state.gamma = config:readSetting("gamma") or 1.0
 	local full_screen = config:readSetting("kopt_full_screen")
 	if full_screen == nil then
-		self.footer_visible = self.document.info.has_pages
-		self.document.configurable.full_screen = self.footer_visible and 0 or 1
-	else
-		self.footer_visible = full_screen == 0 and true or false
+		full_screen = self.document.configurable.full_screen
 	end
+	self.footer_visible = full_screen == 0 and true or false
 	self:resetLayout()
 	local page_scroll = config:readSetting("kopt_page_scroll")
-	self.page_scroll = (page_scroll == nil or page_scroll == 1) and true or false
+	if page_scroll == nil then
+		page_scroll = self.document.configurable.page_scroll
+	end
+	self.page_scroll = page_scroll == 1 and true or false
 end
 
 function ReaderView:onPageUpdate(new_page_no)
