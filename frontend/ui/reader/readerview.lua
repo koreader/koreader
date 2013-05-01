@@ -425,14 +425,15 @@ function ReaderView:onReadSettings(config)
 	self.state.gamma = config:readSetting("gamma") or 1.0
 	local full_screen = config:readSetting("kopt_full_screen")
 	if full_screen == nil then
-		self.footer_visible = self.document.info.has_pages
-		self.document.configurable.full_screen = self.footer_visible and 0 or 1
-	else
-		self.footer_visible = full_screen == 0 and true or false
+		full_screen = self.document.configurable.full_screen
 	end
+	self.footer_visible = full_screen == 0 and true or false
 	self:resetLayout()
 	local page_scroll = config:readSetting("kopt_page_scroll")
-	self.page_scroll = (page_scroll == nil or page_scroll == 1) and true or false
+	if page_scroll == nil then
+		page_scroll = self.document.configurable.page_scroll
+	end
+	self.page_scroll = page_scroll == 1 and true or false
 end
 
 function ReaderView:onPageUpdate(new_page_no)
