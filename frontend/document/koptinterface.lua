@@ -95,10 +95,10 @@ function KoptInterface:getAutoBBox(doc, pageno)
 	end
 end
 
-function KoptInterface:getPageText(doc, pageno)
+function KoptInterface:getReflewTextBoxes(doc, pageno)
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
-	local hash = "pgtext|"..context_hash
+	local hash = "rfpgboxes|"..context_hash
 	local cached = Cache:check(hash)
 	if not cached then
 		local kctx_hash = "kctx|"..context_hash
@@ -106,16 +106,38 @@ function KoptInterface:getPageText(doc, pageno)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
 			local fullwidth, fullheight = kc:getPageDim()
-			local text = kc:getWordBoxes(0, 0, fullwidth, fullheight)
-			Cache:insert(hash, CacheItem:new{ pgtext = text })
-			return text
+			local boxes = kc:getWordBoxes(0, 0, fullwidth, fullheight)
+			Cache:insert(hash, CacheItem:new{ rfpgboxes = boxes })
+			return boxes
 		end
 	else
-		return cached.pgtext
+		return cached.rfpgboxes
 	end
 end
 
-function KoptInterface:getOCRWord(doc, pageno, rect)
+function KoptInterface:getTextBoxes(doc, pageno)
+	local hash = "pgboxes|"..doc.file.."|"..pageno
+	local cached = Cache:check(hash)
+	if not cached then
+		local kc_hash = "kctx|"..doc.file.."|"..pageno
+		local kc = KOPTContext.new()
+		kc:setDebug()
+		local page = doc._document:openPage(pageno)
+		page:getPagePix(kc)
+		local fullwidth, fullheight = kc:getPageDim()
+		local boxes = kc:getWordBoxes(0, 0, fullwidth, fullheight)
+		Cache:insert(hash, CacheItem:new{ pgboxes = boxes })
+		Cache:insert(kc_hash, ContextCacheItem:new{ kctx = kc })
+		return boxes
+	else
+		return cached.pgboxes
+	end
+end
+
+--[[
+get word from OCR in reflew page
+--]]
+function KoptInterface:getReflewOCRWord(doc, pageno, rect)
 	local ocrengine = "ocrengine"
 	if not Cache:check(ocrengine) then
 		local dummy = KOPTContext.new()
@@ -123,14 +145,43 @@ function KoptInterface:getOCRWord(doc, pageno, rect)
 	end
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
-	local hash = "ocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
+	local hash = "rfocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
 	local cached = Cache:check(hash)
 	if not cached then
 		local kctx_hash = "kctx|"..context_hash
 		local cached = Cache:check(kctx_hash)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
-			local fullwidth, fullheight = kc:getPageDim()
+			local ok, word = pcall(
+				kc.getTOCRWord, kc,
+				rect.x, rect.y, rect.w, rect.h,
+				self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
+			Cache:insert(hash, CacheItem:new{ rfocrword = word })
+			return word
+		end
+	else
+		return cached.rfocrword
+	end
+end
+
+--[[
+get word from OCR in non-reflew page
+--]]
+function KoptInterface:getOCRWord(doc, pageno, rect)
+	local ocrengine = "ocrengine"
+	if not Cache:check(ocrengine) then
+		local dummy = KOPTContext.new()
+		Cache:insert(ocrengine, OCREngine:new{ ocrengine = dummy })
+	end
+	local hash = "ocrword|"..doc.file.."|"..pageno..rect.x..rect.y..rect.w..rect.h
+	local cached = Cache:check(hash)
+	if not cached then
+		local pgboxes_hash = "pgboxes|"..doc.file.."|"..pageno
+		local pgboxes_cached = Cache:check(pgboxes_hash)
+		local kc_hash = "kctx|"..doc.file.."|"..pageno
+		local kc_cashed = Cache:check(kc_hash)
+		if pgboxes_cached and kc_cashed then
+			local kc = kc_cashed.kctx
 			local ok, word = pcall(
 				kc.getTOCRWord, kc,
 				rect.x, rect.y, rect.w, rect.h,
