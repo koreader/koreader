@@ -9,6 +9,7 @@ lua-*
 git-rev
 *.o
 tags
+test/*
 
 emu
 

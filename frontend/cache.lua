@@ -20,7 +20,7 @@ A global LRU cache
 ]]--
 Cache = {
 	-- cache configuration:
-	max_memsize = 1024*1024*15, -- 15MB cache size
+	max_memsize = 1024*1024*10, -- 10MB cache size
 	-- cache state:
 	current_memsize = 0,
 	-- associative cache

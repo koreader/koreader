@@ -11,7 +11,6 @@ DictQuickLookup = InputContainer:new{
 	
 	title_face = Font:getFace("tfont", 20),
 	content_face = Font:getFace("cfont", 18),
-	width = Screen:getWidth() - 100
 }
 
 function DictQuickLookup:init()
@@ -44,13 +43,13 @@ function DictQuickLookup:init()
 				TextBoxWidget:new{
 					text = self.dict,
 					face = self.title_face,
-					width = self.width,
+					width = Screen:getWidth() - 100,
 				},
 				VerticalSpan:new{ width = 20 },
 				TextBoxWidget:new{
 					text = self.definition,
 					face = self.content_face,
-					width = self.width,
+					width = Screen:getWidth() - 100,
 				}
 			}
 		}

@@ -25,10 +25,10 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 MO_DIR=i18n
 
 
-all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr mo
+all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr $(KOR_BASE)/sdcv mo
 
-$(KOR_BASE)/koreader-base $(KOR_BASE)/extr:
-	make -C $(KOR_BASE) koreader-base extr
+$(KOR_BASE)/koreader-base $(KOR_BASE)/extr $(KOR_BASE)/sdcv:
+	make -C $(KOR_BASE) koreader-base extr sdcv
 
 fetchthirdparty:
 	git submodule init
@@ -50,6 +50,7 @@ bootstrapemu:
 	test -d $(EMU_DIR)/resources || (cd $(EMU_DIR) && ln -s ../resources ./)
 	test -e $(EMU_DIR)/koreader-base || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/koreader-base ./)
 	test -e $(EMU_DIR)/extr || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/extr ./)
+	test -e $(EMU_DIR)/sdcv || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/sdcv ./)
 	test -e $(EMU_DIR)/reader.lua || (cd $(EMU_DIR) && ln -s ../reader.lua ./)
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
 	test -e $(EMU_DIR)/$(MO_DIR) || (cd $(EMU_DIR) && ln -s ../$(MO_DIR) ./)
@@ -63,8 +64,8 @@ customupdate: all
 	rm -rf $(INSTALL_DIR)
 	# create new dir for package
 	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
-	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr} koreader.sh $(LUA_FILES) $(INSTALL_DIR)
-	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr
+	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr,sdcv} koreader.sh $(LUA_FILES) $(INSTALL_DIR)
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr $(INSTALL_DIR)/sdcv
 	mkdir $(INSTALL_DIR)/data
 	cp -L koreader-base/$(DJVULIB) $(KOR_BASE)/$(CRELIB) \
 		$(KOR_BASE)/$(LUALIB) $(KOR_BASE)/$(K2PDFOPTLIB) \

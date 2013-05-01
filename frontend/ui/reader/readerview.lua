@@ -289,12 +289,7 @@ function ReaderView:drawScrollView(bb, x, y)
 end
 
 function ReaderView:drawHightlight(bb, x, y, rect)
-	-- slightly enlarge the highlight box
-	-- for better viewing experience
-	local x = rect.x - rect.h * 0.01
-	local y = rect.y - rect.h * 0.01
-	local w = rect.w + rect.h * 0.02
-	local h = rect.h + rect.h * 0.02
+	local x, y, w, h = rect.x, rect.y, rect.w, rect.h
 	
 	self.highlight.drawer = self.highlight.drawer or "underscore"
 	if self.highlight.drawer == "underscore" then
