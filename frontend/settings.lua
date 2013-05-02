@@ -114,6 +114,7 @@ function DocSettings:flush()
 	end
 	local f_out = io.open(self.file, "w")
 	if f_out ~= nil then
+		os.setlocale('C', 'numeric')
 		local out = {"-- we can read Lua syntax here!\nreturn "}
 		self:_serialize(self.data, out, 0)
 		table.insert(out, "\n")
