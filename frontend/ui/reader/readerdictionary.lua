@@ -39,7 +39,8 @@ end
 function ReaderDictionary:stardictLookup(word)
 	DEBUG("lookup word:", word)
 	if word then
-		local std_out = io.popen("./sdcv -nj "..'\"'..word..'\"', "r")
+		-- escape quotes and other funny characters in word
+		local std_out = io.popen("./sdcv -nj "..("%q"):format(word), "r")
 		local results_str = std_out:read("*all")
 		if results_str then
 			--DEBUG("result str:", word, results_str)

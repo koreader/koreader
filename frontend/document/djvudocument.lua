@@ -47,22 +47,24 @@ function validDjvuFile(filename)
 	return true
 end
 
-function DjvuDocument:getPageText(pageno)
+function DjvuDocument:getTextBoxes(pageno)
 	if self.configurable.text_wrap == 1 then
-		return self.koptinterface:getPageText(self, pageno)
+		return self.koptinterface:getReflewTextBoxes(self, pageno)
 	else
-		return self._document:getPageText(pageno)
+		local text = self._document:getPageText(pageno)
+		if not text or #text == 0 then
+			return self.koptinterface:getTextBoxes(self, pageno)
+		else
+			return text
+		end
 	end
 end
 
 function DjvuDocument:getOCRWord(pageno, rect)
 	if self.configurable.text_wrap == 1 then
-		return self.koptinterface:getOCRWord(self, pageno, rect)
+		return self.koptinterface:getReflewOCRWord(self, pageno, rect)
 	else
-		--local page = self._document:openPage(pageno)
-		--local word = page:getOCRWord(rect)
-		--page:close()
-		--return word
+		return self.koptinterface:getOCRWord(self, pageno, rect)
 	end
 end
 

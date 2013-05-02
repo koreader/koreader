@@ -184,7 +184,7 @@ function Document:getToc()
 	return self._document:getToc()
 end
 
-function Document:getPageText(pageno)
+function Document:getTextBoxes(pageno)
 	return nil
 end
 
