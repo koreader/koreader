@@ -54,6 +54,10 @@ end
 function ReaderHighlight:onHold(arg, ges)
 	self.pos = self.view:screenToPageTransform(ges.pos)
 	DEBUG("hold position in page", self.pos)
+	if not self.pos then
+		DEBUG("not inside page area")
+		return true
+	end
 	local text_boxes = self.ui.document:getTextBoxes(self.pos.page)
 	--DEBUG("page text", text_boxes)
 	
