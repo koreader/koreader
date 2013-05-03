@@ -3,13 +3,14 @@
 # 
 # Translators:
 # danan72 <danan72@wp.pl>, 2013
+# danan_72 <piotr.martyni@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-10 00:00+0000\n"
-"PO-Revision-Date: 2013-04-18 14:35+0000\n"
-"Last-Translator: houqp <dave2008713@gmail.com>\n"
+"PO-Revision-Date: 2013-04-24 11:31+0000\n"
+"Last-Translator: danan_72 <piotr.martyni@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/koreader/language/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,7 +24,7 @@ msgstr "-d uruchomienie w trybie debugowania"
 
 #: reader.lua:198
 msgid "-h               show this usage help"
-msgstr "-h wyświetlenie tych informacji o użyciu"
+msgstr "-h wyświetlenie pomocy dotyczącej użycia"
 
 #: frontend/ui/data/strings.lua:40
 msgid "0 deg"
@@ -103,7 +104,7 @@ msgstr "Zmniejsz odstęp między liniami do "
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
-msgstr "Błędny rozmiar"
+msgstr "Rozmiar defektu"
 
 #: frontend/ui/reader/readermenu.lua:106
 msgid "Document menu"
@@ -209,7 +210,7 @@ msgstr "Margines strony"
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Proszę zgłosić błąd na https://github.com/koreader/ koreader/issues, Więcej opcji po kliknięciu przy dolnej krawędzi strony"
+msgstr "Proszę zgłosić błąd na https://github.com/koreader/ koreader/issues. Więcej opcji po kliknięciu przy dolnej krawędzi strony"
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
@@ -221,7 +222,7 @@ msgstr "Odśwież z czcionką "
 
 #: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
 msgid "Reflow"
-msgstr "Przeformatuj"
+msgstr "Funkcja \"Reflow\""
 
 #: frontend/ui/data/strings.lua:16
 msgid "Render Quality"
@@ -229,7 +230,7 @@ msgstr "Jakość renderowania"
 
 #: frontend/ui/data/strings.lua:2
 msgid "Screen Mode"
-msgstr "Tryb ekranu"
+msgstr "Orientacja ekranu"
 
 #: frontend/ui/data/strings.lua:5
 msgid "Scroll Mode"
@@ -325,7 +326,7 @@ msgstr "Dopasowanie do szerokości strony"
 
 #: frontend/ui/data/strings.lua:26
 msgid "auto"
-msgstr "automatyczny"
+msgstr "automatycznie"
 
 #: frontend/ui/widget/confirmbox.lua:23
 msgid "cancel"
@@ -461,7 +462,7 @@ msgstr "zwiększ odstępy między liniami"
 
 #: frontend/ui/data/strings.lua:44
 msgid "landscape"
-msgstr "pejzaż"
+msgstr "pozioma"
 
 #: frontend/ui/data/strings.lua:30
 msgid "large"
@@ -537,7 +538,7 @@ msgstr "strona"
 
 #: frontend/ui/data/strings.lua:43
 msgid "portrait"
-msgstr "portret"
+msgstr "pionowa"
 
 #: frontend/ui/reader/readerrotation.lua:12
 msgid "rotate left by 90 degrees"
@@ -549,7 +550,7 @@ msgstr "obróć o 90 st. w prawo"
 
 #: frontend/ui/data/strings.lua:46
 msgid "scroll"
-msgstr "przewiń"
+msgstr "przewijanie"
 
 #: frontend/ui/widget/config.lua:429 frontend/ui/widget/menu.lua:363
 msgid "select current menu item"

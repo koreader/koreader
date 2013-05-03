@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-04-10 00:00+0000\n"
-"PO-Revision-Date: 2013-04-18 13:13+0000\n"
+"PO-Revision-Date: 2013-04-26 15:25+0000\n"
 "Last-Translator: heliox <heliox17@hotmail.com>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/koreader/language/fr/)\n"
 "MIME-Version: 1.0\n"
@@ -28,15 +28,15 @@ msgstr "-h montrer cette aide à l'utilisation"
 
 #: frontend/ui/data/strings.lua:40
 msgid "0 deg"
-msgstr "0 dég"
+msgstr "0 degré"
 
 #: frontend/ui/data/strings.lua:42
 msgid "10 deg"
-msgstr "10 dég"
+msgstr "10 degrés"
 
 #: frontend/ui/data/strings.lua:41
 msgid "5 deg"
-msgstr "5 dég"
+msgstr "5 degrés"
 
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
@@ -112,7 +112,7 @@ msgstr "Menu des documents"
 
 #: frontend/ui/data/strings.lua:22
 msgid "Embedded style"
-msgstr "Style interne"
+msgstr "Style intégré"
 
 #: reader.lua:87
 msgid "Exit"
@@ -124,11 +124,11 @@ msgstr "Gestionnaire de fichiers"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Fine Tuning"
-msgstr "ajustage fin"
+msgstr "Réglage fin"
 
 #: frontend/ui/data/strings.lua:19
 msgid "Font weight"
-msgstr "mettre en gras"
+msgstr "Graisse de police"
 
 #: frontend/ui/data/strings.lua:4
 msgid "Full Screen"
@@ -160,11 +160,11 @@ msgstr "Agrandir la taille de police à"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
-msgstr "augmenter gamma à"
+msgstr "Augmenter le gamma à"
 
 #: frontend/ui/reader/readerfont.lua:167
 msgid "Increase line space to "
-msgstr "augmenter l'interligne à"
+msgstr "Augmenter l'interligne à"
 
 #: frontend/ui/data/strings.lua:18
 msgid "Indentation"
@@ -192,7 +192,7 @@ msgstr " Appareil non pris en charge"
 
 #: frontend/ui/widget/confirmbox.lua:11
 msgid "OK"
-msgstr "OK"
+msgstr "Valider"
 
 #: frontend/ui/widget/touchmenu.lua:328
 msgid "Page "
@@ -200,7 +200,7 @@ msgstr "Page"
 
 #: frontend/ui/data/strings.lua:3
 msgid "Page Crop"
-msgstr "rogner les bords"
+msgstr "Recadrage de la page"
 
 #: frontend/ui/data/strings.lua:6
 msgid "Page Margin"
@@ -210,7 +210,7 @@ msgstr "Marges"
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Merci de signaler des problèmes à https://github.com/koreader/ koreader/issues. Clic en bas de la page pour d'autres options"
+msgstr "Veuillez signaler des problèmes à https://github.com/koreader/koreader/issues . Cliquez en bas de la page pour d'autres options"
 
 #: reader.lua:195
 msgid "Read all the books on your E-Ink reader"
@@ -218,11 +218,11 @@ msgstr "Lire tous les livres présents sur votre liseuse numérique"
 
 #: frontend/ui/reader/readerfont.lua:215
 msgid "Redrawing with font "
-msgstr "En train de redéfinir avec la police"
+msgstr "Redéfinition en cours avec la police"
 
 #: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
 msgid "Reflow"
-msgstr "Reflow"
+msgstr "Reformater"
 
 #: frontend/ui/data/strings.lua:16
 msgid "Render Quality"
@@ -230,7 +230,7 @@ msgstr "Qualité de rendu"
 
 #: frontend/ui/data/strings.lua:2
 msgid "Screen Mode"
-msgstr "mode de l'écran"
+msgstr "Mode de l'écran"
 
 #: frontend/ui/data/strings.lua:5
 msgid "Scroll Mode"
@@ -242,19 +242,19 @@ msgstr "Consulter http://github.com/koreader/kindlepdfviewer pour plus d'informa
 
 #: frontend/ui/widget/config.lua:15 frontend/ui/widget/touchmenu.lua:26
 msgid "Select Menu Item"
-msgstr "sélectionner dans le menu"
+msgstr "Sélectionner dans le menu"
 
 #: frontend/ui/widget/config.lua:54 frontend/ui/widget/config.lua:108
 msgid "Select Option Item"
-msgstr "choisir une option"
+msgstr "Choisir une option"
 
 #: frontend/ui/reader/readerfont.lua:148
 msgid "Set font size to "
-msgstr "fixer la taille de police à"
+msgstr "Définir la taille de police à"
 
 #: frontend/ui/reader/readertypeset.lua:2
 msgid "Set render style"
-msgstr "Fixer style de rendu"
+msgstr "Définir le style de rendu"
 
 #: reader.lua:17
 msgid "Show Home Menu"
@@ -274,11 +274,11 @@ msgstr "Sommaire"
 
 #: frontend/ui/widget/button.lua:55
 msgid "Tap Button"
-msgstr "Toucher bouton"
+msgstr "Bouton d'activation"
 
 #: frontend/ui/data/strings.lua:9
 msgid "Text Align"
-msgstr "alignement texte"
+msgstr "Alignement texte"
 
 #: reader.lua:205
 msgid "This software is licensed under the GPLv3."
@@ -286,7 +286,7 @@ msgstr "Ce logiciel est sous licence GPLv3"
 
 #: frontend/ui/widget/toggleswitch.lua:58
 msgid "Toggle switch"
-msgstr "Basculer"
+msgstr "Bouton de sélection"
 
 #: frontend/ui/data/strings.lua:13
 msgid "Vertical Text"
@@ -298,35 +298,35 @@ msgstr "Mode d'affichage"
 
 #: frontend/ui/data/strings.lua:14
 msgid "Word Gap"
-msgstr "Distance entre mots"
+msgstr "Espacement des mots"
 
 #: frontend/ui/reader/readerzooming.lua:254
 msgid "Zoom to fit content"
-msgstr "zoom au contenu"
+msgstr "Zoom au contenu"
 
 #: frontend/ui/reader/readerzooming.lua:242
 msgid "Zoom to fit content height"
-msgstr "Zoom hauteur de contenu"
+msgstr "Zoom à la hauteur de contenu"
 
 #: frontend/ui/reader/readerzooming.lua:238
 msgid "Zoom to fit content width"
-msgstr "Zoom largeur de contenu"
+msgstr "Zoom à la largeur de contenu"
 
 #: frontend/ui/reader/readerzooming.lua:258
 msgid "Zoom to fit page"
-msgstr "zoom page entier"
+msgstr "Zoom à la page entière"
 
 #: frontend/ui/reader/readerzooming.lua:250
 msgid "Zoom to fit page height"
-msgstr "zoom hauteur de page"
+msgstr "Zoom à la hauteur de page"
 
 #: frontend/ui/reader/readerzooming.lua:246
 msgid "Zoom to fit page width"
-msgstr "zoom largeur de page"
+msgstr "Zoom à la largeur de page"
 
 #: frontend/ui/data/strings.lua:26
 msgid "auto"
-msgstr "Automatique"
+msgstr "automatique"
 
 #: frontend/ui/widget/confirmbox.lua:23
 msgid "cancel"
@@ -338,7 +338,7 @@ msgstr "un sélecteur apparaîtra pour vous permettre de choisir un fichier"
 
 #: frontend/ui/widget/config.lua:20 frontend/ui/widget/config.lua:59
 msgid "chose selected item"
-msgstr "Choisir l'objet en surbrillance"
+msgstr "choisir l'objet en surbrillance"
 
 #: frontend/ui/widget/confirmbox.lua:24
 msgid "chose selected option"
@@ -350,7 +350,7 @@ msgstr "enlever tous les styles externes"
 
 #: frontend/ui/widget/config.lua:425
 msgid "close config menu"
-msgstr "fermer menu de configuration"
+msgstr "fermer le menu de configuration"
 
 #: frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
@@ -362,7 +362,7 @@ msgstr "fermer le document"
 
 #: frontend/ui/widget/menu.lua:349
 msgid "close menu"
-msgstr "fermer menu"
+msgstr "fermer le menu"
 
 #: frontend/ui/data/strings.lua:36
 msgid "darker"
@@ -390,11 +390,11 @@ msgstr "défaut"
 
 #: frontend/ui/reader/readerrolling.lua:42
 msgid "go to 11%"
-msgstr "Aller à 11%"
+msgstr "aller à 11%"
 
 #: frontend/ui/reader/readerrolling.lua:44
 msgid "go to 22%"
-msgstr "Aller à 22%'"
+msgstr "aller à 22%'"
 
 #: frontend/ui/reader/readerrolling.lua:46
 msgid "go to 33%"
@@ -410,11 +410,11 @@ msgstr "aller à 55%"
 
 #: frontend/ui/reader/readerrolling.lua:52
 msgid "go to 66%"
-msgstr "Aller à 66%"
+msgstr "aller à 66%"
 
 #: frontend/ui/reader/readerrolling.lua:54
 msgid "go to 77%"
-msgstr "Aller à 77%"
+msgstr "aller à 77%"
 
 #: frontend/ui/reader/readerrolling.lua:56
 msgid "go to 88%"
@@ -426,15 +426,15 @@ msgstr "aller à la fin"
 
 #: frontend/ui/reader/readerrolling.lua:21
 msgid "go to next view"
-msgstr "vue suivante"
+msgstr "aller à la vue suivante"
 
 #: frontend/ui/reader/readerrolling.lua:26
 msgid "go to previous view"
-msgstr "vue précédente"
+msgstr "aller à la vue précédente"
 
 #: frontend/ui/reader/readerrolling.lua:40
 msgid "go to start"
-msgstr "début"
+msgstr "aller au début"
 
 #: frontend/ui/widget/menu.lua:351
 msgid "goto next page of the menu"
@@ -442,7 +442,7 @@ msgstr "aller à la page suivante du menu"
 
 #: frontend/ui/widget/menu.lua:354
 msgid "goto previous page of the menu"
-msgstr "page précédente du menu"
+msgstr "aller à la page précédente du menu"
 
 #: frontend/ui/data/strings.lua:39
 msgid "high"
@@ -450,11 +450,11 @@ msgstr "haut"
 
 #: frontend/ui/data/strings.lua:32
 msgid "increase"
-msgstr "agrandir"
+msgstr "augmenter"
 
 #: frontend/ui/reader/readerfont.lua:18
 msgid "increase font size"
-msgstr "agrandir taille de la police"
+msgstr "agrandir la taille de police"
 
 #: frontend/ui/reader/readerfont.lua:26
 msgid "increase line space"
@@ -514,7 +514,7 @@ msgstr "déplacer zone visible vers le haut"
 
 #: frontend/ui/widget/menu.lua:433
 msgid "no choices available"
-msgstr "Pas de choix disponible"
+msgstr "Pas de choix disponibles"
 
 #: frontend/ui/widget/confirmbox.lua:9
 msgid "no text"
@@ -522,11 +522,11 @@ msgstr "pas de texte"
 
 #: frontend/ui/data/strings.lua:25
 msgid "off"
-msgstr "désactiver"
+msgstr "désactivé"
 
 #: frontend/ui/data/strings.lua:24
 msgid "on"
-msgstr "activer"
+msgstr "activé"
 
 #: frontend/ui/data/strings.lua:47
 msgid "page"
@@ -542,11 +542,11 @@ msgstr "portrait"
 
 #: frontend/ui/reader/readerrotation.lua:12
 msgid "rotate left by 90 degrees"
-msgstr "Pivoter à gauche 90 dégrées"
+msgstr "Pivoter à gauche de 90 degrés"
 
 #: frontend/ui/reader/readerrotation.lua:16
 msgid "rotate right by 90 degrees"
-msgstr "pivoter à droite 90 dégrées"
+msgstr "pivoter à droite de 90 degrés"
 
 #: frontend/ui/data/strings.lua:46
 msgid "scroll"
@@ -554,7 +554,7 @@ msgstr "faire défiler"
 
 #: frontend/ui/widget/config.lua:429 frontend/ui/widget/menu.lua:363
 msgid "select current menu item"
-msgstr "sélectionner objet actuel au menu"
+msgstr "sélectionner l'entrée actuelle du menu"
 
 #: frontend/ui/reader/readertoc.lua:11
 msgid "show Table of Content menu"
@@ -602,20 +602,20 @@ msgstr "zoom au contenu"
 
 #: frontend/ui/reader/readerzooming.lua:50
 msgid "zoom to fit content height"
-msgstr "zoom hauteur de contenu"
+msgstr "zoom à la hauteur de contenu"
 
 #: frontend/ui/reader/readerzooming.lua:40
 msgid "zoom to fit content width"
-msgstr "zoom largeur de contenu"
+msgstr "zoom à la largeur de contenu"
 
 #: frontend/ui/reader/readerzooming.lua:25
 msgid "zoom to fit page"
-msgstr "zoom page entier"
+msgstr "zoom à la page entière"
 
 #: frontend/ui/reader/readerzooming.lua:45
 msgid "zoom to fit page height"
-msgstr "zoom hauteur de page"
+msgstr "zoom à la hauteur de page"
 
 #: frontend/ui/reader/readerzooming.lua:35
 msgid "zoom to fit page width"
-msgstr "zoom largeur de page"
+msgstr "zoom à la largeur de page"
