@@ -2,13 +2,13 @@
 # Copyright (C) 2005-2013 KOReader Development Team
 # 
 # Translators:
-#  <pblcaccess2me@gmail.com>, 2013.
+# thomass <pblcaccess2me@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-09 18:05+0000\n"
-"PO-Revision-Date: 2013-04-10 06:10+0000\n"
+"POT-Creation-Date: 2013-05-03 16:27+0000\n"
+"PO-Revision-Date: 2013-05-03 16:42+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/koreader/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Language: tr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: reader.lua:197
+#: reader.lua:198
 msgid "-d               start in debug mode"
 msgstr "-d               hata ayıklama modunda başlat"
 
-#: reader.lua:198
+#: reader.lua:199
 msgid "-h               show this usage help"
 msgstr "-h               yardım sayfasını göster"
 
@@ -77,6 +77,10 @@ msgstr "Yer imleri"
 msgid "Cancel"
 msgstr "İptal"
 
+#: frontend/ui/reader/readerhyphenation.lua:21
+msgid "Change Hyphenation to "
+msgstr "Tirelemeyi şuna değiştir: "
+
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
 msgstr "Fontu değiştir"
@@ -93,6 +97,10 @@ msgstr "Kontrast"
 msgid "Decrease font size to "
 msgstr "Font boyutunu şuna düşür:"
 
+#: frontend/ui/reader/readerfrontlight.lua:42
+msgid "Decrease front light intensity to "
+msgstr "Işık şiddetini şuna düşür:"
+
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
 msgstr "Gama değerini şuna düşür:"
@@ -105,7 +113,7 @@ msgstr "Satır boşluğunu şuna düşür:"
 msgid "Defect Size"
 msgstr "Bozukluk Büyüklüğü"
 
-#: frontend/ui/reader/readermenu.lua:106
+#: frontend/ui/reader/readermenu.lua:94
 msgid "Document menu"
 msgstr "Belge menüsü"
 
@@ -113,11 +121,11 @@ msgstr "Belge menüsü"
 msgid "Embedded style"
 msgstr "Gömülü stil"
 
-#: reader.lua:87
+#: reader.lua:88
 msgid "Exit"
 msgstr "Çıkış"
 
-#: reader.lua:149
+#: reader.lua:150
 msgid "FileManager"
 msgstr "DosyaYöneticisi"
 
@@ -141,21 +149,29 @@ msgstr "Gama"
 msgid "Help"
 msgstr "Yardım"
 
-#: reader.lua:105
+#: reader.lua:106
 msgid "Home menu"
 msgstr "Ana menü"
 
-#: reader.lua:203
+#: frontend/ui/reader/readerhyphenation.lua:3
+msgid "Hyphenation"
+msgstr "Tireleme"
+
+#: reader.lua:204
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Eğer hiç bir dosya yolu belirtmezseniz en son görüntülenen belge açılacak"
 
-#: reader.lua:200
+#: reader.lua:201
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Dosya yolu yerine bir klasör ismi belirtmişseniz, bir dosya "
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
 msgstr "Font boyutunu şuna yükselt: "
+
+#: frontend/ui/reader/readerfrontlight.lua:38
+msgid "Increase front light intensity to "
+msgstr "Işık şiddetini şuna yükselt:"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
@@ -169,11 +185,7 @@ msgstr "Satır boşluğunu şuna yükselt:"
 msgid "Indentation"
 msgstr "Girinti"
 
-#: frontend/ui/reader/readermenu.lua:70
-msgid "Languages"
-msgstr "Diller"
-
-#: reader.lua:82
+#: reader.lua:83
 msgid "Last documents"
 msgstr "Son görüntülenen belgeler"
 
@@ -181,7 +193,7 @@ msgstr "Son görüntülenen belgeler"
 msgid "Line Spacing"
 msgstr "Satır boşluğu"
 
-#: reader.lua:126
+#: reader.lua:127
 msgid "No reader engine for this file"
 msgstr "Bu dosya türü desteklenmiyor"
 
@@ -193,7 +205,7 @@ msgstr "Cihaz modeli desteklenmiyor!"
 msgid "OK"
 msgstr "Tamam"
 
-#: frontend/ui/widget/touchmenu.lua:328
+#: frontend/ui/widget/touchmenu.lua:338
 msgid "Page "
 msgstr "Sayfa"
 
@@ -211,7 +223,7 @@ msgid ""
 " the bottom of the page for more options"
 msgstr "Lütfen sorunları buraya bildirin: https://github.com/koreader/ koreader/issues, Ekranın alt bölgesine tıklayarak daha fazla seçeneğe ulaşabilirsiniz."
 
-#: reader.lua:195
+#: reader.lua:196
 msgid "Read all the books on your E-Ink reader"
 msgstr "Tüm kitaplarınızı E-ink okuyucuda okuyun"
 
@@ -219,7 +231,7 @@ msgstr "Tüm kitaplarınızı E-ink okuyucuda okuyun"
 msgid "Redrawing with font "
 msgstr "Fon ile tekrar oluşturuluyor"
 
-#: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
+#: frontend/ui/data/koptoptions.lua:146 frontend/ui/data/strings.lua:12
 msgid "Reflow"
 msgstr "Ekrana Uyarlama"
 
@@ -235,7 +247,7 @@ msgstr "Ekran Modu"
 msgid "Scroll Mode"
 msgstr "Kaydırma Modu"
 
-#: reader.lua:206
+#: reader.lua:207
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "Daha fazla bilgi bu sayfada: http://github.com/koreader/kindlepdfviewer ."
 
@@ -255,11 +267,11 @@ msgstr "Font boyutunu şuna ayarla:"
 msgid "Set render style"
 msgstr "İşleme Stilini Ayarla"
 
-#: reader.lua:17
+#: reader.lua:18
 msgid "Show Home Menu"
 msgstr "Ana menüyü görüntüle"
 
-#: frontend/ui/reader/readerzooming.lua:235
+#: frontend/ui/reader/readerzooming.lua:241
 msgid "Switch zoom mode"
 msgstr "Yakınlaştırma modunu değiştir"
 
@@ -279,7 +291,7 @@ msgstr "Butona Tıklayın"
 msgid "Text Align"
 msgstr "Yazı Hizalama"
 
-#: reader.lua:205
+#: reader.lua:206
 msgid "This software is licensed under the GPLv3."
 msgstr "Bu yazılım GPLv3 ile lisanslanmıştır."
 
@@ -299,27 +311,27 @@ msgstr "Görüntüleme modu"
 msgid "Word Gap"
 msgstr "Kelime Boşluğu"
 
-#: frontend/ui/reader/readerzooming.lua:254
+#: frontend/ui/reader/readerzooming.lua:260
 msgid "Zoom to fit content"
 msgstr "İçeriği sığdır"
 
-#: frontend/ui/reader/readerzooming.lua:242
+#: frontend/ui/reader/readerzooming.lua:248
 msgid "Zoom to fit content height"
 msgstr "İçeriğin genişliğini sığdır"
 
-#: frontend/ui/reader/readerzooming.lua:238
+#: frontend/ui/reader/readerzooming.lua:244
 msgid "Zoom to fit content width"
 msgstr "İçeriğin yüksekliğini sığdır"
 
-#: frontend/ui/reader/readerzooming.lua:258
+#: frontend/ui/reader/readerzooming.lua:264
 msgid "Zoom to fit page"
 msgstr "Sayfayı sığdır"
 
-#: frontend/ui/reader/readerzooming.lua:250
+#: frontend/ui/reader/readerzooming.lua:256
 msgid "Zoom to fit page height"
 msgstr "Sayfa yüksekliğini sığdır"
 
-#: frontend/ui/reader/readerzooming.lua:246
+#: frontend/ui/reader/readerzooming.lua:252
 msgid "Zoom to fit page width"
 msgstr "Sayfa genişliğini sığdır"
 
@@ -331,7 +343,7 @@ msgstr "oto"
 msgid "cancel"
 msgstr "iptal"
 
-#: reader.lua:201
+#: reader.lua:202
 msgid "chooser will show up and let you select a file"
 msgstr "seçim ekranı açılacak ve bir dosya seçebileceksiniz"
 
@@ -351,11 +363,11 @@ msgstr "Harici stilleri temizle"
 msgid "close config menu"
 msgstr "Ayar menüsünü kapat"
 
-#: frontend/ui/widget/infomessage.lua:18
+#: frontend/ui/widget/dict.lua:20 frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
 msgstr "Dialogu kapat"
 
-#: frontend/ui/readerui.lua:28 frontend/ui/readerui.lua:57
+#: frontend/ui/readerui.lua:33 frontend/ui/readerui.lua:62
 msgid "close document"
 msgstr "belgeyi kapat"
 
@@ -387,51 +399,51 @@ msgstr "satır boşluğunu azalt"
 msgid "default"
 msgstr "varsayılan"
 
-#: frontend/ui/reader/readerrolling.lua:42
+#: frontend/ui/reader/readerrolling.lua:41
 msgid "go to 11%"
 msgstr "%11'e git"
 
-#: frontend/ui/reader/readerrolling.lua:44
+#: frontend/ui/reader/readerrolling.lua:43
 msgid "go to 22%"
 msgstr "%22'e git"
 
-#: frontend/ui/reader/readerrolling.lua:46
+#: frontend/ui/reader/readerrolling.lua:45
 msgid "go to 33%"
 msgstr "%33'e git"
 
-#: frontend/ui/reader/readerrolling.lua:48
+#: frontend/ui/reader/readerrolling.lua:47
 msgid "go to 44%"
 msgstr "%44'e git"
 
-#: frontend/ui/reader/readerrolling.lua:50
+#: frontend/ui/reader/readerrolling.lua:49
 msgid "go to 55%"
 msgstr "%55'e git"
 
-#: frontend/ui/reader/readerrolling.lua:52
+#: frontend/ui/reader/readerrolling.lua:51
 msgid "go to 66%"
 msgstr "%66'e git"
 
-#: frontend/ui/reader/readerrolling.lua:54
+#: frontend/ui/reader/readerrolling.lua:53
 msgid "go to 77%"
 msgstr "%77'e git"
 
-#: frontend/ui/reader/readerrolling.lua:56
+#: frontend/ui/reader/readerrolling.lua:55
 msgid "go to 88%"
 msgstr "%88'e git"
 
-#: frontend/ui/reader/readerrolling.lua:58
+#: frontend/ui/reader/readerrolling.lua:57
 msgid "go to end"
 msgstr "en sona git"
 
-#: frontend/ui/reader/readerrolling.lua:21
+#: frontend/ui/reader/readerrolling.lua:20
 msgid "go to next view"
 msgstr "sonraki ekrana git"
 
-#: frontend/ui/reader/readerrolling.lua:26
+#: frontend/ui/reader/readerrolling.lua:25
 msgid "go to previous view"
 msgstr "önceki ekrana git"
 
-#: frontend/ui/reader/readerrolling.lua:40
+#: frontend/ui/reader/readerrolling.lua:39
 msgid "go to start"
 msgstr "en başa git"
 
@@ -446,6 +458,10 @@ msgstr "menünün önceki sayfasına git"
 #: frontend/ui/data/strings.lua:39
 msgid "high"
 msgstr "yüksek"
+
+#: frontend/ui/reader/readerhighlight.lua:9
+msgid "highlight text"
+msgstr "yazıyı vurgula"
 
 #: frontend/ui/data/strings.lua:32
 msgid "increase"
@@ -487,11 +503,11 @@ msgstr "el ile"
 msgid "medium"
 msgstr "orta"
 
-#: frontend/ui/reader/readerrolling.lua:36
+#: frontend/ui/reader/readerrolling.lua:35
 msgid "move view down"
 msgstr "görüntüyü aşağı kaydır"
 
-#: frontend/ui/reader/readerrolling.lua:31
+#: frontend/ui/reader/readerrolling.lua:30
 msgid "move view up"
 msgstr "görüntüyü yukarı kaydır"
 
@@ -583,7 +599,7 @@ msgstr "küçük"
 msgid "toggle bold"
 msgstr "kalınlığı değiştir"
 
-#: reader.lua:194
+#: reader.lua:195
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "kullanım şekli:  ./reader.lua [Seçenekler] ... dosyayolu"
 
