@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-05-03 16:27+0000\n"
+"POT-Creation-Date: 2013-05-06 06:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -247,7 +247,7 @@ msgid ""
 "OK"
 msgstr ""
 
-#: frontend/ui/widget/touchmenu.lua:338
+#: frontend/ui/widget/touchmenu.lua:332
 msgid ""
 "Page "
 msgstr ""
