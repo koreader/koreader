@@ -256,6 +256,20 @@ function ReaderRolling:onUpdatePos()
 	return true
 end
 
+function ReaderRolling:onChangeViewMode()
+	self.ui.document:_readMetadata()
+	self.old_doc_height = self.ui.document.info.doc_height
+	self.old_page = self.ui.document.info.number_of_pages
+	self.ui:handleEvent(Event:new("UpdateToc"))
+	self:gotoXPointer(self.ui.document:getXPointer())
+	if self.view.view_mode == "scroll" then
+		self.current_pos = self.ui.document:getCurrentPos()
+	else
+		self.current_page = self.ui.document:getCurrentPage()
+	end
+	return true
+end
+
 function ReaderRolling:onRedrawCurrentView()
 	if self.view.view_mode == "page" then
 		self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
