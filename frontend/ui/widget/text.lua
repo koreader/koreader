@@ -76,14 +76,15 @@ function TextBoxWidget:_wrapGreedyAlg(h_list)
 
 	for k,w in ipairs(h_list) do
 		cur_line_width = cur_line_width + w.width
+		local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
 		if cur_line_width <= self.width then
-			cur_line_width = cur_line_width + space_w
+			cur_line_width = cur_line_width + (is_ascii and space_w or 0)
 			table.insert(cur_line, w)
 		else
 			-- wrap to next line
 			table.insert(v_list, cur_line)
 			cur_line = {}
-			cur_line_width = w.width + space_w
+			cur_line_width = w.width + (is_ascii and space_w or 0)
 			table.insert(cur_line, w)
 		end
 	end
@@ -96,7 +97,7 @@ end
 function TextBoxWidget:_getVerticalList(alg)
 	-- build horizontal list
 	h_list = {}
-	for w in self.text:gmatch("%S+") do
+	for w in self.text:gmatch("[\33-\127\192-\255]+[\128-\191]*") do
 		word_box = {}
 		word_box.word = w
 		word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
@@ -124,7 +125,8 @@ function TextBoxWidget:_render()
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
 			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
 			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, true)
-			pen_x = pen_x + w.width + space_w
+			local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
+			pen_x = pen_x + w.width + (is_ascii and space_w or 0)
 		end
 		y = y + line_height_px + font_height
 	end
