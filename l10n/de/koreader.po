@@ -2,14 +2,15 @@
 # Copyright (C) 2005-2013 KOReader Development Team
 # 
 # Translators:
-# Hans-Werner Hilse <hwhilse@gmail.com>, 2013.
+# Yim4, 2013
+# hwhw <hwhilse@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-04-09 18:05+0000\n"
-"PO-Revision-Date: 2013-04-10 12:42+0000\n"
-"Last-Translator: hwhw <hwhilse@gmail.com>\n"
+"POT-Creation-Date: 2013-05-03 16:27+0000\n"
+"PO-Revision-Date: 2013-05-03 19:16+0000\n"
+"Last-Translator: Yim4\n"
 "Language-Team: German (http://www.transifex.com/projects/p/koreader/language/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,11 +18,11 @@ msgstr ""
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: reader.lua:197
+#: reader.lua:198
 msgid "-d               start in debug mode"
 msgstr "-d im Debug-Modus starten"
 
-#: reader.lua:198
+#: reader.lua:199
 msgid "-h               show this usage help"
 msgstr "-h diesen Hilfetext anzeigen"
 
@@ -77,6 +78,10 @@ msgstr "Lesezeichen"
 msgid "Cancel"
 msgstr "Abbrechen"
 
+#: frontend/ui/reader/readerhyphenation.lua:21
+msgid "Change Hyphenation to "
+msgstr "Aendern Silbentrennung zu"
+
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
 msgstr "Schriftart aendern"
@@ -93,6 +98,10 @@ msgstr "Kontrast"
 msgid "Decrease font size to "
 msgstr "Schriftgroeße verringern auf"
 
+#: frontend/ui/reader/readerfrontlight.lua:42
+msgid "Decrease front light intensity to "
+msgstr "Verringern der Lichtintensität"
+
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
 msgstr "Gamma-Wert verringern auf"
@@ -105,7 +114,7 @@ msgstr "Zeilenabstand verringern auf"
 msgid "Defect Size"
 msgstr "Stoerflecken-Groeße"
 
-#: frontend/ui/reader/readermenu.lua:106
+#: frontend/ui/reader/readermenu.lua:94
 msgid "Document menu"
 msgstr "Dokument-Menue"
 
@@ -113,11 +122,11 @@ msgstr "Dokument-Menue"
 msgid "Embedded style"
 msgstr "Eingebetteter Stil"
 
-#: reader.lua:87
+#: reader.lua:88
 msgid "Exit"
 msgstr "Beenden"
 
-#: reader.lua:149
+#: reader.lua:150
 msgid "FileManager"
 msgstr "Datei-Manager"
 
@@ -141,21 +150,29 @@ msgstr "Gamma"
 msgid "Help"
 msgstr "Hilfe"
 
-#: reader.lua:105
+#: reader.lua:106
 msgid "Home menu"
 msgstr "Start-Menue"
 
-#: reader.lua:203
+#: frontend/ui/reader/readerhyphenation.lua:3
+msgid "Hyphenation"
+msgstr "Silbentrennung"
+
+#: reader.lua:204
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Wenn Sie keinen Dateipfad angeben, wird das zuletzt angesehene Dokument geoeffnet"
 
-#: reader.lua:200
+#: reader.lua:201
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Wenn Sie statt eines Dateipfads ein Verzeichnis angeben, "
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
 msgstr "Schriftgroeße erhoehen auf"
+
+#: frontend/ui/reader/readerfrontlight.lua:38
+msgid "Increase front light intensity to "
+msgstr "Erhoehen der Lichtintensität"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
@@ -169,11 +186,7 @@ msgstr "Zeilenabstand erhoehen auf"
 msgid "Indentation"
 msgstr "Einrueckung"
 
-#: frontend/ui/reader/readermenu.lua:70
-msgid "Languages"
-msgstr "Sprachen"
-
-#: reader.lua:82
+#: reader.lua:83
 msgid "Last documents"
 msgstr "Zuletzt betrachtete Dokumente"
 
@@ -181,7 +194,7 @@ msgstr "Zuletzt betrachtete Dokumente"
 msgid "Line Spacing"
 msgstr "Zeilenabstand"
 
-#: reader.lua:126
+#: reader.lua:127
 msgid "No reader engine for this file"
 msgstr "Kein Lese-Modul fuer diese Datei"
 
@@ -193,7 +206,7 @@ msgstr "Nicht unterstuetztes Geraete-Modell!"
 msgid "OK"
 msgstr "OK"
 
-#: frontend/ui/widget/touchmenu.lua:328
+#: frontend/ui/widget/touchmenu.lua:338
 msgid "Page "
 msgstr "Seite"
 
@@ -211,7 +224,7 @@ msgid ""
 " the bottom of the page for more options"
 msgstr "Bitte melden Sie Fehler hier:  https://github.com/koreader/koreader/issues - Klicken Sie auf den unteren Seitenteil, um mehr Optionen zu zeigen"
 
-#: reader.lua:195
+#: reader.lua:196
 msgid "Read all the books on your E-Ink reader"
 msgstr "Lesen Sie alle Ihre Buecher auf Ihrem E-Ink-Lesegeraet"
 
@@ -219,7 +232,7 @@ msgstr "Lesen Sie alle Ihre Buecher auf Ihrem E-Ink-Lesegeraet"
 msgid "Redrawing with font "
 msgstr "Neu anzeigen mit Schriftart"
 
-#: frontend/ui/data/koptoptions.lua:144 frontend/ui/data/strings.lua:12
+#: frontend/ui/data/koptoptions.lua:146 frontend/ui/data/strings.lua:12
 msgid "Reflow"
 msgstr "Auto-Umbrechen"
 
@@ -235,7 +248,7 @@ msgstr "Bildschirmmodus"
 msgid "Scroll Mode"
 msgstr "Scroll-Modus"
 
-#: reader.lua:206
+#: reader.lua:207
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "Besuchen Sie http://github.com/koreader/kindlepdfviewer fuer weitere Informationen"
 
@@ -255,11 +268,11 @@ msgstr "Schriftgroeße setzen auf"
 msgid "Set render style"
 msgstr "Darstellungs-Stil setzen"
 
-#: reader.lua:17
+#: reader.lua:18
 msgid "Show Home Menu"
 msgstr "Zeige das Start-Menue"
 
-#: frontend/ui/reader/readerzooming.lua:235
+#: frontend/ui/reader/readerzooming.lua:241
 msgid "Switch zoom mode"
 msgstr "Zoom-Modus wechseln"
 
@@ -279,7 +292,7 @@ msgstr "Button antippen"
 msgid "Text Align"
 msgstr "Textausrichtung"
 
-#: reader.lua:205
+#: reader.lua:206
 msgid "This software is licensed under the GPLv3."
 msgstr "Diese Software ist unter der GPLv3 lizensiert."
 
@@ -299,27 +312,27 @@ msgstr "Anzeige-Modus"
 msgid "Word Gap"
 msgstr "Wortabstand"
 
-#: frontend/ui/reader/readerzooming.lua:254
+#: frontend/ui/reader/readerzooming.lua:260
 msgid "Zoom to fit content"
 msgstr "Zoom auf Seiteninhalt anpassen"
 
-#: frontend/ui/reader/readerzooming.lua:242
+#: frontend/ui/reader/readerzooming.lua:248
 msgid "Zoom to fit content height"
 msgstr "Zoom auf Hoehe des Seiteninhalts anpassen"
 
-#: frontend/ui/reader/readerzooming.lua:238
+#: frontend/ui/reader/readerzooming.lua:244
 msgid "Zoom to fit content width"
 msgstr "Zoom auf Breite des Seiteninhalts anpassen"
 
-#: frontend/ui/reader/readerzooming.lua:258
+#: frontend/ui/reader/readerzooming.lua:264
 msgid "Zoom to fit page"
 msgstr "Zoom auf Seitengroeße anpassen"
 
-#: frontend/ui/reader/readerzooming.lua:250
+#: frontend/ui/reader/readerzooming.lua:256
 msgid "Zoom to fit page height"
 msgstr "Zoom auf Seitenhoehe anpassen"
 
-#: frontend/ui/reader/readerzooming.lua:246
+#: frontend/ui/reader/readerzooming.lua:252
 msgid "Zoom to fit page width"
 msgstr "Zoom auf Seitenbreite anpassen"
 
@@ -331,7 +344,7 @@ msgstr "auto"
 msgid "cancel"
 msgstr "Abbruch"
 
-#: reader.lua:201
+#: reader.lua:202
 msgid "chooser will show up and let you select a file"
 msgstr "Eine Auswahl wird gezeigt und erlaubt Ihnen, eine Datei auszuwaehlen"
 
@@ -351,11 +364,11 @@ msgstr "Externe Stile bereinigen"
 msgid "close config menu"
 msgstr "Konfigurationsmenue schließen"
 
-#: frontend/ui/widget/infomessage.lua:18
+#: frontend/ui/widget/dict.lua:20 frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
 msgstr "Dialog schließen"
 
-#: frontend/ui/readerui.lua:28 frontend/ui/readerui.lua:57
+#: frontend/ui/readerui.lua:33 frontend/ui/readerui.lua:62
 msgid "close document"
 msgstr "Dokument schließen"
 
@@ -387,51 +400,51 @@ msgstr "Zeilenabstand verringern"
 msgid "default"
 msgstr "normal"
 
-#: frontend/ui/reader/readerrolling.lua:42
+#: frontend/ui/reader/readerrolling.lua:41
 msgid "go to 11%"
 msgstr "Springe zu 11%"
 
-#: frontend/ui/reader/readerrolling.lua:44
+#: frontend/ui/reader/readerrolling.lua:43
 msgid "go to 22%"
 msgstr "Springe zu 22%"
 
-#: frontend/ui/reader/readerrolling.lua:46
+#: frontend/ui/reader/readerrolling.lua:45
 msgid "go to 33%"
 msgstr "Springe zu 33%"
 
-#: frontend/ui/reader/readerrolling.lua:48
+#: frontend/ui/reader/readerrolling.lua:47
 msgid "go to 44%"
 msgstr "Springe zu 44%"
 
-#: frontend/ui/reader/readerrolling.lua:50
+#: frontend/ui/reader/readerrolling.lua:49
 msgid "go to 55%"
 msgstr "Springe zu 55%"
 
-#: frontend/ui/reader/readerrolling.lua:52
+#: frontend/ui/reader/readerrolling.lua:51
 msgid "go to 66%"
 msgstr "Springe zu 66%"
 
-#: frontend/ui/reader/readerrolling.lua:54
+#: frontend/ui/reader/readerrolling.lua:53
 msgid "go to 77%"
 msgstr "Springe zu 77%"
 
-#: frontend/ui/reader/readerrolling.lua:56
+#: frontend/ui/reader/readerrolling.lua:55
 msgid "go to 88%"
 msgstr "Springe zu 88%"
 
-#: frontend/ui/reader/readerrolling.lua:58
+#: frontend/ui/reader/readerrolling.lua:57
 msgid "go to end"
 msgstr "zum Ende springen"
 
-#: frontend/ui/reader/readerrolling.lua:21
+#: frontend/ui/reader/readerrolling.lua:20
 msgid "go to next view"
 msgstr "zur naechsten Ansicht springen"
 
-#: frontend/ui/reader/readerrolling.lua:26
+#: frontend/ui/reader/readerrolling.lua:25
 msgid "go to previous view"
 msgstr "zur vorangegangenen Ansicht springen"
 
-#: frontend/ui/reader/readerrolling.lua:40
+#: frontend/ui/reader/readerrolling.lua:39
 msgid "go to start"
 msgstr "zum Start springen"
 
@@ -446,6 +459,10 @@ msgstr "Zur vorangegangenen Seite des Menues springen"
 #: frontend/ui/data/strings.lua:39
 msgid "high"
 msgstr "hoch"
+
+#: frontend/ui/reader/readerhighlight.lua:9
+msgid "highlight text"
+msgstr "Text markieren"
 
 #: frontend/ui/data/strings.lua:32
 msgid "increase"
@@ -487,11 +504,11 @@ msgstr "manuell"
 msgid "medium"
 msgstr "mittel"
 
-#: frontend/ui/reader/readerrolling.lua:36
+#: frontend/ui/reader/readerrolling.lua:35
 msgid "move view down"
 msgstr "Sicht nach unten bewegen"
 
-#: frontend/ui/reader/readerrolling.lua:31
+#: frontend/ui/reader/readerrolling.lua:30
 msgid "move view up"
 msgstr "Sicht nach oben bewegen"
 
@@ -583,7 +600,7 @@ msgstr "klein"
 msgid "toggle bold"
 msgstr "Schrift fett an/aus"
 
-#: reader.lua:194
+#: reader.lua:195
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "Verwendung: ./reader.lua [OPTION] ... Pfad"
 
