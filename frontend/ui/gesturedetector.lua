@@ -1,4 +1,5 @@
 require "ui/geometry"
+require "ui/device"
 
 GestureRange = {
 	ges = nil,
@@ -602,6 +603,10 @@ end
   @return adjusted gesture.
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
+	local dev_mod = Device:getModel()
+	if dev_mod == "Kobo" then
+		ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
+	end
 	if Screen.cur_rotation_mode == 1 then
 		-- in landscape mode
 		if ges.pos then
