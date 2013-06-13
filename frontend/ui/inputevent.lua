@@ -2,6 +2,7 @@ require "ui/event"
 require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
+require "ui/geometry"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -323,6 +324,7 @@ function Input:init()
 						ev.code = ABS_Y
 					elseif ev.code == ABS_Y then
 						ev.code = ABS_X
+						ev.value = Screen.width - ev.value
 					end
 				end
 				return ev
