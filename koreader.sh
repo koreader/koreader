@@ -26,10 +26,11 @@ if test "$1" == "--framework_stop"; then
 	/etc/init.d/framework stop
 fi
 
-# dismiss chrome bar
-lipc-set-prop com.lab126.pillow disableEnablePillow disable
-# notify kpvbooklet that pillow is disabled
-lipc-send-event com.github.koreader.kpvbooklet disablePillow
+# check if kpvbooklet was launched for more than once, if not we will disable pillow
+count=`lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count`
+if [ "$count" == "" -o "$count" == "0" ]; then
+    lipc-set-prop com.lab126.pillow disableEnablePillow disable
+fi
 
 # stop cvm
 #killall -stop cvm
