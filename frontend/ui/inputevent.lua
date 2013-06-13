@@ -268,7 +268,7 @@ function Input:init()
 	self.event_map[10020] = "Charging"
 	self.event_map[10021] = "NotCharging"
 
-	if util.isEmulated()==1 then
+	if util.isEmulated() == 1 then
 		self:initKeyMap()
 		os.remove("emu_event")
 		os.execute("mkfifo emu_event")
@@ -317,6 +317,16 @@ function Input:init()
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print("Auto-detected Kobo")
+			function Input:eventAdjustHook(ev)
+				if ev.type == EV_ABS then
+					if ev.code == ABS_X then
+						ev.code = ABS_Y
+					elseif ev.code == ABS_Y then
+						ev.code = ABS_X
+					end
+				end
+				return ev
+			end
 		elseif dev_mod == "Kindle4" then
 			print(_("Auto-detected Kindle 4"))
 			self:adjustKindle4EventMap()
