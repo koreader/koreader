@@ -323,8 +323,14 @@ function Input:init()
 					if ev.code == ABS_X then
 						ev.code = ABS_Y
 					elseif ev.code == ABS_Y then
-						ev.code = ABS_X
-						ev.value = Screen.width - ev.value
+						ev.code = ABS_X						
+						-- We always have to substract from the physical x,
+						-- regardless of the orientation
+						if (Screen.width<Screen.height) then
+							ev.value = Screen.width - ev.value
+						else
+							ev.value = Screen.height - ev.value
+						end
 					end
 				end
 				return ev
