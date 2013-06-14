@@ -2,6 +2,7 @@ require "ui/event"
 require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
+require "ui/geometry"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -17,6 +18,11 @@ EVENT_VALUE_KEY_RELEASE = 0
 SYN_REPORT = 0
 SYN_CONFIG = 1
 SYN_MT_REPORT = 2
+
+-- For single-touch events (ABS.code).
+ABS_X = 00
+ABS_Y = 01
+ABS_PRESSURE = 24
 
 -- For multi-touch events (ABS.code).
 ABS_MT_SLOT = 47
@@ -263,7 +269,7 @@ function Input:init()
 	self.event_map[10020] = "Charging"
 	self.event_map[10021] = "NotCharging"
 
-	if util.isEmulated()==1 then
+	if util.isEmulated() == 1 then
 		self:initKeyMap()
 		os.remove("emu_event")
 		os.execute("mkfifo emu_event")
@@ -271,9 +277,11 @@ function Input:init()
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
-		input.open("fake_events")
 		local dev_mod = Device:getModel()
-		if dev_mod ~= "KindleTouch" then
+		if dev_mod ~= "Kobo" then
+			input.open("fake_events")
+		end
+		if dev_mod ~= "KindleTouch" and dev_mod ~= "Kobo" then
 			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
 			Device:setTouchInputDev("/dev/input/event0")
 			input.open("/dev/input/event0")
@@ -305,6 +313,28 @@ function Input:init()
 				return ev
 			end
 			print(_("Auto-detected Kindle Touch"))
+		elseif dev_mod == "Kobo" then
+			input.open("/dev/input/event1")
+			Device:setTouchInputDev("/dev/input/event1")
+			input.open("/dev/input/event0") -- Light button and sleep slider
+			print("Auto-detected Kobo")
+			function Input:eventAdjustHook(ev)
+				if ev.type == EV_ABS then
+					if ev.code == ABS_X then
+						ev.code = ABS_Y
+					elseif ev.code == ABS_Y then
+						ev.code = ABS_X						
+						-- We always have to substract from the physical x,
+						-- regardless of the orientation
+						if (Screen.width<Screen.height) then
+							ev.value = Screen.width - ev.value
+						else
+							ev.value = Screen.height - ev.value
+						end
+					end
+				end
+				return ev
+			end
 		elseif dev_mod == "Kindle4" then
 			print(_("Auto-detected Kindle 4"))
 			self:adjustKindle4EventMap()
@@ -453,9 +483,9 @@ function Input:handleTouchEv(ev)
 			end
 		end
 	elseif ev.type == EV_ABS then
-			if #self.MTSlots == 0 then
-				table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
-			end
+		if #self.MTSlots == 0 then
+			table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
+		end
 		if ev.code == ABS_MT_SLOT then
 			if self.cur_slot ~= ev.value then
 				table.insert(self.MTSlots, self:getMtSlot(ev.value))
@@ -463,9 +493,15 @@ function Input:handleTouchEv(ev)
 			self.cur_slot = ev.value
 		elseif ev.code == ABS_MT_TRACKING_ID then
 			self:setCurrentMtSlot("id", ev.value)
-		elseif ev.code == ABS_MT_POSITION_X then
+		elseif ev.code == ABS_PRESSURE then
+			if ev.value ~= 0 then
+				self:setCurrentMtSlot("id", 1)
+			else
+				self:setCurrentMtSlot("id", -1)
+			end
+		elseif ev.code == ABS_MT_POSITION_X or ev.code == ABS_X then
 			self:setCurrentMtSlot("x", ev.value)
-		elseif ev.code == ABS_MT_POSITION_Y then
+		elseif ev.code == ABS_MT_POSITION_Y or ev.code == ABS_Y then
 			self:setCurrentMtSlot("y", ev.value)
 		end
 	end
