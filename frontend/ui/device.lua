@@ -21,12 +21,16 @@ function Device:getModel()
 	if cpu_mod == "MX50" then
 		-- for KPW
 		local pw_test_fd = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
+		-- for Kobo
+		local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
 		-- for KT
 		local kt_test_fd = lfs.attributes("/sys/devices/platform/whitney-button")
 		-- another special file for KT is Neonode zForce touchscreen:
 		-- /sys/devices/platform/zforce.0/
 		if pw_test_fd then
 			self.model = "KindlePaperWhite"
+		elseif kg_test_fd then
+			self.model = "Kobo"
 		elseif kt_test_fd then
 			self.model = "KindleTouch"
 		else
@@ -80,7 +84,7 @@ function Device:isTouchDevice()
 	if not self.model then
 		self.model = self:getModel()
 	end
-	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or util.isEmulated()
+	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or (self.model == "Kobo") or util.isEmulated()
 end
 
 function Device:setTouchInputDev(dev)
