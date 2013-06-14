@@ -52,12 +52,12 @@ For real eink devices
 
 If you already done an emulator build, you must do:
 ```
-make clean && make cleanthirdparty
+make clean cleanthirdparty
 ```
 
 To build:
 ```
-make thirdparty && make
+make all customupdate
 ```
 
 To run, you must call the script reader.lua. Run it without arguments to see
@@ -72,13 +72,12 @@ For emulating
 
 If you already done a real device build, you must do:
 ```
-make clean && make cleanthirdparty
+make clean cleanthirdparty
 ```
 
 To build
 ```
-EMULATE_READER=1 make thirdparty koreader-base
-make bootstrapemu
+EMULATE_READER=1 make all bootstrapemu
 ```
 
 To run:
