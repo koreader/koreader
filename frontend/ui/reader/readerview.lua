@@ -18,8 +18,12 @@ ReaderView = OverlapGroup:new{
 	outer_page_color = 0,
 	-- hightlight
 	highlight = {
-		drawer = "marker" -- show as inverted block instead of underline
+		temp_drawer = "invert",
+		temp = {},
+		saved_drawer = "lighten",
+		saved = {},
 	},
+	highlight_visible = true,
 	-- PDF/DjVu continuous paging
 	page_scroll = nil,
 	page_bgcolor = 0,
@@ -101,9 +105,14 @@ function ReaderView:paintTo(bb, x, y)
 		)
 	end
 	
-	-- draw highlight
-	if self.highlight.rect then
-		self:drawHightlight(bb, x, y, self.highlight.rect)
+	-- draw saved highlight
+	if self.highlight_visible then
+		self:drawSavedHighlight(bb, x, y)
+	end
+	
+	-- draw temporary highlight
+	if self.highlight.temp then
+		self:drawTempHighlight(bb, x, y)
 	end
 
 	-- paint dogear
@@ -190,6 +199,20 @@ function ReaderView:drawScrollPages(bb, x, y)
 	end)
 end
 
+function ReaderView:getCurrentPageList()
+	local pages = {}
+	if self.ui.document.info.has_pages then
+		if self.page_scroll then
+			for _, state in ipairs(self.page_states) do
+				table.insert(pages, state.page)
+			end
+		else
+			table.insert(pages, self.state.page)
+		end
+	end
+	return pages
+end
+
 function ReaderView:getScrollPagePosition(pos)
 	local x_s, y_s = pos.x, pos.y
 	local x_p, y_p = nil, nil
@@ -213,7 +236,7 @@ end
 function ReaderView:getScrollPageRect(page, rect_p)
 	local rect_s = Geom:new{}
 	for _, state in ipairs(self.page_states) do
-		local trans_p = rect_p:copy()
+		local trans_p = Geom:new(rect_p)
 		trans_p:transformByScale(state.zoom, state.zoom)
 		if page == state.page and state.visible_area:contains(trans_p) then
 			rect_s.x = rect_s.x + state.offset.x + trans_p.x - state.visible_area.x
@@ -263,7 +286,7 @@ end
 
 function ReaderView:getSinglePageRect(rect_p)
 	local rect_s = Geom:new{}
-	local trans_p = rect_p:copy()
+	local trans_p = Geom:new(rect_p)
 	trans_p:transformByScale(self.state.zoom, self.state.zoom)
 	if self.visible_area:contains(trans_p) then
 		rect_s.x = self.state.offset.x + trans_p.x - self.visible_area.x
@@ -292,17 +315,45 @@ function ReaderView:drawScrollView(bb, x, y)
 		self.state.pos)
 end
 
-function ReaderView:drawHightlight(bb, x, y, rect)
+function ReaderView:drawTempHighlight(bb, x, y)
+	for page, boxes in pairs(self.highlight.temp) do
+		for i = 1, #boxes do
+			local rect = self:pageToScreenTransform(page, boxes[i])
+			if rect then
+				self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer)
+			end
+		end
+	end
+end
+
+function ReaderView:drawSavedHighlight(bb, x, y)
+	local pages = self:getCurrentPageList()
+	for _, page in pairs(pages) do
+		local items = self.highlight.saved[page]
+		if not items then items = {} end
+		for i = 1, #items do
+			for j = 1, #items[i].boxes do
+				local rect = self:pageToScreenTransform(page, items[i].boxes[j])
+				if rect then
+					self:drawHighlightRect(bb, x, y, rect, self.highlight.saved_drawer)
+				end
+			end -- end for each box
+		end -- end for each hightlight
+	end -- end for each page
+end
+
+function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
 	local x, y, w, h = rect.x, rect.y, rect.w, rect.h
 	
-	self.highlight.drawer = self.highlight.drawer or "underscore"
-	if self.highlight.drawer == "underscore" then
+	if drawer == "underscore" then
 		self.highlight.line_width = self.highlight.line_width or 2
 		self.highlight.line_color = self.highlight.line_color or 5
 		bb:paintRect(x, y+h-1, w,
 			self.highlight.line_width,
 			self.highlight.line_color)
-	elseif self.highlight.drawer == "marker" then
+	elseif drawer == "lighten" then
+		bb:lightenRect(x, y, w, h, 0.1)
+	elseif drawer == "invert" then
 		bb:invertRect(x, y, w, h)
 	end
 end
@@ -438,6 +489,7 @@ function ReaderView:onReadSettings(config)
 		page_scroll = self.document.configurable.page_scroll
 	end
 	self.page_scroll = page_scroll == 1 and true or false
+	self.highlight.saved = config:readSetting("highlight") or {}
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -498,4 +550,5 @@ function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
 	self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
+	self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)	
 end
