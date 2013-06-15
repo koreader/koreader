@@ -39,6 +39,10 @@ end
 function ReaderDictionary:stardictLookup(word)
 	DEBUG("lookup word:", word)
 	if word then
+		-- strip punctuation characters around selected word
+		word = string.gsub(word, "^%p+", '')
+		word = string.gsub(word, "%p+$", '')
+		DEBUG("stripped word:", word)
 		-- escape quotes and other funny characters in word
 		local std_out = io.popen("./sdcv -nj "..("%q"):format(word), "r")
 		local results_str = std_out:read("*all")
@@ -67,6 +71,7 @@ function ReaderDictionary:showDict(result)
 --	})
 	if result then 
 		UIManager:show(DictQuickLookup:new{
+			ui = self.ui,
 			dict = result.dict,
 			definition = result.definition,
 			id = result.ID,
