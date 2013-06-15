@@ -64,5 +64,6 @@ end
 
 function DictQuickLookup:onTapClose()
 	UIManager:close(self)
+	self.ui:handleEvent(Event:new("Tap"))
 	return true
 end
