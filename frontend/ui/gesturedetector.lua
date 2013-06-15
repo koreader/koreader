@@ -51,10 +51,12 @@ Current detectable gestures:
 	* pinch
 	* spread
 	* rotate
+	* hold_pan
 	* double_tap
 	* inward_pan
 	* outward_pan
 	* pan_release
+	* hold_release
 	* two_finger_tap
 	* two_finger_pan
 	* two_finger_swipe
@@ -474,6 +476,7 @@ function GestureDetector:handlePan(tev)
 			y = self.last_tevs[slot].y,
 			w = 0, h = 0,
 		}
+		--DEBUG(pan_ev.ges, pan_ev.pos, pan_ev.direction, pan_ev.distance, "detected")
 		return pan_ev
 	end
 end
@@ -576,8 +579,7 @@ function GestureDetector:holdState(tev, hold)
 			},
 			time = tev.timev,
 		}
-	end
-	if tev.id == -1 and self.last_tevs[slot] ~= nil then
+	elseif tev.id == -1 and self.last_tevs[slot] ~= nil then
 		-- end of hold, signal hold release
 		DEBUG("hold_release detected in slot", slot)
 		local last_x = self.last_tevs[slot].x
@@ -592,6 +594,10 @@ function GestureDetector:holdState(tev, hold)
 			},
 			time = tev.timev,
 		}
+	else
+		local ges_ev = self:handlePan(tev)
+		ges_ev.ges = "hold_pan"
+		return ges_ev
 	end
 end
 
