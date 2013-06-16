@@ -18,6 +18,7 @@ ReaderView = OverlapGroup:new{
 	outer_page_color = 0,
 	-- hightlight
 	highlight = {
+		lighten_color = 0.2, -- color range [0.0, 1.0]
 		temp_drawer = "invert",
 		temp = {},
 		saved_drawer = "lighten",
@@ -352,7 +353,7 @@ function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
 			self.highlight.line_width,
 			self.highlight.line_color)
 	elseif drawer == "lighten" then
-		bb:lightenRect(x, y, w, h, 0.1)
+		bb:lightenRect(x, y, w, h, self.highlight.lighten_color)
 	elseif drawer == "invert" then
 		bb:invertRect(x, y, w, h)
 	end
