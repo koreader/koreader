@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-05-03 16:27+0000\n"
-"PO-Revision-Date: 2013-05-03 16:27+0000\n"
+"POT-Creation-Date: 2013-06-16 04:18+0000\n"
+"PO-Revision-Date: 2013-06-16 04:19+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Italian (Italy) (http://www.transifex.com/projects/p/koreader/language/it_IT/)\n"
 "MIME-Version: 1.0\n"
@@ -38,6 +38,10 @@ msgstr "10°"
 msgid "5 deg"
 msgstr "5°"
 
+#: frontend/ui/reader/readerhighlight.lua:186
+msgid "Add Note"
+msgstr ""
+
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
 msgstr "Automatico"
@@ -46,27 +50,27 @@ msgstr "Automatico"
 msgid "Auto Straighten"
 msgstr "Auto raddrizzamento"
 
-#: frontend/ui/inputevent.lua:317
+#: frontend/ui/inputevent.lua:347
 msgid "Auto-detected Kindle 2"
 msgstr "Auto-rilevamento Kindle 2"
 
-#: frontend/ui/inputevent.lua:313
+#: frontend/ui/inputevent.lua:343
 msgid "Auto-detected Kindle 3"
 msgstr "Auto-rilevamento Kindle 3"
 
-#: frontend/ui/inputevent.lua:309
+#: frontend/ui/inputevent.lua:339
 msgid "Auto-detected Kindle 4"
 msgstr "Auto-rilevamento Kindle 4"
 
-#: frontend/ui/inputevent.lua:315
+#: frontend/ui/inputevent.lua:345
 msgid "Auto-detected Kindle DXG"
 msgstr "Auto-rilevamento Kindle DXG"
 
-#: frontend/ui/inputevent.lua:287
+#: frontend/ui/inputevent.lua:295
 msgid "Auto-detected Kindle PaperWhite"
 msgstr "Auto-rilevamento Kindle PaperWhite"
 
-#: frontend/ui/inputevent.lua:307
+#: frontend/ui/inputevent.lua:315
 msgid "Auto-detected Kindle Touch"
 msgstr "Auto-rilevamento Kindle Touch"
 
@@ -114,9 +118,17 @@ msgstr "Diminuisci interlinea a"
 msgid "Defect Size"
 msgstr "Difetti di scansione"
 
+#: frontend/ui/reader/readerhighlight.lua:97
+msgid "Delete"
+msgstr ""
+
 #: frontend/ui/reader/readermenu.lua:94
 msgid "Document menu"
 msgstr "Menu documento"
+
+#: frontend/ui/reader/readerhighlight.lua:101
+msgid "Edit"
+msgstr ""
 
 #: frontend/ui/data/strings.lua:22
 msgid "Embedded style"
@@ -149,6 +161,10 @@ msgstr "Gamma"
 #: frontend/ui/reader/readermenu.lua:61
 msgid "Help"
 msgstr "Aiuto"
+
+#: frontend/ui/reader/readerhighlight.lua:182
+msgid "Highlight"
+msgstr ""
 
 #: reader.lua:106
 msgid "Home menu"
@@ -194,11 +210,15 @@ msgstr "Documenti recenti"
 msgid "Line Spacing"
 msgstr "Interlinea"
 
+#: frontend/ui/reader/readerhighlight.lua:198
+msgid "More"
+msgstr ""
+
 #: reader.lua:127
 msgid "No reader engine for this file"
 msgstr "Nessun motore di lettura per questo file"
 
-#: frontend/ui/inputevent.lua:319
+#: frontend/ui/inputevent.lua:349
 msgid "Not supported device model!"
 msgstr "Modello non supportato!"
 
@@ -268,6 +288,10 @@ msgstr "Cambia dimensione carattere"
 msgid "Set render style"
 msgstr "cambia modalità di rendering"
 
+#: frontend/ui/reader/readerhighlight.lua:193
+msgid "Share"
+msgstr ""
+
 #: reader.lua:18
 msgid "Show Home Menu"
 msgstr "Mostra menu principale"
@@ -284,7 +308,7 @@ msgstr "Sommario"
 msgid "Table of contents"
 msgstr "Sommario"
 
-#: frontend/ui/widget/button.lua:55
+#: frontend/ui/widget/button.lua:58
 msgid "Tap Button"
 msgstr "Premi a fondo"
 
@@ -364,7 +388,8 @@ msgstr "cancella tutti gli stili esterni"
 msgid "close config menu"
 msgstr "chiudi menu configura"
 
-#: frontend/ui/widget/dict.lua:20 frontend/ui/widget/infomessage.lua:18
+#: frontend/ui/widget/buttontable.lua:18 frontend/ui/widget/dict.lua:20
+#: frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
 msgstr "Chiudi"
 
@@ -460,7 +485,7 @@ msgstr "Vai alla pagina precedente del menu"
 msgid "high"
 msgstr "alto"
 
-#: frontend/ui/reader/readerhighlight.lua:9
+#: frontend/ui/reader/readerhighlight.lua:10
 msgid "highlight text"
 msgstr ""
 
