@@ -66,7 +66,7 @@ function ReaderHighlight:onSetDimensions(dimen)
 end
 
 function ReaderHighlight:onTap(arg, ges)
-	local function inside_box(box)
+	local function inside_box(ges, box)
 		local pos = self.view:screenToPageTransform(ges.pos)
 		local x, y = pos.x, pos.y
 		if box.x <= x and box.y <= y 
@@ -83,22 +83,23 @@ function ReaderHighlight:onTap(arg, ges)
 		return true
 	end
 	local pages = self.view:getCurrentPageList()
-	for _, page in pairs(pages) do
+	for key, page in pairs(pages) do
 		local items = self.view.highlight.saved[page]
 		if not items then items = {} end
 		for i = 1, #items do
 			for j = 1, #items[i].boxes do
-				if inside_box(items[i].boxes[j]) then
+				if inside_box(ges, items[i].boxes[j]) then
 					DEBUG("Tap on hightlight")
 					self.edit_highlight_dialog = ButtonTable:new{
 						buttons = {
 							{
 								{
-									text="Delete",
+									text = _("Delete"),
 									callback = function() self:deleteHighlight(page, i) end,
 								},
 								{
-									text="Edit",
+									text = _("Edit"),
+									enabled = false,
 									callback = function() self:editHighlight() end,
 								},
 							},
@@ -148,7 +149,7 @@ function ReaderHighlight:onHoldPan(arg, ges)
 	self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
 	DEBUG("holdpan position in page", self.holdpan_pos)
 	self.selected_text = self:getTextFromPositions(self.page_boxes, self.hold_pos, self.holdpan_pos)
-	DEBUG("selected text:", self.selected_text)
+	--DEBUG("selected text:", self.selected_text)
 	if self.selected_text then
 		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.boxes
 		UIManager:setDirty(self.dialog, "partial")
@@ -178,21 +179,24 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 			buttons = {
 				{
 					{
-						text="Highlight",
+						text = _("Highlight"),
 						callback = function() self:saveHighlight() end,
 					},
 					{
-						text="Add Note",
+						text = _("Add Note"),
+						enabled = false,
 						callback = function() self:addNote() end,
 					},
 				},
 				{
 					{
-						text="Share",
+						text = _("Share"),
+						enabled = false,
 						callback = function() self:shareHighlight() end,
 					},
 					{
-						text="More",
+						text = _("More"),
+						enabled = false,
 						callback = function() self:moreAction() end,
 					},
 				},
