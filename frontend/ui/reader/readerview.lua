@@ -18,6 +18,7 @@ ReaderView = OverlapGroup:new{
 	outer_page_color = 0,
 	-- hightlight
 	highlight = {
+		lighten_color = 0.2, -- color range [0.0, 1.0]
 		temp_drawer = "invert",
 		temp = {},
 		saved_drawer = "lighten",
@@ -236,7 +237,7 @@ end
 function ReaderView:getScrollPageRect(page, rect_p)
 	local rect_s = Geom:new{}
 	for _, state in ipairs(self.page_states) do
-		local trans_p = Geom:new(rect_p)
+		local trans_p = Geom:new(rect_p):copy()
 		trans_p:transformByScale(state.zoom, state.zoom)
 		if page == state.page and state.visible_area:contains(trans_p) then
 			rect_s.x = rect_s.x + state.offset.x + trans_p.x - state.visible_area.x
@@ -286,7 +287,7 @@ end
 
 function ReaderView:getSinglePageRect(rect_p)
 	local rect_s = Geom:new{}
-	local trans_p = Geom:new(rect_p)
+	local trans_p = Geom:new(rect_p):copy()
 	trans_p:transformByScale(self.state.zoom, self.state.zoom)
 	if self.visible_area:contains(trans_p) then
 		rect_s.x = self.state.offset.x + trans_p.x - self.visible_area.x
@@ -352,7 +353,7 @@ function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
 			self.highlight.line_width,
 			self.highlight.line_color)
 	elseif drawer == "lighten" then
-		bb:lightenRect(x, y, w, h, 0.1)
+		bb:lightenRect(x, y, w, h, self.highlight.lighten_color)
 	elseif drawer == "invert" then
 		bb:invertRect(x, y, w, h)
 	end

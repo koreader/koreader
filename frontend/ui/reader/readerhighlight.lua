@@ -141,7 +141,6 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(arg, ges)
-	self.selected_word = nil
 	if not self.page_boxes or #self.page_boxes == 0 then
 		DEBUG("no page boxes detected")
 		return true
@@ -152,6 +151,11 @@ function ReaderHighlight:onHoldPan(arg, ges)
 	--DEBUG("selected text:", self.selected_text)
 	if self.selected_text then
 		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.boxes
+		-- remove selected word if hold moves out of word box
+		if self.selected_word and
+			not self.selected_word.box:contains(self.selected_text.boxes[1]) then
+			self.selected_word = nil
+		end
 		UIManager:setDirty(self.dialog, "partial")
 	end
 end
@@ -219,9 +223,29 @@ function ReaderHighlight:saveHighlight()
 		local hl_item = {}
 		hl_item["text"] = self.selected_text.text
 		hl_item["boxes"] = self.selected_text.boxes
+		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S"),
 		table.insert(self.view.highlight.saved[page], hl_item)
+		if self.selected_text.text ~= "" then
+			self:exportToClippings(page, hl_item)
+		end
 	end
 	--DEBUG("saved hightlights", self.view.highlight.saved[page])
+end
+
+function ReaderHighlight:exportToClippings(page, item)
+	DEBUG("export highlight to My Clippings")
+	local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
+	if clippings then
+		local current_locale = os.setlocale()
+		os.setlocale("C")
+		clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
+		clippings:write("- Koreader Highlight Page "..page.." ")
+		clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
+		clippings:write(item["text"].."\n")
+		clippings:write("==========\n")
+		clippings:close()
+		os.setlocale(current_locale)
+	end
 end
 
 function ReaderHighlight:addNote()
