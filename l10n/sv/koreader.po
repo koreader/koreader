@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-05-03 16:27+0000\n"
-"PO-Revision-Date: 2013-05-21 06:11+0000\n"
+"POT-Creation-Date: 2013-06-16 04:18+0000\n"
+"PO-Revision-Date: 2013-06-16 04:19+0000\n"
 "Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Swedish (http://www.transifex.com/projects/p/koreader/language/sv/)\n"
 "MIME-Version: 1.0\n"
@@ -36,6 +36,10 @@ msgstr ""
 msgid "5 deg"
 msgstr ""
 
+#: frontend/ui/reader/readerhighlight.lua:186
+msgid "Add Note"
+msgstr ""
+
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
 msgstr ""
@@ -44,27 +48,27 @@ msgstr ""
 msgid "Auto Straighten"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:317
+#: frontend/ui/inputevent.lua:347
 msgid "Auto-detected Kindle 2"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:313
+#: frontend/ui/inputevent.lua:343
 msgid "Auto-detected Kindle 3"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:309
+#: frontend/ui/inputevent.lua:339
 msgid "Auto-detected Kindle 4"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:315
+#: frontend/ui/inputevent.lua:345
 msgid "Auto-detected Kindle DXG"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:287
+#: frontend/ui/inputevent.lua:295
 msgid "Auto-detected Kindle PaperWhite"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:307
+#: frontend/ui/inputevent.lua:315
 msgid "Auto-detected Kindle Touch"
 msgstr ""
 
@@ -112,8 +116,16 @@ msgstr ""
 msgid "Defect Size"
 msgstr ""
 
+#: frontend/ui/reader/readerhighlight.lua:97
+msgid "Delete"
+msgstr ""
+
 #: frontend/ui/reader/readermenu.lua:94
 msgid "Document menu"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:101
+msgid "Edit"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:22
@@ -146,6 +158,10 @@ msgstr ""
 
 #: frontend/ui/reader/readermenu.lua:61
 msgid "Help"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:182
+msgid "Highlight"
 msgstr ""
 
 #: reader.lua:106
@@ -192,11 +208,15 @@ msgstr ""
 msgid "Line Spacing"
 msgstr ""
 
+#: frontend/ui/reader/readerhighlight.lua:198
+msgid "More"
+msgstr ""
+
 #: reader.lua:127
 msgid "No reader engine for this file"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:319
+#: frontend/ui/inputevent.lua:349
 msgid "Not supported device model!"
 msgstr ""
 
@@ -266,6 +286,10 @@ msgstr ""
 msgid "Set render style"
 msgstr ""
 
+#: frontend/ui/reader/readerhighlight.lua:193
+msgid "Share"
+msgstr ""
+
 #: reader.lua:18
 msgid "Show Home Menu"
 msgstr ""
@@ -282,7 +306,7 @@ msgstr ""
 msgid "Table of contents"
 msgstr ""
 
-#: frontend/ui/widget/button.lua:55
+#: frontend/ui/widget/button.lua:58
 msgid "Tap Button"
 msgstr ""
 
@@ -362,7 +386,8 @@ msgstr ""
 msgid "close config menu"
 msgstr ""
 
-#: frontend/ui/widget/dict.lua:20 frontend/ui/widget/infomessage.lua:18
+#: frontend/ui/widget/buttontable.lua:18 frontend/ui/widget/dict.lua:20
+#: frontend/ui/widget/infomessage.lua:18
 msgid "close dialog"
 msgstr ""
 
@@ -458,7 +483,7 @@ msgstr ""
 msgid "high"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:9
+#: frontend/ui/reader/readerhighlight.lua:10
 msgid "highlight text"
 msgstr ""
 
