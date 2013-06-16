@@ -78,6 +78,7 @@ customupdate: all
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
 	echo $(VERSION) > git-rev
 	cp -r git-rev resources $(INSTALL_DIR)
+	rm -r $(INSTALL_DIR)/resources/fonts
 	cp -rpL frontend $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
