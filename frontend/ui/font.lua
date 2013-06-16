@@ -31,6 +31,11 @@ Font = {
 		-- font for info messages
 		infofont = "droid/DroidSans.ttf",
 	},
+	fallbacks = {
+		[1] = "freefont/FreeSans.ttf",
+		[2] = "droid/DroidSans.ttf",
+		[3] = "droid/DroidSansFallback.ttf",
+	},
 
 	fontdir = os.getenv("FONTDIR") or "./fonts",
 

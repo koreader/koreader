@@ -22,6 +22,16 @@ function getGlyph(face, charcode, bgcolor, fgcolor)
 		return glyph[1]
 	end
 	local rendered_glyph = face.ftface:renderGlyph(charcode, bgcolor, fgcolor)
+	if face.ftface:checkGlyph(charcode) == 0 then
+		for index, font in pairs(Font.fallbacks) do
+			DEBUG("fallback to font", font)
+			local fb_face = Font:getFace(font, face.size)
+			if fb_face.ftface:checkGlyph(charcode) ~= 0 then
+				rendered_glyph = fb_face.ftface:renderGlyph(charcode, bgcolor, fgcolor)
+				break
+			end
+		end
+	end
 	if not rendered_glyph then
 		DEBUG("error rendering glyph (charcode=", charcode, ") for face", face)
 		return
