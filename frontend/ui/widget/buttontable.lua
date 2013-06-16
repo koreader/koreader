@@ -4,8 +4,8 @@ require "ui/widget/line"
 ButtonTable = InputContainer:new{
 	buttons = {
 		{
-			{text="OK", callback=nil},
-			{text="Cancel", callback=nil},
+			{text="OK", enabled=true, callback=nil},
+			{text="Cancel", enabled=false, callback=nil},
 		},
 	},
 	tap_close_callback = nil,
@@ -43,6 +43,7 @@ function ButtonTable:init()
 		for j = 1, #line do
 			local button = Button:new{
 				text = line[j].text,
+				enabled = line[j].enabled,
 				callback = line[j].callback,
 				width = Screen:getWidth()*0.9/#line,
 				bordersize = 0,

@@ -8,7 +8,8 @@ A TextWidget puts a string on a single line
 TextWidget = Widget:new{
 	text = nil,
 	face = nil,
-	color = 15,
+	bgcolor = 0.0, -- [0.0, 1.0]
+	fgcolor = 1.0, -- [0.0, 1.0]
 	_bb = nil,
 	_length = 0,
 	_height = 0,
@@ -44,7 +45,8 @@ function TextWidget:paintTo(bb, x, y)
 	--end
 	--bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
 	--@TODO Don't use kerning for monospaced fonts.    (houqp)
-	renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true)
+	renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text,
+					true, self.bgcolor, self.fgcolor)
 end
 
 function TextWidget:free()
@@ -60,7 +62,8 @@ A TextWidget that handles long text wrapping
 TextBoxWidget = Widget:new{
 	text = nil,
 	face = nil,
-	color = 15,
+	bgcolor = 0.0, -- [0.0, 1.0]
+	fgcolor = 1.0, -- [0.0, 1.0]
 	width = 400, -- in pixels
 	line_height = 0.3, -- in em
 	v_list = nil,
@@ -124,7 +127,8 @@ function TextBoxWidget:_render()
 		for _,w in ipairs(l) do
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
 			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, true)
+			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, 
+							true, self.bgcolor, self.fgcolor)
 			local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
 			pen_x = pen_x + w.width + (is_ascii and space_w or 0)
 		end
@@ -176,7 +180,6 @@ function FixedTextWidget:getSize()
 end
 
 function FixedTextWidget:paintTo(bb, x, y)
-	renderUtf8Text(bb, x, y+self._height, self.face, self.text, true)
+	renderUtf8Text(bb, x, y+self._height, self.face, self.text,
+					true, self.bgcolor, self.fgcolor)
 end
-
-

@@ -7,6 +7,7 @@ Button = InputContainer:new{
 	text = nil, -- mandatory
 	preselect = false,
 	callback = nil,
+	enabled = true,
 	margin = 0,
 	bordersize = 3,
 	background = 0,
@@ -18,11 +19,13 @@ Button = InputContainer:new{
 }
 
 function Button:init()
-	local text_widget = TextWidget:new{
+	self.text_widget = TextWidget:new{
 		text = self.text,
+		bgcolor = 0.0,
+		fgcolor = self.enabled and 1.0 or 0.5,
 		face = Font:getFace(self.text_font_face, self.text_font_size)
 	}
-	local text_size = text_widget:getSize()
+	local text_size = self.text_widget:getSize()
 	if self.width == nil then
 		self.width = text_size.w
 	end
@@ -35,7 +38,7 @@ function Button:init()
 		padding = self.padding,
 		HorizontalGroup:new{
 			HorizontalSpan:new{ width = (self.width - text_size.w)/2 },
-			text_widget,
+			self.text_widget,
 			HorizontalSpan:new{ width = (self.width - text_size.w)/2 },
 		}
 	}
@@ -68,7 +71,19 @@ function Button:onUnfocus()
 	return true
 end
 
+function Button:enable()
+	self.enabled = true
+	self.text_widget.fgcolor = 1.0
+end
+
+function Button:disable()
+	self.enabled = false
+	self.text_widget.fgcolor = 0.5
+end
+
 function Button:onTapSelect()
-	self.callback()
+	if self.enabled then
+		self.callback()
+	end
 	return true
 end
