@@ -141,7 +141,6 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(arg, ges)
-	self.selected_word = nil
 	if not self.page_boxes or #self.page_boxes == 0 then
 		DEBUG("no page boxes detected")
 		return true
@@ -152,6 +151,11 @@ function ReaderHighlight:onHoldPan(arg, ges)
 	--DEBUG("selected text:", self.selected_text)
 	if self.selected_text then
 		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.boxes
+		-- remove selected word if hold moves out of word box
+		if self.selected_word and
+			not self.selected_word.box:contains(self.selected_text.boxes[1]) then
+			self.selected_word = nil
+		end
 		UIManager:setDirty(self.dialog, "partial")
 	end
 end
