@@ -25,7 +25,7 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 MO_DIR=i18n
 
 
-all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr $(KOR_BASE)/sdcv mo
+all: $(KOR_BASE)/koreader-base $(KOR_BASE)/extr $(KOR_BASE)/sdcv mo fonts
 
 $(KOR_BASE)/koreader-base $(KOR_BASE)/extr $(KOR_BASE)/sdcv:
 	make -C $(KOR_BASE) koreader-base extr sdcv
@@ -97,4 +97,5 @@ mo:
 		msgfmt -o $(MO_DIR)/$$lingua/LC_MESSAGES/$$resource.mo $$po ; \
 		done
 
-
+fonts:
+	cp -rpL resources/fonts/* $(KOR_BASE)/fonts
