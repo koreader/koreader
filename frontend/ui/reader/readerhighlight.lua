@@ -95,16 +95,21 @@ function ReaderHighlight:onTap(arg, ges)
 							{
 								{
 									text = _("Delete"),
-									callback = function() self:deleteHighlight(page, i) end,
+									callback = function()
+										self:deleteHighlight(page, i)
+										UIManager:close(self.edit_highlight_dialog)
+									end,
 								},
 								{
 									text = _("Edit"),
 									enabled = false,
-									callback = function() self:editHighlight() end,
+									callback = function()
+										self:editHighlight()
+										UIManager:close(self.edit_highlight_dialog)
+									end,
 								},
 							},
 						},
-						tap_close_callback = function() self.ui:handleEvent(Event:new("Tap")) end,
 					}
 					UIManager:show(self.edit_highlight_dialog)
 					return true
@@ -184,24 +189,40 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 				{
 					{
 						text = _("Highlight"),
-						callback = function() self:saveHighlight() end,
+						callback = function()
+							self:saveHighlight()
+							UIManager:close(self.highlight_dialog)
+							self.ui:handleEvent(Event:new("Tap"))
+						end,
 					},
 					{
 						text = _("Add Note"),
 						enabled = false,
-						callback = function() self:addNote() end,
+						callback = function()
+							self:addNote()
+							UIManager:close(self.highlight_dialog)
+							self.ui:handleEvent(Event:new("Tap"))
+						end,
 					},
 				},
 				{
 					{
 						text = _("Share"),
 						enabled = false,
-						callback = function() self:shareHighlight() end,
+						callback = function()
+							self:shareHighlight()
+							UIManager:close(self.highlight_dialog)
+							self.ui:handleEvent(Event:new("Tap"))
+						end,
 					},
 					{
 						text = _("More"),
 						enabled = false,
-						callback = function() self:moreAction() end,
+						callback = function()
+							self:moreAction()
+							UIManager:close(self.highlight_dialog)
+							self.ui:handleEvent(Event:new("Tap"))
+						end,
 					},
 				},
 			},
@@ -214,7 +235,6 @@ end
 
 function ReaderHighlight:saveHighlight()
 	DEBUG("save highlight")
-	UIManager:close(self.highlight_dialog)
 	local page = self.hold_pos.page
 	if self.hold_pos and self.selected_text then
 		if not self.view.highlight.saved[page] then
@@ -250,28 +270,23 @@ end
 
 function ReaderHighlight:addNote()
 	DEBUG("add Note")
-	UIManager:close(self.highlight_dialog)
 end
 
 function ReaderHighlight:shareHighlight()
 	DEBUG("share highlight")
-	UIManager:close(self.highlight_dialog)
 end
 
 function ReaderHighlight:moreAction()
 	DEBUG("more action")
-	UIManager:close(self.highlight_dialog)
 end
 
 function ReaderHighlight:deleteHighlight(page, i)
-	DEBUG("delete highlight")
-	UIManager:close(self.edit_highlight_dialog)
+	DEBUG("delete highlight")	
 	table.remove(self.view.highlight.saved[page], i)
 end
 
 function ReaderHighlight:editHighlight()
 	DEBUG("edit highlight")
-	UIManager:close(self.edit_highlight_dialog)
 end
 
 --[[
