@@ -49,7 +49,7 @@ KoptOptions = {
 				name_text = SCROLL_MODE_STR,
 				toggle = {ON_STR, OFF_STR},
 				values = {1, 0},
-				default_value = 1,
+				default_value = 0,
 				event = "ToggleScrollMode",
 				args = {true, false},
 			},
