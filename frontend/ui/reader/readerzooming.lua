@@ -96,22 +96,22 @@ end
 
 function ReaderZooming:onSpread(arg, ges)
 	if ges.direction == "horizontal" then
-		self:setZoomMode("contentwidth")
+		self:genSetZoomModeCallBack("contentwidth")()
 	elseif ges.direction == "vertical" then
-		self:setZoomMode("contentheight")
+		self:genSetZoomModeCallBack("contentheight")()
 	elseif ges.direction == "diagonal" then
-		self:setZoomMode("content")
+		self:genSetZoomModeCallBack("content")()
 	end
 	return true
 end
 
 function ReaderZooming:onPinch(arg, ges)
 	if ges.direction == "diagonal" then
-		self:setZoomMode("page")
+		self:genSetZoomModeCallBack("page")()
 	elseif ges.direction == "horizontal" then
-		self:setZoomMode("pagewidth")
+		self:genSetZoomModeCallBack("pagewidth")()
 	elseif ges.direction == "vertical" then
-		self:setZoomMode("pageheight")
+		self:genSetZoomModeCallBack("pageheight")()
 	end
 	return true
 end
@@ -226,6 +226,9 @@ end
 
 function ReaderZooming:genSetZoomModeCallBack(mode)
 	return function()
+		-- toggle scroll mode on when zooming to content* and toggle scrool mode 
+		-- off when zooming to page*.
+		self.ui:handleEvent(Event:new("ToggleScrollMode", mode:find("content")))
 		self:setZoomMode(mode)
 	end
 end
