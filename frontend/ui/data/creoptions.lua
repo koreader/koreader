@@ -28,6 +28,23 @@ CreOptions = {
 				default_arg = nil,
 				event = "ChangeLineSpace",
 			},
+			{
+				name = "page_margins",
+				name_text = PAGE_MARGIN_STR,
+				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				values = {
+					{6, 5, 2, 5},
+					{15, 10, 10, 10},
+					{25, 10, 20, 10},
+				},
+				default_value = {15, 10, 10, 10},
+				args = {
+					{6, 5, 2, 5},
+					{15, 10, 10, 10},
+					{25, 10, 20, 10},
+				},
+				event = "SetPageMargins",
+			},
 		}
 	},
 	{
@@ -87,8 +104,8 @@ CreOptions = {
 				name_text = EMBEDDED_STYLE_STR,
 				toggle = {ON_STR, OFF_STR},
 				values = {1, 0},
-				default_value = 0,
-				args = {1, 0},
+				default_value = 1,
+				args = {true, false},
 				default_arg = nil,
 				event = "ToggleEmbeddedStyleSheet",
 			},

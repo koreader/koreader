@@ -223,6 +223,10 @@ function CreDocument:setEmbeddedStyleSheet(toggle)
 	self._document:setEmbeddedStyleSheet(toggle)
 end
 
+function CreDocument:setPageMargins(left, top, right, bottom)
+	self._document:setPageMargins(left, top, right, bottom)
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
 DocumentRegistry:addProvider("html", "application/html", CreDocument)

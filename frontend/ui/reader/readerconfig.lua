@@ -28,7 +28,7 @@ end
 
 function Configurable:loadSettings(settings, prefix)
 	for key,value in pairs(self) do
-		if type(value) == "number" then
+		if type(value) == "number" or type(value) == "table" then
 			saved_value = settings:readSetting(prefix..key)
 			self[key] = (saved_value == nil) and self[key] or saved_value
 			--Debug("Configurable:loadSettings", "key", key, "saved value", saved_value,"Configurable.key", self[key])
@@ -39,7 +39,7 @@ end
 
 function Configurable:saveSettings(settings, prefix)
 	for key,value in pairs(self) do
-		if type(value) == "number" then
+		if type(value) == "number" or type(value) == "table" then
 			settings:saveSetting(prefix..key, value)
 		end
 	end
