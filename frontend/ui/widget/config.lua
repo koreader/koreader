@@ -209,14 +209,25 @@ function ConfigOption:init()
 					-- check if current value is stored in configurable or calculated in runtime
 					local val = self.options[c].current_func and self.options[c].current_func()
 								or self.config.configurable[self.options[c].name]
-					local min_diff = math.abs(val - self.options[c].values[1])
+					local min_diff = nil
+					if type(val) == "table" then
+						min_diff = math.abs(val[1] - self.options[c].values[1][1])
+					else
+						min_diff = math.abs(val - self.options[c].values[1])
+					end
+						
 					local diff = nil
 					for index, val_ in pairs(self.options[c].values) do
+						local diff = nil
+						if type(val) == "table" then
+							diff = math.abs(val[1] - val_[1])
+						else
+							diff = math.abs(val - val_)
+						end
 						if val == val_ then
 							current_item = index
 							break
 						end
-						diff = math.abs(val - val_)
 						if diff <= min_diff then
 							min_diff = diff
 							current_item = index
