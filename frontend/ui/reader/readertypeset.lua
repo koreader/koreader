@@ -32,8 +32,8 @@ function ReaderTypeset:onCloseDocument()
 	self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
 end
 
-function ReaderTypeset:onToggleEmbeddedStyleSheet()
-	self:toggleEmbeddedStyleSheet()
+function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
+	self:toggleEmbeddedStyleSheet(toggle)
 	return true
 end
 
@@ -87,8 +87,8 @@ function ReaderTypeset:setEmbededStyleSheetOnly()
 	end
 end
 
-function ReaderTypeset:toggleEmbeddedStyleSheet()
-	if self.embedded_css then
+function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
+	if not toggle then
 		self.ui.document:setEmbeddedStyleSheet(0)
 		self.embedded_css = false
 	else

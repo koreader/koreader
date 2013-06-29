@@ -547,6 +547,15 @@ function ReaderView:onSetViewMode(new_mode)
 	return true
 end
 
+function ReaderView:onSetPageMargins(margins)
+	local left = margins[1]
+	local top = margins[2]
+	local right = margins[3]
+	local bottom = margins[4]
+	self.ui.document:setPageMargins(left, top, right, bottom)
+	return true
+end
+
 function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
