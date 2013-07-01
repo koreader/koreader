@@ -1,5 +1,6 @@
 #!./koreader-base
 
+require "defaults"
 package.path = "./frontend/?.lua"
 package.cpath = "/usr/lib/lua/?.so"
 require "ui/uimanager"

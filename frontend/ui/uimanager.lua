@@ -4,7 +4,6 @@ require "ui/inputevent"
 require "ui/screen"
 require "debug"
 require "gettext"
-require "defaults"
 
 -- initialize output module, this must be initialized before Input
 Screen:init()

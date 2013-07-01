@@ -1,7 +1,6 @@
 require "ui/reader/readerflip"
 require "ui/reader/readerfooter"
 require "ui/reader/readerdogear"
-require "defaults"
 
 ReaderView = OverlapGroup:new{
 	document = nil,

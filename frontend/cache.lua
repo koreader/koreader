@@ -2,8 +2,6 @@
 Inheritable abstraction for cache items
 --]]
 
-require "defaults"
-
 
 CacheItem = {
 	size = 64, -- some reasonable default for simple Lua values / small tables

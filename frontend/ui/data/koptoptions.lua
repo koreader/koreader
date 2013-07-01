@@ -1,6 +1,5 @@
 require "ui/screen"
 require "ui/data/strings"
-require "defaults"
 
 KoptOptions = {
 	prefix = 'kopt',

@@ -55,6 +55,7 @@ bootstrapemu:
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
 	test -e $(EMU_DIR)/$(MO_DIR) || (cd $(EMU_DIR) && ln -s ../$(MO_DIR) ./)
 	test -e $(EMU_DIR)/ev_replay.py || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/ev_replay.py ./)
+	test -e $(EMU_DIR)/defaults.lua || (cd $(EMU_DIR) && ln -s ../defaults.lua ./)
 
 customupdate: all
 	# ensure that the binaries were built for ARM
