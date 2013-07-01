@@ -26,7 +26,7 @@ KoptOptions = {
 				toggle = {AUTO_STR, MANUAL_STR},
 				alternate = false,
 				values = {1, 0},
-				default_value = 1,
+				default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
 				event = "PageCrop",
 				args = {"auto", "manual"},
 			}
@@ -58,7 +58,7 @@ KoptOptions = {
 				name_text = PAGE_MARGIN_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
 				values = {0.05, 0.10, 0.15},
-				default_value = 0.10,
+				default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
 				event = "MarginUpdate",
 			},
 			{
@@ -66,7 +66,7 @@ KoptOptions = {
 				name_text = LINE_SPACING_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
 				values = {1.0, 1.2, 1.4},
-				default_value = 1.2,
+				default_value = DKOPTREADER_CONFIG_LINE_SPACING,
 			},
 			{
 				name = "max_columns",
@@ -77,7 +77,7 @@ KoptOptions = {
 					"resources/icons/appbar.column.three.png",
 				},
 				values = {1,2,3},
-				default_value = 2,
+				default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
 			},
 			{
 				name = "justification",
@@ -90,7 +90,7 @@ KoptOptions = {
 					"resources/icons/appbar.align.justify.png",
 				},
 				values = {-1,0,1,2,3},
-				default_value = -1,
+				default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
 			},
 		}
 	},
@@ -105,7 +105,7 @@ KoptOptions = {
 				height = 60,
 				item_font_size = {22,24,28,32,34,36,38,42,46,50},
 				values = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 4.0},
-				default_value = 1.0,
+				default_value = DKOPTREADER_CONFIG_FONT_SIZE,
 				event = "FontSizeUpdate",
 			},
 			{
@@ -132,7 +132,7 @@ KoptOptions = {
 				item_font_size = 18,
 				item_align_center = 0.8,
 				values = {2.0, 1.5, 1.0, 0.5, 0.2},
-				default_value = 1.0,
+				default_value = DKOPTREADER_CONFIG_CONTRAST,
 				event = "GammaUpdate",
 				args = {0.5, 0.8, 1.0, 2.0, 4.0},
 			}
@@ -146,7 +146,7 @@ KoptOptions = {
 				name_text = _("Reflow"),
 				toggle = {ON_STR, OFF_STR},
 				values = {1, 0},
-				default_value = 0,
+				default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
 				events = {
 					{
 						event = "RedrawCurrentPage",
@@ -171,14 +171,14 @@ KoptOptions = {
 				name_text = WORD_GAP_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
 				values = {0.05, 0.15, 0.375},
-				default_value = 0.15,
+				default_value = DKOPTREADER_CONFIG_WORD_SAPCING,
 			},
 			{
 				name = "defect_size",
 				name_text = DEFECT_SIZE_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
 				values = {1.0, 8.0, 15.0},
-				default_value = 1.0,
+				default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
 				event = "DefectSizeUpdate",
 			},
 			{
@@ -186,21 +186,21 @@ KoptOptions = {
 				name_text = RENDER_QUALITY_STR,
 				toggle = {LOW_STR, DEFAULT_STR, HIGH_STR},
 				values={0.5, 1.0, 1.5},
-				default_value = 0.8,
+				default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
 			},
 			{
 				name = "auto_straighten",
 				name_text = AUTO_STRAIGHTEN_STR,
 				toggle = {ZERO_DEG_STR, FIVE_DEG_STR, TEN_DEG_STR},
 				values = {0, 5, 10},
-				default_value = 0,
+				default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
 			},
 			{
 				name = "detect_indent",
 				name_text = INDENTATION_STR,
 				toggle = {ON_STR, OFF_STR},
 				values = {1, 0},
-				default_value = 1,
+				default_value = DKOPTREADER_CONFIG_DETECT_INDENT,
 				show = false,
 			},
 		}

@@ -55,6 +55,7 @@ bootstrapemu:
 	test -e $(EMU_DIR)/history || (mkdir $(EMU_DIR)/history)
 	test -e $(EMU_DIR)/$(MO_DIR) || (cd $(EMU_DIR) && ln -s ../$(MO_DIR) ./)
 	test -e $(EMU_DIR)/ev_replay.py || (cd $(EMU_DIR) && ln -s ../$(KOR_BASE)/ev_replay.py ./)
+	test -e $(EMU_DIR)/defaults.lua || (cd $(EMU_DIR) && ln -s ../defaults.lua ./)
 
 customupdate: all
 	# ensure that the binaries were built for ARM
@@ -81,6 +82,7 @@ customupdate: all
 	cp -r git-rev resources $(INSTALL_DIR)
 	rm -r $(INSTALL_DIR)/resources/fonts
 	cp -rpL frontend $(INSTALL_DIR)
+	cp defaults.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
