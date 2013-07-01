@@ -1,6 +1,7 @@
 require "ui/reader/readerflip"
 require "ui/reader/readerfooter"
 require "ui/reader/readerdogear"
+require "defaults"
 
 ReaderView = OverlapGroup:new{
 	document = nil,
@@ -15,7 +16,7 @@ ReaderView = OverlapGroup:new{
 		offset = nil,
 		bbox = nil,
 	},
-	outer_page_color = 0,
+	outer_page_color = DOUTER_PAGE_COLOR,
 	-- hightlight
 	highlight = {
 		lighten_color = 0.2, -- color range [0.0, 1.0]
@@ -27,7 +28,7 @@ ReaderView = OverlapGroup:new{
 	highlight_visible = true,
 	-- PDF/DjVu continuous paging
 	page_scroll = nil,
-	page_bgcolor = 0,
+	page_bgcolor = DBACKGROUND_COLOR,
 	page_states = {},
 	scroll_mode = "vertical",
 	page_gap = {
@@ -36,9 +37,9 @@ ReaderView = OverlapGroup:new{
 		color = 8,
 	},
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
-	render_mode = 0, -- default to COLOR
+	render_mode = DRENDER_MODE, -- default to COLOR
 	-- Crengine view mode
-	view_mode = "page", -- default to page mode
+	view_mode = DCREREADER_VIEW_MODE, -- default to page mode
 	hinting = true,
 
 	-- visible area within current viewing page
@@ -105,17 +106,14 @@ function ReaderView:paintTo(bb, x, y)
 			self.dim_area.w, self.dim_area.h
 		)
 	end
-	
 	-- draw saved highlight
 	if self.highlight_visible then
 		self:drawSavedHighlight(bb, x, y)
 	end
-	
 	-- draw temporary highlight
 	if self.highlight.temp then
 		self:drawTempHighlight(bb, x, y)
 	end
-
 	-- paint dogear
 	if self.dogear_visible then
 		self.dogear:paintTo(bb, x, y)
@@ -478,7 +476,7 @@ function ReaderView:onReadSettings(config)
 	    table.insert(self.ui.postInitCallback, function()
 	        self:onSetScreenMode(screen_mode) end)
 	end
-	self.state.gamma = config:readSetting("gamma") or 1.0
+	self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
 	local full_screen = config:readSetting("kopt_full_screen")
 	if full_screen == nil then
 		full_screen = self.document.configurable.full_screen

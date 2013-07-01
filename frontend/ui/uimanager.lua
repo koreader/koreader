@@ -4,6 +4,7 @@ require "ui/inputevent"
 require "ui/screen"
 require "debug"
 require "gettext"
+require "defaults"
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -23,7 +24,7 @@ UIManager = {
 	-- after each ui loop
 	full_refresh = false,
 	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
-	FULL_REFRESH_COUNT = 6,
+	FULL_REFRESH_COUNT = DRCOUNTMAX,
 	refresh_count = 0,
 
 	_running = true,
