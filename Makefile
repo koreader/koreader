@@ -82,6 +82,7 @@ customupdate: all
 	cp -r git-rev resources $(INSTALL_DIR)
 	rm -r $(INSTALL_DIR)/resources/fonts
 	cp -rpL frontend $(INSTALL_DIR)
+	cp defaults.lua $(INSTALL_DIR)
 	mkdir $(INSTALL_DIR)/fonts/host
 	zip -9 -r koreader-$(VERSION).zip $(INSTALL_DIR) launchpad/ extensions/
 	rm -rf $(INSTALL_DIR)
