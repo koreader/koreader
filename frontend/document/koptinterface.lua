@@ -196,7 +196,7 @@ end
 
 --[[
 get cached koptcontext for centain page. if context doesn't exist in cache make
-new context and reflow the src page immediatly, or wait background thread for 
+new context and reflow the src page immediatly, or wait background thread for
 reflowed context.
 --]]
 function KoptInterface:getCachedContext(doc, pageno)
@@ -272,10 +272,10 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, render_mode
 end
 
 --[[
-inherited from common document interface
-render reflowed page into cache in background thread. this method returns immediatly
-leaving the precache flag on in context. subsequent usage of this context should 
-wait for the precache flag off by calling self:waitForContext(kctx)
+inherited from common document interface render reflowed page into cache in
+background thread. this method returns immediatly leaving the precache flag on
+in context. subsequent usage of this context should wait for the precache flag
+off by calling self:waitForContext(kctx)
 --]]
 function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
 	local bbox = doc:getPageBBox(pageno)
