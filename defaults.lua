@@ -6,7 +6,7 @@ DRCOUNTMAX = 6
 DFULL_SCREEN = 1
 
 -- scroll mode, 1 for true, 0 for false
-DSCROLL_MODE = 1
+DSCROLL_MODE = 0
 
 -- default gamma setting:
 DGLOBALGAMMA = 1.0
