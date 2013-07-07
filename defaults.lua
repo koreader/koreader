@@ -2,6 +2,12 @@
 -- default to full refresh on every page turn
 DRCOUNTMAX = 6
 
+-- full screen mode, 1 for true, 0 for false
+DFULL_SCREEN = 1
+
+-- scroll mode, 1 for true, 0 for false
+DSCROLL_MODE = 0
+
 -- default gamma setting:
 DGLOBALGAMMA = 1.0
 

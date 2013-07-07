@@ -48,7 +48,7 @@ ReaderView = OverlapGroup:new{
 	-- dimen for area to dim
 	dim_area = Geom:new{w = 0, h = 0},
 	-- has footer
-	footer_visible = false,
+	footer_visible = nil,
 	-- has dogear
 	dogear_visible = false,
 	-- in flipping state

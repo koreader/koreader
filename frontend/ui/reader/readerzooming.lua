@@ -226,8 +226,8 @@ end
 
 function ReaderZooming:genSetZoomModeCallBack(mode)
 	return function()
-		-- toggle scroll mode on when zooming to content* and toggle scrool mode 
-		-- off when zooming to page*.
+		-- toggle scroll mode on when zooming to content* and toggle scrool
+		-- mode off when zooming to page*.
 		self.ui:handleEvent(Event:new("ToggleScrollMode", mode:find("content")))
 		self:setZoomMode(mode)
 	end
