@@ -36,6 +36,9 @@ function DocSettings:open(docfile)
 		-- we handle reader setting as special case
 		conf_path = "settings.reader.lua"
 	else
+		if lfs.attributes("./history","mode") ~= "directory" then
+			lfs.mkdir("history")
+		end
 		conf_path = self:getHistoryPath(docfile)
 	end
 	-- construct settings obj
