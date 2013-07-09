@@ -22,7 +22,10 @@ function DocumentRegistry:getProvider(file)
 end
 
 function DocumentRegistry:openDocument(file)
-	return self:getProvider(file):new{file = file}
+    local provider = self:getProvider(file)
+    if provider ~= nil then
+        return provider:new{file = file}
+    end
 end
 
 
