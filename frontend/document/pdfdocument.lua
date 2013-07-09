@@ -131,3 +131,4 @@ function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma,
 end
 
 DocumentRegistry:addProvider("pdf", "application/pdf", PdfDocument)
+DocumentRegistry:addProvider("cbz", "application/cbz", PdfDocument)
