@@ -75,21 +75,24 @@ function KoptInterface:getContextHash(doc, pageno, bbox)
 end
 
 function KoptInterface:getAutoBBox(doc, pageno)
-	local bbox = {
-		x0 = 0, y0 = 0,
-		x1 = 0, y1 = 0,
-	}
+	-- use manual bbox
+	local bbox = Document.getPageBBox(doc, pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local hash = "autobbox|"..context_hash
 	local cached = Cache:check(hash)
 	if not cached then
 		local page = doc._document:openPage(pageno)
 		local kc = self:createContext(doc, pageno, bbox)
-		bbox.x0, bbox.y0, bbox.x1, bbox.y1 = page:getAutoBBox(kc)
-		DEBUG("Auto detected bbox", bbox)
+		local auto_bbox = {}
+		auto_bbox.x0, auto_bbox.y0, auto_bbox.x1, auto_bbox.y1 = page:getAutoBBox(kc)
+		auto_bbox.x0 = auto_bbox.x0 + bbox.x0
+		auto_bbox.y0 = auto_bbox.y0 + bbox.y0
+		auto_bbox.x1 = auto_bbox.x1 + bbox.x0
+		auto_bbox.y1 = auto_bbox.y1 + bbox.y0
+		DEBUG("Auto detected bbox", auto_bbox)
 		page:close()
-		Cache:insert(hash, CacheItem:new{ autobbox = bbox })
-		return bbox
+		Cache:insert(hash, CacheItem:new{ autobbox = auto_bbox })
+		return auto_bbox
 	else
 		return cached.autobbox
 	end
