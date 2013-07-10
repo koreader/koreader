@@ -278,10 +278,10 @@ function Input:init()
 		self.event_map = self.sdl_event_map
 	else
 		local dev_mod = Device:getModel()
-		if dev_mod ~= "Kobo" then
+		if not Device:isKobo() then
 			input.open("fake_events")
 		end
-		if dev_mod ~= "KindleTouch" and dev_mod ~= "Kobo" then
+		if dev_mod ~= "KindleTouch" and not Device:isKobo() then
 			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
 			Device:setTouchInputDev("/dev/input/event0")
 			input.open("/dev/input/event0")
@@ -313,11 +313,11 @@ function Input:init()
 				return ev
 			end
 			print(_("Auto-detected Kindle Touch"))
-		elseif dev_mod == "Kobo" then
+		elseif Device:isKobo() then
 			input.open("/dev/input/event1")
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
-			print("Auto-detected Kobo")
+			print(_("Auto-detected Kobo"))
 			function Input:eventAdjustHook(ev)
 				if ev.type == EV_ABS then
 					if ev.code == ABS_X then
