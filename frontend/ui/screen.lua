@@ -96,7 +96,15 @@ function Screen:getHeight()
 end
 
 function Screen:getDPI()
-	return Device:getModel() == "KindlePaperWhite" and 212 or 167
+	if(Device:getModel() == "KindlePaperWhite") or (Device:getModel() == "Kobo_kraken") then
+		return 212
+	elseif Device:getModel() == "Kobo_dragon" then
+		return 265
+	elseif Device:getModel() == "Kobo_pixie" then
+		return 200
+	else
+		return 167
+	end
 end
 
 function Screen:scaleByDPI(px)
