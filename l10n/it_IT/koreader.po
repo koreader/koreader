@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-06-16 04:18+0000\n"
-"PO-Revision-Date: 2013-06-16 04:19+0000\n"
-"Last-Translator: houqp <dave2008713@gmail.com>\n"
+"PO-Revision-Date: 2013-07-01 07:58+0000\n"
+"Last-Translator: automaticjack <automaticjack@hotmail.it>\n"
 "Language-Team: Italian (Italy) (http://www.transifex.com/projects/p/koreader/language/it_IT/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -40,7 +40,7 @@ msgstr "5°"
 
 #: frontend/ui/reader/readerhighlight.lua:186
 msgid "Add Note"
-msgstr ""
+msgstr "Aggiungi nota"
 
 #: frontend/ui/reader/readertypeset.lua:49
 msgid "Auto"
@@ -84,7 +84,7 @@ msgstr "Cancella"
 
 #: frontend/ui/reader/readerhyphenation.lua:21
 msgid "Change Hyphenation to "
-msgstr ""
+msgstr "Cambia sillabazione"
 
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
@@ -104,7 +104,7 @@ msgstr "Diminuisci dimensione carattere a"
 
 #: frontend/ui/reader/readerfrontlight.lua:42
 msgid "Decrease front light intensity to "
-msgstr ""
+msgstr "Diminuisci intensità luce"
 
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
@@ -120,7 +120,7 @@ msgstr "Difetti di scansione"
 
 #: frontend/ui/reader/readerhighlight.lua:97
 msgid "Delete"
-msgstr ""
+msgstr "Cancella"
 
 #: frontend/ui/reader/readermenu.lua:94
 msgid "Document menu"
@@ -128,7 +128,7 @@ msgstr "Menu documento"
 
 #: frontend/ui/reader/readerhighlight.lua:101
 msgid "Edit"
-msgstr ""
+msgstr "Modifica"
 
 #: frontend/ui/data/strings.lua:22
 msgid "Embedded style"
@@ -164,7 +164,7 @@ msgstr "Aiuto"
 
 #: frontend/ui/reader/readerhighlight.lua:182
 msgid "Highlight"
-msgstr ""
+msgstr "Evidenzia"
 
 #: reader.lua:106
 msgid "Home menu"
@@ -172,7 +172,7 @@ msgstr "Menu principale"
 
 #: frontend/ui/reader/readerhyphenation.lua:3
 msgid "Hyphenation"
-msgstr ""
+msgstr "Sillabazione"
 
 #: reader.lua:204
 msgid "If you don't pass any path, the last viewed document will be opened"
@@ -188,7 +188,7 @@ msgstr "Aumento dimensione font a"
 
 #: frontend/ui/reader/readerfrontlight.lua:38
 msgid "Increase front light intensity to "
-msgstr ""
+msgstr "Aumenta intensità luce"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
@@ -290,7 +290,7 @@ msgstr "cambia modalità di rendering"
 
 #: frontend/ui/reader/readerhighlight.lua:193
 msgid "Share"
-msgstr ""
+msgstr "Condividi"
 
 #: reader.lua:18
 msgid "Show Home Menu"
@@ -487,7 +487,7 @@ msgstr "alto"
 
 #: frontend/ui/reader/readerhighlight.lua:10
 msgid "highlight text"
-msgstr ""
+msgstr "Evidenzia"
 
 #: frontend/ui/data/strings.lua:32
 msgid "increase"
