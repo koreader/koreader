@@ -8,6 +8,10 @@ Device = {
 
 function Device:getModel()
 	if self.model then return self.model end
+	if util.isEmulated()==1 then
+		self.model = "Emulator"
+		return self.model
+	end
 	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
 	local cpu_mod = std_out:read()
 	if not cpu_mod then
@@ -30,7 +34,9 @@ function Device:getModel()
 		if pw_test_fd then
 			self.model = "KindlePaperWhite"
 		elseif kg_test_fd then
-			self.model = "Kobo"
+			local std_out = io.popen("/bin/kobo_config.sh", "r")
+			local codename = std_out:read()
+			self.model = "Kobo_" .. codename
 		elseif kt_test_fd then
 			self.model = "KindleTouch"
 		else
@@ -69,6 +75,18 @@ function Device:isKindle2()
 	end
 end
 
+function Device:isKobo()
+	if not self.model then
+		self.model = self:getModel()
+	end
+	re_val = string.find(self.model,"Kobo_")
+	if re_val == 1 then
+		return true
+	else
+		return false
+	end
+end
+
 function Device:hasNoKeyboard()
 	if not self.model then
 		self.model = self:getModel()
@@ -84,7 +102,7 @@ function Device:isTouchDevice()
 	if not self.model then
 		self.model = self:getModel()
 	end
-	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or (self.model == "Kobo") or util.isEmulated()
+	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or self:isKobo() or util.isEmulated()
 end
 
 function Device:setTouchInputDev(dev)
