@@ -35,6 +35,9 @@ fi
 # stop cvm
 #killall -stop cvm
 
+# keep only one instance of reader
+killall reader.lua
+
 # finally call reader
 ./reader.lua "$1" 2> crash.log
 
