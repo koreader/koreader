@@ -355,6 +355,7 @@ function ReaderHighlight:getTextFromPositions(boxes, pos0, pos1)
     	j_start, j_stop = j_stop, j_start
     end
     for i = i_start, i_stop do
+    	if i_start == i_stop and #boxes[i] == 0 then break end
     	-- insert line words
     	local j0 = i > i_start and 1 or j_start
     	local j1 = i < i_stop and #boxes[i] or j_stop
