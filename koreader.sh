@@ -35,11 +35,11 @@ fi
 # stop cvm
 #killall -stop cvm
 
-# keep only one instance of reader
-killall reader.lua
-
 # finally call reader
 ./reader.lua "$1" 2> crash.log
+
+# clean up forked process in case the reader crashed
+killall reader.lua
 
 # unmount system fonts
 if grep /mnt/us/koreader/fonts/host /proc/mounts; then
