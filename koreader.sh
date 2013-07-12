@@ -38,6 +38,9 @@ fi
 # finally call reader
 ./reader.lua "$1" 2> crash.log
 
+# clean up forked process in case the reader crashed
+killall reader.lua
+
 # unmount system fonts
 if grep /mnt/us/koreader/fonts/host /proc/mounts; then
 	umount /mnt/us/koreader/fonts/host
