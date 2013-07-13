@@ -9,7 +9,7 @@ function ToggleLabel:paintTo(bb, x, y)
 end
 
 ToggleSwitch = InputContainer:new{
-	width = scaleByDPI(204),
+	width = scaleByDPI(216),
 	height = scaleByDPI(30),
 }
 
