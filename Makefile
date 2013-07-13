@@ -76,6 +76,7 @@ customupdate: all
 		$(INSTALL_DIR)/libs
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
 	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
+	cp -rpL $(KOR_BASE)/data/hyph $(INSTALL_DIR)/data/hyph
 	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
 	cp -rp $(MO_DIR) $(INSTALL_DIR)
 	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
