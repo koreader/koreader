@@ -92,8 +92,13 @@ end
 
 function PdfDocument:getPageBBox(pageno)
 	if self.configurable.text_wrap ~= 1 and self.configurable.trim_page == 1 then
+		-- auto bbox finding
 		return self.koptinterface:getAutoBBox(self, pageno)
+	elseif self.configurable.text_wrap ~= 1 and self.configurable.trim_page == 2 then
+		-- semi-auto bbox finding
+		return self.koptinterface:getSemiAutoBBox(self, pageno)
 	else
+		-- get saved manual bbox
 		return Document.getPageBBox(self, pageno)
 	end
 end
