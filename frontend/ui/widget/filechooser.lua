@@ -13,7 +13,17 @@ function FileChooser:init()
 	self:changeToPath(self.path)
 end
 
+function FileChooser:compressPath(item_path)
+	-- compress paths like "test/pdf/../epub" into "test/epub"
+	local path = item_path
+	while path:match("/[^/]+[/][\\.][\\.]") do
+		path = path:gsub("/[^/]+[/][\\.][\\.]", "")
+	end
+	return path
+end
+
 function FileChooser:changeToPath(path)
+	path = self:compressPath(path)
 	local dirs = {}
 	local files = {}
 	self.path = path
