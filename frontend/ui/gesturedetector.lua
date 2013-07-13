@@ -609,7 +609,7 @@ end
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
 	if Screen.cur_rotation_mode == 1 then
-		-- in landscape mode
+		-- in landscape mode rotated 270
 		if ges.pos then
 			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
 		end
@@ -632,6 +632,40 @@ function GestureDetector:adjustGesCoordinate(ges)
 				ges.direction = "southwest"
 			elseif ges.direction == "southwest" then
 				ges.direction = "northwest"
+			end
+		elseif ges.ges == "pinch" or ges.ges == "spread"
+			or ges.ges == "inward_pan"
+			or ges.ges == "outward_pan" then
+			if ges.direction == "horizontal" then
+				ges.direction = "vertical"
+			elseif ges.direction == "vertical" then
+				ges.direction = "horizontal"
+			end
+		end
+	elseif Screen.cur_rotation_mode == 3 then
+		-- in landscape mode rotated 90
+		if ges.pos then
+			ges.pos.x, ges.pos.y = (ges.pos.y), (Screen.height - ges.pos.x)
+		end
+		if ges.ges == "swipe" or ges.ges == "pan"
+			or ges.ges == "two_finger_swipe"
+			or ges.ges == "two_finger_pan" then
+			if ges.direction == "north" then
+				ges.direction = "west"
+			elseif ges.direction == "south" then
+				ges.direction = "east"
+			elseif ges.direction == "east" then
+				ges.direction = "north"
+			elseif ges.direction == "west" then
+				ges.direction = "south"
+			elseif ges.direction == "northeast" then
+				ges.direction = "northwest"
+			elseif ges.direction == "northwest" then
+				ges.direction = "southeast"
+			elseif ges.direction == "southeast" then
+				ges.direction = "northeast"
+			elseif ges.direction == "southwest" then
+				ges.direction = "southeast"
 			end
 		elseif ges.ges == "pinch" or ges.ges == "spread"
 			or ges.ges == "inward_pan"
