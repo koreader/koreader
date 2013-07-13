@@ -10,6 +10,7 @@ KoptOptions = {
 				name = "screen_mode",
 				name_text = SCREEN_MODE_STR,
 				toggle = {PORTRAIT_STR, LANDSCAPE_STR},
+				alternate = false,
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
