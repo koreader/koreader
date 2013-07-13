@@ -52,17 +52,17 @@ function ReaderRotation:onRotate(rotate_by)
 end
 
 function ReaderRotation:onRotateGes(arg, ges)
-	self.ratate_angle = ges.angle
+	self.rotate_angle = ges.angle
 	return true
 end
 
 function ReaderRotation:onTwoFingerPanRelease(arg, ges)
-	if self.ratate_angle and self.ratate_angle > self.ROTATE_ANGLE_THRESHOLD then
+	if self.rotate_angle and self.rotate_angle > self.ROTATE_ANGLE_THRESHOLD then
 		if Screen:getScreenMode() == "portrait" then
 			self.ui:handleEvent(Event:new("SetScreenMode", "landscape"))
 		else
 			self.ui:handleEvent(Event:new("SetScreenMode", "portrait"))
 		end
-		self.ratate_angle = nil
+		self.rotate_angle = nil
 	end
 end

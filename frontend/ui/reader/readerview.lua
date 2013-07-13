@@ -415,12 +415,17 @@ function ReaderView:PanningUpdate(dx, dy)
 	return true
 end
 
-function ReaderView:onSetScreenMode(new_mode)
+function ReaderView:onSetScreenMode(new_mode, rotation)
 	if new_mode == "landscape" or new_mode == "portrait" then
 		self.screen_mode = new_mode
-		Screen:setScreenMode(new_mode)
+		if rotation ~= nil then
+			Screen:setRotationMode(rotation)
+		else
+			Screen:setScreenMode(new_mode)
+		end
 		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 	end
+	self.cur_rotation_mode = Screen.cur_rotation_mode
 
 	if new_mode == "landscape" and self.document.info.has_pages then
 		self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
@@ -473,7 +478,8 @@ function ReaderView:onReadSettings(config)
 	local screen_mode = config:readSetting("screen_mode")
 	if screen_mode then
 	    table.insert(self.ui.postInitCallback, function()
-	        self:onSetScreenMode(screen_mode) end)
+	        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"))
+	    end)
 	end
 	self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
 	local full_screen = config:readSetting("kopt_full_screen")
@@ -556,6 +562,7 @@ end
 function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
+	self.ui.doc_settings:saveSetting("rotation_mode", self.cur_rotation_mode)
 	self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
 	self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)	
 end

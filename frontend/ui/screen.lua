@@ -74,12 +74,16 @@ end
 
 function Screen:refresh(refesh_type)
 	if self.native_rotation_mode ==  self.cur_rotation_mode then
-		self.fb.bb:blitFrom(self.bb, 0, 0, 0, 0, self.width, self.height)
-	elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then
-		self.fb.bb:blitFromRotate(self.bb, 270)
-	elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 0 then
-		self.fb.bb:blitFromRotate(self.bb, 90)
-	end
+        self.fb.bb:blitFrom(self.bb, 0, 0, 0, 0, self.width, self.height)
+    elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then
+        self.fb.bb:blitFromRotate(self.bb, 270)
+    elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 3 then
+        self.fb.bb:blitFromRotate(self.bb, 90)
+    elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 0 then
+        self.fb.bb:blitFromRotate(self.bb, 90)
+    elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 3 then
+        self.fb.bb:blitFromRotate(self.bb, 180)
+    end
 	self.fb:refresh(refesh_type)
 end
 
@@ -159,8 +163,10 @@ function Screen:setScreenMode(mode)
 			self:setRotationMode(0)
 		end
 	elseif mode == "landscape" then
-		if self.cur_rotation_mode ~= 1 then
+		if self.cur_rotation_mode == 0 or self.cur_rotation_mode == 2 then
 			self:setRotationMode(1)
+		elseif self.cur_rotation_mode == 1 or self.cur_rotation_mode == 3 then
+			self:setRotationMode((self.cur_rotation_mode + 2) % 4)
 		end
 	end
 end
