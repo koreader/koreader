@@ -23,12 +23,12 @@ KoptOptions = {
 			{
 				name = "trim_page",
 				name_text = PAGE_CROP_STR,
-				toggle = {AUTO_STR, MANUAL_STR},
+				toggle = {MANUAL_STR, AUTO_STR, SEMIAUTO_STR},
 				alternate = false,
-				values = {1, 0},
+				values = {0, 1, 2},
 				default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
 				event = "PageCrop",
-				args = {"auto", "manual"},
+				args = {"manual", "auto", "semi-auto"},
 			}
 		}
 	},
