@@ -45,7 +45,9 @@ function Configurable:saveSettings(settings, prefix)
 	end
 end
 
-ReaderConfig = InputContainer:new{}
+ReaderConfig = InputContainer:new{
+	last_panel_index = 1,
+}
 
 function ReaderConfig:init()
 	if Device:hasKeyboard() then
@@ -80,11 +82,11 @@ function ReaderConfig:onShowConfigMenu()
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
-		close_callback = function()
-			self.ui:handleEvent(Event:new("RestoreHinting"))
-		end,
+		close_callback = function() self:onCloseCallback() end,
 	}
 	self.ui:handleEvent(Event:new("DisableHinting"))
+	-- show last used panel when opening config dialog
+	self.config_dialog:onShowConfigPanel(self.last_panel_index)
 	UIManager:show(self.config_dialog)
 
 	return true
@@ -106,16 +108,22 @@ function ReaderConfig:onSetDimensions(dimen)
 	end
 end
 
+function ReaderConfig:onCloseCallback()
+	self.last_panel_index = self.config_dialog.panel_index
+	self.ui:handleEvent(Event:new("RestoreHinting"))
+end
+
+-- event handler for readercropping
 function ReaderConfig:onCloseConfig()
 	self.config_dialog:closeDialog()
 end
 
 function ReaderConfig:onReadSettings(config)
-	-- use char(95)(underscore) to avoid conflict with gettext macro
 	self.configurable:loadSettings(config, self.options.prefix.."_")
+	self.last_panel_index = config:readSetting("config_panel_index") or 1
 end
 
 function ReaderConfig:onCloseDocument()
-	-- use char(95)(underscore) to avoid conflict with gettext macro
 	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."_")
+	self.ui.doc_settings:saveSetting("config_panel_index", self.last_panel_index)
 end
