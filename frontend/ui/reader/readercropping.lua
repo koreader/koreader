@@ -131,9 +131,9 @@ function ReaderCropping:exitPageCrop(confirmed)
 		self.view:recalculate()
 	else
 		if confirmed then
-			-- if original zoom mode is not "content", set zoom mode to "content"
+			-- if original zoom mode is not "content", set zoom mode to "contentwidth"
 			self.ui:handleEvent(Event:new("SetZoomMode",
-				self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "content"))
+				self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "contentwidth"))
 			self.ui:handleEvent(Event:new("InitScrollPageStates"))
 		else
 			self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
