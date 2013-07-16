@@ -404,6 +404,7 @@ Widget that displays config menubar and config panel
 
 ConfigDialog = InputContainer:new{
 	--is_borderless = false,
+	panel_index = 1,
 }
 
 function ConfigDialog:init()
@@ -443,6 +444,7 @@ function ConfigDialog:init()
 end
 
 function ConfigDialog:updateConfigPanel(index)
+	self.panel_index = index
 	self.config_panel = ConfigPanel:new{
 		index = index,
 		config_dialog = self,
