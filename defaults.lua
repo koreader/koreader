@@ -41,6 +41,10 @@ DKOPTREADER_CONFIG_JUSTIFICATION = -1	-- -1 = auto, 0 = left, 1 = center, 2 = ri
 DKOPTREADER_CONFIG_MAX_COLUMNS = 2		-- range from 1 to 4
 DKOPTREADER_CONFIG_CONTRAST = 1.0		-- range from 0.2 to 2.0
 
+-- document languages for OCR
+DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese_S", "Chinese_T"}
+DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim", "chi_tra"}
+DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"
 
 -- ####################################################################
 -- following features are not supported right now

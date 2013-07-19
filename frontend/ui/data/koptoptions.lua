@@ -161,6 +161,13 @@ KoptOptions = {
 				}
 			},
 			{
+				name="doc_language",
+				name_text = DOC_LANG_STR,
+				toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
+				values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
+				default_value = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE,
+			},
+			{
 				name="screen_rotation",
 				name_text = VERTICAL_TEXT_STR,
 				toggle = {ON_STR, OFF_STR},
@@ -195,6 +202,7 @@ KoptOptions = {
 				toggle = {ZERO_DEG_STR, FIVE_DEG_STR, TEN_DEG_STR},
 				values = {0, 5, 10},
 				default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+				show = false,
 			},
 			{
 				name = "detect_indent",
