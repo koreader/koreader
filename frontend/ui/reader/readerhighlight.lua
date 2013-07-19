@@ -165,22 +165,42 @@ function ReaderHighlight:onHoldPan(arg, ges)
 	end
 end
 
+function ReaderHighlight:lookup(selected_word)
+	-- if we extracted text directly
+	if selected_word.word then
+		self.ui:handleEvent(Event:new("LookupWord", selected_word.word))
+	-- or we will do OCR
+	else
+		local word_box = selected_word.box
+		--word_box.x = word_box.x - math.floor(word_box.h * 0.1)
+		--word_box.y = word_box.y - math.floor(word_box.h * 0.2)
+		--word_box.w = word_box.w + math.floor(word_box.h * 0.2)
+		--word_box.h = word_box.h + math.floor(word_box.h * 0.4)
+		local word = self.ui.document:getOCRWord(self.hold_pos.page, word_box)
+		DEBUG("OCRed word:", word)
+		self.ui:handleEvent(Event:new("LookupWord", word))
+	end
+end
+
+function ReaderHighlight:translate(selected_text)
+	if selected_text.text ~= "" then
+		self.ui:handleEvent(Event:new("LookupWord", selected_text.text))
+	-- or we will do OCR
+	else
+		local text_box = selected_text.boxes[1]
+		--text_box.x = text_box.x - math.floor(text_box.h * 0.1)
+		text_box.y = text_box.y - math.floor(text_box.h * 0.2)
+		--text_box.w = text_box.w + math.floor(text_box.h * 0.2)
+		text_box.h = text_box.h + math.floor(text_box.h * 0.4)
+		local text = self.ui.document:getOCRWord(self.hold_pos.page, text_box)
+		DEBUG("OCRed text:", text)
+		self.ui:handleEvent(Event:new("LookupWord", text))
+	end
+end
+
 function ReaderHighlight:onHoldRelease(arg, ges)
 	if self.selected_word then
-		-- if we extracted text directly
-		if self.selected_word.word then
-			self.ui:handleEvent(Event:new("LookupWord", self.selected_word.word))
-		-- or we will do OCR
-		else
-			local word_box = self.selected_word.box
-			word_box.x = word_box.x - math.floor(word_box.h * 0.1)
-			word_box.y = word_box.y - math.floor(word_box.h * 0.2)
-			word_box.w = word_box.w + math.floor(word_box.h * 0.2)
-			word_box.h = word_box.h + math.floor(word_box.h * 0.4)
-			local word = self.ui.document:getOCRWord(self.hold_pos.page, word_box)
-			DEBUG("OCRed word:", word)
-			self.ui:handleEvent(Event:new("LookupWord", word))
-		end
+		self:lookup(self.selected_word)
 		self.selected_word = nil
 	elseif self.selected_text then
 		DEBUG("show highlight dialog")
@@ -207,6 +227,14 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 				},
 				{
 					{
+						text = _("Translate"),
+						callback = function()
+							self:translate(self.selected_text)
+							UIManager:close(self.highlight_dialog)
+							self.ui:handleEvent(Event:new("Tap"))
+						end,
+					},
+					{
 						text = _("Share"),
 						enabled = false,
 						callback = function()
@@ -215,6 +243,8 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 							self.ui:handleEvent(Event:new("Tap"))
 						end,
 					},
+				},
+				{
 					{
 						text = _("More"),
 						enabled = false,
