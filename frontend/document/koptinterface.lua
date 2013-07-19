@@ -76,9 +76,11 @@ function KoptInterface:getContextHash(doc, pageno, bbox)
 end
 
 function KoptInterface:getAutoBBox(doc, pageno)
+	local native_size = Document.getNativePageDimensions(doc, pageno)
 	local bbox = {
 		x0 = 0, y0 = 0,
-		x1 = 0, y1 = 0,
+		x1 = native_size.w,
+		y1 = native_size.h,
 	}
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local hash = "autobbox|"..context_hash
