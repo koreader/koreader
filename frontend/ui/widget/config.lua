@@ -502,6 +502,7 @@ end
 function ConfigDialog:onConfigEvent(option_event, option_arg)
 	--DEBUG("config option event", option_event, option_arg)
 	self.ui:handleEvent(Event:new(option_event, option_arg))
+	self:onShowConfigPanel(self.panel_index)
 end
 
 function ConfigDialog:closeDialog()

@@ -49,3 +49,12 @@ function ReaderKoptListener:onZoomUpdate(zoom)
 	end
 end
 
+-- misc koptoption handler
+function ReaderKoptListener:onDocLangUpdate(lang)
+	if lang == "chi_sim" or lang == "chi_tra" or 
+		lang == "jpn" or lang == "kor" then
+		self.document.configurable.word_spacing = DKOPTREADER_CONFIG_WORD_SAPCINGS[1]
+	else
+		self.document.configurable.word_spacing = DKOPTREADER_CONFIG_WORD_SAPCINGS[3]
+	end
+end

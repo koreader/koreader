@@ -166,6 +166,8 @@ KoptOptions = {
 				toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
 				values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
 				default_value = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE,
+				event = "DocLangUpdate",
+				args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
 			},
 			{
 				name="screen_rotation",
@@ -178,8 +180,8 @@ KoptOptions = {
 				name = "word_spacing",
 				name_text = WORD_GAP_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
-				values = {0.05, 0.15, 0.375},
-				default_value = DKOPTREADER_CONFIG_WORD_SAPCING,
+				values = DKOPTREADER_CONFIG_WORD_SAPCINGS,
+				default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING,
 			},
 			{
 				name = "defect_size",
