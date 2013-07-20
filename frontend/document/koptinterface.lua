@@ -62,6 +62,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
+	kc:setLanguage(doc.configurable.doc_language)
 	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
 	if Dbg.is_on then kc:setDebug() end
 	return kc
@@ -75,9 +76,11 @@ function KoptInterface:getContextHash(doc, pageno, bbox)
 end
 
 function KoptInterface:getAutoBBox(doc, pageno)
+	local native_size = Document.getNativePageDimensions(doc, pageno)
 	local bbox = {
 		x0 = 0, y0 = 0,
-		x1 = 0, y1 = 0,
+		x1 = native_size.w,
+		y1 = native_size.h,
 	}
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local hash = "autobbox|"..context_hash
@@ -129,6 +132,13 @@ function KoptInterface:getReflewTextBoxes(doc, pageno)
 		local cached = Cache:check(kctx_hash)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
+			--kc:setDebug()
+			local lang = doc.configurable.doc_language
+			if lang == "chi_sim" or lang == "chi_tra" or 
+				lang == "jpn" or lang == "kor" then
+				kc:setCJKChar()
+			end
+			kc:setLanguage(lang)
 			local fullwidth, fullheight = kc:getPageDim()
 			local boxes = kc:getWordBoxes(0, 0, fullwidth, fullheight)
 			Cache:insert(hash, CacheItem:new{ rfpgboxes = boxes })
@@ -146,6 +156,12 @@ function KoptInterface:getTextBoxes(doc, pageno)
 		local kc_hash = "kctx|"..doc.file.."|"..pageno
 		local kc = KOPTContext.new()
 		kc:setDebug()
+		local lang = doc.configurable.doc_language
+		if lang == "chi_sim" or lang == "chi_tra" or 
+			lang == "jpn" or lang == "kor" then
+			kc:setCJKChar()
+		end
+		kc:setLanguage(lang)
 		local page = doc._document:openPage(pageno)
 		page:getPagePix(kc)
 		local fullwidth, fullheight = kc:getPageDim()
@@ -167,6 +183,7 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
 		local dummy = KOPTContext.new()
 		Cache:insert(ocrengine, OCREngine:new{ ocrengine = dummy })
 	end
+	self.ocr_lang = doc.configurable.doc_language
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local hash = "rfocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
@@ -197,6 +214,7 @@ function KoptInterface:getOCRWord(doc, pageno, rect)
 		local dummy = KOPTContext.new()
 		Cache:insert(ocrengine, OCREngine:new{ ocrengine = dummy })
 	end
+	self.ocr_lang = doc.configurable.doc_language
 	local hash = "ocrword|"..doc.file.."|"..pageno..rect.x..rect.y..rect.w..rect.h
 	local cached = Cache:check(hash)
 	if not cached then

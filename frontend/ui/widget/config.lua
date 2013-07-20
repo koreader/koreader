@@ -204,6 +204,16 @@ function ConfigOption:init()
 			end
 			-- make current index according to configurable table
 			local current_item = nil
+			local function value_diff(val1, val2, name)
+				if type(val1) ~= type(val2) then
+					error("different data types in option", name)
+				end
+				if type(val1) == "number" then
+					return math.abs(val1 - val2)
+				elseif type(val1) == "string" then
+					return val1 == val2 and 0 or 1
+				end
+			end
 			if self.options[c].name then
 				if self.options[c].values then
 					-- check if current value is stored in configurable or calculated in runtime
@@ -211,18 +221,18 @@ function ConfigOption:init()
 								or self.config.configurable[self.options[c].name]
 					local min_diff = nil
 					if type(val) == "table" then
-						min_diff = math.abs(val[1] - self.options[c].values[1][1])
+						min_diff = value_diff(val[1], self.options[c].values[1][1])
 					else
-						min_diff = math.abs(val - self.options[c].values[1])
+						min_diff = value_diff(val, self.options[c].values[1])
 					end
 						
 					local diff = nil
 					for index, val_ in pairs(self.options[c].values) do
 						local diff = nil
 						if type(val) == "table" then
-							diff = math.abs(val[1] - val_[1])
+							diff = value_diff(val[1], val_[1])
 						else
-							diff = math.abs(val - val_)
+							diff = value_diff(val, val_)
 						end
 						if val == val_ then
 							current_item = index
@@ -492,6 +502,7 @@ end
 function ConfigDialog:onConfigEvent(option_event, option_arg)
 	--DEBUG("config option event", option_event, option_arg)
 	self.ui:handleEvent(Event:new(option_event, option_arg))
+	self:onShowConfigPanel(self.panel_index)
 end
 
 function ConfigDialog:closeDialog()
