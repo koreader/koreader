@@ -4,36 +4,11 @@ require "ui/widget/dict"
 ReaderDictionary = EventListener:new{}
 
 function ReaderDictionary:init()
-	local dev_mod = Device:getModel()
-	if dev_mod == "KindlePaperWhite" or dev_mod == "KindleTouch" then
-		require("liblipclua")
-		DEBUG("init lipc handler com.github.koreader.dictionary")
-		self.lipc_handle = lipc.init("com.github.koreader.dictionary")
-	end
 	JSON = require("JSON")
 end
 
 function ReaderDictionary:onLookupWord(word)
 	self:stardictLookup(word)
-end
-
-function ReaderDictionary:nativeDictLookup(word)
-	DEBUG("lookup word:", word)
-	--self:quickLookup()
-	if self.lipc_handle and word then
-		self.lipc_handle:set_string_property(
-			"com.github.koreader.kpvbooklet.dict", "lookup", word)
-		local results_str = self.lipc_handle:get_string_property(
-			"com.github.koreader.kpvbooklet.word", word)
-		if results_str then
-			--DEBUG("result str:", word, results_str)
-			local ok, results_tab = pcall(JSON.decode, JSON, results_str)
-			--DEBUG("lookup result table:", word, results_tab)
-			if results_tab and results_tab[1] then
-				self:showDict(results_tab[1])
-			end
-		end
-	end
 end
 
 function ReaderDictionary:stardictLookup(word)
@@ -48,34 +23,34 @@ function ReaderDictionary:stardictLookup(word)
 		local results_str = std_out:read("*all")
 		if results_str then
 			--DEBUG("result str:", word, results_str)
-			local ok, results_tab = pcall(JSON.decode, JSON, results_str)
-			--DEBUG("lookup result table:", word, results_tab)
-			if results_tab and results_tab[1] then
-				self:showDict(results_tab[1])
-			end
+			local ok, results = pcall(JSON.decode, JSON, results_str)
+			--DEBUG("lookup result table:", word, results)
+			self:showDict(results)
 		end
 	end
 end
 
-function ReaderDictionary:showDict(result)
---	UIManager:show(DictQuickLookup:new{
---		dict = "Oxford Dictionary of English",
---		definition = "coordination n. [mass noun] 1 the organization of the different elements of a \
---			complex body or activity so as to enable them to work together effectively: an important managerial \
---			task is the control and coordination of activities. cooperative effort resulting in an effective \
---			relationship: action groups work in coordination with local groups to end rainforest destruction. \
---			the ability to use different parts of the body together smoothly and efficiently: changing from \
---			one foot position to another requires coordination and balance.",
---		id = "/mnt/us/documents/dictionaries/Oxford_Dictionary_of_English.azw",
---		lang = "en",
---	})
-	if result then 
+function ReaderDictionary:showDict(results)
+	if results and results[1] then
+		DEBUG("showing quick lookup dictionary window")
 		UIManager:show(DictQuickLookup:new{
 			ui = self.ui,
-			dict = result.dict,
-			definition = result.definition,
-			id = result.ID,
-			lang = result.lang,
+			dialog = self.dialog,
+			results = results,
+			dictionary = self.default_dictionary,
 		})
 	end
+end
+
+function ReaderDictionary:onUpdateDefaultDict(dict)
+	DEBUG("make default dictionary:", dict)
+	self.default_dictionary = dict
+end
+
+function ReaderDictionary:onReadSettings(config)
+	self.default_dictionary = config:readSetting("default_dictionary")
+end
+
+function ReaderDictionary:onCloseDocument()
+	self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
 end
