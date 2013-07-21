@@ -5,6 +5,12 @@ WidgetContainer is a container for another Widget
 --]]
 WidgetContainer = Widget:new()
 
+function WidgetContainer:init()
+	if not self.dimen then
+		self.dimen = Geom:new{}
+	end
+end
+
 function WidgetContainer:getSize()
 	if self.dimen then
 		-- fixed size
@@ -155,6 +161,11 @@ end
 
 function FrameContainer:paintTo(bb, x, y)
 	local my_size = self:getSize()
+	self.dimen = Geom:new{
+		x = x, y = y,
+		w = my_size.w,
+		h = my_size.h 
+	}
 	local container_width = self.width or my_size.w
 	local container_height = self.height or my_size.h
 

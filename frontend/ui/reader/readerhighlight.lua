@@ -90,7 +90,7 @@ function ReaderHighlight:onTap(arg, ges)
 			for j = 1, #items[i].boxes do
 				if inside_box(ges, items[i].boxes[j]) then
 					DEBUG("Tap on hightlight")
-					self.edit_highlight_dialog = ButtonTable:new{
+					self.edit_highlight_dialog = HighlightDialog:new{
 						buttons = {
 							{
 								{
@@ -198,13 +198,59 @@ function ReaderHighlight:translate(selected_text)
 	end
 end
 
+HighlightDialog = InputContainer:new{
+	buttons = nil,
+	tap_close_callback = nil,
+}
+
+function HighlightDialog:init()
+	if Device:hasKeyboard() then
+		key_events = {
+			AnyKeyPressed = { { Input.group.Any },
+				seqtext = "any key", doc = _("close dialog") }
+		}
+	else
+		self.ges_events.TapClose = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		}
+	end
+	self[1] = CenterContainer:new{
+		dimen = Screen:getSize(),
+		FrameContainer:new{
+			ButtonTable:new{
+				width = Screen:getWidth()*0.9,
+				buttons = self.buttons,
+			},
+			background = 0,
+			bordersize = 2,
+			radius = 7,
+			padding = 2,
+		}
+	}
+end
+
+function HighlightDialog:onTapClose()
+	UIManager:close(self)
+	if self.tap_close_callback then
+		self.tap_close_callback()
+	end
+	return true
+end
+
 function ReaderHighlight:onHoldRelease(arg, ges)
 	if self.selected_word then
 		self:lookup(self.selected_word)
 		self.selected_word = nil
 	elseif self.selected_text then
 		DEBUG("show highlight dialog")
-		self.highlight_dialog = ButtonTable:new{
+		self.highlight_dialog = HighlightDialog:new{
 			buttons = {
 				{
 					{
@@ -439,3 +485,4 @@ function ReaderHighlight:getTextFromPositions(boxes, pos0, pos1)
     	boxes = line_boxes,
     }
 end
+
