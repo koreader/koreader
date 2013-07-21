@@ -13,7 +13,7 @@ DictQuickLookup = InputContainer:new{
 	title_face = Font:getFace("tfont", 20),
 	word_face = Font:getFace("tfont", 18),
 	content_face = Font:getFace("cfont", 18),
-	width = Screen:getWidth() - scaleByDPI(100),
+	width = nil,
 	
 	title_padding = scaleByDPI(5),
 	title_margin = scaleByDPI(2),
@@ -126,8 +126,8 @@ function DictQuickLookup:update()
 	}
 	
 	self.dict_frame = FrameContainer:new{
-		radius = scaleByDPI(8),
-		bordersize = scaleByDPI(3),
+		radius = 8,
+		bordersize = 3,
 		padding = 0,
 		margin = 0,
 		background = 0,

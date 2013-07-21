@@ -38,6 +38,7 @@ function ReaderDictionary:showDict(results)
 			dialog = self.dialog,
 			results = results,
 			dictionary = self.default_dictionary,
+			width = Screen:getWidth() - scaleByDPI(120),
 		})
 	end
 end
