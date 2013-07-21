@@ -36,10 +36,12 @@ function Button:init()
 		background = self.background,
 		radius = self.radius,
 		padding = self.padding,
-		HorizontalGroup:new{
-			HorizontalSpan:new{ width = (self.width - text_size.w)/2 },
+		CenterContainer:new{
+			dimen = Geom:new{
+				w = self.width,
+				h = text_size.h
+			},
 			self.text_widget,
-			HorizontalSpan:new{ width = (self.width - text_size.w)/2 },
 		}
 	}
 	if self.preselect then
