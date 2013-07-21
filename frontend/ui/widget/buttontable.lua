@@ -1,60 +1,46 @@
 require "ui/widget/base"
 require "ui/widget/line"
 
-ButtonTable = InputContainer:new{
+ButtonTable = VerticalGroup:new{
+	width = Screen:getWidth(),
 	buttons = {
 		{
 			{text="OK", enabled=true, callback=nil},
 			{text="Cancel", enabled=false, callback=nil},
 		},
 	},
-	tap_close_callback = nil,
+	sep_width = scaleByDPI(1),
+	padding = scaleByDPI(2),
+	
+	zero_sep = false,
 }
 
 function ButtonTable:init()
-	if Device:hasKeyboard() then
-		key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	else
-		self.ges_events.TapClose = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
-		}
+	--local vertical_group = VerticalGroup:new{}
+	if self.zero_sep then
+		self:addHorizontalSep()
 	end
-	local vertical_group = VerticalGroup:new{}
-	local horizontal_sep = LineWidget:new{
-		background = 8,
-		dimen = Geom:new{
-			w = Screen:getWidth()*0.9,
-			h = 1,
-		}
-	}
 	for i = 1, #self.buttons do
 		local horizontal_group = HorizontalGroup:new{}
 		local line = self.buttons[i]
+		local sizer_space = self.sep_width * (#line - 1) + 2
 		for j = 1, #line do
 			local button = Button:new{
 				text = line[j].text,
 				enabled = line[j].enabled,
 				callback = line[j].callback,
-				width = Screen:getWidth()*0.9/#line,
+				width = (self.width - sizer_space)/#line,
 				bordersize = 0,
+				margin = 0,
+				padding = 0,
 				text_font_face = "cfont",
-				text_font_size = scaleByDPI(18),
+				text_font_size = 18,
 			}
 			local button_dim = button:getSize()
 			local vertical_sep = LineWidget:new{
 				background = 8,
 				dimen = Geom:new{
-					w = scaleByDPI(1),
+					w = self.sep_width,
 					h = button_dim.h,
 				}
 			}
@@ -63,29 +49,21 @@ function ButtonTable:init()
 				table.insert(horizontal_group, vertical_sep)
 			end
 		end -- end for each button
-		table.insert(vertical_group, horizontal_group)
+		table.insert(self, horizontal_group)
 		if i < #self.buttons then
-			table.insert(vertical_group, VerticalSpan:new{ width = scaleByDPI(2) })
-			table.insert(vertical_group, horizontal_sep)
-			table.insert(vertical_group, VerticalSpan:new{ width = scaleByDPI(2) })
+			self:addHorizontalSep()
 		end
 	end -- end for each button line
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			vertical_group,
-			background = 0,
-			bordersize = 2,
-			radius = 7,
-			padding = 2,
-		},
-	}
 end
 
-function ButtonTable:onTapClose()
-	UIManager:close(self)
-	if self.tap_close_callback then
-		self.tap_close_callback()
-	end
-	return true
+function ButtonTable:addHorizontalSep()
+	table.insert(self, VerticalSpan:new{ width = scaleByDPI(2) })
+	table.insert(self, LineWidget:new{
+		background = 8,
+		dimen = Geom:new{
+			w = self.width,
+			h = self.sep_width,
+		}
+	})
+	table.insert(self, VerticalSpan:new{ width = scaleByDPI(2) })
 end
