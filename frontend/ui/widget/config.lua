@@ -462,27 +462,17 @@ function ConfigDialog:updateConfigPanel(index)
 end
 
 function ConfigDialog:makeDialog()
-	local dialog = VerticalGroup:new{
-		self.config_panel,
-		self.config_menubar,
+	self.dialog_frame = FrameContainer:new{
+		background = 0,
+		VerticalGroup:new{
+			self.config_panel,
+			self.config_menubar,
+		},
 	}
-
-	local dialog_size = dialog:getSize()
 
 	self[1] = BottomContainer:new{
 		dimen = Screen:getSize(),
-		FrameContainer:new{
-			dimen = dialog_size,
-			background = 0,
-			dialog,
-		}
-	}
-
-	self.dialog_dimen = Geom:new{
-		x = (Screen:getWidth() - dialog_size.w)/2,
-		y = Screen:getHeight() - dialog_size.h,
-		w = dialog_size.w,
-		h = dialog_size.h,
+		self.dialog_frame,
 	}
 end
 
@@ -514,7 +504,7 @@ function ConfigDialog:closeDialog()
 end
 
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
-	if ges_ev.pos:notIntersectWith(self.dialog_dimen) then
+	if ges_ev.pos:notIntersectWith(self.dialog_frame.dimen) then
 		self:closeDialog()
 		return true
 	end
