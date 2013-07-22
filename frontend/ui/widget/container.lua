@@ -204,16 +204,12 @@ UnderlineContainer = WidgetContainer:new{
 }
 
 function UnderlineContainer:getSize()
-	if self.dimen then
-		return { w = self.dimen.w, h = self.dimen.h }
-	else
-		return self:getContentSize()
-	end
+	return self:getContentSize()
 end
 
 function UnderlineContainer:getContentSize()
 	local contentSize = self[1]:getSize()
-	return {
+	return Geom:new{
 		w = contentSize.w,
 		h = contentSize.h + self.linesize + self.padding
 	}
