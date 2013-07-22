@@ -10,18 +10,33 @@ Screen:init()
 -- initialize the input handling
 Input:init()
 
+WAVEFORM_MODE_INIT			= 0x0	-- Screen goes to white (clears)
+WAVEFORM_MODE_DU			= 0x1	-- Grey->white/grey->black
+WAVEFORM_MODE_GC16			= 0x2	-- High fidelity (flashing)
+WAVEFORM_MODE_GC4			= WAVEFORM_MODE_GC16 -- For compatibility
+WAVEFORM_MODE_GC16_FAST		= 0x3	-- Medium fidelity
+WAVEFORM_MODE_A2			= 0x4	-- Faster but even lower fidelity
+WAVEFORM_MODE_GL16			= 0x5	-- High fidelity from white transition
+WAVEFORM_MODE_GL16_FAST		= 0x6	-- Medium fidelity from white transition
+WAVEFORM_MODE_AUTO			= 0x101
 
 -- there is only one instance of this
 UIManager = {
 	-- change this to set refresh type for next refresh
 	-- defaults to 1 initially and will be set to 1 after each refresh
 	refresh_type = 1,
+	-- change this to set refresh waveform for next refresh
+	-- default to WAVEFORM_MODE_GC16 
+	waveform_mode = WAVEFORM_MODE_GC16,
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
 	repaint_all = false,
 	-- force to do full refresh, will be reset to false
 	-- after each ui loop
 	full_refresh = false,
+	-- force to do patial refresh, will be reset to false
+	-- after each ui loop
+	patial_refresh = false,
 	-- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
 	FULL_REFRESH_COUNT = DRCOUNTMAX,
 	refresh_count = 0,
@@ -173,6 +188,7 @@ function UIManager:run()
 		local dirty = false
 		local request_full_refresh = false
 		local force_full_refresh = false
+		local force_patial_refresh = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
 				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
@@ -181,6 +197,9 @@ function UIManager:run()
 				end
 				if self._dirty[widget.widget] == "full" then
 					force_full_refresh = true
+				end
+				if self._dirty[widget.widget] == "patial" then
+					force_patial_refresh = true
 				end
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
@@ -193,26 +212,41 @@ function UIManager:run()
 			dirty = true
 			force_full_refresh = true
 		end
+		
+		if self.patial_refresh then
+			dirty = true
+			force_patial_refresh = true
+		end
 
 		self.repaint_all = false
 		self.full_refresh = false
+		self.patial_refresh = false
 
 		if dirty then
-			if force_full_refresh then
-				self.refresh_count = self.FULL_REFRESH_COUNT - 1
-			end
-			if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+			if force_patial_refresh then
+				self.refresh_type = 1
+			elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
 				self.refresh_type = 0
 			else
 				self.refresh_type = 1
 			end
-			-- refresh FB
-			Screen:refresh(self.refresh_type) -- TODO: refresh explicitly only repainted area
-			-- increase refresh_count only when full refresh is requested or performed
-			local refresh_increment = (request_full_refresh or self.refresh_type == 0) and 1 or 0
-			self.refresh_count = (self.refresh_count + refresh_increment)%self.FULL_REFRESH_COUNT
-			-- reset refresh_type
-			self.refresh_type = 1
+			--self.waveform_mode = self.fast_refresh and WAVEFORM_MODE_A2 or WAVEFORM_MODE_GC16
+			if self.update_region_func then
+				local update_region = self.update_region_func()
+				Screen:refresh(self.refresh_type, self.waveform_mode, 
+							   update_region.x, update_region.y,
+							   update_region.w, update_region.h)
+			else
+				Screen:refresh(self.refresh_type, self.waveform_mode)
+			end
+			if self.refresh_type == 0 then
+				self.refresh_count = 0
+			elseif not force_patial_refresh and not force_full_refresh then 
+				self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
+			end
+			-- reset waveform_mode to WAVEFORM_MODE_GC16
+			self.waveform_mode = WAVEFORM_MODE_GC16
+			self.update_region_func = nil
 		end
 
 		self:checkTasks()
