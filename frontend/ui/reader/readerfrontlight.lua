@@ -32,7 +32,7 @@ end
 function ReaderFrontLight:onAdjust(arg, ges)
 	if self.lipc_handle and self.intensity ~=nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
-		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)]
+		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)] or self.steps[#self.steps]
 		local msg = ""
 		if ges.direction == "north" then
 			msg = _("Increase front light intensity to ")
@@ -51,6 +51,7 @@ function ReaderFrontLight:setIntensity(intensity, msg)
 	if self.lipc_handle then 
 		intensity = intensity < 0 and 0 or intensity
 		intensity = intensity > 24 and 24 or intensity
+		self.intensity = intensity
 		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
 		UIManager:show(Notification:new{
 			text = msg..intensity,
