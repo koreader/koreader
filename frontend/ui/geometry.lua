@@ -75,6 +75,17 @@ function Geom:transformByScale(zx, zy)
 end
 
 --[[
+return size of geom
+]]--
+function Geom:sizeof()
+	if not self.w or not self.h then
+		return 0
+	else
+		return self.w * self.h
+	end
+end
+
+--[[
 enlarges or shrinks dimensions or rectangles
 
 note that for rectangles the offset stays the same
@@ -91,7 +102,8 @@ return the outer rectangle that contains both us and a given rectangle
 works for rectangles, dimensions and points
 ]]--
 function Geom:combine(rect_b)
-	local combined = Geom:new(self)
+	local combined = self:copy()
+	if not rect_b or rect_b:sizeof() == 0 then return combined end
 	if combined.x > rect_b.x then
 		combined.x = rect_b.x
 	end
