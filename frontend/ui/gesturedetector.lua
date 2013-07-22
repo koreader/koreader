@@ -596,7 +596,7 @@ function GestureDetector:holdState(tev, hold)
 		}
 	else
 		local ges_ev = self:handlePan(tev)
-		ges_ev.ges = "hold_pan"
+		if ges_ev ~= nil then ges_ev.ges = "hold_pan" end
 		return ges_ev
 	end
 end
