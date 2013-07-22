@@ -154,6 +154,7 @@ function DictQuickLookup:update()
 		dimen = Screen:getSize(),
 		self.dict_frame,
 	}
+	UIManager.repaint_all = true
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
@@ -177,8 +178,15 @@ function DictQuickLookup:changeDictionary(index)
 	self.dictionary = self.results[index].dict
 	self.lookupword = self.results[index].word
 	self.definition = self.results[index].definition
+	
+	local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
 	self:update()
-	UIManager.repaint_all = true
+
+	UIManager.update_region_func = function()
+		local update_region = self.dict_frame.dimen:combine(orig_dimen)
+		DEBUG("update region", update_region)
+		return update_region
+	end
 end
 
 function DictQuickLookup:changeToDefaultDict()		
