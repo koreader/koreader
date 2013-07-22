@@ -103,7 +103,7 @@ function Screen:refresh(refesh_type, waveform_mode, x, y, w, h)
         	x, y = self.width - w - x, self.height - h - y
         end
     end
-	self.fb:refresh(refesh_type, waveform_mode, y, x, w, h)
+	self.fb:refresh(refesh_type, waveform_mode, x, y, w, h)
 end
 
 function Screen:getSize()
