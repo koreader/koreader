@@ -72,19 +72,38 @@ function Screen:init()
 	self.cur_rotation_mode = self.native_rotation_mode
 end
 
-function Screen:refresh(refesh_type)
-	if self.native_rotation_mode ==  self.cur_rotation_mode then
+function Screen:refresh(refesh_type, waveform_mode, x, y, w, h)
+	if x then x = x < 0 and 0 or math.floor(x) end
+    if y then y = y < 0 and 0 or math.floor(y) end
+    if w then w = w > self.width and self.width or math.ceil(w) end
+    if h then h = h > self.height and self.height or math.ceil(h) end
+	if self.native_rotation_mode == self.cur_rotation_mode then
         self.fb.bb:blitFrom(self.bb, 0, 0, 0, 0, self.width, self.height)
     elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then
         self.fb.bb:blitFromRotate(self.bb, 270)
+        if x and y and w and h then
+        	x, y = y, self.width - w - x
+        	w, h = h, w
+        end
     elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 3 then
         self.fb.bb:blitFromRotate(self.bb, 90)
+        if x and y and w and h then
+        	x, y = self.height - h - y, x
+        	w, h = h, w
+        end
     elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 0 then
         self.fb.bb:blitFromRotate(self.bb, 90)
+        if x and y and w and h then
+        	x, y = self.height - h - y, x
+        	w, h = h, w
+        end
     elseif self.native_rotation_mode == 1 and self.cur_rotation_mode == 3 then
         self.fb.bb:blitFromRotate(self.bb, 180)
+        if x and y and w and h then
+        	x, y = self.width - w - x, self.height - h - y
+        end
     end
-	self.fb:refresh(refesh_type)
+	self.fb:refresh(refesh_type, waveform_mode, x, y, w, h)
 end
 
 function Screen:getSize()

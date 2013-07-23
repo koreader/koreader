@@ -4,13 +4,14 @@
 # Translators:
 # Antoine Kamel <antoine12@gmail.com>, 2013
 # Carcara <tiagoprudente@gmail.com>, 2013
+# Carcara <tiagoprudente@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-06-16 04:18+0000\n"
-"PO-Revision-Date: 2013-07-07 02:08+0000\n"
-"Last-Translator: Antoine Kamel <antoine12@gmail.com>\n"
+"PO-Revision-Date: 2013-07-23 06:55+0000\n"
+"Last-Translator: houqp <dave2008713@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/koreader/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -84,7 +85,7 @@ msgstr "Cancelar"
 
 #: frontend/ui/reader/readerhyphenation.lua:21
 msgid "Change Hyphenation to "
-msgstr "Mudar hifenação para"
+msgstr "Mudar hifenação para "
 
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
@@ -100,19 +101,19 @@ msgstr "Contraste"
 
 #: frontend/ui/reader/readerfont.lua:124
 msgid "Decrease font size to "
-msgstr "Diminuir tamanho de fonte para"
+msgstr "Diminuir tamanho de fonte para "
 
 #: frontend/ui/reader/readerfrontlight.lua:42
 msgid "Decrease front light intensity to "
-msgstr "Diminuir intensidade da luz para"
+msgstr "Diminuir intensidade da luz para "
 
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
-msgstr "Diminuir gamute para"
+msgstr "Diminuir gamute para "
 
 #: frontend/ui/reader/readerfont.lua:163
 msgid "Decrease line space to "
-msgstr "Diminuir entrelinhas para"
+msgstr "Diminuir entrelinhas para "
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
@@ -184,19 +185,19 @@ msgstr "Se você der o nome de um diretório ao invés de um caminho para um arq
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
-msgstr "Aumentar tamanho de fonte para"
+msgstr "Aumentar tamanho de fonte para "
 
 #: frontend/ui/reader/readerfrontlight.lua:38
 msgid "Increase front light intensity to "
-msgstr "Aumentar intensidade da luz para"
+msgstr "Aumentar intensidade da luz para "
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
-msgstr "Aumentar gamute para"
+msgstr "Aumentar gamute para "
 
 #: frontend/ui/reader/readerfont.lua:167
 msgid "Increase line space to "
-msgstr "Aumentar entrelinhas para"
+msgstr "Aumentar entrelinhas para "
 
 #: frontend/ui/data/strings.lua:18
 msgid "Indentation"
@@ -250,7 +251,7 @@ msgstr "Leia todos os livros no seu aparelho e-ink"
 
 #: frontend/ui/reader/readerfont.lua:215
 msgid "Redrawing with font "
-msgstr "Redesenhar com fonte"
+msgstr "Redesenhar com fonte "
 
 #: frontend/ui/data/koptoptions.lua:146 frontend/ui/data/strings.lua:12
 msgid "Reflow"
@@ -282,7 +283,7 @@ msgstr "Selecionar Item de Opção"
 
 #: frontend/ui/reader/readerfont.lua:148
 msgid "Set font size to "
-msgstr "Mudar tamanho de fonte para"
+msgstr "Mudar tamanho de fonte para "
 
 #: frontend/ui/reader/readertypeset.lua:2
 msgid "Set render style"
@@ -571,7 +572,7 @@ msgstr "ligado"
 
 #: frontend/ui/data/strings.lua:47
 msgid "page"
-msgstr "página "
+msgstr "página"
 
 #: frontend/ui/widget/menu.lua:431
 msgid "page "

@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-06-16 04:18+0000\n"
-"PO-Revision-Date: 2013-06-18 13:46+0000\n"
+"PO-Revision-Date: 2013-07-14 06:22+0000\n"
 "Last-Translator: chrox <chrox.huang@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -84,7 +84,7 @@ msgstr "取消"
 
 #: frontend/ui/reader/readerhyphenation.lua:21
 msgid "Change Hyphenation to "
-msgstr "断字设置为"
+msgstr "Hyphenation设置为"
 
 #: frontend/ui/reader/readerfont.lua:5
 msgid "Change font"
@@ -100,19 +100,19 @@ msgstr "字体黑度"
 
 #: frontend/ui/reader/readerfont.lua:124
 msgid "Decrease font size to "
-msgstr "字体大小减小为"
+msgstr "字体大小设置为"
 
 #: frontend/ui/reader/readerfrontlight.lua:42
 msgid "Decrease front light intensity to "
-msgstr " 前光亮度调低至"
+msgstr " 前光亮度设置为"
 
 #: frontend/ui/reader/readerfont.lua:192
 msgid "Decrease gamma to "
-msgstr "灰度系数减小为"
+msgstr "灰度系数设置为"
 
 #: frontend/ui/reader/readerfont.lua:163
 msgid "Decrease line space to "
-msgstr "行距减小为"
+msgstr "行距设置为"
 
 #: frontend/ui/data/strings.lua:15
 msgid "Defect Size"
@@ -184,19 +184,19 @@ msgstr "如果提供的是路径参数，"
 
 #: frontend/ui/reader/readerfont.lua:126
 msgid "Increase font size to "
-msgstr "字体大小增加为"
+msgstr "字体大小设置为"
 
 #: frontend/ui/reader/readerfrontlight.lua:38
 msgid "Increase front light intensity to "
-msgstr " 前光亮度调高至"
+msgstr " 前光亮度设置为"
 
 #: frontend/ui/reader/readerfont.lua:189
 msgid "Increase gamma to "
-msgstr "灰度系数增加为"
+msgstr "Gamma校正为"
 
 #: frontend/ui/reader/readerfont.lua:167
 msgid "Increase line space to "
-msgstr "行距增加为"
+msgstr "行距设置为"
 
 #: frontend/ui/data/strings.lua:18
 msgid "Indentation"
@@ -242,7 +242,7 @@ msgstr "页边距"
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Bug反馈请访问https://github.com/koreader/ koreader/issues。获取更多选项请点击页面下方。"
+msgstr "Bug反馈请访问 https://github.com/koreader/ koreader/issues。更多设置选项请点击屏幕下方。"
 
 #: reader.lua:196
 msgid "Read all the books on your E-Ink reader"

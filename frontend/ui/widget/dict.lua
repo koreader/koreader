@@ -10,9 +10,9 @@ DictQuickLookup = InputContainer:new{
 	dictionary = nil,
 	definition = nil,
 	dict_index = 1,
-	title_face = Font:getFace("tfont", 20),
-	word_face = Font:getFace("tfont", 18),
-	content_face = Font:getFace("cfont", 18),
+	title_face = Font:getFace("tfont", 22),
+	word_face = Font:getFace("tfont", 20),
+	content_face = Font:getFace("cfont", 20),
 	width = nil,
 	
 	title_padding = scaleByDPI(5),
@@ -81,6 +81,8 @@ function DictQuickLookup:update()
 	}	
 	local button_table = ButtonTable:new{
 		width = math.max(self.width, definition:getSize().w),
+		button_font_face = "cfont",
+		button_font_size = 20,
 		buttons = {
 			{	
 				{
@@ -154,6 +156,8 @@ function DictQuickLookup:update()
 		dimen = Screen:getSize(),
 		self.dict_frame,
 	}
+	UIManager.repaint_all = true
+	UIManager.full_refresh = true
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
@@ -177,8 +181,15 @@ function DictQuickLookup:changeDictionary(index)
 	self.dictionary = self.results[index].dict
 	self.lookupword = self.results[index].word
 	self.definition = self.results[index].definition
+	
+	local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
 	self:update()
-	UIManager.repaint_all = true
+
+	UIManager.update_region_func = function()
+		local update_region = self.dict_frame.dimen:combine(orig_dimen)
+		DEBUG("update region", update_region)
+		return update_region
+	end
 end
 
 function DictQuickLookup:changeToDefaultDict()		

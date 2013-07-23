@@ -31,18 +31,23 @@ end
 
 function MenuBarItem:invert(invert)
 	self[1].invert = invert
-	UIManager:setDirty(self.config, "partial")
+	UIManager.update_region_func = function()
+		DEBUG("update icon region", self[1].dimen)
+		return self[1].dimen
+	end
+	UIManager:setDirty(self.config, "full")
 end
 
 OptionTextItem = InputContainer:new{}
 function OptionTextItem:init()
 	local text_widget = self[1]
-	self.dimen = text_widget:getSize()
+	
 	self[1] = UnderlineContainer:new{
 		text_widget,
 		padding = self.padding,
 		color = self.color,
-		}
+	}
+	self.dimen = self[1]:getSize()
 	-- we need this table per-instance, so we declare it here
 	if Device:isTouchDevice() then
 		self.ges_events = {
@@ -255,7 +260,6 @@ function ConfigOption:init()
 					end
 				end
 			end
-
 			if self.options[c].item_text then
 				for d = 1, #self.options[c].item_text do
 					local option_item = nil
@@ -421,13 +425,10 @@ function ConfigDialog:init()
 	------------------------------------------
 	-- start to set up widget layout ---------
 	------------------------------------------
-	self.config_panel = ConfigPanel:new{
-		config_dialog = self,
-	}
 	self.config_menubar = MenuBar:new{
 		config_dialog = self,
 	}
-	self:makeDialog()
+	self:update()
 	------------------------------------------
 	-- start to set up input event callback --
 	------------------------------------------
@@ -449,19 +450,17 @@ function ConfigDialog:init()
 		self.key_events.FocusRight = nil
 	end
 	self.key_events.Select = { {"Press"}, doc = _("select current menu item") }
-
-	UIManager:setDirty(self, "partial")
 end
 
 function ConfigDialog:updateConfigPanel(index)
-	self.panel_index = index
-	self.config_panel = ConfigPanel:new{
-		index = index,
-		config_dialog = self,
-	}
+	
 end
 
-function ConfigDialog:makeDialog()
+function ConfigDialog:update()
+	self.config_panel = ConfigPanel:new{
+		index = self.panel_index,
+		config_dialog = self,
+	}
 	self.dialog_frame = FrameContainer:new{
 		background = 0,
 		VerticalGroup:new{
@@ -477,9 +476,18 @@ function ConfigDialog:makeDialog()
 end
 
 function ConfigDialog:onShowConfigPanel(index)
-	self:updateConfigPanel(index)
-	self:makeDialog()
+	self.panel_index = index
+	local orig_dimen = self.dialog_frame and self.dialog_frame.dimen or Geom:new{}
+	
+	self:update()
+	
 	UIManager.repaint_all = true
+	UIManager.full_refresh = true
+	UIManager.update_region_func = function()
+		local update_region = self.dialog_frame.dimen:combine(orig_dimen)
+		DEBUG("update region", update_region)
+		return update_region
+	end
 	return true
 end
 
@@ -487,12 +495,13 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
 	--DEBUG("config option value", option_name, option_value)
 	self.configurable[option_name] = option_value
 	self.ui:handleEvent(Event:new("StartActivityIndicator"))
+	return true
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg)
 	--DEBUG("config option event", option_event, option_arg)
 	self.ui:handleEvent(Event:new(option_event, option_arg))
-	self:onShowConfigPanel(self.panel_index)
+	return true
 end
 
 function ConfigDialog:closeDialog()

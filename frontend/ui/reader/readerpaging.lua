@@ -244,6 +244,8 @@ end
 function ReaderPaging:onPanRelease(arg, ges)
 	if self.flipping_mode then
 		self:updateFlippingPage(self.current_page)
+	else
+		UIManager.full_refresh = true
 	end
 end
 
@@ -516,7 +518,8 @@ function ReaderPaging:onScrollPanRel(diff)
 	end
 	-- update current pageno to the very last part in current view
 	self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
-	UIManager:setDirty(self.view.dialog)
+	
+	UIManager:setDirty(self.view.dialog, "fast")
 end
 
 function ReaderPaging:onScrollPageRel(diff)

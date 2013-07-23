@@ -13,6 +13,8 @@ ButtonTable = VerticalGroup:new{
 	padding = scaleByDPI(2),
 	
 	zero_sep = false,
+	button_font_face = "cfont",
+	button_font_size = 20,
 }
 
 function ButtonTable:init()
@@ -33,8 +35,8 @@ function ButtonTable:init()
 				bordersize = 0,
 				margin = 0,
 				padding = 0,
-				text_font_face = "cfont",
-				text_font_size = 18,
+				text_font_face = self.button_font_face,
+				text_font_size = self.button_font_size,
 			}
 			local button_dim = button:getSize()
 			local vertical_sep = LineWidget:new{
