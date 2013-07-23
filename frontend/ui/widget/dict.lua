@@ -10,9 +10,9 @@ DictQuickLookup = InputContainer:new{
 	dictionary = nil,
 	definition = nil,
 	dict_index = 1,
-	title_face = Font:getFace("tfont", 20),
-	word_face = Font:getFace("tfont", 18),
-	content_face = Font:getFace("cfont", 18),
+	title_face = Font:getFace("tfont", 22),
+	word_face = Font:getFace("tfont", 20),
+	content_face = Font:getFace("cfont", 20),
 	width = nil,
 	
 	title_padding = scaleByDPI(5),
@@ -81,6 +81,8 @@ function DictQuickLookup:update()
 	}	
 	local button_table = ButtonTable:new{
 		width = math.max(self.width, definition:getSize().w),
+		button_font_face = "cfont",
+		button_font_size = 20,
 		buttons = {
 			{	
 				{
@@ -155,6 +157,7 @@ function DictQuickLookup:update()
 		self.dict_frame,
 	}
 	UIManager.repaint_all = true
+	UIManager.full_refresh = true
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
