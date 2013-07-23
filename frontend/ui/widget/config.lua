@@ -31,7 +31,11 @@ end
 
 function MenuBarItem:invert(invert)
 	self[1].invert = invert
-	UIManager:setDirty(self.config, "partial")
+	UIManager.update_region_func = function()
+		DEBUG("update icon region", self[1].dimen)
+		return self[1].dimen
+	end
+	UIManager:setDirty(self.config, "full")
 end
 
 OptionTextItem = InputContainer:new{}
@@ -469,7 +473,6 @@ function ConfigDialog:update()
 		dimen = Screen:getSize(),
 		self.dialog_frame,
 	}
-	UIManager.repaint_all = true
 end
 
 function ConfigDialog:onShowConfigPanel(index)
@@ -478,6 +481,8 @@ function ConfigDialog:onShowConfigPanel(index)
 	
 	self:update()
 	
+	UIManager.repaint_all = true
+	UIManager.full_refresh = true
 	UIManager.update_region_func = function()
 		local update_region = self.dialog_frame.dimen:combine(orig_dimen)
 		DEBUG("update region", update_region)

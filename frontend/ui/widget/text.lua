@@ -118,7 +118,7 @@ function TextBoxWidget:_render()
 	local font_height = self.face.size
 	local line_height_px = self.line_height * font_height
 	local space_w = sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
-	local h = (font_height + line_height_px) * #v_list - line_height_px
+	local h = (font_height + line_height_px) * #v_list
 	self._bb = Blitbuffer.new(self.width, h)
 	local y = font_height
 	local pen_x = 0
@@ -127,7 +127,7 @@ function TextBoxWidget:_render()
 		for _,w in ipairs(l) do
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
 			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-			renderUtf8Text(self._bb, pen_x, y*0.8, self.face, w.word, 
+			renderUtf8Text(self._bb, pen_x, y, self.face, w.word, 
 							true, self.bgcolor, self.fgcolor)
 			local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
 			pen_x = pen_x + w.width + (is_ascii and space_w or 0)
