@@ -146,7 +146,7 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(arg, ges)
-	if not self.page_boxes or #self.page_boxes == 0 then
+	if not self.page_boxes or #self.page_boxes == 0 or self.hold_pos == nil then
 		DEBUG("no page boxes detected")
 		return true
 	end
