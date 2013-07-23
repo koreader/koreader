@@ -200,7 +200,7 @@ function UIManager:run()
 				if self._dirty[widget.widget] == "full" then
 					force_full_refresh = true
 				end
-				if self._dirty[widget.widget] == "patial" then
+				if self._dirty[widget.widget] == "partial" then
 					force_patial_refresh = true
 				end
 				if self._dirty[widget.widget] == "fast" then
