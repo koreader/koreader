@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2013-06-16 04:18+0000\n"
-"PO-Revision-Date: 2013-07-01 07:58+0000\n"
+"PO-Revision-Date: 2013-07-18 13:07+0000\n"
 "Last-Translator: automaticjack <automaticjack@hotmail.it>\n"
 "Language-Team: Italian (Italy) (http://www.transifex.com/projects/p/koreader/language/it_IT/)\n"
 "MIME-Version: 1.0\n"
@@ -212,7 +212,7 @@ msgstr "Interlinea"
 
 #: frontend/ui/reader/readerhighlight.lua:198
 msgid "More"
-msgstr ""
+msgstr "Più opzioni"
 
 #: reader.lua:127
 msgid "No reader engine for this file"
