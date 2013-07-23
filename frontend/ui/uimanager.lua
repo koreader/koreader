@@ -24,10 +24,11 @@ WAVEFORM_MODE_AUTO			= 0x101
 UIManager = {
 	-- change this to set refresh type for next refresh
 	-- defaults to 1 initially and will be set to 1 after each refresh
-	refresh_type = 1,
+	default_refresh_type = 1,
 	-- change this to set refresh waveform for next refresh
 	-- default to WAVEFORM_MODE_GC16 
-	waveform_mode = WAVEFORM_MODE_GC16,
+	default_waveform_mode = WAVEFORM_MODE_GC16,
+	fast_waveform_mode = WAVEFORM_MODE_A2,
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
 	repaint_all = false,
@@ -189,6 +190,7 @@ function UIManager:run()
 		local request_full_refresh = false
 		local force_full_refresh = false
 		local force_patial_refresh = false
+		local force_fast_refresh = false
 		for _, widget in ipairs(self._window_stack) do
 			if self.repaint_all or self._dirty[widget.widget] then
 				widget.widget:paintTo(Screen.bb, widget.x, widget.y)
@@ -198,8 +200,11 @@ function UIManager:run()
 				if self._dirty[widget.widget] == "full" then
 					force_full_refresh = true
 				end
-				if self._dirty[widget.widget] == "patial" then
+				if self._dirty[widget.widget] == "partial" then
 					force_patial_refresh = true
+				end
+				if self._dirty[widget.widget] == "fast" then
+					force_fast_refresh = true
 				end
 				-- and remove from list after painting
 				self._dirty[widget.widget] = nil
@@ -207,45 +212,45 @@ function UIManager:run()
 				dirty = true
 			end
 		end
-
+		
 		if self.full_refresh then
 			dirty = true
 			force_full_refresh = true
 		end
-		
+
 		if self.patial_refresh then
 			dirty = true
 			force_patial_refresh = true
 		end
-
+		
 		self.repaint_all = false
 		self.full_refresh = false
 		self.patial_refresh = false
-
+		
+		local refresh_type = self.default_refresh_type
+		local waveform_mode = self.default_waveform_mode
 		if dirty then
-			if force_patial_refresh then
-				self.refresh_type = 1
+			if force_patial_refresh or force_fast_refresh then
+				refresh_type = 1
 			elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-				self.refresh_type = 0
-			else
-				self.refresh_type = 1
+				refresh_type = 0
 			end
-			--self.waveform_mode = self.fast_refresh and WAVEFORM_MODE_A2 or WAVEFORM_MODE_GC16
+			if force_fast_refresh then
+				self.waveform_mode = self.fast_waveform_mode
+			end
 			if self.update_region_func then
 				local update_region = self.update_region_func()
-				Screen:refresh(self.refresh_type, self.waveform_mode, 
+				Screen:refresh(refresh_type, waveform_mode, 
 							   update_region.x, update_region.y,
 							   update_region.w, update_region.h)
 			else
-				Screen:refresh(self.refresh_type, self.waveform_mode)
+				Screen:refresh(refresh_type, waveform_mode)
 			end
 			if self.refresh_type == 0 then
 				self.refresh_count = 0
 			elseif not force_patial_refresh and not force_full_refresh then 
 				self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
 			end
-			-- reset waveform_mode to WAVEFORM_MODE_GC16
-			self.waveform_mode = WAVEFORM_MODE_GC16
 			self.update_region_func = nil
 		end
 

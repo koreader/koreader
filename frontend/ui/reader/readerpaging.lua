@@ -108,7 +108,7 @@ function ReaderPaging:initGesListener()
 					w = Screen:getWidth(),
 					h = Screen:getHeight(),
 				},
-				rate = 5.0,
+				rate = 4.0,
 			}
 		},
 		PanRelease = {
@@ -246,7 +246,6 @@ function ReaderPaging:onPanRelease(arg, ges)
 		self:updateFlippingPage(self.current_page)
 	else
 		UIManager.full_refresh = true
-		UIManager:setDirty(self.view.dialog)
 	end
 end
 
@@ -520,9 +519,7 @@ function ReaderPaging:onScrollPanRel(diff)
 	-- update current pageno to the very last part in current view
 	self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
 	
-	UIManager.waveform_mode = WAVEFORM_MODE_A2
-	UIManager.patial_refresh = true
-	UIManager:setDirty(self.view.dialog, "partial")
+	UIManager:setDirty(self.view.dialog, "fast")
 end
 
 function ReaderPaging:onScrollPageRel(diff)
