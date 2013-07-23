@@ -3,6 +3,7 @@ require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
 require "ui/geometry"
+require "ui/reader/readerfrontlight"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -318,6 +319,7 @@ function Input:init()
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
+			self:adjustKoboEventMap()
 			if dev_mod ~= 'Kobo_trilogy' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
@@ -368,6 +370,12 @@ function Input:adjustKindle4EventMap()
 	self.event_map[104] = "LPgFwd"
 end
 
+function Input:adjustKoboEventMap()
+	self.event_map[53] = "Power"
+	self.event_map[90] = "Light"
+	self.event_map[116] = "Power"
+end
+
 function Input:setTimeout(cb, tv_out)
 	local item = {
 		callback = cb,
@@ -399,6 +407,10 @@ function Input:handleKeyBoardEv(ev)
 	if keycode == "IntoSS" or keycode == "OutOfSS"
 	or keycode == "Charging" or keycode == "NotCharging" then
 		return keycode
+	end
+
+	if keycode == "Light" then
+		ReaderFrontLight:toggle()
 	end
 
 	-- handle modifier keys

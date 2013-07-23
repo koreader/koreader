@@ -3,6 +3,7 @@ require "ui/device"
 ReaderFrontLight = InputContainer:new{
 	steps = {0,1,2,3,4,5,6,7,8,9,10},
 	intensity = nil,
+	ld = nil,
 }
 
 function ReaderFrontLight:init()
@@ -13,20 +14,23 @@ function ReaderFrontLight:init()
 		if self.lipc_handle then
 			self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
 		end
+		self.ges_events = {
+			Adjust = {
+				GestureRange:new{
+					ges = "two_finger_pan",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					},
+					rate = 2.0,
+				}
+			},
+		}
 	end
-	self.ges_events = {
-		Adjust = {
-			GestureRange:new{
-				ges = "two_finger_pan",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				},
-				rate = 2.0,
-			}
-		},
-	}
+	if Device:isKobo() then
+		self.ld = kobolight.open()
+	end
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
@@ -56,6 +60,23 @@ function ReaderFrontLight:setIntensity(intensity, msg)
 			text = msg..intensity,
 			timeout = 1
 		})
+	end
+	if Device:isKobo() then
+		if self.ld == nil then
+			return true
+		end
+		self.intensity = intensity
+		self.ld:setBrightness(intensity)
+	end
+	return true
+end
+
+function ReaderFrontLight:toggle()
+	if Device:isKobo() then
+		if self.ld == nil then
+			return true
+		end
+		self.ld:toggle()
 	end
 	return true
 end
