@@ -1,3 +1,4 @@
+require "ui/widget/container"
 require "ui/device"
 
 ReaderFrontLight = InputContainer:new{

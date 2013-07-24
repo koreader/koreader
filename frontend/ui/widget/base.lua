@@ -3,7 +3,6 @@ require "ui/rendertext"
 require "ui/graphics"
 require "ui/image"
 require "ui/event"
-require "ui/inputevent"
 require "ui/gesturedetector"
 require "ui/font"
 
