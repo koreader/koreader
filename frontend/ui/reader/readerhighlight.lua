@@ -68,13 +68,14 @@ end
 function ReaderHighlight:onTap(arg, ges)
 	local function inside_box(ges, box)
 		local pos = self.view:screenToPageTransform(ges.pos)
-		local x, y = pos.x, pos.y
-		if box.x <= x and box.y <= y 
-			and box.x + box.w >= x 
-			and box.y + box.h >= y then
-			return true
+		if pos then
+			local x, y = pos.x, pos.y
+			if box.x <= x and box.y <= y 
+				and box.x + box.w >= x 
+				and box.y + box.h >= y then
+				return true
+			end
 		end
-		return false
 	end
 	if self.hold_pos then
 		self.view.highlight.temp[self.hold_pos.page] = nil
