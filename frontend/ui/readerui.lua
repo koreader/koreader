@@ -98,7 +98,7 @@ function ReaderUI:init()
 		ui = self
 	}
 	table.insert(self, reader_bm)
-	-- text highlight 
+	-- text highlight
 	local highlight = ReaderHighlight:new{
 		dialog = self.dialog,
 		view = self[1],
@@ -106,7 +106,7 @@ function ReaderUI:init()
 		document = self.document,
 	}
 	table.insert(self, highlight)
-	-- dictionary 
+	-- dictionary
 	local dict = ReaderDictionary:new{
 		dialog = self.dialog,
 		view = self[1],
@@ -170,6 +170,9 @@ function ReaderUI:init()
 		}
 		table.insert(self, hinter)
 	else
+		if Device:getModel() ~= "KindleDXG" then
+			self.document:setVisiblePageCount(1)
+		end
 		-- make sure we load document first before calling any callback
 		table.insert(self.postInitCallback, function()
 			self.document:loadDocument()
