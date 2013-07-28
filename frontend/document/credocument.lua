@@ -227,6 +227,10 @@ function CreDocument:setPageMargins(left, top, right, bottom)
 	self._document:setPageMargins(left, top, right, bottom)
 end
 
+function CreDocument:setVisiblePageCount(new_count)
+	self._document:setVisiblePageCount(new_count)
+end
+
 DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
 DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
 DocumentRegistry:addProvider("html", "application/html", CreDocument)
