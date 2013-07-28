@@ -14,35 +14,43 @@ DictQuickLookup = InputContainer:new{
 	word_face = Font:getFace("tfont", 20),
 	content_face = Font:getFace("cfont", 20),
 	width = nil,
+	height = nil,
 	
 	title_padding = scaleByDPI(5),
 	title_margin = scaleByDPI(2),
-	word_padding = scaleByDPI(5),
+	word_padding = scaleByDPI(2),
 	word_margin = scaleByDPI(2),
-	definition_padding = scaleByDPI(5),
+	definition_padding = scaleByDPI(2),
 	definition_margin = scaleByDPI(2),
 	button_padding = scaleByDPI(14),
 }
 
 function DictQuickLookup:init()
-	if Device:hasKeyboard() then
-		key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	else
-		self.ges_events.TapCloseDict = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
+	self:changeToDefaultDict()
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapCloseDict = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
+				},
+			},
+			Swipe = {
+				GestureRange:new{
+					ges = "swipe",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
+				},
+			},
 		}
 	end
-	self:changeToDefaultDict()
 end
 
 function DictQuickLookup:update()
@@ -73,10 +81,12 @@ function DictQuickLookup:update()
 		padding = self.definition_padding,
 		margin = self.definition_margin,
 		bordersize = 0,
-		TextBoxWidget:new{
+		ScrollTextWidget:new{
 			text = self.definition,
-			face = self.content_face,
+			font_face = self.content_face,
 			width = self.width,
+			height = self.height*0.8,
+			dialog = self,
 		},
 	}	
 	local button_table = ButtonTable:new{
@@ -138,9 +148,21 @@ function DictQuickLookup:update()
 			self.dict_title,
 			title_bar,
 			-- word
-			lookup_word,
+			CenterContainer:new{
+				dimen = Geom:new{
+					w = title_bar:getSize().w,
+					h = lookup_word:getSize().h,
+				},
+				lookup_word,
+			},
 			-- definition
-			definition,
+			CenterContainer:new{
+				dimen = Geom:new{
+					w = title_bar:getSize().w,
+					h = definition:getSize().h,
+				},
+				definition,
+			},
 			-- buttons
 			CenterContainer:new{
 				dimen = Geom:new{
