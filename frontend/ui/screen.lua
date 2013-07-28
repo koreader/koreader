@@ -131,7 +131,7 @@ function Screen:getDPI()
 end
 
 function Screen:scaleByDPI(px)
-	return (px * self:getDPI()/167)
+	return math.floor(px * self:getDPI()/167)
 end
 
 -- make a shortcut to Screen:scaleByDPI
