@@ -76,6 +76,8 @@ function InputText:initKeyboard()
 	self.keyboard = VirtualKeyboard:new{
 		layout = keyboard_layout,
 		inputbox = self,
+		width = Screen:getWidth(),
+		height = Screen:getHeight()*0.32,
 	}
 end
 

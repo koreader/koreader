@@ -84,7 +84,7 @@ function VirtualKey:onTapSelect()
 	if self.callback then
 		self.callback()
 	end
-	UIManager:scheduleIn(0.08, function() self:invert(false) end)
+	UIManager:scheduleIn(0.02, function() self:invert(false) end)
 	return true
 end
 
@@ -94,7 +94,7 @@ function VirtualKey:onDoubleTapSelect()
 		self.callback() -- once
 		self.callback() -- twice
 	end
-	UIManager:scheduleIn(0.08, function() self:invert(false) end)
+	UIManager:scheduleIn(0.02, function() self:invert(false) end)
 	return true
 end
 
