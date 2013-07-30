@@ -9,6 +9,7 @@ require "ui/widget/infomessage"
 require "ui/widget/confirmbox"
 require "ui/widget/touchmenu"
 require "ui/widget/keyboard"
+require "ui/widget/inputtext"
 require "document/document"
 require "ui/readerui"
 require "dbg"
@@ -254,8 +255,9 @@ touch_menu = TouchMenu:new{
 	},
 }
 
-keyboard = VirtualKeyboard:new{
-	layout = 2
+inputtext = InputText:new{
+	width = 400,
+	height = 300,
 }
 
 -----------------------------------------------------------------------
@@ -268,8 +270,7 @@ UIManager:show(TestGrid)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)
-UIManager:show(keyboard)
+--UIManager:show(keyboard)
+UIManager:show(inputtext)
+
 UIManager:run()
-
-
-
