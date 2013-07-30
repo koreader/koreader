@@ -17,21 +17,21 @@ function ReaderGoto:init()
 					text = _("Cancel"),
 					enabled = true,
 					callback = function()
-						self:onClose()
+						self:close()
 					end,
 				},
 				{
 					text = _("Page"),
 					enabled = self.document.info.has_pages,
 					callback = function()
-						self:onGotoPage()
+						self:gotoPage()
 					end,
 				},
 				{
 					text = _("Location"),
 					enabled = not self.document.info.has_pages,
 					callback = function()
-						self:onGotoLocation()
+						self:gotoLocation()
 					end,
 				},
 			},
@@ -59,22 +59,21 @@ function ReaderGoto:onShowGotoDialog()
 	UIManager:show(self.goto_dialog)
 end
 
-function ReaderGoto:onClose()
+function ReaderGoto:close()
 	self.goto_dialog:onClose()
 	UIManager:close(self.goto_dialog)
 end
 
-function ReaderGoto:onGotoPage()
+function ReaderGoto:gotoPage()
 	local number = tonumber(self.goto_dialog:getInputText())
 	if number then
-		DEBUG("go to page", number)
-		self.ui:handleEvent(Event:new("PageUpdate", number))
+		self.ui:handleEvent(Event:new("GotoPage", number))
 	end
-	self:onClose()
+	self:close()
 	return true
 end
 
-function ReaderGoto:onGotoLocation()
+function ReaderGoto:gotoLocation()
 	-- TODO: implement go to location
-	self:onClose()
+	self:close()
 end

@@ -670,4 +670,7 @@ function ReaderPaging:gotoPage(number, orig)
 	return true
 end
 
-
+function ReaderPaging:onGotoPage(number)
+	self:gotoPage(number)
+	return true
+end
