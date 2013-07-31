@@ -79,7 +79,7 @@ function BottomContainer:paintTo(bb, x, y)
 		-- for now, we ignore this
 	end
 	self[1]:paintTo(bb,
-		x + (self.dimen.w - contentSize.w)/2,
+		x + math.floor((self.dimen.w - contentSize.w)/2),
 		y + (self.dimen.h - contentSize.h))
 end
 
@@ -97,10 +97,10 @@ function CenterContainer:paintTo(bb, x, y)
 	local x_pos = x
 	local y_pos = y
 	if self.ignore ~= "height" then
-		y_pos = y + (self.dimen.h - contentSize.h)/2
+		y_pos = y + math.floor((self.dimen.h - contentSize.h)/2)
 	end
 	if self.ignore ~= "width" then
-		x_pos = x + (self.dimen.w - contentSize.w)/2
+		x_pos = x + math.floor((self.dimen.w - contentSize.w)/2)
 	end
 	self[1]:paintTo(bb, x_pos, y_pos)
 end
@@ -116,7 +116,7 @@ function LeftContainer:paintTo(bb, x, y)
 		-- throw error? paint to scrap buffer and blit partially?
 		-- for now, we ignore this
 	end
-	self[1]:paintTo(bb, x , y + (self.dimen.h - contentSize.h)/2)
+	self[1]:paintTo(bb, x , y + math.floor((self.dimen.h - contentSize.h)/2))
 end
 
 --[[
@@ -132,7 +132,7 @@ function RightContainer:paintTo(bb, x, y)
 	end
 	self[1]:paintTo(bb,
 		x + (self.dimen.w - contentSize.w),
-		y + (self.dimen.h - contentSize.h)/2)
+		y + math.floor((self.dimen.h - contentSize.h)/2))
 end
 
 --[[
@@ -186,7 +186,9 @@ function FrameContainer:paintTo(bb, x, y)
 			y + self.margin + self.bordersize + self.padding)
 	end
 	if self.invert then
-		bb:invertRect(x, y, container_width, container_height)
+		bb:invertRect(x + self.bordersize, y + self.bordersize,
+			container_width - 2*self.bordersize,
+			container_height - 2*self.bordersize)
 	end
 end
 
@@ -220,7 +222,7 @@ function UnderlineContainer:paintTo(bb, x, y)
 	local content_size = self:getContentSize()
 	local p_y = y
 	if self.vertical_align == "center" then
-		p_y = (container_size.h - content_size.h) / 2 + y
+		p_y = math.floor((container_size.h - content_size.h) / 2) + y
 	elseif self.vertical_align == "bottom" then
 		p_y = (container_size.h - content_size.h) + y
 	end
@@ -285,7 +287,7 @@ function InputContainer:paintTo(bb, x, y)
 	if self[1] then
 		if self.vertical_align == "center" then
 			local content_size = self[1]:getSize()
-			self[1]:paintTo(bb, x, y + (self.dimen.h - content_size.h)/2)
+			self[1]:paintTo(bb, x, y + math.floor((self.dimen.h - content_size.h)/2))
 		else
 			self[1]:paintTo(bb, x, y)
 		end

@@ -35,7 +35,7 @@ function HorizontalGroup:paintTo(bb, x, y)
 		if self.align == "center" then
 			widget:paintTo(bb,
 				x + self._offsets[i].x,
-				y + (size.h - self._offsets[i].y) / 2)
+				y + math.floor((size.h - self._offsets[i].y) / 2))
 		elseif self.align == "top" then
 			widget:paintTo(bb, x + self._offsets[i].x, y)
 		elseif self.align == "bottom" then
@@ -93,11 +93,15 @@ function VerticalGroup:paintTo(bb, x, y)
 
 	for i, widget in ipairs(self) do
 		if self.align == "center" then
-			widget:paintTo(bb, x + (size.w - self._offsets[i].x) / 2, y + self._offsets[i].y)
+			widget:paintTo(bb,
+				x + math.floor((size.w - self._offsets[i].x) / 2),
+				y + self._offsets[i].y)
 		elseif self.align == "left" then
 			widget:paintTo(bb, x, y + self._offsets[i].y)
 		elseif self.align == "right" then
-			widget:paintTo(bb, x + size.w - self._offsets[i].x, y + self._offsets[i].y)
+			widget:paintTo(bb,
+				x + size.w - self._offsets[i].x,
+				y + self._offsets[i].y)
 		end
 	end
 end
@@ -158,7 +162,7 @@ function OverlapGroup:paintTo(bb, x, y)
 		if wget.align == "right" then
 			wget:paintTo(bb, x+size.w-wget_size.w, y)
 		elseif wget.align == "center" then
-			wget:paintTo(bb, x+(size.w-wget_size.w)/2, y)
+			wget:paintTo(bb, x+math.floor((size.w-wget_size.w)/2), y)
 		else
 			-- default to left
 			wget:paintTo(bb, x, y)

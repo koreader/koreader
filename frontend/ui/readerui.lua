@@ -9,6 +9,7 @@ require "ui/reader/readerbookmark"
 require "ui/reader/readerfont"
 require "ui/reader/readertypeset"
 require "ui/reader/readermenu"
+require "ui/reader/readergoto"
 require "ui/reader/readerconfig"
 require "ui/reader/readercropping"
 require "ui/reader/readerkopt"
@@ -106,6 +107,14 @@ function ReaderUI:init()
 		document = self.document,
 	}
 	table.insert(self, highlight)
+	-- goto
+	local goto = ReaderGoto:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self,
+		document = self.document,
+	}
+	table.insert(self, goto)
 	-- dictionary
 	local dict = ReaderDictionary:new{
 		dialog = self.dialog,
