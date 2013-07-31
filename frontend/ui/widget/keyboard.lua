@@ -109,6 +109,7 @@ end
 
 VirtualKeyboard = InputContainer:new{
 	is_always_active = true,
+	disable_double_tap = true,
 	inputbox = nil,
 	KEYS = {}, -- table to store layouts
 	min_layout = 2,
