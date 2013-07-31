@@ -236,7 +236,7 @@ function UIManager:run()
 				refresh_type = 0
 			end
 			if force_fast_refresh then
-				self.waveform_mode = self.fast_waveform_mode
+				waveform_mode = self.fast_waveform_mode
 			end
 			if self.update_region_func then
 				local update_region = self.update_region_func()
