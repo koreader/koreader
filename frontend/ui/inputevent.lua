@@ -136,6 +136,7 @@ Input = {
 	},
 	rotation = 0,
 	timer_callbacks = {},
+	disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP,
 }
 
 function Input:initKeyMap()

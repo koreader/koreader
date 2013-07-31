@@ -48,6 +48,8 @@ DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese_S", "Chinese_T"}
 DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim", "chi_tra"}  -- ISO 639-3 language string, 
 DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  -- and make sure you have corresponding training data 
 
+-- gesture detector defaults
+DGESDETECT_DISABLE_DOUBLE_TAP = true
 
 -- ####################################################################
 -- following features are not supported right now
