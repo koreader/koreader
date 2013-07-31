@@ -83,7 +83,7 @@ function DictQuickLookup:update()
 		bordersize = 0,
 		ScrollTextWidget:new{
 			text = self.definition,
-			font_face = self.content_face,
+			face = self.content_face,
 			width = self.width,
 			height = self.height*0.8,
 			dialog = self,

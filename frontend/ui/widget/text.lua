@@ -300,9 +300,11 @@ Text widget with vertical scroll bar
 --]]
 ScrollTextWidget = InputContainer:new{
 	text = nil,
-	font_face = nil,
+	face = nil,
+	bgcolor = 0.0, -- [0.0, 1.0]
+	fgcolor = 1.0, -- [0.0, 1.0]
 	width = 400,
-	height = 300,
+	height = 20,
 	scroll_bar_width = scaleByDPI(6),
 	text_scroll_span = scaleByDPI(6),
 	dialog = nil,
@@ -311,7 +313,9 @@ ScrollTextWidget = InputContainer:new{
 function ScrollTextWidget:init()
 	self.text_widget = TextBoxWidget:new{
 		text = self.text,
-		face = self.font_face,
+		face = self.face,
+		bgcolor = self.bgcolor,
+		fgcolor = self.fgcolor,
 		width = self.width - self.scroll_bar_width - self.text_scroll_span,
 		height = self.height
 	}

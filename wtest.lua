@@ -1,3 +1,6 @@
+#!./koreader-base
+
+require "defaults"
 print(package.path)
 package.path = "./frontend/?.lua"
 require "ui/uimanager"
@@ -5,6 +8,8 @@ require "ui/widget/menu"
 require "ui/widget/infomessage"
 require "ui/widget/confirmbox"
 require "ui/widget/touchmenu"
+require "ui/widget/keyboard"
+require "ui/widget/inputtext"
 require "document/document"
 require "ui/readerui"
 require "dbg"
@@ -250,7 +255,10 @@ touch_menu = TouchMenu:new{
 	},
 }
 
-
+inputtext = InputText:new{
+	width = 400,
+	height = 300,
+}
 
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
@@ -261,8 +269,8 @@ UIManager:show(TestGrid)
 --UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
-UIManager:show(touch_menu)
+--UIManager:show(touch_menu)
+--UIManager:show(keyboard)
+UIManager:show(inputtext)
+
 UIManager:run()
-
-
-
