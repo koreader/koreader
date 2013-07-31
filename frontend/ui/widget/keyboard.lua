@@ -69,12 +69,6 @@ function VirtualKey:init()
 					range = self.dimen,
 				},
 			},
-			DoubleTapSelect = {
-				GestureRange:new{
-					ges = "double_tap",
-					range = self.dimen,
-				},
-			},
 		}
 	end
 end
@@ -83,16 +77,6 @@ function VirtualKey:onTapSelect()
 	self[1].invert = true
 	if self.callback then
 		self.callback()
-	end
-	UIManager:scheduleIn(0.02, function() self:invert(false) end)
-	return true
-end
-
-function VirtualKey:onDoubleTapSelect()
-	self[1].invert = true
-	if self.callback then
-		self.callback() -- once
-		self.callback() -- twice
 	end
 	UIManager:scheduleIn(0.02, function() self:invert(false) end)
 	return true
@@ -109,6 +93,7 @@ end
 
 VirtualKeyboard = InputContainer:new{
 	is_always_active = true,
+	disable_double_tap = true,
 	inputbox = nil,
 	KEYS = {}, -- table to store layouts
 	min_layout = 2,

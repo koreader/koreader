@@ -350,7 +350,8 @@ function GestureDetector:handleDoubleTap(tev)
 	DEBUG("set up tap timer")
 	-- deadline should be calculated by adding current tap time and the interval
 	local deadline = cur_tap.timev + TimeVal:new{
-		sec = 0, usec = self.DOUBLE_TAP_INTERVAL,
+		sec = 0,
+		usec = not Input.disable_double_tap and self.DOUBLE_TAP_INTERVAL or 0,
 	}
 	Input:setTimeout(function()
 		DEBUG("in tap timer", self.last_taps[slot] ~= nil)

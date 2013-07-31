@@ -56,16 +56,22 @@ function UIManager:show(widget, x, y)
 	self:setDirty(widget)
 	-- tell the widget that it is shown now
 	widget:handleEvent(Event:new("Show"))
+	-- check if this widget disables double tap gesture
+	if widget.disable_double_tap then
+		Input.disable_double_tap = true
+	end
 end
 
 -- unregister a widget
 function UIManager:close(widget)
+	Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
 	local dirty = false
 	for i = #self._window_stack, 1, -1 do
 		if self._window_stack[i].widget == widget then
 			table.remove(self._window_stack, i)
 			dirty = true
-			break
+		elseif self._window_stack[i].widget.disable_double_tap then
+			Input.disable_double_tap = true
 		end
 	end
 	if dirty then
@@ -236,7 +242,7 @@ function UIManager:run()
 				refresh_type = 0
 			end
 			if force_fast_refresh then
-				self.waveform_mode = self.fast_waveform_mode
+				waveform_mode = self.fast_waveform_mode
 			end
 			if self.update_region_func then
 				local update_region = self.update_region_func()

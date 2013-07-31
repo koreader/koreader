@@ -102,6 +102,7 @@ function InputText:addChar(char)
 end
 
 function InputText:delChar()
+	if self.charpos == 1 then return end
 	self.charpos = self.charpos - 1
 	table.remove(self.charlist, self.charpos)
 	self.text = self:CharlistToString()
