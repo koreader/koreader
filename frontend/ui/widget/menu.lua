@@ -65,8 +65,8 @@ MenuCloseButton = InputContainer:new{
 
 function MenuCloseButton:init()
 	self[1] = TextWidget:new{
-		text = "-[ X ]-    ",
-		face = Font:getFace("cfont", 22),
+		text = "  X ",
+		face = Font:getFace("cfont", 42),
 	}
 
 	local text_size = self[1]:getSize()
@@ -247,13 +247,13 @@ Menu = FocusManager:new{
 function Menu:_recalculateDimen()
 	self.dimen.w = self.width
 	-- if height not given, dynamically calculate it
-	self.dimen.h = self.height or (#self.item_table + 2) * 36
+	self.dimen.h = self.height or (#self.item_table + 2) * Screen:scaleByDPI(36)
 	if self.dimen.h > Screen:getHeight() then
 		self.dimen.h = Screen:getHeight()
 	end
 	self.item_dimen = Geom:new{
 		w = self.dimen.w,
-		h = 36, -- hardcoded for now
+		h = Screen:scaleByDPI(36), -- hardcoded for now
 	}
 	if not self.is_borderless then
 		-- we need to substract border, margin and padding
