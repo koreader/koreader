@@ -8,6 +8,21 @@ ReaderGoto = InputContainer:new{
 }
 
 function ReaderGoto:init()
+	self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderGoto:addToMainMenu(tab_item_table)
+	-- insert goto command to main reader menu
+	table.insert(tab_item_table.navi, {
+		text = self.goto_menu_title,
+		callback = function()
+			self:onShowGotoDialog()
+		end,
+	})
+end
+
+function ReaderGoto:onShowGotoDialog()
+	DEBUG("show goto dialog")
 	self.goto_dialog = InputDialog:new{
 		title = self.goto_dialog_title,
 		input_hint = "(1 - "..self.document.info.number_of_pages..")",
@@ -40,21 +55,6 @@ function ReaderGoto:init()
 		width = Screen:getWidth() * 0.8,
 		height = Screen:getHeight() * 0.2,
 	}
-	self.ui.menu:registerToMainMenu(self)
-end
-
-function ReaderGoto:addToMainMenu(tab_item_table)
-	-- insert goto command to main reader menu
-	table.insert(tab_item_table.navi, {
-		text = self.goto_menu_title,
-		callback = function()
-			self:onShowGotoDialog()
-		end,
-	})
-end
-
-function ReaderGoto:onShowGotoDialog()
-	DEBUG("show goto dialog")
 	self.goto_dialog:onShowKeyboard()
 	UIManager:show(self.goto_dialog)
 end

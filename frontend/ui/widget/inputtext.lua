@@ -77,7 +77,7 @@ function InputText:initKeyboard()
 		layout = keyboard_layout,
 		inputbox = self,
 		width = Screen:getWidth(),
-		height = Screen:getHeight()*0.32,
+		height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
 	}
 end
 
