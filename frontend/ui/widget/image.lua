@@ -6,8 +6,10 @@ require "ui/image"
 ImageWidget shows an image from a file
 --]]
 ImageWidget = Widget:new{
-	invert = nil,
 	file = nil,
+	invert = nil,
+	dim = nil,
+	hide = nil,
 	_bb = nil
 }
 
@@ -34,9 +36,13 @@ function ImageWidget:paintTo(bb, x, y)
 		w = size.w,
 		h = size.h 
 	}
+	if self.hide then return end
 	bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
 	if self.invert then
 		bb:invertRect(x, y, size.w, size.h)
+	end
+	if self.dim then
+		bb:dimRect(x, y, size.w, size.h)
 	end
 end
 
