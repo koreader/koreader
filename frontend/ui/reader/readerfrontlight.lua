@@ -4,7 +4,7 @@ require "ui/device"
 ReaderFrontLight = InputContainer:new{
 	steps = {0,1,2,3,4,5,6,7,8,9,10},
 	intensity = nil,
-	ld = nil,
+	fl = nil,
 }
 
 function ReaderFrontLight:init()
@@ -30,7 +30,8 @@ function ReaderFrontLight:init()
 		}
 	end
 	if Device:isKobo() then
-		self.ld = kobolight.open()
+		self.fl = kobolight.open()
+		self.intensity = 20
 	end
 end
 
@@ -64,21 +65,25 @@ function ReaderFrontLight:setIntensity(intensity, msg)
 		})
 	end
 	if Device:isKobo() then
-		if self.ld == nil then
-			return true
+		if self.fl == nil then
+			ReaderFrontLight:init()
 		end
-		self.intensity = intensity
-		self.ld:setBrightness(intensity)
+		if self.fl ~= nil then
+			self.fl:setBrightness(intensity)
+			self.intensity = intensity
+		end
 	end
 	return true
 end
 
 function ReaderFrontLight:toggle()
 	if Device:isKobo() then
-		if self.ld == nil then
-			return true
+		if self.fl == nil then
+			ReaderFrontLight:init()
 		end
-		self.ld:toggle()
+		if self.fl ~= nil then
+			self.fl:toggle()
+		end
 	end
 	return true
 end
