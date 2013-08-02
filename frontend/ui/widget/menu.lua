@@ -1,6 +1,7 @@
 require "ui/widget/container"
 require "ui/widget/focusmanager"
 require "ui/widget/infomessage"
+require "ui/widget/button"
 require "ui/widget/text"
 require "ui/widget/group"
 require "ui/widget/span"
@@ -287,8 +288,27 @@ function Menu:init()
 	end
 	-- group for items
 	self.item_group = VerticalGroup:new{}
-		self.page_info = TextWidget:new{
-			face = self.fface,
+	-- group for page info
+	self.page_info_left_chev = Button:new{
+		icon = "resources/icons/appbar.chevron.left.png",
+		callback = function() self:onPrevPage() end,
+		bordersize = 0,
+	}
+	self.page_info_right_chev = Button:new{
+		icon = "resources/icons/appbar.chevron.right.png",
+		callback = function() self:onNextPage() end,
+		bordersize = 0,
+	}
+	self.page_info_left_chev:hide()
+	self.page_info_right_chev:hide()
+	self.page_info_text = TextWidget:new{
+		text = "",
+		face = self.fface,
+	}
+	self.page_info = HorizontalGroup:new{
+		self.page_info_left_chev,
+		self.page_info_text,
+		self.page_info_right_chev
 	}
 	-- group for menu layout
 	local content = VerticalGroup:new{
@@ -428,9 +448,13 @@ function Menu:updateItems(select_number)
 			self.item_group[select_number]:onFocus()
 		end
 		-- update page information
-		self.page_info.text = _("page ")..self.page.."/"..self.page_num
+		self.page_info_text.text = _("page ")..self.page.."/"..self.page_num
+		self.page_info_left_chev:showHide(self.page_num > 1)
+		self.page_info_right_chev:showHide(self.page_num > 1)
+		self.page_info_left_chev:enableDisable(self.page > 1)
+		self.page_info_right_chev:enableDisable(self.page < self.page_num)
 	else
-		self.page_info.text = _("no choices available")
+		self.page_info_text.text = _("no choices available")
 	end
 
 	-- FIXME: this is a dirty hack to clear previous menus
@@ -568,5 +592,3 @@ function Menu:onSwipe(arg, ges_ev)
 		self:onPrevPage()
 	end
 end
-
-
