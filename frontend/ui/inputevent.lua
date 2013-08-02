@@ -411,7 +411,9 @@ function Input:handleKeyBoardEv(ev)
 	end
 
 	if keycode == "Light" then
-		ReaderFrontLight:toggle()
+		if ev.value == EVENT_VALUE_KEY_RELEASE then
+			ReaderFrontLight:toggle()
+		end
 	end
 
 	-- handle modifier keys
