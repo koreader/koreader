@@ -1,6 +1,7 @@
 require "ui/widget/container"
 require "ui/widget/focusmanager"
 require "ui/widget/infomessage"
+require "ui/widget/frontlight"
 require "ui/widget/button"
 require "ui/widget/text"
 require "ui/widget/group"

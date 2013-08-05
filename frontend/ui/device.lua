@@ -105,6 +105,13 @@ function Device:isTouchDevice()
 	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or self:isKobo() or util.isEmulated()
 end
 
+function Device:hasFrontlight()
+	if not self.model then
+		self.model = self:getModel()
+	end
+	return (self.model == "KindlePaperWhite") or (self.model == "Kobo_dragon") or (self.model == "Kobo_kraken") or (self.model == "Kobo_phoenix") or util.isEmulated()
+end
+
 function Device:setTouchInputDev(dev)
 	self.touch_dev = dev
 end
