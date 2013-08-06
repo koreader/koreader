@@ -129,14 +129,14 @@ function ReaderUI:init()
 		view = self[1],
 		ui = self
 	}
+	table.insert(self.active_widgets, reader_ss)
 	-- frontlight controller
 	local reader_fl = ReaderFrontLight:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	table.insert(self.active_widgets, reader_ss)
-	table.insert(self.active_widgets, reader_fl)
+	table.insert(self, reader_fl)
 
 	if self.document.info.has_pages then
 		-- for page specific controller
