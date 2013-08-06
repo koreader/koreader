@@ -10,6 +10,7 @@ VERSION=$(shell git describe HEAD)
 
 # subdirectory we use to build the installation bundle
 INSTALL_DIR=koreader
+INSTALL_DIR_KOBO=mnt/onboard/.kobo/koreader
 
 # subdirectory we use to setup emulation environment
 EMU_DIR=emu
@@ -90,6 +91,40 @@ customupdate: all
 	rm -rf $(INSTALL_DIR)
 	# @TODO write an installation script for KUAL   (houqp)
 
+koboupdate: all
+	# ensure that the binaries were built for ARM
+	file $(KOR_BASE)/koreader-base | grep ARM || exit 1
+	file $(KOR_BASE)/extr | grep ARM || exit 1
+	# remove old package and dir if any
+	rm -f koreader-kobo-$(VERSION).zip
+	rm -rf $(INSTALL_DIR_KOBO)
+	# create new dir for package
+	mkdir -p $(INSTALL_DIR_KOBO)/{history,screenshots,clipboard,libs}
+	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr,sdcv} koreader.sh koreader_kobo.sh $(LUA_FILES) $(INSTALL_DIR_KOBO)
+	$(STRIP) --strip-unneeded $(INSTALL_DIR_KOBO)/koreader-base $(INSTALL_DIR_KOBO)/extr $(INSTALL_DIR_KOBO)/sdcv
+	mkdir $(INSTALL_DIR_KOBO)/data $(INSTALL_DIR_KOBO)/data/dict $(INSTALL_DIR_KOBO)/data/tessdata
+	cp -L koreader-base/$(DJVULIB) $(KOR_BASE)/$(CRELIB) \
+		$(KOR_BASE)/$(LUALIB) $(KOR_BASE)/$(K2PDFOPTLIB) \
+		$(KOR_BASE)/$(LEPTONICALIB) $(KOR_BASE)/$(TESSERACTLIB) \
+		$(INSTALL_DIR_KOBO)/libs
+	$(STRIP) --strip-unneeded $(INSTALL_DIR_KOBO)/libs/*
+	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR_KOBO)/data
+	cp -rpL $(KOR_BASE)/data/hyph $(INSTALL_DIR_KOBO)/data/hyph
+	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR_KOBO)
+	cp -rp $(MO_DIR) $(INSTALL_DIR_KOBO)
+	rm $(INSTALL_DIR_KOBO)/fonts/droid/DroidSansFallbackFull.ttf
+	echo $(VERSION) > git-rev
+	cp -r git-rev resources $(INSTALL_DIR_KOBO)
+	rm -r $(INSTALL_DIR_KOBO)/resources/fonts
+	cp -rpL frontend $(INSTALL_DIR_KOBO)
+	cp defaults.lua $(INSTALL_DIR_KOBO)
+	mkdir $(INSTALL_DIR_KOBO)/fonts/host
+	cp -rpL fmon $(INSTALL_DIR_KOBO)/..
+	cp -p resources/koreader.png $(INSTALL_DIR_KOBO)/../..
+	tar -zcvf KoboRoot.tgz mnt/
+	zip -9 -r koreader-kobo-$(VERSION).zip KoboRoot.tgz
+	rm KoboRoot.tgz
+	rm -rf mnt/
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
