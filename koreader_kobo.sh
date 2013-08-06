@@ -14,7 +14,7 @@ export STARDICT_DATA_DIR="data/dict"
 killall nickel
 
 # finally call reader
-./reader.lua "$@" 2> crash.log
+./reader.lua /mnt/onboard 2> crash.log 
 
 # continue with nickel
 
