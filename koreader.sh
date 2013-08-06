@@ -36,7 +36,7 @@ fi
 #killall -stop cvm
 
 # finally call reader
-./reader.lua "$1" 2> crash.log
+./reader.lua "$@" 2> crash.log
 
 # clean up forked process in case the reader crashed
 killall reader.lua
