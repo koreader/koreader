@@ -56,7 +56,14 @@ function ReaderMenu:setUpdateItemTable()
 	for _, widget in pairs(self.registered_widgets) do
 		widget:addToMainMenu(self.tab_item_table)
 	end
-
+	if Device:hasFrontlight() then
+		table.insert(self.tab_item_table.main, {
+			text = _("Frontlight settings"),
+			callback = function()
+				ReaderFrontLight:onShowFlDialog()
+			end
+		})
+	end
 	table.insert(self.tab_item_table.main, {
 		text = _("Help"),
 		callback = function()
