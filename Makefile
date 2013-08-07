@@ -26,22 +26,21 @@ MO_DIR=$(INSTALL_DIR)/koreader/i18n
 
 all: mo $(KOR_BASE)/$(OUTPUT_DIR)/luajit
 	echo $(VERSION) > git-rev
-	rm -rf $(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/koreader
 	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 ifdef EMULATE_READER
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 endif
 	for f in $(INSTALL_FILES); do \
-		ln -s ../../$$f $(INSTALL_DIR)/koreader/; \
+		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 		done
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
-	mkdir $(INSTALL_DIR)/koreader/screenshots
-	mkdir $(INSTALL_DIR)/koreader/data/dict
-	mkdir $(INSTALL_DIR)/koreader/data/tessdata
-	mkdir $(INSTALL_DIR)/koreader/fonts/host
-	ln -s ../extensions $(INSTALL_DIR)/
-	ln -s ../launchpad $(INSTALL_DIR)/
+	mkdir -p $(INSTALL_DIR)/koreader/screenshots
+	mkdir -p $(INSTALL_DIR)/koreader/data/dict
+	mkdir -p $(INSTALL_DIR)/koreader/data/tessdata
+	mkdir -p $(INSTALL_DIR)/koreader/fonts/host
+	ln -sf ../extensions $(INSTALL_DIR)/
+	ln -sf ../launchpad $(INSTALL_DIR)/
 	# clean up
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 	rm $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttf
@@ -58,13 +57,14 @@ fetchthirdparty:
 	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
 clean:
+	rm -rf $(INSTALL_DIR)
 	$(MAKE) -C $(KOR_BASE) clean
 
 customupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-$(VERSION).zip
+	rm -f koreader-$(MACHINE)-$(VERSION).zip
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
