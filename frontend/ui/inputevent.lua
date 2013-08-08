@@ -316,12 +316,14 @@ function Input:init()
 			end
 			print(_("Auto-detected Kindle Touch"))
 		elseif Device:isKobo() then
+			firm_rev = Device:getFirmVer()
 			input.open("/dev/input/event1")
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
-			if dev_mod ~= 'Kobo_trilogy' then
+			if dev_mod ~= 'Kobo_trilogy' and firm_rev == "2.6.1"
+			or dev_mod == 'Kobo_dragon' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
 						if ev.code == ABS_X then
@@ -335,6 +337,19 @@ function Input:init()
 							else
 								ev.value = Screen.height - ev.value
 							end
+						end
+					end
+					return ev
+				end
+			else
+				function Input:eventAdjustHook(ev)
+					if ev.code == ABS_X then
+						-- We always have to substract from the physical x,
+						-- regardless of the orientation
+						if (Screen.width<Screen.height) then
+							ev.value = Screen.width - ev.value
+						else
+							ev.value = Screen.height - ev.value
 						end
 					end
 					return ev

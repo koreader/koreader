@@ -4,6 +4,7 @@ Device = {
 	survive_screen_saver = false,
 	touch_dev = nil,
 	model = nil,
+	firmware_rev = nil,
 }
 
 function Device:getModel()
@@ -37,6 +38,9 @@ function Device:getModel()
 			local std_out = io.popen("/bin/kobo_config.sh", "r")
 			local codename = std_out:read()
 			self.model = "Kobo_" .. codename
+			local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+			self.firmware_rev = string.sub(version_file:read(),24,28)
+			version_file:close()
 		elseif kt_test_fd then
 			self.model = "KindleTouch"
 		else
@@ -51,6 +55,13 @@ function Device:getModel()
 		self.model = nil
 	end
 	return self.model
+end
+
+function Device:getFirmVer()
+	if not self.model then
+		self.model = self:getModel()
+	end
+	return self.firmware_rev
 end
 
 function Device:isKindle4()
