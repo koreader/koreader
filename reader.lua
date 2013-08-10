@@ -12,6 +12,7 @@ require "settings"
 require "dbg"
 require "gettext"
 
+Profiler = nil
 
 HomeMenu = InputContainer:new{
 	item_table = {},
@@ -33,6 +34,11 @@ HomeMenu = InputContainer:new{
 }
 
 function exitReader()
+	if Profiler ~= nil then
+		Profiler:stop()
+		Profiler:dump("./profile.html")
+	end
+
 	G_reader_settings:close()
 
 	input.closeAll()
@@ -189,6 +195,7 @@ end
 -- option parsing:
 longopts = {
 	debug = "d",
+	profile = "p",
 	help = "h",
 }
 
@@ -197,6 +204,7 @@ function showusage()
 	print(_("Read all the books on your E-Ink reader"))
 	print("")
 	print(_("-d               start in debug mode"))
+	print(_("-p [rows]        enable Lua code profiling"))
 	print(_("-h               show this usage help"))
 	print("")
 	print(_("If you give the name of a directory instead of a file path, a file"))
@@ -209,15 +217,38 @@ function showusage()
 	return
 end
 
-if ARGV[1] == "-h" then
-	return showusage()
+local argidx = 1
+while argidx <= #ARGV do
+	local arg = ARGV[argidx]
+	argidx = argidx + 1
+	if arg == "--" then break end
+	-- parse longopts
+	if arg:sub(1,2) == "--" then
+		local opt = longopts[arg:sub(3)]
+		if opt ~= nil then arg = "-"..opt end
+	end
+	-- code for each option
+	if arg == "-h" then
+		return showusage()
+	elseif arg == "-d" then
+		Dbg:turnOn()
+	elseif arg == "-p" then
+		require "lulip"
+		Profiler = lulip:new()
+		pcall(function()
+			-- set maxrows only if the optional arg is numeric
+			Profiler:maxrows(ARGV[argidx] + 0)
+			argidx = argidx + 1
+		end)
+		Profiler:start()
+	else
+		-- not a recognized option, should be a filename
+		argidx = argidx - 1
+		break
+	end
 end
 
-local argidx = 1
-if ARGV[1] == "-d" then
-	Dbg:turnOn()
-	argidx = argidx + 1
-else
+if not Dbg.is_on then
 	DEBUG = function() end
 end
 
