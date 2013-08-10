@@ -217,8 +217,6 @@ function showusage()
 	return
 end
 
-DEBUG = function() end
-
 local argidx = 1
 while argidx <= #ARGV do
 	local arg = ARGV[argidx]
@@ -248,6 +246,10 @@ while argidx <= #ARGV do
 		argidx = argidx - 1
 		break
 	end
+end
+
+if not Dbg.is_on then
+	DEBUG = function() end
 end
 
 if Device:hasNoKeyboard() then
