@@ -3,14 +3,15 @@ require "ui/widget/inputdialog"
 require "ui/device"
 
 ReaderFrontLight = InputContainer:new{
-	fldial_menu_title = ("Frontlight Settings"),
-	fl_dialog_title = ("Frontlight Level"),
+	fldial_menu_title = _("Frontlight settings"),
+	fl_dialog_title = _("Frontlight Level"),
 	steps = {0,1,2,3,4,5,6,7,8,9,10},
 	intensity = nil,
 	fl = nil,
 }
 
 function ReaderFrontLight:init()
+	if not Device:hasFrontlight() then return end
 	local dev_mod = Device:getModel()
 	if dev_mod == "KindlePaperWhite" then
 		require "liblipclua"
@@ -31,15 +32,16 @@ function ReaderFrontLight:init()
 				}
 			},
 		}
-	end
-	if Device:isKobo() then
+	elseif Device:isKobo() then
 		self.fl = kobolight.open()
 		self.intensity = G_reader_settings:readSetting("frontlight_intensity")
 		if not self.intensity then
 			self.intensity = 20
 		end
-		self:setIntensity(self.intensity, "Set intensity")
+		self:setIntensity(self.intensity, _("Set intensity "))
+		self.key_events.Toggle = { {"Light"}, doc = _("Toggle light") }
 	end
+	self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
@@ -70,13 +72,9 @@ function ReaderFrontLight:setIntensity(intensity, msg)
 			text = msg..intensity,
 			timeout = 1
 		})
-	end
-	if Device:isKobo() then
+	elseif Device:isKobo() then
 		intensity = intensity < 1 and 1 or intensity
 		intensity = intensity > 100 and 100 or intensity
-		if self.fl == nil then
-			ReaderFrontLight:init()
-		end
 		if self.fl ~= nil then
 			self.fl:setBrightness(intensity)
 			self.intensity = intensity
@@ -85,14 +83,9 @@ function ReaderFrontLight:setIntensity(intensity, msg)
 	return true
 end
 
-function ReaderFrontLight:toggle()
-	if Device:isKobo() then
-		if self.fl == nil then
-			ReaderFrontLight:init()
-		end
-		if self.fl ~= nil then
-			self.fl:toggle()
-		end
+function ReaderFrontLight:onToggle()
+	if Device:isKobo() and self.fl ~= nil then
+		self.fl:toggle()
 	end
 	return true
 end
@@ -111,7 +104,7 @@ function ReaderFrontLight:onShowFlDialog()
 	DEBUG("show fldial dialog")
 	self.fl_dialog = InputDialog:new{
 		title = self.fl_dialog_title,
-		input_hint = "(1 - 100)",
+		input_hint = Device:isKobo() and "(1 - 100)" or "(0 - 24)",
 		buttons = {
 			{
 				{
@@ -149,7 +142,7 @@ end
 function ReaderFrontLight:fldialIntensity()
 	local number = tonumber(self.fl_dialog:getInputText())
 	if number then
-		self:setIntensity(number, "Set intensity")
+		self:setIntensity(number, _("Set intensity "))
 	end
 	return true
 end
