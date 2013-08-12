@@ -264,6 +264,7 @@ function Input:init()
 	if Device:isTouchDevice() then
 		self:initTouchState()
 	end
+	Device:getFrontlight() -- forces initialization
 	-- set up fake event map
 	self.event_map[10000] = "IntoSS" -- go into screen saver
 	self.event_map[10001] = "OutOfSS" -- go out of screen saver
