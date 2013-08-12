@@ -26,7 +26,7 @@ function ReaderFrontLight:init()
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
-	local fl = Device.frontlight
+	local fl = Device:getFrontlight()
 	if fl.intensity ~= nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
 		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)] or self.steps[#self.steps]
@@ -59,17 +59,17 @@ function ReaderFrontLight:addToMainMenu(tab_item_table)
 end
 
 function ReaderFrontLight:onShowFlDialog()
-	DEBUG("show fldial dialog")
+	local fl = Device:getFrontlight()
 	self.fl_dialog = InputDialog:new{
 		title = _("Frontlight Level"),
-		input_hint = Device:isKobo() and "(1 - 100)" or "(0 - 24)",
+		input_hint = ("(%d - %d)"):format(fl.min, fl.max),
 		buttons = {
 			{
 				{
 					text = _("Toggle"),
 					enabled = true,
 					callback = function()
-						Device.frontlight:toggle()
+						fl:toggle()
 					end,
 				},
 				{
@@ -100,13 +100,13 @@ end
 
 function ReaderFrontLight:close()
 	self.fl_dialog:onClose()
-	G_reader_settings:saveSetting("frontlight_intensity", Device.frontlight.intensity)
+	G_reader_settings:saveSetting("frontlight_intensity", Device:getFrontlight().intensity)
 	UIManager:close(self.fl_dialog)
 end
 
 function ReaderFrontLight:fldialIntensity()
 	local number = tonumber(self.fl_dialog:getInputText())
 	if number ~= nil then
-		Device.frontlight:setIntensity(number)
+		Device:getFrontlight():setIntensity(number)
 	end
 end

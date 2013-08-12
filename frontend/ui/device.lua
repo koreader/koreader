@@ -8,13 +8,17 @@ Device = {
 	frontlight = nil,
 }
 
+BaseFrontLight = {}
+
 KindleFrontLight = {
+	min = 0, max = 24,
 	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
 	intensity = nil,
 	lipc_handle = nil,
 }
 
 KoboFrontLight = {
+	min = 1, max = 100,
 	intensity = nil,
 	fl = nil,
 }
@@ -187,6 +191,12 @@ function Device:getFrontlight()
 	return self.frontlight
 end
 
+function BaseFrontLight:intensityCheckBounds(intensity)
+	intensity = intensity < self.min and self.min or intensity
+	intensity = intensity > self.max and self.max or intensity
+	self.intensity = intensity
+end
+
 function KindleFrontLight:init()
 	require "liblipclua"
 	self.lipc_handle = lipc.init("com.github.koreader")
@@ -206,12 +216,12 @@ function KindleFrontLight:toggle()
 	end
 end
 
+KindleFrontLight.intensityCheckBounds = BaseFrontLight.intensityCheckBounds
+
 function KindleFrontLight:setIntensity(intensity)
 	if self.lipc_handle ~= nil then
-		intensity = intensity < 0 and 0 or intensity
-		intensity = intensity > 24 and 24 or intensity
-		self.intensity = intensity
-		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
+		self:intensityCheckBounds(intensity)
+		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.intensity)
 	end
 end
 
@@ -230,11 +240,11 @@ function KoboFrontLight:toggle()
 	end
 end
 
+KoboFrontLight.intensityCheckBounds = BaseFrontLight.intensityCheckBounds
+
 function KoboFrontLight:setIntensity(intensity)
 	if self.fl ~= nil then
-		intensity = intensity < 1 and 1 or intensity
-		intensity = intensity > 100 and 100 or intensity
-		self.fl:setBrightness(intensity)
-		self.intensity = intensity
+		self:intensityCheckBounds(intensity)
+		self.fl:setBrightness(self.intensity)
 	end
 end
