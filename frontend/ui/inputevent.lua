@@ -424,6 +424,11 @@ function Input:handleKeyBoardEv(ev)
 		return keycode
 	end
 
+	if ev.value == EVENT_VALUE_KEY_RELEASE
+	and keycode == "Light" then
+		return keycode
+	end
+
 	-- handle modifier keys
 	if self.modifiers[keycode] ~= nil then
 		if ev.value == EVENT_VALUE_KEY_PRESS then

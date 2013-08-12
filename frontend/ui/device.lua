@@ -5,6 +5,18 @@ Device = {
 	touch_dev = nil,
 	model = nil,
 	firmware_rev = nil,
+	frontlight = nil,
+}
+
+KindleFrontLight = {
+	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
+	intensity = nil,
+	lipc_handle = nil,
+}
+
+KoboFrontLight = {
+	intensity = nil,
+	fl = nil,
 }
 
 function Device:getModel()
@@ -25,7 +37,7 @@ function Device:getModel()
 	end
 	if cpu_mod == "MX50" then
 		-- for KPW
-		local pw_test_fd = lfs.attributes("/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity")
+		local pw_test_fd = lfs.attributes(KindleFrontLight.kpw_fl)
 		-- for Kobo
 		local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
 		-- for KT
@@ -58,9 +70,7 @@ function Device:getModel()
 end
 
 function Device:getFirmVer()
-	if not self.model then
-		self.model = self:getModel()
-	end
+	if not self.model then self:getModel() end
 	return self.firmware_rev
 end
 
@@ -69,40 +79,19 @@ function Device:isKindle4()
 end
 
 function Device:isKindle3()
-	re_val = os.execute("cat /proc/cpuinfo | grep MX35")
-	if re_val == 0 then
-		return true
-	else
-		return false
-	end
+	return (self:getModel() == "Kindle3")
 end
 
 function Device:isKindle2()
-	re_val = os.execute("cat /proc/cpuinfo | grep MX3")
-	if re_val == 0 then
-		return true
-	else
-		return false
-	end
+	return (self:getModel() == "Kindle2")
 end
 
 function Device:isKobo()
-	if not self.model then
-		self.model = self:getModel()
-	end
-	re_val = string.find(self.model,"Kobo_")
-	if re_val == 1 then
-		return true
-	else
-		return false
-	end
+	return string.find(self:getModel(),"Kobo_") == 1
 end
 
 function Device:hasNoKeyboard()
-	if not self.model then
-		self.model = self:getModel()
-	end
-	return self:isTouchDevice() or (self.model == "Kindle4")
+	return self:isTouchDevice() or (self:getModel() == "Kindle4")
 end
 
 function Device:hasKeyboard()
@@ -110,17 +99,13 @@ function Device:hasKeyboard()
 end
 
 function Device:isTouchDevice()
-	if not self.model then
-		self.model = self:getModel()
-	end
-	return (self.model == "KindlePaperWhite") or (self.model == "KindleTouch") or self:isKobo() or util.isEmulated()
+	local model = self:getModel()
+	return (model == "KindlePaperWhite") or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
 end
 
 function Device:hasFrontlight()
-	if not self.model then
-		self.model = self:getModel()
-	end
-	return (self.model == "KindlePaperWhite") or (self.model == "Kobo_dragon") or (self.model == "Kobo_kraken") or (self.model == "Kobo_phoenix") or util.isEmulated()
+	local model = self:getModel()
+	return (model == "KindlePaperWhite") or (model == "Kobo_dragon") or (model == "Kobo_kraken") or (model == "Kobo_phoenix") or util.isEmulated()
 end
 
 function Device:setTouchInputDev(dev)
@@ -184,4 +169,72 @@ function Device:usbPlugOut()
 
 	--@TODO signal filemanager for file changes  13.06 2012 (houqp)
 	self.charging_mode = false
+end
+
+function Device:getFrontlight()
+	if self.frontlight ~= nil then
+		return self.frontlight
+	elseif self:hasFrontlight() then
+		if self:getModel() == "KindlePaperWhite" then
+			self.frontlight = KindleFrontLight
+		elseif self:isKobo() then
+			self.frontlight = KoboFrontLight
+		end
+		if self.frontlight ~= nil then
+			self.frontlight:init()
+		end
+	end
+	return self.frontlight
+end
+
+function KindleFrontLight:init()
+	require "liblipclua"
+	self.lipc_handle = lipc.init("com.github.koreader")
+	if self.lipc_handle then
+		self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+	end
+end
+
+function KindleFrontLight:toggle()
+	local f =  io.open(self.kpw_fl, "r")
+	local sysint = tonumber(f:read("*all"):match("%d+"))
+	f:close()
+	if sysint == 0 then
+		self:setIntensity(self.intensity)
+	else
+		os.execute("echo -n 0 > " .. self.kpw_fl)
+	end
+end
+
+function KindleFrontLight:setIntensity(intensity)
+	if self.lipc_handle ~= nil then
+		intensity = intensity < 0 and 0 or intensity
+		intensity = intensity > 24 and 24 or intensity
+		self.intensity = intensity
+		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
+	end
+end
+
+function KoboFrontLight:init()
+	self.fl = kobolight.open()
+	self.intensity = G_reader_settings:readSetting("frontlight_intensity")
+	if not self.intensity then
+		self.intensity = 20
+	end
+	self:setIntensity(self.intensity)
+end
+
+function KoboFrontLight:toggle()
+	if self.fl ~= nil then
+		self.fl:toggle()
+	end
+end
+
+function KoboFrontLight:setIntensity(intensity)
+	if self.fl ~= nil then
+		intensity = intensity < 1 and 1 or intensity
+		intensity = intensity > 100 and 100 or intensity
+		self.fl:setBrightness(intensity)
+		self.intensity = intensity
+	end
 end

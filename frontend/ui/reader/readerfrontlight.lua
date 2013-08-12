@@ -3,22 +3,11 @@ require "ui/widget/inputdialog"
 require "ui/device"
 
 ReaderFrontLight = InputContainer:new{
-	fldial_menu_title = _("Frontlight settings"),
-	fl_dialog_title = _("Frontlight Level"),
 	steps = {0,1,2,3,4,5,6,7,8,9,10},
-	intensity = nil,
-	fl = nil,
 }
 
 function ReaderFrontLight:init()
-	if not Device:hasFrontlight() then return end
-	local dev_mod = Device:getModel()
-	if dev_mod == "KindlePaperWhite" then
-		require "liblipclua"
-		self.lipc_handle = lipc.init("com.github.koreader")
-		if self.lipc_handle then
-			self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-		end
+	if Device:getFrontlight() ~= nil then
 		self.ges_events = {
 			Adjust = {
 				GestureRange:new{
@@ -32,60 +21,29 @@ function ReaderFrontLight:init()
 				}
 			},
 		}
-	elseif Device:isKobo() then
-		self.fl = kobolight.open()
-		self.intensity = G_reader_settings:readSetting("frontlight_intensity")
-		if not self.intensity then
-			self.intensity = 20
-		end
-		self:setIntensity(self.intensity, _("Set intensity "))
-		self.key_events.Toggle = { {"Light"}, doc = _("Toggle light") }
+		self.ui.menu:registerToMainMenu(self)
 	end
-	self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
-	if self.lipc_handle and self.intensity ~=nil then
+	local fl = Device.frontlight
+	if fl.intensity ~= nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
 		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)] or self.steps[#self.steps]
-		local msg = ""
+		local msg = nil
 		if ges.direction == "north" then
 			msg = _("Increase front light intensity to ")
-			self.intensity = self.intensity + delta_int
-			self:setIntensity(self.intensity, msg)
+			fl:setIntensity(fl.intensity + delta_int)
 		elseif ges.direction == "south" then
 			msg = _("Decrease front light intensity to ")
-			self.intensity = self.intensity - delta_int
-			self:setIntensity(self.intensity, msg)
+			fl:setIntensity(fl.intensity - delta_int)
 		end
-	end
-	return true
-end
-
-function ReaderFrontLight:setIntensity(intensity, msg)
-	if self.lipc_handle then
-		intensity = intensity < 0 and 0 or intensity
-		intensity = intensity > 24 and 24 or intensity
-		self.intensity = intensity
-		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
-		UIManager:show(Notification:new{
-			text = msg..intensity,
-			timeout = 1
-		})
-	elseif Device:isKobo() then
-		intensity = intensity < 1 and 1 or intensity
-		intensity = intensity > 100 and 100 or intensity
-		if self.fl ~= nil then
-			self.fl:setBrightness(intensity)
-			self.intensity = intensity
+		if msg ~= nil then
+			UIManager:show(Notification:new{
+				text = msg..fl.intensity,
+				timeout = 1
+			})
 		end
-	end
-	return true
-end
-
-function ReaderFrontLight:onToggle()
-	if Device:isKobo() and self.fl ~= nil then
-		self.fl:toggle()
 	end
 	return true
 end
@@ -93,7 +51,7 @@ end
 function ReaderFrontLight:addToMainMenu(tab_item_table)
 	-- insert fldial command to main reader menu
 	table.insert(tab_item_table.main, {
-		text = self.fldial_menu_title,
+		text = _("Frontlight settings"),
 		callback = function()
 			self:onShowFlDialog()
 		end,
@@ -103,10 +61,17 @@ end
 function ReaderFrontLight:onShowFlDialog()
 	DEBUG("show fldial dialog")
 	self.fl_dialog = InputDialog:new{
-		title = self.fl_dialog_title,
+		title = _("Frontlight Level"),
 		input_hint = Device:isKobo() and "(1 - 100)" or "(0 - 24)",
 		buttons = {
 			{
+				{
+					text = _("Toggle"),
+					enabled = true,
+					callback = function()
+						Device.frontlight:toggle()
+					end,
+				},
 				{
 					text = _("Apply"),
 					enabled = true,
@@ -135,14 +100,13 @@ end
 
 function ReaderFrontLight:close()
 	self.fl_dialog:onClose()
-	G_reader_settings:saveSetting("frontlight_intensity", self.intensity)
+	G_reader_settings:saveSetting("frontlight_intensity", Device.frontlight.intensity)
 	UIManager:close(self.fl_dialog)
 end
 
 function ReaderFrontLight:fldialIntensity()
 	local number = tonumber(self.fl_dialog:getInputText())
-	if number then
-		self:setIntensity(number, _("Set intensity "))
+	if number ~= nil then
+		Device.frontlight:setIntensity(number)
 	end
-	return true
 end
