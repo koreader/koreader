@@ -19,7 +19,8 @@ KindleFrontLight = {
 
 KoboFrontLight = {
 	min = 1, max = 100,
-	intensity = nil,
+	intensity = 20,
+	restore_settings = true,
 	fl = nil,
 }
 
@@ -227,11 +228,6 @@ end
 
 function KoboFrontLight:init()
 	self.fl = kobolight.open()
-	self.intensity = G_reader_settings:readSetting("frontlight_intensity")
-	if not self.intensity then
-		self.intensity = 20
-	end
-	self:setIntensity(self.intensity)
 end
 
 function KoboFrontLight:toggle()
