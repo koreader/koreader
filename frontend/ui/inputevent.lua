@@ -273,9 +273,9 @@ function Input:init()
 
 	if util.isEmulated() == 1 then
 		self:initKeyMap()
-		os.remove("emu_event")
-		os.execute("mkfifo emu_event")
-		input.open("emu_event")
+		os.remove("/tmp/emu_event")
+		os.execute("mkfifo /tmp/emu_event")
+		input.open("/tmp/emu_event")
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
