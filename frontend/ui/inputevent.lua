@@ -3,7 +3,6 @@ require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
 require "ui/geometry"
-require "ui/reader/readerfrontlight"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -425,10 +424,9 @@ function Input:handleKeyBoardEv(ev)
 		return keycode
 	end
 
-	if keycode == "Light" then
-		if ev.value == EVENT_VALUE_KEY_RELEASE then
-			ReaderFrontLight:toggle()
-		end
+	if ev.value == EVENT_VALUE_KEY_RELEASE
+	and keycode == "Light" then
+		return keycode
 	end
 
 	-- handle modifier keys
