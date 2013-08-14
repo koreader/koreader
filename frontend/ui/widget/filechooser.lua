@@ -1,8 +1,9 @@
 require "ui/widget/menu"
 
-FileChooser = Menu:new{
+FileChooser = Menu:extend{
 	height = Screen:getHeight(),
 	width = Screen:getWidth(),
+	no_title = true,
 	path = lfs.currentdir(),
 	parent = nil,
 	show_hidden = false,
@@ -10,7 +11,8 @@ FileChooser = Menu:new{
 }
 
 function FileChooser:init()
-	self:changeToPath(self.path)
+	self:updateItemTableFromPath(self.path)
+	Menu.init(self) -- call parent's init()
 end
 
 function FileChooser:compressPath(item_path)
@@ -22,11 +24,12 @@ function FileChooser:compressPath(item_path)
 	return path
 end
 
-function FileChooser:changeToPath(path)
+function FileChooser:updateItemTableFromPath(path)
 	path = self:compressPath(path)
 	local dirs = {}
 	local files = {}
 	self.path = path
+
 	for f in lfs.dir(self.path) do
 		if self.show_hidden or not string.match(f, "^%.[^.]") then
 			local filename = self.path.."/"..f
@@ -53,15 +56,16 @@ function FileChooser:changeToPath(path)
 	for _, file in ipairs(files) do
 		table.insert(self.item_table, { text = file, path = self.path.."/"..file })
 	end
+end
 
-	Menu.init(self) -- call parent's init()
+function FileChooser:changeToPath(path)
+	self:updateItemTableFromPath(path)
+	self:updateItems(1)
 end
 
 function FileChooser:onMenuSelect(item)
 	if lfs.attributes(item.path, "mode") == "directory" then
-		UIManager:close(self)
 		self:changeToPath(item.path)
-		UIManager:show(self)
 	else
 		self:onFileSelect(item.path)
 	end

@@ -43,10 +43,24 @@ rather than class variables.
 --]]
 Widget = EventListener:new()
 
-function Widget:new(o)
+--[[
+Use this method to define a class that's inherited from current class.
+It only setup the metabale (or prototype chain) and will not initiatie
+a real instance, i.e. call self:init()
+--]]
+function Widget:extend(o)
 	local o = o or {}
 	setmetatable(o, self)
 	self.__index = self
+	return o
+end
+
+--[[
+Use this method to initiatie a instance of a class, don't use it for class
+definition.
+--]]
+function Widget:new(o)
+	o = self:extend(o)
 	-- Both o._init and o.init are called on object create. But o._init is used
 	-- for base widget initialization (basic component used to build other
 	-- widgets). While o.init is for higher level widgets, for example Menu
