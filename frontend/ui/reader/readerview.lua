@@ -1,3 +1,4 @@
+require "ui/widget/group"
 require "ui/reader/readerflip"
 require "ui/reader/readerfooter"
 require "ui/reader/readerdogear"
