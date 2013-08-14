@@ -238,6 +238,9 @@ Menu = FocusManager:new{
 
 	-- set this to true to not paint as popup menu
 	is_borderless = false,
+	-- if you want to embed the menu widget into another widget, set
+	-- this to false
+	is_popout = true,
 	-- set this to true to add close button
 	has_close_button = true,
 	-- close_callback is a function, which is executed when menu is closed
@@ -260,7 +263,7 @@ function Menu:_recalculateDimen()
 		-- we need to substract border, margin and padding
 		self.item_dimen.w = self.item_dimen.w - 14
 	end
-	self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - 2
+	self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
 	self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
@@ -310,12 +313,15 @@ function Menu:init()
 		self.page_info_text,
 		self.page_info_right_chev
 	}
+
 	-- group for menu layout
 	local content = VerticalGroup:new{
-		self.title_bar,
 		self.item_group,
 		self.page_info,
 	}
+	if not self.no_title then
+		table.insert(content, 1, self.title_bar)
+	end
 	-- maintain reference to content so we can change it later
 	self.content_group = content
 
@@ -348,16 +354,19 @@ function Menu:init()
 					menu = self,
 				})
 		end
-		self.ges_events.TapCloseAllMenus = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
+		-- watch for outer region if it's a self contained widget
+		if self.is_popout then
+			self.ges_events.TapCloseAllMenus = {
+				GestureRange:new{
+					ges = "tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
 				}
 			}
-		}
+		end
 		self.ges_events.Swipe = {
 			GestureRange:new{
 				ges = "swipe",
@@ -398,6 +407,11 @@ function Menu:updateItems(select_number)
 	self.item_group:clear()
 	self.content_group:resetLayout()
 	self:_recalculateDimen()
+
+	-- default to select the first item
+	if not select_number then
+		select_number = 1
+	end
 
 	for c = 1, self.perpage do
 		-- calculate index in item_table
