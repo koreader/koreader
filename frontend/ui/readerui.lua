@@ -108,13 +108,12 @@ function ReaderUI:init()
 	}
 	table.insert(self, highlight)
 	-- goto
-	local goto = ReaderGoto:new{
+	table.insert(self, ReaderGoto:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self,
 		document = self.document,
-	}
-	table.insert(self, goto)
+	})
 	-- dictionary
 	local dict = ReaderDictionary:new{
 		dialog = self.dialog,
@@ -130,13 +129,14 @@ function ReaderUI:init()
 		ui = self
 	}
 	table.insert(self.active_widgets, reader_ss)
-	-- frontlight controller
-	local reader_fl = ReaderFrontLight:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
-	table.insert(self, reader_fl)
+	if Device:getFrontlight() then
+		-- frontlight controller
+		table.insert(self, ReaderFrontLight:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		})
+	end
 
 	if self.document.info.has_pages then
 		-- for page specific controller
