@@ -269,6 +269,14 @@ local last_file = G_reader_settings:readSetting("lastfile")
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
 --87712cf0e43fed624f8a9f610be42b1fe174b9fe
 
+do
+	local fl = Device:getFrontlight()
+	if fl.restore_settings then
+		local intensity = G_reader_settings:readSetting("frontlight_intensity")
+		intensity = intensity or fl.intensity
+		fl:setIntensity(intensity)
+	end
+end
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
 	if lfs.attributes(ARGV[argidx], "mode") == "directory" then

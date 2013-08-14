@@ -1,6 +1,7 @@
 require "ui/geometry"
 require "ui/device"
 require "ui/inputevent"
+require "ui/widget/container"
 require "ui/screen"
 require "debug"
 require "gettext"
@@ -290,6 +291,8 @@ function UIManager:run()
 				Device:usbPlugIn()
 			elseif input_event == "NotCharging" then
 				Device:usbPlugOut()
+			elseif input_event == "Light" then
+				Device:getFrontlight():toggle()
 			else
 				self:sendEvent(input_event)
 			end
