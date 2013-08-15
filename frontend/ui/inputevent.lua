@@ -3,7 +3,6 @@ require "ui/device"
 require "ui/time"
 require "ui/gesturedetector"
 require "ui/geometry"
-require "ui/reader/readerfrontlight"
 
 -- constants from <linux/input.h>
 EV_SYN = 0
@@ -273,9 +272,9 @@ function Input:init()
 
 	if util.isEmulated() == 1 then
 		self:initKeyMap()
-		os.remove("emu_event")
-		os.execute("mkfifo emu_event")
-		input.open("emu_event")
+		os.remove("/tmp/emu_event")
+		os.execute("mkfifo /tmp/emu_event")
+		input.open("/tmp/emu_event")
 		-- SDL key codes
 		self.event_map = self.sdl_event_map
 	else
@@ -316,12 +315,14 @@ function Input:init()
 			end
 			print(_("Auto-detected Kindle Touch"))
 		elseif Device:isKobo() then
+			firm_rev = Device:getFirmVer()
 			input.open("/dev/input/event1")
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
-			if dev_mod ~= 'Kobo_trilogy' then
+			if dev_mod ~= 'Kobo_trilogy' and firm_rev == "2.6.1"
+			or dev_mod == 'Kobo_dragon' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
 						if ev.code == ABS_X then
@@ -335,6 +336,19 @@ function Input:init()
 							else
 								ev.value = Screen.height - ev.value
 							end
+						end
+					end
+					return ev
+				end
+			else
+				function Input:eventAdjustHook(ev)
+					if ev.code == ABS_X then
+						-- We always have to substract from the physical x,
+						-- regardless of the orientation
+						if (Screen.width<Screen.height) then
+							ev.value = Screen.width - ev.value
+						else
+							ev.value = Screen.height - ev.value
 						end
 					end
 					return ev
@@ -410,10 +424,9 @@ function Input:handleKeyBoardEv(ev)
 		return keycode
 	end
 
-	if keycode == "Light" then
-		if ev.value == EVENT_VALUE_KEY_RELEASE then
-			ReaderFrontLight:toggle()
-		end
+	if ev.value == EVENT_VALUE_KEY_RELEASE
+	and keycode == "Light" then
+		return keycode
 	end
 
 	-- handle modifier keys

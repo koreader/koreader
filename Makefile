@@ -9,7 +9,8 @@ KOR_BASE=koreader-base
 VERSION=$(shell git describe HEAD)
 
 # subdirectory we use to build the installation bundle
-INSTALL_DIR=koreader-$(MACHINE)
+INSTALL_DIR=koreader
+INSTALL_DIR_KOBO=mnt/onboard/.kobo
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources koreader.sh \
@@ -72,6 +73,42 @@ customupdate: all
 			-x "koreader/resources/fonts/*"
 	# @TODO write an installation script for KUAL   (houqp)
 
+koboupdate: all
+	# ensure that the binaries were built for ARM
+	file $(KOR_BASE)/koreader-base | grep ARM || exit 1
+	file $(KOR_BASE)/extr | grep ARM || exit 1
+	# remove old package and dir if any
+	rm -f koreader-kobo-$(VERSION).zip
+	rm -rf $(INSTALL_DIR)
+	# create new dir for package
+	mkdir -p $(INSTALL_DIR)/{history,screenshots,clipboard,libs}
+	cp -p README.md COPYING $(KOR_BASE)/{koreader-base,extr,sdcv} koreader.sh koreader_kobo.sh $(LUA_FILES) $(INSTALL_DIR)
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader-base $(INSTALL_DIR)/extr $(INSTALL_DIR)/sdcv
+	mkdir $(INSTALL_DIR)/data $(INSTALL_DIR)/data/dict $(INSTALL_DIR)/data/tessdata
+	cp -L koreader-base/$(DJVULIB) $(KOR_BASE)/$(CRELIB) \
+		$(KOR_BASE)/$(LUALIB) $(KOR_BASE)/$(K2PDFOPTLIB) \
+		$(KOR_BASE)/$(LEPTONICALIB) $(KOR_BASE)/$(TESSERACTLIB) \
+		$(INSTALL_DIR)/libs
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/libs/*
+	cp -rpL $(KOR_BASE)/data/*.css $(INSTALL_DIR)/data
+	cp -rpL $(KOR_BASE)/data/hyph $(INSTALL_DIR)/data/hyph
+	cp -rpL $(KOR_BASE)/fonts $(INSTALL_DIR)
+	cp -rp $(MO_DIR) $(INSTALL_DIR)
+	rm $(INSTALL_DIR)/fonts/droid/DroidSansFallbackFull.ttf
+	echo $(VERSION) > git-rev
+	cp -r git-rev resources $(INSTALL_DIR)
+	rm -r $(INSTALL_DIR)/resources/fonts
+	cp -rpL frontend $(INSTALL_DIR)
+	cp defaults.lua $(INSTALL_DIR)
+	mkdir $(INSTALL_DIR)/fonts/host
+	mkdir -p $(INSTALL_DIR_KOBO)/fmon
+	cp -rpL fmon $(INSTALL_DIR_KOBO)
+	cp -p resources/koreader.png $(INSTALL_DIR_KOBO)/..
+	tar -zcvf KoboRoot.tgz mnt/
+	zip -9 -r koreader-kobo-$(VERSION).zip $(INSTALL_DIR) KoboRoot.tgz
+	rm KoboRoot.tgz
+	rm -rf mnt/
+	rm -rf $(INSTALL_DIR)
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \

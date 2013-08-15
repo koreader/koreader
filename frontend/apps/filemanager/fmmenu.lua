@@ -1,27 +1,19 @@
 require "ui/widget/menu"
 require "ui/widget/touchmenu"
 
-ReaderMenu = InputContainer:new{
+FileManagerMenu = InputContainer:extend{
 	tab_item_table = nil,
 	registered_widgets = {},
 }
 
-function ReaderMenu:init()
+function FileManagerMenu:init()
 	self.tab_item_table = {
 		main = {
 			icon = "resources/icons/appbar.pokeball.png",
 		},
-		navi = {
-			icon = "resources/icons/appbar.page.corner.bookmark.png",
-		},
-		typeset = {
-			icon = "resources/icons/appbar.page.text.png",
-		},
 		home = {
 			icon = "resources/icons/appbar.home.png",
 			callback = function()
-				self.ui:handleEvent(Event:new("RestoreScreenMode",
-					G_reader_settings:readSetting("screen_mode") or "portrait"))
 				UIManager:close(self.menu_container)
 				self.ui:onClose()
 			end,
@@ -36,13 +28,13 @@ function ReaderMenu:init()
 	end
 end
 
-function ReaderMenu:initGesListener()
+function FileManagerMenu:initGesListener()
 	self.ges_events = {
 		TapShowMenu = {
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = Screen:getWidth()/8,
+					x = 0,
 					y = 0,
 					w = Screen:getWidth()*3/4,
 					h = Screen:getHeight()/4,
@@ -52,9 +44,18 @@ function ReaderMenu:initGesListener()
 	}
 end
 
-function ReaderMenu:setUpdateItemTable()
+function FileManagerMenu:setUpdateItemTable()
 	for _, widget in pairs(self.registered_widgets) do
 		widget:addToMainMenu(self.tab_item_table)
+	end
+
+	if Device:hasFrontlight() then
+		table.insert(self.tab_item_table.main, {
+			text = _("Frontlight settings"),
+			callback = function()
+				ReaderFrontLight:onShowFlDialog()
+			end
+		})
 	end
 	table.insert(self.tab_item_table.main, {
 		text = _("Help"),
@@ -66,7 +67,7 @@ function ReaderMenu:setUpdateItemTable()
 	})
 end
 
-function ReaderMenu:onShowMenu()
+function FileManagerMenu:onShowMenu()
 	if #self.tab_item_table.main == 0 then
 		self:setUpdateItemTable()
 	end
@@ -81,8 +82,6 @@ function ReaderMenu:onShowMenu()
 		main_menu = TouchMenu:new{
 			width = Screen:getWidth(),
 			tab_item_table = {
-				self.tab_item_table.navi,
-				self.tab_item_table.typeset,
 				self.tab_item_table.main,
 				self.tab_item_table.home,
 			},
@@ -90,7 +89,7 @@ function ReaderMenu:onShowMenu()
 		}
 	else
 		main_menu = Menu:new{
-			title = _("Document menu"),
+			title = _("File manager menu"),
 			item_table = {},
 			width = Screen:getWidth() - 100,
 		}
@@ -114,22 +113,19 @@ function ReaderMenu:onShowMenu()
 	return true
 end
 
-function ReaderMenu:onTapShowMenu()
+function FileManagerMenu:onTapShowMenu()
 	self:onShowMenu()
 	return true
 end
 
-function ReaderMenu:onSetDimensions(dimen)
+function FileManagerMenu:onSetDimensions(dimen)
 	-- update listening according to new screen dimen
 	if Device:isTouchDevice() then
 		self:initGesListener()
 	end
 end
 
-function ReaderMenu:onCloseDocument()
-end
-
-function ReaderMenu:registerToMainMenu(widget)
+function FileManagerMenu:registerToMainMenu(widget)
 	table.insert(self.registered_widgets, widget)
 end
 
