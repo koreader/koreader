@@ -18,8 +18,18 @@ function FileManager:init()
 
 	self.show_parent = self.show_parent or self
 
+	self.banner = FrameContainer:new{
+		padding = 0,
+		bordersize = 0,
+		TextWidget:new{
+			face = Font:getFace("tfont", 24),
+			text = self.title,
+		}
+	}
+
 	local file_chooser = FileChooser:new{
-		_name = 'fuck',
+		-- remeber to adjust the height when new item is added to the group
+		height = Screen:getHeight() - self.banner:getSize().h,
 		is_popout = false,
 		is_borderless = true,
 		has_close_button = true,
@@ -41,17 +51,7 @@ function FileManager:init()
 		return true
 	end
 
-	self.banner = FrameContainer:new{
-		padding = 0,
-		bordersize = 0,
-		TextWidget:new{
-			face = Font:getFace("tfont", 24),
-			text = self.title,
-		}
-	}
-
 	self.layout = VerticalGroup:new{
-		_name = 'fm',
 		self.banner,
 		file_chooser,
 	}
@@ -59,7 +59,6 @@ function FileManager:init()
 	local fm_ui = FrameContainer:new{
 		padding = 0,
 		bordersize = 0,
-		padding = self.padding,
 		background = 0,
 		self.layout,
 	}
