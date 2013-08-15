@@ -7,7 +7,7 @@ FileManager = InputContainer:extend{
 	title = _("FileManager"),
 	width = Screen:getWidth(),
 	height = Screen:getHeight(),
-	root_path = './',
+	root_path = lfs.currentdir(),
 	-- our own size
 	dimen = Geom:new{ w = 400, h = 600 },
 	onExit = function() end,
@@ -29,6 +29,7 @@ function FileManager:init()
 
 	local file_chooser = FileChooser:new{
 		-- remeber to adjust the height when new item is added to the group
+		path = self.root_path,
 		height = Screen:getHeight() - self.banner:getSize().h,
 		is_popout = false,
 		is_borderless = true,
