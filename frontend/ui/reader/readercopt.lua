@@ -20,7 +20,7 @@ function ReaderCoptListener:onReadSettings(config)
 	    end)
 	end
 	
-	local copt_font_size = config:readSetting("copt_font_size") or 22
+	local copt_font_size = config:readSetting("copt_font_size")
 	if copt_font_size then
 		table.insert(self.ui.postInitCallback, function()
 		    self.ui.document:setFontSize(copt_font_size)
