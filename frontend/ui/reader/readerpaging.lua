@@ -220,6 +220,8 @@ function ReaderPaging:onSwipe(arg, ges)
 		self:onPagingRel(1)
 	elseif ges.direction == "east" then
 		self:onPagingRel(-1)
+	else
+		UIManager.full_refresh = true
 	end
 	return true
 end
