@@ -23,14 +23,17 @@ function ReaderCoptListener:onReadSettings(config)
 	local copt_font_size = config:readSetting("copt_font_size")
 	if copt_font_size then
 		table.insert(self.ui.postInitCallback, function()
-		    self.ui:handleEvent(Event:new("SetFontSize", copt_font_size))
+		    self.ui.document:setFontSize(copt_font_size)
+			self.ui:handleEvent(Event:new("UpdatePos"))
 		end)
 	end
 	
 	local copt_margins = config:readSetting("copt_page_margins")
 	if copt_margins then
 		table.insert(self.ui.postInitCallback, function()
-		    self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
+			-- FIXME: SetPageMargins will mess up current reading position
+			-- for now we simply disable this feature.
+		    --self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
 		end)
 	end
 end
