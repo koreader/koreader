@@ -1,7 +1,7 @@
 #!./koreader-base
 
 require "defaults"
-package.path = "./frontend/?.lua"
+package.path = "./frontend/?.lua;./?.lua"
 package.cpath = "/usr/lib/lua/?.so"
 require "ui/uimanager"
 require "ui/widget/infomessage"
@@ -118,7 +118,7 @@ while argidx <= #ARGV do
 	elseif arg == "-d" then
 		Dbg:turnOn()
 	elseif arg == "-p" then
-		require "lulip"
+		lulip = require("ffi/lulip")
 		Profiler = lulip:new()
 		pcall(function()
 			-- set maxrows only if the optional arg is numeric
