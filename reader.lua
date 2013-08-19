@@ -118,7 +118,7 @@ while argidx <= #ARGV do
 	elseif arg == "-d" then
 		Dbg:turnOn()
 	elseif arg == "-p" then
-		lulip = require("ffi/lulip")
+		local lulip = require("ffi/lulip")
 		Profiler = lulip:new()
 		pcall(function()
 			-- set maxrows only if the optional arg is numeric
