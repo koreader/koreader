@@ -114,6 +114,12 @@ function InputText:getText()
 	return self.text
 end
 
+function InputText:setText(text)
+	self:StringToCharlist(text)
+	self:initTextBox()
+	UIManager:setDirty(self.parent, "partial")
+end
+
 function InputText:StringToCharlist(text)
 	if text == nil then return end
 	-- clear
