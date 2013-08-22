@@ -477,7 +477,10 @@ function Menu:updateItems(select_number)
 end
 
 function Menu:swithItemTable(new_title, new_item_table)
-	self.menu_title.text = new_title
+	if self.menu_title then
+		self.menu_title.text = new_title
+	end
+	self.page = 1
 	self.item_table = new_item_table
 	self:updateItems(1)
 end

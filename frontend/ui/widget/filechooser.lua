@@ -11,11 +11,16 @@ FileChooser = Menu:extend{
 }
 
 function FileChooser:init()
-	self:updateItemTableFromPath(self.path)
+	self.item_table = self:genItemTableFromPath(self.path)
 	Menu.init(self) -- call parent's init()
 end
 
 function FileChooser:compressPath(item_path)
+	if (item_path:sub(1, 1) == ".") then
+		-- ignore relative path
+		return item_path
+	end
+
 	-- compress paths like "test/pdf/../epub" into "test/epub"
 	local path = item_path
 	while path:match("/[^/]+[/][\\.][\\.]") do
@@ -24,11 +29,9 @@ function FileChooser:compressPath(item_path)
 	return path
 end
 
-function FileChooser:updateItemTableFromPath(path)
-	path = self:compressPath(path)
+function FileChooser:genItemTableFromPath(path)
 	local dirs = {}
 	local files = {}
-	self.path = path
 
 	for f in lfs.dir(self.path) do
 		if self.show_hidden or not string.match(f, "^%.[^.]") then
@@ -46,21 +49,24 @@ function FileChooser:updateItemTableFromPath(path)
 		end
 	end
 	table.sort(dirs)
-	if self.path ~= "/" then table.insert(dirs, 1, "..") end
+	if path ~= "/" then table.insert(dirs, 1, "..") end
 	table.sort(files)
 
-	self.item_table = {}
+	local item_table = {}
 	for _, dir in ipairs(dirs) do
-		table.insert(self.item_table, { text = dir.."/", path = self.path.."/"..dir })
+		table.insert(item_table, { text = dir.."/", path = self.path.."/"..dir })
 	end
 	for _, file in ipairs(files) do
-		table.insert(self.item_table, { text = file, path = self.path.."/"..file })
+		table.insert(item_table, { text = file, path = self.path.."/"..file })
 	end
+
+	return item_table
 end
 
 function FileChooser:changeToPath(path)
-	self:updateItemTableFromPath(path)
-	self:updateItems(1)
+	path = self:compressPath(path)
+	self.path = path
+	self:swithItemTable(nil, self:genItemTableFromPath(path))
 end
 
 function FileChooser:onMenuSelect(item)
