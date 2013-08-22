@@ -8,7 +8,10 @@ Device = {
 	frontlight = nil,
 }
 
-BaseFrontLight = {}
+BaseFrontLight = {
+	min = 1, max = 10,
+	intensity = nil,
+}
 
 KindleFrontLight = {
 	min = 0, max = 24,
@@ -26,7 +29,7 @@ KoboFrontLight = {
 
 function Device:getModel()
 	if self.model then return self.model end
-	if util.isEmulated()==1 then
+	if util.isEmulated() then
 		self.model = "Emulator"
 		return self.model
 	end
@@ -184,18 +187,23 @@ function Device:getFrontlight()
 			self.frontlight = KindleFrontLight
 		elseif self:isKobo() then
 			self.frontlight = KoboFrontLight
+		else -- emulated FrontLight
+			self.frontlight = BaseFrontLight
 		end
-		if self.frontlight ~= nil then
-			self.frontlight:init()
-		end
+		self.frontlight:init()
 	end
 	return self.frontlight
 end
 
-function BaseFrontLight:intensityCheckBounds(intensity)
+function BaseFrontLight:init() end
+function BaseFrontLight:toggle() end
+function BaseFrontLight:setIntensityHW() end
+
+function BaseFrontLight:setIntensity(intensity)
 	intensity = intensity < self.min and self.min or intensity
 	intensity = intensity > self.max and self.max or intensity
 	self.intensity = intensity
+	self:setIntensityHW()
 end
 
 function KindleFrontLight:init()
@@ -217,11 +225,10 @@ function KindleFrontLight:toggle()
 	end
 end
 
-KindleFrontLight.intensityCheckBounds = BaseFrontLight.intensityCheckBounds
+KindleFrontLight.setIntensity = BaseFrontLight.setIntensity
 
-function KindleFrontLight:setIntensity(intensity)
+function KindleFrontLight:setIntensityHW()
 	if self.lipc_handle ~= nil then
-		self:intensityCheckBounds(intensity)
 		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.intensity)
 	end
 end
@@ -236,11 +243,10 @@ function KoboFrontLight:toggle()
 	end
 end
 
-KoboFrontLight.intensityCheckBounds = BaseFrontLight.intensityCheckBounds
+KoboFrontLight.setIntensity = BaseFrontLight.setIntensity
 
-function KoboFrontLight:setIntensity(intensity)
+function KoboFrontLight:setIntensityHW()
 	if self.fl ~= nil then
-		self:intensityCheckBounds(intensity)
 		self.fl:setBrightness(self.intensity)
 	end
 end

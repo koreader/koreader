@@ -24,7 +24,7 @@ function exitReader()
 
 	input.closeAll()
 
-	if util.isEmulated() == 0 then
+	if not util.isEmulated() then
 		if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
 			-- send double menu key press events to trigger screen refresh
 			os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")

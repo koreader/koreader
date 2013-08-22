@@ -270,7 +270,7 @@ function Input:init()
 	self.event_map[10020] = "Charging"
 	self.event_map[10021] = "NotCharging"
 
-	if util.isEmulated() == 1 then
+	if util.isEmulated() then
 		self:initKeyMap()
 		os.remove("/tmp/emu_event")
 		os.execute("mkfifo /tmp/emu_event")
