@@ -16,6 +16,11 @@ function FileChooser:init()
 end
 
 function FileChooser:compressPath(item_path)
+	if (item_path:sub(1, 1) == ".") then
+		-- ignore relative path
+		return item_path
+	end
+
 	-- compress paths like "test/pdf/../epub" into "test/epub"
 	local path = item_path
 	while path:match("/[^/]+[/][\\.][\\.]") do
