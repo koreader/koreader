@@ -15,18 +15,18 @@ function FileChooser:init()
 	Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:compressPath(item_path)
-	if (item_path:sub(1, 1) == ".") then
-		-- ignore relative path
-		return item_path
+function FileChooser:compressPath(path)
+	local pos
+	if path:sub(1, 1) ~= "/" then
+		-- currently does not work with relative paths
+		return path
 	end
-
+	path = path:gsub("/+", "/")
 	-- compress paths like "test/pdf/../epub" into "test/epub"
-	local path = item_path
-	while path:match("/[^/]+[/][\\.][\\.]") do
-		path = path:gsub("/[^/]+[/][\\.][\\.]", "")
-	end
-	return path
+	repeat
+		path, pos = path:gsub("/?[^/]*/%.%.", "", 1)
+	until pos == 0
+	return path ~= "" and path or "/"
 end
 
 function FileChooser:genItemTableFromPath(path)
