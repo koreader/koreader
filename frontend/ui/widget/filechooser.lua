@@ -15,20 +15,6 @@ function FileChooser:init()
 	Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:compressPath(path)
-	local pos
-	if path:sub(1, 1) ~= "/" then
-		-- currently does not work with relative paths
-		return path
-	end
-	path = path:gsub("/+", "/")
-	-- compress paths like "test/pdf/../epub" into "test/epub"
-	repeat
-		path, pos = path:gsub("/?[^/]*/%.%.", "", 1)
-	until pos == 0
-	return path ~= "" and path or "/"
-end
-
 function FileChooser:genItemTableFromPath(path)
 	local dirs = {}
 	local files = {}
@@ -64,7 +50,7 @@ function FileChooser:genItemTableFromPath(path)
 end
 
 function FileChooser:changeToPath(path)
-	path = self:compressPath(path)
+	path = util.realpath(path)
 	self.path = path
 	self:swithItemTable(nil, self:genItemTableFromPath(path))
 end
