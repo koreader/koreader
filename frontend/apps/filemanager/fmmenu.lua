@@ -49,9 +49,17 @@ function FileManagerMenu:setUpdateItemTable()
 		widget:addToMainMenu(self.tab_item_table)
 	end
 
+	table.insert(self.tab_item_table.main, {
+		text = _("Toggle hidden files"),
+		callback = function()
+			self.ui:toggleHiddenFiles()
+		end
+	})
+
 	if Device:getFrontlight() ~= nil then
 		ReaderFrontLight:addToMainMenu(self.tab_item_table)
 	end
+
 	table.insert(self.tab_item_table.main, {
 		text = _("Help"),
 		callback = function()

@@ -55,6 +55,11 @@ function FileChooser:changeToPath(path)
 	self:swithItemTable(nil, self:genItemTableFromPath(path))
 end
 
+function FileChooser:toggleHiddenFiles()
+	self.show_hidden = not self.show_hidden
+	self:swithItemTable(nil, self:genItemTableFromPath(self.path))
+end
+
 function FileChooser:onMenuSelect(item)
 	if lfs.attributes(item.path, "mode") == "directory" then
 		self:changeToPath(item.path)
