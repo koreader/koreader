@@ -46,6 +46,7 @@ function FileManager:init()
 			end
 		end
 	}
+	self.file_chooser = file_chooser
 
 	function file_chooser:onFileSelect(file)
 		showReaderUI(file)
@@ -78,6 +79,9 @@ function FileManager:init()
 	self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
+function FileManager:toggleHiddenFiles()
+	self.file_chooser:toggleHiddenFiles()
+end
 
 function FileManager:onClose()
 	UIManager:close(self)
