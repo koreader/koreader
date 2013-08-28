@@ -1,10 +1,10 @@
 KOReader
 ========
 
-This is a document viewer application, created for usage on the Kindle e-ink reader.
-It currently supports Kindle 5 (Touch) and Kindle Paperwhite. The devices need
-to be jailbroken in order to install the application. Also, a kind of external
-launcher is needed.
+This is a document viewer application, originally created for usage on the
+Kindle e-ink reader. It currently supports Kindle 5 (Touch), Kindle Paperwhite
+and Kobo devices. Kindles need to be jailbroken in order to install the
+application. Also, a kind of external launcher is needed.
 
 KOReader started as the KindlePDFViewer application, but it supports much more
 formats than PDF now. Among them are DJVU, FB2, EPUB, TXT, CBZ, HTML.
@@ -22,7 +22,7 @@ The application is licensed under the GPLv3 (see COPYING file).
 Prerequisites
 ========
 
-Instructions about how to get and compile the source are intended for a *nix
+Instructions about how to get and compile the source are intended for a \*nix
 OS. Windows users are suggested to develop in a Linux VM or use
 andLinux, Wubi.
 
@@ -30,7 +30,7 @@ To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
 `svn` and `cmake` installed.
 
 You might also need SDL library packages if you want to compile and run the PC
-emulator. Fedora user can install `SDL` and `SDL-devel`. Ubuntu users can
+emulator. Fedora users can install `SDL` and `SDL-devel`. Ubuntu users can
 install `libsdl1.2-dev`.
 
 
@@ -52,12 +52,17 @@ For real eink devices
 
 If you already done an emulator build, you must do:
 ```
-make clean cleanthirdparty
+make clean
 ```
 
-To build:
+To build for the Kindle:
 ```
-make all customupdate
+make customupdate
+```
+
+To build for the Kobo:
+```
+make TARGET_DEVICE=KOBO koboupdate
 ```
 
 To run, you must call the script reader.lua. Run it without arguments to see
@@ -72,18 +77,18 @@ For emulating
 
 If you already done a real device build, you must do:
 ```
-make clean cleanthirdparty
+make clean
 ```
 
 To build
 ```
-EMULATE_READER=1 make all bootstrapemu
+EMULATE_READER=1 make
 ```
 
 To run:
 
 ```
-cd emu && ./reader.lua -d ./
+cd koreader-*/koreader && ./reader.lua -d ./
 ```
 
 You can also specify size of emulator's screen via environment variables.
