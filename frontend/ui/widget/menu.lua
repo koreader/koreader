@@ -259,10 +259,6 @@ function Menu:_recalculateDimen()
 		w = self.dimen.w,
 		h = Screen:scaleByDPI(36), -- hardcoded for now
 	}
-	if not self.is_borderless then
-		-- we need to substract border, margin and padding
-		self.item_dimen.w = self.item_dimen.w - 14
-	end
 	self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
 	self.page_num = math.ceil(#self.item_table / self.perpage)
 end
@@ -286,9 +282,6 @@ function Menu:init()
 		dimen = {w = self.dimen.w},
 		self.menu_title,
 	}
-	if not self.is_borderless then
-		self.title_bar.dimen.w = self.title_bar.dimen.w - 14
-	end
 	-- group for items
 	self.item_group = VerticalGroup:new{}
 	-- group for page info
@@ -314,35 +307,43 @@ function Menu:init()
 		self.page_info_right_chev
 	}
 
-	-- group for menu layout
-	local content = VerticalGroup:new{
-		self.item_group,
+	local header = self.title_bar
+	local body = self.item_group
+	local footer = BottomContainer:new{
+		dimen = self.dimen:copy(),
 		self.page_info,
 	}
-	if not self.no_title then
-		table.insert(content, 1, self.title_bar)
-	end
-	-- maintain reference to content so we can change it later
-	self.content_group = content
 
-	if not self.is_borderless then
-		self[1] = FrameContainer:new{
-			dimen = self.dimen,
-			background = 0,
-			radius = math.floor(self.dimen.w/20),
-			content
+	local content = nil
+	if self.no_title then
+		content = OverlapGroup:new{
+			dimen = self.dimen:copy(),
+			VerticalGroup:new{
+				align = "left",
+				body,
+			},
+			footer
 		}
 	else
-		-- no border for the menu
-		self[1] = FrameContainer:new{
-			background = 0,
-			bordersize = 0,
-			padding = 0,
-			margin = 0,
-			dimen = self.dimen,
-			content
+		content = OverlapGroup:new{
+			dimen = self.dimen:copy(),
+			VerticalGroup:new{
+				align = "left",
+				header,
+				body,
+			},
+			footer
 		}
 	end
+
+	self[1] = FrameContainer:new{
+		background = 0,
+		bordersize = self.is_borderless and 0 or 2,
+		padding = 0,
+		margin = 0,
+		radius = math.floor(self.dimen.w/20),
+		content
+	}
 
 	------------------------------------------
 	-- start to set up input event callback --
@@ -405,7 +406,6 @@ function Menu:updateItems(select_number)
 	-- self.layout must be updated for focusmanager
 	self.layout = {}
 	self.item_group:clear()
-	self.content_group:resetLayout()
 	self:_recalculateDimen()
 
 	-- default to select the first item
@@ -444,13 +444,6 @@ function Menu:updateItems(select_number)
 			table.insert(self.item_group, item_tmp)
 			-- this is for focus manager
 			table.insert(self.layout, {item_tmp})
-		else
-			-- item not enough to fill the whole page, break out of loop
-			table.insert(self.item_group,
-				VerticalSpan:new{
-					width = (self.item_dimen.h * (self.perpage - c + 1))
-				})
-			break
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 	if self.item_group[1] then
