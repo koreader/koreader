@@ -86,21 +86,18 @@ end
 
 function TextBoxWidget:_wrapGreedyAlg(h_list)
 	local cur_line_width = 0
-	local space_w = sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
 	local cur_line = {}
 	local v_list = {}
 
 	for k,w in ipairs(h_list) do
 		cur_line_width = cur_line_width + w.width
-		local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
 		if cur_line_width <= self.width then
-			cur_line_width = cur_line_width + (is_ascii and space_w or 0)
 			table.insert(cur_line, w)
 		else
 			-- wrap to next line
 			table.insert(v_list, cur_line)
 			cur_line = {}
-			cur_line_width = w.width + (is_ascii and space_w or 0)
+			cur_line_width = w.width
 			table.insert(cur_line, w)
 		end
 	end
@@ -110,17 +107,58 @@ function TextBoxWidget:_wrapGreedyAlg(h_list)
 	return v_list
 end
 
+--[[
+Lua doesn't have a string.split() function and most of the time
+you don't really need it because string.gmatch() is enough.
+However string.gmatch() has one significant disadvantage for me:
+You can't split a string while matching both the delimited
+strings and the delimiters themselves without tracking positions
+and substrings. The string.gsplit() function below takes care of
+this problem. 
+Author: Peter Odding
+License: MIT/X11
+Source: http://snippets.luacode.org/snippets/String_splitting_130
+--]]
+function string:gsplit(pattern, capture)
+	pattern = pattern and tostring(pattern) or '%s+'
+	if (''):find(pattern) then
+		error('pattern matches empty string!', 2)
+	end
+	return coroutine.wrap(function()
+		local index = 1
+		repeat
+			local first, last = self:find(pattern, index)
+			if first and last then
+				if index < first then
+					coroutine.yield(self:sub(index, first - 1))
+				end
+				if capture then
+					coroutine.yield(self:sub(first, last))
+				end
+				index = last + 1
+			else
+				if index <= #self then
+					coroutine.yield(self:sub(index))
+				end
+				break
+			end
+		until index > #self
+	end)
+end
+
 function TextBoxWidget:_getVerticalList(alg)
 	if self.vertical_list then
 		return self.vertical_list
 	end
 	-- build horizontal list
 	local h_list = {}
-	for w in self.text:gmatch("[\33-\127\192-\255]+[\128-\191]*") do
-		local word_box = {}
-		word_box.word = w
-		word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
-		table.insert(h_list, word_box)
+	for words in self.text:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
+		for w in words:gsplit("%s+", true) do 
+			local word_box = {}
+			word_box.word = w
+			word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
+			table.insert(h_list, word_box)
+		end
 	end
 
 	-- @TODO check alg here 25.04 2012 (houqp)
@@ -215,10 +253,9 @@ function TextBoxWidget:_render(v_list)
 		for _,w in ipairs(l) do
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
 			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-			renderUtf8Text(self._bb, pen_x, y, self.face, w.word, 
-							true, self.bgcolor, self.fgcolor)
-			local is_ascii = not w.word:match("[%z\194-\244][\128-\191]*")
-			pen_x = pen_x + w.width + (is_ascii and space_w or 0)
+			renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true,
+						   self.bgcolor, self.fgcolor)
+			pen_x = pen_x + w.width
 		end
 		y = y + line_height_px + font_height
 	end
