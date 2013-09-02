@@ -315,14 +315,13 @@ function Input:init()
 			end
 			print(_("Auto-detected Kindle Touch"))
 		elseif Device:isKobo() then
-			firm_rev = Device:getFirmVer()
+			local firm_rev = Device:getFirmVer()
 			input.open("/dev/input/event1")
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
-			if dev_mod ~= 'Kobo_trilogy' and firm_rev == "2.6.1"
-			or dev_mod == 'Kobo_dragon' then
+			if dev_mod ~= 'Kobo_trilogy' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
 						if ev.code == ABS_X then
@@ -470,6 +469,16 @@ function Input:getCurrentMtSlot()
 	return self:getMtSlot(self.cur_slot)
 end
 
+function Input:confirmAbsxy()
+	self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
+	self:setCurrentMtSlot("y", self.ev_slots[self.cur_slot]["abs_y"])
+end
+
+function Input:cleanAbsxy()
+	self:setCurrentMtSlot("abs_x", nil)
+	self:setCurrentMtSlot("abs_y", nil)
+end
+
 --[[
 parse each touch ev from kernel and build up tev.
 tev will be sent to GestureDetector:feedEvent
@@ -523,16 +532,25 @@ function Input:handleTouchEv(ev)
 			self.cur_slot = ev.value
 		elseif ev.code == ABS_MT_TRACKING_ID then
 			self:setCurrentMtSlot("id", ev.value)
+		elseif ev.code == ABS_MT_POSITION_X then
+			self:setCurrentMtSlot("x", ev.value)
+		elseif ev.code == ABS_MT_POSITION_Y then
+			self:setCurrentMtSlot("y", ev.value)
+
+		-- code to emulate mt protocol on kobos
+		-- we "confirm" abs_x, abs_y only when pressure ~= 0
+		elseif ev.code == ABS_X then
+			self:setCurrentMtSlot("abs_x", ev.value)
+		elseif ev.code == ABS_Y then
+			self:setCurrentMtSlot("abs_y", ev.value)
 		elseif ev.code == ABS_PRESSURE then
 			if ev.value ~= 0 then
 				self:setCurrentMtSlot("id", 1)
+				self:confirmAbsxy()
 			else
+				self:cleanAbsxy()
 				self:setCurrentMtSlot("id", -1)
 			end
-		elseif ev.code == ABS_MT_POSITION_X or ev.code == ABS_X then
-			self:setCurrentMtSlot("x", ev.value)
-		elseif ev.code == ABS_MT_POSITION_Y or ev.code == ABS_Y then
-			self:setCurrentMtSlot("y", ev.value)
 		end
 	end
 end
