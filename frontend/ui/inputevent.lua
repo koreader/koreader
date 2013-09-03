@@ -322,6 +322,7 @@ function Input:init()
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
 			if dev_mod ~= 'Kobo_trilogy' and firm_rev == "2.6.1"
+			or dev_mod == 'Kobo_pixie'
 			or dev_mod == 'Kobo_dragon' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
