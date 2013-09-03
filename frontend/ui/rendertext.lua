@@ -41,16 +41,16 @@ local function utf8Chars(input)
 			if string.len(input) < (pos + bytes_left - 1) then
 				return pos+1, 0xFFFD, "\xFF\xFD"
 			end
-			for i = pos+1, pos+bytes_left do
+			for i = pos+1, pos + bytes_left do
 				value = string.byte(input, i)
 				if bit.band(value, 0xC0) == 0x80 then
-					glyph = bit.bor(lshift(glyph, 6), bit.band(value, 0x3F))
+					glyph = bit.bor(bit.lshift(glyph, 6), bit.band(value, 0x3F))
 				else
 					return i+1, 0xFFFD, "\xFF\xFD"
 				end
 			end
 			-- TODO: check for valid ranges here!
-			return pos, glyph, string.sub(input, pos, pos+bytes_left)
+			return pos+bytes_left+1, glyph, string.sub(input, pos, pos+bytes_left)
 		end
 	end
 	return read_next_glyph, input, 1
