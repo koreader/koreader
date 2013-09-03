@@ -12,6 +12,50 @@ GlyphCache = Cache:new{
 	cache_order = {}
 }
 
+-- iterator over UTF8 encoded characters in a string
+local function utf8Chars(input)
+	local function read_next_glyph(input, pos)
+		if string.len(input) < pos then return nil end
+		local value = string.byte(input, pos)
+		if bit.band(value, 0x80) == 0 then
+			-- TODO: check valid ranges
+			return pos+1, value, string.sub(input, pos, pos)
+		elseif bit.band(value, 0xC0) == 0x80 -- invalid, continuation
+		or bit.band(value, 0xF8) == 0xF8 -- 5-or-more byte sequence, illegal due to RFC3629
+		then
+			return pos+1, 0xFFFD, "\xFF\xFD"
+		else
+			local glyph, bytes_left
+			if bit.band(value, 0xE0) == 0xC0 then
+				glyph = bit.band(value, 0x1F)
+				bytes_left = 1
+			elseif bit.band(value, 0xF0) == 0xE0 then
+				glyph = bit.band(value, 0x0F)
+				bytes_left = 2
+			elseif bit.band(value, 0xF8) == 0xF0 then
+				glyph = bit.band(value, 0x07)
+				bytes_left = 3
+			else
+				return pos+1, 0xFFFD, "\xFF\xFD"
+			end
+			if string.len(input) < (pos + bytes_left - 1) then
+				return pos+1, 0xFFFD, "\xFF\xFD"
+			end
+			for i = pos+1, pos+bytes_left do
+				value = string.byte(input, i)
+				if bit.band(value, 0xC0) == 0x80 then
+					glyph = bit.bor(lshift(glyph, 6), bit.band(value, 0x3F))
+				else
+					return i+1, 0xFFFD, "\xFF\xFD"
+				end
+			end
+			-- TODO: check for valid ranges here!
+			return pos, glyph, string.sub(input, pos, pos+bytes_left)
+		end
+	end
+	return read_next_glyph, input, 1
+end
+
 function getGlyph(face, charcode, bgcolor, fgcolor)
 	if bgcolor == nil then bgcolor = 0.0 end
 	if fgcolor == nil then fgcolor = 1.0 end
@@ -46,9 +90,8 @@ function getSubTextByWidth(text, face, width, kerning)
 	local pen_x = 0
 	local prevcharcode = 0
 	local char_list = {}
-	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < width then
-			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
 			if kerning and prevcharcode then
 				local kern = face.ftface:getKerning(prevcharcode, charcode)
@@ -78,12 +121,11 @@ function sizeUtf8Text(x, width, face, text, kerning)
 	local pen_y_top = 0
 	local pen_y_bottom = 0
 	local prevcharcode = 0
-	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < (width - x) then
-			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode)
 			if kerning and (prevcharcode ~= 0) then
-				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
+				pen_x = pen_x + (face.ftface):getKerning(prevcharcode, charcode)
 			end
 			pen_x = pen_x + glyph.ax
 			pen_y_top = math.max(pen_y_top, glyph.t)
@@ -91,7 +133,7 @@ function sizeUtf8Text(x, width, face, text, kerning)
 			--DEBUG("ax:"..glyph.ax.." t:"..glyph.t.." r:"..glyph.r.." h:"..glyph.bb:getHeight().." w:"..glyph.bb:getWidth().." yt:"..pen_y_top.." yb:"..pen_y_bottom)
 			prevcharcode = charcode
 		end -- if pen_x < (width - x)
-	end -- for uchar
+	end
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
@@ -106,9 +148,8 @@ function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 	local pen_x = 0
 	local prevcharcode = 0
 	local buffer_width = buffer:getWidth()
-	for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < buffer_width then
-			local charcode = util.utf8charcode(uchar)
 			local glyph = getGlyph(face, charcode, bgcolor, fgcolor)
 			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
@@ -121,7 +162,7 @@ function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
 		end -- if pen_x < buffer_width
-	end -- for uchar
+	end
 
 	return pen_x
 end
