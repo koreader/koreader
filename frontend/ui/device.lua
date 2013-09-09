@@ -155,19 +155,31 @@ end
 function Device:Suspend()
 	UIManager:show(InfoMessage:new{
 			text = _("Standby"),
-			timeout = 4,
+			timeout = 2,
 		})
 	if self.fl ~= nil then
 		self.fl:sleep()
 	end
-	os.execute("./kobo_suspend.sh &")
+	self.screen_saver_mode = true
+	os.execute("./kobo_suspend.sh")
 end
 
 function Device:Resume()
+	--util.usleep(1500000)
+	os.execute("echo 0 > /sys/power/state-extended")
 	if self.fl ~= nil then
 		self.fl:resume()
 	end
 	-- Screen:refresh(0)
+	self.screen_saver_mode = false
+end
+
+function Device:Power()
+	if self.screen_saver_mode == true then
+		Device:Resume()
+	else
+		Device:Suspend()
+	end
 end
 
 function Device:usbPlugIn()

@@ -385,7 +385,7 @@ function Input:adjustKindle4EventMap()
 end
 
 function Input:adjustKoboEventMap()
-	self.event_map[53] = "Power"
+	self.event_map[59] = "Power_SleepCover"
 	self.event_map[90] = "Light"
 	self.event_map[116] = "Power"
 end
@@ -424,7 +424,7 @@ function Input:handleKeyBoardEv(ev)
 	end
 
 	-- Kobo sleep
-	if keycode == "Power" then
+	if keycode == "Power_SleepCover" then
 		if ev.value == EVENT_VALUE_KEY_PRESS then
 			return "Suspend"
 		else
@@ -433,7 +433,7 @@ function Input:handleKeyBoardEv(ev)
 	end
 
 	if ev.value == EVENT_VALUE_KEY_RELEASE
-	and keycode == "Light" then
+	and (keycode == "Light" or keycode == "Power") then
 		return keycode
 	end
 
