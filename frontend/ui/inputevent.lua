@@ -423,6 +423,15 @@ function Input:handleKeyBoardEv(ev)
 		return keycode
 	end
 
+	-- Kobo sleep
+	if keycode == "Power" then
+		if ev.value == EVENT_VALUE_KEY_PRESS then
+			return "Suspend"
+		else
+			return "Resume"
+		end
+	end
+
 	if ev.value == EVENT_VALUE_KEY_RELEASE
 	and keycode == "Light" then
 		return keycode

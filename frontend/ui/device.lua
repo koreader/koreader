@@ -152,6 +152,24 @@ function Device:outofScreenSaver()
 	self.screen_saver_mode = false
 end
 
+function Device:Suspend()
+	UIManager:show(InfoMessage:new{
+			text = _("Standby"),
+			timeout = 4,
+		})
+	if self.fl ~= nil then
+		self.fl:sleep()
+	end
+	os.execute("./kobo_suspend.sh &")
+end
+
+function Device:Resume()
+	if self.fl ~= nil then
+		self.fl:resume()
+	end
+	-- Screen:refresh(0)
+end
+
 function Device:usbPlugIn()
 	--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then

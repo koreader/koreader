@@ -293,6 +293,10 @@ function UIManager:run()
 				Device:usbPlugOut()
 			elseif input_event == "Light" then
 				Device:getFrontlight():toggle()
+			elseif input_event == "Suspend" then
+				Device:Suspend()
+			elseif input_event == "Resume" then
+				Device:Resume()
 			else
 				self:sendEvent(input_event)
 			end
