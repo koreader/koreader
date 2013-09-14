@@ -1,6 +1,10 @@
 -- number of page turns between full screen refresh
--- default to full refresh on every page turn
+-- default to do a full refresh on every 6 page turns
 DRCOUNTMAX = 6
+
+-- number of pages for hinting
+-- default to pre-rendering 2 pages
+DHINTCOUNT = 2
 
 -- full screen mode, 1 for true, 0 for false
 DFULL_SCREEN = 1
