@@ -173,6 +173,7 @@ function ReaderUI:init()
 		-- hinting controller
 		local hinter = ReaderHinting:new{
 			dialog = self.dialog,
+			zoom = zoomer,
 			view = self[1],
 			ui = self,
 			document = self.document,

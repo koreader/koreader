@@ -5,7 +5,7 @@ ReaderPaging = InputContainer:new{
 	number_of_pages = 0,
 	visible_area = nil,
 	page_area = nil,
-	show_overlap_enable = true,
+	show_overlap_enable = DSHOWOVERLAP,
 	overlap = scaleByDPI(20),
 	flip_steps = {0,1,2,5,10,20,50,100}
 }
