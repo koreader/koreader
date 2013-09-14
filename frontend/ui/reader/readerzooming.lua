@@ -161,19 +161,6 @@ function ReaderZooming:onReZoom()
 	return true
 end
 
-function ReaderZooming:onHintPage()
-	if not self.view.hinting then return true end
-	if self.current_page < self.ui.document.info.number_of_pages then
-		self.ui.document:hintPage(
-			self.view.state.page + 1,
-			self:getZoom(self.view.state.page + 1),
-			self.view.state.rotation,
-			self.view.state.gamma,
-			self.view.render_mode)
-	end
-	return true
-end
-
 function ReaderZooming:getZoom(pageno)
 	-- check if we're in bbox mode and work on bbox if that's the case
 	local zoom = nil
