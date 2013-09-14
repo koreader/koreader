@@ -154,12 +154,12 @@ function TextBoxWidget:_getVerticalList(alg)
 	local h_list = {}
 	for words in self.text:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
 		for word in words:gsplit("%s+", true) do
-            for w in word:gsplit("%p+", true) do
-			    local word_box = {}
-			    word_box.word = w
-			    word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
-			    table.insert(h_list, word_box)
-            end
+			for w in word:gsplit("%p+", true) do
+				local word_box = {}
+				word_box.word = w
+				word_box.width = sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
+				table.insert(h_list, word_box)
+			end
 		end
 	end
 
