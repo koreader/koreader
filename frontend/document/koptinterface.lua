@@ -46,6 +46,12 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	-- So there is no need to check background context when creating new context.
 	local kc = KOPTContext.new()
 	local screen_size = Screen:getSize()
+	local lang = doc.configurable.doc_language
+	if lang == "chi_sim" or lang == "chi_tra" or 
+		lang == "jpn" or lang == "kor" then
+		kc:setCJKChar()
+	end
+	kc:setLanguage(lang)
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
 	kc:setIndent(doc.configurable.detect_indent)
@@ -62,8 +68,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
-	kc:setLanguage(doc.configurable.doc_language)
-	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+	if bbox then kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1) end
 	if Dbg.is_on then kc:setDebug() end
 	return kc
 end
@@ -133,12 +138,6 @@ function KoptInterface:getReflewTextBoxes(doc, pageno)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
 			--kc:setDebug()
-			local lang = doc.configurable.doc_language
-			if lang == "chi_sim" or lang == "chi_tra" or 
-				lang == "jpn" or lang == "kor" then
-				kc:setCJKChar()
-			end
-			kc:setLanguage(lang)
 			local fullwidth, fullheight = kc:getPageDim()
 			local boxes = kc:getWordBoxes(0, 0, fullwidth, fullheight)
 			Cache:insert(hash, CacheItem:new{ rfpgboxes = boxes })
@@ -154,14 +153,8 @@ function KoptInterface:getTextBoxes(doc, pageno)
 	local cached = Cache:check(hash)
 	if not cached then
 		local kc_hash = "kctx|"..doc.file.."|"..pageno
-		local kc = KOPTContext.new()
+		local kc = self:createContext(doc, pageno)
 		kc:setDebug()
-		local lang = doc.configurable.doc_language
-		if lang == "chi_sim" or lang == "chi_tra" or 
-			lang == "jpn" or lang == "kor" then
-			kc:setCJKChar()
-		end
-		kc:setLanguage(lang)
 		local page = doc._document:openPage(pageno)
 		page:getPagePix(kc)
 		local fullwidth, fullheight = kc:getPageDim()
