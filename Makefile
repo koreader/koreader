@@ -25,6 +25,7 @@ MO_DIR=$(INSTALL_DIR)/koreader/i18n
 
 
 all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit mo
+	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
 	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
