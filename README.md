@@ -27,7 +27,9 @@ OS. Windows users are suggested to develop in a Linux VM or use
 andLinux, Wubi.
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
-`svn` and `cmake` installed.
+`svn`, `autoconf` and `cmake` installed.
+
+Version of autoconf need to be greater than 2.64.
 
 You might also need SDL library packages if you want to compile and run the PC
 emulator. Fedora users can install `SDL` and `SDL-devel`. Ubuntu users can
