@@ -8,6 +8,8 @@ KoptInterface = {
 	tessocr_data = "data",
 	ocr_lang = "eng",
 	ocr_type = 3, -- default 0, for more accuracy use 3
+	last_context_size = nil,
+	default_context_size = 1024*1024,
 }
 
 ContextCacheItem = CacheItem:new{}
@@ -253,11 +255,18 @@ function KoptInterface:getCachedContext(doc, pageno)
 		--self:logReflowDuration(pageno, dur)
 		local fullwidth, fullheight = kc:getPageDim()
 		DEBUG("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
-		Cache:insert(kctx_hash, ContextCacheItem:new{ kctx = kc })
+		self.last_context_size = fullwidth * fullheight + 128 -- estimation
+		Cache:insert(kctx_hash, ContextCacheItem:new{
+			size = self.last_context_size,
+			kctx = kc
+		})
 		return kc
 	else
 		-- wait for background thread
-		return self:waitForContext(cached.kctx)
+		local kc = self:waitForContext(cached.kctx)
+		local fullwidth, fullheight = kc:getPageDim()
+		self.last_context_size = fullwidth * fullheight + 128 -- estimation
+		return kc
 	end
 end
 
@@ -325,7 +334,10 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
 		kc:setPreCache()
 		page:reflow(kc, 0)
 		page:close()
-		Cache:insert(kctx_hash, ContextCacheItem:new{ kctx = kc })
+		Cache:insert(kctx_hash, ContextCacheItem:new{
+			size = self.last_context_size or self.default_context_size,
+			kctx = kc,
+		})
 	end
 end
 
