@@ -3,11 +3,29 @@ export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
-test -e $PROC_KEYPAD && echo unlock > $PROC_KEYPAD
-test -e $PROC_FIVEWAY && echo unlock > $PROC_FIVEWAY
+[ -e $PROC_KEYPAD ] && echo unlock > $PROC_KEYPAD
+[ -e $PROC_FIVEWAY ] && echo unlock > $PROC_FIVEWAY
+
+# By default, don't stop the framework.
+if [ "$1" == "--framework_stop" ] ; then
+	shift 1
+	STOP_FRAMEWORK="yes"
+	# Yield a bit to let stuff stop properly...
+	echo "Stopping framework . . ."
+	sleep 2
+else
+	STOP_FRAMEWORK="no"
+fi
+
+# Check which type of init system we're using
+if [ -d /etc/upstart ] ; then
+	INIT_TYPE="upstart"
+else
+	INIT_TYPE="sysv"
+fi
 
 # we're always starting from our working directory
-cd /mnt/us/koreader/
+cd /mnt/us/koreader
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -16,39 +34,89 @@ export TESSDATA_PREFIX="data"
 export STARDICT_DATA_DIR="data/dict"
 
 # bind-mount system fonts
-if ! grep /mnt/us/koreader/fonts/host /proc/mounts; then
+if ! grep /mnt/us/koreader/fonts/host /proc/mounts ; then
 	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host
 fi
 
+# bind-mount altfonts
+if [ -d /mnt/us/fonts ] ; then
+	mkdir -p /mnt/us/koreader/fonts/altfonts
+	if ! grep /mnt/us/koreader/fonts/altfonts /proc/mounts ; then
+		mount -o bind /mnt/us/fonts /mnt/us/koreader/fonts/altfonts
+	fi
+fi
+
+# bind-mount linkfonts
+if [ -d /mnt/us/linkfonts/fonts ] ; then
+	mkdir -p /mnt/us/koreader/fonts/linkfonts
+	if ! grep /mnt/us/koreader/fonts/linkfonts /proc/mounts ; then
+		mount -o bind /mnt/us/linkfonts/fonts /mnt/us/koreader/fonts/linkfonts
+	fi
+fi
+
 # check if we are supposed to shut down the Amazon framework
-if test "$1" == "--framework_stop"; then
-	shift 1
-	/etc/init.d/framework stop
+if [ "${STOP_FRAMEWORK}" == "yes" ]; then
+	# Upstart or SysV?
+	if [ "${INIT_TYPE}" == "sysv" ] ; then
+		/etc/init.d/framework stop
+	else
+		# The framework job sends a SIGTERM on stop, trap it so we don't get killed if we were launched by KUAL
+		trap "" SIGTERM
+		stop lab126_gui
+	fi
 fi
 
 # check if kpvbooklet was launched for more than once, if not we will disable pillow
-count=`lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count`
-if [ "$count" == "" -o "$count" == "0" ]; then
-    lipc-set-prop com.lab126.pillow disableEnablePillow disable
+# there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
+if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
+	count=`lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count`
+	if [ "$count" == "" -o "$count" == "0" ]; then
+		lipc-set-prop com.lab126.pillow disableEnablePillow disable
+	fi
 fi
 
-# stop cvm
-#killall -stop cvm
+# stop cvm (sysv & framework up only)
+if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
+	killall -stop cvm
+fi
 
 # finally call reader
 ./reader.lua "$@" 2> crash.log
 
 # clean up forked process in case the reader crashed
-killall reader.lua
+if [ "${INIT_TYPE}" == "sysv" ] ; then
+	killall -TERM reader.lua
+else
+	# We trapped SIGTERM, remember? ;)
+	killall -KILL reader.lua
+fi
 
 # unmount system fonts
-if grep /mnt/us/koreader/fonts/host /proc/mounts; then
+if grep /mnt/us/koreader/fonts/host /proc/mounts ; then
 	umount /mnt/us/koreader/fonts/host
 fi
 
-# always try to continue cvm
-killall -cont cvm || /etc/init.d/framework start
+# unmount altfonts
+if grep /mnt/us/koreader/fonts/altfonts /proc/mounts ; then
+	umount /mnt/us/koreader/fonts/altfonts
+fi
 
-# display chrome bar
-lipc-set-prop com.lab126.pillow disableEnablePillow enable
+# unmount linkfonts
+if grep /mnt/us/koreader/fonts/linkfonts /proc/mounts ; then
+	umount /mnt/us/koreader/fonts/linkfonts
+fi
+
+# always try to continue cvm
+if ! killall -cont cvm ; then
+	if [ "${INIT_TYPE}" == "sysv" ] ; then
+		/etc/init.d/framework start
+	else
+		start lab126_gui
+	fi
+fi
+
+# display chrome bar (upstart & framework up only)
+if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
+	lipc-set-prop com.lab126.pillow disableEnablePillow enable
+fi
 
