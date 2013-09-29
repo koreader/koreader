@@ -75,8 +75,10 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-# stop cvm
-#killall -stop cvm
+# stop cvm (sysv & framework up only)
+if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
+	killall -stop cvm
+fi
 
 # finally call reader
 ./reader.lua "$@" 2> crash.log
