@@ -46,8 +46,9 @@ endif
 	# Kobo startup
 	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
 	ln -sf ../../../../../fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
-	ln -sf ../../../../resources/koreader.png $(INSTALL_DIR)/kobo/mnt/onboard/
 	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
+	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
+	cp fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	# clean up
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 	rm $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttf
@@ -86,7 +87,7 @@ koboupdate: all
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
-			KoboRoot.tgz koreader \
+			KoboRoot.tgz koreader koreader.png README_kobo.txt \
 			-x "koreader/resources/fonts/*"
 
 pot:
