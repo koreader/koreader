@@ -152,7 +152,7 @@ function Device:outofScreenSaver()
 	self.screen_saver_mode = false
 end
 
-function Device:prepareSuspend()
+function Device:prepareSuspend() -- currently only used for kobo devices
 	local fl = self:getFrontlight()
 	if fl ~= nil then
 		fl.fl:sleep()
@@ -161,12 +161,11 @@ function Device:prepareSuspend()
 	self.screen_saver_mode = true
 end
 
-function Device:Suspend()
+function Device:Suspend() -- currently only used for kobo devices
 	os.execute("./kobo_suspend.sh")
 end
 
-function Device:Resume()
-	--util.usleep(1500000)
+function Device:Resume() -- currently only used for kobo devices
 	os.execute("echo 0 > /sys/power/state-extended")
 	Screen:refresh(0)
 	local fl = self:getFrontlight()
