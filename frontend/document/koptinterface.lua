@@ -8,6 +8,8 @@ KoptInterface = {
 	tessocr_data = "data",
 	ocr_lang = "eng",
 	ocr_type = 3, -- default 0, for more accuracy use 3
+	last_context_size = nil,
+	default_context_size = 1024*1024,
 }
 
 ContextCacheItem = CacheItem:new{}
@@ -46,6 +48,12 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	-- So there is no need to check background context when creating new context.
 	local kc = KOPTContext.new()
 	local screen_size = Screen:getSize()
+	local lang = doc.configurable.doc_language
+	if lang == "chi_sim" or lang == "chi_tra" or 
+		lang == "jpn" or lang == "kor" then
+		kc:setCJKChar()
+	end
+	kc:setLanguage(lang)
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
 	kc:setIndent(doc.configurable.detect_indent)
@@ -62,8 +70,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
-	kc:setLanguage(doc.configurable.doc_language)
-	kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+	if bbox then kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1) end
 	if Dbg.is_on then kc:setDebug() end
 	return kc
 end
@@ -133,12 +140,6 @@ function KoptInterface:getReflewTextBoxes(doc, pageno)
 		if cached then
 			local kc = self:waitForContext(cached.kctx)
 			--kc:setDebug()
-			local lang = doc.configurable.doc_language
-			if lang == "chi_sim" or lang == "chi_tra" or 
-				lang == "jpn" or lang == "kor" then
-				kc:setCJKChar()
-			end
-			kc:setLanguage(lang)
 			local fullwidth, fullheight = kc:getPageDim()
 			local boxes = kc:getWordBoxes(0, 0, fullwidth, fullheight)
 			Cache:insert(hash, CacheItem:new{ rfpgboxes = boxes })
@@ -154,14 +155,8 @@ function KoptInterface:getTextBoxes(doc, pageno)
 	local cached = Cache:check(hash)
 	if not cached then
 		local kc_hash = "kctx|"..doc.file.."|"..pageno
-		local kc = KOPTContext.new()
+		local kc = self:createContext(doc, pageno)
 		kc:setDebug()
-		local lang = doc.configurable.doc_language
-		if lang == "chi_sim" or lang == "chi_tra" or 
-			lang == "jpn" or lang == "kor" then
-			kc:setCJKChar()
-		end
-		kc:setLanguage(lang)
 		local page = doc._document:openPage(pageno)
 		page:getPagePix(kc)
 		local fullwidth, fullheight = kc:getPageDim()
@@ -260,11 +255,18 @@ function KoptInterface:getCachedContext(doc, pageno)
 		--self:logReflowDuration(pageno, dur)
 		local fullwidth, fullheight = kc:getPageDim()
 		DEBUG("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
-		Cache:insert(kctx_hash, ContextCacheItem:new{ kctx = kc })
+		self.last_context_size = fullwidth * fullheight + 128 -- estimation
+		Cache:insert(kctx_hash, ContextCacheItem:new{
+			size = self.last_context_size,
+			kctx = kc
+		})
 		return kc
 	else
 		-- wait for background thread
-		return self:waitForContext(cached.kctx)
+		local kc = self:waitForContext(cached.kctx)
+		local fullwidth, fullheight = kc:getPageDim()
+		self.last_context_size = fullwidth * fullheight + 128 -- estimation
+		return kc
 	end
 end
 
@@ -332,7 +334,10 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
 		kc:setPreCache()
 		page:reflow(kc, 0)
 		page:close()
-		Cache:insert(kctx_hash, ContextCacheItem:new{ kctx = kc })
+		Cache:insert(kctx_hash, ContextCacheItem:new{
+			size = self.last_context_size or self.default_context_size,
+			kctx = kc,
+		})
 	end
 end
 

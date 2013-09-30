@@ -1,6 +1,10 @@
 -- number of page turns between full screen refresh
--- default to full refresh on every page turn
+-- default to do a full refresh on every 6 page turns
 DRCOUNTMAX = 6
+
+-- number of pages for hinting
+-- default to pre-rendering 2 pages
+DHINTCOUNT = 2
 
 -- full screen mode, 1 for true, 0 for false
 DFULL_SCREEN = 1
@@ -26,6 +30,10 @@ DOUTER_PAGE_COLOR = 0
 -- supported view mode includes: "scroll" and "page"
 DCREREADER_VIEW_MODE = "page"
 
+-- show dimmed area to indicate page overlap in "page" view mode,
+-- default to false
+DSHOWOVERLAP = false
+
 -- koptreader config defaults
 DKOPTREADER_CONFIG_FONT_SIZE = 1.0		-- range from 0.1 to 3.0
 DKOPTREADER_CONFIG_TEXT_WRAP = 0		-- 1 = on, 0 = off
@@ -34,7 +42,7 @@ DKOPTREADER_CONFIG_DETECT_INDENT = 1	-- 1 = enable, 0 = disable
 DKOPTREADER_CONFIG_DEFECT_SIZE = 1.0	-- range from 0.0 to 3.0
 DKOPTREADER_CONFIG_PAGE_MARGIN = 0.10	-- range from 0.0 to 1.0
 DKOPTREADER_CONFIG_LINE_SPACING = 1.2	-- range from 0.5 to 2.0
-DKOPTREADER_CONFIG_RENDER_QUALITY = 0.8	-- range from 0.5 to 1.0
+DKOPTREADER_CONFIG_RENDER_QUALITY = 1.0	-- range from 0.5 to 2.0
 DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0	-- range from 0 to 10
 DKOPTREADER_CONFIG_JUSTIFICATION = -1	-- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
 DKOPTREADER_CONFIG_MAX_COLUMNS = 2		-- range from 1 to 4
