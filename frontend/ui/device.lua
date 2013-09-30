@@ -152,18 +152,16 @@ function Device:outofScreenSaver()
 	self.screen_saver_mode = false
 end
 
-function Device:Suspend()
-	UIManager:show(InfoMessage:new{
-			text = _("Standby"),
-			timeout = 4,
-		})
-	Screen:refresh(0)
+function Device:prepareSuspend()
 	local fl = self:getFrontlight()
 	if fl ~= nil then
-		fl:sleep()
+		fl.fl:sleep()
 	end
-	util.usleep(1500000)
+	Screen:refresh(0)
 	self.screen_saver_mode = true
+end
+
+function Device:Suspend()
 	os.execute("./kobo_suspend.sh")
 end
 
@@ -173,17 +171,9 @@ function Device:Resume()
 	Screen:refresh(0)
 	local fl = self:getFrontlight()
 	if fl ~= nil then
-		fl:resume()
+		fl.fl:restore()
 	end
 	self.screen_saver_mode = false
-end
-
-function Device:Power()
-	if self.screen_saver_mode == true then
-		self:Resume()
-	else
-		self:Suspend()
-	end
 end
 
 function Device:usbPlugIn()
