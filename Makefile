@@ -13,7 +13,7 @@ INSTALL_DIR=koreader-$(MACHINE)
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources koreader.sh \
-		koreader_kobo.sh defaults.lua \
+		koreader_kobo.sh kobo_suspend.sh defaults.lua \
 		git-rev README.md COPYING
 
 # for gettext
