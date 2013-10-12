@@ -331,12 +331,16 @@ function ReaderView:drawSavedHighlight(bb, x, y)
 		local items = self.highlight.saved[page]
 		if not items then items = {} end
 		for i = 1, #items do
-			for j = 1, #items[i].boxes do
-				local rect = self:pageToScreenTransform(page, items[i].boxes[j])
-				if rect then
-					self:drawHighlightRect(bb, x, y, rect, self.highlight.saved_drawer)
-				end
-			end -- end for each box
+			local pos0, pos1 = items[i].pos0, items[i].pos1
+			local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
+			if boxes then
+				for _, box in pairs(boxes) do
+					local rect = self:pageToScreenTransform(page, box)
+					if rect then
+						self:drawHighlightRect(bb, x, y, rect, self.highlight.saved_drawer)
+					end
+				end -- end for each box
+			end -- end if boxes
 		end -- end for each hightlight
 	end -- end for each page
 end

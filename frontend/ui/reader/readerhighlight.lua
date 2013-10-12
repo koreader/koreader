@@ -88,32 +88,36 @@ function ReaderHighlight:onTap(arg, ges)
 		local items = self.view.highlight.saved[page]
 		if not items then items = {} end
 		for i = 1, #items do
-			for j = 1, #items[i].boxes do
-				if inside_box(ges, items[i].boxes[j]) then
-					DEBUG("Tap on hightlight")
-					self.edit_highlight_dialog = HighlightDialog:new{
-						buttons = {
-							{
+			local pos0, pos1 = items[i].pos0, items[i].pos1
+			local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
+			if boxes then
+				for index, box in pairs(boxes) do
+					if inside_box(ges, box) then
+						DEBUG("Tap on hightlight")
+						self.edit_highlight_dialog = HighlightDialog:new{
+							buttons = {
 								{
-									text = _("Delete"),
-									callback = function()
-										self:deleteHighlight(page, i)
-										UIManager:close(self.edit_highlight_dialog)
-									end,
-								},
-								{
-									text = _("Edit"),
-									enabled = false,
-									callback = function()
-										self:editHighlight()
-										UIManager:close(self.edit_highlight_dialog)
-									end,
+									{
+										text = _("Delete"),
+										callback = function()
+											self:deleteHighlight(page, i)
+											UIManager:close(self.edit_highlight_dialog)
+										end,
+									},
+									{
+										text = _("Edit"),
+										enabled = false,
+										callback = function()
+											self:editHighlight()
+											UIManager:close(self.edit_highlight_dialog)
+										end,
+									},
 								},
 							},
-						},
-					}
-					UIManager:show(self.edit_highlight_dialog)
-					return true
+						}
+						UIManager:show(self.edit_highlight_dialog)
+						return true
+					end
 				end
 			end
 		end
@@ -127,19 +131,12 @@ function ReaderHighlight:onHold(arg, ges)
 		DEBUG("not inside page area")
 		return true
 	end
-	self.page_boxes = self.ui.document:getTextBoxes(self.hold_pos.page)
-	--DEBUG("page text", page_boxes)
-	
-	if not self.page_boxes or #self.page_boxes == 0 then
-		DEBUG("no page boxes detected")
-		return true
-	end
-	
-	self.selected_word = self:getWordFromPosition(self.page_boxes, self.hold_pos)
+
+	self.selected_word = self.ui.document:getWordFromPosition(self.hold_pos)
 	DEBUG("selected word:", self.selected_word)
 	if self.selected_word then
 		local boxes = {}
-		table.insert(boxes, self.selected_word.box)
+		table.insert(boxes, self.selected_word.sbox)
 		self.view.highlight.temp[self.hold_pos.page] = boxes
 		UIManager:setDirty(self.dialog, "partial")
 	end
@@ -147,19 +144,19 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(arg, ges)
-	if not self.page_boxes or #self.page_boxes == 0 or self.hold_pos == nil then
-		DEBUG("no page boxes detected")
+	if self.hold_pos == nil then
+		DEBUG("no previous hold position")
 		return true
 	end
 	self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
 	DEBUG("holdpan position in page", self.holdpan_pos)
-	self.selected_text = self:getTextFromPositions(self.page_boxes, self.hold_pos, self.holdpan_pos)
-	--DEBUG("selected text:", self.selected_text)
+	self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+	DEBUG("selected text:", self.selected_text)
 	if self.selected_text then
-		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.boxes
+		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
 		-- remove selected word if hold moves out of word box
 		if self.selected_word and
-			not self.selected_word.box:contains(self.selected_text.boxes[1]) then
+			not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) then
 			self.selected_word = nil
 		end
 		UIManager:setDirty(self.dialog, "partial")
@@ -172,11 +169,11 @@ function ReaderHighlight:lookup(selected_word)
 		self.ui:handleEvent(Event:new("LookupWord", selected_word.word))
 	-- or we will do OCR
 	else
-		local word_box = selected_word.box
-		--word_box.x = word_box.x - math.floor(word_box.h * 0.1)
-		--word_box.y = word_box.y - math.floor(word_box.h * 0.2)
-		--word_box.w = word_box.w + math.floor(word_box.h * 0.2)
-		--word_box.h = word_box.h + math.floor(word_box.h * 0.4)
+		local word_box = selected_word.pbox:copy()
+		word_box.x = word_box.x - math.floor(word_box.h * 0.1)
+		word_box.y = word_box.y - math.floor(word_box.h * 0.1)
+		word_box.w = word_box.w + math.floor(word_box.h * 0.2)
+		word_box.h = word_box.h + math.floor(word_box.h * 0.2)
 		local word = self.ui.document:getOCRWord(self.hold_pos.page, word_box)
 		DEBUG("OCRed word:", word)
 		self.ui:handleEvent(Event:new("LookupWord", word))
@@ -188,12 +185,12 @@ function ReaderHighlight:translate(selected_text)
 		self.ui:handleEvent(Event:new("LookupWord", selected_text.text))
 	-- or we will do OCR
 	else
-		local text_box = selected_text.boxes[1]
+		local text_pboxes = selected_text.pboxes[1]:copy()
 		--text_box.x = text_box.x - math.floor(text_box.h * 0.1)
-		text_box.y = text_box.y - math.floor(text_box.h * 0.2)
+		text_pboxes.y = text_pboxes.y - math.floor(text_pboxes.h * 0.2)
 		--text_box.w = text_box.w + math.floor(text_box.h * 0.2)
-		text_box.h = text_box.h + math.floor(text_box.h * 0.4)
-		local text = self.ui.document:getOCRWord(self.hold_pos.page, text_box)
+		text_pboxes.h = text_pboxes.h + math.floor(text_pboxes.h * 0.4)
+		local text = self.ui.document:getOCRWord(self.hold_pos.page, text_pboxes)
 		DEBUG("OCRed text:", text)
 		self.ui:handleEvent(Event:new("LookupWord", text))
 	end
@@ -319,7 +316,8 @@ function ReaderHighlight:saveHighlight()
 		end
 		local hl_item = {}
 		hl_item["text"] = self.selected_text.text
-		hl_item["boxes"] = self.selected_text.boxes
+		hl_item["pos0"] = self.selected_text.pos0
+		hl_item["pos1"] = self.selected_text.pos1
 		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S"),
 		table.insert(self.view.highlight.saved[page], hl_item)
 		if self.selected_text.text ~= "" then
@@ -365,125 +363,3 @@ end
 function ReaderHighlight:editHighlight()
 	DEBUG("edit highlight")
 end
-
---[[
-get index of nearest word box around pos
---]]
-local function getWordBoxIndices(boxes, pos)
-	local function inside_box(box)
-		local x, y = pos.x, pos.y
-		if box.x0 <= x and box.y0 <= y and box.x1 >= x and box.y1 >= y then
-			return true
-		end
-		return false
-	end
-	local function box_distance(i, j)
-		local wb = boxes[i][j]
-		if inside_box(wb) then
-			return 0
-		else
-			local x0, y0 = pos.x, pos.y
-			local x1, y1 = (wb.x0 + wb.x1) / 2, (wb.y0 + wb.y1) / 2
-			return (x0 - x1)*(x0 - x1) + (y0 - y1)*(y0 - y1)
-		end
-	end
-
-	local m, n = 1, 1
-	for i = 1, #boxes do
-		for j = 1, #boxes[i] do
-			if box_distance(i, j) < box_distance(m, n) then
-				m, n = i, j
-			end
-		end
-	end
-	return m, n
-end
-
---[[
-get word and word box around pos
---]]
-function ReaderHighlight:getWordFromPosition(boxes, pos)
-	local i, j = getWordBoxIndices(boxes, pos)
-	local lb = boxes[i]
-	local wb = boxes[i][j]
-	if lb and wb then
-		local box = Geom:new{
-			x = wb.x0, y = lb.y0, 
-			w = wb.x1 - wb.x0,
-			h = lb.y1 - lb.y0,
-		}
-		return {
-			word = wb.word,
-			box = box,
-		}
-	end
-end
-
---[[
-get text and text boxes between pos0 and pos1
---]]
-function ReaderHighlight:getTextFromPositions(boxes, pos0, pos1)
-    local line_text = ""
-    local line_boxes = {}
-    local i_start, j_start = getWordBoxIndices(boxes, pos0)
-    local i_stop, j_stop = getWordBoxIndices(boxes, pos1)
-    if i_start == i_stop and j_start > j_stop or i_start > i_stop then
-    	i_start, i_stop = i_stop, i_start
-    	j_start, j_stop = j_stop, j_start
-    end
-    for i = i_start, i_stop do
-    	if i_start == i_stop and #boxes[i] == 0 then break end
-    	-- insert line words
-    	local j0 = i > i_start and 1 or j_start
-    	local j1 = i < i_stop and #boxes[i] or j_stop
-    	for j = j0, j1 do
-    		local word = boxes[i][j].word
-    		if word then
-    			-- if last character of this word is an ascii char then append a space
-    			local space = (word:match("[%z\194-\244][\128-\191]*$") or j == j1)
-    						   and "" or " "
-    			line_text = line_text..word..space
-    		end
-    	end
-    	-- insert line box
-    	local lb = boxes[i]
-    	if i > i_start and i < i_stop then
-    		local line_box = Geom:new{
-				x = lb.x0, y = lb.y0, 
-				w = lb.x1 - lb.x0,
-				h = lb.y1 - lb.y0,
-			}
-    		table.insert(line_boxes, line_box)
-    	elseif i == i_start and i < i_stop then
-    		local wb = boxes[i][j_start]
-    		local line_box = Geom:new{
-				x = wb.x0, y = lb.y0, 
-				w = lb.x1 - wb.x0,
-				h = lb.y1 - lb.y0,
-			}
-    		table.insert(line_boxes, line_box)
-    	elseif i > i_start and i == i_stop then
-    		local wb = boxes[i][j_stop]
-    		local line_box = Geom:new{
-				x = lb.x0, y = lb.y0, 
-				w = wb.x1 - lb.x0,
-				h = lb.y1 - lb.y0,
-			}
-    		table.insert(line_boxes, line_box)
-    	elseif i == i_start and i == i_stop then
-    		local wb_start = boxes[i][j_start]
-    		local wb_stop = boxes[i][j_stop]
-    		local line_box = Geom:new{
-				x = wb_start.x0, y = lb.y0, 
-				w = wb_stop.x1 - wb_start.x0,
-				h = lb.y1 - lb.y0,
-			}
-    		table.insert(line_boxes, line_box)
-    	end
-    end
-    return {
-    	text = line_text,
-    	boxes = line_boxes,
-    }
-end
-

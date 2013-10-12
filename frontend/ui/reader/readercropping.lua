@@ -98,7 +98,7 @@ function ReaderCropping:onConfirmPageCrop()
 	--DEBUG("new bbox", new_bbox)
 	UIManager:close(self.crop_dialog)
 	local new_bbox = self.bbox_widget:getModifiedPageBBox()
-	self.ui:handleEvent(Event:new("BBoxUpdate"), new_bbox)
+	self.ui:handleEvent(Event:new("BBoxUpdate", new_bbox))
 	local pageno = self.view.state.page
 	self.document.bbox[pageno] = new_bbox
 	self.document.bbox[math.oddEven(pageno)] = new_bbox
@@ -119,16 +119,14 @@ function ReaderCropping:exitPageCrop(confirmed)
 	self.view.page_scroll = self.orig_page_scroll
 	-- restore view bgcolor
 	self.view.outer_page_color = self.orig_view_bgcolor
-	-- restore view dimens
-	self.ui:handleEvent(Event:new("RestoreDimensions", self.orig_view_dimen))
 	-- restore reflow mode
 	self.document.configurable.text_wrap = self.orig_reflow_mode
+	-- restore view dimens
+	self.ui:handleEvent(Event:new("RestoreDimensions", self.orig_view_dimen))
 	self.view:recalculate()
 	-- Exiting should have the same look and feel with entering.
 	if self.orig_reflow_mode == 1 then
-		-- restore original reflow mode
-		self.document.configurable.text_wrap = 1
-		self.view:recalculate()
+		self.ui:handleEvent(Event:new("RestoreZoomMode"))
 	else
 		if confirmed then
 			-- if original zoom mode is not "content", set zoom mode to "contentwidth"

@@ -295,3 +295,13 @@ function Geom:midpoint(geom)
 	}
 end
 
+--[[
+return center point in this geom
+]]--
+function Geom:center()
+	return Geom:new{
+		x = self.x + self.w / 2,
+		y = self.y + self.h / 2,
+		w = 0, h = 0,
+	}
+end
