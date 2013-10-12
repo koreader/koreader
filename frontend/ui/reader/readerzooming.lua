@@ -122,6 +122,12 @@ function ReaderZooming:onSetDimensions(dimensions)
 	self:setZoom()
 end
 
+function ReaderZooming:onRestoreDimensions(dimensions)
+	-- we were resized
+	self.dimen = dimensions
+	self:setZoom()
+end
+
 function ReaderZooming:onRotationUpdate(rotation)
 	self.rotation = rotation
 	self:setZoom()
@@ -176,6 +182,7 @@ function ReaderZooming:getZoom(pageno)
 		-- otherwise, operate on full page
 		self.view:onBBoxUpdate(nil)
 		page_size = self.ui.document:getNativePageDimensions(pageno)
+		--page_size = self.ui.document:getPageDimensions(pageno, 1, 0)
 	end
 	-- calculate zoom value:
 	local zoom_w = self.dimen.w / page_size.w
