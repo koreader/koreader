@@ -11,6 +11,8 @@ end
 ToggleSwitch = InputContainer:new{
 	width = scaleByDPI(216),
 	height = scaleByDPI(30),
+	bgcolor = 0, -- unfoused item color
+	fgcolor = 7, -- focused item color
 }
 
 function ToggleSwitch:init()
@@ -65,13 +67,13 @@ function ToggleSwitch:update()
 	local pos = self.position
 	for i=1,#self.toggle_content do
 		if pos == i then
-			self.toggle_content[i].color = 7
-			self.toggle_content[i].background = 7
-			self.toggle_content[i][1][1].bgcolor = 0.5
+			self.toggle_content[i].color = self.fgcolor
+			self.toggle_content[i].background = self.fgcolor
+			self.toggle_content[i][1][1].bgcolor = self.fgcolor/15
 			self.toggle_content[i][1][1].fgcolor = 0.0
 		else
-			self.toggle_content[i].color = 0
-			self.toggle_content[i].background = 0
+			self.toggle_content[i].color = self.bgcolor
+			self.toggle_content[i].background = self.bgcolor
 			self.toggle_content[i][1][1].bgcolor = 0.0
 			self.toggle_content[i][1][1].fgcolor = 1.0
 		end

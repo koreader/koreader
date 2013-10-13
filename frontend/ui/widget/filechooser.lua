@@ -6,7 +6,7 @@ FileChooser = Menu:extend{
 	no_title = true,
 	path = lfs.currentdir(),
 	parent = nil,
-	show_hidden = false,
+	show_hidden = DSHOWHIDDENFILES,
 	filter = function(filename) return true end,
 }
 

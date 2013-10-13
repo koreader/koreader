@@ -28,6 +28,14 @@ function DocumentRegistry:openDocument(file)
     end
 end
 
+TileCacheItem = CacheItem:new{}
+
+function TileCacheItem:onFree()
+	if self.bb.free then
+		DEBUG("free blitbuffer", self.bb)
+		self.bb:free()
+	end
+end
 
 --[[
 This is an abstract interface to a document
@@ -216,7 +224,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 	end
 
 	-- prepare cache item with contained blitbuffer	
-	local tile = CacheItem:new{
+	local tile = TileCacheItem:new{
 		size = size.w * size.h / 2 + 64, -- estimation
 		excerpt = size,
 		pageno = pageno,
@@ -295,7 +303,6 @@ function Document:getPageText(pageno)
 	page:close()
 	return text
 end
-
 
 -- load implementations:
 

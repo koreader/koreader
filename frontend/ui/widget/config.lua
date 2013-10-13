@@ -323,6 +323,7 @@ function ConfigOption:init()
 
 			if self.options[c].toggle then
 				local switch = ToggleSwitch:new{
+					width = scaleByDPI(self.options[c].width or 216),
 					name = self.options[c].name,
 					toggle = self.options[c].toggle,
 					alternate = self.options[c].alternate,
