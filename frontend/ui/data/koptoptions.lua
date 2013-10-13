@@ -187,7 +187,7 @@ KoptOptions = {
 				name = "defect_size",
 				name_text = DEFECT_SIZE_STR,
 				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
-				values = {1.0, 8.0, 15.0},
+				values = {1.0, 3.0, 5.0},
 				default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
 				event = "DefectSizeUpdate",
 			},
