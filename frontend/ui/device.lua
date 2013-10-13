@@ -99,7 +99,8 @@ function Device:isKobo()
 end
 
 function Device:hasNoKeyboard()
-	return self:isTouchDevice() or (self:getModel() == "Kindle4")
+	local model = self:getModel()
+	return (model == "KindlePaperWhite") or (model == "KindleTouch") or self:isKobo()
 end
 
 function Device:hasKeyboard()
