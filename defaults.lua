@@ -34,6 +34,10 @@ DCREREADER_VIEW_MODE = "page"
 -- default to false
 DSHOWOVERLAP = false
 
+-- show hidden files in filemanager
+-- default to false
+DSHOWHIDDENFILES = false
+
 -- koptreader config defaults
 DKOPTREADER_CONFIG_FONT_SIZE = 1.0		-- range from 0.1 to 3.0
 DKOPTREADER_CONFIG_TEXT_WRAP = 0		-- 1 = on, 0 = off
