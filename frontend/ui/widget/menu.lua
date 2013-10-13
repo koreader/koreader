@@ -32,6 +32,7 @@ function ItemShortCutIcon:init()
 	end
 
 	--@TODO calculate font size by icon size  01.05 2012 (houqp)
+	local sc_face = nil
 	if self.key:len() > 1 then
 		sc_face = Font:getFace("ffont", 14)
 	else
@@ -49,6 +50,7 @@ function ItemShortCutIcon:init()
 			TextWidget:new{
 				text = self.key,
 				face = sc_face,
+				bgcolor = background/15,
 			},
 		},
 	}
@@ -123,7 +125,8 @@ function MenuItem:init()
 				doc = "Select Menu Item",
 			},
 		}
-	else
+	end
+	if Device:hasKeyboard() then
 		self.active_key_events = {
 			Select = { {"Press"}, doc = "chose selected item" },
 		}
@@ -261,6 +264,10 @@ function Menu:_recalculateDimen()
 	}
 	self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
 	self.page_num = math.ceil(#self.item_table / self.perpage)
+	-- update page info layout, fixed #281
+	if self.page_info then
+		self.page_info:resetLayout()
+	end
 end
 
 function Menu:init()
@@ -374,7 +381,8 @@ function Menu:init()
 				range = self.dimen,
 			}
 		}
-	else
+	end
+	if Device:hasKeyboard() then
 		-- set up keyboard events
 		self.key_events.Close = { {"Back"}, doc = _("close menu") }
 		self.key_events.NextPage = {

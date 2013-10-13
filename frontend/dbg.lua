@@ -36,3 +36,6 @@ function LvDEBUG(lv, ...)
 	print("#"..line)
 end
 
+function DEBUGBT()
+	DEBUG(debug.traceback())
+end
