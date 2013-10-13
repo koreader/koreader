@@ -434,7 +434,6 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
 
 	if new_mode == "landscape" and self.document.info.has_pages then
 		self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
-		self.ui:handleEvent(Event:new("InitScrollPageStates"))
 	end
 	return true
 end
@@ -482,6 +481,7 @@ function ReaderView:onReadSettings(config)
 	self.render_mode = config:readSetting("render_mode") or 0
 	local screen_mode = config:readSetting("screen_mode")
 	if screen_mode then
+		Screen:setScreenMode(screen_mode)
 	    table.insert(self.ui.postInitCallback, function()
 	        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"))
 	    end)
