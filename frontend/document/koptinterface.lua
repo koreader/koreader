@@ -212,6 +212,8 @@ function KoptInterface:getRFPageDimensions(doc, pageno, zoom, rotation)
 end
 
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode)
+	--DEBUG("log memory usage at renderPage")
+	--self:logMemoryUsage(pageno)
 	if doc.configurable.text_wrap == 1 then
 		return self:renderreflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
 	else
@@ -240,7 +242,7 @@ function KoptInterface:renderreflowedPage(doc, pageno, rect, zoom, rotation, ren
 		end
 		local page = doc._document:openPage(pageno)
 		-- prepare cache item with contained blitbuffer
-		local tile = CacheItem:new{
+		local tile = TileCacheItem:new{
 			size = fullwidth * fullheight / 2 + 64, -- estimation
 			excerpt = Geom:new{ w = fullwidth, h = fullheight },
 			pageno = pageno,
@@ -604,7 +606,6 @@ end
 get word and word box from position in native page
 ]]--
 function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
-	DEBUG("boxes", boxes)
 	local native_word_box = self:getWordFromBoxes(boxes, pos)
 	local word_box = {
 		word = native_word_box.word,
@@ -726,12 +727,34 @@ end
 helper functions
 --]]
 function KoptInterface:logReflowDuration(pageno, dur)
-	local file = io.open("reflowlog.txt", "a+")
+	local file = io.open("reflow_dur_log.txt", "a+")
 	if file then
 		if file:seek("end") == 0 then -- write the header only once
 			file:write("PAGE\tDUR\n")
 		end
 		file:write(string.format("%s\t%s\n", pageno, dur))
 		file:close()
+	end
+end
+
+function KoptInterface:logMemoryUsage(pageno)
+	local status_file = io.open("/proc/self/status", "r")
+	local log_file = io.open("reflow_mem_log.txt", "a+")
+	local data = -1
+	if status_file then
+		for line in status_file:lines() do
+			local s, n
+			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")
+			if n ~= 0 then data = tonumber(s) end
+			if data ~= -1 then break end
+		end
+		status_file:close()
+	end
+	if log_file then
+		if log_file:seek("end") == 0 then -- write the header only once
+			log_file:write("PAGE\tMEM\n")
+		end
+		log_file:write(string.format("%s\t%s\n", pageno, data))
+		log_file:close()
 	end
 end
