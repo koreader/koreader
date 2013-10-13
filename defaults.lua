@@ -56,9 +56,9 @@ DKOPTREADER_CONFIG_CONTRAST = 1.0		-- range from 0.2 to 2.0
 DKOPTREADER_CONFIG_WORD_SAPCINGS = {0.05, 0.15, 0.375}  -- range from 0.05 to 0.5
 DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = 0.15			-- range from 0.05 to 0.5
 -- document languages for OCR
-DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese_S", "Chinese_T"}
-DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim", "chi_tra"}  -- ISO 639-3 language string, 
-DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  -- and make sure you have corresponding training data 
+DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese"}
+DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}	-- language code, make sure you have corresponding training data
+DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  		-- that have filenames starting with the language codes
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
