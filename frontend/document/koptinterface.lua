@@ -100,7 +100,7 @@ end
 --[[
 auto detect bbox
 --]]
-function KoptInterface:getAutoBBox(doc, pageno)
+function KoptInterface:getAutoBBox(doc, pageno)	
 	local native_size = Document.getNativePageDimensions(doc, pageno)
 	local bbox = {
 		x0 = 0, y0 = 0,
@@ -113,8 +113,9 @@ function KoptInterface:getAutoBBox(doc, pageno)
 	if not cached then
 		local page = doc._document:openPage(pageno)
 		local kc = self:createContext(doc, pageno, bbox)
+		--DEBUGBT()
 		bbox.x0, bbox.y0, bbox.x1, bbox.y1 = page:getAutoBBox(kc)
-		DEBUG("Auto detected bbox", bbox)
+		--DEBUG("Auto detected bbox", bbox)
 		Cache:insert(hash, CacheItem:new{ autobbox = bbox })
 		page:close()
 		kc:free()
