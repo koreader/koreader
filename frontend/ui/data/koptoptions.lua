@@ -24,6 +24,7 @@ KoptOptions = {
 			{
 				name = "trim_page",
 				name_text = PAGE_CROP_STR,
+				width = 225,
 				toggle = {MANUAL_STR, AUTO_STR, SEMIAUTO_STR},
 				alternate = false,
 				values = {0, 1, 2},
