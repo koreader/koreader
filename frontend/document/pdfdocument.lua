@@ -60,8 +60,12 @@ function PdfDocument:getPageBoxesFromPositions(pageno, ppos0, ppos1)
 	return self.koptinterface:getPageBoxesFromPositions(self, pageno, ppos0, ppos1)
 end
 
-function PdfDocument:getOCRWord(pageno, rect)
-	return self.koptinterface:getOCRWord(self, pageno, rect)
+function PdfDocument:getOCRWord(pageno, wbox)
+	return self.koptinterface:getOCRWord(self, pageno, wbox)
+end
+
+function PdfDocument:getOCRText(pageno, tboxes)
+	return self.koptinterface:getOCRText(self, pageno, tboxes)
 end
 
 function PdfDocument:getUsedBBox(pageno)
