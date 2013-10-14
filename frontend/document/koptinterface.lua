@@ -6,6 +6,7 @@ require "ui/screen"
 require "ui/reader/readerconfig"
 
 KoptInterface = {
+	ocrengine = "ocrengine",
 	tessocr_data = "data",
 	ocr_lang = "eng",
 	ocr_type = 3, -- default 0, for more accuracy use 3
@@ -419,28 +420,61 @@ function KoptInterface:getTextBoxesFromScratch(doc, pageno)
 end
 
 --[[
-OCR word inside the rect area of the page
-rect should be in native page coordinates
+get word from OCR providing selected word box
 --]]
-function KoptInterface:getOCRWord(doc, pageno, rect)
-	local ocrengine = "ocrengine"
-	if not Cache:check(ocrengine) then
-		local dummy = KOPTContext.new()
-		Cache:insert(ocrengine, OCREngine:new{ ocrengine = dummy })
+function KoptInterface:getOCRWord(doc, pageno, wbox)
+	if not Cache:check(self.ocrengine) then
+		Cache:insert(self.ocrengine, OCREngine:new{ ocrengine = KOPTContext.new() })
 	end
+	if doc.configurable.text_wrap == 1 then
+		return self:getReflewOCRWord(doc, pageno, wbox.sbox)
+	else
+		return self:getNativeOCRWord(doc, pageno, wbox.sbox)
+	end
+end
+
+--[[
+get word from OCR in reflew page
+--]]
+function KoptInterface:getReflewOCRWord(doc, pageno, rect)
+	self.ocr_lang = doc.configurable.doc_language
+	local bbox = doc:getPageBBox(pageno)
+	local context_hash = self:getContextHash(doc, pageno, bbox)
+	local hash = "rfocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
+	local cached = Cache:check(hash)
+	if not cached then
+		local kctx_hash = "kctx|"..context_hash
+		local cached = Cache:check(kctx_hash)
+		if cached then
+			local kc = self:waitForContext(cached.kctx)
+			local ok, word = pcall(
+				kc.getTOCRWord, kc,
+				rect.x, rect.y, rect.w, rect.h,
+				self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
+			Cache:insert(hash, CacheItem:new{ rfocrword = word })
+			return word
+		end
+	else
+		return cached.rfocrword
+	end
+end
+
+--[[
+get word from OCR in native page
+--]]
+function KoptInterface:getNativeOCRWord(doc, pageno, rect)
 	self.ocr_lang = doc.configurable.doc_language
 	local hash = "ocrword|"..doc.file.."|"..pageno..rect.x..rect.y..rect.w..rect.h
 	local cached = Cache:check(hash)
 	if not cached then
 		local bbox = {
-			x0 = rect.x,
-			y0 = rect.y,
-			x1 = rect.x + rect.w,
-			y1 = rect.y + rect.h,
+			x0 = rect.x - math.floor(rect.h * 0.3),
+			y0 = rect.y - math.floor(rect.h * 0.3),
+			x1 = rect.x + rect.w + math.floor(rect.h * 0.3),
+			y1 = rect.y + rect.h + math.floor(rect.h * 0.3),
 		}
 		local kc = self:createContext(doc, pageno, bbox)
-		--kc:setZoom(30/rect.h)
-		kc:setZoom(1.0)
+		kc:setZoom(30/rect.h)
 		local page = doc._document:openPage(pageno)
 		page:getPagePix(kc)
 		local word_w, word_h = kc:getPageDim()
@@ -455,6 +489,16 @@ function KoptInterface:getOCRWord(doc, pageno, rect)
 	else
 		return cached.ocrword
 	end
+end
+
+--[[
+get text from OCR providing selected text boxes
+--]]
+function KoptInterface:getOCRText(doc, pageno, tboxes)
+	if not Cache:check(self.ocrengine) then
+		Cache:insert(self.ocrengine, OCREngine:new{ ocrengine = KOPTContext.new() })
+	end
+	DEBUG("Not implemented yet")
 end
 
 --[[
