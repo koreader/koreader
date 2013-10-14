@@ -169,12 +169,7 @@ function ReaderHighlight:lookup(selected_word)
 		self.ui:handleEvent(Event:new("LookupWord", selected_word.word))
 	-- or we will do OCR
 	else
-		local word_box = selected_word.pbox:copy()
-		word_box.x = word_box.x - math.floor(word_box.h * 0.1)
-		word_box.y = word_box.y - math.floor(word_box.h * 0.1)
-		word_box.w = word_box.w + math.floor(word_box.h * 0.2)
-		word_box.h = word_box.h + math.floor(word_box.h * 0.2)
-		local word = self.ui.document:getOCRWord(self.hold_pos.page, word_box)
+		local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
 		DEBUG("OCRed word:", word)
 		self.ui:handleEvent(Event:new("LookupWord", word))
 	end
@@ -182,17 +177,12 @@ end
 
 function ReaderHighlight:translate(selected_text)
 	if selected_text.text ~= "" then
-		self.ui:handleEvent(Event:new("LookupWord", selected_text.text))
+		self.ui:handleEvent(Event:new("TranslateText", selected_text.text))
 	-- or we will do OCR
 	else
-		local text_pboxes = selected_text.pboxes[1]:copy()
-		--text_box.x = text_box.x - math.floor(text_box.h * 0.1)
-		text_pboxes.y = text_pboxes.y - math.floor(text_pboxes.h * 0.2)
-		--text_box.w = text_box.w + math.floor(text_box.h * 0.2)
-		text_pboxes.h = text_pboxes.h + math.floor(text_pboxes.h * 0.4)
-		local text = self.ui.document:getOCRWord(self.hold_pos.page, text_pboxes)
+		local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
 		DEBUG("OCRed text:", text)
-		self.ui:handleEvent(Event:new("LookupWord", text))
+		self.ui:handleEvent(Event:new("TranslateText", text))
 	end
 end
 
