@@ -114,8 +114,16 @@ function KoptInterface:getAutoBBox(doc, pageno)
 		local page = doc._document:openPage(pageno)
 		local kc = self:createContext(doc, pageno, bbox)
 		--DEBUGBT()
-		bbox.x0, bbox.y0, bbox.x1, bbox.y1 = page:getAutoBBox(kc)
-		--DEBUG("Auto detected bbox", bbox)
+		--DEBUG("getAutoBBox:native page size", native_size)
+		local x0, y0, x1, y1 = page:getAutoBBox(kc)
+		local w, h = native_size.w, native_size.h
+		if (x1 - x0)/w > 0.1 or (y1 - y0)/h > 0.1 then
+			bbox.x0, bbox.y0, bbox.x1, bbox.y1 = x0, y0, x1, y1
+			--DEBUG("getAutoBBox:auto detected bbox", bbox)
+		else
+			bbox = Document.getPageBBox(doc, pageno)
+			--DEBUG("getAutoBBox:use manual bbox", bbox)
+		end
 		Cache:insert(hash, CacheItem:new{ autobbox = bbox })
 		page:close()
 		kc:free()
