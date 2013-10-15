@@ -1,6 +1,4 @@
 require "ui/widget/base"
---require "ui/image"
-
 
 --[[
 ImageWidget shows an image from a file
