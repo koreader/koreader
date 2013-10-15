@@ -1,6 +1,4 @@
 require "ui/widget/base"
-require "ui/image"
-
 
 --[[
 ImageWidget shows an image from a file
@@ -16,9 +14,9 @@ ImageWidget = Widget:new{
 function ImageWidget:_render()
 	local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
 	if itype == "jpeg" or itype == "jpg" then
-		self._bb = Image.fromJPEG(self.file)
+		self._bb = Image:fromJPEG(self.file)
 	elseif itype == "png" then
-		self._bb = Image.fromPNG(self.file)
+		self._bb = Image:fromPNG(self.file)
 	end
 end
 

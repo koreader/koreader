@@ -1,7 +1,6 @@
 require "ui/screen"
 require "ui/rendertext"
 require "ui/graphics"
-require "ui/image"
 require "ui/event"
 require "ui/gesturedetector"
 require "ui/font"
