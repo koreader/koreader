@@ -134,9 +134,18 @@ function Screen:scaleByDPI(px)
 	return math.floor(px * self:getDPI()/167)
 end
 
+function Screen:rescaleByDPI(px)
+	return math.ceil(px * 167/self:getDPI())
+end
+
 -- make a shortcut to Screen:scaleByDPI
 function scaleByDPI(px)
 	return Screen:scaleByDPI(px)
+end
+
+-- make a shortcut to Screen:rescaleByDPI
+function rescaleByDPI(px)
+	return Screen:rescaleByDPI(px)
 end
 
 function Screen:getPitch()
