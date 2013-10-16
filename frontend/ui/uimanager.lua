@@ -247,9 +247,10 @@ function UIManager:run()
 			end
 			if self.update_region_func then
 				local update_region = self.update_region_func()
+				-- in some rare cases update region has 1 pixel offset
 				Screen:refresh(refresh_type, waveform_mode, 
-							   update_region.x, update_region.y,
-							   update_region.w, update_region.h)
+							   update_region.x-1, update_region.y-1,
+							   update_region.w+2, update_region.h+2)
 			else
 				Screen:refresh(refresh_type, waveform_mode)
 			end
