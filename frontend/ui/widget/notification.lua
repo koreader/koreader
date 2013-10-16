@@ -11,7 +11,7 @@ Notification = InputContainer:new{
 
 function Notification:init()
 	if Device:hasKeyboard() then
-		key_events = {
+		self.key_events = {
 			AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
 		}
 	end

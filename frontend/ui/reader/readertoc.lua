@@ -4,7 +4,7 @@ ReaderToc = InputContainer:new{
 }
 
 function ReaderToc:init()
-	if not Device:hasNoKeyboard() then
+	if Device:hasKeyboard() then
 		self.key_events = {
 			ShowToc = {
 				{ "T" },

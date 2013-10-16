@@ -9,7 +9,7 @@ ReaderFont = InputContainer:new{
 }
 
 function ReaderFont:init()
-	if not Device:hasNoKeyboard() then
+	if Device:hasKeyboard() then
 		-- add shortcut for keyboard
 		self.key_events = {
 			ShowFontMenu = { {"F"}, doc = _("show font menu") },
