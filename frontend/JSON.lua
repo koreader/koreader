@@ -326,6 +326,8 @@ local function grok_string(self, text, start, etc)
       elseif text:match('^\\t', i) then
          VALUE = VALUE .. "\t"
          i = i + 2
+      elseif text:match('^\\\\', i) then
+         i = i + 1
       else
          local hex = text:match('^\\u([0123456789aAbBcCdDeEfF][0123456789aAbBcCdDeEfF][0123456789aAbBcCdDeEfF][0123456789aAbBcCdDeEfF])', i)
          if hex then
