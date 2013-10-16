@@ -11,8 +11,9 @@ CreDocument = Document:new{
 	engine_initilized = false,
 
 	line_space_percent = 100,
-	default_font = "Droid Sans Fallback",
-	header_font = "Droid Sans Fallback",
+	default_font = "FreeSerif",
+	header_font = "FreeSans",
+	fallback_font = "Droid Sans Fallback",
 	default_css = "./data/cr3.css",
 	options = CreOptions,
 	configurable = Configurable,
@@ -89,14 +90,17 @@ function CreDocument:init()
 	ok, self._document = pcall(cre.newDocView,
 		Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
 	)
-	
-	-- adjust font sizes according to screen dpi
-	self._document:adjustFontSizes(Screen:getDPI())
-	
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return
 	end
+	
+	-- adjust font sizes according to screen dpi
+	self._document:adjustFontSizes(Screen:getDPI())
+	
+	-- set fallback font face
+	self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
+	
 	self.is_open = true
 	self.info.has_pages = false
 	self:_readMetadata()
@@ -108,6 +112,11 @@ function CreDocument:loadDocument()
 	if not self.info.has_pages then
 		self.info.doc_height = self._document:getFullHeight()
 	end
+end
+
+function CreDocument:close()
+	self._document:saveDefaults()
+	Document.close(self)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
@@ -229,6 +238,10 @@ end
 
 function CreDocument:setPageMargins(left, top, right, bottom)
 	self._document:setPageMargins(left, top, right, bottom)
+	self._document:setIntProperty("crengine.page.margin.left", left)
+	self._document:setIntProperty("crengine.page.margin.top", top)
+	self._document:setIntProperty("crengine.page.margin.right", right)
+	self._document:setIntProperty("crengine.page.margin.bottom", bottom)
 end
 
 function CreDocument:setVisiblePageCount(new_count)
