@@ -141,14 +141,14 @@ end
 
 function ReaderFont:onSetFontSize(new_size)
 	if new_size > 44 then new_size = 44 end
-	if new_size < 18 then new_size = 18 end
+	if new_size < 16 then new_size = 16 end
 
 	self.font_size = new_size
 	UIManager:show(Notification:new{
 		text = _("Set font size to ")..self.font_size,
 		timeout = 1,
 	})
-	self.ui.document:setFontSize(new_size)
+	self.ui.document:setFontSize(scaleByDPI(new_size))
 	self.ui:handleEvent(Event:new("UpdatePos"))
 
 	return true
