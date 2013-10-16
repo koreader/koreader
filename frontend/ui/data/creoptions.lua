@@ -1,6 +1,17 @@
 require "ui/screen"
 require "ui/data/strings"
 
+-- add multiply operator to Aa dict
+local Aa = setmetatable({"Aa"}, {
+	__mul = function(t, mul)
+	    local new = {}
+	    for i = 1, mul do
+	    	for _, v in ipairs(t) do table.insert(new, v) end
+	    end
+	    return new
+	end
+})
+
 CreOptions = {
 	prefix = 'copt',
 	{
@@ -52,13 +63,13 @@ CreOptions = {
 		options = {
 			{
 				name = "font_size",
-				item_text = {"Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa", "Aa"},
+				item_text = Aa * #DCREREADER_CONFIG_FONT_SIZES,
 				item_align_center = 1.0,
 				spacing = 15,
-				item_font_size = {18, 20, 22, 24, 29, 33, 39, 44},
-				values = {18, 20, 22, 24, 29, 33, 39, 44},
+				item_font_size = DCREREADER_CONFIG_FONT_SIZES,
+				values = DCREREADER_CONFIG_FONT_SIZES,
 				default_value = 22,
-				args = {18, 20, 22, 24, 29, 33, 39, 44},
+				args = DCREREADER_CONFIG_FONT_SIZES,
 				event = "SetFontSize",
 			},
 		}

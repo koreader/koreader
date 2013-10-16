@@ -89,6 +89,10 @@ function CreDocument:init()
 	ok, self._document = pcall(cre.newDocView,
 		Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
 	)
+	
+	-- adjust font sizes according to screen dpi
+	self._document:adjustFontSizes(Screen:getDPI())
+	
 	if not ok then
 		self.error_message = self.doc -- will contain error message
 		return

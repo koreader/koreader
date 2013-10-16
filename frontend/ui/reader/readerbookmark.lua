@@ -94,13 +94,14 @@ function ReaderBookmark:onShowBookmark()
 	}
 	-- buid up menu widget method as closure
 	local doc = self.ui.document
+	local view = self.view
 	local sendEv = function(ev)
 		self.ui:handleEvent(ev)
 	end
 	function bm_menu:onMenuChoice(item)
 		if doc.info.has_pages then
 			sendEv(Event:new("PageUpdate", item.page))
-		elseif self.view.view_mode == "page" then
+		elseif view.view_mode == "page" then
 			sendEv(Event:new("PageUpdate", doc:getPageFromXPointer(item.page)))
 		else
 			sendEv(Event:new("PosUpdate", doc:getPosFromXPointer(item.page)))
