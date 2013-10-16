@@ -3,12 +3,12 @@ require "dbg" -- for DEBUG()
 Font = {
 	fontmap = {
 		-- default font for menu contents
-		cfont = "droid/DroidSansFallback.ttf",
+		cfont = "freefont/FreeSerif.ttf",
 		-- default font for title
 		--tfont = "NimbusSanL-BoldItal.cff",
-		tfont = "droid/DroidSansFallback.ttf",
+		tfont = "freefont/FreeSerif.ttf",
 		-- default font for footer
-		ffont = "droid/DroidSansFallback.ttf",
+		ffont = "freefont/FreeSerif.ttf",
 
 		-- default font for reading position info
 		rifont = "droid/DroidSans.ttf",
@@ -32,9 +32,9 @@ Font = {
 		infofont = "droid/DroidSans.ttf",
 	},
 	fallbacks = {
-		[1] = "freefont/FreeSans.ttf",
-		[2] = "droid/DroidSans.ttf",
-		[3] = "droid/DroidSansFallback.ttf",
+		[1] = "droid/DroidSansFallback.ttf",
+		[2] = "freefont/FreeSans.ttf",
+		[3] = "droid/DroidSans.ttf",
 	},
 
 	fontdir = os.getenv("FONTDIR") or "./fonts",
@@ -50,7 +50,7 @@ function Font:getFace(font, size)
 		font = self.cfont
 	end
 
-	local size = math.floor(scaleByDPI(size))
+	local size = scaleByDPI(size)
 
 	local face = self.faces[font..size]
 	-- build face if not found
