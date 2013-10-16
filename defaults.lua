@@ -60,6 +60,10 @@ DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese"}
 DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}	-- language code, make sure you have corresponding training data
 DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  		-- that have filenames starting with the language codes
 
+-- crereader font sizes
+-- feel free to add more entries in this list
+DCREREADER_CONFIG_FONT_SIZES = {16, 20, 22, 24, 28, 32, 38, 44}  -- range from 16 to 44
+
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 

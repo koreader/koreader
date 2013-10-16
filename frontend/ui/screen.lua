@@ -75,8 +75,8 @@ end
 function Screen:refresh(refesh_type, waveform_mode, x, y, w, h)
 	if x then x = x < 0 and 0 or math.floor(x) end
     if y then y = y < 0 and 0 or math.floor(y) end
-    if w then w = w > self.width and self.width or math.ceil(w) end
-    if h then h = h > self.height and self.height or math.ceil(h) end
+    if w then w = w + x > self.width and self.width - x or math.ceil(w) end
+    if h then h = h + y > self.height and self.height - y or math.ceil(h) end
 	if self.native_rotation_mode == self.cur_rotation_mode then
         self.fb.bb:blitFrom(self.bb, 0, 0, 0, 0, self.width, self.height)
     elseif self.native_rotation_mode == 0 and self.cur_rotation_mode == 1 then

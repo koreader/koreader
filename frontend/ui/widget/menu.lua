@@ -160,16 +160,20 @@ function MenuItem:init()
 		},
 	}
 
-	self[1] = HorizontalGroup:new{
-		HorizontalSpan:new{ width = 5 },
-		ItemShortCutIcon:new{
-			dimen = shortcut_icon_dimen,
-			key = self.shortcut,
-			radius = shortcut_icon_r,
-			style = self.shortcut_style,
-		},
-		HorizontalSpan:new{ width = 10 },
-		self._underline_container
+	self[1] = FrameContainer:new{
+		bordersize = 0,
+		padding = 0,
+		HorizontalGroup:new{
+			HorizontalSpan:new{ width = 5 },
+			ItemShortCutIcon:new{
+				dimen = shortcut_icon_dimen,
+				key = self.shortcut,
+				radius = shortcut_icon_r,
+				style = self.shortcut_style,
+			},
+			HorizontalSpan:new{ width = 10 },
+			self._underline_container
+		}
 	}
 end
 
@@ -264,10 +268,6 @@ function Menu:_recalculateDimen()
 	}
 	self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
 	self.page_num = math.ceil(#self.item_table / self.perpage)
-	-- update page info layout, fixed #281
-	if self.page_info then
-		self.page_info:resetLayout()
-	end
 end
 
 function Menu:init()
@@ -414,6 +414,7 @@ function Menu:updateItems(select_number)
 	-- self.layout must be updated for focusmanager
 	self.layout = {}
 	self.item_group:clear()
+	self.page_info:resetLayout()
 	self:_recalculateDimen()
 
 	-- default to select the first item

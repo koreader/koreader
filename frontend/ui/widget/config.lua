@@ -23,8 +23,10 @@ function MenuBarItem:init()
 end
 
 function MenuBarItem:onTapSelect()
-	self[1].invert = true
-	self.config:onShowConfigPanel(self.index)
+	UIManager:scheduleIn(0.0, function() self:invert(true) end)
+	UIManager:scheduleIn(0.1, function()
+		UIManager:sendEvent(Event:new("ShowConfigPanel", self.index))
+	end)
 	UIManager:scheduleIn(0.5, function() self:invert(false) end)
 	return true
 end
