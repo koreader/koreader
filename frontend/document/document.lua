@@ -315,3 +315,4 @@ end
 require "document/pdfdocument"
 require "document/djvudocument"
 require "document/credocument"
+require "document/picdocument"
