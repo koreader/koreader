@@ -126,6 +126,10 @@ function Document:_readMetadata()
 	return true
 end
 
+function Document:getPageCount()
+	return self.info.number_of_pages
+end
+
 -- calculates page dimensions
 function Document:getPageDimensions(pageno, zoom, rotation)
 	local native_dimen = self:getNativePageDimensions(pageno):copy()
