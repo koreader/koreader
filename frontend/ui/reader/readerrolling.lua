@@ -325,4 +325,7 @@ function ReaderRolling:gotoPercent(new_percent)
 	self:gotoPos(new_percent * self.doc_height / 10000)
 end
 
-
+function ReaderRolling:onGotoPage(number)
+	self:gotoPage(number)
+	return true
+end

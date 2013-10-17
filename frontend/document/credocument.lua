@@ -119,6 +119,10 @@ function CreDocument:close()
 	Document.close(self)
 end
 
+function CreDocument:getPageCount()
+	return self._document:getPages()
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
 	tile_bb = Blitbuffer.new(rect.w, rect.h)
 	self._document:drawCurrentPage(tile_bb)
