@@ -10,7 +10,6 @@ PdfDocument = Document:new{
 	mupdf_cache_size = 5 * 1024 * 1024,
 	dc_null = DrawContext.new(),
 	options = KoptOptions,
-	configurable = Configurable,
 	koptinterface = KoptInterface,
 }
 

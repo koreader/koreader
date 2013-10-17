@@ -60,24 +60,26 @@ Document = {
 		number_of_pages = 0,
 		-- if not pageable, length of the document in pixels
 		doc_height = 0,
-		
+
 		-- other metadata
 		title = "",
 		author = "",
 		date = ""
 	},
-	
+
 	GAMMA_NO_GAMMA = 1.0,
-	
+
 	-- override bbox from orignal page's getUsedBBox
 	bbox = {},
-		
+
 	-- flag to show whether the document was opened successfully
 	is_open = false,
 	error_message = nil,
 
 	-- flag to show that the document needs to be unlocked by a password
 	is_locked = false,
+
+	configurable = Configurable,
 }
 
 function Document:new(o)

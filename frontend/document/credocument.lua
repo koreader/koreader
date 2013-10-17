@@ -16,7 +16,6 @@ CreDocument = Document:new{
 	fallback_font = "Droid Sans Fallback",
 	default_css = "./data/cr3.css",
 	options = CreOptions,
-	configurable = Configurable,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
