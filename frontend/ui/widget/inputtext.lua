@@ -94,6 +94,10 @@ function InputText:getKeyboardDimen()
 end
 
 function InputText:addChar(char)
+	if self.enter_callback and char == '\n' then
+		UIManager:scheduleIn(0.1, function() self.enter_callback() end)
+		return
+	end
 	table.insert(self.charlist, self.charpos, char)
 	self.charpos = self.charpos + 1
 	self.text = self:CharlistToString()
