@@ -229,7 +229,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 		size = rect
 	end
 
-	-- prepare cache item with contained blitbuffer	
+	-- prepare cache item with contained blitbuffer
 	local tile = TileCacheItem:new{
 		size = size.w * size.h / 2 + 64, -- estimation
 		excerpt = size,
@@ -250,7 +250,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 		dc:setOffset(0, page_size.h)
 	end
 	dc:setZoom(zoom)
-	
+
 	if gamma ~= self.GAMMA_NO_GAMMA then
 		--DEBUG("gamma correction: ", gamma)
 		dc:setGamma(gamma)
@@ -296,7 +296,7 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, re
 	end
 	DEBUG("now painting", tile, rect)
 	target:blitFrom(tile.bb,
-		x, y, 
+		x, y,
 		rect.x - tile.excerpt.x,
 		rect.y - tile.excerpt.y,
 		rect.w, rect.h)
