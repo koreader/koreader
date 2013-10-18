@@ -68,12 +68,12 @@ MenuCloseButton = InputContainer:new{
 
 function MenuCloseButton:init()
 	self[1] = TextWidget:new{
-		text = "  X ",
-		face = Font:getFace("cfont", 42),
+		text = "×",
+		face = Font:getFace("cfont", 32),
 	}
 
 	local text_size = self[1]:getSize()
-	self.dimen.w, self.dimen.h = text_size.w, text_size.h
+	self.dimen.w, self.dimen.h = text_size.w*2, text_size.h*2
 
 	self.ges_events.Close = {
 		GestureRange:new{
