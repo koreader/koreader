@@ -1,15 +1,17 @@
-require "ui/screen"
-require "ui/data/strings"
+local Screen = require("ui/screen")
+local S = require("ui/data/strings")
 
-KoptOptions = {
+local _ = require("gettext")
+
+local KoptOptions = {
 	prefix = 'kopt',
 	{
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
 				name = "screen_mode",
-				name_text = SCREEN_MODE_STR,
-				toggle = {PORTRAIT_STR, LANDSCAPE_STR},
+				name_text = S.SCREEN_MODE,
+				toggle = {S.PORTRAIT, S.LANDSCAPE},
 				alternate = false,
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
@@ -23,9 +25,9 @@ KoptOptions = {
 		options = {
 			{
 				name = "trim_page",
-				name_text = PAGE_CROP_STR,
+				name_text = S.PAGE_CROP,
 				width = 225,
-				toggle = {MANUAL_STR, AUTO_STR, SEMIAUTO_STR},
+				toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO},
 				alternate = false,
 				values = {0, 1, 2},
 				default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
@@ -39,8 +41,8 @@ KoptOptions = {
 		options = {
 			{
 				name = "full_screen",
-				name_text = FULL_SCREEN_STR,
-				toggle = {ON_STR, OFF_STR},
+				name_text = S.FULL_SCREEN,
+				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = DFULL_SCREEN,
 				event = "SetFullScreen",
@@ -48,8 +50,8 @@ KoptOptions = {
 			},
 			{
 				name = "page_scroll",
-				name_text = SCROLL_MODE_STR,
-				toggle = {ON_STR, OFF_STR},
+				name_text = S.SCROLL_MODE,
+				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = DSCROLL_MODE,
 				event = "ToggleScrollMode",
@@ -57,22 +59,22 @@ KoptOptions = {
 			},
 			{
 				name = "page_margin",
-				name_text = PAGE_MARGIN_STR,
-				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				name_text = S.PAGE_MARGIN,
+				toggle = {S.SMALL, S.MEDIUM, S.LARGE},
 				values = {0.05, 0.10, 0.15},
 				default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
 				event = "MarginUpdate",
 			},
 			{
 				name = "line_spacing",
-				name_text = LINE_SPACING_STR,
-				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				name_text = S.LINE_SPACING,
+				toggle = {S.SMALL, S.MEDIUM, S.LARGE},
 				values = {1.0, 1.2, 1.4},
 				default_value = DKOPTREADER_CONFIG_LINE_SPACING,
 			},
 			{
 				name = "max_columns",
-				name_text = COLUMNS_STR,
+				name_text = S.COLUMNS,
 				item_icons = {
 					"resources/icons/appbar.column.one.png",
 					"resources/icons/appbar.column.two.png",
@@ -83,7 +85,7 @@ KoptOptions = {
 			},
 			{
 				name = "justification",
-				name_text = TEXT_ALIGN_STR,
+				name_text = S.TEXT_ALIGN,
 				item_icons = {
 					"resources/icons/appbar.align.auto.png",
 					"resources/icons/appbar.align.left.png",
@@ -112,8 +114,8 @@ KoptOptions = {
 			},
 			{
 				name = "font_fine_tune",
-				name_text = FONTSIZE_FINE_TUNING_STR,
-				toggle = {DECREASE_STR, INCREASE_STR},
+				name_text = S.FONTSIZE_FINE_TUNING,
+				toggle = {S.DECREASE, S.INCREASE},
 				values = {-0.05, 0.05},
 				default_value = 0.05,
 				event = "FineTuningFontSize",
@@ -128,9 +130,9 @@ KoptOptions = {
 		options = {
 			{
 				name = "contrast",
-				name_text = CONTRAST_STR,
+				name_text = S.CONTRAST,
 				name_align_right = 0.2,
-				item_text = {LIGHTEST_STR , LIGHTER_STR, DEFAULT_STR, DARKER_STR, DARKEST_STR},
+				item_text = {S.LIGHTEST , S.LIGHTER, S.DEFAULT, S.DARKER, S.DARKEST},
 				item_font_size = 18,
 				item_align_center = 0.8,
 				values = {2.0, 1.5, 1.0, 0.5, 0.2},
@@ -146,7 +148,7 @@ KoptOptions = {
 			{
 				name = "text_wrap",
 				name_text = _("Reflow"),
-				toggle = {ON_STR, OFF_STR},
+				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
 				events = {
@@ -163,7 +165,7 @@ KoptOptions = {
 			},
 			{
 				name="doc_language",
-				name_text = DOC_LANG_STR,
+				name_text = S.DOC_LANG,
 				toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
 				values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
 				default_value = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE,
@@ -172,45 +174,45 @@ KoptOptions = {
 			},
 			{
 				name="screen_rotation",
-				name_text = VERTICAL_TEXT_STR,
-				toggle = {ON_STR, OFF_STR},
+				name_text = S.VERTICAL_TEXT,
+				toggle = {S.ON, S.OFF},
 				values = {90, 0},
 				default_value = 0,
 			},
 			{
 				name = "word_spacing",
-				name_text = WORD_GAP_STR,
-				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				name_text = S.WORD_GAP,
+				toggle = {S.SMALL, S.MEDIUM, S.LARGE},
 				values = DKOPTREADER_CONFIG_WORD_SAPCINGS,
 				default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING,
 			},
 			{
 				name = "defect_size",
-				name_text = DEFECT_SIZE_STR,
-				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				name_text = S.DEFECT_SIZE,
+				toggle = {S.SMALL, S.MEDIUM, S.LARGE},
 				values = {1.0, 3.0, 5.0},
 				default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
 				event = "DefectSizeUpdate",
 			},
 			{
 				name = "quality",
-				name_text = RENDER_QUALITY_STR,
-				toggle = {LOW_STR, DEFAULT_STR, HIGH_STR},
+				name_text = S.RENDER_QUALITY,
+				toggle = {S.LOW, S.DEFAULT, S.HIGH},
 				values={0.5, 1.0, 1.5},
 				default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
 			},
 			{
 				name = "auto_straighten",
-				name_text = AUTO_STRAIGHTEN_STR,
-				toggle = {ZERO_DEG_STR, FIVE_DEG_STR, TEN_DEG_STR},
+				name_text = S.AUTO_STRAIGHTEN,
+				toggle = {S.ZERO_DEG, S.FIVE_DEG, S.TEN_DEG},
 				values = {0, 5, 10},
-				default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+				default_value = S.DKOPTREADER_CONFIG_AUTOAIGHTEN,
 				show = false,
 			},
 			{
 				name = "detect_indent",
-				name_text = INDENTATION_STR,
-				toggle = {ON_STR, OFF_STR},
+				name_text = S.INDENTATION,
+				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = DKOPTREADER_CONFIG_DETECT_INDENT,
 				show = false,
@@ -218,3 +220,5 @@ KoptOptions = {
 		}
 	},
 }
+
+return KoptOptions

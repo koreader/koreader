@@ -1,13 +1,27 @@
-require "ui/widget/container"
-require "ui/widget/group"
-require "ui/widget/line"
-require "ui/widget/iconbutton"
-
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Font = require("ui/font")
+local TextWidget = require("ui/widget/textwidget")
+local LineWidget = require("ui/widget/linewidget")
+local Screen = require("ui/screen")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local VerticalSpan = require("ui/widget/verticalspan")
+local IconButton = require("ui/widget/iconbutton")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local _ = require("gettext")
 
 --[[
 TouchMenuItem widget
 --]]
-TouchMenuItem = InputContainer:new{
+local TouchMenuItem = InputContainer:new{
 	menu = nil,
 	vertical_align = "center",
 	item = nil,
@@ -58,8 +72,8 @@ end
 --[[
 TouchMenuBar widget
 --]]
-TouchMenuBar = InputContainer:new{
-	height = scaleByDPI(70),
+local TouchMenuBar = InputContainer:new{
+	height = Screen:scaleByDPI(70),
 	width = Screen:getWidth(),
 	icons = {},
 	-- touch menu that holds the bar, used for trigger repaint on icons
@@ -79,12 +93,12 @@ function TouchMenuBar:init()
 
 	local icon_sep = LineWidget:new{
 		dimen = Geom:new{
-			w = scaleByDPI(2),
+			w = Screen:scaleByDPI(2),
 			h = self.height,
 		}
 	}
 
-	local icon_span = HorizontalSpan:new{ width = scaleByDPI(20) }
+	local icon_span = HorizontalSpan:new{ width = Screen:scaleByDPI(20) }
 
 	-- build up image widget for menu icon bar
 	self.icon_widgets = {}
@@ -113,7 +127,7 @@ function TouchMenuBar:init()
 			self.bar_sep = LineWidget:new{
 				dimen = Geom:new{
 					w = self.width,
-					h = scaleByDPI(2),
+					h = Screen:scaleByDPI(2),
 				},
 				empty_segments = {
 					{
@@ -156,15 +170,15 @@ end
 --[[
 TouchMenu widget
 --]]
-TouchMenu = InputContainer:new{
+local TouchMenu = InputContainer:new{
 	tab_item_table = {},
 	-- for returnning in multi-level menus
 	item_table_stack = nil,
 	item_table = nil,
-	item_height = scaleByDPI(50),
-	bordersize = scaleByDPI(2),
-	padding = scaleByDPI(5),
-	footer_height = scaleByDPI(50),
+	item_height = Screen:scaleByDPI(50),
+	bordersize = Screen:scaleByDPI(2),
+	padding = Screen:scaleByDPI(5),
+	footer_height = Screen:scaleByDPI(50),
 	width = nil,
 	height = nil,
 	page = 1,
@@ -327,7 +341,7 @@ function TouchMenu:updateItems()
 		end -- if i <= self.items
 	end -- for c=1, self.perpage
 
-	table.insert(self.item_group, VerticalSpan:new{width = scaleByDPI(2)})
+	table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleByDPI(2)})
 	table.insert(self.item_group, self.footer)
 	self.footer_page.text = _("Page ")..self.page.."/"..self.page_num
 	self.time_info.text = os.date("%H:%M")
@@ -412,3 +426,4 @@ function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
 	end
 end
 
+return TouchMenu

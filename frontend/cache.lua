@@ -1,26 +1,7 @@
 --[[
-Inheritable abstraction for cache items
---]]
-
-
-CacheItem = {
-	size = 64, -- some reasonable default for simple Lua values / small tables
-}
-
-function CacheItem:new(o)
-	o = o or {}
-	setmetatable(o, self)
-	self.__index = self
-	return o
-end
-
-function CacheItem:onFree()
-end
-
---[[
 A global LRU cache
 ]]--
-Cache = {
+local Cache = {
 	-- cache configuration:
 	max_memsize = DGLOBAL_CACHE_SIZE,
 	-- cache state:
@@ -89,3 +70,5 @@ function Cache:clear()
 	self.cache_order = {}
 	self.current_memsize = 0
 end
+
+return Cache

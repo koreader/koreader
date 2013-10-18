@@ -1,5 +1,6 @@
+local EventListener = require("ui/widget/eventlistener")
 
-ReaderHinting = EventListener:new{
+local ReaderHinting = EventListener:new{
 	hinting_states = {}
 }
 
@@ -32,3 +33,5 @@ function ReaderHinting:onRestoreHinting()
 	self.view.hinting = table.remove(self.hinting_states)
 	return true
 end
+
+return ReaderHinting

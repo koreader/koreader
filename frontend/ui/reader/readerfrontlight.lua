@@ -1,8 +1,11 @@
-require "ui/widget/container"
-require "ui/widget/inputdialog"
-require "ui/device"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Geom = require("ui/geometry")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local _ = require("gettext")
 
-ReaderFrontLight = InputContainer:new{
+local ReaderFrontLight = InputContainer:new{
 	steps = {0,1,2,3,4,5,6,7,8,9,10},
 }
 
@@ -111,3 +114,5 @@ function ReaderFrontLight:fldialIntensity()
 		Device:getFrontlight():setIntensity(number)
 	end
 end
+
+return ReaderFrontLight

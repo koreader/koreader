@@ -1,6 +1,7 @@
 require "dbg" -- for DEBUG()
+local Screen = require("ui/screen")
 
-Font = {
+local Font = {
 	fontmap = {
 		-- default font for menu contents
 		cfont = "freefont/FreeSerif.ttf",
@@ -50,7 +51,7 @@ function Font:getFace(font, size)
 		font = self.cfont
 	end
 
-	local size = scaleByDPI(size)
+	local size = Screen:scaleByDPI(size)
 
 	local face = self.faces[font..size]
 	-- build face if not found
@@ -98,3 +99,5 @@ function Font:update()
 	self.faces = {}
 	clearGlyphCache()
 end
+
+return Font

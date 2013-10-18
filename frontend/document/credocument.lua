@@ -1,8 +1,10 @@
-require "ui/geometry"
-require "ui/reader/readerconfig"
-require "ui/data/creoptions"
+local Geom = require("ui/geometry")
+local CreOptions = require("ui/data/creoptions")
+local Document = require("document/document")
+local Configurable = require("ui/reader/configurable")
+-- TBD: DrawContext
 
-CreDocument = Document:new{
+local CreDocument = Document:new{
 	-- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
 	SCROLL_VIEW_MODE = 0,
 	PAGE_VIEW_MODE = 1,
@@ -248,16 +250,20 @@ function CreDocument:setVisiblePageCount(new_count)
 	self._document:setVisiblePageCount(new_count)
 end
 
-DocumentRegistry:addProvider("txt", "application/txt", CreDocument)
-DocumentRegistry:addProvider("epub", "application/epub", CreDocument)
-DocumentRegistry:addProvider("html", "application/html", CreDocument)
-DocumentRegistry:addProvider("htm", "application/htm", CreDocument)
-DocumentRegistry:addProvider("zip", "application/zip", CreDocument)
-DocumentRegistry:addProvider("rtf", "application/rtf", CreDocument)
-DocumentRegistry:addProvider("mobi", "application/mobi", CreDocument)
-DocumentRegistry:addProvider("prc", "application/prc", CreDocument)
-DocumentRegistry:addProvider("azw", "application/azw", CreDocument)
-DocumentRegistry:addProvider("chm", "application/chm", CreDocument)
-DocumentRegistry:addProvider("pdb", "application/pdb", CreDocument)
-DocumentRegistry:addProvider("doc", "application/doc", CreDocument)
-DocumentRegistry:addProvider("tcr", "application/tcr", CreDocument)
+function CreDocument:register(registry)
+	registry:addProvider("txt", "application/txt", self)
+	registry:addProvider("epub", "application/epub", self)
+	registry:addProvider("html", "application/html", self)
+	registry:addProvider("htm", "application/htm", self)
+	registry:addProvider("zip", "application/zip", self)
+	registry:addProvider("rtf", "application/rtf", self)
+	registry:addProvider("mobi", "application/mobi", self)
+	registry:addProvider("prc", "application/prc", self)
+	registry:addProvider("azw", "application/azw", self)
+	registry:addProvider("chm", "application/chm", self)
+	registry:addProvider("pdb", "application/pdb", self)
+	registry:addProvider("doc", "application/doc", self)
+	registry:addProvider("tcr", "application/tcr", self)
+end
+
+return CreDocument

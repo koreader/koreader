@@ -1,6 +1,11 @@
-require "ui/widget/buttontable"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local GestureRange = require("ui/gesturerange")
+local Geom = require("ui/geometry")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local _ = require("gettext")
 
-ReaderHighlight = InputContainer:new{}
+local ReaderHighlight = InputContainer:new{}
 
 function ReaderHighlight:init()
 	if Device:hasKeyboard() then
@@ -353,3 +358,5 @@ end
 function ReaderHighlight:editHighlight()
 	DEBUG("edit highlight")
 end
+
+return ReaderHighlight

@@ -7,7 +7,7 @@ In order to see how event propagation works and how to make
 widgets event-aware see the implementation in WidgetContainer
 below.
 ]]
-Event = {}
+local Event = {}
 
 function Event:new(name, ...)
 	local o = {
@@ -18,3 +18,5 @@ function Event:new(name, ...)
 	self.__index = self
 	return o
 end
+
+return Event

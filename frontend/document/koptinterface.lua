@@ -1,11 +1,10 @@
-require "dbg"
-require "cache"
-require "ui/geometry"
-require "ui/device"
-require "ui/screen"
-require "ui/reader/readerconfig"
+local Document = require("document/document")
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local Screen = require("ui/screen")
+-- TBD: KOPTContext
 
-KoptInterface = {
+local KoptInterface = {
 	ocrengine = "ocrengine",
 	tessocr_data = "data",
 	ocr_lang = "eng",
@@ -15,7 +14,7 @@ KoptInterface = {
 	screen_dpi = Screen:getDPI(),
 }
 
-ContextCacheItem = CacheItem:new{}
+local ContextCacheItem = CacheItem:new{}
 
 function ContextCacheItem:onFree()
 	if self.kctx.free then
@@ -24,7 +23,7 @@ function ContextCacheItem:onFree()
 	end
 end
 
-OCREngine = CacheItem:new{}
+local OCREngine = CacheItem:new{}
 
 function OCREngine:onFree()
 	if self.ocrengine.freeOCR then
@@ -811,3 +810,5 @@ function KoptInterface:logMemoryUsage(pageno)
 		log_file:close()
 	end
 end
+
+return KoptInterface

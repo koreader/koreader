@@ -1,16 +1,29 @@
+local TextWidget = require("ui/widget/textwidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local RenderText = require("ui/rendertext")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local _ = require("gettext")
 
-ToggleLabel = TextWidget:new{
+local ToggleLabel = TextWidget:new{
 	bgcolor = 0,
 	fgcolor = 1,
 }
 
 function ToggleLabel:paintTo(bb, x, y)
-	renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bgcolor, self.fgcolor)
+	RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bgcolor, self.fgcolor)
 end
 
-ToggleSwitch = InputContainer:new{
-	width = scaleByDPI(216),
-	height = scaleByDPI(30),
+local ToggleSwitch = InputContainer:new{
+	width = Screen:scaleByDPI(216),
+	height = Screen:scaleByDPI(30),
 	bgcolor = 0, -- unfoused item color
 	fgcolor = 7, -- focused item color
 }
@@ -123,3 +136,4 @@ function ToggleSwitch:onTapSelect(arg, gev)
 	UIManager.repaint_all = true
 end
 
+return ToggleSwitch

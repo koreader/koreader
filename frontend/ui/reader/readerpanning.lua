@@ -1,4 +1,8 @@
-ReaderPanning = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Device = require("ui/device")
+local _ = require("gettext")
+
+local ReaderPanning = InputContainer:new{
 	-- defaults
 	panning_steps = {
 		normal = 50,
@@ -42,3 +46,5 @@ function ReaderPanning:onPanning(args, key)
 		dy * self.panning_steps.normal * self.dimen.h / 100)
 	return true
 end
+
+return ReaderPanning

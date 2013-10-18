@@ -1,13 +1,22 @@
-require "ui/widget/group"
-require "ui/widget/bbox"
-require "ui/widget/button"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local Screen = require("ui/screen")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Button = require("ui/widget/button")
+local _ = require("gettext")
 
-PageCropDialog = VerticalGroup:new{
+local PageCropDialog = VerticalGroup:new{
 	ok_text = "OK",
 	cancel_text = "Cancel",
 	ok_callback = function() end,
 	cancel_callback = function() end,
-	button_width = math.floor(scaleByDPI(70)),
+	button_width = math.floor(Screen:scaleByDPI(70)),
 }
 
 function PageCropDialog:init()
@@ -49,7 +58,7 @@ function PageCropDialog:init()
 	}
 end
 
-ReaderCropping = InputContainer:new{}
+local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
 	if mode == "auto" then return end
@@ -147,3 +156,5 @@ end
 function ReaderCropping:onCloseDocument()
 	self.ui.doc_settings:saveSetting("bbox", self.document.bbox)
 end
+
+return ReaderCropping

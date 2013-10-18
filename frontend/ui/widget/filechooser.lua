@@ -1,6 +1,9 @@
-require "ui/widget/menu"
+local Menu = require("ui/widget/menu")
+local Screen = require("ui/screen")
+local UIManager = require("ui/uimanager")
+-- lfs
 
-FileChooser = Menu:extend{
+local FileChooser = Menu:extend{
 	height = Screen:getHeight(),
 	width = Screen:getWidth(),
 	no_title = true,
@@ -73,3 +76,5 @@ function FileChooser:onFileSelect(file)
 	UIManager:close(self)
 	return true
 end
+
+return FileChooser

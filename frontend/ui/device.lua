@@ -1,4 +1,12 @@
-Device = {
+local KindleFrontLight = require("ui/device/kindlefrontlight")
+local KoboFrontLight = require("ui/device/kobofrontlight")
+local BaseFrontLight = require("ui/device/basefrontlight")
+
+-- Screen
+-- util
+-- lfs
+
+local Device = {
 	screen_saver_mode = false,
 	charging_mode = false,
 	survive_screen_saver = false,
@@ -6,25 +14,6 @@ Device = {
 	model = nil,
 	firmware_rev = nil,
 	frontlight = nil,
-}
-
-BaseFrontLight = {
-	min = 1, max = 10,
-	intensity = nil,
-}
-
-KindleFrontLight = {
-	min = 0, max = 24,
-	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
-	intensity = nil,
-	lipc_handle = nil,
-}
-
-KoboFrontLight = {
-	min = 1, max = 100,
-	intensity = 20,
-	restore_settings = true,
-	fl = nil,
 }
 
 function Device:getModel()
@@ -219,58 +208,4 @@ function Device:getFrontlight()
 	return self.frontlight
 end
 
-function BaseFrontLight:init() end
-function BaseFrontLight:toggle() end
-function BaseFrontLight:setIntensityHW() end
-
-function BaseFrontLight:setIntensity(intensity)
-	intensity = intensity < self.min and self.min or intensity
-	intensity = intensity > self.max and self.max or intensity
-	self.intensity = intensity
-	self:setIntensityHW()
-end
-
-function KindleFrontLight:init()
-	require "liblipclua"
-	self.lipc_handle = lipc.init("com.github.koreader")
-	if self.lipc_handle then
-		self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-	end
-end
-
-function KindleFrontLight:toggle()
-	local f =  io.open(self.kpw_fl, "r")
-	local sysint = tonumber(f:read("*all"):match("%d+"))
-	f:close()
-	if sysint == 0 then
-		self:setIntensity(self.intensity)
-	else
-		os.execute("echo -n 0 > " .. self.kpw_fl)
-	end
-end
-
-KindleFrontLight.setIntensity = BaseFrontLight.setIntensity
-
-function KindleFrontLight:setIntensityHW()
-	if self.lipc_handle ~= nil then
-		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.intensity)
-	end
-end
-
-function KoboFrontLight:init()
-	self.fl = kobolight.open()
-end
-
-function KoboFrontLight:toggle()
-	if self.fl ~= nil then
-		self.fl:toggle()
-	end
-end
-
-KoboFrontLight.setIntensity = BaseFrontLight.setIntensity
-
-function KoboFrontLight:setIntensityHW()
-	if self.fl ~= nil then
-		self.fl:setBrightness(self.intensity)
-	end
-end
+return Device

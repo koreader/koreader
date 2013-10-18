@@ -1,10 +1,12 @@
-require "cache"
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
 
 --[[
 TODO: all these functions should probably be methods on Face objects
 ]]--
+local RenderText = {}
 
-GlyphCache = Cache:new{
+local GlyphCache = Cache:new{
 	max_memsize = 512*1024,
 	current_memsize = 0,
 	cache = {},
@@ -56,7 +58,7 @@ local function utf8Chars(input)
 	return read_next_glyph, input, 1
 end
 
-function getGlyph(face, charcode, bgcolor, fgcolor)
+function RenderText:getGlyph(face, charcode, bgcolor, fgcolor)
 	if bgcolor == nil then bgcolor = 0.0 end
 	if fgcolor == nil then fgcolor = 1.0 end
 	local hash = "glyph|"..face.hash.."|"..charcode.."|"..bgcolor.."|"..fgcolor
@@ -87,13 +89,13 @@ function getGlyph(face, charcode, bgcolor, fgcolor)
 	return rendered_glyph
 end
 
-function getSubTextByWidth(text, face, width, kerning)
+function RenderText:getSubTextByWidth(text, face, width, kerning)
 	local pen_x = 0
 	local prevcharcode = 0
 	local char_list = {}
 	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < width then
-			local glyph = getGlyph(face, charcode)
+			local glyph = self:getGlyph(face, charcode)
 			if kerning and prevcharcode then
 				local kern = face.ftface:getKerning(prevcharcode, charcode)
 				pen_x = pen_x + kern
@@ -110,7 +112,7 @@ function getSubTextByWidth(text, face, width, kerning)
 	return table.concat(char_list)
 end
 
-function sizeUtf8Text(x, width, face, text, kerning)
+function RenderText:sizeUtf8Text(x, width, face, text, kerning)
 	if not text then
 		DEBUG("sizeUtf8Text called without text");
 		return
@@ -124,7 +126,7 @@ function sizeUtf8Text(x, width, face, text, kerning)
 	local prevcharcode = 0
 	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < (width - x) then
-			local glyph = getGlyph(face, charcode)
+			local glyph = self:getGlyph(face, charcode)
 			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + (face.ftface):getKerning(prevcharcode, charcode)
 			end
@@ -138,7 +140,7 @@ function sizeUtf8Text(x, width, face, text, kerning)
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
-function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
+function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 	if not text then
 		DEBUG("renderUtf8Text called without text");
 		return 0
@@ -151,7 +153,7 @@ function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 	local buffer_width = buffer:getWidth()
 	for _, charcode, uchar in utf8Chars(text) do
 		if pen_x < buffer_width then
-			local glyph = getGlyph(face, charcode, bgcolor, fgcolor)
+			local glyph = self:getGlyph(face, charcode, bgcolor, fgcolor)
 			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
 			end
@@ -167,3 +169,5 @@ function renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
 
 	return pen_x
 end
+
+return RenderText

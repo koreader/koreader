@@ -1,9 +1,13 @@
-require "ui/graphics"
-require "ui/widget/text"
-require "ui/widget/keyboard"
-require "ui/widget/container"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local VirtualKeyboard = require("ui/widget/virtualkeyboard")
+local Font = require("ui/font")
+local Screen = require("ui/screen")
+local UIManager = require("ui/uimanager")
 
-InputText = InputContainer:new{
+local InputText = InputContainer:new{
 	text = "",
 	hint = "demo hint",
 	charlist = {}, -- table to store input string
@@ -144,3 +148,5 @@ function InputText:CharlistToString()
 	end
 	return s
 end
+
+return InputText

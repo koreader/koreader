@@ -1,4 +1,11 @@
-ReaderRotation = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local _ = require("gettext")
+
+local ReaderRotation = InputContainer:new{
 	ROTATE_ANGLE_THRESHOLD = 15,
 	current_rotation = 0
 }
@@ -66,3 +73,5 @@ function ReaderRotation:onTwoFingerPanRelease(arg, ges)
 		self.rotate_angle = nil
 	end
 end
+
+return ReaderRotation

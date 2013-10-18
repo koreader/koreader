@@ -1,5 +1,9 @@
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
+local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
 
-ReaderScreenshot = InputContainer:new{}
+local ReaderScreenshot = InputContainer:new{}
 
 function ReaderScreenshot:init()
 	local diagonal = math.sqrt(
@@ -10,7 +14,7 @@ function ReaderScreenshot:init()
 		Screenshot = {
 			GestureRange:new{
 				ges = "two_finger_tap",
-				scale = {diagonal - scaleByDPI(100), diagonal},
+				scale = {diagonal - Screen:scaleByDPI(100), diagonal},
 				rate = 1.0,
 			}
 		},
@@ -23,3 +27,4 @@ function ReaderScreenshot:onScreenshot()
 	return true
 end
 
+return ReaderScreenshot

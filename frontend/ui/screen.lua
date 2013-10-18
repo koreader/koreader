@@ -1,19 +1,8 @@
---[[
-    Copyright (C) 2011 Hans-Werner Hilse <hilse@web.de>
+local Device = require("ui/device")
+local Geom = require("ui/geometry")
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-]]--
+-- Blitbuffer
+-- einkfb
 
 --[[
 Codes for rotation modes:
@@ -39,7 +28,7 @@ Codes for rotation modes:
 --]]
 
 
-Screen = {
+local Screen = {
 	width = 0,
 	height = 0,
 	native_rotation_mode = nil,
@@ -138,16 +127,6 @@ function Screen:rescaleByDPI(px)
 	return math.ceil(px * 167/self:getDPI())
 end
 
--- make a shortcut to Screen:scaleByDPI
-function scaleByDPI(px)
-	return Screen:scaleByDPI(px)
-end
-
--- make a shortcut to Screen:rescaleByDPI
-function rescaleByDPI(px)
-	return Screen:rescaleByDPI(px)
-end
-
 function Screen:getPitch()
 	return self.fb:getPitch()
 end
@@ -181,8 +160,6 @@ function Screen:setRotationMode(mode)
 	self.cur_rotation_mode = mode
 	self.bb:free()
 	self.bb = Blitbuffer.new(self.width, self.height, self.width/2)
-	-- update mode for input module
-	Input.rotation = mode
 end
 
 function Screen:setScreenMode(mode)
@@ -229,3 +206,5 @@ function Screen:restoreFromBB(bb)
 		DEBUG("Got nil bb in restoreFromSavedBB!")
 	end
 end
+
+return Screen

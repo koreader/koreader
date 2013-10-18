@@ -1,6 +1,12 @@
-require "ui/reader/readerpanning"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local Input = require("ui/input")
+local GestureRange = require("ui/gesturerange")
+local ReaderPanning = require("ui/reader/readerpanning")
+local _ = require("gettext")
 
-ReaderRolling = InputContainer:new{
+local ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
 	old_page = nil,
 	current_pos = 0,
@@ -325,4 +331,4 @@ function ReaderRolling:gotoPercent(new_percent)
 	self:gotoPos(new_percent * self.doc_height / 10000)
 end
 
-
+return ReaderRolling

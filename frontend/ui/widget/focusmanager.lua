@@ -1,3 +1,6 @@
+local InputContainer = require("ui/widget/container/inputcontainer")
+-- UIManager
+
 --[[
 Wrapper Widget that manages focus for a whole dialog
 
@@ -21,7 +24,7 @@ reach either <okbutton> or <cancelbutton>.
 but notice that this does _not_ do the layout for you,
 it rather defines an abstract layout.
 ]]
-FocusManager = InputContainer:new{
+local FocusManager = InputContainer:new{
 	selected = nil, -- defaults to x=1, y=1
 	layout = nil, -- mandatory
 	movement_allowed = { x = true, y = true }
@@ -93,3 +96,5 @@ function FocusManager:onWrapLast()
 	self.selected.y = 1
 	return true
 end
+
+return FocusManager

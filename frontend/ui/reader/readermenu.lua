@@ -1,7 +1,15 @@
-require "ui/widget/menu"
-require "ui/widget/touchmenu"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local TouchMenu = require("ui/widget/touchmenu")
+local UIManager = require("ui/uimanager")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local Screen = require("ui/screen")
+local _ = require("gettext")
 
-ReaderMenu = InputContainer:new{
+local ReaderMenu = InputContainer:new{
 	tab_item_table = nil,
 	registered_widgets = {},
 }
@@ -133,3 +141,4 @@ function ReaderMenu:registerToMainMenu(widget)
 	table.insert(self.registered_widgets, widget)
 end
 
+return ReaderMenu

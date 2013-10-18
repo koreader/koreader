@@ -1,46 +1,12 @@
-require "../math"
-
---[[
-This is a registry for document providers
-]]--
-DocumentRegistry = {
-	providers = { }
-}
-
-function DocumentRegistry:addProvider(extension, mimetype, provider)
-	table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
-end
-
-function DocumentRegistry:getProvider(file)
-	-- TODO: some implementation based on mime types?
-	local extension = string.lower(string.match(file, ".+%.([^.]+)") or "")
-	for _, provider in ipairs(self.providers) do
-		if extension == provider.extension then
-			return provider.provider
-		end
-	end
-end
-
-function DocumentRegistry:openDocument(file)
-    local provider = self:getProvider(file)
-    if provider ~= nil then
-        return provider:new{file = file}
-    end
-end
-
-TileCacheItem = CacheItem:new{}
-
-function TileCacheItem:onFree()
-	if self.bb.free then
-		DEBUG("free blitbuffer", self.bb)
-		self.bb:free()
-	end
-end
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local TileCacheItem = require("document/tilecacheitem")
+local Geom = require("ui/geometry")
 
 --[[
 This is an abstract interface to a document
 ]]--
-Document = {
+local Document = {
 	-- file name
 	file = nil,
 
@@ -304,8 +270,4 @@ function Document:getPageText(pageno)
 	return text
 end
 
--- load implementations:
-
-require "document/pdfdocument"
-require "document/djvudocument"
-require "document/credocument"
+return Document

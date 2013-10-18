@@ -1,10 +1,12 @@
-require "cache"
-require "ui/geometry"
-require "ui/reader/readerconfig"
-require "ui/data/koptoptions"
-require "document/koptinterface"
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local KoptOptions = require("ui/data/koptoptions")
+local KoptInterface = require("document/koptinterface")
+local Document = require("document/document")
+local Configurable = require("ui/reader/configurable")
+-- TBD: DrawContext
 
-PdfDocument = Document:new{
+local PdfDocument = Document:new{
 	_document = false,
 	-- muPDF manages its own additional cache
 	mupdf_cache_size = 5 * 1024 * 1024,
@@ -111,5 +113,9 @@ function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma,
 	return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
 end
 
-DocumentRegistry:addProvider("pdf", "application/pdf", PdfDocument)
-DocumentRegistry:addProvider("cbz", "application/cbz", PdfDocument)
+function PdfDocument:register(registry)
+	registry:addProvider("pdf", "application/pdf", self)
+	registry:addProvider("cbz", "application/cbz", self)
+end
+
+return PdfDocument

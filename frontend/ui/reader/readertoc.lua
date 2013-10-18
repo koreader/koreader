@@ -1,4 +1,12 @@
-ReaderToc = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Menu = require("ui/widget/menu")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+
+local ReaderToc = InputContainer:new{
 	toc = nil,
 	toc_menu_title = _("Table of contents"),
 }
@@ -113,3 +121,5 @@ function ReaderToc:addToMainMenu(tab_item_table)
 		end,
 	})
 end
+
+return ReaderToc

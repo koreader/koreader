@@ -1,11 +1,20 @@
-require "ui/widget/container"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Font = require("ui/font")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local ImageWidget = require("ui/widget/imagewidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local UIManager = require("ui/uimanager")
 
 --[[
 Widget that displays an informational message
 
 it vanishes on key press or after a given timeout
 ]]
-InfoMessage = InputContainer:new{
+local InfoMessage = InputContainer:new{
 	face = Font:getFace("infofont", 25),
 	text = "",
 	timeout = nil, -- in seconds
@@ -69,3 +78,5 @@ function InfoMessage:onTapClose()
 	UIManager:close(self)
 	return true
 end
+
+return InfoMessage

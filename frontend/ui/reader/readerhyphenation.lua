@@ -1,5 +1,9 @@
+local InputContainer = require("ui/widget/container/inputcontainer")
+local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
+local _ = require("gettext")
 
-ReaderHyphenation = InputContainer:new{
+local ReaderHyphenation = InputContainer:new{
 	hyph_menu_title = _("Hyphenation"),
 	hyph_table = nil,
 	cur_hyph_idx = nil,
@@ -36,3 +40,5 @@ function ReaderHyphenation:addToMainMenu(tab_item_table)
 		sub_item_table = self.hyph_table,
 	})
 end
+
+return ReaderHyphenation

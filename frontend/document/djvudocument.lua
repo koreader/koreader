@@ -1,10 +1,13 @@
-require "cache"
-require "ui/geometry"
-require "ui/reader/readerconfig"
-require "ui/data/koptoptions"
-require "document/koptinterface"
+local Geom = require("ui/geometry")
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local KoptOptions = require("ui/data/koptoptions")
+local KoptInterface = require("document/koptinterface")
+local Document = require("document/document")
+local Configurable = require("ui/reader/configurable")
+-- TBD: DrawContext
 
-DjvuDocument = Document:new{
+local DjvuDocument = Document:new{
 	_document = false,
 	-- libdjvulibre manages its own additional cache, default value is hard written in c module.
 	djvulibre_cache_size = nil,
@@ -13,6 +16,16 @@ DjvuDocument = Document:new{
 	configurable = Configurable,
 	koptinterface = KoptInterface,
 }
+
+-- check DjVu magic string to validate
+local function validDjvuFile(filename)
+	f = io.open(filename, "r")
+	if not f then return false end
+	local magic = f:read(8)
+	f:close()
+	if not magic or magic ~= "AT&TFORM" then return false end
+	return true
+end
 
 function DjvuDocument:init()
 	self.configurable:loadDefaults(self.options)
@@ -31,16 +44,6 @@ function DjvuDocument:init()
 	self.info.has_pages = true
 	self.info.configurable = true
 	self:_readMetadata()
-end
-
--- check DjVu magic string to validate
-function validDjvuFile(filename)
-	f = io.open(filename, "r")
-	if not f then return false end
-	local magic = f:read(8)
-	f:close()
-	if not magic or magic ~= "AT&TFORM" then return false end
-	return true
 end
 
 function DjvuDocument:invertTextYAxel(pageno, text_table)
@@ -105,4 +108,8 @@ function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma
 	return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
 end
 
-DocumentRegistry:addProvider("djvu", "application/djvu", DjvuDocument)
+function DjvuDocument:register(registry)
+	registry:addProvider("djvu", "application/djvu", self)
+end
+
+return DjvuDocument

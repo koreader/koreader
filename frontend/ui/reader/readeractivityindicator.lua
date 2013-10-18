@@ -1,6 +1,8 @@
-require "ui/device"
+local EventListener = require("ui/widget/eventlistener")
+local Device = require("ui/device")
+-- lipc
 
-ReaderActivityIndicator = EventListener:new{}
+local ReaderActivityIndicator = EventListener:new{}
 
 function ReaderActivityIndicator:init()
 	local dev_mod = Device:getModel()
@@ -41,3 +43,5 @@ function ReaderActivityIndicator:onStopActivityIndicator()
 	end
 	return true
 end
+
+return ReaderActivityIndicator
