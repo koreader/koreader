@@ -26,24 +26,26 @@ local Document = {
 		number_of_pages = 0,
 		-- if not pageable, length of the document in pixels
 		doc_height = 0,
-		
+
 		-- other metadata
 		title = "",
 		author = "",
 		date = ""
 	},
-	
+
 	GAMMA_NO_GAMMA = 1.0,
-	
+
 	-- override bbox from orignal page's getUsedBBox
 	bbox = {},
-		
+
 	-- flag to show whether the document was opened successfully
 	is_open = false,
 	error_message = nil,
 
 	-- flag to show that the document needs to be unlocked by a password
 	is_locked = false,
+
+	configurable = Configurable,
 }
 
 function Document:new(o)
@@ -90,6 +92,10 @@ end
 function Document:_readMetadata()
 	self.info.number_of_pages = self._document:getPages()
 	return true
+end
+
+function Document:getPageCount()
+	return self.info.number_of_pages
 end
 
 -- calculates page dimensions
@@ -189,7 +195,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 		size = rect
 	end
 
-	-- prepare cache item with contained blitbuffer	
+	-- prepare cache item with contained blitbuffer
 	local tile = TileCacheItem:new{
 		size = size.w * size.h / 2 + 64, -- estimation
 		excerpt = size,
@@ -210,7 +216,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 		dc:setOffset(0, page_size.h)
 	end
 	dc:setZoom(zoom)
-	
+
 	if gamma ~= self.GAMMA_NO_GAMMA then
 		--DEBUG("gamma correction: ", gamma)
 		dc:setGamma(gamma)
@@ -256,7 +262,7 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, re
 	end
 	DEBUG("now painting", tile, rect)
 	target:blitFrom(tile.bb,
-		x, y, 
+		x, y,
 		rect.x - tile.excerpt.x,
 		rect.y - tile.excerpt.y,
 		rect.w, rect.h)

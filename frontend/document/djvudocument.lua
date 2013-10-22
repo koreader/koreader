@@ -13,7 +13,6 @@ local DjvuDocument = Document:new{
 	djvulibre_cache_size = nil,
 	dc_null = DrawContext.new(),
 	options = KoptOptions,
-	configurable = Configurable,
 	koptinterface = KoptInterface,
 }
 

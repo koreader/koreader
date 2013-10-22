@@ -28,7 +28,7 @@ function ReaderGoto:onShowGotoDialog()
 	DEBUG("show goto dialog")
 	self.goto_dialog = InputDialog:new{
 		title = self.goto_dialog_title,
-		input_hint = "(1 - "..self.document.info.number_of_pages..")",
+		input_hint = "(1 - "..self.document:getPageCount()..")",
 		buttons = {
 			{	
 				{
@@ -55,6 +55,9 @@ function ReaderGoto:onShowGotoDialog()
 			},
 		},
 		input_type = "number",
+		enter_callback = self.document.info.has_pages 
+			and function() self:gotoPage() end 
+			or function() self:gotoLocation() end,
 		width = Screen:getWidth() * 0.8,
 		height = Screen:getHeight() * 0.2,
 	}
@@ -77,8 +80,12 @@ function ReaderGoto:gotoPage()
 end
 
 function ReaderGoto:gotoLocation()
-	-- TODO: implement go to location
+	local number = tonumber(self.goto_dialog:getInputText())
+	if number then
+		self.ui:handleEvent(Event:new("GotoPage", number))
+	end
 	self:close()
+	return true
 end
 
 return ReaderGoto

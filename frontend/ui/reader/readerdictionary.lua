@@ -18,7 +18,7 @@ function ReaderDictionary:stardictLookup(word)
 		word = string.gsub(word, "%p+$", '')
 		DEBUG("stripped word:", word)
 		-- escape quotes and other funny characters in word
-		local std_out = io.popen("./sdcv -nj "..("%q"):format(word), "r")
+		local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
 		local results_str = std_out:read("*all")
 		if results_str then
 			--DEBUG("result str:", word, results_str)

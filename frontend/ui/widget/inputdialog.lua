@@ -17,6 +17,7 @@ local InputDialog = InputContainer:new{
 	input_hint = "",
 	buttons = nil,
 	input_type = nil,
+	enter_callback = nil,
 	
 	width = nil,
 	height = nil,
@@ -48,6 +49,7 @@ function InputDialog:init()
 		face = self.input_face,
 		width = self.width * 0.9,
 		input_type = self.input_type,
+		enter_callback = self.enter_callback,
 		scroll = false,
 		parent = self,
 	}

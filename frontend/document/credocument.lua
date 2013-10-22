@@ -20,7 +20,6 @@ local CreDocument = Document:new{
 	fallback_font = "Droid Sans Fallback",
 	default_css = "./data/cr3.css",
 	options = CreOptions,
-	configurable = Configurable,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -121,6 +120,10 @@ end
 function CreDocument:close()
 	self._document:saveDefaults()
 	Document.close(self)
+end
+
+function CreDocument:getPageCount()
+	return self._document:getPages()
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
