@@ -6,6 +6,7 @@ local ReaderDogear = require("ui/reader/readerdogear")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
 
 local ReaderView = OverlapGroup:new{
 	document = nil,

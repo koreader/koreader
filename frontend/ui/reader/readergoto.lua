@@ -3,6 +3,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderGoto = InputContainer:new{

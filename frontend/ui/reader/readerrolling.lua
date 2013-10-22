@@ -6,6 +6,7 @@ local Input = require("ui/input")
 local Event = require("ui/event")
 local GestureRange = require("ui/gesturerange")
 local ReaderPanning = require("ui/reader/readerpanning")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderRolling = InputContainer:new{

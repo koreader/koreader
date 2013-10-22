@@ -4,6 +4,7 @@ local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
 local Font = require("ui/font")
 local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 -- TBD: DrawContext
 
 local CreDocument = Document:new{

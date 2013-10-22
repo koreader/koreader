@@ -14,6 +14,7 @@ local Screen = require("ui/screen")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
 
 local VirtualKey = InputContainer:new{
 	key = nil,

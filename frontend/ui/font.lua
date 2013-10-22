@@ -1,5 +1,5 @@
-require "dbg" -- for DEBUG()
 local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 
 local Font = {
 	fontmap = {

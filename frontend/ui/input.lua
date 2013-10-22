@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local TimeVal = require("ui/timeval")
 local Screen = require("ui/screen")
 local Dbg = require("dbg")
+local DEBUG = require("dbg")
 
 -- constants from <linux/input.h>
 local EV_SYN = 0

@@ -1,5 +1,6 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local DEBUG = require("dbg")
 
 --[[
 TODO: all these functions should probably be methods on Face objects

@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 -- lfs
 

@@ -2,6 +2,7 @@ local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Input = require("ui/input")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()

@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
+local DEBUG = require("dbg")
 
 --[[
 BBoxWidget shows a bbox for page cropping

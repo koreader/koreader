@@ -2,6 +2,8 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local TileCacheItem = require("document/tilecacheitem")
 local Geom = require("ui/geometry")
+local Configurable = require("ui/reader/configurable")
+local DEBUG = require("dbg")
 
 --[[
 This is an abstract interface to a document

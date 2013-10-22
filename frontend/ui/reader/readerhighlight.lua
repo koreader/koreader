@@ -9,6 +9,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ButtonTable = require("ui/widget/buttontable")
 local Input = require("ui/input")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderHighlight = InputContainer:new{}

@@ -1,3 +1,5 @@
+local DEBUG = require("dbg")
+
 --[[
 2D Geometry utilities
 

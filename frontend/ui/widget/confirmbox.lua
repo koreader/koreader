@@ -11,6 +11,7 @@ local Screen = require("ui/screen")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 -- screen

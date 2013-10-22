@@ -14,6 +14,7 @@ local UIManager = require("ui/uimanager")
 local ButtonTable = require("ui/widget/buttontable")
 local Device = require("ui/device")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[

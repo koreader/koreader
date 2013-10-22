@@ -7,6 +7,7 @@ local Device = require("ui/device")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
+local DEBUG = require("dbg")
 
 local ReaderPaging = InputContainer:new{
 	current_page = 0,

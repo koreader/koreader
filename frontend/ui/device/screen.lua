@@ -1,4 +1,5 @@
 local Geom = require("ui/geometry")
+local DEBUG = require("dbg")
 
 -- Blitbuffer
 -- einkfb

@@ -5,6 +5,7 @@ local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderZooming = InputContainer:new{

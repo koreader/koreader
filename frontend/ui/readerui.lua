@@ -4,6 +4,7 @@ local Device = require("ui/device")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderView = require("ui/reader/readerview")

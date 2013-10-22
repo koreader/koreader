@@ -1,6 +1,7 @@
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
 local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 
 --[[
 Current detectable gestures:

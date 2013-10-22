@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ToggleLabel = TextWidget:new{

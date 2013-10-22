@@ -11,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local BBoxWidget = require("ui/widget/bboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local Button = require("ui/widget/button")
+local DEBUG = require("dbg")
 
 local PageCropDialog = VerticalGroup:new{
 	ok_text = "OK",
