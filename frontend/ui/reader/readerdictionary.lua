@@ -20,7 +20,8 @@ function ReaderDictionary:stardictLookup(word)
 		DEBUG("stripped word:", word)
 		-- escape quotes and other funny characters in word
 		local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
-		local results_str = std_out:read("*all")
+		local results_str = nil
+		if std_out then results_str = std_out:read("*all") end
 		if results_str then
 			--DEBUG("result str:", word, results_str)
 			local ok, results = pcall(JSON.decode, JSON, results_str)
