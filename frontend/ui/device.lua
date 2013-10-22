@@ -1,8 +1,7 @@
 local KindleFrontLight = require("ui/device/kindlefrontlight")
 local KoboFrontLight = require("ui/device/kobofrontlight")
 local BaseFrontLight = require("ui/device/basefrontlight")
-
--- Screen
+local Screen = require("ui/device/screen")
 -- util
 -- lfs
 
@@ -14,7 +13,10 @@ local Device = {
 	model = nil,
 	firmware_rev = nil,
 	frontlight = nil,
+	screen = Screen
 }
+
+Screen.device = Device
 
 function Device:getModel()
 	if self.model then return self.model end
@@ -117,7 +119,7 @@ end
 function Device:intoScreenSaver()
 	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
-		Screen:saveCurrentBB()
+		self.screen:saveCurrentBB()
 		--UIManager:show(InfoMessage:new{
 			--text = "Going into screensaver... ",
 			--timeout = 2,
@@ -135,8 +137,8 @@ function Device:outofScreenSaver()
 		-- Blitbuffer.
 		util.usleep(1500000)
 		--os.execute("killall -stop cvm")
-		Screen:restoreFromSavedBB()
-		Screen:refresh(0)
+		self.screen:restoreFromSavedBB()
+		self.screen:refresh(0)
 		self.survive_screen_saver = true
 	end
 	self.screen_saver_mode = false
@@ -147,7 +149,7 @@ function Device:prepareSuspend() -- currently only used for kobo devices
 	if fl ~= nil then
 		fl.fl:sleep()
 	end
-	Screen:refresh(0)
+	self.screen:refresh(0)
 	self.screen_saver_mode = true
 end
 
@@ -157,7 +159,7 @@ end
 
 function Device:Resume() -- currently only used for kobo devices
 	os.execute("echo 0 > /sys/power/state-extended")
-	Screen:refresh(0)
+	self.screen:refresh(0)
 	local fl = self:getFrontlight()
 	if fl ~= nil then
 		fl.fl:restore()
@@ -168,7 +170,7 @@ end
 function Device:usbPlugIn()
 	--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
-		Screen:saveCurrentBB()
+		self.screen:saveCurrentBB()
 		--UIManager:show(InfoMessage:new{
 			--text = "Going into USB mode... ",
 			--timeout = 2,
@@ -184,8 +186,8 @@ function Device:usbPlugOut()
 	if self.charging_mode == true and self.screen_saver_mode == false then
 		--util.usleep(1500000)
 		--os.execute("killall -stop cvm")
-		Screen:restoreFromSavedBB()
-		Screen:refresh(0)
+		self.screen:restoreFromSavedBB()
+		self.screen:refresh(0)
 	end
 
 	--@TODO signal filemanager for file changes  13.06 2012 (houqp)

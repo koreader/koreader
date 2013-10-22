@@ -1,4 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")

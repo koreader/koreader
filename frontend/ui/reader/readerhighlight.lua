@@ -1,8 +1,14 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local ButtonTable = require("ui/widget/buttontable")
+local Input = require("ui/input")
 local _ = require("gettext")
 
 local ReaderHighlight = InputContainer:new{}

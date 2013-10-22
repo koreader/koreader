@@ -1,6 +1,7 @@
 local EventListener = require("ui/widget/eventlistener")
 local UIManager = require("ui/uimanager")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Screen = require("ui/screen")
 local JSON = require("JSON")
 
 local ReaderDictionary = EventListener:new{}

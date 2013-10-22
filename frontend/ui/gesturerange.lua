@@ -1,4 +1,4 @@
--- TimeVal
+local TimeVal = require("ui/timeval")
 
 local GestureRange = {
 	ges = nil,

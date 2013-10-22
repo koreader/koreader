@@ -3,6 +3,9 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
+local InputDialog = require("ui/widget/inputdialog")
+local UIManager = require("ui/uimanager")
+local Notification = require("ui/widget/notification")
 local _ = require("gettext")
 
 local ReaderFrontLight = InputContainer:new{

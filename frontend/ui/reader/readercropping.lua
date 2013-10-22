@@ -8,8 +8,9 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local BBoxWidget = require("ui/widget/bboxwidget")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local Button = require("ui/widget/button")
-local _ = require("gettext")
 
 local PageCropDialog = VerticalGroup:new{
 	ok_text = "OK",

@@ -8,6 +8,11 @@ local ImageWidget = require("ui/widget/imagewidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Input = require("ui/input")
+local Screen = require("ui/screen")
+local _ = require("gettext")
 
 --[[
 Widget that displays an informational message

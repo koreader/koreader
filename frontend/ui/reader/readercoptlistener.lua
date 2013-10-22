@@ -1,4 +1,5 @@
 local EventListener = require("ui/widget/eventlistener")
+local Event = require("ui/event")
 
 local ReaderCoptListener = EventListener:new{}
 

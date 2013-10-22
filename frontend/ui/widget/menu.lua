@@ -19,6 +19,7 @@ local Screen = require("ui/screen")
 local Input = require("ui/input")
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
+local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 
 --[[

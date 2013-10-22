@@ -7,6 +7,8 @@ local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Screen = require("ui/screen")
+local Menu = require("ui/widget/menu")
+local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{

@@ -6,6 +6,9 @@ local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
 local UIManager = require("ui/uimanager")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Input = require("ui/input")
+local Screen = require("ui/screen")
 
 --[[
 Widget that displays a tiny notification on top of screen

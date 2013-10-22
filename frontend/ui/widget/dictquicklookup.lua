@@ -9,6 +9,12 @@ local Screen = require("ui/screen")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local ButtonTable = require("ui/widget/buttontable")
+local Device = require("ui/device")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local _ = require("gettext")
 
 --[[
 Display quick lookup word definition

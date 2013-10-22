@@ -2,6 +2,9 @@ local Document = require("document/document")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local TileCacheItem = require("document/tilecacheitem")
+local Dbg = require("dbg")
 -- TBD: KOPTContext
 
 local KoptInterface = {

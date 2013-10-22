@@ -1,5 +1,6 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 
 --[[
 an InputContainer is an WidgetContainer that handles input events

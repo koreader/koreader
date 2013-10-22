@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
+local Event = require("ui/event")
 local GestureRange = require("ui/gesturerange")
 local _ = require("gettext")
 

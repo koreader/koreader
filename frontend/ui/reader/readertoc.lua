@@ -4,6 +4,7 @@ local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local UIManager = require("ui/uimanager")
+local Event = require("ui/event")
 local _ = require("gettext")
 
 local ReaderToc = InputContainer:new{

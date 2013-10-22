@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
--- UIManager
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
 
 --[[
 Wrapper Widget that manages focus for a whole dialog

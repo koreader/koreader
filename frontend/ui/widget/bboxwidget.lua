@@ -1,4 +1,9 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
 
 --[[
 BBoxWidget shows a bbox for page cropping

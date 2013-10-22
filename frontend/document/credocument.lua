@@ -2,6 +2,8 @@ local Geom = require("ui/geometry")
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
+local Font = require("ui/font")
+local Screen = require("ui/screen")
 -- TBD: DrawContext
 
 local CreDocument = Document:new{
@@ -22,7 +24,7 @@ local CreDocument = Document:new{
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
-function CreDocument:zipContentExt(fname)
+function CreDocument.zipContentExt(self, fname)
 	local outfile = "./data/zip_content"
 	local s = ""
 	os.execute("unzip ".."-l \""..fname.."\" > "..outfile)

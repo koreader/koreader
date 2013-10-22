@@ -2,6 +2,16 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/centercontainer")
 local FocusManager = require("ui/widget/focusmanager")
 local Button = require("ui/widget/button")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local ImageWidget = require("ui/widget/imagewidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local Font = require("ui/font")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local _ = require("gettext")
 
 -- screen
 
