@@ -4,6 +4,7 @@ require "defaults"
 package.path = "./frontend/?.lua;./?.lua"
 package.cpath = "/usr/lib/lua/?.so"
 local UIManager = require("ui/uimanager")
+local Menu = require("ui/widget/menu")
 local InfoMessage = require("ui/widget/infomessage")
 local ReaderUI = require("ui/readerui")
 local DocumentRegistry = require("document/documentregistry")
