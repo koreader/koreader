@@ -81,3 +81,5 @@ function ScrollTextWidget:onSwipe(arg, ges)
 	UIManager:setDirty(self.dialog, "partial")
 	return true
 end
+
+return ScrollTextWidget

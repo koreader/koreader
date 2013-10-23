@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
+local Math = require("optmath")
 local DEBUG = require("dbg")
 
 --[[
@@ -73,10 +74,10 @@ function BBoxWidget:getScreenBBox(page_bbox)
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in page_to_screen", screen_offset)
-	bbox.x0 = math.round(page_bbox.x0 * scale + screen_offset.x)
-	bbox.y0 = math.round(page_bbox.y0 * scale + screen_offset.y)
-	bbox.x1 = math.round(page_bbox.x1 * scale + screen_offset.x)
-	bbox.y1 = math.round(page_bbox.y1 * scale + screen_offset.y)
+	bbox.x0 = Math.round(page_bbox.x0 * scale + screen_offset.x)
+	bbox.y0 = Math.round(page_bbox.y0 * scale + screen_offset.y)
+	bbox.x1 = Math.round(page_bbox.x1 * scale + screen_offset.x)
+	bbox.y1 = Math.round(page_bbox.y1 * scale + screen_offset.y)
 	return bbox
 end
 
@@ -86,10 +87,10 @@ function BBoxWidget:getPageBBox(screen_bbox)
 	local scale = self.view.state.zoom
 	local screen_offset = self.view.state.offset
 	--DEBUG("screen offset in screen_to_page", screen_offset)
-	bbox.x0 = math.round((screen_bbox.x0 - screen_offset.x) / scale)
-	bbox.y0 = math.round((screen_bbox.y0 - screen_offset.y) / scale)
-	bbox.x1 = math.round((screen_bbox.x1 - screen_offset.x) / scale)
-	bbox.y1 = math.round((screen_bbox.y1 - screen_offset.y) / scale)
+	bbox.x0 = Math.round((screen_bbox.x0 - screen_offset.x) / scale)
+	bbox.y0 = Math.round((screen_bbox.y0 - screen_offset.y) / scale)
+	bbox.x1 = Math.round((screen_bbox.x1 - screen_offset.x) / scale)
+	bbox.y1 = Math.round((screen_bbox.y1 - screen_offset.y) / scale)
 	return bbox
 end
 
@@ -117,7 +118,7 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		left_center, 				right_center,
 		bottom_left, bottom_center, bottom_right,
 	}
-	local _, nearest = math.tmin(anchors, function(a,b)
+	local _, nearest = Math.tmin(anchors, function(a,b)
 		return a:distance(ges.pos) > b:distance(ges.pos)
 	end)
 	--DEBUG("nearest anchor", nearest)
@@ -183,10 +184,10 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
 		end
 	end
 	self.screen_bbox = {
-		x0 = math.round(upper_left.x),
-		y0 = math.round(upper_left.y),
-		x1 = math.round(bottom_right.x),
-		y1 = math.round(bottom_right.y)
+		x0 = Math.round(upper_left.x),
+		y0 = Math.round(upper_left.y),
+		x1 = Math.round(bottom_right.x),
+		y1 = Math.round(bottom_right.y)
 	}
 
 	UIManager.repaint_all = true

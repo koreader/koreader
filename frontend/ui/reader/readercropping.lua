@@ -11,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local BBoxWidget = require("ui/widget/bboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local Button = require("ui/widget/button")
+local Math = require("optmath")
 local DEBUG = require("dbg")
 
 local PageCropDialog = VerticalGroup:new{
@@ -112,7 +113,7 @@ function ReaderCropping:onConfirmPageCrop()
 	self.ui:handleEvent(Event:new("BBoxUpdate", new_bbox))
 	local pageno = self.view.state.page
 	self.document.bbox[pageno] = new_bbox
-	self.document.bbox[math.oddEven(pageno)] = new_bbox
+	self.document.bbox[Math.oddEven(pageno)] = new_bbox
 	self:exitPageCrop(true)
 	return true
 end
