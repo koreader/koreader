@@ -1,10 +1,18 @@
-require "ui/widget/image"
-require "ui/widget/container"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local ImageWidget = require("ui/widget/imagewidget")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("ui/device")
+local _ = require("gettext")
 
 --[[
 a button widget that shows text or a icon and handles callback when tapped
 --]]
-Button = InputContainer:new{
+local Button = InputContainer:new{
 	text = nil, -- mandatory
 	icon = nil,
 	preselect = false,
@@ -134,3 +142,5 @@ function Button:onTapSelect()
 	end
 	return true
 end
+
+return Button

@@ -1,11 +1,12 @@
-require "ui/widget/container"
-require "ui/widget/image"
-
+local InputContainer = require("ui/widget/container/inputcontainer")
+local ImageWidget = require("ui/widget/imagewidget")
+local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
 
 --[[
 Button with a big icon image! Designed for touch device
 --]]
-IconButton = InputContainer:new{
+local IconButton = InputContainer:new{
 	icon_file = "resources/info-confirm.png",
 	dimen = nil,
 	-- show_parent is used for UIManager:setDirty, so we can trigger repaint
@@ -53,3 +54,4 @@ function IconButton:onSetDimensions(new_dimen)
 	self.dimen = new_dimen
 end
 
+return IconButton

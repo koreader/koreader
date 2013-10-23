@@ -1,6 +1,16 @@
-require "ui/widget/progress"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
+local TextWidget = require("ui/widget/textwidget")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local Font = require("ui/font")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 
-ReaderFooter = InputContainer:new{
+local ReaderFooter = InputContainer:new{
 	pageno = nil,
 	pages = nil,
 	progress_percentage = 0.0,
@@ -24,16 +34,16 @@ function ReaderFooter:init()
 	}
 	local _, text_height = self.progress_text:getSize()
 	local horizontal_group = HorizontalGroup:new{}
-	local bar_containner = RightContainer:new{
+	local bar_container = RightContainer:new{
 		dimen = Geom:new{w = Screen:getWidth()*self.bar_width, h = self.height},
 		self.progress_bar,
 	}
-	local text_containner = CenterContainer:new{
+	local text_container = CenterContainer:new{
 		dimen = Geom:new{w = Screen:getWidth()*self.text_width, h = self.height},
 		self.progress_text,
 	}
-	table.insert(horizontal_group, bar_containner)
-	table.insert(horizontal_group, text_containner)
+	table.insert(horizontal_group, bar_container)
+	table.insert(horizontal_group, text_container)
 	self[1] = BottomContainer:new{
 		dimen = Screen:getSize(),
 		FrameContainer:new{
@@ -63,3 +73,5 @@ function ReaderFooter:onPageUpdate(pageno)
 	self.pages = self.view.document.info.number_of_pages
 	self:updateFooter()
 end
+
+return ReaderFooter

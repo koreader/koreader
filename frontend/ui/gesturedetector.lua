@@ -1,46 +1,7 @@
-require "ui/geometry"
-
-GestureRange = {
-	ges = nil,
-	-- spatial range limits the gesture emitting position
-	range = nil,
-	-- temproal range limits the gesture emitting rate
-	rate = nil,
-	-- span limits of this gesture
-	scale = nil,
-}
-
-function GestureRange:new(o)
-	local o = o or {}
-	setmetatable(o, self)
-	self.__index = self
-	return o
-end
-
-function GestureRange:match(gs)
-	if gs.ges ~= self.ges then
-		return false
-	end
-	if self.range then
-		if not self.range:contains(gs.pos) then
-			return false
-		end
-	end
-	if self.rate then
-		local last_time = self.last_time or TimeVal:new{}
-		if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
-			self.last_time = gs.time
-		else
-			return false
-		end
-	end
-	if self.scale then
-		if self.scale[1] > gs.span or self.scale[2] < gs.span then
-			return false
-		end
-	end
-	return true
-end
+local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
+local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 
 --[[
 Current detectable gestures:
@@ -80,7 +41,9 @@ GestureDetector:feedEvent(tev) will return a detection result when you
 feed a touch release event to it.
 --]]
 
-GestureDetector = {
+local GestureDetector = {
+	-- must be initialized with the Input singleton class
+	input = nil,
 	-- all the time parameters are in us
 	DOUBLE_TAP_INTERVAL = 300 * 1000,
 	TWO_FINGER_TAP_DURATION = 300 * 1000,
@@ -351,9 +314,9 @@ function GestureDetector:handleDoubleTap(tev)
 	-- deadline should be calculated by adding current tap time and the interval
 	local deadline = cur_tap.timev + TimeVal:new{
 		sec = 0,
-		usec = not Input.disable_double_tap and self.DOUBLE_TAP_INTERVAL or 0,
+		usec = not self.input.disable_double_tap and self.DOUBLE_TAP_INTERVAL or 0,
 	}
-	Input:setTimeout(function()
+	self.input:setTimeout(function()
 		DEBUG("in tap timer", self.last_taps[slot] ~= nil)
 		-- double tap will set last_tap to nil so if it is not, then
 		-- user must only tapped once
@@ -379,7 +342,7 @@ function GestureDetector:handleNonTap(tev)
 		local deadline = tev.timev + TimeVal:new{
 			sec = 0, usec = self.HOLD_INTERVAL
 		}
-		Input:setTimeout(function()
+		self.input:setTimeout(function()
 			if self.states[slot] == self.tapState then
 				-- timer set in tapState, so we switch to hold
 				DEBUG("hold gesture detected in slot", slot)
@@ -680,3 +643,5 @@ function GestureDetector:adjustGesCoordinate(ges)
 	end
 	return ges
 end
+
+return GestureDetector

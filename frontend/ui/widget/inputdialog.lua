@@ -1,7 +1,17 @@
-require "ui/widget/container"
-require "ui/widget/inputtext"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local ButtonTable = require("ui/widget/buttontable")
+local TextWidget = require("ui/widget/textwidget")
+local LineWidget = require("ui/widget/linewidget")
+local InputText = require("ui/widget/inputtext")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
 
-InputDialog = InputContainer:new{
+local InputDialog = InputContainer:new{
 	title = "",
 	input = "",
 	input_hint = "",
@@ -15,11 +25,11 @@ InputDialog = InputContainer:new{
 	title_face = Font:getFace("tfont", 22),
 	input_face = Font:getFace("cfont", 20),
 	
-	title_padding = scaleByDPI(5),
-	title_margin = scaleByDPI(2),
-	input_padding = scaleByDPI(10),
-	input_margin = scaleByDPI(10),
-	button_padding = scaleByDPI(14),
+	title_padding = Screen:scaleByDPI(5),
+	title_margin = Screen:scaleByDPI(2),
+	input_padding = Screen:scaleByDPI(10),
+	input_margin = Screen:scaleByDPI(10),
+	button_padding = Screen:scaleByDPI(14),
 }
 
 function InputDialog:init()
@@ -54,7 +64,7 @@ function InputDialog:init()
 		--background = 8,
 		dimen = Geom:new{
 			w = button_table:getSize().w + self.button_padding,
-			h = scaleByDPI(2),
+			h = Screen:scaleByDPI(2),
 		}
 	}
 	
@@ -109,3 +119,5 @@ end
 function InputDialog:onClose()
 	self.input:onCloseKeyboard()
 end
+
+return InputDialog

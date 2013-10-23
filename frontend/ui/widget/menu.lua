@@ -1,16 +1,31 @@
-require "ui/widget/container"
-require "ui/widget/focusmanager"
-require "ui/widget/infomessage"
-require "ui/widget/button"
-require "ui/widget/text"
-require "ui/widget/group"
-require "ui/widget/span"
-require "ui/font"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local FocusManager = require("ui/widget/focusmanager")
+local TextWidget = require("ui/widget/textwidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Button = require("ui/widget/button")
+local GestureRange = require("ui/gesturerange")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local Device = require("ui/device")
+local Screen = require("ui/screen")
+local Input = require("ui/input")
+local UIManager = require("ui/uimanager")
+local RenderText = require("ui/rendertext")
+local InfoMessage = require("ui/widget/infomessage")
+local _ = require("gettext")
 
 --[[
 Widget that displays a shortcut icon for menu item
 --]]
-ItemShortCutIcon = WidgetContainer:new{
+local ItemShortCutIcon = WidgetContainer:new{
 	dimen = Geom:new{ w = 22, h = 22 },
 	key = nil,
 	bordersize = 2,
@@ -60,7 +75,7 @@ end
 NOTICE:
 @menu entry must be provided in order to close the menu
 --]]
-MenuCloseButton = InputContainer:new{
+local MenuCloseButton = InputContainer:new{
 	align = "right",
 	menu = nil,
 	dimen = Geom:new{},
@@ -92,7 +107,7 @@ end
 --[[
 Widget that displays an item for menu
 --]]
-MenuItem = InputContainer:new{
+local MenuItem = InputContainer:new{
 	text = nil,
 	show_parent = nil,
 	detail = nil,
@@ -132,7 +147,7 @@ function MenuItem:init()
 		}
 	end
 
-	w = sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
+	w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
 	if w >= self.content_width then
 		if Device:isTouchDevice() then
 		else
@@ -141,8 +156,8 @@ function MenuItem:init()
 			}
 		end
 		indicator = "  >>"
-		indicator_w = sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
-		self.text = getSubTextByWidth(self.text, self.face,
+		indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
+		self.text = RenderText:getSubTextByWidth(self.text, self.face,
 			self.content_width - indicator_w, true) .. indicator
 	end
 
@@ -211,7 +226,7 @@ end
 --[[
 Widget that displays menu
 --]]
-Menu = FocusManager:new{
+local Menu = FocusManager:new{
 	show_parent = nil,
 	-- face for displaying item contents
 	cface = Font:getFace("cfont", 22),
@@ -611,3 +626,5 @@ function Menu:onSwipe(arg, ges_ev)
 		self:onPrevPage()
 	end
 end
+
+return Menu

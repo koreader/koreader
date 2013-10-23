@@ -1,6 +1,15 @@
-require "ui/widget/notification"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Menu = require("ui/widget/menu")
+local Device = require("ui/device")
+local GestureRange = require("ui/gesturerange")
+local Geom = require("ui/geometry")
+local Screen = require("ui/screen")
+local UIManager = require("ui/uimanager")
+local Event = require("ui/event")
+local _ = require("gettext")
 
-ReaderBookmark = InputContainer:new{
+local ReaderBookmark = InputContainer:new{
 	bm_menu_title = _("Bookmarks"),
 	bookmarks = nil,
 }
@@ -170,3 +179,5 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
 	end
 	self:addBookmark(pn_or_xp)
 end
+
+return ReaderBookmark

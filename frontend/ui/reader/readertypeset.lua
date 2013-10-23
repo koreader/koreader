@@ -1,4 +1,10 @@
-ReaderTypeset = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Event = require("ui/event")
+local DEBUG = require("dbg")
+local _ = require("gettext")
+-- lfs
+
+local ReaderTypeset = InputContainer:new{
 	css_menu_title = _("Set render style"),
 	css = nil,
 	internal_css = true,
@@ -106,4 +112,4 @@ function ReaderTypeset:addToMainMenu(tab_item_table)
 	})
 end
 
-
+return ReaderTypeset

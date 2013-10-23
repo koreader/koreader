@@ -1,4 +1,14 @@
-ReaderZooming = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Device = require("ui/device")
+local Input = require("ui/input")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local Event = require("ui/event")
+local DEBUG = require("dbg")
+local _ = require("gettext")
+
+local ReaderZooming = InputContainer:new{
 	zoom = 1.0,
 	-- default to nil so we can trigger ZoomModeUpdate events on start up
 	zoom_mode = nil,
@@ -262,3 +272,5 @@ function ReaderZooming:addToMainMenu(tab_item_table)
 		})
 	end
 end
+
+return ReaderZooming

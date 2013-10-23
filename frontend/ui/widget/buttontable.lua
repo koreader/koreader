@@ -1,7 +1,12 @@
-require "ui/widget/base"
-require "ui/widget/line"
+local VerticalGroup = require("ui/widget/verticalgroup")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local LineWidget = require("ui/widget/linewidget")
+local Button = require("ui/widget/button")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
 
-ButtonTable = VerticalGroup:new{
+local ButtonTable = VerticalGroup:new{
 	width = Screen:getWidth(),
 	buttons = {
 		{
@@ -9,8 +14,8 @@ ButtonTable = VerticalGroup:new{
 			{text="Cancel", enabled=false, callback=nil},
 		},
 	},
-	sep_width = scaleByDPI(1),
-	padding = scaleByDPI(2),
+	sep_width = Screen:scaleByDPI(1),
+	padding = Screen:scaleByDPI(2),
 	
 	zero_sep = false,
 	button_font_face = "cfont",
@@ -59,7 +64,7 @@ function ButtonTable:init()
 end
 
 function ButtonTable:addHorizontalSep()
-	table.insert(self, VerticalSpan:new{ width = scaleByDPI(2) })
+	table.insert(self, VerticalSpan:new{ width = Screen:scaleByDPI(2) })
 	table.insert(self, LineWidget:new{
 		background = 8,
 		dimen = Geom:new{
@@ -67,5 +72,7 @@ function ButtonTable:addHorizontalSep()
 			h = self.sep_width,
 		}
 	})
-	table.insert(self, VerticalSpan:new{ width = scaleByDPI(2) })
+	table.insert(self, VerticalSpan:new{ width = Screen:scaleByDPI(2) })
 end
+
+return ButtonTable

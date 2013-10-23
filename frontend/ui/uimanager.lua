@@ -1,28 +1,26 @@
-require "ui/geometry"
-require "ui/device"
-require "ui/inputevent"
-require "ui/widget/container"
-require "ui/screen"
-require "debug"
-require "gettext"
+local Device = require("ui/device")
+local Screen = require("ui/screen")
+local Input = require("ui/input")
+local Event = require("ui/event")
+local DEBUG = require("dbg")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
 -- initialize the input handling
 Input:init()
 
-WAVEFORM_MODE_INIT			= 0x0	-- Screen goes to white (clears)
-WAVEFORM_MODE_DU			= 0x1	-- Grey->white/grey->black
-WAVEFORM_MODE_GC16			= 0x2	-- High fidelity (flashing)
-WAVEFORM_MODE_GC4			= WAVEFORM_MODE_GC16 -- For compatibility
-WAVEFORM_MODE_GC16_FAST		= 0x3	-- Medium fidelity
-WAVEFORM_MODE_A2			= 0x4	-- Faster but even lower fidelity
-WAVEFORM_MODE_GL16			= 0x5	-- High fidelity from white transition
-WAVEFORM_MODE_GL16_FAST		= 0x6	-- Medium fidelity from white transition
-WAVEFORM_MODE_AUTO			= 0x101
+local WAVEFORM_MODE_INIT			= 0x0	-- Screen goes to white (clears)
+local WAVEFORM_MODE_DU			= 0x1	-- Grey->white/grey->black
+local WAVEFORM_MODE_GC16			= 0x2	-- High fidelity (flashing)
+local WAVEFORM_MODE_GC4			= WAVEFORM_MODE_GC16 -- For compatibility
+local WAVEFORM_MODE_GC16_FAST		= 0x3	-- Medium fidelity
+local WAVEFORM_MODE_A2			= 0x4	-- Faster but even lower fidelity
+local WAVEFORM_MODE_GL16			= 0x5	-- High fidelity from white transition
+local WAVEFORM_MODE_GL16_FAST		= 0x6	-- Medium fidelity from white transition
+local WAVEFORM_MODE_AUTO			= 0x101
 
 -- there is only one instance of this
-UIManager = {
+local UIManager = {
 	-- change this to set refresh type for next refresh
 	-- defaults to 1 initially and will be set to 1 after each refresh
 	default_refresh_type = 1,
@@ -296,12 +294,12 @@ function UIManager:run()
 				Device:getFrontlight():toggle()
 			elseif (input_event == "Power" and not Device.screen_saver_mode) or
 			input_event == "Suspend" then
-				UIManager:show(InfoMessage:new{
+				self:show(InfoMessage:new{
 					text = _("Standby"),
 					timeout = 1,
 				})
 				Device:prepareSuspend()
-				UIManager:scheduleIn(0.5, function() Device:Suspend() end)
+				self:scheduleIn(0.5, function() Device:Suspend() end)
 			elseif (input_event == "Power" and Device.screen_saver_mode) or
 			input_event == "Resume" then
 				Device:Resume()
@@ -311,3 +309,5 @@ function UIManager:run()
 		end
 	end
 end
+
+return UIManager

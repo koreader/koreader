@@ -1,8 +1,12 @@
-require "ui/widget/container"
-require "ui/widget/inputdialog"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local Event = require("ui/event")
+local DEBUG = require("dbg")
+local _ = require("gettext")
 
-
-ReaderGoto = InputContainer:new{
+local ReaderGoto = InputContainer:new{
 	goto_menu_title = _("Go To"),
 	goto_dialog_title = _("Go to Page or Location"),
 }
@@ -84,3 +88,5 @@ function ReaderGoto:gotoLocation()
 	self:close()
 	return true
 end
+
+return ReaderGoto

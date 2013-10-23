@@ -1,4 +1,11 @@
-Device = {
+local KindleFrontLight = require("ui/device/kindlefrontlight")
+local KoboFrontLight = require("ui/device/kobofrontlight")
+local BaseFrontLight = require("ui/device/basefrontlight")
+local Screen = require("ui/device/screen")
+-- util
+-- lfs
+
+local Device = {
 	screen_saver_mode = false,
 	charging_mode = false,
 	survive_screen_saver = false,
@@ -6,26 +13,10 @@ Device = {
 	model = nil,
 	firmware_rev = nil,
 	frontlight = nil,
+	screen = Screen
 }
 
-BaseFrontLight = {
-	min = 1, max = 10,
-	intensity = nil,
-}
-
-KindleFrontLight = {
-	min = 0, max = 24,
-	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
-	intensity = nil,
-	lipc_handle = nil,
-}
-
-KoboFrontLight = {
-	min = 1, max = 100,
-	intensity = 20,
-	restore_settings = true,
-	fl = nil,
-}
+Screen.device = Device
 
 function Device:getModel()
 	if self.model then return self.model end
@@ -128,7 +119,7 @@ end
 function Device:intoScreenSaver()
 	--os.execute("echo 'screensaver in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
-		Screen:saveCurrentBB()
+		self.screen:saveCurrentBB()
 		--UIManager:show(InfoMessage:new{
 			--text = "Going into screensaver... ",
 			--timeout = 2,
@@ -146,8 +137,8 @@ function Device:outofScreenSaver()
 		-- Blitbuffer.
 		util.usleep(1500000)
 		--os.execute("killall -stop cvm")
-		Screen:restoreFromSavedBB()
-		Screen:refresh(0)
+		self.screen:restoreFromSavedBB()
+		self.screen:refresh(0)
 		self.survive_screen_saver = true
 	end
 	self.screen_saver_mode = false
@@ -158,7 +149,7 @@ function Device:prepareSuspend() -- currently only used for kobo devices
 	if fl ~= nil then
 		fl.fl:sleep()
 	end
-	Screen:refresh(0)
+	self.screen:refresh(0)
 	self.screen_saver_mode = true
 end
 
@@ -168,7 +159,7 @@ end
 
 function Device:Resume() -- currently only used for kobo devices
 	os.execute("echo 0 > /sys/power/state-extended")
-	Screen:refresh(0)
+	self.screen:refresh(0)
 	local fl = self:getFrontlight()
 	if fl ~= nil then
 		fl.fl:restore()
@@ -179,7 +170,7 @@ end
 function Device:usbPlugIn()
 	--os.execute("echo 'usb in' >> /mnt/us/event_test.txt")
 	if self.charging_mode == false and self.screen_saver_mode == false then
-		Screen:saveCurrentBB()
+		self.screen:saveCurrentBB()
 		--UIManager:show(InfoMessage:new{
 			--text = "Going into USB mode... ",
 			--timeout = 2,
@@ -195,8 +186,8 @@ function Device:usbPlugOut()
 	if self.charging_mode == true and self.screen_saver_mode == false then
 		--util.usleep(1500000)
 		--os.execute("killall -stop cvm")
-		Screen:restoreFromSavedBB()
-		Screen:refresh(0)
+		self.screen:restoreFromSavedBB()
+		self.screen:refresh(0)
 	end
 
 	--@TODO signal filemanager for file changes  13.06 2012 (houqp)
@@ -219,58 +210,4 @@ function Device:getFrontlight()
 	return self.frontlight
 end
 
-function BaseFrontLight:init() end
-function BaseFrontLight:toggle() end
-function BaseFrontLight:setIntensityHW() end
-
-function BaseFrontLight:setIntensity(intensity)
-	intensity = intensity < self.min and self.min or intensity
-	intensity = intensity > self.max and self.max or intensity
-	self.intensity = intensity
-	self:setIntensityHW()
-end
-
-function KindleFrontLight:init()
-	require "liblipclua"
-	self.lipc_handle = lipc.init("com.github.koreader")
-	if self.lipc_handle then
-		self.intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-	end
-end
-
-function KindleFrontLight:toggle()
-	local f =  io.open(self.kpw_fl, "r")
-	local sysint = tonumber(f:read("*all"):match("%d+"))
-	f:close()
-	if sysint == 0 then
-		self:setIntensity(self.intensity)
-	else
-		os.execute("echo -n 0 > " .. self.kpw_fl)
-	end
-end
-
-KindleFrontLight.setIntensity = BaseFrontLight.setIntensity
-
-function KindleFrontLight:setIntensityHW()
-	if self.lipc_handle ~= nil then
-		self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.intensity)
-	end
-end
-
-function KoboFrontLight:init()
-	self.fl = kobolight.open()
-end
-
-function KoboFrontLight:toggle()
-	if self.fl ~= nil then
-		self.fl:toggle()
-	end
-end
-
-KoboFrontLight.setIntensity = BaseFrontLight.setIntensity
-
-function KoboFrontLight:setIntensityHW()
-	if self.fl ~= nil then
-		self.fl:setBrightness(self.intensity)
-	end
-end
+return Device

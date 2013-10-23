@@ -1,11 +1,25 @@
-require "ui/widget/container"
-require "ui/widget/focusmanager"
-require "ui/widget/button"
+local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/centercontainer")
+local FocusManager = require("ui/widget/focusmanager")
+local Button = require("ui/widget/button")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local ImageWidget = require("ui/widget/imagewidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local Font = require("ui/font")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local DEBUG = require("dbg")
+local _ = require("gettext")
+
+-- screen
 
 --[[
 Widget that shows a message and OK/Cancel buttons
 ]]
-ConfirmBox = FocusManager:new{
+local ConfirmBox = FocusManager:new{
 	text = _("no text"),
 	width = nil,
 	ok_text = _("OK"),
@@ -88,3 +102,4 @@ function ConfirmBox:onSelect()
 	return true
 end
 
+return ConfirmBox

@@ -1,5 +1,7 @@
+local Document = require("document/document")
+-- DrawContext
 
-PicDocument = Document:new{
+local PicDocument = Document:new{
 	_document = false,
 	dc_null = DrawContext.new(),
 }
@@ -21,6 +23,9 @@ function PicDocument:readMetadata()
 	self.info.number_of_pages = 1
 end
 
+function PicDocument:register(registry)
+	registry:addProvider("jpeg", "application/jpeg", self)
+	registry:addProvider("jpg", "application/jpeg", self)
+end
 
-DocumentRegistry:addProvider("jpeg", "application/jpeg", PicDocument)
-DocumentRegistry:addProvider("jpg", "application/jpeg", PicDocument)
+return PicDocument

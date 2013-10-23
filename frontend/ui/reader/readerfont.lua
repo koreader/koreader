@@ -1,4 +1,15 @@
-ReaderFont = InputContainer:new{
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Menu = require("ui/widget/menu")
+local Notification = require("ui/widget/notification")
+local Device = require("ui/device")
+local Screen = require("ui/screen")
+local Input = require("ui/input")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+
+local ReaderFont = InputContainer:new{
 	font_face = nil,
 	font_size = nil,
 	line_space_percent = nil,
@@ -231,3 +242,5 @@ function ReaderFont:addToMainMenu(tab_item_table)
 		sub_item_table = self.face_table,
 	})
 end
+
+return ReaderFont

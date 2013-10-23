@@ -3,14 +3,16 @@
 require "defaults"
 package.path = "./frontend/?.lua;./?.lua"
 package.cpath = "/usr/lib/lua/?.so"
-require "ui/uimanager"
-require "ui/widget/infomessage"
-require "ui/readerui"
-require "document/document"
-require "settings"
-require "dbg"
-require "gettext"
-require "apps/filemanager/fm"
+local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
+local ReaderUI = require("ui/readerui")
+local DocumentRegistry = require("document/documentregistry")
+local DocSettings = require("docsettings")
+local Dbg = require("dbg")
+local FileManager = require("apps/filemanager/filemanager")
+local Device = require("ui/device")
+local Screen = require("ui/screen")
+local _ = require("gettext")
 
 Profiler = nil
 
@@ -75,10 +77,8 @@ function showHomePage(path)
 	})
 end
 
-
-
 -- option parsing:
-longopts = {
+local longopts = {
 	debug = "d",
 	profile = "p",
 	help = "h",

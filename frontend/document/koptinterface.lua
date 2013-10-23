@@ -1,11 +1,13 @@
-require "dbg"
-require "cache"
-require "ui/geometry"
-require "ui/device"
-require "ui/screen"
-require "ui/reader/readerconfig"
+local Document = require("document/document")
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local TileCacheItem = require("document/tilecacheitem")
+local DEBUG = require("dbg")
+-- TBD: KOPTContext
 
-KoptInterface = {
+local KoptInterface = {
 	ocrengine = "ocrengine",
 	tessocr_data = "data",
 	ocr_lang = "eng",
@@ -15,7 +17,7 @@ KoptInterface = {
 	screen_dpi = Screen:getDPI(),
 }
 
-ContextCacheItem = CacheItem:new{}
+local ContextCacheItem = CacheItem:new{}
 
 function ContextCacheItem:onFree()
 	if self.kctx.free then
@@ -24,7 +26,7 @@ function ContextCacheItem:onFree()
 	end
 end
 
-OCREngine = CacheItem:new{}
+local OCREngine = CacheItem:new{}
 
 function OCREngine:onFree()
 	if self.ocrengine.freeOCR then
@@ -56,6 +58,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 		lang == "jpn" or lang == "kor" then
 		kc:setCJKChar()
 	end
+	DEBUG("configurable", doc.configurable)
 	kc:setLanguage(lang)
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
@@ -74,7 +77,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
 	if bbox then kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1) end
-	if Dbg.is_on then kc:setDebug() end
+	if DEBUG.is_on then kc:setDebug() end
 	return kc
 end
 
@@ -811,3 +814,5 @@ function KoptInterface:logMemoryUsage(pageno)
 		log_file:close()
 	end
 end
+
+return KoptInterface

@@ -1,5 +1,7 @@
-require "ui/screen"
-require "ui/data/strings"
+local Screen = require("ui/screen")
+local S = require("ui/data/strings")
+
+local _ = require("gettext")
 
 -- add multiply operator to Aa dict
 local Aa = setmetatable({"Aa"}, {
@@ -12,15 +14,15 @@ local Aa = setmetatable({"Aa"}, {
 	end
 })
 
-CreOptions = {
+local CreOptions = {
 	prefix = 'copt',
 	{
 		icon = "resources/icons/appbar.transform.rotate.right.large.png",
 		options = {
 			{
 				name = "screen_mode",
-				name_text = SCREEN_MODE_STR,
-				toggle = {PORTRAIT_STR, LANDSCAPE_STR},
+				name_text = S.SCREEN_MODE,
+				toggle = {S.PORTRAIT, S.LANDSCAPE},
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
@@ -33,16 +35,16 @@ CreOptions = {
 		options = {
 			{
 				name = "line_spacing",
-				name_text = LINE_SPACING_STR,
-				item_text = {DECREASE_STR, INCREASE_STR},
+				name_text = S.LINE_SPACING,
+				item_text = {S.DECREASE, S.INCREASE},
 				args = {"decrease", "increase"},
 				default_arg = nil,
 				event = "ChangeLineSpace",
 			},
 			{
 				name = "page_margins",
-				name_text = PAGE_MARGIN_STR,
-				toggle = {SMALL_STR, MEDIUM_STR, LARGE_STR},
+				name_text = S.PAGE_MARGIN,
+				toggle = {S.SMALL, S.MEDIUM, S.LARGE},
 				values = {
 					{6, 5, 2, 5},
 					{15, 10, 10, 10},
@@ -79,8 +81,8 @@ CreOptions = {
 		options = {
 			{
 				name = "font_weight",
-				name_text = FONT_WEIGHT_STR,
-				item_text = {TOGGLE_BOLD_STR},
+				name_text = S.FONT_WEIGHT,
+				item_text = {S.TOGGLE_BOLD},
 				-- args is indeed not used, we put here just to keep the
 				-- UI happy.
 				args = {1},
@@ -89,8 +91,8 @@ CreOptions = {
 			},
 			{
 				name = "font_gamma",
-				name_text = GAMMA_STR,
-				item_text = {DECREASE_STR, INCREASE_STR},
+				name_text = S.GAMMA,
+				item_text = {S.DECREASE, S.INCREASE},
 				args = {"decrease", "increase"},
 				default_arg = nil,
 				event = "ChangeFontGamma",
@@ -102,8 +104,8 @@ CreOptions = {
 		options = {
 			{
 				name = "view_mode",
-				name_text = VIEW_MODE_STR,
-				toggle = {VIEW_SCROLL_STR, VIEW_PAGE_STR},
+				name_text = S.VIEW_MODE,
+				toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
 				values = {1, 0},
 				default_value = 0,
 				args = {"scroll", "page"},
@@ -112,8 +114,8 @@ CreOptions = {
 			},
 			{
 				name = "embedded_css",
-				name_text = EMBEDDED_STYLE_STR,
-				toggle = {ON_STR, OFF_STR},
+				name_text = S.EMBEDDED_STYLE,
+				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = 1,
 				args = {true, false},
@@ -123,3 +125,5 @@ CreOptions = {
 		},
 	},
 }
+
+return CreOptions

@@ -1,9 +1,19 @@
-require "ui/widget/container"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local Device = require("ui/device")
+local UIManager = require("ui/uimanager")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Input = require("ui/input")
+local Screen = require("ui/screen")
 
 --[[
 Widget that displays a tiny notification on top of screen
 --]]
-Notification = InputContainer:new{
+local Notification = InputContainer:new{
 	face = Font:getFace("infofont", 20),
 	text = "Null Message",
 	timeout = nil,
@@ -50,3 +60,4 @@ function Notification:onAnyKeyPressed()
 	return true
 end
 
+return Notification

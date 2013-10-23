@@ -1,3 +1,5 @@
+local DEBUG = require("dbg")
+
 --[[
 2D Geometry utilities
 
@@ -9,7 +11,7 @@ some behaviour is defined for dimensions { w = ..., h = ... }
 just use it on simple tables that have x, y and/or w, h
 or define your own types using this as a metatable
 ]]--
-Geom = {
+local Geom = {
 	x = 0,
 	y = 0,
 	w = 0,
@@ -305,3 +307,5 @@ function Geom:center()
 		w = 0, h = 0,
 	}
 end
+
+return Geom

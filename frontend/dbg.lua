@@ -1,9 +1,31 @@
-require "settings" -- for dump method
+local DocSettings = require("docsettings") -- for dump method
 
-Dbg = {
+local Dbg = {
 	is_on = false,
 	ev_log = nil,
 }
+
+local Dbg_mt = {}
+
+local function LvDEBUG(lv, ...)
+	local line = ""
+	for i,v in ipairs({...}) do
+		if type(v) == "table" then
+			line = line .. " " .. DocSettings:dump(v, lv)
+		else
+			line = line .. " " .. tostring(v)
+		end
+	end
+	print("#"..line)
+end
+
+local function DEBUGBT()
+	DEBUG(debug.traceback())
+end
+
+function Dbg_mt.__call(dbg, ...)
+	LvDEBUG(math.huge, ...)
+end
 
 function Dbg:turnOn()
 	self.is_on = true
@@ -20,22 +42,6 @@ function Dbg:logEv(ev)
 	self.ev_log:flush()
 end
 
-function DEBUG(...)
-	LvDEBUG(math.huge, ...)
-end
+setmetatable(Dbg, Dbg_mt)
 
-function LvDEBUG(lv, ...)
-	local line = ""
-	for i,v in ipairs({...}) do
-		if type(v) == "table" then
-			line = line .. " " .. dump(v, lv)
-		else
-			line = line .. " " .. tostring(v)
-		end
-	end
-	print("#"..line)
-end
-
-function DEBUGBT()
-	DEBUG(debug.traceback())
-end
+return Dbg

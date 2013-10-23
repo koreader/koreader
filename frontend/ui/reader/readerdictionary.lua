@@ -1,11 +1,11 @@
-require "ui/device"
-require "ui/widget/dict"
+local EventListener = require("ui/widget/eventlistener")
+local UIManager = require("ui/uimanager")
+local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Screen = require("ui/screen")
+local JSON = require("JSON")
+local DEBUG = require("dbg")
 
-ReaderDictionary = EventListener:new{}
-
-function ReaderDictionary:init()
-	JSON = require("JSON")
-end
+local ReaderDictionary = EventListener:new{}
 
 function ReaderDictionary:onLookupWord(word)
 	self:stardictLookup(word)
@@ -39,7 +39,7 @@ function ReaderDictionary:showDict(results)
 			dialog = self.dialog,
 			results = results,
 			dictionary = self.default_dictionary,
-			width = Screen:getWidth() - scaleByDPI(120),
+			width = Screen:getWidth() - Screen:scaleByDPI(120),
 			height = Screen:getHeight()*0.43,
 		})
 	end
@@ -57,3 +57,5 @@ end
 function ReaderDictionary:onCloseDocument()
 	self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
 end
+
+return ReaderDictionary

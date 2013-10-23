@@ -1,26 +1,35 @@
-require "ui/reader/readerview"
-require "ui/reader/readerzooming"
-require "ui/reader/readerpanning"
-require "ui/reader/readerrotation"
-require "ui/reader/readerpaging"
-require "ui/reader/readerrolling"
-require "ui/reader/readertoc"
-require "ui/reader/readerbookmark"
-require "ui/reader/readerfont"
-require "ui/reader/readertypeset"
-require "ui/reader/readermenu"
-require "ui/reader/readergoto"
-require "ui/reader/readerconfig"
-require "ui/reader/readercropping"
-require "ui/reader/readerkopt"
-require "ui/reader/readercopt"
-require "ui/reader/readerhinting"
-require "ui/reader/readerhighlight"
-require "ui/reader/readerscreenshot"
-require "ui/reader/readerfrontlight"
-require "ui/reader/readerdictionary"
-require "ui/reader/readerhyphenation"
-require "ui/reader/readeractivityindicator"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Geom = require("ui/geometry")
+local Device = require("ui/device")
+local DocSettings = require("docsettings")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
+local _ = require("gettext")
+
+local ReaderView = require("ui/reader/readerview")
+local ReaderZooming = require("ui/reader/readerzooming")
+local ReaderPanning = require("ui/reader/readerpanning")
+local ReaderRotation = require("ui/reader/readerrotation")
+local ReaderPaging = require("ui/reader/readerpaging")
+local ReaderRolling = require("ui/reader/readerrolling")
+local ReaderToc = require("ui/reader/readertoc")
+local ReaderBookmark = require("ui/reader/readerbookmark")
+local ReaderFont = require("ui/reader/readerfont")
+local ReaderTypeset = require("ui/reader/readertypeset")
+local ReaderMenu = require("ui/reader/readermenu")
+local ReaderGoto = require("ui/reader/readergoto")
+local ReaderConfig = require("ui/reader/readerconfig")
+local ReaderCropping = require("ui/reader/readercropping")
+local ReaderKoptListener = require("ui/reader/readerkoptlistener")
+local ReaderCoptListener = require("ui/reader/readercoptlistener")
+local ReaderHinting = require("ui/reader/readerhinting")
+local ReaderHighlight = require("ui/reader/readerhighlight")
+local ReaderScreenshot = require("ui/reader/readerscreenshot")
+local ReaderFrontLight = require("ui/reader/readerfrontlight")
+local ReaderDictionary = require("ui/reader/readerdictionary")
+local ReaderHyphenation = require("ui/reader/readerhyphenation")
+local ReaderActivityIndicator = require("ui/reader/readeractivityindicator")
 
 --[[
 This is an abstraction for a reader interface
@@ -28,7 +37,7 @@ This is an abstraction for a reader interface
 it works using data gathered from a document interface
 ]]--
 
-ReaderUI = InputContainer:new{
+local ReaderUI = InputContainer:new{
 	key_events = {
 		Close = { { "Home" },
 			doc = _("close document"), event = "Close" },
@@ -278,3 +287,4 @@ function ReaderUI:onClose()
 	return true
 end
 
+return ReaderUI

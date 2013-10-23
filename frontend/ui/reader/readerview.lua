@@ -1,9 +1,14 @@
-require "ui/widget/group"
-require "ui/reader/readerflip"
-require "ui/reader/readerfooter"
-require "ui/reader/readerdogear"
+local OverlapGroup = require("ui/widget/overlapgroup")
+local Screen = require("ui/screen")
+local ReaderFlipping = require("ui/reader/readerflipping")
+local ReaderFooter = require("ui/reader/readerfooter")
+local ReaderDogear = require("ui/reader/readerdogear")
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
 
-ReaderView = OverlapGroup:new{
+local ReaderView = OverlapGroup:new{
 	document = nil,
 
 	-- single page state
@@ -32,8 +37,8 @@ ReaderView = OverlapGroup:new{
 	page_states = {},
 	scroll_mode = "vertical",
 	page_gap = {
-		width = scaleByDPI(8),
-		height = scaleByDPI(8),
+		width = Screen:scaleByDPI(8),
+		height = Screen:scaleByDPI(8),
 		color = 8,
 	},
 	-- DjVu page rendering mode (used in djvu.c:drawPage())
@@ -571,3 +576,5 @@ function ReaderView:onCloseDocument()
 	self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
 	self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)	
 end
+
+return ReaderView

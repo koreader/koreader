@@ -1,6 +1,15 @@
-require "ui/reader/readerpanning"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local Geom = require("ui/geometry")
+local Input = require("ui/input")
+local Event = require("ui/event")
+local GestureRange = require("ui/gesturerange")
+local ReaderPanning = require("ui/reader/readerpanning")
+local DEBUG = require("dbg")
+local _ = require("gettext")
 
-ReaderRolling = InputContainer:new{
+local ReaderRolling = InputContainer:new{
 	old_doc_height = nil,
 	old_page = nil,
 	current_pos = 0,
@@ -329,3 +338,5 @@ function ReaderRolling:onGotoPage(number)
 	self:gotoPage(number)
 	return true
 end
+
+return ReaderRolling

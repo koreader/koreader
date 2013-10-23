@@ -1,12 +1,21 @@
-require "math"
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local Input = require("ui/input")
+local GestureRange = require("ui/gesturerange")
+local Device = require("ui/device")
+local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local Math = require("optmath")
+local DEBUG = require("dbg")
 
-ReaderPaging = InputContainer:new{
+local ReaderPaging = InputContainer:new{
 	current_page = 0,
 	number_of_pages = 0,
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = DSHOWOVERLAP,
-	overlap = scaleByDPI(20),
+	overlap = Screen:scaleByDPI(20),
 	flip_steps = {0,1,2,5,10,20,50,100}
 }
 
@@ -569,10 +578,10 @@ function ReaderPaging:onGotoPageRel(diff)
 	-- adjust offset to help with page turn decision
 	-- we dont take overlap into account here yet, otherwise new_va will
 	-- always intersect with page_area
-	x_pan_off = math.roundAwayFromZero(x_pan_off)
-	y_pan_off = math.roundAwayFromZero(y_pan_off)
-	new_va.x = math.roundAwayFromZero(self.visible_area.x+x_pan_off)
-	new_va.y = math.roundAwayFromZero(self.visible_area.y+y_pan_off)
+	x_pan_off = Math.roundAwayFromZero(x_pan_off)
+	y_pan_off = Math.roundAwayFromZero(y_pan_off)
+	new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
+	new_va.y = Math.roundAwayFromZero(self.visible_area.y+y_pan_off)
 
 	if new_va:notIntersectWith(self.page_area) then
 		-- view area out of page area, do a page turn
@@ -604,8 +613,8 @@ function ReaderPaging:onGotoPageRel(diff)
 				y_pan_off = y_pan_off + self.overlap
 			end
 			-- we have to calculate again to count into overlap
-			new_va.x = math.roundAwayFromZero(self.visible_area.x+x_pan_off)
-			new_va.y = math.roundAwayFromZero(self.visible_area.y+y_pan_off)
+			new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
+			new_va.y = Math.roundAwayFromZero(self.visible_area.y+y_pan_off)
 		end
 		-- fit new view area into page area
 		new_va:offsetWithin(self.page_area, 0, 0)
@@ -676,3 +685,5 @@ function ReaderPaging:onGotoPage(number)
 	self:gotoPage(number)
 	return true
 end
+
+return ReaderPaging
