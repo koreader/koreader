@@ -3,6 +3,7 @@ local GestureDetector = require("ui/gesturedetector")
 local Event = require("ui/event")
 local TimeVal = require("ui/timeval")
 local Screen = require("ui/screen")
+local Math = require("optmath")
 local Dbg = require("dbg")
 local DEBUG = require("dbg")
 
@@ -304,9 +305,9 @@ function Input:init()
 					--@TODO handle coordinates properly after
 					--screen rotate.    (houqp)
 					if ev.code == ABS_MT_POSITION_X then
-						ev.value = math.round(ev.value * (600/4095))
+						ev.value = Math.round(ev.value * (600/4095))
 					elseif ev.code == ABS_MT_POSITION_Y then
-						ev.value = math.round(ev.value * (800/4095))
+						ev.value = Math.round(ev.value * (800/4095))
 					end
 				end
 				return ev

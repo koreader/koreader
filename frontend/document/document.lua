@@ -3,6 +3,7 @@ local CacheItem = require("cacheitem")
 local TileCacheItem = require("document/tilecacheitem")
 local Geom = require("ui/geometry")
 local Configurable = require("ui/reader/configurable")
+local Math = require("optmath")
 local DEBUG = require("dbg")
 
 --[[
@@ -118,7 +119,7 @@ function Document:getPageBBox(pageno)
 		--DEBUG("bbox from", pageno)
 		return bbox
 	else
-		local oddEven = math.oddEven(pageno)
+		local oddEven = Math.oddEven(pageno)
 		bbox = self.bbox[oddEven] -- odd/even
 	end
 	if bbox ~= nil then -- last used up to this page

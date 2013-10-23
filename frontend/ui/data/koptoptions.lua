@@ -206,7 +206,7 @@ local KoptOptions = {
 				name_text = S.AUTO_STRAIGHTEN,
 				toggle = {S.ZERO_DEG, S.FIVE_DEG, S.TEN_DEG},
 				values = {0, 5, 10},
-				default_value = S.DKOPTREADER_CONFIG_AUTOAIGHTEN,
+				default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
 				show = false,
 			},
 			{

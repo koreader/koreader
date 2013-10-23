@@ -4,7 +4,7 @@ local CacheItem = require("cacheitem")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local TileCacheItem = require("document/tilecacheitem")
-local Dbg = require("dbg")
+local DEBUG = require("dbg")
 -- TBD: KOPTContext
 
 local KoptInterface = {
@@ -58,6 +58,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 		lang == "jpn" or lang == "kor" then
 		kc:setCJKChar()
 	end
+	DEBUG("configurable", doc.configurable)
 	kc:setLanguage(lang)
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
@@ -76,7 +77,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
 	if bbox then kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1) end
-	if Dbg.is_on then kc:setDebug() end
+	if DEBUG.is_on then kc:setDebug() end
 	return kc
 end
 

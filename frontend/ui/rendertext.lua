@@ -1,3 +1,5 @@
+local Font = require("ui/font")
+local Screen = require("ui/screen")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local DEBUG = require("dbg")
@@ -72,7 +74,7 @@ function RenderText:getGlyph(face, charcode, bgcolor, fgcolor)
 	if face.ftface:checkGlyph(charcode) == 0 then
 		for index, font in pairs(Font.fallbacks) do
 			-- rescale face size by DPI since it will be scaled in getFace again
-			local fb_face = Font:getFace(font, rescaleByDPI(face.size))
+			local fb_face = Font:getFace(font, Screen:rescaleByDPI(face.size))
 			if fb_face.ftface:checkGlyph(charcode) ~= 0 then
 				rendered_glyph = fb_face.ftface:renderGlyph(charcode, bgcolor, fgcolor)
 				DEBUG("fallback to font", font)
