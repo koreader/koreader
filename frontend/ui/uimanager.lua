@@ -3,6 +3,7 @@ local Screen = require("ui/screen")
 local Input = require("ui/input")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
