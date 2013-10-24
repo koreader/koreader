@@ -294,6 +294,7 @@ function UIManager:run()
 				Device:getFrontlight():toggle()
 			elseif (input_event == "Power" and not Device.screen_saver_mode) or
 			input_event == "Suspend" then
+				local InfoMessage = require("ui/widget/infomessage")
 				self:show(InfoMessage:new{
 					text = _("Standby"),
 					timeout = 1,
