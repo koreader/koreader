@@ -16,7 +16,7 @@ local ButtonTable = VerticalGroup:new{
 	},
 	sep_width = Screen:scaleByDPI(1),
 	padding = Screen:scaleByDPI(2),
-	
+
 	zero_sep = false,
 	button_font_face = "cfont",
 	button_font_size = 20,

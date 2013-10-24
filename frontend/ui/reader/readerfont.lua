@@ -7,6 +7,7 @@ local Screen = require("ui/screen")
 local Input = require("ui/input")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
 local _ = require("gettext")
 
 local ReaderFont = InputContainer:new{
@@ -159,7 +160,7 @@ function ReaderFont:onSetFontSize(new_size)
 		text = _("Set font size to ")..self.font_size,
 		timeout = 1,
 	})
-	self.ui.document:setFontSize(scaleByDPI(new_size))
+	self.ui.document:setFontSize(Screen:scaleByDPI(new_size))
 	self.ui:handleEvent(Event:new("UpdatePos"))
 
 	return true
