@@ -58,7 +58,6 @@ function KoptInterface:createContext(doc, pageno, bbox)
 		lang == "jpn" or lang == "kor" then
 		kc:setCJKChar()
 	end
-	DEBUG("configurable", doc.configurable)
 	kc:setLanguage(lang)
 	kc:setTrim(doc.configurable.trim_page)
 	kc:setWrap(doc.configurable.text_wrap)
