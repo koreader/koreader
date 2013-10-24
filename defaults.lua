@@ -48,13 +48,13 @@ DKOPTREADER_CONFIG_PAGE_MARGIN = 0.10	-- range from 0.0 to 1.0
 DKOPTREADER_CONFIG_LINE_SPACING = 1.2	-- range from 0.5 to 2.0
 DKOPTREADER_CONFIG_RENDER_QUALITY = 1.0	-- range from 0.5 to 2.0
 DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0	-- range from 0 to 10
-DKOPTREADER_CONFIG_JUSTIFICATION = -1	-- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
+DKOPTREADER_CONFIG_JUSTIFICATION = 3	-- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
 DKOPTREADER_CONFIG_MAX_COLUMNS = 2		-- range from 1 to 4
 DKOPTREADER_CONFIG_CONTRAST = 1.0		-- range from 0.2 to 2.0
 
 -- word spacing for reflow
-DKOPTREADER_CONFIG_WORD_SAPCINGS = {0.05, 0.15, 0.375}  -- range from 0.05 to 0.5
-DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = 0.15			-- range from 0.05 to 0.5
+DKOPTREADER_CONFIG_WORD_SAPCINGS = {0.05, -1, 0.375}    -- range from 0.05 to 0.5
+DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = -1			-- range from 0.05 to 0.5
 -- document languages for OCR
 DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese"}
 DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}	-- language code, make sure you have corresponding training data
