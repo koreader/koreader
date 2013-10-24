@@ -338,9 +338,8 @@ function KoptInterface:getTextBoxes(doc, pageno)
 	else
 		if doc.configurable.text_wrap == 1 then
 			return self:getNativeTextBoxes(doc, pageno)
-			--return self:getTextBoxesFromScratch(doc, pageno)
 		else
-			return self:getTextBoxesFromScratch(doc, pageno)
+			return self:getNativeTextBoxesFromScratch(doc, pageno)
 		end
 	end
 end
@@ -394,11 +393,38 @@ function KoptInterface:getNativeTextBoxes(doc, pageno)
 end
 
 --[[
+get text boxes in reflowed page via optical method, 
+i.e. OCR pre-processing in Tesseract and Leptonica.
+--]]
+function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
+	local bbox = doc:getPageBBox(pageno)
+	local context_hash = self:getContextHash(doc, pageno, bbox)
+	local hash = "scratchrfpgboxes|"..context_hash
+	local cached = Cache:check(hash)
+	if not cached then
+		local kctx_hash = "kctx|"..context_hash
+		local cached = Cache:check(kctx_hash)
+		if cached then
+			local reflowed_kc = self:waitForContext(cached.kctx)
+			local fullwidth, fullheight = reflowed_kc:getPageDim()
+			local kc = self:createContext(doc, pageno)
+			kc:copyDestBMP(reflowed_kc)
+			local boxes = kc:getNativeWordBoxes(0, 0, fullwidth, fullheight)
+			Cache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes })
+			kc:free()
+			return boxes
+		end
+	else
+		return cached.scratchrfpgboxes
+	end
+end
+
+--[[
 get text boxes in native page via optical method, 
 i.e. OCR pre-processing in Tesseract and Leptonica.
 --]]
-function KoptInterface:getTextBoxesFromScratch(doc, pageno)
-	local hash = "pgboxes|"..doc.file.."|"..pageno
+function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
+	local hash = "scratchnativepgboxes|"..doc.file.."|"..pageno
 	local cached = Cache:check(hash)
 	if not cached then
 		local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -412,12 +438,12 @@ function KoptInterface:getTextBoxesFromScratch(doc, pageno)
 		local page = doc._document:openPage(pageno)
 		page:getPagePix(kc)
 		local boxes = kc:getNativeWordBoxes(0, 0, page_size.w, page_size.h)
-		Cache:insert(hash, CacheItem:new{ pgboxes = boxes })
+		Cache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes })
 		page:close()
 		kc:free()
 		return boxes
 	else
-		return cached.pgboxes
+		return cached.scratchnativepgboxes
 	end
 end
 
@@ -643,7 +669,7 @@ get word and word box from position in reflowed page
 ]]--
 function KoptInterface:getWordFromReflowPosition(doc, boxes, pos)
 	local pageno = pos.page
-	local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
+	local reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
 	local reflowed_word_box = self:getWordFromBoxes(reflowed_page_boxes, pos)
 	local reflowed_pos = reflowed_word_box.box:center()
 	local native_pos = self:reflowToNativePosTransform(doc, pageno, reflowed_pos)
