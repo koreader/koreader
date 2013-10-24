@@ -21,6 +21,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local MenuBarItem = InputContainer:new{}
