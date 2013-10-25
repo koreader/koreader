@@ -77,7 +77,7 @@ function RenderText:getGlyph(face, charcode, bgcolor, fgcolor)
 			local fb_face = Font:getFace(font, Screen:rescaleByDPI(face.size))
 			if fb_face.ftface:checkGlyph(charcode) ~= 0 then
 				rendered_glyph = fb_face.ftface:renderGlyph(charcode, bgcolor, fgcolor)
-				DEBUG("fallback to font", font)
+				--DEBUG("fallback to font", font)
 				break
 			end
 		end
