@@ -12,6 +12,7 @@ local DEBUG = require("dbg")
 local ReaderPaging = InputContainer:new{
 	current_page = 0,
 	number_of_pages = 0,
+	last_pan_relative_y = 0,
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = DSHOWOVERLAP,
@@ -244,10 +245,9 @@ end
 function ReaderPaging:onPan(arg, ges)
 	if self.flipping_mode then
 		self:flipping(self.flipping_page, ges)
-	elseif ges.direction == "north" then
-		self:onPanningRel(ges.distance)
-	elseif ges.direction == "south" then
-		self:onPanningRel(-ges.distance)
+	elseif ges.direction == "north" or ges.direction == "south" then
+		self:onPanningRel(self.last_pan_relative_y - ges.relative.y)
+		self.last_pan_relative_y = ges.relative.y
 	end
 	return true
 end
@@ -256,6 +256,7 @@ function ReaderPaging:onPanRelease(arg, ges)
 	if self.flipping_mode then
 		self:updateFlippingPage(self.current_page)
 	else
+		self.last_pan_relative_y = 0
 		UIManager.full_refresh = true
 	end
 end

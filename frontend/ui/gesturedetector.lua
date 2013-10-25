@@ -433,14 +433,14 @@ function GestureDetector:handlePan(tev)
 			distance = pan_distance,
 			time = tev.timev,
 		}
-		pan_ev.relative.x = tev.x - self.last_tevs[slot].x
-		pan_ev.relative.y = tev.y - self.last_tevs[slot].y
+		pan_ev.relative.x = tev.x - self.first_tevs[slot].x
+		pan_ev.relative.y = tev.y - self.first_tevs[slot].y
 		pan_ev.pos = Geom:new{
 			x = self.last_tevs[slot].x,
 			y = self.last_tevs[slot].y,
 			w = 0, h = 0,
 		}
-		--DEBUG(pan_ev.ges, pan_ev.pos, pan_ev.direction, pan_ev.distance, "detected")
+		--DEBUG(pan_ev.ges, pan_ev, "detected")
 		return pan_ev
 	end
 end
@@ -597,6 +597,9 @@ function GestureDetector:adjustGesCoordinate(ges)
 			elseif ges.direction == "southwest" then
 				ges.direction = "northwest"
 			end
+			if ges.relative then
+				ges.relative.x, ges.relative.y = -ges.relative.y, ges.relative.x
+			end
 		elseif ges.ges == "pinch" or ges.ges == "spread"
 			or ges.ges == "inward_pan"
 			or ges.ges == "outward_pan" then
@@ -630,6 +633,9 @@ function GestureDetector:adjustGesCoordinate(ges)
 				ges.direction = "northeast"
 			elseif ges.direction == "southwest" then
 				ges.direction = "southeast"
+			end
+			if ges.relative then
+				ges.relative.x, ges.relative.y = ges.relative.y, -ges.relative.x
 			end
 		elseif ges.ges == "pinch" or ges.ges == "spread"
 			or ges.ges == "inward_pan"

@@ -19,12 +19,8 @@ local function LvDEBUG(lv, ...)
 	print("#"..line)
 end
 
-local function DEBUGBT()
-	DEBUG(debug.traceback())
-end
-
 function Dbg_mt.__call(dbg, ...)
-	LvDEBUG(math.huge, ...)
+	if dbg.is_on then LvDEBUG(math.huge, ...) end
 end
 
 function Dbg:turnOn()
@@ -40,6 +36,10 @@ function Dbg:logEv(ev)
 				..ev.value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
 	self.ev_log:write(log)
 	self.ev_log:flush()
+end
+
+function Dbg:traceback()
+	LvDEBUG(math.huge, debug.traceback())
 end
 
 setmetatable(Dbg, Dbg_mt)
