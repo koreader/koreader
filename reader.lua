@@ -134,10 +134,6 @@ while argidx <= #ARGV do
 	end
 end
 
-if not Dbg.is_on then
-	DEBUG = function() end
-end
-
 if Device:hasNoKeyboard() then
 	-- remove menu item shortcut for K4
 	Menu.is_enable_shortcut = false
