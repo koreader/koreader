@@ -12,6 +12,52 @@ local Input = require("ui/input")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
+local HighlightDialog = InputContainer:new{
+	buttons = nil,
+	tap_close_callback = nil,
+}
+
+function HighlightDialog:init()
+	if Device:hasKeyboard() then
+		self.key_events = {
+			AnyKeyPressed = { { Input.group.Any },
+				seqtext = "any key", doc = _("close dialog") }
+		}
+	else
+		self.ges_events.TapClose = {
+			GestureRange:new{
+				ges = "tap",
+				range = Geom:new{
+					x = 0, y = 0,
+					w = Screen:getWidth(),
+					h = Screen:getHeight(),
+				}
+			}
+		}
+	end
+	self[1] = CenterContainer:new{
+		dimen = Screen:getSize(),
+		FrameContainer:new{
+			ButtonTable:new{
+				width = Screen:getWidth()*0.9,
+				buttons = self.buttons,
+			},
+			background = 0,
+			bordersize = 2,
+			radius = 7,
+			padding = 2,
+		}
+	}
+end
+
+function HighlightDialog:onTapClose()
+	UIManager:close(self)
+	if self.tap_close_callback then
+		self.tap_close_callback()
+	end
+	return true
+end
+
 local ReaderHighlight = InputContainer:new{}
 
 function ReaderHighlight:init()
@@ -168,7 +214,8 @@ function ReaderHighlight:onHoldPan(arg, ges)
 		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
 		-- remove selected word if hold moves out of word box
 		if self.selected_word and
-			not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) then
+			not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) or
+			#self.selected_text.sboxes > 1 then
 			self.selected_word = nil
 		end
 		UIManager:setDirty(self.dialog, "partial")
@@ -196,52 +243,6 @@ function ReaderHighlight:translate(selected_text)
 		DEBUG("OCRed text:", text)
 		self.ui:handleEvent(Event:new("TranslateText", text))
 	end
-end
-
-HighlightDialog = InputContainer:new{
-	buttons = nil,
-	tap_close_callback = nil,
-}
-
-function HighlightDialog:init()
-	if Device:hasKeyboard() then
-		key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	else
-		self.ges_events.TapClose = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
-		}
-	end
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			ButtonTable:new{
-				width = Screen:getWidth()*0.9,
-				buttons = self.buttons,
-			},
-			background = 0,
-			bordersize = 2,
-			radius = 7,
-			padding = 2,
-		}
-	}
-end
-
-function HighlightDialog:onTapClose()
-	UIManager:close(self)
-	if self.tap_close_callback then
-		self.tap_close_callback()
-	end
-	return true
 end
 
 function ReaderHighlight:onHoldRelease(arg, ges)
