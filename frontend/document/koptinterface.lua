@@ -532,29 +532,29 @@ end
 --[[
 get index of nearest word box around pos
 --]]
-local function getWordBoxIndices(boxes, pos)
-	local function inside_box(box)
-		local x, y = pos.x, pos.y
-		if box.x0 <= x and box.y0 <= y and box.x1 >= x and box.y1 >= y then
-			return true
-		end
-		return false
+local function inside_box(box, pos)
+	local x, y = pos.x, pos.y
+	if box.x0 <= x and box.y0 <= y and box.x1 >= x and box.y1 >= y then
+		return true
 	end
-	local function box_distance(i, j)
-		local wb = boxes[i][j]
-		if inside_box(wb) then
-			return 0
-		else
-			local x0, y0 = pos.x, pos.y
-			local x1, y1 = (wb.x0 + wb.x1) / 2, (wb.y0 + wb.y1) / 2
-			return (x0 - x1)*(x0 - x1) + (y0 - y1)*(y0 - y1)
-		end
-	end
+	return false
+end
 
+local function box_distance(box, pos)
+	if inside_box(box, pos) then
+		return 0
+	else
+		local x0, y0 = pos.x, pos.y
+		local x1, y1 = (box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2
+		return (x0 - x1)*(x0 - x1) + (y0 - y1)*(y0 - y1)
+	end
+end
+
+local function getWordBoxIndices(boxes, pos)
 	local m, n = 1, 1
 	for i = 1, #boxes do
 		for j = 1, #boxes[i] do
-			if box_distance(i, j) < box_distance(m, n) then
+			if box_distance(boxes[i][j], pos) < box_distance(boxes[m][n], pos) then
 				m, n = i, j
 			end
 		end
@@ -586,6 +586,7 @@ end
 get text and text boxes between pos0 and pos1
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
+	if not pos0 or not pos1 then return {} end
     local line_text = ""
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
@@ -706,12 +707,10 @@ function KoptInterface:nativeToReflowPosTransform(doc, pageno, pos)
 	local kctx_hash = "kctx|"..context_hash
 	local cached = Cache:check(kctx_hash)
 	local kc = self:waitForContext(cached.kctx)
-	--kc:setDebug()
-	--DEBUG("transform native pos", pos)
-	local rpos = {}
-	rpos.x, rpos.y = kc:nativeToReflowPosTransform(pos.x, pos.y)
-	--DEBUG("transformed reflowed pos", rpos)
-	return rpos
+	local x, y = kc:nativeToReflowPosTransform(pos.x, pos.y)
+	if x ~= nil and y ~= nil then
+		return {x=x, y=y}
+	end
 end
 
 --[[
