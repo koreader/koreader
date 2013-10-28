@@ -99,7 +99,7 @@ end
 
 function InputText:addChar(char)
 	if self.enter_callback and char == '\n' then
-		UIManager:scheduleIn(0.1, function() self.enter_callback() end)
+		UIManager:scheduleIn(0.3, function() self.enter_callback() end)
 		return
 	end
 	table.insert(self.charlist, self.charpos, char)
