@@ -56,12 +56,15 @@ end
 
 function FileManagerHistory:updateItemTable()
 	function readHistDir(order_arg, re)
-		local pipe_out = io.popen("ls "..order_arg.." -1 ./history")
-		for f in pipe_out:lines() do
-			table.insert(re, {
-				dir = DocSettings:getPathFromHistory(f),
-				name = DocSettings:getNameFromHistory(f),
-			})
+		for f in lfs.dir("./history") do
+		    	local filemode = lfs.attributes(f, "mode")
+
+		    	if filemode ~= "directory" then -- we can't use filemode == "file" here, when it should be "file" it is actually nil, weird
+				table.insert(re, {
+					dir = DocSettings:getPathFromHistory(f),
+					name = DocSettings:getNameFromHistory(f),
+			    })
+		    end
 		end
 	end
 
