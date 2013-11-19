@@ -321,7 +321,7 @@ function Input:init()
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
-			if dev_mod ~= 'Kobo_trilogy' then
+			if dev_mod ~= 'Kobo_trilogy' and dev_mod ~= 'Kobo_phoenix' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
 						if ev.code == ABS_X then
