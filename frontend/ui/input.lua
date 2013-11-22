@@ -321,13 +321,26 @@ function Input:init()
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
 			self:adjustKoboEventMap()
-			if dev_mod ~= 'Kobo_trilogy' and dev_mod ~= 'Kobo_phoenix' then
+			if dev_mod ~= 'Kobo_trilogy' then
 				function Input:eventAdjustHook(ev)
 					if ev.type == EV_ABS then
 						if ev.code == ABS_X then
 							ev.code = ABS_Y
 						elseif ev.code == ABS_Y then
-							ev.code = ABS_X						
+							ev.code = ABS_X
+							-- We always have to substract from the physical x,
+							-- regardless of the orientation
+							if (Screen.width<Screen.height) then
+								ev.value = Screen.width - ev.value
+							else
+								ev.value = Screen.height - ev.value
+							end
+						end
+						-- same thing for multitouch events (phoenix)
+						if ev.code == ABS_MT_POSITION_X then
+							ev.code = ABS_MT_POSITION_Y
+						elseif ev.code == ABS_MT_POSITION_Y then
+							ev.code = ABS_MT_POSITION_X
 							-- We always have to substract from the physical x,
 							-- regardless of the orientation
 							if (Screen.width<Screen.height) then
@@ -339,7 +352,9 @@ function Input:init()
 					end
 					return ev
 				end
-			else
+			else -- kobo touch (trilogy)
+				-- FIXME some touch models should be treated as the other models,
+				-- depending on board revision
 				function Input:eventAdjustHook(ev)
 					if ev.code == ABS_X then
 						-- We always have to substract from the physical x,
