@@ -3,6 +3,7 @@ local BaseFrontLight = require("ui/device/basefrontlight")
 
 local KindleFrontLight = {
 	min = 0, max = 24,
+	-- FIXME: Check how to handle this on the PW2, initial reports on IRC suggest that this isn't possible anymore
 	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
 	intensity = nil,
 	lipc_handle = nil,

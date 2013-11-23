@@ -18,52 +18,60 @@ local Device = {
 
 Screen.device = Device
 
+function Set (list)
+	local set = {}
+	for _, l in ipairs(list) do set[l] = true end
+	return set
+end
+
 function Device:getModel()
 	if self.model then return self.model end
 	if util.isEmulated() then
 		self.model = "Emulator"
 		return self.model
 	end
-	local std_out = io.popen("grep 'MX' /proc/cpuinfo | cut -d':' -f2 | awk {'print $2'}", "r")
-	local cpu_mod = std_out:read()
-	if not cpu_mod then
-		local ret = os.execute("grep 'Hardware : Mario Platform' /proc/cpuinfo", "r")
-		if ret ~= 0 then
-			self.model = nil
-		else
-			self.model = "KindleDXG"
-		end
-	end
-	if cpu_mod == "MX50" then
-		-- for KPW
-		local pw_test_fd = lfs.attributes(KindleFrontLight.kpw_fl)
-		-- for Kobo
-		local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
-		-- for KT
-		local kt_test_fd = lfs.attributes("/sys/devices/platform/whitney-button")
-		-- another special file for KT is Neonode zForce touchscreen:
-		-- /sys/devices/platform/zforce.0/
-		if pw_test_fd then
+	self.model = nil
+	local kindle_sn = io.open("/proc/usid", "r")
+	if kindle_sn then
+		local kindle_devcode = string.sub(kindle_sn:read(),3,4)
+		kindle_sn:close()
+		-- NOTE: Update me when new models come out :)
+		local k2_set = Set { "02", "03" }
+		local dx_set = Set { "04", "05" }
+		local dxg_set = Set { "09" }
+		local k3_set = Set { "08", "06", "0A" }
+		local k4_set = Set { "0E", "23" }
+		local touch_set = Set { "0F", "11", "10", "12" }
+		local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
+		local pw2_set = Set { "D4", "5A", "D5" }
+
+		if k2_set[kindle_devcode] then
+			self.model = "Kindle2"
+		elseif dx_set[kindle_devcode] then
+			self.model = "Kindle2"
+		elseif dxg_set[kindle_devcode] then
+			self.model = "Kindle2"
+		elseif k3_set[kindle_devcode] then
+			self.model = "Kindle3"
+		elseif k4_set[kindle_devcode] then
+			self.model = "Kindle4"
+		elseif touch_set[kindle_devcode] then
+			self.model = "KindleTouch"
+		elseif pw_set[kindle_devcode] then
 			self.model = "KindlePaperWhite"
-		elseif kg_test_fd then
+		elseif pw2_set[kindle_devcode] then
+			self.model = "KindlePaperWhite"
+		end
+	else
+		local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
+		if kg_test_fd then
 			local std_out = io.popen("/bin/kobo_config.sh", "r")
 			local codename = std_out:read()
 			self.model = "Kobo_" .. codename
 			local version_file = io.open("/mnt/onboard/.kobo/version", "r")
 			self.firmware_rev = string.sub(version_file:read(),24,28)
 			version_file:close()
-		elseif kt_test_fd then
-			self.model = "KindleTouch"
-		else
-			self.model = "Kindle4"
 		end
-	elseif cpu_mod == "MX35" then
-		-- check if we are running on Kindle 3 (additional volume input)
-		self.model = "Kindle3"
-	elseif cpu_mod == "MX3" then
-		self.model = "Kindle2"
-	else
-		self.model = nil
 	end
 	return self.model
 end
