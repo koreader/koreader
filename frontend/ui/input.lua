@@ -282,19 +282,17 @@ function Input:init()
 		if not Device:isKobo() then
 			input.open("fake_events")
 		end
-		if dev_mod ~= "KindleTouch" and not Device:isKobo() then
-			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
-			Device:setTouchInputDev("/dev/input/event0")
-			input.open("/dev/input/event0")
-		end
-		if dev_mod ~= "KindleTouch" and dev_mod ~= "KindlePaperWhite" then
-			-- event1 in KindleTouch is "imx-yoshi Headset" (useless)
-			-- and we don't have event1 in KindlePaperWhite
-			input.open("/dev/input/event1")
-		end
 		if dev_mod == "KindlePaperWhite" then
 			print(_("Auto-detected Kindle PaperWhite"))
+			Device:setTouchInputDev("/dev/input/event0")
+			input.open("/dev/input/event0")
+		elseif dev_mod == "KindlePaperWhite2" then
+			print(_("Auto-detected Kindle PaperWhite"))
+			Device:setTouchInputDev("/dev/input/event1")
+			input.open("/dev/input/event1")
 		elseif dev_mod == "KindleTouch" then
+			-- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
+			-- event1 in KindleTouch is "imx-yoshi Headset" (useless)
 			Device:setTouchInputDev("/dev/input/event3")
 			input.open("/dev/input/event2") -- Home button
 			input.open("/dev/input/event3") -- touchscreen
@@ -370,14 +368,18 @@ function Input:init()
 			end
 		elseif dev_mod == "Kindle4" then
 			print(_("Auto-detected Kindle 4"))
+			input.open("/dev/input/event1")
 			self:adjustKindle4EventMap()
 		elseif dev_mod == "Kindle3" then
-			input.open("/dev/input/event2")
 			print(_("Auto-detected Kindle 3"))
+			input.open("/dev/input/event1")
+			input.open("/dev/input/event2")
 		elseif dev_mod == "KindleDXG" then
 			print(_("Auto-detected Kindle DXG"))
+			input.open("/dev/input/event1")
 		elseif dev_mod == "Kindle2" then
 			print(_("Auto-detected Kindle 2"))
+			input.open("/dev/input/event1")
 		else
 			print(_("Not supported device model!"))
 			os.exit(-1)

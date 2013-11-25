@@ -4,12 +4,12 @@ local DEBUG = require("dbg")
 local Font = {
 	fontmap = {
 		-- default font for menu contents
-		cfont = "freefont/FreeSerif.ttf",
+		cfont = "droid/DroidSans.ttf",
 		-- default font for title
 		--tfont = "NimbusSanL-BoldItal.cff",
-		tfont = "freefont/FreeSerif.ttf",
+		tfont = "droid/DroidSans.ttf",
 		-- default font for footer
-		ffont = "freefont/FreeSerif.ttf",
+		ffont = "droid/DroidSans.ttf",
 
 		-- default font for reading position info
 		rifont = "droid/DroidSans.ttf",
@@ -34,8 +34,8 @@ local Font = {
 	},
 	fallbacks = {
 		[1] = "droid/DroidSansFallback.ttf",
-		[2] = "freefont/FreeSans.ttf",
-		[3] = "droid/DroidSans.ttf",
+		[2] = "droid/DroidSans.ttf",
+		[3] = "freefont/FreeSans.ttf",
 	},
 
 	fontdir = os.getenv("FONTDIR") or "./fonts",
