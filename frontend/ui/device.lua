@@ -13,6 +13,9 @@ local Device = {
 	model = nil,
 	firmware_rev = nil,
 	frontlight = nil,
+	has_no_keyboard = nil,
+	is_touch_device = nil,
+	has_front_light = nil,
 	screen = Screen
 }
 
@@ -60,7 +63,7 @@ function Device:getModel()
 		elseif pw_set[kindle_devcode] then
 			self.model = "KindlePaperWhite"
 		elseif pw2_set[kindle_devcode] then
-			self.model = "KindlePaperWhite"
+			self.model = "KindlePaperWhite2"
 		end
 	else
 		local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
@@ -98,8 +101,11 @@ function Device:isKobo()
 end
 
 function Device:hasNoKeyboard()
+	if self.has_no_keyboard ~= nil then return self.has_no_keyboard end
 	local model = self:getModel()
-	return (model == "KindlePaperWhite") or (model == "KindleTouch") or self:isKobo()
+	self.has_no_keyboard = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
+						or (model == "KindleTouch") or self:isKobo()
+	return self.has_no_keyboard
 end
 
 function Device:hasKeyboard()
@@ -107,13 +113,20 @@ function Device:hasKeyboard()
 end
 
 function Device:isTouchDevice()
+	if self.is_touch_device ~= nil then return self.is_touch_device end
 	local model = self:getModel()
-	return (model == "KindlePaperWhite") or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
+	self.is_touch_device = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
+						or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
+	return self.is_touch_device
 end
 
 function Device:hasFrontlight()
+	if self.has_front_light ~= nil then return self.has_front_light end
 	local model = self:getModel()
-	return (model == "KindlePaperWhite") or (model == "Kobo_dragon") or (model == "Kobo_kraken") or (model == "Kobo_phoenix") or util.isEmulated()
+	self.has_front_light = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
+						or (model == "Kobo_dragon") or (model == "Kobo_kraken") or (model == "Kobo_phoenix")
+						or util.isEmulated()
+	return self.has_front_light
 end
 
 function Device:setTouchInputDev(dev)
@@ -206,7 +219,8 @@ function Device:getFrontlight()
 	if self.frontlight ~= nil then
 		return self.frontlight
 	elseif self:hasFrontlight() then
-		if self:getModel() == "KindlePaperWhite" then
+		local model = self:getModel()
+		if model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
 			self.frontlight = KindleFrontLight
 		elseif self:isKobo() then
 			self.frontlight = KoboFrontLight
