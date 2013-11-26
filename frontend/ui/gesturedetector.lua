@@ -575,7 +575,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 	if Screen.cur_rotation_mode == 1 then
 		-- in landscape mode rotated 270
 		if ges.pos then
-			ges.pos.x, ges.pos.y = (Screen.width - ges.pos.y), (ges.pos.x)
+			ges.pos.x, ges.pos.y = (Screen:getWidth() - ges.pos.y), (ges.pos.x)
 		end
 		if ges.ges == "swipe" or ges.ges == "pan"
 			or ges.ges == "two_finger_swipe"
@@ -612,7 +612,7 @@ function GestureDetector:adjustGesCoordinate(ges)
 	elseif Screen.cur_rotation_mode == 3 then
 		-- in landscape mode rotated 90
 		if ges.pos then
-			ges.pos.x, ges.pos.y = (ges.pos.y), (Screen.height - ges.pos.x)
+			ges.pos.x, ges.pos.y = (ges.pos.y), (Screen:getHeight() - ges.pos.x)
 		end
 		if ges.ges == "swipe" or ges.ges == "pan"
 			or ges.ges == "two_finger_swipe"
