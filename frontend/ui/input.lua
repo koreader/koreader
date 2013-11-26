@@ -328,10 +328,10 @@ function Input:init()
 							ev.code = ABS_X
 							-- We always have to substract from the physical x,
 							-- regardless of the orientation
-							if (Screen.width<Screen.height) then
-								ev.value = Screen.width - ev.value
+							if (Screen:getWidth()<Screen:getHeight()) then
+								ev.value = Screen:getWidth() - ev.value
 							else
-								ev.value = Screen.height - ev.value
+								ev.value = Screen:getHeight() - ev.value
 							end
 						end
 						-- same thing for multitouch events (phoenix)
@@ -341,10 +341,10 @@ function Input:init()
 							ev.code = ABS_MT_POSITION_X
 							-- We always have to substract from the physical x,
 							-- regardless of the orientation
-							if (Screen.width<Screen.height) then
-								ev.value = Screen.width - ev.value
+							if (Screen:getWidth()<Screen:getHeight()) then
+								ev.value = Screen:getWidth() - ev.value
 							else
-								ev.value = Screen.height - ev.value
+								ev.value = Screen:getHeight() - ev.value
 							end
 						end
 					end
@@ -357,10 +357,10 @@ function Input:init()
 					if ev.code == ABS_X then
 						-- We always have to substract from the physical x,
 						-- regardless of the orientation
-						if (Screen.width<Screen.height) then
-							ev.value = Screen.width - ev.value
+						if (Screen:getWidth()<Screen:getHeight()) then
+							ev.value = Screen:getWidth() - ev.value
 						else
-							ev.value = Screen.height - ev.value
+							ev.value = Screen:getHeight() - ev.value
 						end
 					end
 					return ev
