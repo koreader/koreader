@@ -22,12 +22,8 @@ local WAVEFORM_MODE_AUTO			= 0x101
 
 -- there is only one instance of this
 local UIManager = {
-	-- change this to set refresh type for next refresh
-	-- defaults to 1 initially and will be set to 1 after each refresh
-	default_refresh_type = 1,
-	-- change this to set refresh waveform for next refresh
-	-- default to WAVEFORM_MODE_GC16 
-	default_waveform_mode = WAVEFORM_MODE_GC16,
+	default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
+	default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
 	fast_waveform_mode = WAVEFORM_MODE_A2,
 	-- force to repaint all the widget is stack, will be reset to false
 	-- after each ui loop
@@ -237,9 +233,9 @@ function UIManager:run()
 		local waveform_mode = self.default_waveform_mode
 		if dirty then
 			if force_patial_refresh or force_fast_refresh then
-				refresh_type = 1
-			elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
 				refresh_type = 0
+			elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+				refresh_type = 1
 			end
 			if force_fast_refresh then
 				waveform_mode = self.fast_waveform_mode
@@ -253,7 +249,7 @@ function UIManager:run()
 			else
 				Screen:refresh(refresh_type, waveform_mode)
 			end
-			if self.refresh_type == 0 then
+			if self.refresh_type == 1 then
 				self.refresh_count = 0
 			elseif not force_patial_refresh and not force_full_refresh then 
 				self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
