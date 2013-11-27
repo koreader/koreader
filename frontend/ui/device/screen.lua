@@ -31,6 +31,7 @@ Codes for rotation modes:
 local Screen = {
 	cur_rotation_mode = 0,
 	native_rotation_mode = nil,
+	blitbuffer_rotation_mode = 0,
 
 	bb = nil,
 	saved_bb = nil,
@@ -42,6 +43,7 @@ local Screen = {
 
 function Screen:init()
 	self.bb = self.fb.bb
+	self.blitbuffer_rotation_mode = self.bb:getRotation()
 	-- asking the framebuffer for orientation is error prone,
 	-- so we do this simple heuristic (for now)
 	if self:getWidth() > self:getHeight() then
@@ -103,7 +105,7 @@ function Screen:getScreenMode()
 end
 
 function Screen:setRotationMode(mode)
-	self.fb.bb:rotateAbsolute(-90 * (mode - self.native_rotation_mode))
+	self.fb.bb:rotateAbsolute(-90 * (mode - self.native_rotation_mode - self.blitbuffer_rotation_mode))
 	self.cur_rotation_mode = mode
 end
 
