@@ -436,10 +436,6 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
 		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 	end
 	self.cur_rotation_mode = Screen.cur_rotation_mode
-
-	if new_mode == "landscape" and self.document.info.has_pages then
-		self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
-	end
 	return true
 end
 
