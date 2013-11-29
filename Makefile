@@ -24,7 +24,7 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 MO_DIR=$(INSTALL_DIR)/koreader/i18n
 
 
-all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit mo
+all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit po mo
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
@@ -93,6 +93,9 @@ koboupdate: all
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
+
+po:
+	$(MAKE) -i -C l10n bootstrap update
 
 mo:
 	for po in `find l10n -iname '*.po'`; do \
