@@ -665,20 +665,40 @@ function KoptInterface:getWordFromPosition(doc, pos)
 	end
 end
 
+local function getBoxRelativePosition(s_box, l_box)
+	local pos_rel = {}
+	local s_box_center = s_box:center()
+	pos_rel.x = (s_box_center.x - l_box.x)/l_box.w
+	pos_rel.y = (s_box_center.y - l_box.y)/l_box.h
+	return pos_rel
+end
+
 --[[
 get word and word box from position in reflowed page
 ]]--
 function KoptInterface:getWordFromReflowPosition(doc, boxes, pos)
 	local pageno = pos.page
-	local reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
+	
+	local scratch_reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
+	local scratch_reflowed_word_box = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos)
+	--DEBUG("word box from scratch", scratch_reflowed_word_box)
+	
+	local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
 	local reflowed_word_box = self:getWordFromBoxes(reflowed_page_boxes, pos)
-	local reflowed_pos = reflowed_word_box.box:center()
-	local native_pos = self:reflowToNativePosTransform(doc, pageno, reflowed_pos)
+	--DEBUG("word box from reflow", reflowed_word_box)
+	
+	local reflowed_pos_abs = scratch_reflowed_word_box.box:center()
+	local reflowed_pos_rel = getBoxRelativePosition(scratch_reflowed_word_box.box, reflowed_word_box.box)
+	--DEBUG("word box absolote center", reflowed_pos_abs)
+	--DEBUG("word box relative center", reflowed_pos_rel)
+	
+	local native_pos = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs, reflowed_pos_rel)
 	local native_word_box = self:getWordFromBoxes(boxes, native_pos)
+	
 	local word_box = {
 		word = native_word_box.word,
 		pbox = native_word_box.box,   -- box on page
-		sbox = reflowed_word_box.box, -- box on screen
+		sbox = scratch_reflowed_word_box.box, -- box on screen
 		pos = native_pos,
 	}
 	return word_box
@@ -716,7 +736,7 @@ end
 --[[
 transform position in reflowed page to native page
 ]]--
-function KoptInterface:reflowToNativePosTransform(doc, pageno, pos)
+function KoptInterface:reflowToNativePosTransform(doc, pageno, abs_pos, rel_pos)
 	local bbox = doc:getPageBBox(pageno)
 	local context_hash = self:getContextHash(doc, pageno, bbox)
 	local kctx_hash = "kctx|"..context_hash
@@ -725,7 +745,7 @@ function KoptInterface:reflowToNativePosTransform(doc, pageno, pos)
 	--kc:setDebug()
 	--DEBUG("transform reflowed pos", pos)
 	local npos = {}
-	npos.x, npos.y = kc:reflowToNativePosTransform(pos.x, pos.y)
+	npos.x, npos.y = kc:reflowToNativePosTransform(abs_pos.x, abs_pos.y, rel_pos.x, rel_pos.y)
 	--DEBUG("transformed native pos", npos)
 	return npos
 end
@@ -749,17 +769,25 @@ get text and text boxes from screen positions for reflowed page
 ]]--
 function KoptInterface:getTextFromReflowPositions(doc, native_boxes, pos0, pos1)
 	local pageno = pos0.page
-	local reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
-	local reflowed_box0 = self:getWordFromBoxes(reflowed_page_boxes, pos0)
-	local reflowed_pos0 = reflowed_box0.box:center()
-	local native_pos0 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos0)
 	
-	local reflowed_box1 = self:getWordFromBoxes(reflowed_page_boxes, pos1)
-	local reflowed_pos1 = reflowed_box1.box:center()
-	local native_pos1 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos1)
+	local scratch_reflowed_page_boxes = self:getReflowedTextBoxesFromScratch(doc, pageno)
+	local reflowed_page_boxes = self:getReflowedTextBoxes(doc, pageno)
+	
+	local scratch_reflowed_word_box0 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos0)
+	local reflowed_word_box0 = self:getWordFromBoxes(reflowed_page_boxes, pos0)
+	local scratch_reflowed_word_box1 = self:getWordFromBoxes(scratch_reflowed_page_boxes, pos1)
+	local reflowed_word_box1 = self:getWordFromBoxes(reflowed_page_boxes, pos1)
+	
+	local reflowed_pos_abs0 = scratch_reflowed_word_box0.box:center()
+	local reflowed_pos_rel0 = getBoxRelativePosition(scratch_reflowed_word_box0.box, reflowed_word_box0.box)
+	local reflowed_pos_abs1 = scratch_reflowed_word_box1.box:center()
+	local reflowed_pos_rel1 = getBoxRelativePosition(scratch_reflowed_word_box1.box, reflowed_word_box1.box)
+	
+	local native_pos0 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs0, reflowed_pos_rel0)
+	local native_pos1 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs1, reflowed_pos_rel1)
 	
 	local reflowed_text_boxes = self:getTextFromBoxes(reflowed_page_boxes, pos0, pos1)
-	local native_text_boxes = self:getTextFromBoxes(native_boxes, pos0, pos1)
+	local native_text_boxes = self:getTextFromBoxes(native_boxes, native_pos0, native_pos1)
 	local text_boxes = {
 		text = native_text_boxes.text,
 		pboxes = native_text_boxes.boxes,   -- boxes on page
@@ -776,7 +804,7 @@ get text and text boxes from screen positions for native page
 function KoptInterface:getTextFromNativePositions(doc, native_boxes, pos0, pos1)
 	local native_text_boxes = self:getTextFromBoxes(native_boxes, pos0, pos1)
 	local text_boxes = {
-		word = native_text_boxes.text,
+		text = native_text_boxes.text,
 		pboxes = native_text_boxes.boxes,   -- boxes on page
 		sboxes = native_text_boxes.boxes,   -- boxes on screen
 		pos0 = pos0,

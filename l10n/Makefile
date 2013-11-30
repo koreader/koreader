@@ -1,7 +1,7 @@
 all: update
 
 update:
-	tx pull -a
+	tx pull -a -f
 
 bootstrap:
 	tx set --auto-local -r koreader.koreader "<lang>/koreader.po" \
