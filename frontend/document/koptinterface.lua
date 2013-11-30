@@ -787,7 +787,7 @@ function KoptInterface:getTextFromReflowPositions(doc, native_boxes, pos0, pos1)
 	local native_pos1 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs1, reflowed_pos_rel1)
 	
 	local reflowed_text_boxes = self:getTextFromBoxes(reflowed_page_boxes, pos0, pos1)
-	local native_text_boxes = self:getTextFromBoxes(native_boxes, pos0, pos1)
+	local native_text_boxes = self:getTextFromBoxes(native_boxes, native_pos0, native_pos1)
 	local text_boxes = {
 		text = native_text_boxes.text,
 		pboxes = native_text_boxes.boxes,   -- boxes on page
@@ -804,7 +804,7 @@ get text and text boxes from screen positions for native page
 function KoptInterface:getTextFromNativePositions(doc, native_boxes, pos0, pos1)
 	local native_text_boxes = self:getTextFromBoxes(native_boxes, pos0, pos1)
 	local text_boxes = {
-		word = native_text_boxes.text,
+		text = native_text_boxes.text,
 		pboxes = native_text_boxes.boxes,   -- boxes on page
 		sboxes = native_text_boxes.boxes,   -- boxes on screen
 		pos0 = pos0,

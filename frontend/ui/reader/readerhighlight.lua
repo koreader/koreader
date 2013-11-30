@@ -331,7 +331,7 @@ function ReaderHighlight:saveHighlight()
 end
 
 function ReaderHighlight:exportToClippings(page, item)
-	DEBUG("export highlight to My Clippings")
+	DEBUG("export highlight", item)
 	local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
 	if clippings and item.text then
 		local current_locale = os.setlocale()
