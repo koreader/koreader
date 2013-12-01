@@ -46,7 +46,7 @@ function Device:getModel()
 		local k4_set = Set { "0E", "23" }
 		local touch_set = Set { "0F", "11", "10", "12" }
 		local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
-		local pw2_set = Set { "D4", "5A", "D5" }
+		local pw2_set = Set { "D4", "5A", "D5", "D7", "D8", "F2" }
 
 		if k2_set[kindle_devcode] then
 			self.model = "Kindle2"
