@@ -4,6 +4,7 @@ local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local FileManagerHistory = InputContainer:extend{
@@ -55,22 +56,27 @@ function FileManagerHistory:addToMainMenu(tab_item_table)
 end
 
 function FileManagerHistory:updateItemTable()
-	function readHistDir(order_arg, re)
-		for f in lfs.dir("./history") do
-		    	local filemode = lfs.attributes(f, "mode")
-
-		    	if filemode ~= "directory" then -- we can't use filemode == "file" here, when it should be "file" it is actually nil, weird
-				table.insert(re, {
-					dir = DocSettings:getPathFromHistory(f),
-					name = DocSettings:getNameFromHistory(f),
-			    })
-		    end
+	function readHistDir(re)
+		local sorted_files = {}
+		local history_dir = "./history/"
+		for f in lfs.dir(history_dir) do
+			local path = history_dir..f
+			if lfs.attributes(path, "mode") == "file" then
+				table.insert(sorted_files, {file = f, date = lfs.attributes(path, "modification")})
+			end
+		end
+		table.sort(sorted_files, function(v1,v2) return v1.date > v2.date end)
+		for _, v in pairs(sorted_files) do
+			table.insert(re, {
+				dir = DocSettings:getPathFromHistory(v.file),
+				name = DocSettings:getNameFromHistory(v.file),
+			})
 		end
 	end
 
 	self.hist = {}
 	local last_files = {}
-	readHistDir("-c", last_files)
+	readHistDir(last_files)
 	for _,v in pairs(last_files) do
 		table.insert(self.hist, {
 			text = v.name,
