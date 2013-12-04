@@ -321,7 +321,7 @@ function ReaderHighlight:saveHighlight()
 		hl_item["text"] = self.selected_text.text
 		hl_item["pos0"] = self.selected_text.pos0
 		hl_item["pos1"] = self.selected_text.pos1
-		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S"),
+		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S")
 		table.insert(self.view.highlight.saved[page], hl_item)
 		if self.selected_text.text ~= "" then
 			self:exportToClippings(page, hl_item)
