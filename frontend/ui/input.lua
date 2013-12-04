@@ -30,6 +30,9 @@ local ABS_PRESSURE = 24
 
 -- For multi-touch events (ABS.code).
 local ABS_MT_SLOT = 47
+local ABS_MT_TOUCH_MAJOR = 48
+local ABS_MT_WIDTH_MAJOR = 50
+
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 local ABS_MT_TRACKING_ID = 57
@@ -322,11 +325,6 @@ function Input:init()
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
-			print(_("Device model "..dev_mod))
-			print(_("firmware revision "..firm_rev ))
-			print(_("Screen Height "..Screen:getHeight() ))
-			print(_("Screen Width "..Screen:getWidth() ))
-			print(_("Screen DPI programmed "..Screen:getDPI() ))
 			
 			self:adjustKoboEventMap()
 			if dev_mod ~= 'Kobo_trilogy' then
@@ -610,7 +608,7 @@ function Input:handleTouchEv(ev)
 					)
 				end
 			end
-		elseif ev.type == EV_ABS and ev.code ~= 48 and ev.code ~= 50 then
+		elseif ev.type == EV_ABS and ev.code ~= ABS_MT_TOUCH_MAJOR and ev.code ~= ABS_MT_WIDTH_MAJOR then
 			if #self.MTSlots == 0 then
 				table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
 				-- I have to add id's without events for the AURA.
