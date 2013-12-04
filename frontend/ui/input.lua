@@ -38,8 +38,6 @@ local ABS_MT_PRESSURE = 58
 local dev_mod = Device:getModel()
 local Phoenix = false
 if dev_mod == 'Kobo_phoenix'  then Phoenix = true end
-print(_("Phoenix "))
-print(Phoenix)
 
 --[[
 an interface for key presses
