@@ -727,10 +727,11 @@ function KoptInterface:nativeToReflowPosTransform(doc, pageno, pos)
 	local kctx_hash = "kctx|"..context_hash
 	local cached = Cache:check(kctx_hash)
 	local kc = self:waitForContext(cached.kctx)
-	local x, y = kc:nativeToReflowPosTransform(pos.x, pos.y)
-	if x ~= nil and y ~= nil then
-		return {x=x, y=y}
-	end
+	--DEBUG("transform native pos", pos)
+	local rpos = {}
+	rpos.x, rpos.y = kc:nativeToReflowPosTransform(pos.x, pos.y)
+	--DEBUG("transformed reflowed pos", rpos)
+	return rpos
 end
 
 --[[
@@ -743,7 +744,7 @@ function KoptInterface:reflowToNativePosTransform(doc, pageno, abs_pos, rel_pos)
 	local cached = Cache:check(kctx_hash)
 	local kc = self:waitForContext(cached.kctx)
 	--kc:setDebug()
-	--DEBUG("transform reflowed pos", pos)
+	--DEBUG("transform reflowed pos", abs_pos, rel_pos)
 	local npos = {}
 	npos.x, npos.y = kc:reflowToNativePosTransform(abs_pos.x, abs_pos.y, rel_pos.x, rel_pos.y)
 	--DEBUG("transformed native pos", npos)
@@ -782,9 +783,12 @@ function KoptInterface:getTextFromReflowPositions(doc, native_boxes, pos0, pos1)
 	local reflowed_pos_rel0 = getBoxRelativePosition(scratch_reflowed_word_box0.box, reflowed_word_box0.box)
 	local reflowed_pos_abs1 = scratch_reflowed_word_box1.box:center()
 	local reflowed_pos_rel1 = getBoxRelativePosition(scratch_reflowed_word_box1.box, reflowed_word_box1.box)
+	--DEBUG("absolute positions", reflowed_pos_abs0, reflowed_pos_abs1)
+	--DEBUG("relative positions", reflowed_pos_rel0, reflowed_pos_rel1)
 	
 	local native_pos0 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs0, reflowed_pos_rel0)
 	local native_pos1 = self:reflowToNativePosTransform(doc, pageno, reflowed_pos_abs1, reflowed_pos_rel1)
+	--DEBUG("native positions", native_pos0, native_pos1)
 	
 	local reflowed_text_boxes = self:getTextFromBoxes(reflowed_page_boxes, pos0, pos1)
 	local native_text_boxes = self:getTextFromBoxes(native_boxes, native_pos0, native_pos1)
