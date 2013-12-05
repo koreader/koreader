@@ -50,9 +50,9 @@ local GestureDetector = {
 	HOLD_INTERVAL = 1000 * 1000,
 	SWIPE_INTERVAL = 900 * 1000,
 	-- distance parameters
-	DOUBLE_TAP_DISTANCE = 50,
-	TWO_FINGER_TAP_REGION = 20,
-	PAN_THRESHOLD = 50,
+	DOUBLE_TAP_DISTANCE = 50 * Screen:getDPI() / 167,
+	TWO_FINGER_TAP_REGION = 20 * Screen:getDPI() / 167,
+	PAN_THRESHOLD = 50 * Screen:getDPI() / 167,
 	-- pinch/spread direction table
 	DIRECTION_TABLE = {
 		east = "horizontal",
