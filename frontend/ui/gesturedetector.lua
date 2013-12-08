@@ -81,6 +81,7 @@ function GestureDetector:feedEvent(tevs)
 	repeat
 		local tev = table.remove(tevs)
 		if tev then
+			DEBUG("tev fed to GestureDetector|",tev.x.."|"..tev.y.."|"..tev.id.."|"..tev.slot.."|"..tev.timev.sec.."|"..tev.timev.usec)
 			local slot = tev.slot
 			if not self.states[slot] then
 				self:clearState(slot) -- initiate state

@@ -321,6 +321,14 @@ function Input:init()
 			Device:setTouchInputDev("/dev/input/event1")
 			input.open("/dev/input/event0") -- Light button and sleep slider
 			print(_("Auto-detected Kobo"))
+			print(_("Device model="))
+			print(_(dev_mod))
+			print(_("Firmware revision"))
+			print(_(firm_rev))
+			print(_("Screen height ="))
+			print(_(Screen:getHeight()))
+			print(_("Screen width ="))
+			print(_(Screen:getWidth()))
 			self:adjustKoboEventMap()
 			if dev_mod ~= 'Kobo_trilogy' then
 				function Input:eventAdjustHook(ev)
@@ -595,6 +603,7 @@ function Input:handleTypeBTouchEv(ev)
 end
 
 function Input:handlePhoenixTouchEv(ev)
+	local TwoSlotTrack = false
 	-- Hack on handleTouchEV for the Kobo Aura
 	if ev.type == EV_SYN then
 		if ev.code == SYN_REPORT then
@@ -603,6 +612,10 @@ function Input:handlePhoenixTouchEv(ev)
 			end
 			-- feed ev in all slots to state machine
 			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
+			if #self.MTSlots == 2 then
+				TwoSlotTrack = true
+			else TwoSlotTrack = false
+			end
 			self.MTSlots = {}
 			if touch_ges then
 				return Event:new("Gesture",
@@ -612,6 +625,7 @@ function Input:handlePhoenixTouchEv(ev)
 		end
 	elseif ev.type == EV_ABS and ev.code ~= ABS_MT_TOUCH_MAJOR and ev.code ~= ABS_MT_WIDTH_MAJOR then
 		if #self.MTSlots == 0 then
+			self.cur_slot = 0
 			table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
 			-- I have to add id's without events for the AURA.
 			self:setMtSlot(self.cur_slot, "id", 0)
@@ -619,15 +633,14 @@ function Input:handlePhoenixTouchEv(ev)
 		-- I have changed ABS_MT_SLOT to ABS_MT_TRACKING_ID
 		if ev.code == ABS_MT_TRACKING_ID then
 			if self.cur_slot ~= ev.value then
-				table.insert(self.MTSlots, self:getMtSlot(ev.value))
-				-- I have to add id's without events for the AURA. Since there are only two 
-				-- ID's 0 and 1 and it's not 0, 
-				self:setMtSlot(ev.value, "id", 1)
+				if #self.MTSlots == 1 then
+					table.insert(self.MTSlots, self:getMtSlot(ev.value))
+					-- I have to add id's without events for the AURA. Since there are only two 
+					-- ID's 0 and 1 and it's not 0, 
+					self:setMtSlot(ev.value, "id", 1)
+				end
 			end
 			self.cur_slot = ev.value
-		-- ABS_MT_TRACKING_ID is no longer used for assigning id's.
-		-- elseif ev.code == ABS_MT_TRACKING_ID then
-			-- self:setCurrentMtSlot("id", ev.value)
 		elseif ev.code == ABS_MT_POSITION_X then
 			self:setCurrentMtSlot("x", ev.value)
 		elseif ev.code == ABS_MT_POSITION_Y then
@@ -644,7 +657,7 @@ function Input:handlePhoenixTouchEv(ev)
 		elseif ev.code == ABS_PRESSURE then
 			if ev.value ~= 0 then
 				-- Single tap events only use slot 0.
-				self:setMtSlot(0, "id", 1)
+				--self:setMtSlot(0, "id", 1)
 				--Unnecessary for Aura
 				--self:confirmAbsxy()
 			else
@@ -653,7 +666,10 @@ function Input:handlePhoenixTouchEv(ev)
 				-- Pressure 0 events only invalidate slot 0.
 				self:setMtSlot(0, "id", -1)
 				-- If there are 2 slots active, invalidates slot 2.
-				if #self.MTSlots == 2 then
+				if TwoSlotTrack then 
+					if #self.MTSlots == 1 then
+					table.insert(self.MTSlots, self:getMtSlot(1))
+					end
 					self:setMtSlot(1, "id", -1)
 				end
 			end
