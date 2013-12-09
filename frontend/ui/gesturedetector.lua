@@ -559,7 +559,8 @@ function GestureDetector:holdState(tev, hold)
 			},
 			time = tev.timev,
 		}
-	else
+	elseif (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
+		(tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
 		local ges_ev = self:handlePan(tev)
 		if ges_ev ~= nil then ges_ev.ges = "hold_pan" end
 		return ges_ev
