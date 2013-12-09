@@ -601,22 +601,20 @@ function ReaderPaging:onGotoPageRel(diff)
 	else
 		-- not end of page yet, goto next view
 		-- adjust panning step according to overlap
-		if self.show_overlap_enable then
-			if x_pan_off > self.overlap then
-				-- moving to next view, move view
-				x_pan_off = x_pan_off - self.overlap
-			elseif x_pan_off < -self.overlap then
-				x_pan_off = x_pan_off + self.overlap
-			end
-			if y_pan_off > self.overlap then
-				y_pan_off = y_pan_off - self.overlap
-			elseif y_pan_off < -self.overlap then
-				y_pan_off = y_pan_off + self.overlap
-			end
-			-- we have to calculate again to count into overlap
-			new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
-			new_va.y = Math.roundAwayFromZero(self.visible_area.y+y_pan_off)
+		if x_pan_off > self.overlap then
+			-- moving to next view, move view
+			x_pan_off = x_pan_off - self.overlap
+		elseif x_pan_off < -self.overlap then
+			x_pan_off = x_pan_off + self.overlap
 		end
+		if y_pan_off > self.overlap then
+			y_pan_off = y_pan_off - self.overlap
+		elseif y_pan_off < -self.overlap then
+			y_pan_off = y_pan_off + self.overlap
+		end
+		-- we have to calculate again to count into overlap
+		new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
+		new_va.y = Math.roundAwayFromZero(self.visible_area.y+y_pan_off)
 		-- fit new view area into page area
 		new_va:offsetWithin(self.page_area, 0, 0)
 		-- calculate panning offsets
