@@ -29,10 +29,10 @@ function ReaderConfig:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = 0,
-					y = 11*Screen:getHeight()/12,
-					w = Screen:getWidth(),
-					h = Screen:getHeight()/12,
+					x = Screen:getWidth()*DTAP_ZONE_CONFIG.x,
+					y = Screen:getHeight()*DTAP_ZONE_CONFIG.y,
+					w = Screen:getWidth()*DTAP_ZONE_CONFIG.w,
+					h = Screen:getHeight()*DTAP_ZONE_CONFIG.h,
 				}
 			}
 		}

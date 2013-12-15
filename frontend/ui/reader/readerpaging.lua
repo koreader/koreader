@@ -62,10 +62,10 @@ function ReaderPaging:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = Screen:getWidth()/4,
-					y = Screen:getHeight()/4,
-					w = 3*Screen:getWidth()/4,
-					h = 2*Screen:getHeight()/3,
+					x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
+					y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
+					w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
+					h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
 				}
 			}
 		},
@@ -73,10 +73,10 @@ function ReaderPaging:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = 0,
-					y = Screen:getHeight()/4,
-					w = Screen:getWidth()/4,
-					h = 2*Screen:getHeight()/3,
+					x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
+					y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
+					w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
+					h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
 				}
 			}
 		},
