@@ -301,7 +301,7 @@ function Menu:init()
 	}
 	-- group for title bar
 	self.title_bar = OverlapGroup:new{
-		dimen = {w = self.dimen.w},
+		dimen = {w = self.dimen.w, h = self.menu_title:getSize().h},
 		self.menu_title,
 	}
 	-- group for items
