@@ -10,9 +10,11 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
+# stop Nickel
+killall -STOP nickel
+
 # finally call reader
 ./reader.lua /mnt/onboard 2> crash.log
 
 # continue with nickel
-
-reboot
+killall -CONT nickel
