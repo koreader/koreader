@@ -4,17 +4,23 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local TextWidget = require("ui/widget/textwidget")
+local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
+local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
+local DEBUG = require("dbg")
 
 local ReaderFooter = InputContainer:new{
+	visible = true,
 	pageno = nil,
 	pages = nil,
 	progress_percentage = 0.0,
 	progress_text = "0 / 0",
+	show_time = false,
 	bar_width = 0.88,
 	text_width = 0.12,
 	text_font_face = "ffont",
@@ -57,21 +63,41 @@ function ReaderFooter:init()
 	self.pageno = self.view.state.page
 	self.pages = self.view.document.info.number_of_pages
 	self:updateFooter()
-end
-
-function ReaderFooter:paintTo(bb, x, y)
-	self[1]:paintTo(bb, x, y)
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			TapFooter = {
+				GestureRange:new{
+					ges = "tap",
+					range = self[1]:contentRange(),
+				},
+			},
+		}
+	end
 end
 
 function ReaderFooter:updateFooter()
 	self.progress_bar.percentage = self.pageno / self.pages
-	self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+	if self.show_time then
+		self.progress_text.text = os.date("%H:%M")
+	else
+		self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+	end
 end
 
 function ReaderFooter:onPageUpdate(pageno)
 	self.pageno = pageno
 	self.pages = self.view.document.info.number_of_pages
 	self:updateFooter()
+end
+
+function ReaderFooter:onTapFooter(arg, gev)
+	self.show_time = not self.show_time
+	self:updateFooter()
+	UIManager:setDirty(self.view.dialog)
+	-- consume this tap when footer is visible
+	if self.visible then
+		return true
+	end
 end
 
 return ReaderFooter

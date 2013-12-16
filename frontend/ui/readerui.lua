@@ -138,18 +138,27 @@ function ReaderUI:init()
 		ui = self
 	}
 	table.insert(self.active_widgets, reader_ss)
+	-- frontlight controller
 	if Device:getFrontlight() then
-		-- frontlight controller
 		table.insert(self, ReaderFrontLight:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
 		})
 	end
-
+	-- config panel controller
+	if self.document.info.configurable then
+		local config_dialog = ReaderConfig:new{
+			configurable = self.document.configurable,
+			options = self.document.options,
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, config_dialog)
+	end
+	-- for page specific controller
 	if self.document.info.has_pages then
-		-- for page specific controller
-
 		-- if needed, insert a paging container
 		local pager = ReaderPaging:new{
 			dialog = self.dialog,
@@ -225,15 +234,6 @@ function ReaderUI:init()
 		})
 	end
 	if self.document.info.configurable then
-		-- configurable controller
-		local config_dialog = ReaderConfig:new{
-			configurable = self.document.configurable,
-			options = self.document.options,
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		}
-		table.insert(self, config_dialog)
 		-- kopt option controller
 		local koptlistener = ReaderKoptListener:new{
 			dialog = self.dialog,

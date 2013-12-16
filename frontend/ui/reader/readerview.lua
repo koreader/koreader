@@ -71,6 +71,7 @@ function ReaderView:resetLayout()
 	}
 	self.footer = ReaderFooter:new{
 		view = self,
+		visible = self.footer_visible,
 	}
 	self.flipping = ReaderFlipping:new{
 		view = self,
