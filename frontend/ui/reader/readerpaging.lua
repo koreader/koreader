@@ -80,16 +80,6 @@ function ReaderPaging:initGesListener()
 				}
 			}
 		},
-		ToggleFlipping = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth()/8,
-					h = Screen:getHeight()/8
-				}
-			}
-		},
 		Swipe = {
 			GestureRange:new{
 				ges = "swipe",
