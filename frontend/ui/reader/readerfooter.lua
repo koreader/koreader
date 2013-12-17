@@ -93,7 +93,7 @@ end
 function ReaderFooter:onTapFooter(arg, gev)
 	self.show_time = not self.show_time
 	self:updateFooter()
-	UIManager:setDirty(self.view.dialog)
+	UIManager:setDirty(self.view.dialog, "partial")
 	-- consume this tap when footer is visible
 	if self.visible then
 		return true
