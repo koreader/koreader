@@ -1,4 +1,5 @@
 local Widget = require("ui/widget/widget")
+local Geom = require("ui/geometry")
 
 --[[
 ProgressWidget shows a progress bar
@@ -22,6 +23,11 @@ end
 
 function ProgressWidget:paintTo(bb, x, y)
 	local my_size = self:getSize()
+	self.dimen = Geom:new{
+		x = x, y = y,
+		w = my_size.w,
+		h = my_size.h 
+	}
 	bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
 	bb:paintBorder(x, y, my_size.w, my_size.h,
 					self.bordersize, self.bordercolor, self.radius)
