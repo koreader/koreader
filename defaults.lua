@@ -43,6 +43,7 @@ DSHOWHIDDENFILES = false
 -- y: y coordinate of top left corner in proportion of screen height
 -- w: width of tap zone in proportion of screen width
 -- h: height of tap zone in proportion of screen height
+DTAP_ZONE_MENU = {x = 1/8, y = 0, w = 3/4, h = 1/4}
 DTAP_ZONE_CONFIG = {x = 0, y = 11/12, w = 1, h = 1/12}
 DTAP_ZONE_FORWARD = {x = 1/4, y = 0, w = 3/4, h = 1}
 DTAP_ZONE_BACKWARD = {x = 0, y = 0, w = 1/4, h = 1}
