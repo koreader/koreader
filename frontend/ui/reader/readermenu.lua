@@ -52,10 +52,10 @@ function ReaderMenu:initGesListener()
 			GestureRange:new{
 				ges = "tap",
 				range = Geom:new{
-					x = Screen:getWidth()/8,
-					y = 0,
-					w = Screen:getWidth()*3/4,
-					h = Screen:getHeight()/4,
+					x = Screen:getWidth()*DTAP_ZONE_MENU.x,
+					y = Screen:getHeight()*DTAP_ZONE_MENU.y,
+					w = Screen:getWidth()*DTAP_ZONE_MENU.w,
+					h = Screen:getHeight()*DTAP_ZONE_MENU.h
 				}
 			}
 		},

@@ -25,34 +25,12 @@ function ReaderBookmark:init()
 	self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderBookmark:initGesListener()
-	self.ges_events = {
-		ToggleBookmark = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = Screen:getWidth()*7/8, y = 0,
-					w = Screen:getWidth()/8,
-					h = Screen:getHeight()/8
-				}
-			}
-		},
-	}
-end
-
 function ReaderBookmark:onReadSettings(config)
 	self.bookmarks = config:readSetting("bookmarks") or {}
 end
 
 function ReaderBookmark:onCloseDocument()
 	self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
-end
-
-function ReaderBookmark:onSetDimensions(dimen)
-	-- update listening according to new screen dimen
-	if Device:isTouchDevice() then
-		self:initGesListener()
-	end
 end
 
 function ReaderBookmark:onToggleBookmark()
@@ -65,6 +43,7 @@ function ReaderBookmark:onToggleBookmark()
 	self:toggleBookmark(pn_or_xp)
 	self.view.dogear_visible = not self.view.dogear_visible
 	UIManager:setDirty(self.view.dialog, "partial")
+	return true
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)

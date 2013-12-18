@@ -11,6 +11,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
+local Event = require("ui/event")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 
@@ -21,8 +22,8 @@ local ReaderFooter = InputContainer:new{
 	progress_percentage = 0.0,
 	progress_text = "0 / 0",
 	show_time = false,
-	bar_width = 0.88,
-	text_width = 0.12,
+	bar_width = 0.85,
+	text_width = 0.15,
 	text_font_face = "ffont",
 	text_font_size = 14,
 	height = 19,
@@ -90,10 +91,17 @@ function ReaderFooter:onPageUpdate(pageno)
 	self:updateFooter()
 end
 
-function ReaderFooter:onTapFooter(arg, gev)
-	self.show_time = not self.show_time
+function ReaderFooter:onTapFooter(arg, ges)
+	if self.view.flipping_visible then
+		local pos = ges.pos
+		local dimen = self.progress_bar.dimen
+		local percentage = (pos.x - dimen.x)/dimen.w
+		self.ui:handleEvent(Event:new("GotoPercentage", percentage))
+	else
+		self.show_time = not self.show_time
+	end
 	self:updateFooter()
-	UIManager:setDirty(self.view.dialog)
+	UIManager:setDirty(self.view.dialog, "partial")
 	-- consume this tap when footer is visible
 	if self.visible then
 		return true

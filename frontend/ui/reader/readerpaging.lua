@@ -80,16 +80,6 @@ function ReaderPaging:initGesListener()
 				}
 			}
 		},
-		ToggleFlipping = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth()/8,
-					h = Screen:getHeight()/8
-				}
-			}
-		},
 		Swipe = {
 			GestureRange:new{
 				ges = "swipe",
@@ -186,15 +176,35 @@ function ReaderPaging:onToggleFlipping()
 	self.view.flipping_visible = not self.view.flipping_visible
 	self.flipping_mode = self.view.flipping_visible
 	self.flipping_page = self.current_page
+	
 	if self.flipping_mode then
 		self:updateOriginalPage(self.current_page)
+		self:enterFlippingMode()
 	else
 		self:updateOriginalPage(nil)
+		self:exitFlippingMode()
 	end
+	self.view:resetLayout()
 	self.ui:handleEvent(Event:new("SetFlippingMode", self.flipping_mode))
 	self.ui:handleEvent(Event:new("SetHinting", not self.flipping_mode))
 	self.ui:handleEvent(Event:new("ReZoom"))
 	UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderPaging:enterFlippingMode()
+	self.orig_reflow_mode = self.view.document.configurable.text_wrap
+	self.orig_footer_mode = self.view.footer_visible
+	self.orig_scroll_mode = self.view.page_scroll
+	
+	self.view.document.configurable.text_wrap = 0
+	self.view.page_scroll = false
+	self.view.footer_visible = true
+end
+
+function ReaderPaging:exitFlippingMode()
+	self.view.document.configurable.text_wrap = self.orig_reflow_mode
+	self.view.page_scroll = self.orig_scroll_mode
+	self.view.footer_visible = self.orig_footer_mode
 end
 
 function ReaderPaging:updateOriginalPage(page)
@@ -682,6 +692,13 @@ end
 
 function ReaderPaging:onGotoPage(number)
 	self:gotoPage(number)
+	return true
+end
+
+function ReaderPaging:onGotoPercentage(percentage)
+	if percentage < 0 then percentage = 0 end
+	if percentage > 1 then percentage = 1 end
+	self:gotoPage(math.floor(percentage*self.number_of_pages))
 	return true
 end
 

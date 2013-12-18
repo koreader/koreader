@@ -68,13 +68,16 @@ end
 function ReaderView:resetLayout()
 	self.dogear = ReaderDogear:new{
 		view = self,
+		ui = self.ui,
 	}
 	self.footer = ReaderFooter:new{
 		view = self,
+		ui = self.ui,
 		visible = self.footer_visible,
 	}
 	self.flipping = ReaderFlipping:new{
 		view = self,
+		ui = self.ui,
 	}
 	self[1] = self.dogear
 	self[2] = self.footer
