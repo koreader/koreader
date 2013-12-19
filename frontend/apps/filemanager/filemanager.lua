@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local TextWidget = require("ui/widget/textwidget")
 local FileChooser = require("ui/widget/filechooser")
+local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Font = require("ui/font")
 local Screen = require("ui/screen")
@@ -28,13 +29,12 @@ function FileManager:init()
 
 	self.show_parent = self.show_parent or self
 
-	self.banner = FrameContainer:new{
-		padding = 0,
-		bordersize = 0,
+	self.banner = VerticalGroup:new{
 		TextWidget:new{
 			face = Font:getFace("tfont", 24),
 			text = self.title,
-		}
+		},
+		VerticalSpan:new{ width = Screen:scaleByDPI(10) }
 	}
 
 	local file_chooser = FileChooser:new{
