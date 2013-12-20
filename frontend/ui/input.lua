@@ -602,28 +602,29 @@ function Input:handleTypeBTouchEv(ev)
 	end
 end
 
+local TwoSlotTrack = false
 function Input:handlePhoenixTouchEv(ev)
-	local TwoSlotTrack = false
 	-- Hack on handleTouchEV for the Kobo Aura
-	if ev.type == EV_SYN then
-		if ev.code == SYN_REPORT then
-			for _, MTSlot in pairs(self.MTSlots) do
-				self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
-			end
-			-- feed ev in all slots to state machine
-			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
-			if #self.MTSlots == 2 then
-				TwoSlotTrack = true
-			else TwoSlotTrack = false
-			end
-			self.MTSlots = {}
-			if touch_ges then
-				return Event:new("Gesture",
-					GestureDetector:adjustGesCoordinate(touch_ges)
-				)
-			end
+	-- DEBUG("TwoSlotTrack = ", TwoSlotTrack)
+	if ev.type == EV_SYN and ev.code == SYN_REPORT then
+		DEBUG("Event= |EV_SYN|SYN_REPORT|",ev.time.sec,"|",ev.time.usec)
+		for _, MTSlot in pairs(self.MTSlots) do
+			self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
 		end
-	elseif ev.type == EV_ABS and ev.code ~= ABS_MT_TOUCH_MAJOR and ev.code ~= ABS_MT_WIDTH_MAJOR then
+		-- feed ev in all slots to state machine
+		DEBUG("Evt 1= ", self.MTSlots[1].slot,"|", self.MTSlots[1].id,"|", self.MTSlots[1].x,"|", self.MTSlots[1].y,"|", self.MTSlots[1].timev.sec,"|", self.MTSlots[1].timev.usec)
+		if #self.MTSlots == 2 then
+			DEBUG("Evt 2= ", self.MTSlots[2].slot,"|", self.MTSlots[2].id,"|", self.MTSlots[2].x,"|", self.MTSlots[2].y,"|", self.MTSlots[2].timev.sec,"|", self.MTSlots[2].timev.usec)
+		end
+		local touch_ges = GestureDetector:feedEvent(self.MTSlots)
+		self.MTSlots = {}
+		if touch_ges then
+			return Event:new("Gesture",
+				GestureDetector:adjustGesCoordinate(touch_ges)
+			)
+		end
+	elseif ev.type == EV_ABS and ( ev.code == ABS_PRESSURE or ev.code > ABS_MT_WIDTH_MAJOR ) then
+		DEBUG("Event= |EV_ABS|",ev.code,"|",ev.value,"|",ev.time.sec,"|",ev.time.usec)
 		if #self.MTSlots == 0 then
 			self.cur_slot = 0
 			table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
@@ -635,9 +636,11 @@ function Input:handlePhoenixTouchEv(ev)
 			if self.cur_slot ~= ev.value then
 				if #self.MTSlots == 1 then
 					table.insert(self.MTSlots, self:getMtSlot(ev.value))
-					-- I have to add id's without events for the AURA. Since there are only two 
+					-- I have to add id's without events for the AURA. 
+					-- Since there are only two 
 					-- ID's 0 and 1 and it's not 0, 
 					self:setMtSlot(ev.value, "id", 1)
+					TwoSlotTrack = true
 				end
 			end
 			self.cur_slot = ev.value
@@ -645,33 +648,17 @@ function Input:handlePhoenixTouchEv(ev)
 			self:setCurrentMtSlot("x", ev.value)
 		elseif ev.code == ABS_MT_POSITION_Y then
 			self:setCurrentMtSlot("y", ev.value)
-
-		-- code to emulate mt protocol on kobos
-		-- we "confirm" abs_x, abs_y only when pressure ~= 0
-		---[[
-			elseif ev.code == ABS_X then
-				self:setCurrentMtSlot("abs_x", ev.value)
-			elseif ev.code == ABS_Y then
-				self:setCurrentMtSlot("abs_y", ev.value)
-			--]]	
-		elseif ev.code == ABS_PRESSURE then
-			if ev.value ~= 0 then
-				-- Single tap events only use slot 0.
-				--self:setMtSlot(0, "id", 1)
-				--Unnecessary for Aura
-				--self:confirmAbsxy()
-			else
-				--Unnecessary for Aura
-				--self:cleanAbsxy()
-				-- Pressure 0 events only invalidate slot 0.
-				self:setMtSlot(0, "id", -1)
-				-- If there are 2 slots active, invalidates slot 2.
-				if TwoSlotTrack then 
-					if #self.MTSlots == 1 then
+		elseif ev.code == ABS_PRESSURE and ev.value == 0 then
+			-- Pressure 0 events only invalidate slot 0.
+			self:setMtSlot(0, "id", -1)
+			-- If there are 2 slots active, invalidates slot 2.
+			if TwoSlotTrack then 
+				if #self.MTSlots == 1 then
+					DEBUG("Extra table inserted for Track ID -1 in slot 1")
 					table.insert(self.MTSlots, self:getMtSlot(1))
-					end
-					self:setMtSlot(1, "id", -1)
 				end
+				self:setMtSlot(1, "id", -1)
+				TwoSlotTrack = false
 			end
 		end
 	end
