@@ -2,17 +2,25 @@
 
 require "defaults"
 print(package.path)
-package.path = "./frontend/?.lua"
-require "ui/uimanager"
-require "ui/widget/menu"
-require "ui/widget/infomessage"
-require "ui/widget/confirmbox"
-require "ui/widget/touchmenu"
-require "ui/widget/keyboard"
-require "ui/widget/inputtext"
-require "document/document"
-require "ui/readerui"
-require "dbg"
+package.path = "./frontend/?.lua;./?.lua"
+local UIManager = require("ui/uimanager")
+local RenderText = require("ui/rendertext")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local Menu = require("ui/widget/menu")
+local Widget = require("ui/widget/widget")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
+local TouchMenu = require("ui/widget/touchmenu")
+local InputText = require("ui/widget/inputtext")
+local DocumentRegistry = require("document/documentregistry")
+local ReaderUI = require("ui/readerui")
+local Dbg = require("dbg")
+local Device = require("ui/device")
+local Screen = require("ui/screen")
 
 
 -----------------------------------------------------
@@ -25,12 +33,12 @@ function TestGrid:paintTo(bb)
 	h_line = math.floor(bb:getHeight() / 50)
 	for i=1,h_line do
 		y_num = i*50
-		renderUtf8Text(bb, 0, y_num+10, Font:getFace("ffont", 12), y_num, true)
+		RenderText:renderUtf8Text(bb, 0, y_num+10, Font:getFace("ffont", 12), y_num, true)
 		bb:paintRect(0, y_num, bb:getWidth(), 1, 10)
 	end
 	for i=1,v_line do
 		x_num = i*50
-		renderUtf8Text(bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
+		RenderText:renderUtf8Text(bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
 		bb:paintRect(x_num, 0, 1, bb:getHeight(), 10)
 	end
 end
