@@ -10,6 +10,7 @@ local FileChooser = Menu:extend{
 	path = lfs.currentdir(),
 	parent = nil,
 	show_hidden = DSHOWHIDDENFILES,
+	show_filesize = DSHOWFILESIZE,
 	filter = function(filename) return true end,
 }
 
@@ -46,7 +47,13 @@ function FileChooser:genItemTableFromPath(path)
 		table.insert(item_table, { text = dir.."/", path = self.path.."/"..dir })
 	end
 	for _, file in ipairs(files) do
-		table.insert(item_table, { text = file, path = self.path.."/"..file })
+		local full_path = self.path.."/"..file
+		if self.show_filesize then
+			local sstr = string.format("%4.1fM",lfs.attributes(full_path, "size")/1024/1024)
+			table.insert(item_table, { text = file, mandatory = sstr, path = full_path })
+		else
+			table.insert(item_table, { text = file, path = full_path })
+		end
 	end
 
 	return item_table

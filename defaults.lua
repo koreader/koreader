@@ -38,6 +38,10 @@ DSHOWOVERLAP = false
 -- default to false
 DSHOWHIDDENFILES = false
 
+-- show file size in filemanager
+-- default to false
+DSHOWFILESIZE = false
+
 -- customizable tap zones(rectangles)
 -- x: x coordinate of top left corner in proportion of screen width
 -- y: y coordinate of top left corner in proportion of screen height

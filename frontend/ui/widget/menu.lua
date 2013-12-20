@@ -1,5 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
@@ -8,6 +10,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local FocusManager = require("ui/widget/focusmanager")
 local TextWidget = require("ui/widget/textwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local Button = require("ui/widget/button")
@@ -111,7 +114,8 @@ local MenuItem = InputContainer:new{
 	text = nil,
 	show_parent = nil,
 	detail = nil,
-	face = Font:getFace("cfont", 22),
+	face = Font:getFace("cfont", 30),
+	info_face = Font:getFace("infont", 15),
 	dimen = nil,
 	shortcut = nil,
 	shortcut_style = "square",
@@ -147,32 +151,51 @@ function MenuItem:init()
 		}
 	end
 
+	local mandatory = self.mandatory and ""..self.mandatory.." " or ""
+	local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true).x
+	
 	w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
-	if w >= self.content_width then
+	if w + mandatory_w >= self.content_width then
 		if Device:isTouchDevice() then
 		else
 			self.active_key_events.ShowItemDetail = {
 				{"Right"}, doc = "show item detail"
 			}
 		end
-		indicator = "  >>"
-		indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
+		local indicator = "  >> "
+		local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
 		self.text = RenderText:getSubTextByWidth(self.text, self.face,
-			self.content_width - indicator_w, true) .. indicator
+			self.content_width - indicator_w - mandatory_w, true) .. indicator
 	end
+	
+	local text_container = LeftContainer:new{
+		dimen = Geom:new{w = self.content_width},
+		TextWidget:new{
+			text = self.text,
+			face = self.face,
+		}
+	}
+	
+	local mandatory_container = RightContainer:new{
+		dimen = Geom:new{w = self.content_width},
+		TextWidget:new{
+			text = mandatory,
+			face = self.info_face,
+		}
+	}
 
 	self._underline_container = UnderlineContainer:new{
 		dimen = Geom:new{
 			w = self.content_width,
 			h = self.dimen.h
 		},
-		HorizontalGroup:new {
+		HorizontalGroup:new{
 			align = "center",
-			TextWidget:new{
-				text = self.text,
-				face = self.face,
+			OverlapGroup:new{
+				text_container,
+				mandatory_container,
 			},
-		},
+		}
 	}
 
 	self[1] = FrameContainer:new{
@@ -458,6 +481,7 @@ function Menu:updateItems(select_number)
 			local item_tmp = MenuItem:new{
 				show_parent = self.show_parent,
 				text = self.item_table[i].text,
+				mandatory = self.item_table[i].mandatory,
 				face = self.cface,
 				dimen = self.item_dimen:new(),
 				shortcut = item_shortcut,
