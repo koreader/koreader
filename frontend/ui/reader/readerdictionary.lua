@@ -7,7 +7,8 @@ local DEBUG = require("dbg")
 
 local ReaderDictionary = EventListener:new{}
 
-function ReaderDictionary:onLookupWord(word)
+function ReaderDictionary:onLookupWord(highlight, word)
+	self.highlight = highlight
 	self:stardictLookup(word)
 end
 
@@ -36,6 +37,7 @@ function ReaderDictionary:showDict(results)
 		DEBUG("showing quick lookup dictionary window")
 		UIManager:show(DictQuickLookup:new{
 			ui = self.ui,
+			highlight = self.highlight,
 			dialog = self.dialog,
 			results = results,
 			dictionary = self.default_dictionary,
