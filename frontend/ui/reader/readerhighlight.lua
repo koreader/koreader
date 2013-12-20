@@ -225,23 +225,23 @@ end
 function ReaderHighlight:lookup(selected_word)
 	-- if we extracted text directly
 	if selected_word.word then
-		self.ui:handleEvent(Event:new("LookupWord", selected_word.word))
+		self.ui:handleEvent(Event:new("LookupWord", self, selected_word.word))
 	-- or we will do OCR
 	else
 		local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
 		DEBUG("OCRed word:", word)
-		self.ui:handleEvent(Event:new("LookupWord", word))
+		self.ui:handleEvent(Event:new("LookupWord", self, word))
 	end
 end
 
 function ReaderHighlight:translate(selected_text)
 	if selected_text.text ~= "" then
-		self.ui:handleEvent(Event:new("TranslateText", selected_text.text))
+		self.ui:handleEvent(Event:new("TranslateText", self, selected_text.text))
 	-- or we will do OCR
 	else
 		local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
 		DEBUG("OCRed text:", text)
-		self.ui:handleEvent(Event:new("TranslateText", text))
+		self.ui:handleEvent(Event:new("TranslateText", self, text))
 	end
 end
 
@@ -259,7 +259,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:saveHighlight()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 					{
@@ -268,7 +268,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:addNote()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
@@ -278,7 +278,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:translate(self.selected_text)
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 					{
@@ -287,7 +287,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:shareHighlight()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
@@ -298,12 +298,12 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:moreAction()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
 			},
-			tap_close_callback = function() self.ui:handleEvent(Event:new("Tap")) end,
+			tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
 		}
 		UIManager:show(self.highlight_dialog)
 	end

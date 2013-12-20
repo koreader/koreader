@@ -268,7 +268,7 @@ end
 function DictQuickLookup:onTapCloseDict(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.dict_frame.dimen) then
 		UIManager:close(self)
-		self.ui:handleEvent(Event:new("Tap"))
+		self.highlight:handleEvent(Event:new("Tap"))
 		return true
 	elseif not ges_ev.pos:notIntersectWith(self.dict_title.dimen) then
 		self.ui:handleEvent(Event:new("UpdateDefaultDict", self.dictionary))
