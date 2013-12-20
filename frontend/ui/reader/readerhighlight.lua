@@ -259,7 +259,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:saveHighlight()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 					{
@@ -268,7 +268,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:addNote()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
@@ -278,7 +278,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:translate(self.selected_text)
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 					{
@@ -287,7 +287,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:shareHighlight()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
@@ -298,12 +298,12 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 						callback = function()
 							self:moreAction()
 							UIManager:close(self.highlight_dialog)
-							self.ui:handleEvent(Event:new("Tap"))
+							self:handleEvent(Event:new("Tap"))
 						end,
 					},
 				},
 			},
-			tap_close_callback = function() self.ui:handleEvent(Event:new("Tap")) end,
+			tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
 		}
 		UIManager:show(self.highlight_dialog)
 	end
