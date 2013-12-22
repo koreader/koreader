@@ -24,6 +24,7 @@ S.FONT_WEIGHT = _("Font weight")
 S.GAMMA = _("Gamma")
 S.VIEW_MODE = _("View mode")
 S.EMBEDDED_STYLE = _("Embedded style")
+S.WRITING_DIR = _("Writing Direction")
 
 S.ON = _("on")
 S.OFF = _("off")
@@ -50,5 +51,9 @@ S.LANDSCAPE = _("landscape")
 S.TOGGLE_BOLD = _("toggle bold")
 S.VIEW_SCROLL = _("scroll")
 S.VIEW_PAGE = _("page")
+S.LTR = _("LTR")
+S.RTL = _("RTL")
+S.TBRTL = _("TBRTL")
+S.TBLTR = _("TBLTR")
 
 return S
