@@ -72,30 +72,6 @@ local KoptOptions = {
 				values = {1.0, 1.2, 1.4},
 				default_value = DKOPTREADER_CONFIG_LINE_SPACING,
 			},
-			{
-				name = "max_columns",
-				name_text = S.COLUMNS,
-				item_icons = {
-					"resources/icons/appbar.column.one.png",
-					"resources/icons/appbar.column.two.png",
-					"resources/icons/appbar.column.three.png",
-				},
-				values = {1,2,3},
-				default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
-			},
-			{
-				name = "justification",
-				name_text = S.TEXT_ALIGN,
-				item_icons = {
-					"resources/icons/appbar.align.auto.png",
-					"resources/icons/appbar.align.left.png",
-					"resources/icons/appbar.align.center.png",
-					"resources/icons/appbar.align.right.png",
-					"resources/icons/appbar.align.justify.png",
-				},
-				values = {-1,0,1,2,3},
-				default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
-			},
 		}
 	},
 	{
@@ -173,18 +149,49 @@ local KoptOptions = {
 				args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
 			},
 			{
-				name="screen_rotation",
-				name_text = S.VERTICAL_TEXT,
-				toggle = {S.ON, S.OFF},
-				values = {90, 0},
-				default_value = 0,
-			},
-			{
 				name = "word_spacing",
 				name_text = S.WORD_GAP,
 				toggle = {S.SMALL, S.AUTO, S.LARGE},
 				values = DKOPTREADER_CONFIG_WORD_SAPCINGS,
 				default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING,
+			},
+			{
+				name = "writing_direction",
+				name_text = S.WRITING_DIR,
+				toggle = {S.LTR, S.RTL, S.TBRTL},
+				values = {0, 1, 2},
+				default_value = 0,
+			},
+			{
+				name = "quality",
+				name_text = S.RENDER_QUALITY,
+				toggle = {S.LOW, S.DEFAULT, S.HIGH},
+				values={0.5, 1.0, 1.5},
+				default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
+			},
+			{
+				name = "max_columns",
+				name_text = S.COLUMNS,
+				item_icons = {
+					"resources/icons/appbar.column.one.png",
+					"resources/icons/appbar.column.two.png",
+					"resources/icons/appbar.column.three.png",
+				},
+				values = {1,2,3},
+				default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
+			},
+			{
+				name = "justification",
+				name_text = S.TEXT_ALIGN,
+				item_icons = {
+					"resources/icons/appbar.align.auto.png",
+					"resources/icons/appbar.align.left.png",
+					"resources/icons/appbar.align.center.png",
+					"resources/icons/appbar.align.right.png",
+					"resources/icons/appbar.align.justify.png",
+				},
+				values = {-1,0,1,2,3},
+				default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
 			},
 			{
 				name = "defect_size",
@@ -193,13 +200,7 @@ local KoptOptions = {
 				values = {1.0, 3.0, 5.0},
 				default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
 				event = "DefectSizeUpdate",
-			},
-			{
-				name = "quality",
-				name_text = S.RENDER_QUALITY,
-				toggle = {S.LOW, S.DEFAULT, S.HIGH},
-				values={0.5, 1.0, 1.5},
-				default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
+				show = false,
 			},
 			{
 				name = "auto_straighten",
