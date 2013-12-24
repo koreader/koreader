@@ -149,6 +149,11 @@ function ReaderView:screenToPageTransform(pos)
 		else
 			return self:getSinglePagePosition(pos)
 		end
+	else
+		pos.page = self.ui.document:getCurrentPage()
+		local last_y = self.ui.document:getCurrentPos()
+		DEBUG("document has no pages at", pos)
+		return pos
 	end
 end
 
@@ -162,6 +167,8 @@ function ReaderView:pageToScreenTransform(page, rect)
 		else
 			return self:getSinglePageRect(rect)
 		end
+	else
+		return rect
 	end
 end
 

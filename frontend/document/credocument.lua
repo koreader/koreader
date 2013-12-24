@@ -127,6 +127,25 @@ function CreDocument:getPageCount()
 	return self._document:getPages()
 end
 
+function CreDocument:getWordFromPosition(pos)
+	local word_box = self._document:getWordFromPos(pos.x, pos.y)
+	if word_box.word then
+		return {
+			word = word_box.word,
+			page = self._document:getCurrentPage(),
+			sbox = {
+				x = word_box.x0, y = word_box.y0,
+				w = word_box.x1 - word_box.x0,
+				h = word_box.y1 - word_box.y0,
+			}
+		}
+	end
+end
+
+function CreDocument:getTextFromPositions(doc, pos0, pos1)
+	DEBUG("getTextFromPositions not finished yet")
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
 	tile_bb = Blitbuffer.new(rect.w, rect.h)
 	self._document:drawCurrentPage(tile_bb)
