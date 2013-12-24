@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-11-29 14:39+0000\n"
+"POT-Creation-Date: 2013-12-24 04:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -27,17 +27,17 @@ msgid ""
 "-p [rows]        enable Lua code profiling"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:45
+#: frontend/ui/data/strings.lua:46
 msgid ""
 "0 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:47
+#: frontend/ui/data/strings.lua:48
 msgid ""
 "10 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:46
+#: frontend/ui/data/strings.lua:47
 msgid ""
 "5 deg"
 msgstr ""
@@ -73,38 +73,38 @@ msgid ""
 "Auto Straighten"
 msgstr ""
 
-#: frontend/ui/input.lua:381
+#: frontend/ui/input.lua:392
 msgid ""
 "Auto-detected Kindle 2"
 msgstr ""
 
-#: frontend/ui/input.lua:374
+#: frontend/ui/input.lua:385
 msgid ""
 "Auto-detected Kindle 3"
 msgstr ""
 
-#: frontend/ui/input.lua:370
+#: frontend/ui/input.lua:381
 msgid ""
 "Auto-detected Kindle 4"
 msgstr ""
 
-#: frontend/ui/input.lua:378
+#: frontend/ui/input.lua:389
 msgid ""
 "Auto-detected Kindle DXG"
 msgstr ""
 
-#: frontend/ui/input.lua:286
-#: frontend/ui/input.lua:290
+#: frontend/ui/input.lua:289
+#: frontend/ui/input.lua:293
 msgid ""
 "Auto-detected Kindle PaperWhite"
 msgstr ""
 
-#: frontend/ui/input.lua:314
+#: frontend/ui/input.lua:317
 msgid ""
 "Auto-detected Kindle Touch"
 msgstr ""
 
-#: frontend/ui/input.lua:320
+#: frontend/ui/input.lua:323
 msgid ""
 "Auto-detected Kobo"
 msgstr ""
@@ -170,6 +170,11 @@ msgid ""
 "Delete"
 msgstr ""
 
+#: frontend/ui/input.lua:324
+msgid ""
+"Device model="
+msgstr ""
+
 #: frontend/ui/data/strings.lua:16
 msgid ""
 "Document Language"
@@ -195,7 +200,7 @@ msgid ""
 "File manager menu"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanager.lua:17
+#: frontend/apps/filemanager/filemanager.lua:18
 msgid ""
 "FileManager"
 msgstr ""
@@ -203,6 +208,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:13
 msgid ""
 "Fine Tuning"
+msgstr ""
+
+#: frontend/ui/input.lua:326
+msgid ""
+"Firmware revision"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:23
@@ -252,8 +262,8 @@ msgid ""
 "Highlight"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagerhistory.lua:10
-#: frontend/apps/filemanager/filemanagerhistory.lua:29
+#: frontend/apps/filemanager/filemanagerhistory.lua:11
+#: frontend/apps/filemanager/filemanagerhistory.lua:30
 msgid ""
 "History"
 msgstr ""
@@ -298,6 +308,11 @@ msgid ""
 "Indentation"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:54
+msgid ""
+"LTR"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:10
 msgid ""
 "Line Spacing"
@@ -318,7 +333,7 @@ msgid ""
 "No reader engine for this file"
 msgstr ""
 
-#: frontend/ui/input.lua:384
+#: frontend/ui/input.lua:395
 msgid ""
 "Not supported device model!"
 msgstr ""
@@ -355,6 +370,11 @@ msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at the bottom of the page for more options"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:55
+msgid ""
+"RTL"
+msgstr ""
+
 #: reader.lua:90
 msgid ""
 "Read all the books on your E-Ink reader"
@@ -365,7 +385,7 @@ msgid ""
 "Redrawing with font "
 msgstr ""
 
-#: frontend/ui/data/koptoptions.lua:150
+#: frontend/ui/data/koptoptions.lua:126
 #: frontend/ui/data/strings.lua:15
 msgid ""
 "Reflow"
@@ -379,6 +399,16 @@ msgstr ""
 #: frontend/ui/data/strings.lua:5
 msgid ""
 "Screen Mode"
+msgstr ""
+
+#: frontend/ui/input.lua:328
+msgid ""
+"Screen height ="
+msgstr ""
+
+#: frontend/ui/input.lua:330
+msgid ""
+"Screen width ="
 msgstr ""
 
 #: frontend/ui/data/strings.lua:8
@@ -428,7 +458,17 @@ msgid ""
 "Switch zoom mode"
 msgstr ""
 
-#: frontend/ui/reader/readertoc.lua:94
+#: frontend/ui/data/strings.lua:57
+msgid ""
+"TBLTR"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:56
+msgid ""
+"TBRTL"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:95
 msgid ""
 "Table of Contents"
 msgstr ""
@@ -488,6 +528,11 @@ msgid ""
 "Word Gap"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:27
+msgid ""
+"Writing Direction"
+msgstr ""
+
 #: frontend/ui/reader/readerzooming.lua:264
 msgid ""
 "Zoom to fit content"
@@ -518,7 +563,7 @@ msgid ""
 "Zoom to fit page width"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:30
+#: frontend/ui/data/strings.lua:31
 msgid ""
 "auto"
 msgstr ""
@@ -566,22 +611,22 @@ msgid ""
 "close document"
 msgstr ""
 
-#: frontend/ui/widget/menu.lua:402
+#: frontend/ui/widget/menu.lua:425
 msgid ""
 "close menu"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:41
+#: frontend/ui/data/strings.lua:42
 msgid ""
 "darker"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:42
+#: frontend/ui/data/strings.lua:43
 msgid ""
 "darkest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:36
+#: frontend/ui/data/strings.lua:37
 msgid ""
 "decrease"
 msgstr ""
@@ -596,7 +641,7 @@ msgid ""
 "decrease line space"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:40
+#: frontend/ui/data/strings.lua:41
 msgid ""
 "default"
 msgstr ""
@@ -661,17 +706,17 @@ msgid ""
 "go to start"
 msgstr ""
 
-#: frontend/ui/widget/menu.lua:404
+#: frontend/ui/widget/menu.lua:427
 msgid ""
 "goto next page of the menu"
 msgstr ""
 
-#: frontend/ui/widget/menu.lua:407
+#: frontend/ui/widget/menu.lua:430
 msgid ""
 "goto previous page of the menu"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:44
+#: frontend/ui/data/strings.lua:45
 msgid ""
 "high"
 msgstr ""
@@ -681,7 +726,7 @@ msgid ""
 "highlight text"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:37
+#: frontend/ui/data/strings.lua:38
 msgid ""
 "increase"
 msgstr ""
@@ -696,37 +741,37 @@ msgid ""
 "increase line space"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:49
+#: frontend/ui/data/strings.lua:50
 msgid ""
 "landscape"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:35
+#: frontend/ui/data/strings.lua:36
 msgid ""
 "large"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:39
+#: frontend/ui/data/strings.lua:40
 msgid ""
 "lighter"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:38
+#: frontend/ui/data/strings.lua:39
 msgid ""
 "lightest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:43
+#: frontend/ui/data/strings.lua:44
 msgid ""
 "low"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:31
+#: frontend/ui/data/strings.lua:32
 msgid ""
 "manual"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:34
+#: frontend/ui/data/strings.lua:35
 msgid ""
 "medium"
 msgstr ""
@@ -761,7 +806,7 @@ msgid ""
 "move visible area up"
 msgstr ""
 
-#: frontend/ui/widget/menu.lua:488
+#: frontend/ui/widget/menu.lua:512
 msgid ""
 "no choices available"
 msgstr ""
@@ -771,27 +816,27 @@ msgid ""
 "no text"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:29
+#: frontend/ui/data/strings.lua:30
 msgid ""
 "off"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:28
+#: frontend/ui/data/strings.lua:29
 msgid ""
 "on"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:52
+#: frontend/ui/data/strings.lua:53
 msgid ""
 "page"
 msgstr ""
 
-#: frontend/ui/widget/menu.lua:482
+#: frontend/ui/widget/menu.lua:506
 msgid ""
 "page "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:48
+#: frontend/ui/data/strings.lua:49
 msgid ""
 "portrait"
 msgstr ""
@@ -806,18 +851,18 @@ msgid ""
 "rotate right by 90 degrees"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:51
+#: frontend/ui/data/strings.lua:52
 msgid ""
 "scroll"
 msgstr ""
 
 #: frontend/ui/widget/configdialog.lua:466
-#: frontend/ui/widget/menu.lua:416
+#: frontend/ui/widget/menu.lua:439
 msgid ""
 "select current menu item"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:32
+#: frontend/ui/data/strings.lua:33
 msgid ""
 "semi-auto"
 msgstr ""
@@ -848,12 +893,12 @@ msgid ""
 "show menu"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:33
+#: frontend/ui/data/strings.lua:34
 msgid ""
 "small"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:50
+#: frontend/ui/data/strings.lua:51
 msgid ""
 "toggle bold"
 msgstr ""
