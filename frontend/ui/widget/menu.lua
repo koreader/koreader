@@ -169,7 +169,7 @@ function MenuItem:init()
 	end
 	
 	local text_container = LeftContainer:new{
-		dimen = Geom:new{w = self.content_width},
+		dimen = Geom:new{w = self.content_width, h = self.dimen.h},
 		TextWidget:new{
 			text = self.text,
 			face = self.face,
@@ -177,7 +177,7 @@ function MenuItem:init()
 	}
 	
 	local mandatory_container = RightContainer:new{
-		dimen = Geom:new{w = self.content_width},
+		dimen = Geom:new{w = self.content_width, h = self.dimen.h},
 		TextWidget:new{
 			text = mandatory,
 			face = self.info_face,
@@ -192,6 +192,7 @@ function MenuItem:init()
 		HorizontalGroup:new{
 			align = "center",
 			OverlapGroup:new{
+				dimen = Geom:new{w = self.content_width, h = self.dimen.h},
 				text_container,
 				mandatory_container,
 			},
@@ -245,16 +246,15 @@ function MenuItem:onTapSelect()
 	return true
 end
 
-
 --[[
 Widget that displays menu
 --]]
 local Menu = FocusManager:new{
 	show_parent = nil,
 	-- face for displaying item contents
-	cface = Font:getFace("cfont", 22),
+	cface = Font:getFace("cfont", 24),
 	-- face for menu title
-	tface = Font:getFace("tfont", 25),
+	tface = Font:getFace("tfont", 26),
 	-- face for paging info display
 	fface = Font:getFace("ffont", 16),
 	-- font for item shortcut
@@ -302,7 +302,7 @@ function Menu:_recalculateDimen()
 	end
 	self.item_dimen = Geom:new{
 		w = self.dimen.w,
-		h = Screen:scaleByDPI(36), -- hardcoded for now
+		h = Screen:scaleByDPI(46), -- hardcoded for now
 	}
 	self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
 	self.page_num = math.ceil(#self.item_table / self.perpage)
