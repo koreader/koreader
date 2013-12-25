@@ -509,6 +509,7 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
 	--DEBUG("config option value", option_name, option_value)
 	self.configurable[option_name] = option_value
 	self.ui:handleEvent(Event:new("StartActivityIndicator"))
+	self:closeDialog()
 	return true
 end
 

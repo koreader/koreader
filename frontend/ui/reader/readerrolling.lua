@@ -6,6 +6,7 @@ local Input = require("ui/input")
 local Event = require("ui/event")
 local GestureRange = require("ui/gesturerange")
 local ReaderPanning = require("ui/reader/readerpanning")
+local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -243,7 +244,7 @@ end
 
 function ReaderRolling:onZoom()
 	--@TODO re-read doc_height info after font or lineheight changes  05.06 2012 (houqp)
-	self:onUpdatePos()
+	self:updatePos()
 end
 
 --[[
@@ -251,6 +252,11 @@ end
 	font has been changed, or line height has been changed.
 --]]
 function ReaderRolling:onUpdatePos()
+	UIManager:scheduleIn(0.1, function () self:updatePos() end)
+	return true
+end
+
+function ReaderRolling:updatePos()
 	-- reread document height
 	self.ui.document:_readMetadata()
 	-- update self.current_pos if the height of document has been changed.
@@ -262,7 +268,6 @@ function ReaderRolling:onUpdatePos()
 		self.old_page = new_page
 		self.ui:handleEvent(Event:new("UpdateToc"))
 	end
-	return true
 end
 
 function ReaderRolling:onChangeViewMode()
