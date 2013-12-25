@@ -573,6 +573,7 @@ function ReaderView:onSetPageMargins(margins)
 	local right = margins[3]
 	local bottom = margins[4]
 	self.ui.document:setPageMargins(left, top, right, bottom)
+	self.ui:handleEvent(Event:new("UpdatePos"))
 	return true
 end
 

@@ -40,6 +40,7 @@ function FileManager:init()
 	local file_chooser = FileChooser:new{
 		-- remeber to adjust the height when new item is added to the group
 		path = self.root_path,
+		show_parent = self.show_parent,
 		height = Screen:getHeight() - self.banner:getSize().h,
 		is_popout = false,
 		is_borderless = true,
