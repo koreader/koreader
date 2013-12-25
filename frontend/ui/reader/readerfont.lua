@@ -8,6 +8,7 @@ local Input = require("ui/input")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderFont = InputContainer:new{
@@ -80,7 +81,7 @@ function ReaderFont:onReadSettings(config)
 		--@TODO change this!  12.01 2013 (houqp)
 		self.font_size = 29
 	end
-	self.ui.document:setFontSize(self.font_size)
+	self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
 
 	self.line_space_percent = config:readSetting("line_space_percent")
 	if not self.line_space_percent then
