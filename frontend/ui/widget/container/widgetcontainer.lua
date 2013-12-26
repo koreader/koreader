@@ -40,7 +40,20 @@ end
 function WidgetContainer:paintTo(bb, x, y)
 	-- default to pass request to first child widget
 	if self[1] then
-		return self[1]:paintTo(bb, x, y)
+		x = x + (self.dimen.x or 0)
+		y = y + (self.dimen.y or 0)
+		if self.align == "top" then
+			local contentSize = self[1]:getSize()
+			self[1]:paintTo(bb,
+				x + math.floor((self.dimen.w - contentSize.w)/2), y)
+		elseif self.align == "bottom" then
+			local contentSize = self[1]:getSize()
+			self[1]:paintTo(bb,
+				x + math.floor((self.dimen.w - contentSize.w)/2),
+				y + (self.dimen.h - contentSize.h))
+		else
+			return self[1]:paintTo(bb, x, y)
+		end
 	end
 end
 
