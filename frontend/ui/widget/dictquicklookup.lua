@@ -1,10 +1,13 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = require("ui/screen")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
@@ -66,6 +69,10 @@ function DictQuickLookup:init()
 				},
 			},
 		}
+		table.insert(self.dict_bar,
+			CloseButton:new{
+				window = self,
+		})
 	end
 end
 
@@ -101,7 +108,7 @@ function DictQuickLookup:update()
 			text = self.definition,
 			face = self.content_face,
 			width = self.width,
-			height = self.height*0.8,
+			height = self.height*0.6,
 			dialog = self,
 		},
 	}	
@@ -153,6 +160,11 @@ function DictQuickLookup:update()
 		}
 	}
 	
+	self.dict_bar = OverlapGroup:new{
+		dimen = {w = button_table:getSize().w, h = self.dict_title:getSize().h},
+		self.dict_title,
+	}
+	
 	self.dict_frame = FrameContainer:new{
 		radius = 8,
 		bordersize = 3,
@@ -161,7 +173,7 @@ function DictQuickLookup:update()
 		background = 0,
 		VerticalGroup:new{
 			align = "left",
-			self.dict_title,
+			self.dict_bar,
 			title_bar,
 			-- word
 			CenterContainer:new{
@@ -189,10 +201,14 @@ function DictQuickLookup:update()
 			}
 		}
 	}
-	
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		self.dict_frame,
+	self[1] = WidgetContainer:new{
+		align = self.align,
+		dimen = self.region:copy(),
+		FrameContainer:new{
+			bordersize = 0,
+			padding = Screen:scaleByDPI(5),
+			self.dict_frame,
+		}
 	}
 	UIManager.repaint_all = true
 	UIManager.full_refresh = true
@@ -267,13 +283,18 @@ end
 
 function DictQuickLookup:onTapCloseDict(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.dict_frame.dimen) then
-		UIManager:close(self)
-		self.highlight:handleEvent(Event:new("Tap"))
+		self:onClose()
 		return true
 	elseif not ges_ev.pos:notIntersectWith(self.dict_title.dimen) then
 		self.ui:handleEvent(Event:new("UpdateDefaultDict", self.dictionary))
 		return true
 	end
+	return true
+end
+
+function DictQuickLookup:onClose()
+	UIManager:close(self)
+	self.highlight:handleEvent(Event:new("Tap"))
 	return true
 end
 
