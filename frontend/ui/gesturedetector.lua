@@ -350,6 +350,16 @@ function GestureDetector:handleNonTap(tev)
 				return self:switchState("holdState", tev, true)
 			end
 		end, deadline)
+		DEBUG("handle non-tap", tev)
+		return {
+			ges = "touch",
+			pos = Geom:new{
+				x = tev.x,
+				y = tev.y,
+				w = 0, h = 0,
+			},
+			time = tev.timev,
+		}
 	else
 		-- it is not end of touch event, see if we need to switch to
 		-- other states
