@@ -59,6 +59,9 @@ local ReaderView = OverlapGroup:new{
 	dogear_visible = false,
 	-- in flipping state
 	flipping_visible = false,
+	
+	-- auto save settings after turning pages
+	auto_save_paging_count = 0,	
 }
 
 function ReaderView:init()
@@ -516,11 +519,13 @@ end
 function ReaderView:onPageUpdate(new_page_no)
 	self.state.page = new_page_no
 	self:recalculate()
+	self:autoSaveSettings()
 end
 
 function ReaderView:onPosUpdate(new_pos)
 	self.state.pos = new_pos
 	self:recalculate()
+	self:autoSaveSettings()
 end
 
 function ReaderView:onZoomUpdate(zoom)
@@ -577,12 +582,23 @@ function ReaderView:onSetPageMargins(margins)
 	return true
 end
 
-function ReaderView:onCloseDocument()
+function ReaderView:onSaveSettings()
 	self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
 	self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
 	self.ui.doc_settings:saveSetting("rotation_mode", self.cur_rotation_mode)
 	self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
 	self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)	
+end
+
+function ReaderView:autoSaveSettings()
+	if DAUTO_SAVE_PAGING_COUNT then
+		if self.auto_save_paging_count == DAUTO_SAVE_PAGING_COUNT then
+			self.ui:saveSettings()
+			self.auto_save_paging_count = 0
+		else
+			self.auto_save_paging_count = self.auto_save_paging_count + 1
+		end
+	end
 end
 
 return ReaderView

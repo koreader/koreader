@@ -33,7 +33,7 @@ function ReaderTypeset:onReadSettings(config)
 	end
 end
 
-function ReaderTypeset:onCloseDocument()
+function ReaderTypeset:onSaveSettings()
 	self.ui.doc_settings:saveSetting("css", self.css)
 	self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
 end

@@ -137,7 +137,7 @@ function ReaderMenu:onSetDimensions(dimen)
 	end
 end
 
-function ReaderMenu:onCloseDocument()
+function ReaderMenu:onSaveSettings()
 end
 
 function ReaderMenu:registerToMainMenu(widget)

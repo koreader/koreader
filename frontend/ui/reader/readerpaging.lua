@@ -133,7 +133,7 @@ function ReaderPaging:onReadSettings(config)
 	end
 end
 
-function ReaderPaging:onCloseDocument()
+function ReaderPaging:onSaveSettings()
 	self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
 	self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
 	self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)

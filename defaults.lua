@@ -83,6 +83,9 @@ DCREREADER_CONFIG_FONT_SIZES = {16, 20, 22, 24, 28, 32, 38, 44}  -- range from 1
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 
+-- change this to any numerical value if you want to antomatically save settings when turning pages
+DAUTO_SAVE_PAGING_COUNT = nil
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################
