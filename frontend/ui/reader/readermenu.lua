@@ -76,7 +76,7 @@ function ReaderMenu:setUpdateItemTable()
 	})
 end
 
-function ReaderMenu:onShowMenu()
+function ReaderMenu:onShowReaderMenu()
 	if #self.tab_item_table.main == 0 then
 		self:setUpdateItemTable()
 	end
@@ -125,7 +125,8 @@ function ReaderMenu:onShowMenu()
 end
 
 function ReaderMenu:onTapShowMenu()
-	self:onShowMenu()
+	self.ui:handleEvent(Event:new("ShowConfigMenu"))
+	self.ui:handleEvent(Event:new("ShowReaderMenu"))
 	return true
 end
 

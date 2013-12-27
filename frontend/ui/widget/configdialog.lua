@@ -491,17 +491,8 @@ end
 
 function ConfigDialog:onShowConfigPanel(index)
 	self.panel_index = index
-	local orig_dimen = self.dialog_frame and self.dialog_frame.dimen or Geom:new{}
-	
 	self:update()
-	
 	UIManager.repaint_all = true
-	UIManager.full_refresh = true
-	UIManager.update_region_func = function()
-		local update_region = self.dialog_frame.dimen:combine(orig_dimen)
-		DEBUG("update region", update_region)
-		return update_region
-	end
 	return true
 end
 
