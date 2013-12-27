@@ -350,7 +350,7 @@ function GestureDetector:handleNonTap(tev)
 				return self:switchState("holdState", tev, true)
 			end
 		end, deadline)
-		DEBUG("handle non-tap", tev)
+		--DEBUG("handle non-tap", tev)
 		return {
 			ges = "touch",
 			pos = Geom:new{
