@@ -27,6 +27,7 @@ function ReaderTypeset:onReadSettings(config)
 	-- default to enable embedded css
 	if self.embedded_css == nil then
 		self.embedded_css = true
+		self.ui.document:setEmbeddedStyleSheet(1)
 	end
 	if not self.embedded_css then
 		self.ui.document:setEmbeddedStyleSheet(0)
@@ -95,11 +96,13 @@ end
 
 function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
 	if not toggle then
-		self.ui.document:setEmbeddedStyleSheet(0)
 		self.embedded_css = false
+		self:setStyleSheet(self.ui.document.default_css)
+		self.ui.document:setEmbeddedStyleSheet(0)
 	else
-		self.ui.document:setEmbeddedStyleSheet(1)
 		self.embedded_css = true
+		--self:setStyleSheet(self.ui.document.default_css)
+		self.ui.document:setEmbeddedStyleSheet(1)
 	end
 	self.ui:handleEvent(Event:new("UpdatePos"))
 end
