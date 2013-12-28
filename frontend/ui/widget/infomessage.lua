@@ -58,7 +58,7 @@ function InfoMessage:init()
 				HorizontalSpan:new{ width = 10 },
 				TextBoxWidget:new{
 					text = self.text,
-					face = Font:getFace("cfont", 30)
+					face = self.face
 				}
 			}
 		}

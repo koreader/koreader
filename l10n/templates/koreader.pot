@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-12-24 04:51+0000\n"
+"POT-Creation-Date: 2013-12-28 04:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -42,18 +42,18 @@ msgid ""
 "5 deg"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:115
+#: frontend/ui/widget/dictquicklookup.lua:122
 msgid ""
 "<<"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:122
+#: frontend/ui/widget/dictquicklookup.lua:129
 msgid ""
 ">>"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:266
-#: frontend/ui/widget/dictquicklookup.lua:138
+#: frontend/ui/reader/readerhighlight.lua:268
+#: frontend/ui/widget/dictquicklookup.lua:145
 msgid ""
 "Add Note"
 msgstr ""
@@ -125,7 +125,7 @@ msgid ""
 "Change Hyphenation to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:17
+#: frontend/ui/reader/readerfont.lua:18
 msgid ""
 "Change font"
 msgstr ""
@@ -140,7 +140,7 @@ msgid ""
 "Contrast"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:136
+#: frontend/ui/reader/readerfont.lua:137
 msgid ""
 "Decrease font size to "
 msgstr ""
@@ -150,12 +150,12 @@ msgid ""
 "Decrease front light intensity to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:204
+#: frontend/ui/reader/readerfont.lua:205
 msgid ""
 "Decrease gamma to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:175
+#: frontend/ui/reader/readerfont.lua:176
 msgid ""
 "Decrease line space to "
 msgstr ""
@@ -180,7 +180,7 @@ msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/ui/reader/readermenu.lua:103
+#: frontend/ui/reader/readermenu.lua:111
 msgid ""
 "Document menu"
 msgstr ""
@@ -195,7 +195,7 @@ msgid ""
 "Embedded style"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:103
+#: frontend/apps/filemanager/filemanagermenu.lua:112
 msgid ""
 "File manager menu"
 msgstr ""
@@ -250,14 +250,14 @@ msgid ""
 "Go to Page or Location"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:72
+#: frontend/apps/filemanager/filemanagermenu.lua:73
 #: frontend/ui/reader/readermenu.lua:70
 msgid ""
 "Help"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:258
-#: frontend/ui/widget/dictquicklookup.lua:131
+#: frontend/ui/reader/readerhighlight.lua:260
+#: frontend/ui/widget/dictquicklookup.lua:138
 msgid ""
 "Highlight"
 msgstr ""
@@ -283,7 +283,7 @@ msgid ""
 "If you give the name of a directory instead of a file path, a file"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:138
+#: frontend/ui/reader/readerfont.lua:139
 msgid ""
 "Increase font size to "
 msgstr ""
@@ -293,12 +293,12 @@ msgid ""
 "Increase front light intensity to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:201
+#: frontend/ui/reader/readerfont.lua:202
 msgid ""
 "Increase gamma to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:179
+#: frontend/ui/reader/readerfont.lua:180
 msgid ""
 "Increase line space to "
 msgstr ""
@@ -323,7 +323,7 @@ msgid ""
 "Location"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:296
+#: frontend/ui/reader/readerhighlight.lua:298
 msgid ""
 "More"
 msgstr ""
@@ -349,7 +349,7 @@ msgid ""
 "Page"
 msgstr ""
 
-#: frontend/ui/widget/touchmenu.lua:346
+#: frontend/ui/widget/touchmenu.lua:345
 msgid ""
 "Page "
 msgstr ""
@@ -364,7 +364,7 @@ msgid ""
 "Page Margin"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:75
+#: frontend/apps/filemanager/filemanagermenu.lua:76
 #: frontend/ui/reader/readermenu.lua:73
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at the bottom of the page for more options"
@@ -380,7 +380,7 @@ msgid ""
 "Read all the books on your E-Ink reader"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:227
+#: frontend/ui/reader/readerfont.lua:228
 msgid ""
 "Redrawing with font "
 msgstr ""
@@ -433,7 +433,7 @@ msgid ""
 "Select Option Item"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:160
+#: frontend/ui/reader/readerfont.lua:161
 msgid ""
 "Set font size to "
 msgstr ""
@@ -443,7 +443,7 @@ msgid ""
 "Set render style"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:285
+#: frontend/ui/reader/readerhighlight.lua:287
 msgid ""
 "Share"
 msgstr ""
@@ -498,7 +498,7 @@ msgid ""
 "Toggle"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:61
+#: frontend/apps/filemanager/filemanagermenu.lua:62
 msgid ""
 "Toggle hidden files"
 msgstr ""
@@ -508,9 +508,15 @@ msgid ""
 "Toggle switch"
 msgstr ""
 
-#: frontend/ui/reader/readerhighlight.lua:277
+#: frontend/ui/reader/readerhighlight.lua:279
 msgid ""
 "Translate"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:81
+#: frontend/ui/reader/readermenu.lua:78
+msgid ""
+"Version"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:17
@@ -631,12 +637,12 @@ msgid ""
 "decrease"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:34
+#: frontend/ui/reader/readerfont.lua:35
 msgid ""
 "decrease font size"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:42
+#: frontend/ui/reader/readerfont.lua:43
 msgid ""
 "decrease line space"
 msgstr ""
@@ -646,62 +652,62 @@ msgid ""
 "default"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:50
+#: frontend/ui/reader/readerrolling.lua:51
 msgid ""
 "go to 11%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:52
+#: frontend/ui/reader/readerrolling.lua:53
 msgid ""
 "go to 22%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:54
+#: frontend/ui/reader/readerrolling.lua:55
 msgid ""
 "go to 33%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:56
+#: frontend/ui/reader/readerrolling.lua:57
 msgid ""
 "go to 44%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:58
+#: frontend/ui/reader/readerrolling.lua:59
 msgid ""
 "go to 55%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:60
+#: frontend/ui/reader/readerrolling.lua:61
 msgid ""
 "go to 66%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:62
+#: frontend/ui/reader/readerrolling.lua:63
 msgid ""
 "go to 77%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:64
+#: frontend/ui/reader/readerrolling.lua:65
 msgid ""
 "go to 88%"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:66
+#: frontend/ui/reader/readerrolling.lua:67
 msgid ""
 "go to end"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:29
+#: frontend/ui/reader/readerrolling.lua:30
 msgid ""
 "go to next view"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:34
+#: frontend/ui/reader/readerrolling.lua:35
 msgid ""
 "go to previous view"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:48
+#: frontend/ui/reader/readerrolling.lua:49
 msgid ""
 "go to start"
 msgstr ""
@@ -731,12 +737,12 @@ msgid ""
 "increase"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:30
+#: frontend/ui/reader/readerfont.lua:31
 msgid ""
 "increase font size"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:38
+#: frontend/ui/reader/readerfont.lua:39
 msgid ""
 "increase line space"
 msgstr ""
@@ -776,12 +782,12 @@ msgid ""
 "medium"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:44
+#: frontend/ui/reader/readerrolling.lua:45
 msgid ""
 "move view down"
 msgstr ""
 
-#: frontend/ui/reader/readerrolling.lua:39
+#: frontend/ui/reader/readerrolling.lua:40
 msgid ""
 "move view up"
 msgstr ""
@@ -882,12 +888,12 @@ msgid ""
 "show config dialog"
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:27
+#: frontend/ui/reader/readerfont.lua:28
 msgid ""
 "show font menu"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:34
+#: frontend/apps/filemanager/filemanagermenu.lua:35
 #: frontend/ui/reader/readermenu.lua:44
 msgid ""
 "show menu"

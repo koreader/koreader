@@ -74,6 +74,14 @@ function ReaderMenu:setUpdateItemTable()
 			})
 		end
 	})
+	table.insert(self.tab_item_table.main, {
+		text = _("Version"),
+		callback = function()
+			UIManager:show(InfoMessage:new{
+				text = io.open("git-rev", "r"):read(),
+			})
+		end
+	})
 end
 
 function ReaderMenu:onShowReaderMenu()

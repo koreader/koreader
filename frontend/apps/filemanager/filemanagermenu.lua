@@ -2,6 +2,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local TouchMenu = require("ui/widget/touchmenu")
 local ReaderFrontLight = require("ui/reader/readerfrontlight")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
@@ -73,6 +74,14 @@ function FileManagerMenu:setUpdateItemTable()
 		callback = function()
 			UIManager:show(InfoMessage:new{
 				text = _("Please report bugs to https://github.com/koreader/ koreader/issues, Click at the bottom of the page for more options"),
+			})
+		end
+	})
+	table.insert(self.tab_item_table.main, {
+		text = _("Version"),
+		callback = function()
+			UIManager:show(InfoMessage:new{
+				text = io.open("git-rev", "r"):read(),
 			})
 		end
 	})
