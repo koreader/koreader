@@ -9,7 +9,7 @@ local FileChooser = Menu:extend{
 	no_title = true,
 	path = lfs.currentdir(),
 	parent = nil,
-	show_hidden = DSHOWHIDDENFILES,
+	show_hidden = nil,
 	show_filesize = DSHOWFILESIZE,
 	filter = function(filename) return true end,
 }
