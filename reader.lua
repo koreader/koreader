@@ -9,7 +9,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local ReaderUI = require("ui/readerui")
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
-local Dbg = require("dbg")
+local DEBUG = require("dbg")
 local FileManager = require("apps/filemanager/filemanager")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
@@ -49,6 +49,15 @@ function exitReader()
 end
 
 function showReaderUI(file, pass)
+	DEBUG("opening file", file)
+	UIManager:show(InfoMessage:new{
+		text = _("opening file") .. file,
+		timeout = 1,
+	})
+	UIManager:scheduleIn(0.1, function() doShowReaderUI(file, pass) end)
+end
+
+function doShowReaderUI(file, pass)
 	local document = DocumentRegistry:openDocument(file)
 	if not document then
 		UIManager:show(InfoMessage:new{
@@ -117,7 +126,7 @@ while argidx <= #ARGV do
 	if arg == "-h" then
 		return showusage()
 	elseif arg == "-d" then
-		Dbg:turnOn()
+		DEBUG:turnOn()
 	elseif arg == "-p" then
 		local lulip = require("ffi/lulip")
 		Profiler = lulip:new()
