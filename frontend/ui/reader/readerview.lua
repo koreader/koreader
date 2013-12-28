@@ -573,10 +573,10 @@ function ReaderView:onSetViewMode(new_mode)
 end
 
 function ReaderView:onSetPageMargins(margins)
-	local left = margins[1]
-	local top = margins[2]
-	local right = margins[3]
-	local bottom = margins[4]
+	local left = Screen:scaleByDPI(margins[1])
+	local top = Screen:scaleByDPI(margins[2])
+	local right = Screen:scaleByDPI(margins[3])
+	local bottom = Screen:scaleByDPI(margins[4])
 	self.ui.document:setPageMargins(left, top, right, bottom)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 	return true
