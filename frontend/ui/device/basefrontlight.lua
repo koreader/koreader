@@ -3,6 +3,14 @@ local BaseFrontLight = {
 	intensity = nil,
 }
 
+function BaseFrontLight:new(o)
+	local o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	if o.init then o:init() end
+	return o
+end
+
 function BaseFrontLight:init() end
 function BaseFrontLight:toggle() end
 function BaseFrontLight:setIntensityHW() end

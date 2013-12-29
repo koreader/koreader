@@ -18,7 +18,7 @@ function ReaderKoptListener:onReadSettings(config)
 	self:setZoomMode(self.normal_zoom_mode)
 end
 
-function ReaderKoptListener:onCloseDocument()
+function ReaderKoptListener:onSaveSettings()
 	self.ui.doc_settings:saveSetting("normal_zoom_mode", self.normal_zoom_mode)
 end
 

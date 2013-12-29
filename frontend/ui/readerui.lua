@@ -274,10 +274,14 @@ function ReaderUI:onSetDimensions(dimen)
 	self.dimen = dimen
 end
 
+function ReaderUI:saveSettings()
+	self:handleEvent(Event:new("SaveSettings"))
+	self.doc_settings:flush()
+end
+
 function ReaderUI:onClose()
 	DEBUG("closing reader")
-	self:handleEvent(Event:new("CloseDocument"))
-	self.doc_settings:flush()
+	self:saveSettings()
 	if self.document ~= nil then
 		self.document:close()
 		self.document = nil

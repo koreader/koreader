@@ -100,7 +100,7 @@ function ReaderZooming:onReadSettings(config)
 	self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
 
-function ReaderZooming:onCloseDocument()
+function ReaderZooming:onSaveSettings()
 	self.ui.doc_settings:saveSetting("zoom_mode", self.zoom_mode)
 end
 

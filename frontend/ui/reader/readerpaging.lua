@@ -8,6 +8,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 local ReaderPaging = InputContainer:new{
 	current_page = 0,
@@ -15,7 +16,7 @@ local ReaderPaging = InputContainer:new{
 	last_pan_relative_y = 0,
 	visible_area = nil,
 	page_area = nil,
-	show_overlap_enable = DSHOWOVERLAP,
+	show_overlap_enable = nil,
 	overlap = Screen:scaleByDPI(20),
 	flip_steps = {0,1,2,5,10,20,50,100}
 }
@@ -53,6 +54,7 @@ function ReaderPaging:init()
 		}
 	end
 	self.number_of_pages = self.ui.document.info.number_of_pages
+	self.ui.menu:registerToMainMenu(self)
 end
 
 -- This method will  be called in onSetDimensions handler
@@ -127,16 +129,28 @@ end
 function ReaderPaging:onReadSettings(config)
 	self.page_positions = config:readSetting("page_positions") or {}
 	self:gotoPage(config:readSetting("last_page") or 1)
-	local soe = config:readSetting("show_overlap_enable")
-	if not soe then
-		self.show_overlap_enable = soe
+	self.show_overlap_enable = config:readSetting("show_overlap_enable")
+	if self.show_overlap_enable == nil then
+		self.show_overlap_enable = DSHOWOVERLAP
 	end
 end
 
-function ReaderPaging:onCloseDocument()
+function ReaderPaging:onSaveSettings()
 	self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
 	self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
 	self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)
+	self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
+end
+
+function ReaderPaging:addToMainMenu(tab_item_table)
+	if self.ui.document.info.has_pages then
+		table.insert(tab_item_table.typeset, {
+			text = _("Toggle page overlap"),
+			callback = function()
+				self.show_overlap_enable = not self.show_overlap_enable
+			end
+		})
+	end
 end
 
 --[[

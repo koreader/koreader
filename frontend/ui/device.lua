@@ -221,13 +221,12 @@ function Device:getFrontlight()
 	elseif self:hasFrontlight() then
 		local model = self:getModel()
 		if model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
-			self.frontlight = KindleFrontLight
+			self.frontlight = KindleFrontLight:new()
 		elseif self:isKobo() then
-			self.frontlight = KoboFrontLight
+			self.frontlight = KoboFrontLight:new()
 		else -- emulated FrontLight
-			self.frontlight = BaseFrontLight
+			self.frontlight = BaseFrontLight:new()
 		end
-		self.frontlight:init()
 	end
 	return self.frontlight
 end

@@ -74,9 +74,17 @@ function ReaderMenu:setUpdateItemTable()
 			})
 		end
 	})
+	table.insert(self.tab_item_table.main, {
+		text = _("Version"),
+		callback = function()
+			UIManager:show(InfoMessage:new{
+				text = io.open("git-rev", "r"):read(),
+			})
+		end
+	})
 end
 
-function ReaderMenu:onShowMenu()
+function ReaderMenu:onShowReaderMenu()
 	if #self.tab_item_table.main == 0 then
 		self:setUpdateItemTable()
 	end
@@ -125,7 +133,8 @@ function ReaderMenu:onShowMenu()
 end
 
 function ReaderMenu:onTapShowMenu()
-	self:onShowMenu()
+	self.ui:handleEvent(Event:new("ShowConfigMenu"))
+	self.ui:handleEvent(Event:new("ShowReaderMenu"))
 	return true
 end
 
@@ -136,7 +145,7 @@ function ReaderMenu:onSetDimensions(dimen)
 	end
 end
 
-function ReaderMenu:onCloseDocument()
+function ReaderMenu:onSaveSettings()
 end
 
 function ReaderMenu:registerToMainMenu(widget)

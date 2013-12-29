@@ -29,7 +29,7 @@ function ReaderBookmark:onReadSettings(config)
 	self.bookmarks = config:readSetting("bookmarks") or {}
 end
 
-function ReaderBookmark:onCloseDocument()
+function ReaderBookmark:onSaveSettings()
 	self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
 end
 

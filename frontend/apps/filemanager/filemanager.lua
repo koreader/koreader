@@ -36,11 +36,14 @@ function FileManager:init()
 		},
 		VerticalSpan:new{ width = Screen:scaleByDPI(10) }
 	}
-
+	
+	local g_show_hidden = G_reader_settings:readSetting("show_hidden")
+	local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
 	local file_chooser = FileChooser:new{
 		-- remeber to adjust the height when new item is added to the group
 		path = self.root_path,
 		show_parent = self.show_parent,
+		show_hidden = show_hidden,
 		height = Screen:getHeight() - self.banner:getSize().h,
 		is_popout = false,
 		is_borderless = true,
@@ -92,6 +95,7 @@ end
 
 function FileManager:toggleHiddenFiles()
 	self.file_chooser:toggleHiddenFiles()
+	G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
 end
 
 function FileManager:onClose()

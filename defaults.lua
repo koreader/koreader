@@ -80,8 +80,17 @@ DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  		-- that have filenames start
 -- feel free to add more entries in this list
 DCREREADER_CONFIG_FONT_SIZES = {16, 20, 22, 24, 28, 32, 38, 44}  -- range from 16 to 44
 
+-- crereader margin sizes
+-- margin {left, top, right, bottom} in pixels
+DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {3, 5, 0, 5}
+DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {6, 10, 2, 10}
+DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {15, 10, 10, 10}
+
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
+
+-- change this to any numerical value if you want to antomatically save settings when turning pages
+DAUTO_SAVE_PAGING_COUNT = nil
 
 -- ####################################################################
 -- following features are not supported right now

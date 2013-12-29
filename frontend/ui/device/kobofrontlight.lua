@@ -1,6 +1,6 @@
 local BaseFrontLight = require("ui/device/basefrontlight")
 
-local KoboFrontLight = {
+local KoboFrontLight = BaseFrontLight:new{
 	min = 1, max = 100,
 	intensity = 20,
 	restore_settings = true,
@@ -16,8 +16,6 @@ function KoboFrontLight:toggle()
 		self.fl:toggle()
 	end
 end
-
-KoboFrontLight.setIntensity = BaseFrontLight.setIntensity
 
 function KoboFrontLight:setIntensityHW()
 	if self.fl ~= nil then

@@ -70,7 +70,7 @@ function ReaderDictionary:onReadSettings(config)
 	self.default_dictionary = config:readSetting("default_dictionary")
 end
 
-function ReaderDictionary:onCloseDocument()
+function ReaderDictionary:onSaveSettings()
 	self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
 end
 

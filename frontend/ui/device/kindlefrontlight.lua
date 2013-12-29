@@ -1,7 +1,7 @@
 local BaseFrontLight = require("ui/device/basefrontlight")
 -- liblipclua, see require below
 
-local KindleFrontLight = {
+local KindleFrontLight = BaseFrontLight:new{
 	min = 0, max = 24,
 	-- FIXME: Check how to handle this on the PW2, initial reports on IRC suggest that this isn't possible anymore
 	kpw_fl = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
@@ -27,8 +27,6 @@ function KindleFrontLight:toggle()
 		os.execute("echo -n 0 > " .. self.kpw_fl)
 	end
 end
-
-KindleFrontLight.setIntensity = BaseFrontLight.setIntensity
 
 function KindleFrontLight:setIntensityHW()
 	if self.lipc_handle ~= nil then

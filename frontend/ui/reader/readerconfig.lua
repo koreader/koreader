@@ -45,6 +45,7 @@ function ReaderConfig:onShowConfigMenu()
 		ui = self.ui,
 		configurable = self.configurable,
 		config_options = self.options,
+		is_always_active = true,
 		close_callback = function() self:onCloseCallback() end,
 	}
 	self.ui:handleEvent(Event:new("DisableHinting"))
@@ -86,7 +87,7 @@ function ReaderConfig:onReadSettings(config)
 	self.last_panel_index = config:readSetting("config_panel_index") or 1
 end
 
-function ReaderConfig:onCloseDocument()
+function ReaderConfig:onSaveSettings()
 	self.configurable:saveSettings(self.ui.doc_settings, self.options.prefix.."_")
 	self.ui.doc_settings:saveSetting("config_panel_index", self.last_panel_index)
 end

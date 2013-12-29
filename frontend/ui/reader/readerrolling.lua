@@ -155,7 +155,7 @@ function ReaderRolling:onReadSettings(config)
 	end
 end
 
-function ReaderRolling:onCloseDocument()
+function ReaderRolling:onSaveSettings()
 	-- remove last_percent config since its deprecated
 	self.ui.doc_settings:saveSetting("last_percent", nil)
 	self.ui.doc_settings:saveSetting("last_xpointer", self.ui.document:getXPointer())

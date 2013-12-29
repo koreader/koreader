@@ -65,7 +65,6 @@ function TouchMenuItem:onTapSelect(arg, ges)
 		UIManager:setDirty(self.show_parent, "partial")
 	end)
 	self.menu:onMenuSelect(self.item)
-	return true
 end
 
 
@@ -422,7 +421,6 @@ end
 function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
 	if ges_ev.pos:notIntersectWith(self.dimen) then
 		self:closeMenu()
-		return true
 	end
 end
 

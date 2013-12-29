@@ -213,7 +213,7 @@ function ReaderFont:onChangeFontGamma(direction)
 	return true
 end
 
-function ReaderFont:onCloseDocument()
+function ReaderFont:onSaveSettings()
 	self.ui.doc_settings:saveSetting("font_face", self.font_face)
 	self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
 	self.ui.doc_settings:saveSetting("font_size", self.font_size)

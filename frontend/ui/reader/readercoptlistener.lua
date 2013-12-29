@@ -5,11 +5,10 @@ local ReaderCoptListener = EventListener:new{}
 
 function ReaderCoptListener:onReadSettings(config)
 	local embedded_css = config:readSetting("copt_embedded_css")
-	if embedded_css == 0 then
-		table.insert(self.ui.postInitCallback, function()
-	        self.ui:handleEvent(Event:new("ToggleEmbeddedStyleSheet", false))
-	    end)
-	end
+	local toggle_embedded_css = embedded_css == 0 and false or true
+	table.insert(self.ui.postInitCallback, function()
+        self.ui:handleEvent(Event:new("ToggleEmbeddedStyleSheet", toggle_embedded_css))
+    end)
 	
 	local view_mode = config:readSetting("copt_view_mode")
 	if view_mode == 0 then
