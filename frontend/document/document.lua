@@ -1,3 +1,4 @@
+local DrawContext = require("ffi/drawcontext")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local TileCacheItem = require("document/tilecacheitem")

@@ -5,7 +5,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local KoptInterface = require("document/koptinterface")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
--- TBD: DrawContext
+local DrawContext = require("ffi/drawcontext")
 
 local DjvuDocument = Document:new{
 	_document = false,
@@ -27,6 +27,7 @@ local function validDjvuFile(filename)
 end
 
 function DjvuDocument:init()
+	require "libs/libkoreader-djvu"
 	self.configurable:loadDefaults(self.options)
 	if not validDjvuFile(self.file) then
 		self.error_message = "Not a valid DjVu file"

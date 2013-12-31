@@ -69,6 +69,7 @@ function CreDocument:engineInit()
 end
 
 function CreDocument:init()
+	require "libs/libkoreader-cre"
 	self:engineInit()
 	self.configurable:loadDefaults(self.options)
 

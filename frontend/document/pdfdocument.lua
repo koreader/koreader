@@ -4,7 +4,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local KoptInterface = require("document/koptinterface")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
--- TBD: DrawContext
+local DrawContext = require("ffi/drawcontext")
 
 local PdfDocument = Document:new{
 	_document = false,
@@ -16,6 +16,7 @@ local PdfDocument = Document:new{
 }
 
 function PdfDocument:init()
+	require "libs/libkoreader-pdf"
 	self.configurable:loadDefaults(self.options)
 	local ok
 	ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)

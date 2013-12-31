@@ -5,7 +5,7 @@ local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local TileCacheItem = require("document/tilecacheitem")
 local DEBUG = require("dbg")
--- TBD: KOPTContext
+local KOPTContext = require("ffi/koptcontext")
 
 local KoptInterface = {
 	ocrengine = "ocrengine",
