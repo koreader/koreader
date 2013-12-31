@@ -2,7 +2,7 @@
 
 require "defaults"
 package.path = "./frontend/?.lua;./?.lua"
-package.cpath = "/usr/lib/lua/?.so"
+package.cpath = "?.so;/usr/lib/lua/?.so"
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local InfoMessage = require("ui/widget/infomessage")
