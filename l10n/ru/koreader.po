@@ -3,13 +3,14 @@
 # 
 # Translators:
 # varnie <varnie29a@mail.ru>, 2013
+# varnie <varnie29a@mail.ru>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-06-16 04:18+0000\n"
-"PO-Revision-Date: 2013-06-16 04:19+0000\n"
-"Last-Translator: houqp <dave2008713@gmail.com>\n"
+"POT-Creation-Date: 2013-12-28 11:04+0000\n"
+"PO-Revision-Date: 2013-12-29 08:56+0000\n"
+"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/koreader/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,645 +18,763 @@ msgstr ""
 "Language: ru\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: reader.lua:198
+#: reader.lua:101
 msgid "-d               start in debug mode"
 msgstr "-d запустить в отладочном режиме"
 
-#: reader.lua:199
+#: reader.lua:103
 msgid "-h               show this usage help"
 msgstr "-h показать справку"
 
-#: frontend/ui/data/strings.lua:40
+#: reader.lua:102
+msgid "-p [rows]        enable Lua code profiling"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:46
 msgid "0 deg"
 msgstr "0 градусов"
 
-#: frontend/ui/data/strings.lua:42
+#: frontend/ui/data/strings.lua:48
 msgid "10 deg"
 msgstr "10 градусов"
 
-#: frontend/ui/data/strings.lua:41
+#: frontend/ui/data/strings.lua:47
 msgid "5 deg"
 msgstr "5 градусов"
 
-#: frontend/ui/reader/readerhighlight.lua:186
+#: frontend/ui/widget/dictquicklookup.lua:122
+msgid "<<"
+msgstr ""
+
+#: frontend/ui/widget/dictquicklookup.lua:129
+msgid ">>"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:268
+#: frontend/ui/widget/dictquicklookup.lua:145
 msgid "Add Note"
 msgstr ""
 
-#: frontend/ui/reader/readertypeset.lua:49
+#: frontend/ui/reader/readerfrontlight.lua:83
+msgid "Apply"
+msgstr ""
+
+#: frontend/ui/reader/readertypeset.lua:56
 msgid "Auto"
 msgstr "Авто"
 
-#: frontend/ui/data/strings.lua:17
+#: frontend/ui/data/strings.lua:21
 msgid "Auto Straighten"
 msgstr ""
 
-#: frontend/ui/inputevent.lua:347
+#: frontend/ui/input.lua:392
 msgid "Auto-detected Kindle 2"
 msgstr "Авто-определение Kindle 2"
 
-#: frontend/ui/inputevent.lua:343
+#: frontend/ui/input.lua:385
 msgid "Auto-detected Kindle 3"
 msgstr "Авто-определение Kindle 3"
 
-#: frontend/ui/inputevent.lua:339
+#: frontend/ui/input.lua:381
 msgid "Auto-detected Kindle 4"
 msgstr "Авто-определение Kindle 4"
 
-#: frontend/ui/inputevent.lua:345
+#: frontend/ui/input.lua:389
 msgid "Auto-detected Kindle DXG"
 msgstr "Авто-определение Kindle DXG"
 
-#: frontend/ui/inputevent.lua:295
+#: frontend/ui/input.lua:289 frontend/ui/input.lua:293
 msgid "Auto-detected Kindle PaperWhite"
 msgstr "Авто-определение Kindle PaperWhite"
 
-#: frontend/ui/inputevent.lua:315
+#: frontend/ui/input.lua:317
 msgid "Auto-detected Kindle Touch"
 msgstr "Авто-определение Kindle Touch"
 
-#: frontend/ui/reader/readerbookmark.lua:4
+#: frontend/ui/input.lua:323
+msgid "Auto-detected Kobo"
+msgstr ""
+
+#: frontend/ui/reader/readerbookmark.lua:13
 msgid "Bookmarks"
 msgstr "Закладки"
 
-#: frontend/ui/widget/confirmbox.lua:12
+#: frontend/ui/reader/readergoto.lua:36 frontend/ui/widget/confirmbox.lua:26
 msgid "Cancel"
 msgstr "Отмена"
 
-#: frontend/ui/reader/readerhyphenation.lua:21
+#: frontend/ui/reader/readerhyphenation.lua:25
 msgid "Change Hyphenation to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:5
+#: frontend/ui/reader/readerfont.lua:18
 msgid "Change font"
 msgstr "Изменить шрифт"
 
-#: frontend/ui/data/strings.lua:8
+#: frontend/ui/data/strings.lua:11
 msgid "Columns"
 msgstr "Колонки"
 
-#: frontend/ui/data/strings.lua:11
+#: frontend/ui/data/strings.lua:14
 msgid "Contrast"
 msgstr "Контраст"
 
-#: frontend/ui/reader/readerfont.lua:124
+#: frontend/ui/reader/readerfont.lua:137
 msgid "Decrease font size to "
 msgstr "Уменьшить размер шрифта до"
 
-#: frontend/ui/reader/readerfrontlight.lua:42
+#: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:192
+#: frontend/ui/reader/readerfont.lua:205
 msgid "Decrease gamma to "
 msgstr "Уменьшить гамму до"
 
-#: frontend/ui/reader/readerfont.lua:163
+#: frontend/ui/reader/readerfont.lua:176
 msgid "Decrease line space to "
 msgstr "Уменьшить межстрочное расстояние до"
 
-#: frontend/ui/data/strings.lua:15
+#: frontend/ui/data/strings.lua:19
 msgid "Defect Size"
 msgstr "Defect Size"
 
-#: frontend/ui/reader/readerhighlight.lua:97
+#: frontend/ui/reader/readerhighlight.lua:159
 msgid "Delete"
 msgstr ""
 
-#: frontend/ui/reader/readermenu.lua:94
+#: frontend/ui/input.lua:324
+msgid "Device model="
+msgstr ""
+
+#: frontend/ui/data/strings.lua:16
+msgid "Document Language"
+msgstr ""
+
+#: frontend/ui/reader/readermenu.lua:111
 msgid "Document menu"
 msgstr "Меню документа"
 
-#: frontend/ui/reader/readerhighlight.lua:101
+#: frontend/ui/reader/readerhighlight.lua:166
 msgid "Edit"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:22
+#: frontend/ui/data/strings.lua:26
 msgid "Embedded style"
 msgstr "Встроенные стили"
 
-#: reader.lua:88
-msgid "Exit"
-msgstr "Выход"
+#: frontend/apps/filemanager/filemanagermenu.lua:112
+msgid "File manager menu"
+msgstr ""
 
-#: reader.lua:150
+#: frontend/apps/filemanager/filemanager.lua:18
 msgid "FileManager"
 msgstr "Менеджер файлов"
 
-#: frontend/ui/data/strings.lua:10
+#: frontend/ui/data/strings.lua:13
 msgid "Fine Tuning"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:19
+#: frontend/ui/input.lua:326
+msgid "Firmware revision"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:23
 msgid "Font weight"
 msgstr "Вес шрифта"
 
-#: frontend/ui/data/strings.lua:4
+#: frontend/ui/reader/readerfrontlight.lua:70
+msgid "Frontlight Level"
+msgstr ""
+
+#: frontend/ui/reader/readerfrontlight.lua:60
+msgid "Frontlight settings"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:7
 msgid "Full Screen"
 msgstr "Полноэкранный режим"
 
-#: frontend/ui/data/strings.lua:20
+#: frontend/ui/data/strings.lua:24
 msgid "Gamma"
 msgstr "Гамма"
 
-#: frontend/ui/reader/readermenu.lua:61
+#: frontend/ui/reader/readergoto.lua:10
+msgid "Go To"
+msgstr ""
+
+#: frontend/ui/reader/readergoto.lua:11
+msgid "Go to Page or Location"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:73
+#: frontend/ui/reader/readermenu.lua:70
 msgid "Help"
 msgstr "Помощь"
 
-#: frontend/ui/reader/readerhighlight.lua:182
+#: frontend/ui/reader/readerhighlight.lua:260
+#: frontend/ui/widget/dictquicklookup.lua:138
 msgid "Highlight"
 msgstr ""
 
-#: reader.lua:106
-msgid "Home menu"
-msgstr "Меню"
+#: frontend/apps/filemanager/filemanagerhistory.lua:11
+#: frontend/apps/filemanager/filemanagerhistory.lua:30
+msgid "History"
+msgstr ""
 
-#: frontend/ui/reader/readerhyphenation.lua:3
+#: frontend/ui/reader/readerhyphenation.lua:7
 msgid "Hyphenation"
 msgstr ""
 
-#: reader.lua:204
+#: reader.lua:108
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Если Вы не укажете путь, будет открыт последний просмотренный документ"
 
-#: reader.lua:201
+#: reader.lua:105
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Если Вы укажете имя папки вместо пути до файла, файл"
 
-#: frontend/ui/reader/readerfont.lua:126
+#: frontend/ui/reader/readerfont.lua:139
 msgid "Increase font size to "
 msgstr "Увеличить размер шрифта до"
 
-#: frontend/ui/reader/readerfrontlight.lua:38
+#: frontend/ui/reader/readerfrontlight.lua:41
 msgid "Increase front light intensity to "
 msgstr ""
 
-#: frontend/ui/reader/readerfont.lua:189
+#: frontend/ui/reader/readerfont.lua:202
 msgid "Increase gamma to "
 msgstr "Увеличить гамму до"
 
-#: frontend/ui/reader/readerfont.lua:167
+#: frontend/ui/reader/readerfont.lua:180
 msgid "Increase line space to "
 msgstr "Увеличить межстрочное расстояние до"
 
-#: frontend/ui/data/strings.lua:18
+#: frontend/ui/data/strings.lua:22
 msgid "Indentation"
 msgstr "Подчеркивание"
 
-#: reader.lua:83
-msgid "Last documents"
-msgstr "Последние документы"
+#: frontend/ui/data/strings.lua:54
+msgid "LTR"
+msgstr ""
 
-#: frontend/ui/data/strings.lua:7
+#: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
 msgstr "Строковое расстояние"
 
-#: frontend/ui/reader/readerhighlight.lua:198
+#: frontend/ui/reader/readergoto.lua:50
+msgid "Location"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:298
 msgid "More"
 msgstr ""
 
-#: reader.lua:127
+#: reader.lua:64
 msgid "No reader engine for this file"
 msgstr "Нет движка ридера для этого файла"
 
-#: frontend/ui/inputevent.lua:349
+#: frontend/ui/input.lua:395
 msgid "Not supported device model!"
 msgstr "Модель устройства не поддерживается!"
 
-#: frontend/ui/widget/confirmbox.lua:11
+#: frontend/ui/reader/readerfrontlight.lua:90
+#: frontend/ui/widget/confirmbox.lua:25
 msgid "OK"
 msgstr "ОК"
 
-#: frontend/ui/widget/touchmenu.lua:338
+#: frontend/ui/reader/readergoto.lua:43
+msgid "Page"
+msgstr ""
+
+#: frontend/ui/widget/touchmenu.lua:345
 msgid "Page "
 msgstr "страница"
 
-#: frontend/ui/data/strings.lua:3
+#: frontend/ui/data/strings.lua:6
 msgid "Page Crop"
 msgstr "Обрезка Страницы"
 
-#: frontend/ui/data/strings.lua:6
+#: frontend/ui/data/strings.lua:9
 msgid "Page Margin"
 msgstr "Отступы Страницы"
 
-#: frontend/ui/reader/readermenu.lua:64
+#: frontend/apps/filemanager/filemanagermenu.lua:76
+#: frontend/ui/reader/readermenu.lua:73
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
 msgstr "Пожалуйста, отправляйте багрепорты сюда: https://github.com/koreader/koreader/issues . Кликните внизу страницы для  подробной информации"
 
-#: reader.lua:196
+#: frontend/ui/data/strings.lua:55
+msgid "RTL"
+msgstr ""
+
+#: reader.lua:99
 msgid "Read all the books on your E-Ink reader"
 msgstr "Читать все книги на Вашем E-ink ридере"
 
-#: frontend/ui/reader/readerfont.lua:215
+#: frontend/ui/reader/readerfont.lua:228
 msgid "Redrawing with font "
 msgstr "Перерисовка с шрифтом"
 
-#: frontend/ui/data/koptoptions.lua:146 frontend/ui/data/strings.lua:12
+#: frontend/ui/data/koptoptions.lua:126 frontend/ui/data/strings.lua:15
 msgid "Reflow"
 msgstr "Рефлоу"
 
-#: frontend/ui/data/strings.lua:16
+#: frontend/ui/data/strings.lua:20
 msgid "Render Quality"
 msgstr "Качество Отрисовки"
 
-#: frontend/ui/data/strings.lua:2
+#: frontend/ui/data/strings.lua:5
 msgid "Screen Mode"
 msgstr "Экранный Режим"
 
-#: frontend/ui/data/strings.lua:5
+#: frontend/ui/input.lua:328
+msgid "Screen height ="
+msgstr ""
+
+#: frontend/ui/input.lua:330
+msgid "Screen width ="
+msgstr ""
+
+#: frontend/ui/data/strings.lua:8
 msgid "Scroll Mode"
 msgstr "Режим Скролла"
 
-#: reader.lua:207
+#: reader.lua:111
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "За дополнительной информацией обращайтесь сюда: http://github.com/koreader/kindlepdfviewer "
 
-#: frontend/ui/widget/config.lua:15 frontend/ui/widget/touchmenu.lua:26
+#: frontend/ui/widget/configdialog.lua:38 frontend/ui/widget/touchmenu.lua:40
 msgid "Select Menu Item"
 msgstr "Выбрать Пункт меню"
 
-#: frontend/ui/widget/config.lua:54 frontend/ui/widget/config.lua:108
+#: frontend/ui/widget/configdialog.lua:84
+#: frontend/ui/widget/configdialog.lua:138
 msgid "Select Option Item"
 msgstr "Выбрать Пункт меню"
 
-#: frontend/ui/reader/readerfont.lua:148
+#: frontend/ui/reader/readerfont.lua:161
 msgid "Set font size to "
 msgstr "Установить размер шрифта"
 
-#: frontend/ui/reader/readertypeset.lua:2
+#: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
 msgstr "Установить стиль отрисовки"
 
-#: frontend/ui/reader/readerhighlight.lua:193
+#: frontend/ui/reader/readerhighlight.lua:287
 msgid "Share"
 msgstr ""
 
-#: reader.lua:18
-msgid "Show Home Menu"
-msgstr "Показать Меню"
+#: frontend/ui/uimanager.lua:296
+msgid "Standby"
+msgstr ""
 
-#: frontend/ui/reader/readerzooming.lua:241
+#: frontend/ui/reader/readerzooming.lua:245
 msgid "Switch zoom mode"
 msgstr "Изменить режим масштабирования"
 
-#: frontend/ui/reader/readertoc.lua:85
+#: frontend/ui/data/strings.lua:57
+msgid "TBLTR"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:56
+msgid "TBRTL"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:95
 msgid "Table of Contents"
 msgstr "Оглавление"
 
-#: frontend/ui/reader/readertoc.lua:3
+#: frontend/ui/reader/readertoc.lua:12
 msgid "Table of contents"
 msgstr "Оглавление"
 
-#: frontend/ui/widget/button.lua:58
+#: frontend/ui/widget/button.lua:77
 msgid "Tap Button"
 msgstr "Нажать Кнопку"
 
-#: frontend/ui/data/strings.lua:9
+#: frontend/ui/data/strings.lua:12
 msgid "Text Align"
 msgstr "Выравнивание Текста"
 
-#: reader.lua:206
+#: reader.lua:110
 msgid "This software is licensed under the GPLv3."
 msgstr "Это программное обеспечение распространяется под лицензией GPLv3."
 
-#: frontend/ui/widget/toggleswitch.lua:58
+#: frontend/ui/reader/readerfrontlight.lua:75
+msgid "Toggle"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:62
+msgid "Toggle hidden files"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:148
+msgid "Toggle page overlap"
+msgstr ""
+
+#: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
 msgstr "Выбрать переключение"
 
-#: frontend/ui/data/strings.lua:13
+#: frontend/ui/reader/readerhighlight.lua:279
+msgid "Translate"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:81
+#: frontend/ui/reader/readermenu.lua:78
+msgid "Version"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:17
 msgid "Vertical Text"
 msgstr "Вертикальный Текст"
 
-#: frontend/ui/data/strings.lua:21
+#: frontend/ui/data/strings.lua:25
 msgid "View mode"
 msgstr "Режим Просмотра"
 
-#: frontend/ui/data/strings.lua:14
+#: frontend/ui/data/strings.lua:18
 msgid "Word Gap"
 msgstr "Промежуток между словами"
 
-#: frontend/ui/reader/readerzooming.lua:260
+#: frontend/ui/data/strings.lua:27
+msgid "Writing Direction"
+msgstr ""
+
+#: frontend/ui/reader/readerzooming.lua:264
 msgid "Zoom to fit content"
 msgstr "Отмасштабировать чтобы вошло всё содержимое"
 
-#: frontend/ui/reader/readerzooming.lua:248
+#: frontend/ui/reader/readerzooming.lua:252
 msgid "Zoom to fit content height"
 msgstr "Отмасштабировать чтобы вошло все содержимое по высоте"
 
-#: frontend/ui/reader/readerzooming.lua:244
+#: frontend/ui/reader/readerzooming.lua:248
 msgid "Zoom to fit content width"
 msgstr "Отмасштабировать чтобы вошло всё содержимое по ширине"
 
-#: frontend/ui/reader/readerzooming.lua:264
+#: frontend/ui/reader/readerzooming.lua:268
 msgid "Zoom to fit page"
 msgstr "Отмасштабировать чтобы вошла вся страница"
 
-#: frontend/ui/reader/readerzooming.lua:256
+#: frontend/ui/reader/readerzooming.lua:260
 msgid "Zoom to fit page height"
 msgstr "Отмасштабировать чтобы вошла вся страница по высоте"
 
-#: frontend/ui/reader/readerzooming.lua:252
+#: frontend/ui/reader/readerzooming.lua:256
 msgid "Zoom to fit page width"
 msgstr "Отмасштабировать чтобы вошла вся страница по ширине"
 
-#: frontend/ui/data/strings.lua:26
+#: frontend/ui/data/strings.lua:31
 msgid "auto"
 msgstr "авто"
 
-#: frontend/ui/widget/confirmbox.lua:23
+#: frontend/ui/widget/confirmbox.lua:37
 msgid "cancel"
 msgstr "отмена"
 
-#: reader.lua:202
+#: reader.lua:106
 msgid "chooser will show up and let you select a file"
 msgstr "появится окно выбора где можно выбрать файл"
 
-#: frontend/ui/widget/config.lua:20 frontend/ui/widget/config.lua:59
+#: frontend/ui/widget/configdialog.lua:43
+#: frontend/ui/widget/configdialog.lua:89
 msgid "chose selected item"
 msgstr "выбранный пункт"
 
-#: frontend/ui/widget/confirmbox.lua:24
+#: frontend/ui/widget/confirmbox.lua:38
 msgid "chose selected option"
 msgstr "выбранная опция"
 
-#: frontend/ui/reader/readertypeset.lua:43
+#: frontend/ui/reader/readertypeset.lua:50
 msgid "clear all external styles"
 msgstr "очистить все внешние стили"
 
-#: frontend/ui/widget/config.lua:425
+#: frontend/ui/widget/configdialog.lua:462
 msgid "close config menu"
 msgstr "закрыть меню конфигов"
 
-#: frontend/ui/widget/buttontable.lua:18 frontend/ui/widget/dict.lua:20
-#: frontend/ui/widget/infomessage.lua:18
+#: frontend/ui/reader/readerhighlight.lua:24
+#: frontend/ui/widget/infomessage.lua:32
 msgid "close dialog"
 msgstr "закрыть диалог"
 
-#: frontend/ui/readerui.lua:33 frontend/ui/readerui.lua:62
+#: frontend/ui/readerui.lua:43 frontend/ui/readerui.lua:72
 msgid "close document"
 msgstr "закрыть документ"
 
-#: frontend/ui/widget/menu.lua:349
+#: frontend/ui/widget/menu.lua:425
 msgid "close menu"
 msgstr "закрыть меню"
 
-#: frontend/ui/data/strings.lua:36
+#: frontend/ui/data/strings.lua:42
 msgid "darker"
 msgstr "темнее"
 
-#: frontend/ui/data/strings.lua:37
+#: frontend/ui/data/strings.lua:43
 msgid "darkest"
 msgstr "самый тёмный"
 
-#: frontend/ui/data/strings.lua:31
+#: frontend/ui/data/strings.lua:37
 msgid "decrease"
 msgstr "уменьшить"
 
-#: frontend/ui/reader/readerfont.lua:22
+#: frontend/ui/reader/readerfont.lua:35
 msgid "decrease font size"
 msgstr "уменьшить размер шрифта"
 
-#: frontend/ui/reader/readerfont.lua:30
+#: frontend/ui/reader/readerfont.lua:43
 msgid "decrease line space"
 msgstr "уменьшить строчное расстояние"
 
-#: frontend/ui/data/strings.lua:35
+#: frontend/ui/data/strings.lua:41
 msgid "default"
 msgstr "по-умолчанию"
 
-#: frontend/ui/reader/readerrolling.lua:41
+#: frontend/ui/reader/readerrolling.lua:51
 msgid "go to 11%"
 msgstr "увеличить до 11%"
 
-#: frontend/ui/reader/readerrolling.lua:43
+#: frontend/ui/reader/readerrolling.lua:53
 msgid "go to 22%"
 msgstr "увеличить до 22%"
 
-#: frontend/ui/reader/readerrolling.lua:45
+#: frontend/ui/reader/readerrolling.lua:55
 msgid "go to 33%"
 msgstr "увеличить до 33%"
 
-#: frontend/ui/reader/readerrolling.lua:47
+#: frontend/ui/reader/readerrolling.lua:57
 msgid "go to 44%"
 msgstr "увеличить до 44%"
 
-#: frontend/ui/reader/readerrolling.lua:49
+#: frontend/ui/reader/readerrolling.lua:59
 msgid "go to 55%"
 msgstr "увеличить до 55%"
 
-#: frontend/ui/reader/readerrolling.lua:51
+#: frontend/ui/reader/readerrolling.lua:61
 msgid "go to 66%"
 msgstr "увеличить до 66%"
 
-#: frontend/ui/reader/readerrolling.lua:53
+#: frontend/ui/reader/readerrolling.lua:63
 msgid "go to 77%"
 msgstr "увеличить до 77%"
 
-#: frontend/ui/reader/readerrolling.lua:55
+#: frontend/ui/reader/readerrolling.lua:65
 msgid "go to 88%"
 msgstr "увеличить до 88%"
 
-#: frontend/ui/reader/readerrolling.lua:57
+#: frontend/ui/reader/readerrolling.lua:67
 msgid "go to end"
 msgstr "перейти в конец"
 
-#: frontend/ui/reader/readerrolling.lua:20
+#: frontend/ui/reader/readerrolling.lua:30
 msgid "go to next view"
 msgstr "перейти к следующему просмотру"
 
-#: frontend/ui/reader/readerrolling.lua:25
+#: frontend/ui/reader/readerrolling.lua:35
 msgid "go to previous view"
 msgstr "перейти к предыдущему просмотру"
 
-#: frontend/ui/reader/readerrolling.lua:39
+#: frontend/ui/reader/readerrolling.lua:49
 msgid "go to start"
 msgstr "перейти к началу"
 
-#: frontend/ui/widget/menu.lua:351
+#: frontend/ui/widget/menu.lua:427
 msgid "goto next page of the menu"
 msgstr "перейти к следующей странице меню"
 
-#: frontend/ui/widget/menu.lua:354
+#: frontend/ui/widget/menu.lua:430
 msgid "goto previous page of the menu"
 msgstr "перейти к предыдущей странице меню"
 
-#: frontend/ui/data/strings.lua:39
+#: frontend/ui/data/strings.lua:45
 msgid "high"
 msgstr "выше"
 
-#: frontend/ui/reader/readerhighlight.lua:10
+#: frontend/ui/reader/readerhighlight.lua:68
 msgid "highlight text"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:32
+#: frontend/ui/data/strings.lua:38
 msgid "increase"
 msgstr "увеличить"
 
-#: frontend/ui/reader/readerfont.lua:18
+#: frontend/ui/reader/readerfont.lua:31
 msgid "increase font size"
 msgstr "Увеличить размер шрифта"
 
-#: frontend/ui/reader/readerfont.lua:26
+#: frontend/ui/reader/readerfont.lua:39
 msgid "increase line space"
 msgstr "Увеличить строковое расстояние"
 
-#: frontend/ui/data/strings.lua:44
+#: frontend/ui/data/strings.lua:50
 msgid "landscape"
 msgstr "ландшафт"
 
-#: frontend/ui/data/strings.lua:30
+#: frontend/ui/data/strings.lua:36
 msgid "large"
 msgstr "больше"
 
-#: frontend/ui/data/strings.lua:34
+#: frontend/ui/data/strings.lua:40
 msgid "lighter"
 msgstr "ярче"
 
-#: frontend/ui/data/strings.lua:33
+#: frontend/ui/data/strings.lua:39
 msgid "lightest"
 msgstr "самый яркий"
 
-#: frontend/ui/data/strings.lua:38
+#: frontend/ui/data/strings.lua:44
 msgid "low"
 msgstr "ниже"
 
-#: frontend/ui/data/strings.lua:27
+#: frontend/ui/data/strings.lua:32
 msgid "manual"
 msgstr "вручную"
 
-#: frontend/ui/data/strings.lua:29
+#: frontend/ui/data/strings.lua:35
 msgid "medium"
 msgstr "средний"
 
-#: frontend/ui/reader/readerrolling.lua:35
+#: frontend/ui/reader/readerrolling.lua:45
 msgid "move view down"
 msgstr "Переместить просмотр вниз"
 
-#: frontend/ui/reader/readerrolling.lua:30
+#: frontend/ui/reader/readerrolling.lua:40
 msgid "move view up"
 msgstr "Переместить просмотр вверх"
 
-#: frontend/ui/reader/readerpanning.lua:20
+#: frontend/ui/reader/readerpanning.lua:25
 msgid "move visible area down"
 msgstr "сдвинуть видимую область вниз"
 
-#: frontend/ui/reader/readerpanning.lua:23
+#: frontend/ui/reader/readerpanning.lua:28
 msgid "move visible area left"
 msgstr "сдвинуть видимую область влево"
 
-#: frontend/ui/reader/readerpanning.lua:26
+#: frontend/ui/reader/readerpanning.lua:31
 msgid "move visible area right"
 msgstr "сдвинуть видимую область вправо"
 
-#: frontend/ui/reader/readerpanning.lua:17
+#: frontend/ui/reader/readerpanning.lua:22
 msgid "move visible area up"
 msgstr "сдвинуть видимую область вверх"
 
-#: frontend/ui/widget/menu.lua:433
+#: frontend/ui/widget/menu.lua:512
 msgid "no choices available"
 msgstr "нет доступных опций"
 
-#: frontend/ui/widget/confirmbox.lua:9
+#: frontend/ui/widget/confirmbox.lua:23
 msgid "no text"
 msgstr "нет текста"
 
-#: frontend/ui/data/strings.lua:25
+#: frontend/ui/data/strings.lua:30
 msgid "off"
 msgstr "выключено"
 
-#: frontend/ui/data/strings.lua:24
+#: frontend/ui/data/strings.lua:29
 msgid "on"
 msgstr "включено"
 
-#: frontend/ui/data/strings.lua:47
+#: reader.lua:54
+msgid "opening file"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:53
 msgid "page"
 msgstr "страница"
 
-#: frontend/ui/widget/menu.lua:431
+#: frontend/ui/widget/menu.lua:506
 msgid "page "
 msgstr "страница"
 
-#: frontend/ui/data/strings.lua:43
+#: frontend/ui/data/strings.lua:49
 msgid "portrait"
 msgstr "портрет"
 
-#: frontend/ui/reader/readerrotation.lua:12
+#: frontend/ui/reader/readerrotation.lua:20
 msgid "rotate left by 90 degrees"
 msgstr "повернуть налево на 90 градусов"
 
-#: frontend/ui/reader/readerrotation.lua:16
+#: frontend/ui/reader/readerrotation.lua:24
 msgid "rotate right by 90 degrees"
 msgstr "повернуть направо на 90 градусов"
 
-#: frontend/ui/data/strings.lua:46
+#: frontend/ui/data/strings.lua:52
 msgid "scroll"
 msgstr "скролл"
 
-#: frontend/ui/widget/config.lua:429 frontend/ui/widget/menu.lua:363
+#: frontend/ui/widget/configdialog.lua:466 frontend/ui/widget/menu.lua:439
 msgid "select current menu item"
 msgstr "выбрать текущий пункт меню"
 
-#: frontend/ui/reader/readertoc.lua:11
+#: frontend/ui/data/strings.lua:33
+msgid "semi-auto"
+msgstr ""
+
+#: frontend/ui/reader/readertoc.lua:20
 msgid "show Table of Content menu"
 msgstr "показать меню с Оглавлением"
 
-#: frontend/ui/reader/readerbookmark.lua:13
+#: frontend/ui/reader/readerbookmark.lua:22
 msgid "show bookmarks"
 msgstr "показать закладки"
 
-#: frontend/ui/reader/readerconfig.lua:53
+#: frontend/ui/reader/readerconfig.lua:18
 msgid "show config dialog"
 msgstr "показать диалог конфигов"
 
-#: frontend/ui/reader/readerfont.lua:15
+#: frontend/ui/reader/readerfont.lua:28
 msgid "show font menu"
 msgstr "показать меню шрифтов"
 
-#: frontend/ui/reader/readermenu.lua:34
+#: frontend/apps/filemanager/filemanagermenu.lua:35
+#: frontend/ui/reader/readermenu.lua:44
 msgid "show menu"
 msgstr "показать меню"
 
-#: frontend/ui/data/strings.lua:28
+#: frontend/ui/data/strings.lua:34
 msgid "small"
 msgstr "меньше"
 
-#: frontend/ui/data/strings.lua:45
+#: frontend/ui/data/strings.lua:51
 msgid "toggle bold"
 msgstr "выбрать жирный"
 
-#: reader.lua:195
+#: reader.lua:98
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "использование: ./reader.lua [OPTION] ... путь"
 
-#: frontend/ui/reader/readerzooming.lua:15
+#: frontend/ui/reader/readerzooming.lua:25
 msgid "zoom in"
 msgstr "увеличить"
 
-#: frontend/ui/reader/readerzooming.lua:20
+#: frontend/ui/reader/readerzooming.lua:30
 msgid "zoom out"
 msgstr "уменьшить"
 
-#: frontend/ui/reader/readerzooming.lua:30
+#: frontend/ui/reader/readerzooming.lua:40
 msgid "zoom to fit content"
 msgstr "увеличить чтобы вошло содержимое"
 
-#: frontend/ui/reader/readerzooming.lua:50
+#: frontend/ui/reader/readerzooming.lua:60
 msgid "zoom to fit content height"
 msgstr "увеличить чтобы вошло содержимое по высоте"
 
-#: frontend/ui/reader/readerzooming.lua:40
+#: frontend/ui/reader/readerzooming.lua:50
 msgid "zoom to fit content width"
 msgstr "увеличить чтобы вошло содержимое по ширине"
 
-#: frontend/ui/reader/readerzooming.lua:25
+#: frontend/ui/reader/readerzooming.lua:35
 msgid "zoom to fit page"
 msgstr "увеличить чтобы вошла страница"
 
-#: frontend/ui/reader/readerzooming.lua:45
+#: frontend/ui/reader/readerzooming.lua:55
 msgid "zoom to fit page height"
 msgstr "увеличить чтобы вошла страница по высоте"
 
-#: frontend/ui/reader/readerzooming.lua:35
+#: frontend/ui/reader/readerzooming.lua:45
 msgid "zoom to fit page width"
 msgstr "увеличить чтобы вошла страница по ширине"
