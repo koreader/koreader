@@ -1,5 +1,5 @@
 # koreader-base directory
-KOR_BASE=koreader-base
+KOR_BASE?=koreader-base
 
 # the repository might not have been checked out yet, so make this
 # able to fail:
@@ -28,13 +28,17 @@ all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit po mo
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
-	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 ifdef EMULATE_READER
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
+	# create symlink instead of copying files in development mode
+	cd $(INSTALL_DIR)/koreader && \
+		ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/* .
+else
+	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
-		done
+	done
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	mkdir -p $(INSTALL_DIR)/koreader/screenshots
 	mkdir -p $(INSTALL_DIR)/koreader/data/dict
@@ -49,9 +53,11 @@ endif
 	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
 	cp fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
-	# clean up
+ifndef EMULATE_READER
+	# clean up, remove unused files for releases
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 	rm $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttf
+endif
 
 $(KOR_BASE)/$(OUTPUT_DIR)/luajit:
 	$(MAKE) -C $(KOR_BASE)
