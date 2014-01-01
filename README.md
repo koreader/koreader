@@ -82,19 +82,27 @@ If you already done a real device build, you must do:
 make clean
 ```
 
-To build
+To build:
 ```
 EMULATE_READER=1 make
 ```
 
 To run:
-
 ```
 cd koreader-*/koreader && ./reader.lua -d ./
 ```
 
 You can also specify size of emulator's screen via environment variables.
 For more information, please refer to [koreader-base's README][base-readme].
+
+To use your own koreader-base repo instead of the default one change KOR_BASE
+environment variable:
+```
+EMULATE_READER=1 make KOR_BASE=../koreader-base
+```
+
+This will be handy if you are developing koreader-base and want to test your
+modifications with kroeader frontend. NOTE: only support relative path for now.
 
 
 Use ccache
