@@ -32,11 +32,19 @@ function ReaderTypeset:onReadSettings(config)
 	if not self.embedded_css then
 		self.ui.document:setEmbeddedStyleSheet(0)
 	end
+
+	self.floating_punctuation = config:readSetting("floating_punctuation")
+	-- default to no floating punctuation
+	if self.floating_punctuation == nil then
+		self.floating_punctuation = 0
+	end
+	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
 end
 
 function ReaderTypeset:onSaveSettings()
 	self.ui.doc_settings:saveSetting("css", self.css)
 	self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
+	self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -107,11 +115,21 @@ function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
 	self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
+function ReaderTypeset:toggleFloatingPunctuation()
+	self.floating_punctuation = self.floating_punctuation == 0 and 1 or 0
+	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
+	self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
 function ReaderTypeset:addToMainMenu(tab_item_table)
 	-- insert table to main reader menu
 	table.insert(tab_item_table.typeset, {
 		text = self.css_menu_title,
 		sub_item_table = self:genStyleSheetMenu(),
+	})
+	table.insert(tab_item_table.typeset, {
+		text = _("Toggle floating punctuation"),
+		callback = function () self:toggleFloatingPunctuation() end,
 	})
 end
 
