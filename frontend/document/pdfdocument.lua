@@ -70,6 +70,10 @@ function PdfDocument:getOCRText(pageno, tboxes)
 	return self.koptinterface:getOCRText(self, pageno, tboxes)
 end
 
+function PdfDocument:getPageRegions(pageno)
+	return self.koptinterface:getPageRegions(self, pageno)
+end
+
 function PdfDocument:getUsedBBox(pageno)
 	local hash = "pgubbox|"..self.file.."|"..pageno
 	local cached = Cache:check(hash)

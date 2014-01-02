@@ -209,16 +209,26 @@ function ReaderPaging:enterFlippingMode()
 	self.orig_reflow_mode = self.view.document.configurable.text_wrap
 	self.orig_footer_mode = self.view.footer_visible
 	self.orig_scroll_mode = self.view.page_scroll
+	self.orig_zoom_mode = self.view.zoom_mode
+	DEBUG("store zoom mode", self.orig_zoom_mode)
+	self.DGESDETECT_DISABLE_DOUBLE_TAP = DGESDETECT_DISABLE_DOUBLE_TAP
 	
 	self.view.document.configurable.text_wrap = 0
 	self.view.page_scroll = false
 	self.view.footer_visible = true
+	Input.disable_double_tap = false
+	DGESDETECT_DISABLE_DOUBLE_TAP = false
+	self.ui:handleEvent(Event:new("SetZoomMode", "page"))
 end
 
 function ReaderPaging:exitFlippingMode()
 	self.view.document.configurable.text_wrap = self.orig_reflow_mode
 	self.view.page_scroll = self.orig_scroll_mode
 	self.view.footer_visible = self.orig_footer_mode
+	DGESDETECT_DISABLE_DOUBLE_TAP = self.DGESDETECT_DISABLE_DOUBLE_TAP
+	Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
+	DEBUG("restore zoom mode", self.orig_zoom_mode)
+	self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
 end
 
 function ReaderPaging:updateOriginalPage(page)
@@ -268,7 +278,11 @@ end
 
 function ReaderPaging:onPan(arg, ges)
 	if self.flipping_mode then
-		self:flipping(self.flipping_page, ges)
+		if self.view.zoom_mode == "page" then
+			self:flipping(self.flipping_page, ges)
+		else
+			self.view:PanningStart(-ges.relative.x, -ges.relative.y)
+		end
 	elseif ges.direction == "north" or ges.direction == "south" then
 		self:onPanningRel(self.last_pan_relative_y - ges.relative.y)
 		self.last_pan_relative_y = ges.relative.y
@@ -278,7 +292,11 @@ end
 
 function ReaderPaging:onPanRelease(arg, ges)
 	if self.flipping_mode then
-		self:updateFlippingPage(self.current_page)
+		if self.view.zoom_mode == "page" then
+			self:updateFlippingPage(self.current_page)
+		else
+			self.view:PanningStop()
+		end
 	else
 		self.last_pan_relative_y = 0
 		UIManager.full_refresh = true
@@ -588,7 +606,9 @@ function ReaderPaging:onGotoPageRel(diff)
 	local new_va = self.visible_area:copy()
 	local x_pan_off, y_pan_off = 0, 0
 
-	if self.zoom_mode:find("width") then
+	if self.zoom_mode == "free" then
+		-- do nothing in free zoom mode
+	elseif self.zoom_mode:find("width") then
 		y_pan_off = self.visible_area.h * diff
 	elseif self.zoom_mode:find("height") then
 		x_pan_off = self.visible_area.w * diff

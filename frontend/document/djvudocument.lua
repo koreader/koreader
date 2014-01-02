@@ -80,6 +80,10 @@ function DjvuDocument:getOCRText(pageno, tboxes)
 	return self.koptinterface:getOCRText(self, pageno, tboxes)
 end
 
+function DjvuDocument:getPageRegions(pageno)
+	return self.koptinterface:getPageRegions(self, pageno)
+end
+
 function DjvuDocument:getUsedBBox(pageno)
 	-- djvu does not support usedbbox, so fake it.
 	local used = {}
