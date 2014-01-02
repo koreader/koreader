@@ -84,6 +84,16 @@ function ReaderZooming:init()
 					}
 				}
 			},
+			ToggleFreeZoom = {
+				GestureRange:new{
+					ges = "double_tap",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					}
+				}
+			},
 		}
 	end
 	self.ui.menu:registerToMainMenu(self)
@@ -126,6 +136,24 @@ function ReaderZooming:onPinch(arg, ges)
 	return true
 end
 
+function ReaderZooming:onToggleFreeZoom(arg, ges)
+	if self.zoom_mode ~= "free" then
+		self.orig_zoom = self.zoom
+		self.orig_zoom_mode = self.zoom_mode
+		local xpos, ypos
+		self.zoom, xpos, ypos = self:getRegionalZoomCenter(self.current_page, ges.pos)
+		DEBUG("zoom center", self.zoom, xpos, ypos)
+		self.ui:handleEvent(Event:new("SetZoomMode", "free"))
+		if xpos == nil or ypos == nil then
+			xpos = ges.pos.x * self.zoom / self.orig_zoom
+			ypos = ges.pos.y * self.zoom / self.orig_zoom
+		end
+		self.view:SetZoomCenter(xpos, ypos)
+	else
+		self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode or "page"))
+	end
+end
+
 function ReaderZooming:onSetDimensions(dimensions)
 	-- we were resized
 	self.dimen = dimensions
@@ -160,9 +188,9 @@ function ReaderZooming:onSetZoomMode(new_mode)
 	self.view.zoom_mode = new_mode
 	if self.zoom_mode ~= new_mode then
 		DEBUG("setting zoom mode to", new_mode)
+		self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
 		self.zoom_mode = new_mode
 		self:setZoom()
-		self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
 	end
 end
 
@@ -212,15 +240,34 @@ function ReaderZooming:getZoom(pageno)
 		zoom = zoom_w
 	elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
 		zoom = zoom_h
+	elseif self.zoom_mode == "free" then
+		zoom = self.zoom
 	end
 	return zoom
 end
 
-function ReaderZooming:setZoom()
-	-- nothing to do in free zoom mode
-	if self.zoom_mode == "free" then
-		return
+function ReaderZooming:getRegionalZoomCenter(pageno, pos)
+	local p_pos = self.view:getSinglePagePosition(pos)
+	local page_size = self.ui.document:getNativePageDimensions(pageno)
+	local pos_x = p_pos.x / page_size.w / p_pos.zoom
+	local pos_y = p_pos.y / page_size.h / p_pos.zoom
+	local regions = self.ui.document:getPageRegions(pageno)
+	DEBUG("get page regions", regions)
+	local margin = self.ui.document.configurable.page_margin * Screen:getDPI()
+	for i = 1, #regions do
+		if regions[i].x0 <= pos_x and pos_x <= regions[i].x1
+			and regions[i].y0 <= pos_y and pos_y <= regions[i].y1 then
+			local zoom = 1/(regions[i].x1 - regions[i].x0)
+			zoom = zoom/(1 + 3*margin/zoom/page_size.w)
+			local xpos = (regions[i].x0 + regions[i].x1)/2 * zoom * page_size.w
+			local ypos = p_pos.y / p_pos.zoom * zoom
+			return zoom, xpos, ypos
+		end
 	end
+	return 2
+end
+
+function ReaderZooming:setZoom()
 	if not self.dimen then
 		self.dimen = self.ui.dimen
 	end

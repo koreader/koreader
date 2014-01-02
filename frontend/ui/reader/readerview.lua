@@ -439,6 +439,30 @@ function ReaderView:PanningUpdate(dx, dy)
 	return true
 end
 
+function ReaderView:PanningStart(x, y)
+	DEBUG("panning start", x, y)
+	if not self.panning_visible_area then
+		self.panning_visible_area = self.visible_area:copy()
+	end
+	self.visible_area = self.panning_visible_area:copy()
+	self.visible_area:offsetWithin(self.page_area, x, y)
+	self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
+	UIManager:setDirty(self.dialog)
+end
+
+function ReaderView:PanningStop()
+	self.panning_visible_area = nil
+end
+
+function ReaderView:SetZoomCenter(x, y)
+	local old = self.visible_area:copy()
+	self.visible_area:centerWithin(self.page_area, x, y)
+	if self.visible_area ~= old then
+		self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
+		UIManager:setDirty(self.dialog)
+	end
+end
+
 function ReaderView:onSetScreenMode(new_mode, rotation)
 	if new_mode == "landscape" or new_mode == "portrait" then
 		self.screen_mode = new_mode

@@ -274,6 +274,35 @@ function Geom:offsetWithin(rect_b, dx, dy)
 	end
 end
 
+--[[
+center the current rectangle at position x and y of a given rectangle
+]]--
+function Geom:centerWithin(rect_b, x, y)
+	-- check size constraints and shrink us when we're too big
+	if self.w > rect_b.w then
+		self.w = rect_b.w
+	end
+	if self.h > rect_b.h then
+		self.h = rect_b.h
+	end
+	-- place to center
+	self.x = x - self.w/2
+	self.y = y - self.h/2
+	-- check boundary
+	if self.x < rect_b.x then
+		self.x = rect_b.x
+	end
+	if self.y < rect_b.y then
+		self.y = rect_b.y
+	end
+	if self.x + self.w > rect_b.x + rect_b.w then
+		self.x = rect_b.x + rect_b.w - self.w
+	end
+	if self.y + self.h > rect_b.y + rect_b.h then
+		self.y = rect_b.y + rect_b.h - self.h
+	end
+end
+
 function Geom:shrinkInside(rect_b, dx, dy)
 	self:offsetBy(dx, dy)
 	return self:intersect(rect_b)

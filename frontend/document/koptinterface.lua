@@ -448,6 +448,35 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
 end
 
 --[[
+get page regions in native page via optical method, 
+--]]
+function KoptInterface:getPageRegions(doc, pageno)
+	local bbox = doc:getPageBBox(pageno)
+	local context_hash = self:getContextHash(doc, pageno, bbox)
+	local hash = "pageregions|"..context_hash
+	local cached = Cache:check(hash)
+	if not cached then
+		local page_size = Document.getNativePageDimensions(doc, pageno)
+		local bbox = {
+			x0 = 0, y0 = 0,
+			x1 = page_size.w,
+			y1 = page_size.h,
+		}
+		local kc = self:createContext(doc, pageno, bbox)
+		kc:setZoom(1.0)
+		local page = doc._document:openPage(pageno)
+		page:getPagePix(kc)
+		local regions = kc:getPageRegions()
+		Cache:insert(hash, CacheItem:new{ pageregions = regions })
+		page:close()
+		kc:free()
+		return regions
+	else
+		return cached.pageregions
+	end
+end
+
+--[[
 get word from OCR providing selected word box
 --]]
 function KoptInterface:getOCRWord(doc, pageno, wbox)
