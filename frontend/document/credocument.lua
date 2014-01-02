@@ -273,6 +273,10 @@ function CreDocument:setPageMargins(left, top, right, bottom)
 	self._document:setIntProperty("crengine.page.margin.bottom", bottom)
 end
 
+function CreDocument:setFloatingPunctuation(enabled)
+	self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
+end
+
 function CreDocument:setVisiblePageCount(new_count)
 	self._document:setVisiblePageCount(new_count)
 end
