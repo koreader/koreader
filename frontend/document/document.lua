@@ -280,4 +280,29 @@ function Document:getPageText(pageno)
 	return text
 end
 
+--[[
+helper functions
+--]]
+function Document:logMemoryUsage(pageno)
+	local status_file = io.open("/proc/self/status", "r")
+	local log_file = io.open("mem_usage_log.txt", "a+")
+	local data = -1
+	if status_file then
+		for line in status_file:lines() do
+			local s, n
+			s, n = line:gsub("VmData:%s-(%d+) kB", "%1")
+			if n ~= 0 then data = tonumber(s) end
+			if data ~= -1 then break end
+		end
+		status_file:close()
+	end
+	if log_file then
+		if log_file:seek("end") == 0 then -- write the header only once
+			log_file:write("PAGE\tMEM\n")
+		end
+		log_file:write(string.format("%s\t%s\n", pageno, data))
+		log_file:close()
+	end
+end
+
 return Document

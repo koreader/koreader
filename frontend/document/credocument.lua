@@ -151,6 +151,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
 	tile_bb = Blitbuffer.new(rect.w, rect.h)
 	self._document:drawCurrentPage(tile_bb)
 	target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
+	tile_bb:free()
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
