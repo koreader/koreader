@@ -393,9 +393,9 @@ function TouchMenu:onPrevPage()
 end
 
 function TouchMenu:onSwipe(arg, ges_ev)
-	if ges_ev.direction == "west" then
+	if ges_ev.direction == "west" or ges_ev.direction == "north" then
 		self:onNextPage()
-	elseif ges_ev.direction == "east" then
+	elseif ges_ev.direction == "east" or ges_ev.direction == "south" then
 		self:onPrevPage()
 	end
 end
