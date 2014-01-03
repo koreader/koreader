@@ -23,6 +23,7 @@ local CreOptions = {
 				name = "screen_mode",
 				name_text = S.SCREEN_MODE,
 				toggle = {S.PORTRAIT, S.LANDSCAPE},
+				alternate = false,
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
