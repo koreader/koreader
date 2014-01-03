@@ -146,8 +146,9 @@ function ReaderUI:init()
 			ui = self
 		})
 	end
-	-- config panel controller
+	-- configuable controller
 	if self.document.info.configurable then
+		-- config panel controller
 		local config_dialog = ReaderConfig:new{
 			configurable = self.document.configurable,
 			options = self.document.options,
@@ -156,6 +157,14 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, config_dialog)
+		-- cre option controller
+		local coptlistener = ReaderCoptListener:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self,
+			document = self.document,
+		}
+		table.insert(self, coptlistener)
 	end
 	-- for page specific controller
 	if self.document.info.has_pages then
@@ -205,20 +214,6 @@ function ReaderUI:init()
 		table.insert(self.postInitCallback, function()
 			self.document:loadDocument()
 		end)
-		-- rolling controller
-		local roller = ReaderRolling:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		}
-		table.insert(self, roller)
-		-- font menu
-		local font_menu = ReaderFont:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		}
-		table.insert(self, font_menu)
 		-- typeset controller
 		local typeset = ReaderTypeset:new{
 			dialog = self.dialog,
@@ -226,13 +221,27 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, typeset)
-
+		-- font menu
+		local font_menu = ReaderFont:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, font_menu)
 		table.insert(self, ReaderHyphenation:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
 		})
+		-- rolling controller
+		local roller = ReaderRolling:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, roller)
 	end
+	-- configuable controller
 	if self.document.info.configurable then
 		-- kopt option controller
 		local koptlistener = ReaderKoptListener:new{
@@ -242,14 +251,6 @@ function ReaderUI:init()
 			document = self.document,
 		}
 		table.insert(self, koptlistener)
-		-- cre option controller
-		local coptlistener = ReaderCoptListener:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self,
-			document = self.document,
-		}
-		table.insert(self, coptlistener)
 		-- activity indicator
 		local activity_listener = ReaderActivityIndicator:new{
 			dialog = self.dialog,
