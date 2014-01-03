@@ -18,6 +18,9 @@ local ReaderPaging = InputContainer:new{
 	page_area = nil,
 	show_overlap_enable = nil,
 	overlap = Screen:scaleByDPI(20),
+	
+	page_flipping_mode = false,
+	bookmark_flipping_mode = false,
 	flip_steps = {0,1,2,5,10,20,50,100}
 }
 
@@ -145,7 +148,11 @@ end
 function ReaderPaging:addToMainMenu(tab_item_table)
 	if self.ui.document.info.has_pages then
 		table.insert(tab_item_table.typeset, {
-			text = _("Toggle page overlap"),
+			text_func = function() 
+				return self.show_overlap_enable and 
+				_("Turn off page overlap") or 
+				_("Turn on page overlap")
+			end,
 			callback = function()
 				self.show_overlap_enable = not self.show_overlap_enable
 			end
@@ -186,12 +193,12 @@ function ReaderPaging:onTapBackward()
 	return true
 end
 
-function ReaderPaging:onToggleFlipping()
+function ReaderPaging:onTogglePageFlipping()
 	self.view.flipping_visible = not self.view.flipping_visible
-	self.flipping_mode = self.view.flipping_visible
+	self.page_flipping_mode = self.view.flipping_visible
 	self.flipping_page = self.current_page
 	
-	if self.flipping_mode then
+	if self.page_flipping_mode then
 		self:updateOriginalPage(self.current_page)
 		self:enterFlippingMode()
 	else
@@ -199,8 +206,30 @@ function ReaderPaging:onToggleFlipping()
 		self:exitFlippingMode()
 	end
 	self.view:resetLayout()
-	self.ui:handleEvent(Event:new("SetFlippingMode", self.flipping_mode))
-	self.ui:handleEvent(Event:new("SetHinting", not self.flipping_mode))
+	self.ui:handleEvent(Event:new("SetHinting", not self.page_flipping_mode))
+	self.ui:handleEvent(Event:new("ReZoom"))
+	UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderPaging:onToggleBookmarkFlipping()
+	 self.bookmark_flipping_mode = not self.bookmark_flipping_mode
+	
+	if self.bookmark_flipping_mode then
+		self.orig_flipping_mode = self.view.flipping_visible
+		self.orig_dogear_mode = self.view.dogear_visible
+		
+		self.view.flipping_visible = true
+		self.view.dogear_visible = true
+		self.bm_flipping_orig_page = self.current_page
+		self:enterFlippingMode()
+	else
+		self.view.flipping_visible = self.orig_flipping_mode
+		self.view.dogear_visible = self.orig_dogear_mode
+		self:exitFlippingMode()
+		self:gotoPage(self.bm_flipping_orig_page)
+	end
+	self.view:resetLayout()
+	self.ui:handleEvent(Event:new("SetHinting", not self.bookmark_flipping_mode))
 	self.ui:handleEvent(Event:new("ReZoom"))
 	UIManager:setDirty(self.view.dialog, "partial")
 end
@@ -239,7 +268,7 @@ function ReaderPaging:updateFlippingPage(page)
 	self.flipping_page = page
 end
 
-function ReaderPaging:flipping(flipping_page, flipping_ges)
+function ReaderPaging:pageFlipping(flipping_page, flipping_ges)
 	local whole = self.number_of_pages
 	local steps = #self.flip_steps
 	local stp_proportion = flipping_ges.distance / Screen:getWidth()
@@ -256,9 +285,20 @@ function ReaderPaging:flipping(flipping_page, flipping_ges)
 	UIManager:setDirty(self.view.dialog, "partial")
 end
 
+function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
+	if flipping_ges.direction == "east" then
+		self.ui:handleEvent(Event:new("GotoPreviousBookmark", flipping_page))
+	elseif flipping_ges.direction == "west" then
+		self.ui:handleEvent(Event:new("GotoNextBookmark", flipping_page))
+	end
+	UIManager:setDirty(self.view.dialog, "partial")
+end
+
 function ReaderPaging:onSwipe(arg, ges)
-	if self.flipping_mode then
-		self:flipping(self.flipping_page, ges)
+	if self.bookmark_flipping_mode then
+		self:bookmarkFlipping(self.current_page, ges)
+	elseif self.page_flipping_mode then
+		self:pageFlipping(self.flipping_page, ges)
 		self:updateFlippingPage(self.current_page)
 	elseif ges.direction == "west" then
 		self:onPagingRel(1)
@@ -277,9 +317,11 @@ function ReaderPaging:onTwoFingerSwipe(arg, ges)
 end
 
 function ReaderPaging:onPan(arg, ges)
-	if self.flipping_mode then
+	if self.bookmark_flipping_mode then
+		return true
+	elseif self.page_flipping_mode then
 		if self.view.zoom_mode == "page" then
-			self:flipping(self.flipping_page, ges)
+			self:pageFlipping(self.flipping_page, ges)
 		else
 			self.view:PanningStart(-ges.relative.x, -ges.relative.y)
 		end
@@ -291,7 +333,7 @@ function ReaderPaging:onPan(arg, ges)
 end
 
 function ReaderPaging:onPanRelease(arg, ges)
-	if self.flipping_mode then
+	if self.page_flipping_mode then
 		if self.view.zoom_mode == "page" then
 			self:updateFlippingPage(self.current_page)
 		else
@@ -709,7 +751,7 @@ end
 
 -- wrapper for bounds checking
 function ReaderPaging:gotoPage(number, orig)
-	if number == self.current_page then
+	if number == self.current_page or not number then
 		return true
 	end
 	if number > self.number_of_pages

@@ -3,6 +3,7 @@ local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
 local Font = require("ui/font")
+local Device = require("ui/device")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 -- TBD: DrawContext
@@ -116,6 +117,9 @@ function CreDocument:loadDocument()
 	self._document:loadDocument(self.file)
 	if not self.info.has_pages then
 		self.info.doc_height = self._document:getFullHeight()
+	end
+	if Device:getModel() ~= "KindleDXG" then
+		self:setVisiblePageCount(1)
 	end
 end
 

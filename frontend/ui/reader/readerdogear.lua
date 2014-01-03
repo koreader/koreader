@@ -29,6 +29,17 @@ function ReaderDogear:init()
 						h = Screen:getHeight()*DTAP_ZONE_BOOKMARK.h
 					}
 				}
+			},
+			Hold = {
+				GestureRange:new{
+					ges = "hold",
+					range = Geom:new{
+						x = Screen:getWidth()*DTAP_ZONE_BOOKMARK.x,
+						y = Screen:getHeight()*DTAP_ZONE_BOOKMARK.y,
+						w = Screen:getWidth()*DTAP_ZONE_BOOKMARK.w,
+						h = Screen:getHeight()*DTAP_ZONE_BOOKMARK.h
+					}
+				}
 			}
 		}
 	end
@@ -36,6 +47,11 @@ end
 
 function ReaderDogear:onTap()
 	self.ui:handleEvent(Event:new("ToggleBookmark"))
+	return true
+end
+
+function ReaderDogear:onHold()
+	self.ui:handleEvent(Event:new("ToggleBookmarkFlipping"))
 	return true
 end
 

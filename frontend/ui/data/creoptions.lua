@@ -23,6 +23,7 @@ local CreOptions = {
 				name = "screen_mode",
 				name_text = S.SCREEN_MODE,
 				toggle = {S.PORTRAIT, S.LANDSCAPE},
+				alternate = false,
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
@@ -36,9 +37,10 @@ local CreOptions = {
 			{
 				name = "line_spacing",
 				name_text = S.LINE_SPACING,
-				item_text = {S.DECREASE, S.INCREASE},
+				toggle = {S.DECREASE, S.INCREASE},
+				alternate = false,
 				args = {"decrease", "increase"},
-				default_arg = nil,
+				default_arg = "decrease",
 				event = "ChangeLineSpace",
 			},
 			{
@@ -82,19 +84,17 @@ local CreOptions = {
 			{
 				name = "font_weight",
 				name_text = S.FONT_WEIGHT,
-				item_text = {S.TOGGLE_BOLD},
-				-- args is indeed not used, we put here just to keep the
-				-- UI happy.
-				args = {1},
+				toggle = {S.TOGGLE_BOLD},
 				default_arg = nil,
 				event = "ToggleFontBolder",
 			},
 			{
 				name = "font_gamma",
 				name_text = S.GAMMA,
-				item_text = {S.DECREASE, S.INCREASE},
+				toggle = {S.DECREASE, S.INCREASE},
+				alternate = false,
 				args = {"decrease", "increase"},
-				default_arg = nil,
+				default_arg = "increase",
 				event = "ChangeFontGamma",
 			}
 		}

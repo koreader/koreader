@@ -163,4 +163,42 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
 	self:addBookmark(pn_or_xp)
 end
 
+function ReaderBookmark:getPreviousBookmarkedPage(pn_or_xp)
+	for i = #self.bookmarks, 1, -1 do
+		if pn_or_xp > self.bookmarks[i].page then
+			return self.bookmarks[i].page
+		end
+	end
+end
+
+function ReaderBookmark:getNextBookmarkedPage(pn_or_xp)
+	for i = 1, #self.bookmarks do
+		if pn_or_xp < self.bookmarks[i].page then
+			return self.bookmarks[i].page
+		end
+	end
+end
+
+function ReaderBookmark:onGotoPreviousBookmark(pn_or_xp)
+	self:GotoBookmark(self:getPreviousBookmarkedPage(pn_or_xp))
+	return true
+end
+
+function ReaderBookmark:onGotoNextBookmark(pn_or_xp)
+	self:GotoBookmark(self:getNextBookmarkedPage(pn_or_xp))
+	return true
+end
+
+function ReaderBookmark:GotoBookmark(pn_or_xp)
+	if type(pn_or_xp) == "string" then
+		if self.view.view_mode == "page" then
+			self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getPageFromXPointer(pn_or_xp)))
+		else
+			self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getPosFromXPointer(pn_or_xp)))
+		end
+	elseif type(pn_or_xp) == "number" then
+		self.ui:handleEvent(Event:new("PageUpdate", pn_or_xp))
+	end
+end
+
 return ReaderBookmark

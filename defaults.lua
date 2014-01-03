@@ -42,6 +42,10 @@ DSHOWHIDDENFILES = false
 -- default to false
 DSHOWFILESIZE = false
 
+-- landscape clockwise rotation
+-- default to true, set to false for counterclockwise rotation
+DLANDSCAPE_CLOCKWISE_ROTATION = true
+
 -- customizable tap zones(rectangles)
 -- x: x coordinate of top left corner in proportion of screen width
 -- y: y coordinate of top left corner in proportion of screen height

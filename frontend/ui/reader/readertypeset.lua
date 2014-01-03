@@ -128,7 +128,11 @@ function ReaderTypeset:addToMainMenu(tab_item_table)
 		sub_item_table = self:genStyleSheetMenu(),
 	})
 	table.insert(tab_item_table.typeset, {
-		text = _("Toggle floating punctuation"),
+		text_func = function() 
+			return self.floating_punctuation == 1 and 
+			_("Turn off floating punctuation") or 
+			_("Turn on floating punctuation")
+		end,
 		callback = function () self:toggleFloatingPunctuation() end,
 	})
 end
