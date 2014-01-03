@@ -174,6 +174,7 @@ function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
 function CreDocument:gotoXPointer(xpointer)
+	DEBUG("CreDocument: goto xpointer", xpointer)
 	self._document:gotoXPointer(xpointer)
 end
 
@@ -198,10 +199,12 @@ function CreDocument:getCurrentPos()
 end
 
 function Document:gotoPos(pos)
+	DEBUG("CreDocument: goto position", pos)
 	self._document:gotoPos(pos)
 end
 
 function CreDocument:gotoPage(page)
+	DEBUG("CreDocument: goto page", page)
 	self._document:gotoPage(page)
 end
 
@@ -211,6 +214,7 @@ end
 
 function CreDocument:setFontFace(new_font_face)
 	if new_font_face then
+		DEBUG("CreDocument: set font face", new_font_face)
 		self._document:setFontFace(new_font_face)
 	end
 end
@@ -221,12 +225,14 @@ end
 
 function CreDocument:setFontSize(new_font_size)
 	if new_font_size then
+		DEBUG("CreDocument: set font size", new_font_size)
 		self._document:setFontSize(new_font_size)
 	end
 end
 
 function CreDocument:setViewMode(new_mode)
 	if new_mode then
+		DEBUG("CreDocument: set view mode", new_mode)
 		if new_mode == "scroll" then
 			self._document:setViewMode(self.SCROLL_VIEW_MODE)
 		else
@@ -237,47 +243,53 @@ end
 
 function CreDocument:setHeaderFont(new_font)
 	if new_font then
+		DEBUG("CreDocument: set header font", new_font)
 		self._document:setHeaderFont(new_font)
 	end
 end
 
 function CreDocument:zoomFont(delta)
+	DEBUG("CreDocument: zoom font", delta)
 	self._document:zoomFont(delta)
 end
 
 function CreDocument:setInterlineSpacePercent(percent)
+	DEBUG("CreDocument: set interline space", percent)
 	self._document:setDefaultInterlineSpace(percent)
 end
 
 function CreDocument:toggleFontBolder()
+	DEBUG("CreDocument: toggle font bolder")
 	self._document:toggleFontBolder()
 end
 
 function CreDocument:setGammaIndex(index)
+	DEBUG("CreDocument: set gamma index", index)
 	cre.setGammaIndex(index)
 end
 
 function CreDocument:setStyleSheet(new_css)
+	DEBUG("CreDocument: set style sheet", new_css)
 	self._document:setStyleSheet(new_css)
 end
 
 function CreDocument:setEmbeddedStyleSheet(toggle)
+	DEBUG("CreDocument: set embedded style sheet", toggle)
 	self._document:setEmbeddedStyleSheet(toggle)
 end
 
 function CreDocument:setPageMargins(left, top, right, bottom)
+	DEBUG("CreDocument: set page margins", left, top, right, bottom)
 	self._document:setPageMargins(left, top, right, bottom)
-	self._document:setIntProperty("crengine.page.margin.left", left)
-	self._document:setIntProperty("crengine.page.margin.top", top)
-	self._document:setIntProperty("crengine.page.margin.right", right)
-	self._document:setIntProperty("crengine.page.margin.bottom", bottom)
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
+	DEBUG("CreDocument: set floating punctuation", enabled)
 	self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end
 
 function CreDocument:setVisiblePageCount(new_count)
+	DEBUG("CreDocument: set visible page count", new_count)
 	self._document:setVisiblePageCount(new_count)
 end
 
