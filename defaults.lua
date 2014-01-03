@@ -78,13 +78,14 @@ DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  		-- that have filenames start
 
 -- crereader font sizes
 -- feel free to add more entries in this list
-DCREREADER_CONFIG_FONT_SIZES = {16, 20, 22, 24, 28, 32, 38, 44}  -- range from 16 to 44
+DCREREADER_CONFIG_FONT_SIZES = {16, 20, 22, 24, 26, 28, 30, 34, 38, 44}  -- option range from 16 to 44
+DCREREADER_CONFIG_DEFAULT_FONT_SIZE = 22    -- default font size
 
 -- crereader margin sizes
 -- margin {left, top, right, bottom} in pixels
-DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {5, 5, 5, 5}
-DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {15, 10, 15, 10}
-DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {25, 10, 25, 10}
+DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {15, 5, 15, 5}
+DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {22, 10, 22, 10}
+DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {30, 10, 30, 10}
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true

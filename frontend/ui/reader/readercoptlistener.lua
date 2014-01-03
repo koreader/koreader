@@ -22,13 +22,12 @@ function ReaderCoptListener:onReadSettings(config)
 	end
 	
 	local copt_margins = config:readSetting("copt_page_margins")
-	if copt_margins then
-		table.insert(self.ui.postInitCallback, function()
-			-- FIXME: SetPageMargins will mess up current reading position
-			-- for now we simply disable this feature.
-		    --self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
-		end)
+	if copt_margins == nil then
+		copt_margins = DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
 	end
+	table.insert(self.ui.postInitCallback, function()
+	    self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
+	end)
 end
 
 return ReaderCoptListener
