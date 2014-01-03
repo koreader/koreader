@@ -70,7 +70,7 @@ local CreOptions = {
 				spacing = 15,
 				item_font_size = DCREREADER_CONFIG_FONT_SIZES,
 				values = DCREREADER_CONFIG_FONT_SIZES,
-				default_value = 22,
+				default_value = DCREREADER_CONFIG_DEFAULT_FONT_SIZE,
 				args = DCREREADER_CONFIG_FONT_SIZES,
 				event = "SetFontSize",
 			},

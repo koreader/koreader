@@ -79,7 +79,7 @@ function ReaderFont:onReadSettings(config)
 	self.font_size = config:readSetting("font_size")
 	if not self.font_size then
 		--@TODO change this!  12.01 2013 (houqp)
-		self.font_size = 29
+		self.font_size = DCREREADER_CONFIG_DEFAULT_FONT_SIZE
 	end
 	self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
 
