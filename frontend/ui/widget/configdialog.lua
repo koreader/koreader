@@ -96,26 +96,8 @@ function OptionTextItem:onTapSelect()
 		item[1].color = 0
 	end
 	self[1].color = 15
-	local option_value = nil
-	local option_arg = nil
-	if self.values then
-		self.values = self.values or {}
-		option_value = self.values[self.current_item]
-		self.config:onConfigChoice(self.name, option_value)
-	end
-	if self.event then
-		self.args = self.args or {}
-		option_arg = self.args[self.current_item]
-		self.config:onConfigEvent(self.event, option_arg)
-	end
-	if self.events then
-		for i=0,#self.events do
-			self.events[i].args = self.events[i].args or {}
-			option_arg = self.events[i].args[self.current_item]
-			self.config:onConfigEvent(self.events[i].event, option_arg)
-		end
-	end
-	UIManager.repaint_all = true
+	self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.current_item)
+	UIManager:setDirty(self.config, "partial")
 	return true
 end
 
@@ -148,16 +130,8 @@ function OptionIconItem:onTapSelect()
 	end
 	--self[1][1].invert = true
 	self[1].color = 15
-	local option_value = nil
-	local option_arg = nil
-	if type(self.values) == "table" then
-		option_value = self.values[self.current_item]
-		self.config:onConfigChoice(self.name, option_value, self.event)
-	elseif type(self.args) == "table" then
-		option_arg = self.args[self.current_item]
-		self.config:onConfigChoice(self.name, option_arg, self.event)
-	end
-	UIManager.repaint_all = true
+	self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.current_item)
+	UIManager:setDirty(self.config, "partial")
 	return true
 end
 
@@ -498,21 +472,40 @@ end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
 	--DEBUG("config option value", option_name, option_value)
-	UIManager:scheduleIn(0.2, function()
-		self.configurable[option_name] = option_value
-		self.ui:handleEvent(Event:new("StartActivityIndicator"))
-		UIManager:setDirty(self, "partial")
-	end)
+	self.configurable[option_name] = option_value
+	self.ui:handleEvent(Event:new("StartActivityIndicator"))
 	return true
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg)
 	--DEBUG("config option event", option_event, option_arg)
-	UIManager:scheduleIn(0.5, function()
-		self.ui:handleEvent(Event:new(option_event, option_arg))
+	self.ui:handleEvent(Event:new(option_event, option_arg))
+	return true
+end
+
+function ConfigDialog:onConfigEvents(option_events, arg_index)
+	--DEBUG("config option events", option_events, arg_index)
+	for i=1, #option_events do
+		option_events[i].args = option_events[i].args or {}
+		self.ui:handleEvent(Event:new(option_events[i].event, option_events[i].args[arg_index]))
+	end
+	return true
+end
+
+function ConfigDialog:onConfigChoose(values, name, event, args, events, position)
+	UIManager:scheduleIn(0.05, function()
+		if values then
+			self:onConfigChoice(name, values[position])
+		end
+		if event then
+			args = args or {}
+			self:onConfigEvent(event, args[position])
+		end
+		if events then
+			self:onConfigEvents(events, position)
+		end
 		UIManager.repaint_all = true
 	end)
-	return true
 end
 
 function ConfigDialog:closeDialog()

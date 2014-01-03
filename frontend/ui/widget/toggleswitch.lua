@@ -115,26 +115,21 @@ function ToggleSwitch:onTapSelect(arg, gev)
 	)
 	--DEBUG("toggle position:", position)
 	self:togglePosition(position)
-	local option_value = nil
-	local option_arg = nil
+	--[[
 	if self.values then
 		self.values = self.values or {}
-		option_value = self.values[self.position]
-		self.config:onConfigChoice(self.name, option_value)
+		self.config:onConfigChoice(self.name, self.values[self.position])
 	end
 	if self.event then
 		self.args = self.args or {}
-		option_arg = self.args[self.position]
-		self.config:onConfigEvent(self.event, option_arg)
+		self.config:onConfigEvent(self.event, self.args[self.position])
 	end
 	if self.events then
-		for i=1,#self.events do
-			self.events[i].args = self.events[i].args or {}
-			option_arg = self.events[i].args[self.position]
-			self.config:onConfigEvent(self.events[i].event, option_arg)
-		end
+		self.config:onConfigEvents(self.events, self.position)
 	end
-	UIManager.repaint_all = true
+	--]]
+	self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.position)
+	UIManager:setDirty(self.config, "partial")
 	return true
 end
 
