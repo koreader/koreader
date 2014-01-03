@@ -268,6 +268,7 @@ function ReaderRolling:updatePos()
 		self.old_page = new_page
 		self.ui:handleEvent(Event:new("UpdateToc"))
 	end
+	UIManager.repaint_all = true
 end
 
 function ReaderRolling:onChangeViewMode()

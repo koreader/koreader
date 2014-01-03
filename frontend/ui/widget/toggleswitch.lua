@@ -103,6 +103,8 @@ function ToggleSwitch:togglePosition(position)
 	if self.n_pos == 2 and self.alternate ~= false then
 		self.position = (self.position+1)%self.n_pos
 		self.position = self.position == 0 and self.n_pos or self.position
+	elseif self.n_pos == 1 then
+		self.position = self.position == 1 and 0 or 1
 	else
 		self.position = position
 	end
