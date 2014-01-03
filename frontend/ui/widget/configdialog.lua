@@ -498,15 +498,21 @@ end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
 	--DEBUG("config option value", option_name, option_value)
-	self.configurable[option_name] = option_value
-	self.ui:handleEvent(Event:new("StartActivityIndicator"))
-	self:closeDialog()
+	UIManager:scheduleIn(0.2, function()
+		self.configurable[option_name] = option_value
+		self.ui:handleEvent(Event:new("StartActivityIndicator"))
+		self:closeDialog()
+		UIManager.repaint_all = true
+	end)
 	return true
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg)
 	--DEBUG("config option event", option_event, option_arg)
-	self.ui:handleEvent(Event:new(option_event, option_arg))
+	UIManager:scheduleIn(0.5, function()
+		self.ui:handleEvent(Event:new(option_event, option_arg))
+		UIManager.repaint_all = true
+	end)
 	return true
 end
 
