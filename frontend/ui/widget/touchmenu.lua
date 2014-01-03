@@ -49,7 +49,7 @@ function TouchMenuItem:init()
 			align = "center",
 			HorizontalSpan:new{ width = 10 },
 			TextWidget:new{
-				text = self.item.text,
+				text = self.item.text or self.item.text_func(),
 				face = self.face,
 			},
 		},

@@ -145,7 +145,11 @@ end
 function ReaderPaging:addToMainMenu(tab_item_table)
 	if self.ui.document.info.has_pages then
 		table.insert(tab_item_table.typeset, {
-			text = _("Toggle page overlap"),
+			text_func = function() 
+				return self.show_overlap_enable and 
+				_("Turn off page overlap") or 
+				_("Turn on page overlap")
+			end,
 			callback = function()
 				self.show_overlap_enable = not self.show_overlap_enable
 			end
