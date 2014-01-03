@@ -157,14 +157,16 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, config_dialog)
-		-- cre option controller
-		local coptlistener = ReaderCoptListener:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self,
-			document = self.document,
-		}
-		table.insert(self, coptlistener)
+		if not self.document.info.has_pages then
+			-- cre option controller
+			local coptlistener = ReaderCoptListener:new{
+				dialog = self.dialog,
+				view = self[1],
+				ui = self,
+				document = self.document,
+			}
+			table.insert(self, coptlistener)
+		end
 	end
 	-- for page specific controller
 	if self.document.info.has_pages then
@@ -207,9 +209,6 @@ function ReaderUI:init()
 		}
 		table.insert(self, hinter)
 	else
-		if Device:getModel() ~= "KindleDXG" then
-			self.document:setVisiblePageCount(1)
-		end
 		-- make sure we load document first before calling any callback
 		table.insert(self.postInitCallback, function()
 			self.document:loadDocument()
@@ -243,14 +242,16 @@ function ReaderUI:init()
 	end
 	-- configuable controller
 	if self.document.info.configurable then
-		-- kopt option controller
-		local koptlistener = ReaderKoptListener:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self,
-			document = self.document,
-		}
-		table.insert(self, koptlistener)
+		if self.document.info.has_pages then
+			-- kopt option controller
+			local koptlistener = ReaderKoptListener:new{
+				dialog = self.dialog,
+				view = self[1],
+				ui = self,
+				document = self.document,
+			}
+			table.insert(self, koptlistener)
+		end
 		-- activity indicator
 		local activity_listener = ReaderActivityIndicator:new{
 			dialog = self.dialog,
