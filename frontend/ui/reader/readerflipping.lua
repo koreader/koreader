@@ -37,7 +37,7 @@ function ReaderFlipping:init()
 end
 
 function ReaderFlipping:onTap()
-	self.ui:handleEvent(Event:new("ToggleFlipping"))
+	self.ui:handleEvent(Event:new("TogglePageFlipping"))
 	return true
 end
 
