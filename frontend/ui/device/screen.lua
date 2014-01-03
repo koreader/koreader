@@ -116,7 +116,7 @@ function Screen:setScreenMode(mode)
 		end
 	elseif mode == "landscape" then
 		if self.cur_rotation_mode == 0 or self.cur_rotation_mode == 2 then
-			self:setRotationMode(1)
+			self:setRotationMode(DLANDSCAPE_CLOCKWISE_ROTATION and 1 or 3)
 		elseif self.cur_rotation_mode == 1 or self.cur_rotation_mode == 3 then
 			self:setRotationMode((self.cur_rotation_mode + 2) % 4)
 		end
