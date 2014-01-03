@@ -135,6 +135,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
 		end
 	end
 	UIManager.repaint_all = true
+	return true
 end
 
 return ToggleSwitch

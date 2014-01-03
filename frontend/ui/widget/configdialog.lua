@@ -501,8 +501,7 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
 	UIManager:scheduleIn(0.2, function()
 		self.configurable[option_name] = option_value
 		self.ui:handleEvent(Event:new("StartActivityIndicator"))
-		self:closeDialog()
-		UIManager.repaint_all = true
+		UIManager:setDirty(self, "partial")
 	end)
 	return true
 end
