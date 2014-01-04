@@ -288,7 +288,7 @@ function UIManager:run()
 			elseif input_event == "NotCharging" then
 				Device:usbPlugOut()
 			elseif input_event == "Light" then
-				Device:getFrontlight():toggle()
+				Device:getPowerDevice():toggleFrontlight()
 			elseif (input_event == "Power" and not Device.screen_saver_mode) or
 			input_event == "Suspend" then
 				local InfoMessage = require("ui/widget/infomessage")

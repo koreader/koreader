@@ -161,11 +161,11 @@ local last_file = G_reader_settings:readSetting("lastfile")
 --87712cf0e43fed624f8a9f610be42b1fe174b9fe
 
 do
-	local fl = Device:getFrontlight()
-	if fl and fl.restore_settings then
+	local powerd = Device:getPowerDevice()
+	if powerd and powerd.restore_settings then
 		local intensity = G_reader_settings:readSetting("frontlight_intensity")
-		intensity = intensity or fl.intensity
-		fl:setIntensity(intensity)
+		intensity = intensity or powerd.flIntensity
+		powerd:setIntensity(intensity)
 	end
 end
 

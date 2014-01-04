@@ -204,10 +204,12 @@ end
 
 function ReaderRolling:onPosUpdate(new_pos)
 	self.current_pos = new_pos
+	self:updateBatteryState()
 end
 
 function ReaderRolling:onPageUpdate(new_page)
 	self.current_page = new_page
+	self:updateBatteryState()
 end
 
 function ReaderRolling:onGotoPercent(percent)
@@ -343,6 +345,17 @@ end
 function ReaderRolling:onGotoPage(number)
 	self:gotoPage(number)
 	return true
+end
+
+function ReaderRolling:updateBatteryState()
+	DEBUG("update battery state")
+	if self.view.view_mode == "page" then
+		local powerd = Device:getPowerDevice()
+		local state = powerd:isCharging() and -1 or powerd:getCapacity()
+		if state then
+			self.ui.document:setBatteryState(state)
+		end
+	end
 end
 
 return ReaderRolling

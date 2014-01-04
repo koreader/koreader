@@ -1,6 +1,6 @@
-local KindleFrontLight = require("ui/device/kindlefrontlight")
-local KoboFrontLight = require("ui/device/kobofrontlight")
-local BaseFrontLight = require("ui/device/basefrontlight")
+local KindlePowerD = require("ui/device/kindlepowerd")
+local KoboPowerD = require("ui/device/kobopowerd")
+local BasePowerD = require("ui/device/basepowerd")
 local Screen = require("ui/device/screen")
 -- util
 -- lfs
@@ -12,7 +12,7 @@ local Device = {
 	touch_dev = nil,
 	model = nil,
 	firmware_rev = nil,
-	frontlight = nil,
+	powerd = nil,
 	has_no_keyboard = nil,
 	is_touch_device = nil,
 	has_front_light = nil,
@@ -166,9 +166,9 @@ function Device:outofScreenSaver()
 end
 
 function Device:prepareSuspend() -- currently only used for kobo devices
-	local fl = self:getFrontlight()
-	if fl ~= nil then
-		fl.fl:sleep()
+	local powerd = self:getPowerDevice()
+	if powerd ~= nil then
+		powerd.fl:sleep()
 	end
 	self.screen:refresh(0)
 	self.screen_saver_mode = true
@@ -181,9 +181,9 @@ end
 function Device:Resume() -- currently only used for kobo devices
 	os.execute("echo 0 > /sys/power/state-extended")
 	self.screen:refresh(0)
-	local fl = self:getFrontlight()
-	if fl ~= nil then
-		fl.fl:restore()
+	local powerd = self:getPowerDevice()
+	if powerd ~= nil then
+		powerd.fl:restore()
 	end
 	self.screen_saver_mode = false
 end
@@ -215,20 +215,20 @@ function Device:usbPlugOut()
 	self.charging_mode = false
 end
 
-function Device:getFrontlight()
-	if self.frontlight ~= nil then
-		return self.frontlight
-	elseif self:hasFrontlight() then
+function Device:getPowerDevice()
+	if self.powerd ~= nil then
+		return self.powerd
+	else
 		local model = self:getModel()
-		if model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
-			self.frontlight = KindleFrontLight:new()
+		if model == "KindleTouch" or model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
+			self.powerd = KindlePowerD:new{model = model}
 		elseif self:isKobo() then
-			self.frontlight = KoboFrontLight:new()
+			self.powerd = KoboPowerD:new()
 		else -- emulated FrontLight
-			self.frontlight = BaseFrontLight:new()
+			self.powerd = BasePowerD:new()
 		end
 	end
-	return self.frontlight
+	return self.powerd
 end
 
 return Device

@@ -13,7 +13,7 @@ local ReaderFrontLight = InputContainer:new{
 }
 
 function ReaderFrontLight:init()
-	if Device:getFrontlight() ~= nil then
+	if Device:isTouchDevice() then
 		self.ges_events = {
 			Adjust = {
 				GestureRange:new{
@@ -32,21 +32,21 @@ function ReaderFrontLight:init()
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
-	local fl = Device:getFrontlight()
-	if fl.intensity ~= nil then
+	local powerd = Device:getPowerDevice()
+	if powerd.intensity ~= nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
 		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)] or self.steps[#self.steps]
 		local msg = nil
 		if ges.direction == "north" then
 			msg = _("Increase front light intensity to ")
-			fl:setIntensity(fl.intensity + delta_int)
+			powerd:setIntensity(powerd.intensity + delta_int)
 		elseif ges.direction == "south" then
 			msg = _("Decrease front light intensity to ")
-			fl:setIntensity(fl.intensity - delta_int)
+			powerd:setIntensity(powerd.intensity - delta_int)
 		end
 		if msg ~= nil then
 			UIManager:show(Notification:new{
-				text = msg..fl.intensity,
+				text = msg..powerd.intensity,
 				timeout = 1
 			})
 		end
@@ -65,10 +65,10 @@ function ReaderFrontLight:addToMainMenu(tab_item_table)
 end
 
 function ReaderFrontLight:onShowFlDialog()
-	local fl = Device:getFrontlight()
+	local powerd = Device:getPowerDevice()
 	self.fl_dialog = InputDialog:new{
 		title = _("Frontlight Level"),
-		input_hint = ("(%d - %d)"):format(fl.min, fl.max),
+		input_hint = ("(%d - %d)"):format(powerd.fl_min, powerd.fl_max),
 		buttons = {
 			{
 				{
@@ -76,7 +76,7 @@ function ReaderFrontLight:onShowFlDialog()
 					enabled = true,
 					callback = function()
 						self.fl_dialog.input:setText("")
-						fl:toggle()
+						powerd:toggleFrontlight()
 					end,
 				},
 				{
@@ -107,14 +107,14 @@ end
 
 function ReaderFrontLight:close()
 	self.fl_dialog:onClose()
-	G_reader_settings:saveSetting("frontlight_intensity", Device:getFrontlight().intensity)
+	G_reader_settings:saveSetting("frontlight_intensity", Device:getPowerDevice().flIntensity)
 	UIManager:close(self.fl_dialog)
 end
 
 function ReaderFrontLight:fldialIntensity()
 	local number = tonumber(self.fl_dialog:getInputText())
 	if number ~= nil then
-		Device:getFrontlight():setIntensity(number)
+		Device:getPowerDevice():setIntensity(number)
 	end
 end
 

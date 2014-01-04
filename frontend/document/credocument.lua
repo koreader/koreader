@@ -297,6 +297,11 @@ function CreDocument:setVisiblePageCount(new_count)
 	self._document:setVisiblePageCount(new_count)
 end
 
+function CreDocument:setBatteryState(state)
+	DEBUG("CreDocument: set battery state", state)
+	self._document:setBatteryState(state)
+end
+
 function CreDocument:register(registry)
 	registry:addProvider("txt", "application/txt", self)
 	registry:addProvider("epub", "application/epub", self)

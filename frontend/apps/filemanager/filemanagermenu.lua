@@ -65,7 +65,7 @@ function FileManagerMenu:setUpdateItemTable()
 		end
 	})
 
-	if Device:getFrontlight() ~= nil then
+	if Device:hasFrontlight() then
 		ReaderFrontLight:addToMainMenu(self.tab_item_table)
 	end
 

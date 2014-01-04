@@ -139,7 +139,7 @@ function ReaderUI:init()
 	}
 	table.insert(self.active_widgets, reader_ss)
 	-- frontlight controller
-	if Device:getFrontlight() then
+	if Device:hasFrontlight() then
 		table.insert(self, ReaderFrontLight:new{
 			dialog = self.dialog,
 			view = self[1],
