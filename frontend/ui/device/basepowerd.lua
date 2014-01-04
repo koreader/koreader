@@ -3,7 +3,10 @@ local BasePowerD = {
 	fl_max = 10,     -- max frontlight intensity
 	flIntensity = nil,   -- frontlight intensity
 	battCapacity = nil,  -- battery capacity
-	model = nil   -- device model
+	model = nil,     -- device model
+	
+	capacity_pulled_count = 0,
+	capacity_cached_count = 10,
 }
 
 function BasePowerD:new(o)
@@ -37,7 +40,13 @@ function BasePowerD:setIntensity(intensity)
 end
 
 function BasePowerD:getCapacity()
-	return self:getCapacityHW()
+	if capacity_pulled_count == capacity_cached_count then
+		capacity_pulled_count = 0
+		return self:getCapacityHW()
+	else
+		capacity_pulled_count = capacity_pulled_count + 1
+		return self.battCapacity or self:getCapacityHW()
+	end
 end
 
 function BasePowerD:isCharging()
