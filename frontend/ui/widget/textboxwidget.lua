@@ -40,13 +40,20 @@ function TextBoxWidget:_wrapGreedyAlg(h_list)
 
 	for k,w in ipairs(h_list) do
 		cur_line_width = cur_line_width + w.width
-		if cur_line_width <= self.width then
-			table.insert(cur_line, w)
-		else
+		if w.word == "\n" then
+			if cur_line_width > 0 then
+				-- hard line break
+				table.insert(v_list, cur_line)
+				cur_line = {}
+				cur_line_width = 0
+			end
+		elseif cur_line_width > self.width then
 			-- wrap to next line
 			table.insert(v_list, cur_line)
 			cur_line = {}
 			cur_line_width = w.width
+			table.insert(cur_line, w)
+		else
 			table.insert(cur_line, w)
 		end
 	end
@@ -101,15 +108,19 @@ function TextBoxWidget:_getVerticalList(alg)
 	end
 	-- build horizontal list
 	local h_list = {}
-	for words in self.text:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
-		for word in words:gsplit("%s+", true) do
-			for w in word:gsplit("%p+", true) do
-				local word_box = {}
-				word_box.word = w
-				word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
-				table.insert(h_list, word_box)
+	local line_count = 0
+	for line in self.text:gsplit("\n", true) do
+		for words in line:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
+			for word in words:gsplit("%s+", true) do
+				for w in word:gsplit("%p+", true) do
+					local word_box = {}
+					word_box.word = w
+					word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
+					table.insert(h_list, word_box)
+				end
 			end
 		end
+		if line:sub(-1) == "\n" then table.insert(h_list, {word = '\n', width = 0}) end
 	end
 
 	-- @TODO check alg here 25.04 2012 (houqp)
