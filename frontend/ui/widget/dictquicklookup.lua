@@ -30,7 +30,7 @@ local DictQuickLookup = InputContainer:new{
 	definition = nil,
 	dict_index = 1,
 	title_face = Font:getFace("tfont", 22),
-	word_face = Font:getFace("tfont", 20),
+	word_face = Font:getFace("tfont", 22),
 	content_face = Font:getFace("cfont", 20),
 	width = nil,
 	height = nil,
@@ -108,7 +108,7 @@ function DictQuickLookup:update()
 			text = self.definition,
 			face = self.content_face,
 			width = self.width,
-			height = self.height*0.6,
+			height = self.height*0.7,
 			dialog = self,
 		},
 	}	
