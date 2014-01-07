@@ -33,20 +33,20 @@ end
 
 function ReaderFrontLight:onAdjust(arg, ges)
 	local powerd = Device:getPowerDevice()
-	if powerd.intensity ~= nil then
+	if powerd.flIntensity ~= nil then
 		local rel_proportion = ges.distance / Screen:getWidth()
 		local delta_int = self.steps[math.ceil(#self.steps*rel_proportion)] or self.steps[#self.steps]
 		local msg = nil
 		if ges.direction == "north" then
 			msg = _("Increase front light intensity to ")
-			powerd:setIntensity(powerd.intensity + delta_int)
+			powerd:setIntensity(powerd.flIntensity + delta_int)
 		elseif ges.direction == "south" then
 			msg = _("Decrease front light intensity to ")
-			powerd:setIntensity(powerd.intensity - delta_int)
+			powerd:setIntensity(powerd.flIntensity - delta_int)
 		end
 		if msg ~= nil then
 			UIManager:show(Notification:new{
-				text = msg..powerd.intensity,
+				text = msg..powerd.flIntensity,
 				timeout = 1
 			})
 		end
