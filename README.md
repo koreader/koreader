@@ -129,3 +129,7 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/koreader/koreader/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
