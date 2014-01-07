@@ -209,20 +209,20 @@ end
 function GestureDetector:initialState(tev)
 	local slot = tev.slot
 	if tev.id then
-		-- a event ends
+		-- an event ends
 		if tev.id == -1 then
 			self.detectings[slot] = false
 		else
 			self.track_ids[slot] = tev.id
-		end
-	end
-	if tev.x and tev.y then
-		-- user starts a new touch motion
-		if not self.detectings[slot] then
-			self.detectings[slot] = true
-			self.first_tevs[slot] = self:deepCopyEv(tev)
-			-- default to tap state
-			return self:switchState("tapState", tev)
+			if tev.x and tev.y then
+				-- user starts a new touch motion
+				if not self.detectings[slot] then
+					self.detectings[slot] = true
+					self.first_tevs[slot] = self:deepCopyEv(tev)
+					-- default to tap state
+					return self:switchState("tapState", tev)
+				end
+			end
 		end
 	end
 end
