@@ -27,8 +27,8 @@ function ReaderTypeset:onReadSettings(config)
 	self.embedded_css = config:readSetting("embedded_css") or true
 	self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 	
-	-- default to no floating punctuation
-	self.floating_punctuation = config:readSetting("floating_punctuation") or 0
+	-- default to enable floating punctuation
+	self.floating_punctuation = config:readSetting("floating_punctuation") or 1
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
 	
 	local copt_margins = self.ui.doc_settings:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
