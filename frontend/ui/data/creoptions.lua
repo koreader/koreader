@@ -90,7 +90,7 @@ local CreOptions = {
 			},
 			{
 				name = "font_gamma",
-				name_text = S.GAMMA,
+				name_text = S.CONTRAST,
 				toggle = {S.DECREASE, S.INCREASE},
 				alternate = false,
 				args = {"decrease", "increase"},
