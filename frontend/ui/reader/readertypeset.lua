@@ -23,22 +23,16 @@ function ReaderTypeset:onReadSettings(config)
 		self.css = nil
 	end
 
-	self.embedded_css = config:readSetting("embedded_css")
 	-- default to enable embedded css
-	if self.embedded_css == nil then
-		self.embedded_css = true
-		self.ui.document:setEmbeddedStyleSheet(1)
-	end
-	if not self.embedded_css then
-		self.ui.document:setEmbeddedStyleSheet(0)
-	end
-
-	self.floating_punctuation = config:readSetting("floating_punctuation")
+	self.embedded_css = config:readSetting("embedded_css") or true
+	self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
+	
 	-- default to no floating punctuation
-	if self.floating_punctuation == nil then
-		self.floating_punctuation = 0
-	end
+	self.floating_punctuation = config:readSetting("floating_punctuation") or 0
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
+	
+	local copt_margins = self.ui.doc_settings:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
+	self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
 end
 
 function ReaderTypeset:onSaveSettings()

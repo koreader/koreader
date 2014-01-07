@@ -20,14 +20,6 @@ function ReaderCoptListener:onReadSettings(config)
 	        self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
 	    end)
 	end
-	
-	local copt_margins = config:readSetting("copt_page_margins")
-	if copt_margins == nil then
-		copt_margins = DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
-	end
-	table.insert(self.ui.postInitCallback, function()
-	    self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
-	end)
 end
 
 return ReaderCoptListener
