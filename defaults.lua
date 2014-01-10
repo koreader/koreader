@@ -97,6 +97,9 @@ DGESDETECT_DISABLE_DOUBLE_TAP = true
 -- change this to any numerical value if you want to antomatically save settings when turning pages
 DAUTO_SAVE_PAGING_COUNT = nil
 
+-- dictionary font size
+DDICT_FONT_SIZE = 20
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################

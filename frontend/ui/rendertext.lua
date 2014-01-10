@@ -143,7 +143,7 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning)
 	return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
-function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor)
+function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, fgcolor, width)
 	if not text then
 		DEBUG("renderUtf8Text called without text");
 		return 0
@@ -153,9 +153,12 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, f
 	-- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
 	local pen_x = 0
 	local prevcharcode = 0
-	local buffer_width = buffer:getWidth()
+	local text_width = buffer:getWidth() - x
+	if width and width < text_width then
+		text_width = width
+	end
 	for _, charcode, uchar in utf8Chars(text) do
-		if pen_x < buffer_width then
+		if pen_x < text_width then
 			local glyph = self:getGlyph(face, charcode, bgcolor, fgcolor)
 			if kerning and (prevcharcode ~= 0) then
 				pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
@@ -167,7 +170,7 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bgcolor, f
 				glyph.bb:getWidth(), glyph.bb:getHeight(), 1)
 			pen_x = pen_x + glyph.ax
 			prevcharcode = charcode
-		end -- if pen_x < buffer_width
+		end -- if pen_x < text_width
 	end
 
 	return pen_x
