@@ -31,7 +31,7 @@ local DictQuickLookup = InputContainer:new{
 	dict_index = 1,
 	title_face = Font:getFace("tfont", 22),
 	word_face = Font:getFace("tfont", 22),
-	content_face = Font:getFace("cfont", 20),
+	content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
 	width = nil,
 	height = nil,
 	
@@ -85,7 +85,7 @@ function DictQuickLookup:update()
 		TextWidget:new{
 			text = self.dictionary,
 			face = self.title_face,
-			width = self.width,
+			width = self.width - self.button_padding,
 		}
 	}
 	-- lookup word
