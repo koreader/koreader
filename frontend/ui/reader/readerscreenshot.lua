@@ -22,7 +22,18 @@ function ReaderScreenshot:init()
 end
 
 function ReaderScreenshot:onScreenshot()
-	os.execute("screenshot")
+	if Device:getModel() ~= 'Kobo_phoenix' then
+		os.execute("screenshot")
+	else Screen.bb:invert() 
+		local screenshot_name = os.date("screenshots/Screenshot_%Y-%B-%d_%Hh%M.pam")
+		UIManager:show(InfoMessage:new{
+			text = _("Writing screen to "..screenshot_name),
+			timeout = 2,
+		})
+		Screen.bb:writePAM(screenshot_name)
+		DEBUG(screenshot_name)
+		Screen.bb:invert() 
+	end
 	UIManager.full_refresh = true
 	return true
 end
