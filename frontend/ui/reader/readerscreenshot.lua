@@ -27,7 +27,7 @@ function ReaderScreenshot:onScreenshot()
 	else Screen.bb:invert() 
 		local screenshot_name = os.date("screenshots/Screenshot_%Y-%B-%d_%Hh%M.pam")
 		UIManager:show(InfoMessage:new{
-			text = _("Writing screen to "..screenshot_name),
+			text = _("Writing screen to ")..screenshot_name,
 			timeout = 2,
 		})
 		Screen.bb:writePAM(screenshot_name)
