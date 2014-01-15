@@ -30,6 +30,7 @@ local ReaderFrontLight = require("ui/reader/readerfrontlight")
 local ReaderDictionary = require("ui/reader/readerdictionary")
 local ReaderHyphenation = require("ui/reader/readerhyphenation")
 local ReaderActivityIndicator = require("ui/reader/readeractivityindicator")
+local ReaderLink = require("ui/reader/readerlink")
 
 --[[
 This is an abstraction for a reader interface
@@ -82,41 +83,46 @@ function ReaderUI:init()
 		ui = self,
 		document = self.document,
 	}
-	-- rotation controller
-	self[2] = ReaderRotation:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
-	-- reader menu controller
-	self[3] = ReaderMenu:new{
-		view = self[1],
-		ui = self
-	}
-	self.menu = self[3] -- hold reference to menu widget
-	-- Table of content controller
-	self[4] = ReaderToc:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
-	self.toc = self[4] -- hold reference to bm widget
-	-- bookmark controller
-	local reader_bm = ReaderBookmark:new{
-		dialog = self.dialog,
-		view = self[1],
-		ui = self
-	}
-	table.insert(self, reader_bm)
-	-- text highlight
-	local highlight = ReaderHighlight:new{
+	-- link
+	table.insert(self, ReaderLink:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self,
 		document = self.document,
+	})
+	-- text highlight
+	table.insert(self, ReaderHighlight:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self,
+		document = self.document,
+	})
+	-- rotation controller
+	table.insert(self, ReaderRotation:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	})
+	-- reader menu controller
+	self.menu = ReaderMenu:new{
+		view = self[1],
+		ui = self
 	}
-	table.insert(self, highlight)
-	-- goto
+	table.insert(self, self.menu) -- hold reference to menu widget
+	-- Table of content controller
+	self.toc = ReaderToc:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	}
+	table.insert(self, self.toc) -- hold reference to bm widget
+	-- bookmark controller
+	table.insert(self, ReaderBookmark:new{
+		dialog = self.dialog,
+		view = self[1],
+		ui = self
+	})
+	-- reader goto controller
 	table.insert(self, ReaderGoto:new{
 		dialog = self.dialog,
 		view = self[1],
@@ -124,20 +130,18 @@ function ReaderUI:init()
 		document = self.document,
 	})
 	-- dictionary
-	local dict = ReaderDictionary:new{
+	table.insert(self, ReaderDictionary:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self,
 		document = self.document,
-	}
-	table.insert(self, dict)
+	})
 	-- screenshot controller
-	local reader_ss = ReaderScreenshot:new{
+	table.insert(self.active_widgets, ReaderScreenshot:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
-	}
-	table.insert(self.active_widgets, reader_ss)
+	})
 	-- frontlight controller
 	if Device:hasFrontlight() then
 		table.insert(self, ReaderFrontLight:new{
@@ -149,117 +153,106 @@ function ReaderUI:init()
 	-- configuable controller
 	if self.document.info.configurable then
 		-- config panel controller
-		local config_dialog = ReaderConfig:new{
+		table.insert(self, ReaderConfig:new{
 			configurable = self.document.configurable,
 			options = self.document.options,
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, config_dialog)
+		})
 		if not self.document.info.has_pages then
 			-- cre option controller
-			local coptlistener = ReaderCoptListener:new{
+			table.insert(self, ReaderCoptListener:new{
 				dialog = self.dialog,
 				view = self[1],
 				ui = self,
 				document = self.document,
-			}
-			table.insert(self, coptlistener)
+			})
 		end
 	end
 	-- for page specific controller
 	if self.document.info.has_pages then
 		-- if needed, insert a paging container
-		local pager = ReaderPaging:new{
+		table.insert(self, ReaderPaging:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, pager)
+		})
 		-- zooming controller
-		local zoomer = ReaderZooming:new{
+		self.zoom = ReaderZooming:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
 		}
-		table.insert(self, zoomer)
+		table.insert(self, self.zoom) -- hold reference to zoom controller
 		-- panning controller
-		local panner = ReaderPanning:new{
+		table.insert(self, ReaderPanning:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, panner)
+		})
 		-- cropping controller
-		local cropper = ReaderCropping:new{
+		table.insert(self, ReaderCropping:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self,
 			document = self.document,
-		}
-		table.insert(self, cropper)
+		})
 		-- hinting controller
-		local hinter = ReaderHinting:new{
+		table.insert(self, ReaderHinting:new{
 			dialog = self.dialog,
-			zoom = zoomer,
+			zoom = self.zoom,
 			view = self[1],
 			ui = self,
 			document = self.document,
-		}
-		table.insert(self, hinter)
+		})
 	else
 		-- make sure we load document first before calling any callback
 		table.insert(self.postInitCallback, function()
 			self.document:loadDocument()
 		end)
 		-- typeset controller
-		local typeset = ReaderTypeset:new{
+		table.insert(self, ReaderTypeset:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, typeset)
+		})
 		-- font menu
-		local font_menu = ReaderFont:new{
+		table.insert(self, ReaderFont:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, font_menu)
+		})
 		table.insert(self, ReaderHyphenation:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
 		})
 		-- rolling controller
-		local roller = ReaderRolling:new{
+		table.insert(self, ReaderRolling:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		}
-		table.insert(self, roller)
+		})
 	end
 	-- configuable controller
 	if self.document.info.configurable then
 		if self.document.info.has_pages then
 			-- kopt option controller
-			local koptlistener = ReaderKoptListener:new{
+			table.insert(self, ReaderKoptListener:new{
 				dialog = self.dialog,
 				view = self[1],
 				ui = self,
 				document = self.document,
-			}
-			table.insert(self, koptlistener)
+			})
 		end
 		-- activity indicator
-		local activity_listener = ReaderActivityIndicator:new{
+		table.insert(self, ReaderActivityIndicator:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self,
 			document = self.document,
-		}
-		table.insert(self, activity_listener)
+		})
 	end
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized
