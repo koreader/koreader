@@ -554,21 +554,7 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTypeBTouchEv(ev)
-	if ev.type == EV_SYN then
-		if ev.code == SYN_REPORT then
-			for _, MTSlot in pairs(self.MTSlots) do
-				self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
-			end
-			-- feed ev in all slots to state machine
-			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
-			self.MTSlots = {}
-			if touch_ges then
-				return Event:new("Gesture",
-					GestureDetector:adjustGesCoordinate(touch_ges)
-				)
-			end
-		end
-	elseif ev.type == EV_ABS then
+	if ev.type == EV_ABS then
 		if #self.MTSlots == 0 then
 			table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
 		end
@@ -599,71 +585,83 @@ function Input:handleTypeBTouchEv(ev)
 				self:setCurrentMtSlot("id", -1)
 			end
 		end
+	elseif ev.type == EV_SYN then
+		if ev.code == SYN_REPORT then
+			for _, MTSlot in pairs(self.MTSlots) do
+				self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+			end
+			-- feed ev in all slots to state machine
+			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
+			self.MTSlots = {}
+			if touch_ges then
+				return Event:new("Gesture",
+					GestureDetector:adjustGesCoordinate(touch_ges)
+				)
+			end
+		end
 	end
 end
 
-local is_TwoSlotTrack = false
 function Input:handlePhoenixTouchEv(ev)
 	-- Hack on handleTouchEV for the Kobo Aura
-	-- DEBUG("is_TwoSlotTrack = ", is_TwoSlotTrack)
-	if ev.type == EV_SYN and ev.code == SYN_REPORT then
-		DEBUG("Event =|",ev.time.sec,"|",ev.time.usec,"|SYN_REPORT")
-		for _, MTSlot in pairs(self.MTSlots) do
-			self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
-		end
-		-- feed ev in all slots to state machine
-		if Dbg.is_on then 
-			if #self.MTSlots > 0 then
-				DEBUG("Evt", self.MTSlots[1].slot,"=|", self.MTSlots[1].timev.sec,"|", self.MTSlots[1].timev.usec,"|id=", self.MTSlots[1].id,"|x=", self.MTSlots[1].x,"|y=", self.MTSlots[1].y)
-			end -- if slot 0 exists
-			if #self.MTSlots == 2 then
-				DEBUG("Evt", self.MTSlots[2].slot,"=|", self.MTSlots[2].timev.sec,"|", self.MTSlots[2].timev.usec,"|id=", self.MTSlots[2].id,"|x=", self.MTSlots[2].x,"|y=", self.MTSlots[2].y)
-			end -- if slot 1 exists
-		end -- if Dbg.is_on
-		local touch_ges = GestureDetector:feedEvent(self.MTSlots)
-		self.MTSlots = {}
-		if touch_ges then
-			return Event:new("Gesture",
-				GestureDetector:adjustGesCoordinate(touch_ges)
-			)
-		end
-	elseif ev.type == EV_ABS and ( ev.code == ABS_PRESSURE or ev.code > ABS_MT_WIDTH_MAJOR ) then
+	-- It seems to be using a custom protocol:
+	--		finger 0 down:
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, x1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, y1);
+	--			input_mt_sync (elan_touch_data.input);
+	--		finger 1 down:
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, x2);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, y2);
+	--			input_mt_sync (elan_touch_data.input);
+	--		finger 0 up:
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, last_x);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, last_y);
+	--			input_mt_sync (elan_touch_data.input);
+	--		finger 1 up:
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 1);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 0);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, last_x2);
+	--			input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, last_y2);
+	--			input_mt_sync (elan_touch_data.input);
+	if ev.type == EV_ABS then
 		if #self.MTSlots == 0 then
-			self.cur_slot = 0
 			table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
-			-- I have to add id's without events for the AURA.
-			self:setMtSlot(self.cur_slot, "id", 0)
 		end
-		-- I have changed ABS_MT_SLOT to ABS_MT_TRACKING_ID
 		if ev.code == ABS_MT_TRACKING_ID then
-			DEBUG("Event =|",ev.time.sec,"|",ev.time.usec,"|ABS_MT_TRACKING_ID|",ev.value)
-			if self.cur_slot ~= ev.value and #self.MTSlots == 1 then
+			if self.cur_slot ~= ev.value then
 				table.insert(self.MTSlots, self:getMtSlot(ev.value))
-				-- I have to add id's without events for the AURA. 
-				-- Since there are only two 
-				-- ID's 0 and 1 and it's not 0, 
-				self:setMtSlot(ev.value, "id", 1)
-				is_TwoSlotTrack = true
 			end
 			self.cur_slot = ev.value
+			self:setCurrentMtSlot("id", ev.value)
+		elseif ev.code == ABS_MT_TOUCH_MAJOR and ev.value == 0 then
+			self:setCurrentMtSlot("id", -1)
 		elseif ev.code == ABS_MT_POSITION_X then
-			DEBUG("Event =|",ev.time.sec,"|",ev.time.usec,"|ABS_MT_POSITION_X |",ev.value)
 			self:setCurrentMtSlot("x", ev.value)
 		elseif ev.code == ABS_MT_POSITION_Y then
-			DEBUG("Event =|",ev.time.sec,"|",ev.time.usec,"|ABS_MT_POSITION_Y |",ev.value)
 			self:setCurrentMtSlot("y", ev.value)
-		elseif ev.code == ABS_PRESSURE and ev.value == 0 then
-			DEBUG("Event =|",ev.time.sec,"|",ev.time.usec,"|ABS_PRESSURE      |",ev.value)
-			-- Pressure 0 events invalidate slot 0.
-			self:setMtSlot(0, "id", -1)
-			-- If there are 2 slots active, invalidates slot 1.
-			if is_TwoSlotTrack then 
-				if #self.MTSlots == 1 then
-					DEBUG("Extra table inserted for Track ID -1 in slot 1")
-					table.insert(self.MTSlots, self:getMtSlot(1))
-				end
-				self:setMtSlot(1, "id", -1)
-				is_TwoSlotTrack = false
+		end
+	elseif ev.type == EV_SYN then
+		if ev.code == SYN_REPORT then
+			for _, MTSlot in pairs(self.MTSlots) do
+				self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+			end
+			-- feed ev in all slots to state machine
+			local touch_ges = GestureDetector:feedEvent(self.MTSlots)
+			self.MTSlots = {}
+			if touch_ges then
+				return Event:new("Gesture",
+					GestureDetector:adjustGesCoordinate(touch_ges)
+				)
 			end
 		end
 	end
