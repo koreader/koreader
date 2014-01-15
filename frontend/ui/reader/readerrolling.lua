@@ -183,10 +183,12 @@ function ReaderRolling:onTapBackward()
 end
 
 function ReaderRolling:onSwipe(arg, ges)
-	if ges.direction == "west" or ges.direction == "north" then
-		self:onGotoViewRel(1)
-	elseif ges.direction == "east" or ges.direction == "south" then
-		self:onGotoViewRel(-1)
+	if ges.direction == "west" then
+		self.ui.document:goForward()
+		self:onUpdateXPointer()
+	elseif ges.direction == "east" then
+		self.ui.document:goBack()
+		self:onUpdateXPointer()
 	end
 	return true
 end
@@ -204,11 +206,13 @@ end
 
 function ReaderRolling:onPosUpdate(new_pos)
 	self.current_pos = new_pos
+	self:updatePageLink()
 	self:updateBatteryState()
 end
 
 function ReaderRolling:onPageUpdate(new_page)
 	self.current_page = new_page
+	self:updatePageLink()
 	self:updateBatteryState()
 end
 
@@ -271,6 +275,16 @@ function ReaderRolling:updatePos()
 		self.ui:handleEvent(Event:new("UpdateToc"))
 	end
 	UIManager.repaint_all = true
+end
+
+function ReaderRolling:onUpdateXPointer()
+	local xp = self.ui.document:getXPointer()
+	if self.view.view_mode == "page" then
+		self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getPageFromXPointer(xp)))
+	else
+		self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getPosFromXPointer(xp)))
+	end
+	return true
 end
 
 function ReaderRolling:onChangeViewMode()
@@ -345,6 +359,12 @@ end
 function ReaderRolling:onGotoPage(number)
 	self:gotoPage(number)
 	return true
+end
+
+function ReaderRolling:updatePageLink()
+	DEBUG("update page link")
+	local links = self.ui.document:getPageLinks()
+	self.view.links = links
 end
 
 function ReaderRolling:updateBatteryState()

@@ -202,6 +202,10 @@ function CreDocument:getCurrentPos()
 	return self._document:getCurrentPos()
 end
 
+function CreDocument:getPageLinks()
+	return self._document:getPageLinks()
+end
+
 function Document:gotoPos(pos)
 	DEBUG("CreDocument: goto position", pos)
 	self._document:gotoPos(pos)
@@ -210,6 +214,21 @@ end
 function CreDocument:gotoPage(page)
 	DEBUG("CreDocument: goto page", page)
 	self._document:gotoPage(page)
+end
+
+function CreDocument:gotoLink(link)
+	DEBUG("CreDocument: goto link", link)
+	self._document:gotoLink(link)
+end
+
+function CreDocument:goBack()
+	DEBUG("CreDocument: go back")
+	self._document:goBack()
+end
+
+function CreDocument:goForward(link)
+	DEBUG("CreDocument: go forward")
+	self._document:goForward()
 end
 
 function CreDocument:getCurrentPage()
