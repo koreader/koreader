@@ -87,15 +87,18 @@ DCREREADER_CONFIG_DEFAULT_FONT_SIZE = 22    -- default font size
 
 -- crereader margin sizes
 -- margin {left, top, right, bottom} in pixels
-DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {15, 10, 15, 10}
-DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {22, 15, 22, 15}
-DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {30, 20, 30, 20}
+DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {5, 10, 5, 10}
+DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {20, 15, 20, 15}
+DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {25, 20, 25, 20}
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 
 -- change this to any numerical value if you want to antomatically save settings when turning pages
 DAUTO_SAVE_PAGING_COUNT = nil
+
+-- dictionary font size
+DDICT_FONT_SIZE = 20
 
 -- ####################################################################
 -- following features are not supported right now
