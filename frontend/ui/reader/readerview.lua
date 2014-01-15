@@ -543,18 +543,21 @@ end
 function ReaderView:onPageUpdate(new_page_no)
 	self.state.page = new_page_no
 	self:recalculate()
+	self.highlight.temp = {}
 	self:autoSaveSettings()
 end
 
 function ReaderView:onPosUpdate(new_pos)
 	self.state.pos = new_pos
 	self:recalculate()
+	self.highlight.temp = {}
 	self:autoSaveSettings()
 end
 
 function ReaderView:onZoomUpdate(zoom)
 	self.state.zoom = zoom
 	self:recalculate()
+	self.highlight.temp = {}
 end
 
 function ReaderView:onBBoxUpdate(bbox)
