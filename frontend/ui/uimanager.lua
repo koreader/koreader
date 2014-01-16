@@ -287,10 +287,11 @@ function UIManager:run()
 				Device:usbPlugIn()
 			elseif input_event == "NotCharging" then
 				Device:usbPlugOut()
+				self:sendEvent(Event:new("NotCharging"))
 			elseif input_event == "Light" then
 				Device:getPowerDevice():toggleFrontlight()
-			elseif (input_event == "Power" and not Device.screen_saver_mode) or
-			input_event == "Suspend" then
+			elseif (input_event == "Power" and not Device.screen_saver_mode)
+					or input_event == "Suspend" then
 				local InfoMessage = require("ui/widget/infomessage")
 				self:show(InfoMessage:new{
 					text = _("Standby"),
@@ -298,9 +299,10 @@ function UIManager:run()
 				})
 				Device:prepareSuspend()
 				self:scheduleIn(0.5, function() Device:Suspend() end)
-			elseif (input_event == "Power" and Device.screen_saver_mode) or
-			input_event == "Resume" then
+			elseif (input_event == "Power" and Device.screen_saver_mode)
+					or input_event == "Resume" then
 				Device:Resume()
+				self:sendEvent(Event:new("Resume"))
 			else
 				self:sendEvent(input_event)
 			end
