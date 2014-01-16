@@ -1,4 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Device = require("ui/device")
 local Screen = require("ui/screen")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
