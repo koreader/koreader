@@ -1,5 +1,5 @@
 # KOReader PATH/TO/FILE.PO
-# Copyright (C) 2005-2013 KOReader Development Team
+# Copyright (C) 2005-2014 KOReader Development Team
 # 
 # Translators:
 # chrox <chrox.huang@gmail.com>, 2013
@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-12-28 11:04+0000\n"
-"PO-Revision-Date: 2013-12-29 09:13+0000\n"
-"Last-Translator: chrox <chrox.huang@gmail.com>\n"
+"POT-Creation-Date: 2014-01-07 15:39+0000\n"
+"PO-Revision-Date: 2014-01-08 08:55+0000\n"
+"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,7 +59,7 @@ msgstr "添加笔记"
 msgid "Apply"
 msgstr "应用"
 
-#: frontend/ui/reader/readertypeset.lua:56
+#: frontend/ui/reader/readertypeset.lua:58
 msgid "Auto"
 msgstr "自动"
 
@@ -351,7 +351,7 @@ msgid "Select Menu Item"
 msgstr "选择菜单项"
 
 #: frontend/ui/widget/configdialog.lua:84
-#: frontend/ui/widget/configdialog.lua:138
+#: frontend/ui/widget/configdialog.lua:120
 msgid "Select Option Item"
 msgstr "选择选项"
 
@@ -371,7 +371,7 @@ msgstr "分享"
 msgid "Standby"
 msgstr "进入待机状态"
 
-#: frontend/ui/reader/readerzooming.lua:245
+#: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
 msgstr "设置缩放模式"
 
@@ -411,10 +411,6 @@ msgstr "开关"
 msgid "Toggle hidden files"
 msgstr "打开/关闭显示隐藏文件"
 
-#: frontend/ui/reader/readerpaging.lua:148
-msgid "Toggle page overlap"
-msgstr "打开/关闭页面重叠"
-
 #: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
 msgstr "选择开关"
@@ -422,6 +418,22 @@ msgstr "选择开关"
 #: frontend/ui/reader/readerhighlight.lua:279
 msgid "Translate"
 msgstr "翻译"
+
+#: frontend/ui/reader/readertypeset.lua:127
+msgid "Turn off floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:153
+msgid "Turn off page overlap"
+msgstr ""
+
+#: frontend/ui/reader/readertypeset.lua:128
+msgid "Turn on floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:154
+msgid "Turn on page overlap"
+msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:81
 #: frontend/ui/reader/readermenu.lua:78
@@ -444,27 +456,27 @@ msgstr "字符间距"
 msgid "Writing Direction"
 msgstr "文字方向"
 
-#: frontend/ui/reader/readerzooming.lua:264
+#: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
 msgstr "适应内容缩放"
 
-#: frontend/ui/reader/readerzooming.lua:252
+#: frontend/ui/reader/readerzooming.lua:299
 msgid "Zoom to fit content height"
 msgstr "适应内容高度缩放"
 
-#: frontend/ui/reader/readerzooming.lua:248
+#: frontend/ui/reader/readerzooming.lua:295
 msgid "Zoom to fit content width"
 msgstr "适应内容宽度缩放"
 
-#: frontend/ui/reader/readerzooming.lua:268
+#: frontend/ui/reader/readerzooming.lua:315
 msgid "Zoom to fit page"
 msgstr "适应页面缩放"
 
-#: frontend/ui/reader/readerzooming.lua:260
+#: frontend/ui/reader/readerzooming.lua:307
 msgid "Zoom to fit page height"
 msgstr "适应页面高度缩放"
 
-#: frontend/ui/reader/readerzooming.lua:256
+#: frontend/ui/reader/readerzooming.lua:303
 msgid "Zoom to fit page width"
 msgstr "适应页面宽度缩放"
 
@@ -489,11 +501,11 @@ msgstr "按键选择项目"
 msgid "chose selected option"
 msgstr "按键选择选项"
 
-#: frontend/ui/reader/readertypeset.lua:50
+#: frontend/ui/reader/readertypeset.lua:52
 msgid "clear all external styles"
 msgstr "清除外置样式"
 
-#: frontend/ui/widget/configdialog.lua:462
+#: frontend/ui/widget/configdialog.lua:436
 msgid "close config menu"
 msgstr "关闭设置菜单"
 
@@ -706,7 +718,7 @@ msgstr "向右旋转90度"
 msgid "scroll"
 msgstr "卷轴模式"
 
-#: frontend/ui/widget/configdialog.lua:466 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
 msgid "select current menu item"
 msgstr "选择当前菜单项目"
 

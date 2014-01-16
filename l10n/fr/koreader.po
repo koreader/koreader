@@ -1,5 +1,5 @@
 # KOReader PATH/TO/FILE.PO
-# Copyright (C) 2005-2013 KOReader Development Team
+# Copyright (C) 2005-2014 KOReader Development Team
 # 
 # Translators:
 # Piperclassique <Transifex.piperclassique@xoxy.net>, 2013
@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-12-28 11:04+0000\n"
-"PO-Revision-Date: 2013-12-29 08:56+0000\n"
+"POT-Creation-Date: 2014-01-07 15:39+0000\n"
+"PO-Revision-Date: 2014-01-08 08:55+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/koreader/language/fr/)\n"
 "MIME-Version: 1.0\n"
@@ -61,7 +61,7 @@ msgstr "Ajouter une annotation"
 msgid "Apply"
 msgstr "Appliquer"
 
-#: frontend/ui/reader/readertypeset.lua:56
+#: frontend/ui/reader/readertypeset.lua:58
 msgid "Auto"
 msgstr "Automatique"
 
@@ -353,7 +353,7 @@ msgid "Select Menu Item"
 msgstr "Sélectionner dans le menu"
 
 #: frontend/ui/widget/configdialog.lua:84
-#: frontend/ui/widget/configdialog.lua:138
+#: frontend/ui/widget/configdialog.lua:120
 msgid "Select Option Item"
 msgstr "Choisir une option"
 
@@ -373,7 +373,7 @@ msgstr "Partager"
 msgid "Standby"
 msgstr "Veille"
 
-#: frontend/ui/reader/readerzooming.lua:245
+#: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
 msgstr "Changer mode de zoom"
 
@@ -413,10 +413,6 @@ msgstr "Basculer"
 msgid "Toggle hidden files"
 msgstr ""
 
-#: frontend/ui/reader/readerpaging.lua:148
-msgid "Toggle page overlap"
-msgstr ""
-
 #: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
 msgstr "Bouton de sélection"
@@ -424,6 +420,22 @@ msgstr "Bouton de sélection"
 #: frontend/ui/reader/readerhighlight.lua:279
 msgid "Translate"
 msgstr "Traduire"
+
+#: frontend/ui/reader/readertypeset.lua:127
+msgid "Turn off floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:153
+msgid "Turn off page overlap"
+msgstr ""
+
+#: frontend/ui/reader/readertypeset.lua:128
+msgid "Turn on floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:154
+msgid "Turn on page overlap"
+msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:81
 #: frontend/ui/reader/readermenu.lua:78
@@ -446,27 +458,27 @@ msgstr "Espacement des mots"
 msgid "Writing Direction"
 msgstr ""
 
-#: frontend/ui/reader/readerzooming.lua:264
+#: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
 msgstr "Zoom au contenu"
 
-#: frontend/ui/reader/readerzooming.lua:252
+#: frontend/ui/reader/readerzooming.lua:299
 msgid "Zoom to fit content height"
 msgstr "Zoom à la hauteur de contenu"
 
-#: frontend/ui/reader/readerzooming.lua:248
+#: frontend/ui/reader/readerzooming.lua:295
 msgid "Zoom to fit content width"
 msgstr "Zoom à la largeur de contenu"
 
-#: frontend/ui/reader/readerzooming.lua:268
+#: frontend/ui/reader/readerzooming.lua:315
 msgid "Zoom to fit page"
 msgstr "Zoom à la page entière"
 
-#: frontend/ui/reader/readerzooming.lua:260
+#: frontend/ui/reader/readerzooming.lua:307
 msgid "Zoom to fit page height"
 msgstr "Zoom à la hauteur de page"
 
-#: frontend/ui/reader/readerzooming.lua:256
+#: frontend/ui/reader/readerzooming.lua:303
 msgid "Zoom to fit page width"
 msgstr "Zoom à la largeur de page"
 
@@ -491,11 +503,11 @@ msgstr "choisir l'objet en surbrillance"
 msgid "chose selected option"
 msgstr "choisir l'option en surbrillance"
 
-#: frontend/ui/reader/readertypeset.lua:50
+#: frontend/ui/reader/readertypeset.lua:52
 msgid "clear all external styles"
 msgstr "enlever tous les styles externes"
 
-#: frontend/ui/widget/configdialog.lua:462
+#: frontend/ui/widget/configdialog.lua:436
 msgid "close config menu"
 msgstr "fermer le menu de configuration"
 
@@ -708,7 +720,7 @@ msgstr "pivoter à droite de 90 degrés"
 msgid "scroll"
 msgstr "faire défiler"
 
-#: frontend/ui/widget/configdialog.lua:466 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
 msgid "select current menu item"
 msgstr "sélectionner l'entrée actuelle du menu"
 
