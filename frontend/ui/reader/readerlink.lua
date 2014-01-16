@@ -53,10 +53,14 @@ function ReaderLink:onTap(arg, ges)
 		local pos = self.view:screenToPageTransform(ges.pos)
 		for i = 1, #self.view.links do
 			local link = self.view.links[i]
+			-- enlarge tappable link box
 			local lbox = Geom:new{
-				x = link.start_x, y = link.start_y,
-				w = link.end_x - link.start_x,
-				h = link.end_y - link.start_y > 0 and link.end_y - link.start_y or 30,
+				x = link.start_x - Screen:scaleByDPI(15),
+				y = link.start_y - Screen:scaleByDPI(15),
+				w = link.end_x - link.start_x + Screen:scaleByDPI(30),
+				h = link.end_y - link.start_y > 0 
+				        and link.end_y - link.start_y + Screen:scaleByDPI(30) 
+				        or Screen:scaleByDPI(50),
 			}
 			if inside_box(pos, lbox) then
 				DEBUG("goto link", link)
