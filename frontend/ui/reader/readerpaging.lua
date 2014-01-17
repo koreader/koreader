@@ -140,7 +140,7 @@ end
 
 function ReaderPaging:onSaveSettings()
 	self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
-	self.ui.doc_settings:saveSetting("last_page", self:getTopPage() or self.current_page)
+	self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
 	self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)
 	self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
 end
@@ -410,7 +410,7 @@ Get page number of the page drawn at the very top part of the screen.
 function ReaderPaging:getTopPage()
 	if self.view.page_scroll then
 		local state = self.view.page_states[1]
-		if state then return state.page end
+		return state and state.page or self.current_page
 	else
 		return self.current_page
 	end
