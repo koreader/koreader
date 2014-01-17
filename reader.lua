@@ -50,6 +50,12 @@ end
 
 function showReaderUI(file, pass)
 	DEBUG("opening file", file)
+	if lfs.attributes(file, "mode") ~= "file" then
+		UIManager:show(InfoMessage:new{
+			text = _("File does not exist")
+		})
+		return
+	end
 	UIManager:show(InfoMessage:new{
 		text = _("opening file") .. file,
 		timeout = 1,
@@ -172,11 +178,11 @@ end
 if ARGV[argidx] and ARGV[argidx] ~= "" then
 	if lfs.attributes(ARGV[argidx], "mode") == "directory" then
 		showHomePage(ARGV[argidx])
-	elseif lfs.attributes(ARGV[argidx], "mode") == "file" then
+	else
 		showReaderUI(ARGV[argidx])
 	end
 	UIManager:run()
-elseif last_file and lfs.attributes(last_file, "mode") == "file" then
+elseif last_file then
 	showReaderUI(last_file)
 	UIManager:run()
 else
