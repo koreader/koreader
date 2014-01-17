@@ -216,6 +216,14 @@ function ReaderRolling:onPageUpdate(new_page)
 	self:updateBatteryState()
 end
 
+function ReaderRolling:onResume()
+	self:updateBatteryState()
+end
+
+function ReaderRolling:onNotCharging()
+	self:updateBatteryState()
+end
+
 function ReaderRolling:onGotoPercent(percent)
 	DEBUG("goto document offset in percent:", percent)
 	self:gotoPercent(percent)

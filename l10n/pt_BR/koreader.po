@@ -1,5 +1,5 @@
 # KOReader PATH/TO/FILE.PO
-# Copyright (C) 2005-2013 KOReader Development Team
+# Copyright (C) 2005-2014 KOReader Development Team
 # 
 # Translators:
 # Antoine Kamel <antoine12@gmail.com>, 2013
@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2013-12-28 11:04+0000\n"
-"PO-Revision-Date: 2013-12-29 08:56+0000\n"
+"POT-Creation-Date: 2014-01-07 15:39+0000\n"
+"PO-Revision-Date: 2014-01-08 08:55+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/koreader/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
@@ -60,7 +60,7 @@ msgstr "Adicionar nota"
 msgid "Apply"
 msgstr "Aplicar"
 
-#: frontend/ui/reader/readertypeset.lua:56
+#: frontend/ui/reader/readertypeset.lua:58
 msgid "Auto"
 msgstr "Automático"
 
@@ -352,7 +352,7 @@ msgid "Select Menu Item"
 msgstr "Escolher Item do Menu"
 
 #: frontend/ui/widget/configdialog.lua:84
-#: frontend/ui/widget/configdialog.lua:138
+#: frontend/ui/widget/configdialog.lua:120
 msgid "Select Option Item"
 msgstr "Selecionar Item de Opção"
 
@@ -372,7 +372,7 @@ msgstr "Compartilhar"
 msgid "Standby"
 msgstr "Stand-b"
 
-#: frontend/ui/reader/readerzooming.lua:245
+#: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
 msgstr "Mudar o zoom"
 
@@ -412,10 +412,6 @@ msgstr "Liga/Desliga"
 msgid "Toggle hidden files"
 msgstr "Arquivos ocultos"
 
-#: frontend/ui/reader/readerpaging.lua:148
-msgid "Toggle page overlap"
-msgstr ""
-
 #: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
 msgstr "Alternar seleção"
@@ -423,6 +419,22 @@ msgstr "Alternar seleção"
 #: frontend/ui/reader/readerhighlight.lua:279
 msgid "Translate"
 msgstr "Traduzir"
+
+#: frontend/ui/reader/readertypeset.lua:127
+msgid "Turn off floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:153
+msgid "Turn off page overlap"
+msgstr ""
+
+#: frontend/ui/reader/readertypeset.lua:128
+msgid "Turn on floating punctuation"
+msgstr ""
+
+#: frontend/ui/reader/readerpaging.lua:154
+msgid "Turn on page overlap"
+msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:81
 #: frontend/ui/reader/readermenu.lua:78
@@ -445,27 +457,27 @@ msgstr "Vácuo entre palavras"
 msgid "Writing Direction"
 msgstr ""
 
-#: frontend/ui/reader/readerzooming.lua:264
+#: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
 msgstr "Zoom no conteúdo"
 
-#: frontend/ui/reader/readerzooming.lua:252
+#: frontend/ui/reader/readerzooming.lua:299
 msgid "Zoom to fit content height"
 msgstr "Zoom na altura do conteúdo"
 
-#: frontend/ui/reader/readerzooming.lua:248
+#: frontend/ui/reader/readerzooming.lua:295
 msgid "Zoom to fit content width"
 msgstr "Zoom na largura do conteúdo"
 
-#: frontend/ui/reader/readerzooming.lua:268
+#: frontend/ui/reader/readerzooming.lua:315
 msgid "Zoom to fit page"
 msgstr "Zoom na página"
 
-#: frontend/ui/reader/readerzooming.lua:260
+#: frontend/ui/reader/readerzooming.lua:307
 msgid "Zoom to fit page height"
 msgstr "Zoom na altura da página"
 
-#: frontend/ui/reader/readerzooming.lua:256
+#: frontend/ui/reader/readerzooming.lua:303
 msgid "Zoom to fit page width"
 msgstr "Zoom na largura da página"
 
@@ -490,11 +502,11 @@ msgstr "escolhido o item selecionado"
 msgid "chose selected option"
 msgstr "escolhida a opção selecionada"
 
-#: frontend/ui/reader/readertypeset.lua:50
+#: frontend/ui/reader/readertypeset.lua:52
 msgid "clear all external styles"
 msgstr "limpar todos os estilos externos"
 
-#: frontend/ui/widget/configdialog.lua:462
+#: frontend/ui/widget/configdialog.lua:436
 msgid "close config menu"
 msgstr "fechar menu de configuração"
 
@@ -707,7 +719,7 @@ msgstr "Rodar para a direita 90º"
 msgid "scroll"
 msgstr "rolar"
 
-#: frontend/ui/widget/configdialog.lua:466 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
 msgid "select current menu item"
 msgstr "selecione o item do menu atual"
 
