@@ -68,6 +68,7 @@ function ReaderHighlight:init()
 				doc = _("highlight text") },
 		}
 	end
+	self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderHighlight:initGesListener()
@@ -116,6 +117,39 @@ function ReaderHighlight:initGesListener()
 	}
 end
 
+function ReaderHighlight:addToMainMenu(tab_item_table)
+	-- insert table to main reader menu
+	table.insert(tab_item_table.typeset, {
+		text_func = function()
+			return _("Set highlight drawer ").."( "..self.view.highlight.saved_drawer.." )"
+		end,
+		sub_item_table = self:genHighlightDrawerMenu(),
+	})
+end
+
+function ReaderHighlight:genHighlightDrawerMenu()
+	return {
+		{
+			text = _("Lighten"),
+			callback = function()
+				self.view.highlight.saved_drawer = "lighten"
+			end
+		},
+		{
+			text = _("Underscore"),
+			callback = function()
+				self.view.highlight.saved_drawer = "underscore"
+			end
+		},
+		{
+			text = _("Invert"),
+			callback = function()
+				self.view.highlight.saved_drawer = "invert"
+			end
+		},
+	}
+end
+
 function ReaderHighlight:onSetDimensions(dimen)
 	-- update listening according to new screen dimen
 	if Device:isTouchDevice() then
@@ -124,24 +158,33 @@ function ReaderHighlight:onSetDimensions(dimen)
 end
 
 function ReaderHighlight:onTap(arg, ges)
-	local function inside_box(ges, box)
-		local pos = self.view:screenToPageTransform(ges.pos)
-		if pos then
-			local x, y = pos.x, pos.y
-			if box.x <= x and box.y <= y 
-				and box.x + box.w >= x 
-				and box.y + box.h >= y then
-				return true
-			end
-		end
-	end
 	if self.hold_pos then
 		self.view.highlight.temp[self.hold_pos.page] = nil
 		UIManager:setDirty(self.dialog, "partial")
 		self.hold_pos = nil
 		return true
 	end
+	if self.ui.document.info.has_pages then
+		return self:onTapPageSavedHighlight(ges)
+	else
+		return self:onTapXPointerSavedHighlight(ges)
+	end
+end
+
+local function inside_box(pos, box)
+	if pos then
+		local x, y = pos.x, pos.y
+		if box.x <= x and box.y <= y 
+			and box.x + box.w >= x 
+			and box.y + box.h >= y then
+			return true
+		end
+	end
+end
+
+function ReaderHighlight:onTapPageSavedHighlight(ges)
 	local pages = self.view:getCurrentPageList()
+	local pos = self.view:screenToPageTransform(ges.pos)
 	for key, page in pairs(pages) do
 		local items = self.view.highlight.saved[page]
 		if not items then items = {} end
@@ -150,36 +193,60 @@ function ReaderHighlight:onTap(arg, ges)
 			local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
 			if boxes then
 				for index, box in pairs(boxes) do
-					if inside_box(ges, box) then
+					if inside_box(pos, box) then
 						DEBUG("Tap on hightlight")
-						self.edit_highlight_dialog = HighlightDialog:new{
-							buttons = {
-								{
-									{
-										text = _("Delete"),
-										callback = function()
-											self:deleteHighlight(page, i)
-											UIManager:close(self.edit_highlight_dialog)
-										end,
-									},
-									{
-										text = _("Edit"),
-										enabled = false,
-										callback = function()
-											self:editHighlight()
-											UIManager:close(self.edit_highlight_dialog)
-										end,
-									},
-								},
-							},
-						}
-						UIManager:show(self.edit_highlight_dialog)
-						return true
+						return self:onShowHighlightDialog(page, i)
 					end
 				end
 			end
 		end
 	end
+end
+
+function ReaderHighlight:onTapXPointerSavedHighlight(ges)
+	local pos = self.view:screenToPageTransform(ges.pos)
+	for page, _ in pairs(self.view.highlight.saved) do
+		local items = self.view.highlight.saved[page]
+		if not items then items = {} end
+		for i = 1, #items do
+			local pos0, pos1 = items[i].pos0, items[i].pos1
+			local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+			if boxes then
+				for index, box in pairs(boxes) do
+					if inside_box(pos, box) then
+						DEBUG("Tap on hightlight")
+						return self:onShowHighlightDialog(page, i)
+					end
+				end
+			end
+		end
+	end
+end
+
+function ReaderHighlight:onShowHighlightDialog(page, index)
+	self.edit_highlight_dialog = HighlightDialog:new{
+		buttons = {
+			{
+				{
+					text = _("Delete"),
+					callback = function()
+						self:deleteHighlight(page, index)
+						UIManager:close(self.edit_highlight_dialog)
+					end,
+				},
+				{
+					text = _("Edit"),
+					enabled = false,
+					callback = function()
+						self:editHighlight()
+						UIManager:close(self.edit_highlight_dialog)
+					end,
+				},
+			},
+		},
+	}
+	UIManager:show(self.edit_highlight_dialog)
+	return true
 end
 
 function ReaderHighlight:onHold(arg, ges)
@@ -213,13 +280,14 @@ function ReaderHighlight:onHoldPan(arg, ges)
 	if self.selected_text then
 		self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
 		-- remove selected word if hold moves out of word box
-		if self.selected_word and
-			not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) or
+		if not self.selected_text.sboxes or #self.selected_text.sboxes == 0 then
+			self.selected_word = nil
+		elseif self.selected_word and not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) or
 			#self.selected_text.sboxes > 1 then
 			self.selected_word = nil
 		end
-		UIManager:setDirty(self.dialog, "partial")
 	end
+	UIManager:setDirty(self.dialog, "partial")
 end
 
 function ReaderHighlight:lookup(selected_word)
@@ -324,6 +392,7 @@ function ReaderHighlight:saveHighlight()
 		hl_item["pos0"] = self.selected_text.pos0
 		hl_item["pos1"] = self.selected_text.pos1
 		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S")
+		hl_item["drawer"] = self.view.highlight.saved_drawer
 		table.insert(self.view.highlight.saved[page], hl_item)
 		if self.selected_text.text ~= "" then
 			self:exportToClippings(page, hl_item)
@@ -367,6 +436,14 @@ end
 
 function ReaderHighlight:editHighlight()
 	DEBUG("edit highlight")
+end
+
+function ReaderHighlight:onReadSettings(config)
+	self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
+end
+
+function ReaderHighlight:onSaveSettings()
+	self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
 end
 
 return ReaderHighlight

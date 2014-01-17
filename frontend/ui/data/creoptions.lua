@@ -76,6 +76,15 @@ local CreOptions = {
 				args = DCREREADER_CONFIG_FONT_SIZES,
 				event = "SetFontSize",
 			},
+			{
+				name = "font_fine_tune",
+				name_text = S.FONTSIZE_FINE_TUNING,
+				toggle = {S.DECREASE, S.INCREASE},
+				event = "ChangeSize",
+				args = {"decrease", "increase"},
+				alternate = false,
+				height = 60,
+			}
 		}
 	},
 	{

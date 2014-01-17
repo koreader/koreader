@@ -129,32 +129,15 @@ end
 	UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
 function ReaderFont:onChangeSize(direction)
-	local delta = 1
-	local msg = ""
-
-	if direction == "decrease" then
-	   delta = -1
-	   msg = _("Decrease font size to ")
-	else
-	   msg = _("Increase font size to ")
-	end
-
+	local delta = direction == "decrease" and -1 or 1
 	self.font_size = self.font_size + delta
-
-	UIManager:show(Notification:new{
-		text = msg..self.font_size,
-		timeout = 1,
-	})
-	self.ui.document:zoomFont(delta)
-	self.ui:handleEvent(Event:new("UpdatePos"))
-	UIManager:close(msg)
-
+	self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
 	return true
 end
 
 function ReaderFont:onSetFontSize(new_size)
-	if new_size > 44 then new_size = 44 end
-	if new_size < 16 then new_size = 16 end
+	if new_size > 72 then new_size = 72 end
+	if new_size < 12 then new_size = 12 end
 
 	self.font_size = new_size
 	UIManager:show(Notification:new{
