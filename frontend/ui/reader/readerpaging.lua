@@ -410,7 +410,7 @@ Get page number of the page drawn at the very top part of the screen.
 function ReaderPaging:getTopPage()
 	if self.view.page_scroll then
 		local state = self.view.page_states[1]
-		return state.page
+		return state and state.page or self.current_page
 	else
 		return self.current_page
 	end
