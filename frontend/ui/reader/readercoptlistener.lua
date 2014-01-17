@@ -22,4 +22,8 @@ function ReaderCoptListener:onReadSettings(config)
 	end
 end
 
+function ReaderCoptListener:onSetFontSize(font_size)
+	self.document.configurable.font_size = font_size
+end
+
 return ReaderCoptListener
