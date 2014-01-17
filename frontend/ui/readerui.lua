@@ -83,6 +83,12 @@ function ReaderUI:init()
 		ui = self,
 		document = self.document,
 	}
+	-- reader menu controller
+	-- hold reference to menu widget
+	self.menu = ReaderMenu:new{
+		view = self[1],
+		ui = self
+	}
 	-- link
 	table.insert(self, ReaderLink:new{
 		dialog = self.dialog,
@@ -97,25 +103,23 @@ function ReaderUI:init()
 		ui = self,
 		document = self.document,
 	})
+	-- menu widget should be registered after link widget and highlight widget
+	-- so that taps on link and highlight areas won't popup reader menu
+	table.insert(self, self.menu)
 	-- rotation controller
 	table.insert(self, ReaderRotation:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	})
-	-- reader menu controller
-	self.menu = ReaderMenu:new{
-		view = self[1],
-		ui = self
-	}
-	table.insert(self, self.menu) -- hold reference to menu widget
 	-- Table of content controller
+	-- hold reference to bm widget
 	self.toc = ReaderToc:new{
 		dialog = self.dialog,
 		view = self[1],
 		ui = self
 	}
-	table.insert(self, self.toc) -- hold reference to bm widget
+	table.insert(self, self.toc)
 	-- bookmark controller
 	table.insert(self, ReaderBookmark:new{
 		dialog = self.dialog,

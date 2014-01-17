@@ -22,7 +22,7 @@ local ReaderView = OverlapGroup:new{
 		bbox = nil,
 	},
 	outer_page_color = DOUTER_PAGE_COLOR,
-	-- hightlight
+	-- hightlight with "lighten" or "underscore" or "invert"
 	highlight = {
 		lighten_color = 0.2, -- color range [0.0, 1.0]
 		temp_drawer = "invert",
@@ -345,23 +345,52 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
+	if self.ui.document.info.has_pages then
+		self:drawPageSavedHighlight(bb, x, y)
+	else
+		self:drawXPointerSavedHighlight(bb, x, y)
+	end
+end
+
+function ReaderView:drawPageSavedHighlight(bb, x, y)
 	local pages = self:getCurrentPageList()
 	for _, page in pairs(pages) do
 		local items = self.highlight.saved[page]
 		if not items then items = {} end
 		for i = 1, #items do
-			local pos0, pos1 = items[i].pos0, items[i].pos1
+			local item = items[i]
+			local pos0, pos1 = item.pos0, item.pos1
 			local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
 			if boxes then
 				for _, box in pairs(boxes) do
 					local rect = self:pageToScreenTransform(page, box)
 					if rect then
-						self:drawHighlightRect(bb, x, y, rect, self.highlight.saved_drawer)
+						self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
 					end
 				end -- end for each box
 			end -- end if boxes
 		end -- end for each hightlight
 	end -- end for each page
+end
+
+function ReaderView:drawXPointerSavedHighlight(bb, x, y)
+	for page, _ in pairs(self.highlight.saved) do
+		local items = self.highlight.saved[page]
+		if not items then items = {} end
+		for j = 1, #items do
+			local item = items[j]
+			local pos0, pos1 = item.pos0, item.pos1
+			local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+			if boxes then
+				for _, box in pairs(boxes) do
+					local rect = self:pageToScreenTransform(page, box)
+					if rect then
+						self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
+					end
+				end -- end for each box
+			end -- end if boxes
+		end -- end for each hightlight
+	end -- end for all saved highlight
 end
 
 function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)

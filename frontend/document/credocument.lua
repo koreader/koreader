@@ -2,6 +2,7 @@ local Geom = require("ui/geometry")
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
+local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
@@ -133,12 +134,12 @@ function CreDocument:getPageCount()
 end
 
 function CreDocument:getWordFromPosition(pos)
-	local word_box = self._document:getWordFromPos(pos.x, pos.y)
+	local word_box = self._document:getWordFromPosition(pos.x, pos.y)
 	if word_box.word then
 		return {
 			word = word_box.word,
 			page = self._document:getCurrentPage(),
-			sbox = {
+			sbox = Geom:new{
 				x = word_box.x0, y = word_box.y0,
 				w = word_box.x1 - word_box.x0,
 				h = word_box.y1 - word_box.y0,
@@ -147,8 +148,34 @@ function CreDocument:getWordFromPosition(pos)
 	end
 end
 
-function CreDocument:getTextFromPositions(doc, pos0, pos1)
-	DEBUG("getTextFromPositions not finished yet")
+function CreDocument:getTextFromPositions(pos0, pos1)
+	local text_range = self._document:getTextFromPositions(pos0.x, pos0.y, pos1.x, pos1.y)
+	DEBUG("CreDocument: get text range", text_range)
+	local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+	return {
+        text = text_range.text,
+        pos0 = text_range.pos0,
+        pos1 = text_range.pos1,
+        sboxes = line_boxes,     -- boxes on screen
+    }
+end
+
+function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
+	local line_boxes = {}
+	if pos0 and pos1 then
+		local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1)
+		--DEBUG("word boxes", word_boxes)
+		for i = 1, #word_boxes do
+			local line_box = word_boxes[i]
+			table.insert(line_boxes, Geom:new{
+				x = line_box.x0, y = line_box.y0,
+				w = line_box.x1 - line_box.x0,
+				h = line_box.y1 - line_box.y0,
+			})
+		end
+		--DEBUG("line boxes", line_boxes)
+	end
+	return line_boxes
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
