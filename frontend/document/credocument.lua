@@ -348,6 +348,11 @@ function CreDocument:setBatteryState(state)
 	self._document:setBatteryState(state)
 end
 
+function CreDocument:isXPointerInCurrentPage(xp)
+	DEBUG("CreDocument: check in page", xp)
+	return self._document:isXPointerInCurrentPage(xp)
+end
+
 function CreDocument:register(registry)
 	registry:addProvider("txt", "application/txt", self)
 	registry:addProvider("epub", "application/epub", self)

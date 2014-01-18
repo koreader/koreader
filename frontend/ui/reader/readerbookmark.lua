@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderBookmark = InputContainer:new{
@@ -35,10 +36,10 @@ end
 
 function ReaderBookmark:onToggleBookmark()
 	local pn_or_xp = nil
-	if self.ui.document.getXPointer then
-		pn_or_xp = self.ui.document:getXPointer()
-	else
+	if self.ui.document.info.has_pages then
 		pn_or_xp = self.view.state.page
+	else
+		pn_or_xp = self.ui.document:getXPointer()
 	end
 	self:toggleBookmark(pn_or_xp)
 	self.view.dogear_visible = not self.view.dogear_visible
@@ -55,13 +56,19 @@ function ReaderBookmark:setDogearVisibility(pn_or_xp)
 end
 
 function ReaderBookmark:onPageUpdate(pageno)
-	self:setDogearVisibility(pageno)
+	if self.ui.document.info.has_pages then
+		self:setDogearVisibility(pageno)
+	else
+		-- FIXME: this is a dirty hack to prevent crash in isXPointerInCurrentPage
+		if pageno ~= 1 then
+			self:setDogearVisibility("dummy")
+		end
+	end
 end
 
 function ReaderBookmark:onPosUpdate(pos)
-	-- TODO: cannot check if this pos is bookmarked or not.
+	self:setDogearVisibility("dummy")
 end
-
 
 function ReaderBookmark:onShowBookmark()
 	-- build up item_table
@@ -124,7 +131,8 @@ end
 
 function ReaderBookmark:isBookmarked(pn_or_xp)
 	for k,v in ipairs(self.bookmarks) do
-		if v.page == pn_or_xp then
+		if (type(pn_or_xp) == "number" and v.page == pn_or_xp) or
+			(type(pn_or_xp) == "string" and self.ui.document:isXPointerInCurrentPage(v.page)) then
 			return true
 		end
 	end
@@ -155,7 +163,8 @@ end
 
 function ReaderBookmark:toggleBookmark(pn_or_xp)
 	for k,v in ipairs(self.bookmarks) do
-		if v.page == pn_or_xp then
+		if (type(pn_or_xp) == "number" and v.page == pn_or_xp) or
+			(type(pn_or_xp) == "string" and self.ui.document:isXPointerInCurrentPage(v.page)) then
 			table.remove(self.bookmarks, k)
 			return
 		end
