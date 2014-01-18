@@ -9,6 +9,7 @@ local Event = require("ui/event")
 local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
 local InfoMessage = require("ui/widget/infomessage")
+local Language = require("ui/language")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
@@ -66,6 +67,7 @@ function ReaderMenu:setUpdateItemTable()
 	for _, widget in pairs(self.registered_widgets) do
 		widget:addToMainMenu(self.tab_item_table)
 	end
+
 	table.insert(self.tab_item_table.main, {
 		text = _("Help"),
 		callback = function()
@@ -82,6 +84,7 @@ function ReaderMenu:setUpdateItemTable()
 			})
 		end
 	})
+	table.insert(self.tab_item_table.main, Language:getLangMenuTable())
 end
 
 function ReaderMenu:onShowReaderMenu()

@@ -154,13 +154,20 @@ if Device:hasNoKeyboard() then
 	Menu.is_enable_shortcut = false
 end
 
--- set up reader's setting: font
+-- read some global reader setting here:
 G_reader_settings = DocSettings:open(".reader")
-fontmap = G_reader_settings:readSetting("fontmap")
+-- font
+local fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
 	Font.fontmap = fontmap
 end
+-- last file
 local last_file = G_reader_settings:readSetting("lastfile")
+-- language
+local lang_po = G_reader_settings:readSetting("language_po")
+if lang_po then
+	_.changeLang(lang_po)
+end
 
 
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
