@@ -143,6 +143,13 @@ function MenuItem:init()
 				},
 				doc = "Select Menu Item",
 			},
+			HoldSelect = {
+				GestureRange:new{
+					ges = "hold",
+					range = self.dimen,
+				},
+				doc = "Hold Menu Item",
+			},
 		}
 	end
 	if Device:hasKeyboard() then
@@ -242,6 +249,17 @@ function MenuItem:onTapSelect()
 		self[1].invert = false
 		UIManager:setDirty(self.show_parent, "partial")
 		self.menu:onMenuSelect(self.table)
+	end)
+	return true
+end
+
+function MenuItem:onHoldSelect()
+	self[1].invert = true
+	UIManager:setDirty(self.show_parent, "partial")
+	UIManager:scheduleIn(0.1, function()
+		self[1].invert = false
+		UIManager:setDirty(self.show_parent, "partial")
+		self.menu:onMenuHold(self.table)
 	end)
 	return true
 end
@@ -583,6 +601,13 @@ function Menu:onMenuChoice(item)
 	if item.callback then
 		item.callback()
 	end
+	return true
+end
+
+--[[
+override this function to process the item hold in a different manner
+]]--
+function Menu:onMenuHold(item)
 	return true
 end
 

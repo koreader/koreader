@@ -1,6 +1,7 @@
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
+local DEBUG = require("dbg")
 -- lfs
 
 local FileChooser = Menu:extend{
@@ -79,8 +80,17 @@ function FileChooser:onMenuSelect(item)
 	return true
 end
 
+function FileChooser:onMenuHold(item)
+	self:onFileHold(item.path)
+	return true
+end
+
 function FileChooser:onFileSelect(file)
 	UIManager:close(self)
+	return true
+end
+
+function FileChooser:onFileHold(file)
 	return true
 end
 
