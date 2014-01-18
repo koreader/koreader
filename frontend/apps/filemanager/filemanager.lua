@@ -9,6 +9,7 @@ local FileChooser = require("ui/widget/filechooser")
 local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local ButtonTable = require("ui/widget/buttontable")
+local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Input = require("ui/input")
 local Font = require("ui/font")
@@ -221,14 +222,18 @@ end
 
 function FileManager:pasteHere(file)
 	if self.clipboard then
-		local program = self.cutfile and "mv " or "cp -r "
-		os.execute(program..util.realpath(self.clipboard).." "..util.realpath(file):match("(.*/)"))
+		local orig = util.realpath(self.clipboard)
+		local dest = util.realpath(file):match("(.*/)")
+		if self.cutfile then
+			util.execute("/bin/mv", orig, dest)
+		else
+			util.execute("/bin/cp", "-r", orig, dest)
+		end
 	end
 end
 
 function FileManager:deleteFile(file)
-	local program = "rm -r "
-	os.execute(program..util.realpath(file))
+	util.execute("/bin/rm", "-r", util.realpath(file))
 end
 
 return FileManager
