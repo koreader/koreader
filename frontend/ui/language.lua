@@ -31,7 +31,7 @@ function Language:getLangMenuTable()
 			text = _("Language"),
 			-- NOTE: language with no translation are commented out for now
 			sub_item_table = {
-				self:genLanguageSubItem("English", ""),
+				self:genLanguageSubItem("English", "C"),
 				self:genLanguageSubItem("čeština", "cs_CZ"),
 				self:genLanguageSubItem("Deutsch", "de"),
 				self:genLanguageSubItem("français", "fr"),
