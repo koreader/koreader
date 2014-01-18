@@ -36,6 +36,8 @@ local Document = {
 		author = "",
 		date = ""
 	},
+	
+	links = {},
 
 	GAMMA_NO_GAMMA = 1.0,
 

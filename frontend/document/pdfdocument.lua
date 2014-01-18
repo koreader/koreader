@@ -97,6 +97,21 @@ function PdfDocument:getUsedBBox(pageno)
 	return used
 end
 
+function PdfDocument:getPageLinks(pageno)
+	local hash = "pglinks|"..self.file.."|"..pageno
+	local cached = Cache:check(hash)
+	if cached then
+		return cached.links
+	end
+	local page = self._document:openPage(pageno)
+	local links = page:getPageLinks()
+	Cache:insert(hash, CacheItem:new{ 
+		links = links,
+	})
+	page:close()
+	return links
+end
+
 function PdfDocument:getPageBBox(pageno)
 	return self.koptinterface:getPageBBox(self, pageno)
 end
