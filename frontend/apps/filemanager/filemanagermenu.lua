@@ -8,6 +8,7 @@ local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
+local Language = require("ui/language")
 local _ = require("gettext")
 
 local FileManagerMenu = InputContainer:extend{
@@ -85,6 +86,7 @@ function FileManagerMenu:setUpdateItemTable()
 			})
 		end
 	})
+	table.insert(self.tab_item_table.main, Language:getLangMenuTable())
 end
 
 function FileManagerMenu:onShowMenu()
