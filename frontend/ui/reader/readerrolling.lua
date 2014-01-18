@@ -349,7 +349,7 @@ end
 
 function ReaderRolling:gotoPage(new_page)
 	self.ui.document:gotoPage(new_page)
-	self.ui:handleEvent(Event:new("PageUpdate", new_page))
+	self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
 end
 
 function ReaderRolling:gotoXPointer(xpointer)
