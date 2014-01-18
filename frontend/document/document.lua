@@ -173,6 +173,10 @@ function Document:getToc()
 	return self._document:getToc()
 end
 
+function Document:getPageLinks(pageno)
+	return nil
+end
+
 function Document:getTextBoxes(pageno)
 	return nil
 end
