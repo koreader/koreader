@@ -53,7 +53,7 @@ function ReaderDictionary:showDict(results, box)
 			dialog = self.dialog,
 			results = results,
 			dictionary = self.default_dictionary,
-			width = Screen:getWidth() - Screen:scaleByDPI(120),
+			width = Screen:getWidth() - Screen:scaleByDPI(80),
 			height = math.min(region.h*0.7, Screen:getHeight()*0.5),
 			region = region,
 			align = align,
