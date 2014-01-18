@@ -183,16 +183,10 @@ function ReaderRolling:onTapBackward()
 end
 
 function ReaderRolling:onSwipe(arg, ges)
-	if ges.direction == "north" then
+	if ges.direction == "west" or ges.direction == "north" then
 		self:onGotoViewRel(1)
-	elseif ges.direction == "south" then
+	elseif ges.direction == "east" or ges.direction == "south" then
 		self:onGotoViewRel(-1)
-	elseif ges.direction == "west" then
-		self.ui.document:goForward()
-		self:onUpdateXPointer()
-	elseif ges.direction == "east" then
-		self.ui.document:goBack()
-		self:onUpdateXPointer()
 	end
 	return true
 end

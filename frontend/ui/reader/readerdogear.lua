@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
@@ -57,6 +58,7 @@ end
 
 function ReaderDogear:onSetDogearVisibility(visible)
 	self.view.dogear_visible = visible
+	UIManager:setDirty(self.view.dialog, "partial")
 	return true
 end
 

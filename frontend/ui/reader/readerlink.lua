@@ -6,7 +6,9 @@ local Device = require("ui/device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 
-local ReaderLink = InputContainer:new{}
+local ReaderLink = InputContainer:new{
+	link_states = {}
+}
 
 function ReaderLink:init()
 	if Device:isTouchDevice() then
@@ -24,6 +26,16 @@ function ReaderLink:initGesListener()
 						x = 0, y = 0,
 						w = Screen:getWidth(),
 						h = Screen:getHeight()
+					}
+				}
+			},
+			Swipe = {
+				GestureRange:new{
+					ges = "swipe",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
 					}
 				}
 			},
@@ -49,22 +61,71 @@ function ReaderLink:onTap(arg, ges)
 			end
 		end
 	end
-	if self.view.links then
-		local pos = self.view:screenToPageTransform(ges.pos)
-		for i = 1, #self.view.links do
-			local link = self.view.links[i]
-			-- enlarge tappable link box
-			local lbox = Geom:new{
-				x = link.start_x - Screen:scaleByDPI(15),
-				y = link.start_y - Screen:scaleByDPI(15),
-				w = link.end_x - link.start_x + Screen:scaleByDPI(30),
-				h = link.end_y - link.start_y > 0 
-				        and link.end_y - link.start_y + Screen:scaleByDPI(30) 
-				        or Screen:scaleByDPI(50),
-			}
-			if inside_box(pos, lbox) then
-				DEBUG("goto link", link)
-				self.document:gotoLink(link.section)
+	local pos = self.view:screenToPageTransform(ges.pos)
+	if self.ui.document.info.has_pages then
+		local page_links = self.ui.document:getPageLinks(pos.page)
+		--DEBUG("page links", page_links)
+		if page_links then
+			for i = 1, #page_links do
+				local link = page_links[i]
+				-- enlarge tappable link box
+				local lbox = Geom:new{
+					x = link.x0 - Screen:scaleByDPI(15),
+					y = link.y0 - Screen:scaleByDPI(15),
+					w = link.x1 - link.x0 + Screen:scaleByDPI(30),
+					h = link.y1 - link.y0 + Screen:scaleByDPI(30)
+				}
+				if inside_box(pos, lbox) and link.page then
+					return self:onGotoLink(link)
+				end
+			end
+		end
+	else
+		if self.view.links then
+			for i = 1, #self.view.links do
+				local link = self.view.links[i]
+				-- enlarge tappable link box
+				local lbox = Geom:new{
+					x = link.start_x - Screen:scaleByDPI(15),
+					y = link.start_y - Screen:scaleByDPI(15),
+					w = link.end_x - link.start_x + Screen:scaleByDPI(30),
+					h = link.end_y - link.start_y > 0 
+					        and link.end_y - link.start_y + Screen:scaleByDPI(30) 
+					        or Screen:scaleByDPI(50),
+				}
+				if inside_box(pos, lbox) then
+					return self:onGotoLink(link)
+				end
+			end
+		end
+	end
+end
+
+function ReaderLink:onGotoLink(link)
+	DEBUG("goto link", link)
+	if self.ui.document.info.has_pages then
+		table.insert(self.link_states, self.view.state.page)
+		self.ui:handleEvent(Event:new("PageUpdate", link.page + 1))
+	else
+		table.insert(self.link_states, self.ui.document:getXPointer())
+		self.document:gotoLink(link.section)
+		self.ui:handleEvent(Event:new("UpdateXPointer"))
+	end
+	return true
+end
+
+function ReaderLink:onSwipe(arg, ges)
+	if ges.direction == "east" then
+		if self.ui.document.info.has_pages then
+			local last_page = table.remove(self.link_states)
+			if last_page then
+				self.ui:handleEvent(Event:new("PageUpdate", last_page))
+				return true
+			end
+		else
+			local last_xp = table.remove(self.link_states)
+			if last_xp then
+				self.ui.document:gotoXPointer(last_xp)
 				self.ui:handleEvent(Event:new("UpdateXPointer"))
 				return true
 			end

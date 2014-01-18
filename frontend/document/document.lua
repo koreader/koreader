@@ -36,6 +36,8 @@ local Document = {
 		author = "",
 		date = ""
 	},
+	
+	links = {},
 
 	GAMMA_NO_GAMMA = 1.0,
 
@@ -169,6 +171,10 @@ end
 
 function Document:getToc()
 	return self._document:getToc()
+end
+
+function Document:getPageLinks(pageno)
+	return nil
 end
 
 function Document:getTextBoxes(pageno)
