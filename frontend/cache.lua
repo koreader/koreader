@@ -1,9 +1,34 @@
 --[[
 A global LRU cache
 ]]--
+local function calcFreeMem()
+	local meminfo = io.open("/proc/meminfo", "r")
+	local freemem = 0
+	if meminfo then
+		for line in meminfo:lines() do
+			local free, buffer, cached, n
+			free, n = line:gsub("^MemFree:%s-(%d+) kB", "%1")
+			if n ~= 0 then freemem = freemem + tonumber(free)*1024 end
+			buffer, n = line:gsub("^Buffers:%s-(%d+) kB", "%1")
+			if n ~= 0 then freemem = freemem + tonumber(buffer)*1024 end
+			cached, n = line:gsub("^Cached:%s-(%d+) kB", "%1")
+			if n ~= 0 then freemem = freemem + tonumber(cached)*1024 end
+		end
+		meminfo:close()
+	end
+	return freemem
+end
+
+local function calcCacheMemSize()
+	local min = DGLOBAL_CACHE_SIZE_MINIMUM
+	local max = DGLOBAL_CACHE_SIZE_MAXIMUM
+	local calc = calcFreeMem()*(DGLOBAL_CACHE_FREE_PROPORTION or 0)
+	return math.min(max, math.max(min, calc))
+end
+
 local Cache = {
 	-- cache configuration:
-	max_memsize = DGLOBAL_CACHE_SIZE,
+	max_memsize = calcCacheMemSize(),
 	-- cache state:
 	current_memsize = 0,
 	-- associative cache
