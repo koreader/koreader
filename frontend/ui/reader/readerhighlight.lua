@@ -296,7 +296,7 @@ function ReaderHighlight:lookup(selected_word)
 		local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
 		self.ui:handleEvent(Event:new("LookupWord", self, selected_word.word, word_box))
 	-- or we will do OCR
-	else
+	elseif selected_word.sbox then
 		local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
 		DEBUG("OCRed word:", word)
 		local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
