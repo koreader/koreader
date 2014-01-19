@@ -593,6 +593,7 @@ end
 get word and word box around pos
 --]]
 function KoptInterface:getWordFromBoxes(boxes, pos)
+	if not pos or #boxes == 0 then return {} end
 	local i, j = getWordBoxIndices(boxes, pos)
 	local lb = boxes[i]
 	local wb = boxes[i][j]
@@ -613,7 +614,7 @@ end
 get text and text boxes between pos0 and pos1
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
-	if not pos0 or not pos1 then return {} end
+	if not pos0 or not pos1 or #boxes == 0 then return {} end
     local line_text = ""
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
