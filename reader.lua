@@ -11,9 +11,9 @@ local _ = require("gettext")
 -- has to be done before requiring other files because
 -- they might call gettext on load
 G_reader_settings = DocSettings:open(".reader")
-local lang_po = G_reader_settings:readSetting("language_po")
-if lang_po then
-	_.changeLang(lang_po)
+local lang_locale = G_reader_settings:readSetting("language")
+if lang_locale then
+	_.changeLang(lang_locale)
 end
 
 local UIManager = require("ui/uimanager")

@@ -6,20 +6,20 @@ local _ = require("gettext")
 
 Language = {}
 
-function Language:changeLanguage(lang_po)
-	_.changeLang(lang_po)
-	G_reader_settings:saveSetting("language_po", lang_po)
+function Language:changeLanguage(lang_locale)
+	_.changeLang(lang_locale)
+	G_reader_settings:saveSetting("language", lang_locale)
 	UIManager:show(InfoMessage:new{
 		text = _("Please restart reader for new language setting to take effect."),
 		timeout = 3,
 	})
 end
 
-function Language:genLanguageSubItem(lang, lang_po)
+function Language:genLanguageSubItem(lang, lang_locale)
 	return {
 		text = lang,
 		callback = function()
-			self:changeLanguage(lang_po)
+			self:changeLanguage(lang_locale)
 		end
 	}
 end
