@@ -3,17 +3,28 @@
 require "defaults"
 package.path = "./frontend/?.lua;./?.lua"
 package.cpath = "?.so;/usr/lib/lua/?.so"
+
+local DocSettings = require("docsettings")
+local _ = require("gettext")
+
+-- read settings and check for language override
+-- has to be done before requiring other files because
+-- they might call gettext on load
+G_reader_settings = DocSettings:open(".reader")
+local lang_po = G_reader_settings:readSetting("language_po")
+if lang_po then
+	_.changeLang(lang_po)
+end
+
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local InfoMessage = require("ui/widget/infomessage")
 local ReaderUI = require("ui/readerui")
 local DocumentRegistry = require("document/documentregistry")
-local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
 local FileManager = require("apps/filemanager/filemanager")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
-local _ = require("gettext")
 
 Profiler = nil
 
@@ -155,7 +166,6 @@ if Device:hasNoKeyboard() then
 end
 
 -- read some global reader setting here:
-G_reader_settings = DocSettings:open(".reader")
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
@@ -163,11 +173,6 @@ if fontmap ~= nil then
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
--- language
-local lang_po = G_reader_settings:readSetting("language_po")
-if lang_po then
-	_.changeLang(lang_po)
-end
 
 
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
