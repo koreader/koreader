@@ -2,14 +2,14 @@
 # Copyright (C) 2005-2014 KOReader Development Team
 # 
 # Translators:
-# chrox <chrox.huang@gmail.com>, 2013
+# chrox <chrox.huang@gmail.com>, 2013-2014
 # houqp <dave2008713@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-01-07 15:39+0000\n"
-"PO-Revision-Date: 2014-01-08 08:55+0000\n"
+"POT-Creation-Date: 2014-01-18 17:24+0000\n"
+"PO-Revision-Date: 2014-01-19 08:55+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/koreader/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: reader.lua:101
+#: reader.lua:107
 msgid "-d               start in debug mode"
 msgstr "-d 开启调试模式"
 
-#: reader.lua:103
+#: reader.lua:109
 msgid "-h               show this usage help"
 msgstr "-h 显示帮助信息"
 
-#: reader.lua:102
+#: reader.lua:108
 msgid "-p [rows]        enable Lua code profiling"
 msgstr "-p [rows] 开启Lua代码性能分析"
 
@@ -50,7 +50,7 @@ msgstr "<<"
 msgid ">>"
 msgstr ">>"
 
-#: frontend/ui/reader/readerhighlight.lua:268
+#: frontend/ui/reader/readerhighlight.lua:336
 #: frontend/ui/widget/dictquicklookup.lua:145
 msgid "Add Note"
 msgstr "添加笔记"
@@ -95,7 +95,7 @@ msgstr "自动检测为Kindle Touch"
 msgid "Auto-detected Kobo"
 msgstr "自动检测为Kobo"
 
-#: frontend/ui/reader/readerbookmark.lua:13
+#: frontend/ui/reader/readerbookmark.lua:14
 msgid "Bookmarks"
 msgstr "书签"
 
@@ -119,19 +119,23 @@ msgstr "分栏数"
 msgid "Contrast"
 msgstr "字体黑度"
 
-#: frontend/ui/reader/readerfont.lua:137
-msgid "Decrease font size to "
-msgstr "字体大小设置为"
+#: frontend/apps/filemanager/filemanager.lua:133
+msgid "Copy"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanager.lua:151
+msgid "Cut"
+msgstr ""
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
 msgstr " 前光亮度设置为"
 
-#: frontend/ui/reader/readerfont.lua:205
+#: frontend/ui/reader/readerfont.lua:188
 msgid "Decrease gamma to "
 msgstr "灰度系数设置为"
 
-#: frontend/ui/reader/readerfont.lua:176
+#: frontend/ui/reader/readerfont.lua:159
 msgid "Decrease line space to "
 msgstr "行距设置为"
 
@@ -139,7 +143,8 @@ msgstr "行距设置为"
 msgid "Defect Size"
 msgstr "页面污点"
 
-#: frontend/ui/reader/readerhighlight.lua:159
+#: frontend/apps/filemanager/filemanager.lua:158
+#: frontend/ui/reader/readerhighlight.lua:231
 msgid "Delete"
 msgstr "删除"
 
@@ -151,11 +156,11 @@ msgstr "设备型号"
 msgid "Document Language"
 msgstr "文档语言"
 
-#: frontend/ui/reader/readermenu.lua:111
+#: frontend/ui/reader/readermenu.lua:114
 msgid "Document menu"
 msgstr "文档菜单"
 
-#: frontend/ui/reader/readerhighlight.lua:166
+#: frontend/ui/reader/readerhighlight.lua:238
 msgid "Edit"
 msgstr "编辑"
 
@@ -163,11 +168,15 @@ msgstr "编辑"
 msgid "Embedded style"
 msgstr "内置CSS"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:112
+#: reader.lua:55
+msgid "File does not exist"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
 msgstr "文件管理器菜单"
 
-#: frontend/apps/filemanager/filemanager.lua:18
+#: frontend/apps/filemanager/filemanager.lua:69
 msgid "FileManager"
 msgstr "文件管理器"
 
@@ -207,12 +216,12 @@ msgstr "前往"
 msgid "Go to Page or Location"
 msgstr "前往页码或位置"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:73
-#: frontend/ui/reader/readermenu.lua:70
+#: frontend/apps/filemanager/filemanagermenu.lua:74
+#: frontend/ui/reader/readermenu.lua:72
 msgid "Help"
 msgstr "帮助"
 
-#: frontend/ui/reader/readerhighlight.lua:260
+#: frontend/ui/reader/readerhighlight.lua:328
 #: frontend/ui/widget/dictquicklookup.lua:138
 msgid "Highlight"
 msgstr "标注"
@@ -226,27 +235,23 @@ msgstr "历史记录"
 msgid "Hyphenation"
 msgstr "断字"
 
-#: reader.lua:108
+#: reader.lua:114
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "如果不提供路径参数将会打开最后关闭的文档"
 
-#: reader.lua:105
+#: reader.lua:111
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "如果提供的是路径参数，"
-
-#: frontend/ui/reader/readerfont.lua:139
-msgid "Increase font size to "
-msgstr "字体大小设置为"
 
 #: frontend/ui/reader/readerfrontlight.lua:41
 msgid "Increase front light intensity to "
 msgstr " 前光亮度设置为"
 
-#: frontend/ui/reader/readerfont.lua:202
+#: frontend/ui/reader/readerfont.lua:185
 msgid "Increase gamma to "
 msgstr "Gamma校正为"
 
-#: frontend/ui/reader/readerfont.lua:180
+#: frontend/ui/reader/readerfont.lua:163
 msgid "Increase line space to "
 msgstr "行距设置为"
 
@@ -254,9 +259,21 @@ msgstr "行距设置为"
 msgid "Indentation"
 msgstr "缩进"
 
+#: frontend/ui/reader/readerhighlight.lua:145
+msgid "Invert"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
 msgstr "左至右"
+
+#: frontend/ui/language.lua:31
+msgid "Language"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:133
+msgid "Lighten"
+msgstr ""
 
 #: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
@@ -266,11 +283,11 @@ msgstr "行间距"
 msgid "Location"
 msgstr "位置"
 
-#: frontend/ui/reader/readerhighlight.lua:298
+#: frontend/ui/reader/readerhighlight.lua:366
 msgid "More"
 msgstr "更多"
 
-#: reader.lua:64
+#: reader.lua:70
 msgid "No reader engine for this file"
 msgstr "无渲染组件解析此文档"
 
@@ -299,22 +316,30 @@ msgstr "切边"
 msgid "Page Margin"
 msgstr "页边距"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:76
-#: frontend/ui/reader/readermenu.lua:73
+#: frontend/apps/filemanager/filemanager.lua:140
+msgid "Paste"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:77
+#: frontend/ui/reader/readermenu.lua:75
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
 msgstr "Bug反馈请访问 https://github.com/koreader/ koreader/issues。更多设置选项请点击屏幕下方。"
 
+#: frontend/ui/language.lua:13
+msgid "Please restart reader for new language setting to take effect."
+msgstr ""
+
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
 msgstr "右至左"
 
-#: reader.lua:99
+#: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
 msgstr "使用本软件在E-ink设备上阅读你的电子文档"
 
-#: frontend/ui/reader/readerfont.lua:228
+#: frontend/ui/reader/readerfont.lua:211
 msgid "Redrawing with font "
 msgstr "重绘使用字体"
 
@@ -342,7 +367,7 @@ msgstr "屏幕宽度"
 msgid "Scroll Mode"
 msgstr "卷轴模式"
 
-#: reader.lua:111
+#: reader.lua:117
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "更多信息请访问http://github.com/koreader/kindlepdfviewer"
 
@@ -355,19 +380,23 @@ msgstr "选择菜单项"
 msgid "Select Option Item"
 msgstr "选择选项"
 
-#: frontend/ui/reader/readerfont.lua:161
+#: frontend/ui/reader/readerfont.lua:144
 msgid "Set font size to "
 msgstr "设置字体大小"
+
+#: frontend/ui/reader/readerhighlight.lua:124
+msgid "Set highlight drawer "
+msgstr ""
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
 msgstr "设置渲染样式"
 
-#: frontend/ui/reader/readerhighlight.lua:287
+#: frontend/ui/reader/readerhighlight.lua:355
 msgid "Share"
 msgstr "分享"
 
-#: frontend/ui/uimanager.lua:296
+#: frontend/ui/uimanager.lua:297
 msgid "Standby"
 msgstr "进入待机状态"
 
@@ -399,7 +428,7 @@ msgstr "点击按钮"
 msgid "Text Align"
 msgstr "文本对齐"
 
-#: reader.lua:110
+#: reader.lua:116
 msgid "This software is licensed under the GPLv3."
 msgstr "本软件在GPLv3许可证下发布。"
 
@@ -407,7 +436,7 @@ msgstr "本软件在GPLv3许可证下发布。"
 msgid "Toggle"
 msgstr "开关"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:62
+#: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
 msgstr "打开/关闭显示隐藏文件"
 
@@ -415,28 +444,32 @@ msgstr "打开/关闭显示隐藏文件"
 msgid "Toggle switch"
 msgstr "选择开关"
 
-#: frontend/ui/reader/readerhighlight.lua:279
+#: frontend/ui/reader/readerhighlight.lua:347
 msgid "Translate"
 msgstr "翻译"
 
 #: frontend/ui/reader/readertypeset.lua:127
 msgid "Turn off floating punctuation"
-msgstr ""
+msgstr "关闭标点浮动"
 
 #: frontend/ui/reader/readerpaging.lua:153
 msgid "Turn off page overlap"
-msgstr ""
+msgstr "关闭页面重叠"
 
 #: frontend/ui/reader/readertypeset.lua:128
 msgid "Turn on floating punctuation"
-msgstr ""
+msgstr "打开标点浮动"
 
 #: frontend/ui/reader/readerpaging.lua:154
 msgid "Turn on page overlap"
+msgstr "打开页面重叠"
+
+#: frontend/ui/reader/readerhighlight.lua:139
+msgid "Underscore"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:81
-#: frontend/ui/reader/readermenu.lua:78
+#: frontend/apps/filemanager/filemanagermenu.lua:82
+#: frontend/ui/reader/readermenu.lua:80
 msgid "Version"
 msgstr "版本"
 
@@ -455,6 +488,10 @@ msgstr "字符间距"
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
 msgstr "文字方向"
+
+#: frontend/ui/reader/readerscreenshot.lua:31
+msgid "Writing screen to "
+msgstr ""
 
 #: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
@@ -488,7 +525,7 @@ msgstr "自动"
 msgid "cancel"
 msgstr "取消"
 
-#: reader.lua:106
+#: reader.lua:112
 msgid "chooser will show up and let you select a file"
 msgstr "从文件选择器选择要打开的文件"
 
@@ -509,16 +546,17 @@ msgstr "清除外置样式"
 msgid "close config menu"
 msgstr "关闭设置菜单"
 
+#: frontend/apps/filemanager/filemanager.lua:31
 #: frontend/ui/reader/readerhighlight.lua:24
 #: frontend/ui/widget/infomessage.lua:32
 msgid "close dialog"
 msgstr "关闭对话框"
 
-#: frontend/ui/readerui.lua:43 frontend/ui/readerui.lua:72
+#: frontend/ui/readerui.lua:44 frontend/ui/readerui.lua:73
 msgid "close document"
 msgstr "关闭文档"
 
-#: frontend/ui/widget/menu.lua:425
+#: frontend/ui/widget/menu.lua:443
 msgid "close menu"
 msgstr "关闭菜单"
 
@@ -594,11 +632,11 @@ msgstr "跳转到上一视图"
 msgid "go to start"
 msgstr "跳转到开头"
 
-#: frontend/ui/widget/menu.lua:427
+#: frontend/ui/widget/menu.lua:445
 msgid "goto next page of the menu"
 msgstr "转到菜单下一页"
 
-#: frontend/ui/widget/menu.lua:430
+#: frontend/ui/widget/menu.lua:448
 msgid "goto previous page of the menu"
 msgstr "转到菜单上一页"
 
@@ -674,7 +712,7 @@ msgstr "向右移动可视区域"
 msgid "move visible area up"
 msgstr "向上移动可视区域"
 
-#: frontend/ui/widget/menu.lua:512
+#: frontend/ui/widget/menu.lua:530
 msgid "no choices available"
 msgstr "没有可选选项"
 
@@ -690,7 +728,7 @@ msgstr "关闭"
 msgid "on"
 msgstr "开启"
 
-#: reader.lua:54
+#: reader.lua:60
 msgid "opening file"
 msgstr "正在打开文件"
 
@@ -698,7 +736,7 @@ msgstr "正在打开文件"
 msgid "page"
 msgstr "分页模式"
 
-#: frontend/ui/widget/menu.lua:506
+#: frontend/ui/widget/menu.lua:524
 msgid "page "
 msgstr "页码"
 
@@ -718,7 +756,7 @@ msgstr "向右旋转90度"
 msgid "scroll"
 msgstr "卷轴模式"
 
-#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:457
 msgid "select current menu item"
 msgstr "选择当前菜单项目"
 
@@ -730,7 +768,7 @@ msgstr "半自动"
 msgid "show Table of Content menu"
 msgstr "显示目录菜单"
 
-#: frontend/ui/reader/readerbookmark.lua:22
+#: frontend/ui/reader/readerbookmark.lua:23
 msgid "show bookmarks"
 msgstr "显示书签"
 
@@ -742,8 +780,8 @@ msgstr "显示设置对话框"
 msgid "show font menu"
 msgstr "显示字体选择菜单"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:35
-#: frontend/ui/reader/readermenu.lua:44
+#: frontend/apps/filemanager/filemanagermenu.lua:36
+#: frontend/ui/reader/readermenu.lua:45
 msgid "show menu"
 msgstr "显示菜单"
 
@@ -755,7 +793,7 @@ msgstr "小"
 msgid "toggle bold"
 msgstr "粗体"
 
-#: reader.lua:98
+#: reader.lua:104
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "用法： ./reader.lua [选项] ... [文件|路径]"
 
