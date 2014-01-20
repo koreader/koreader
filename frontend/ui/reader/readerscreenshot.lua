@@ -3,6 +3,9 @@ local Device = require("ui/device")
 local Screen = require("ui/screen")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
+local _ = require("gettext")
+local DEBUG = require("dbg")
 
 local ReaderScreenshot = InputContainer:new{}
 
