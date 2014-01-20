@@ -58,7 +58,6 @@ end
 
 function ReaderDogear:onSetDogearVisibility(visible)
 	self.view.dogear_visible = visible
-	UIManager:setDirty(self.view.dialog, "partial")
 	return true
 end
 
