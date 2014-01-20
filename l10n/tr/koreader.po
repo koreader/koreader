@@ -2,14 +2,14 @@
 # Copyright (C) 2005-2014 KOReader Development Team
 # 
 # Translators:
-# thomass <pblcaccess2me@gmail.com>, 2013
+# thomass <pblcaccess2me@gmail.com>, 2013-2014
 # thomass <pblcaccess2me@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-01-07 15:39+0000\n"
-"PO-Revision-Date: 2014-01-08 08:55+0000\n"
+"POT-Creation-Date: 2014-01-18 17:24+0000\n"
+"PO-Revision-Date: 2014-01-19 08:55+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/koreader/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Language: tr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: reader.lua:101
+#: reader.lua:107
 msgid "-d               start in debug mode"
 msgstr "-d               hata ayıklama modunda başlat"
 
-#: reader.lua:103
+#: reader.lua:109
 msgid "-h               show this usage help"
 msgstr "-h               yardım sayfasını göster"
 
-#: reader.lua:102
+#: reader.lua:108
 msgid "-p [rows]        enable Lua code profiling"
 msgstr ""
 
@@ -44,20 +44,20 @@ msgstr "5 °"
 
 #: frontend/ui/widget/dictquicklookup.lua:122
 msgid "<<"
-msgstr ""
+msgstr "<<"
 
 #: frontend/ui/widget/dictquicklookup.lua:129
 msgid ">>"
-msgstr ""
+msgstr ">>"
 
-#: frontend/ui/reader/readerhighlight.lua:268
+#: frontend/ui/reader/readerhighlight.lua:336
 #: frontend/ui/widget/dictquicklookup.lua:145
 msgid "Add Note"
 msgstr "Not Ekle"
 
 #: frontend/ui/reader/readerfrontlight.lua:83
 msgid "Apply"
-msgstr ""
+msgstr "Uygula"
 
 #: frontend/ui/reader/readertypeset.lua:58
 msgid "Auto"
@@ -93,9 +93,9 @@ msgstr "Kindle Touch olarak belirlendi"
 
 #: frontend/ui/input.lua:323
 msgid "Auto-detected Kobo"
-msgstr ""
+msgstr "Kobo olarak belirlendi"
 
-#: frontend/ui/reader/readerbookmark.lua:13
+#: frontend/ui/reader/readerbookmark.lua:14
 msgid "Bookmarks"
 msgstr "Yer imleri"
 
@@ -119,19 +119,23 @@ msgstr "Sütunlar"
 msgid "Contrast"
 msgstr "Kontrast"
 
-#: frontend/ui/reader/readerfont.lua:137
-msgid "Decrease font size to "
-msgstr "Font boyutunu şuna düşür:"
+#: frontend/apps/filemanager/filemanager.lua:133
+msgid "Copy"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanager.lua:151
+msgid "Cut"
+msgstr ""
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
 msgstr "Işık şiddetini şuna düşür:"
 
-#: frontend/ui/reader/readerfont.lua:205
+#: frontend/ui/reader/readerfont.lua:188
 msgid "Decrease gamma to "
 msgstr "Gama değerini şuna düşür:"
 
-#: frontend/ui/reader/readerfont.lua:176
+#: frontend/ui/reader/readerfont.lua:159
 msgid "Decrease line space to "
 msgstr "Satır boşluğunu şuna düşür:"
 
@@ -139,23 +143,24 @@ msgstr "Satır boşluğunu şuna düşür:"
 msgid "Defect Size"
 msgstr "Bozukluk Büyüklüğü"
 
-#: frontend/ui/reader/readerhighlight.lua:159
+#: frontend/apps/filemanager/filemanager.lua:158
+#: frontend/ui/reader/readerhighlight.lua:231
 msgid "Delete"
 msgstr "Sil"
 
 #: frontend/ui/input.lua:324
 msgid "Device model="
-msgstr ""
+msgstr "Cihaz modeli="
 
 #: frontend/ui/data/strings.lua:16
 msgid "Document Language"
-msgstr ""
+msgstr "Döküman Dili"
 
-#: frontend/ui/reader/readermenu.lua:111
+#: frontend/ui/reader/readermenu.lua:114
 msgid "Document menu"
 msgstr "Belge menüsü"
 
-#: frontend/ui/reader/readerhighlight.lua:166
+#: frontend/ui/reader/readerhighlight.lua:238
 msgid "Edit"
 msgstr "Düzenle"
 
@@ -163,11 +168,15 @@ msgstr "Düzenle"
 msgid "Embedded style"
 msgstr "Gömülü stil"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:112
-msgid "File manager menu"
+#: reader.lua:55
+msgid "File does not exist"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanager.lua:18
+#: frontend/apps/filemanager/filemanagermenu.lua:114
+msgid "File manager menu"
+msgstr "Dosya yönetici menüsü"
+
+#: frontend/apps/filemanager/filemanager.lua:69
 msgid "FileManager"
 msgstr "DosyaYöneticisi"
 
@@ -177,7 +186,7 @@ msgstr "İnce Ayar"
 
 #: frontend/ui/input.lua:326
 msgid "Firmware revision"
-msgstr ""
+msgstr "Yazılım versiyonu"
 
 #: frontend/ui/data/strings.lua:23
 msgid "Font weight"
@@ -185,11 +194,11 @@ msgstr "Font kalınlığı"
 
 #: frontend/ui/reader/readerfrontlight.lua:70
 msgid "Frontlight Level"
-msgstr ""
+msgstr "Aydnlatma Seviyesi"
 
 #: frontend/ui/reader/readerfrontlight.lua:60
 msgid "Frontlight settings"
-msgstr ""
+msgstr "Aydınlatma ayarları"
 
 #: frontend/ui/data/strings.lua:7
 msgid "Full Screen"
@@ -201,18 +210,18 @@ msgstr "Gama"
 
 #: frontend/ui/reader/readergoto.lua:10
 msgid "Go To"
-msgstr ""
+msgstr "Git"
 
 #: frontend/ui/reader/readergoto.lua:11
 msgid "Go to Page or Location"
-msgstr ""
+msgstr "Sayfa veya Konuma Git"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:73
-#: frontend/ui/reader/readermenu.lua:70
+#: frontend/apps/filemanager/filemanagermenu.lua:74
+#: frontend/ui/reader/readermenu.lua:72
 msgid "Help"
 msgstr "Yardım"
 
-#: frontend/ui/reader/readerhighlight.lua:260
+#: frontend/ui/reader/readerhighlight.lua:328
 #: frontend/ui/widget/dictquicklookup.lua:138
 msgid "Highlight"
 msgstr "Vurgula"
@@ -220,33 +229,29 @@ msgstr "Vurgula"
 #: frontend/apps/filemanager/filemanagerhistory.lua:11
 #: frontend/apps/filemanager/filemanagerhistory.lua:30
 msgid "History"
-msgstr ""
+msgstr "Geçmiş"
 
 #: frontend/ui/reader/readerhyphenation.lua:7
 msgid "Hyphenation"
 msgstr "Tireleme"
 
-#: reader.lua:108
+#: reader.lua:114
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Eğer hiç bir dosya yolu belirtmezseniz en son görüntülenen belge açılacak"
 
-#: reader.lua:105
+#: reader.lua:111
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Dosya yolu yerine bir klasör ismi belirtmişseniz, bir dosya "
-
-#: frontend/ui/reader/readerfont.lua:139
-msgid "Increase font size to "
-msgstr "Font boyutunu şuna yükselt: "
 
 #: frontend/ui/reader/readerfrontlight.lua:41
 msgid "Increase front light intensity to "
 msgstr "Işık şiddetini şuna yükselt:"
 
-#: frontend/ui/reader/readerfont.lua:202
+#: frontend/ui/reader/readerfont.lua:185
 msgid "Increase gamma to "
 msgstr "Gama değerini şuna yükselt:"
 
-#: frontend/ui/reader/readerfont.lua:180
+#: frontend/ui/reader/readerfont.lua:163
 msgid "Increase line space to "
 msgstr "Satır boşluğunu şuna yükselt:"
 
@@ -254,8 +259,20 @@ msgstr "Satır boşluğunu şuna yükselt:"
 msgid "Indentation"
 msgstr "Girinti"
 
+#: frontend/ui/reader/readerhighlight.lua:145
+msgid "Invert"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
+msgstr ""
+
+#: frontend/ui/language.lua:31
+msgid "Language"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:133
+msgid "Lighten"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:10
@@ -264,13 +281,13 @@ msgstr "Satır boşluğu"
 
 #: frontend/ui/reader/readergoto.lua:50
 msgid "Location"
-msgstr ""
+msgstr "Konum"
 
-#: frontend/ui/reader/readerhighlight.lua:298
+#: frontend/ui/reader/readerhighlight.lua:366
 msgid "More"
 msgstr "Diğer"
 
-#: reader.lua:64
+#: reader.lua:70
 msgid "No reader engine for this file"
 msgstr "Bu dosya türü desteklenmiyor"
 
@@ -285,7 +302,7 @@ msgstr "Tamam"
 
 #: frontend/ui/reader/readergoto.lua:43
 msgid "Page"
-msgstr ""
+msgstr "Sayfa"
 
 #: frontend/ui/widget/touchmenu.lua:345
 msgid "Page "
@@ -299,22 +316,30 @@ msgstr "Sayfa Kırpma"
 msgid "Page Margin"
 msgstr "Kenar Boşluğu"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:76
-#: frontend/ui/reader/readermenu.lua:73
+#: frontend/apps/filemanager/filemanager.lua:140
+msgid "Paste"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:77
+#: frontend/ui/reader/readermenu.lua:75
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
 msgstr "Lütfen sorunları buraya bildirin: https://github.com/koreader/ koreader/issues, Ekranın alt bölgesine tıklayarak daha fazla seçeneğe ulaşabilirsiniz."
 
+#: frontend/ui/language.lua:13
+msgid "Please restart reader for new language setting to take effect."
+msgstr ""
+
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
 msgstr ""
 
-#: reader.lua:99
+#: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
 msgstr "Tüm kitaplarınızı E-ink okuyucuda okuyun"
 
-#: frontend/ui/reader/readerfont.lua:228
+#: frontend/ui/reader/readerfont.lua:211
 msgid "Redrawing with font "
 msgstr "Fon ile tekrar oluşturuluyor"
 
@@ -332,17 +357,17 @@ msgstr "Ekran Modu"
 
 #: frontend/ui/input.lua:328
 msgid "Screen height ="
-msgstr ""
+msgstr "Ekran yüksekliği ="
 
 #: frontend/ui/input.lua:330
 msgid "Screen width ="
-msgstr ""
+msgstr "Ekran genişliği ="
 
 #: frontend/ui/data/strings.lua:8
 msgid "Scroll Mode"
 msgstr "Kaydırma Modu"
 
-#: reader.lua:111
+#: reader.lua:117
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "Daha fazla bilgi bu sayfada: http://github.com/koreader/kindlepdfviewer ."
 
@@ -355,21 +380,25 @@ msgstr "Menü Ögesini Seçin"
 msgid "Select Option Item"
 msgstr "Seçenek Ögesini Seçin"
 
-#: frontend/ui/reader/readerfont.lua:161
+#: frontend/ui/reader/readerfont.lua:144
 msgid "Set font size to "
 msgstr "Font boyutunu şuna ayarla:"
+
+#: frontend/ui/reader/readerhighlight.lua:124
+msgid "Set highlight drawer "
+msgstr ""
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
 msgstr "İşleme Stilini Ayarla"
 
-#: frontend/ui/reader/readerhighlight.lua:287
+#: frontend/ui/reader/readerhighlight.lua:355
 msgid "Share"
 msgstr "Paylaş"
 
-#: frontend/ui/uimanager.lua:296
+#: frontend/ui/uimanager.lua:297
 msgid "Standby"
-msgstr ""
+msgstr "Beklemeye al"
 
 #: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
@@ -399,7 +428,7 @@ msgstr "Butona Tıklayın"
 msgid "Text Align"
 msgstr "Yazı Hizalama"
 
-#: reader.lua:110
+#: reader.lua:116
 msgid "This software is licensed under the GPLv3."
 msgstr "Bu yazılım GPLv3 ile lisanslanmıştır."
 
@@ -407,7 +436,7 @@ msgstr "Bu yazılım GPLv3 ile lisanslanmıştır."
 msgid "Toggle"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:62
+#: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
 msgstr ""
 
@@ -415,9 +444,9 @@ msgstr ""
 msgid "Toggle switch"
 msgstr "Geçiş yap"
 
-#: frontend/ui/reader/readerhighlight.lua:279
+#: frontend/ui/reader/readerhighlight.lua:347
 msgid "Translate"
-msgstr ""
+msgstr "Çevir"
 
 #: frontend/ui/reader/readertypeset.lua:127
 msgid "Turn off floating punctuation"
@@ -435,10 +464,14 @@ msgstr ""
 msgid "Turn on page overlap"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:81
-#: frontend/ui/reader/readermenu.lua:78
-msgid "Version"
+#: frontend/ui/reader/readerhighlight.lua:139
+msgid "Underscore"
 msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:82
+#: frontend/ui/reader/readermenu.lua:80
+msgid "Version"
+msgstr "Versiyon"
 
 #: frontend/ui/data/strings.lua:17
 msgid "Vertical Text"
@@ -454,6 +487,10 @@ msgstr "Kelime Boşluğu"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
+msgstr "Yazma yönü"
+
+#: frontend/ui/reader/readerscreenshot.lua:31
+msgid "Writing screen to "
 msgstr ""
 
 #: frontend/ui/reader/readerzooming.lua:311
@@ -488,7 +525,7 @@ msgstr "oto"
 msgid "cancel"
 msgstr "iptal"
 
-#: reader.lua:106
+#: reader.lua:112
 msgid "chooser will show up and let you select a file"
 msgstr "seçim ekranı açılacak ve bir dosya seçebileceksiniz"
 
@@ -509,16 +546,17 @@ msgstr "Harici stilleri temizle"
 msgid "close config menu"
 msgstr "Ayar menüsünü kapat"
 
+#: frontend/apps/filemanager/filemanager.lua:31
 #: frontend/ui/reader/readerhighlight.lua:24
 #: frontend/ui/widget/infomessage.lua:32
 msgid "close dialog"
 msgstr "Dialogu kapat"
 
-#: frontend/ui/readerui.lua:43 frontend/ui/readerui.lua:72
+#: frontend/ui/readerui.lua:44 frontend/ui/readerui.lua:73
 msgid "close document"
 msgstr "belgeyi kapat"
 
-#: frontend/ui/widget/menu.lua:425
+#: frontend/ui/widget/menu.lua:443
 msgid "close menu"
 msgstr "menüyü kapat"
 
@@ -594,11 +632,11 @@ msgstr "önceki ekrana git"
 msgid "go to start"
 msgstr "en başa git"
 
-#: frontend/ui/widget/menu.lua:427
+#: frontend/ui/widget/menu.lua:445
 msgid "goto next page of the menu"
 msgstr "menünün sonraki sayfasına git"
 
-#: frontend/ui/widget/menu.lua:430
+#: frontend/ui/widget/menu.lua:448
 msgid "goto previous page of the menu"
 msgstr "menünün önceki sayfasına git"
 
@@ -674,7 +712,7 @@ msgstr "görüntülenen alanı sağa kaydır"
 msgid "move visible area up"
 msgstr "görüntülenen alanı yukarı kaydır"
 
-#: frontend/ui/widget/menu.lua:512
+#: frontend/ui/widget/menu.lua:530
 msgid "no choices available"
 msgstr "hiçbir seçenek yok"
 
@@ -690,15 +728,15 @@ msgstr "kapalı"
 msgid "on"
 msgstr "açık"
 
-#: reader.lua:54
+#: reader.lua:60
 msgid "opening file"
-msgstr ""
+msgstr "dosya açılıyor"
 
 #: frontend/ui/data/strings.lua:53
 msgid "page"
 msgstr "sayfa"
 
-#: frontend/ui/widget/menu.lua:506
+#: frontend/ui/widget/menu.lua:524
 msgid "page "
 msgstr "sayfa"
 
@@ -718,19 +756,19 @@ msgstr "sağa 90 derece döndür"
 msgid "scroll"
 msgstr "kaydırma"
 
-#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:457
 msgid "select current menu item"
 msgstr "mevcut menü ögesini seç"
 
 #: frontend/ui/data/strings.lua:33
 msgid "semi-auto"
-msgstr ""
+msgstr "yarı-otomatik"
 
 #: frontend/ui/reader/readertoc.lua:20
 msgid "show Table of Content menu"
 msgstr "İçindekileri görüntüle"
 
-#: frontend/ui/reader/readerbookmark.lua:22
+#: frontend/ui/reader/readerbookmark.lua:23
 msgid "show bookmarks"
 msgstr "yerimlerini göster"
 
@@ -742,8 +780,8 @@ msgstr "ayar diyalogunu göster"
 msgid "show font menu"
 msgstr "font menüsünü göster"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:35
-#: frontend/ui/reader/readermenu.lua:44
+#: frontend/apps/filemanager/filemanagermenu.lua:36
+#: frontend/ui/reader/readermenu.lua:45
 msgid "show menu"
 msgstr "menüyü göster"
 
@@ -755,7 +793,7 @@ msgstr "küçük"
 msgid "toggle bold"
 msgstr "kalınlığı değiştir"
 
-#: reader.lua:98
+#: reader.lua:104
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "kullanım şekli:  ./reader.lua [Seçenekler] ... dosyayolu"
 

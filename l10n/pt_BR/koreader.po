@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-01-07 15:39+0000\n"
-"PO-Revision-Date: 2014-01-08 08:55+0000\n"
+"POT-Creation-Date: 2014-01-18 17:24+0000\n"
+"PO-Revision-Date: 2014-01-19 08:55+0000\n"
 "Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/koreader/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
@@ -19,15 +19,15 @@ msgstr ""
 "Language: pt_BR\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: reader.lua:101
+#: reader.lua:107
 msgid "-d               start in debug mode"
 msgstr "-d iniciar em modo de depuração"
 
-#: reader.lua:103
+#: reader.lua:109
 msgid "-h               show this usage help"
 msgstr "-h mostrar esse guia de uso"
 
-#: reader.lua:102
+#: reader.lua:108
 msgid "-p [rows]        enable Lua code profiling"
 msgstr "-p [rows] habilitar código Lua"
 
@@ -51,7 +51,7 @@ msgstr "<<"
 msgid ">>"
 msgstr ">>"
 
-#: frontend/ui/reader/readerhighlight.lua:268
+#: frontend/ui/reader/readerhighlight.lua:336
 #: frontend/ui/widget/dictquicklookup.lua:145
 msgid "Add Note"
 msgstr "Adicionar nota"
@@ -96,7 +96,7 @@ msgstr "Autodetectado Kindle Touch"
 msgid "Auto-detected Kobo"
 msgstr "Kobo detectado"
 
-#: frontend/ui/reader/readerbookmark.lua:13
+#: frontend/ui/reader/readerbookmark.lua:14
 msgid "Bookmarks"
 msgstr "Marcadores"
 
@@ -120,19 +120,23 @@ msgstr "Colunas"
 msgid "Contrast"
 msgstr "Contraste"
 
-#: frontend/ui/reader/readerfont.lua:137
-msgid "Decrease font size to "
-msgstr "Diminuir tamanho de fonte para "
+#: frontend/apps/filemanager/filemanager.lua:133
+msgid "Copy"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanager.lua:151
+msgid "Cut"
+msgstr ""
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
 msgstr "Diminuir intensidade da luz para "
 
-#: frontend/ui/reader/readerfont.lua:205
+#: frontend/ui/reader/readerfont.lua:188
 msgid "Decrease gamma to "
 msgstr "Diminuir gamute para "
 
-#: frontend/ui/reader/readerfont.lua:176
+#: frontend/ui/reader/readerfont.lua:159
 msgid "Decrease line space to "
 msgstr "Diminuir entrelinhas para "
 
@@ -140,7 +144,8 @@ msgstr "Diminuir entrelinhas para "
 msgid "Defect Size"
 msgstr "Tamanho do defeito"
 
-#: frontend/ui/reader/readerhighlight.lua:159
+#: frontend/apps/filemanager/filemanager.lua:158
+#: frontend/ui/reader/readerhighlight.lua:231
 msgid "Delete"
 msgstr "Excluir"
 
@@ -152,11 +157,11 @@ msgstr ""
 msgid "Document Language"
 msgstr "Idioma do documento"
 
-#: frontend/ui/reader/readermenu.lua:111
+#: frontend/ui/reader/readermenu.lua:114
 msgid "Document menu"
 msgstr "Menu do documento"
 
-#: frontend/ui/reader/readerhighlight.lua:166
+#: frontend/ui/reader/readerhighlight.lua:238
 msgid "Edit"
 msgstr "Editar"
 
@@ -164,11 +169,15 @@ msgstr "Editar"
 msgid "Embedded style"
 msgstr "Estilo embutido"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:112
+#: reader.lua:55
+msgid "File does not exist"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
 msgstr "Menu do gerenciador de arquivos"
 
-#: frontend/apps/filemanager/filemanager.lua:18
+#: frontend/apps/filemanager/filemanager.lua:69
 msgid "FileManager"
 msgstr "Gerenciador de Arquivos"
 
@@ -208,12 +217,12 @@ msgstr "Ir para"
 msgid "Go to Page or Location"
 msgstr "Ir para página ou posição"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:73
-#: frontend/ui/reader/readermenu.lua:70
+#: frontend/apps/filemanager/filemanagermenu.lua:74
+#: frontend/ui/reader/readermenu.lua:72
 msgid "Help"
 msgstr "Ajuda"
 
-#: frontend/ui/reader/readerhighlight.lua:260
+#: frontend/ui/reader/readerhighlight.lua:328
 #: frontend/ui/widget/dictquicklookup.lua:138
 msgid "Highlight"
 msgstr "Destaque"
@@ -227,27 +236,23 @@ msgstr "História"
 msgid "Hyphenation"
 msgstr "Hifenação"
 
-#: reader.lua:108
+#: reader.lua:114
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Se você não informar nenhuma localização, será aberto o último documento visto"
 
-#: reader.lua:105
+#: reader.lua:111
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Se você der o nome de um diretório ao invés de um caminho para um arquivo, o gerenciador de arquivos"
-
-#: frontend/ui/reader/readerfont.lua:139
-msgid "Increase font size to "
-msgstr "Aumentar tamanho de fonte para "
 
 #: frontend/ui/reader/readerfrontlight.lua:41
 msgid "Increase front light intensity to "
 msgstr "Aumentar intensidade da luz para "
 
-#: frontend/ui/reader/readerfont.lua:202
+#: frontend/ui/reader/readerfont.lua:185
 msgid "Increase gamma to "
 msgstr "Aumentar gamute para "
 
-#: frontend/ui/reader/readerfont.lua:180
+#: frontend/ui/reader/readerfont.lua:163
 msgid "Increase line space to "
 msgstr "Aumentar entrelinhas para "
 
@@ -255,8 +260,20 @@ msgstr "Aumentar entrelinhas para "
 msgid "Indentation"
 msgstr "Indentação"
 
+#: frontend/ui/reader/readerhighlight.lua:145
+msgid "Invert"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
+msgstr ""
+
+#: frontend/ui/language.lua:31
+msgid "Language"
+msgstr ""
+
+#: frontend/ui/reader/readerhighlight.lua:133
+msgid "Lighten"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:10
@@ -267,11 +284,11 @@ msgstr "Entrelinhas"
 msgid "Location"
 msgstr "Posição"
 
-#: frontend/ui/reader/readerhighlight.lua:298
+#: frontend/ui/reader/readerhighlight.lua:366
 msgid "More"
 msgstr "Mais"
 
-#: reader.lua:64
+#: reader.lua:70
 msgid "No reader engine for this file"
 msgstr "Não há suporte para esse arquivo"
 
@@ -300,22 +317,30 @@ msgstr "Cortar Página"
 msgid "Page Margin"
 msgstr "Margem da Página"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:76
-#: frontend/ui/reader/readermenu.lua:73
+#: frontend/apps/filemanager/filemanager.lua:140
+msgid "Paste"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:77
+#: frontend/ui/reader/readermenu.lua:75
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
 msgstr "Reporte falhas em https://github.com/koreader/ koreader/issues. Clique na parte inferior da página para mais opções"
 
+#: frontend/ui/language.lua:13
+msgid "Please restart reader for new language setting to take effect."
+msgstr ""
+
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
 msgstr ""
 
-#: reader.lua:99
+#: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
 msgstr "Leia todos os livros no seu aparelho e-ink"
 
-#: frontend/ui/reader/readerfont.lua:228
+#: frontend/ui/reader/readerfont.lua:211
 msgid "Redrawing with font "
 msgstr "Redesenhar com fonte "
 
@@ -343,7 +368,7 @@ msgstr ""
 msgid "Scroll Mode"
 msgstr "Modo rolagem"
 
-#: reader.lua:111
+#: reader.lua:117
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "Visite http://github.com/koreader/kindlepdfviewer para mais informações."
 
@@ -356,19 +381,23 @@ msgstr "Escolher Item do Menu"
 msgid "Select Option Item"
 msgstr "Selecionar Item de Opção"
 
-#: frontend/ui/reader/readerfont.lua:161
+#: frontend/ui/reader/readerfont.lua:144
 msgid "Set font size to "
 msgstr "Mudar tamanho de fonte para "
+
+#: frontend/ui/reader/readerhighlight.lua:124
+msgid "Set highlight drawer "
+msgstr ""
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
 msgstr "Escolher estilo de exibição"
 
-#: frontend/ui/reader/readerhighlight.lua:287
+#: frontend/ui/reader/readerhighlight.lua:355
 msgid "Share"
 msgstr "Compartilhar"
 
-#: frontend/ui/uimanager.lua:296
+#: frontend/ui/uimanager.lua:297
 msgid "Standby"
 msgstr "Stand-b"
 
@@ -400,7 +429,7 @@ msgstr "Tocar no Botão"
 msgid "Text Align"
 msgstr "Alinhamento de texto"
 
-#: reader.lua:110
+#: reader.lua:116
 msgid "This software is licensed under the GPLv3."
 msgstr "Este software está sob a licença GPLv3."
 
@@ -408,7 +437,7 @@ msgstr "Este software está sob a licença GPLv3."
 msgid "Toggle"
 msgstr "Liga/Desliga"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:62
+#: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
 msgstr "Arquivos ocultos"
 
@@ -416,7 +445,7 @@ msgstr "Arquivos ocultos"
 msgid "Toggle switch"
 msgstr "Alternar seleção"
 
-#: frontend/ui/reader/readerhighlight.lua:279
+#: frontend/ui/reader/readerhighlight.lua:347
 msgid "Translate"
 msgstr "Traduzir"
 
@@ -436,8 +465,12 @@ msgstr ""
 msgid "Turn on page overlap"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:81
-#: frontend/ui/reader/readermenu.lua:78
+#: frontend/ui/reader/readerhighlight.lua:139
+msgid "Underscore"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:82
+#: frontend/ui/reader/readermenu.lua:80
 msgid "Version"
 msgstr ""
 
@@ -455,6 +488,10 @@ msgstr "Vácuo entre palavras"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
+msgstr ""
+
+#: frontend/ui/reader/readerscreenshot.lua:31
+msgid "Writing screen to "
 msgstr ""
 
 #: frontend/ui/reader/readerzooming.lua:311
@@ -489,7 +526,7 @@ msgstr "automático"
 msgid "cancel"
 msgstr "cancelar"
 
-#: reader.lua:106
+#: reader.lua:112
 msgid "chooser will show up and let you select a file"
 msgstr "será exibido para você escolher um arquivo"
 
@@ -510,16 +547,17 @@ msgstr "limpar todos os estilos externos"
 msgid "close config menu"
 msgstr "fechar menu de configuração"
 
+#: frontend/apps/filemanager/filemanager.lua:31
 #: frontend/ui/reader/readerhighlight.lua:24
 #: frontend/ui/widget/infomessage.lua:32
 msgid "close dialog"
 msgstr "fechar diálogo"
 
-#: frontend/ui/readerui.lua:43 frontend/ui/readerui.lua:72
+#: frontend/ui/readerui.lua:44 frontend/ui/readerui.lua:73
 msgid "close document"
 msgstr "fechar documento"
 
-#: frontend/ui/widget/menu.lua:425
+#: frontend/ui/widget/menu.lua:443
 msgid "close menu"
 msgstr "fechar menu"
 
@@ -595,11 +633,11 @@ msgstr "ir para vista anterior"
 msgid "go to start"
 msgstr "ir para o início"
 
-#: frontend/ui/widget/menu.lua:427
+#: frontend/ui/widget/menu.lua:445
 msgid "goto next page of the menu"
 msgstr "ir para próxima página do menu"
 
-#: frontend/ui/widget/menu.lua:430
+#: frontend/ui/widget/menu.lua:448
 msgid "goto previous page of the menu"
 msgstr "ir para página anterior do menu"
 
@@ -675,7 +713,7 @@ msgstr "mover área visível para a direita"
 msgid "move visible area up"
 msgstr "mover área visível para cima"
 
-#: frontend/ui/widget/menu.lua:512
+#: frontend/ui/widget/menu.lua:530
 msgid "no choices available"
 msgstr "não há opções disponíveis"
 
@@ -691,7 +729,7 @@ msgstr "desligado"
 msgid "on"
 msgstr "ligado"
 
-#: reader.lua:54
+#: reader.lua:60
 msgid "opening file"
 msgstr ""
 
@@ -699,7 +737,7 @@ msgstr ""
 msgid "page"
 msgstr "página"
 
-#: frontend/ui/widget/menu.lua:506
+#: frontend/ui/widget/menu.lua:524
 msgid "page "
 msgstr "página "
 
@@ -719,7 +757,7 @@ msgstr "Rodar para a direita 90º"
 msgid "scroll"
 msgstr "rolar"
 
-#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:439
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:457
 msgid "select current menu item"
 msgstr "selecione o item do menu atual"
 
@@ -731,7 +769,7 @@ msgstr "semiauto"
 msgid "show Table of Content menu"
 msgstr "mostrar menu do Sumário"
 
-#: frontend/ui/reader/readerbookmark.lua:22
+#: frontend/ui/reader/readerbookmark.lua:23
 msgid "show bookmarks"
 msgstr "mostrar marcadores"
 
@@ -743,8 +781,8 @@ msgstr "exibir diálogo configuração"
 msgid "show font menu"
 msgstr "mostrar menu da fonte"
 
-#: frontend/apps/filemanager/filemanagermenu.lua:35
-#: frontend/ui/reader/readermenu.lua:44
+#: frontend/apps/filemanager/filemanagermenu.lua:36
+#: frontend/ui/reader/readermenu.lua:45
 msgid "show menu"
 msgstr "mostrar menu"
 
@@ -756,7 +794,7 @@ msgstr "pequeno"
 msgid "toggle bold"
 msgstr "alternar negrito"
 
-#: reader.lua:98
+#: reader.lua:104
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "usage: ./reader.lua [OPÇÃO] ... caminho"
 
