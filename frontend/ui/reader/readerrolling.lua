@@ -204,13 +204,11 @@ end
 
 function ReaderRolling:onPosUpdate(new_pos)
 	self.current_pos = new_pos
-	self:updatePageLink()
 	self:updateBatteryState()
 end
 
 function ReaderRolling:onPageUpdate(new_page)
 	self.current_page = new_page
-	self:updatePageLink()
 	self:updateBatteryState()
 end
 
@@ -367,6 +365,10 @@ function ReaderRolling:onGotoPage(number)
 	return true
 end
 
+--[[
+currently we don't need to get page links on each page/pos update
+since we can check link on the fly when tapping on the screen
+--]]
 function ReaderRolling:updatePageLink()
 	DEBUG("update page link")
 	local links = self.ui.document:getPageLinks()

@@ -61,8 +61,8 @@ function ReaderLink:onTap(arg, ges)
 			end
 		end
 	end
-	local pos = self.view:screenToPageTransform(ges.pos)
 	if self.ui.document.info.has_pages then
+		local pos = self.view:screenToPageTransform(ges.pos)
 		local page_links = self.ui.document:getPageLinks(pos.page)
 		--DEBUG("page links", page_links)
 		if page_links then
@@ -81,34 +81,20 @@ function ReaderLink:onTap(arg, ges)
 			end
 		end
 	else
-		if self.view.links then
-			for i = 1, #self.view.links do
-				local link = self.view.links[i]
-				-- enlarge tappable link box
-				local lbox = Geom:new{
-					x = link.start_x - Screen:scaleByDPI(15),
-					y = link.start_y - Screen:scaleByDPI(15),
-					w = link.end_x - link.start_x + Screen:scaleByDPI(30),
-					h = link.end_y - link.start_y > 0 
-					        and link.end_y - link.start_y + Screen:scaleByDPI(30) 
-					        or Screen:scaleByDPI(50),
-				}
-				if inside_box(pos, lbox) then
-					return self:onGotoLink(link)
-				end
-			end
+		local link = self.ui.document:getLinkFromPosition(ges.pos)
+		if link ~= "" then
+			return self:onGotoLink(link)
 		end
 	end
 end
 
 function ReaderLink:onGotoLink(link)
-	DEBUG("goto link", link)
 	if self.ui.document.info.has_pages then
 		table.insert(self.link_states, self.view.state.page)
 		self.ui:handleEvent(Event:new("PageUpdate", link.page + 1))
 	else
 		table.insert(self.link_states, self.ui.document:getXPointer())
-		self.document:gotoLink(link.section)
+		self.document:gotoLink(link)
 		self.ui:handleEvent(Event:new("UpdateXPointer"))
 	end
 	return true

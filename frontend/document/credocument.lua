@@ -233,6 +233,10 @@ function CreDocument:getPageLinks()
 	return self._document:getPageLinks()
 end
 
+function CreDocument:getLinkFromPosition(pos)
+	return self._document:getLinkFromPosition(pos.x, pos.y)
+end
+
 function Document:gotoPos(pos)
 	DEBUG("CreDocument: goto position", pos)
 	self._document:gotoPos(pos)
