@@ -53,9 +53,11 @@ end
 function ReaderLink:onTap(arg, ges)
 	if self.ui.document.info.has_pages then
 		local pos = self.view:screenToPageTransform(ges.pos)
-		local link = self.ui.document:getLinkFromPosition(pos.page, pos)
-		if link then
-			return self:onGotoLink(link)
+		if pos then
+			local link = self.ui.document:getLinkFromPosition(pos.page, pos)
+			if link then
+				return self:onGotoLink(link)
+			end
 		end
 	else
 		local link = self.ui.document:getLinkFromPosition(ges.pos)

@@ -34,7 +34,7 @@ function ReaderDictionary:stardictLookup(word, box)
 end
 
 function ReaderDictionary:showDict(results, box)
-	if results and results[1] then
+	if results and results[1] and box then
 		DEBUG("showing quick lookup dictionary window")
 		local align = nil
 		local region = Geom:new{x = 0, w = Screen:getWidth()}
