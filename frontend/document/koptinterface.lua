@@ -747,6 +747,41 @@ function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
 end
 
 --[[
+get link from position in screen page
+]]--
+function KoptInterface:getLinkFromPosition(doc, pageno, pos)
+	local function inside_box(pos, box)
+		if pos then
+			local x, y = pos.x, pos.y
+			if box.x <= x and box.y <= y 
+				and box.x + box.w >= x 
+				and box.y + box.h >= y then
+				return true
+			end
+		end
+	end
+	local page_links = doc:getPageLinks(pageno)
+	if page_links then
+		if doc.configurable.text_wrap == 1 then
+			pos = self:reflowToNativePosTransform(doc, pageno, pos, {x=0.5, y=0.5})
+		end
+		for i = 1, #page_links do
+			local link = page_links[i]
+			-- enlarge tappable link box
+			local lbox = Geom:new{
+				x = link.x0 - Screen:scaleByDPI(15),
+				y = link.y0 - Screen:scaleByDPI(15),
+				w = link.x1 - link.x0 + Screen:scaleByDPI(30),
+				h = link.y1 - link.y0 + Screen:scaleByDPI(30)
+			}
+			if inside_box(pos, lbox) and link.page then
+				return link
+			end
+		end
+	end
+end
+
+--[[
 transform position in native page to reflowed page
 ]]--
 function KoptInterface:nativeToReflowPosTransform(doc, pageno, pos)
