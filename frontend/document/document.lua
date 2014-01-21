@@ -177,6 +177,10 @@ function Document:getPageLinks(pageno)
 	return nil
 end
 
+function Document:getLinkFromPosition(pageno, pos)
+	return nil
+end
+
 function Document:getTextBoxes(pageno)
 	return nil
 end

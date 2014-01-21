@@ -30,7 +30,10 @@ function ReaderTypeset:onReadSettings(config)
 	-- default to enable floating punctuation
 	self.floating_punctuation = config:readSetting("floating_punctuation") or 1
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
-	
+	self:_setPageMargins()
+end
+
+function ReaderTypeset:_setPageMargins()
 	local copt_margins = self.ui.doc_settings:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
 	self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
 end
@@ -112,7 +115,10 @@ end
 function ReaderTypeset:toggleFloatingPunctuation()
 	self.floating_punctuation = self.floating_punctuation == 0 and 1 or 0
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
-	self.ui:handleEvent(Event:new("UpdatePos"))
+	--self.ui:handleEvent(Event:new("UpdatePos"))
+	-- workaround: set again things unset by crengine after changing floating punctuation
+	self.ui.document:setFontFace(self.ui.doc_settings:readSetting("font_face"))
+	self:_setPageMargins()
 end
 
 function ReaderTypeset:addToMainMenu(tab_item_table)
