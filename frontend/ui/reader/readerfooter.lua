@@ -77,6 +77,7 @@ function ReaderFooter:init()
 end
 
 function ReaderFooter:updateFooter()
+	if type(self.pageno) ~= "number" then return end
 	self.progress_bar.percentage = self.pageno / self.pages
 	if self.show_time then
 		self.progress_text.text = os.date("%H:%M")
