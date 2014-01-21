@@ -112,6 +112,10 @@ function PdfDocument:getPageLinks(pageno)
 	return links
 end
 
+function PdfDocument:getLinkFromPosition(pageno, pos)
+	return self.koptinterface:getLinkFromPosition(self, pageno, pos)
+end
+
 function PdfDocument:getPageBBox(pageno)
 	return self.koptinterface:getPageBBox(self, pageno)
 end

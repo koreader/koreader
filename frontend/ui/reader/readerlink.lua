@@ -51,34 +51,11 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(arg, ges)
-	local function inside_box(pos, box)
-		if pos then
-			local x, y = pos.x, pos.y
-			if box.x <= x and box.y <= y 
-				and box.x + box.w >= x 
-				and box.y + box.h >= y then
-				return true
-			end
-		end
-	end
 	if self.ui.document.info.has_pages then
 		local pos = self.view:screenToPageTransform(ges.pos)
-		local page_links = self.ui.document:getPageLinks(pos.page)
-		--DEBUG("page links", page_links)
-		if page_links then
-			for i = 1, #page_links do
-				local link = page_links[i]
-				-- enlarge tappable link box
-				local lbox = Geom:new{
-					x = link.x0 - Screen:scaleByDPI(15),
-					y = link.y0 - Screen:scaleByDPI(15),
-					w = link.x1 - link.x0 + Screen:scaleByDPI(30),
-					h = link.y1 - link.y0 + Screen:scaleByDPI(30)
-				}
-				if inside_box(pos, lbox) and link.page then
-					return self:onGotoLink(link)
-				end
-			end
+		local link = self.ui.document:getLinkFromPosition(pos.page, pos)
+		if link then
+			return self:onGotoLink(link)
 		end
 	else
 		local link = self.ui.document:getLinkFromPosition(ges.pos)
