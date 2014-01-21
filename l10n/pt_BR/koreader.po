@@ -4,14 +4,16 @@
 # Translators:
 # Antoine Kamel <antoine12@gmail.com>, 2013
 # Carcara <tiagoprudente@gmail.com>, 2013
+# thotypous, 2014
+# thotypous, 2014
 # Carcara <tiagoprudente@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2014-01-18 17:24+0000\n"
-"PO-Revision-Date: 2014-01-19 08:55+0000\n"
-"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
+"PO-Revision-Date: 2014-01-21 02:21+0000\n"
+"Last-Translator: thotypous\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/koreader/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -21,15 +23,15 @@ msgstr ""
 
 #: reader.lua:107
 msgid "-d               start in debug mode"
-msgstr "-d iniciar em modo de depuração"
+msgstr "-d               iniciar em modo de depuração"
 
 #: reader.lua:109
 msgid "-h               show this usage help"
-msgstr "-h mostrar esse guia de uso"
+msgstr "-h               mostrar esse guia de uso"
 
 #: reader.lua:108
 msgid "-p [rows]        enable Lua code profiling"
-msgstr "-p [rows] habilitar código Lua"
+msgstr "-p [linhas]      gerar perfil de desempenho do código Lua"
 
 #: frontend/ui/data/strings.lua:46
 msgid "0 deg"
@@ -122,11 +124,11 @@ msgstr "Contraste"
 
 #: frontend/apps/filemanager/filemanager.lua:133
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
 #: frontend/apps/filemanager/filemanager.lua:151
 msgid "Cut"
-msgstr ""
+msgstr "Cortar"
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
@@ -151,7 +153,7 @@ msgstr "Excluir"
 
 #: frontend/ui/input.lua:324
 msgid "Device model="
-msgstr ""
+msgstr "Modelo do dispositivo="
 
 #: frontend/ui/data/strings.lua:16
 msgid "Document Language"
@@ -171,7 +173,7 @@ msgstr "Estilo embutido"
 
 #: reader.lua:55
 msgid "File does not exist"
-msgstr ""
+msgstr "Arquivo inexistente"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
@@ -187,7 +189,7 @@ msgstr "Ajuste Fino"
 
 #: frontend/ui/input.lua:326
 msgid "Firmware revision"
-msgstr ""
+msgstr "Versão do firmware"
 
 #: frontend/ui/data/strings.lua:23
 msgid "Font weight"
@@ -262,19 +264,19 @@ msgstr "Indentação"
 
 #: frontend/ui/reader/readerhighlight.lua:145
 msgid "Invert"
-msgstr ""
+msgstr "Inverter"
 
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
-msgstr ""
+msgstr "ED"
 
 #: frontend/ui/language.lua:31
 msgid "Language"
-msgstr ""
+msgstr "Língua"
 
 #: frontend/ui/reader/readerhighlight.lua:133
 msgid "Lighten"
-msgstr ""
+msgstr "Brilhar"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
@@ -319,7 +321,7 @@ msgstr "Margem da Página"
 
 #: frontend/apps/filemanager/filemanager.lua:140
 msgid "Paste"
-msgstr ""
+msgstr "Colar"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:77
 #: frontend/ui/reader/readermenu.lua:75
@@ -330,11 +332,11 @@ msgstr "Reporte falhas em https://github.com/koreader/ koreader/issues. Clique n
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
-msgstr ""
+msgstr "Por favor reinicie o leitor para que a tradução tenha efeito."
 
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
-msgstr ""
+msgstr "DE"
 
 #: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
@@ -358,11 +360,11 @@ msgstr "Modo de Tela"
 
 #: frontend/ui/input.lua:328
 msgid "Screen height ="
-msgstr ""
+msgstr "Altura da tela="
 
 #: frontend/ui/input.lua:330
 msgid "Screen width ="
-msgstr ""
+msgstr "Largura da tela="
 
 #: frontend/ui/data/strings.lua:8
 msgid "Scroll Mode"
@@ -387,7 +389,7 @@ msgstr "Mudar tamanho de fonte para "
 
 #: frontend/ui/reader/readerhighlight.lua:124
 msgid "Set highlight drawer "
-msgstr ""
+msgstr "Escolher estilo de realce "
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
@@ -407,11 +409,11 @@ msgstr "Mudar o zoom"
 
 #: frontend/ui/data/strings.lua:57
 msgid "TBLTR"
-msgstr ""
+msgstr "CBED"
 
 #: frontend/ui/data/strings.lua:56
 msgid "TBRTL"
-msgstr ""
+msgstr "CBDE"
 
 #: frontend/ui/reader/readertoc.lua:95
 msgid "Table of Contents"
@@ -451,28 +453,28 @@ msgstr "Traduzir"
 
 #: frontend/ui/reader/readertypeset.lua:127
 msgid "Turn off floating punctuation"
-msgstr ""
+msgstr "Desabilitar pontuação flutuante"
 
 #: frontend/ui/reader/readerpaging.lua:153
 msgid "Turn off page overlap"
-msgstr ""
+msgstr "Não clarear áreas já lidas"
 
 #: frontend/ui/reader/readertypeset.lua:128
 msgid "Turn on floating punctuation"
-msgstr ""
+msgstr "Habilitar pontuação flutuante"
 
 #: frontend/ui/reader/readerpaging.lua:154
 msgid "Turn on page overlap"
-msgstr ""
+msgstr "Clarear áreas já lidas"
 
 #: frontend/ui/reader/readerhighlight.lua:139
 msgid "Underscore"
-msgstr ""
+msgstr "Sublinhar"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
 #: frontend/ui/reader/readermenu.lua:80
 msgid "Version"
-msgstr ""
+msgstr "Versão"
 
 #: frontend/ui/data/strings.lua:17
 msgid "Vertical Text"
@@ -488,11 +490,11 @@ msgstr "Vácuo entre palavras"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
-msgstr ""
+msgstr "Direção de escrita"
 
 #: frontend/ui/reader/readerscreenshot.lua:31
 msgid "Writing screen to "
-msgstr ""
+msgstr "Gravando a tela em "
 
 #: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
@@ -520,7 +522,7 @@ msgstr "Zoom na largura da página"
 
 #: frontend/ui/data/strings.lua:31
 msgid "auto"
-msgstr "automático"
+msgstr "auto"
 
 #: frontend/ui/widget/confirmbox.lua:37
 msgid "cancel"
@@ -731,7 +733,7 @@ msgstr "ligado"
 
 #: reader.lua:60
 msgid "opening file"
-msgstr ""
+msgstr "abrindo o arquivo "
 
 #: frontend/ui/data/strings.lua:53
 msgid "page"
