@@ -47,7 +47,7 @@ local GestureDetector = {
 	-- all the time parameters are in us
 	DOUBLE_TAP_INTERVAL = 300 * 1000,
 	TWO_FINGER_TAP_DURATION = 300 * 1000,
-	HOLD_INTERVAL = 1000 * 1000,
+	HOLD_INTERVAL = 500 * 1000,
 	SWIPE_INTERVAL = 900 * 1000,
 	-- distance parameters
 	DOUBLE_TAP_DISTANCE = 50 * Screen:getDPI() / 167,
