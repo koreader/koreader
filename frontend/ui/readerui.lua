@@ -222,11 +222,12 @@ function ReaderUI:init()
 			ui = self
 		})
 		-- font menu
-		table.insert(self, ReaderFont:new{
+		self.font = ReaderFont:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		})
+		}
+		table.insert(self, self.font) -- hold reference to font menu
 		table.insert(self, ReaderHyphenation:new{
 			dialog = self.dialog,
 			view = self[1],
