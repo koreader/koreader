@@ -34,7 +34,9 @@ function ReaderTypeset:onReadSettings(config)
 end
 
 function ReaderTypeset:_setPageMargins()
-	local copt_margins = self.ui.doc_settings:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
+	local copt_margins = self.ui.document.configurable.page_margins or
+		self.ui.doc_settings:readSetting("copt_page_margins") or
+		DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM
 	self.ui:handleEvent(Event:new("SetPageMargins", copt_margins))
 end
 
@@ -117,7 +119,8 @@ function ReaderTypeset:toggleFloatingPunctuation()
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
 	--self.ui:handleEvent(Event:new("UpdatePos"))
 	-- workaround: set again things unset by crengine after changing floating punctuation
-	self.ui.document:setFontFace(self.ui.doc_settings:readSetting("font_face"))
+	self.ui.document:setFontFace(self.ui.font.font_face or
+		self.ui.doc_settings:readSetting("font_face"))
 	self:_setPageMargins()
 end
 
