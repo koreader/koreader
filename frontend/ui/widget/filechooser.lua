@@ -63,7 +63,11 @@ end
 function FileChooser:changeToPath(path)
 	path = util.realpath(path)
 	self.path = path
-	self:swithItemTable(nil, self:genItemTableFromPath(path))
+	self:refreshPath()
+end
+
+function FileChooser:refreshPath()
+	self:swithItemTable(nil, self:genItemTableFromPath(self.path))
 end
 
 function FileChooser:toggleHiddenFiles()

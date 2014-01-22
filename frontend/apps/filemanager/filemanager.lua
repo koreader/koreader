@@ -92,7 +92,7 @@ function FileManager:init()
 						enabled = fileManager.clipboard and true or false,
 						callback = function()
 							pasteHere(file)
-							self:changeToPath(util.realpath(file):match("(.*/)"))
+							self:refreshPath()
 							UIManager:close(self.file_dialog)
 						end,
 					},
@@ -110,7 +110,7 @@ function FileManager:init()
 						callback = function()
 							local path = util.realpath(file)
 							deleteFile(file)
-							self:changeToPath(path:match("(.*/)"))
+							self:refreshPath()
 							UIManager:close(self.file_dialog)
 						end,
 					},
