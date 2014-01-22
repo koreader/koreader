@@ -16,6 +16,11 @@ function ReaderLink:init()
 	end
 end
 
+function ReaderLink:onReadSettings(config)
+	-- called when loading new document
+	self.link_states = {}
+end
+
 function ReaderLink:initGesListener()
 	if Device:isTouchDevice() then
 		self.ges_events = {
