@@ -1,70 +1,20 @@
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local DocumentRegistry = require("document/documentregistry")
 local TextWidget = require("ui/widget/textwidget")
 local FileChooser = require("ui/widget/filechooser")
 local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local ButtonTable = require("ui/widget/buttontable")
-local GestureRange = require("ui/gesturerange")
+local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
-local Input = require("ui/input")
 local Font = require("ui/font")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
-local Device = require("ui/device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
-local FileDialog = InputContainer:new{
-	buttons = nil,
-	tap_close_callback = nil,
-}
-
-function FileDialog:init()
-	if Device:hasKeyboard() then
-		self.key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	else
-		self.ges_events.TapClose = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
-		}
-	end
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			ButtonTable:new{
-				width = Screen:getWidth()*0.9,
-				buttons = self.buttons,
-			},
-			background = 0,
-			bordersize = 2,
-			radius = 7,
-			padding = 2,
-		}
-	}
-end
-
-function FileDialog:onTapClose()
-	UIManager:close(self)
-	if self.tap_close_callback then
-		self.tap_close_callback()
-	end
-	return true
-end
 
 local FileManager = InputContainer:extend{
 	title = _("FileManager"),
@@ -127,7 +77,7 @@ function FileManager:init()
 	
 	function file_chooser:onFileHold(file)
 		--DEBUG("hold file", file)
-		self.file_dialog = FileDialog:new{
+		self.file_dialog = ButtonDialog:new{
 			buttons = {
 				{
 					{
