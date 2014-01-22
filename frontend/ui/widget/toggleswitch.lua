@@ -14,12 +14,13 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ToggleLabel = TextWidget:new{
+	bold = true,
 	bgcolor = 0,
 	fgcolor = 1,
 }
 
 function ToggleLabel:paintTo(bb, x, y)
-	RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bgcolor, self.fgcolor)
+	RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bold, self.bgcolor, self.fgcolor)
 end
 
 local ToggleSwitch = InputContainer:new{

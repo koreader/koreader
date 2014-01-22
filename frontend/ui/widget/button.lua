@@ -34,6 +34,7 @@ function Button:init()
 			text = self.text,
 			bgcolor = 0.0,
 			fgcolor = self.enabled and 1.0 or 0.5,
+			bold = true,
 			face = Font:getFace(self.text_font_face, self.text_font_size)
 		}
 	else

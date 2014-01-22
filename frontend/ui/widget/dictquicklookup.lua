@@ -85,6 +85,7 @@ function DictQuickLookup:update()
 		TextWidget:new{
 			text = self.dictionary,
 			face = self.title_face,
+			bold = true,
 			width = self.width - self.button_padding,
 		}
 	}
@@ -96,6 +97,7 @@ function DictQuickLookup:update()
 		TextBoxWidget:new{
 			text = self.lookupword,
 			face = self.word_face,
+			bold = true,
 			width = self.width,
 		},
 	}
