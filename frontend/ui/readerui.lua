@@ -228,11 +228,13 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, self.font) -- hold reference to font menu
-		table.insert(self, ReaderHyphenation:new{
+		-- hyphenation menu
+		self.hyphenation = ReaderHyphenation:new{
 			dialog = self.dialog,
 			view = self[1],
 			ui = self
-		})
+		}
+		table.insert(self, self.hyphenation) -- hold reference to hyphenation menu
 		-- rolling controller
 		table.insert(self, ReaderRolling:new{
 			dialog = self.dialog,
