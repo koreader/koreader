@@ -172,8 +172,10 @@ end
 
 function FileManager:pasteHere(file)
 	if self.clipboard then
+		file = util.realpath(file)
 		local orig = util.realpath(self.clipboard)
-		local dest = util.realpath(file):match("(.*/)")
+		local dest = lfs.attributes(file, "mode") == "directory" and
+			file or file:match("(.*/)")
 		if self.cutfile then
 			util.execute("/bin/mv", orig, dest)
 		else
