@@ -135,9 +135,10 @@ end
 
 function CreDocument:getWordFromPosition(pos)
 	local word_box = self._document:getWordFromPosition(pos.x, pos.y)
+	local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y)
 	if word_box.word then
 		return {
-			word = word_box.word,
+			word = text_range.text == "" and word_box.word or text_range.text,
 			page = self._document:getCurrentPage(),
 			sbox = Geom:new{
 				x = word_box.x0, y = word_box.y0,
@@ -156,7 +157,7 @@ function CreDocument:getTextFromPositions(pos0, pos1)
         text = text_range.text,
         pos0 = text_range.pos0,
         pos1 = text_range.pos1,
-        sboxes = line_boxes,     -- boxes on screen
+        --sboxes = line_boxes,     -- boxes on screen
     }
 end
 
@@ -271,6 +272,10 @@ function CreDocument:setFontFace(new_font_face)
 		DEBUG("CreDocument: set font face", new_font_face)
 		self._document:setFontFace(new_font_face)
 	end
+end
+
+function CreDocument:clearSelection()
+	self._document:clearSelection()
 end
 
 function CreDocument:getFontSize()

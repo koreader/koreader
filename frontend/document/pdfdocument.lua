@@ -1,7 +1,6 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
-local KoptInterface = require("document/koptinterface")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
 local DrawContext = require("ffi/drawcontext")
@@ -12,11 +11,12 @@ local PdfDocument = Document:new{
 	mupdf_cache_size = 5 * 1024 * 1024,
 	dc_null = DrawContext.new(),
 	options = KoptOptions,
-	koptinterface = KoptInterface,
+	koptinterface = nil,
 }
 
 function PdfDocument:init()
-	require "libs/libkoreader-pdf"
+	local pdf = require("libs/libkoreader-pdf")
+	self.koptinterface = require("document/koptinterface")
 	self.configurable:loadDefaults(self.options)
 	local ok
 	ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)

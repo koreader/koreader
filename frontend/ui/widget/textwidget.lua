@@ -9,6 +9,7 @@ A TextWidget puts a string on a single line
 local TextWidget = Widget:new{
 	text = nil,
 	face = nil,
+	bold = nil,
 	bgcolor = 0.0, -- [0.0, 1.0]
 	fgcolor = 1.0, -- [0.0, 1.0]
 	_bb = nil,
@@ -20,7 +21,7 @@ local TextWidget = Widget:new{
 --function TextWidget:_render()
 	--local h = self.face.size * 1.3
 	--self._bb = Blitbuffer.new(self._maxlength, h)
-	--self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, self.color)
+	--self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, true, self.bold)
 --end
 
 function TextWidget:getSize()
@@ -28,7 +29,7 @@ function TextWidget:getSize()
 		--self:_render()
 	--end
 	--return { w = self._length, h = self._bb:getHeight() }
-	local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true)
+	local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
 	if not tsize then
 		return Geom:new{}
 	end
@@ -46,8 +47,8 @@ function TextWidget:paintTo(bb, x, y)
 	--end
 	--bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
 	--@TODO Don't use kerning for monospaced fonts.    (houqp)
-	RenderText:renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text,
-					true, self.bgcolor, self.fgcolor, self.width)
+	RenderText:renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true, self.bold,
+				self.bgcolor, self.fgcolor, self.width)
 end
 
 function TextWidget:free()

@@ -9,7 +9,7 @@ FixedTextWidget
 local FixedTextWidget = TextWidget:new{}
 
 function FixedTextWidget:getSize()
-	local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true)
+	local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
 	if not tsize then
 		return Geom:new{}
 	end
@@ -22,8 +22,8 @@ function FixedTextWidget:getSize()
 end
 
 function FixedTextWidget:paintTo(bb, x, y)
-	RenderText:renderUtf8Text(bb, x, y+self._height, self.face, self.text,
-					true, self.bgcolor, self.fgcolor)
+	RenderText:renderUtf8Text(bb, x, y+self._height, self.face, self.text, true, self.bold,
+				self.bgcolor, self.fgcolor)
 end
 
 return FixedTextWidget

@@ -2,7 +2,6 @@ local Geom = require("ui/geometry")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
-local KoptInterface = require("document/koptinterface")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
 local DrawContext = require("ffi/drawcontext")
@@ -13,7 +12,7 @@ local DjvuDocument = Document:new{
 	djvulibre_cache_size = nil,
 	dc_null = DrawContext.new(),
 	options = KoptOptions,
-	koptinterface = KoptInterface,
+	koptinterface = nil,
 }
 
 -- check DjVu magic string to validate
@@ -27,7 +26,8 @@ local function validDjvuFile(filename)
 end
 
 function DjvuDocument:init()
-	require "libs/libkoreader-djvu"
+	local djvu = require("libs/libkoreader-djvu")
+	self.koptinterface = require("document/koptinterface")
 	self.configurable:loadDefaults(self.options)
 	if not validDjvuFile(self.file) then
 		self.error_message = "Not a valid DjVu file"
