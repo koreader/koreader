@@ -11,6 +11,7 @@ A TextWidget that handles long text wrapping
 local TextBoxWidget = Widget:new{
 	text = nil,
 	face = nil,
+	bold = nil,
 	bgcolor = 0.0, -- [0.0, 1.0]
 	fgcolor = 1.0, -- [0.0, 1.0]
 	width = 400, -- in pixels
@@ -115,7 +116,7 @@ function TextBoxWidget:_getVerticalList(alg)
 				for w in word:gsplit("%p+", true) do
 					local word_box = {}
 					word_box.word = w
-					word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true).x
+					word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true, self.bold).x
 					table.insert(h_list, word_box)
 				end
 			end
@@ -215,8 +216,7 @@ function TextBoxWidget:_render(v_list)
 		for _,w in ipairs(l) do
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
 			-- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-			RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true,
-						   self.bgcolor, self.fgcolor)
+			RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true, self.bold, self.bgcolor, self.fgcolor)
 			pen_x = pen_x + w.width
 		end
 		y = y + line_height_px + font_height
