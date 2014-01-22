@@ -159,9 +159,13 @@ end
 
 function ReaderHighlight:onTap(arg, ges)
 	if self.hold_pos then
-		self.view.highlight.temp[self.hold_pos.page] = nil
-		UIManager:setDirty(self.dialog, "partial")
+		if self.ui.document.info.has_pages then
+			self.view.highlight.temp[self.hold_pos.page] = nil
+		else
+			self.ui.document:clearSelection()
+		end
 		self.hold_pos = nil
+		UIManager:setDirty(self.dialog, "partial")
 		return true
 	end
 	if self.ui.document.info.has_pages then
@@ -260,9 +264,11 @@ function ReaderHighlight:onHold(arg, ges)
 	self.selected_word = self.ui.document:getWordFromPosition(self.hold_pos)
 	DEBUG("selected word:", self.selected_word)
 	if self.selected_word then
-		local boxes = {}
-		table.insert(boxes, self.selected_word.sbox)
-		self.view.highlight.temp[self.hold_pos.page] = boxes
+		if self.ui.document.info.has_pages then
+			local boxes = {}
+			table.insert(boxes, self.selected_word.sbox)
+			self.view.highlight.temp[self.hold_pos.page] = boxes
+		end
 		UIManager:setDirty(self.dialog, "partial")
 	end
 	return true
