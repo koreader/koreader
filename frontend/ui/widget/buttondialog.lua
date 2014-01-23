@@ -8,6 +8,7 @@ local Geom = require("ui/geometry")
 local Input = require("ui/input")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
+local _ = require("gettext")
 
 local ButtonDialog = InputContainer:new{
 	buttons = nil,
