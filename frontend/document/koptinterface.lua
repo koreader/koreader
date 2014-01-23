@@ -75,7 +75,14 @@ function KoptInterface:createContext(doc, pageno, bbox)
 	kc:setDefectSize(doc.configurable.defect_size)
 	kc:setLineSpacing(doc.configurable.line_spacing)
 	kc:setWordSpacing(doc.configurable.word_spacing)
-	if bbox then kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1) end
+	if bbox then
+		if bbox.x0 >= bbox.x1 or bbox.y0 >= bbox.y1 then
+			local page_size = Document.getNativePageDimensions(doc, pageno)
+			bbox.x0, bbox.y0 = 0, 0
+			bbox.x1, bbox.y1 = page_size.w, page_size.h
+		end
+		kc:setBBox(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+	end
 	if DEBUG.is_on then kc:setDebug() end
 	return kc
 end
