@@ -119,8 +119,8 @@ function ReaderTypeset:toggleFloatingPunctuation()
 	self.ui.document:setFloatingPunctuation(self.floating_punctuation)
 	--self.ui:handleEvent(Event:new("UpdatePos"))
 	-- workaround: set again things unset by crengine after changing floating punctuation
-	self.ui.document:setFontFace(self.ui.font.font_face or
-		self.ui.doc_settings:readSetting("font_face"))
+	self.ui.document:setFontFace(self.ui.font.font_face)
+	self.ui.document:setInterlineSpacePercent(self.ui.font.line_space_percent)
 	cre.setHyphDictionary(self.ui.hyphenation.hyph_alg)
 	self:_setPageMargins()
 end
