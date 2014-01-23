@@ -1,62 +1,13 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
-local ButtonTable = require("ui/widget/buttontable")
-local Input = require("ui/input")
+local ButtonDialog = require("ui/widget/buttondialog")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
-local HighlightDialog = InputContainer:new{
-	buttons = nil,
-	tap_close_callback = nil,
-}
-
-function HighlightDialog:init()
-	if Device:hasKeyboard() then
-		self.key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	else
-		self.ges_events.TapClose = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
-		}
-	end
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			ButtonTable:new{
-				width = Screen:getWidth()*0.9,
-				buttons = self.buttons,
-			},
-			background = 0,
-			bordersize = 2,
-			radius = 7,
-			padding = 2,
-		}
-	}
-end
-
-function HighlightDialog:onTapClose()
-	UIManager:close(self)
-	if self.tap_close_callback then
-		self.tap_close_callback()
-	end
-	return true
-end
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -228,7 +179,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
-	self.edit_highlight_dialog = HighlightDialog:new{
+	self.edit_highlight_dialog = ButtonDialog:new{
 		buttons = {
 			{
 				{
@@ -327,7 +278,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
 		self.selected_word = nil
 	elseif self.selected_text then
 		DEBUG("show highlight dialog")
-		self.highlight_dialog = HighlightDialog:new{
+		self.highlight_dialog = ButtonDialog:new{
 			buttons = {
 				{
 					{
