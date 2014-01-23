@@ -212,9 +212,10 @@ function ReaderHighlight:onHold(arg, ges)
 		return true
 	end
 
-	self.selected_word = self.ui.document:getWordFromPosition(self.hold_pos)
-	DEBUG("selected word:", self.selected_word)
-	if self.selected_word then
+	local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
+	if ok and word then
+		DEBUG("selected word:", word)
+		self.selected_word = word
 		if self.ui.document.info.has_pages then
 			local boxes = {}
 			table.insert(boxes, self.selected_word.sbox)
