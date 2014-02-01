@@ -321,6 +321,11 @@ function ReaderRolling:onSetDimensions()
 	end
 end
 
+function ReaderRolling:onChangeScreenMode(mode)
+	self.ui:handleEvent(Event:new("SetScreenMode", mode))
+	self:onChangeViewMode()
+end
+
 --[[
 	PosUpdate event is used to signal other widgets that pos has been changed.
 --]]
