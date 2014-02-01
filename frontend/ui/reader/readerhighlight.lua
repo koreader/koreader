@@ -349,18 +349,22 @@ function ReaderHighlight:saveHighlight()
 		hl_item["text"] = self.selected_text.text
 		hl_item["pos0"] = self.selected_text.pos0
 		hl_item["pos1"] = self.selected_text.pos1
+		hl_item["pboxes"] = self.selected_text.pboxes
 		hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S")
 		hl_item["drawer"] = self.view.highlight.saved_drawer
 		table.insert(self.view.highlight.saved[page], hl_item)
 		if self.selected_text.text ~= "" then
 			self:exportToClippings(page, hl_item)
 		end
+		if self.selected_text.pboxes then
+			self:exportToDocument(page, hl_item)
+		end
 	end
 	--DEBUG("saved hightlights", self.view.highlight.saved[page])
 end
 
 function ReaderHighlight:exportToClippings(page, item)
-	DEBUG("export highlight", item)
+	DEBUG("export highlight to clippings", item)
 	local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
 	if clippings and item.text then
 		local current_locale = os.setlocale()
@@ -373,6 +377,11 @@ function ReaderHighlight:exportToClippings(page, item)
 		clippings:close()
 		os.setlocale(current_locale)
 	end
+end
+
+function ReaderHighlight:exportToDocument(page, item)
+	DEBUG("export highlight to document", item)
+	self.ui.document:saveHighlight(page, item)
 end
 
 function ReaderHighlight:addNote()

@@ -4,6 +4,40 @@ local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
 local Configurable = require("ui/reader/configurable")
 local DrawContext = require("ffi/drawcontext")
+local ffi = require("ffi")
+ffi.cdef[[
+typedef struct fz_point_s fz_point;
+struct fz_point_s {
+	float x, y;
+};
+typedef enum {
+	FZ_ANNOT_TEXT,
+	FZ_ANNOT_LINK,
+	FZ_ANNOT_FREETEXT,
+	FZ_ANNOT_LINE,
+	FZ_ANNOT_SQUARE,
+	FZ_ANNOT_CIRCLE,
+	FZ_ANNOT_POLYGON,
+	FZ_ANNOT_POLYLINE,
+	FZ_ANNOT_HIGHLIGHT,
+	FZ_ANNOT_UNDERLINE,
+	FZ_ANNOT_SQUIGGLY,
+	FZ_ANNOT_STRIKEOUT,
+	FZ_ANNOT_STAMP,
+	FZ_ANNOT_CARET,
+	FZ_ANNOT_INK,
+	FZ_ANNOT_POPUP,
+	FZ_ANNOT_FILEATTACHMENT,
+	FZ_ANNOT_SOUND,
+	FZ_ANNOT_MOVIE,
+	FZ_ANNOT_WIDGET,
+	FZ_ANNOT_SCREEN,
+	FZ_ANNOT_PRINTERMARK,
+	FZ_ANNOT_TRAPNET,
+	FZ_ANNOT_WATERMARK,
+	FZ_ANNOT_3D
+} fz_annot_type;
+]]
 
 local PdfDocument = Document:new{
 	_document = false,
@@ -12,6 +46,7 @@ local PdfDocument = Document:new{
 	dc_null = DrawContext.new(),
 	options = KoptOptions,
 	koptinterface = nil,
+	annot_revision = 0,
 }
 
 function PdfDocument:init()
@@ -110,6 +145,44 @@ function PdfDocument:getPageLinks(pageno)
 	})
 	page:close()
 	return links
+end
+
+function PdfDocument:saveHighlight(pageno, item)
+	self.annot_revision = self.annot_revision + 1
+	local n = #item.pboxes
+	local quadpoints = ffi.new("fz_point[?]", 4*n)
+	for i=1, n do
+		quadpoints[4*i-4].x = item.pboxes[i].x + item.pboxes[i].w
+		quadpoints[4*i-4].y = item.pboxes[i].y + item.pboxes[i].h
+		quadpoints[4*i-3].x = item.pboxes[i].x
+		quadpoints[4*i-3].y = item.pboxes[i].y + item.pboxes[i].h
+		quadpoints[4*i-2].x = item.pboxes[i].x
+		quadpoints[4*i-2].y = item.pboxes[i].y
+		quadpoints[4*i-1].x = item.pboxes[i].x + item.pboxes[i].w
+		quadpoints[4*i-1].y = item.pboxes[i].y
+	end
+	local page = self._document:openPage(pageno)
+	local annot_type = ffi.C.FZ_ANNOT_HIGHLIGHT
+	if item.drawer == "lighten" then
+		annot_type = ffi.C.FZ_ANNOT_HIGHLIGHT
+	elseif item.drawer == "underscore" then
+		annot_type = ffi.C.FZ_ANNOT_UNDERLINE
+	elseif item.drawer == "strikeout" then
+		annot_type = ffi.C.FZ_ANNOT_STRIKEOUT
+	end
+	page:addMarkupAnnotation(quadpoints, 4*n, annot_type)
+	page:close()
+end
+
+function PdfDocument:writeDocument()
+	self._document:writeDocument(self.file)
+end
+
+function PdfDocument:close()
+	if self.annot_revision ~= 0 then
+		self:writeDocument()
+	end
+	Document.close(self)
 end
 
 function PdfDocument:getLinkFromPosition(pageno, pos)
