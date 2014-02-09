@@ -19,8 +19,8 @@ function ReaderTypeset:onReadSettings(config)
 	if self.css and self.css ~= "" then
 		self.ui.document:setStyleSheet(self.css)
 	else
-		self.ui.document:setStyleSheet("")
-		self.css = nil
+		self.ui.document:setStyleSheet(self.ui.document.default_css)
+		self.css = self.ui.document.default_css
 	end
 
 	-- default to enable embedded css
