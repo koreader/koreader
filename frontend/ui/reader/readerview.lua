@@ -369,7 +369,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
 					end
 				end -- end for each box
 			end -- end if boxes
-		end -- end for each hightlight
+		end -- end for each highlight
 	end -- end for each page
 end
 
@@ -389,7 +389,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
 					end
 				end -- end for each box
 			end -- end if boxes
-		end -- end for each hightlight
+		end -- end for each highlight
 	end -- end for all saved highlight
 end
 

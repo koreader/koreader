@@ -27,7 +27,7 @@ local CreOptions = {
 				args = {"portrait", "landscape"},
 				default_arg = "portrait",
 				current_func = function() return Screen:getScreenMode() end,
-				event = "SetScreenMode",
+				event = "ChangeScreenMode",
 			}
 		}
 	},

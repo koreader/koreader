@@ -290,6 +290,10 @@ function Document:getPageText(pageno)
 	return text
 end
 
+function Document:saveHighlight(pageno, item)
+	return nil
+end
+
 --[[
 helper functions
 --]]
