@@ -126,9 +126,9 @@ local CreOptions = {
 				name_text = S.PROGRESS_BAR,
 				toggle = {S.FULL, S.MINI},
 				values = {0, 1},
-				default_value = 0,
+				default_value = DCREREADER_PROGRESS_BAR,
 				args = {0, 1},
-				default_arg = 0,
+				default_arg = DCREREADER_PROGRESS_BAR,
 				event = "SetStatusLine",
 			},
 			{

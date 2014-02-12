@@ -21,7 +21,7 @@ function ReaderCoptListener:onReadSettings(config)
 	    end)
 	end
 	
-	local status_line = config:readSetting("copt_status_line") or 0
+	local status_line = config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR
 	self.document:setStatusLineProp(status_line)
 end
 

@@ -126,7 +126,7 @@ function ReaderFooter:onTapFooter(arg, ges)
 	end
 	UIManager:setDirty(self.view.dialog, "partial")
 	-- consume this tap when footer is visible
-	if self.visible then
+	if self.view.footer_visible then
 		return true
 	end
 end

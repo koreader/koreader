@@ -98,6 +98,11 @@ DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {5, 10, 5, 10}
 DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {10, 15, 10, 15}
 DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {20, 20, 20, 20}
 
+-- crereader progress bar
+-- 0 for top "full" progress bar
+-- 1 for bottom "mini" progress bar
+DCREREADER_PROGRESS_BAR = 1
+
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 
