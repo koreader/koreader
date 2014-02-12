@@ -122,6 +122,16 @@ local CreOptions = {
 				event = "SetViewMode",
 			},
 			{
+				name = "status_line",
+				name_text = S.PROGRESS_BAR,
+				toggle = {S.FULL, S.MINI},
+				values = {0, 1},
+				default_value = DCREREADER_PROGRESS_BAR,
+				args = {0, 1},
+				default_arg = DCREREADER_PROGRESS_BAR,
+				event = "SetStatusLine",
+			},
+			{
 				name = "embedded_css",
 				name_text = S.EMBEDDED_STYLE,
 				toggle = {S.ON, S.OFF},

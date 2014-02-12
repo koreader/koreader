@@ -107,7 +107,7 @@ function ReaderZooming:onReadSettings(config)
 	if not zoom_mode then
 		zoom_mode = self.DEFAULT_ZOOM_MODE
 	end
-	self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
+	self:setZoomMode(zoom_mode)
 end
 
 function ReaderZooming:onSaveSettings()

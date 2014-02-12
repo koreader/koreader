@@ -20,6 +20,9 @@ function ReaderCoptListener:onReadSettings(config)
 	        self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
 	    end)
 	end
+	
+	local status_line = config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR
+	self.document:setStatusLineProp(status_line)
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
