@@ -13,7 +13,7 @@ local ReaderView = OverlapGroup:new{
 
 	-- single page state
 	state = {
-		page = 0,
+		page = nil,
 		pos = 0,
 		zoom = 1.0,
 		rotation = 0,
@@ -422,7 +422,7 @@ This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
 	local page_size = nil
-	if self.ui.document.info.has_pages then
+	if self.ui.document.info.has_pages and self.state.page then
 		self.page_area = self:getPageArea(
 			self.state.page,
 			self.state.zoom,
@@ -547,24 +547,17 @@ end
 
 function ReaderView:onReadSettings(config)
 	self.render_mode = config:readSetting("render_mode") or 0
-	local screen_mode = config:readSetting("screen_mode")
+	local screen_mode = config:readSetting("screen_mode") or "portrait"
 	if screen_mode then
 		Screen:setScreenMode(screen_mode)
-	    table.insert(self.ui.postInitCallback, function()
-	        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"))
-	    end)
+	    self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"))
 	end
 	self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
-	local full_screen = config:readSetting("kopt_full_screen")
-	if full_screen == nil then
-		full_screen = self.document.configurable.full_screen
-	end
-	self.footer_visible = full_screen == 0 and true or false
+	local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
+	local status_line = config:readSetting("copt_status_line") or self.document.configurable.status_line
+	self.footer_visible = (full_screen == 0 or status_line == 1) and true or false
 	self:resetLayout()
-	local page_scroll = config:readSetting("kopt_page_scroll")
-	if page_scroll == nil then
-		page_scroll = self.document.configurable.page_scroll
-	end
+	local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
 	self.page_scroll = page_scroll == 1 and true or false
 	self.highlight.saved = config:readSetting("highlight") or {}
 end

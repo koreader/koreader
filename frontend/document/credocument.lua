@@ -362,6 +362,11 @@ function CreDocument:isXPointerInCurrentPage(xp)
 	return self._document:isXPointerInCurrentPage(xp)
 end
 
+function CreDocument:setStatusLineProp(prop)
+	DEBUG("CreDocument: set status line property", prop)
+	self._document:setStringProperty("window.status.line", prop)
+end
+
 function CreDocument:register(registry)
 	registry:addProvider("txt", "application/txt", self)
 	registry:addProvider("epub", "application/epub", self)

@@ -40,21 +40,21 @@ local KoptOptions = {
 		icon = "resources/icons/appbar.column.two.large.png",
 		options = {
 			{
-				name = "full_screen",
-				name_text = S.FULL_SCREEN,
-				toggle = {S.ON, S.OFF},
-				values = {1, 0},
-				default_value = DFULL_SCREEN,
-				event = "SetFullScreen",
-				args = {true, false},
-			},
-			{
 				name = "page_scroll",
 				name_text = S.SCROLL_MODE,
 				toggle = {S.ON, S.OFF},
 				values = {1, 0},
 				default_value = DSCROLL_MODE,
 				event = "ToggleScrollMode",
+				args = {true, false},
+			},
+			{
+				name = "full_screen",
+				name_text = S.PROGRESS_BAR,
+				toggle = {S.OFF, S.ON},
+				values = {1, 0},
+				default_value = DFULL_SCREEN,
+				event = "SetFullScreen",
 				args = {true, false},
 			},
 			{

@@ -122,6 +122,16 @@ local CreOptions = {
 				event = "SetViewMode",
 			},
 			{
+				name = "status_line",
+				name_text = S.PROGRESS_BAR,
+				toggle = {S.FULL, S.MINI},
+				values = {0, 1},
+				default_value = 0,
+				args = {0, 1},
+				default_arg = 0,
+				event = "SetStatusLine",
+			},
+			{
 				name = "embedded_css",
 				name_text = S.EMBEDDED_STYLE,
 				toggle = {S.ON, S.OFF},

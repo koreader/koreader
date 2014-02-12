@@ -63,7 +63,7 @@ function ReaderFooter:init()
 	self.dimen = self[1]:getSize()
 	self.pageno = self.view.state.page
 	self.pages = self.view.document.info.number_of_pages
-	self:updateFooter()
+	self:updateFooterPage()
 	if Device:isTouchDevice() then
 		self.ges_events = {
 			TapFooter = {
@@ -76,9 +76,10 @@ function ReaderFooter:init()
 	end
 end
 
-function ReaderFooter:updateFooter()
+function ReaderFooter:updateFooterPage()
 	if type(self.pageno) ~= "number" then return end
 	self.progress_bar.percentage = self.pageno / self.pages
+	
 	if self.show_time then
 		self.progress_text.text = os.date("%H:%M")
 	else
@@ -86,10 +87,27 @@ function ReaderFooter:updateFooter()
 	end
 end
 
+function ReaderFooter:updateFooterPos()
+	if type(self.position) ~= "number" then return end
+	self.progress_bar.percentage = self.position / self.doc_height
+	
+	if self.show_time then
+		self.progress_text.text = os.date("%H:%M")
+	else
+		self.progress_text.text = string.format("%1.f", self.progress_bar.percentage*100).."%"
+	end
+end
+
 function ReaderFooter:onPageUpdate(pageno)
 	self.pageno = pageno
 	self.pages = self.view.document.info.number_of_pages
-	self:updateFooter()
+	self:updateFooterPage()
+end
+
+function ReaderFooter:onPosUpdate(pos)
+	self.position = pos
+	self.doc_height = self.view.document.info.doc_height
+	self:updateFooterPos()
 end
 
 function ReaderFooter:onTapFooter(arg, ges)
@@ -101,12 +119,22 @@ function ReaderFooter:onTapFooter(arg, ges)
 	else
 		self.show_time = not self.show_time
 	end
-	self:updateFooter()
+	if self.pageno then
+		self:updateFooterPage()
+	else
+		self:updateFooterPos()
+	end
 	UIManager:setDirty(self.view.dialog, "partial")
 	-- consume this tap when footer is visible
 	if self.visible then
 		return true
 	end
+end
+
+function ReaderFooter:onSetStatusLine(status_line)
+	self.view.footer_visible = status_line == 1 and true or false
+	self.ui.document:setStatusLineProp(status_line)
+	self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 return ReaderFooter
