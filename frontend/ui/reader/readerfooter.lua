@@ -72,6 +72,12 @@ function ReaderFooter:init()
 					range = self[1]:contentRange(),
 				},
 			},
+			HoldFooter = {
+				GestureRange:new{
+					ges = "hold",
+					range = self[1]:contentRange(),
+				},
+			},
 		}
 	end
 end
@@ -129,6 +135,11 @@ function ReaderFooter:onTapFooter(arg, ges)
 	if self.view.footer_visible then
 		return true
 	end
+end
+
+function ReaderFooter:onHoldFooter(arg, ges)
+	self.ui:handleEvent(Event:new("ShowGotoDialog"))
+	return true
 end
 
 function ReaderFooter:onSetStatusLine(status_line)
