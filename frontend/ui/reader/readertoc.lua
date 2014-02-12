@@ -1,6 +1,8 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local GestureRange = require("ui/gesturerange")
 local Menu = require("ui/widget/menu")
+local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local UIManager = require("ui/uimanager")
@@ -18,6 +20,21 @@ function ReaderToc:init()
 			ShowToc = {
 				{ "T" },
 				doc = _("show Table of Content menu") },
+		}
+	end
+	if Device:isTouchDevice() then
+		self.ges_events = {
+			ShowToc = {
+				GestureRange:new{
+					ges = "two_finger_swipe",
+					range = Geom:new{
+						x = 0, y = 0,
+						w = Screen:getWidth(),
+						h = Screen:getHeight(),
+					},
+					direction = "east"
+				}
+			},
 		}
 	end
 	self.ui.menu:registerToMainMenu(self)

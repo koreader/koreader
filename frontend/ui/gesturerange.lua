@@ -39,6 +39,11 @@ function GestureRange:match(gs)
 			return false
 		end
 	end
+	if self.direction then
+		if self.direction ~= gs.direction then
+			return false
+		end
+	end
 	return true
 end
 
