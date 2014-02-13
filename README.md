@@ -31,8 +31,16 @@ To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
 
 Version of autoconf need to be greater than 2.64.
 
-You might also need SDL library packages if you want to compile and run the PC
-emulator. Fedora users can install `SDL` and `SDL-devel`. Ubuntu users can
+Cross toolchains are available to Ubuntu users through these commands:
+```
+# building for Kindle
+sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
+# building for Kobo
+sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+```
+
+You might also need SDL library packages if you want to compile and run 
+Koreader on PC. Fedora users can install `SDL` and `SDL-devel`. Ubuntu users can
 install `libsdl1.2-dev`.
 
 
