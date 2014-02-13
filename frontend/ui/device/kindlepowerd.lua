@@ -3,8 +3,8 @@ local BasePowerD = require("ui/device/basepowerd")
 
 local KindlePowerD = BasePowerD:new{
 	fl_min = 0, fl_max = 24,
-	-- FIXME: Check how to handle this on the PW2, initial reports on IRC suggest that this isn't possible anymore
-	kpw_frontlight = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
+	kpw1_frontlight = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
+	kpw2_frontlight = "/sys/class/backlight/max77696-bl/brightness",
 	kt_kpw_capacity = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
 	kpw_charging = "/sys/devices/platform/aplite_charger.0/charging",
 	kt_charging = "/sys/devices/platform/fsl-usb2-udc/charging",
@@ -32,8 +32,12 @@ function KindlePowerD:init(model)
 	if model == "KindleTouch" then
 		self.batt_capacity_file = self.kt_kpw_capacity
 		self.is_charging_file = self.kt_charging
-	elseif model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
-		self.fl_intensity_file = self.kpw_frontlight
+	elseif model == "KindlePaperWhite" then
+		self.fl_intensity_file = self.kpw1_frontlight
+		self.batt_capacity_file = self.kt_kpw_capacity
+		self.is_charging_file = self.kpw_charging
+	elseif model == "KindlePaperWhite2" then
+		self.fl_intensity_file = self.kpw2_frontlight
 		self.batt_capacity_file = self.kt_kpw_capacity
 		self.is_charging_file = self.kpw_charging
 	end
