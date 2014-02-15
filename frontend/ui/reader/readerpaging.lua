@@ -17,7 +17,7 @@ local ReaderPaging = InputContainer:new{
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = nil,
-	overlap = Screen:scaleByDPI(20),
+	overlap = Screen:scaleByDPI(30),
 	
 	page_flipping_mode = false,
 	bookmark_flipping_mode = false,

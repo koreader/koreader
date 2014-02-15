@@ -501,6 +501,7 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
 			Screen:setScreenMode(new_mode)
 		end
 		self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
+		self.ui:handleEvent(Event:new("InitScrollPageStates"))
 	end
 	self.cur_rotation_mode = Screen.cur_rotation_mode
 	return true
@@ -516,12 +517,8 @@ function ReaderView:onRestoreScreenMode(old_mode)
 end
 
 function ReaderView:onSetDimensions(dimensions)
-	--DEBUG("set dimen", dimensions)
 	self:resetLayout()
 	self.dimen = dimensions
-	if self.footer_visible then
-		self.dimen.h = dimensions.h - self.footer.height
-	end
 	-- recalculate view
 	self:recalculate()
 end

@@ -35,11 +35,6 @@ function ReaderKoptListener:onSetZoomMode(zoom_mode, orig)
 	self:setZoomMode(self.normal_zoom_mode)
 end
 
-function ReaderKoptListener:onSetDimensions(dimensions)
-	-- called later than reader zooming
-	self.ui:handleEvent(Event:new("InitScrollPageStates"))
-end
-
 function ReaderKoptListener:onFineTuningFontSize(delta)
 	self.document.configurable.font_size = self.document.configurable.font_size + delta
 end

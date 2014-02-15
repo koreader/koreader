@@ -264,9 +264,6 @@ function ReaderUI:init()
 	--DEBUG(self.doc_settings)
 	-- we only read settings after all the widgets are initialized
 	self:handleEvent(Event:new("ReadSettings", self.doc_settings))
-	-- dirty hack to make final rezoom
-	-- TODO: find out why we need this.
-	if self.zoom then self.zoom:onReZoom() end
 
 	for _,v in ipairs(self.postInitCallback) do
 		v()
