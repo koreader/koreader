@@ -1,4 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = require("ui/screen")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -26,6 +27,9 @@ function ReaderTypeset:onReadSettings(config)
 	-- default to enable embedded css
 	self.embedded_css = config:readSetting("embedded_css") or true
 	self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
+	
+	-- set page margins
+  	self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -107,6 +111,16 @@ function ReaderTypeset:addToMainMenu(tab_item_table)
 		text = self.css_menu_title,
 		sub_item_table = self:genStyleSheetMenu(),
 	})
+end
+
+function ReaderTypeset:onSetPageMargins(margins)
+	local left = Screen:scaleByDPI(margins[1])
+	local top = Screen:scaleByDPI(margins[2])
+	local right = Screen:scaleByDPI(margins[3])
+	local bottom = Screen:scaleByDPI(margins[4])
+	self.ui.document:setPageMargins(left, top, right, bottom)
+	self.ui:handleEvent(Event:new("UpdatePos"))
+	return true
 end
 
 return ReaderTypeset
