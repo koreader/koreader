@@ -176,25 +176,6 @@ function ReaderUI:init()
 	end
 	-- for page specific controller
 	if self.document.info.has_pages then
-		-- if needed, insert a paging container
-		table.insert(self, ReaderPaging:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		})
-		-- zooming controller
-		self.zoom = ReaderZooming:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		}
-		table.insert(self, self.zoom) -- hold reference to zoom controller
-		-- panning controller
-		table.insert(self, ReaderPanning:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		})
 		-- cropping controller
 		table.insert(self, ReaderCropping:new{
 			dialog = self.dialog,
@@ -202,10 +183,29 @@ function ReaderUI:init()
 			ui = self,
 			document = self.document,
 		})
+		-- zooming controller
+		local zoom = ReaderZooming:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		}
+		table.insert(self, zoom)
+		-- paging controller
+		table.insert(self, ReaderPaging:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		})
+		-- panning controller
+		table.insert(self, ReaderPanning:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		})
 		-- hinting controller
 		table.insert(self, ReaderHinting:new{
 			dialog = self.dialog,
-			zoom = self.zoom,
+			zoom = zoom,
 			view = self[1],
 			ui = self,
 			document = self.document,
