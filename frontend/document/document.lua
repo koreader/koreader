@@ -150,9 +150,13 @@ This method returns pagesize if bbox is corrupted
 --]]
 function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
 	local bbox = self:getPageBBox(pageno)
+	-- clipping page bbox
+	if bbox.x0 < 0 then bbox.x0 = 0 end
+	if bbox.y0 < 0 then bbox.y0 = 0 end
+	if bbox.x1 < 0 then bbox.x1 = 0 end
+	if bbox.y1 < 0 then bbox.y1 = 0 end
 	local ubbox_dimen = nil
-	if (bbox.x0 < 0) or (bbox.y0 < 0) or (bbox.x1 < 0) or (bbox.y1 < 0)
-	or (bbox.x0 == bbox.x1) or (bbox.y0 == bbox.y1) then
+	if (bbox.x0 > bbox.x1) or (bbox.y0 > bbox.y1) then
 		-- if document's bbox info is corrupted, we use the page size
 		ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
 	else

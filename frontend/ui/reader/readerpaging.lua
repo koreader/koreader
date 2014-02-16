@@ -17,7 +17,7 @@ local ReaderPaging = InputContainer:new{
 	visible_area = nil,
 	page_area = nil,
 	show_overlap_enable = nil,
-	overlap = Screen:scaleByDPI(30),
+	overlap = Screen:scaleByDPI(DOVERLAPPIXELS),
 	
 	page_flipping_mode = false,
 	bookmark_flipping_mode = false,
@@ -400,8 +400,9 @@ function ReaderPaging:getTopPage()
 end
 
 function ReaderPaging:onInitScrollPageStates(orig)
+	--DEBUG.traceback()
 	DEBUG("init scroll page states", orig)
-	if self.view.page_scroll then
+	if self.view.page_scroll and self.view.state.page then
 		self.orig_page = self.current_page
 		self.view.page_states = {}
 		local blank_area = Geom:new{}
@@ -734,6 +735,7 @@ end
 
 -- wrapper for bounds checking
 function ReaderPaging:gotoPage(number, orig)
+	--DEBUG.traceback()
 	if number == self.current_page or not number then
 		return true
 	end
