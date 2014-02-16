@@ -1,11 +1,11 @@
 local OverlapGroup = require("ui/widget/overlapgroup")
-local Screen = require("ui/screen")
 local ReaderFlipping = require("ui/reader/readerflipping")
 local ReaderFooter = require("ui/reader/readerfooter")
 local ReaderDogear = require("ui/reader/readerdogear")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 
 local ReaderView = OverlapGroup:new{
@@ -615,16 +615,6 @@ function ReaderView:onSetViewMode(new_mode)
 	self.view_mode = new_mode
 	self.ui.document:setViewMode(new_mode)
 	self.ui:handleEvent(Event:new("ChangeViewMode"))
-	return true
-end
-
-function ReaderView:onSetPageMargins(margins)
-	local left = Screen:scaleByDPI(margins[1])
-	local top = Screen:scaleByDPI(margins[2])
-	local right = Screen:scaleByDPI(margins[3])
-	local bottom = Screen:scaleByDPI(margins[4])
-	self.ui.document:setPageMargins(left, top, right, bottom)
-	self.ui:handleEvent(Event:new("UpdatePos"))
 	return true
 end
 
