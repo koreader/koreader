@@ -81,7 +81,7 @@ customupdate: all
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 			extensions koreader launchpad \
-			-x "koreader/resources/fonts/*"
+			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
 	# @TODO write an installation script for KUAL   (houqp)
 
 koboupdate: all
@@ -94,7 +94,7 @@ koboupdate: all
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*"
+			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
