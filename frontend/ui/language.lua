@@ -37,7 +37,7 @@ function Language:getLangMenuTable()
 				self:genLanguageSubItem("français", "fr"),
 				--self:genLanguageSubItem("magyar", "hu"),
 				self:genLanguageSubItem("Italiano", "it_IT"),
-				self:genLanguageSubItem("język polski", "pl"),
+				self:genLanguageSubItem("Polski", "pl"),
 				self:genLanguageSubItem("Português do Brasil", "pt_BR"),
 				self:genLanguageSubItem("Русский язык", "ru"),
 				--self:genLanguageSubItem("svenska", "sv"),
