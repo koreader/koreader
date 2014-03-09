@@ -3,8 +3,8 @@
 DRCOUNTMAX = 6
 
 -- number of pages for hinting
--- default to pre-rendering 2 pages
-DHINTCOUNT = 2
+-- default to pre-rendering 1 page
+DHINTCOUNT = 1
 
 -- full screen mode, 1 for true, 0 for false
 DFULL_SCREEN = 1
