@@ -18,9 +18,9 @@ local CreDocument = Document:new{
 	engine_initilized = false,
 
 	line_space_percent = 100,
-	default_font = "FreeSerif",
-	header_font = "FreeSans",
-	fallback_font = "Droid Sans Fallback",
+	default_font = G_reader_settings:readSetting("cre_font") or "FreeSerif",
+	header_font = G_reader_settings:readSetting("header_font") or "FreeSans",
+	fallback_font = G_reader_settings:readSetting("fallback_font") or "Droid Sans Fallback",
 	default_css = "./data/cr3.css",
 	options = CreOptions,
 }
@@ -54,16 +54,6 @@ function CreDocument:engineInit()
 					DEBUG(err)
 				end
 			end
-		end
-
-		local default_font = G_reader_settings:readSetting("cre_font")
-		if default_font then
-			self.default_font = default_font
-		end
-
-		local header_font = G_reader_settings:readSetting("header_font")
-		if header_font then
-			self.header_font = header_font
 		end
 
 		engine_initilized = true
