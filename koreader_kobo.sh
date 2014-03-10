@@ -14,12 +14,12 @@ export STARDICT_DATA_DIR="data/dict"
 killall -STOP nickel
 
 # store the content of the framebuffer
-dd if=/dev/fb0 of=.last_screen_content
+#dd if=/dev/fb0 of=.last_screen_content
 
 # finally call reader
 ./reader.lua /mnt/onboard 2> crash.log
 
 # continue with nickel
-cat .last_screen_content | /usr/local/Kobo/pickel showpic
-rm .last_screen_content
+#cat .last_screen_content | /usr/local/Kobo/pickel showpic
+#rm .last_screen_content
 killall -CONT nickel
