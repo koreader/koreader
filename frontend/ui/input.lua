@@ -433,15 +433,10 @@ function Input:setTimeout(cb, tv_out)
 		callback = cb,
 		deadline = tv_out,
 	}
-	for k,v in ipairs(self.timer_callbacks) do
-		if v.deadline > tv_out then
-			table.insert(self.timer_callbacks, k, item)
-			break
-		end
-	end
-	if #self.timer_callbacks <= 0 then
-		self.timer_callbacks[1] = item
-	end
+	table.insert(self.timer_callbacks, item)
+	table.sort(self.timer_callbacks, function(v1,v2)
+		return v1.deadline < v2.deadline
+	end)
 end
 
 function Input:handleKeyBoardEv(ev)
