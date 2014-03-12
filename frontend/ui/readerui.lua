@@ -183,6 +183,12 @@ function ReaderUI:init()
 			ui = self,
 			document = self.document,
 		})
+		-- paging controller
+		table.insert(self, ReaderPaging:new{
+			dialog = self.dialog,
+			view = self[1],
+			ui = self
+		})
 		-- zooming controller
 		local zoom = ReaderZooming:new{
 			dialog = self.dialog,
@@ -190,12 +196,6 @@ function ReaderUI:init()
 			ui = self
 		}
 		table.insert(self, zoom)
-		-- paging controller
-		table.insert(self, ReaderPaging:new{
-			dialog = self.dialog,
-			view = self[1],
-			ui = self
-		})
 		-- panning controller
 		table.insert(self, ReaderPanning:new{
 			dialog = self.dialog,
