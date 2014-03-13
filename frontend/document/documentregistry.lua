@@ -2,21 +2,21 @@
 This is a registry for document providers
 ]]--
 local DocumentRegistry = {
-	providers = { }
+    providers = { }
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider)
-	table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
+    table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
 end
 
 function DocumentRegistry:getProvider(file)
-	-- TODO: some implementation based on mime types?
-	local extension = string.lower(string.match(file, ".+%.([^.]+)") or "")
-	for _, provider in ipairs(self.providers) do
-		if extension == provider.extension then
-			return provider.provider
-		end
-	end
+    -- TODO: some implementation based on mime types?
+    local extension = string.lower(string.match(file, ".+%.([^.]+)") or "")
+    for _, provider in ipairs(self.providers) do
+        if extension == provider.extension then
+            return provider.provider
+        end
+    end
 end
 
 function DocumentRegistry:openDocument(file)
