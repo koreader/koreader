@@ -69,26 +69,26 @@ DTAP_ZONE_BOOKMARK = {x = 7/8, y = 0, w = 1/8, h = 1/8}
 DTAP_ZONE_FLIPPING = {x = 0, y = 0, w = 1/8, h = 1/8}
 
 -- koptreader config defaults
-DKOPTREADER_CONFIG_FONT_SIZE = 1.0		-- range from 0.1 to 3.0
-DKOPTREADER_CONFIG_TEXT_WRAP = 0		-- 1 = on, 0 = off
-DKOPTREADER_CONFIG_TRIM_PAGE = 1		-- 1 = auto, 0 = manual
-DKOPTREADER_CONFIG_DETECT_INDENT = 1	-- 1 = enable, 0 = disable
-DKOPTREADER_CONFIG_DEFECT_SIZE = 1.0	-- range from 0.0 to 3.0
-DKOPTREADER_CONFIG_PAGE_MARGIN = 0.10	-- range from 0.0 to 1.0
-DKOPTREADER_CONFIG_LINE_SPACING = 1.2	-- range from 0.5 to 2.0
-DKOPTREADER_CONFIG_RENDER_QUALITY = 1.0	-- range from 0.5 to 2.0
-DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0	-- range from 0 to 10
-DKOPTREADER_CONFIG_JUSTIFICATION = 3	-- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
-DKOPTREADER_CONFIG_MAX_COLUMNS = 2		-- range from 1 to 4
-DKOPTREADER_CONFIG_CONTRAST = 1.0		-- range from 0.2 to 2.0
+DKOPTREADER_CONFIG_FONT_SIZE = 1.0        -- range from 0.1 to 3.0
+DKOPTREADER_CONFIG_TEXT_WRAP = 0        -- 1 = on, 0 = off
+DKOPTREADER_CONFIG_TRIM_PAGE = 1        -- 1 = auto, 0 = manual
+DKOPTREADER_CONFIG_DETECT_INDENT = 1    -- 1 = enable, 0 = disable
+DKOPTREADER_CONFIG_DEFECT_SIZE = 1.0    -- range from 0.0 to 3.0
+DKOPTREADER_CONFIG_PAGE_MARGIN = 0.10    -- range from 0.0 to 1.0
+DKOPTREADER_CONFIG_LINE_SPACING = 1.2    -- range from 0.5 to 2.0
+DKOPTREADER_CONFIG_RENDER_QUALITY = 1.0    -- range from 0.5 to 2.0
+DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0    -- range from 0 to 10
+DKOPTREADER_CONFIG_JUSTIFICATION = 3    -- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
+DKOPTREADER_CONFIG_MAX_COLUMNS = 2        -- range from 1 to 4
+DKOPTREADER_CONFIG_CONTRAST = 1.0        -- range from 0.2 to 2.0
 
 -- word spacing for reflow
 DKOPTREADER_CONFIG_WORD_SAPCINGS = {0.05, -1, 0.375}    -- range from 0.05 to 0.5
-DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = -1			-- range from 0.05 to 0.5
+DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = -1            -- range from 0.05 to 0.5
 -- document languages for OCR
 DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese"}
-DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}	-- language code, make sure you have corresponding training data
-DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"  		-- that have filenames starting with the language codes
+DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}    -- language code, make sure you have corresponding training data
+DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"          -- that have filenames starting with the language codes
 
 -- crereader font sizes
 -- feel free to add more entries in this list
@@ -170,5 +170,5 @@ DDICT_FONT_SIZE = 20
 --DPICVIEWER_PAGE_MODE_ENABLE = false
 
 
---DKOPTREADER_CONFIG_MULTI_THREADS = 1	-- 1 = on, 0 = off
---DKOPTREADER_CONFIG_SCREEN_ROTATION = 0	-- 0, 90, 180, 270 degrees
+--DKOPTREADER_CONFIG_MULTI_THREADS = 1    -- 1 = on, 0 = off
+--DKOPTREADER_CONFIG_SCREEN_ROTATION = 0    -- 0, 90, 180, 270 degrees

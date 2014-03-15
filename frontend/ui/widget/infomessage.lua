@@ -20,68 +20,68 @@ Widget that displays an informational message
 it vanishes on key press or after a given timeout
 ]]
 local InfoMessage = InputContainer:new{
-	face = Font:getFace("infofont", 25),
-	text = "",
-	timeout = nil, -- in seconds
+    face = Font:getFace("infofont", 25),
+    text = "",
+    timeout = nil, -- in seconds
 }
 
 function InfoMessage:init()
-	if Device:hasKeyboard() then
-		self.key_events = {
-			AnyKeyPressed = { { Input.group.Any },
-				seqtext = "any key", doc = _("close dialog") }
-		}
-	end
-	if Device:isTouchDevice() then
-		self.ges_events.TapClose = {
-			GestureRange:new{
-				ges = "tap",
-				range = Geom:new{
-					x = 0, y = 0,
-					w = Screen:getWidth(),
-					h = Screen:getHeight(),
-				}
-			}
-		}
-	end
-	-- we construct the actual content here because self.text is only available now
-	self[1] = CenterContainer:new{
-		dimen = Screen:getSize(),
-		FrameContainer:new{
-			margin = 2,
-			background = 0,
-			HorizontalGroup:new{
-				align = "center",
-				ImageWidget:new{
-					file = "resources/info-i.png"
-				},
-				HorizontalSpan:new{ width = 10 },
-				TextBoxWidget:new{
-					text = self.text,
-					face = self.face
-				}
-			}
-		}
-	}
+    if Device:hasKeyboard() then
+        self.key_events = {
+            AnyKeyPressed = { { Input.group.Any },
+                seqtext = "any key", doc = _("close dialog") }
+        }
+    end
+    if Device:isTouchDevice() then
+        self.ges_events.TapClose = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                }
+            }
+        }
+    end
+    -- we construct the actual content here because self.text is only available now
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        FrameContainer:new{
+            margin = 2,
+            background = 0,
+            HorizontalGroup:new{
+                align = "center",
+                ImageWidget:new{
+                    file = "resources/info-i.png"
+                },
+                HorizontalSpan:new{ width = 10 },
+                TextBoxWidget:new{
+                    text = self.text,
+                    face = self.face
+                }
+            }
+        }
+    }
 end
 
 function InfoMessage:onShow()
-	-- triggered by the UIManager after we got successfully shown (not yet painted)
-	if self.timeout then
-		UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
-	end
-	return true
+    -- triggered by the UIManager after we got successfully shown (not yet painted)
+    if self.timeout then
+        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
+    end
+    return true
 end
 
 function InfoMessage:onAnyKeyPressed()
-	-- triggered by our defined key events
-	UIManager:close(self)
-	return true
+    -- triggered by our defined key events
+    UIManager:close(self)
+    return true
 end
 
 function InfoMessage:onTapClose()
-	UIManager:close(self)
-	return true
+    UIManager:close(self)
+    return true
 end
 
 return InfoMessage

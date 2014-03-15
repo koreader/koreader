@@ -10,13 +10,13 @@ below.
 local Event = {}
 
 function Event:new(name, ...)
-	local o = {
-		handler = "on"..name,
-		args = {...}
-	}
-	setmetatable(o, self)
-	self.__index = self
-	return o
+    local o = {
+        handler = "on"..name,
+        args = {...}
+    }
+    setmetatable(o, self)
+    self.__index = self
+    return o
 end
 
 return Event
