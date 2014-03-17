@@ -10,7 +10,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderFrontLight = InputContainer:new{
-    steps = {0,1,2,3,4,5,6,7,8,9,10},
+    steps = {0,1,1,1,1,2,2,2,3,4,5,6,7,8,9,10},
 }
 
 function ReaderFrontLight:init()
@@ -19,7 +19,7 @@ function ReaderFrontLight:init()
             Adjust = {
                 GestureRange:new{
                     ges = "two_finger_pan",
-                    rate = Device:getModel() == 'Kobo_phoenix' and nil or 3.0,
+                    rate = Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil,
                 }
             },
             PanRelease= {
@@ -33,8 +33,10 @@ function ReaderFrontLight:init()
                 }
             },
         }
+		DEBUG("Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil =", Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil)
         self.ui.menu:registerToMainMenu(self)
     end
+	
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
@@ -42,7 +44,9 @@ function ReaderFrontLight:onAdjust(arg, ges)
     if powerd.flIntensity ~= nil then
         DEBUG("frontlight intensity", powerd.flIntensity)
         local step = math.ceil(#self.steps * ges.distance / Screen:getWidth())
-        local delta_int = self.steps[step] or self.steps[0]
+		DEBUG("step = ", step)
+        local delta_int = self.steps[step] or self.steps[#self.steps]
+		DEBUG("delta_int = ", delta_int)
         if ges.direction == "north" then
             powerd:setIntensity(powerd.flIntensity + delta_int)
         elseif ges.direction == "south" then
@@ -65,11 +69,13 @@ end
 
 function ReaderFrontLight:onSwipe(arg, ges)
     if ges.direction == "north" or ges.direction == "south" then
+		DEBUG("onSwipe activated")
         return self:onShowIntensity()
     end
 end
 
 function ReaderFrontLight:onPanRelease(arg, ges)
+	DEBUG("onPanRelease activated")
     return self:onShowIntensity()
 end
 
