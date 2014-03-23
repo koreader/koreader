@@ -1,4 +1,4 @@
-KOReader
+KOReader [![Build Status][travis-icon]][travis-link] [![Bitdeli Badge][bitdeli-icon]][bitdeli-link]
 ========
 
 This is a document viewer application, originally created for usage on the
@@ -16,8 +16,7 @@ e-ink devices (like the Kindle 2, Kindle DX, Kindle 3, Kindle 4) see the
 KindlePDFviewer legacy project or - especially for the Kindle 4 - have a look
 at its fork Librerator.
 
-The application is licensed under the GPLv3 (see COPYING file).
-
+This application is distributed under the GNU AGPL v3 license (read the [COPYING](COPYING) file).
 
 Prerequisites
 ========
@@ -137,7 +136,8 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/koreader/koreader/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+[travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
+[travis-link]:https://travis-ci.org/koreader/koreader-base
+[bitdeli-icon]:https://d2weczhvl823v0.cloudfront.net/koreader/koreader/trend.png
+[bitdeli-link]:https://bitdeli.com/free "Bitdeli Badge"
 
