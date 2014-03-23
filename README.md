@@ -32,9 +32,9 @@ Version of autoconf need to be greater than 2.64.
 
 Cross toolchains are available to Ubuntu users through these commands:
 ```
-# building for Kindle
+# for Kindle
 sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
-# building for Kobo
+# for Kobo
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
 
