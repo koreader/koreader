@@ -62,6 +62,11 @@ endif
 $(KOR_BASE)/$(OUTPUT_DIR)/luajit:
 	$(MAKE) -C $(KOR_BASE)
 
+test:
+	$(MAKE) -C $(KOR_BASE) test
+
+.PHONY: test
+
 fetchthirdparty:
 	git submodule init
 	git submodule update

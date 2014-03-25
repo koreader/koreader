@@ -25,10 +25,13 @@ Instructions about how to get and compile the source are intended for a \*nix
 OS. Windows users are suggested to develop in a Linux VM or use
 andLinux, Wubi.
 
-To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
-`svn`, `autoconf` and `cmake` installed.
+To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf` 
+and `cmake` installed. Version of autoconf need to be greater than 2.64.
 
-Version of autoconf need to be greater than 2.64.
+Ubuntu users may need to run:
+```
+sudo apt-get install build-essential
+```
 
 Cross toolchains are available to Ubuntu users through these commands:
 ```
@@ -39,9 +42,11 @@ sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
 
 You might also need SDL library packages if you want to compile and run 
-Koreader on PC. Fedora users can install `SDL` and `SDL-devel`. Ubuntu users can
-install `libsdl1.2-dev`.
-
+Koreader on PC. Fedora users can install `SDL` and `SDL-devel`.
+Ubuntu users probably have to run:
+```
+sudo apt-get install libsdl1.2-dev
+```
 
 Getting the source
 ========
@@ -53,7 +58,7 @@ make fetchthirdparty
 ```
 
 
-Building & Running
+Building & Running & Testing
 ========
 
 For real eink devices
@@ -99,6 +104,17 @@ To run:
 cd koreader-*/koreader && ./reader.lua -d ./
 ```
 
+To test:
+```
+make test
+```
+
+You may need to checkout the [travis config file][travis-conf] to setup up
+a proper testing environment. Briefly, you need to install `luarocks` and 
+then install `busted` with `luarocks`. The "eng" language data file for 
+tesseract-ocr is also need to test OCR functionality. Finally, make sure
+that `luajit` in your system is at least of version 2.0.2.
+
 You can also specify size of emulator's screen via environment variables.
 For more information, please refer to [koreader-base's README][base-readme].
 
@@ -138,6 +154,8 @@ http://ccache.samba.org
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
 [travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
 [travis-link]:https://travis-ci.org/koreader/koreader-base
+[travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
 [bitdeli-icon]:https://d2weczhvl823v0.cloudfront.net/koreader/koreader/trend.png
 [bitdeli-link]:https://bitdeli.com/free "Bitdeli Badge"
+
 
