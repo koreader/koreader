@@ -313,7 +313,7 @@ msgstr "Oříznout stránku"
 
 #: frontend/ui/data/strings.lua:9
 msgid "Page Margin"
-msgstr "Okraj stránky"
+msgstr "Okraje stránky"
 
 #: frontend/apps/filemanager/filemanager.lua:140
 msgid "Paste"
@@ -354,7 +354,7 @@ msgstr "Kvalita vykreslení"
 
 #: frontend/ui/data/strings.lua:5
 msgid "Screen Mode"
-msgstr "Mód zobrazení"
+msgstr "Režim zobrazení"
 
 #: frontend/ui/input.lua:328
 msgid "Screen height ="
@@ -387,7 +387,7 @@ msgstr "Nastavit velikost písma na "
 
 #: frontend/ui/reader/readerhighlight.lua:124
 msgid "Set highlight drawer "
-msgstr "Způsob zvýraznění nastaven "
+msgstr "Způsob zvýraznění "
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
@@ -403,7 +403,7 @@ msgstr "Uspávám"
 
 #: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
-msgstr "Přepnout režim zvětšení"
+msgstr "Režim zvětšení"
 
 #: frontend/ui/data/strings.lua:57
 msgid "TBLTR"
@@ -467,7 +467,7 @@ msgstr "Zapnout překrývání stránek"
 
 #: frontend/ui/reader/readerhighlight.lua:139
 msgid "Underscore"
-msgstr "Podtržení"
+msgstr "Podtrhnout"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
 #: frontend/ui/reader/readermenu.lua:80
@@ -484,7 +484,7 @@ msgstr "Režim náhledu"
 
 #: frontend/ui/data/strings.lua:18
 msgid "Word Gap"
-msgstr "Mezera mezi slovy"
+msgstr "Mezery mezi slovy"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
@@ -667,7 +667,7 @@ msgstr "na šířku"
 
 #: frontend/ui/data/strings.lua:36
 msgid "large"
-msgstr "velký"
+msgstr "velké"
 
 #: frontend/ui/data/strings.lua:40
 msgid "lighter"
@@ -679,7 +679,7 @@ msgstr "nejsvětlejší"
 
 #: frontend/ui/data/strings.lua:44
 msgid "low"
-msgstr "nízký"
+msgstr "nízká"
 
 #: frontend/ui/data/strings.lua:32
 msgid "manual"
@@ -792,7 +792,7 @@ msgstr "malé"
 
 #: frontend/ui/data/strings.lua:51
 msgid "toggle bold"
-msgstr "přepnout tučně"
+msgstr "tučně"
 
 #: reader.lua:104
 msgid "usage: ./reader.lua [OPTION] ... path"
