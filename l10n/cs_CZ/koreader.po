@@ -19,80 +19,80 @@ msgstr ""
 
 #: reader.lua:107
 msgid "-d               start in debug mode"
-msgstr "-d spustit v režimu ladění"
+msgstr "-d               spustit v režimu ladění"
 
 #: reader.lua:109
 msgid "-h               show this usage help"
-msgstr "-h zobrazit nápovědu"
+msgstr "-h               zobrazit nápovědu"
 
 #: reader.lua:108
 msgid "-p [rows]        enable Lua code profiling"
-msgstr ""
+msgstr "-p [řádky]        umožnit profiling Lua kódu"
 
 #: frontend/ui/data/strings.lua:46
 msgid "0 deg"
-msgstr "0 stupňu"
+msgstr "0 stupňů"
 
 #: frontend/ui/data/strings.lua:48
 msgid "10 deg"
-msgstr "10 stupňu"
+msgstr "10 stupňů"
 
 #: frontend/ui/data/strings.lua:47
 msgid "5 deg"
-msgstr "5 stupňu"
+msgstr "5 stupňů"
 
 #: frontend/ui/widget/dictquicklookup.lua:122
 msgid "<<"
-msgstr ""
+msgstr "<<"
 
 #: frontend/ui/widget/dictquicklookup.lua:129
 msgid ">>"
-msgstr ""
+msgstr ">>"
 
 #: frontend/ui/reader/readerhighlight.lua:336
 #: frontend/ui/widget/dictquicklookup.lua:145
 msgid "Add Note"
-msgstr ""
+msgstr "Přidat poznámku"
 
 #: frontend/ui/reader/readerfrontlight.lua:83
 msgid "Apply"
-msgstr ""
+msgstr "Použít"
 
 #: frontend/ui/reader/readertypeset.lua:58
 msgid "Auto"
-msgstr "Automaticky"
+msgstr "Auto"
 
 #: frontend/ui/data/strings.lua:21
 msgid "Auto Straighten"
-msgstr "Automatické vyrovnání"
+msgstr "Automatické narovnání"
 
 #: frontend/ui/input.lua:392
 msgid "Auto-detected Kindle 2"
-msgstr "Automatické rozpoznání Kindle 2"
+msgstr "Detekován Kindle 2"
 
 #: frontend/ui/input.lua:385
 msgid "Auto-detected Kindle 3"
-msgstr "Automatické rozpoznání Kindle 3"
+msgstr "Detekován Kindle 3"
 
 #: frontend/ui/input.lua:381
 msgid "Auto-detected Kindle 4"
-msgstr "Automatické rozpoznání Kindle 4"
+msgstr "Detekován Kindle 4"
 
 #: frontend/ui/input.lua:389
 msgid "Auto-detected Kindle DXG"
-msgstr "Automatické rozpoznání Kindle DXG"
+msgstr "Detekován Kindle DXG"
 
 #: frontend/ui/input.lua:289 frontend/ui/input.lua:293
 msgid "Auto-detected Kindle PaperWhite"
-msgstr "Automatické rozpoznání Kindle PaperWhite"
+msgstr "Detekován Kindle PaperWhite"
 
 #: frontend/ui/input.lua:317
 msgid "Auto-detected Kindle Touch"
-msgstr "Automatické rozpoznání Kindle Touch"
+msgstr "Detekován Kindle Touch"
 
 #: frontend/ui/input.lua:323
 msgid "Auto-detected Kobo"
-msgstr ""
+msgstr "Detekováno Kobo"
 
 #: frontend/ui/reader/readerbookmark.lua:14
 msgid "Bookmarks"
@@ -104,11 +104,11 @@ msgstr "Zrušit"
 
 #: frontend/ui/reader/readerhyphenation.lua:25
 msgid "Change Hyphenation to "
-msgstr ""
+msgstr "Změna slovníku pro dělení slov na "
 
 #: frontend/ui/reader/readerfont.lua:18
 msgid "Change font"
-msgstr "Změnit typ písma"
+msgstr "Změnit písmo"
 
 #: frontend/ui/data/strings.lua:11
 msgid "Columns"
@@ -120,48 +120,48 @@ msgstr "Kontrast"
 
 #: frontend/apps/filemanager/filemanager.lua:133
 msgid "Copy"
-msgstr ""
+msgstr "Kopírovat"
 
 #: frontend/apps/filemanager/filemanager.lua:151
 msgid "Cut"
-msgstr ""
+msgstr "Vystřihnout"
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
-msgstr ""
+msgstr "Snížit úroveň osvětlení na "
 
 #: frontend/ui/reader/readerfont.lua:188
 msgid "Decrease gamma to "
-msgstr "Zmenšit gama na"
+msgstr "Snížit gamu na "
 
 #: frontend/ui/reader/readerfont.lua:159
 msgid "Decrease line space to "
-msgstr "Zmenšit mezery mezi slovy na"
+msgstr "Snížit rozteč řádků na "
 
 #: frontend/ui/data/strings.lua:19
 msgid "Defect Size"
-msgstr "Změnit velikost"
+msgstr "Neplatná velikost"
 
 #: frontend/apps/filemanager/filemanager.lua:158
 #: frontend/ui/reader/readerhighlight.lua:231
 msgid "Delete"
-msgstr ""
+msgstr "Smazat"
 
 #: frontend/ui/input.lua:324
 msgid "Device model="
-msgstr ""
+msgstr "Model zařízení="
 
 #: frontend/ui/data/strings.lua:16
 msgid "Document Language"
-msgstr ""
+msgstr "Jazyk dokumentu"
 
 #: frontend/ui/reader/readermenu.lua:114
 msgid "Document menu"
-msgstr "Nabídka dokument"
+msgstr "Menu dokumentu"
 
 #: frontend/ui/reader/readerhighlight.lua:238
 msgid "Edit"
-msgstr ""
+msgstr "Editovat"
 
 #: frontend/ui/data/strings.lua:26
 msgid "Embedded style"
@@ -169,11 +169,11 @@ msgstr "Vložený styl"
 
 #: reader.lua:55
 msgid "File does not exist"
-msgstr ""
+msgstr "Soubor neexistuje"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
-msgstr ""
+msgstr "Menu správce souborů"
 
 #: frontend/apps/filemanager/filemanager.lua:69
 msgid "FileManager"
@@ -185,7 +185,7 @@ msgstr "Jemné ladění"
 
 #: frontend/ui/input.lua:326
 msgid "Firmware revision"
-msgstr ""
+msgstr "Revize firmwaru"
 
 #: frontend/ui/data/strings.lua:23
 msgid "Font weight"
@@ -193,11 +193,11 @@ msgstr "Tloušťka písma"
 
 #: frontend/ui/reader/readerfrontlight.lua:70
 msgid "Frontlight Level"
-msgstr ""
+msgstr "Úroveň osvětlení"
 
 #: frontend/ui/reader/readerfrontlight.lua:60
 msgid "Frontlight settings"
-msgstr ""
+msgstr "Nastavení osvětlení"
 
 #: frontend/ui/data/strings.lua:7
 msgid "Full Screen"
@@ -209,11 +209,11 @@ msgstr "Gama"
 
 #: frontend/ui/reader/readergoto.lua:10
 msgid "Go To"
-msgstr ""
+msgstr "Jít na"
 
 #: frontend/ui/reader/readergoto.lua:11
 msgid "Go to Page or Location"
-msgstr ""
+msgstr "Jít na stránku nebo pozici"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:74
 #: frontend/ui/reader/readermenu.lua:72
@@ -223,36 +223,36 @@ msgstr "Nápověda"
 #: frontend/ui/reader/readerhighlight.lua:328
 #: frontend/ui/widget/dictquicklookup.lua:138
 msgid "Highlight"
-msgstr ""
+msgstr "Zvýraznění"
 
 #: frontend/apps/filemanager/filemanagerhistory.lua:11
 #: frontend/apps/filemanager/filemanagerhistory.lua:30
 msgid "History"
-msgstr ""
+msgstr "Historie"
 
 #: frontend/ui/reader/readerhyphenation.lua:7
 msgid "Hyphenation"
-msgstr ""
+msgstr "Dělení slov"
 
 #: reader.lua:114
 msgid "If you don't pass any path, the last viewed document will be opened"
-msgstr "Pokud nezadáte jinou cestu, bude otevřen naposledy použitý dokument"
+msgstr "Pokud nezadáte jinou cestu, bude otevřen naposled zobrazený dokument"
 
 #: reader.lua:111
 msgid "If you give the name of a directory instead of a file path, a file"
-msgstr "Dáte-li jméno adresáře místo cesty k souboru, soubor"
+msgstr "Zadáte-li jméno adresáře místo cesty k souboru, soubor"
 
 #: frontend/ui/reader/readerfrontlight.lua:41
 msgid "Increase front light intensity to "
-msgstr ""
+msgstr "Zvýšit úroveň osvětlení na "
 
 #: frontend/ui/reader/readerfont.lua:185
 msgid "Increase gamma to "
-msgstr "Zvětšit gama na"
+msgstr "Zvýšit gamu na "
 
 #: frontend/ui/reader/readerfont.lua:163
 msgid "Increase line space to "
-msgstr "Zvětšit mezery mezi slovy na"
+msgstr "Zvýšit rozteč řádků na "
 
 #: frontend/ui/data/strings.lua:22
 msgid "Indentation"
@@ -260,19 +260,19 @@ msgstr "Odsazení"
 
 #: frontend/ui/reader/readerhighlight.lua:145
 msgid "Invert"
-msgstr ""
+msgstr "Invertovat"
 
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
-msgstr ""
+msgstr "LTR"
 
 #: frontend/ui/language.lua:31
 msgid "Language"
-msgstr ""
+msgstr "Jazyk"
 
 #: frontend/ui/reader/readerhighlight.lua:133
 msgid "Lighten"
-msgstr ""
+msgstr "Zesvětlit"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
@@ -280,11 +280,11 @@ msgstr "Řádkování"
 
 #: frontend/ui/reader/readergoto.lua:50
 msgid "Location"
-msgstr ""
+msgstr "Pozice"
 
 #: frontend/ui/reader/readerhighlight.lua:366
 msgid "More"
-msgstr ""
+msgstr "Více"
 
 #: reader.lua:70
 msgid "No reader engine for this file"
@@ -301,15 +301,15 @@ msgstr "OK"
 
 #: frontend/ui/reader/readergoto.lua:43
 msgid "Page"
-msgstr ""
+msgstr "Stránka"
 
 #: frontend/ui/widget/touchmenu.lua:345
 msgid "Page "
-msgstr "Stránka"
+msgstr "Stránka "
 
 #: frontend/ui/data/strings.lua:6
 msgid "Page Crop"
-msgstr "Ořezat stránku"
+msgstr "Oříznout stránku"
 
 #: frontend/ui/data/strings.lua:9
 msgid "Page Margin"
@@ -317,34 +317,36 @@ msgstr "Okraj stránky"
 
 #: frontend/apps/filemanager/filemanager.lua:140
 msgid "Paste"
-msgstr ""
+msgstr "Vložit"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:77
 #: frontend/ui/reader/readermenu.lua:75
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Prosím chyby hlašte na https://github.com/koreader/ koreader/issues, Klikněte na horní okraj pro více voleb"
+msgstr ""
+"Prosím chyby hlašte na https://github.com/koreader/ koreader/issues, klikněte"
+" na horní okraj pro více voleb"
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
-msgstr ""
+msgstr "Restartujte prosím KOReader, aby se změna jazyka projevila."
 
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
-msgstr ""
+msgstr "RTL"
 
 #: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
-msgstr "Načíst všechny knihy ve vaší E-Ink čtečce"
+msgstr "A přečtete všechny knihy na vaší čtečce"
 
 #: frontend/ui/reader/readerfont.lua:211
 msgid "Redrawing with font "
-msgstr "Překreslit s písmem"
+msgstr "Překresluji s písmem "
 
 #: frontend/ui/data/koptoptions.lua:126 frontend/ui/data/strings.lua:15
 msgid "Reflow"
-msgstr "Přeformátovat"
+msgstr "Přeformátování (reflow)"
 
 #: frontend/ui/data/strings.lua:20
 msgid "Render Quality"
@@ -356,15 +358,15 @@ msgstr "Mód zobrazení"
 
 #: frontend/ui/input.lua:328
 msgid "Screen height ="
-msgstr ""
+msgstr "Výška displeje ="
 
 #: frontend/ui/input.lua:330
 msgid "Screen width ="
-msgstr ""
+msgstr "Šířka displeje ="
 
 #: frontend/ui/data/strings.lua:8
 msgid "Scroll Mode"
-msgstr "Mód posouvání"
+msgstr "Režim posouvání"
 
 #: reader.lua:117
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
@@ -372,20 +374,20 @@ msgstr "Navštivte http://github.com/koreader/kindlepdfviewer pro více informac
 
 #: frontend/ui/widget/configdialog.lua:38 frontend/ui/widget/touchmenu.lua:40
 msgid "Select Menu Item"
-msgstr "Vybrat nabídku položky"
+msgstr "Vyberte položku menu"
 
 #: frontend/ui/widget/configdialog.lua:84
 #: frontend/ui/widget/configdialog.lua:120
 msgid "Select Option Item"
-msgstr "Vybrat volby položky"
+msgstr "Vyberte volbu"
 
 #: frontend/ui/reader/readerfont.lua:144
 msgid "Set font size to "
-msgstr "Nastavit velikost písma na"
+msgstr "Nastavit velikost písma na "
 
 #: frontend/ui/reader/readerhighlight.lua:124
 msgid "Set highlight drawer "
-msgstr ""
+msgstr "Způsob zvýraznění nastaven "
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
@@ -393,11 +395,11 @@ msgstr "Nastavit způsob vykreslování"
 
 #: frontend/ui/reader/readerhighlight.lua:355
 msgid "Share"
-msgstr ""
+msgstr "Sdílet"
 
 #: frontend/ui/uimanager.lua:297
 msgid "Standby"
-msgstr ""
+msgstr "Uspávám"
 
 #: frontend/ui/reader/readerzooming.lua:292
 msgid "Switch zoom mode"
@@ -405,11 +407,11 @@ msgstr "Přepnout režim zvětšení"
 
 #: frontend/ui/data/strings.lua:57
 msgid "TBLTR"
-msgstr ""
+msgstr "TBLTR"
 
 #: frontend/ui/data/strings.lua:56
 msgid "TBRTL"
-msgstr ""
+msgstr "TBRTL"
 
 #: frontend/ui/reader/readertoc.lua:95
 msgid "Table of Contents"
@@ -421,7 +423,7 @@ msgstr "Obsah"
 
 #: frontend/ui/widget/button.lua:77
 msgid "Tap Button"
-msgstr "Tlačítko"
+msgstr "Klikněte na tlačítko"
 
 #: frontend/ui/data/strings.lua:12
 msgid "Text Align"
@@ -429,15 +431,15 @@ msgstr "Zarovnání textu"
 
 #: reader.lua:116
 msgid "This software is licensed under the GPLv3."
-msgstr "Tento program je pod licencí GPLv3."
+msgstr "Tento software podléhá licenci GPLv3."
 
 #: frontend/ui/reader/readerfrontlight.lua:75
 msgid "Toggle"
-msgstr ""
+msgstr "Přepnout"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
-msgstr ""
+msgstr "Přepnout zobrazování skrytých souborů"
 
 #: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
@@ -445,32 +447,32 @@ msgstr "Přepínač"
 
 #: frontend/ui/reader/readerhighlight.lua:347
 msgid "Translate"
-msgstr ""
+msgstr "Přeložit"
 
 #: frontend/ui/reader/readertypeset.lua:127
 msgid "Turn off floating punctuation"
-msgstr ""
+msgstr "Vypnout plovoucí interpunkci"
 
 #: frontend/ui/reader/readerpaging.lua:153
 msgid "Turn off page overlap"
-msgstr ""
+msgstr "Vypnout překrývání stránek"
 
 #: frontend/ui/reader/readertypeset.lua:128
 msgid "Turn on floating punctuation"
-msgstr ""
+msgstr "Zapnout plovoucí interpunkci"
 
 #: frontend/ui/reader/readerpaging.lua:154
 msgid "Turn on page overlap"
-msgstr ""
+msgstr "Zapnout překrývání stránek"
 
 #: frontend/ui/reader/readerhighlight.lua:139
 msgid "Underscore"
-msgstr ""
+msgstr "Podtržení"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
 #: frontend/ui/reader/readermenu.lua:80
 msgid "Version"
-msgstr ""
+msgstr "Verze"
 
 #: frontend/ui/data/strings.lua:17
 msgid "Vertical Text"
@@ -478,19 +480,19 @@ msgstr "Svislý text"
 
 #: frontend/ui/data/strings.lua:25
 msgid "View mode"
-msgstr "Režim náhled"
+msgstr "Režim náhledu"
 
 #: frontend/ui/data/strings.lua:18
 msgid "Word Gap"
-msgstr "Mezery mezi slovy"
+msgstr "Mezera mezi slovy"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
-msgstr ""
+msgstr "Směr psaní"
 
 #: frontend/ui/reader/readerscreenshot.lua:31
 msgid "Writing screen to "
-msgstr ""
+msgstr "Ukládám snímek do "
 
 #: frontend/ui/reader/readerzooming.lua:311
 msgid "Zoom to fit content"
@@ -518,7 +520,7 @@ msgstr "Zvětšit na šířku stránky"
 
 #: frontend/ui/data/strings.lua:31
 msgid "auto"
-msgstr "automatický"
+msgstr "auto"
 
 #: frontend/ui/widget/confirmbox.lua:37
 msgid "cancel"
@@ -526,16 +528,16 @@ msgstr "zrušit"
 
 #: reader.lua:112
 msgid "chooser will show up and let you select a file"
-msgstr "zobrazí se volič a umožno vybrat soubor"
+msgstr "zobrazí se dialog, jenž umožní výběr souboru"
 
 #: frontend/ui/widget/configdialog.lua:43
 #: frontend/ui/widget/configdialog.lua:89
 msgid "chose selected item"
-msgstr "zvolit vybranou položku"
+msgstr "zvolena vybraná položka"
 
 #: frontend/ui/widget/confirmbox.lua:38
 msgid "chose selected option"
-msgstr "zvolit vybranou volbu"
+msgstr "zvolena vybraná volba"
 
 #: frontend/ui/reader/readertypeset.lua:52
 msgid "clear all external styles"
@@ -543,7 +545,7 @@ msgstr "vyčistit všechny externí styly"
 
 #: frontend/ui/widget/configdialog.lua:436
 msgid "close config menu"
-msgstr "zavřít konfigurační nabídku"
+msgstr "zavřít nastavení"
 
 #: frontend/apps/filemanager/filemanager.lua:31
 #: frontend/ui/reader/readerhighlight.lua:24
@@ -557,7 +559,7 @@ msgstr "zavřít dokument"
 
 #: frontend/ui/widget/menu.lua:443
 msgid "close menu"
-msgstr "zavřít nabídku"
+msgstr "zavřít menu"
 
 #: frontend/ui/data/strings.lua:42
 msgid "darker"
@@ -569,7 +571,7 @@ msgstr "nejtmavší"
 
 #: frontend/ui/data/strings.lua:37
 msgid "decrease"
-msgstr "snížení"
+msgstr "snížit"
 
 #: frontend/ui/reader/readerfont.lua:35
 msgid "decrease font size"
@@ -633,19 +635,19 @@ msgstr "jít na začátek"
 
 #: frontend/ui/widget/menu.lua:445
 msgid "goto next page of the menu"
-msgstr "jít na další stranu nabídky"
+msgstr "jít na další stránku menu"
 
 #: frontend/ui/widget/menu.lua:448
 msgid "goto previous page of the menu"
-msgstr "jít na předešlou stranu nabídky"
+msgstr "jít na předešlou stránku menu"
 
 #: frontend/ui/data/strings.lua:45
 msgid "high"
-msgstr "vysoký"
+msgstr "vysoká"
 
 #: frontend/ui/reader/readerhighlight.lua:68
 msgid "highlight text"
-msgstr ""
+msgstr "zvýraznit text"
 
 #: frontend/ui/data/strings.lua:38
 msgid "increase"
@@ -669,11 +671,11 @@ msgstr "velký"
 
 #: frontend/ui/data/strings.lua:40
 msgid "lighter"
-msgstr "lehčí"
+msgstr "světlejší"
 
 #: frontend/ui/data/strings.lua:39
 msgid "lightest"
-msgstr "nejlehčí"
+msgstr "nejsvětlejší"
 
 #: frontend/ui/data/strings.lua:44
 msgid "low"
@@ -689,7 +691,7 @@ msgstr "střední"
 
 #: frontend/ui/reader/readerrolling.lua:45
 msgid "move view down"
-msgstr "posunout pohled dolu"
+msgstr "posunout pohled dolů"
 
 #: frontend/ui/reader/readerrolling.lua:40
 msgid "move view up"
@@ -697,7 +699,7 @@ msgstr "posunout pohled nahoru"
 
 #: frontend/ui/reader/readerpanning.lua:25
 msgid "move visible area down"
-msgstr "posunout viditelnou oblast dolu"
+msgstr "posunout viditelnou oblast dolů"
 
 #: frontend/ui/reader/readerpanning.lua:28
 msgid "move visible area left"
@@ -729,7 +731,7 @@ msgstr "zapnout"
 
 #: reader.lua:60
 msgid "opening file"
-msgstr ""
+msgstr "otevírám soubor"
 
 #: frontend/ui/data/strings.lua:53
 msgid "page"
@@ -737,7 +739,7 @@ msgstr "stránka"
 
 #: frontend/ui/widget/menu.lua:524
 msgid "page "
-msgstr "stránka"
+msgstr "stránka "
 
 #: frontend/ui/data/strings.lua:49
 msgid "portrait"
@@ -757,15 +759,15 @@ msgstr "posuv"
 
 #: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:457
 msgid "select current menu item"
-msgstr "vybrat aktuální položku nabídky"
+msgstr "vybrat aktuální položku menu"
 
 #: frontend/ui/data/strings.lua:33
 msgid "semi-auto"
-msgstr ""
+msgstr "polo-auto"
 
 #: frontend/ui/reader/readertoc.lua:20
 msgid "show Table of Content menu"
-msgstr "zobrazit Přehled nabídky"
+msgstr "zobrazit menu pro Obsah"
 
 #: frontend/ui/reader/readerbookmark.lua:23
 msgid "show bookmarks"
@@ -777,12 +779,12 @@ msgstr "zobrazit konfigurační dialog"
 
 #: frontend/ui/reader/readerfont.lua:28
 msgid "show font menu"
-msgstr "zobrazit typ písma menu"
+msgstr "zobrazit menu pro písmo"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:36
 #: frontend/ui/reader/readermenu.lua:45
 msgid "show menu"
-msgstr "zobrazit nabídku"
+msgstr "zobrazit menu"
 
 #: frontend/ui/data/strings.lua:34
 msgid "small"
@@ -790,7 +792,7 @@ msgstr "malé"
 
 #: frontend/ui/data/strings.lua:51
 msgid "toggle bold"
-msgstr "tučně"
+msgstr "přepnout tučně"
 
 #: reader.lua:104
 msgid "usage: ./reader.lua [OPTION] ... path"
