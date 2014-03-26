@@ -3,13 +3,14 @@
 # 
 # Translators:
 # mastnacek <mastnacek@gmail.com>, 2013
+# dsmid <david@smidovi.eu>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
 "POT-Creation-Date: 2014-01-18 17:24+0000\n"
 "PO-Revision-Date: 2014-01-19 08:55+0000\n"
-"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
+"Last-Translator: dsmid <david@smidovi.eu>\n"
 "Language-Team: Czech (Czech Republic) (http://www.transifex.com/projects/p/koreader/language/cs_CZ/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -325,8 +326,8 @@ msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
 msgstr ""
-"Prosím chyby hlašte na https://github.com/koreader/ koreader/issues, klikněte"
-" na horní okraj pro více voleb"
+"Chyby prosím hlašte na https://github.com/koreader/ koreader/issues, klikněte"
+" na spodní okraj pro více voleb"
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
@@ -391,7 +392,7 @@ msgstr "Způsob zvýraznění "
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
-msgstr "Nastavit způsob vykreslování"
+msgstr "Styl zobrazení"
 
 #: frontend/ui/reader/readerhighlight.lua:355
 msgid "Share"
@@ -829,3 +830,21 @@ msgstr "zvětšit na výšku stránky"
 #: frontend/ui/reader/readerzooming.lua:45
 msgid "zoom to fit page width"
 msgstr "zvětšit na šířku stránky"
+
+msgid "Font Weight"
+msgstr "Styl písma"
+
+msgid "View Mode"
+msgstr "Režim zobrazení"
+
+msgid "Progress Bar"
+msgstr "Spodní lišta"
+
+msgid "full"
+msgstr "plná"
+
+msgid "mini"
+msgstr "mini"
+
+msgid "Embedded Style"
+msgstr "Vložený styl"
