@@ -121,11 +121,11 @@ msgstr "Kontrast"
 
 #: frontend/apps/filemanager/filemanager.lua:133
 msgid "Copy"
-msgstr ""
+msgstr "Kopyala"
 
 #: frontend/apps/filemanager/filemanager.lua:151
 msgid "Cut"
-msgstr ""
+msgstr "Yapıştır"
 
 #: frontend/ui/reader/readerfrontlight.lua:44
 msgid "Decrease front light intensity to "
@@ -170,7 +170,7 @@ msgstr "Gömülü stil"
 
 #: reader.lua:55
 msgid "File does not exist"
-msgstr ""
+msgstr "Dosya bulunamadı"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
@@ -182,7 +182,7 @@ msgstr "DosyaYöneticisi"
 
 #: frontend/ui/data/strings.lua:13
 msgid "Fine Tuning"
-msgstr "İnce Ayar"
+msgstr "İnce Ayarlama"
 
 #: frontend/ui/input.lua:326
 msgid "Firmware revision"
@@ -261,23 +261,23 @@ msgstr "Girinti"
 
 #: frontend/ui/reader/readerhighlight.lua:145
 msgid "Invert"
-msgstr ""
+msgstr "Tersine çevir"
 
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
-msgstr ""
+msgstr "Soldan sağa"
 
 #: frontend/ui/language.lua:31
 msgid "Language"
-msgstr ""
+msgstr "Dil"
 
 #: frontend/ui/reader/readerhighlight.lua:133
 msgid "Lighten"
-msgstr ""
+msgstr "Hafiflet"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
-msgstr "Satır boşluğu"
+msgstr "Satır aralığı"
 
 #: frontend/ui/reader/readergoto.lua:50
 msgid "Location"
@@ -318,7 +318,7 @@ msgstr "Kenar Boşluğu"
 
 #: frontend/apps/filemanager/filemanager.lua:140
 msgid "Paste"
-msgstr ""
+msgstr "Yapıştır"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:77
 #: frontend/ui/reader/readermenu.lua:75
@@ -329,11 +329,11 @@ msgstr "Lütfen sorunları buraya bildirin: https://github.com/koreader/ koreade
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
-msgstr ""
+msgstr "Yeni dilin uygulanabilmesi için uygulamayı yeniden başlatın."
 
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
-msgstr ""
+msgstr "Sağdan sola"
 
 #: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
@@ -386,7 +386,7 @@ msgstr "Font boyutunu şuna ayarla:"
 
 #: frontend/ui/reader/readerhighlight.lua:124
 msgid "Set highlight drawer "
-msgstr ""
+msgstr "Vurgulama yöntemini seçin "
 
 #: frontend/ui/reader/readertypeset.lua:8
 msgid "Set render style"
@@ -434,11 +434,11 @@ msgstr "Bu yazılım GPLv3 ile lisanslanmıştır."
 
 #: frontend/ui/reader/readerfrontlight.lua:75
 msgid "Toggle"
-msgstr ""
+msgstr "Değiştir"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
-msgstr ""
+msgstr "Gizlileri göstermeyi değiştir"
 
 #: frontend/ui/widget/toggleswitch.lua:74
 msgid "Toggle switch"
@@ -454,7 +454,7 @@ msgstr ""
 
 #: frontend/ui/reader/readerpaging.lua:153
 msgid "Turn off page overlap"
-msgstr ""
+msgstr "Sayfa çakışmasını kapat"
 
 #: frontend/ui/reader/readertypeset.lua:128
 msgid "Turn on floating punctuation"
@@ -462,11 +462,11 @@ msgstr ""
 
 #: frontend/ui/reader/readerpaging.lua:154
 msgid "Turn on page overlap"
-msgstr ""
+msgstr "Sayfa çakışmasını aç"
 
 #: frontend/ui/reader/readerhighlight.lua:139
 msgid "Underscore"
-msgstr ""
+msgstr "Altını çiz"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
 #: frontend/ui/reader/readermenu.lua:80
