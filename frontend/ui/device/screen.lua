@@ -71,17 +71,19 @@ function Screen:getHeight()
 end
 
 function Screen:getDPI()
-    if(self.device:getModel() == "KindlePaperWhite")
-    or (self.device:getModel() == "Kobo_kraken")
-    or (self.device:getModel() == "Kobo_phoenix") then
-        return 212
-    elseif self.device:getModel() == "Kobo_dragon" then
-        return 265
-    elseif self.device:getModel() == "Kobo_pixie" then
-        return 200
+    if self.dpi ~= nil then return self.dpi end
+    local model = self.device:getModel()
+    if model == "KindlePaperWhite" or model == "KindlePaperWhite2" 
+        or model == "Kobo_kraken" or model == "Kobo_phoenix" then
+        self.dpi = 212
+    elseif model == "Kobo_dragon" then
+        self.dpi = 265
+    elseif model == "Kobo_pixie" then
+        self.dpi = 200
     else
-        return 167
+        self.dpi = 167
     end
+    return self.dpi
 end
 
 function Screen:scaleByDPI(px)
