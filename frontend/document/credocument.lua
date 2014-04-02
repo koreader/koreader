@@ -1,12 +1,12 @@
 local Geom = require("ui/geometry")
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
-local Configurable = require("ui/reader/configurable")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
+local Configurable = require("configurable")
 -- TBD: DrawContext
 
 local CreDocument = Document:new{
@@ -91,13 +91,13 @@ function CreDocument:init()
         self.error_message = self.doc -- will contain error message
         return
     end
-    
+
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
-    
+
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
-    
+
     self.is_open = true
     self.info.has_pages = false
     self:_readMetadata()

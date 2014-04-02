@@ -5,10 +5,10 @@ local Geom = require("ui/geometry")
 local Input = require("ui/input")
 local Event = require("ui/event")
 local GestureRange = require("ui/gesturerange")
-local ReaderPanning = require("ui/reader/readerpanning")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local ReaderPanning = require("apps/reader/modules/readerpanning")
 
 local ReaderRolling = InputContainer:new{
     old_doc_height = nil,

@@ -3,7 +3,7 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local TileCacheItem = require("document/tilecacheitem")
 local Geom = require("ui/geometry")
-local Configurable = require("ui/reader/configurable")
+local Configurable = require("configurable")
 local Math = require("optmath")
 local DEBUG = require("dbg")
 
@@ -36,7 +36,7 @@ local Document = {
         author = "",
         date = ""
     },
-    
+
     links = {},
 
     GAMMA_NO_GAMMA = 1.0,

@@ -2,7 +2,7 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
-local Configurable = require("ui/reader/configurable")
+local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
 local ffi = require("ffi")
 ffi.cdef[[
@@ -125,7 +125,7 @@ function PdfDocument:getUsedBBox(pageno)
     if used.y0 < 0 then used.y0 = 0 end
     if used.y1 > pheight then used.y1 = pheight end
     --@TODO give size for cacheitem?  02.12 2012 (houqp)
-    Cache:insert(hash, CacheItem:new{ 
+    Cache:insert(hash, CacheItem:new{
         ubbox = used,
     })
     page:close()
@@ -140,7 +140,7 @@ function PdfDocument:getPageLinks(pageno)
     end
     local page = self._document:openPage(pageno)
     local links = page:getPageLinks()
-    Cache:insert(hash, CacheItem:new{ 
+    Cache:insert(hash, CacheItem:new{
         links = links,
     })
     page:close()
