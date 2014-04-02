@@ -24,7 +24,6 @@ local DEBUG = require("dbg")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 
-local FileManager = require("apps/filemanager/filemanager")
 local ReaderUI = require("apps/reader/readerui")
 
 Profiler = nil
@@ -95,6 +94,7 @@ function doShowReaderUI(file, pass)
 end
 
 function showHomePage(path)
+    local FileManager = require("apps/filemanager/filemanager")
     UIManager:show(FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
