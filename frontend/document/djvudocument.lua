@@ -3,8 +3,8 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
-local Configurable = require("ui/reader/configurable")
 local DrawContext = require("ffi/drawcontext")
+local Configurable = require("configurable")
 
 local DjvuDocument = Document:new{
     _document = false,

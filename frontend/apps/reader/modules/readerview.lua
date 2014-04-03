@@ -1,12 +1,12 @@
 local OverlapGroup = require("ui/widget/overlapgroup")
-local ReaderFlipping = require("ui/reader/readerflipping")
-local ReaderFooter = require("ui/reader/readerfooter")
-local ReaderDogear = require("ui/reader/readerdogear")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local ReaderFlipping = require("apps/reader/modules/readerflipping")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
+local ReaderDogear = require("apps/reader/modules/readerdogear")
 
 local ReaderView = OverlapGroup:new{
     document = nil,
@@ -59,9 +59,9 @@ local ReaderView = OverlapGroup:new{
     dogear_visible = false,
     -- in flipping state
     flipping_visible = false,
-    
+
     -- auto save settings after turning pages
-    auto_save_paging_count = 0,    
+    auto_save_paging_count = 0,
 }
 
 function ReaderView:init()
@@ -395,7 +395,7 @@ end
 
 function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
-    
+
     if drawer == "underscore" then
         self.highlight.line_width = self.highlight.line_width or 2
         self.highlight.line_color = self.highlight.line_color or 5
@@ -623,7 +623,7 @@ function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
     self.ui.doc_settings:saveSetting("rotation_mode", self.cur_rotation_mode)
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
-    self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)    
+    self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
 end
 
 function ReaderView:autoSaveSettings()

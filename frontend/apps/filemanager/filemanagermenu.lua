@@ -1,6 +1,5 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local TouchMenu = require("ui/widget/touchmenu")
-local ReaderFrontLight = require("ui/reader/readerfrontlight")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -10,6 +9,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Language = require("ui/language")
 local _ = require("gettext")
+local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
