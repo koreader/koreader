@@ -160,7 +160,7 @@ function MenuItem:init()
 
     local mandatory = self.mandatory and ""..self.mandatory.." " or ""
     local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true).x
-    
+
     w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
     if w + mandatory_w >= self.content_width then
         if Device:isTouchDevice() then
@@ -174,20 +174,22 @@ function MenuItem:init()
         self.text = RenderText:getSubTextByWidth(self.text, self.face,
             self.content_width - indicator_w - mandatory_w, true) .. indicator
     end
-    
+
     local text_container = LeftContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         TextWidget:new{
             text = self.text,
             face = self.face,
+            bold = self.bold,
         }
     }
-    
+
     local mandatory_container = RightContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         TextWidget:new{
             text = mandatory,
             face = self.info_face,
+            bold = self.bold,
         }
     }
 
@@ -283,6 +285,7 @@ local Menu = FocusManager:new{
     width = 500,
     -- height will be calculated according to item number if not given
     height = nil,
+    header_padding = Screen:scaleByDPI(10),
     dimen = Geom:new{},
     item_table = {},
     item_shortcuts = {
@@ -322,7 +325,7 @@ function Menu:_recalculateDimen()
         w = self.dimen.w,
         h = Screen:scaleByDPI(46), -- hardcoded for now
     }
-    self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
+    self.perpage = math.floor((self.dimen.h - self.dimen.y - self.header_padding) / self.item_dimen.h) - 2
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
@@ -370,7 +373,10 @@ function Menu:init()
         self.page_info_right_chev
     }
 
-    local header = self.title_bar
+    local header = VerticalGroup:new{
+        VerticalSpan:new{width = self.header_padding},
+        self.title_bar,
+    }
     local body = self.item_group
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
@@ -462,6 +468,7 @@ function Menu:init()
     if #self.item_table > 0 then
         -- if the table is not yet initialized, this call
         -- must be done manually:
+        self.page = math.ceil((self.item_table.current or 1) / self.perpage)
         self:updateItems(1)
     end
 end
@@ -500,6 +507,7 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 text = self.item_table[i].text,
                 mandatory = self.item_table[i].mandatory,
+                bold = self.item_table.current == i,
                 face = self.cface,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,

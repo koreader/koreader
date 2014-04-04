@@ -16,6 +16,7 @@ local Font = require("ui/font")
 local DEBUG = require("dbg")
 
 local ReaderFooter = InputContainer:new{
+    mode = 1,
     visible = true,
     pageno = nil,
     pages = nil,
@@ -85,7 +86,7 @@ end
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    
+
     if self.show_time then
         self.progress_text.text = os.date("%H:%M")
     else
@@ -96,7 +97,7 @@ end
 function ReaderFooter:updateFooterPos()
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    
+
     if self.show_time then
         self.progress_text.text = os.date("%H:%M")
     else
@@ -116,6 +117,23 @@ function ReaderFooter:onPosUpdate(pos)
     self:updateFooterPos()
 end
 
+function ReaderFooter:applyFooterMode()
+    -- three modes switcher for reader footer
+    -- 0 for footer off
+    -- 1 for footer page info
+    -- 2 for footer time info
+    if self.mode == 0 then
+        self.view.footer_visible = false
+    else
+        self.view.footer_visible = true
+    end
+    if self.mode == 1 then
+        self.show_time = false
+    elseif self.mode == 2 then
+        self.show_time = true
+    end
+end
+
 function ReaderFooter:onTapFooter(arg, ges)
     if self.view.flipping_visible then
         local pos = ges.pos
@@ -123,7 +141,8 @@ function ReaderFooter:onTapFooter(arg, ges)
         local percentage = (pos.x - dimen.x)/dimen.w
         self.ui:handleEvent(Event:new("GotoPercentage", percentage))
     else
-        self.show_time = not self.show_time
+        self.mode = (self.mode + 1) % 3
+        self:applyFooterMode()
     end
     if self.pageno then
         self:updateFooterPage()
@@ -131,10 +150,7 @@ function ReaderFooter:onTapFooter(arg, ges)
         self:updateFooterPos()
     end
     UIManager:setDirty(self.view.dialog, "partial")
-    -- consume this tap when footer is visible
-    if self.view.footer_visible then
-        return true
-    end
+    return true
 end
 
 function ReaderFooter:onHoldFooter(arg, ges)

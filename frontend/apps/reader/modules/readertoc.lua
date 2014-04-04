@@ -53,6 +53,10 @@ function ReaderToc:onUpdateToc()
     return true
 end
 
+function ReaderToc:onPageUpdate(pageno)
+    self.pageno = pageno
+end
+
 function ReaderToc:fillToc()
     self.toc = self.ui.document:getToc()
 end
@@ -103,21 +107,31 @@ function ReaderToc:onShowToc()
             v.mandatory = v.page
         end
     end
-
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
+    -- update current entry
+    if #self.toc > 0 then
+        for i=1, #self.toc do
+            v = self.toc[i]
+            if v.page > self.pageno then
+                self.toc.current = i > 1 and i - 1 or 1
+                break
+            end
+        end
+    end
 
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.toc,
         ui = self.ui,
-        width = Screen:getWidth()-50,
-        height = Screen:getHeight()-50,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
         show_parent = menu_container,
+        is_borderless = true,
     }
 
-    table.insert(menu_container, toc_menu)
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+        toc_menu,
+    }
 
     function toc_menu:onMenuChoice(item)
         self.ui:handleEvent(Event:new("PageUpdate", item.page))
