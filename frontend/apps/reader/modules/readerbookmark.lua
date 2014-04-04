@@ -95,21 +95,21 @@ function ReaderBookmark:onShowBookmark()
         end
         v.text = "Page "..page.." "..v.notes.." @ "..v.datetime
     end
-    
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
 
     local bm_menu = Menu:new{
         title = "Bookmarks",
         item_table = self.bookmarks,
-        width = Screen:getWidth()-50,
-        height = Screen:getHeight()-50,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
         show_parent = menu_container,
+        is_borderless = true,
     }
-    
-    table.insert(menu_container, bm_menu)
-    
+
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+        bm_menu,
+    }
+
     -- buid up menu widget method as closure
     local doc = self.ui.document
     local view = self.view

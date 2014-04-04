@@ -285,6 +285,7 @@ local Menu = FocusManager:new{
     width = 500,
     -- height will be calculated according to item number if not given
     height = nil,
+    header_padding = Screen:scaleByDPI(10),
     dimen = Geom:new{},
     item_table = {},
     item_shortcuts = {
@@ -324,7 +325,7 @@ function Menu:_recalculateDimen()
         w = self.dimen.w,
         h = Screen:scaleByDPI(46), -- hardcoded for now
     }
-    self.perpage = math.floor((self.dimen.h - self.dimen.x) / self.item_dimen.h) - 2
+    self.perpage = math.floor((self.dimen.h - self.dimen.y - self.header_padding) / self.item_dimen.h) - 2
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
@@ -372,7 +373,10 @@ function Menu:init()
         self.page_info_right_chev
     }
 
-    local header = self.title_bar
+    local header = VerticalGroup:new{
+        VerticalSpan:new{width = self.header_padding},
+        self.title_bar,
+    }
     local body = self.item_group
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),

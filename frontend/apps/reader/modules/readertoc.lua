@@ -118,20 +118,20 @@ function ReaderToc:onShowToc()
         end
     end
 
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
-
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.toc,
         ui = self.ui,
-        width = Screen:getWidth()-50,
-        height = Screen:getHeight()-50,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
         show_parent = menu_container,
+        is_borderless = true,
     }
 
-    table.insert(menu_container, toc_menu)
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+        toc_menu,
+    }
 
     function toc_menu:onMenuChoice(item)
         self.ui:handleEvent(Event:new("PageUpdate", item.page))
