@@ -53,6 +53,10 @@ function ReaderToc:onUpdateToc()
     return true
 end
 
+function ReaderToc:onPageUpdate(pageno)
+    self.pageno = pageno
+end
+
 function ReaderToc:fillToc()
     self.toc = self.ui.document:getToc()
 end
@@ -101,6 +105,16 @@ function ReaderToc:onShowToc()
         for _,v in ipairs(self.toc) do
             v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
             v.mandatory = v.page
+        end
+    end
+    -- update current entry
+    if #self.toc > 0 then
+        for i=1, #self.toc do
+            v = self.toc[i]
+            if v.page > self.pageno then
+                self.toc.current = i > 1 and i - 1 or 1
+                break
+            end
         end
     end
 

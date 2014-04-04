@@ -160,7 +160,7 @@ function MenuItem:init()
 
     local mandatory = self.mandatory and ""..self.mandatory.." " or ""
     local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true).x
-    
+
     w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
     if w + mandatory_w >= self.content_width then
         if Device:isTouchDevice() then
@@ -174,20 +174,22 @@ function MenuItem:init()
         self.text = RenderText:getSubTextByWidth(self.text, self.face,
             self.content_width - indicator_w - mandatory_w, true) .. indicator
     end
-    
+
     local text_container = LeftContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         TextWidget:new{
             text = self.text,
             face = self.face,
+            bold = self.bold,
         }
     }
-    
+
     local mandatory_container = RightContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         TextWidget:new{
             text = mandatory,
             face = self.info_face,
+            bold = self.bold,
         }
     }
 
@@ -462,6 +464,7 @@ function Menu:init()
     if #self.item_table > 0 then
         -- if the table is not yet initialized, this call
         -- must be done manually:
+        self.page = math.ceil((self.item_table.current or 1) / self.perpage)
         self:updateItems(1)
     end
 end
@@ -500,6 +503,7 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 text = self.item_table[i].text,
                 mandatory = self.item_table[i].mandatory,
+                bold = self.item_table.current == i,
                 face = self.cface,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,
