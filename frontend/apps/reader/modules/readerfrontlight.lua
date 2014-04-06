@@ -33,10 +33,9 @@ function ReaderFrontLight:init()
                 }
             },
         }
-		DEBUG("Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil =", Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil)
         self.ui.menu:registerToMainMenu(self)
     end
-	
+
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
@@ -44,9 +43,9 @@ function ReaderFrontLight:onAdjust(arg, ges)
     if powerd.flIntensity ~= nil then
         DEBUG("frontlight intensity", powerd.flIntensity)
         local step = math.ceil(#self.steps * ges.distance / Screen:getWidth())
-		DEBUG("step = ", step)
+        DEBUG("step = ", step)
         local delta_int = self.steps[step] or self.steps[#self.steps]
-		DEBUG("delta_int = ", delta_int)
+        DEBUG("delta_int = ", delta_int)
         if ges.direction == "north" then
             powerd:setIntensity(powerd.flIntensity + delta_int)
         elseif ges.direction == "south" then
@@ -69,13 +68,13 @@ end
 
 function ReaderFrontLight:onSwipe(arg, ges)
     if ges.direction == "north" or ges.direction == "south" then
-		DEBUG("onSwipe activated")
+        DEBUG("onSwipe activated")
         return self:onShowIntensity()
     end
 end
 
 function ReaderFrontLight:onPanRelease(arg, ges)
-	DEBUG("onPanRelease activated")
+    DEBUG("onPanRelease activated")
     return self:onShowIntensity()
 end
 
