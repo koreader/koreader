@@ -123,7 +123,7 @@ local KoptOptions = {
         options = {
             {
                 name = "text_wrap",
-                name_text = _("Reflow"),
+                name_text = S.REFLOW,
                 toggle = {S.ON, S.OFF},
                 values = {1, 0},
                 default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
@@ -138,6 +138,13 @@ local KoptOptions = {
                         event = "InitScrollPageStates",
                     },
                 }
+            },
+            {
+                name = "page_opt",
+                name_text = S.DEWATERMARK,
+                toggle = {S.ON, S.OFF},
+                values = {1, 0},
+                default_value = 0,
             },
             {
                 name="doc_language",
