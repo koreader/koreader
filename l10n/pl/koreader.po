@@ -4,14 +4,14 @@
 # Translators:
 # danan72 <danan72@wp.pl>, 2013
 # danan_72 <piotr.martyni@gmail.com>, 2013
-# danan_72 <piotr.martyni@gmail.com>, 2013
+# danan_72 <piotr.martyni@gmail.com>, 2013-2014
 msgid ""
 msgstr ""
 "Project-Id-Version: KOReader\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-01-18 17:24+0000\n"
-"PO-Revision-Date: 2014-01-19 08:55+0000\n"
-"Last-Translator: thomass <pblcaccess2me@gmail.com>\n"
+"POT-Creation-Date: 2014-04-06 16:41+0000\n"
+"PO-Revision-Date: 2014-04-08 17:47+0000\n"
+"Last-Translator: danan_72 <piotr.martyni@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/koreader/language/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,52 +19,52 @@ msgstr ""
 "Language: pl\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: reader.lua:107
+#: reader.lua:119
 msgid "-d               start in debug mode"
 msgstr "-d uruchomienie w trybie debugowania"
 
-#: reader.lua:109
+#: reader.lua:121
 msgid "-h               show this usage help"
 msgstr "-h wyświetlenie pomocy dotyczącej użycia"
 
-#: reader.lua:108
+#: reader.lua:120
 msgid "-p [rows]        enable Lua code profiling"
-msgstr ""
+msgstr "-p [wiersze] włączenie profilowania kodu Lua"
 
-#: frontend/ui/data/strings.lua:46
+#: frontend/ui/data/strings.lua:48
 msgid "0 deg"
 msgstr "0 stopni"
 
-#: frontend/ui/data/strings.lua:48
+#: frontend/ui/data/strings.lua:50
 msgid "10 deg"
 msgstr "10 stopni"
 
-#: frontend/ui/data/strings.lua:47
+#: frontend/ui/data/strings.lua:49
 msgid "5 deg"
 msgstr "5 stopni"
 
-#: frontend/ui/widget/dictquicklookup.lua:122
+#: frontend/ui/widget/dictquicklookup.lua:124
 msgid "<<"
-msgstr ""
+msgstr "<<"
 
-#: frontend/ui/widget/dictquicklookup.lua:129
+#: frontend/ui/widget/dictquicklookup.lua:131
 msgid ">>"
-msgstr ""
+msgstr ">>"
 
-#: frontend/ui/reader/readerhighlight.lua:336
-#: frontend/ui/widget/dictquicklookup.lua:145
+#: frontend/apps/reader/modules/readerhighlight.lua:294
+#: frontend/ui/widget/dictquicklookup.lua:147
 msgid "Add Note"
 msgstr "Dodaj notatkę"
 
-#: frontend/ui/reader/readerfrontlight.lua:83
+#: frontend/apps/reader/modules/readerfrontlight.lua:107
 msgid "Apply"
-msgstr ""
+msgstr "Zatwierdź"
 
-#: frontend/ui/reader/readertypeset.lua:58
+#: frontend/apps/reader/modules/readertypeset.lua:54
 msgid "Auto"
 msgstr "Automatycznie"
 
-#: frontend/ui/data/strings.lua:21
+#: frontend/ui/data/strings.lua:22
 msgid "Auto Straighten"
 msgstr "Automatyczne wyrównanie"
 
@@ -94,21 +94,22 @@ msgstr "Automatycznie wykryty Kindle Touch"
 
 #: frontend/ui/input.lua:323
 msgid "Auto-detected Kobo"
-msgstr ""
+msgstr "Autom. wykryte Kobo"
 
-#: frontend/ui/reader/readerbookmark.lua:14
+#: frontend/apps/reader/modules/readerbookmark.lua:14
 msgid "Bookmarks"
 msgstr "Zakładki"
 
-#: frontend/ui/reader/readergoto.lua:36 frontend/ui/widget/confirmbox.lua:26
+#: frontend/apps/reader/modules/readergoto.lua:36
+#: frontend/ui/widget/confirmbox.lua:26
 msgid "Cancel"
 msgstr "Anuluj"
 
-#: frontend/ui/reader/readerhyphenation.lua:25
+#: frontend/apps/reader/modules/readerhyphenation.lua:32
 msgid "Change Hyphenation to "
 msgstr "Zmień dzielenie wyrazów na "
 
-#: frontend/ui/reader/readerfont.lua:18
+#: frontend/apps/reader/modules/readerfont.lua:18
 msgid "Change font"
 msgstr "Zmiana czcionki"
 
@@ -120,64 +121,65 @@ msgstr "Kolumny"
 msgid "Contrast"
 msgstr "Kontrast"
 
-#: frontend/apps/filemanager/filemanager.lua:133
+#: frontend/apps/filemanager/filemanager.lua:84
 msgid "Copy"
-msgstr ""
+msgstr "Kopiuj"
 
-#: frontend/apps/filemanager/filemanager.lua:151
+#: frontend/apps/filemanager/filemanager.lua:102
 msgid "Cut"
-msgstr ""
+msgstr "Wytnij"
 
-#: frontend/ui/reader/readerfrontlight.lua:44
-msgid "Decrease front light intensity to "
-msgstr "Zmniejsz intensywność oświetlenia na "
-
-#: frontend/ui/reader/readerfont.lua:188
+#: frontend/apps/reader/modules/readerfont.lua:188
 msgid "Decrease gamma to "
 msgstr "Zmniejsz gamma do "
 
-#: frontend/ui/reader/readerfont.lua:159
+#: frontend/apps/reader/modules/readerfont.lua:159
 msgid "Decrease line space to "
 msgstr "Zmniejsz odstęp między liniami do "
 
-#: frontend/ui/data/strings.lua:19
+#: frontend/ui/data/strings.lua:20
 msgid "Defect Size"
 msgstr "Rozmiar defektu"
 
-#: frontend/apps/filemanager/filemanager.lua:158
-#: frontend/ui/reader/readerhighlight.lua:231
+#: frontend/apps/filemanager/filemanager.lua:109
+#: frontend/apps/filemanager/filemanagerhistory.lua:30
+#: frontend/apps/reader/modules/readerhighlight.lua:186
 msgid "Delete"
 msgstr "Usuń"
 
 #: frontend/ui/input.lua:324
 msgid "Device model="
-msgstr ""
+msgstr "Model urządzenia="
 
 #: frontend/ui/data/strings.lua:16
-msgid "Document Language"
-msgstr ""
+msgid "Dewatermark"
+msgstr "Usuwanie znaku wodnego"
 
-#: frontend/ui/reader/readermenu.lua:114
+#: frontend/ui/data/strings.lua:17
+msgid "Document Language"
+msgstr "Język tłumaczenia"
+
+#: frontend/apps/reader/modules/readermenu.lua:114
 msgid "Document menu"
 msgstr "Menu dokumentu"
 
-#: frontend/ui/reader/readerhighlight.lua:238
+#: frontend/apps/reader/modules/readerhighlight.lua:193
 msgid "Edit"
 msgstr "Edycja"
 
-#: frontend/ui/data/strings.lua:26
-msgid "Embedded style"
+#: frontend/ui/data/strings.lua:27
+msgid "Embedded Style"
 msgstr "Wbudowany styl"
 
-#: reader.lua:55
+#: reader.lua:66
 msgid "File does not exist"
-msgstr ""
+msgstr "Plik nie istnieje"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:114
 msgid "File manager menu"
-msgstr ""
+msgstr "Menu menadżera plików"
 
-#: frontend/apps/filemanager/filemanager.lua:69
+#: frontend/apps/filemanager/filemanager.lua:20
 msgid "FileManager"
 msgstr "Menedżer plików"
 
@@ -187,108 +189,107 @@ msgstr "Dostrajanie"
 
 #: frontend/ui/input.lua:326
 msgid "Firmware revision"
-msgstr ""
+msgstr "Korekta oprogramowania"
 
-#: frontend/ui/data/strings.lua:23
-msgid "Font weight"
+#: frontend/ui/data/strings.lua:24
+msgid "Font Weight"
 msgstr "Grubość czcionki"
 
-#: frontend/ui/reader/readerfrontlight.lua:70
+#: frontend/apps/reader/modules/readerfrontlight.lua:94
 msgid "Frontlight Level"
-msgstr ""
+msgstr "Poziom oświetlenia"
 
-#: frontend/ui/reader/readerfrontlight.lua:60
+#: frontend/apps/reader/modules/readerfrontlight.lua:62
+msgid "Frontlight intensity is set to "
+msgstr "Intensywność oświetlenia jest ustawiona na"
+
+#: frontend/apps/reader/modules/readerfrontlight.lua:84
 msgid "Frontlight settings"
-msgstr ""
+msgstr "Ustawienia oświetlenia"
 
 #: frontend/ui/data/strings.lua:7
 msgid "Full Screen"
 msgstr "Pełny ekran"
 
-#: frontend/ui/data/strings.lua:24
+#: frontend/ui/data/strings.lua:25
 msgid "Gamma"
 msgstr "Gamma"
 
-#: frontend/ui/reader/readergoto.lua:10
+#: frontend/apps/reader/modules/readergoto.lua:10
 msgid "Go To"
-msgstr ""
+msgstr "Idź do"
 
-#: frontend/ui/reader/readergoto.lua:11
+#: frontend/apps/reader/modules/readergoto.lua:11
 msgid "Go to Page or Location"
-msgstr ""
+msgstr "Idź do strony lub lokacji"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:74
-#: frontend/ui/reader/readermenu.lua:72
+#: frontend/apps/reader/modules/readermenu.lua:72
 msgid "Help"
 msgstr "Pomoc"
 
-#: frontend/ui/reader/readerhighlight.lua:328
-#: frontend/ui/widget/dictquicklookup.lua:138
+#: frontend/apps/reader/modules/readerhighlight.lua:286
+#: frontend/ui/widget/dictquicklookup.lua:140
 msgid "Highlight"
 msgstr "Podkreślenie"
 
-#: frontend/apps/filemanager/filemanagerhistory.lua:11
-#: frontend/apps/filemanager/filemanagerhistory.lua:30
+#: frontend/apps/filemanager/filemanagerhistory.lua:14
 msgid "History"
-msgstr ""
+msgstr "Historia"
 
-#: frontend/ui/reader/readerhyphenation.lua:7
+#: frontend/apps/reader/modules/readerhyphenation.lua:7
 msgid "Hyphenation"
 msgstr "Dzielenie wyrazów"
 
-#: reader.lua:114
+#: reader.lua:126
 msgid "If you don't pass any path, the last viewed document will be opened"
 msgstr "Jeśli nie wskażesz żadnej ścieżki, zostanie otwarty ostatnio używany dokument"
 
-#: reader.lua:111
+#: reader.lua:123
 msgid "If you give the name of a directory instead of a file path, a file"
 msgstr "Jeśli podasz nazwę katalogu zamiast ścieżki do pliku, plik"
 
-#: frontend/ui/reader/readerfrontlight.lua:41
-msgid "Increase front light intensity to "
-msgstr "Zwiększ intensywność oświetlenia na "
-
-#: frontend/ui/reader/readerfont.lua:185
+#: frontend/apps/reader/modules/readerfont.lua:185
 msgid "Increase gamma to "
 msgstr "Zwiększ gamma do "
 
-#: frontend/ui/reader/readerfont.lua:163
+#: frontend/apps/reader/modules/readerfont.lua:163
 msgid "Increase line space to "
 msgstr "Zwiększ odstęp między liniami do "
 
-#: frontend/ui/data/strings.lua:22
+#: frontend/ui/data/strings.lua:23
 msgid "Indentation"
 msgstr "Wcięcie"
 
-#: frontend/ui/reader/readerhighlight.lua:145
+#: frontend/apps/reader/modules/readerhighlight.lua:96
 msgid "Invert"
-msgstr ""
+msgstr "Odwrócenie"
 
-#: frontend/ui/data/strings.lua:54
+#: frontend/ui/data/strings.lua:56
 msgid "LTR"
-msgstr ""
+msgstr "LTR"
 
 #: frontend/ui/language.lua:31
 msgid "Language"
-msgstr ""
+msgstr "Język"
 
-#: frontend/ui/reader/readerhighlight.lua:133
+#: frontend/apps/reader/modules/readerhighlight.lua:84
 msgid "Lighten"
-msgstr ""
+msgstr "Podświetlenie"
 
 #: frontend/ui/data/strings.lua:10
 msgid "Line Spacing"
 msgstr "Odstępy między liniami"
 
-#: frontend/ui/reader/readergoto.lua:50
+#: frontend/apps/reader/modules/readergoto.lua:50
 msgid "Location"
-msgstr ""
+msgstr "Lokacja"
 
-#: frontend/ui/reader/readerhighlight.lua:366
+#: frontend/apps/reader/modules/readerhighlight.lua:324
 msgid "More"
 msgstr "Więcej"
 
-#: reader.lua:70
+#: reader.lua:81
 msgid "No reader engine for this file"
 msgstr "Brak obsługi dla tego pliku"
 
@@ -296,14 +297,14 @@ msgstr "Brak obsługi dla tego pliku"
 msgid "Not supported device model!"
 msgstr "Nieobsługiwany model urządzenia!"
 
-#: frontend/ui/reader/readerfrontlight.lua:90
+#: frontend/apps/reader/modules/readerfrontlight.lua:114
 #: frontend/ui/widget/confirmbox.lua:25
 msgid "OK"
 msgstr "OK"
 
-#: frontend/ui/reader/readergoto.lua:43
+#: frontend/apps/reader/modules/readergoto.lua:43
 msgid "Page"
-msgstr ""
+msgstr "Strona"
 
 #: frontend/ui/widget/touchmenu.lua:345
 msgid "Page "
@@ -317,12 +318,12 @@ msgstr "Przycięcie strony"
 msgid "Page Margin"
 msgstr "Margines strony"
 
-#: frontend/apps/filemanager/filemanager.lua:140
+#: frontend/apps/filemanager/filemanager.lua:91
 msgid "Paste"
-msgstr ""
+msgstr "Wklej"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:77
-#: frontend/ui/reader/readermenu.lua:75
+#: frontend/apps/reader/modules/readermenu.lua:75
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
@@ -330,25 +331,29 @@ msgstr "Proszę zgłosić błąd na https://github.com/koreader/ koreader/issues
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
-msgstr ""
+msgstr "Uruchom ponownie aby zmiana ustawienia języka odniosła skutek."
 
-#: frontend/ui/data/strings.lua:55
+#: frontend/ui/data/strings.lua:29
+msgid "Progress Bar"
+msgstr "Pasek postępu"
+
+#: frontend/ui/data/strings.lua:57
 msgid "RTL"
-msgstr ""
+msgstr "RTL"
 
-#: reader.lua:105
+#: reader.lua:117
 msgid "Read all the books on your E-Ink reader"
 msgstr "Czytaj wszystkie książki na swoim czytniku E-Ink"
 
-#: frontend/ui/reader/readerfont.lua:211
+#: frontend/apps/reader/modules/readerfont.lua:211
 msgid "Redrawing with font "
 msgstr "Odśwież z czcionką "
 
-#: frontend/ui/data/koptoptions.lua:126 frontend/ui/data/strings.lua:15
+#: frontend/ui/data/strings.lua:15
 msgid "Reflow"
 msgstr "Funkcja \"Reflow\""
 
-#: frontend/ui/data/strings.lua:20
+#: frontend/ui/data/strings.lua:21
 msgid "Render Quality"
 msgstr "Jakość renderowania"
 
@@ -358,17 +363,17 @@ msgstr "Orientacja ekranu"
 
 #: frontend/ui/input.lua:328
 msgid "Screen height ="
-msgstr ""
+msgstr "Wysokość ekranu="
 
 #: frontend/ui/input.lua:330
 msgid "Screen width ="
-msgstr ""
+msgstr "Szerokość ekranu="
 
 #: frontend/ui/data/strings.lua:8
 msgid "Scroll Mode"
 msgstr "Tryb przewijania"
 
-#: reader.lua:117
+#: reader.lua:129
 msgid "See http://github.com/koreader/kindlepdfviewer for more info."
 msgstr "Więcej informacji na stronie http://github.com/koreader/kindlepdfviewer."
 
@@ -381,47 +386,47 @@ msgstr "Wybierz pozycję menu"
 msgid "Select Option Item"
 msgstr "Wybierz opcję"
 
-#: frontend/ui/reader/readerfont.lua:144
+#: frontend/apps/reader/modules/readerfont.lua:144
 msgid "Set font size to "
 msgstr "Ustaw rozmiar czcionki na "
 
-#: frontend/ui/reader/readerhighlight.lua:124
+#: frontend/apps/reader/modules/readerhighlight.lua:75
 msgid "Set highlight drawer "
-msgstr ""
+msgstr "Ustaw typ zaznaczenia"
 
-#: frontend/ui/reader/readertypeset.lua:8
+#: frontend/apps/reader/modules/readertypeset.lua:9
 msgid "Set render style"
 msgstr "Ustaw tryb renderowania"
 
-#: frontend/ui/reader/readerhighlight.lua:355
+#: frontend/apps/reader/modules/readerhighlight.lua:313
 msgid "Share"
 msgstr "Udostępnij"
 
 #: frontend/ui/uimanager.lua:297
 msgid "Standby"
-msgstr ""
+msgstr "Tryb gotowości"
 
-#: frontend/ui/reader/readerzooming.lua:292
+#: frontend/apps/reader/modules/readerzooming.lua:292
 msgid "Switch zoom mode"
 msgstr "Włącz tryb powiększenia"
 
-#: frontend/ui/data/strings.lua:57
+#: frontend/ui/data/strings.lua:59
 msgid "TBLTR"
-msgstr ""
+msgstr "TBLTR"
 
-#: frontend/ui/data/strings.lua:56
+#: frontend/ui/data/strings.lua:58
 msgid "TBRTL"
-msgstr ""
+msgstr "TBRTL"
 
-#: frontend/ui/reader/readertoc.lua:95
+#: frontend/apps/reader/modules/readertoc.lua:122
 msgid "Table of Contents"
 msgstr "Spis treści"
 
-#: frontend/ui/reader/readertoc.lua:12
+#: frontend/apps/reader/modules/readertoc.lua:14
 msgid "Table of contents"
 msgstr "Spis treści"
 
-#: frontend/ui/widget/button.lua:77
+#: frontend/ui/widget/button.lua:78
 msgid "Tap Button"
 msgstr "Przycisk"
 
@@ -429,104 +434,96 @@ msgstr "Przycisk"
 msgid "Text Align"
 msgstr "Wyrównanie tekstu"
 
-#: reader.lua:116
+#: reader.lua:128
 msgid "This software is licensed under the GPLv3."
 msgstr "Ten program jest na licencji GPLv3."
 
-#: frontend/ui/reader/readerfrontlight.lua:75
+#: frontend/apps/reader/modules/readerfrontlight.lua:99
 msgid "Toggle"
-msgstr ""
+msgstr "Przełącz"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid "Toggle hidden files"
-msgstr ""
+msgstr "Włącz/wyłącz ukryte pliki"
 
-#: frontend/ui/widget/toggleswitch.lua:74
+#: frontend/ui/widget/toggleswitch.lua:75
 msgid "Toggle switch"
 msgstr "Przełącznik"
 
-#: frontend/ui/reader/readerhighlight.lua:347
+#: frontend/apps/reader/modules/readerhighlight.lua:305
 msgid "Translate"
-msgstr ""
+msgstr "Tłumacz"
 
-#: frontend/ui/reader/readertypeset.lua:127
-msgid "Turn off floating punctuation"
-msgstr ""
-
-#: frontend/ui/reader/readerpaging.lua:153
+#: frontend/apps/reader/modules/readerpaging.lua:143
 msgid "Turn off page overlap"
-msgstr ""
+msgstr "Wyłącz nakładanie strony"
 
-#: frontend/ui/reader/readertypeset.lua:128
-msgid "Turn on floating punctuation"
-msgstr ""
-
-#: frontend/ui/reader/readerpaging.lua:154
+#: frontend/apps/reader/modules/readerpaging.lua:144
 msgid "Turn on page overlap"
-msgstr ""
+msgstr "Włącz nakładanie strony"
 
-#: frontend/ui/reader/readerhighlight.lua:139
+#: frontend/apps/reader/modules/readerhighlight.lua:90
 msgid "Underscore"
-msgstr ""
+msgstr "Podkreślenie"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
-#: frontend/ui/reader/readermenu.lua:80
+#: frontend/apps/reader/modules/readermenu.lua:80
 msgid "Version"
-msgstr ""
+msgstr "Wersja"
 
-#: frontend/ui/data/strings.lua:17
+#: frontend/ui/data/strings.lua:18
 msgid "Vertical Text"
 msgstr "Tekst pionowy"
 
-#: frontend/ui/data/strings.lua:25
-msgid "View mode"
+#: frontend/ui/data/strings.lua:26
+msgid "View Mode"
 msgstr "Tryb przeglądania"
 
-#: frontend/ui/data/strings.lua:18
+#: frontend/ui/data/strings.lua:19
 msgid "Word Gap"
 msgstr "Odstęp między słowami"
 
-#: frontend/ui/data/strings.lua:27
+#: frontend/ui/data/strings.lua:28
 msgid "Writing Direction"
-msgstr ""
+msgstr "Kierunek tekstu"
 
-#: frontend/ui/reader/readerscreenshot.lua:31
+#: frontend/apps/reader/modules/readerscreenshot.lua:34
 msgid "Writing screen to "
-msgstr ""
+msgstr "Pisz po ekranie aby"
 
-#: frontend/ui/reader/readerzooming.lua:311
+#: frontend/apps/reader/modules/readerzooming.lua:311
 msgid "Zoom to fit content"
 msgstr "Dopasowanie do tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:299
+#: frontend/apps/reader/modules/readerzooming.lua:299
 msgid "Zoom to fit content height"
 msgstr "Dopasowanie do wysokości tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:295
+#: frontend/apps/reader/modules/readerzooming.lua:295
 msgid "Zoom to fit content width"
 msgstr "Dopasowanie do szerokości tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:315
+#: frontend/apps/reader/modules/readerzooming.lua:315
 msgid "Zoom to fit page"
 msgstr "Dopasowanie do strony"
 
-#: frontend/ui/reader/readerzooming.lua:307
+#: frontend/apps/reader/modules/readerzooming.lua:307
 msgid "Zoom to fit page height"
 msgstr "Dopasowanie do wysokości strony"
 
-#: frontend/ui/reader/readerzooming.lua:303
+#: frontend/apps/reader/modules/readerzooming.lua:303
 msgid "Zoom to fit page width"
 msgstr "Dopasowanie do szerokości strony"
 
-#: frontend/ui/data/strings.lua:31
+#: frontend/ui/data/strings.lua:33
 msgid "auto"
-msgstr "automatycznie"
+msgstr "auto"
 
 #: frontend/ui/widget/confirmbox.lua:37
 msgid "cancel"
 msgstr "anuluj"
 
-#: reader.lua:112
+#: reader.lua:124
 msgid "chooser will show up and let you select a file"
 msgstr "pojawi się okno wyboru pliku"
 
@@ -539,7 +536,7 @@ msgstr "wybierz zaznaczony element"
 msgid "chose selected option"
 msgstr "wybierz zaznaczoną opcję"
 
-#: frontend/ui/reader/readertypeset.lua:52
+#: frontend/apps/reader/modules/readertypeset.lua:48
 msgid "clear all external styles"
 msgstr "wyczyść wszystkie zewnętrzne style"
 
@@ -547,173 +544,180 @@ msgstr "wyczyść wszystkie zewnętrzne style"
 msgid "close config menu"
 msgstr "wybierz menu konfiguracji"
 
-#: frontend/apps/filemanager/filemanager.lua:31
-#: frontend/ui/reader/readerhighlight.lua:24
+#: frontend/ui/widget/buttondialog.lua:22
 #: frontend/ui/widget/infomessage.lua:32
 msgid "close dialog"
 msgstr "zamknij dialog"
 
-#: frontend/ui/readerui.lua:44 frontend/ui/readerui.lua:73
+#: frontend/apps/reader/readerui.lua:44 frontend/apps/reader/readerui.lua:73
 msgid "close document"
 msgstr "zamknij dokument"
 
-#: frontend/ui/widget/menu.lua:443
+#: frontend/ui/widget/menu.lua:449
 msgid "close menu"
 msgstr "zamknij menu"
 
-#: frontend/ui/data/strings.lua:42
+#: frontend/ui/data/strings.lua:44
 msgid "darker"
 msgstr "ciemniejszy"
 
-#: frontend/ui/data/strings.lua:43
+#: frontend/ui/data/strings.lua:45
 msgid "darkest"
-msgstr "najciemniejszy"
+msgstr "najciemn."
 
-#: frontend/ui/data/strings.lua:37
+#: frontend/ui/data/strings.lua:39
 msgid "decrease"
-msgstr "zmniejszenie"
+msgstr "zmniejsz"
 
-#: frontend/ui/reader/readerfont.lua:35
+#: frontend/apps/reader/modules/readerfont.lua:35
 msgid "decrease font size"
 msgstr "zmniejsz rozmiar czcionki"
 
-#: frontend/ui/reader/readerfont.lua:43
+#: frontend/apps/reader/modules/readerfont.lua:43
 msgid "decrease line space"
 msgstr "zmniejsz odstęp między liniami"
 
-#: frontend/ui/data/strings.lua:41
+#: frontend/ui/data/strings.lua:43
 msgid "default"
 msgstr "domyślny"
 
-#: frontend/ui/reader/readerrolling.lua:51
+#: frontend/ui/data/strings.lua:60
+msgid "full"
+msgstr "pełny"
+
+#: frontend/apps/reader/modules/readerrolling.lua:51
 msgid "go to 11%"
 msgstr "idź do 11%"
 
-#: frontend/ui/reader/readerrolling.lua:53
+#: frontend/apps/reader/modules/readerrolling.lua:53
 msgid "go to 22%"
 msgstr "idź do 22%"
 
-#: frontend/ui/reader/readerrolling.lua:55
+#: frontend/apps/reader/modules/readerrolling.lua:55
 msgid "go to 33%"
 msgstr "idź do 33%"
 
-#: frontend/ui/reader/readerrolling.lua:57
+#: frontend/apps/reader/modules/readerrolling.lua:57
 msgid "go to 44%"
 msgstr "idź do 44%"
 
-#: frontend/ui/reader/readerrolling.lua:59
+#: frontend/apps/reader/modules/readerrolling.lua:59
 msgid "go to 55%"
 msgstr "idź do 55%"
 
-#: frontend/ui/reader/readerrolling.lua:61
+#: frontend/apps/reader/modules/readerrolling.lua:61
 msgid "go to 66%"
 msgstr "idź do 66%"
 
-#: frontend/ui/reader/readerrolling.lua:63
+#: frontend/apps/reader/modules/readerrolling.lua:63
 msgid "go to 77%"
 msgstr "idź do 77%"
 
-#: frontend/ui/reader/readerrolling.lua:65
+#: frontend/apps/reader/modules/readerrolling.lua:65
 msgid "go to 88%"
 msgstr "idź do 88%"
 
-#: frontend/ui/reader/readerrolling.lua:67
+#: frontend/apps/reader/modules/readerrolling.lua:67
 msgid "go to end"
 msgstr "idź na koniec"
 
-#: frontend/ui/reader/readerrolling.lua:30
+#: frontend/apps/reader/modules/readerrolling.lua:30
 msgid "go to next view"
 msgstr "idź do następnego widoku"
 
-#: frontend/ui/reader/readerrolling.lua:35
+#: frontend/apps/reader/modules/readerrolling.lua:35
 msgid "go to previous view"
 msgstr "idź do poprzedniego widoku"
 
-#: frontend/ui/reader/readerrolling.lua:49
+#: frontend/apps/reader/modules/readerrolling.lua:49
 msgid "go to start"
 msgstr "wróć do początku"
 
-#: frontend/ui/widget/menu.lua:445
+#: frontend/ui/widget/menu.lua:451
 msgid "goto next page of the menu"
 msgstr "idź do następnej strony menu"
 
-#: frontend/ui/widget/menu.lua:448
+#: frontend/ui/widget/menu.lua:454
 msgid "goto previous page of the menu"
 msgstr "idź do poprzedniej strony menu"
 
-#: frontend/ui/data/strings.lua:45
+#: frontend/ui/data/strings.lua:47
 msgid "high"
 msgstr "wysoki"
 
-#: frontend/ui/reader/readerhighlight.lua:68
+#: frontend/apps/reader/modules/readerhighlight.lua:19
 msgid "highlight text"
 msgstr "podkreśl tekst"
 
-#: frontend/ui/data/strings.lua:38
+#: frontend/ui/data/strings.lua:40
 msgid "increase"
-msgstr "zwiększenie"
+msgstr "zwiększ"
 
-#: frontend/ui/reader/readerfont.lua:31
+#: frontend/apps/reader/modules/readerfont.lua:31
 msgid "increase font size"
 msgstr "zwiększ rozmiar czcionki"
 
-#: frontend/ui/reader/readerfont.lua:39
+#: frontend/apps/reader/modules/readerfont.lua:39
 msgid "increase line space"
 msgstr "zwiększ odstępy między liniami"
 
-#: frontend/ui/data/strings.lua:50
+#: frontend/ui/data/strings.lua:52
 msgid "landscape"
 msgstr "pozioma"
 
-#: frontend/ui/data/strings.lua:36
+#: frontend/ui/data/strings.lua:38
 msgid "large"
 msgstr "duży"
 
-#: frontend/ui/data/strings.lua:40
+#: frontend/ui/data/strings.lua:42
 msgid "lighter"
-msgstr "większy"
+msgstr "jaśniejszy"
 
-#: frontend/ui/data/strings.lua:39
+#: frontend/ui/data/strings.lua:41
 msgid "lightest"
-msgstr "największy"
+msgstr "najjaśn."
 
-#: frontend/ui/data/strings.lua:44
+#: frontend/ui/data/strings.lua:46
 msgid "low"
 msgstr "niski"
 
-#: frontend/ui/data/strings.lua:32
+#: frontend/ui/data/strings.lua:34
 msgid "manual"
 msgstr "ręcznie"
 
-#: frontend/ui/data/strings.lua:35
+#: frontend/ui/data/strings.lua:37
 msgid "medium"
 msgstr "średni"
 
-#: frontend/ui/reader/readerrolling.lua:45
+#: frontend/ui/data/strings.lua:61
+msgid "mini"
+msgstr "minimalny"
+
+#: frontend/apps/reader/modules/readerrolling.lua:45
 msgid "move view down"
 msgstr "przesuń widok w dół"
 
-#: frontend/ui/reader/readerrolling.lua:40
+#: frontend/apps/reader/modules/readerrolling.lua:40
 msgid "move view up"
 msgstr "przesuń widok do góry"
 
-#: frontend/ui/reader/readerpanning.lua:25
+#: frontend/apps/reader/modules/readerpanning.lua:25
 msgid "move visible area down"
 msgstr "przesuń widoczny obszar w dół"
 
-#: frontend/ui/reader/readerpanning.lua:28
+#: frontend/apps/reader/modules/readerpanning.lua:28
 msgid "move visible area left"
 msgstr "przesuń widoczny obszar w lewo"
 
-#: frontend/ui/reader/readerpanning.lua:31
+#: frontend/apps/reader/modules/readerpanning.lua:31
 msgid "move visible area right"
 msgstr "przesuń widoczny obszar w prawo"
 
-#: frontend/ui/reader/readerpanning.lua:22
+#: frontend/apps/reader/modules/readerpanning.lua:22
 msgid "move visible area up"
 msgstr "przesuń widoczny obszar do góry"
 
-#: frontend/ui/widget/menu.lua:530
+#: frontend/ui/widget/menu.lua:538
 msgid "no choices available"
 msgstr "brak możliwości wyboru"
 
@@ -721,111 +725,111 @@ msgstr "brak możliwości wyboru"
 msgid "no text"
 msgstr "brak tekstu"
 
-#: frontend/ui/data/strings.lua:30
+#: frontend/ui/data/strings.lua:32
 msgid "off"
 msgstr "wyłącz"
 
-#: frontend/ui/data/strings.lua:29
+#: frontend/ui/data/strings.lua:31
 msgid "on"
 msgstr "włącz"
 
-#: reader.lua:60
+#: reader.lua:71
 msgid "opening file"
-msgstr ""
+msgstr "otwieranie pliku"
 
-#: frontend/ui/data/strings.lua:53
+#: frontend/ui/data/strings.lua:55
 msgid "page"
 msgstr "strona"
 
-#: frontend/ui/widget/menu.lua:524
+#: frontend/ui/widget/menu.lua:532
 msgid "page "
 msgstr "strona"
 
-#: frontend/ui/data/strings.lua:49
+#: frontend/ui/data/strings.lua:51
 msgid "portrait"
 msgstr "pionowa"
 
-#: frontend/ui/reader/readerrotation.lua:20
+#: frontend/apps/reader/modules/readerrotation.lua:20
 msgid "rotate left by 90 degrees"
 msgstr "obróć o 90 st. w lewo"
 
-#: frontend/ui/reader/readerrotation.lua:24
+#: frontend/apps/reader/modules/readerrotation.lua:24
 msgid "rotate right by 90 degrees"
 msgstr "obróć o 90 st. w prawo"
 
-#: frontend/ui/data/strings.lua:52
+#: frontend/ui/data/strings.lua:54
 msgid "scroll"
 msgstr "przewijanie"
 
-#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:457
+#: frontend/ui/widget/configdialog.lua:440 frontend/ui/widget/menu.lua:463
 msgid "select current menu item"
 msgstr "wybierz aktualną pozycję menu"
 
-#: frontend/ui/data/strings.lua:33
+#: frontend/ui/data/strings.lua:35
 msgid "semi-auto"
-msgstr ""
+msgstr "pół-auto"
 
-#: frontend/ui/reader/readertoc.lua:20
+#: frontend/apps/reader/modules/readertoc.lua:22
 msgid "show Table of Content menu"
 msgstr "wybierz menu spisu treści"
 
-#: frontend/ui/reader/readerbookmark.lua:23
+#: frontend/apps/reader/modules/readerbookmark.lua:23
 msgid "show bookmarks"
 msgstr "pokaż zakładki"
 
-#: frontend/ui/reader/readerconfig.lua:18
+#: frontend/apps/reader/modules/readerconfig.lua:18
 msgid "show config dialog"
 msgstr "pokaż konfigurację"
 
-#: frontend/ui/reader/readerfont.lua:28
+#: frontend/apps/reader/modules/readerfont.lua:28
 msgid "show font menu"
 msgstr "pokaż menu czcionki"
 
 #: frontend/apps/filemanager/filemanagermenu.lua:36
-#: frontend/ui/reader/readermenu.lua:45
+#: frontend/apps/reader/modules/readermenu.lua:45
 msgid "show menu"
 msgstr "pokaż menu"
 
-#: frontend/ui/data/strings.lua:34
+#: frontend/ui/data/strings.lua:36
 msgid "small"
 msgstr "mały"
 
-#: frontend/ui/data/strings.lua:51
+#: frontend/ui/data/strings.lua:53
 msgid "toggle bold"
 msgstr "przełącz grubość"
 
-#: reader.lua:104
+#: reader.lua:116
 msgid "usage: ./reader.lua [OPTION] ... path"
 msgstr "użycie: ./reader.lua [OPCJE] ... ścieżka"
 
-#: frontend/ui/reader/readerzooming.lua:25
+#: frontend/apps/reader/modules/readerzooming.lua:25
 msgid "zoom in"
 msgstr "powiększenie"
 
-#: frontend/ui/reader/readerzooming.lua:30
+#: frontend/apps/reader/modules/readerzooming.lua:30
 msgid "zoom out"
 msgstr "pomniejszenie"
 
-#: frontend/ui/reader/readerzooming.lua:40
+#: frontend/apps/reader/modules/readerzooming.lua:40
 msgid "zoom to fit content"
 msgstr "dopasuj do tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:60
+#: frontend/apps/reader/modules/readerzooming.lua:60
 msgid "zoom to fit content height"
 msgstr "dopasuj do wysokości tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:50
+#: frontend/apps/reader/modules/readerzooming.lua:50
 msgid "zoom to fit content width"
 msgstr "dopasuj do szerokości tekstu/zawartości"
 
-#: frontend/ui/reader/readerzooming.lua:35
+#: frontend/apps/reader/modules/readerzooming.lua:35
 msgid "zoom to fit page"
 msgstr "dopasuj do strony"
 
-#: frontend/ui/reader/readerzooming.lua:55
+#: frontend/apps/reader/modules/readerzooming.lua:55
 msgid "zoom to fit page height"
 msgstr "dopasuj do wysokości strony"
 
-#: frontend/ui/reader/readerzooming.lua:45
+#: frontend/apps/reader/modules/readerzooming.lua:45
 msgid "zoom to fit page width"
 msgstr "dopasuj do szerokości strony"
