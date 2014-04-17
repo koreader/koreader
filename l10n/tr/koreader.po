@@ -265,7 +265,7 @@ msgstr "Tersine çevir"
 
 #: frontend/ui/data/strings.lua:54
 msgid "LTR"
-msgstr "Soldan sağa"
+msgstr "Soldan"
 
 #: frontend/ui/language.lua:31
 msgid "Language"
@@ -306,7 +306,7 @@ msgstr "Sayfa"
 
 #: frontend/ui/widget/touchmenu.lua:345
 msgid "Page "
-msgstr "Sayfa"
+msgstr "Sayfa "
 
 #: frontend/ui/data/strings.lua:6
 msgid "Page Crop"
@@ -325,7 +325,8 @@ msgstr "Yapıştır"
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at"
 " the bottom of the page for more options"
-msgstr "Lütfen sorunları buraya bildirin: https://github.com/koreader/ koreader/issues, Ekranın alt bölgesine tıklayarak daha fazla seçeneğe ulaşabilirsiniz."
+msgstr "Lütfen sorunları buraya bildirin: https://github.com/koreader/ koreader/issues,"
+"Ekranın alt bölgesine tıklayarak daha fazla seçeneğe ulaşabilirsiniz."
 
 #: frontend/ui/language.lua:13
 msgid "Please restart reader for new language setting to take effect."
@@ -333,7 +334,7 @@ msgstr "Yeni dilin uygulanabilmesi için uygulamayı yeniden başlatın."
 
 #: frontend/ui/data/strings.lua:55
 msgid "RTL"
-msgstr "Sağdan sola"
+msgstr "Sağdan"
 
 #: reader.lua:105
 msgid "Read all the books on your E-Ink reader"
@@ -487,7 +488,7 @@ msgstr "Kelime Boşluğu"
 
 #: frontend/ui/data/strings.lua:27
 msgid "Writing Direction"
-msgstr "Yazma yönü"
+msgstr "Yazı yönü"
 
 #: frontend/ui/reader/readerscreenshot.lua:31
 msgid "Writing screen to "
@@ -562,7 +563,7 @@ msgstr "menüyü kapat"
 
 #: frontend/ui/data/strings.lua:42
 msgid "darker"
-msgstr "daha koyu"
+msgstr "az koyu"
 
 #: frontend/ui/data/strings.lua:43
 msgid "darkest"
@@ -582,7 +583,7 @@ msgstr "satır boşluğunu azalt"
 
 #: frontend/ui/data/strings.lua:41
 msgid "default"
-msgstr "varsayılan"
+msgstr "normal"
 
 #: frontend/ui/reader/readerrolling.lua:51
 msgid "go to 11%"
@@ -662,7 +663,7 @@ msgstr "satır boşluğunu arttır"
 
 #: frontend/ui/data/strings.lua:50
 msgid "landscape"
-msgstr "yatay mod"
+msgstr "yatay"
 
 #: frontend/ui/data/strings.lua:36
 msgid "large"
@@ -670,7 +671,7 @@ msgstr "geniş"
 
 #: frontend/ui/data/strings.lua:40
 msgid "lighter"
-msgstr "daha açık"
+msgstr "az açık"
 
 #: frontend/ui/data/strings.lua:39
 msgid "lightest"
@@ -762,7 +763,7 @@ msgstr "mevcut menü ögesini seç"
 
 #: frontend/ui/data/strings.lua:33
 msgid "semi-auto"
-msgstr "yarı-otomatik"
+msgstr "yarı-oto"
 
 #: frontend/ui/reader/readertoc.lua:20
 msgid "show Table of Content menu"
