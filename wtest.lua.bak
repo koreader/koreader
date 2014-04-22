@@ -3,17 +3,6 @@
 require "defaults"
 print(package.path)
 package.path = "./frontend/?.lua;./?.lua"
-local DocSettings = require("docsettings")
-local _ = require("gettext")
-
--- read settings and check for language override
--- has to be done before requiring other files because
--- they might call gettext on load
-G_reader_settings = DocSettings:open(".reader")
-local lang_locale = G_reader_settings:readSetting("language")
-if lang_locale then
-    _.changeLang(lang_locale)
-end
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local Font = require("ui/font")
@@ -28,10 +17,11 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local TouchMenu = require("ui/widget/touchmenu")
 local InputText = require("ui/widget/inputtext")
 local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
+local ReaderUI = require("ui/readerui")
 local Dbg = require("dbg")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
+
 
 -----------------------------------------------------
 -- widget that paints the grid on the background
