@@ -37,6 +37,7 @@ local Screen = require("ui/screen")
 -- widget that paints the grid on the background
 -----------------------------------------------------
 TestGrid = Widget:new{}
+TestVisible = Widget:new{}
 
 function TestGrid:paintTo(bb)
     v_line = math.floor(bb:getWidth() / 50)
@@ -51,6 +52,57 @@ function TestGrid:paintTo(bb)
         RenderText:renderUtf8Text(bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
         bb:paintRect(x_num, 0, 1, bb:getHeight(), 10)
     end
+end
+
+function TestVisible:paintTo(bb)
+    --Draw three lines at the borders to assess what the maximum visible coordinates are
+    
+    v_line = math.floor(bb:getWidth() / 50)
+    h_line = math.floor(bb:getHeight() / 50)
+    -- Paint white background for higher contrast
+    bb:paintRect(0,0,bb:getWidth(),bb:getHeight() , 0)
+    -- Only render gridtext not lines at a more central postition, so it doesn't interfere with the
+    for i=1,h_line do
+        y_num = i*50
+        RenderText:renderUtf8Text(bb, 40, y_num+10, Font:getFace("ffont", 12), y_num, true)
+    end
+    for i=1,v_line do
+        x_num = i*50
+        RenderText:renderUtf8Text(bb, x_num, 40, Font:getFace("ffont", 12), x_num, true)
+    end
+    
+    -- Handtunable minimal and maximal visible coordinates
+    local x_min = 0 + 3
+    local x_max = bb:getWidth() - 4
+    local y_min = 0 + 3
+    local y_max = bb:getHeight() - 15
+    
+    -- Render extremes on screen
+    RenderText:renderUtf8Text(bb, 150, 100, Font:getFace("ffont", 22), "x_min = "..x_min, true)
+    RenderText:renderUtf8Text(bb, 500, 100, Font:getFace("ffont", 22), "x_max = "..x_max, true)
+    RenderText:renderUtf8Text(bb, 100, 150, Font:getFace("ffont", 22), "y_min = "..y_min, true)
+    RenderText:renderUtf8Text(bb, 100, 300, Font:getFace("ffont", 22), "y_max = "..y_max, true)
+    
+    -- Three parallel lines at the top
+    bb:paintRect(x_min,y_min, x_max, 1 , 10)
+    bb:paintRect(x_min,y_min + 3, x_max, 1 , 10)
+    bb:paintRect(x_min,y_min + 6, x_max, 1 , 10)
+    
+    -- Three parallel lines at the bottom
+    bb:paintRect(x_min,y_max, x_max, 1 , 10)
+    bb:paintRect(x_min,y_max - 3, x_max, 1 , 10)
+    bb:paintRect(x_min,y_max - 6, x_max, 1 , 10)
+    
+    -- Three parallel lines at the left
+    bb:paintRect(x_min,y_min, 1, y_max , 10)
+    bb:paintRect(x_min + 3,y_min, 1, y_max, 10)
+    bb:paintRect(x_min + 6,y_min, 1, y_max, 10)
+    
+    -- Three parallel lines at the right
+    bb:paintRect(x_max,y_min, 1, y_max , 10)
+    bb:paintRect(x_max - 3,y_min, 1, y_max, 10)
+    bb:paintRect(x_max - 6,y_min, 1, y_max, 10)
+    
 end
 
 -----------------------------------------------------
@@ -282,13 +334,14 @@ inputtext = InputText:new{
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
 UIManager:show(Background:new())
-UIManager:show(TestGrid)
+-- UIManager:show(TestGrid)
+UIManager:show(TestVisible)
 --UIManager:show(Clock:new())
 --UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)
 --UIManager:show(keyboard)
-UIManager:show(inputtext)
+-- UIManager:show(inputtext)
 
 UIManager:run()
