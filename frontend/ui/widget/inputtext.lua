@@ -3,9 +3,13 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
-local Font = require("ui/font")
-local Screen = require("ui/screen")
+local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
+local Device = require("ui/device")
+local Screen = require("ui/screen")
+local Font = require("ui/font")
+local DEBUG = require("dbg")
 
 local InputText = InputContainer:new{
     text = "",
@@ -13,40 +17,51 @@ local InputText = InputContainer:new{
     charlist = {}, -- table to store input string
     charpos = 1,
     input_type = nil,
-    
+    text_type = nil,
+
     width = nil,
     height = nil,
     face = Font:getFace("cfont", 22),
-    
+
     padding = 5,
     margin = 5,
     bordersize = 2,
-    
+
     parent = nil, -- parent dialog that will be set dirty
     scroll = false,
+    focused = true,
 }
 
 function InputText:init()
     self:StringToCharlist(self.text)
     self:initTextBox()
     self:initKeyboard()
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapTextBox = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen
+                }
+            }
+        }
+    end
 end
 
 function InputText:initTextBox()
-    local bgcolor = nil
-    local fgcolor = nil
-    if self.text == "" then
-        self.text = self.hint
-        bgcolor = 0.0
-        fgcolor = 0.5
-    else
-        bgcolor = 0.0
-        fgcolor = 1.0
-    end
+    local bgcolor, fgcolor = 0.0, self.text == "" and 0.5 or 1.0
+
     local text_widget = nil
+    local show_text = self.text
+    if self.text_type == "password" and show_text ~= "" then
+        show_text = self.text:gsub("(.-).", function() return "*" end)
+        show_text = show_text:gsub("(.)$", function() return self.text:sub(-1) end)
+    elseif show_text == "" then
+        show_text = self.hint
+    end
     if self.scroll then
         text_widget = ScrollTextWidget:new{
-            text = self.text,
+            text = show_text,
             face = self.face,
             bgcolor = bgcolor,
             fgcolor = fgcolor,
@@ -55,7 +70,7 @@ function InputText:initTextBox()
         }
     else
         text_widget = TextBoxWidget:new{
-            text = self.text,
+            text = show_text,
             face = self.face,
             bgcolor = bgcolor,
             fgcolor = fgcolor,
@@ -67,6 +82,7 @@ function InputText:initTextBox()
         bordersize = self.bordersize,
         padding = self.padding,
         margin = self.margin,
+        color = self.focused and 15 or 8,
         text_widget,
     }
     self.dimen = self[1]:getSize()
@@ -83,6 +99,22 @@ function InputText:initKeyboard()
         width = Screen:getWidth(),
         height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
     }
+end
+
+function InputText:onTapTextBox()
+    if self.parent.onSwitchFocus then
+        self.parent:onSwitchFocus(self)
+    end
+end
+
+function InputText:unfocus()
+    self.focused = false
+    self[1].color = 8
+end
+
+function InputText:focus()
+    self.focused = true
+    self[1].color = 15
 end
 
 function InputText:onShowKeyboard()

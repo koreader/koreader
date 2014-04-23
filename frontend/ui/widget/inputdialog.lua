@@ -18,13 +18,13 @@ local InputDialog = InputContainer:new{
     buttons = nil,
     input_type = nil,
     enter_callback = nil,
-    
+
     width = nil,
     height = nil,
-    
+
     title_face = Font:getFace("tfont", 22),
     input_face = Font:getFace("cfont", 20),
-    
+
     title_padding = Screen:scaleByDPI(5),
     title_margin = Screen:scaleByDPI(2),
     input_padding = Screen:scaleByDPI(10),
@@ -53,21 +53,21 @@ function InputDialog:init()
         scroll = false,
         parent = self,
     }
-    local button_table = ButtonTable:new{
+    self.button_table = ButtonTable:new{
         width = self.width,
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = self.buttons,
         zero_sep = true,
     }
-    local title_bar = LineWidget:new{
+    self.title_bar = LineWidget:new{
         --background = 8,
         dimen = Geom:new{
-            w = button_table:getSize().w + self.button_padding,
+            w = self.button_table:getSize().w + self.button_padding,
             h = Screen:scaleByDPI(2),
         }
     }
-    
+
     self.dialog_frame = FrameContainer:new{
         radius = 8,
         bordersize = 3,
@@ -77,11 +77,11 @@ function InputDialog:init()
         VerticalGroup:new{
             align = "left",
             self.title,
-            title_bar,
+            self.title_bar,
             -- input
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = title_bar:getSize().w,
+                    w = self.title_bar:getSize().w,
                     h = self.input:getSize().h,
                 },
                 self.input,
@@ -89,14 +89,14 @@ function InputDialog:init()
             -- buttons
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = title_bar:getSize().w,
-                    h = button_table:getSize().h,
+                    w = self.title_bar:getSize().w,
+                    h = self.button_table:getSize().h,
                 },
-                button_table,
+                self.button_table,
             }
         }
     }
-    
+
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
