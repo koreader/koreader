@@ -1,8 +1,8 @@
 #!./koreader-base
 
 require "defaults"
-package.path = "./frontend/?.lua;./?.lua"
-package.cpath = "?.so;/usr/lib/lua/?.so"
+package.path = "?.lua;common/?.lua;frontend/?.lua"
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")

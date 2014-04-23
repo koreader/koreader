@@ -31,6 +31,7 @@ local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
+local PluginLoader = require("apps/reader/pluginloader")
 
 --[[
 This is an abstraction for a reader interface
@@ -261,6 +262,18 @@ function ReaderUI:init()
             document = self.document,
         })
     end
+
+    -- koreader plugins
+    for _,module in ipairs(PluginLoader:loadPlugins()) do
+        DEBUG("Loaded plugin", module.path)
+        table.insert(self, module:new{
+            dialog = self.dialog,
+            view = self[1],
+            ui = self,
+            document = self.document,
+        })
+    end
+
     --DEBUG(self.doc_settings)
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
