@@ -10,6 +10,7 @@ git-rev
 *.o
 tags
 test/*
+*.tar
 
 emu
 
@@ -18,4 +19,6 @@ koreader-*.zip
 /.cproject
 /.project
 
+koreader-arm-linux-gnueabi
+koreader-x86_64-linux-gnu
 

@@ -39,6 +39,8 @@ endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
+	# install plugins
+	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	mkdir -p $(INSTALL_DIR)/koreader/screenshots
 	mkdir -p $(INSTALL_DIR)/koreader/data/dict
@@ -103,6 +105,7 @@ koboupdate: all
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
+		`find plugins -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 
 po:

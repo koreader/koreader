@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-04-06 16:41+0000\n"
+"POT-Creation-Date: 2014-04-23 15:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -116,6 +116,7 @@ msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
 #: frontend/ui/widget/confirmbox.lua:26
+#: plugins/evernote.koplugin/main.lua:92
 msgid ""
 "Cancel"
 msgstr ""
@@ -187,7 +188,7 @@ msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:114
+#: frontend/apps/reader/modules/readermenu.lua:118
 msgid ""
 "Document menu"
 msgstr ""
@@ -200,6 +201,43 @@ msgstr ""
 #: frontend/ui/data/strings.lua:27
 msgid ""
 "Embedded Style"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:245
+msgid ""
+"Error occurs when exporting book:"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:140
+#: plugins/evernote.koplugin/main.lua:152
+msgid ""
+"Error occurs when login:"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:247
+msgid ""
+"Errors occur when exporting book:"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:41
+msgid ""
+"Evernote"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:56
+msgid ""
+"Export all notes in this book"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:69
+msgid ""
+"Export all notes in your library"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:238
+#: plugins/evernote.koplugin/main.lua:240
+msgid ""
+"Exported notes in book:"
 msgstr ""
 
 #: reader.lua:66
@@ -268,7 +306,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:74
-#: frontend/apps/reader/modules/readermenu.lua:72
+#: frontend/apps/reader/modules/readermenu.lua:75
 msgid ""
 "Help"
 msgstr ""
@@ -319,6 +357,11 @@ msgid ""
 "Invert"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:17
+msgid ""
+"Koreader Notes"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:56
 msgid ""
 "LTR"
@@ -344,6 +387,27 @@ msgid ""
 "Location"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:45
+#: plugins/evernote.koplugin/main.lua:99
+msgid ""
+"Login"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:16
+msgid ""
+"Login to Evernote"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:158
+msgid ""
+"Login to Evernote successfully"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:45
+msgid ""
+"Logout"
+msgstr ""
+
 #: frontend/apps/reader/modules/readerhighlight.lua:324
 msgid ""
 "More"
@@ -357,6 +421,11 @@ msgstr ""
 #: frontend/ui/input.lua:395
 msgid ""
 "Not supported device model!"
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:258
+msgid ""
+"Note: "
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:114
@@ -391,7 +460,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:77
-#: frontend/apps/reader/modules/readermenu.lua:75
+#: frontend/apps/reader/modules/readermenu.lua:78
 msgid ""
 "Please report bugs to https://github.com/koreader/ koreader/issues, Click at the bottom of the page for more options"
 msgstr ""
@@ -528,6 +597,16 @@ msgid ""
 "Text Align"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:76
+msgid ""
+"This may take several minutes..."
+msgstr ""
+
+#: plugins/evernote.koplugin/main.lua:63
+msgid ""
+"This may take several seconds..."
+msgstr ""
+
 #: reader.lua:128
 msgid ""
 "This software is licensed under the GPLv3."
@@ -569,7 +648,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:82
-#: frontend/apps/reader/modules/readermenu.lua:80
+#: frontend/apps/reader/modules/readermenu.lua:83
 msgid ""
 "Version"
 msgstr ""
@@ -629,6 +708,12 @@ msgid ""
 "Zoom to fit page width"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:241
+#: plugins/evernote.koplugin/main.lua:248
+msgid ""
+"and "
+msgstr ""
+
 #: frontend/ui/data/strings.lua:33
 msgid ""
 "auto"
@@ -671,8 +756,8 @@ msgid ""
 "close dialog"
 msgstr ""
 
-#: frontend/apps/reader/readerui.lua:44
-#: frontend/apps/reader/readerui.lua:73
+#: frontend/apps/reader/readerui.lua:45
+#: frontend/apps/reader/readerui.lua:74
 msgid ""
 "close document"
 msgstr ""
@@ -907,6 +992,11 @@ msgid ""
 "opening file"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:241
+msgid ""
+"others."
+msgstr ""
+
 #: frontend/ui/data/strings.lua:55
 msgid ""
 "page"
@@ -969,7 +1059,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:36
-#: frontend/apps/reader/modules/readermenu.lua:45
+#: frontend/apps/reader/modules/readermenu.lua:48
 msgid ""
 "show menu"
 msgstr ""
