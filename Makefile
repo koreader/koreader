@@ -105,6 +105,7 @@ koboupdate: all
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
+		`find plugins -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 
 po:
