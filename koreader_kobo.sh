@@ -20,6 +20,26 @@ killall -STOP nickel
 ./reader.lua /mnt/onboard 2> crash.log
 
 # continue with nickel
-#cat .last_screen_content | /usr/local/Kobo/pickel showpic
-#rm .last_screen_content
 killall -CONT nickel
+
+# return to home screen
+cd /mnt/onboard/.kobo/koreader/Kobo2HomeScreen
+case `/bin/kobo_config.sh * 2>/dev/null` in
+	dragon)		#DEVICE=AURAHD 
+				#no binary file available
+		;;
+	phoenix)	#DEVICE=AURA
+				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
+				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
+		;;
+	kraken)		#DEVICE=GLO    
+				#no binary file available
+		;;
+	pixie)		#DEVICE=MINI   
+				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
+				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
+		;;
+	trilogy|*)	#DEVICE=TOUCH
+				cat ./KoboTouchHomeButton.bin > /dev/input/event0
+		;;
+esac
