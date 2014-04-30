@@ -78,6 +78,7 @@ function Document:close()
         self.is_open = false
         self._document:close()
     end
+    Cache:serialize()
 end
 
 -- this might be overridden by a document implementation
@@ -253,7 +254,7 @@ end
 -- TODO: this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
     local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
-    if not Cache:check(hash_full_page) then
+    if not Cache:check(hash_full_page, TileCacheItem) then
         DEBUG("hinting page", pageno)
         self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
     end
@@ -270,7 +271,7 @@ Draw page content to blitbuffer.
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local hash_full_page = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
     local hash_excerpt = hash_full_page.."|"..tostring(rect)
-    local tile = Cache:check(hash_full_page)
+    local tile = Cache:check(hash_full_page, TileCacheItem)
     if not tile then
         tile = Cache:check(hash_excerpt)
         if not tile then

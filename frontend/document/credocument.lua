@@ -40,10 +40,21 @@ function CreDocument.zipContentExt(self, fname)
     return string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
+function CreDocument:cacheInit()
+    -- remove legacy cr3cache directory
+    if lfs.attributes("./cr3cache", "mode") == "directory" then
+        os.execute("rm -r ./cr3cache")
+    end
+    cre.initCache("./cache/cr3cache", 1024*1024*32)
+end
+
 function CreDocument:engineInit()
     if not engine_initilized then
         -- initialize cache
-        cre.initCache(1024*1024*64)
+        self:cacheInit()
+
+        -- initialize hyph dictionaries
+        cre.initHyphDict("./data/hyph")
 
         -- we need to initialize the CRE font list
         local fonts = Font:getFontList()
