@@ -65,6 +65,8 @@ local ReaderView = OverlapGroup:new{
 }
 
 function ReaderView:init()
+    -- fix recalculate from close document pageno
+    self.state.page = nil
     self:resetLayout()
 end
 
