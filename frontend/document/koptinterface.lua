@@ -1,11 +1,12 @@
+local TileCacheItem = require("document/tilecacheitem")
+local KOPTContext = require("ffi/koptcontext")
 local Document = require("document/document")
-local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
-local TileCacheItem = require("document/tilecacheitem")
+local serial = require("serialize")
+local Cache = require("cache")
 local DEBUG = require("dbg")
-local KOPTContext = require("ffi/koptcontext")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -24,6 +25,20 @@ function ContextCacheItem:onFree()
         DEBUG("free koptcontext", self.kctx)
         self.kctx:free()
     end
+end
+
+function ContextCacheItem:dump(filename)
+    if self.kctx:isPreCache() == 0 then
+        DEBUG("dumping koptcontext to", filename)
+        return serial.dump(self.size, KOPTContext.totable(self.kctx), filename)
+    end
+end
+
+function ContextCacheItem:load(filename)
+    DEBUG("loading koptcontext from", filename)
+    local size, kc_table = serial.load(filename)
+    self.size = size
+    self.kctx = KOPTContext.fromtable(kc_table)
 end
 
 local OCREngine = CacheItem:new{}
@@ -182,7 +197,7 @@ function KoptInterface:getCachedContext(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
     local context_hash = self:getContextHash(doc, pageno, bbox)
     local kctx_hash = "kctx|"..context_hash
-    local cached = Cache:check(kctx_hash)
+    local cached = Cache:check(kctx_hash, ContextCacheItem)
     if not cached then
         -- If kctx is not cached, create one and get reflowed bmp in foreground.
         local kc = self:createContext(doc, pageno, bbox)
@@ -304,7 +319,11 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         -- prepare cache item with contained blitbuffer
         local tile = TileCacheItem:new{
             size = fullwidth * fullheight / 2 + 64, -- estimation
-            excerpt = Geom:new{ w = fullwidth, h = fullheight },
+            excerpt = Geom:new{
+                x = 0, y = 0,
+                w = fullwidth,
+                h = fullheight
+            },
             pageno = pageno,
         }
         tile.bb = kc:dstToBlitBuffer()
