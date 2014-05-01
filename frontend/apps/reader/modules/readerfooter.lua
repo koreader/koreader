@@ -81,6 +81,8 @@ function ReaderFooter:init()
             },
         }
     end
+    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    self:applyFooterMode()
 end
 
 function ReaderFooter:updateFooterPage()
@@ -150,6 +152,7 @@ function ReaderFooter:onTapFooter(arg, ges)
         self:updateFooterPos()
     end
     UIManager:setDirty(self.view.dialog, "partial")
+    G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     return true
 end
 
