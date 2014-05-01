@@ -42,6 +42,7 @@ function ButtonTable:init()
                 padding = 0,
                 text_font_face = self.button_font_face,
                 text_font_size = self.button_font_size,
+                show_parent = self.show_parent,
             }
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{

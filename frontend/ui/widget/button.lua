@@ -6,7 +6,9 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[
@@ -139,7 +141,13 @@ end
 
 function Button:onTapSelect()
     if self.enabled then
-        self.callback()
+        self[1].invert = true
+        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:scheduleIn(0.1, function()
+            self.callback()
+            self[1].invert = false
+            UIManager:setDirty(self.show_parent, "partial")
+        end)
     end
     return true
 end

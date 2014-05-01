@@ -41,6 +41,10 @@ function TouchMenuItem:init()
         },
     }
 
+    local item_enabled = self.item.enabled
+    if self.item.enabled_func then
+        item_enabled = self.item.enabled_func()
+    end
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -50,6 +54,8 @@ function TouchMenuItem:init()
             HorizontalSpan:new{ width = 10 },
             TextWidget:new{
                 text = self.item.text or self.item.text_func(),
+                bgcolor = 0.0,
+                fgcolor = item_enabled ~= false and 1.0 or 0.5,
                 face = self.face,
             },
         },
@@ -58,6 +64,12 @@ function TouchMenuItem:init()
 end
 
 function TouchMenuItem:onTapSelect(arg, ges)
+    local enabled = self.item.enabled
+    if self.item.enabled_func then
+        enabled = self.item.enabled_func()
+    end
+    if enabled == false then return end
+
     self.item_frame.invert = true
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.5, function()
@@ -401,18 +413,31 @@ function TouchMenu:onSwipe(arg, ges_ev)
 end
 
 function TouchMenu:onMenuSelect(item)
-    if item.sub_item_table == nil then
-        if item.callback then
+    local enabled = item.enabled
+    if item.enabled_func then
+        enabled = item.enabled_func()
+    end
+    if enabled == false then return end
+    local sub_item_table = item.sub_item_table
+    if item.sub_item_table_func then
+        sub_item_table = item.sub_item_table_func()
+    end
+    if sub_item_table == nil then
+        local callback = item.callback
+        if item.callback_func then
+            callback = item.callback_func()
+        end
+        if callback then
             -- put stuff in scheduler so we can See
             -- the effect of inverted menu item
             UIManager:scheduleIn(0.1, function()
                 self:closeMenu()
-                item.callback()
+                callback()
             end)
         end
     else
         table.insert(self.item_table_stack, self.item_table)
-        self.item_table = item.sub_item_table
+        self.item_table = sub_item_table
         self:updateItems()
     end
     return true

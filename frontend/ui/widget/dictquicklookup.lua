@@ -34,7 +34,7 @@ local DictQuickLookup = InputContainer:new{
     content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
     width = nil,
     height = nil,
-    
+
     title_padding = Screen:scaleByDPI(5),
     title_margin = Screen:scaleByDPI(2),
     word_padding = Screen:scaleByDPI(2),
@@ -113,13 +113,13 @@ function DictQuickLookup:update()
             height = self.height*0.7,
             dialog = self,
         },
-    }    
+    }
     local button_table = ButtonTable:new{
         width = math.max(self.width, definition:getSize().w),
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = {
-            {    
+            {
                 {
                     text = _("<<"),
                     enabled = self:isPrevDictAvaiable(),
@@ -153,6 +153,7 @@ function DictQuickLookup:update()
             },
         },
         zero_sep = true,
+        show_parent = self,
     }
     local title_bar = LineWidget:new{
         --background = 8,
@@ -161,12 +162,12 @@ function DictQuickLookup:update()
             h = Screen:scaleByDPI(2),
         }
     }
-    
+
     self.dict_bar = OverlapGroup:new{
         dimen = {w = button_table:getSize().w, h = self.dict_title:getSize().h},
         self.dict_title,
     }
-    
+
     self.dict_frame = FrameContainer:new{
         radius = 8,
         bordersize = 3,
@@ -237,7 +238,7 @@ function DictQuickLookup:changeDictionary(index)
     self.dictionary = self.results[index].dict
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
-    
+
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     self:update()
 
@@ -248,7 +249,7 @@ function DictQuickLookup:changeDictionary(index)
     end
 end
 
-function DictQuickLookup:changeToDefaultDict()        
+function DictQuickLookup:changeToDefaultDict()
     if self.dictionary then
         -- dictionaries that have definition of the first word(accurate word)
         -- excluding Fuzzy queries.
