@@ -26,14 +26,9 @@ local Screen = require("ui/screen")
 
 local ReaderUI = require("apps/reader/readerui")
 
-Profiler = nil
+local Profiler = nil
 
 function exitReader()
-    if Profiler ~= nil then
-        Profiler:stop()
-        Profiler:dump("./profile.html")
-    end
-
     G_reader_settings:close()
 
     input.closeAll()
@@ -56,6 +51,7 @@ function exitReader()
         end
     end
 
+    if Profiler then Profiler.stop() end
     os.exit(0)
 end
 
@@ -146,14 +142,8 @@ while argidx <= #ARGV do
     elseif arg == "-d" then
         DEBUG:turnOn()
     elseif arg == "-p" then
-        local lulip = require("ffi/lulip")
-        Profiler = lulip:new()
-        pcall(function()
-            -- set maxrows only if the optional arg is numeric
-            Profiler:maxrows(ARGV[argidx] + 0)
-            argidx = argidx + 1
-        end)
-        Profiler:start()
+        Profiler = require("jit.p")
+        Profiler.start("la")
     else
         -- not a recognized option, should be a filename
         argidx = argidx - 1
