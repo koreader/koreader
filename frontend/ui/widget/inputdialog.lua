@@ -59,6 +59,7 @@ function InputDialog:init()
         button_font_size = 20,
         buttons = self.buttons,
         zero_sep = true,
+        show_parent = self,
     }
     self.title_bar = LineWidget:new{
         --background = 8,

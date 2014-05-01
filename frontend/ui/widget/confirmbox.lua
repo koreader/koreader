@@ -43,6 +43,7 @@ function ConfirmBox:init()
             self.ok_callback()
             UIManager:close(self)
         end,
+        show_parent = self,
     }
     local cancel_button = Button:new{
         text = self.cancel_text,
@@ -51,6 +52,7 @@ function ConfirmBox:init()
             self.cancel_callback()
             UIManager:close(self)
         end,
+        show_parent = self,
     }
 
     self.layout = { { ok_button, cancel_button } }

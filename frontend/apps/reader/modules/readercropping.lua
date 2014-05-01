@@ -32,6 +32,7 @@ function PageCropDialog:init()
         radius = 7,
         text_font_face = "cfont",
         text_font_size = 20,
+        show_parent = self,
     }
     local cancel_button = Button:new{
         text = self.cancel_text,
@@ -41,6 +42,7 @@ function PageCropDialog:init()
         radius = 7,
         text_font_face = "cfont",
         text_font_size = 20,
+        show_parent = self,
     }
     local ok_container = RightContainer:new{
         dimen = Geom:new{ w = Screen:getWidth()*0.33, h = Screen:getHeight()/12},

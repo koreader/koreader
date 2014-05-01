@@ -39,6 +39,7 @@ function ButtonDialog:init()
             ButtonTable:new{
                 width = Screen:getWidth()*0.9,
                 buttons = self.buttons,
+                show_parent = self,
             },
             background = 0,
             bordersize = 2,
