@@ -9,13 +9,11 @@ local _ = require("gettext")
 
 local slt2 = require('slt2')
 local MyClipping = require("clip")
-local EvernoteOAuth = require("EvernoteOAuth")
-local EvernoteClient = require("EvernoteClient")
 
 local EvernoteExporter = InputContainer:new{
     login_title = _("Login to Evernote"),
     notebook_name = _("Koreader Notes"),
-    --evernote_domain = "sandbox",
+    evernote_domain = nil,
 
     evernote_token,
     notebook_guid,
@@ -25,6 +23,7 @@ function EvernoteExporter:init()
     self.ui.menu:registerToMainMenu(self)
 
     local settings = G_reader_settings:readSetting("evernote") or {}
+    self.evernote_domain = settings.domain
     self.evernote_username = settings.username or ""
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
@@ -37,23 +36,50 @@ function EvernoteExporter:init()
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
+    local domain = nil
+    if self.evernote_domain == "sandbox" then
+        domain = _("Sandbox")
+    elseif self.evernote_domain == "yinxiang" then
+        domain = _("Yinxiang")
+    else
+        domain = _("Evernote")
+    end
     table.insert(tab_item_table.plugins, {
         text = _("Evernote"),
         sub_item_table = {
             {
                 text_func = function()
-                    return self.evernote_token and _("Logout") or _("Login")
+                    return self.evernote_token and (_("Logout") .. " " .. domain)
+                            or _("Login")
                 end,
-                callback = function()
-                    if self.evernote_token then
-                        self:logout()
-                    else
-                        self:login()
-                    end
-                end
+                callback_func = function()
+                    return self.evernote_token and function() self:logout() end
+                            or nil
+                end,
+                sub_item_table_func = function()
+                    return not self.evernote_token and {
+                        {
+                            text = _("Evernote"),
+                            callback = function()
+                                self.evernote_domain = nil
+                                self:login()
+                            end
+                        },
+                        {
+                            text = _("Yinxiang"),
+                            callback = function()
+                                self.evernote_domain = "yinxiang"
+                                self:login()
+                            end
+                        }
+                    } or nil
+                end,
             },
             {
                 text = _("Export all notes in this book"),
+                enabled_func = function()
+                    return self.evernote_token ~= nil
+                end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
                         self:exportCurrentNotes(self.view)
@@ -61,12 +87,15 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
 
                     UIManager:show(InfoMessage:new{
                         text = _("This may take several seconds..."),
-                        timeout = 3,
+                        timeout = 1,
                     })
                 end
             },
             {
                 text = _("Export all notes in your library"),
+                enabled_func = function()
+                    return self.evernote_token ~= nil
+                end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
                         self:exportAllNotes()
@@ -74,7 +103,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
 
                     UIManager:show(InfoMessage:new{
                         text = _("This may take several minutes..."),
-                        timeout = 3,
+                        timeout = 1,
                     })
                 end
             },
@@ -104,6 +133,11 @@ function EvernoteExporter:login()
                         UIManager:scheduleIn(0.5, function()
                             self:doLogin(username, password)
                         end)
+
+                        UIManager:show(InfoMessage:new{
+                            text = _("Logging in please wait..."),
+                            timeout = 1,
+                        })
                     end,
                 },
             },
@@ -126,7 +160,8 @@ function EvernoteExporter:getCredential()
 end
 
 function EvernoteExporter:doLogin(username, password)
-    self:closeDialog()
+    local EvernoteOAuth = require("EvernoteOAuth")
+    local EvernoteClient = require("EvernoteClient")
 
     local oauth = EvernoteOAuth:new{
         domain = self.evernote_domain,
@@ -165,11 +200,13 @@ end
 function EvernoteExporter:logout()
     self.evernote_token = nil
     self.notebook_guid = nil
+    self.evernote_domain = nil
     self:saveSettings()
 end
 
 function EvernoteExporter:saveSettings()
     local settings = {
+        domain = self.evernote_domain,
         username = self.evernote_username,
         token = self.evernote_token,
         notebook = self.notebook_guid,
@@ -183,6 +220,7 @@ function EvernoteExporter:getExportNotebook(client)
 end
 
 function EvernoteExporter:exportCurrentNotes(view)
+    local EvernoteClient = require("EvernoteClient")
     local client = EvernoteClient:new{
         domain = self.evernote_domain,
         authToken = self.evernote_token,
@@ -193,6 +231,7 @@ function EvernoteExporter:exportCurrentNotes(view)
 end
 
 function EvernoteExporter:exportAllNotes()
+    local EvernoteClient = require("EvernoteClient")
     local client = EvernoteClient:new{
         domain = self.evernote_domain,
         authToken = self.evernote_token,
