@@ -23,7 +23,7 @@ killall -STOP nickel
 killall -CONT nickel
 
 # return to home screen
-cd /mnt/onboard/.kobo/koreader/Kobo2HomeScreen
+cd /mnt/onboard/.kobo/koreader/Kobo
 case `/bin/kobo_config.sh * 2>/dev/null` in
 	dragon)		#DEVICE=AURAHD 
 				#no binary file available
