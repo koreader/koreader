@@ -325,7 +325,8 @@ function Menu:_recalculateDimen()
         w = self.dimen.w,
         h = Screen:scaleByDPI(46), -- hardcoded for now
     }
-    self.perpage = math.floor((self.dimen.h - self.dimen.y - self.header_padding) / self.item_dimen.h) - 2
+    -- header and footer should approximately take up space of 2 items
+    self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - (self.no_title and 1 or 2)
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 

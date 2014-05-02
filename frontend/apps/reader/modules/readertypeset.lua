@@ -25,9 +25,10 @@ function ReaderTypeset:onReadSettings(config)
     end
 
     -- default to enable embedded css
-    self.embedded_css = config:readSetting("embedded_css") or true
+    self.embedded_css = config:readSetting("embedded_css")
+    if self.embedded_css == nil then self.embedded_css = true end
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
-    
+
     -- set page margins
     self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 end
