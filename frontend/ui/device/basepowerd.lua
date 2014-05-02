@@ -20,6 +20,7 @@ end
 function BasePowerD:init() end
 function BasePowerD:toggleFrontlight() end
 function BasePowerD:setIntensityHW() end
+function BasePowerD:setIntensitySW() end
 function BasePowerD:getCapacityHW() end
 function BasePowerD:isChargingHW() end
 function BasePowerD:suspendHW() end
@@ -38,6 +39,14 @@ function BasePowerD:setIntensity(intensity)
     self.flIntensity = intensity
     self:setIntensityHW()
 end
+
+function BasePowerD:setIntensityWithoutHW(intensity)
+    intensity = intensity < self.fl_min and self.fl_min or intensity
+    intensity = intensity > self.fl_max and self.fl_max or intensity
+    self.flIntensity = intensity
+    self:setIntensitySW()
+end
+
 
 function BasePowerD:getCapacity()
     if capacity_pulled_count == capacity_cached_count then

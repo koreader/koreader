@@ -28,6 +28,13 @@ function KoboPowerD:setIntensityHW()
     end
 end
 
+function KoboPowerD:setIntensitySW()
+    if self.fl ~= nil then
+        self.fl:restoreBrightness(self.flIntensity)
+    end
+end
+
+
 function KoboPowerD:getCapacityHW()
     self.battCapacity = self:read_int_file(self.batt_capacity_file)
     return self.battCapacity

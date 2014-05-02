@@ -1,8 +1,8 @@
 #!./koreader-base
 
 require "defaults"
-package.path = "./frontend/?.lua;./?.lua"
-package.cpath = "?.so;/usr/lib/lua/?.so"
+package.path = "?.lua;common/?.lua;frontend/?.lua"
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")
@@ -184,7 +184,8 @@ do
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
         intensity = intensity or powerd.flIntensity
-        powerd:setIntensity(intensity)
+        powerd:setIntensityWithoutHW(intensity)
+        -- powerd:setIntensity(intensity)
     end
 end
 
