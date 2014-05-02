@@ -99,7 +99,7 @@ koboupdate: all
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
+			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*" "koreader/Kobo/*"
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
