@@ -1,7 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
@@ -17,6 +17,8 @@ local Notification = InputContainer:new{
     face = Font:getFace("infofont", 20),
     text = "Null Message",
     timeout = nil,
+    margin = 5,
+    padding = 5,
 }
 
 function Notification:init()
@@ -26,21 +28,27 @@ function Notification:init()
         }
     end
     -- we construct the actual content here because self.text is only available now
+    local text_widget = TextWidget:new{
+        text = self.text,
+        face = self.face
+    }
+    local widget_size = text_widget:getSize()
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
             h = Screen:getHeight()/10,
         },
-        ignore = "height",
         FrameContainer:new{
             background = 0,
             radius = 0,
-            HorizontalGroup:new{
-                align = "center",
-                TextBoxWidget:new{
-                    text = self.text,
-                    face = self.face,
-                }
+            margin = self.margin,
+            padding = self.padding,
+            CenterContainer:new{
+                dimen = Geom:new{
+                    w = widget_size.w,
+                    h = widget_size.h
+                },
+                text_widget,
             }
         }
     }
