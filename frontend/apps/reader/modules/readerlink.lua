@@ -1,5 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local GestureRange = require("ui/gesturerange")
+local LinkBox = require("ui/widget/linkbox")
+local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
@@ -59,9 +61,18 @@ function ReaderLink:onTap(arg, ges)
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
-            local link = self.ui.document:getLinkFromPosition(pos.page, pos)
-            if link then
-                return self:onGotoLink(link)
+            local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
+            if link and lbox then
+                -- screen box that holds the link
+                local sbox = self.view:pageToScreenTransform(pos.page, lbox)
+                if sbox then
+                    UIManager:show(LinkBox:new{
+                        box = sbox,
+                        timeout = 0.5,
+                        callback = function() self:onGotoLink(link) end
+                    })
+                    return true
+                end
             end
         end
     else

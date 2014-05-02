@@ -843,13 +843,13 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
             local link = page_links[i]
             -- enlarge tappable link box
             local lbox = Geom:new{
-                x = link.x0 - Screen:scaleByDPI(15),
-                y = link.y0 - Screen:scaleByDPI(15),
-                w = link.x1 - link.x0 + Screen:scaleByDPI(30),
-                h = link.y1 - link.y0 + Screen:scaleByDPI(30)
+                x = link.x0 - Screen:scaleByDPI(5),
+                y = link.y0 - Screen:scaleByDPI(5),
+                w = link.x1 - link.x0 + Screen:scaleByDPI(10),
+                h = link.y1 - link.y0 + Screen:scaleByDPI(10)
             }
             if inside_box(pos, lbox) and link.page then
-                return link
+                return link, lbox
             end
         end
     end
@@ -969,6 +969,32 @@ function KoptInterface:getPageBoxesFromPositions(doc, pageno, ppos0, ppos1)
         local page_boxes = self:getTextBoxes(doc, pageno)
         local text_boxes = self:getTextFromBoxes(page_boxes, ppos0, ppos1)
         return text_boxes.boxes
+    end
+end
+
+--[[
+get page rect from native rect
+--]]
+function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
+    if doc.configurable.text_wrap == 1 then
+        local pos0 = {
+            x = rect.x + 5, y = rect.y + 5
+        }
+        local pos1 = {
+            x = rect.x + rect.w - 5,
+            y = rect.y + rect.h - 5
+        }
+        local boxes = self:getPageBoxesFromPositions(doc, pageno, pos0, pos1)
+        res_rect = nil
+        if #boxes > 0 then
+            res_rect = boxes[1]
+            for _, box in pairs(boxes) do
+                res_rect = res_rect:combine(box)
+            end
+        end
+        return res_rect
+    else
+        return rect
     end
 end
 

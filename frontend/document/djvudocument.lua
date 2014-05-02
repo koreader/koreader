@@ -72,6 +72,10 @@ function DjvuDocument:getPageBoxesFromPositions(pageno, ppos0, ppos1)
     return self.koptinterface:getPageBoxesFromPositions(self, pageno, ppos0, ppos1)
 end
 
+function DjvuDocument:nativeToPageRectTransform(pageno, rect)
+    return self.koptinterface:nativeToPageRectTransform(self, pageno, rect)
+end
+
 function DjvuDocument:getOCRWord(pageno, wbox)
     return self.koptinterface:getOCRWord(self, pageno, wbox)
 end
