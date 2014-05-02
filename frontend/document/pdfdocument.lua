@@ -97,6 +97,10 @@ function PdfDocument:getPageBoxesFromPositions(pageno, ppos0, ppos1)
     return self.koptinterface:getPageBoxesFromPositions(self, pageno, ppos0, ppos1)
 end
 
+function PdfDocument:nativeToPageRectTransform(pageno, rect)
+    return self.koptinterface:nativeToPageRectTransform(self, pageno, rect)
+end
+
 function PdfDocument:getOCRWord(pageno, wbox)
     return self.koptinterface:getOCRWord(self, pageno, wbox)
 end

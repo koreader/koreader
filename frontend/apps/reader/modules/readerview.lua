@@ -167,6 +167,7 @@ Given rectangle in original page return rectangle on the screen
 ]]--
 function ReaderView:pageToScreenTransform(page, rect)
     if self.ui.document.info.has_pages then
+        rect = self.ui.document:nativeToPageRectTransform(page, rect)
         if self.page_scroll then
             return self:getScrollPageRect(page, rect)
         else
