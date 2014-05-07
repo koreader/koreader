@@ -29,7 +29,7 @@ To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `au
 
 Ubuntu users may need to run:
 ```
-sudo apt-get install build-essential
+sudo apt-get install build-essential libtool
 ```
 
 Cross toolchains are available to Ubuntu users through these commands:
