@@ -22,11 +22,10 @@ Prerequisites
 ========
 
 Instructions about how to get and compile the source are intended for a \*nix
-OS. Windows users are suggested to develop in a Linux VM or use
-andLinux, Wubi.
+OS. Windows users are suggested to develop in a [Linux VM](http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/) or use Wubi.
 
-To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf` 
-and `cmake` installed. Version of autoconf need to be greater than 2.64.
+To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`, 
+`subversion` and `cmake` installed. Version of autoconf need to be greater than 2.64.
 
 Ubuntu users may need to run:
 ```
