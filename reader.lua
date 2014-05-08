@@ -174,7 +174,8 @@ do
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
         intensity = intensity or powerd.flIntensity
-        powerd:setIntensity(intensity)
+        powerd:setIntensityWithoutHW(intensity)
+        -- powerd:setIntensity(intensity)
     end
 end
 
