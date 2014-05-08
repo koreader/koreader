@@ -23,19 +23,18 @@ killall -STOP nickel
 killall -CONT nickel
 
 # return to home screen
-cd /mnt/onboard/.kobo/koreader/Kobo
 case `/bin/kobo_config.sh * 2>/dev/null` in
-	dragon)		#DEVICE=AURAHD 
+	dragon)		#DEVICE=AURAHD
 				#no binary file available
 		;;
 	phoenix)	#DEVICE=AURA
 				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
 				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
 		;;
-	kraken)		#DEVICE=GLO    
+	kraken)		#DEVICE=GLO
 				#no binary file available
 		;;
-	pixie)		#DEVICE=MINI   
+	pixie)		#DEVICE=MINI
 				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
 				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
 		;;
@@ -43,3 +42,4 @@ case `/bin/kobo_config.sh * 2>/dev/null` in
 				cat ./KoboTouchHomeButton.bin > /dev/input/event0
 		;;
 esac
+

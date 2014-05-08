@@ -70,7 +70,7 @@ make clean
 
 To build for the Kindle:
 ```
-make customupdate
+make kindleupdate
 ```
 
 To build for the Kobo:
