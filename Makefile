@@ -12,8 +12,7 @@ VERSION=$(shell git describe HEAD)
 INSTALL_DIR=koreader-$(MACHINE)
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources koreader.sh \
-		koreader_kobo.sh kobo_suspend.sh defaults.lua \
+INSTALL_FILES=reader.lua frontend resources defaults.lua \
 		git-rev README.md COPYING
 
 # for gettext
@@ -46,15 +45,6 @@ endif
 	mkdir -p $(INSTALL_DIR)/koreader/data/dict
 	mkdir -p $(INSTALL_DIR)/koreader/data/tessdata
 	mkdir -p $(INSTALL_DIR)/koreader/fonts/host
-	# Kindle startup
-	ln -sf ../extensions $(INSTALL_DIR)/
-	ln -sf ../launchpad $(INSTALL_DIR)/
-	# Kobo startup
-	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
-	ln -sf ../../../../../fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
-	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
-	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
-	cp fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 ifndef EMULATE_READER
 	# clean up, remove unused files for releases
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
@@ -78,11 +68,15 @@ clean:
 	rm -rf $(INSTALL_DIR)
 	$(MAKE) -C $(KOR_BASE) clean
 
-customupdate: all
+kindleupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
 	rm -f koreader-kindle-$(MACHINE)-$(VERSION).zip
+	# Kindle launching scripts
+	ln -sf ../kindle/extensions $(INSTALL_DIR)/
+	ln -sf ../kindle/launchpad $(INSTALL_DIR)/
+	ln -sf ../../kindle/koreader.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
@@ -96,12 +90,21 @@ koboupdate: all
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
+	# Kobo launching scripts
+	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
+	ln -sf ../../../../../kobo/fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
+	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
+	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
+	cp kobo/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
+	cp kobo/koreader_kobo.sh $(INSTALL_DIR)/koreader
+	cp kobo/kobo_suspend.sh $(INSTALL_DIR)/koreader
+	cp kobo/*.bin $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*" "koreader/Kobo/*"
+			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
