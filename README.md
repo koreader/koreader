@@ -18,6 +18,9 @@ at its fork Librerator.
 
 This application is distributed under the GNU AGPL v3 license (read the [COPYING](COPYING) file).
 
+Check out the [KOReader wiki](https://github.com/koreader/koreader/wiki) to learn 
+more about this project.
+
 Prerequisites
 ========
 
