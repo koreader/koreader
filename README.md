@@ -1,4 +1,4 @@
-KOReader [![Build Status][travis-icon]][travis-link] [![Bitdeli Badge][bitdeli-icon]][bitdeli-link]
+KOReader [![Build Status][travis-icon]][travis-link]
 ========
 
 This is a document viewer application, originally created for usage on the
@@ -157,7 +157,4 @@ http://ccache.samba.org
 [travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
 [travis-link]:https://travis-ci.org/koreader/koreader-base
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
-[bitdeli-icon]:https://d2weczhvl823v0.cloudfront.net/koreader/koreader/trend.png
-[bitdeli-link]:https://bitdeli.com/free "Bitdeli Badge"
-
 
