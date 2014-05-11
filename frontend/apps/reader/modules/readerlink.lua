@@ -61,10 +61,12 @@ function ReaderLink:onTap(arg, ges)
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
+            -- link box in native page
             local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
             if link and lbox then
                 -- screen box that holds the link
-                local sbox = self.view:pageToScreenTransform(pos.page, lbox)
+                local sbox = self.view:pageToScreenTransform(pos.page,
+                    self.ui.document:nativeToPageRectTransform(pos.page, lbox))
                 if sbox then
                     UIManager:show(LinkBox:new{
                         box = sbox,
