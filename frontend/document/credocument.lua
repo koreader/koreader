@@ -272,7 +272,7 @@ end
 function CreDocument:setFontFace(new_font_face)
     if new_font_face then
         DEBUG("CreDocument: set font face", new_font_face)
-        self._document:setFontFace(new_font_face)
+        self._document:setStringProperty("font.face.default", new_font_face)
     end
 end
 
