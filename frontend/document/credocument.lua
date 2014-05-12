@@ -127,7 +127,6 @@ function CreDocument:loadDocument()
 end
 
 function CreDocument:close()
-    self._document:saveDefaults()
     Document.close(self)
 end
 
@@ -272,7 +271,7 @@ end
 function CreDocument:setFontFace(new_font_face)
     if new_font_face then
         DEBUG("CreDocument: set font face", new_font_face)
-        self._document:setFontFace(new_font_face)
+        self._document:setStringProperty("font.face.default", new_font_face)
     end
 end
 
@@ -335,13 +334,17 @@ function CreDocument:setStyleSheet(new_css)
 end
 
 function CreDocument:setEmbeddedStyleSheet(toggle)
+    -- FIXME: occasional segmentation fault when switching embedded style sheet
     DEBUG("CreDocument: set embedded style sheet", toggle)
-    self._document:setEmbeddedStyleSheet(toggle)
+    self._document:setIntProperty("crengine.doc.embedded.styles.enabled", toggle)
 end
 
 function CreDocument:setPageMargins(left, top, right, bottom)
     DEBUG("CreDocument: set page margins", left, top, right, bottom)
-    self._document:setPageMargins(left, top, right, bottom)
+    self._document:setIntProperty("crengine.page.margin.left", left)
+    self._document:setIntProperty("crengine.page.margin.top", top)
+    self._document:setIntProperty("crengine.page.margin.right", right)
+    self._document:setIntProperty("crengine.page.margin.bottom", bottom)
 end
 
 function CreDocument:setFloatingPunctuation(enabled)

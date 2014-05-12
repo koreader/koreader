@@ -1,6 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
+local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
@@ -33,6 +34,7 @@ function EvernoteExporter:init()
         history_dir = "./history",
     }
     self.template = slt2.loadfile(self.path.."/note.tpl")
+    self.config = DocSettings:open(self.path)
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
@@ -230,6 +232,24 @@ function EvernoteExporter:exportCurrentNotes(view)
     self:exportClippings(client, clippings)
 end
 
+function EvernoteExporter:updateClippings(clippings, new_clippings)
+    for title, booknotes in pairs(new_clippings) do
+        for chapter_index, chapternotes in ipairs(booknotes) do
+            for note_index, note in ipairs(chapternotes) do
+                if clippings[title] == nil or clippings[title][chapter_index] == nil
+                    or clippings[title][chapter_index][note_index] == nil
+                    or clippings[title][chapter_index][note_index].page ~= note.page
+                    or clippings[title][chapter_index][note_index].time ~= note.time
+                    or clippings[title][chapter_index][note_index].text ~= note.text
+                    or clippings[title][chapter_index][note_index].note ~= note.note then
+                    clippings[title] = booknotes
+                end
+            end
+        end
+    end
+    return clippings
+end
+
 function EvernoteExporter:exportAllNotes()
     local EvernoteClient = require("EvernoteClient")
     local client = EvernoteClient:new{
@@ -237,10 +257,9 @@ function EvernoteExporter:exportAllNotes()
         authToken = self.evernote_token,
     }
 
-    local clippings = self.parser:parseMyClippings()
-    if next(clippings) == nil then
-        clippings = self.parser:parseHistory()
-    end
+    local clippings = self.config:readSetting("clippings") or {}
+    clippings = self:updateClippings(clippings, self.parser:parseMyClippings())
+    clippings = self:updateClippings(clippings, self.parser:parseHistory())
     -- remove blank entries
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
@@ -250,45 +269,52 @@ function EvernoteExporter:exportAllNotes()
     end
     --DEBUG("clippings", clippings)
     self:exportClippings(client, clippings)
+    self.config:saveSetting("clippings", clippings)
+    self.config:flush()
 end
 
 function EvernoteExporter:exportClippings(client, clippings)
     local export_count, error_count = 0, 0
     local export_title, error_title
     for title, booknotes in pairs(clippings) do
-        local ok, err = pcall(self.exportBooknotes, self, client, title, booknotes)
-
-        -- error reporting
-        if not ok then
-            DEBUG("Error occurs when exporting book:", title, err)
-            error_count = error_count + 1
-            error_title = title
+        -- skip exported booknotes
+        if booknotes.exported ~= true then 
+            local ok, err = pcall(self.exportBooknotes, self, 
+                        client, title, booknotes)
+            -- error reporting
+            if not ok then
+                DEBUG("Error occurs when exporting book:", title, err)
+                error_count = error_count + 1
+                error_title = title
+            else
+                DEBUG("Exported notes in book:", title)
+                export_count = export_count + 1
+                export_title = title
+                booknotes.exported = true
+            end
         else
-            DEBUG("Exported notes in book:", title)
-            export_count = export_count + 1
-            export_title = title
+            DEBUG("Skip exporting notes in book:", title)
         end
     end
 
-    local msg = ""
+    local msg = "Not exported anything."
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
         if all_count == 1 then
             msg = _("Exported notes in book:") .. "\n" .. export_title
         else
             msg = _("Exported notes in book:") .. "\n" .. export_title
-            msg = msg .. "\n" .. _("and ") .. all_count-1 .. _("others.")
+            msg = msg .. "\n" .. _("and ") .. all_count-1 .. _(" others.")
         end
     elseif error_count > 0 then
         if all_count == 1 then
             msg = _("Error occurs when exporting book:") .. "\n" .. error_title
         else
             msg = _("Errors occur when exporting book:") .. "\n" .. error_title
-            msg = msg .. "\n" .. _("and ") .. error_count-1 .. ("others.")
+            msg = msg .. "\n" .. _("and ") .. error_count-1 .. (" others.")
         end
     end
     UIManager:show(InfoMessage:new{ text = msg })
-
 end
 
 function EvernoteExporter:exportBooknotes(client, title, booknotes)
