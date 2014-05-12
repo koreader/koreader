@@ -354,7 +354,10 @@ function ReaderHighlight:saveHighlight()
         hl_item["drawer"] = self.view.highlight.saved_drawer
         table.insert(self.view.highlight.saved[page], hl_item)
         if self.selected_text.text ~= "" then
-            self:exportToClippings(page, hl_item)
+            -- disable exporting hightlights to My Clippings
+            -- since it's not potable and there is a better Evernote plugin
+            -- to do the same thing
+            --self:exportToClippings(page, hl_item)
         end
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
