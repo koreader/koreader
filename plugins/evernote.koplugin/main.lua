@@ -232,7 +232,8 @@ function EvernoteExporter:exportCurrentNotes(view)
     self:exportClippings(client, clippings)
 end
 
-function EvernoteExporter:updateClippings(clippings, new_clippings)
+function EvernoteExporter:updateHistoryClippings(clippings, new_clippings)
+    -- update clippings from history clippings
     for title, booknotes in pairs(new_clippings) do
         for chapter_index, chapternotes in ipairs(booknotes) do
             for note_index, note in ipairs(chapternotes) do
@@ -242,9 +243,22 @@ function EvernoteExporter:updateClippings(clippings, new_clippings)
                     or clippings[title][chapter_index][note_index].time ~= note.time
                     or clippings[title][chapter_index][note_index].text ~= note.text
                     or clippings[title][chapter_index][note_index].note ~= note.note then
+                    DEBUG("found new notes in history", booknotes.title)
                     clippings[title] = booknotes
                 end
             end
+        end
+    end
+    return clippings
+end
+
+function EvernoteExporter:updateMyClippings(clippings, new_clippings)
+    -- only new titles or new notes in My clippings are updated to clippings
+    -- since appending is the only way to modify notes in My Clippings
+    for title, booknotes in pairs(new_clippings) do
+        if clippings[title] == nil or #clippings[title] < #booknotes then
+            DEBUG("found new notes in MyClipping", booknotes.title)
+            clippings[title] = booknotes
         end
     end
     return clippings
@@ -258,8 +272,8 @@ function EvernoteExporter:exportAllNotes()
     }
 
     local clippings = self.config:readSetting("clippings") or {}
-    clippings = self:updateClippings(clippings, self.parser:parseMyClippings())
-    clippings = self:updateClippings(clippings, self.parser:parseHistory())
+    clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
+    clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
     -- remove blank entries
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
@@ -278,8 +292,8 @@ function EvernoteExporter:exportClippings(client, clippings)
     local export_title, error_title
     for title, booknotes in pairs(clippings) do
         -- skip exported booknotes
-        if booknotes.exported ~= true then 
-            local ok, err = pcall(self.exportBooknotes, self, 
+        if booknotes.exported ~= true then
+            local ok, err = pcall(self.exportBooknotes, self,
                         client, title, booknotes)
             -- error reporting
             if not ok then
@@ -292,8 +306,6 @@ function EvernoteExporter:exportClippings(client, clippings)
                 export_title = title
                 booknotes.exported = true
             end
-        else
-            DEBUG("Skip exporting notes in book:", title)
         end
     end
 
