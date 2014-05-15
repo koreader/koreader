@@ -38,19 +38,19 @@ function EvernoteExporter:init()
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
-    local domain = nil
-    if self.evernote_domain == "sandbox" then
-        domain = _("Sandbox")
-    elseif self.evernote_domain == "yinxiang" then
-        domain = _("Yinxiang")
-    else
-        domain = _("Evernote")
-    end
     table.insert(tab_item_table.plugins, {
         text = _("Evernote"),
         sub_item_table = {
             {
                 text_func = function()
+                    local domain = nil
+                    if self.evernote_domain == "sandbox" then
+                        domain = _("Sandbox")
+                    elseif self.evernote_domain == "yinxiang" then
+                        domain = _("Yinxiang")
+                    else
+                        domain = _("Evernote")
+                    end
                     return self.evernote_token and (_("Logout") .. " " .. domain)
                             or _("Login")
                 end,
