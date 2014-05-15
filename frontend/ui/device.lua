@@ -2,7 +2,7 @@ local KindlePowerD = require("ui/device/kindlepowerd")
 local KoboPowerD = require("ui/device/kobopowerd")
 local BasePowerD = require("ui/device/basepowerd")
 local Screen = require("ui/device/screen")
--- util
+local util = require("ffi/util")
 -- lfs
 
 local Device = {

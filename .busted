@@ -1,0 +1,6 @@
+return {
+	default = {
+		verbose = true,
+		ROOT = "spec/front/unit",
+	},
+}
