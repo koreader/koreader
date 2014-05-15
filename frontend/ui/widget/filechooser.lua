@@ -3,6 +3,15 @@ local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 -- lfs
+local ffi = require("ffi")
+ffi.cdef[[
+int strcoll (char *str1, char *str2);
+]]
+
+-- string sort function respecting LC_COLLATE
+local function strcoll(str1, str2)
+    return ffi.C.strcoll(ffi.cast("char*", str1), ffi.cast("char*", str2)) <= 0
+end
 
 local FileChooser = Menu:extend{
     height = Screen:getHeight(),
@@ -39,9 +48,9 @@ function FileChooser:genItemTableFromPath(path)
             end
         end
     end
-    table.sort(dirs)
+    table.sort(dirs, strcoll)
     if path ~= "/" then table.insert(dirs, 1, "..") end
-    table.sort(files)
+    table.sort(files, strcoll)
 
     local item_table = {}
     for _, dir in ipairs(dirs) do
