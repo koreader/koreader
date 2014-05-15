@@ -291,8 +291,12 @@ function EvernoteExporter:exportClippings(client, clippings)
     local export_count, error_count = 0, 0
     local export_title, error_title
     for title, booknotes in pairs(clippings) do
-        -- skip exported booknotes
-        if booknotes.exported ~= true then
+        if type(booknotes.exported) ~= "table" then
+            booknotes.exported = {}
+        end
+        -- check if booknotes are exported in this notebook
+        -- so that booknotes will still be exported after switching user account
+        if booknotes.exported[self.notebook_guid] ~= true then
             local ok, err = pcall(self.exportBooknotes, self,
                         client, title, booknotes)
             -- error reporting
@@ -304,7 +308,7 @@ function EvernoteExporter:exportClippings(client, clippings)
                 DEBUG("Exported notes in book:", title)
                 export_count = export_count + 1
                 export_title = title
-                booknotes.exported = true
+                booknotes.exported[self.notebook_guid] = true
             end
         end
     end
