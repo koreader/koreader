@@ -233,8 +233,12 @@ function MyClipping:parseHighlight(highlights, book)
             clipping.sort = "highlight"
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
-            if item.pos0 and item.pos1 and item.pos0.x and item.pos0.y
-                    and item.pos1.x and item.pos1.y then
+            if item.pos0 and item.pos1 and
+                    item.pos0.x and item.pos0.y and
+                    item.pos1.x and item.pos1.y then
+                -- highlights in reflowing mode don't have page in pos
+                if item.pos0.page == nil then item.pos0.page = page end
+                if item.pos1.page == nil then item.pos1.page = page end
                 local image = {}
                 image.file = book.file
                 image.pos0, image.pos1 = item.pos0, item.pos1
