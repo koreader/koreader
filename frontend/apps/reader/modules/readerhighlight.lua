@@ -354,7 +354,10 @@ function ReaderHighlight:saveHighlight()
         hl_item["drawer"] = self.view.highlight.saved_drawer
         table.insert(self.view.highlight.saved[page], hl_item)
         if self.selected_text.text ~= "" then
-            self:exportToClippings(page, hl_item)
+            -- disable exporting hightlights to My Clippings
+            -- since it's not potable and there is a better Evernote plugin
+            -- to do the same thing
+            --self:exportToClippings(page, hl_item)
         end
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
@@ -372,7 +375,8 @@ function ReaderHighlight:exportToClippings(page, item)
         clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
         clippings:write("- Koreader Highlight Page "..page.." ")
         clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
-        clippings:write(item["text"].."\n")
+        -- My Clippings only holds one line of highlight
+        clippings:write(item["text"]:gsub("\n", " ").."\n")
         clippings:write("==========\n")
         clippings:close()
         os.setlocale(current_locale)

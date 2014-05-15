@@ -1,4 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Cache = require("cache")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
 local DocSettings = require("docsettings")
@@ -301,6 +302,8 @@ function ReaderUI:onClose()
         self.start_pos = nil
     end
     UIManager:close(self.dialog)
+    -- serialize last used items for later launch
+    Cache:serialize()
     return true
 end
 

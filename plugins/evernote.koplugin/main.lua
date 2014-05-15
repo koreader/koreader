@@ -38,19 +38,19 @@ function EvernoteExporter:init()
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
-    local domain = nil
-    if self.evernote_domain == "sandbox" then
-        domain = _("Sandbox")
-    elseif self.evernote_domain == "yinxiang" then
-        domain = _("Yinxiang")
-    else
-        domain = _("Evernote")
-    end
     table.insert(tab_item_table.plugins, {
         text = _("Evernote"),
         sub_item_table = {
             {
                 text_func = function()
+                    local domain = nil
+                    if self.evernote_domain == "sandbox" then
+                        domain = _("Sandbox")
+                    elseif self.evernote_domain == "yinxiang" then
+                        domain = _("Yinxiang")
+                    else
+                        domain = _("Evernote")
+                    end
                     return self.evernote_token and (_("Logout") .. " " .. domain)
                             or _("Login")
                 end,
@@ -232,7 +232,8 @@ function EvernoteExporter:exportCurrentNotes(view)
     self:exportClippings(client, clippings)
 end
 
-function EvernoteExporter:updateClippings(clippings, new_clippings)
+function EvernoteExporter:updateHistoryClippings(clippings, new_clippings)
+    -- update clippings from history clippings
     for title, booknotes in pairs(new_clippings) do
         for chapter_index, chapternotes in ipairs(booknotes) do
             for note_index, note in ipairs(chapternotes) do
@@ -242,9 +243,22 @@ function EvernoteExporter:updateClippings(clippings, new_clippings)
                     or clippings[title][chapter_index][note_index].time ~= note.time
                     or clippings[title][chapter_index][note_index].text ~= note.text
                     or clippings[title][chapter_index][note_index].note ~= note.note then
+                    DEBUG("found new notes in history", booknotes.title)
                     clippings[title] = booknotes
                 end
             end
+        end
+    end
+    return clippings
+end
+
+function EvernoteExporter:updateMyClippings(clippings, new_clippings)
+    -- only new titles or new notes in My clippings are updated to clippings
+    -- since appending is the only way to modify notes in My Clippings
+    for title, booknotes in pairs(new_clippings) do
+        if clippings[title] == nil or #clippings[title] < #booknotes then
+            DEBUG("found new notes in MyClipping", booknotes.title)
+            clippings[title] = booknotes
         end
     end
     return clippings
@@ -258,8 +272,8 @@ function EvernoteExporter:exportAllNotes()
     }
 
     local clippings = self.config:readSetting("clippings") or {}
-    clippings = self:updateClippings(clippings, self.parser:parseMyClippings())
-    clippings = self:updateClippings(clippings, self.parser:parseHistory())
+    clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
+    clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
     -- remove blank entries
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
@@ -277,9 +291,13 @@ function EvernoteExporter:exportClippings(client, clippings)
     local export_count, error_count = 0, 0
     local export_title, error_title
     for title, booknotes in pairs(clippings) do
-        -- skip exported booknotes
-        if booknotes.exported ~= true then 
-            local ok, err = pcall(self.exportBooknotes, self, 
+        if type(booknotes.exported) ~= "table" then
+            booknotes.exported = {}
+        end
+        -- check if booknotes are exported in this notebook
+        -- so that booknotes will still be exported after switching user account
+        if booknotes.exported[self.notebook_guid] ~= true then
+            local ok, err = pcall(self.exportBooknotes, self,
                         client, title, booknotes)
             -- error reporting
             if not ok then
@@ -290,10 +308,8 @@ function EvernoteExporter:exportClippings(client, clippings)
                 DEBUG("Exported notes in book:", title)
                 export_count = export_count + 1
                 export_title = title
-                booknotes.exported = true
+                booknotes.exported[self.notebook_guid] = true
             end
-        else
-            DEBUG("Skip exporting notes in book:", title)
         end
     end
 
@@ -324,10 +340,22 @@ function EvernoteExporter:exportBooknotes(client, title, booknotes)
     })
     --DEBUG("content", content)
     local note_guid = client:findNoteByTitle(title, self.notebook_guid)
+    local resources = {}
+    for _, chapter in ipairs(booknotes) do
+        for _, clipping in ipairs(chapter) do
+            if clipping.image then
+                table.insert(resources, {
+                    image = clipping.image
+                })
+                -- nullify clipping image after passing it to evernote client
+                clipping.image = nil
+            end
+        end
+    end
     if not note_guid then
-        client:createNote(title, content, {}, self.notebook_guid)
+        client:createNote(title, content, resources, {}, self.notebook_guid)
     else
-        client:updateNote(note_guid, title, content, {}, self.notebook_guid)
+        client:updateNote(note_guid, title, content, resources, {}, self.notebook_guid)
     end
 end
 

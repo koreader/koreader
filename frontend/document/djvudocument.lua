@@ -96,6 +96,14 @@ function DjvuDocument:getUsedBBox(pageno)
     return used
 end
 
+function DjvuDocument:clipPagePNGFile(pos0, pos1, pboxes, drawer, filename)
+    return self.koptinterface:clipPagePNGFile(self, pos0, pos1, pboxes, drawer, filename)
+end
+
+function DjvuDocument:clipPagePNGString(pos0, pos1, pboxes, drawer)
+    return self.koptinterface:clipPagePNGString(self, pos0, pos1, pboxes, drawer)
+end
+
 function DjvuDocument:getPageBBox(pageno)
     return self.koptinterface:getPageBBox(self, pageno)
 end

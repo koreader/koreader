@@ -132,10 +132,10 @@ function MD5Transform(buf, input)
   c = MD5STEP(F4, c, d, a, b, input[2] + 0x2ad7d2bb, 15);
   b = MD5STEP(F4, b, c, d, a, input[9] + 0xeb86d391, 21);
 
-  buf[0] = (buf[0] + a)%0xffffffff;
-  buf[1] = (buf[1] + b)%0xffffffff;
-  buf[2] = (buf[2] + c)%0xffffffff;
-  buf[3] = (buf[3] + d)%0xffffffff;
+  buf[0] = band(buf[0] + a, 0xFFFFFFFF);
+  buf[1] = band(buf[1] + b, 0xFFFFFFFF);
+  buf[2] = band(buf[2] + c, 0xFFFFFFFF);
+  buf[3] = band(buf[3] + d, 0xFFFFFFFF);
 end
 
 function MD5Update(ctx, buf, len)

@@ -38,6 +38,11 @@ endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
+	# install front spec
+	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
+		ln -sf ../../../../spec ./front
+	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
+		ln -sf ../../test ./data
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
@@ -54,8 +59,16 @@ endif
 $(KOR_BASE)/$(OUTPUT_DIR)/luajit:
 	$(MAKE) -C $(KOR_BASE)
 
+$(INSTALL_DIR)/koreader/.busted:
+	test -e $(INSTALL_DIR)/koreader/.busted || \
+		ln -sf ../../.busted $(INSTALL_DIR)/koreader
+
+testfront: $(INSTALL_DIR)/koreader/.busted
+	cd $(INSTALL_DIR)/koreader && busted -l ./luajit
+
 test:
 	$(MAKE) -C $(KOR_BASE) test
+	$(MAKE) testfront
 
 .PHONY: test
 

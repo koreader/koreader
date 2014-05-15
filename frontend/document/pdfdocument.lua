@@ -193,6 +193,14 @@ function PdfDocument:getLinkFromPosition(pageno, pos)
     return self.koptinterface:getLinkFromPosition(self, pageno, pos)
 end
 
+function PdfDocument:clipPagePNGFile(pos0, pos1, pboxes, drawer, filename)
+    return self.koptinterface:clipPagePNGFile(self, pos0, pos1, pboxes, drawer, filename)
+end
+
+function PdfDocument:clipPagePNGString(pos0, pos1, pboxes, drawer)
+    return self.koptinterface:clipPagePNGString(self, pos0, pos1, pboxes, drawer)
+end
+
 function PdfDocument:getPageBBox(pageno)
     return self.koptinterface:getPageBBox(self, pageno)
 end
