@@ -78,7 +78,6 @@ function Document:close()
         self.is_open = false
         self._document:close()
     end
-    Cache:serialize()
 end
 
 -- this might be overridden by a document implementation
