@@ -336,10 +336,22 @@ function EvernoteExporter:exportBooknotes(client, title, booknotes)
     })
     --DEBUG("content", content)
     local note_guid = client:findNoteByTitle(title, self.notebook_guid)
+    local resources = {}
+    for _, chapter in ipairs(booknotes) do
+        for _, clipping in ipairs(chapter) do
+            if clipping.image then
+                table.insert(resources, {
+                    image = clipping.image
+                })
+                -- nullify clipping image after passing it to evernote client
+                clipping.image = nil
+            end
+        end
+    end
     if not note_guid then
-        client:createNote(title, content, {}, self.notebook_guid)
+        client:createNote(title, content, resources, {}, self.notebook_guid)
     else
-        client:updateNote(note_guid, title, content, {}, self.notebook_guid)
+        client:updateNote(note_guid, title, content, resources, {}, self.notebook_guid)
     end
 end
 

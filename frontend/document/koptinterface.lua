@@ -630,6 +630,54 @@ function KoptInterface:getOCRText(doc, pageno, tboxes)
     DEBUG("Not implemented yet")
 end
 
+function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
+    assert(pos0.page == pos1.page)
+    assert(pos0.zoom == pos1.zoom)
+    local rect = nil
+    if pboxes and #pboxes > 0 then
+        local box = pboxes[1]
+        rect = Geom:new{
+            x = box.x, y = box.y,
+            w = box.w, h = box.h,
+        }
+        for _, box in ipairs(pboxes) do
+            rect = rect:combine(Geom:new(box))
+        end
+    else
+        local zoom = pos0.zoom or 1
+        rect = {
+            x = math.min(pos0.x, pos1.x)/zoom,
+            y = math.min(pos0.y, pos1.y)/zoom,
+            w = math.abs(pos0.x - pos1.x)/zoom,
+            h = math.abs(pos0.y - pos1.y)/zoom
+        }
+    end
+
+    local bbox = {
+        x0 = rect.x, y0 = rect.y,
+        x1 = rect.x + rect.w,
+        y1 = rect.y + rect.h
+    }
+    local kc = self:createContext(doc, pos0.page, bbox)
+    local page = doc._document:openPage(pos0.page)
+    page:getPagePix(kc)
+    page:close()
+    return kc, rect
+end
+
+function KoptInterface:clipPagePNGFile(doc, pos0, pos1, pboxes, drawer, filename)
+    local kc = self:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
+    kc:exportSrcPNGFile(pboxes, drawer, filename)
+    kc:free()
+end
+
+function KoptInterface:clipPagePNGString(doc, pos0, pos1, pboxes, drawer)
+    local kc = self:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
+    local png = kc:exportSrcPNGString(pboxes, drawer)
+    kc:free()
+    return png
+end
+
 --[[
 get index of nearest word box around pos
 --]]

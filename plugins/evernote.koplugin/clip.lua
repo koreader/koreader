@@ -1,3 +1,7 @@
+local DocumentRegistry = require("document/documentregistry")
+local DocSettings = require("docsettings")
+local DEBUG = require("dbg")
+require("MD5")
 -- lfs
 
 local MyClipping = {
@@ -157,7 +161,7 @@ function MyClipping:getTime(line)
         for k, v in pairs(months) do
             if line:find(k) then
                 month = v
-                _, _, day = line:find(" (%d%d),")
+                _, _, day = line:find(" (%d?%d),")
                 _, _, year = line:find(" (%d%d%d%d)")
                 break
             end
@@ -206,7 +210,22 @@ function MyClipping:getText(line)
     return line:match("^%s*(.-)%s*$") or ""
 end
 
+-- get PNG string and md5 hash
+function MyClipping:getImage(image)
+    --DEBUG("image", image)
+    local doc = DocumentRegistry:openDocument(image.file)
+    if doc then
+        local png = doc:clipPagePNGString(image.pos0, image.pos1,
+                image.pboxes, image.drawer)
+        --doc:clipPagePNGFile(image.pos0, image.pos1,
+                --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
+        doc:close()
+        if png then return { png = png, hash = md5(png) } end
+    end
+end
+
 function MyClipping:parseHighlight(highlights, book)
+    --DEBUG("book", book.file)
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
             local clipping = {}
@@ -214,8 +233,17 @@ function MyClipping:parseHighlight(highlights, book)
             clipping.sort = "highlight"
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
+            if item.pos0 and item.pos1 and item.pos0.x and item.pos0.y
+                    and item.pos1.x and item.pos1.y then
+                local image = {}
+                image.file = book.file
+                image.pos0, image.pos1 = item.pos0, item.pos1
+                image.pboxes = item.pboxes
+                image.drawer = item.drawer
+                clipping.image = self:getImage(image)
+            end
             -- TODO: store chapter info when exporting highlights
-            if clipping.text and clipping.text ~= "" then
+            if clipping.text and clipping.text ~= "" or clipping.image then
                 table.insert(book, { clipping })
             end
         end
@@ -232,7 +260,10 @@ function MyClipping:parseHistory()
             if ok and stored.highlight then
                 local _, _, docname = path:find("%[.*%](.*)%.lua$")
                 local title, author = self:getTitle(docname)
+                local path = DocSettings:getPathFromHistory(f)
+                local name = DocSettings:getNameFromHistory(f)
                 clippings[title] = {
+                    file = path .. "/" .. name,
                     title = title,
                     author = author,
                 }
@@ -250,6 +281,7 @@ function MyClipping:parseCurrentDoc(view)
     local _, _, docname = path:find(".*/(.*)")
     local title, author = self:getTitle(docname)
     clippings[title] = {
+        file = view.document.file,
         title = title,
         author = author,
     }

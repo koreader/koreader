@@ -43,6 +43,9 @@
         </div>
         <div style="font-size:12pt">
           <span>#{= htmlescape(clipping.text) }#</span>
+          #{ if clipping.image then }#
+            <en-media type="image/png" hash="#{= clipping.image.hash }#"/>
+          #{ end }#
         </div>
         #{ if clipping.note then }#
           <div style="font-size:11pt; margin-top:0.2em;">
