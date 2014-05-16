@@ -233,7 +233,7 @@ function MyClipping:parseHighlight(highlights, book)
             clipping.sort = "highlight"
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
-            if item.pos0 and item.pos1 and
+            if item.text == "" and item.pos0 and item.pos1 and
                     item.pos0.x and item.pos0.y and
                     item.pos1.x and item.pos1.y then
                 -- highlights in reflowing mode don't have page in pos

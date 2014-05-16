@@ -50,16 +50,20 @@ local Document = {
 
     -- flag to show that the document needs to be unlocked by a password
     is_locked = false,
-
-    configurable = Configurable,
 }
 
 function Document:new(o)
     local o = o or {}
     setmetatable(o, self)
     self.__index = self
+    if o._init then o:_init() end
     if o.init then o:init() end
     return o
+end
+
+-- base document initialization should be called on each document init
+function Document:_init()
+    self.configurable = Configurable:new()
 end
 
 -- override this method to open a document
