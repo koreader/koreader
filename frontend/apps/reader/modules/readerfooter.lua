@@ -27,7 +27,7 @@ local ReaderFooter = InputContainer:new{
     text_width = 0.15,
     text_font_face = "ffont",
     text_font_size = 14,
-    height = 19,
+    height = Screen:scaleByDPI(19),
 }
 
 function ReaderFooter:init()
@@ -54,11 +54,14 @@ function ReaderFooter:init()
     table.insert(horizontal_group, text_container)
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
-        FrameContainer:new{
-            horizontal_group,
-            background = 0,
-            bordersize = 0,
-            padding = 0,
+        BottomContainer:new{
+            dimen = Geom:new{w = Screen:getWidth(), h = self.height*2},
+            FrameContainer:new{
+                horizontal_group,
+                background = 0,
+                bordersize = 0,
+                padding = 0,
+            }
         }
     }
     self.dimen = self[1]:getSize()
