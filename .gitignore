@@ -11,6 +11,7 @@ git-rev
 tags
 test/*
 *.tar
+*.log
 spec/unit/data
 
 emu
