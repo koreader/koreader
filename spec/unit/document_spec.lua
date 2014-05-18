@@ -50,11 +50,10 @@ describe("PDF document module", function()
 end)
 
 describe("EPUB document module", function()
-    local sample_epub = "spec/front/unit/data/leaves_of_grass.epub"
+    local sample_epub = "spec/front/unit/data/leaves.epub"
     it("should open document", function()
         doc = DocumentRegistry:openDocument(sample_epub)
         assert.truthy(doc)
-        doc:close()
     end)
     it("should close document", function()
         doc:close()
