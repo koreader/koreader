@@ -56,6 +56,7 @@ local KoptOptions = {
                 default_value = DFULL_SCREEN,
                 event = "SetFullScreen",
                 args = {true, false},
+                show = false,
             },
             {
                 name = "page_margin",

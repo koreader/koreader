@@ -23,7 +23,7 @@ local ReaderFooter = InputContainer:new{
     progress_percentage = 0.0,
     progress_text = "0 / 0",
     show_time = false,
-    bar_width = 0.85,
+    bar_width = 0.87,
     text_width = 0.15,
     text_font_face = "ffont",
     text_font_size = 14,
@@ -122,11 +122,12 @@ function ReaderFooter:onPosUpdate(pos)
     self:updateFooterPos()
 end
 
-function ReaderFooter:applyFooterMode()
+function ReaderFooter:applyFooterMode(mode)
     -- three modes switcher for reader footer
     -- 0 for footer off
     -- 1 for footer page info
     -- 2 for footer time info
+    if mode ~= nil then self.mode = mode end
     if self.mode == 0 then
         self.view.footer_visible = false
     else
@@ -139,12 +140,24 @@ function ReaderFooter:applyFooterMode()
     end
 end
 
+function ReaderFooter:onEnterFlippingMode()
+    self.orig_mode = self.mode
+    self:applyFooterMode(1)
+end
+
+function ReaderFooter:onExitFlippingMode()
+    self:applyFooterMode(self.orig_mode)
+end
+
 function ReaderFooter:onTapFooter(arg, ges)
     if self.view.flipping_visible then
         local pos = ges.pos
         local dimen = self.progress_bar.dimen
-        local percentage = (pos.x - dimen.x)/dimen.w
-        self.ui:handleEvent(Event:new("GotoPercentage", percentage))
+        -- if reader footer is not drawn before the dimen value should be nil
+        if dimen then
+            local percentage = (pos.x - dimen.x)/dimen.w
+            self.ui:handleEvent(Event:new("GotoPercentage", percentage))
+        end
     else
         self.mode = (self.mode + 1) % 3
         self:applyFooterMode()

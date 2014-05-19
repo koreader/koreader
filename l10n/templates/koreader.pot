@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-05-15 09:54+0000\n"
+"POT-Creation-Date: 2014-05-19 04:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -78,42 +78,6 @@ msgid ""
 "Auto Straighten"
 msgstr ""
 
-#: frontend/ui/input.lua:392
-msgid ""
-"Auto-detected Kindle 2"
-msgstr ""
-
-#: frontend/ui/input.lua:385
-msgid ""
-"Auto-detected Kindle 3"
-msgstr ""
-
-#: frontend/ui/input.lua:381
-msgid ""
-"Auto-detected Kindle 4"
-msgstr ""
-
-#: frontend/ui/input.lua:389
-msgid ""
-"Auto-detected Kindle DXG"
-msgstr ""
-
-#: frontend/ui/input.lua:289
-#: frontend/ui/input.lua:293
-msgid ""
-"Auto-detected Kindle PaperWhite"
-msgstr ""
-
-#: frontend/ui/input.lua:317
-msgid ""
-"Auto-detected Kindle Touch"
-msgstr ""
-
-#: frontend/ui/input.lua:323
-msgid ""
-"Auto-detected Kobo"
-msgstr ""
-
 #: frontend/apps/reader/modules/readerbookmark.lua:14
 msgid ""
 "Bookmarks"
@@ -176,11 +140,6 @@ msgstr ""
 #: frontend/apps/reader/modules/readerhighlight.lua:186
 msgid ""
 "Delete"
-msgstr ""
-
-#: frontend/ui/input.lua:324
-msgid ""
-"Device model="
 msgstr ""
 
 #: frontend/ui/data/strings.lua:16
@@ -265,11 +224,6 @@ msgstr ""
 #: frontend/ui/data/strings.lua:13
 msgid ""
 "Fine Tuning"
-msgstr ""
-
-#: frontend/ui/input.lua:326
-msgid ""
-"Firmware revision"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:24
@@ -430,11 +384,6 @@ msgid ""
 "No reader engine for this file"
 msgstr ""
 
-#: frontend/ui/input.lua:395
-msgid ""
-"Not supported device model!"
-msgstr ""
-
 #: plugins/evernote.koplugin/main.lua:339
 msgid ""
 "Note: "
@@ -520,16 +469,6 @@ msgstr ""
 #: frontend/ui/data/strings.lua:5
 msgid ""
 "Screen Mode"
-msgstr ""
-
-#: frontend/ui/input.lua:328
-msgid ""
-"Screen height ="
-msgstr ""
-
-#: frontend/ui/input.lua:330
-msgid ""
-"Screen width ="
 msgstr ""
 
 #: frontend/ui/data/strings.lua:8
@@ -779,8 +718,8 @@ msgid ""
 "close dialog"
 msgstr ""
 
-#: frontend/apps/reader/readerui.lua:45
-#: frontend/apps/reader/readerui.lua:74
+#: frontend/apps/reader/readerui.lua:46
+#: frontend/apps/reader/readerui.lua:75
 msgid ""
 "close document"
 msgstr ""

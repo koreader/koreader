@@ -286,11 +286,11 @@ function Input:init()
             input.open("fake_events")
         end
         if dev_mod == "KindlePaperWhite" then
-            print(_("Auto-detected Kindle PaperWhite"))
+            print("Auto-detected Kindle PaperWhite")
             Device:setTouchInputDev("/dev/input/event0")
             input.open("/dev/input/event0")
         elseif dev_mod == "KindlePaperWhite2" then
-            print(_("Auto-detected Kindle PaperWhite"))
+            print("Auto-detected Kindle PaperWhite")
             Device:setTouchInputDev("/dev/input/event1")
             input.open("/dev/input/event1")
         elseif dev_mod == "KindleTouch" then
@@ -314,21 +314,17 @@ function Input:init()
                 end
                 return ev
             end
-            print(_("Auto-detected Kindle Touch"))
+            print("Auto-detected Kindle Touch")
         elseif Device:isKobo() then
             local firm_rev = Device:getFirmVer()
             input.open("/dev/input/event1")
             Device:setTouchInputDev("/dev/input/event1")
             input.open("/dev/input/event0") -- Light button and sleep slider
-            print(_("Auto-detected Kobo"))
-            print(_("Device model="))
-            print(_(dev_mod))
-            print(_("Firmware revision"))
-            print(_(firm_rev))
-            print(_("Screen height ="))
-            print(_(Screen:getHeight()))
-            print(_("Screen width ="))
-            print(_(Screen:getWidth()))
+            print("Auto-detected Kobo")
+            print("Device model=", dev_mod)
+            print("Firmware revision", firm_rev)
+            print("Screen width =", Screen:getWidth())
+            print("Screen height =", Screen:getHeight())
             self:adjustKoboEventMap()
             if dev_mod ~= 'Kobo_trilogy' then
                 function Input:eventAdjustHook(ev)
@@ -378,25 +374,25 @@ function Input:init()
                 end
             end
         elseif dev_mod == "Kindle4" then
-            print(_("Auto-detected Kindle 4"))
+            print("Auto-detected Kindle 4")
             input.open("/dev/input/event1")
             self:adjustKindle4EventMap()
         elseif dev_mod == "Kindle3" then
-            print(_("Auto-detected Kindle 3"))
+            print("Auto-detected Kindle 3")
             input.open("/dev/input/event1")
             input.open("/dev/input/event2")
         elseif dev_mod == "KindleDXG" then
-            print(_("Auto-detected Kindle DXG"))
+            print("Auto-detected Kindle DXG")
             input.open("/dev/input/event1")
         elseif dev_mod == "Kindle2" then
-            print(_("Auto-detected Kindle 2"))
+            print("Auto-detected Kindle 2")
             input.open("/dev/input/event1")
         else
-            print(_("Not supported device model!"))
+            print("Not supported device model!")
             os.exit(-1)
         end
     end
-    
+
     if Device:getModel() ~= 'Kobo_phoenix' then
         function Input:handleTouchEv(ev)
             return Input:handleTypeBTouchEv(ev)
