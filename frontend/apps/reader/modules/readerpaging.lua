@@ -18,7 +18,7 @@ local ReaderPaging = InputContainer:new{
     page_area = nil,
     show_overlap_enable = nil,
     overlap = Screen:scaleByDPI(DOVERLAPPIXELS),
-    
+
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
     flip_steps = {0,1,2,5,10,20,50,100}
@@ -138,9 +138,9 @@ end
 function ReaderPaging:addToMainMenu(tab_item_table)
     if self.ui.document.info.has_pages then
         table.insert(tab_item_table.typeset, {
-            text_func = function() 
-                return self.show_overlap_enable and 
-                _("Turn off page overlap") or 
+            text_func = function()
+                return self.show_overlap_enable and
+                _("Turn off page overlap") or
                 _("Turn on page overlap")
             end,
             callback = function()
@@ -153,7 +153,7 @@ end
 --[[
 Set reading position on certain page
 Page position is a fractional number ranging from 0 to 1, indicating the read percentage on
-certain page. With the position information on each page whenever users change font size, 
+certain page. With the position information on each page whenever users change font size,
 page margin or line spacing or close and reopen the book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
@@ -165,9 +165,9 @@ end
 Get reading position on certain page
 --]]
 function ReaderPaging:getPagePosition(page)
-    -- Page number ought to be integer, somehow I notice that with 
-    -- fractional page number the reader runs silently well, but the 
-    -- number won't fit to retrieve page position. 
+    -- Page number ought to be integer, somehow I notice that with
+    -- fractional page number the reader runs silently well, but the
+    -- number won't fit to retrieve page position.
     page = math.floor(page)
     DEBUG("get page position", self.page_positions[page])
     return self.page_positions[page] or 0
@@ -187,7 +187,7 @@ function ReaderPaging:onTogglePageFlipping()
     self.view.flipping_visible = not self.view.flipping_visible
     self.page_flipping_mode = self.view.flipping_visible
     self.flipping_page = self.current_page
-    
+
     if self.page_flipping_mode then
         self:updateOriginalPage(self.current_page)
         self:enterFlippingMode()
@@ -195,7 +195,6 @@ function ReaderPaging:onTogglePageFlipping()
         self:updateOriginalPage(nil)
         self:exitFlippingMode()
     end
-    self.view:resetLayout()
     self.ui:handleEvent(Event:new("SetHinting", not self.page_flipping_mode))
     self.ui:handleEvent(Event:new("ReZoom"))
     UIManager:setDirty(self.view.dialog, "partial")
@@ -203,11 +202,11 @@ end
 
 function ReaderPaging:onToggleBookmarkFlipping()
      self.bookmark_flipping_mode = not self.bookmark_flipping_mode
-    
+
     if self.bookmark_flipping_mode then
         self.orig_flipping_mode = self.view.flipping_visible
         self.orig_dogear_mode = self.view.dogear_visible
-        
+
         self.view.flipping_visible = true
         self.view.dogear_visible = true
         self.bm_flipping_orig_page = self.current_page
@@ -218,32 +217,30 @@ function ReaderPaging:onToggleBookmarkFlipping()
         self:exitFlippingMode()
         self:gotoPage(self.bm_flipping_orig_page)
     end
-    self.view:resetLayout()
     self.ui:handleEvent(Event:new("SetHinting", not self.bookmark_flipping_mode))
     self.ui:handleEvent(Event:new("ReZoom"))
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:enterFlippingMode()
+    self.ui:handleEvent(Event:new("EnterFlippingMode"))
     self.orig_reflow_mode = self.view.document.configurable.text_wrap
-    self.orig_footer_mode = self.view.footer_visible
     self.orig_scroll_mode = self.view.page_scroll
     self.orig_zoom_mode = self.view.zoom_mode
     DEBUG("store zoom mode", self.orig_zoom_mode)
     self.DGESDETECT_DISABLE_DOUBLE_TAP = DGESDETECT_DISABLE_DOUBLE_TAP
-    
+
     self.view.document.configurable.text_wrap = 0
     self.view.page_scroll = false
-    self.view.footer_visible = true
     Input.disable_double_tap = false
     DGESDETECT_DISABLE_DOUBLE_TAP = false
     self.ui:handleEvent(Event:new("SetZoomMode", "page"))
 end
 
 function ReaderPaging:exitFlippingMode()
+    self.ui:handleEvent(Event:new("ExitFlippingMode"))
     self.view.document.configurable.text_wrap = self.orig_reflow_mode
     self.view.page_scroll = self.orig_scroll_mode
-    self.view.footer_visible = self.orig_footer_mode
     DGESDETECT_DISABLE_DOUBLE_TAP = self.DGESDETECT_DISABLE_DOUBLE_TAP
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     DEBUG("restore zoom mode", self.orig_zoom_mode)
@@ -598,7 +595,7 @@ function ReaderPaging:onScrollPanRel(diff)
     end
     -- update current pageno to the very last part in current view
     self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
-    
+
     UIManager:setDirty(self.view.dialog, "fast")
 end
 
