@@ -12,7 +12,7 @@ VERSION=$(shell git describe HEAD)
 INSTALL_DIR=koreader-$(MACHINE)
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources defaults.lua \
+INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
 		git-rev README.md COPYING
 
 # for gettext
@@ -20,10 +20,9 @@ DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
 KOREADER_MISC_TOOL=../misc
 XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
-MO_DIR=$(INSTALL_DIR)/koreader/i18n
 
 
-all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit po mo
+all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit po
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
@@ -126,12 +125,3 @@ pot:
 
 po:
 	$(MAKE) -i -C l10n bootstrap update
-
-mo:
-	for po in `find l10n -iname '*.po'`; do \
-		resource=`basename $$po .po` ; \
-		lingua=`dirname $$po | xargs basename` ; \
-		mkdir -p $(MO_DIR)/$$lingua/LC_MESSAGES/ ; \
-		msgfmt -o $(MO_DIR)/$$lingua/LC_MESSAGES/$$resource.mo $$po ; \
-		done
-
