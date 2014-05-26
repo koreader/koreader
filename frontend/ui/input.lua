@@ -4,7 +4,6 @@ local Event = require("ui/event")
 local TimeVal = require("ui/timeval")
 local Screen = require("ui/screen")
 local Math = require("optmath")
-local Dbg = require("dbg")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -286,11 +285,11 @@ function Input:init()
             input.open("fake_events")
         end
         if dev_mod == "KindlePaperWhite" then
-            print("Auto-detected Kindle PaperWhite")
+            DEBUG("Auto-detected Kindle PaperWhite")
             Device:setTouchInputDev("/dev/input/event0")
             input.open("/dev/input/event0")
         elseif dev_mod == "KindlePaperWhite2" then
-            print("Auto-detected Kindle PaperWhite")
+            DEBUG("Auto-detected Kindle PaperWhite")
             Device:setTouchInputDev("/dev/input/event1")
             input.open("/dev/input/event1")
         elseif dev_mod == "KindleTouch" then
@@ -314,17 +313,11 @@ function Input:init()
                 end
                 return ev
             end
-            print("Auto-detected Kindle Touch")
-        elseif Device:isKobo() then
-            local firm_rev = Device:getFirmVer()
-            input.open("/dev/input/event1")
-            Device:setTouchInputDev("/dev/input/event1")
-            input.open("/dev/input/event0") -- Light button and sleep slider
-            print("Auto-detected Kobo")
-            print("Device model=", dev_mod)
-            print("Firmware revision", firm_rev)
-            print("Screen width =", Screen:getWidth())
-            print("Screen height =", Screen:getHeight())
+            DEBUG("Auto-detected Kobo")
+            DEBUG("Device model=", dev_mod)
+            DEBUG("Firmware revision", firm_rev)
+            DEBUG("Screen width =", Screen:getWidth())
+            DEBUG("Screen height =", Screen:getHeight())
             self:adjustKoboEventMap()
             if dev_mod ~= 'Kobo_trilogy' then
                 function Input:eventAdjustHook(ev)
@@ -374,22 +367,23 @@ function Input:init()
                 end
             end
         elseif dev_mod == "Kindle4" then
-            print("Auto-detected Kindle 4")
+            DEBUG("Auto-detected Kindle 4")
             input.open("/dev/input/event1")
             self:adjustKindle4EventMap()
         elseif dev_mod == "Kindle3" then
-            print("Auto-detected Kindle 3")
+            DEBUG("Auto-detected Kindle 3")
             input.open("/dev/input/event1")
             input.open("/dev/input/event2")
         elseif dev_mod == "KindleDXG" then
-            print("Auto-detected Kindle DXG")
+            DEBUG("Auto-detected Kindle DXG")
             input.open("/dev/input/event1")
         elseif dev_mod == "Kindle2" then
-            print("Auto-detected Kindle 2")
+            DEBUG("Auto-detected Kindle 2")
             input.open("/dev/input/event1")
+        elseif util.isAndroid() then
+            DEBUG("Auto-detected Android")
         else
-            print("Not supported device model!")
-            os.exit(-1)
+            DEBUG("Not supported device model!")
         end
     end
 
@@ -711,8 +705,8 @@ function Input:waitEvent(timeout_us, timeout_s)
     end
 
     if ok and ev then
-        if Dbg.is_on and ev then
-            Dbg:logEv(ev)
+        if DEBUG.is_on and ev then
+            DEBUG:logEv(ev)
         end
         ev = self:eventAdjustHook(ev)
         if ev.type == EV_KEY then

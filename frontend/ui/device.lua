@@ -97,7 +97,7 @@ function Device:isKindle2()
 end
 
 function Device:isKobo()
-    return string.find(self:getModel(),"Kobo_") == 1
+    return string.find(self:getModel() or "", "Kobo_") == 1
 end
 
 function Device:hasNoKeyboard()

@@ -14,6 +14,8 @@ export PATH:=$(CURDIR)/$(KOR_BASE)/toolchain/android-toolchain/bin:$(PATH)
 MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 INSTALL_DIR=koreader-$(MACHINE)
 
+ANDROID_LAUNCHER_DIR:=android/luajit-launcher
+
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
 		git-rev README.md COPYING
@@ -97,7 +99,8 @@ kindleupdate: all
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 			extensions koreader launchpad \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
+			-x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
 	# @TODO write an installation script for KUAL   (houqp)
 
 koboupdate: all
@@ -119,11 +122,17 @@ koboupdate: all
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
+			-x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
 
-androidupdate:
-	cd $(INSTALL_DIR)/koreader && \
-		7z a -l -mx=5 ../koreader-g$(REVISION).7z *
+androidupdate: all
+	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
+	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
+	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=3 \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z *
+
+androiddev: androidupdate
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
