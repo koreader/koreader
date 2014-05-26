@@ -7,9 +7,14 @@ KOR_BASE?=koreader-base
 
 # we want VERSION to carry the version of koreader, not koreader-base
 VERSION=$(shell git describe HEAD)
+REVISION=$(shell git rev-parse --short HEAD)
 
 # subdirectory we use to build the installation bundle
+export PATH:=$(CURDIR)/$(KOR_BASE)/toolchain/android-toolchain/bin:$(PATH)
+MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 INSTALL_DIR=koreader-$(MACHINE)
+
+ANDROID_LAUNCHER_DIR:=android/luajit-launcher
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
@@ -22,7 +27,7 @@ KOREADER_MISC_TOOL=../misc
 XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 
-all: $(KOR_BASE)/$(OUTPUT_DIR)/luajit po
+all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit) po
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
@@ -31,15 +36,15 @@ ifdef EMULATE_READER
 	# create symlink instead of copying files in development mode
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/* .
+	# install front spec
+	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
+		ln -sf ../../../../spec ./front
 else
 	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
-	# install front spec
-	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
-		ln -sf ../../../../spec ./front
 	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
 		ln -sf ../../test ./data
 	# install plugins
@@ -94,7 +99,8 @@ kindleupdate: all
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 			extensions koreader launchpad \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
+			-x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
 	# @TODO write an installation script for KUAL   (houqp)
 
 koboupdate: all
@@ -116,7 +122,17 @@ koboupdate: all
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*" "koreader/resources/icons/src/*" "koreader/spec/*"
+			-x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
+
+androidupdate: all
+	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
+	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
+	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=3 \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z *
+
+androiddev: androidupdate
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \

@@ -1,4 +1,5 @@
 local DocSettings = require("docsettings") -- for dump method
+local isAndroid, android = pcall(require, "android")
 
 local Dbg = {
     is_on = false,
@@ -16,7 +17,11 @@ local function LvDEBUG(lv, ...)
             line = line .. " " .. tostring(v)
         end
     end
-    print("#"..line)
+    if isAndroid then
+        android.LOGI("#"..line)
+    else
+        print("#"..line)
+    end
 end
 
 function Dbg_mt.__call(dbg, ...)
@@ -27,8 +32,10 @@ function Dbg:turnOn()
     self.is_on = true
 
     -- create or clear ev log file
-    os.execute("echo > ev.log")
-    self.ev_log = io.open("ev.log", "w")
+    if not isAndroid then
+        os.execute("echo > ev.log")
+        self.ev_log = io.open("ev.log", "w")
+    end
 end
 
 function Dbg:logEv(ev)
