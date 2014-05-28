@@ -33,7 +33,7 @@ function Device:getModel()
         self.model = "Emulator"
         return self.model
     end
-    self.model = nil
+    self.model = ""
     local kindle_sn = io.open("/proc/usid", "r")
     if kindle_sn then
         local kindle_devcode = string.sub(kindle_sn:read(),3,4)

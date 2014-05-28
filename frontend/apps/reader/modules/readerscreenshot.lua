@@ -18,7 +18,7 @@ function ReaderScreenshot:init()
         Screenshot = {
             GestureRange:new{
                 ges = "two_finger_tap",
-                scale = {diagonal - Screen:scaleByDPI(100), diagonal},
+                scale = {diagonal - Screen:scaleByDPI(200), diagonal},
                 rate = 1.0,
             }
         },
@@ -26,9 +26,8 @@ function ReaderScreenshot:init()
 end
 
 function ReaderScreenshot:onScreenshot()
-    if Device:getModel() ~= 'Kobo_phoenix' then
-        os.execute("screenshot")
-    else Screen.bb:invert() 
+    if os.execute("screenshot") ~= 0 then
+        Screen.bb:invert()
         local screenshot_name = os.date("screenshots/Screenshot_%Y-%B-%d_%Hh%M.pam")
         UIManager:show(InfoMessage:new{
             text = _("Writing screen to ")..screenshot_name,
@@ -36,7 +35,7 @@ function ReaderScreenshot:onScreenshot()
         })
         Screen.bb:writePAM(screenshot_name)
         DEBUG(screenshot_name)
-        Screen.bb:invert() 
+        Screen.bb:invert()
     end
     UIManager.full_refresh = true
     return true
