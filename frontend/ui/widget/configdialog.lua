@@ -56,17 +56,13 @@ end
 
 function MenuBarItem:invert(invert)
     self[1].invert = invert
-    UIManager.update_region_func = function()
-        DEBUG("update icon region", self[1].dimen)
-        return self[1].dimen
-    end
-    UIManager:setDirty(self.config, "full")
+    UIManager:setDirty(self.config)
 end
 
 local OptionTextItem = InputContainer:new{}
 function OptionTextItem:init()
     local text_widget = self[1]
-    
+
     self[1] = UnderlineContainer:new{
         text_widget,
         padding = self.padding,
@@ -155,8 +151,9 @@ function ConfigOption:init()
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
             local option_height = Screen:scaleByDPI(self.options[c].height and self.options[c].height or default_option_height)
+            local item_spacing_with = self.options[c].spacing and self.options[c].spacing or default_items_spacing
             local items_spacing = HorizontalSpan:new{
-                width = Screen:scaleByDPI(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
+                width = Screen:scaleByDPI(item_spacing_with)
             }
             local horizontal_group = HorizontalGroup:new{}
             if self.options[c].name_text then
@@ -173,7 +170,10 @@ function ConfigOption:init()
 
             if self.options[c].widget == "ProgressWidget" then
                 local widget_container = CenterContainer:new{
-                    dimen = Geom:new{w = Screen:getWidth()*self.options[c].widget_align_center, h = option_height}
+                    dimen = Geom:new{
+                        w = Screen:getWidth()*self.options[c].widget_align_center,
+                        h = option_height
+                    }
                 }
                 local widget = ProgressWidget:new{
                     width = self.options[c].width,
@@ -217,7 +217,7 @@ function ConfigOption:init()
                     else
                         min_diff = value_diff(val, self.options[c].values[1])
                     end
-                        
+
                     local diff = nil
                     for index, val_ in pairs(self.options[c].values) do
                         local diff = nil
@@ -292,6 +292,12 @@ function ConfigOption:init()
                         },
                         padding = -2,
                         color = d == current_item and 15 or 0,
+                    }
+                    local icons_count = #self.options[c].item_icons
+                    local min_item_spacing = (Screen:getWidth() * item_align -
+                            option_item:getSize().w * icons_count) / icons_count
+                    local items_spacing = HorizontalSpan:new{
+                        width = math.min(min_item_spacing, Screen:scaleByDPI(item_spacing_with))
                     }
                     option_items[d] = option_item
                     option_item.items = option_items
@@ -441,7 +447,7 @@ function ConfigDialog:init()
 end
 
 function ConfigDialog:updateConfigPanel(index)
-    
+
 end
 
 function ConfigDialog:update()

@@ -102,21 +102,16 @@ function TouchMenuBar:init()
 
     self.bar_icon_group = HorizontalGroup:new{}
 
-    local icon_sep = LineWidget:new{
-        dimen = Geom:new{
-            w = Screen:scaleByDPI(2),
-            h = self.height,
-        }
-    }
-
-    local icon_span = HorizontalSpan:new{ width = Screen:scaleByDPI(20) }
-
+    local icon_sep_width = Screen:scaleByDPI(2)
+    local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- build up image widget for menu icon bar
     self.icon_widgets = {}
+    -- hold icon seperators
+    self.icon_seps = {}
     -- the start_seg for first icon_widget should be 0
     -- we asign negative here to offset it in the loop
-    start_seg = -icon_sep:getSize().w
-    end_seg = start_seg
+    local start_seg = -icon_sep_width
+    local end_seg = start_seg
     for k, v in ipairs(self.icons) do
         local ib = IconButton:new{
             show_parent = self.show_parent,
@@ -124,14 +119,18 @@ function TouchMenuBar:init()
             callback = nil,
         }
 
+        -- we assume all icons are of the same width
+        local content_width = ib:getSize().w * #self.icons + icons_sep_width
+        local spacing_width = (Screen:getWidth()-content_width)/(#self.icons*2)
+        local spacing = HorizontalSpan:new{
+            width = math.min(spacing_width, Screen:scaleByDPI(20))
+        }
         table.insert(self.icon_widgets, HorizontalGroup:new{
-            icon_span,
-            ib,
-            icon_span,
+            spacing, ib, spacing,
         })
 
         -- we have to use local variable here for closure callback
-        local _start_seg = end_seg + icon_sep:getSize().w
+        local _start_seg = end_seg + icon_sep_width
         local _end_seg = _start_seg + self.icon_widgets[k]:getSize().w
 
         if k == 1 then
@@ -148,12 +147,26 @@ function TouchMenuBar:init()
             }
         end
 
+        local icon_sep = LineWidget:new{
+            style = k == 1 and "solid" or "none",
+            dimen = Geom:new{
+                w = Screen:scaleByDPI(2),
+                h = self.height,
+            }
+        }
+        table.insert(self.icon_seps, icon_sep)
+
+        -- callback to set visual style
         ib.callback = function()
             self.bar_sep.empty_segments = {
                 {
                     s = _start_seg, e = _end_seg
                 }
             }
+            for i, sep in ipairs(self.icon_seps) do
+                local current_icon = i == k - 1 or i == k
+                self.icon_seps[i].style = current_icon and "solid" or "none"
+            end
             self.menu:switchMenuTab(k)
         end
 
@@ -171,7 +184,7 @@ function TouchMenuBar:init()
             align = "left",
             -- bar icons
             self.bar_icon_group,
-            -- separate line
+            -- horizontal separate line
             self.bar_sep
         },
     }

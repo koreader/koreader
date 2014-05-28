@@ -9,6 +9,7 @@ local LineWidget = Widget:new{
 }
 
 function LineWidget:paintTo(bb, x, y)
+    if self.style == "none" then return end
     if self.style == "dashed" then
         for i = 0, self.dimen.w - 20, 20 do
             bb:paintRect(x + i, y,
