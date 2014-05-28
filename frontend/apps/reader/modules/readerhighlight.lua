@@ -71,9 +71,7 @@ end
 function ReaderHighlight:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
     table.insert(tab_item_table.typeset, {
-        text_func = function()
-            return _("Set highlight drawer ").."( "..self.view.highlight.saved_drawer.." )"
-        end,
+        text = _("Set highlight drawer "),
         sub_item_table = self:genHighlightDrawerMenu(),
     })
 end
@@ -82,18 +80,27 @@ function ReaderHighlight:genHighlightDrawerMenu()
     return {
         {
             text = _("Lighten"),
+            enabled_func = function()
+                return self.view.highlight.saved_drawer ~= "lighten"
+            end,
             callback = function()
                 self.view.highlight.saved_drawer = "lighten"
             end
         },
         {
             text = _("Underscore"),
+            enabled_func = function()
+                return self.view.highlight.saved_drawer ~= "underscore"
+            end,
             callback = function()
                 self.view.highlight.saved_drawer = "underscore"
             end
         },
         {
             text = _("Invert"),
+            enabled_func = function()
+                return self.view.highlight.saved_drawer ~= "invert"
+            end,
             callback = function()
                 self.view.highlight.saved_drawer = "invert"
             end
@@ -129,8 +136,8 @@ end
 local function inside_box(pos, box)
     if pos then
         local x, y = pos.x, pos.y
-        if box.x <= x and box.y <= y 
-            and box.x + box.w >= x 
+        if box.x <= x and box.y <= y
+            and box.x + box.w >= x
             and box.y + box.h >= y then
             return true
         end
@@ -401,7 +408,7 @@ function ReaderHighlight:moreAction()
 end
 
 function ReaderHighlight:deleteHighlight(page, i)
-    DEBUG("delete highlight")    
+    DEBUG("delete highlight")
     table.remove(self.view.highlight.saved[page], i)
 end
 
