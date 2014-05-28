@@ -117,6 +117,7 @@ function Device:isTouchDevice()
     local model = self:getModel()
     self.is_touch_device = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
                         or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
+                        or util.isAndroid()
     return self.is_touch_device
 end
 
