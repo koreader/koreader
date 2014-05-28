@@ -32,10 +32,8 @@ function Dbg:turnOn()
     self.is_on = true
 
     -- create or clear ev log file
-    if not isAndroid then
-        os.execute("echo > ev.log")
-        self.ev_log = io.open("ev.log", "w")
-    end
+    os.execute("echo > ev.log")
+    self.ev_log = io.open("ev.log", "w")
 end
 
 function Dbg:logEv(ev)
