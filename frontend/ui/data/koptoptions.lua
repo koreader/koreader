@@ -73,6 +73,30 @@ local KoptOptions = {
                 values = {1.0, 1.2, 1.4},
                 default_value = DKOPTREADER_CONFIG_LINE_SPACING,
             },
+            {
+                name = "max_columns",
+                name_text = S.COLUMNS,
+                item_icons = {
+                    "resources/icons/appbar.column.one.png",
+                    "resources/icons/appbar.column.two.png",
+                    "resources/icons/appbar.column.three.png",
+                },
+                values = {1,2,3},
+                default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
+            },
+            {
+                name = "justification",
+                name_text = S.TEXT_ALIGN,
+                item_icons = {
+                    "resources/icons/appbar.align.auto.png",
+                    "resources/icons/appbar.align.left.png",
+                    "resources/icons/appbar.align.center.png",
+                    "resources/icons/appbar.align.right.png",
+                    "resources/icons/appbar.align.justify.png",
+                },
+                values = {-1,0,1,2,3},
+                default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
+            },
         }
     },
     {
@@ -176,30 +200,6 @@ local KoptOptions = {
                 toggle = {S.LOW, S.DEFAULT, S.HIGH},
                 values={0.5, 1.0, 1.5},
                 default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
-            },
-            {
-                name = "max_columns",
-                name_text = S.COLUMNS,
-                item_icons = {
-                    "resources/icons/appbar.column.one.png",
-                    "resources/icons/appbar.column.two.png",
-                    "resources/icons/appbar.column.three.png",
-                },
-                values = {1,2,3},
-                default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
-            },
-            {
-                name = "justification",
-                name_text = S.TEXT_ALIGN,
-                item_icons = {
-                    "resources/icons/appbar.align.auto.png",
-                    "resources/icons/appbar.align.left.png",
-                    "resources/icons/appbar.align.center.png",
-                    "resources/icons/appbar.align.right.png",
-                    "resources/icons/appbar.align.justify.png",
-                },
-                values = {-1,0,1,2,3},
-                default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
             },
             {
                 name = "defect_size",
