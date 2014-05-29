@@ -128,8 +128,9 @@ koboupdate: all
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
 	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
-	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=3 \
-		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z *
+	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z * \
+		-x!resources/fonts -x!resources/icons/src -x!spec
 
 androiddev: androidupdate
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev

@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local serial = require("serialize")
 local Cache = require("cache")
 local DEBUG = require("dbg")
+local util = require("ffi/util")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -673,7 +674,20 @@ end
 
 function KoptInterface:clipPagePNGString(doc, pos0, pos1, pboxes, drawer)
     local kc = self:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
-    local png = kc:exportSrcPNGString(pboxes, drawer)
+    -- there is no fmemopen in Android so leptonica.pixWriteMemPng will
+    -- fail silently, workaround is creating a PNG file and read back the string
+    local png = nil
+    if util.isAndroid() then
+        local tmp = "cache/tmpclippng.png"
+        kc:exportSrcPNGFile(pboxes, drawer, tmp)
+        local pngfile = io.open(tmp, "rb")
+        if pngfile then
+            png = pngfile:read("*all")
+            pngfile:close()
+        end
+    else
+        png = kc:exportSrcPNGString(pboxes, drawer)
+    end
     kc:free()
     return png
 end

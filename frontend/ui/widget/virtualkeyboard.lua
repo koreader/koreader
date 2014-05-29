@@ -20,10 +20,10 @@ local VirtualKey = InputContainer:new{
     key = nil,
     icon = nil,
     label = nil,
-    
+
     keyboard = nil,
     callback = nil,
-    
+
     width = nil,
     height = nil,
     bordersize = 2,
@@ -42,7 +42,7 @@ function VirtualKey:init()
     else
         self.callback = function () self.keyboard:addChar(self.key) end
     end
-    
+
     local label_widget = nil
     if self.icon then
         label_widget = ImageWidget:new{
@@ -96,10 +96,6 @@ end
 
 function VirtualKey:invert(invert)
     self[1].invert = invert
-    UIManager.update_region_func = function()
-        DEBUG("update key region", self[1].dimen)
-        return self[1].dimen
-    end
     UIManager:setDirty(self.keyboard, "partial")
 end
 
@@ -114,7 +110,7 @@ local VirtualKeyboard = InputContainer:new{
     shiftmode = false,
     symbolmode = false,
     utf8mode = false,
-    
+
     width = 600,
     height = 256,
     bordersize = 2,
@@ -183,7 +179,7 @@ function VirtualKeyboard:init()
               icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
             },
-            
+
         }
     }
     self:initLayout(self.layout)
@@ -196,7 +192,7 @@ function VirtualKeyboard:initLayout(layout)
         end
         return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3)
     end
-    
+
     if layout then
         -- to be sure layout is selected properly
         layout = math.max(layout, self.min_layout)
@@ -223,7 +219,7 @@ function VirtualKeyboard:addKeys()
         local horizontal_group = HorizontalGroup:new{}
         for j = 1, #self.KEYS[i] do
             local width_factor = self.KEYS[i][j].width or 1.0
-            local key_width = math.floor((base_key_width + self.key_padding) * width_factor) 
+            local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
             local label = self.KEYS[i][j].label or self.KEYS[i][j][self.layout]
@@ -236,7 +232,7 @@ function VirtualKeyboard:addKeys()
                 height = key_height,
             }
             table.insert(horizontal_group, key)
-            if j ~= #self.KEYS[i] then 
+            if j ~= #self.KEYS[i] then
                 table.insert(horizontal_group, h_key_padding)
             end
         end
@@ -245,7 +241,7 @@ function VirtualKeyboard:addKeys()
             table.insert(vertical_group, v_key_padding)
         end
     end
-    
+
     local size = vertical_group:getSize()
     local keyboard_frame = FrameContainer:new{
         margin = 0,

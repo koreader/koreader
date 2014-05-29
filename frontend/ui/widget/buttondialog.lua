@@ -21,7 +21,8 @@ function ButtonDialog:init()
             AnyKeyPressed = { { Input.group.Any },
                 seqtext = "any key", doc = _("close dialog") }
         }
-    else
+    end
+    if Device:isTouchDevice() then
         self.ges_events.TapClose = {
             GestureRange:new{
                 ges = "tap",
