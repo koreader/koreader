@@ -80,7 +80,7 @@ function FocusManager:onFocusMove(args)
             current_item:handleEvent(Event:new("Unfocus"))
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
             -- trigger a repaint (we need to be the registered widget!)
-            UIManager:setDirty(self, "partial")
+            UIManager:setDirty(self.show_parent or  self, "partial")
             break
         end
     end

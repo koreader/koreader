@@ -142,6 +142,9 @@ function ReaderToc:onShowToc()
     end
 
     UIManager:show(menu_container)
+--nicolua
+    UIManager:show(toc_menu)
+
     return true
 end
 

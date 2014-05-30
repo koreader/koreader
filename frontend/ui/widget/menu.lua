@@ -542,8 +542,11 @@ function Menu:updateItems(select_number)
     end
 
     -- FIXME: this is a dirty hack to clear previous menus
-    UIManager.repaint_all = true
+--    UIManager.repaint_all = true
     --UIManager:setDirty(self)
+--nicolua
+    UIManager:setDirty(self.show_parent or self)
+
 end
 
 function Menu:swithItemTable(new_title, new_item_table)
