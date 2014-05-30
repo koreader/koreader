@@ -1,5 +1,4 @@
 require "defaults"
-require "libs/libkoreader-luagettext"
 package.path = "?.lua;common/?.lua;frontend/?.lua"
 package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
 
