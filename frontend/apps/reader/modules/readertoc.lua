@@ -124,7 +124,6 @@ function ReaderToc:onShowToc()
         ui = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        show_parent = menu_container,
         is_borderless = true,
     }
 
@@ -137,13 +136,13 @@ function ReaderToc:onShowToc()
         self.ui:handleEvent(Event:new("PageUpdate", item.page))
     end
 
-    local w = Device:isTouchDevice() and menu_container or toc_menu
-
     toc_menu.close_callback = function()
-        UIManager:close(w)
+        UIManager:close(menu_container)
     end
 
-    UIManager:show(w)
+    toc_menu.show_parent = menu_container
+
+    UIManager:show(menu_container)
 
     return true
 end
