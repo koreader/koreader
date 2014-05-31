@@ -137,13 +137,13 @@ function ReaderToc:onShowToc()
         self.ui:handleEvent(Event:new("PageUpdate", item.page))
     end
 
+    local w = Device:isTouchDevice() and menu_container or toc_menu
+
     toc_menu.close_callback = function()
-        UIManager:close(menu_container)
+        UIManager:close(w)
     end
 
-    UIManager:show(menu_container)
---nicolua
-    UIManager:show(toc_menu)
+    UIManager:show(w)
 
     return true
 end
