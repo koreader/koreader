@@ -176,7 +176,8 @@ function Device:prepareSuspend() -- currently only used for kobo devices
 end
 
 function Device:Suspend() -- currently only used for kobo devices
-    os.execute("./kobo_suspend.sh")
+   -- os.execute("./kobo_suspend.sh")
+    os.execute("./suspend &")
 end
 
 function Device:Resume() -- currently only used for kobo devices

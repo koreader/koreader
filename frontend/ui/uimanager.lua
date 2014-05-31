@@ -295,7 +295,8 @@ function UIManager:run()
                 local InfoMessage = require("ui/widget/infomessage")
                 self:show(InfoMessage:new{
                     text = _("Standby"),
-                    timeout = 1,
+                    --timeout = 1,
+                    timeout = 4,
                 })
                 Device:prepareSuspend()
                 self:scheduleIn(0.5, function() Device:Suspend() end)
