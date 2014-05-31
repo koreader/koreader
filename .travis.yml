@@ -1,0 +1,20 @@
+# Travis-CI Build for koreader
+# see travis-ci.org for details
+
+language: c
+
+compiler:
+    - gcc
+
+env:
+    - EMULATE_READER=1 USE_NO_CCACHE=1
+
+install:
+    - sudo apt-get install libsdl1.2-dev luarocks
+    - git clone https://github.com/Olivine-Labs/busted/
+    - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
+
+script:
+    - make fetchthirdparty
+    - make
+    - make testfront

@@ -56,7 +56,7 @@ end
 
 function MenuBarItem:invert(invert)
     self[1].invert = invert
-    UIManager:setDirty(self.config)
+    UIManager:setDirty(self.config, "partial")
 end
 
 local OptionTextItem = InputContainer:new{}

@@ -36,17 +36,17 @@ ifdef EMULATE_READER
 	# create symlink instead of copying files in development mode
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/* .
-	# install front spec
+	# install front spec only for the emulator
 	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
 		ln -sf ../../../../spec ./front
+	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
+		ln -sf ../../test ./data
 else
 	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
-	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
-		ln -sf ../../test ./data
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
@@ -131,9 +131,15 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) apk
+	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
+		koreader-android-$(MACHINE)-$(VERSION).apk
 
 androiddev: androidupdate
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
+
+android-toolchain:
+	$(MAKE) -C $(KOR_BASE) android-toolchain
 
 pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \

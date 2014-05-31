@@ -1,17 +1,16 @@
 KOReader [![Build Status][travis-icon]][travis-link]
 ========
 
-This is a document viewer application, originally created for usage on the
+KOReader is a document viewer application, originally created for usage on the
 Kindle e-ink reader. It currently supports Kindle 5 (Touch), Kindle Paperwhite
-and Kobo devices. Kindles need to be jailbroken in order to install the
-application. Also, a kind of external launcher is needed.
+, Kobo and Android devices.
 
 KOReader started as the KindlePDFViewer application, but it supports much more
 formats than PDF now. Among them are DJVU, FB2, EPUB, TXT, CBZ, HTML.
 
 KOReader is a frontend written in Lua and uses the API presented by the
-KOReader-base framework. KOReader implements a GUI and is currently targeted
-at Touch-based devices - for the classic user interface for button-driven
+koreader-base framework. KOReader implements a GUI and is currently targeted
+at touch-based devices - for the classic user interface for button-driven
 e-ink devices (like the Kindle 2, Kindle DX, Kindle 3, Kindle 4) see the
 KindlePDFviewer legacy project or - especially for the Kindle 4 - have a look
 at its fork Librerator.
@@ -24,8 +23,8 @@ more about this project.
 Prerequisites
 ========
 
-Instructions about how to get and compile the source are intended for a \*nix
-OS. Windows users are suggested to develop in a [Linux VM](http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/) or use Wubi.
+Instructions about how to get and compile the source are intended for a linux
+OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`, 
 `subversion` and `cmake` installed. Version of autoconf need to be greater than 2.64.
@@ -35,7 +34,7 @@ Ubuntu users may need to run:
 sudo apt-get install build-essential libtool
 ```
 
-Cross toolchains are available to Ubuntu users through these commands:
+Cross compile toolchains are available for Ubuntu users through these commands:
 ```
 # for Kindle
 sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
@@ -43,9 +42,12 @@ sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
 
+A recent version of Android SDK/NDK is needed in order to build Koreader for Android
+devices.
+
 You might also need SDL library packages if you want to compile and run 
 Koreader on PC. Fedora users can install `SDL` and `SDL-devel`.
-Ubuntu users probably have to run:
+Ubuntu users probably need to run:
 ```
 sudo apt-get install libsdl1.2-dev
 ```
@@ -66,19 +68,20 @@ Building & Running & Testing
 For real eink devices
 ---------------------
 
-If you already done an emulator build, you must do:
+If you have already built one package for a different target, remember to run
+this command before you go further:
 ```
 make clean
 ```
 
-To build for the Kindle:
+To build installable package for Kindle:
 ```
-make kindleupdate
+make TARGET=kindle kindleupdate
 ```
 
-To build for the Kobo:
+To build installable package for Kobo:
 ```
-make TARGET_DEVICE=KOBO koboupdate
+make TARGET=kobo koboupdate
 ```
 
 To run, you must call the script reader.lua. Run it without arguments to see
@@ -88,8 +91,31 @@ be in the same directory.
 You may checkout our [nightlybuild script][nb-script] to see how to build a
 package from scratch.
 
+For Android devices
+-------------------
+
+Make sure the "android" tool is in your PATH variable and the NDK variable
+points to the root directory of the Android NDK.
+
+First, run this command to make a standalone android cross compiling toolchain
+from NDK:
+```
+make android-toolchain
+```
+
+Also, if you have already built a different target, remember to clear the source
+code tree with:
+```
+make clean
+```
+
+Then, build installable package for Android:
+```
+make TARGET=android androidupdate
+```
+
 For emulating
------------
+-------------
 
 If you already done a real device build, you must do:
 ```
@@ -157,4 +183,5 @@ http://ccache.samba.org
 [travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
 [travis-link]:https://travis-ci.org/koreader/koreader-base
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
+[linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 
