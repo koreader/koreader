@@ -1,0 +1,46 @@
+#!/bin/sh
+
+
+export PATH=$PATH:/sbin:/usr/sbin
+
+ts_file=/tmp/back_from_suspend
+
+if test -e $ts_file ; then
+ sec_back_suspend=$(stat -t $ts_file | awk '{print $13}' )
+ delta_sec=$(( $(date +%s) - $sec_back_suspend ))
+ echo sec_back_suspend=$sec_back_suspend delta_sec=$delta_sec >> /tmp/event_test.txt
+
+ test $delta_sec -gt 2 || exit 
+fi
+
+#make log-bat.sh log2
+#kill $( pstree -p|grep log-bat.*sleep|sed -e 's/.*(//;s/).*//' )
+
+sleep 1
+
+if lsmod | grep -q sdio_wifi_pwr ; then 
+ wlarm_le -i eth0 down
+ ifconfig eth0 down
+ /sbin/rmmod -r dhd
+ /sbin/rmmod -r sdio_wifi_pwr
+fi
+
+
+/mnt/onboard/.kobo/koreader/frontlight-wrap off
+sleep 1
+
+sync
+echo 1 > /sys/power/state-extended
+echo mem > /sys/power/state
+echo 0 > /sys/power/state-extended
+
+
+/mnt/onboard/.kobo/koreader/frontlight-wrap on
+
+#/mnt/onboard/.kobo/KoboLauncher/usbnet/start-wireless.sh
+
+touch $ts_file
+
+#make log-bat.sh log2
+#kill $( pstree -p|grep log-bat.*sleep|sed -e 's/.*(//;s/).*//' )
+
