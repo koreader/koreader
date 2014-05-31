@@ -121,7 +121,11 @@ function ReaderFont:onShowFontMenu()
         UIManager:close(menu_container)
     end
     -- show menu
+
+    main_menu.show_parent = menu_container
+
     UIManager:show(menu_container)
+
     return true
 end
 
