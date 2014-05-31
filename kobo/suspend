@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export PATH=$PATH:/sbin:/usr/sbin
+
+test -e /tmp/back_from_suspend || touch /tmp/back_from_suspend
+
+exec flock -n /tmp/back_from_suspend /mnt/onboard/.kobo/koreader/suspend2
+
