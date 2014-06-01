@@ -180,8 +180,8 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
-[travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
-[travis-link]:https://travis-ci.org/koreader/koreader-base
+[travis-icon]:https://travis-ci.org/koreader/koreader.png?branch=master
+[travis-link]:https://travis-ci.org/koreader/koreader
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 
