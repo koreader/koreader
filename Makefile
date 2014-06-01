@@ -14,7 +14,8 @@ export PATH:=$(CURDIR)/$(KOR_BASE)/toolchain/android-toolchain/bin:$(PATH)
 MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 INSTALL_DIR=koreader-$(MACHINE)
 
-ANDROID_LAUNCHER_DIR:=android/luajit-launcher
+ANDROID_DIR=android
+ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
@@ -47,6 +48,10 @@ endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
+ifdef ANDROID
+	cd $(INSTALL_DIR)/koreader && \
+		ln -sf ../../$(ANDROID_DIR)/*.lua .
+endif
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
