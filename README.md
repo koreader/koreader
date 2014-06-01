@@ -94,8 +94,8 @@ package from scratch.
 For Android devices
 -------------------
 
-Make sure the "android" tool is in your PATH variable and the NDK variable
-points to the root directory of the Android NDK.
+Make sure the "android" and "ndk-build" tools are in your PATH variable
+and the NDK variable points to the root directory of the Android NDK.
 
 First, run this command to make a standalone android cross compiling toolchain
 from NDK:
