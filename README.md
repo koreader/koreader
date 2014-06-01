@@ -94,8 +94,8 @@ package from scratch.
 For Android devices
 -------------------
 
-Make sure the "android" tool is in your PATH variable and the NDK variable
-points to the root directory of the Android NDK.
+Make sure the "android" and "ndk-build" tools are in your PATH variable
+and the NDK variable points to the root directory of the Android NDK.
 
 First, run this command to make a standalone android cross compiling toolchain
 from NDK:
@@ -180,8 +180,8 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
-[travis-icon]:https://travis-ci.org/koreader/koreader-base.png?branch=master
-[travis-link]:https://travis-ci.org/koreader/koreader-base
+[travis-icon]:https://travis-ci.org/koreader/koreader.png?branch=master
+[travis-link]:https://travis-ci.org/koreader/koreader
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 
