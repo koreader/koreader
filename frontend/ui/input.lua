@@ -313,6 +313,12 @@ function Input:init()
                 end
                 return ev
             end
+            DEBUG("Auto-detected Kindle Touch")
+        elseif Device:isKobo() then
+            local firm_rev = Device:getFirmVer()
+            input.open("/dev/input/event1")
+            Device:setTouchInputDev("/dev/input/event1")
+            input.open("/dev/input/event0") -- Light button and sleep slider
             DEBUG("Auto-detected Kobo")
             DEBUG("Device model=", dev_mod)
             DEBUG("Firmware revision", firm_rev)
