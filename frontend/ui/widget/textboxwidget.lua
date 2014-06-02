@@ -1,3 +1,4 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
 local RenderText = require("ui/rendertext")
 local Screen = require("ui/screen")
@@ -71,7 +72,7 @@ However string.gmatch() has one significant disadvantage for me:
 You can't split a string while matching both the delimited
 strings and the delimiters themselves without tracking positions
 and substrings. The string.gsplit() function below takes care of
-this problem. 
+this problem.
 Author: Peter Odding
 License: MIT/X11
 Source: http://snippets.luacode.org/snippets/String_splitting_130
