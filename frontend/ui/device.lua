@@ -100,11 +100,13 @@ function Device:isKobo()
     return string.find(self:getModel() or "", "Kobo_") == 1
 end
 
+Device.isAndroid = util.isAndroid
+
 function Device:hasNoKeyboard()
     if self.has_no_keyboard ~= nil then return self.has_no_keyboard end
     local model = self:getModel()
     self.has_no_keyboard = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
-                        or (model == "KindleTouch") or self:isKobo()
+                        or (model == "KindleTouch") or self:isKobo() or self:isAndroid()
     return self.has_no_keyboard
 end
 
