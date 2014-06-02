@@ -3,6 +3,8 @@ local KoboPowerD = require("ui/device/kobopowerd")
 local BasePowerD = require("ui/device/basepowerd")
 local Screen = require("ui/device/screen")
 local util = require("ffi/util")
+local ffi = require("ffi")
+local isAndroid, android = pcall(require, "android")
 -- lfs
 
 local Device = {
@@ -104,9 +106,14 @@ Device.isAndroid = util.isAndroid
 
 function Device:hasNoKeyboard()
     if self.has_no_keyboard ~= nil then return self.has_no_keyboard end
-    local model = self:getModel()
-    self.has_no_keyboard = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
-                        or (model == "KindleTouch") or self:isKobo() or self:isAndroid()
+    if not isAndroid then
+        local model = self:getModel()
+        self.has_no_keyboard = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
+                            or (model == "KindleTouch") or self:isKobo()
+    else
+        self.has_no_keyboard = ffi.C.AConfiguration_getKeyboard(android.app.config)
+                            ~= ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
+    end
     return self.has_no_keyboard
 end
 
@@ -116,10 +123,14 @@ end
 
 function Device:isTouchDevice()
     if self.is_touch_device ~= nil then return self.is_touch_device end
-    local model = self:getModel()
-    self.is_touch_device = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
-                        or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
-                        or util.isAndroid()
+    if not isAndroid then
+        local model = self:getModel()
+        self.is_touch_device = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
+                            or (model == "KindleTouch") or self:isKobo() or util.isEmulated()
+    else
+        self.is_touch_device = ffi.C.AConfiguration_getTouchscreen(android.app.config)
+                            ~= ffi.C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
+    end
     return self.is_touch_device
 end
 
