@@ -1,3 +1,4 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local DEBUG = require("dbg")
 
@@ -73,13 +74,17 @@ end
 function Screen:getDPI()
     if self.dpi ~= nil then return self.dpi end
     local model = self.device:getModel()
-    if model == "KindlePaperWhite" or model == "KindlePaperWhite2" 
+    if model == "KindlePaperWhite" or model == "KindlePaperWhite2"
         or model == "Kobo_kraken" or model == "Kobo_phoenix" then
         self.dpi = 212
     elseif model == "Kobo_dragon" then
         self.dpi = 265
     elseif model == "Kobo_pixie" then
         self.dpi = 200
+    elseif util.isAndroid() then
+        local android = require("android")
+        local ffi = require("ffi")
+        self.dpi = ffi.C.AConfiguration_getDensity(android.app.config)
     else
         self.dpi = 167
     end
