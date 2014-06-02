@@ -17,6 +17,7 @@ spec/unit/data
 emu
 
 koreader-*.zip
+koreader-*.apk
 
 /.cproject
 /.project
