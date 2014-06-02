@@ -1,4 +1,5 @@
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
 local Geom = require("ui/geometry")

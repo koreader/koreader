@@ -104,12 +104,12 @@ local KoptOptions = {
         options = {
             {
                 name = "font_size",
-                item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
+                item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
                 item_align_center = 1.0,
                 spacing = 15,
                 height = 60,
-                item_font_size = {22,24,28,32,34,36,38,42,46,50},
-                values = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 4.0},
+                item_font_size = {24,28,32,34,36,38,42,46},
+                values = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0},
                 default_value = DKOPTREADER_CONFIG_FONT_SIZE,
                 event = "FontSizeUpdate",
             },
@@ -132,14 +132,14 @@ local KoptOptions = {
             {
                 name = "contrast",
                 name_text = S.CONTRAST,
-                name_align_right = 0.2,
-                item_text = {S.LIGHTEST , S.LIGHTER, S.DEFAULT, S.DARKER, S.DARKEST},
+                name_align_right = 0.25,
+                item_text = {S.LIGHTER, S.DEFAULT, S.DARKER, S.DARKEST},
                 item_font_size = 18,
-                item_align_center = 0.8,
-                values = {2.0, 1.5, 1.0, 0.5, 0.2},
+                item_align_center = 0.7,
+                values = {1.5, 1.0, 0.5, 0.2},
                 default_value = DKOPTREADER_CONFIG_CONTRAST,
                 event = "GammaUpdate",
-                args = {0.5, 0.8, 1.0, 2.0, 4.0},
+                args = {0.8, 1.0, 2.0, 4.0},
             }
         }
     },

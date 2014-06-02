@@ -248,6 +248,21 @@ function ConfigOption:init()
                 end
             end
             if self.options[c].item_text then
+                local items_count = #self.options[c].item_text
+                local middle_index = math.ceil(items_count/2)
+                local middle_item = OptionTextItem:new{
+                    TextWidget:new{
+                        text = self.options[c].item_text[middle_index],
+                        face = Font:getFace(item_font_face,
+                            option_items_fixed and item_font_size[middle_index]
+                            or item_font_size),
+                    }
+                }
+                local max_item_spacing = (Screen:getWidth() * item_align -
+                        middle_item:getSize().w * items_count) / items_count
+                local items_spacing = HorizontalSpan:new{
+                    width = math.min(max_item_spacing, Screen:scaleByDPI(item_spacing_with))
+                }
                 for d = 1, #self.options[c].item_text do
                     local option_item = nil
                     if option_items_fixed then
@@ -285,6 +300,17 @@ function ConfigOption:init()
             end
 
             if self.options[c].item_icons then
+                local items_count = #self.options[c].item_icons
+                local first_item = OptionIconItem:new{
+                    icon = ImageWidget:new{
+                        file = self.options[c].item_icons[1]
+                    }
+                }
+                local max_item_spacing = (Screen:getWidth() * item_align -
+                        first_item:getSize().w * items_count) / items_count
+                local items_spacing = HorizontalSpan:new{
+                    width = math.min(max_item_spacing, Screen:scaleByDPI(item_spacing_with))
+                }
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
                         icon = ImageWidget:new{
@@ -292,12 +318,6 @@ function ConfigOption:init()
                         },
                         padding = -2,
                         color = d == current_item and 15 or 0,
-                    }
-                    local icons_count = #self.options[c].item_icons
-                    local min_item_spacing = (Screen:getWidth() * item_align -
-                            option_item:getSize().w * icons_count) / icons_count
-                    local items_spacing = HorizontalSpan:new{
-                        width = math.min(min_item_spacing, Screen:scaleByDPI(item_spacing_with))
                     }
                     option_items[d] = option_item
                     option_item.items = option_items
@@ -315,8 +335,10 @@ function ConfigOption:init()
             end
 
             if self.options[c].toggle then
+                local max_toggle_width = Screen:getWidth() / 2
+                local toggle_width = Screen:scaleByDPI(self.options[c].width or 216)
                 local switch = ToggleSwitch:new{
-                    width = Screen:scaleByDPI(self.options[c].width or 216),
+                    width = math.min(max_toggle_width, toggle_width),
                     name = self.options[c].name,
                     toggle = self.options[c].toggle,
                     alternate = self.options[c].alternate,
