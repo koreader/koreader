@@ -3,4 +3,4 @@
 	url = git://github.com/koreader/koreader-base.git
 [submodule "android/luajit-launcher"]
 	path = android/luajit-launcher
-	url = https://github.com/hwhw/android-luajit-launcher.git
+	url = https://github.com/koreader/android-luajit-launcher.git
