@@ -34,17 +34,20 @@ function FileChooser:genItemTableFromPath(path)
     local dirs = {}
     local files = {}
 
-    for f in lfs.dir(self.path) do
-        if self.show_hidden or not string.match(f, "^%.[^.]") then
-            local filename = self.path.."/"..f
-            local filemode = lfs.attributes(filename, "mode")
-            if filemode == "directory" and f ~= "." and f~=".." then
-                if self.dir_filter(filename) then
-                    table.insert(dirs, f)
-                end
-            elseif filemode == "file" then
-                if self.file_filter(filename) then
-                    table.insert(files, f)
+    -- lfs.dir directory without permission will give error
+    if pcall(lfs.dir, self.path) then
+        for f in lfs.dir(self.path) do
+            if self.show_hidden or not string.match(f, "^%.[^.]") then
+                local filename = self.path.."/"..f
+                local filemode = lfs.attributes(filename, "mode")
+                if filemode == "directory" and f ~= "." and f~=".." then
+                    if self.dir_filter(filename) then
+                        table.insert(dirs, f)
+                    end
+                elseif filemode == "file" then
+                    if self.file_filter(filename) then
+                        table.insert(files, f)
+                    end
                 end
             end
         end
@@ -86,10 +89,12 @@ function FileChooser:toggleHiddenFiles()
 end
 
 function FileChooser:onMenuSelect(item)
-    if lfs.attributes(item.path, "mode") == "directory" then
-        self:changeToPath(item.path)
-    else
+    -- parent directory of dir without permission get nil mode
+    -- we need to change to parent path in this case
+    if lfs.attributes(item.path, "mode") == "file" then
         self:onFileSelect(item.path)
+    else
+        self:changeToPath(item.path)
     end
     return true
 end
