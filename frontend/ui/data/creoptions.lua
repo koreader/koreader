@@ -93,8 +93,10 @@ local CreOptions = {
             {
                 name = "font_weight",
                 name_text = S.FONT_WEIGHT,
-                toggle = {S.TOGGLE_BOLD},
-                default_arg = nil,
+                toggle = {S.REGULAR, S.BOLD},
+                values = {0, 1},
+                default_value = 0,
+                args = {0, 1},
                 event = "ToggleFontBolder",
             },
             {
