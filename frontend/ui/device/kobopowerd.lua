@@ -13,7 +13,8 @@ local KoboPowerD = BasePowerD:new{
 }
 
 function KoboPowerD:init()
-    self.fl = kobolight.open()
+    local ok, light = pcall(kobolight.open)
+    if ok then self.fl = light end
 end
 
 function KoboPowerD:toggleFrontlight()
