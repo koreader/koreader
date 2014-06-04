@@ -42,8 +42,11 @@ sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
 
-A recent version of Android SDK/NDK is needed in order to build Koreader for Android
+A recent version of Android SDK/NDK and `ant` are needed in order to build Koreader for Android
 devices.
+```
+sudo apt-get install ant
+```
 
 You might also need SDL library packages if you want to compile and run 
 Koreader on PC. Fedora users can install `SDL` and `SDL-devel`.
