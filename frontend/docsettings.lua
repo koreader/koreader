@@ -50,7 +50,7 @@ function DocSettings:open(docfile)
         -- takes care of reader legacy setting
         ok, stored = pcall(dofile, docfile..".kpdfview.lua")
     end
-    if ok then
+    if ok and stored then
         new.data = stored
     end
     return setmetatable(new, { __index = DocSettings})
