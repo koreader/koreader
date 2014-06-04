@@ -15,6 +15,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local util = require("ffi/util")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
@@ -38,7 +39,7 @@ function FileManager:init()
         },
         VerticalSpan:new{ width = Screen:scaleByDPI(10) }
     }
-    
+
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
     local file_chooser = FileChooser:new{
@@ -68,13 +69,13 @@ function FileManager:init()
         showReaderUI(file)
         return true
     end
-    
+
     local copyFile = function(file) self:copyFile(file) end
     local pasteHere = function(file) self:pasteHere(file) end
     local cutFile = function(file) self:cutFile(file) end
     local deleteFile = function(file) self:deleteFile(file) end
     local fileManager = self
-    
+
     function file_chooser:onFileHold(file)
         --DEBUG("hold file", file)
         self.file_dialog = ButtonDialog:new{
