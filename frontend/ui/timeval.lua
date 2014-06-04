@@ -1,3 +1,5 @@
+local util = require("ffi/util")
+
 local TimeVal = {
     sec = 0,
     usec = 0,

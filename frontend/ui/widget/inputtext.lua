@@ -10,6 +10,7 @@ local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
+local util = require("ffi/util")
 
 local InputText = InputContainer:new{
     text = "",

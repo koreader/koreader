@@ -68,20 +68,14 @@ Building & Running & Testing
 For real eink devices
 ---------------------
 
-If you have already built one package for a different target, remember to run
-this command before you go further:
-```
-make clean
-```
-
 To build installable package for Kindle:
 ```
-make TARGET=kindle kindleupdate
+make TARGET=kindle clean kindleupdate
 ```
 
 To build installable package for Kobo:
 ```
-make TARGET=kobo koboupdate
+make TARGET=kobo clean koboupdate
 ```
 
 To run, you must call the script reader.lua. Run it without arguments to see
@@ -103,36 +97,26 @@ from NDK:
 make android-toolchain
 ```
 
-Also, if you have already built a different target, remember to clear the source
-code tree with:
-```
-make clean
-```
-
 Then, build installable package for Android:
 ```
-make TARGET=android androidupdate
+make TARGET=android clean androidupdate
 ```
 
 For emulating
 -------------
 
-If you already done a real device build, you must do:
+To build an emulator on current machine just run:
 ```
-make clean
-```
-
-To build:
-```
-EMULATE_READER=1 make
+make clean && make
 ```
 
-To run:
+To run koreader on your developing machine 
+(you may need to change $(MACHINE) to the arch of your machine such as 'x86_64'):
 ```
-cd koreader-*/koreader && ./reader.lua -d ./
+cd koreader-$(MACHINE)/koreader && ./reader.lua -d ../../test
 ```
 
-To test:
+To run unit tests in Koreader just issue:
 ```
 make test
 ```
@@ -149,7 +133,7 @@ For more information, please refer to [koreader-base's README][base-readme].
 To use your own koreader-base repo instead of the default one change KOR_BASE
 environment variable:
 ```
-EMULATE_READER=1 make KOR_BASE=../koreader-base
+make KOR_BASE=../koreader-base
 ```
 
 This will be handy if you are developing koreader-base and want to test your

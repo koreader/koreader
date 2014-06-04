@@ -6,6 +6,7 @@ local Screen = require("ui/screen")
 local Math = require("optmath")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local util = require("ffi/util")
 
 -- constants from <linux/input.h>
 local EV_SYN = 0

@@ -5,7 +5,6 @@ einkfb = require("ffi/framebuffer")
 input = require("ffi/input")
 freetype = require("ffi/freetype")
 Image = require("ffi/mupdfimg")
-util = require("ffi/util")
 
 require "defaults"
 package.path = "?.lua;common/?.lua;frontend/?.lua"
@@ -13,6 +12,7 @@ package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")
+local util = require("ffi/util")
 
 -- read settings and check for language override
 -- has to be done before requiring other files because

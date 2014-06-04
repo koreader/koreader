@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local DEBUG = require("dbg")
+local util = require("ffi/util")
 
 -- Blitbuffer
 -- einkfb

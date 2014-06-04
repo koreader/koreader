@@ -4,6 +4,7 @@ local Input = require("ui/input")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local util = require("ffi/util")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -214,7 +215,7 @@ function UIManager:run()
                 dirty = true
             end
         end
-        
+
         if self.full_refresh then
             dirty = true
             force_full_refresh = true
@@ -224,11 +225,11 @@ function UIManager:run()
             dirty = true
             force_patial_refresh = true
         end
-        
+
         self.repaint_all = false
         self.full_refresh = false
         self.patial_refresh = false
-        
+
         local refresh_type = self.default_refresh_type
         local waveform_mode = self.default_waveform_mode
         if dirty then
@@ -243,7 +244,7 @@ function UIManager:run()
             if self.update_region_func then
                 local update_region = self.update_region_func()
                 -- in some rare cases update region has 1 pixel offset
-                Screen:refresh(refresh_type, waveform_mode, 
+                Screen:refresh(refresh_type, waveform_mode,
                                update_region.x-1, update_region.y-1,
                                update_region.w+2, update_region.h+2)
             else
@@ -251,7 +252,7 @@ function UIManager:run()
             end
             if self.refresh_type == 1 then
                 self.refresh_count = 0
-            elseif not force_patial_refresh and not force_full_refresh then 
+            elseif not force_patial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
             end
             self.update_region_func = nil

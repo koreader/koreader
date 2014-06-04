@@ -1,5 +1,6 @@
 local EventListener = require("ui/widget/eventlistener")
 local Device = require("ui/device")
+local util = require("ffi/util")
 -- lipc
 
 local ReaderActivityIndicator = EventListener:new{}
@@ -12,7 +13,7 @@ function ReaderActivityIndicator:init()
     end
 end
 
-function ReaderActivityIndicator:onStartActivityIndicator()    
+function ReaderActivityIndicator:onStartActivityIndicator()
     if self.lipc_handle then
         -- check if activity indicator is needed
         if self.document.configurable.text_wrap == 1 then
