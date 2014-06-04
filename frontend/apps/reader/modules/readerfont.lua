@@ -64,36 +64,23 @@ function ReaderFont:onSetDimensions(dimen)
 end
 
 function ReaderFont:onReadSettings(config)
-    self.font_face = config:readSetting("font_face")
-    if not self.font_face then
-        self.font_face = self.ui.document.default_font
-    end
+    self.font_face = config:readSetting("font_face") or self.ui.document.default_font
     self.ui.document:setFontFace(self.font_face)
 
-    self.header_font_face = config:readSetting("header_font_face")
-    if not self.header_font_face then
-        self.header_font_face = self.ui.document.header_font
-    end
+    self.header_font_face = config:readSetting("header_font_face") or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
-    self.font_size = config:readSetting("font_size")
-    if not self.font_size then
-        --@TODO change this!  12.01 2013 (houqp)
-        self.font_size = DCREREADER_CONFIG_DEFAULT_FONT_SIZE
-    end
+    --@TODO change this!  12.01 2013 (houqp)
+    self.font_size = config:readSetting("font_size") or DCREREADER_CONFIG_DEFAULT_FONT_SIZE
     self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
 
-    self.line_space_percent = config:readSetting("line_space_percent")
-    if not self.line_space_percent then
-        self.line_space_percent = 100
-    else
-        self.ui.document:setInterlineSpacePercent(self.line_space_percent)
-    end
+    self.font_embolden = config:readSetting("font_embolden") or 0
+    self.ui.document:toggleFontBolder(self.font_embolden)
 
-    self.gamma_index = config:readSetting("gamma_index")
-    if not self.gamma_index then
-        self.gamma_index = 15
-    end
+    self.line_space_percent = config:readSetting("line_space_percent") or 100
+    self.ui.document:setInterlineSpacePercent(self.line_space_percent)
+
+    self.gamma_index = config:readSetting("gamma_index") or 15
     self.ui.document:setGammaIndex(self.gamma_index)
 
     -- Dirty hack: we have to add folloing call in order to set
@@ -176,8 +163,9 @@ function ReaderFont:onChangeLineSpace(direction)
     return true
 end
 
-function ReaderFont:onToggleFontBolder()
-    self.ui.document:toggleFontBolder()
+function ReaderFont:onToggleFontBolder(toggle)
+    self.font_embolden = toggle
+    self.ui.document:toggleFontBolder(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
@@ -204,6 +192,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
+    self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end

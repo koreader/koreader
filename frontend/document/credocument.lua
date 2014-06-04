@@ -319,9 +319,9 @@ function CreDocument:setInterlineSpacePercent(percent)
     self._document:setDefaultInterlineSpace(percent)
 end
 
-function CreDocument:toggleFontBolder()
-    DEBUG("CreDocument: toggle font bolder")
-    self._document:toggleFontBolder()
+function CreDocument:toggleFontBolder(toggle)
+    DEBUG("CreDocument: toggle font bolder", toggle)
+    self._document:setIntProperty("font.face.weight.embolden", toggle)
 end
 
 function CreDocument:setGammaIndex(index)
