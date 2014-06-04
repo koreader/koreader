@@ -32,7 +32,6 @@ function Dbg:turnOn()
     self.is_on = true
 
     -- create or clear ev log file
-    os.execute("echo > ev.log")
     self.ev_log = io.open("ev.log", "w")
 end
 
