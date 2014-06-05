@@ -128,7 +128,7 @@ function showusage()
     print("")
     print("If you don't pass any path, the last viewed document will be opened")
     print("")
-    print("This software is licensed under the GPLv3.")
+    print("This software is licensed under the AGPLv3.")
     print("See http://github.com/koreader/koreader for more info.")
     return
 end
