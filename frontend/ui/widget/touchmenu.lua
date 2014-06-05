@@ -13,6 +13,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local VerticalSpan = require("ui/widget/verticalspan")
 local IconButton = require("ui/widget/iconbutton")
+local Button = require("ui/widget/button")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
@@ -204,7 +205,7 @@ end
 
 
 --[[
-TouchMenu widget
+TouchMenu widget for hierarchical menus
 --]]
 local TouchMenu = InputContainer:new{
     tab_item_table = {},
@@ -215,6 +216,7 @@ local TouchMenu = InputContainer:new{
     bordersize = Screen:scaleByDPI(2),
     padding = Screen:scaleByDPI(5),
     footer_height = Screen:scaleByDPI(50),
+    fface = Font:getFace("ffont", 16),
     width = nil,
     height = nil,
     page = 1,
@@ -264,14 +266,33 @@ function TouchMenu:init()
     self.item_group = VerticalGroup:new{
         align = "left",
     }
-
-    self.footer_page = TextWidget:new{
-        face = Font:getFace("ffont", 20),
+    -- group for page info
+    self.page_info_left_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.left.png",
+        callback = function() self:onPrevPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_right_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.right.png",
+        callback = function() self:onNextPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_left_chev:hide()
+    self.page_info_right_chev:hide()
+    self.page_info_text = TextWidget:new{
         text = "",
+        face = self.fface,
+    }
+    self.page_info = HorizontalGroup:new{
+        self.page_info_left_chev,
+        self.page_info_text,
+        self.page_info_right_chev
     }
     self.time_info = TextWidget:new{
-        face = Font:getFace("ffont", 20),
         text = "",
+        face = self.fface,
     }
     local footer_width = self.width - self.padding*2 - self.bordersize*2
     self.footer = HorizontalGroup:new{
@@ -288,7 +309,7 @@ function TouchMenu:init()
         },
         CenterContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
-            self.footer_page,
+            self.page_info,
         },
         RightContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
@@ -379,7 +400,11 @@ function TouchMenu:updateItems()
 
     table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleByDPI(2)})
     table.insert(self.item_group, self.footer)
-    self.footer_page.text = _("Page ")..self.page.."/"..self.page_num
+    self.page_info_text.text = _("Page ")..self.page.."/"..self.page_num
+    self.page_info_left_chev:showHide(self.page_num > 1)
+    self.page_info_right_chev:showHide(self.page_num > 1)
+    self.page_info_left_chev:enableDisable(self.page > 1)
+    self.page_info_right_chev:enableDisable(self.page < self.page_num)
     self.time_info.text = os.date("%H:%M")
     -- FIXME: this is a dirty hack to clear previous menus
     -- refert to issue #664
