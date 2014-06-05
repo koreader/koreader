@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-06-05 11:05+0000\n"
+"POT-Creation-Date: 2014-06-05 11:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -251,8 +251,8 @@ msgid ""
 "Go to Page or Location"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:85
-#: frontend/apps/reader/modules/readermenu.lua:75
+#: frontend/apps/filemanager/filemanagermenu.lua:94
+#: frontend/apps/reader/modules/readermenu.lua:84
 msgid ""
 "Help"
 msgstr ""
@@ -400,8 +400,8 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:88
-#: frontend/apps/reader/modules/readermenu.lua:78
+#: frontend/apps/filemanager/filemanagermenu.lua:97
+#: frontend/apps/reader/modules/readermenu.lua:87
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -552,8 +552,8 @@ msgid ""
 "Underscore"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:93
-#: frontend/apps/reader/modules/readermenu.lua:83
+#: frontend/apps/filemanager/filemanagermenu.lua:86
+#: frontend/apps/reader/modules/readermenu.lua:76
 msgid ""
 "Version"
 msgstr ""
