@@ -1,4 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Font = require("ui/font")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
@@ -9,7 +10,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local Input = require("ui/input")
 local Screen = require("ui/screen")
 local _ = require("gettext")
@@ -29,7 +29,7 @@ function InfoMessage:init()
     if Device:hasKeyboard() then
         self.key_events = {
             AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = _("close dialog") }
+                seqtext = "any key", doc = "close dialog" }
         }
     end
     if Device:isTouchDevice() then

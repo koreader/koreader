@@ -20,7 +20,7 @@ function ReaderBookmark:init()
         self.key_events = {
             ShowBookmark = {
                 { "B" },
-                doc = _("show bookmarks") },
+                doc = "show bookmarks" },
         }
     end
     if Device:isTouchDevice() then

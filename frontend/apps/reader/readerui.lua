@@ -43,7 +43,7 @@ it works using data gathered from a document interface
 local ReaderUI = InputContainer:new{
     key_events = {
         Close = { { "Home" },
-            doc = _("close document"), event = "Close" },
+            doc = "close document", event = "Close" },
     },
     active_widgets = {},
 
@@ -72,7 +72,7 @@ function ReaderUI:init()
 
     if Device:hasKeyboard() then
         self.key_events.Back = {
-            { "Back" }, doc = _("close document"),
+            { "Back" }, doc = "close document",
             event = "Close" }
     end
 

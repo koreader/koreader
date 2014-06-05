@@ -38,7 +38,7 @@ function TouchMenuItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = _("Select Menu Item"),
+            doc = "Select Menu Item",
         },
     }
 

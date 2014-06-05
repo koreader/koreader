@@ -22,42 +22,42 @@ function ReaderZooming:init()
         self.key_events = {
             ZoomIn = {
                 { "Shift", Input.group.PgFwd },
-                doc = _("zoom in"),
+                doc = "zoom in",
                 event = "Zoom", args = "in"
             },
             ZoomOut = {
                 { "Shift", Input.group.PgBack },
-                doc = _("zoom out"),
+                doc = "zoom out",
                 event = "Zoom", args = "out"
             },
             ZoomToFitPage = {
                 { "A" },
-                doc = _("zoom to fit page"),
+                doc = "zoom to fit page",
                 event = "SetZoomMode", args = "page"
             },
             ZoomToFitContent = {
                 { "Shift", "A" },
-                doc = _("zoom to fit content"),
+                doc = "zoom to fit content",
                 event = "SetZoomMode", args = "content"
             },
             ZoomToFitPageWidth = {
                 { "S" },
-                doc = _("zoom to fit page width"),
+                doc = "zoom to fit page width",
                 event = "SetZoomMode", args = "pagewidth"
             },
             ZoomToFitContentWidth = {
                 { "Shift", "S" },
-                doc = _("zoom to fit content width"),
+                doc = "zoom to fit content width",
                 event = "SetZoomMode", args = "contentwidth"
             },
             ZoomToFitPageHeight = {
                 { "D" },
-                doc = _("zoom to fit page height"),
+                doc = "zoom to fit page height",
                 event = "SetZoomMode", args = "pageheight"
             },
             ZoomToFitContentHeight = {
                 { "Shift", "D" },
-                doc = _("zoom to fit content height"),
+                doc = "zoom to fit content height",
                 event = "SetZoomMode", args = "contentheight"
             },
         }

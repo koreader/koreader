@@ -27,44 +27,44 @@ function ReaderRolling:init()
         self.key_events = {
             GotoNextView = {
                 { Input.group.PgFwd },
-                doc = _("go to next view"),
+                doc = "go to next view",
                 event = "GotoViewRel", args = 1
             },
             GotoPrevView = {
                 { Input.group.PgBack },
-                doc = _("go to previous view"),
+                doc = "go to previous view",
                 event = "GotoViewRel", args = -1
             },
             MoveUp = {
                 { "Up" },
-                doc = _("move view up"),
+                doc = "move view up",
                 event = "Panning", args = {0, -1}
             },
             MoveDown = {
                 { "Down" },
-                doc = _("move view down"),
+                doc = "move view down",
                 event = "Panning", args = {0,  1}
             },
             GotoFirst = {
-                {"1"}, doc = _("go to start"), event = "GotoPercent", args = 0},
+                {"1"}, doc = "go to start", event = "GotoPercent", args = 0},
             Goto11 = {
-                {"2"}, doc = _("go to 11%"), event = "GotoPercent", args = 11},
+                {"2"}, doc = "go to 11%", event = "GotoPercent", args = 11},
             Goto22 = {
-                {"3"}, doc = _("go to 22%"), event = "GotoPercent", args = 22},
+                {"3"}, doc = "go to 22%", event = "GotoPercent", args = 22},
             Goto33 = {
-                {"4"}, doc = _("go to 33%"), event = "GotoPercent", args = 33},
+                {"4"}, doc = "go to 33%", event = "GotoPercent", args = 33},
             Goto44 = {
-                {"5"}, doc = _("go to 44%"), event = "GotoPercent", args = 44},
+                {"5"}, doc = "go to 44%", event = "GotoPercent", args = 44},
             Goto55 = {
-                {"6"}, doc = _("go to 55%"), event = "GotoPercent", args = 55},
+                {"6"}, doc = "go to 55%", event = "GotoPercent", args = 55},
             Goto66 = {
-                {"7"}, doc = _("go to 66%"), event = "GotoPercent", args = 66},
+                {"7"}, doc = "go to 66%", event = "GotoPercent", args = 66},
             Goto77 = {
-                {"8"}, doc = _("go to 77%"), event = "GotoPercent", args = 77},
+                {"8"}, doc = "go to 77%", event = "GotoPercent", args = 77},
             Goto88 = {
-                {"9"}, doc = _("go to 88%"), event = "GotoPercent", args = 88},
+                {"9"}, doc = "go to 88%", event = "GotoPercent", args = 88},
             GotoLast = {
-                {"0"}, doc = _("go to end"), event = "GotoPercent", args = 100},
+                {"0"}, doc = "go to end", event = "GotoPercent", args = 100},
         }
     end
 

@@ -449,12 +449,12 @@ function Menu:init()
     end
     if Device:hasKeyboard() then
         -- set up keyboard events
-        self.key_events.Close = { {"Back"}, doc = _("close menu") }
+        self.key_events.Close = { {"Back"}, doc = "close menu" }
         self.key_events.NextPage = {
-            {Input.group.PgFwd}, doc = _("goto next page of the menu")
+            {Input.group.PgFwd}, doc = "goto next page of the menu"
         }
         self.key_events.PrevPage = {
-            {Input.group.PgBack}, doc = _("goto previous page of the menu")
+            {Input.group.PgBack}, doc = "goto previous page of the menu"
         }
         -- we won't catch presses to "Right", leave that to MenuItem.
         self.key_events.FocusRight = nil
@@ -463,7 +463,7 @@ function Menu:init()
             self.key_events.SelectByShortCut = { {self.item_shortcuts} }
         end
         self.key_events.Select = {
-            {"Press"}, doc = _("select current menu item")
+            {"Press"}, doc = "select current menu item"
         }
     end
 

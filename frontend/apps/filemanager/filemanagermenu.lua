@@ -33,7 +33,7 @@ function FileManagerMenu:init()
 
     if Device:hasKeyboard() then
         self.key_events = {
-            ShowMenu = { { "Menu" }, doc = _("show menu") },
+            ShowMenu = { { "Menu" }, doc = "show menu" },
         }
     end
 end
@@ -74,7 +74,7 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Help"),
         callback = function()
             UIManager:show(InfoMessage:new{
-                text = _("Please report bugs to https://github.com/koreader/ koreader/issues, Click at the bottom of the page for more options"),
+                text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
             })
         end
     })

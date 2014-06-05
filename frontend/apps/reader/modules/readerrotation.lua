@@ -17,11 +17,11 @@ function ReaderRotation:init()
             -- these will all generate the same event, just with different arguments
             RotateLeft = {
                 {"J"},
-                doc = _("rotate left by 90 degrees"),
+                doc = "rotate left by 90 degrees",
                 event = "Rotate", args = -90 },
             RotateRight = {
                 {"K"},
-                doc = _("rotate right by 90 degrees"),
+                doc = "rotate right by 90 degrees",
                 event = "Rotate", args = 90 },
         }
     end

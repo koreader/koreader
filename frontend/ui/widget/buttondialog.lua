@@ -19,7 +19,7 @@ function ButtonDialog:init()
     if Device:hasKeyboard() then
         self.key_events = {
             AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = _("close dialog") }
+                seqtext = "any key", doc = "close dialog" }
         }
     end
     if Device:isTouchDevice() then
