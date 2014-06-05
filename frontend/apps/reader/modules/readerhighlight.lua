@@ -16,7 +16,7 @@ function ReaderHighlight:init()
         self.key_events = {
             ShowToc = {
                 { "." },
-                doc = _("highlight text") },
+                doc = "highlight text" },
         }
     end
     self.ui.menu:registerToMainMenu(self)

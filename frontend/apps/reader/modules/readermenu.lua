@@ -45,7 +45,7 @@ function ReaderMenu:init()
 
     if Device:hasKeyboard() then
         self.key_events = {
-            ShowMenu = { { "Menu" }, doc = _("show menu") },
+            ShowMenu = { { "Menu" }, doc = "show menu" },
         }
     end
 end
@@ -71,14 +71,7 @@ function ReaderMenu:setUpdateItemTable()
         widget:addToMainMenu(self.tab_item_table)
     end
 
-    table.insert(self.tab_item_table.main, {
-        text = _("Help"),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
-            })
-        end
-    })
+    table.insert(self.tab_item_table.main, Language:getLangMenuTable())
     table.insert(self.tab_item_table.main, {
         text = _("Version"),
         callback = function()
@@ -87,7 +80,14 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
-    table.insert(self.tab_item_table.main, Language:getLangMenuTable())
+    table.insert(self.tab_item_table.main, {
+        text = _("Help"),
+        callback = function()
+            UIManager:show(InfoMessage:new{
+                text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
+            })
+        end
+    })
 end
 
 function ReaderMenu:onShowReaderMenu()

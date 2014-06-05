@@ -34,8 +34,8 @@ function ConfirmBox:init()
         self.width = Screen:getWidth() - 200
     end
     -- build bottons
-    self.key_events.Close = { {{"Home","Back"}}, doc = _("cancel") }
-    self.key_events.Select = { {{"Enter","Press"}}, doc = _("chose selected option") }
+    self.key_events.Close = { {{"Home","Back"}}, doc = "cancel" }
+    self.key_events.Select = { {{"Enter","Press"}}, doc = "chose selected option" }
 
     local ok_button = Button:new{
         text = self.ok_text,

@@ -71,7 +71,7 @@ function showReaderUI(file, pass)
         return
     end
     UIManager:show(InfoMessage:new{
-        text = _("opening file") .. file,
+        text = _("Opening file") .. file,
         timeout = 1,
     })
     UIManager:scheduleIn(0.1, function() doShowReaderUI(file, pass) end)
@@ -116,20 +116,20 @@ local longopts = {
 }
 
 function showusage()
-    print(_("usage: ./reader.lua [OPTION] ... path"))
-    print(_("Read all the books on your E-Ink reader"))
+    print("usage: ./reader.lua [OPTION] ... path")
+    print("Read all the books on your E-Ink reader")
     print("")
-    print(_("-d               start in debug mode"))
-    print(_("-p [rows]        enable Lua code profiling"))
-    print(_("-h               show this usage help"))
+    print("-d               start in debug mode")
+    print("-p               enable Lua code profiling")
+    print("-h               show this usage help")
     print("")
-    print(_("If you give the name of a directory instead of a file path, a file"))
-    print(_("chooser will show up and let you select a file"))
+    print("If you give the name of a directory instead of a file path, a file")
+    print("chooser will show up and let you select a file")
     print("")
-    print(_("If you don't pass any path, the last viewed document will be opened"))
+    print("If you don't pass any path, the last viewed document will be opened")
     print("")
-    print(_("This software is licensed under the GPLv3."))
-    print(_("See http://github.com/koreader/kindlepdfviewer for more info."))
+    print("This software is licensed under the AGPLv3.")
+    print("See http://github.com/koreader/koreader for more info.")
     return
 end
 
@@ -171,6 +171,8 @@ if fontmap ~= nil then
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
+-- load last opened file
+local open_last = G_reader_settings:readSetting("open_last")
 
 
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
@@ -187,10 +189,14 @@ do
 end
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
-    if lfs.attributes(ARGV[argidx], "mode") == "directory" then
+    if lfs.attributes(ARGV[argidx], "mode") == "file" then
+        showReaderUI(ARGV[argidx])
+    elseif open_last and last_file then
+        showReaderUI(last_file)
+        UIManager:run()
         showHomePage(ARGV[argidx])
     else
-        showReaderUI(ARGV[argidx])
+        showHomePage(ARGV[argidx])
     end
     UIManager:run()
 elseif last_file then

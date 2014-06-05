@@ -25,22 +25,22 @@ function ReaderFont:init()
     if Device:hasKeyboard() then
         -- add shortcut for keyboard
         self.key_events = {
-            ShowFontMenu = { {"F"}, doc = _("show font menu") },
+            ShowFontMenu = { {"F"}, doc = "show font menu" },
             IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
-                doc = _("increase font size"),
+                doc = "increase font size",
                 event = "ChangeSize", args = "increase" },
             DecreaseSize = {
                 { "Shift", Input.group.PgBack },
-                doc = _("decrease font size"),
+                doc = "decrease font size",
                 event = "ChangeSize", args = "decrease" },
             IncreaseLineSpace = {
                 { "Alt", Input.group.PgFwd },
-                doc = _("increase line space"),
+                doc = "increase line space",
                 event = "ChangeLineSpace", args = "increase" },
             DecreaseLineSpace = {
                 { "Alt", Input.group.PgBack },
-                doc = _("decrease line space"),
+                doc = "decrease line space",
                 event = "ChangeLineSpace", args = "decrease" },
         }
     end

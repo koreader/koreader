@@ -72,7 +72,7 @@ function ToggleSwitch:init()
                     ges = "tap",
                     range = self.dimen,
                 },
-                doc = _("Toggle switch"),
+                doc = "Toggle switch",
             },
         }
     end

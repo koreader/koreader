@@ -19,16 +19,16 @@ function ReaderPanning:init()
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             MoveUp = {
-                { "Up" }, doc = _("move visible area up"),
+                { "Up" }, doc = "move visible area up",
                 event = "Panning", args = {0, -1} },
             MoveDown = {
-                { "Down" }, doc = _("move visible area down"),
+                { "Down" }, doc = "move visible area down",
                 event = "Panning", args = {0,  1} },
             MoveLeft = {
-                { "Left" }, doc = _("move visible area left"),
+                { "Left" }, doc = "move visible area left",
                 event = "Panning", args = {-1, 0} },
             MoveRight = {
-                { "Right" }, doc = _("move visible area right"),
+                { "Right" }, doc = "move visible area right",
                 event = "Panning", args = {1,  0} },
         }
     end

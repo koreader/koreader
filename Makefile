@@ -28,7 +28,7 @@ KOREADER_MISC_TOOL=../misc
 XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 
-all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit) po
+all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader

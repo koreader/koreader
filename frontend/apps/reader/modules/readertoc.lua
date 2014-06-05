@@ -19,7 +19,7 @@ function ReaderToc:init()
         self.key_events = {
             ShowToc = {
                 { "T" },
-                doc = _("show Table of Content menu") },
+                doc = "show Table of Content menu" },
         }
     end
     if Device:isTouchDevice() then
