@@ -21,33 +21,32 @@ local ReaderFooter = InputContainer:new{
     pageno = nil,
     pages = nil,
     progress_percentage = 0.0,
-    progress_text = "0 / 0",
+    progress_text = "0000 / 0000",
     show_time = false,
-    bar_width = 0.87,
-    text_width = 0.15,
     text_font_face = "ffont",
     text_font_size = 14,
     height = Screen:scaleByDPI(19),
+    padding = Screen:scaleByDPI(10),
 }
 
 function ReaderFooter:init()
-    self.progress_bar = ProgressWidget:new{
-        width = math.floor(Screen:getWidth()*(self.bar_width-0.02)),
-        height = 7,
-        percentage = self.progress_percentage,
-    }
     self.progress_text = TextWidget:new{
         text = self.progress_text,
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
-    local _, text_height = self.progress_text:getSize()
+    local text_width = self.progress_text:getSize().w
+    self.progress_bar = ProgressWidget:new{
+        width = math.floor(Screen:getWidth() - text_width - self.padding),
+        height = Screen:scaleByDPI(7),
+        percentage = self.progress_percentage,
+    }
     local horizontal_group = HorizontalGroup:new{}
     local bar_container = RightContainer:new{
-        dimen = Geom:new{w = Screen:getWidth()*self.bar_width, h = self.height},
+        dimen = Geom:new{ w = Screen:getWidth() - text_width, h = self.height },
         self.progress_bar,
     }
     local text_container = CenterContainer:new{
-        dimen = Geom:new{w = Screen:getWidth()*self.text_width, h = self.height},
+        dimen = Geom:new{ w = text_width, h = self.height },
         self.progress_text,
     }
     table.insert(horizontal_group, bar_container)
