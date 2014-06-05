@@ -64,7 +64,6 @@ cd koreader
 make fetchthirdparty
 ```
 
-
 Building & Running & Testing
 ========
 
@@ -143,6 +142,17 @@ This will be handy if you are developing koreader-base and want to test your
 modifications with kroeader frontend. NOTE: only support relative path for now.
 
 
+Translation
+========
+
+Please refer to [l10n's README][l10n-readme] to grab the latest translations from
+[the Koreader project on Transifex][koreader-transifex] with this command:
+```
+make po
+```
+If your language is not listed on the Transifex project, please don't hesitate
+to send a language request [here][koreader-transifex].
+
 Use ccache
 ==========
 
@@ -171,4 +181,6 @@ http://ccache.samba.org
 [travis-link]:https://travis-ci.org/koreader/koreader
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
+[l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
+[koreader-transifex]:https://www.transifex.com/projects/p/koreader/
 
