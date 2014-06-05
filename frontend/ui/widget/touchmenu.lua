@@ -46,13 +46,29 @@ function TouchMenuItem:init()
     if self.item.enabled_func then
         item_enabled = self.item.enabled_func()
     end
+    local item_checked = self.item.checked
+    if self.item.checked_func then
+        item_checked = self.item.checked_func()
+    end
+    local checked_widget = TextWidget:new{
+        text = "√ ",
+        face = self.face,
+    }
+    local unchecked_widget = TextWidget:new{
+        text = "",
+        face = self.face,
+    }
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
         color = 15,
         HorizontalGroup:new {
             align = "center",
-            HorizontalSpan:new{ width = 10 },
+            HorizontalSpan:new{ width = Screen:scaleByDPI(5) },
+            CenterContainer:new{
+                dimen = Geom:new{ w = checked_widget:getSize().w },
+                item_checked and checked_widget or unchecked_widget
+            },
             TextWidget:new{
                 text = self.item.text or self.item.text_func(),
                 bgcolor = 0.0,

@@ -120,7 +120,7 @@ function showusage()
     print("Read all the books on your E-Ink reader")
     print("")
     print("-d               start in debug mode")
-    print("-p [rows]        enable Lua code profiling")
+    print("-p               enable Lua code profiling")
     print("-h               show this usage help")
     print("")
     print("If you give the name of a directory instead of a file path, a file")
@@ -171,6 +171,8 @@ if fontmap ~= nil then
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
+-- load last opened file
+local open_last = G_reader_settings:readSetting("open_last")
 
 
 --@TODO we can read version here, refer to commit in master tree:   (houqp)
@@ -187,10 +189,14 @@ do
 end
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
-    if lfs.attributes(ARGV[argidx], "mode") == "directory" then
+    if lfs.attributes(ARGV[argidx], "mode") == "file" then
+        showReaderUI(ARGV[argidx])
+    elseif open_last and last_file then
+        showReaderUI(last_file)
+        UIManager:run()
         showHomePage(ARGV[argidx])
     else
-        showReaderUI(ARGV[argidx])
+        showHomePage(ARGV[argidx])
     end
     UIManager:run()
 elseif last_file then

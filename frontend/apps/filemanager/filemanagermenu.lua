@@ -60,9 +60,20 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     table.insert(self.tab_item_table.main, {
-        text = _("Toggle hidden files"),
+        text = _("Show hidden files"),
+        checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function()
             self.ui:toggleHiddenFiles()
+        end
+    })
+
+    table.insert(self.tab_item_table.main, {
+        text = _("Start with last opened file"),
+        checked_func = function() return G_reader_settings:readSetting("open_last") end,
+        enabled_func = function() return G_reader_settings:readSetting("lastfile") ~= nil end,
+        callback = function()
+            local open_last = G_reader_settings:readSetting("open_last") or false
+            G_reader_settings:saveSetting("open_last", not open_last)
         end
     })
 

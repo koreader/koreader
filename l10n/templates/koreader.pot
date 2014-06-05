@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-06-05 06:57+0000\n"
+"POT-Creation-Date: 2014-06-05 11:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,7 +196,7 @@ msgid ""
 "File does not exist"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:114
+#: frontend/apps/filemanager/filemanagermenu.lua:125
 msgid ""
 "File manager menu"
 msgstr ""
@@ -251,7 +251,7 @@ msgid ""
 "Go to Page or Location"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:74
+#: frontend/apps/filemanager/filemanagermenu.lua:85
 #: frontend/apps/reader/modules/readermenu.lua:75
 msgid ""
 "Help"
@@ -380,7 +380,7 @@ msgid ""
 "Page"
 msgstr ""
 
-#: frontend/ui/widget/touchmenu.lua:366
+#: frontend/ui/widget/touchmenu.lua:382
 msgid ""
 "Page "
 msgstr ""
@@ -400,7 +400,7 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:77
+#: frontend/apps/filemanager/filemanagermenu.lua:88
 #: frontend/apps/reader/modules/readermenu.lua:78
 msgid ""
 "Please report bugs to \n"
@@ -472,9 +472,19 @@ msgid ""
 "Share"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagermenu.lua:63
+msgid ""
+"Show hidden files"
+msgstr ""
+
 #: frontend/ui/uimanager.lua:298
 msgid ""
 "Standby"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:71
+msgid ""
+"Start with last opened file"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerzooming.lua:292
@@ -522,11 +532,6 @@ msgid ""
 "Toggle"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:63
-msgid ""
-"Toggle hidden files"
-msgstr ""
-
 #: frontend/apps/reader/modules/readerhighlight.lua:312
 msgid ""
 "Translate"
@@ -547,7 +552,7 @@ msgid ""
 "Underscore"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:82
+#: frontend/apps/filemanager/filemanagermenu.lua:93
 #: frontend/apps/reader/modules/readermenu.lua:83
 msgid ""
 "Version"
