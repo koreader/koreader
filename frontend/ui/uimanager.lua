@@ -116,6 +116,7 @@ end
 
 -- transmit an event to registered widgets
 function UIManager:sendEvent(event)
+    if #self._window_stack == 0 then return end
     -- top level widget has first access to the event
     if self._window_stack[#self._window_stack].widget:handleEvent(event) then
         return
