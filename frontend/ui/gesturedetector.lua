@@ -460,7 +460,7 @@ function GestureDetector:handleTwoFingerPan(tev)
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
-    local rslot = tslot and 0 or 1
+    local rslot = tslot == 1 and 0 or 1
     local tpan_dir, tpan_dis = self:getPath(tslot)
     local tstart_pos = Geom:new{
         x = self.first_tevs[tslot].x,

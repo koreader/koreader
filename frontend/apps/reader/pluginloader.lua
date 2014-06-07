@@ -2,7 +2,7 @@ local DEBUG = require("dbg")
 -- lfs
 
 local PluginLoader = {
-    plugin_path = lfs.currentdir().."/plugins"
+    plugin_path = "plugins"
 }
 
 function PluginLoader:loadPlugins()
