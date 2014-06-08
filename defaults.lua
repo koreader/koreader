@@ -63,6 +63,7 @@ DOVERLAPPIXELS = 30
 -- h: height of tap zone in proportion of screen height
 DTAP_ZONE_MENU = {x = 1/8, y = 0, w = 3/4, h = 1/4}
 DTAP_ZONE_CONFIG = {x = 0, y = 0, w = 0, h = 0}
+DTAP_ZONE_MINIBAR = {x = 0, y = 15/16, w = 1, h = 1/16}
 DTAP_ZONE_FORWARD = {x = 1/4, y = 0, w = 3/4, h = 1}
 DTAP_ZONE_BACKWARD = {x = 0, y = 0, w = 1/4, h = 1}
 DTAP_ZONE_BOOKMARK = {x = 7/8, y = 0, w = 1/8, h = 1/8}
