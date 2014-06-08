@@ -293,26 +293,32 @@ function ReaderZooming:addToMainMenu(tab_item_table)
             sub_item_table = {
                 {
                     text = _("Zoom to fit content width"),
+                    checked_func = function() return self.zoom_mode == "contentwidth" end,
                     callback = self:genSetZoomModeCallBack("contentwidth")
                 },
                 {
                     text = _("Zoom to fit content height"),
+                    checked_func = function() return self.zoom_mode == "contentheight" end,
                     callback = self:genSetZoomModeCallBack("contentheight")
                 },
                 {
                     text = _("Zoom to fit page width"),
+                    checked_func = function() return self.zoom_mode == "pagewidth" end,
                     callback = self:genSetZoomModeCallBack("pagewidth")
                 },
                 {
                     text = _("Zoom to fit page height"),
+                    checked_func = function() return self.zoom_mode == "pageheight" end,
                     callback = self:genSetZoomModeCallBack("pageheight")
                 },
                 {
                     text = _("Zoom to fit content"),
+                    checked_func = function() return self.zoom_mode == "content" end,
                     callback = self:genSetZoomModeCallBack("content")
                 },
                 {
                     text = _("Zoom to fit page"),
+                    checked_func = function() return self.zoom_mode == "page" end,
                     callback = self:genSetZoomModeCallBack("page")
                 },
             }
