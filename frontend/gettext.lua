@@ -39,7 +39,10 @@ function GetText_mt.__index.changeLang(new_lang)
     GetText.current_lang = "C"
 
     -- the "C" locale disables localization alltogether
-    if new_lang == "C" then return end
+    if new_lang == "C" or new_lang == nil then return end
+
+    -- strip encoding suffix in locale like "zh_CN.utf8"
+    new_lang = new_lang:sub(1, new_lang:find(".%."))
 
     local file = GetText.dirname .. "/" .. new_lang .. "/" .. GetText.textdomain .. ".po"
     local po = io.open(file, "r")
