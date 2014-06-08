@@ -80,8 +80,8 @@ function ReaderHighlight:genHighlightDrawerMenu()
     return {
         {
             text = _("Lighten"),
-            enabled_func = function()
-                return self.view.highlight.saved_drawer ~= "lighten"
+            checked_func = function()
+                return self.view.highlight.saved_drawer == "lighten"
             end,
             callback = function()
                 self.view.highlight.saved_drawer = "lighten"
@@ -89,8 +89,8 @@ function ReaderHighlight:genHighlightDrawerMenu()
         },
         {
             text = _("Underscore"),
-            enabled_func = function()
-                return self.view.highlight.saved_drawer ~= "underscore"
+            checked_func = function()
+                return self.view.highlight.saved_drawer == "underscore"
             end,
             callback = function()
                 self.view.highlight.saved_drawer = "underscore"
@@ -98,8 +98,8 @@ function ReaderHighlight:genHighlightDrawerMenu()
         },
         {
             text = _("Invert"),
-            enabled_func = function()
-                return self.view.highlight.saved_drawer ~= "invert"
+            checked_func = function()
+                return self.view.highlight.saved_drawer == "invert"
             end,
             callback = function()
                 self.view.highlight.saved_drawer = "invert"
