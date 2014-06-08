@@ -1,3 +1,4 @@
+local isAndroid, android = pcall(require, "android")
 local DEBUG = require("dbg")
 
 local GetText = {
@@ -94,6 +95,18 @@ elseif os.getenv("LC_MESSAGES") then
     GetText.changeLang(os.getenv("LC_MESSAGES"))
 elseif os.getenv("LANG") then
     GetText.changeLang(os.getenv("LANG"))
+end
+
+if isAndroid then
+    local ffi = require("ffi")
+    local buf = ffi.new("char[?]", 16)
+    ffi.C.AConfiguration_getLanguage(android.app.config, buf)
+    local lang = ffi.string(buf)
+    ffi.C.AConfiguration_getCountry(android.app.config, buf)
+    local country = ffi.string(buf)
+    if lang and country then
+        GetText.changeLang(lang.."_"..country)
+    end
 end
 
 return GetText
