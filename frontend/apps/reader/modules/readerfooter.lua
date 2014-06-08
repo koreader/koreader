@@ -67,18 +67,24 @@ function ReaderFooter:init()
     self.pageno = self.view.state.page
     self.pages = self.view.document.info.number_of_pages
     self:updateFooterPage()
+    local range = Geom:new{
+        x = Screen:getWidth()*DTAP_ZONE_MINIBAR.x,
+        y = Screen:getHeight()*DTAP_ZONE_MINIBAR.y,
+        w = Screen:getWidth()*DTAP_ZONE_MINIBAR.w,
+        h = Screen:getHeight()*DTAP_ZONE_MINIBAR.h
+    }
     if Device:isTouchDevice() then
         self.ges_events = {
             TapFooter = {
                 GestureRange:new{
                     ges = "tap",
-                    range = self[1]:contentRange(),
+                    range = range,
                 },
             },
             HoldFooter = {
                 GestureRange:new{
                     ges = "hold",
-                    range = self[1]:contentRange(),
+                    range = range,
                 },
             },
         }

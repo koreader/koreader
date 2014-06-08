@@ -45,7 +45,7 @@ function ReaderMenu:init()
 
     if Device:hasKeyboard() then
         self.key_events = {
-            ShowMenu = { { "Menu" }, doc = "show menu" },
+            ShowReaderMenu = { { "Menu" }, doc = "show menu" },
         }
     end
 end
@@ -71,6 +71,15 @@ function ReaderMenu:setUpdateItemTable()
         widget:addToMainMenu(self.tab_item_table)
     end
 
+    table.insert(self.tab_item_table.main, {
+        text = _("Night mode"),
+        checked_func = function() return G_reader_settings:readSetting("night_mode") end,
+        callback = function()
+            local night_mode = G_reader_settings:readSetting("night_mode") or false
+            Screen.bb:invert()
+            G_reader_settings:saveSetting("night_mode", not night_mode)
+        end
+    })
     table.insert(self.tab_item_table.main, Language:getLangMenuTable())
     table.insert(self.tab_item_table.main, {
         text = _("Version"),

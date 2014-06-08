@@ -293,6 +293,11 @@ function ReaderUI:saveSettings()
     self.doc_settings:flush()
 end
 
+function ReaderUI:onFlushSettings()
+    self:saveSettings()
+    return true
+end
+
 function ReaderUI:onClose()
     DEBUG("closing reader")
     self:saveSettings()

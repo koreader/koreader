@@ -65,7 +65,6 @@ function TouchMenuItem:init()
         color = 15,
         HorizontalGroup:new {
             align = "center",
-            HorizontalSpan:new{ width = Screen:scaleByDPI(5) },
             CenterContainer:new{
                 dimen = Geom:new{ w = checked_widget:getSize().w },
                 item_checked and checked_widget or unchecked_widget

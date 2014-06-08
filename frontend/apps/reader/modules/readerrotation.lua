@@ -34,19 +34,10 @@ function ReaderRotation:init()
                         x = 0, y = 0,
                         w = Screen:getWidth(),
                         h = Screen:getHeight(),
-                    }
+                    },
+                    rate = 0.3
                 }
             },
-            TwoFingerPanRelease = {
-                GestureRange:new{
-                    ges = "two_finger_pan_release",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
-                }
-            }
         }
     end
 end
@@ -60,19 +51,14 @@ function ReaderRotation:onRotate(rotate_by)
 end
 
 function ReaderRotation:onRotateGes(arg, ges)
-    self.rotate_angle = ges.angle
-    return true
-end
-
-function ReaderRotation:onTwoFingerPanRelease(arg, ges)
-    if self.rotate_angle and self.rotate_angle > self.ROTATE_ANGLE_THRESHOLD then
+    if ges.angle and ges.angle > self.ROTATE_ANGLE_THRESHOLD then
         if Screen:getScreenMode() == "portrait" then
             self.ui:handleEvent(Event:new("SetScreenMode", "landscape"))
         else
             self.ui:handleEvent(Event:new("SetScreenMode", "portrait"))
         end
-        self.rotate_angle = nil
     end
+    return true
 end
 
 return ReaderRotation

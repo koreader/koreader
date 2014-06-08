@@ -103,7 +103,7 @@ function ReaderToc:onShowToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
         for _,v in ipairs(self.toc) do
-            v.text = ("        "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
+            v.text = ("    "):rep(v.depth-1)..self:cleanUpTocTitle(v.title)
             v.mandatory = v.page
         end
     end

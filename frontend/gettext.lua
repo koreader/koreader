@@ -1,3 +1,4 @@
+local isAndroid, android = pcall(require, "android")
 local DEBUG = require("dbg")
 
 local GetText = {
@@ -39,7 +40,10 @@ function GetText_mt.__index.changeLang(new_lang)
     GetText.current_lang = "C"
 
     -- the "C" locale disables localization alltogether
-    if new_lang == "C" then return end
+    if new_lang == "C" or new_lang == nil then return end
+
+    -- strip encoding suffix in locale like "zh_CN.utf8"
+    new_lang = new_lang:sub(1, new_lang:find(".%."))
 
     local file = GetText.dirname .. "/" .. new_lang .. "/" .. GetText.textdomain .. ".po"
     local po = io.open(file, "r")
@@ -91,6 +95,18 @@ elseif os.getenv("LC_MESSAGES") then
     GetText.changeLang(os.getenv("LC_MESSAGES"))
 elseif os.getenv("LANG") then
     GetText.changeLang(os.getenv("LANG"))
+end
+
+if isAndroid then
+    local ffi = require("ffi")
+    local buf = ffi.new("char[?]", 16)
+    ffi.C.AConfiguration_getLanguage(android.app.config, buf)
+    local lang = ffi.string(buf)
+    ffi.C.AConfiguration_getCountry(android.app.config, buf)
+    local country = ffi.string(buf)
+    if lang and country then
+        GetText.changeLang(lang.."_"..country)
+    end
 end
 
 return GetText
