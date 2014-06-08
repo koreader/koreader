@@ -282,6 +282,7 @@ function UIManager:run()
         if input_event then
             --DEBUG("in ui.lua:", input_event)
             if input_event == "IntoSS" then
+                self:sendEvent(Event:new("FlushSettings"))
                 Device:intoScreenSaver()
             elseif input_event == "OutOfSS" then
                 Device:outofScreenSaver()
@@ -299,12 +300,15 @@ function UIManager:run()
                     text = _("Standby"),
                     timeout = 1,
                 })
+                self:sendEvent(Event:new("FlushSettings"))
                 Device:prepareSuspend()
                 self:scheduleIn(0.5, function() Device:Suspend() end)
             elseif (input_event == "Power" and Device.screen_saver_mode)
                     or input_event == "Resume" then
                 Device:Resume()
                 self:sendEvent(Event:new("Resume"))
+            elseif input_event == "SaveState" then
+                self:sendEvent(Event:new("FlushSettings"))
             else
                 self:sendEvent(input_event)
             end
