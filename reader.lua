@@ -173,10 +173,10 @@ end
 local last_file = G_reader_settings:readSetting("lastfile")
 -- load last opened file
 local open_last = G_reader_settings:readSetting("open_last")
-
-
---@TODO we can read version here, refer to commit in master tree:   (houqp)
---87712cf0e43fed624f8a9f610be42b1fe174b9fe
+-- night mode
+if G_reader_settings:readSetting("night_mode") then
+    Screen.bb:invert()
+end
 
 do
     local powerd = Device:getPowerDevice()
