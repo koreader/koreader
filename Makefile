@@ -83,6 +83,7 @@ test:
 
 fetchthirdparty:
 	git submodule init
+	git submodule sync
 	git submodule update
 	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
