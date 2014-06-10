@@ -120,8 +120,8 @@ koboupdate: all
 	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
 	cp kobo/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
-	cp kobo/koreader_kobo.sh $(INSTALL_DIR)/koreader
-	cp kobo/kobo_suspend.sh $(INSTALL_DIR)/koreader
+	cp kobo/koreader.sh $(INSTALL_DIR)/koreader
+	cp kobo/suspend.sh $(INSTALL_DIR)/koreader
 	cp kobo/*.bin $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
