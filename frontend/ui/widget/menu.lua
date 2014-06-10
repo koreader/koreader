@@ -23,6 +23,7 @@ local Input = require("ui/input")
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local InfoMessage = require("ui/widget/infomessage")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[
@@ -446,6 +447,7 @@ function Menu:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.Close = self.on_close_ges
     end
     if Device:hasKeys() then
         -- set up keyboard events
