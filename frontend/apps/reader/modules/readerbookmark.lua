@@ -101,8 +101,18 @@ function ReaderBookmark:onShowBookmark()
         item_table = self.bookmarks,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        show_parent = menu_container,
         is_borderless = true,
+        on_close_ges = {
+            GestureRange:new{
+                ges = "two_finger_swipe",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                },
+                direction = "east"
+            }
+        }
     }
 
     local menu_container = CenterContainer:new{
@@ -129,6 +139,8 @@ function ReaderBookmark:onShowBookmark()
     bm_menu.close_callback = function()
         UIManager:close(menu_container)
     end
+
+    bm_menu.show_parent = menu_container
 
     UIManager:show(menu_container)
     return true
