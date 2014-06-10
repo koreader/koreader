@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -99,9 +100,10 @@ function ReaderBookmark:onShowBookmark()
     local bm_menu = Menu:new{
         title = "Bookmarks",
         item_table = self.bookmarks,
+        is_borderless = true,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        is_borderless = true,
+        cface = Font:getFace("cfont", 20),
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",

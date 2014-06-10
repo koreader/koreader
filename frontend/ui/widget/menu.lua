@@ -277,7 +277,7 @@ local Menu = FocusManager:new{
     -- face for menu title
     tface = Font:getFace("tfont", 26),
     -- face for paging info display
-    fface = Font:getFace("ffont", 16),
+    fface = Font:getFace("ffont", 20),
     -- font for item shortcut
     sface = Font:getFace("scfont", 20),
 
