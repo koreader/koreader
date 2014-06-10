@@ -61,7 +61,8 @@ function FileManager:init()
             if DocumentRegistry:getProvider(filename) then
                 return true
             end
-        end
+        end,
+        close_callback = function() return self:onClose() end,
     }
     self.file_chooser = file_chooser
 
@@ -154,6 +155,7 @@ function FileManager:toggleHiddenFiles()
 end
 
 function FileManager:onClose()
+    DEBUG("close filemanager")
     UIManager:close(self)
     if self.onExit then
         self:onExit()

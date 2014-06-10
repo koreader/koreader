@@ -459,7 +459,8 @@ function ConfigDialog:init()
                 }
             }
         }
-    else
+    end
+    if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close config menu" }
         -- we won't catch presses to "Right"
@@ -549,6 +550,11 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
         self:closeDialog()
         return true
     end
+end
+
+function ConfigDialog:onClose()
+    self:closeDialog()
+    return true
 end
 
 return ConfigDialog

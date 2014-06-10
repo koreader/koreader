@@ -215,7 +215,7 @@ local TouchMenu = InputContainer:new{
     bordersize = Screen:scaleByDPI(2),
     padding = Screen:scaleByDPI(5),
     footer_height = Screen:scaleByDPI(50),
-    fface = Font:getFace("ffont", 16),
+    fface = Font:getFace("ffont", 20),
     width = nil,
     height = nil,
     page = 1,
@@ -250,6 +250,8 @@ function TouchMenu:init()
             range = self.dimen,
         }
     }
+
+    self.key_events.Close = { {"Back"}, doc = "close touch menu" }
 
     local icons = {}
     for _,v in ipairs(self.tab_item_table) do
@@ -496,6 +498,10 @@ function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.dimen) then
         self:closeMenu()
     end
+end
+
+function TouchMenu:onClose()
+    self:closeMenu()
 end
 
 return TouchMenu

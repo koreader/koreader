@@ -104,21 +104,31 @@ end
 
 Device.isAndroid = util.isAndroid
 
-function Device:hasNoKeyboard()
-    if self.has_no_keyboard ~= nil then return self.has_no_keyboard end
+-- device has qwerty keyboard
+function Device:hasKeyboard()
+    if self.has_keyboard ~= nil then return self.has_keyboard end
     if not isAndroid then
         local model = self:getModel()
-        self.has_no_keyboard = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
-                            or (model == "KindleTouch") or self:isKobo()
+        self.has_keyboard = (model == "Kindle2") or (model == "Kindle3")
+                            or util.isEmulated()
     else
-        self.has_no_keyboard = ffi.C.AConfiguration_getKeyboard(android.app.config)
-                            ~= ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
+        self.has_keyboard = ffi.C.AConfiguration_getKeyboard(android.app.config)
+                            == ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
     end
-    return self.has_no_keyboard
+    return self.has_keyboard
 end
 
-function Device:hasKeyboard()
-    return not self:hasNoKeyboard()
+function Device:hasNoKeyboard()
+    return not self:hasKeyboard()
+end
+
+-- device has hardware keys for pagedown/pageup
+function Device:hasKeys()
+    if self.has_keys ~= nil then return self.has_keys end
+    local model = self:getModel()
+    self.has_keys = (model ~= "KindlePaperWhite") and (model ~= "KindlePaperWhite2")
+                    and (model ~= "KindleTouch") and not self:isKobo()
+    return self.has_keys
 end
 
 function Device:isTouchDevice()

@@ -46,6 +46,11 @@ local DictQuickLookup = InputContainer:new{
 
 function DictQuickLookup:init()
     self:changeToDefaultDict()
+    if Device:hasKeys() then
+        self.key_events = {
+            Close = { {"Back"}, doc = "close quick lookup" }
+        }
+    end
     if Device:isTouchDevice() then
         self.ges_events = {
             TapCloseDict = {

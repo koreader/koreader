@@ -7,6 +7,8 @@ local Screen = require("ui/screen")
 local Device = require("ui/device")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
+local Font = require("ui/font")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderToc = InputContainer:new{
@@ -122,9 +124,21 @@ function ReaderToc:onShowToc()
         title = _("Table of Contents"),
         item_table = self.toc,
         ui = self.ui,
+        is_borderless = true,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        is_borderless = true,
+        cface = Font:getFace("cfont", 20),
+        on_close_ges = {
+            GestureRange:new{
+                ges = "two_finger_swipe",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                },
+                direction = "west"
+            }
+        }
     }
 
     local menu_container = CenterContainer:new{

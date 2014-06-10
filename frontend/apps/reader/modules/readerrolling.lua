@@ -23,7 +23,7 @@ local ReaderRolling = InputContainer:new{
 }
 
 function ReaderRolling:init()
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() or Device:hasKeys() then
         self.key_events = {
             GotoNextView = {
                 { Input.group.PgFwd },

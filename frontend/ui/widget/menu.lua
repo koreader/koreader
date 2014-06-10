@@ -23,6 +23,7 @@ local Input = require("ui/input")
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local InfoMessage = require("ui/widget/infomessage")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[
@@ -152,7 +153,7 @@ function MenuItem:init()
             },
         }
     end
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         self.active_key_events = {
             Select = { {"Press"}, doc = "chose selected item" },
         }
@@ -276,7 +277,7 @@ local Menu = FocusManager:new{
     -- face for menu title
     tface = Font:getFace("tfont", 26),
     -- face for paging info display
-    fface = Font:getFace("ffont", 16),
+    fface = Font:getFace("ffont", 20),
     -- font for item shortcut
     sface = Font:getFace("scfont", 20),
 
@@ -446,8 +447,9 @@ function Menu:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.Close = self.on_close_ges
     end
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close menu" }
         self.key_events.NextPage = {

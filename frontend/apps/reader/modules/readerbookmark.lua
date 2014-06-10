@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -99,10 +100,21 @@ function ReaderBookmark:onShowBookmark()
     local bm_menu = Menu:new{
         title = "Bookmarks",
         item_table = self.bookmarks,
+        is_borderless = true,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        show_parent = menu_container,
-        is_borderless = true,
+        cface = Font:getFace("cfont", 20),
+        on_close_ges = {
+            GestureRange:new{
+                ges = "two_finger_swipe",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                },
+                direction = "east"
+            }
+        }
     }
 
     local menu_container = CenterContainer:new{
@@ -129,6 +141,8 @@ function ReaderBookmark:onShowBookmark()
     bm_menu.close_callback = function()
         UIManager:close(menu_container)
     end
+
+    bm_menu.show_parent = menu_container
 
     UIManager:show(menu_container)
     return true

@@ -12,13 +12,6 @@ local _ = require("gettext")
 local ReaderHighlight = InputContainer:new{}
 
 function ReaderHighlight:init()
-    if Device:hasKeyboard() then
-        self.key_events = {
-            ShowToc = {
-                { "." },
-                doc = "highlight text" },
-        }
-    end
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -310,6 +303,7 @@ function ReaderHighlight:onHoldRelease(arg, ges)
                 {
                     {
                         text = _("Translate"),
+                        enabled = false,
                         callback = function()
                             self:translate(self.selected_text)
                             UIManager:close(self.highlight_dialog)
