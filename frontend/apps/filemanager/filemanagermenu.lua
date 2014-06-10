@@ -31,7 +31,7 @@ function FileManagerMenu:init()
     }
     self.registered_widgets = {}
 
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         self.key_events = {
             ShowMenu = { { "Menu" }, doc = "show menu" },
         }

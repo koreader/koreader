@@ -70,7 +70,7 @@ function ReaderUI:init()
         self.dialog = self
     end
 
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         self.key_events.Back = {
             { "Back" }, doc = "close document",
             event = "Close" }

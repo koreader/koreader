@@ -16,10 +16,9 @@ local ButtonDialog = InputContainer:new{
 }
 
 function ButtonDialog:init()
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         self.key_events = {
-            AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = "close dialog" }
+            Close = { {"Back"}, doc = "close button dialog" }
         }
     end
     if Device:isTouchDevice() then
@@ -55,6 +54,11 @@ function ButtonDialog:onTapClose()
     if self.tap_close_callback then
         self.tap_close_callback()
     end
+    return true
+end
+
+function ButtonDialog:onClose()
+    self:onTapClose()
     return true
 end
 

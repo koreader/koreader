@@ -251,6 +251,8 @@ function TouchMenu:init()
         }
     }
 
+    self.key_events.Close = { {"Back"}, doc = "close touch menu" }
+
     local icons = {}
     for _,v in ipairs(self.tab_item_table) do
         table.insert(icons, v.icon)
@@ -496,6 +498,10 @@ function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.dimen) then
         self:closeMenu()
     end
+end
+
+function TouchMenu:onClose()
+    self:closeMenu()
 end
 
 return TouchMenu

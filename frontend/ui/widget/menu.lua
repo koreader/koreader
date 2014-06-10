@@ -152,7 +152,7 @@ function MenuItem:init()
             },
         }
     end
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         self.active_key_events = {
             Select = { {"Press"}, doc = "chose selected item" },
         }
@@ -447,7 +447,7 @@ function Menu:init()
             }
         }
     end
-    if Device:hasKeyboard() then
+    if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close menu" }
         self.key_events.NextPage = {

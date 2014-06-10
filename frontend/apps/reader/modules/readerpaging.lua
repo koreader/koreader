@@ -25,7 +25,7 @@ local ReaderPaging = InputContainer:new{
 }
 
 function ReaderPaging:init()
-    if Device:hasKeyboard() then
+    if Device:hasKeyboard() or Device:hasKeys() then
         self.key_events = {
             GotoNextPage = {
                 {Input.group.PgFwd}, doc = "go to next page",
