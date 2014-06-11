@@ -13,6 +13,7 @@ local ReaderFrontLight = InputContainer:new{
     steps = {0,1,1,1,1,2,2,2,3,4,5,6,7,8,9,10},
     gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
+
 function ReaderFrontLight:init()
     if Device:isTouchDevice() then
         self.ges_events = {
