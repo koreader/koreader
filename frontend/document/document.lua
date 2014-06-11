@@ -161,7 +161,7 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
     if bbox.x1 < 0 then bbox.x1 = 0 end
     if bbox.y1 < 0 then bbox.y1 = 0 end
     local ubbox_dimen = nil
-    if (bbox.x0 > bbox.x1) or (bbox.y0 > bbox.y1) then
+    if (bbox.x0 >= bbox.x1) or (bbox.y0 >= bbox.y1) then
         -- if document's bbox info is corrupted, we use the page size
         ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
     else
