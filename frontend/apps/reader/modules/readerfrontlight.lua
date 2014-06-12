@@ -11,6 +11,7 @@ local _ = require("gettext")
 
 local ReaderFrontLight = InputContainer:new{
     steps = {0,1,1,1,1,2,2,2,3,4,5,6,7,8,9,10},
+    gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
 
 function ReaderFrontLight:init()
@@ -42,7 +43,7 @@ function ReaderFrontLight:onAdjust(arg, ges)
     local powerd = Device:getPowerDevice()
     if powerd.flIntensity ~= nil then
         DEBUG("frontlight intensity", powerd.flIntensity)
-        local step = math.ceil(#self.steps * ges.distance / Screen:getWidth())
+        local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
         DEBUG("step = ", step)
         local delta_int = self.steps[step] or self.steps[#self.steps]
         DEBUG("delta_int = ", delta_int)
