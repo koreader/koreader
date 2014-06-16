@@ -1,5 +1,6 @@
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
+local pic = nil
 
 local PicDocument = Document:new{
     _document = false,
@@ -7,7 +8,7 @@ local PicDocument = Document:new{
 }
 
 function PicDocument:init()
-    require "libs/libkoreader-pic"
+    if not pic then pic = require("ffi/pic") end
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then
         self.error_message = "failed to open jpeg image"
