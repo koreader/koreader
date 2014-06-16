@@ -387,6 +387,7 @@ function CreDocument:register(registry)
     registry:addProvider("pdb", "application/pdb", self)
     registry:addProvider("doc", "application/doc", self)
     registry:addProvider("tcr", "application/tcr", self)
+    registry:addProvider("zip", "application/zip", self)
 end
 
 return CreDocument
