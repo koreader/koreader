@@ -188,7 +188,6 @@ function ReaderRolling:onSwipe(arg, ges)
     elseif ges.direction == "east" or ges.direction == "south" then
         self:onGotoViewRel(-1)
     end
-    return true
 end
 
 function ReaderRolling:onPan(arg, ges)

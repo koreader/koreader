@@ -15,9 +15,16 @@ function ReaderScreenshot:init()
         math.pow(Screen:getHeight(), 2)
     )
     self.ges_events = {
-        Screenshot = {
+        TapDiagonal = {
             GestureRange:new{
                 ges = "two_finger_tap",
+                scale = {diagonal - Screen:scaleByDPI(200), diagonal},
+                rate = 1.0,
+            }
+        },
+        SwipeDiagonal = {
+            GestureRange:new{
+                ges = "swipe",
                 scale = {diagonal - Screen:scaleByDPI(200), diagonal},
                 rate = 1.0,
             }
@@ -39,6 +46,14 @@ function ReaderScreenshot:onScreenshot()
     end
     UIManager.full_refresh = true
     return true
+end
+
+function ReaderScreenshot:onTapDiagonal()
+    return self:onScreenshot()
+end
+
+function ReaderScreenshot:onSwipeDiagonal()
+    return self:onScreenshot()
 end
 
 return ReaderScreenshot

@@ -290,7 +290,6 @@ function ReaderPaging:onSwipe(arg, ges)
     else
         UIManager.full_refresh = true
     end
-    return true
 end
 
 function ReaderPaging:onPan(arg, ges)
