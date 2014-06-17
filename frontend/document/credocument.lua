@@ -55,7 +55,7 @@ function CreDocument:engineInit()
         self:cacheInit()
 
         -- initialize hyph dictionaries
-        cre.initHyphDict("./data/hyph")
+        cre.initHyphDict("./data/hyph/")
 
         -- we need to initialize the CRE font list
         local fonts = Font:getFontList()
