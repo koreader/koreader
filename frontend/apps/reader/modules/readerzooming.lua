@@ -62,7 +62,30 @@ function ReaderZooming:init()
             },
         }
     end
-    if Device:isTouchDevice() then
+    if Device:isTouchDevice() and DSCREENSHOT_WITH_DOUBLE_TAP then
+        self.ges_events = {
+            Spread = {
+                GestureRange:new{
+                    ges = "spread",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            },
+            Pinch = {
+                GestureRange:new{
+                    ges = "pinch",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            },
+        }
+    else
         self.ges_events = {
             Spread = {
                 GestureRange:new{

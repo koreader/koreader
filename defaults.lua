@@ -107,7 +107,15 @@ DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {20, 20, 20, 20}
 -- 1 for bottom "mini" progress bar
 DCREREADER_PROGRESS_BAR = 1
 
+-- Set to 'true' to enable screenshots to be taken by double tap gestures, instead of simultaneous diagonal corner tapping.
+-- This can be used for single touch devices, such as Kobo Touch, Mini and emulator. 
+-- Remember to also set DGESDETECT_DISABLE_DOUBLE_TAP to false!
+DSCREENSHOT_WITH_DOUBLE_TAP = false
+-- This will limit the screenshot double tap zone to the middle bottom part of the screen.
+DTAP_ZONE_SCREENSHOT = {x = 3/8, y = 3/4, w = 1/2, h = 1/4}
+
 -- gesture detector defaults
+-- Set to 'false' if you have enabled screenshots with double tap gesture!
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 
 -- change this to any numerical value if you want to antomatically save settings when turning pages
@@ -116,7 +124,6 @@ DAUTO_SAVE_PAGING_COUNT = nil
 -- dictionary font size
 DDICT_FONT_SIZE = 20
 
--- Frontlight decrease of sensitivity for two-fingered pan gesture,
 -- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.
 FRONTLIGHT_SENSITIVITY_DECREASE = 2
 
