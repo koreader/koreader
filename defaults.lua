@@ -124,6 +124,7 @@ DAUTO_SAVE_PAGING_COUNT = nil
 -- dictionary font size
 DDICT_FONT_SIZE = 20
 
+-- Frontlight decrease of sensitivity for two-fingered pan gesture,
 -- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.
 FRONTLIGHT_SENSITIVITY_DECREASE = 2
 
