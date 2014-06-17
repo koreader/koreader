@@ -35,7 +35,8 @@ function GestureRange:match(gs)
         end
     end
     if self.scale then
-        if self.scale[1] > gs.span or self.scale[2] < gs.span then
+        local scale = gs.distance or gs.span
+        if self.scale[1] > scale or self.scale[2] < scale then
             return false
         end
     end
