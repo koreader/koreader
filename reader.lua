@@ -7,6 +7,7 @@ freetype = require("ffi/freetype")
 Image = require("ffi/mupdfimg")
 
 require "defaults"
+pcall(dofile, "defaults.persistent.lua")
 package.path = "?.lua;common/?.lua;frontend/?.lua"
 package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
 

@@ -1,3 +1,6 @@
+-- To make configuration changes that persists between (nightly) releases,
+-- copy defaults.lua to defaults.persistent.lua and make the changes there.
+
 -- number of page turns between full screen refresh
 -- default to do a full refresh on every 6 page turns
 DRCOUNTMAX = 6
