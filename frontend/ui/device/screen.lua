@@ -86,14 +86,16 @@ function Screen:getSizeBB()
 end
 
 function Screen:getSizePhoenix()
-    return Geom:new{w = 751, h = 1006}
+    return Geom:new{w = self.getWidth(), h = self.getHeight()}
 end
 
 function Screen:getWidthBB()
     return self.bb:getWidth()
 end
 function Screen:getWidthPhoenix()
-    return 751
+    if self.cur_rotation_mode == 0 then return 751
+    else return 1006
+    end
 end
 
 function Screen:getHeightBB()
@@ -101,7 +103,9 @@ function Screen:getHeightBB()
 end
 
 function Screen:getHeightPhoenix()
-    return 1006
+    if self.cur_rotation_mode == 0 then return 1006
+    else return 751
+    end
 end
 
 function Screen:getDPI()
