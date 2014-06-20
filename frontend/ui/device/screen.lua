@@ -93,8 +93,8 @@ function Screen:getWidthBB()
     return self.bb:getWidth()
 end
 function Screen:getWidthPhoenix()
-    if self.cur_rotation_mode == 0 then return 751
-    else return 1006
+    if self.cur_rotation_mode == 0 then return 757
+    else return 1012
     end
 end
 
@@ -103,8 +103,8 @@ function Screen:getHeightBB()
 end
 
 function Screen:getHeightPhoenix()
-    if self.cur_rotation_mode == 0 then return 1006
-    else return 751
+    if self.cur_rotation_mode == 0 then return 1012
+    else return 757
     end
 end
 
