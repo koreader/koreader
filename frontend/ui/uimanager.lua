@@ -21,6 +21,15 @@ local WAVEFORM_MODE_GL16            = 0x5    -- High fidelity from white transit
 local WAVEFORM_MODE_GL16_FAST        = 0x6    -- Medium fidelity from white transition
 local WAVEFORM_MODE_AUTO            = 0x101
 
+-- For the Kobo Aura an offset is needed, because the bezel make the visible screen smaller.
+local WIDGET_OFFSET_X = 0
+local WIDGET_OFFSET_Y = 0
+
+if Device:getModel() == 'Kobo_phoenix' then
+    WIDGET_OFFSET_X = 3
+    WIDGET_OFFSET_Y = 3
+    end
+
 -- there is only one instance of this
 local UIManager = {
     default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
@@ -197,7 +206,7 @@ function UIManager:run()
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
-                widget.widget:paintTo(Screen.bb, widget.x, widget.y)
+                widget.widget:paintTo(Screen.bb, widget.x + WIDGET_OFFSET_X, widget.y + WIDGET_OFFSET_Y)
                 if self._dirty[widget.widget] == "auto" then
                     request_full_refresh = true
                 end
