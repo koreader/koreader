@@ -220,6 +220,8 @@ end
 -- it is intended to manage input events and delegate
 -- them to dialogs
 function UIManager:run()
+    local suspend_msg = nil
+
     self._running = true
     while self._running do
         local now = { util.gettime() }
@@ -340,7 +342,6 @@ function UIManager:run()
 
         -- delegate input_event to handler
         if input_event then
-            --DEBUG("in ui.lua:", input_event)
             if input_event == "IntoSS" then
                 self:sendEvent(Event:new("FlushSettings"))
                 Device:intoScreenSaver()
@@ -353,20 +354,25 @@ function UIManager:run()
                 self:sendEvent(Event:new("NotCharging"))
             elseif input_event == "Light" then
                 Device:getPowerDevice():toggleFrontlight()
-            elseif (input_event == "Power" and not Device.screen_saver_mode)
-                    or input_event == "Suspend" then
-                local InfoMessage = require("ui/widget/infomessage")
-                self:show(InfoMessage:new{
-                    text = _("Standby"),
-                    timeout = 1,
-                })
+            elseif (input_event == "Power" or input_event == "Suspend")
+                    and not Device.screen_saver_mode then
+                if not suspend_msg then
+                    local InfoMessage = require("ui/widget/infomessage")
+                    suspend_msg = InfoMessage:new{
+                        text = _("Suspended"),
+                    }
+                end
+                self:show(suspend_msg)
                 self:sendEvent(Event:new("FlushSettings"))
                 Device:prepareSuspend()
-                self:scheduleIn(0.5, function() Device:Suspend() end)
-            elseif (input_event == "Power" and Device.screen_saver_mode)
-                    or input_event == "Resume" then
+                self:scheduleIn(2, function() Device:Suspend() end)
+            elseif (input_event == "Power" or input_event == "Resume")
+                    and Device.screen_saver_mode then
                 Device:Resume()
                 self:sendEvent(Event:new("Resume"))
+                if suspend_msg then
+                    self:close(suspend_msg)
+                end
             elseif input_event == "SaveState" then
                 self:sendEvent(Event:new("FlushSettings"))
             else
