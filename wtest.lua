@@ -1,8 +1,16 @@
 #!./koreader-base
 
+require "libs/libkoreader-lfs"
+einkfb = require("ffi/framebuffer")
+input = require("ffi/input")
+freetype = require("ffi/freetype")
+Image = require("ffi/mupdfimg")
+
 require "defaults"
 print(package.path)
-package.path = "./frontend/?.lua;./?.lua"
+package.path = "?.lua;common/?.lua;frontend/?.lua"
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
+
 local DocSettings = require("docsettings")
 local _ = require("gettext")
 
