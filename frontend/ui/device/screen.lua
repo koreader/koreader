@@ -45,6 +45,27 @@ local Screen = {
 
 function Screen:init()
     self.bb = self.fb.bb
+    if self.device:getModel() ~= 'Kobo_phoenix' then
+        function Screen:getSize()
+            return Screen:getSizeBB()
+        end
+        function Screen:getWidth()
+            return Screen:getWidthBB()
+        end
+        function Screen:getHeight()
+            return Screen:getHeightBB()
+        end
+    else
+        function Screen:getSize()
+            return Screen:getSizePhoenix()
+        end
+        function Screen:getWidth()
+            return Screen:getWidthPhoenix()
+        end
+        function Screen:getHeight()
+            return Screen:getHeightPhoenix()
+        end
+    end
     self.blitbuffer_rotation_mode = self.bb:getRotation()
     -- asking the framebuffer for orientation is error prone,
     -- so we do this simple heuristic (for now)
@@ -60,24 +81,42 @@ function Screen:refresh(refresh_type, waveform_mode, x, y, w, h)
     self.fb:refresh(refresh_type, waveform_mode, x, y, w, h)
 end
 
-function Screen:getSize()
+function Screen:getSizeBB()
     return Geom:new{w = self.bb:getWidth(), h = self.bb:getHeight()}
 end
 
-function Screen:getWidth()
+function Screen:getSizePhoenix()
+    return Geom:new{w = self.getWidth(), h = self.getHeight()}
+end
+
+function Screen:getWidthBB()
     return self.bb:getWidth()
 end
 
-function Screen:getHeight()
+function Screen:getWidthPhoenix()
+    if self.cur_rotation_mode == 0 then return 752
+    else return 1012
+    end
+end
+
+function Screen:getHeightBB()
     return self.bb:getHeight()
+end
+
+function Screen:getHeightPhoenix()
+    if self.cur_rotation_mode == 0 then return 1012
+    else return 752
+    end
 end
 
 function Screen:getDPI()
     if self.dpi ~= nil then return self.dpi end
     local model = self.device:getModel()
     if model == "KindlePaperWhite" or model == "KindlePaperWhite2"
-        or model == "Kobo_kraken" or model == "Kobo_phoenix" then
+        or model == "Kobo_kraken" then
         self.dpi = 212
+    elseif model == "Kobo_phoenix" then
+        self.dpi = 212.8
     elseif model == "Kobo_dragon" then
         self.dpi = 265
     elseif model == "Kobo_pixie" then
@@ -165,3 +204,4 @@ function Screen:restoreFromBB(bb)
 end
 
 return Screen
+
