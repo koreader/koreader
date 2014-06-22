@@ -20,7 +20,7 @@ local WAVEFORM_MODE_A2            = 0x4    -- Faster but even lower fidelity
 local WAVEFORM_MODE_GL16            = 0x5    -- High fidelity from white transition
 local WAVEFORM_MODE_GL16_FAST        = 0x6    -- Medium fidelity from white transition
 local WAVEFORM_MODE_AUTO            = 0x101
-
+ 
 -- there is only one instance of this
 local UIManager = {
     default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
@@ -44,6 +44,36 @@ local UIManager = {
     _execution_stack = {},
     _dirty = {}
 }
+
+-- For the Kobo Aura an offset is needed, because the bezel make the visible screen smaller.
+if Device:getModel() ~= 'Kobo_phoenix' then
+    function UIManager:offsetX()
+        return 0
+    end
+    function UIManager:offsetY()
+        return 0
+    end
+else
+    function UIManager:offsetX()
+        if Screen.cur_rotation_mode == 0 then
+            return 4
+        elseif Screen.cur_rotation_mode == 1 then
+            return 15
+        else
+            return 3
+        end
+    end
+    function UIManager:offsetY()
+        if Screen.cur_rotation_mode == 0 then
+            return 3
+        elseif Screen.cur_rotation_mode == 1 then
+            return 4
+        else
+            return 4
+        end
+    end
+end
+
 
 -- register & show a widget
 function UIManager:show(widget, x, y)
@@ -197,7 +227,7 @@ function UIManager:run()
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
-                widget.widget:paintTo(Screen.bb, widget.x, widget.y)
+                widget.widget:paintTo(Screen.bb, widget.x + UIManager:offsetX(), widget.y + UIManager:offsetY() )
                 if self._dirty[widget.widget] == "auto" then
                     request_full_refresh = true
                 end
@@ -317,3 +347,4 @@ function UIManager:run()
 end
 
 return UIManager
+

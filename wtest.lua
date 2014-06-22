@@ -1,8 +1,16 @@
 #!./koreader-base
 
+require "libs/libkoreader-lfs"
+einkfb = require("ffi/framebuffer")
+input = require("ffi/input")
+freetype = require("ffi/freetype")
+Image = require("ffi/mupdfimg")
+
 require "defaults"
 print(package.path)
-package.path = "./frontend/?.lua;./?.lua"
+package.path = "?.lua;common/?.lua;frontend/?.lua"
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
+
 local DocSettings = require("docsettings")
 local _ = require("gettext")
 
@@ -72,16 +80,17 @@ function TestVisible:paintTo(bb)
     end
     
     -- Handtunable minimal and maximal visible coordinates
-    local x_min = 0 + 3
+    local x_min = 0 + 4
     local x_max = bb:getWidth() - 4
     local y_min = 0 + 3
-    local y_max = bb:getHeight() - 15
+    local y_max = bb:getHeight() - 3 - 12
     
     -- Render extremes on screen
     RenderText:renderUtf8Text(bb, 150, 100, Font:getFace("ffont", 22), "x_min = "..x_min, true)
     RenderText:renderUtf8Text(bb, 500, 100, Font:getFace("ffont", 22), "x_max = "..x_max, true)
     RenderText:renderUtf8Text(bb, 100, 150, Font:getFace("ffont", 22), "y_min = "..y_min, true)
     RenderText:renderUtf8Text(bb, 100, 300, Font:getFace("ffont", 22), "y_max = "..y_max, true)
+    RenderText:renderUtf8Text(bb, 100, 500, Font:getFace("ffont", 26), "Visible screen size :  "..(x_max-x_min).."x"..(y_max-y_min), true)
     
     -- Three parallel lines at the top
     bb:paintRect(x_min,y_min, x_max, 1 , 10)
@@ -102,7 +111,12 @@ function TestVisible:paintTo(bb)
     bb:paintRect(x_max,y_min, 1, y_max , 10)
     bb:paintRect(x_max - 3,y_min, 1, y_max, 10)
     bb:paintRect(x_max - 6,y_min, 1, y_max, 10)
-    
+   
+    --Two lines spaces 600 pixels
+    bb:paintRect(100,600, 1, 250 , 10)
+    bb:paintRect(700,600, 1, 250 , 10)
+    RenderText:renderUtf8Text(bb, 150, 670, Font:getFace("ffont", 26), "Measure inches per 600 pixels", true)
+    RenderText:renderUtf8Text(bb, 150, 770, Font:getFace("ffont", 22), "Kobo Aura: 600 pixels/ 2.82 \" = "..(600/2.82).." dpi", true)
 end
 
 -----------------------------------------------------
