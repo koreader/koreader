@@ -19,7 +19,7 @@ function PluginLoader:loadPlugins()
             local package_cpath = package.cpath
             package.path = path.."/?.lua;"..package.path
             package.cpath = path.."/lib/?.so;"..package.cpath
-            local ok, module = pcall(require, "main")
+            local ok, module = pcall(dofile, mainfile)
             if not ok then
                 DEBUG("Error when loading", mainfile, module)
             end
@@ -36,6 +36,8 @@ function PluginLoader:loadPlugins()
         package.path = package.path..";"..plugin.path.."/?.lua"
         package.cpath = package.cpath..";"..plugin.path.."/lib/?.so"
     end
+
+    table.sort(self.plugins, function(v1,v2) return v1.path < v2.path end)
 
     return self.plugins
 end

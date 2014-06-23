@@ -11,16 +11,16 @@ Screen:init()
 -- initialize the input handling
 Input:init()
 
-local WAVEFORM_MODE_INIT            = 0x0    -- Screen goes to white (clears)
-local WAVEFORM_MODE_DU            = 0x1    -- Grey->white/grey->black
-local WAVEFORM_MODE_GC16            = 0x2    -- High fidelity (flashing)
-local WAVEFORM_MODE_GC4            = WAVEFORM_MODE_GC16 -- For compatibility
-local WAVEFORM_MODE_GC16_FAST        = 0x3    -- Medium fidelity
-local WAVEFORM_MODE_A2            = 0x4    -- Faster but even lower fidelity
-local WAVEFORM_MODE_GL16            = 0x5    -- High fidelity from white transition
-local WAVEFORM_MODE_GL16_FAST        = 0x6    -- Medium fidelity from white transition
-local WAVEFORM_MODE_AUTO            = 0x101
- 
+local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
+local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
+local WAVEFORM_MODE_GC16        = 0x2    -- High fidelity (flashing)
+local WAVEFORM_MODE_GC4         = WAVEFORM_MODE_GC16 -- For compatibility
+local WAVEFORM_MODE_GC16_FAST   = 0x3    -- Medium fidelity
+local WAVEFORM_MODE_A2          = 0x4    -- Faster but even lower fidelity
+local WAVEFORM_MODE_GL16        = 0x5    -- High fidelity from white transition
+local WAVEFORM_MODE_GL16_FAST   = 0x6    -- Medium fidelity from white transition
+local WAVEFORM_MODE_AUTO        = 0x101
+
 -- there is only one instance of this
 local UIManager = {
     default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
@@ -42,7 +42,8 @@ local UIManager = {
     _running = true,
     _window_stack = {},
     _execution_stack = {},
-    _dirty = {}
+    _dirty = {},
+    _zeromqs = {},
 }
 
 -- For the Kobo Aura an offset is needed, because the bezel make the visible screen smaller.
@@ -139,9 +140,26 @@ function UIManager:setDirty(widget, refresh_type)
     self._dirty[widget] = refresh_type
 end
 
+function UIManager:insertZMQ(zeromq)
+    table.insert(self._zeromqs, zeromq)
+    return zeromq
+end
+
+function UIManager:removeZMQ(zeromq)
+    for i = #self._zeromqs, 1, -1 do
+        if self._zeromqs[i] == zeromq then
+            table.remove(self._zeromqs, i)
+        end
+    end
+end
+
 -- signal to quit
 function UIManager:quit()
     self._running = false
+    for i = #self._zeromqs, 1, -1 do
+        self._zeromqs[i]:stop()
+        table.remove(self._zeromqs, i)
+    end
 end
 
 -- transmit an event to registered widgets
@@ -216,6 +234,7 @@ function UIManager:run()
         -- stop when we have no window to show
         if #self._window_stack == 0 then
             DEBUG("no dialog left to show, would loop endlessly")
+            self:quit()
             return nil
         end
 
@@ -295,8 +314,19 @@ function UIManager:run()
         -- note that we will skip that if in the meantime we have tasks that are ready to run
         local input_event = nil
         if not wait_until then
-            -- no pending task, wait endlessly
-            input_event = Input:waitEvent()
+            if #self._zeromqs > 0 then
+                -- pending message queue, wait 100ms for input
+                input_event = Input:waitEvent(1000*100)
+                if input_event and input_event.handler == "onInputError" then
+                    for _, zeromq in ipairs(self._zeromqs) do
+                        input_event = zeromq:waitEvent()
+                        if input_event then break end
+                    end
+                end
+            else
+                -- no pending task, wait endlessly
+                input_event = Input:waitEvent()
+            end
         elseif wait_until[1] > now[1]
         or wait_until[1] == now[1] and wait_until[2] > now[2] then
             local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }

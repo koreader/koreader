@@ -24,13 +24,14 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
+local DocumentRegistry = require("document/documentregistry")
+local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
-local InfoMessage = require("ui/widget/infomessage")
-local DocumentRegistry = require("document/documentregistry")
-local DEBUG = require("dbg")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
+local DEBUG = require("dbg")
 
 local ReaderUI = require("apps/reader/readerui")
 
@@ -98,12 +99,11 @@ function doShowReaderUI(file, pass)
 end
 
 function showHomePage(path)
-    local FileManager = require("apps/filemanager/filemanager")
+    G_reader_settings:saveSetting("lastdir", path)
     UIManager:show(FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
         onExit = function()
-            exitReader()
             UIManager:quit()
         end
     })
