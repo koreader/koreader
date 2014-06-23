@@ -301,6 +301,7 @@ end
 function ReaderUI:onClose()
     DEBUG("closing reader")
     self:saveSettings()
+    self:handleEvent(Event:new("CloseReader"))
     if self.document ~= nil then
         self.document:close()
         self.document = nil
