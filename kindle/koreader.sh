@@ -33,6 +33,10 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
+# accept input ports for zsync plugin
+iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+
 # bind-mount system fonts
 if ! grep /mnt/us/koreader/fonts/host /proc/mounts ; then
 	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host

@@ -5,6 +5,7 @@ local Event = require("ui/event")
 local MessageQueue = require("ui/message/messagequeue")
 
 local dummy = require("ffi/zeromq_h")
+local czmq = ffi.load("libs/libczmq.so.1")
 local filemq = ffi.load("libs/libfmq.so.1")
 
 local FileMessageQueue = MessageQueue:new{
@@ -14,11 +15,15 @@ local FileMessageQueue = MessageQueue:new{
 
 function FileMessageQueue:init()
     if self.client ~= nil then
-        self.fmq_recv = filemq.fmq_client_recv_nowait
+        self.fmq_recv = filemq.fmq_client_recv
         self.filemq = self.client
+        self.poller = czmq.zpoller_new(filemq.fmq_client_handle(self.client), nil)
     elseif self.server ~= nil then
-        self.fmq_recv = filemq.fmq_server_recv_nowait
+        -- TODO: currently fmq_server_recv API is not available
+        --self.fmq_recv = filemq.fmq_server_recv
         self.filemq = self.server
+        -- TODO: currently fmq_server_handle API is not available
+        --self.poller = czmq.zpoller_new(filemq.fmq_server_handle(self.server), nil)
     end
 end
 
@@ -31,13 +36,18 @@ function FileMessageQueue:stop()
         DEBUG("stop filemq server")
         filemq.fmq_server_destroy(ffi.new('fmq_server_t *[1]', self.server))
     end
+    if self.poller ~= nil then
+        czmq.zpoller_destroy(ffi.new('zpoller_t *[1]', self.poller))
+    end
 end
 
 function FileMessageQueue:waitEvent()
-    local msg = self.fmq_recv(self.filemq)
-    while msg ~= nil do
-        table.insert(self.messages, msg)
-        msg = self.fmq_recv(self.filemq)
+    if not self.poller then return end
+    if czmq.zpoller_wait(self.poller, 0) ~= nil then
+        local msg = self.fmq_recv(self.filemq)
+        if msg ~= nil then
+            table.insert(self.messages, msg)
+        end
     end
     return self:handleZMsgs(self.messages)
 end

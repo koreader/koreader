@@ -300,12 +300,14 @@ end
 
 function ZSync:subscribe()
     DEBUG("subscribe documents")
+    self.received = {}
     self.inbox_chooser = InboxChooser:new{zsync = self}
     UIManager:show(self.inbox_chooser)
 end
 
 function ZSync:unsubscribe()
     DEBUG("ZSync unsubscribe")
+    self.received = {}
     self:stopFileMQ()
     self:stopZyreMQ()
 end
@@ -329,10 +331,13 @@ function ZSync:onZyreEnter(id, name, header, endpoint)
 end
 
 function ZSync:onFileDeliver(filename, fullname)
+    -- sometimes several FileDelever msgs are sent from filemq
+    if self.received[filename] then return end
     UIManager:show(InfoMessage:new{
         text = _("Received file:") .. "\n" .. filename,
         timeout = 1,
     })
+    self.received[filename] = true
 end
 
 --[[
