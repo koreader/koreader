@@ -10,31 +10,53 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# exit from nickel
-killall nickel
-killall hindenburg
-        
-# finally call the launcher
+# stop Nickel
+killall -STOP nickel
+
+# store the content of the framebuffer
+#dd if=/dev/fb0 of=.last_screen_content
+
+# finally call reader
+
+#Before calling the reader, run a script in background that would prevent the device from sleep crashing
+sh ./crashfix.sh &
+
+#record pid of the process that runs, so it can be killed later
+echo $!> waiter.pid
+
+
+
 ./reader.lua /mnt/onboard 2> crash.log
+#./reader.lua -d /mnt/onboard > ./koreader_debug.log 2>&1
 
-# back to nickel again :)
-( usleep 400000; /etc/init.d/on-animator.sh ) &
-(
-/usr/local/Kobo/pickel disable.rtc.alarm
-if [ ! -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
-  cp /etc/wpa_supplicant/wpa_supplicant.conf.template /etc/wpa_supplicant/wpa_supplicant.conf
-fi
+# continue with nickel
 
-echo 1 > /sys/devices/platform/mxc_dvfs_core.0/enable
-/sbin/hwclock -s -u
-) &
 
-export QWS_MOUSE_PROTO="tslib_nocal:/dev/input/event1"
-export QWS_KEYBOARD=imx508kbd:/dev/input/event0
-export QWS_DISPLAY=Transformed:imx508:Rot90
-export NICKEL_HOME=/mnt/onboard/.kobo
-export LD_LIBRARY_PATH=/usr/local/Kobo
+#kill the waiter process
+kill `cat waiter.pid`
+echo "killed waiter" >>test.log
 
-/usr/local/Kobo/hindenburg &
-/usr/local/Kobo/nickel -qws -skipFontLoad
 
+
+killall -CONT nickel
+
+# return to home screen
+case `/bin/kobo_config.sh * 2>/dev/null` in
+	dragon)		#DEVICE=AURAHD
+				#no binary file available
+		;;
+	phoenix)	#DEVICE=AURA
+				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
+				cat ./KoboAuraTapHomeIcon.bin > /dev/input/event1
+		;;
+	kraken)		#DEVICE=GLO
+				#no binary file available
+		;;
+	pixie)		#DEVICE=MINI
+				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
+				cat ./KoboMiniTapHomeIcon.bin > /dev/input/event1
+		;;
+	trilogy|*)	#DEVICE=TOUCH
+				cat ./KoboTouchHomeButton.bin > /dev/input/event0
+		;;
+esac
