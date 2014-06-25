@@ -317,7 +317,7 @@ function UIManager:run()
             if #self._zeromqs > 0 then
                 -- pending message queue, wait 100ms for input
                 input_event = Input:waitEvent(1000*100)
-                if input_event and input_event.handler == "onInputError" then
+                if not input_event or input_event.handler == "onInputError" then
                     for _, zeromq in ipairs(self._zeromqs) do
                         input_event = zeromq:waitEvent()
                         if input_event then break end

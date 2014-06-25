@@ -67,7 +67,7 @@ function MessageQueue:handleZMsgs(messages)
     local message_size = czmq.zmsg_size(messages[1])
     local command = pop_string()
     DEBUG("ØMQ message", command)
-    if command == "ENTER" and #messages >= 4 then
+    if command == "ENTER" then
         local id = pop_string()
         local name = pop_string()
         local header = pop_header()
