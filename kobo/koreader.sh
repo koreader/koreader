@@ -18,13 +18,12 @@ killall -STOP nickel
 
 # finally call reader
 
-# chandravadan's fix START
 #Before calling the reader, run a script in background that would prevent the device from sleep crashing
 sh ./crashfix.sh &
 
 #record pid of the process that runs, so it can be killed later
 echo $!> waiter.pid
-# chandravadan's fix END
+
 
 
 ./reader.lua /mnt/onboard 2> crash.log
@@ -32,11 +31,11 @@ echo $!> waiter.pid
 
 # continue with nickel
 
-# chandravadan's fix START
+
 #kill the waiter process
 kill `cat waiter.pid`
 echo "killed waiter" >>test.log
-# chandravadan's fix END
+
 
 
 killall -CONT nickel
