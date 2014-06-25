@@ -2,7 +2,7 @@
 i = 0
 while :
 do
-    echo $i > test.log
-    sleep 1
+    #echo $i > test.log
+    i=0
+    sleep 2
 done
-echo "Done" >> test.log
