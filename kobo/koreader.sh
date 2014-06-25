@@ -21,6 +21,10 @@ killall hindenburg
 # finally call the launcher
 ./reader.lua /mnt/onboard 2> crash.log
 
+# restore firewall rules
+iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+
 # back to nickel again :)
 ( usleep 400000; /etc/init.d/on-animator.sh ) &
 (

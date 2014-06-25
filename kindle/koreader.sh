@@ -124,3 +124,7 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	lipc-set-prop com.lab126.pillow disableEnablePillow enable
 fi
 
+# restore firewall rules
+iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+
