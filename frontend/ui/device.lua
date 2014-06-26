@@ -98,6 +98,16 @@ function Device:isKindle2()
     return (self:getModel() == "Kindle2")
 end
 
+function Device:isKindle()
+    local is_kindle = false
+    local kindle_sn = io.open("/proc/usid", "r")
+    if kindle_sn then
+        is_kindle = true
+        kindle_sn:close()
+    end
+    return is_kindle
+end
+
 function Device:isKobo()
     return string.find(self:getModel() or "", "Kobo_") == 1
 end
