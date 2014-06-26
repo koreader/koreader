@@ -39,6 +39,8 @@ local UIManager = {
     FULL_REFRESH_COUNT = DRCOUNTMAX,
     refresh_count = 0,
 
+    event_handlers = nil,
+
     _running = true,
     _window_stack = {},
     _execution_stack = {},
@@ -46,35 +48,86 @@ local UIManager = {
     _zeromqs = {},
 }
 
--- For the Kobo Aura an offset is needed, because the bezel make the visible screen smaller.
-if Device:getModel() ~= 'Kobo_phoenix' then
-    function UIManager:offsetX()
-        return 0
-    end
-    function UIManager:offsetY()
-        return 0
-    end
-else
-    function UIManager:offsetX()
-        if Screen.cur_rotation_mode == 0 then
-            return 4
-        elseif Screen.cur_rotation_mode == 1 then
-            return 15
-        else
-            return 3
+
+function UIManager:init()
+    -- For the Kobo Aura an offset is needed, because the bezel make the
+    -- visible screen smaller.
+    if Device:getModel() ~= 'Kobo_phoenix' then
+        function self:offsetX() return 0 end
+        function self:offsetY() return 0 end
+    else
+        function self:offsetX()
+            if Screen.cur_rotation_mode == 0 then
+                return 4
+            elseif Screen.cur_rotation_mode == 1 then
+                return 15
+            else
+                return 3
+            end
+        end
+        function self:offsetY()
+            if Screen.cur_rotation_mode == 0 then
+                return 3
+            else
+                return 4
+            end
         end
     end
-    function UIManager:offsetY()
-        if Screen.cur_rotation_mode == 0 then
-            return 3
-        elseif Screen.cur_rotation_mode == 1 then
-            return 4
-        else
-            return 4
+
+    self.event_handlers = {
+        __default__ = function(input_event)
+            self:sendEvent(input_event)
+        end,
+        SaveState = function()
+            self:sendEvent(Event:new("FlushSettings"))
+        end
+    }
+    if Device:isKobo() then
+        -- lazy create suspend_msg to avoid dependence loop
+        local suspend_msg = nil
+        function kobo_power(input_event)
+            if (input_event == "Power" or input_event == "Suspend")
+                    and not Device.screen_saver_mode then
+                if not suspend_msg then
+                    local InfoMessage = require("ui/widget/infomessage")
+                    suspend_msg = InfoMessage:new{ text = _("Suspended") }
+                end
+                self:show(suspend_msg)
+                self:sendEvent(Event:new("FlushSettings"))
+                Device:prepareSuspend()
+                self:scheduleIn(2, function() Device:Suspend() end)
+            elseif (input_event == "Power" or input_event == "Resume")
+                    and Device.screen_saver_mode then
+                Device:Resume()
+                self:sendEvent(Event:new("Resume"))
+                if suspend_msg then
+                    self:close(suspend_msg)
+                end
+            end
+        end
+        self.event_handlers["Power"] = kobo_power
+        self.event_handlers["Suspend"] = kobo_power
+        self.event_handlers["Resume"] = kobo_power
+        self.event_handlers["Light"] = function()
+            Device:getPowerDevice():toggleFrontlight()
+        end
+    elseif Device:isKindle() then
+        self.event_handlers["IntoSS"] = function()
+            self:sendEvent(Event:new("FlushSettings"))
+            Device:intoScreenSaver()
+        end
+        self.event_handlers["OutOfSS"] = function()
+            Device:outofScreenSaver()
+        end
+        self.event_handlers["Charging"] = function()
+            Device:usbPlugIn()
+        end
+        self.event_handlers["NotCharging"] = function()
+            Device:usbPlugOut()
+            self:sendEvent(Event:new("NotCharging"))
         end
     end
 end
-
 
 -- register & show a widget
 function UIManager:show(widget, x, y)
@@ -220,8 +273,6 @@ end
 -- it is intended to manage input events and delegate
 -- them to dialogs
 function UIManager:run()
-    local suspend_msg = nil
-
     self._running = true
     while self._running do
         local now = { util.gettime() }
@@ -248,7 +299,9 @@ function UIManager:run()
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
-                widget.widget:paintTo(Screen.bb, widget.x + UIManager:offsetX(), widget.y + UIManager:offsetY() )
+                widget.widget:paintTo(Screen.bb,
+                                      widget.x + UIManager:offsetX(),
+                                      widget.y + UIManager:offsetY())
                 if self._dirty[widget.widget] == "auto" then
                     request_full_refresh = true
                 end
@@ -342,45 +395,16 @@ function UIManager:run()
 
         -- delegate input_event to handler
         if input_event then
-            if input_event == "IntoSS" then
-                self:sendEvent(Event:new("FlushSettings"))
-                Device:intoScreenSaver()
-            elseif input_event == "OutOfSS" then
-                Device:outofScreenSaver()
-            elseif input_event == "Charging" then
-                Device:usbPlugIn()
-            elseif input_event == "NotCharging" then
-                Device:usbPlugOut()
-                self:sendEvent(Event:new("NotCharging"))
-            elseif input_event == "Light" then
-                Device:getPowerDevice():toggleFrontlight()
-            elseif (input_event == "Power" or input_event == "Suspend")
-                    and not Device.screen_saver_mode then
-                if not suspend_msg then
-                    local InfoMessage = require("ui/widget/infomessage")
-                    suspend_msg = InfoMessage:new{
-                        text = _("Suspended"),
-                    }
-                end
-                self:show(suspend_msg)
-                self:sendEvent(Event:new("FlushSettings"))
-                Device:prepareSuspend()
-                self:scheduleIn(2, function() Device:Suspend() end)
-            elseif (input_event == "Power" or input_event == "Resume")
-                    and Device.screen_saver_mode then
-                Device:Resume()
-                self:sendEvent(Event:new("Resume"))
-                if suspend_msg then
-                    self:close(suspend_msg)
-                end
-            elseif input_event == "SaveState" then
-                self:sendEvent(Event:new("FlushSettings"))
+            local handler = self.event_handlers[input_event]
+            if handler then
+                handler(input_event)
             else
-                self:sendEvent(input_event)
+                self.event_handlers["__default__"](input_event)
             end
         end
     end
 end
 
+UIManager:init()
 return UIManager
 
