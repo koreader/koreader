@@ -111,6 +111,16 @@ function UIManager:init()
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
         end
+        self.event_handlers["__default__"] = function(input_event)
+            if Device.screen_saver_mode then
+                -- Suspension in Kobo can be interrupted by screen updates. We
+                -- ignore user touch input here so screen udpate won't be
+                -- triggered in suspend mode
+                return
+            else
+                self:sendEvent(input_event)
+            end
+        end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
             self:sendEvent(Event:new("FlushSettings"))
