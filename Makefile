@@ -122,7 +122,6 @@ koboupdate: all
 	cp kobo/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp kobo/koreader.sh $(INSTALL_DIR)/koreader
 	cp kobo/suspend.sh $(INSTALL_DIR)/koreader
-	cp kobo/*.bin $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
