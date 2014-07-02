@@ -17,16 +17,16 @@ local DEBUG = require("dbg")
 
 progress_text_default = ""
 if DMINIBAR_ALL_AT_ONCE then
-		if DMINIBAR_TIME then
-			progress_text_default = progress_text_default .. " | WW:WW"
-		end
-		if DMINIBAR_PAGES then
-			progress_text_default = progress_text_default .. " | 0000 / 0000"
-		end
-		if DMINIBAR_NEXT_CHAPTER then
-			progress_text_default = progress_text_default .. " | => 000"
-		end
-		progress_text_default = string.sub(progress_text_default,4)
+	if DMINIBAR_TIME then
+		progress_text_default = progress_text_default .. " | WW:WW"
+	end
+	if DMINIBAR_PAGES then
+		progress_text_default = progress_text_default .. " | 0000 / 0000"
+	end
+	if DMINIBAR_NEXT_CHAPTER then
+		progress_text_default = progress_text_default .. " | => 000"
+	end
+	progress_text_default = string.sub(progress_text_default,4)
 else
 	progress_text_default = "0000 / 0000"
 end
@@ -115,27 +115,27 @@ end
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-		if DMINIBAR_ALL_AT_ONCE then
-			 self.progress_text.text = ""
-			 if DMINIBAR_TIME then
-					self.progress_text.text = self.progress_text.text .. " | " .. os.date("%H:%M")
-			 end
-			 if DMINIBAR_PAGES then
-					self.progress_text.text = self.progress_text.text .. " | " .. string.format("%d / %d", self.pageno, self.pages)
-			 end
-			 if DMINIBAR_NEXT_CHAPTER then
-					self.progress_text.text = self.progress_text.text .. " | => " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
-			 end
-	     self.progress_text.text = string.sub(self.progress_text.text,4)
-		else
-    	if self.mode == 1 then 
-	       self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
-		  end if self.mode == 2 then 
-	       self.progress_text.text = os.date("%H:%M")
-		  end if self.mode == 3 then 
-	       self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
-		  end 
-		end
+    if DMINIBAR_ALL_AT_ONCE then
+        self.progress_text.text = ""
+        if DMINIBAR_TIME then
+            self.progress_text.text = self.progress_text.text .. " | " .. os.date("%H:%M")
+        end
+        if DMINIBAR_PAGES then
+            self.progress_text.text = self.progress_text.text .. " | " .. string.format("%d / %d", self.pageno, self.pages)
+        end
+        if DMINIBAR_NEXT_CHAPTER then
+            self.progress_text.text = self.progress_text.text .. " | => " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+        end
+        self.progress_text.text = string.sub(self.progress_text.text,4)
+    else
+        if self.mode == 1 then 
+            self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+        end if self.mode == 2 then 
+            self.progress_text.text = os.date("%H:%M")
+        end if self.mode == 3 then 
+            self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+        end 
+    end
 end
 
 function ReaderFooter:updateFooterPos()
@@ -197,16 +197,16 @@ function ReaderFooter:onTapFooter(arg, ges)
     else
         self.mode = (self.mode + 1) % 4
         if DMINIBAR_ALL_AT_ONCE and (self.mode > 1) then
-        	self.mode = 0
+            self.mode = 0
         end
         if (self.mode == 1) and not DMINIBAR_PAGES then
-        	self.mode = 2
+            self.mode = 2
         end
         if (self.mode == 2) and not DMINIBAR_TIME then
-        	self.mode = 3
+            self.mode = 3
         end
         if (self.mode == 3) and not DMINIBAR_NEXT_CHAPTER then
-        	self.mode = 0
+            self.mode = 0
         end
         self:applyFooterMode()
     end
