@@ -116,6 +116,7 @@ function ReaderHighlight:onTap(arg, ges)
             self.ui.document:clearSelection()
         end
         self.hold_pos = nil
+        self.selected_text = nil
         UIManager:setDirty(self.dialog, "partial")
         return true
     end
