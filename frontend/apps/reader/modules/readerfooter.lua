@@ -15,29 +15,13 @@ local Event = require("ui/event")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 
-progress_text_default = ""
-if DMINIBAR_ALL_AT_ONCE then
-	if DMINIBAR_TIME then
-		progress_text_default = progress_text_default .. " | WW:WW"
-	end
-	if DMINIBAR_PAGES then
-		progress_text_default = progress_text_default .. " | 0000 / 0000"
-	end
-	if DMINIBAR_NEXT_CHAPTER then
-		progress_text_default = progress_text_default .. " | => 000"
-	end
-	progress_text_default = string.sub(progress_text_default,4)
-else
-	progress_text_default = "0000 / 0000"
-end
-
 local ReaderFooter = InputContainer:new{
     mode = 1,
     visible = true,
     pageno = nil,
     pages = nil,
     progress_percentage = 0.0,
-    progress_text = progress_text_default,
+    progress_text = nil,
     text_font_face = "ffont",
     text_font_size = 14,
     height = Screen:scaleByDPI(19),
@@ -45,8 +29,28 @@ local ReaderFooter = InputContainer:new{
 }
 
 function ReaderFooter:init()
+    if self.ui.document.info.has_pages then
+        DMINIBAR_NEXT_CHAPTER = false
+    end
+
+    progress_text_default = ""
+    if DMINIBAR_ALL_AT_ONCE then
+	    if DMINIBAR_TIME then
+    		progress_text_default = progress_text_default .. " | WW:WW"
+	    end
+    	if DMINIBAR_PAGES then
+    		progress_text_default = progress_text_default .. " | 0000 / 0000"
+    	end
+    	if DMINIBAR_NEXT_CHAPTER then
+		    progress_text_default = progress_text_default .. " | => 000"
+    	end
+    	progress_text_default = string.sub(progress_text_default,4)
+    else
+    	progress_text_default = "0000 / 0000"
+    end
+
     self.progress_text = TextWidget:new{
-        text = self.progress_text,
+        text = progress_text_default,
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     local text_width = self.progress_text:getSize().w
