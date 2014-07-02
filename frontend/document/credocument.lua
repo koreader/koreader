@@ -137,18 +137,27 @@ end
 
 function CreDocument:getWordFromPosition(pos)
     local word_box = self._document:getWordFromPosition(pos.x, pos.y)
+    DEBUG("CreDocument: get word box", word_box)
     local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y)
+    DEBUG("CreDocument: get text range", text_range)
+    local wordbox = {
+        word = text_range.text == "" and word_box.word or text_range.text,
+        page = self._document:getCurrentPage(),
+    }
     if word_box.word then
-        return {
-            word = text_range.text == "" and word_box.word or text_range.text,
-            page = self._document:getCurrentPage(),
-            sbox = Geom:new{
-                x = word_box.x0, y = word_box.y0,
-                w = word_box.x1 - word_box.x0,
-                h = word_box.y1 - word_box.y0,
-            }
+        wordbox.sbox = Geom:new{
+            x = word_box.x0, y = word_box.y0,
+            w = word_box.x1 - word_box.x0,
+            h = word_box.y1 - word_box.y0,
+        }
+    else
+        -- dummy word box
+        wordbox.sbox = Geom:new{
+            x = pos.x, y = pos.y,
+            w = 20, h = 20,
         }
     end
+    return wordbox
 end
 
 function CreDocument:getTextFromPositions(pos0, pos1)
