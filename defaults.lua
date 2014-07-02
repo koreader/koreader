@@ -110,6 +110,13 @@ DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {20, 20, 20, 20}
 -- 1 for bottom "mini" progress bar
 DCREREADER_PROGRESS_BAR = 1
 
+-- configure "mini" progress bar
+DMINIBAR_ALL_AT_ONCE = false
+DMINIBAR_TIME = true
+DMINIBAR_PAGES = true
+DMINIBAR_NEXT_CHAPTER = true
+
+
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 

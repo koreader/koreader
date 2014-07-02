@@ -98,6 +98,35 @@ function ReaderToc:getTocTitleOfCurrentPage()
     return self:getTocTitleByPage(self.pageno)
 end
 
+function ReaderToc:_getChapterPagesLeft(pageno,pages)
+    if not self.toc then
+        -- build toc when needed.
+        self:fillToc()
+    end
+
+    -- no table of content
+    if #self.toc == 0 then
+        return ""
+    end
+
+    j=0
+    if #self.toc > 0 then
+        for i=1, #self.toc do
+            v = self.toc[i]
+            if v.page > pageno then
+                j = v.page
+                break
+            end
+        end
+    end
+    if j==0 then
+    	return pages-pageno
+    else
+        return j-pageno-1
+    end
+end
+
+
 function ReaderToc:onShowToc()
     if not self.toc then
         self:fillToc()

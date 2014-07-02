@@ -21,8 +21,7 @@ local ReaderFooter = InputContainer:new{
     pageno = nil,
     pages = nil,
     progress_percentage = 0.0,
-    progress_text = "0000 / 0000",
-    show_time = false,
+    progress_text = nil,
     text_font_face = "ffont",
     text_font_size = 14,
     height = Screen:scaleByDPI(19),
@@ -30,8 +29,28 @@ local ReaderFooter = InputContainer:new{
 }
 
 function ReaderFooter:init()
+    if self.ui.document.info.has_pages then
+        DMINIBAR_NEXT_CHAPTER = false
+    end
+
+    progress_text_default = ""
+    if DMINIBAR_ALL_AT_ONCE then
+	    if DMINIBAR_TIME then
+    		progress_text_default = progress_text_default .. " | WW:WW"
+	    end
+    	if DMINIBAR_PAGES then
+    		progress_text_default = progress_text_default .. " | 0000 / 0000"
+    	end
+    	if DMINIBAR_NEXT_CHAPTER then
+		    progress_text_default = progress_text_default .. " | => 000"
+    	end
+    	progress_text_default = string.sub(progress_text_default,4)
+    else
+    	progress_text_default = "0000 / 0000"
+    end
+
     self.progress_text = TextWidget:new{
-        text = self.progress_text,
+        text = progress_text_default,
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     local text_width = self.progress_text:getSize().w
@@ -93,14 +112,33 @@ function ReaderFooter:init()
     self:applyFooterMode()
 end
 
+function ReaderFooter:fillToc()
+    self.toc = self.ui.document:getToc()
+end
+
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-
-    if self.show_time then
-        self.progress_text.text = os.date("%H:%M")
+    if DMINIBAR_ALL_AT_ONCE then
+        self.progress_text.text = ""
+        if DMINIBAR_TIME then
+            self.progress_text.text = self.progress_text.text .. " | " .. os.date("%H:%M")
+        end
+        if DMINIBAR_PAGES then
+            self.progress_text.text = self.progress_text.text .. " | " .. string.format("%d / %d", self.pageno, self.pages)
+        end
+        if DMINIBAR_NEXT_CHAPTER then
+            self.progress_text.text = self.progress_text.text .. " | => " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+        end
+        self.progress_text.text = string.sub(self.progress_text.text,4)
     else
-        self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+        if self.mode == 1 then 
+            self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+        end if self.mode == 2 then 
+            self.progress_text.text = os.date("%H:%M")
+        end if self.mode == 3 then 
+            self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+        end 
     end
 end
 
@@ -114,6 +152,7 @@ function ReaderFooter:updateFooterPos()
         self.progress_text.text = string.format("%1.f", self.progress_bar.percentage*100).."%"
     end
 end
+
 
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
@@ -132,16 +171,12 @@ function ReaderFooter:applyFooterMode(mode)
     -- 0 for footer off
     -- 1 for footer page info
     -- 2 for footer time info
+    -- 3 for footer next_chapter info
     if mode ~= nil then self.mode = mode end
     if self.mode == 0 then
         self.view.footer_visible = false
     else
         self.view.footer_visible = true
-    end
-    if self.mode == 1 then
-        self.show_time = false
-    elseif self.mode == 2 then
-        self.show_time = true
     end
 end
 
@@ -164,7 +199,19 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        self.mode = (self.mode + 1) % 3
+        self.mode = (self.mode + 1) % 4
+        if DMINIBAR_ALL_AT_ONCE and (self.mode > 1) then
+            self.mode = 0
+        end
+        if (self.mode == 1) and not DMINIBAR_PAGES then
+            self.mode = 2
+        end
+        if (self.mode == 2) and not DMINIBAR_TIME then
+            self.mode = 3
+        end
+        if (self.mode == 3) and not DMINIBAR_NEXT_CHAPTER then
+            self.mode = 0
+        end
         self:applyFooterMode()
     end
     if self.pageno then
