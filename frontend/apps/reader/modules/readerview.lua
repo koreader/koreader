@@ -177,6 +177,36 @@ function ReaderView:pageToScreenTransform(page, rect)
     end
 end
 
+--[[
+Get page area on screen for a given page number
+--]]
+function ReaderView:getScreenPageArea(page)
+    if self.ui.document.info.has_pages then
+        local area = Geom:new{x = 0, y = 0}
+        if self.page_scroll then
+            for _, state in ipairs(self.page_states) do
+                if page ~= state.page then
+                    area.y = area.y + state.visible_area.h + state.offset.y
+                    area.y = area.y + self.page_gap.height
+                else
+                    area.x = state.offset.x
+                    area.w = state.visible_area.w
+                    area.h = state.visible_area.h
+                    return area
+                end
+            end
+        else
+            area.x = self.state.offset.x
+            area.y = self.state.offset.y
+            area.w = self.visible_area.w
+            area.h = self.visible_area.h
+            return area
+        end
+    else
+        return self.dimen:copy()
+    end
+end
+
 function ReaderView:drawPageBackground(bb, x, y)
     bb:paintRect(x, y, self.dimen.w, self.dimen.h, self.page_bgcolor)
 end

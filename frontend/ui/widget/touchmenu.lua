@@ -41,6 +41,13 @@ function TouchMenuItem:init()
             },
             doc = "Select Menu Item",
         },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
+            },
+            doc = "Hold Menu Item",
+        },
     }
 
     local item_enabled = self.item.enabled
@@ -96,6 +103,21 @@ function TouchMenuItem:onTapSelect(arg, ges)
     self.menu:onMenuSelect(self.item)
 end
 
+function TouchMenuItem:onHoldSelect(arg, ges)
+    local enabled = self.item.enabled
+    if self.item.enabled_func then
+        enabled = self.item.enabled_func()
+    end
+    if enabled == false then return end
+
+    self.item_frame.invert = true
+    UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.5, function()
+        self.item_frame.invert = false
+        UIManager:setDirty(self.show_parent, "partial")
+    end)
+    self.menu:onMenuHold(self.item)
+end
 
 --[[
 TouchMenuBar widget
@@ -464,11 +486,6 @@ function TouchMenu:onSwipe(arg, ges_ev)
 end
 
 function TouchMenu:onMenuSelect(item)
-    local enabled = item.enabled
-    if item.enabled_func then
-        enabled = item.enabled_func()
-    end
-    if enabled == false then return end
     local sub_item_table = item.sub_item_table
     if item.sub_item_table_func then
         sub_item_table = item.sub_item_table_func()
@@ -490,6 +507,20 @@ function TouchMenu:onMenuSelect(item)
         table.insert(self.item_table_stack, self.item_table)
         self.item_table = sub_item_table
         self:updateItems()
+    end
+    return true
+end
+
+function TouchMenu:onMenuHold(item)
+    local callback = item.hold_callback
+    if item.hold_callback_func then
+        callback = item.hold_callback_func()
+    end
+    if callback then
+        UIManager:scheduleIn(0.1, function()
+            self:closeMenu()
+            callback()
+        end)
     end
     return true
 end

@@ -1,7 +1,8 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
+local ConfirmBox = require("ui/widget/confirmbox")
+local Menu = require("ui/widget/menu")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Input = require("ui/input")
@@ -52,7 +53,10 @@ function ReaderFont:init()
             text = v,
             callback = function()
                 self:setFont(v)
-            end
+            end,
+            hold_callback = function()
+                self:makeDefault(v)
+            end,
         })
         face_list[k] = {text = v}
     end
@@ -210,6 +214,17 @@ function ReaderFont:setFont(face)
         self.ui:handleEvent(Event:new("UpdatePos"))
 
         UIManager:close(msg)
+    end
+end
+
+function ReaderFont:makeDefault(face)
+    if face then
+        UIManager:show(ConfirmBox:new{
+            text = _("Set default font \"")..face.."\"?",
+            ok_callback = function()
+                G_reader_settings:saveSetting("cre_font", face)
+            end,
+        })
     end
 end
 

@@ -116,6 +116,7 @@ function ReaderHighlight:onTap(arg, ges)
             self.ui.document:clearSelection()
         end
         self.hold_pos = nil
+        self.selected_text = nil
         UIManager:setDirty(self.dialog, "partial")
         return true
     end
@@ -231,6 +232,13 @@ function ReaderHighlight:onHoldPan(arg, ges)
         DEBUG("no previous hold position")
         return true
     end
+    local page_area = self.view:getScreenPageArea(self.hold_pos.page)
+    DEBUG("current page area", page_area)
+    if ges.pos:notIntersectWith(page_area) then
+        DEBUG("not inside page area")
+        return true
+    end
+
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     DEBUG("holdpan position in page", self.holdpan_pos)
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
