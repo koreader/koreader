@@ -109,21 +109,21 @@ function ReaderToc:_getChapterPagesLeft(pageno,pages)
         return ""
     end
 
-		j=0
+    j=0
     if #self.toc > 0 then
         for i=1, #self.toc do
             v = self.toc[i]
             if v.page > pageno then
-            		j = v.page
+                j = v.page
                 break
             end
         end
     end
     if j==0 then
     	return pages-pageno
-		else
-	    return j-pageno-1
-	  end
+    else
+        return j-pageno-1
+    end
 end
 
 
