@@ -33,7 +33,9 @@ function Configurable:loadDefaults(config_options)
         local options = config_options[i].options
         for j=1,#config_options[i].options do
             local key = config_options[i].options[j].name
-            self[key] = config_options[i].options[j].default_value
+            local settings_key = config_options.prefix.."_"..key
+            local default = G_reader_settings:readSetting(settings_key)
+            self[key] = default or config_options[i].options[j].default_value
             if not self[key] then
                 self[key] = config_options[i].options[j].default_arg
             end
