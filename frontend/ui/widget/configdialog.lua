@@ -9,6 +9,7 @@ local TextWidget = require("ui/widget/textwidget")
 local FixedTextWidget = require("ui/widget/fixedtextwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ToggleSwitch = require("ui/widget/toggleswitch")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Font = require("ui/font")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
@@ -79,6 +80,13 @@ function OptionTextItem:init()
                 },
                 doc = "Select Option Item",
             },
+            HoldSelect = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+                doc = "Hold Option Item",
+            },
         }
     else
         self.active_key_events = {
@@ -92,8 +100,18 @@ function OptionTextItem:onTapSelect()
         item[1].color = 0
     end
     self[1].color = 15
-    self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.current_item)
+    self.config:onConfigChoose(self.values, self.name,
+                    self.event, self.args,
+                    self.events, self.current_item)
     UIManager:setDirty(self.config, "partial")
+    return true
+end
+
+function OptionTextItem:onHoldSelect()
+    self.config:onMakeDefault(self.name, self.name_text,
+                    self.values or self.args,
+                    self.values or self.item_text,
+                    self.current_item)
     return true
 end
 
@@ -115,6 +133,14 @@ function OptionIconItem:init()
                 },
                 doc = "Select Option Item",
             },
+            HoldSelect = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+                doc = "Hold Option Item",
+            },
+
         }
     end
 end
@@ -126,8 +152,16 @@ function OptionIconItem:onTapSelect()
     end
     --self[1][1].invert = true
     self[1].color = 15
-    self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.current_item)
+    self.config:onConfigChoose(self.values, self.name,
+                    self.event, self.args,
+                    self.events, self.current_item)
     UIManager:setDirty(self.config, "partial")
+    return true
+end
+
+function OptionIconItem:onHoldSelect()
+    self.config:onMakeDefault(self.name, self.name_text,
+                    self.values, self.values, self.current_item)
     return true
 end
 
@@ -287,6 +321,8 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
+                    option_item.name_text = self.options[c].name_text
+                    option_item.item_text = self.options[c].item_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
@@ -322,6 +358,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
+                    option_item.name_text = self.options[c].name_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
@@ -340,6 +377,7 @@ function ConfigOption:init()
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
                     name = self.options[c].name,
+                    name_text = self.options[c].name_text,
                     toggle = self.options[c].toggle,
                     alternate = self.options[c].alternate,
                     values = self.options[c].values,
@@ -535,6 +573,16 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         end
         UIManager.repaint_all = true
     end)
+end
+
+function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
+    UIManager:show(ConfirmBox:new{
+        text = _("Set default ")..(name_text or "").." to "..labels[position].."?",
+        ok_callback = function()
+            local name = self.config_options.prefix.."_"..name
+            G_reader_settings:saveSetting(name, values[position])
+        end,
+    })
 end
 
 function ConfigDialog:closeDialog()

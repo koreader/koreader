@@ -291,6 +291,7 @@ end
 function ReaderUI:saveSettings()
     self:handleEvent(Event:new("SaveSettings"))
     self.doc_settings:flush()
+    G_reader_settings:flush()
 end
 
 function ReaderUI:onFlushSettings()

@@ -238,7 +238,8 @@ function ReaderRolling:onGotoViewRel(diff)
         end
         self:gotoPos(self.current_pos + pan_diff)
     elseif self.view.view_mode == "page" then
-        self:gotoPage(self.current_page + diff)
+        local page_count = self.ui.document:getVisiblePageCount()
+        self:gotoPage(self.current_page + diff*page_count)
     end
     return true
 end

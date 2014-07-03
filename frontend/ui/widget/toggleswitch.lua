@@ -74,6 +74,13 @@ function ToggleSwitch:init()
                 },
                 doc = "Toggle switch",
             },
+            HoldSelect = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+                doc = "Hold switch",
+            },
         }
     end
 end
@@ -131,8 +138,18 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.config:onConfigEvents(self.events, self.position)
     end
     --]]
-    self.config:onConfigChoose(self.values, self.name, self.event, self.args, self.events, self.position)
+    self.config:onConfigChoose(self.values, self.name,
+                    self.event, self.args, self.events, self.position)
     UIManager:setDirty(self.config, "partial")
+    return true
+end
+
+function ToggleSwitch:onHoldSelect(arg, gev)
+    local position = math.ceil(
+        (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
+    )
+    self.config:onMakeDefault(self.name, self.name_text,
+                    self.values or self.args, self.toggle, position)
     return true
 end
 
