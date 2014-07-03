@@ -11,8 +11,7 @@ export TESSDATA_PREFIX="data"
 export STARDICT_DATA_DIR="data/dict"
 
 # exit from nickel
-killall nickel
-killall hindenburg
+killall nickel hindenburg fmon
 
 # finally call the launcher
 ./reader.lua /mnt/onboard 2> crash.log
