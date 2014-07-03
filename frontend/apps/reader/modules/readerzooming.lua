@@ -1,9 +1,11 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
+local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local Input = require("ui/input")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -103,10 +105,9 @@ function ReaderZooming:onReadSettings(config)
     -- @TODO config file from old code base uses globalzoom_mode
     -- instead of zoom_mode, we need to handle this imcompatibility
     -- 04.12 2012 (houqp)
-    local zoom_mode = config:readSetting("zoom_mode")
-    if not zoom_mode then
-        zoom_mode = self.DEFAULT_ZOOM_MODE
-    end
+    local zoom_mode = config:readSetting("zoom_mode") or
+                    G_reader_settings:readSetting("zoom_mode") or
+                    self.DEFAULT_ZOOM_MODE
     self:setZoomMode(zoom_mode)
 end
 
@@ -294,36 +295,51 @@ function ReaderZooming:addToMainMenu(tab_item_table)
                 {
                     text = _("Zoom to fit content width"),
                     checked_func = function() return self.zoom_mode == "contentwidth" end,
-                    callback = self:genSetZoomModeCallBack("contentwidth")
+                    callback = self:genSetZoomModeCallBack("contentwidth"),
+                    hold_callback = function() self:makeDefault("contentwidth") end,
                 },
                 {
                     text = _("Zoom to fit content height"),
                     checked_func = function() return self.zoom_mode == "contentheight" end,
-                    callback = self:genSetZoomModeCallBack("contentheight")
+                    callback = self:genSetZoomModeCallBack("contentheight"),
+                    hold_callback = function() self:makeDefault("contentheight") end,
                 },
                 {
                     text = _("Zoom to fit page width"),
                     checked_func = function() return self.zoom_mode == "pagewidth" end,
-                    callback = self:genSetZoomModeCallBack("pagewidth")
+                    callback = self:genSetZoomModeCallBack("pagewidth"),
+                    hold_callback = function() self:makeDefault("pagewidth") end,
                 },
                 {
                     text = _("Zoom to fit page height"),
                     checked_func = function() return self.zoom_mode == "pageheight" end,
-                    callback = self:genSetZoomModeCallBack("pageheight")
+                    callback = self:genSetZoomModeCallBack("pageheight"),
+                    hold_callback = function() self:makeDefault("pageheight") end,
                 },
                 {
                     text = _("Zoom to fit content"),
                     checked_func = function() return self.zoom_mode == "content" end,
-                    callback = self:genSetZoomModeCallBack("content")
+                    callback = self:genSetZoomModeCallBack("content"),
+                    hold_callback = function() self:makeDefault("content") end,
                 },
                 {
                     text = _("Zoom to fit page"),
                     checked_func = function() return self.zoom_mode == "page" end,
-                    callback = self:genSetZoomModeCallBack("page")
+                    callback = self:genSetZoomModeCallBack("page"),
+                    hold_callback = function() self:makeDefault("page") end,
                 },
             }
         })
     end
+end
+
+function ReaderZooming:makeDefault(zoom_mode)
+    UIManager:show(ConfirmBox:new{
+        text = _("Set default zoom mode to \"")..zoom_mode.."\"?",
+        ok_callback = function()
+            G_reader_settings:saveSetting("zoom_mode", zoom_mode)
+        end,
+    })
 end
 
 return ReaderZooming

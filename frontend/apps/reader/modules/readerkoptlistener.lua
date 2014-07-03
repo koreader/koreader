@@ -14,8 +14,12 @@ end
 
 function ReaderKoptListener:onReadSettings(config)
     -- normal zoom mode is zoom mode used in non-reflow mode.
-    self.normal_zoom_mode = config:readSetting("normal_zoom_mode") or "page"
+    self.normal_zoom_mode = config:readSetting("normal_zoom_mode") or
+                    G_reader_settings:readSetting("zoom_mode") or "page"
     self:setZoomMode(self.normal_zoom_mode)
+    self.document.configurable.contrast = config:readSetting("kopt_contrast") or
+                    G_reader_settings:readSetting("kopt_contrast") or 1.0
+    self.ui:handleEvent(Event:new("GammaUpdate", 1/self.document.configurable.contrast))
 end
 
 function ReaderKoptListener:onSaveSettings()
@@ -40,7 +44,7 @@ function ReaderKoptListener:onFineTuningFontSize(delta)
 end
 
 function ReaderKoptListener:onZoomUpdate(zoom)
-    -- an exceptional case is reflow mode 
+    -- an exceptional case is reflow mode
     if self.document.configurable.text_wrap == 1 then
         self.view.state.zoom = 1.0
     end
@@ -48,7 +52,7 @@ end
 
 -- misc koptoption handler
 function ReaderKoptListener:onDocLangUpdate(lang)
-    if lang == "chi_sim" or lang == "chi_tra" or 
+    if lang == "chi_sim" or lang == "chi_tra" or
         lang == "jpn" or lang == "kor" then
         self.document.configurable.word_spacing = DKOPTREADER_CONFIG_WORD_SAPCINGS[1]
     else
