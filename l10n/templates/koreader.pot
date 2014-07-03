@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-01 13:59+0000\n"
+"POT-Creation-Date: 2014-07-03 10:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -42,7 +42,7 @@ msgid ""
 ">>"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:294
+#: frontend/apps/reader/modules/readerhighlight.lua:302
 #: frontend/ui/widget/dictquicklookup.lua:152
 msgid ""
 "Add Note"
@@ -69,7 +69,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
-#: frontend/ui/widget/confirmbox.lua:26
+#: frontend/ui/widget/confirmbox.lua:29
 #: plugins/evernote.koplugin/main.lua:123
 #: plugins/zsync.koplugin/main.lua:254
 msgid ""
@@ -81,7 +81,7 @@ msgid ""
 "Change Hyphenation to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:18
+#: frontend/apps/reader/modules/readerfont.lua:19
 msgid ""
 "Change font"
 msgstr ""
@@ -117,12 +117,12 @@ msgid ""
 "Cut"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:180
+#: frontend/apps/reader/modules/readerfont.lua:184
 msgid ""
 "Decrease gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:150
+#: frontend/apps/reader/modules/readerfont.lua:154
 msgid ""
 "Decrease line space to "
 msgstr ""
@@ -134,7 +134,7 @@ msgstr ""
 
 #: frontend/apps/filemanager/filemanager.lua:111
 #: frontend/apps/filemanager/filemanagerhistory.lua:30
-#: frontend/apps/reader/modules/readerhighlight.lua:186
+#: frontend/apps/reader/modules/readerhighlight.lua:187
 msgid ""
 "Delete"
 msgstr ""
@@ -154,7 +154,7 @@ msgid ""
 "Document menu"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:193
+#: frontend/apps/reader/modules/readerhighlight.lua:194
 msgid ""
 "Edit"
 msgstr ""
@@ -269,7 +269,7 @@ msgid ""
 "Help"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:286
+#: frontend/apps/reader/modules/readerhighlight.lua:294
 #: frontend/ui/widget/dictquicklookup.lua:145
 msgid ""
 "Highlight"
@@ -285,12 +285,12 @@ msgid ""
 "Hyphenation"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:177
+#: frontend/apps/reader/modules/readerfont.lua:181
 msgid ""
 "Increase gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:154
+#: frontend/apps/reader/modules/readerfont.lua:158
 msgid ""
 "Increase line space to "
 msgstr ""
@@ -361,7 +361,7 @@ msgid ""
 "Logout"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:325
+#: frontend/apps/reader/modules/readerhighlight.lua:333
 msgid ""
 "More"
 msgstr ""
@@ -383,7 +383,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
-#: frontend/ui/widget/confirmbox.lua:25
+#: frontend/ui/widget/confirmbox.lua:28
 msgid ""
 "OK"
 msgstr ""
@@ -398,7 +398,7 @@ msgid ""
 "Page"
 msgstr ""
 
-#: frontend/ui/widget/touchmenu.lua:404
+#: frontend/ui/widget/touchmenu.lua:426
 msgid ""
 "Page "
 msgstr ""
@@ -450,7 +450,7 @@ msgid ""
 "Received file:"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:204
+#: frontend/apps/reader/modules/readerfont.lua:208
 msgid ""
 "Redrawing with font "
 msgstr ""
@@ -480,7 +480,22 @@ msgid ""
 "Scroll Mode"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:135
+#: frontend/ui/widget/configdialog.lua:580
+msgid ""
+"Set default "
+msgstr ""
+
+#: frontend/apps/reader/modules/readerfont.lua:223
+msgid ""
+"Set default font \""
+msgstr ""
+
+#: frontend/apps/reader/modules/readerzooming.lua:338
+msgid ""
+"Set default zoom mode to \""
+msgstr ""
+
+#: frontend/apps/reader/modules/readerfont.lua:139
 msgid ""
 "Set font size to "
 msgstr ""
@@ -495,7 +510,7 @@ msgid ""
 "Set render style"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:314
+#: frontend/apps/reader/modules/readerhighlight.lua:322
 msgid ""
 "Share"
 msgstr ""
@@ -535,7 +550,7 @@ msgid ""
 "Suspended"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:292
+#: frontend/apps/reader/modules/readerzooming.lua:293
 msgid ""
 "Switch zoom mode"
 msgstr ""
@@ -550,7 +565,7 @@ msgid ""
 "TBRTL"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertoc.lua:124
+#: frontend/apps/reader/modules/readertoc.lua:153
 msgid ""
 "Table of Contents"
 msgstr ""
@@ -580,7 +595,7 @@ msgid ""
 "Toggle"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:305
+#: frontend/apps/reader/modules/readerhighlight.lua:313
 msgid ""
 "Translate"
 msgstr ""
@@ -632,32 +647,32 @@ msgid ""
 "ZSync"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:315
+#: frontend/apps/reader/modules/readerzooming.lua:320
 msgid ""
 "Zoom to fit content"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:300
+#: frontend/apps/reader/modules/readerzooming.lua:302
 msgid ""
 "Zoom to fit content height"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:295
+#: frontend/apps/reader/modules/readerzooming.lua:296
 msgid ""
 "Zoom to fit content width"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:320
+#: frontend/apps/reader/modules/readerzooming.lua:326
 msgid ""
 "Zoom to fit page"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:310
+#: frontend/apps/reader/modules/readerzooming.lua:314
 msgid ""
 "Zoom to fit page height"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerzooming.lua:305
+#: frontend/apps/reader/modules/readerzooming.lua:308
 msgid ""
 "Zoom to fit page width"
 msgstr ""
@@ -763,7 +778,7 @@ msgid ""
 "no choices available"
 msgstr ""
 
-#: frontend/ui/widget/confirmbox.lua:23
+#: frontend/ui/widget/confirmbox.lua:26
 msgid ""
 "no text"
 msgstr ""
