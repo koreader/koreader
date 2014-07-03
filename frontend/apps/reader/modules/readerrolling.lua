@@ -121,6 +121,28 @@ function ReaderRolling:initGesListener()
                 rate = 4.0,
             }
         },
+        DoubleTapForward = {
+            GestureRange:new{
+                ges = "double_tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x,
+                    y = Screen:getHeight()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
+                    w = Screen:getWidth()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w,
+                    h = Screen:getHeight()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
+                }
+            }
+        },
+        DoubleTapBackward = {
+            GestureRange:new{
+                ges = "double_tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
+                    y = Screen:getHeight()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
+                    w = Screen:getWidth()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.w,
+                    h = Screen:getHeight()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
+                }
+            }
+        },
     }
 end
 
@@ -184,9 +206,17 @@ end
 
 function ReaderRolling:onSwipe(arg, ges)
     if ges.direction == "west" or ges.direction == "north" then
-        self:onGotoViewRel(1)
+        if DCHANGE_WEST_SWIPE_TO_EAST then
+            self:onGotoViewRel(-1)
+        else
+            self:onGotoViewRel(1)
+        end
     elseif ges.direction == "east" or ges.direction == "south" then
-        self:onGotoViewRel(-1)
+        if DCHANGE_EAST_SWIPE_TO_WEST then
+            self:onGotoViewRel(1)
+        else
+            self:onGotoViewRel(-1)
+        end
     end
 end
 
@@ -213,6 +243,22 @@ end
 
 function ReaderRolling:onResume()
     self:updateBatteryState()
+end
+
+function ReaderRolling:onDoubleTapForward()
+		i = self.ui.toc:_getChapterPagesLeft(self.current_page,-1)
+		if i ~= "" then
+        self:onGotoViewRel(i+1)
+    end
+    return true
+end
+
+function ReaderRolling:onDoubleTapBackward()
+		i = self.ui.toc:_getChapterPagesDone(self.current_page)
+		if i ~= "" then
+        self:onGotoViewRel(i)
+    end
+    return true
 end
 
 function ReaderRolling:onNotCharging()
