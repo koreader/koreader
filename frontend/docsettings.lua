@@ -32,23 +32,37 @@ function DocSettings:getNameFromHistory(hist_name)
 end
 
 function DocSettings:open(docfile)
-    local conf_path = nil
+    local history_path = nil
+    local sidecar_path = nil
     if docfile == ".reader" then
         -- we handle reader setting as special case
-        conf_path = "settings.reader.lua"
+        history_path = "settings.reader.lua"
     else
-        if lfs.attributes("./history","mode") ~= "directory" then
+        if lfs.attributes("./history", "mode") ~= "directory" then
             lfs.mkdir("history")
         end
-        conf_path = self:getHistoryPath(docfile)
+        history_path = self:getHistoryPath(docfile)
+
+        local sidecar = docfile:match("(.*)%.")..".sdr"
+        if lfs.attributes(sidecar, "mode") ~= "directory" then
+            lfs.mkdir(sidecar)
+        end
+        sidecar_path = sidecar.."/"..docfile:match(".*%/(.*)")..".lua"
     end
     -- construct settings obj
-    local new = { file = conf_path, data = {} }
-    local ok, stored = pcall(dofile, new.file)
+    local new = {
+        history_file = history_path,
+        sidecar_file = sidecar_path,
+        data = {}
+    }
+    local ok, stored = pcall(dofile, new.history_file)
     if not ok then
-        -- try legacy conf path, for backward compatibility. this also
-        -- takes care of reader legacy setting
-        ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+        ok, stored = pcall(dofile, new.sidecar_file)
+        if not ok then
+            -- try legacy conf path, for backward compatibility. this also
+            -- takes care of reader legacy setting
+            ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+        end
     end
     if ok and stored then
         new.data = stored
@@ -112,18 +126,30 @@ function DocSettings:_serialize(what, outt, indent, max_lv)
 end
 
 function DocSettings:flush()
-    -- write a serialized version of the data table
-    if not self.file then
+    -- write serialized version of the data table into
+    --  i) history directory in root directory of koreader
+    -- ii) sidecar directory in the same directory of the document
+    if not self.history_file and not self.sidecar_file then
         return
     end
-    local f_out = io.open(self.file, "w")
-    if f_out ~= nil then
-        os.setlocale('C', 'numeric')
-        local out = {"-- we can read Lua syntax here!\nreturn "}
-        self:_serialize(self.data, out, 0)
-        table.insert(out, "\n")
-        f_out:write(table.concat(out))
-        f_out:close()
+
+    local serials = {}
+    if self.history_file then
+        table.insert(serials, io.open(self.history_file, "w"))
+    end
+    if self.sidecar_file then
+        table.insert(serials, io.open(self.sidecar_file, "w"))
+    end
+    os.setlocale('C', 'numeric')
+    local out = {"-- we can read Lua syntax here!\nreturn "}
+    self:_serialize(self.data, out, 0)
+    table.insert(out, "\n")
+    local s_out = table.concat(out)
+    for _, f_out in ipairs(serials) do
+        if f_out ~= nil then
+            f_out:write(s_out)
+            f_out:close()
+        end
     end
 end
 
