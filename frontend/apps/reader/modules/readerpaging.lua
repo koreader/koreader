@@ -284,9 +284,17 @@ function ReaderPaging:onSwipe(arg, ges)
     elseif self.page_flipping_mode and self.original_page then
         self:gotoPage(self.original_page)
     elseif ges.direction == "west" then
-        self:onPagingRel(1)
+        if DCHANGE_WEST_SWIPE_TO_EAST then
+            self:onPagingRel(-1)
+        else
+            self:onPagingRel(1)
+        end
     elseif ges.direction == "east" then
-        self:onPagingRel(-1)
+        if DCHANGE_EAST_SWIPE_TO_WEST then
+            self:onPagingRel(1)
+        else
+            self:onPagingRel(-1)
+        end
     else
         UIManager.full_refresh = true
     end
