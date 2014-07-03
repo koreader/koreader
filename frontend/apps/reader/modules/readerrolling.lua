@@ -246,16 +246,16 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onDoubleTapForward()
-		i = self.ui.toc:_getChapterPagesLeft(self.current_page,-1)
-		if i ~= "" then
+    local i = self.ui.toc:_getChapterPagesLeft(self.current_page,-1)
+    if i ~= "" then
         self:onGotoViewRel(i+1)
     end
     return true
 end
 
 function ReaderRolling:onDoubleTapBackward()
-		i = self.ui.toc:_getChapterPagesDone(self.current_page)
-		if i ~= "" then
+    local i = self.ui.toc:_getChapterPagesDone(self.current_page)
+    if i ~= "" then
         self:onGotoViewRel(i)
     end
     return true
@@ -284,8 +284,7 @@ function ReaderRolling:onGotoViewRel(diff)
         end
         self:gotoPos(self.current_pos + pan_diff)
     elseif self.view.view_mode == "page" then
-        local page_count = self.ui.document:getVisiblePageCount()
-        self:gotoPage(self.current_page + diff*page_count)
+        self:gotoPage(self.current_page + diff)
     end
     return true
 end
