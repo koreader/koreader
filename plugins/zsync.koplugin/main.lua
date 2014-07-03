@@ -14,6 +14,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local ltn12 = require("ltn12")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
@@ -158,33 +159,57 @@ local function mklink(path, filename)
     end
 end
 
-function ZSync:getOutboxes(files)
-    lfs.mkdir(self.outbox)
-    clearDirectory(self.outbox)
-    local outboxes = {}
-    for _, filename in ipairs(files) do
-        local mode = lfs.attributes(filename, "mode")
-        if mode == "file" then
-            mklink(self.outbox, filename)
-        elseif mode == "directory" then
-            local basename = filename:match(".*/(.*)") or filename
-            table.insert(outboxes, {
-                path = filename,
-                alias = "/" .. basename,
-            })
+-- add directory directly into outboxes
+function ZSync:outboxesAddDirectory(outboxes, dir)
+    if lfs.attributes(dir, "mode") == "directory" then
+        local basename = dir:match(".*/(.*)") or dir
+        table.insert(outboxes, {
+            path = dir,
+            alias = "/"..basename,
+        })
+    end
+end
+
+-- link file in root outbox
+function ZSync:outboxAddFileLink(filename)
+    local mode = lfs.attributes(filename, "mode")
+    if mode == "file" then
+        mklink(self.outbox, filename)
+    end
+end
+
+-- copy directory content into root outbox(no recursively)
+function ZSync:outboxCopyDirectory(dir)
+    local basename = dir:match(".*/(.*)") or dir
+    local newdir = self.outbox.."/"..basename
+    lfs.mkdir(newdir)
+    if pcall(lfs.dir, dir) then
+        for f in lfs.dir(dir) do
+            local filename = dir.."/"..f
+            if lfs.attributes(filename, "mode") == "file" then
+                local newfile = newdir.."/"..f
+                ltn12.pump.all(
+                    ltn12.source.file(assert(io.open(filename, "rb"))),
+                    ltn12.sink.file(assert(io.open(newfile, "wb")))
+                )
+            end
         end
     end
-    table.insert(outboxes, {
-        path = self.outbox,
-        alias = "/",
-    })
-    return outboxes
 end
 
 function ZSync:publish()
     DEBUG("publish document", self.view.document.file)
+    lfs.mkdir(self.outbox)
+    clearDirectory(self.outbox)
     local file = self.view.document.file
-    local outboxes = self:getOutboxes({file})
+    local sidecar = file:match("(.*)%.")..".sdr"
+    self:outboxAddFileLink(file)
+    self:outboxCopyDirectory(sidecar)
+    local outboxes = {}
+    table.insert(outboxes, {
+        path = self.outbox,
+        alias = "/",
+    })
     -- init filemq first to get filemq port
     self:initServerFileMQ(outboxes)
     self:initServerZyreMQ()
