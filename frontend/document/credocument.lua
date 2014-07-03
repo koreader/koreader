@@ -361,6 +361,10 @@ function CreDocument:setFloatingPunctuation(enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end
 
+function CreDocument:getVisiblePageCount()
+    return self._document:getVisiblePageCount()
+end
+
 function CreDocument:setVisiblePageCount(new_count)
     DEBUG("CreDocument: set visible page count", new_count)
     self._document:setVisiblePageCount(new_count)
