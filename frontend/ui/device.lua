@@ -70,7 +70,7 @@ function Device:getModel()
     else
         local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
         if kg_test_fd then
-            local std_out = io.popen("/bin/kobo_config.sh", "r")
+            local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "r")
             local codename = std_out:read()
             self.model = "Kobo_" .. codename
             local version_file = io.open("/mnt/onboard/.kobo/version", "r")
