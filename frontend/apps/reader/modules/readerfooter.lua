@@ -134,9 +134,9 @@ function ReaderFooter:updateFooterPage()
     else
         if self.mode == 1 then 
             self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
-        end if self.mode == 2 then 
+        elseif self.mode == 2 then 
             self.progress_text.text = os.date("%H:%M")
-        end if self.mode == 3 then 
+        elseif self.mode == 3 then 
             self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
         end 
     end
