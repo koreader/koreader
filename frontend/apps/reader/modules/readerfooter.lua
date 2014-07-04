@@ -44,6 +44,9 @@ function ReaderFooter:init()
     	if DMINIBAR_NEXT_CHAPTER then
 		    progress_text_default = progress_text_default .. " | => 000"
     	end
+    	if DMINIBAR_BATTERY then
+		    progress_text_default = progress_text_default .. " | B:100%"
+    	end
     	progress_text_default = string.sub(progress_text_default,4)
     else
     	progress_text_default = "0000 / 0000"
@@ -117,10 +120,18 @@ function ReaderFooter:fillToc()
 end
 
 function ReaderFooter:updateFooterPage()
+    local powerd
+    local state
+
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
     if DMINIBAR_ALL_AT_ONCE then
         self.progress_text.text = ""
+        if DMINIBAR_NEXT_CHAPTER then
+            powerd = Device:getPowerDevice()
+            state = powerd:isCharging() and -1 or powerd:getCapacity()
+            self.progress_text.text = self.progress_text.text .. " | B:" .. powerd:getCapacity() .. "%"
+        end
         if DMINIBAR_TIME then
             self.progress_text.text = self.progress_text.text .. " | " .. os.date("%H:%M")
         end
@@ -138,8 +149,13 @@ function ReaderFooter:updateFooterPage()
             self.progress_text.text = os.date("%H:%M")
         elseif self.mode == 3 then 
             self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+        elseif self.mode == 4 then 
+            powerd = Device:getPowerDevice()
+            state = powerd:isCharging() and -1 or powerd:getCapacity()
+            self.progress_text.text = "B:" .. powerd:getCapacity() .. "%"
         end 
     end
+
 end
 
 function ReaderFooter:updateFooterPos()
@@ -172,6 +188,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 1 for footer page info
     -- 2 for footer time info
     -- 3 for footer next_chapter info
+    -- 4 for battery status
     if mode ~= nil then self.mode = mode end
     if self.mode == 0 then
         self.view.footer_visible = false
@@ -199,7 +216,7 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        self.mode = (self.mode + 1) % 4
+        self.mode = (self.mode + 1) % 5
         if DMINIBAR_ALL_AT_ONCE and (self.mode > 1) then
             self.mode = 0
         end
@@ -210,6 +227,9 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.mode = 3
         end
         if (self.mode == 3) and not DMINIBAR_NEXT_CHAPTER then
+            self.mode = 4
+        end
+        if (self.mode == 4) and not DMINIBAR_BATTERY then
             self.mode = 0
         end
         self:applyFooterMode()
