@@ -34,8 +34,12 @@ logmsg()
 # Keep track of what we do with pillow...
 PILLOW_DISABLED="no"
 
+# Keep track of if we were started through KUAL
+FROM_KUAL="no"
+
 # Detect if we were started by KUAL by checking our nice value...
 if [ "$(nice)" == "5" ] ; then
+	FROM_KUAL="yes"
 	# Yield a bit to let stuff stop properly...
 	logmsg "Hush now . . ."
 	# NOTE: This may or may not be terribly useful...
@@ -120,8 +124,14 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 		# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
 		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
 		PILLOW_DISABLED="yes"
-		# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing pillow/the chrome bar
+		# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing the title bar
 		usleep 250000
+		# NOTE: If we were started from KUAL, we risk getting a list item to popup right over us, so, wait some more...
+		# The culprit appears to be a I WindowManager:flashTimeoutExpired:window=Root 0 0 600x30
+		if [ "${FROM_KUAL}" == "yes" ] ; then
+			logmsg "Playing possum to wait for the window manager . . ."
+			usleep 2500000
+		fi
 	fi
 fi
 
