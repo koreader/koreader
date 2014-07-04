@@ -577,7 +577,7 @@ end
 
 function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
     UIManager:show(ConfirmBox:new{
-        text = _("Set default ")..(name_text or "").." to "..labels[position].."?",
+        text = _("Set default ")..(name_text or "").._(" to ")..labels[position].."?",
         ok_callback = function()
             local name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])

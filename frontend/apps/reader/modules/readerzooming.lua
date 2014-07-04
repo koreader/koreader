@@ -335,7 +335,7 @@ end
 
 function ReaderZooming:makeDefault(zoom_mode)
     UIManager:show(ConfirmBox:new{
-        text = _("Set default zoom mode to \"")..zoom_mode.."\"?",
+        text = _("Set default zoom mode to ")..zoom_mode.."?",
         ok_callback = function()
             G_reader_settings:saveSetting("zoom_mode", zoom_mode)
         end,
