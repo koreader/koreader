@@ -30,6 +30,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Device = require("ui/device")
+local KindlePowerD = require("ui/device/kindlepowerd")
+local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 
@@ -41,6 +43,10 @@ function exitReader()
     G_reader_settings:close()
 
     input.closeAll()
+
+    -- Close lipc handles
+    KindlePowerD:coda()
+    ReaderActivityIndicator:coda()
 
     if not util.isEmulated() then
         if Device:isKindle3() or (Device:getModel() == "KindleDXG") then

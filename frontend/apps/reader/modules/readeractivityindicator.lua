@@ -45,4 +45,10 @@ function ReaderActivityIndicator:onStopActivityIndicator()
     return true
 end
 
+function ReaderActivityIndicator:coda()
+    if self.lipc_handle then
+        self.lipc_handle:close()
+    end
+end
+
 return ReaderActivityIndicator
