@@ -39,7 +39,7 @@ if [ "$(nice)" == "5" ] ; then
 	# Yield a bit to let stuff stop properly...
 	logmsg "Hush now . . ."
 	# NOTE: This may or may not be terribly useful...
-	sleep 1
+	usleep 250000
 
 	# Kindlet threads spawn with a nice value of 5, we aim for the same -2 as the KF8 reader
 	logmsg "Be nice!"
@@ -102,8 +102,8 @@ if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
 		# The framework job sends a SIGTERM on stop, trap it so we don't get killed if we were launched by KUAL
 		trap "" SIGTERM
 		stop lab126_gui
-		# Let things lie a bit so that we don't hit the black screen of no X ;).
-		sleep 2
+		# NOTE: Let the framework teardown finish, so we don't start before the black screen...
+		usleep 1250000
 		# And remove the trap like a ninja now!
 		trap - SIGTERM
 	fi
@@ -114,11 +114,14 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
 	if [ "$count" == "" -o "$count" == "0" ] ; then
-		logmsg "Disabling pillow . . ."
-		lipc-set-prop com.lab126.pillow disableEnablePillow disable
+		#logmsg "Disabling pillow . . ."
+		#lipc-set-prop com.lab126.pillow disableEnablePillow disable
+		logmsg "Hiding the status bar . . ."
+		# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
+		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
 		PILLOW_DISABLED="yes"
-		# NOTE: This may or may not be terribly useful...
-		sleep 1
+		# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing pillow/the chrome bar
+		usleep 250000
 	fi
 fi
 
@@ -176,8 +179,12 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	# Only if we actually killed it...
 	if [ "${PILLOW_DISABLED}" == "yes" ] ; then
-		logmsg "Enabling pillow . . ."
-		lipc-set-prop com.lab126.pillow disableEnablePillow enable
+		#logmsg "Enabling pillow . . ."
+		#lipc-set-prop com.lab126.pillow disableEnablePillow enable
+		logmsg "Restoring the status bar . . ."
+		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
+		# Poke the search bar too, so that we get a proper refresh ;)
+		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "search_bar", "function": "nativeBridge.hideMe(); nativeBridge.showMe();"}'
 	fi
 fi
 
