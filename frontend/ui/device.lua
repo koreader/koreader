@@ -11,6 +11,7 @@ local Device = {
     screen_saver_mode = false,
     charging_mode = false,
     survive_screen_saver = false,
+    is_special_offers = nil,
     touch_dev = nil,
     model = nil,
     firmware_rev = nil,
@@ -40,7 +41,7 @@ function Device:getModel()
     if kindle_sn then
         local kindle_devcode = string.sub(kindle_sn:read(),3,4)
         kindle_sn:close()
-        -- NOTE: Update me when new models come out :)
+        -- NOTE: Update me when new devices come out :)
         local k2_set = Set { "02", "03" }
         local dx_set = Set { "04", "05" }
         local dxg_set = Set { "09" }
@@ -48,7 +49,7 @@ function Device:getModel()
         local k4_set = Set { "0E", "23" }
         local touch_set = Set { "0F", "11", "10", "12" }
         local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
-        local pw2_set = Set { "D4", "5A", "D5", "D7", "D8", "F2" }
+        local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2" }
 
         if k2_set[kindle_devcode] then
             self.model = "Kindle2"
@@ -263,6 +264,28 @@ function Device:getPowerDevice()
         end
     end
     return self.powerd
+end
+
+function Device:isSpecialOffers()
+    if self.is_special_offers ~= nil then return self.is_special_offers end
+    -- K5 only
+    if self:isTouchDevice() and self:isKindle() then
+        -- Look at the current blanket modules to see if the SO screensavers are enabled...
+        local lipc = require("liblipclua")
+        local lipc_handle = nil
+        if lipc then
+            lipc_handle = lipc.init("com.github.koreader.device")
+        end
+        if lipc_handle then
+            local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
+            if string.find(loaded_blanket_modules, "ad_screensaver") then
+                self.is_special_offers = true
+            end
+            lipc_handle:close()
+        else
+        end
+    end
+    return self.is_special_offers
 end
 
 return Device

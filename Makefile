@@ -101,10 +101,14 @@ kindleupdate: all
 	ln -sf ../kindle/launchpad $(INSTALL_DIR)/
 	ln -sf ../../kindle/koreader.sh $(INSTALL_DIR)/koreader
 	# create new package
+	# Don't bundle launchpad on touch devices..
+ifeq ($(TARGET), kindle-legacy)
+	KINDLE_LEGACY_LAUNCHER:=launchpad
+endif
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
-			extensions koreader launchpad \
+			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \
 			-x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
 	# @TODO write an installation script for KUAL   (houqp)

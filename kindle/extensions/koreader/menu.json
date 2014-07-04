@@ -1,30 +1,30 @@
 {
 	"items": [
 	{
-		"name": "Koreader",
+		"name": "KOReader",
 		"priority": 0,
 		"items": [
 		{
 			"name": "Start the filemanager",
 			"priority": 1,
-			"action": "nice -n -7 /mnt/us/koreader/koreader.sh",
+			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "/mnt/us/documents"
 		},
 		{
 			"name": "Open the last document",
 			"priority": 2,
-			"action": "nice -n -7 /mnt/us/koreader/koreader.sh"
+			"action": "/mnt/us/koreader/koreader.sh"
 		},
 		{
 			"name": "Start the filemanager (no framework)",
 			"priority": 3,
-			"action": "nice -n -7 /mnt/us/koreader/koreader.sh",
+			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--framework_stop /mnt/us/documents"
 		},
 		{
 			"name": "Open the last document (no framework)",
 			"priority": 4,
-			"action": "nice -n -7 /mnt/us/koreader/koreader.sh",
+			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--framework_stop"
 		}
 		]
