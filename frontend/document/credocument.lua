@@ -121,7 +121,7 @@ function CreDocument:loadDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
     end
-    if Device:getModel() ~= "KindleDXG" then
+    if math.max(Screen:getWidth(), Screen:getHeight())/Screen:getDPI() < 7 then
         self:setVisiblePageCount(1)
     end
 end
