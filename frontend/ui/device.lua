@@ -40,7 +40,7 @@ function Device:getModel()
     if kindle_sn then
         local kindle_devcode = string.sub(kindle_sn:read(),3,4)
         kindle_sn:close()
-        -- NOTE: Update me when new models come out :)
+        -- NOTE: Update me when new devices come out :)
         local k2_set = Set { "02", "03" }
         local dx_set = Set { "04", "05" }
         local dxg_set = Set { "09" }
@@ -48,7 +48,7 @@ function Device:getModel()
         local k4_set = Set { "0E", "23" }
         local touch_set = Set { "0F", "11", "10", "12" }
         local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
-        local pw2_set = Set { "D4", "5A", "D5", "D7", "D8", "F2" }
+        local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2" }
 
         if k2_set[kindle_devcode] then
             self.model = "Kindle2"
