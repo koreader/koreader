@@ -11,6 +11,7 @@ local Device = {
     screen_saver_mode = false,
     charging_mode = false,
     survive_screen_saver = false,
+    is_special_offers = nil,
     touch_dev = nil,
     model = nil,
     firmware_rev = nil,
@@ -263,6 +264,28 @@ function Device:getPowerDevice()
         end
     end
     return self.powerd
+end
+
+function Device:isSpecialOffers()
+    if self.is_special_offers ~= nil then return self.is_special_offers end
+    -- K5 only
+    if self:isTouchDevice() and self:isKindle() then
+        -- Look at the current blanket modules to see if the SO screensavers are enabled...
+        local lipc = require("liblipclua")
+        local lipc_handle = nil
+        if lipc then
+            lipc_handle = lipc.init("com.github.koreader.device")
+        end
+        if lipc_handle then
+            local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
+            if string.find(loaded_blanket_modules, "ad_screensaver") then
+                self.is_special_offers = true
+            end
+            lipc_handle:close()
+        else
+        end
+    end
+    return self.is_special_offers
 end
 
 return Device
