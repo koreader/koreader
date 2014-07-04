@@ -121,7 +121,7 @@ DMINIBAR_ALL_AT_ONCE = false
 DMINIBAR_TIME = true
 DMINIBAR_PAGES = true
 DMINIBAR_NEXT_CHAPTER = true
-
+DMINIBAR_BATTERY = true
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
