@@ -220,7 +220,7 @@ end
 function ReaderFont:makeDefault(face)
     if face then
         UIManager:show(ConfirmBox:new{
-            text = _("Set default font \"")..face.."\"?",
+            text = _("Set default font to ")..face.."?",
             ok_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
             end,
