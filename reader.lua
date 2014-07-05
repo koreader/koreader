@@ -30,8 +30,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Device = require("ui/device")
-local KindlePowerD = require("ui/device/kindlepowerd")
-local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 
@@ -40,6 +38,9 @@ local ReaderUI = require("apps/reader/readerui")
 local Profiler = nil
 
 function exitReader()
+    local KindlePowerD = require("ui/device/kindlepowerd")
+    local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+
     G_reader_settings:close()
 
     input.closeAll()
