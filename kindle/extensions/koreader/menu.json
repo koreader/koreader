@@ -26,6 +26,18 @@
 			"priority": 4,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--framework_stop"
+		},
+		{
+			"name": "Start the filemanager (ASAP)",
+			"priority": 5,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--asap /mnt/us/documents"
+		},
+		{
+			"name": "Open the last document (ASAP)",
+			"priority": 6,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--asap"
 		}
 		]
 	}

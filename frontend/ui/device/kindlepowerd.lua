@@ -8,7 +8,7 @@ local KindlePowerD = BasePowerD:new{
     kt_kpw_capacity = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
     kpw_charging = "/sys/devices/platform/aplite_charger.0/charging",
     kt_charging = "/sys/devices/platform/fsl-usb2-udc/charging",
-    
+
     flIntensity = nil,
     battCapacity = nil,
     is_charging = nil,
@@ -26,9 +26,9 @@ end
 function KindlePowerD:init(model)
     local lipc = require("liblipclua")
     if lipc then
-        self.lipc_handle = lipc.init("com.github.koreader")
+        self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
-    
+
     if model == "KindleTouch" then
         self.batt_capacity_file = self.kt_kpw_capacity
         self.is_charging_file = self.kt_charging
@@ -81,6 +81,12 @@ function KindlePowerD:isChargingHW()
         self.is_charging = self:read_int_file(self.is_charging_file)
     end
     return self.is_charging == 1
+end
+
+function KindlePowerD:coda()
+    if self.lipc_handle then
+        self.lipc_handle:close()
+    end
 end
 
 return KindlePowerD

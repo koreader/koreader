@@ -38,9 +38,16 @@ local ReaderUI = require("apps/reader/readerui")
 local Profiler = nil
 
 function exitReader()
+    local KindlePowerD = require("ui/device/kindlepowerd")
+    local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+
     G_reader_settings:close()
 
     input.closeAll()
+
+    -- Close lipc handles
+    KindlePowerD:coda()
+    ReaderActivityIndicator:coda()
 
     if not util.isEmulated() then
         if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
