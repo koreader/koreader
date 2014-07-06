@@ -353,6 +353,19 @@ function UIManager:run()
             elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
                 refresh_type = 1
             end
+            -- Emulate the Kindle behavior...
+            if Device:isKindle() then
+                -- NOTE: For ref, on a Touch (debugPaint is my new best friend):
+                -- UI: gc16_fast
+                -- Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
+                if refresh_type == 1 then
+                    -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the best q.
+                    waveform_mode = WAVEFORM_MODE_GC16
+                else
+                    -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
+                    waveform_mode = WAVEFORM_MODE_GL16_FAST
+                end
+            end
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
