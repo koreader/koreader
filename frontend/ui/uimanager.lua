@@ -367,7 +367,7 @@ function UIManager:run()
                 -- On a PW2:
                 -- Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
                 if refresh_type == 1 then
-                    -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the best q.
+                    -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
                     waveform_mode = WAVEFORM_MODE_GC16
                 else
                     -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
