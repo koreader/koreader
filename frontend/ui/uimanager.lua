@@ -38,9 +38,9 @@ local UIManager = {
     -- force to do full refresh, will be reset to false
     -- after each ui loop
     full_refresh = false,
-    -- force to do patial refresh, will be reset to false
+    -- force to do partial refresh, will be reset to false
     -- after each ui loop
-    patial_refresh = false,
+    partial_refresh = false,
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT = DRCOUNTMAX,
     refresh_count = 0,
@@ -311,7 +311,7 @@ function UIManager:run()
         local dirty = false
         local request_full_refresh = false
         local force_full_refresh = false
-        local force_patial_refresh = false
+        local force_partial_refresh = false
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
@@ -325,7 +325,7 @@ function UIManager:run()
                     force_full_refresh = true
                 end
                 if self._dirty[widget.widget] == "partial" then
-                    force_patial_refresh = true
+                    force_partial_refresh = true
                 end
                 if self._dirty[widget.widget] == "fast" then
                     force_fast_refresh = true
@@ -342,19 +342,19 @@ function UIManager:run()
             force_full_refresh = true
         end
 
-        if self.patial_refresh then
+        if self.partial_refresh then
             dirty = true
-            force_patial_refresh = true
+            force_partial_refresh = true
         end
 
         self.repaint_all = false
         self.full_refresh = false
-        self.patial_refresh = false
+        self.partial_refresh = false
 
         local refresh_type = self.default_refresh_type
         local waveform_mode = self.default_waveform_mode
         if dirty then
-            if force_patial_refresh or force_fast_refresh then
+            if force_partial_refresh or force_fast_refresh then
                 refresh_type = 0
             elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
                 refresh_type = 1
@@ -392,7 +392,7 @@ function UIManager:run()
             end
             if self.refresh_type == 1 then
                 self.refresh_count = 0
-            elseif not force_patial_refresh and not force_full_refresh then
+            elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
             end
             self.update_region_func = nil
