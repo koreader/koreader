@@ -19,9 +19,12 @@ local WAVEFORM_MODE_GC16_FAST   = 0x3    -- Medium fidelity
 local WAVEFORM_MODE_A2          = 0x4    -- Faster but even lower fidelity
 local WAVEFORM_MODE_GL16        = 0x5    -- High fidelity from white transition
 local WAVEFORM_MODE_GL16_FAST   = 0x6    -- Medium fidelity from white transition
+-- Kindle FW >= 5.3
 local WAVEFORM_MODE_DU4         = 0x7    -- Medium fidelity 4 level of gray direct update
+-- Kindle PW2
 local WAVEFORM_MODE_REAGL       = 0x8    -- Ghost compensation waveform
 local WAVEFORM_MODE_REAGLD      = 0x9    -- Ghost compensation waveform with dithering
+
 local WAVEFORM_MODE_AUTO        = 0x101
 
 -- there is only one instance of this
@@ -362,7 +365,7 @@ function UIManager:run()
                 -- UI: gc16_fast
                 -- Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
                 -- On a PW2:
-                -- Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer; Always waits for marker
+                -- Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
                 if refresh_type == 1 then
                     -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the best q.
                     waveform_mode = WAVEFORM_MODE_GC16
