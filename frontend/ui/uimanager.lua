@@ -375,6 +375,8 @@ function UIManager:run()
                         waveform_mode = WAVEFORM_MODE_REAGL
                     else
                         waveform_mode = WAVEFORM_MODE_GL16_FAST
+                        -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also use WAVEFORM_MODE_AUTO ;). I have *no* idea how the driver makes its choice though...
+                        --waveform_mode = WAVEFORM_MODE_AUTO
                     end
                 end
             end
