@@ -33,6 +33,8 @@ local UIManager = {
     default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
     default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
     fast_waveform_mode = WAVEFORM_MODE_A2,
+    full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
+    partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -142,6 +144,24 @@ function UIManager:init()
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
             self:sendEvent(Event:new("NotCharging"))
+        end
+        -- Emulate the stock reader refresh behavior...
+        --[[
+            NOTE: For ref, on a Touch (debugPaint is my new best friend):
+                UI: gc16_fast
+                Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
+            On a PW2:
+                Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
+        --]]
+        -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
+        self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
+        -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
+        if Device:getModel() == "KindlePaperWhite2" then
+            self.partial_refresh_waveform_mode = WAVEFORM_MODE_REAGL
+        else
+            self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
+            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also use WAVEFORM_MODE_AUTO ;). I have *no* idea how the driver makes its choice though...
+            --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
         end
     end
 end
@@ -360,26 +380,11 @@ function UIManager:run()
             elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
                 refresh_type = 1
             end
-            -- Emulate the Kindle behavior...
-            if Device:isKindle() then
-                -- NOTE: For ref, on a Touch (debugPaint is my new best friend):
-                -- UI: gc16_fast
-                -- Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
-                -- On a PW2:
-                -- Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
-                if refresh_type == 1 then
-                    -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
-                    waveform_mode = WAVEFORM_MODE_GC16
-                else
-                    -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
-                    if Device:getModel() == "KindlePaperWhite2" then
-                        waveform_mode = WAVEFORM_MODE_REAGL
-                    else
-                        waveform_mode = WAVEFORM_MODE_GL16_FAST
-                        -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also use WAVEFORM_MODE_AUTO ;). I have *no* idea how the driver makes its choice though...
-                        --waveform_mode = WAVEFORM_MODE_AUTO
-                    end
-                end
+            -- Handle the waveform mode selection...
+            if refresh_type == 1 then
+                waveform_mode = self.full_refresh_waveform_mode
+            else
+                waveform_mode = self.partial_refresh_waveform_mode
             end
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
