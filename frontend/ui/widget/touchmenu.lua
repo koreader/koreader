@@ -7,6 +7,7 @@ local Font = require("ui/font")
 local TextWidget = require("ui/widget/textwidget")
 local LineWidget = require("ui/widget/linewidget")
 local Screen = require("ui/screen")
+local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -428,7 +429,7 @@ function TouchMenu:updateItems()
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
-    self.time_info.text = os.date("%H:%M")
+    self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
     -- FIXME: this is a dirty hack to clear previous menus
     -- refert to issue #664
     UIManager.repaint_all = true
