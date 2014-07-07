@@ -4,7 +4,7 @@ local BasePowerD = {
     flIntensity = nil,   -- frontlight intensity
     battCapacity = nil,  -- battery capacity
     model = nil,     -- device model
-    
+
     capacity_pulled_count = 0,
     capacity_cached_count = 10,
 }
@@ -49,11 +49,11 @@ end
 
 
 function BasePowerD:getCapacity()
-    if capacity_pulled_count == capacity_cached_count then
-        capacity_pulled_count = 0
+    if self.capacity_pulled_count == self.capacity_cached_count then
+        self.capacity_pulled_count = 0
         return self:getCapacityHW()
     else
-        capacity_pulled_count = capacity_pulled_count + 1
+        self.capacity_pulled_count = self.capacity_pulled_count + 1
         return self.battCapacity or self:getCapacityHW()
     end
 end
