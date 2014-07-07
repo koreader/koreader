@@ -11,6 +11,7 @@ Screen:init()
 -- initialize the input handling
 Input:init()
 
+-- NOTE: Those have been confirmed on Kindle devices. Might be completely different on Kobo (except for AUTO)!
 local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
 local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
 local WAVEFORM_MODE_GC16        = 0x2    -- High fidelity (flashing)
