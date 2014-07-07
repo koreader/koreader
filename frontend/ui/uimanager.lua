@@ -19,6 +19,12 @@ local WAVEFORM_MODE_GC16_FAST   = 0x3    -- Medium fidelity
 local WAVEFORM_MODE_A2          = 0x4    -- Faster but even lower fidelity
 local WAVEFORM_MODE_GL16        = 0x5    -- High fidelity from white transition
 local WAVEFORM_MODE_GL16_FAST   = 0x6    -- Medium fidelity from white transition
+-- Kindle FW >= 5.3
+local WAVEFORM_MODE_DU4         = 0x7    -- Medium fidelity 4 level of gray direct update
+-- Kindle PW2
+local WAVEFORM_MODE_REAGL       = 0x8    -- Ghost compensation waveform
+local WAVEFORM_MODE_REAGLD      = 0x9    -- Ghost compensation waveform with dithering
+
 local WAVEFORM_MODE_AUTO        = 0x101
 
 -- there is only one instance of this
@@ -32,9 +38,9 @@ local UIManager = {
     -- force to do full refresh, will be reset to false
     -- after each ui loop
     full_refresh = false,
-    -- force to do patial refresh, will be reset to false
+    -- force to do partial refresh, will be reset to false
     -- after each ui loop
-    patial_refresh = false,
+    partial_refresh = false,
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT = DRCOUNTMAX,
     refresh_count = 0,
@@ -305,7 +311,7 @@ function UIManager:run()
         local dirty = false
         local request_full_refresh = false
         local force_full_refresh = false
-        local force_patial_refresh = false
+        local force_partial_refresh = false
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
@@ -319,7 +325,7 @@ function UIManager:run()
                     force_full_refresh = true
                 end
                 if self._dirty[widget.widget] == "partial" then
-                    force_patial_refresh = true
+                    force_partial_refresh = true
                 end
                 if self._dirty[widget.widget] == "fast" then
                     force_fast_refresh = true
@@ -336,22 +342,43 @@ function UIManager:run()
             force_full_refresh = true
         end
 
-        if self.patial_refresh then
+        if self.partial_refresh then
             dirty = true
-            force_patial_refresh = true
+            force_partial_refresh = true
         end
 
         self.repaint_all = false
         self.full_refresh = false
-        self.patial_refresh = false
+        self.partial_refresh = false
 
         local refresh_type = self.default_refresh_type
         local waveform_mode = self.default_waveform_mode
         if dirty then
-            if force_patial_refresh or force_fast_refresh then
+            if force_partial_refresh or force_fast_refresh then
                 refresh_type = 0
             elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
                 refresh_type = 1
+            end
+            -- Emulate the Kindle behavior...
+            if Device:isKindle() then
+                -- NOTE: For ref, on a Touch (debugPaint is my new best friend):
+                -- UI: gc16_fast
+                -- Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
+                -- On a PW2:
+                -- Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
+                if refresh_type == 1 then
+                    -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
+                    waveform_mode = WAVEFORM_MODE_GC16
+                else
+                    -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
+                    if Device:getModel() == "KindlePaperWhite2" then
+                        waveform_mode = WAVEFORM_MODE_REAGL
+                    else
+                        waveform_mode = WAVEFORM_MODE_GL16_FAST
+                        -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also use WAVEFORM_MODE_AUTO ;). I have *no* idea how the driver makes its choice though...
+                        --waveform_mode = WAVEFORM_MODE_AUTO
+                    end
+                end
             end
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
@@ -367,7 +394,7 @@ function UIManager:run()
             end
             if self.refresh_type == 1 then
                 self.refresh_count = 0
-            elseif not force_patial_refresh and not force_full_refresh then
+            elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
             end
             self.update_region_func = nil
