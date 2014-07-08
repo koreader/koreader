@@ -21,7 +21,7 @@ function BasePowerD:init() end
 function BasePowerD:toggleFrontlight() end
 function BasePowerD:setIntensityHW() end
 function BasePowerD:setIntensitySW() end
-function BasePowerD:getCapacityHW() end
+function BasePowerD:getCapacityHW() return "0" end
 function BasePowerD:isChargingHW() end
 function BasePowerD:suspendHW() end
 function BasePowerD:wakeUpHW() end
