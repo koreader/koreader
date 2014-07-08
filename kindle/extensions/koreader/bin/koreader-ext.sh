@@ -193,6 +193,16 @@ cre_nohinting()
 	set_cre_prop "font.hinting.mode" "0"
 }
 
+# Handle CRe's font.kerning.enabled
+cre_kerning()
+{
+	set_cre_prop "font.kerning.enabled" "1"
+}
+cre_nokerning()
+{
+	set_cre_prop "font.kerning.enabled" "0"
+}
+
 
 ## Main
 case "${1}" in
@@ -209,6 +219,12 @@ case "${1}" in
 		${1}
 	;;
 	"cre_nohinting" )
+		${1}
+	;;
+	"cre_kerning" )
+		${1}
+	;;
+	"cre_nokerning" )
 		${1}
 	;;
 	* )

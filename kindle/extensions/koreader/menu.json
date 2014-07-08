@@ -109,6 +109,28 @@
 				"refresh": false,
 				"status": false,
 				"internal": "status Setup CRe to forgo font hinting"
+			},
+			{
+				"name": "Enable CRe font kerning",
+				"priority": 6,
+				"action": "./bin/koreader-ext.sh",
+				"params": "cre_kerning",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Setup CRe to enable kerning"
+			},
+			{
+				"name": "Disable CRe font kerning",
+				"priority": 7,
+				"action": "./bin/koreader-ext.sh",
+				"params": "cre_nokerning",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Setup CRe to disable kerning"
 			}
 			]
 		}
