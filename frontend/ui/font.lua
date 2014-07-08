@@ -4,18 +4,18 @@ local DEBUG = require("dbg")
 local Font = {
     fontmap = {
         -- default font for menu contents
-        cfont = "droid/DroidSans.ttf",
+        cfont = "noto/NotoSans-Regular.ttf",
         -- default font for title
         --tfont = "NimbusSanL-BoldItal.cff",
-        tfont = "droid/DroidSans.ttf",
+        tfont = "noto/NotoSans-Bold.ttf",
         -- default font for footer
-        ffont = "droid/DroidSans.ttf",
+        ffont = "noto/NotoSans-Regular.ttf",
 
         -- default font for reading position info
-        rifont = "droid/DroidSans.ttf",
+        rifont = "noto/NotoSans-Regular.ttf",
 
         -- default font for pagination display
-        pgfont = "droid/DroidSans.ttf",
+        pgfont = "noto/NotoSans-Regular.ttf",
 
         -- selectmenu: font for item shortcut
         scfont = "droid/DroidSansMono.ttf",
@@ -23,19 +23,20 @@ local Font = {
         -- help page: font for displaying keys
         hpkfont = "droid/DroidSansMono.ttf",
         -- font for displaying help messages
-        hfont = "droid/DroidSans.ttf",
+        hfont = "noto/NotoSans-Regular.ttf",
 
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
         infont = "droid/DroidSansMono.ttf",
 
         -- font for info messages
-        infofont = "droid/DroidSans.ttf",
+        infofont = "noto/NotoSans-Regular.ttf",
     },
     fallbacks = {
         [1] = "droid/DroidSansFallback.ttf",
-        [2] = "droid/DroidSans.ttf",
-        [3] = "freefont/FreeSans.ttf",
+        [2] = "noto/NotoSans-Regular.ttf",
+        [3] = "droid/DroidSans.ttf",
+        [4] = "freefont/FreeSans.ttf",
     },
 
     fontdir = os.getenv("FONTDIR") or "./fonts",

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension>
 	<information>
-		<name>Koreader</name>
-		<version>0.1</version>
-		<author>Koreader dev team</author>
-		<id>helper</id>
+		<name>KOReader</name>
+		<version>0.2</version>
+		<author>KOReader Dev Team</author>
+		<id>KOReader</id>
 	</information>
 	<menus>
 		<menu type="json" dynamic="true">menu.json</menu>
