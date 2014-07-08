@@ -8,36 +8,109 @@
 			"name": "Start the filemanager",
 			"priority": 1,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "/mnt/us/documents"
+			"params": "/mnt/us/documents",
+			"status": false,
+			"internal": "status Start KOReader on the File Manager"
 		},
 		{
 			"name": "Open the last document",
 			"priority": 2,
-			"action": "/mnt/us/koreader/koreader.sh"
+			"action": "/mnt/us/koreader/koreader.sh",
+			"status": false,
+			"internal": "status Start KOReader on the last document"
 		},
 		{
 			"name": "Start the filemanager (no framework)",
 			"priority": 3,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--framework_stop /mnt/us/documents"
+			"params": "--framework_stop /mnt/us/documents",
+			"status": false,
+			"internal": "status Kill the framework and start KOReader's FM"
 		},
 		{
 			"name": "Open the last document (no framework)",
 			"priority": 4,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--framework_stop"
+			"params": "--framework_stop",
+			"status": false,
+			"internal": "status Kill the framework and start KOReader"
 		},
 		{
 			"name": "Start the filemanager (ASAP)",
 			"priority": 5,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--asap /mnt/us/documents"
+			"params": "--asap /mnt/us/documents",
+			"status": false,
+			"internal": "status Start KOreader on the File Manager ASAP"
 		},
 		{
 			"name": "Open the last document (ASAP)",
 			"priority": 6,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--asap"
+			"params": "--asap",
+			"status": false,
+			"internal": "status Start KOreader on the last document ASAP"
+		},
+		{
+			"name": "Tools",
+			"priority": 7,
+			"items": [
+			{
+				"name": "Update KOReader",
+				"priority": 1,
+				"action": "./bin/koreader-ext.sh",
+				"params": "update_koreader",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Try to update KOReader . . ."
+			},
+			{
+				"name": "Clean Install of KOReader",
+				"priority": 2,
+				"action": "./bin/koreader-ext.sh",
+				"params": "install_koreader",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Try to install KOreader from scratch . . ."
+			},
+			{
+				"name": "CRe font hinting: Autohint",
+				"priority": 3,
+				"action": "./bin/koreader-ext.sh",
+				"params": "cre_autohint",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Setup CRe to use autohinting"
+			},
+			{
+				"name": "CRe font hinting: BCI",
+				"priority": 4,
+				"action": "./bin/koreader-ext.sh",
+				"params": "cre_bci",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Setup CRe to use bytecode hinting"
+			},
+			{
+				"name": "CRe font hinting: None",
+				"priority": 5,
+				"action": "./bin/koreader-ext.sh",
+				"params": "cre_nohinting",
+				"exitmenu": false,
+				"checked": true,
+				"refresh": false,
+				"status": false,
+				"internal": "status Setup CRe to forgo font hinting"
+			}
+			]
 		}
 		]
 	}

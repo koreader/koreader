@@ -111,7 +111,6 @@ endif
 			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \
 			-x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
-	# @TODO write an installation script for KUAL   (houqp)
 
 koboupdate: all
 	# ensure that the binaries were built for ARM
