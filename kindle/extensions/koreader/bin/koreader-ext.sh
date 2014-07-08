@@ -134,9 +134,11 @@ update_koreader()
 		logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
 		unzip -q -o "${found_koreader_package}" -d "/mnt/us"
 		if [ $? -eq 0 ] ; then
-			logmsg "Finished updating KOReader ${koreader_pkg_ver} :)"
+			logmsg "Update to v${koreader_pkg_ver} successful :)"
+			# Cleanup behind us...
+			rm -f "${found_koreader_package}"
 		else
-			logmsg "Failed to update to KOReader ${koreader_pkg_ver} :("
+			logmsg "Failed to update to v${koreader_pkg_ver} :("
 		fi
 	fi
 }
