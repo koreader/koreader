@@ -93,7 +93,7 @@ logmsg()
 	fi
 
 	# And handle user visual feedback via eips...
-	eips_print_bottom_centered "${1}" 2
+	eips_print_bottom_centered "${1}" 1
 }
 
 ## And now the actual useful stuff!
