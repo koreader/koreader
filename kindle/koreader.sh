@@ -62,9 +62,9 @@ if [ "$(nice)" == "5" ] ; then
 		usleep 250000
 	fi
 
-	# Kindlet threads spawn with a nice value of 5, we aim for the same -2 as the KF8 reader
+	# Kindlet threads spawn with a nice value of 5, go back to a neutral value
 	logmsg "Be nice!"
-	renice -n -7 $$
+	renice -n -5 $$
 fi
 
 # we're always starting from our working directory
