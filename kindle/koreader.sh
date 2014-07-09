@@ -31,6 +31,15 @@ logmsg()
 	echo "${1}"
 }
 
+# Go away if we're on FW 5.0, it's not supported
+if [ "${INIT_TYPE}" == "upstart" ] ; then
+	if grep '^Kindle 5\.0' /etc/prettyversion.txt > /dev/null 2>&1 ; then
+		logmsg "FW 5.0 is not supported. Update to 5.1!"
+		# And... scene!
+		exit 0
+	fi
+fi
+
 # Keep track of what we do with pillow...
 PILLOW_DISABLED="no"
 
