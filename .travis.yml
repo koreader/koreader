@@ -9,6 +9,9 @@ compiler:
 env:
     - EMULATE_READER=1 USE_NO_CCACHE=1
 
+before_install:
+    - sudo apt-get update
+
 install:
     - sudo apt-get install libsdl1.2-dev luarocks
     - git clone https://github.com/Olivine-Labs/busted/
