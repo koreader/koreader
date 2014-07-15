@@ -246,17 +246,17 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onDoubleTapForward()
-    local i = self.ui.toc:_getChapterPagesLeft(self.current_page,-1)
+    local i = self.ui.toc:_getNextChapter(self.current_page+self.ui.document:getVisiblePageCount())
     if i ~= "" then
-        self:onGotoViewRel(i+1)
+        self:onGotoPage(i)
     end
     return true
 end
 
 function ReaderRolling:onDoubleTapBackward()
-    local i = self.ui.toc:_getChapterPagesDone(self.current_page)
+    local i = self.ui.toc:_getPreviousChapter(self.current_page)
     if i ~= "" then
-        self:onGotoViewRel(i)
+        self:onGotoPage(i)
     end
     return true
 end
