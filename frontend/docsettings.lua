@@ -135,10 +135,10 @@ function DocSettings:flush()
 
     local serials = {}
     if self.history_file then
-        table.insert(serials, io.open(self.history_file, "w"))
+        pcall(table.insert, serials, io.open(self.history_file, "w"))
     end
     if self.sidecar_file then
-        table.insert(serials, io.open(self.sidecar_file, "w"))
+        pcall(table.insert, serials, io.open(self.sidecar_file, "w"))
     end
     os.setlocale('C', 'numeric')
     local out = {"-- we can read Lua syntax here!\nreturn "}
