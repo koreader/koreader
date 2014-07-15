@@ -101,6 +101,7 @@ end
 function ReaderToc:_getChapterPagesLeft(pageno,pages)
     local i 
     local j = 0
+
     if not self.toc then
         -- build toc when needed.
         self:fillToc()
@@ -134,6 +135,7 @@ end
 function ReaderToc:_getChapterPagesDone(pageno)
     local i
     local j = 0
+
     if not self.toc then
         -- build toc when needed.
         self:fillToc()
@@ -157,6 +159,66 @@ function ReaderToc:_getChapterPagesDone(pageno)
         return ""
     else
         return j-pageno
+    end
+end
+
+function ReaderToc:_getPreviousChapter(pageno)
+    local i
+    local j = 0
+
+    if not self.toc then
+        -- build toc when needed.
+        self:fillToc()
+    end
+
+    -- no table of content
+    if #self.toc == 0 then
+        return ""
+    end
+
+    if #self.toc > 0 then
+        for i = 1, #self.toc do
+            v = self.toc[i]
+            if v.page >= pageno then
+                break
+            end
+            j = v.page
+        end
+    end
+    if j >= pageno then
+        return ""
+    else
+        return j
+    end
+end
+
+function ReaderToc:_getNextChapter(pageno)
+    local i
+    local j = 0
+
+    if not self.toc then
+        -- build toc when needed.
+        self:fillToc()
+    end
+
+    -- no table of content
+    if #self.toc == 0 then
+        return ""
+    end
+
+    if #self.toc > 0 then
+        for i = 1, #self.toc do
+            v = self.toc[i]
+            if v.page >= pageno then
+                j = v.page
+                break
+            end
+        end
+    end
+    if j < pageno then
+        return ""
+    else
+        return j
     end
 end
 
