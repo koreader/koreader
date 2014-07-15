@@ -27,10 +27,14 @@ function BasePowerD:suspendHW() end
 function BasePowerD:wakeUpHW() end
 
 function BasePowerD:read_int_file(file)
-    local f =  io.open(file, "r")
-    local sysint = tonumber(f:read("*all"):match("%d+"))
-    f:close()
-    return sysint
+    local fd =  io.open(file, "r")
+    if fd then
+        local int = fd:read("*all"):match("%d+")
+        fd:close()
+        return int and tonumber(int) or 0
+    else
+        return 0
+    end
 end
 
 function BasePowerD:setIntensity(intensity)
