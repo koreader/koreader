@@ -1,3 +1,4 @@
+local AndroidPowerd = require("ui/device/androidpowerd")
 local KindlePowerD = require("ui/device/kindlepowerd")
 local KoboPowerD = require("ui/device/kobopowerd")
 local BasePowerD = require("ui/device/basepowerd")
@@ -259,6 +260,8 @@ function Device:getPowerDevice()
             self.powerd = KindlePowerD:new{model = model}
         elseif self:isKobo() then
             self.powerd = KoboPowerD:new()
+        elseif self.isAndroid then
+            self.powerd = AndroidPowerd:new()
         else -- emulated FrontLight
             self.powerd = BasePowerD:new()
         end
