@@ -55,6 +55,8 @@ function Screen:init()
         function Screen:getHeight()
             return Screen:getHeightBB()
         end
+        function self:offsetX() return 0 end
+        function self:offsetY() return 0 end
     else
         function Screen:getSize()
             return Screen:getSizePhoenix()
@@ -64,6 +66,16 @@ function Screen:init()
         end
         function Screen:getHeight()
             return Screen:getHeightPhoenix()
+        end
+        function self:offsetX()
+            if Screen.cur_rotation_mode == 0 then
+                return 6
+            else
+                return 12
+            end
+        end
+        function self:offsetY()
+            return 1
         end
     end
     self.blitbuffer_rotation_mode = self.bb:getRotation()
@@ -77,8 +89,19 @@ function Screen:init()
     self.cur_rotation_mode = self.native_rotation_mode
 end
 
+function Screen:PhoenixBezelCleaner()
+    -- bb.paintRect(x, y, w, h, color)
+    self.bb:paintRect(0,0, Screen:getWidth(), Screen:offsetY() , 0 )
+    self.bb:paintRect(0,0, Screen:offsetX(), Screen:getHeight(), 0 )
+    self.bb:paintRect(Screen:getWidth() + Screen:offsetX(), 0 , Screen:getWidth() - Screen:getWidth() - Screen:offsetX(), Screen:getHeight(), 0 )
+    self.bb:paintRect(0, Screen:getHeight() + Screen:offsetY(), Screen:offsetX(), Screen:getWidth(), 0 )
+end
+
 function Screen:refresh(refresh_type, waveform_mode, x, y, w, h)
     self.fb:refresh(refresh_type, waveform_mode, x, y, w, h)
+    if self.device:getModel() == 'Kobo_phoenix' and refresh_type == 1 then
+        Screen:PhoenixBezelCleaner()
+    end
 end
 
 function Screen:getSizeBB()
