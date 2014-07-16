@@ -61,27 +61,9 @@ local UIManager = {
 function UIManager:init()
     -- For the Kobo Aura an offset is needed, because the bezel make the
     -- visible screen smaller.
-    if Device:getModel() ~= 'Kobo_phoenix' then
-        function self:offsetX() return 0 end
-        function self:offsetY() return 0 end
-    else
-        function self:offsetX()
-            if Screen.cur_rotation_mode == 0 then
-                return 4
-            elseif Screen.cur_rotation_mode == 1 then
-                return 15
-            else
-                return 3
-            end
-        end
-        function self:offsetY()
-            if Screen.cur_rotation_mode == 0 then
-                return 3
-            else
-                return 4
-            end
-        end
-    end
+    
+    function self:offsetX() return Screen:offsetX() end
+    function self:offsetY() return Screen:offsetY() end
 
     self.event_handlers = {
         __default__ = function(input_event)
