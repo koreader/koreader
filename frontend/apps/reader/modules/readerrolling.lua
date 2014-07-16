@@ -370,6 +370,7 @@ end
 function ReaderRolling:onChangeScreenMode(mode)
     self.ui:handleEvent(Event:new("SetScreenMode", mode))
     self:onChangeViewMode()
+    self:onUpdatePos()
 end
 
 --[[

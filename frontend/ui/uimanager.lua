@@ -61,9 +61,6 @@ local UIManager = {
 function UIManager:init()
     -- For the Kobo Aura an offset is needed, because the bezel make the
     -- visible screen smaller.
-    
-    function self:offsetX() return Screen:offsetX() end
-    function self:offsetY() return Screen:offsetY() end
 
     self.event_handlers = {
         __default__ = function(input_event)
@@ -319,8 +316,8 @@ function UIManager:run()
         for _, widget in ipairs(self._window_stack) do
             if self.repaint_all or self._dirty[widget.widget] then
                 widget.widget:paintTo(Screen.bb,
-                                      widget.x + UIManager:offsetX(),
-                                      widget.y + UIManager:offsetY())
+                                      widget.x + Screen:offsetX(),
+                                      widget.y + Screen:offsetY())
                 if self._dirty[widget.widget] == "auto" then
                     request_full_refresh = true
                 end

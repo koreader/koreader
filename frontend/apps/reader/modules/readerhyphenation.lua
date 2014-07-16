@@ -33,6 +33,7 @@ function ReaderHyphenation:init()
                 })
                 self:_changeSel(k)
                 cre.setHyphDictionary(v)
+                self.ui.toc:onUpdateToc()
             end
         })
     end

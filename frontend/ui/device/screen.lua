@@ -70,8 +70,12 @@ function Screen:init()
         function self:offsetX()
             if Screen.cur_rotation_mode == 0 then
                 return 6
-            else
+            elseif Screen.cur_rotation_mode == 1 then
                 return 12
+            elseif Screen.cur_rotation_mode == 2 then
+                return 12
+            elseif Screen.cur_rotation_mode == 3 then
+                return 6
             end
         end
         function self:offsetY()
