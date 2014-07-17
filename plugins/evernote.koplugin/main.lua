@@ -62,14 +62,14 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 sub_item_table_func = function()
                     return not self.evernote_token and {
                         {
-                            text = _("Evernote"),
+                            text = "Evernote",
                             callback = function()
                                 self.evernote_domain = nil
                                 self:login()
                             end
                         },
                         {
-                            text = _("Yinxiang"),
+                            text = "印象笔记",
                             callback = function()
                                 self.evernote_domain = "yinxiang"
                                 self:login()
