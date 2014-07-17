@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
 local DocSettings = require("docsettings")
+local NetworkMgr = require("ui/networkmgr")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
@@ -172,7 +173,11 @@ function EvernoteExporter:doLogin(username, password)
     }
     self.evernote_username = username
     local ok, token = pcall(oauth.getToken, oauth)
-    if not ok or not token then
+    -- prompt users to turn on Wifi if network is unreachable
+    if not ok and token and token:find("Network is unreachable") then
+        NetworkMgr:promptWifiOn()
+        return
+    elseif not ok and token then
         UIManager:show(InfoMessage:new{
             text = _("Error occurs when login:") .. "\n" .. token,
         })
@@ -184,11 +189,14 @@ function EvernoteExporter:doLogin(username, password)
         authToken = token,
     }
     local ok, guid = pcall(self.getExportNotebook, self, client)
-    if not ok or not guid then
+    if not ok and guid and guid:find("Transport not open") then
+        NetworkMgr:promptWifiOn()
+        return
+    elseif not ok and guid then
         UIManager:show(InfoMessage:new{
             text = _("Error occurs when login:") .. "\n" .. guid,
         })
-    elseif guid then
+    elseif ok and guid then
         self.evernote_token = token
         self.notebook_guid = guid
         UIManager:show(InfoMessage:new{
@@ -300,11 +308,14 @@ function EvernoteExporter:exportClippings(client, clippings)
             local ok, err = pcall(self.exportBooknotes, self,
                         client, title, booknotes)
             -- error reporting
-            if not ok then
+            if not ok and err and err:find("Transport not open") then
+                NetworkMgr:promptWifiOn()
+                return
+            elseif not ok and err then
                 DEBUG("Error occurs when exporting book:", title, err)
                 error_count = error_count + 1
                 error_title = title
-            else
+            elseif ok then
                 DEBUG("Exported notes in book:", title)
                 export_count = export_count + 1
                 export_title = title
