@@ -81,6 +81,14 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
+    table.insert(self.tab_item_table.main, {
+        text = _("Show advanced options"),
+        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
+        callback = function()
+            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+            G_reader_settings:saveSetting("show_advanced", not show_advanced)
+        end
+    })
     table.insert(self.tab_item_table.main, Language:getLangMenuTable())
     table.insert(self.tab_item_table.main, {
         text = _("Version"),
