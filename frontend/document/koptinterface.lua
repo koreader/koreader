@@ -402,7 +402,7 @@ returned boxes are in native page coordinates zoomed at 1.0
 --]]
 function KoptInterface:getTextBoxes(doc, pageno)
     local text = doc:getPageTextBoxes(pageno)
-    if text and #text > 1 then
+    if text and #text > 1 and doc.configurable.forced_ocr == 0 then
         return text
     -- if we have no text in original page then we will reuse native word boxes
     -- in reflow mode and find text boxes from scratch in non-reflow mode
