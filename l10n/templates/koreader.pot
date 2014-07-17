@@ -6,28 +6,33 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-03 10:56+0000\n"
+"POT-Creation-Date: 2014-07-17 14:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: plugins/evernote.koplugin/main.lua:323
+#: plugins/evernote.koplugin/main.lua:334
 msgid ""
 " others."
 msgstr ""
 
-#: frontend/ui/data/strings.lua:48
+#: frontend/ui/widget/configdialog.lua:582
+msgid ""
+" to "
+msgstr ""
+
+#: frontend/ui/data/strings.lua:49
 msgid ""
 "0 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:50
+#: frontend/ui/data/strings.lua:51
 msgid ""
 "10 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:49
+#: frontend/ui/data/strings.lua:50
 msgid ""
 "5 deg"
 msgstr ""
@@ -70,8 +75,8 @@ msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
 #: frontend/ui/widget/confirmbox.lua:29
-#: plugins/evernote.koplugin/main.lua:123
-#: plugins/zsync.koplugin/main.lua:254
+#: plugins/evernote.koplugin/main.lua:124
+#: plugins/zsync.koplugin/main.lua:279
 msgid ""
 "Cancel"
 msgstr ""
@@ -86,8 +91,8 @@ msgid ""
 "Change font"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:201
-#: plugins/zsync.koplugin/main.lua:211
+#: plugins/zsync.koplugin/main.lua:226
+#: plugins/zsync.koplugin/main.lua:236
 msgid ""
 "Choose inbox"
 msgstr ""
@@ -97,7 +102,7 @@ msgid ""
 "Columns"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:246
+#: plugins/zsync.koplugin/main.lua:271
 msgid ""
 "Confirm"
 msgstr ""
@@ -144,12 +149,22 @@ msgid ""
 "Dewatermark"
 msgstr ""
 
+#: frontend/ui/networkmgr.lua:48
+msgid ""
+"Do you want to Turn off Wifi?"
+msgstr ""
+
+#: frontend/ui/networkmgr.lua:39
+msgid ""
+"Do you want to Turn on Wifi?"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:17
 msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:128
+#: frontend/apps/reader/modules/readermenu.lua:136
 msgid ""
 "Document menu"
 msgstr ""
@@ -164,46 +179,45 @@ msgid ""
 "Embedded Style"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:327
+#: plugins/evernote.koplugin/main.lua:338
 msgid ""
 "Error occurs when exporting book:"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:177
-#: plugins/evernote.koplugin/main.lua:189
+#: plugins/evernote.koplugin/main.lua:182
+#: plugins/evernote.koplugin/main.lua:197
 msgid ""
 "Error occurs when login:"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:329
+#: plugins/evernote.koplugin/main.lua:340
 msgid ""
 "Errors occur when exporting book:"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:42
-#: plugins/evernote.koplugin/main.lua:52
-#: plugins/evernote.koplugin/main.lua:64
+#: plugins/evernote.koplugin/main.lua:43
+#: plugins/evernote.koplugin/main.lua:53
 msgid ""
 "Evernote"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:81
+#: plugins/evernote.koplugin/main.lua:82
 msgid ""
 "Export all notes in this book"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:97
+#: plugins/evernote.koplugin/main.lua:98
 msgid ""
 "Export all notes in your library"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:320
-#: plugins/evernote.koplugin/main.lua:322
+#: plugins/evernote.koplugin/main.lua:331
+#: plugins/evernote.koplugin/main.lua:333
 msgid ""
 "Exported notes in book:"
 msgstr ""
 
-#: reader.lua:71
+#: reader.lua:80
 msgid ""
 "File does not exist"
 msgstr ""
@@ -226,6 +240,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:24
 msgid ""
 "Font Weight"
+msgstr ""
+
+#: frontend/ui/data/strings.lua:30
+msgid ""
+"Forced OCR"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:95
@@ -264,7 +283,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:103
-#: frontend/apps/reader/modules/readermenu.lua:94
+#: frontend/apps/reader/modules/readermenu.lua:102
 msgid ""
 "Help"
 msgstr ""
@@ -305,12 +324,12 @@ msgid ""
 "Invert"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:16
+#: plugins/evernote.koplugin/main.lua:17
 msgid ""
 "Koreader Notes"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:57
+#: frontend/ui/data/strings.lua:58
 msgid ""
 "LTR"
 msgstr ""
@@ -335,28 +354,28 @@ msgid ""
 "Location"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:140
+#: plugins/evernote.koplugin/main.lua:141
 msgid ""
 "Logging in please wait..."
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:55
-#: plugins/evernote.koplugin/main.lua:130
+#: plugins/evernote.koplugin/main.lua:56
+#: plugins/evernote.koplugin/main.lua:131
 msgid ""
 "Login"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:15
+#: plugins/evernote.koplugin/main.lua:16
 msgid ""
 "Login to Evernote"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:195
+#: plugins/evernote.koplugin/main.lua:203
 msgid ""
 "Login to Evernote successfully"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:54
+#: plugins/evernote.koplugin/main.lua:55
 msgid ""
 "Logout"
 msgstr ""
@@ -372,12 +391,12 @@ msgid ""
 "Night mode"
 msgstr ""
 
-#: reader.lua:86
+#: reader.lua:95
 msgid ""
 "No reader engine for this file"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:339
+#: plugins/evernote.koplugin/main.lua:350
 msgid ""
 "Note: "
 msgstr ""
@@ -388,7 +407,7 @@ msgid ""
 "OK"
 msgstr ""
 
-#: reader.lua:76
+#: reader.lua:85
 msgid ""
 "Opening file"
 msgstr ""
@@ -398,7 +417,7 @@ msgid ""
 "Page"
 msgstr ""
 
-#: frontend/ui/widget/touchmenu.lua:426
+#: frontend/ui/widget/touchmenu.lua:427
 msgid ""
 "Page "
 msgstr ""
@@ -419,7 +438,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:106
-#: frontend/apps/reader/modules/readermenu.lua:97
+#: frontend/apps/reader/modules/readermenu.lua:105
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -435,17 +454,17 @@ msgid ""
 "Progress Bar"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:46
+#: plugins/zsync.koplugin/main.lua:47
 msgid ""
 "Publish this document"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:58
+#: frontend/ui/data/strings.lua:59
 msgid ""
 "RTL"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:337
+#: plugins/zsync.koplugin/main.lua:362
 msgid ""
 "Received file:"
 msgstr ""
@@ -465,7 +484,7 @@ msgid ""
 "Render Quality"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:48
+#: plugins/evernote.koplugin/main.lua:49
 msgid ""
 "Sandbox"
 msgstr ""
@@ -480,19 +499,19 @@ msgid ""
 "Scroll Mode"
 msgstr ""
 
-#: frontend/ui/widget/configdialog.lua:580
+#: frontend/ui/widget/configdialog.lua:582
 msgid ""
 "Set default "
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfont.lua:223
 msgid ""
-"Set default font \""
+"Set default font to "
 msgstr ""
 
 #: frontend/apps/reader/modules/readerzooming.lua:338
 msgid ""
-"Set default zoom mode to \""
+"Set default zoom mode to "
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfont.lua:139
@@ -515,6 +534,11 @@ msgid ""
 "Share"
 msgstr ""
 
+#: frontend/apps/reader/modules/readermenu.lua:85
+msgid ""
+"Show advanced options"
+msgstr ""
+
 #: frontend/apps/filemanager/filemanagermenu.lua:63
 msgid ""
 "Show hidden files"
@@ -530,22 +554,22 @@ msgid ""
 "Start with last opened file"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:47
+#: plugins/zsync.koplugin/main.lua:48
 msgid ""
 "Stop publisher"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:64
+#: plugins/zsync.koplugin/main.lua:65
 msgid ""
 "Stop subscriber"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:63
+#: plugins/zsync.koplugin/main.lua:64
 msgid ""
 "Subscribe documents"
 msgstr ""
 
-#: frontend/ui/uimanager.lua:93
+#: frontend/ui/uimanager.lua:81
 msgid ""
 "Suspended"
 msgstr ""
@@ -555,17 +579,17 @@ msgid ""
 "Switch zoom mode"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:60
+#: frontend/ui/data/strings.lua:61
 msgid ""
 "TBLTR"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:59
+#: frontend/ui/data/strings.lua:60
 msgid ""
 "TBRTL"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertoc.lua:153
+#: frontend/apps/reader/modules/readertoc.lua:249
 msgid ""
 "Table of Contents"
 msgstr ""
@@ -580,12 +604,12 @@ msgid ""
 "Text Align"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:107
+#: plugins/evernote.koplugin/main.lua:108
 msgid ""
 "This may take several minutes..."
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:91
+#: plugins/evernote.koplugin/main.lua:92
 msgid ""
 "This may take several seconds..."
 msgstr ""
@@ -606,7 +630,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:95
-#: frontend/apps/reader/modules/readermenu.lua:86
+#: frontend/apps/reader/modules/readermenu.lua:94
 msgid ""
 "Version"
 msgstr ""
@@ -636,13 +660,12 @@ msgid ""
 "Writing screen to "
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:50
-#: plugins/evernote.koplugin/main.lua:71
+#: plugins/evernote.koplugin/main.lua:51
 msgid ""
 "Yinxiang"
 msgstr ""
 
-#: plugins/zsync.koplugin/main.lua:41
+#: plugins/zsync.koplugin/main.lua:42
 msgid ""
 "ZSync"
 msgstr ""
@@ -677,18 +700,18 @@ msgid ""
 "Zoom to fit page width"
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:323
-#: plugins/evernote.koplugin/main.lua:330
+#: plugins/evernote.koplugin/main.lua:334
+#: plugins/evernote.koplugin/main.lua:341
 msgid ""
 "and "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:33
+#: frontend/ui/data/strings.lua:34
 msgid ""
 "auto"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:54
+#: frontend/ui/data/strings.lua:55
 msgid ""
 "bold"
 msgstr ""
@@ -698,77 +721,77 @@ msgid ""
 "clear all external styles"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:44
+#: frontend/ui/data/strings.lua:45
 msgid ""
 "darker"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:45
+#: frontend/ui/data/strings.lua:46
 msgid ""
 "darkest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:39
+#: frontend/ui/data/strings.lua:40
 msgid ""
 "decrease"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:43
+#: frontend/ui/data/strings.lua:44
 msgid ""
 "default"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:61
+#: frontend/ui/data/strings.lua:62
 msgid ""
 "full"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:47
+#: frontend/ui/data/strings.lua:48
 msgid ""
 "high"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:40
+#: frontend/ui/data/strings.lua:41
 msgid ""
 "increase"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:52
+#: frontend/ui/data/strings.lua:53
 msgid ""
 "landscape"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:38
+#: frontend/ui/data/strings.lua:39
 msgid ""
 "large"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:42
+#: frontend/ui/data/strings.lua:43
 msgid ""
 "lighter"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:41
+#: frontend/ui/data/strings.lua:42
 msgid ""
 "lightest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:46
+#: frontend/ui/data/strings.lua:47
 msgid ""
 "low"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:34
+#: frontend/ui/data/strings.lua:35
 msgid ""
 "manual"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:37
+#: frontend/ui/data/strings.lua:38
 msgid ""
 "medium"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:62
+#: frontend/ui/data/strings.lua:63
 msgid ""
 "mini"
 msgstr ""
@@ -783,17 +806,17 @@ msgid ""
 "no text"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:32
+#: frontend/ui/data/strings.lua:33
 msgid ""
 "off"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:31
+#: frontend/ui/data/strings.lua:32
 msgid ""
 "on"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:56
+#: frontend/ui/data/strings.lua:57
 msgid ""
 "page"
 msgstr ""
@@ -803,27 +826,27 @@ msgid ""
 "page "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:51
+#: frontend/ui/data/strings.lua:52
 msgid ""
 "portrait"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:53
+#: frontend/ui/data/strings.lua:54
 msgid ""
 "regular"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:55
+#: frontend/ui/data/strings.lua:56
 msgid ""
 "scroll"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:35
+#: frontend/ui/data/strings.lua:36
 msgid ""
 "semi-auto"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:36
+#: frontend/ui/data/strings.lua:37
 msgid ""
 "small"
 msgstr ""

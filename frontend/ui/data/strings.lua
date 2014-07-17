@@ -27,6 +27,7 @@ S.VIEW_MODE = _("View Mode")
 S.EMBEDDED_STYLE = _("Embedded Style")
 S.WRITING_DIR = _("Writing Direction")
 S.PROGRESS_BAR = _("Progress Bar")
+S.FORCED_OCR = _("Forced OCR")
 
 S.ON = _("on")
 S.OFF = _("off")

@@ -176,8 +176,10 @@ function ConfigOption:init()
     table.insert(vertical_group, VerticalSpan:new{
         width = Screen:scaleByDPI(default_option_padding),
     })
+    local show_advanced = G_reader_settings:readSetting("show_advanced") or false
     for c = 1, #self.options do
-        if self.options[c].show ~= false then
+        local show_default = not self.options[c].advanced or show_advanced
+        if self.options[c].show ~= false and show_default then
             local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
             local item_align = self.options[c].item_align_center and self.options[c].item_align_center or 0.66
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"

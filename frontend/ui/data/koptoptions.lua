@@ -202,6 +202,14 @@ local KoptOptions = {
                 default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
             },
             {
+                name = "forced_ocr",
+                name_text = S.FORCED_OCR,
+                toggle = {S.ON, S.OFF},
+                values = {1, 0},
+                default_value = 0,
+                advanced = true,
+            },
+            {
                 name = "defect_size",
                 name_text = S.DEFECT_SIZE,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
