@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-17 13:28+0000\n"
+"POT-Creation-Date: 2014-07-17 14:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,22 +17,22 @@ msgid ""
 " others."
 msgstr ""
 
-#: frontend/ui/widget/configdialog.lua:580
+#: frontend/ui/widget/configdialog.lua:582
 msgid ""
 " to "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:48
+#: frontend/ui/data/strings.lua:49
 msgid ""
 "0 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:50
+#: frontend/ui/data/strings.lua:51
 msgid ""
 "10 deg"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:49
+#: frontend/ui/data/strings.lua:50
 msgid ""
 "5 deg"
 msgstr ""
@@ -164,7 +164,7 @@ msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:128
+#: frontend/apps/reader/modules/readermenu.lua:136
 msgid ""
 "Document menu"
 msgstr ""
@@ -242,6 +242,11 @@ msgid ""
 "Font Weight"
 msgstr ""
 
+#: frontend/ui/data/strings.lua:30
+msgid ""
+"Forced OCR"
+msgstr ""
+
 #: frontend/apps/reader/modules/readerfrontlight.lua:95
 msgid ""
 "Frontlight Level"
@@ -278,7 +283,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:103
-#: frontend/apps/reader/modules/readermenu.lua:94
+#: frontend/apps/reader/modules/readermenu.lua:102
 msgid ""
 "Help"
 msgstr ""
@@ -324,7 +329,7 @@ msgid ""
 "Koreader Notes"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:57
+#: frontend/ui/data/strings.lua:58
 msgid ""
 "LTR"
 msgstr ""
@@ -433,7 +438,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:106
-#: frontend/apps/reader/modules/readermenu.lua:97
+#: frontend/apps/reader/modules/readermenu.lua:105
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -454,7 +459,7 @@ msgid ""
 "Publish this document"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:58
+#: frontend/ui/data/strings.lua:59
 msgid ""
 "RTL"
 msgstr ""
@@ -494,7 +499,7 @@ msgid ""
 "Scroll Mode"
 msgstr ""
 
-#: frontend/ui/widget/configdialog.lua:580
+#: frontend/ui/widget/configdialog.lua:582
 msgid ""
 "Set default "
 msgstr ""
@@ -527,6 +532,11 @@ msgstr ""
 #: frontend/apps/reader/modules/readerhighlight.lua:322
 msgid ""
 "Share"
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:85
+msgid ""
+"Show advanced options"
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:63
@@ -569,12 +579,12 @@ msgid ""
 "Switch zoom mode"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:60
+#: frontend/ui/data/strings.lua:61
 msgid ""
 "TBLTR"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:59
+#: frontend/ui/data/strings.lua:60
 msgid ""
 "TBRTL"
 msgstr ""
@@ -620,7 +630,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:95
-#: frontend/apps/reader/modules/readermenu.lua:86
+#: frontend/apps/reader/modules/readermenu.lua:94
 msgid ""
 "Version"
 msgstr ""
@@ -696,12 +706,12 @@ msgid ""
 "and "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:33
+#: frontend/ui/data/strings.lua:34
 msgid ""
 "auto"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:54
+#: frontend/ui/data/strings.lua:55
 msgid ""
 "bold"
 msgstr ""
@@ -711,77 +721,77 @@ msgid ""
 "clear all external styles"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:44
+#: frontend/ui/data/strings.lua:45
 msgid ""
 "darker"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:45
+#: frontend/ui/data/strings.lua:46
 msgid ""
 "darkest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:39
+#: frontend/ui/data/strings.lua:40
 msgid ""
 "decrease"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:43
+#: frontend/ui/data/strings.lua:44
 msgid ""
 "default"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:61
+#: frontend/ui/data/strings.lua:62
 msgid ""
 "full"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:47
+#: frontend/ui/data/strings.lua:48
 msgid ""
 "high"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:40
+#: frontend/ui/data/strings.lua:41
 msgid ""
 "increase"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:52
+#: frontend/ui/data/strings.lua:53
 msgid ""
 "landscape"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:38
+#: frontend/ui/data/strings.lua:39
 msgid ""
 "large"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:42
+#: frontend/ui/data/strings.lua:43
 msgid ""
 "lighter"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:41
+#: frontend/ui/data/strings.lua:42
 msgid ""
 "lightest"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:46
+#: frontend/ui/data/strings.lua:47
 msgid ""
 "low"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:34
+#: frontend/ui/data/strings.lua:35
 msgid ""
 "manual"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:37
+#: frontend/ui/data/strings.lua:38
 msgid ""
 "medium"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:62
+#: frontend/ui/data/strings.lua:63
 msgid ""
 "mini"
 msgstr ""
@@ -796,17 +806,17 @@ msgid ""
 "no text"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:32
+#: frontend/ui/data/strings.lua:33
 msgid ""
 "off"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:31
+#: frontend/ui/data/strings.lua:32
 msgid ""
 "on"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:56
+#: frontend/ui/data/strings.lua:57
 msgid ""
 "page"
 msgstr ""
@@ -816,27 +826,27 @@ msgid ""
 "page "
 msgstr ""
 
-#: frontend/ui/data/strings.lua:51
+#: frontend/ui/data/strings.lua:52
 msgid ""
 "portrait"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:53
+#: frontend/ui/data/strings.lua:54
 msgid ""
 "regular"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:55
+#: frontend/ui/data/strings.lua:56
 msgid ""
 "scroll"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:35
+#: frontend/ui/data/strings.lua:36
 msgid ""
 "semi-auto"
 msgstr ""
 
-#: frontend/ui/data/strings.lua:36
+#: frontend/ui/data/strings.lua:37
 msgid ""
 "small"
 msgstr ""
