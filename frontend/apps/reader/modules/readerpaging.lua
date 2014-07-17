@@ -603,15 +603,21 @@ function ReaderPaging:onScrollPanRel(diff)
     UIManager:setDirty(self.view.dialog, "fast")
 end
 
+function ReaderPaging:calculateOverlap()
+    local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer.bar_height
+    return self.overlap + footer_height
+end
+
 function ReaderPaging:onScrollPageRel(diff)
     DEBUG("scroll relative page:", diff)
     local blank_area = Geom:new{}
     blank_area:setSizeTo(self.view.dimen)
+    local overlap = self:calculateOverlap()
     if diff > 0 then
         local last_page_state = table.remove(self.view.page_states)
         local offset = Geom:new{
             x = 0,
-            y = last_page_state.visible_area.h - self.overlap
+            y = last_page_state.visible_area.h - overlap
         }
         self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
     end
@@ -619,7 +625,7 @@ function ReaderPaging:onScrollPageRel(diff)
         local first_page_state = table.remove(self.view.page_states, 1)
         local offset = Geom:new{
             x = 0,
-            y = -first_page_state.visible_area.h + self.overlap
+            y = -first_page_state.visible_area.h + overlap
         }
         self.view.page_states = self:genPageStatesFromBottom(first_page_state, blank_area, offset)
     end
@@ -672,16 +678,17 @@ function ReaderPaging:onGotoPageRel(diff)
     else
         -- not end of page yet, goto next view
         -- adjust panning step according to overlap
-        if x_pan_off > self.overlap then
+        local overlap = self:calculateOverlap()
+        if x_pan_off > overlap then
             -- moving to next view, move view
-            x_pan_off = x_pan_off - self.overlap
-        elseif x_pan_off < -self.overlap then
-            x_pan_off = x_pan_off + self.overlap
+            x_pan_off = x_pan_off - overlap
+        elseif x_pan_off < -overlap then
+            x_pan_off = x_pan_off + overlap
         end
-        if y_pan_off > self.overlap then
-            y_pan_off = y_pan_off - self.overlap
-        elseif y_pan_off < -self.overlap then
-            y_pan_off = y_pan_off + self.overlap
+        if y_pan_off > overlap then
+            y_pan_off = y_pan_off - overlap
+        elseif y_pan_off < -overlap then
+            y_pan_off = y_pan_off + overlap
         end
         -- we have to calculate again to count into overlap
         new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)

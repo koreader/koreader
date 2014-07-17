@@ -24,6 +24,7 @@ local ReaderFooter = InputContainer:new{
     progress_text = nil,
     text_font_face = "ffont",
     text_font_size = 14,
+    bar_height = Screen:scaleByDPI(7),
     height = Screen:scaleByDPI(19),
     padding = Screen:scaleByDPI(10),
 }
@@ -59,7 +60,7 @@ function ReaderFooter:init()
     local text_width = self.progress_text:getSize().w
     self.progress_bar = ProgressWidget:new{
         width = math.floor(Screen:getWidth() - text_width - self.padding),
-        height = Screen:scaleByDPI(7),
+        height = self.bar_height,
         percentage = self.progress_percentage,
     }
     local horizontal_group = HorizontalGroup:new{}
@@ -143,17 +144,17 @@ function ReaderFooter:updateFooterPage()
         end
         self.progress_text.text = string.sub(self.progress_text.text,4)
     else
-        if self.mode == 1 then 
+        if self.mode == 1 then
             self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
-        elseif self.mode == 2 then 
+        elseif self.mode == 2 then
             self.progress_text.text = os.date("%H:%M")
-        elseif self.mode == 3 then 
+        elseif self.mode == 3 then
             self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
-        elseif self.mode == 4 then 
+        elseif self.mode == 4 then
             powerd = Device:getPowerDevice()
             state = powerd:isCharging() and -1 or powerd:getCapacity()
             self.progress_text.text = "B:" .. powerd:getCapacity() .. "%"
-        end 
+        end
     end
 
 end
