@@ -75,7 +75,7 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setHeaderFont(self.header_font_face)
 
     --@TODO change this!  12.01 2013 (houqp)
-    self.font_size = config:readSetting("font_size") or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 1.0
+    self.font_size = config:readSetting("font_size") or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
     self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
 
     self.font_embolden = config:readSetting("font_embolden") or G_reader_settings:readSetting("copt_font_weight") or 0
