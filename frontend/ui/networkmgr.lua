@@ -22,7 +22,7 @@ function NetworkMgr:turnOnWifi()
     if Device:isKindle() then
         kindleEnableWifi(1)
     elseif Device:isKobo() then
-        -- TODO: turn on wifi on kobo?
+        os.execute("./wifi.sh on")
     end
 end
 
@@ -30,7 +30,7 @@ function NetworkMgr:turnOffWifi()
     if Device:isKindle() then
         kindleEnableWifi(0)
     elseif Device:isKobo() then
-        -- TODO: turn off wifi on kobo?
+        os.execute("./wifi.sh off")
     end
 end
 

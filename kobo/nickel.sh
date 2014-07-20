@@ -4,25 +4,11 @@ PATH=$PATH:/usr/sbin:/sbin
 # start fmon again:
 ( usleep 400000; /etc/init.d/on-animator.sh ) &
 
-# environment needed by nickel, from /etc/init.d/rcS:
-PLATFORM=freescale                                                              
-if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
-  CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU 2>/dev/null`
-  PLATFORM=$CPU-ntx                
-fi                                 
-                                                               
-if [ $PLATFORM != freescale ]; then                            
-  INTERFACE=eth0                                               
-  WIFI_MODULE=dhd                                              
-else                                                                            
-  INTERFACE=wlan0                                                               
-  WIFI_MODULE=ar6000                                                            
-fi                                                                              
-                                                                                
-export PLATFORM                                                                 
-export INTERFACE                                                                
-export WIFI_MODULE                                                              
-export WIFI_MODULE_PATH=/drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
+# environment needed by nickel, from /etc/init.d/rcS:                                                
+                                                           
+export INTERFACE=eth0                                                            
+export WIFI_MODULE=dhd                                                              
+export WIFI_MODULE_PATH=/drivers/ntx508/wifi/$WIFI_MODULE.ko
 export NICKEL_HOME=/mnt/onboard/.kobo                                           
 export LD_LIBRARY_PATH=/usr/local/Kobo
 
@@ -51,7 +37,7 @@ if [ ! -e /usr/local/Kobo/platforms/libkobo.so ]; then
     /usr/local/Kobo/nickel -qws -skipFontLoad                                   
 else
     /usr/local/Kobo/hindenburg &
-    insmod /drivers/$PLATFORM/misc/lowmem.ko &
+    insmod /drivers/ntx508/misc/lowmem.ko &
     [ `cat /mnt/onboard/.kobo/Kobo/Kobo\ eReader.conf | grep -c dhcpcd=true` == 1 ] && dhcpcd -d -t 10 &
     /usr/local/Kobo/nickel -platform kobo -skipFontLoad
 fi
