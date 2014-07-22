@@ -31,11 +31,17 @@ function ReaderTypeset:onReadSettings(config)
 
     -- set page margins
     self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+
+    -- default to enable floating punctuation
+    self.floating_punctuation = config:readSetting("floating_punctuation") or
+        G_reader_settings:readSetting("floating_punctuation") or true
+    self:toggleFloatingPunctuation(self.floating_punctuation and 1 or 0)
 end
 
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
+    self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -106,11 +112,24 @@ function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
+function ReaderTypeset:toggleFloatingPunctuation(toggle)
+    self.ui.document:setFloatingPunctuation(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
 function ReaderTypeset:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
     table.insert(tab_item_table.typeset, {
         text = self.css_menu_title,
         sub_item_table = self:genStyleSheetMenu(),
+    })
+    table.insert(tab_item_table.typeset, {
+        text = _("Floating punctuation"),
+        checked_func = function() return self.floating_punctuation == true end,
+        callback = function()
+            self.floating_punctuation = not self.floating_punctuation
+            self:toggleFloatingPunctuation(self.floating_punctuation and 1 or 0)
+        end
     })
 end
 
