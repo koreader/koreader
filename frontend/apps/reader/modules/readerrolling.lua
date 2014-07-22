@@ -175,6 +175,7 @@ function ReaderRolling:onReadSettings(config)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
     end
+    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderRolling:onSaveSettings()
