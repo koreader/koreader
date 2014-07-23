@@ -357,6 +357,7 @@ function CreDocument:setPageMargins(left, top, right, bottom)
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
+    -- FIXME: occasional segmentation fault when toggling floating punctuation
     DEBUG("CreDocument: set floating punctuation", enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end

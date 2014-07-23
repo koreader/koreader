@@ -34,23 +34,26 @@ function ReaderFooter:init()
         DMINIBAR_NEXT_CHAPTER = false
     end
 
-    progress_text_default = ""
+    self.pageno = self.view.state.page
+    self.pages = self.view.document:getPageCount()
+
+    local progress_text_default = ""
     if DMINIBAR_ALL_AT_ONCE then
-	    if DMINIBAR_TIME then
-    		progress_text_default = progress_text_default .. " | WW:WW"
-	    end
-    	if DMINIBAR_PAGES then
-    		progress_text_default = progress_text_default .. " | 0000 / 0000"
-    	end
-    	if DMINIBAR_NEXT_CHAPTER then
-		    progress_text_default = progress_text_default .. " | => 000"
-    	end
-    	if DMINIBAR_BATTERY then
-		    progress_text_default = progress_text_default .. " | B:100%"
-    	end
-    	progress_text_default = string.sub(progress_text_default,4)
+        if DMINIBAR_TIME then
+            progress_text_default = progress_text_default .. " | WW:WW"
+        end
+        if DMINIBAR_PAGES then
+            progress_text_default = progress_text_default .. " | 0000 / 0000"
+        end
+        if DMINIBAR_NEXT_CHAPTER then
+            progress_text_default = progress_text_default .. " | => 000"
+        end
+        if DMINIBAR_BATTERY then
+            progress_text_default = progress_text_default .. " | B:100%"
+        end
+        progress_text_default = string.sub(progress_text_default, 4)
     else
-    	progress_text_default = "0000 / 0000"
+        progress_text_default = string.format(" %d / %d ", self.pages, self.pages)
     end
 
     self.progress_text = TextWidget:new{
@@ -87,8 +90,6 @@ function ReaderFooter:init()
         }
     }
     self.dimen = self[1]:getSize()
-    self.pageno = self.view.state.page
-    self.pages = self.view.document.info.number_of_pages
     self:updateFooterPage()
     local range = Geom:new{
         x = Screen:getWidth()*DTAP_ZONE_MINIBAR.x,
@@ -121,16 +122,13 @@ function ReaderFooter:fillToc()
 end
 
 function ReaderFooter:updateFooterPage()
-    local powerd
-    local state
-
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
     if DMINIBAR_ALL_AT_ONCE then
         self.progress_text.text = ""
         if DMINIBAR_NEXT_CHAPTER then
-            powerd = Device:getPowerDevice()
-            state = powerd:isCharging() and -1 or powerd:getCapacity()
+            local powerd = Device:getPowerDevice()
+            local state = powerd:isCharging() and -1 or powerd:getCapacity()
             self.progress_text.text = self.progress_text.text .. " | B:" .. powerd:getCapacity() .. "%"
         end
         if DMINIBAR_TIME then
@@ -142,7 +140,7 @@ function ReaderFooter:updateFooterPage()
         if DMINIBAR_NEXT_CHAPTER then
             self.progress_text.text = self.progress_text.text .. " | => " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
         end
-        self.progress_text.text = string.sub(self.progress_text.text,4)
+        self.progress_text.text = string.sub(self.progress_text.text, 4)
     else
         if self.mode == 1 then
             self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
@@ -151,8 +149,8 @@ function ReaderFooter:updateFooterPage()
         elseif self.mode == 3 then
             self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
         elseif self.mode == 4 then
-            powerd = Device:getPowerDevice()
-            state = powerd:isCharging() and -1 or powerd:getCapacity()
+            local powerd = Device:getPowerDevice()
+            local state = powerd:isCharging() and -1 or powerd:getCapacity()
             self.progress_text.text = "B:" .. powerd:getCapacity() .. "%"
         end
     end
@@ -170,7 +168,6 @@ function ReaderFooter:updateFooterPos()
     end
 end
 
-
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
     self.pages = self.view.document.info.number_of_pages
@@ -181,6 +178,11 @@ function ReaderFooter:onPosUpdate(pos)
     self.position = pos
     self.doc_height = self.view.document.info.doc_height
     self:updateFooterPos()
+end
+
+-- recalculate footer sizes when document page count is updated
+function ReaderFooter:onUpdatePos()
+    UIManager:scheduleIn(0.1, function() self:init() end)
 end
 
 function ReaderFooter:applyFooterMode(mode)
