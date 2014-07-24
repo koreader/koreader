@@ -5,6 +5,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local JSON = require("JSON")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 local ReaderDictionary = EventListener:new{}
 
@@ -24,10 +25,21 @@ function ReaderDictionary:stardictLookup(word, box)
         local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
         local results_str = nil
         if std_out then results_str = std_out:read("*all") end
-        if results_str then
-            --DEBUG("result str:", word, results_str)
-            local ok, results = pcall(JSON.decode, JSON, results_str)
-            --DEBUG("lookup result table:", word, results)
+        --DEBUG("result str:", word, results_str)
+        local ok, results = pcall(JSON.decode, JSON, results_str)
+        if ok and results then
+            DEBUG("lookup result table:", word, results)
+            self:showDict(results, box)
+        else
+            -- dummy results
+            results = {
+                {
+                    dict = "",
+                    word = word,
+                    definition = _("No definition found."),
+                }
+            }
+            DEBUG("dummy result table:", word, results)
             self:showDict(results, box)
         end
     end
