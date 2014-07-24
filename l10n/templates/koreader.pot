@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-17 14:32+0000\n"
+"POT-Creation-Date: 2014-07-24 14:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -58,7 +58,7 @@ msgid ""
 "Apply"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertypeset.lua:55
+#: frontend/apps/reader/modules/readertypeset.lua:61
 msgid ""
 "Auto"
 msgstr ""
@@ -122,12 +122,12 @@ msgid ""
 "Cut"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:184
+#: frontend/apps/reader/modules/readerfont.lua:185
 msgid ""
 "Decrease gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:154
+#: frontend/apps/reader/modules/readerfont.lua:155
 msgid ""
 "Decrease line space to "
 msgstr ""
@@ -237,6 +237,11 @@ msgid ""
 "Fine Tuning"
 msgstr ""
 
+#: frontend/apps/reader/modules/readertypeset.lua:127
+msgid ""
+"Floating punctuation"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:24
 msgid ""
 "Font Weight"
@@ -304,12 +309,12 @@ msgid ""
 "Hyphenation"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:181
+#: frontend/apps/reader/modules/readerfont.lua:182
 msgid ""
 "Increase gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:158
+#: frontend/apps/reader/modules/readerfont.lua:159
 msgid ""
 "Increase line space to "
 msgstr ""
@@ -391,6 +396,11 @@ msgid ""
 "Night mode"
 msgstr ""
 
+#: frontend/apps/reader/modules/readerdictionary.lua:39
+msgid ""
+"No definition found."
+msgstr ""
+
 #: reader.lua:95
 msgid ""
 "No reader engine for this file"
@@ -469,7 +479,7 @@ msgid ""
 "Received file:"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:208
+#: frontend/apps/reader/modules/readerfont.lua:209
 msgid ""
 "Redrawing with font "
 msgstr ""
@@ -504,7 +514,7 @@ msgid ""
 "Set default "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:223
+#: frontend/apps/reader/modules/readerfont.lua:224
 msgid ""
 "Set default font to "
 msgstr ""
@@ -514,7 +524,7 @@ msgid ""
 "Set default zoom mode to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:139
+#: frontend/apps/reader/modules/readerfont.lua:140
 msgid ""
 "Set font size to "
 msgstr ""
@@ -716,7 +726,7 @@ msgid ""
 "bold"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertypeset.lua:49
+#: frontend/apps/reader/modules/readertypeset.lua:55
 msgid ""
 "clear all external styles"
 msgstr ""
