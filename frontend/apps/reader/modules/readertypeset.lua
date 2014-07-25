@@ -1,4 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
+local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
@@ -33,9 +35,12 @@ function ReaderTypeset:onReadSettings(config)
     self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 
     -- default to enable floating punctuation
+    -- the floating punctuation should not be boolean value for the following
+    -- expression otherwise a false value will never be returned but numerical
+    -- values will survive this expression
     self.floating_punctuation = config:readSetting("floating_punctuation") or
-        G_reader_settings:readSetting("floating_punctuation") or true
-    self:toggleFloatingPunctuation(self.floating_punctuation and 1 or 0)
+        G_reader_settings:readSetting("floating_punctuation") or 1
+    self:toggleFloatingPunctuation(self.floating_punctuation)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -113,6 +118,13 @@ function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
 end
 
 function ReaderTypeset:toggleFloatingPunctuation(toggle)
+    -- for some reason the toggle value read from history files may stay boolean
+    -- and there seems no more elegant way to convert boolean values to numbers
+    if toggle == true then
+        toggle = 1
+    elseif toggle == false then
+        toggle = 0
+    end
     self.ui.document:setFloatingPunctuation(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
@@ -125,11 +137,22 @@ function ReaderTypeset:addToMainMenu(tab_item_table)
     })
     table.insert(tab_item_table.typeset, {
         text = _("Floating punctuation"),
-        checked_func = function() return self.floating_punctuation == true end,
+        checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()
-            self.floating_punctuation = not self.floating_punctuation
-            self:toggleFloatingPunctuation(self.floating_punctuation and 1 or 0)
-        end
+            self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
+            self:toggleFloatingPunctuation(self.floating_punctuation)
+    end,
+        hold_callback = function() self:makeDefaultFloatingPunctuation() end,
+    })
+end
+
+function ReaderTypeset:makeDefaultFloatingPunctuation()
+    local toggler = self.floating_punctuation == 1 and _("On") or _("Off")
+    UIManager:show(ConfirmBox:new{
+        text = _("Set default floating punctuation to ")..toggler.."?",
+        ok_callback = function()
+            G_reader_settings:saveSetting("floating_punctuation", self.floating_punctuation)
+        end,
     })
 end
 
