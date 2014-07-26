@@ -1,15 +1,17 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local TouchMenu = require("ui/widget/touchmenu")
+local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
-local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
-local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
@@ -81,6 +83,7 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
+    table.insert(self.tab_item_table.main, self:genRefreshRateMenu())
     table.insert(self.tab_item_table.main, {
         text = _("Show advanced options"),
         checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
@@ -106,6 +109,88 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
+end
+
+function ReaderMenu:genRefreshRateMenu()
+    local custom_1 = function() return G_reader_settings:readSetting("refresh_rate_1") or 12 end
+    local custom_2 = function() return G_reader_settings:readSetting("refresh_rate_2") or 22 end
+    local custom_3 = function() return G_reader_settings:readSetting("refresh_rate_3") or 99 end
+    return {
+        text = _("E-ink full refresh rate"),
+        sub_item_table = {
+            {
+                text = _("Every page"),
+                checked_func = function() return UIManager:getRefreshRate() == 1 end,
+                callback = function() UIManager:setRefreshRate(1) end,
+            },
+            {
+                text = _("Every 6 pages"),
+                checked_func = function() return UIManager:getRefreshRate() == 6 end,
+                callback = function() UIManager:setRefreshRate(6) end,
+            },
+            {
+                text_func = function() return _("Custom ") .. "1: " .. custom_1() .. _(" pages") end,
+                checked_func = function() return UIManager:getRefreshRate() == custom_1() end,
+                callback = function() UIManager:setRefreshRate(custom_1()) end,
+                hold_callback = function() self:makeCustomRateDialog("refresh_rate_1") end,
+            },
+            {
+                text_func = function() return _("Custom ") .. "2: " .. custom_2() .. _(" pages") end,
+                checked_func = function() return UIManager:getRefreshRate() == custom_2() end,
+                callback = function() UIManager:setRefreshRate(custom_2()) end,
+                hold_callback = function() self:makeCustomRateDialog("refresh_rate_2") end,
+            },
+            {
+                text_func = function() return _("Custom ") .. "3: " .. custom_3() .. _(" pages") end,
+                checked_func = function() return UIManager:getRefreshRate() == custom_3() end,
+                callback = function() UIManager:setRefreshRate(custom_3()) end,
+                hold_callback = function() self:makeCustomRateDialog("refresh_rate_3") end,
+            },
+        }
+    }
+end
+
+function ReaderMenu:makeCustomRate(custom_rate)
+    local number = tonumber(self.custom_dialog:getInputText())
+    G_reader_settings:saveSetting(custom_rate, number)
+end
+
+function ReaderMenu:makeCustomRateDialog(custom_rate)
+    self.custom_dialog = InputDialog:new{
+        title = _("Input page number for a full refresh"),
+        input_hint = "(1 - 99)",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:closeMakeCustomDialog()
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    callback = function()
+                        self:makeCustomRate(custom_rate)
+                        self:closeMakeCustomDialog()
+                    end,
+                },
+            },
+        },
+        input_type = "number",
+        enter_callback = function()
+            self:makeCustomRate(custom_rate)
+            self:closeMakeCustomDialog()
+        end,
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.custom_dialog:onShowKeyboard()
+    UIManager:show(self.custom_dialog)
+end
+
+function ReaderMenu:closeMakeCustomDialog()
+    self.custom_dialog:onClose()
+    UIManager:close(self.custom_dialog)
 end
 
 function ReaderMenu:onShowReaderMenu()

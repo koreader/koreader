@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-17 14:32+0000\n"
+"POT-Creation-Date: 2014-07-26 14:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -15,6 +15,13 @@ msgstr ""
 #: plugins/evernote.koplugin/main.lua:334
 msgid ""
 " others."
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:132
+#: frontend/apps/reader/modules/readermenu.lua:138
+#: frontend/apps/reader/modules/readermenu.lua:144
+msgid ""
+" pages"
 msgstr ""
 
 #: frontend/ui/widget/configdialog.lua:582
@@ -58,7 +65,7 @@ msgid ""
 "Apply"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertypeset.lua:55
+#: frontend/apps/reader/modules/readertypeset.lua:66
 msgid ""
 "Auto"
 msgstr ""
@@ -74,6 +81,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
+#: frontend/apps/reader/modules/readermenu.lua:165
 #: frontend/ui/widget/confirmbox.lua:29
 #: plugins/evernote.koplugin/main.lua:124
 #: plugins/zsync.koplugin/main.lua:279
@@ -117,17 +125,24 @@ msgid ""
 "Copy"
 msgstr ""
 
+#: frontend/apps/reader/modules/readermenu.lua:132
+#: frontend/apps/reader/modules/readermenu.lua:138
+#: frontend/apps/reader/modules/readermenu.lua:144
+msgid ""
+"Custom "
+msgstr ""
+
 #: frontend/apps/filemanager/filemanager.lua:104
 msgid ""
 "Cut"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:184
+#: frontend/apps/reader/modules/readerfont.lua:185
 msgid ""
 "Decrease gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:154
+#: frontend/apps/reader/modules/readerfont.lua:155
 msgid ""
 "Decrease line space to "
 msgstr ""
@@ -164,9 +179,14 @@ msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:136
+#: frontend/apps/reader/modules/readermenu.lua:221
 msgid ""
 "Document menu"
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:119
+msgid ""
+"E-ink full refresh rate"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:194
@@ -199,6 +219,16 @@ msgstr ""
 #: plugins/evernote.koplugin/main.lua:53
 msgid ""
 "Evernote"
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:127
+msgid ""
+"Every 6 pages"
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:122
+msgid ""
+"Every page"
 msgstr ""
 
 #: plugins/evernote.koplugin/main.lua:82
@@ -235,6 +265,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:13
 msgid ""
 "Fine Tuning"
+msgstr ""
+
+#: frontend/apps/reader/modules/readertypeset.lua:139
+msgid ""
+"Floating punctuation"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:24
@@ -283,7 +318,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:103
-#: frontend/apps/reader/modules/readermenu.lua:102
+#: frontend/apps/reader/modules/readermenu.lua:105
 msgid ""
 "Help"
 msgstr ""
@@ -304,12 +339,12 @@ msgid ""
 "Hyphenation"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:181
+#: frontend/apps/reader/modules/readerfont.lua:182
 msgid ""
 "Increase gamma to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:158
+#: frontend/apps/reader/modules/readerfont.lua:159
 msgid ""
 "Increase line space to "
 msgstr ""
@@ -317,6 +352,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:23
 msgid ""
 "Indentation"
+msgstr ""
+
+#: frontend/apps/reader/modules/readermenu.lua:160
+msgid ""
+"Input page number for a full refresh"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:93
@@ -386,9 +426,14 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:85
-#: frontend/apps/reader/modules/readermenu.lua:76
+#: frontend/apps/reader/modules/readermenu.lua:78
 msgid ""
 "Night mode"
+msgstr ""
+
+#: frontend/apps/reader/modules/readerdictionary.lua:39
+msgid ""
+"No definition found."
 msgstr ""
 
 #: reader.lua:95
@@ -402,9 +447,20 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
+#: frontend/apps/reader/modules/readermenu.lua:171
 #: frontend/ui/widget/confirmbox.lua:28
 msgid ""
 "OK"
+msgstr ""
+
+#: frontend/apps/reader/modules/readertypeset.lua:150
+msgid ""
+"Off"
+msgstr ""
+
+#: frontend/apps/reader/modules/readertypeset.lua:150
+msgid ""
+"On"
 msgstr ""
 
 #: reader.lua:85
@@ -438,7 +494,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:106
-#: frontend/apps/reader/modules/readermenu.lua:105
+#: frontend/apps/reader/modules/readermenu.lua:108
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -469,7 +525,7 @@ msgid ""
 "Received file:"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:208
+#: frontend/apps/reader/modules/readerfont.lua:209
 msgid ""
 "Redrawing with font "
 msgstr ""
@@ -504,7 +560,12 @@ msgid ""
 "Set default "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:223
+#: frontend/apps/reader/modules/readertypeset.lua:152
+msgid ""
+"Set default floating punctuation to "
+msgstr ""
+
+#: frontend/apps/reader/modules/readerfont.lua:224
 msgid ""
 "Set default font to "
 msgstr ""
@@ -514,7 +575,7 @@ msgid ""
 "Set default zoom mode to "
 msgstr ""
 
-#: frontend/apps/reader/modules/readerfont.lua:139
+#: frontend/apps/reader/modules/readerfont.lua:140
 msgid ""
 "Set font size to "
 msgstr ""
@@ -524,7 +585,7 @@ msgid ""
 "Set highlight drawer "
 msgstr ""
 
-#: frontend/apps/reader/modules/readertypeset.lua:9
+#: frontend/apps/reader/modules/readertypeset.lua:11
 msgid ""
 "Set render style"
 msgstr ""
@@ -534,7 +595,7 @@ msgid ""
 "Share"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:85
+#: frontend/apps/reader/modules/readermenu.lua:88
 msgid ""
 "Show advanced options"
 msgstr ""
@@ -630,7 +691,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:95
-#: frontend/apps/reader/modules/readermenu.lua:94
+#: frontend/apps/reader/modules/readermenu.lua:97
 msgid ""
 "Version"
 msgstr ""
@@ -716,7 +777,7 @@ msgid ""
 "bold"
 msgstr ""
 
-#: frontend/apps/reader/modules/readertypeset.lua:49
+#: frontend/apps/reader/modules/readertypeset.lua:60
 msgid ""
 "clear all external styles"
 msgstr ""

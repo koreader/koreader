@@ -50,10 +50,10 @@ function ScrollTextWidget:init()
     self.dimen = Geom:new(self[1]:getSize())
     if Device:isTouchDevice() then
         self.ges_events = {
-            Swipe = {
+            ScrollText = {
                 GestureRange:new{
                     ges = "swipe",
-                    range = self.dimen,
+                    range = function() return self.dimen end,
                 },
             },
         }
@@ -70,7 +70,7 @@ function ScrollTextWidget:updateScrollBar(text)
     )
 end
 
-function ScrollTextWidget:onSwipe(arg, ges)
+function ScrollTextWidget:onScrollText(arg, ges)
     if ges.direction == "north" then
         self.text_widget:scrollDown()
         self:updateScrollBar(self.text_widget)
@@ -79,7 +79,6 @@ function ScrollTextWidget:onSwipe(arg, ges)
         self:updateScrollBar(self.text_widget)
     end
     UIManager:setDirty(self.dialog, "partial")
-    return true
 end
 
 return ScrollTextWidget

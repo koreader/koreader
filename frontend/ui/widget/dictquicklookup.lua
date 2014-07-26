@@ -239,6 +239,7 @@ function DictQuickLookup:changeToNextDict()
 end
 
 function DictQuickLookup:changeDictionary(index)
+    if not self.results[index] then return end
     self.dict_index = index
     self.dictionary = self.results[index].dict
     self.lookupword = self.results[index].word
@@ -303,6 +304,15 @@ end
 function DictQuickLookup:onClose()
     UIManager:close(self)
     self.highlight:handleEvent(Event:new("Tap"))
+    return true
+end
+
+function DictQuickLookup:onSwipe(arg, ges)
+    if ges.direction == "west" then
+        self:changeToNextDict()
+    elseif ges.direction == "east" then
+        self:changeToPrevDict()
+    end
     return true
 end
 

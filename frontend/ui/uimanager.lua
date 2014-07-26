@@ -45,7 +45,7 @@ local UIManager = {
     -- after each ui loop
     partial_refresh = false,
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
-    FULL_REFRESH_COUNT = DRCOUNTMAX,
+    FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
     refresh_count = 0,
 
     event_handlers = nil,
@@ -220,6 +220,19 @@ function UIManager:removeZMQ(zeromq)
             table.remove(self._zeromqs, i)
         end
     end
+end
+
+-- set full refresh rate for e-ink screen
+-- and make the refresh rate persistant in global reader settings
+function UIManager:setRefreshRate(rate)
+    DEBUG("set screen full refresh rate", rate)
+    self.FULL_REFRESH_COUNT = rate
+    G_reader_settings:saveSetting("full_refresh_count", rate)
+end
+
+-- get full refresh rate for e-ink screen
+function UIManager:getRefreshRate(rate)
+    return self.FULL_REFRESH_COUNT
 end
 
 -- signal to quit
