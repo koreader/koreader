@@ -18,7 +18,10 @@ local FileManagerMenu = InputContainer:extend{
 
 function FileManagerMenu:init()
     self.tab_item_table = {
-        main = {
+        setting = {
+            icon = "resources/icons/appbar.settings.png",
+        },
+        info = {
             icon = "resources/icons/appbar.pokeball.png",
         },
         home = {
@@ -59,7 +62,8 @@ function FileManagerMenu:setUpdateItemTable()
         widget:addToMainMenu(self.tab_item_table)
     end
 
-    table.insert(self.tab_item_table.main, {
+    -- setting tab
+    table.insert(self.tab_item_table.setting, {
         text = _("Show hidden files"),
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function()
@@ -67,7 +71,7 @@ function FileManagerMenu:setUpdateItemTable()
         end
     })
 
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.setting, {
         text = _("Start with last opened file"),
         checked_func = function() return G_reader_settings:readSetting("open_last") end,
         enabled_func = function() return G_reader_settings:readSetting("lastfile") ~= nil end,
@@ -81,7 +85,7 @@ function FileManagerMenu:setUpdateItemTable()
         ReaderFrontLight:addToMainMenu(self.tab_item_table)
     end
 
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
         callback = function()
@@ -90,8 +94,49 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-    table.insert(self.tab_item_table.main, Language:getLangMenuTable())
-    table.insert(self.tab_item_table.main, {
+
+    -- TODO: refactor out redundant code between reader menu and filemanager menu
+    table.insert(self.tab_item_table.setting, {
+        text = _("Font size"),
+        sub_item_table = {
+            {
+                text = _("Auto"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi == nil
+                end,
+                callback = function() Screen:setDPI() end
+            },
+            {
+                text = _("Small"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi <= 140
+                end,
+                callback = function() Screen:setDPI(120) end
+            },
+            {
+                text = _("Medium"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 140 and dpi <= 200
+                end,
+                callback = function() Screen:setDPI(160) end
+            },
+            {
+                text = _("Large"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 200
+                end,
+                callback = function() Screen:setDPI(240) end
+            },
+        }
+    })
+    table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
+
+    -- info tab
+    table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
             UIManager:show(InfoMessage:new{
@@ -99,7 +144,7 @@ function FileManagerMenu:setUpdateItemTable()
             })
         end
     })
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.info, {
         text = _("Help"),
         callback = function()
             UIManager:show(InfoMessage:new{
@@ -110,7 +155,7 @@ function FileManagerMenu:setUpdateItemTable()
 end
 
 function FileManagerMenu:onShowMenu()
-    if #self.tab_item_table.main == 0 then
+    if #self.tab_item_table.setting == 0 then
         self:setUpdateItemTable()
     end
 
@@ -124,7 +169,8 @@ function FileManagerMenu:onShowMenu()
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
             tab_item_table = {
-                self.tab_item_table.main,
+                self.tab_item_table.setting,
+                self.tab_item_table.info,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,

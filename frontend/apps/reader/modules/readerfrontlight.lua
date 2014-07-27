@@ -80,8 +80,8 @@ function ReaderFrontLight:onPanRelease(arg, ges)
 end
 
 function ReaderFrontLight:addToMainMenu(tab_item_table)
-    -- insert fldial command to main reader menu
-    table.insert(tab_item_table.main, {
+    -- insert fldial command to setting tab of reader menu
+    table.insert(tab_item_table.setting, {
         text = _("Frontlight settings"),
         callback = function()
             self:onShowFlDialog()

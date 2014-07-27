@@ -137,6 +137,7 @@ function Screen:getHeightPhoenix()
 end
 
 function Screen:getDPI()
+    self.dpi = G_reader_settings:readSetting("screen_dpi")
     if self.dpi ~= nil then return self.dpi end
     local model = self.device:getModel()
     if model == "KindlePaperWhite" or model == "KindlePaperWhite2"
@@ -153,9 +154,14 @@ function Screen:getDPI()
         local ffi = require("ffi")
         self.dpi = ffi.C.AConfiguration_getDensity(android.app.config)
     else
-        self.dpi = 167
+        self.dpi = 160
     end
     return self.dpi
+end
+
+function Screen:setDPI(dpi)
+    G_reader_settings:saveSetting("screen_dpi", dpi)
+    self.dpi = dpi
 end
 
 function Screen:scaleByDPI(px)
