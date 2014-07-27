@@ -21,11 +21,14 @@ local ReaderMenu = InputContainer:new{
 
 function ReaderMenu:init()
     self.tab_item_table = {
-        main = {
-            icon = "resources/icons/appbar.pokeball.png",
+        setting = {
+            icon = "resources/icons/appbar.settings.png",
         },
         navi = {
             icon = "resources/icons/appbar.page.corner.bookmark.png",
+        },
+        info = {
+            icon = "resources/icons/appbar.pokeball.png",
         },
         typeset = {
             icon = "resources/icons/appbar.page.text.png",
@@ -74,7 +77,8 @@ function ReaderMenu:setUpdateItemTable()
         widget:addToMainMenu(self.tab_item_table)
     end
 
-    table.insert(self.tab_item_table.main, {
+    -- setting tab
+    table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
         callback = function()
@@ -83,8 +87,45 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-    table.insert(self.tab_item_table.main, self:genRefreshRateMenu())
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.setting, {
+        text = _("Font size"),
+        sub_item_table = {
+            {
+                text = _("Auto"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi == nil
+                end,
+                callback = function() Screen:setDPI() end
+            },
+            {
+                text = _("Small"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi <= 140
+                end,
+                callback = function() Screen:setDPI(120) end
+            },
+            {
+                text = _("Medium"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 140 and dpi <= 200
+                end,
+                callback = function() Screen:setDPI(160) end
+            },
+            {
+                text = _("Large"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 200
+                end,
+                callback = function() Screen:setDPI(240) end
+            },
+        }
+    })
+    table.insert(self.tab_item_table.setting, self:genRefreshRateMenu())
+    table.insert(self.tab_item_table.setting, {
         text = _("Show advanced options"),
         checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
         callback = function()
@@ -92,8 +133,10 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("show_advanced", not show_advanced)
         end
     })
-    table.insert(self.tab_item_table.main, Language:getLangMenuTable())
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
+
+    -- info tab
+    table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
             UIManager:show(InfoMessage:new{
@@ -101,7 +144,7 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
-    table.insert(self.tab_item_table.main, {
+    table.insert(self.tab_item_table.info, {
         text = _("Help"),
         callback = function()
             UIManager:show(InfoMessage:new{
@@ -194,7 +237,7 @@ function ReaderMenu:closeMakeCustomDialog()
 end
 
 function ReaderMenu:onShowReaderMenu()
-    if #self.tab_item_table.main == 0 then
+    if #self.tab_item_table.setting == 0 then
         self:setUpdateItemTable()
     end
 
@@ -210,7 +253,8 @@ function ReaderMenu:onShowReaderMenu()
             tab_item_table = {
                 self.tab_item_table.navi,
                 self.tab_item_table.typeset,
-                self.tab_item_table.main,
+                self.tab_item_table.setting,
+                self.tab_item_table.info,
                 self.tab_item_table.plugins,
                 self.tab_item_table.home,
             },
