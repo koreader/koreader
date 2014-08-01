@@ -138,26 +138,7 @@ function ReaderMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
-    table.insert(self.tab_item_table.info, {
-        text = _("Check update"),
-        callback = function()
-            local ota_version = OTAManager:checkUpdate()
-            if ota_version == 0 then
-                UIManager:show(InfoMessage:new{
-                    text = _("Your koreader is updated."),
-                })
-            elseif ota_version == nil then
-                UIManager:show(InfoMessage:new{
-                    text = _("OTA server is not available."),
-                })
-            elseif ota_version then
-                UIManager:show(ConfirmBox:new{
-                    text = _("Do you want to update to version ")..ota_version.."?",
-                    ok_callback = function() OTAManager:zsync() end
-                })
-            end
-        end
-    })
+    table.insert(self.tab_item_table.info, OTAManager:genMenuEntry())
     table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
