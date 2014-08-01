@@ -1,4 +1,6 @@
 #!/bin/sh
+# NOTE: KatePart is being stupid, probably because of the file extension. Get me a decent syntax HL anyway.
+#kate: syntax bash;
 
 ## A bit of helper functions...
 # Check which type of init system we're running on
@@ -15,7 +17,7 @@ fi
 # We need to get the proper constants for our model...
 kmodel="$(cut -c3-4 /proc/usid)"
 case "${kmodel}" in
-	"24" | "1B" | "1D" | "1F" | "1C" | "20" | "D4" | "5A" | "D5" | "D6" | "D7" | "D8" | "F2" | "17" )
+	"24" | "1B" | "1D" | "1F" | "1C" | "20" | "D4" | "5A" | "D5" | "D6" | "D7" | "D8" | "F2" | "17" | "60" | "F4" | "F9" | "62" | "61" | "5F" )
 		# PaperWhite...
 		SCREEN_X_RES=768	# NOTE: Yes, 768, not 758...
 		SCREEN_Y_RES=1024
