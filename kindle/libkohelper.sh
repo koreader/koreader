@@ -1,6 +1,4 @@
 #!/bin/sh
-# NOTE: KatePart is being stupid, probably because of the file extension. Get me a decent syntax HL anyway.
-#kate: syntax bash;
 
 ## A bit of helper functions...
 # Check which type of init system we're running on

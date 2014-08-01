@@ -10,8 +10,8 @@ PROC_FIVEWAY="/proc/fiveway"
 KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
-if [ -f "${KOREADER_DIR}/libkoreader.inc" ] ; then
-	source "${KOREADER_DIR}/libkoreader.inc"
+if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
+	source "${KOREADER_DIR}/libkohelper.sh"
 else
 	echo "Can't source helper functions, aborting!"
 	exit 1
@@ -83,10 +83,11 @@ cd "${KOREADER_DIR}"
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 if [ -f "${NEWUPDATE}" ] ; then
 	logmsg "Updating koreader . . ."
-	# Look for our own GNU tar build to do a fancy update tracking...
+	# Look for our own GNU tar build to do a fancy progress tracking...
 	GNUTAR_BIN="${KOREADER_DIR}/tar"
 	if [ -x "${GNUTAR_BIN}" ] ; then
-		# Let our checkpoint script handle the visual feedback...
+		# Let our checkpoint script handle the detailed visual feedback...
+		eips_print_bottom_centered "Updating koreader" 1
 		${GNUTAR_BIN} -C "/mnt/us" --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
 	else
 		# Fall back to busybox tar

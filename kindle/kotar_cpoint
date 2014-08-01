@@ -4,8 +4,8 @@
 KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
-if [ -f "${KOREADER_DIR}/libkoreader.inc" ] ; then
-	source "${KOREADER_DIR}/libkoreader.inc"
+if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
+	source "${KOREADER_DIR}/libkohelper.sh"
 else
 	echo "Can't source helper functions, aborting!"
 	exit 1
