@@ -4,7 +4,7 @@
 #
 ##
 
-# KOReader's  working directory
+# KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...

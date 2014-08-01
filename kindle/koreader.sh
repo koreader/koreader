@@ -6,7 +6,7 @@ PROC_FIVEWAY="/proc/fiveway"
 [ -e $PROC_KEYPAD ] && echo unlock > $PROC_KEYPAD
 [ -e $PROC_FIVEWAY ] && echo unlock > $PROC_FIVEWAY
 
-# KOReader's  working directory
+# KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
