@@ -1,8 +1,19 @@
 #!/bin/sh
 export LC_ALL="en_US.UTF-8"
 
+# working directory of koreader
+KOREADER_DIR=/mnt/onboard/.kobo/koreader
+
+# update to new version from OTA directory
+NEWUPDATE=${KOREADER_DIR}/ota/koreader.updated.tar
+if [ -f $NEWUPDATE ]; then
+    # TODO: any graphic indication for the updating progress?
+	logmsg "Updating koreader . . ."
+    cd /mnt/onboard/.kobo && tar xf $NEWUPDATE && rm $NEWUPDATE
+fi
+
 # we're always starting from our working directory
-cd /mnt/onboard/.kobo/koreader/
+cd $KOREADER_DIR
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
