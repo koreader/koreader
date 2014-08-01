@@ -3,6 +3,9 @@
 # KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
 
+# We do NOT want to sleep during eips calls!
+export EIPS_NO_SLEEP="true"
+
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
 	source "${KOREADER_DIR}/libkohelper.sh"

@@ -72,7 +72,10 @@ eips_print_bottom_centered()
 
 	# Sleep a tiny bit to workaround the logic in the 'new' (K4+) eInk controllers that tries to bundle updates,
 	# otherwise it may drop part of our messages because of other screen updates from KUAL...
-	usleep 150000	# 150ms
+	# Unless we really don't want to sleep, for special cases...
+	if [ ! -n "${EIPS_NO_SLEEP}" ] ; then
+		usleep 150000	# 150ms
+	fi
 
 	# And finally, show our formatted message centered on the bottom of the screen (NOTE: Redirect to /dev/null to kill unavailable character & pixel not in range warning messages)
 	eips 0 $((${EIPS_MAXLINES} - 2 - ${kh_eips_y_shift_up})) "${kh_eips_string}" >/dev/null
