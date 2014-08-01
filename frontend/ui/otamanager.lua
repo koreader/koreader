@@ -89,7 +89,7 @@ function OTAManager:zsync()
     end
 end
 
-function OTAManager:genMenuEntry()
+function OTAManager:getOTAMenuTable()
     return {
         text = _("Check update"),
         callback = function()

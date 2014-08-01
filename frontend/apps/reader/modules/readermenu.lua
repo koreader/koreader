@@ -89,43 +89,7 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Font size"),
-        sub_item_table = {
-            {
-                text = _("Auto"),
-                checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi == nil
-                end,
-                callback = function() Screen:setDPI() end
-            },
-            {
-                text = _("Small"),
-                checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi <= 140
-                end,
-                callback = function() Screen:setDPI(120) end
-            },
-            {
-                text = _("Medium"),
-                checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi > 140 and dpi <= 200
-                end,
-                callback = function() Screen:setDPI(160) end
-            },
-            {
-                text = _("Large"),
-                checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi > 200
-                end,
-                callback = function() Screen:setDPI(240) end
-            },
-        }
-    })
+    table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
     table.insert(self.tab_item_table.setting, self:genRefreshRateMenu())
     table.insert(self.tab_item_table.setting, {
         text = _("Show advanced options"),
@@ -138,7 +102,7 @@ function ReaderMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
-    table.insert(self.tab_item_table.info, OTAManager:genMenuEntry())
+    table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
     table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
