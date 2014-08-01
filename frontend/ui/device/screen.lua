@@ -1,7 +1,8 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
-local DEBUG = require("dbg")
 local util = require("ffi/util")
+local DEBUG = require("dbg")
+local _ = require("gettext")
 
 -- Blitbuffer
 -- einkfb
@@ -234,6 +235,46 @@ function Screen:restoreFromBB(bb)
     else
         DEBUG("Got nil bb in restoreFromSavedBB!")
     end
+end
+
+function Screen:getDPIMenuTable()
+    return {
+        text = _("Font size"),
+        sub_item_table = {
+            {
+                text = _("Auto"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi == nil
+                end,
+                callback = function() Screen:setDPI() end
+            },
+            {
+                text = _("Small"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi <= 140
+                end,
+                callback = function() Screen:setDPI(120) end
+            },
+            {
+                text = _("Medium"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 140 and dpi <= 200
+                end,
+                callback = function() Screen:setDPI(160) end
+            },
+            {
+                text = _("Large"),
+                checked_func = function()
+                    local dpi = G_reader_settings:readSetting("screen_dpi")
+                    return dpi and dpi > 200
+                end,
+                callback = function() Screen:setDPI(240) end
+            },
+        }
+    }
 end
 
 return Screen
