@@ -88,7 +88,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 	if [ -x "${GNUTAR_BIN}" ] ; then
 		# Let our checkpoint script handle the detailed visual feedback...
 		eips_print_bottom_centered "Updating koreader" 1
-		${GNUTAR_BIN} -C "/mnt/us" --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
+		${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
 	else
 		# Fall back to busybox tar
 		eips_print_bottom_centered "Updating koreader . . ." 1
