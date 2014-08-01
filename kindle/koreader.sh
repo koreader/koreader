@@ -6,15 +6,15 @@ PROC_FIVEWAY="/proc/fiveway"
 [ -e $PROC_KEYPAD ] && echo unlock > $PROC_KEYPAD
 [ -e $PROC_FIVEWAY ] && echo unlock > $PROC_FIVEWAY
 
-# Check which type of init system we're running on
-if [ -d /etc/upstart ] ; then
-	INIT_TYPE="upstart"
-	# We'll need that for logging
-	[ -f /etc/upstart/functions ] && source /etc/upstart/functions
+# KOReader's working directory
+KOREADER_DIR="/mnt/us/koreader"
+
+# Load our helper functions...
+if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
+	source "${KOREADER_DIR}/libkohelper.sh"
 else
-	INIT_TYPE="sysv"
-	# We'll need that for logging
-	[ -f /etc/rc.d/functions ] && source /etc/rc.d/functions
+	echo "Can't source helper functions, aborting!"
+	exit 1
 fi
 
 # Handle logging...
@@ -76,19 +76,35 @@ if [ "$(nice)" == "5" ] ; then
 	renice -n -5 $$
 fi
 
-# working directory of koreader
-KOREADER_DIR=/mnt/us/koreader
-
-# update to new version from OTA directory
-NEWUPDATE=${KOREADER_DIR}/ota/koreader.updated.tar
-if [ -f $NEWUPDATE ]; then
-    # TODO: any graphic indication for the updating progress?
-	logmsg "Updating koreader . . ."
-    cd /mnt/us && tar xf $NEWUPDATE && rm $NEWUPDATE
-fi
-
 # we're always starting from our working directory
-cd $KOREADER_DIR
+cd "${KOREADER_DIR}"
+
+# Handle pending OTA update
+NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+if [ -f "${NEWUPDATE}" ] ; then
+	logmsg "Updating koreader . . ."
+	# Look for our own GNU tar build to do a fancy progress tracking...
+	GNUTAR_BIN="${KOREADER_DIR}/tar"
+	if [ -x "${GNUTAR_BIN}" ] ; then
+		# Let our checkpoint script handle the detailed visual feedback...
+		eips_print_bottom_centered "Updating koreader" 1
+		${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
+	else
+		# Fall back to busybox tar
+		eips_print_bottom_centered "Updating koreader . . ." 1
+		tar -C "/mnt/us" -xf "${NEWUPDATE}"
+	fi
+	# Cleanup behind us...
+	if [ $? -eq 0 ] ; then
+		rm "${NEWUPDATE}"
+		logmsg "Update sucessful :)"
+		eips_print_bottom_centered "Update sucessful :)" 1
+	else
+		# Huh ho...
+		logmsg "Update failed :("
+		eips_print_bottom_centered "Update failed :(" 1
+	fi
+fi
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -174,6 +190,7 @@ fi
 
 # finally call reader
 logmsg "Starting KOReader . . ."
+eips_print_bottom_centered "Starting KOReader . . ." 1
 ./reader.lua "$@" 2> crash.log
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
