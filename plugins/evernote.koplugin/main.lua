@@ -89,7 +89,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("This may take several seconds..."),
+                        text = _("Exporting may take several seconds..."),
                         timeout = 1,
                     })
                 end
@@ -105,7 +105,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("This may take several minutes..."),
+                        text = _("Exporting may take several minutes..."),
                         timeout = 1,
                     })
                 end
