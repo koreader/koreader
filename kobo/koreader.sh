@@ -8,7 +8,6 @@ KOREADER_DIR=/mnt/onboard/.kobo/koreader
 NEWUPDATE=${KOREADER_DIR}/ota/koreader.updated.tar
 if [ -f $NEWUPDATE ]; then
     # TODO: any graphic indication for the updating progress?
-	logmsg "Updating koreader . . ."
     cd /mnt/onboard/.kobo && tar xf $NEWUPDATE && rm $NEWUPDATE
 fi
 
