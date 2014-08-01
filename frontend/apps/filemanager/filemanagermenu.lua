@@ -1,7 +1,9 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
-local TouchMenu = require("ui/widget/touchmenu")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
+local TouchMenu = require("ui/widget/touchmenu")
 local InfoMessage = require("ui/widget/infomessage")
+local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
@@ -136,6 +138,26 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
+    table.insert(self.tab_item_table.info, {
+        text = _("Check update"),
+        callback = function()
+            local ota_version = OTAManager:checkUpdate()
+            if ota_version == 0 then
+                UIManager:show(InfoMessage:new{
+                    text = _("Your koreader is updated."),
+                })
+            elseif ota_version == nil then
+                UIManager:show(InfoMessage:new{
+                    text = _("OTA server is not available."),
+                })
+            elseif ota_version then
+                UIManager:show(ConfirmBox:new{
+                    text = _("Do you want to update to version ")..ota_version.."?",
+                    ok_callback = function() OTAManager:zsync() end
+                })
+            end
+        end
+    })
     table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()

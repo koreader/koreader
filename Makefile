@@ -59,6 +59,7 @@ endif
 	mkdir -p $(INSTALL_DIR)/koreader/data/dict
 	mkdir -p $(INSTALL_DIR)/koreader/data/tessdata
 	mkdir -p $(INSTALL_DIR)/koreader/fonts/host
+	mkdir -p $(INSTALL_DIR)/koreader/ota
 ifndef EMULATE_READER
 	# clean up, remove unused files for releases
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
@@ -109,8 +110,19 @@ endif
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \
-			-x "koreader/resources/fonts/*" \
+			-x "koreader/resources/fonts/*" "koreader/ota/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
+	# generate kindleupdate package index file
+	zipinfo -1 koreader-kindle-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-kindle-$(MACHINE)-$(VERSION).zip \
+		koreader/ota/package.index
+	# make gzip kindleupdate for zsync OTA update
+	cd $(INSTALL_DIR) && \
+		tar czafh ../koreader-kindle-$(MACHINE)-$(VERSION).tar.gz \
+		-T koreader/ota/package.index --no-recursion
 
 koboupdate: all
 	# ensure that the binaries were built for ARM
@@ -134,6 +146,17 @@ koboupdate: all
 			KoboRoot.tgz koreader koreader.png README_kobo.txt \
 			-x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
+	# generate koboupdate package index file
+	zipinfo -1 koreader-kobo-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-kobo-$(MACHINE)-$(VERSION).zip \
+		koreader/ota/package.index
+	# make gzip koboupdate for zsync OTA update
+	cd $(INSTALL_DIR) && \
+		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).tar.gz \
+		-T koreader/ota/package.index --no-recursion
 
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module

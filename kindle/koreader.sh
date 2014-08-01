@@ -76,8 +76,19 @@ if [ "$(nice)" == "5" ] ; then
 	renice -n -5 $$
 fi
 
+# working directory of koreader
+KOREADER_DIR=/mnt/us/koreader
+
+# update to new version from OTA directory
+NEWUPDATE=${KOREADER_DIR}/ota/koreader.updated.tar
+if [ -f $NEWUPDATE ]; then
+    # TODO: any graphic indication for the updating progress?
+	logmsg "Updating koreader . . ."
+    cd /mnt/us && tar xf $NEWUPDATE && rm $NEWUPDATE
+fi
+
 # we're always starting from our working directory
-cd /mnt/us/koreader
+cd $KOREADER_DIR
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -91,26 +102,26 @@ iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
 iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
 
 # bind-mount system fonts
-if ! grep /mnt/us/koreader/fonts/host /proc/mounts > /dev/null 2>&1 ; then
+if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Mounting system fonts . . ."
-	mount -o bind /usr/java/lib/fonts /mnt/us/koreader/fonts/host
+	mount -o bind /usr/java/lib/fonts ${KOREADER_DIR}/fonts/host
 fi
 
 # bind-mount altfonts
 if [ -d /mnt/us/fonts ] ; then
-	mkdir -p /mnt/us/koreader/fonts/altfonts
-	if ! grep /mnt/us/koreader/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
+	mkdir -p ${KOREADER_DIR}/fonts/altfonts
+	if ! grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
 		logmsg "Mounting altfonts . . ."
-		mount -o bind /mnt/us/fonts /mnt/us/koreader/fonts/altfonts
+		mount -o bind /mnt/us/fonts ${KOREADER_DIR}/fonts/altfonts
 	fi
 fi
 
 # bind-mount linkfonts
 if [ -d /mnt/us/linkfonts/fonts ] ; then
-	mkdir -p /mnt/us/koreader/fonts/linkfonts
-	if ! grep /mnt/us/koreader/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
+	mkdir -p ${KOREADER_DIR}/fonts/linkfonts
+	if ! grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
 		logmsg "Mounting linkfonts . . ."
-		mount -o bind /mnt/us/linkfonts/fonts /mnt/us/koreader/fonts/linkfonts
+		mount -o bind /mnt/us/linkfonts/fonts ${KOREADER_DIR}/fonts/linkfonts
 	fi
 fi
 
@@ -172,21 +183,21 @@ if pidof reader.lua > /dev/null 2>&1 ; then
 fi
 
 # unmount system fonts
-if grep /mnt/us/koreader/fonts/host /proc/mounts > /dev/null 2>&1 ; then
+if grep ${KOREADER_DIR}/fonts/host /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Unmounting system fonts . . ."
-	umount /mnt/us/koreader/fonts/host
+	umount ${KOREADER_DIR}/fonts/host
 fi
 
 # unmount altfonts
-if grep /mnt/us/koreader/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
+if grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Unmounting altfonts . . ."
-	umount /mnt/us/koreader/fonts/altfonts
+	umount ${KOREADER_DIR}/fonts/altfonts
 fi
 
 # unmount linkfonts
-if grep /mnt/us/koreader/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
+if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Unmounting linkfonts . . ."
-	umount /mnt/us/koreader/fonts/linkfonts
+	umount ${KOREADER_DIR}/fonts/linkfonts
 fi
 
 # Resume cvm (only if we stopped it)

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-07-27 13:41+0000\n"
+"POT-Creation-Date: 2014-08-01 04:35+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,9 +17,9 @@ msgid ""
 " others."
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:175
-#: frontend/apps/reader/modules/readermenu.lua:181
-#: frontend/apps/reader/modules/readermenu.lua:187
+#: frontend/apps/reader/modules/readermenu.lua:197
+#: frontend/apps/reader/modules/readermenu.lua:203
+#: frontend/apps/reader/modules/readermenu.lua:209
 msgid ""
 " pages"
 msgstr ""
@@ -65,8 +65,8 @@ msgid ""
 "Apply"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:103
-#: frontend/apps/reader/modules/readermenu.lua:94
+#: frontend/apps/filemanager/filemanagermenu.lua:105
+#: frontend/apps/reader/modules/readermenu.lua:96
 #: frontend/apps/reader/modules/readertypeset.lua:66
 msgid ""
 "Auto"
@@ -83,7 +83,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
-#: frontend/apps/reader/modules/readermenu.lua:208
+#: frontend/apps/reader/modules/readermenu.lua:230
 #: frontend/ui/widget/confirmbox.lua:29
 #: plugins/evernote.koplugin/main.lua:124
 #: plugins/zsync.koplugin/main.lua:279
@@ -99,6 +99,12 @@ msgstr ""
 #: frontend/apps/reader/modules/readerfont.lua:19
 msgid ""
 "Change font"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:142
+#: frontend/apps/reader/modules/readermenu.lua:142
+msgid ""
+"Check update"
 msgstr ""
 
 #: plugins/zsync.koplugin/main.lua:226
@@ -127,9 +133,9 @@ msgid ""
 "Copy"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:175
-#: frontend/apps/reader/modules/readermenu.lua:181
-#: frontend/apps/reader/modules/readermenu.lua:187
+#: frontend/apps/reader/modules/readermenu.lua:197
+#: frontend/apps/reader/modules/readermenu.lua:203
+#: frontend/apps/reader/modules/readermenu.lua:209
 msgid ""
 "Custom "
 msgstr ""
@@ -176,17 +182,23 @@ msgid ""
 "Do you want to Turn on Wifi?"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagermenu.lua:155
+#: frontend/apps/reader/modules/readermenu.lua:155
+msgid ""
+"Do you want to update to version "
+msgstr ""
+
 #: frontend/ui/data/strings.lua:17
 msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:265
+#: frontend/apps/reader/modules/readermenu.lua:287
 msgid ""
 "Document menu"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:162
+#: frontend/apps/reader/modules/readermenu.lua:184
 msgid ""
 "E-ink full refresh rate"
 msgstr ""
@@ -223,12 +235,12 @@ msgid ""
 "Evernote"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:170
+#: frontend/apps/reader/modules/readermenu.lua:192
 msgid ""
 "Every 6 pages"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:165
+#: frontend/apps/reader/modules/readermenu.lua:187
 msgid ""
 "Every page"
 msgstr ""
@@ -254,7 +266,7 @@ msgid ""
 "File does not exist"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:180
+#: frontend/apps/filemanager/filemanagermenu.lua:202
 msgid ""
 "File manager menu"
 msgstr ""
@@ -279,8 +291,8 @@ msgid ""
 "Font Weight"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:100
-#: frontend/apps/reader/modules/readermenu.lua:91
+#: frontend/apps/filemanager/filemanagermenu.lua:102
+#: frontend/apps/reader/modules/readermenu.lua:93
 msgid ""
 "Font size"
 msgstr ""
@@ -325,8 +337,8 @@ msgid ""
 "Go to Page or Location"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:148
-#: frontend/apps/reader/modules/readermenu.lua:148
+#: frontend/apps/filemanager/filemanagermenu.lua:170
+#: frontend/apps/reader/modules/readermenu.lua:170
 msgid ""
 "Help"
 msgstr ""
@@ -362,7 +374,7 @@ msgid ""
 "Indentation"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:203
+#: frontend/apps/reader/modules/readermenu.lua:225
 msgid ""
 "Input page number for a full refresh"
 msgstr ""
@@ -387,8 +399,8 @@ msgid ""
 "Language"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:127
-#: frontend/apps/reader/modules/readermenu.lua:118
+#: frontend/apps/filemanager/filemanagermenu.lua:129
+#: frontend/apps/reader/modules/readermenu.lua:120
 msgid ""
 "Large"
 msgstr ""
@@ -434,8 +446,8 @@ msgid ""
 "Logout"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:119
-#: frontend/apps/reader/modules/readermenu.lua:110
+#: frontend/apps/filemanager/filemanagermenu.lua:121
+#: frontend/apps/reader/modules/readermenu.lua:112
 msgid ""
 "Medium"
 msgstr ""
@@ -445,8 +457,8 @@ msgid ""
 "More"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:89
-#: frontend/apps/reader/modules/readermenu.lua:82
+#: frontend/apps/filemanager/filemanagermenu.lua:91
+#: frontend/apps/reader/modules/readermenu.lua:84
 msgid ""
 "Night mode"
 msgstr ""
@@ -467,10 +479,16 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
-#: frontend/apps/reader/modules/readermenu.lua:214
+#: frontend/apps/reader/modules/readermenu.lua:236
 #: frontend/ui/widget/confirmbox.lua:28
 msgid ""
 "OK"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:151
+#: frontend/apps/reader/modules/readermenu.lua:151
+msgid ""
+"OTA server is not available."
 msgstr ""
 
 #: frontend/apps/reader/modules/readertypeset.lua:150
@@ -513,8 +531,8 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:151
-#: frontend/apps/reader/modules/readermenu.lua:151
+#: frontend/apps/filemanager/filemanagermenu.lua:173
+#: frontend/apps/reader/modules/readermenu.lua:173
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -615,12 +633,12 @@ msgid ""
 "Share"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:129
+#: frontend/apps/reader/modules/readermenu.lua:131
 msgid ""
 "Show advanced options"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:67
+#: frontend/apps/filemanager/filemanagermenu.lua:69
 msgid ""
 "Show hidden files"
 msgstr ""
@@ -630,13 +648,13 @@ msgid ""
 "Show page overlap"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:111
-#: frontend/apps/reader/modules/readermenu.lua:102
+#: frontend/apps/filemanager/filemanagermenu.lua:113
+#: frontend/apps/reader/modules/readermenu.lua:104
 msgid ""
 "Small"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:75
+#: frontend/apps/filemanager/filemanagermenu.lua:77
 msgid ""
 "Start with last opened file"
 msgstr ""
@@ -716,8 +734,8 @@ msgid ""
 "Underscore"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:140
-#: frontend/apps/reader/modules/readermenu.lua:140
+#: frontend/apps/filemanager/filemanagermenu.lua:162
+#: frontend/apps/reader/modules/readermenu.lua:162
 msgid ""
 "Version"
 msgstr ""
@@ -750,6 +768,12 @@ msgstr ""
 #: plugins/evernote.koplugin/main.lua:51
 msgid ""
 "Yinxiang"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:147
+#: frontend/apps/reader/modules/readermenu.lua:147
+msgid ""
+"Your koreader is updated."
 msgstr ""
 
 #: plugins/zsync.koplugin/main.lua:42
