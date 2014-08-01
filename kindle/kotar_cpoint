@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# KOReader's  working directory
+KOREADER_DIR="/mnt/us/koreader"
+
+# Load our helper functions...
+if [ -f "${KOREADER_DIR}/libkoreader.inc" ] ; then
+	source "${KOREADER_DIR}/libkoreader.inc"
+else
+	echo "Can't source helper functions, aborting!"
+	exit 1
+fi
+
+
+## First arg is the chekpoint number, and we get one every 200 checkpoints.
+CHECKPOINT_NUM="${1}"
+CHECKPOINT_GRANULARITY="200"
+
+# Use that to build a poor man's progress bar, with dots.
+PROGRESS_AMOUNT="$(( ${CHECKPOINT_NUM} / ${CHECKPOINT_GRANULARITY} ))"
+PROGRESS_STRING="Updating koreader "
+for foo in $( seq 1 ${PROGRESS_AMOUNT} ) ; do
+	# Append a dot until we hit the needed amount
+	PROGRESS_STRING="${PROGRESS_STRING}."
+done
+
+# Print our status
+eips_print_bottom_centered "${PROGRESS_STRING}" 1
