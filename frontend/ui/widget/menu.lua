@@ -34,7 +34,7 @@ local ItemShortCutIcon = WidgetContainer:new{
     key = nil,
     bordersize = 2,
     radius = 0,
-    style = "square"
+    style = "square",
 }
 
 function ItemShortCutIcon:init()
@@ -365,16 +365,33 @@ function Menu:init()
         bordersize = 0,
         show_parent = self,
     }
+    self.page_info_first_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.first.png",
+        callback = function() self:onFirstPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_last_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.last.png",
+        callback = function() self:onLastPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
+    self.page_info_first_chev:hide()
+    self.page_info_last_chev:hide()
+
     self.page_info_text = TextWidget:new{
         text = "",
         face = self.fface,
     }
     self.page_info = HorizontalGroup:new{
+        self.page_info_first_chev,
         self.page_info_left_chev,
         self.page_info_text,
-        self.page_info_right_chev
+        self.page_info_right_chev,
+        self.page_info_last_chev,
     }
 
     local header = VerticalGroup:new{
@@ -537,8 +554,13 @@ function Menu:updateItems(select_number)
         self.page_info_text.text = _("page ")..self.page.."/"..self.page_num
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
+        self.page_info_first_chev:showHide(self.page_num > 2)
+        self.page_info_last_chev:showHide(self.page_num > 2)
+
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
+        self.page_info_first_chev:enableDisable(self.page > 1)
+        self.page_info_last_chev:enableDisable(self.page < self.page_num)
     else
         self.page_info_text.text = _("no choices available")
     end
@@ -555,6 +577,7 @@ function Menu:swithItemTable(new_title, new_item_table)
     if self.menu_title then
         self.menu_title.text = new_title
     end
+
     self.page = 1
     self.item_table = new_item_table
     self:updateItems(1)
@@ -652,6 +675,18 @@ function Menu:onPrevPage()
     return true
 end
 
+function Menu:onFirstPage()
+    self.page = 1
+    self:updateItems(1)
+    return true
+end
+
+function Menu:onLastPage()
+    self.page = self.page_num
+    self:updateItems(1)
+    return true
+end
+
 function Menu:onSelect()
     self:onMenuSelect(self.item_table[(self.page-1)*self.perpage+self.selected.y])
     return true
@@ -686,9 +721,17 @@ end
 
 function Menu:onSwipe(arg, ges_ev)
     if ges_ev.direction == "west" then
-        self:onNextPage()
+        if DCHANGE_WEST_SWIPE_TO_EAST then
+            self:onPrevPage()
+        else
+            self:onNextPage()
+        end
     elseif ges_ev.direction == "east" then
-        self:onPrevPage()
+        if DCHANGE_WEST_SWIPE_TO_EAST then
+            self:onNextPage()
+        else
+            self:onPrevPage()
+        end
     end
 end
 
