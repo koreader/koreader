@@ -101,7 +101,7 @@ kindleupdate: all
 	ln -sf ../kindle/extensions $(INSTALL_DIR)/
 	ln -sf ../kindle/launchpad $(INSTALL_DIR)/
 	ln -sf ../../kindle/koreader.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../kindle/libkoreader.inc $(INSTALL_DIR)/koreader
+	ln -sf ../../kindle/libkohelper.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../kindle/kotar_cpoint $(INSTALL_DIR)/koreader
 	# create new package
 	# Don't bundle launchpad on touch devices..
