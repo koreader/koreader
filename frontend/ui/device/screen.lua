@@ -138,7 +138,9 @@ function Screen:getHeightPhoenix()
 end
 
 function Screen:getDPI()
-    self.dpi = G_reader_settings:readSetting("screen_dpi")
+    if self.dpi == nil then
+        self.dpi = G_reader_settings:readSetting("screen_dpi")
+    end
     if self.dpi ~= nil then return self.dpi end
     local model = self.device:getModel()
     if model == "KindlePaperWhite" or model == "KindlePaperWhite2"
@@ -162,7 +164,6 @@ end
 
 function Screen:setDPI(dpi)
     G_reader_settings:saveSetting("screen_dpi", dpi)
-    self.dpi = dpi
 end
 
 function Screen:scaleByDPI(px)
@@ -238,40 +239,69 @@ function Screen:restoreFromBB(bb)
 end
 
 function Screen:getDPIMenuTable()
+    local function dpi() return G_reader_settings:readSetting("screen_dpi") end
+    local function custom() return G_reader_settings:readSetting("custom_screen_dpi") end
+    local function setDPI(dpi)
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+        UIManager:show(InfoMessage:new{
+            text = _("This will take effect on next restart."),
+        })
+        Screen:setDPI(dpi)
+    end
     return {
-        text = _("Font size"),
+        text = _("Screen DPI"),
         sub_item_table = {
             {
                 text = _("Auto"),
                 checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi == nil
+                    return dpi() == nil
                 end,
-                callback = function() Screen:setDPI() end
+                callback = function() setDPI() end
             },
             {
                 text = _("Small"),
                 checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi <= 140
+                    local dpi, custom = dpi(), custom()
+                    return dpi and dpi <= 140 and dpi ~= custom
                 end,
-                callback = function() Screen:setDPI(120) end
+                callback = function() setDPI(120) end
             },
             {
                 text = _("Medium"),
                 checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi > 140 and dpi <= 200
+                    local dpi, custom = dpi(), custom()
+                    return dpi and dpi > 140 and dpi <= 200 and dpi ~= custom
                 end,
-                callback = function() Screen:setDPI(160) end
+                callback = function() setDPI(160) end
             },
             {
                 text = _("Large"),
                 checked_func = function()
-                    local dpi = G_reader_settings:readSetting("screen_dpi")
-                    return dpi and dpi > 200
+                    local dpi, custom = dpi(), custom()
+                    return dpi and dpi > 200 and dpi ~= custom
                 end,
-                callback = function() Screen:setDPI(240) end
+                callback = function() setDPI(240) end
+            },
+            {
+                text = _("Custom DPI") .. ": " .. custom() or 160,
+                checked_func = function()
+                    local dpi, custom = dpi(), custom()
+                    return custom and dpi == custom
+                end,
+                callback = function() setDPI(custom() or 160) end,
+                hold_input = {
+                    title = _("Input screen DPI"),
+                    type = "number",
+                    hint = "(90 - 330)",
+                    callback = function(input)
+                        local dpi = tonumber(input)
+                        dpi = dpi < 90 and 90 or dpi
+                        dpi = dpi > 330 and 330 or dpi
+                        G_reader_settings:saveSetting("custom_screen_dpi", dpi)
+                        setDPI(dpi)
+                    end,
+                },
             },
         }
     }
