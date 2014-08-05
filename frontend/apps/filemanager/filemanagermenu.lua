@@ -87,6 +87,7 @@ function FileManagerMenu:setUpdateItemTable()
         ReaderFrontLight:addToMainMenu(self.tab_item_table)
     end
 
+    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,

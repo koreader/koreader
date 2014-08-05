@@ -126,7 +126,7 @@ function ReaderFooter:updateFooterPage()
     self.progress_bar.percentage = self.pageno / self.pages
     if DMINIBAR_ALL_AT_ONCE then
         self.progress_text.text = ""
-        if DMINIBAR_NEXT_CHAPTER then
+        if DMINIBAR_BATTERY then
             local powerd = Device:getPowerDevice()
             local state = powerd:isCharging() and -1 or powerd:getCapacity()
             self.progress_text.text = self.progress_text.text .. " | B:" .. powerd:getCapacity() .. "%"

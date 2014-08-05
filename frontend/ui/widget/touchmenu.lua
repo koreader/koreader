@@ -3,21 +3,21 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local Font = require("ui/font")
-local TextWidget = require("ui/widget/textwidget")
-local LineWidget = require("ui/widget/linewidget")
-local Screen = require("ui/screen")
-local Device = require("ui/device")
-local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local VerticalSpan = require("ui/widget/verticalspan")
+local InputDialog = require("ui/widget/inputdialog")
+local TextWidget = require("ui/widget/textwidget")
+local LineWidget = require("ui/widget/linewidget")
 local IconButton = require("ui/widget/iconbutton")
+local GestureRange = require("ui/gesturerange")
 local Button = require("ui/widget/button")
 local UIManager = require("ui/uimanager")
+local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -487,43 +487,91 @@ function TouchMenu:onSwipe(arg, ges_ev)
 end
 
 function TouchMenu:onMenuSelect(item)
-    local sub_item_table = item.sub_item_table
-    if item.sub_item_table_func then
-        sub_item_table = item.sub_item_table_func()
-    end
-    if sub_item_table == nil then
-        local callback = item.callback
-        if item.callback_func then
-            callback = item.callback_func()
-        end
-        if callback then
-            -- put stuff in scheduler so we can See
-            -- the effect of inverted menu item
-            UIManager:scheduleIn(0.1, function()
-                self:closeMenu()
-                callback()
-            end)
-        end
+    if item.tap_input then
+        self:closeMenu()
+        self:onMenuInput(item.tap_input)
     else
-        table.insert(self.item_table_stack, self.item_table)
-        self.item_table = sub_item_table
-        self:updateItems()
+        local sub_item_table = item.sub_item_table
+        if item.sub_item_table_func then
+            sub_item_table = item.sub_item_table_func()
+        end
+        if sub_item_table == nil then
+            local callback = item.callback
+            if item.callback_func then
+                callback = item.callback_func()
+            end
+            if callback then
+                -- put stuff in scheduler so we can See
+                -- the effect of inverted menu item
+                UIManager:scheduleIn(0.1, function()
+                    self:closeMenu()
+                    callback()
+                end)
+            end
+        else
+            table.insert(self.item_table_stack, self.item_table)
+            self.item_table = sub_item_table
+            self:updateItems()
+        end
     end
     return true
 end
 
 function TouchMenu:onMenuHold(item)
-    local callback = item.hold_callback
-    if item.hold_callback_func then
-        callback = item.hold_callback_func()
-    end
-    if callback then
-        UIManager:scheduleIn(0.1, function()
-            self:closeMenu()
-            callback()
-        end)
+    if item.hold_input then
+        self:closeMenu()
+        self:onMenuInput(item.hold_input)
+    else
+        local callback = item.hold_callback
+        if item.hold_callback_func then
+            callback = item.hold_callback_func()
+        end
+        if callback then
+            UIManager:scheduleIn(0.1, function()
+                self:closeMenu()
+                callback()
+            end)
+        end
     end
     return true
+end
+
+function TouchMenu:onMenuInput(input)
+    self.input_dialog = InputDialog:new{
+        title = input.title or "",
+        input_hint = input.hint or "",
+        input_type = input.type or "number",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:closeInputDialog()
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    callback = function()
+                        input.callback(self.input_dialog:getInputText())
+                        self:closeInputDialog()
+                    end,
+                },
+            },
+        },
+        enter_callback = function()
+            input.callback(self.input_dialog:getInputText())
+            self:closeInputDialog()
+        end,
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.input_dialog:onShowKeyboard()
+    UIManager:show(self.input_dialog)
+end
+
+function TouchMenu:closeInputDialog()
+    self.input_dialog:onClose()
+    UIManager:close(self.input_dialog)
 end
 
 function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
