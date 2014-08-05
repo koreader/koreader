@@ -450,7 +450,9 @@ function UIManager:getRefreshMenuTable()
             type = "number",
             hint = "(1 - 99)",
             callback = function(input)
-                G_reader_settings:saveSetting(name, tonumber(input))
+                local rate = tonumber(input)
+                G_reader_settings:saveSetting(name, rate)
+                UIManager:setRefreshRate(rate)
             end,
         }
     end
