@@ -81,6 +81,15 @@ function ReaderMenu:setUpdateItemTable()
 
     -- setting tab
     table.insert(self.tab_item_table.setting, {
+        text = _("Show advanced options"),
+        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
+        callback = function()
+            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+            G_reader_settings:saveSetting("show_advanced", not show_advanced)
+        end
+    })
+    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
+    table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
         callback = function()
@@ -90,15 +99,6 @@ function ReaderMenu:setUpdateItemTable()
         end
     })
     table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
-    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
-    table.insert(self.tab_item_table.setting, {
-        text = _("Show advanced options"),
-        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
-        callback = function()
-            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
-            G_reader_settings:saveSetting("show_advanced", not show_advanced)
-        end
-    })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab

@@ -72,6 +72,7 @@ local KoptOptions = {
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
                 values = {1.0, 1.2, 1.4},
                 default_value = DKOPTREADER_CONFIG_LINE_SPACING,
+                advanced = true,
             },
             {
                 name = "max_columns",
@@ -96,6 +97,7 @@ local KoptOptions = {
                 },
                 values = {-1,0,1,2,3},
                 default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
+                advanced = true,
             },
         }
     },
@@ -193,6 +195,7 @@ local KoptOptions = {
                 toggle = {S.LTR, S.RTL, S.TBRTL},
                 values = {0, 1, 2},
                 default_value = 0,
+                advanced = true,
             },
             {
                 name = "quality",
@@ -200,6 +203,7 @@ local KoptOptions = {
                 toggle = {S.LOW, S.DEFAULT, S.HIGH},
                 values={0.5, 1.0, 1.5},
                 default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
+                advanced = true,
             },
             {
                 name = "forced_ocr",
