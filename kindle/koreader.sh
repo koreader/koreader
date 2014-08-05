@@ -56,6 +56,8 @@ elif [ "$1" == "--asap" ] ; then
 	shift 1
 	NO_SLEEP="yes"
 	STOP_FRAMEWORK="no"
+	# Don't sleep during eips calls either...
+	export EIPS_NO_SLEEP="true"
 else
 	STOP_FRAMEWORK="no"
 	NO_SLEEP="no"
@@ -190,7 +192,10 @@ fi
 
 # finally call reader
 logmsg "Starting KOReader . . ."
-eips_print_bottom_centered "Starting KOReader . . ." 1
+# That's not necessary when using KPVBooklet ;).
+if [ "${FROM_KUAL}" == "yes" ] ; then
+	eips_print_bottom_centered "Starting KOReader . . ." 1
+fi
 ./reader.lua "$@" 2> crash.log
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
