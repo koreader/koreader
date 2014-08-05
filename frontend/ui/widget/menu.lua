@@ -565,7 +565,7 @@ function Menu:updateItems(select_number)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
         self.page_info_last_chev:showHide(self.page_num > 2)
-        self.page_info_spacer:show()
+        self.page_info_spacer:showHide(self.page_num > 2)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
