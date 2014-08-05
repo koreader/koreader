@@ -98,6 +98,7 @@ function FileManagerMenu:setUpdateItemTable()
     })
 
     table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
+    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
