@@ -85,6 +85,13 @@ function FileManagerMenu:setUpdateItemTable()
         ReaderFrontLight:addToMainMenu(self.tab_item_table)
     end
     table.insert(self.tab_item_table.setting, {
+        text = _("Screen settings"),
+        sub_item_table = {
+            Screen:getDPIMenuTable(),
+            UIManager:getRefreshMenuTable(),
+        },
+    })
+    table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
         callback = function()
@@ -92,13 +99,6 @@ function FileManagerMenu:setUpdateItemTable()
             Screen.bb:invert()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Screen"),
-        sub_item_table = {
-            Screen:getDPIMenuTable(),
-            UIManager:getRefreshMenuTable(),
-        },
     })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
