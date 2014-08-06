@@ -644,7 +644,9 @@ function ReaderPaging:onGotoPageRel(diff)
     elseif self.zoom_mode:find("width") then
         y_pan_off = self.visible_area.h * diff
     elseif self.zoom_mode:find("height") then
-        x_pan_off = self.visible_area.w * diff
+        -- negative x panning if writing direction is right to left
+        local direction = self.ui.document.configurable.writing_direction
+        x_pan_off = self.visible_area.w * diff * (direction == 1 and -1 or 1)
     else
         -- must be fit content or page zoom mode
         if self.visible_area.w == self.page_area.w then

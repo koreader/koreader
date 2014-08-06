@@ -195,7 +195,6 @@ local KoptOptions = {
                 toggle = {S.LTR, S.RTL, S.TBRTL},
                 values = {0, 1, 2},
                 default_value = 0,
-                advanced = true,
             },
             {
                 name = "quality",
