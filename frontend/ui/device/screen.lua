@@ -284,7 +284,7 @@ function Screen:getDPIMenuTable()
                 callback = function() setDPI(240) end
             },
             {
-                text = _("Custom DPI") .. ": " .. custom() or 160,
+                text = _("Custom DPI") .. ": " .. (custom() or 160),
                 checked_func = function()
                     local dpi, custom = dpi(), custom()
                     return custom and dpi == custom
