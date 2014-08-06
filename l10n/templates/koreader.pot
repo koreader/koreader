@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-08-05 04:19+0000\n"
+"POT-Creation-Date: 2014-08-06 12:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -100,7 +100,7 @@ msgid ""
 "Change font"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:94
+#: frontend/ui/otamanager.lua:138
 msgid ""
 "Check update"
 msgstr ""
@@ -185,7 +185,7 @@ msgid ""
 "Do you want to Turn on Wifi?"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:107
+#: frontend/ui/otamanager.lua:151
 msgid ""
 "Do you want to update to version "
 msgstr ""
@@ -195,12 +195,12 @@ msgid ""
 "Document Language"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:150
+#: frontend/apps/reader/modules/readermenu.lua:159
 msgid ""
 "Document menu"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:110
+#: frontend/ui/otamanager.lua:154
 msgid ""
 "Downloading may take several minutes..."
 msgstr ""
@@ -283,7 +283,7 @@ msgid ""
 "File does not exist"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:147
+#: frontend/apps/filemanager/filemanagermenu.lua:150
 msgid ""
 "File manager menu"
 msgstr ""
@@ -348,8 +348,8 @@ msgid ""
 "Go to Page or Location"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:115
-#: frontend/apps/reader/modules/readermenu.lua:115
+#: frontend/apps/filemanager/filemanagermenu.lua:118
+#: frontend/apps/reader/modules/readermenu.lua:124
 msgid ""
 "Help"
 msgstr ""
@@ -405,7 +405,7 @@ msgid ""
 "Koreader Notes"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:116
+#: frontend/ui/otamanager.lua:160
 msgid ""
 "Koreader will be updated on next restart."
 msgstr ""
@@ -476,7 +476,7 @@ msgid ""
 "More"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:92
+#: frontend/apps/filemanager/filemanagermenu.lua:95
 #: frontend/apps/reader/modules/readermenu.lua:93
 msgid ""
 "Night mode"
@@ -504,9 +504,24 @@ msgid ""
 "OK"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:103
+#: frontend/ui/otamanager.lua:177
+msgid ""
+"OTA channel"
+msgstr ""
+
+#: frontend/ui/otamanager.lua:173
+msgid ""
+"OTA server"
+msgstr ""
+
+#: frontend/ui/otamanager.lua:147
 msgid ""
 "OTA server is not available."
+msgstr ""
+
+#: frontend/ui/otamanager.lua:135
+msgid ""
+"OTA update"
 msgstr ""
 
 #: frontend/apps/reader/modules/readertypeset.lua:150
@@ -549,8 +564,8 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:118
-#: frontend/apps/reader/modules/readermenu.lua:118
+#: frontend/apps/filemanager/filemanagermenu.lua:121
+#: frontend/apps/reader/modules/readermenu.lua:127
 msgid ""
 "Please report bugs to \n"
 "https://github.com/koreader/koreader/issues"
@@ -611,6 +626,12 @@ msgid ""
 "Screen Mode"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagermenu.lua:88
+#: frontend/apps/reader/modules/readermenu.lua:86
+msgid ""
+"Screen settings"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:8
 msgid ""
 "Scroll Mode"
@@ -651,12 +672,17 @@ msgid ""
 "Set render style"
 msgstr ""
 
+#: frontend/ui/otamanager.lua:170
+msgid ""
+"Settings"
+msgstr ""
+
 #: frontend/apps/reader/modules/readerhighlight.lua:322
 msgid ""
 "Share"
 msgstr ""
 
-#: frontend/apps/reader/modules/readermenu.lua:84
+#: frontend/apps/reader/modules/readermenu.lua:103
 msgid ""
 "Show advanced options"
 msgstr ""
@@ -676,7 +702,7 @@ msgid ""
 "Small"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:77
+#: frontend/apps/filemanager/filemanagermenu.lua:76
 msgid ""
 "Start with last opened file"
 msgstr ""
@@ -751,8 +777,8 @@ msgid ""
 "Underscore"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:107
-#: frontend/apps/reader/modules/readermenu.lua:107
+#: frontend/apps/filemanager/filemanagermenu.lua:110
+#: frontend/apps/reader/modules/readermenu.lua:116
 msgid ""
 "Version"
 msgstr ""
@@ -787,7 +813,7 @@ msgid ""
 "Yinxiang"
 msgstr ""
 
-#: frontend/ui/otamanager.lua:99
+#: frontend/ui/otamanager.lua:143
 msgid ""
 "Your koreader is updated."
 msgstr ""
