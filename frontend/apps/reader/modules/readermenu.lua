@@ -88,7 +88,6 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("show_advanced", not show_advanced)
         end
     })
-    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
@@ -98,7 +97,15 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-    table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
+    -- FIXME: it's curious that if this 'Screen' menu is placed after the Language
+    -- menu submenu in Advanced won't be shown. Probably a bug in the touchmenu module.
+    table.insert(self.tab_item_table.setting, {
+        text = _("Screen"),
+        sub_item_table = {
+            Screen:getDPIMenuTable(),
+            UIManager:getRefreshMenuTable(),
+        },
+    })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab

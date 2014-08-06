@@ -72,7 +72,6 @@ function FileManagerMenu:setUpdateItemTable()
             self.ui:toggleHiddenFiles()
         end
     })
-
     table.insert(self.tab_item_table.setting, {
         text = _("Start with last opened file"),
         checked_func = function() return G_reader_settings:readSetting("open_last") end,
@@ -82,12 +81,9 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("open_last", not open_last)
         end
     })
-
     if Device:hasFrontlight() then
         ReaderFrontLight:addToMainMenu(self.tab_item_table)
     end
-
-    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
@@ -97,8 +93,13 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-
-    table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
+    table.insert(self.tab_item_table.setting, {
+        text = _("Screen"),
+        sub_item_table = {
+            Screen:getDPIMenuTable(),
+            UIManager:getRefreshMenuTable(),
+        },
+    })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
