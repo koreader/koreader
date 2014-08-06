@@ -377,10 +377,17 @@ function Menu:init()
         bordersize = 0,
         show_parent = self,
     }
+     self.page_info_spacer = Button:new{
+        icon = "resources/icons/appbar.spacer.png",
+        callback = function() end,    -- NoOp
+        bordersize = 0,
+        show_parent = self,
+    }
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
+    self.page_info_spacer:hide()
 
     self.page_info_text = TextWidget:new{
         text = "",
@@ -388,9 +395,11 @@ function Menu:init()
     }
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
+        self.page_info_spacer,
         self.page_info_left_chev,
         self.page_info_text,
         self.page_info_right_chev,
+        self.page_info_spacer,
         self.page_info_last_chev,
     }
 
@@ -556,6 +565,7 @@ function Menu:updateItems(select_number)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
         self.page_info_last_chev:showHide(self.page_num > 2)
+        self.page_info_spacer:showHide(self.page_num > 2)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
