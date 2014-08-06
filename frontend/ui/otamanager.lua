@@ -6,8 +6,14 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local OTAManager = {
-    ota_server = "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
-    ota_channel = "nightly", -- or "stable"
+    ota_servers = {
+        "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
+        "http://koreader.ak-team.com/",
+        "http://hal9k.ifsc.usp.br/koreader/",
+    },
+    ota_channels = {
+        "nightly",
+    },
     zsync_template = "koreader-%s-latest-%s.zsync",
     installed_package = "ota/koreader.installed.tar",
     package_indexfile = "ota/package.index",
@@ -24,13 +30,22 @@ function OTAManager:getOTAModel()
     end
 end
 
+function OTAManager:getOTAServer()
+    return G_reader_settings:readSetting("ota_server") or self.ota_servers[1]
+end
+
+function OTAManager:setOTAServer(server)
+    DEBUG("Set OTA server:", server)
+    G_reader_settings:saveSetting("ota_server", server)
+end
+
 function OTAManager:getOTAChannel()
-    return self.ota_channel
+    return G_reader_settings:readSetting("ota_channel") or self.ota_channels[1]
 end
 
 function OTAManager:setOTAChannel(channel)
-    -- channel should be "nightly" or "stable"
-    self.ota_channel = channel
+    DEBUG("Set OTA channel:", channel)
+    G_reader_settings:saveSetting("ota_channel", channel)
 end
 
 function OTAManager:getZsyncFilename()
@@ -42,7 +57,7 @@ function OTAManager:checkUpdate()
     local ltn12 = require("ltn12")
 
     local zsync_file = self:getZsyncFilename()
-    local ota_zsync_file = self.ota_server .. zsync_file
+    local ota_zsync_file = self:getOTAServer() .. zsync_file
     local local_zsync_file = "ota/" .. zsync_file
     -- download zsync file from OTA server
     local r, c, h = http.request{
@@ -84,43 +99,87 @@ function OTAManager:zsync()
         return os.execute(string.format(
         "./zsync -i %s -o %s -u %s %s",
         self.installed_package, self.updated_package,
-        self.ota_server, "ota/" .. self:getZsyncFilename()
+        self:getOTAServer(), "ota/" .. self:getZsyncFilename()
         ))
     end
 end
 
+function OTAManager:genServerList()
+    local servers = {}
+    for _, server in ipairs(self.ota_servers) do
+        local server_item = {
+            text = server,
+            checked_func = function() return self:getOTAServer() == server end,
+            callback = function() self:setOTAServer(server) end
+        }
+        table.insert(servers, server_item)
+    end
+    return servers
+end
+
+function OTAManager:genChannelList()
+    local channels = {}
+    for _, channel in ipairs(self.ota_channels) do
+        local channel_item = {
+            text = channel,
+            checked_func = function() return self:getOTAChannel() == channel end,
+            callback = function() self:setOTAChannel(channel) end
+        }
+        table.insert(channels, channel_item)
+    end
+    return channels
+end
+
 function OTAManager:getOTAMenuTable()
     return {
-        text = _("Check update"),
-        callback = function()
-            local ota_version = OTAManager:checkUpdate()
-            if ota_version == 0 then
-                UIManager:show(InfoMessage:new{
-                    text = _("Your koreader is updated."),
-                })
-            elseif ota_version == nil then
-                UIManager:show(InfoMessage:new{
-                    text = _("OTA server is not available."),
-                })
-            elseif ota_version then
-                UIManager:show(ConfirmBox:new{
-                    text = _("Do you want to update to version ")..ota_version.."?",
-                    ok_callback = function()
+        text = _("OTA update"),
+        sub_item_table = {
+            {
+                text = _("Check update"),
+                callback = function()
+                    local ota_version = OTAManager:checkUpdate()
+                    if ota_version == 0 then
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes..."),
-                            timeout = 3,
+                            text = _("Your koreader is updated."),
                         })
-                        UIManager:scheduleIn(1, function()
-                            if OTAManager:zsync() == 0 then
+                    elseif ota_version == nil then
+                        UIManager:show(InfoMessage:new{
+                            text = _("OTA server is not available."),
+                        })
+                    elseif ota_version then
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Do you want to update to version ")..ota_version.."?",
+                            ok_callback = function()
                                 UIManager:show(InfoMessage:new{
-                                    text = _("Koreader will be updated on next restart."),
+                                    text = _("Downloading may take several minutes..."),
+                                    timeout = 3,
                                 })
+                                UIManager:scheduleIn(1, function()
+                                    if OTAManager:zsync() == 0 then
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("Koreader will be updated on next restart."),
+                                        })
+                                    end
+                                end)
                             end
-                        end)
+                        })
                     end
-                })
-            end
-        end
+                end
+            },
+            {
+                text = _("Settings"),
+                sub_item_table = {
+                    {
+                        text = _("OTA server"),
+                        sub_item_table = self:genServerList()
+                    },
+                    {
+                        text = _("OTA channel"),
+                        sub_item_table = self:genChannelList()
+                    },
+                }
+            },
+        }
     }
 end
 

@@ -459,11 +459,17 @@ function ReaderView:recalculate()
             self.state.page,
             self.state.zoom,
             self.state.rotation)
-        -- starts from left top of page_area
-        self.visible_area.x = self.page_area.x
-        self.visible_area.y = self.page_area.y
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
+        if self.ui.document.configurable.writing_direction == 0 then
+            -- starts from left top of page_area
+            self.visible_area.x = self.page_area.x
+            self.visible_area.y = self.page_area.y
+        else
+            -- start from right top of page_area
+            self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
+            self.visible_area.y = self.page_area.y
+        end
         -- and recalculate it according to page size
         self.visible_area:offsetWithin(self.page_area, 0, 0)
         -- clear dim area

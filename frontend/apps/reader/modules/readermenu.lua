@@ -80,15 +80,15 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- setting tab
+    -- FIXME: it's curious that if this 'Screen' menu is placed after the Language
+    -- menu submenu in 'Screen' won't be shown. Probably a bug in the touchmenu module.
     table.insert(self.tab_item_table.setting, {
-        text = _("Show advanced options"),
-        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
-        callback = function()
-            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
-            G_reader_settings:saveSetting("show_advanced", not show_advanced)
-        end
+        text = _("Screen settings"),
+        sub_item_table = {
+            Screen:getDPIMenuTable(),
+            UIManager:getRefreshMenuTable(),
+        },
     })
-    table.insert(self.tab_item_table.setting, UIManager:getRefreshMenuTable())
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
@@ -98,11 +98,20 @@ function ReaderMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
-    table.insert(self.tab_item_table.setting, Screen:getDPIMenuTable())
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
+    table.insert(self.tab_item_table.setting, {
+        text = _("Show advanced options"),
+        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
+        callback = function()
+            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+            G_reader_settings:saveSetting("show_advanced", not show_advanced)
+        end
+    })
 
     -- info tab
-    table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    if Device:isKindle() or Device:isKobo() then
+        table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    end
     table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
