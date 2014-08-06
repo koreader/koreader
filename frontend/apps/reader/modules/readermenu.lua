@@ -109,7 +109,9 @@ function ReaderMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
 
     -- info tab
-    table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    if Device:isKindle() or Device:isKobo() then
+        table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    end
     table.insert(self.tab_item_table.info, {
         text = _("Version"),
         callback = function()
