@@ -139,6 +139,23 @@ DDICT_FONT_SIZE = 20
 -- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.
 FRONTLIGHT_SENSITIVITY_DECREASE = 2
 
+-- Set a path to a folder that is filled by Calibre (must contain the file metadata.calibre)
+-- e.g.
+-- /mnt/sd/.hidden for Kobo with files in ".hidden" on the SD card
+-- /mnt/onboard/MyPath for Kobo with files in "MyPath" on the device itself
+-- /mnt/us/documents/ for Kindle files in folder "documents"
+LIBRARY_PATH = nil
+
+-- Search parameters
+SEARCH_CASESENSITIVE = false
+
+SEARCH_AUTHORS = true
+SEARCH_TITLE = true
+SEARCH_TAGS = true
+SEARCH_SERIES = true
+SEARCH_PATH = true
+
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################
