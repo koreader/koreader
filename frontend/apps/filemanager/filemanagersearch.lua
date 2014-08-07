@@ -8,8 +8,8 @@ local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
 
 local Search = InputContainer:new{
-    calibrefile=nil,
-    search_dialog=nil,
+    calibrefile = nil,
+    search_dialog = nil,
     authors = 1,
     title = 2,
     path = 3,
@@ -20,21 +20,44 @@ local Search = InputContainer:new{
     results = {},
 }
 
+local function findcalibre(root)
+    local t=nil
+    for entity in lfs.dir(root) do
+        if t then
+            break
+        else
+                if entity~="." and entity~=".." then
+                      local fullPath=root .. "/" .. entity
+                local mode = lfs.attributes(fullPath,"mode")
+                if mode == "file" then
+                    if entity == "metadata.calibre" or entity == ".metadata.calibre" then
+                        t = root.."/"..entity
+                    end
+                elseif mode == "directory" then
+                    t = findcalibre(fullPath)
+                end
+            end
+        end
+    end
+    return t
+end
+
 function Search:init()
+    local error = nil
     self.data = {}
     self.results = {}
 
     -- check if we find the calibre file
     if LIBRARY_PATH == nil then 
-		    UIManager:show(InfoMessage:new{text = _("LIBRARY_PATH in DEFAULTS.LUA is not set!"),})
+          error = "LIBRARY_PATH in DEFAULTS.LUA is not set!"
     else
         if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
             LIBRARY_PATH = LIBRARY_PATH .. "/"
         end
         if io.open(LIBRARY_PATH .. "metadata.calibre","r") == nil then
             if io.open(LIBRARY_PATH .. ".metadata.calibre","r") == nil then
-		            UIManager:show(InfoMessage:new{text = _(LIBRARY_PATH .. "metadata.calibre not found!")})
-		        else
+                   error = LIBRARY_PATH .. "metadata.calibre not found!"
+            else
                 self.calibrefile = LIBRARY_PATH .. ".metadata.calibre"
             end
         else
@@ -44,6 +67,8 @@ function Search:init()
         if not (SEARCH_AUTHORS or SEARCH_TITLE or SEARCH_PATH or SEARCH_SERIES or SEARCH_TAGS) then
             self.calibrefile = nil
             UIManager:show(InfoMessage:new{text = _("You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)")})
+        elseif self.calibrefile == nil then
+            self.calibrefile = findcalibre("/mnt")
         end
     end
     
@@ -73,6 +98,10 @@ function Search:init()
         }
         self.search_dialog:onShowKeyboard()
         UIManager:show(self.search_dialog)
+    else
+        if error then
+            UIManager:show(InfoMessage:new{text = _(error .. " A search for a metadata.calibre file was not successful!"),})
+        end
     end
 end
 
@@ -109,7 +138,7 @@ function Search:find()
 --        s=string.gsub(s,"\\","\195\185") -- ù
 --        s=string.gsub(s,"\\","\195\161") -- á
 --        s=string.gsub(s,"\\","\195\179") -- ó
---        s=string.gsub(s,"\\","\195\169") -- é
+--
 --        s=string.gsub(s,"\\","\195\173") -- í
 --        s=string.gsub(s,"\\","\195\186") -- ú
 --        s=string.gsub(s,"\\","\195\162") -- â
@@ -122,9 +151,11 @@ function Search:find()
 --        s=string.gsub(s,"\\","\195\171") -- ë
 --        s=string.gsub(s,"\\","\195\175") -- ï
 --        s=string.gsub(s,"\\","\195\166") -- æ
---        s=string.gsub(s,"\\","\195\184 ") -- ø
+--        s=string.gsub(s,"\\","\195\184") -- ø
 --        s=string.gsub(s,"\\","\195\167") -- ç
 --        s=string.gsub(s,"\\","\195\177") -- ñ
+
+        s=string.gsub(s,"\\u00e9","\195\169") -- é
         
         s=string.gsub(s,"\\u00c4","\195\132") -- Ä
         s=string.gsub(s,"\\u00d6","\195\150") -- Ö
@@ -181,14 +212,14 @@ function Search:find()
             ReadMultipleLines(self.authors)
         elseif line == "    \"tags\": [" then -- TAGS
             ReadMultipleLines(self.tags)
-		    elseif string.sub(line,1,11) == "    \"title\"" then -- TITLE
-    				self.data[i][self.title] = ReplaceHexChars(line,15)
-		    elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
-    				self.data[i][self.path] = string.sub(line,15,string.len(line)-3)
-		    elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
-    				self.data[i][self.series] = ReplaceHexChars(line,16)
-	      end
-	      line = f:read()
+            elseif string.sub(line,1,11) == "    \"title\"" then -- TITLE
+                    self.data[i][self.title] = ReplaceHexChars(line,15)
+            elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
+                    self.data[i][self.path] = string.sub(line,15,string.len(line)-3)
+            elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
+                    self.data[i][self.series] = ReplaceHexChars(line,16)
+          end
+          line = f:read()
     end
     i = i - 1
     if i > 0 then
