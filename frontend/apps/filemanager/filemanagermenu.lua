@@ -12,6 +12,7 @@ local Screen = require("ui/screen")
 local Language = require("ui/language")
 local _ = require("gettext")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+local Search = require("apps/filemanager/filemanagersearch")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -120,6 +121,12 @@ function FileManagerMenu:setUpdateItemTable()
             UIManager:show(InfoMessage:new{
                 text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
             })
+        end
+    })
+    table.insert(self.tab_item_table.info, {
+        text = _("Search Books (experimental)"),
+        callback = function()
+            Search:init()
         end
     })
 end
