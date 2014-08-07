@@ -75,7 +75,9 @@ function ReaderFooter:init()
         dimen = Geom:new{ w = text_width, h = self.height },
         self.progress_text,
     }
-    table.insert(horizontal_group, bar_container)
+    if DMINIBAR_PROGRESSBAR then
+        table.insert(horizontal_group, bar_container)
+    end
     table.insert(horizontal_group, text_container)
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
