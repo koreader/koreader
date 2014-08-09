@@ -37,6 +37,8 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayout(self.key or self.label) end
     elseif self.label == "IM" then
         self.callback = function () self.keyboard:setLayout(self.key or self.label) end
+    elseif self.label == "Äéß" then
+        self.callback = function () self.keyboard:setLayout(self.key or self.label) end
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
     else
@@ -105,11 +107,12 @@ local VirtualKeyboard = InputContainer:new{
     inputbox = nil,
     KEYS = {}, -- table to store layouts
     min_layout = 2,
-    max_layout = 9,
+    max_layout = 13,
     layout = 2,
     shiftmode = false,
     symbolmode = false,
     utf8mode = false,
+    umlautmode = false,
 
     width = 600,
     height = 256,
@@ -121,43 +124,43 @@ local VirtualKeyboard = InputContainer:new{
 function VirtualKeyboard:init()
     self.KEYS = {
         -- first row
-        {
-            { "Q",        "q",    "1",    "!",    "Я",    "я",    "1",    "!", },
-            { "W",        "w",    "2",    "?",    "Ж",    "ж",    "2",    "?", },
-            { "E",        "e",    "3",    "|",    "Е",    "е",    "3",    "«", },
-            { "R",        "r",    "4",    "#",    "Р",    "р",    "4",    "»", },
-            { "T",        "t",    "5",    "@",    "Т",    "т",    "5",    ":", },
-            { "Y",        "y",    "6",    "‰",    "Ы",    "ы",    "6",    ";", },
-            { "U",        "u",    "7",    "'",    "У",    "у",    "7",    "~", },
-            { "I",        "i",    "8",    "`",    "И",    "и",    "8",    "(", },
-            { "O",        "o",    "9",    ":",    "О",    "о",    "9",    ")", },
-            { "P",        "p",    "0",    ";",    "П",    "п",    "0",    "=", },
+        {  --  1           2       3       4       5       6       7       8       9       10      11      12
+            { "Q",        "q",    "1",    "!",    "Я",    "я",    "1",    "!",    "Ä",    "ä",    "1",    "ª", },
+            { "W",        "w",    "2",    "?",    "Ж",    "ж",    "2",    "?",    "Ö",    "ö",    "2",    "º", },
+            { "E",        "e",    "3",    "|",    "Е",    "е",    "3",    "«",    "Ü",    "ü",    "3",    "¡", },
+            { "R",        "r",    "4",    "#",    "Р",    "р",    "4",    "»",    "ß",    "ß",    "4",    "¿", },
+            { "T",        "t",    "5",    "@",    "Т",    "т",    "5",    ":",    "À",    "à",    "5",    "¼", },
+            { "Y",        "y",    "6",    "‰",    "Ы",    "ы",    "6",    ";",    "Â",    "â",    "6",    "½", },
+            { "U",        "u",    "7",    "'",    "У",    "у",    "7",    "~",    "Æ",    "æ",    "7",    "¾", },
+            { "I",        "i",    "8",    "`",    "И",    "и",    "8",    "(",    "Ç",    "ç",    "8",    "©", },
+            { "O",        "o",    "9",    ":",    "О",    "о",    "9",    ")",    "È",    "è",    "9",    "®", },
+            { "P",        "p",    "0",    ";",    "П",    "п",    "0",    "=",    "É",    "é",    "0",    "™", },
         },
         -- second raw
-        {
-            { "A",        "a",    "+",    "…",    "А",    "а",    "Ш",    "ш", },
-            { "S",        "s",    "-",    "_",    "С",    "с",    "Ѕ",    "ѕ", },
-            { "D",        "d",    "*",    "=",    "Д",    "д",    "Э",    "э", },
-            { "F",        "f",    "/",    "\\",    "Ф",    "ф",    "Ю",    "ю", },
-            { "G",        "g",    "%",    "„",    "Г",    "г",    "Ґ",    "ґ", },
-            { "H",        "h",    "^",    "“",    "Ч",    "ч",    "Ј",    "ј", },
-            { "J",        "j",    "<",    "”",    "Й",    "й",    "І",    "і", },
-            { "K",        "k",    "=",    "\"",    "К",    "к",    "Ќ",    "ќ", },
-            { "L",        "l",    ">",    "~",    "Л",    "л",    "Љ",    "љ", },
+        {  --  1           2       3       4       5       6       7       8       9       10      11      12
+            { "A",        "a",    "+",    "…",    "А",    "а",    "Ш",    "ш",    "Ê",    "ê",    "Ş",    "ş", },
+            { "S",        "s",    "-",    "_",    "С",    "с",    "Ѕ",    "ѕ",    "Ë",    "ë",    "İ",    "ı", },
+            { "D",        "d",    "*",    "=",    "Д",    "д",    "Э",    "э",    "Î",    "î",    "Ğ",    "ğ", },
+            { "F",        "f",    "/",    "\\",   "Ф",    "ф",    "Ю",    "ю",    "Ï",    "ï",    "Ć",    "ć", },
+            { "G",        "g",    "%",    "„",    "Г",    "г",    "Ґ",    "ґ",    "Ô",    "ô",    "Č",    "č", },
+            { "H",        "h",    "^",    "“",    "Ч",    "ч",    "Ј",    "ј",    "Œ",    "œ",    "Đ",    "đ", },
+            { "J",        "j",    "<",    "”",    "Й",    "й",    "І",    "і",    "Ù",    "ù",    "Š",    "š", },
+            { "K",        "k",    "=",    "\"",   "К",    "к",    "Ќ",    "ќ",    "Û",    "û",    "Ž",    "ž", },
+            { "L",        "l",    ">",    "~",    "Л",    "л",    "Љ",    "љ",    "Ÿ",    "ÿ",    "Ő",    "ő", },
         },
         -- third raw
-        {
+        {  --  1           2       3       4       5       6       7       8       9       10      11      12
             { label = "Shift",
               icon = "resources/icons/appbar.arrow.shift.png",
               width = 1.5
             },
-            { "Z",        "z",    "(",    "$",    "З",    "з",    "Щ",    "щ", },
-            { "X",        "x",    ")",    "€",    "Х",    "х",    "№",    "@", },
-            { "C",        "c",    "&",    "¥",    "Ц",    "ц",    "Џ",    "џ", },
-            { "V",        "v",    ":",    "£",    "В",    "в",    "Ў",    "ў", },
-            { "B",        "b",    "π",    "‚",    "Б",    "б",    "Ћ",    "ћ", },
-            { "N",        "n",    "е",    "‘",    "Н",    "н",    "Њ",    "њ", },
-            { "M",        "m",    "~",    "’",    "М",    "м",    "Ї",    "ї", },
+            { "Z",        "z",    "(",    "$",    "З",    "з",    "Щ",    "щ",    "Á",    "á",    "Ű",    "ű", },
+            { "X",        "x",    ")",    "€",    "Х",    "х",    "№",    "@",    "É",    "é",    "Ø",    "ø", },
+            { "C",        "c",    "&",    "¥",    "Ц",    "ц",    "Џ",    "џ",    "Í",    "í",    "Þ",    "þ", },
+            { "V",        "v",    ":",    "£",    "В",    "в",    "Ў",    "ў",    "Ñ",    "ñ",    "Ý",    "ý", },
+            { "B",        "b",    "π",    "‚",    "Б",    "б",    "Ћ",    "ћ",    "Ó",    "ó",    "†",    "‡", },
+            { "N",        "n",    "е",    "‘",    "Н",    "н",    "Њ",    "њ",    "Ú",    "ú",    "–",    "—", },
+            { "M",        "m",    "~",    "’",    "М",    "м",    "Ї",    "ї",    "Ç",    "ç",    "…",    "¨", },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
@@ -165,17 +168,18 @@ function VirtualKeyboard:init()
         },
         -- fourth raw
         {
-            { "Sym",    "Sym",    "ABC",    "ABC",    "Sym",    "Sym",    "ABC",    "ABC",
+            { "Sym",    "Sym",    "ABC",    "ABC",    "Sym",    "Sym",    "ABC",    "ABC",    "Sym",    "Sym",    "ABC",    "ABC",
               width = 1.5},
             { label = "IM",
               icon = "resources/icons/appbar.globe.wire.png",
             },
+            { "Äéß",        "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß",    "Äéß", },
             { label = "space",
-              " ",        " ",    " ",    " ",    " ",    " ",    " ",    " ",
-              width = 5.0},
-            { ",",        ".",    ".",    ",",    ",",    ".",    "Є",    "є", },
+              " ",        " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",
+              width = 4.0},
+            { ",",        ".",    ".",    ",",    ",",    ".",    "Є",    "є",    ",",    ".",    ",",    ".", },
             { label = "Enter",
-              "\n",        "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",
+              "\n",        "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",    "\n",
               icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
             },
@@ -186,11 +190,11 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:initLayout(layout)
-    local function VKLayout(b1, b2, b3)
+    local function VKLayout(b1, b2, b3, b4)
         local function boolnum(bool)
             return bool and 1 or 0
         end
-        return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3)
+        return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3) + 8 * boolnum(b4)
     end
 
     if layout then
@@ -199,12 +203,12 @@ function VirtualKeyboard:initLayout(layout)
         layout = math.min(layout, self.max_layout)
         self.layout = layout
         -- fill the layout modes
-        layout = layout % 4
-        self.shiftmode  = (layout == 1 or layout == 3)
-        self.symbolmode = (layout == 3 or layout == 4)
-        self.utf8mode   = (self.layout > 5)
+        self.shiftmode  = (layout == 1 or layout == 3 or layout == 5 or layout == 7 or layout == 9 or layout == 11)
+        self.symbolmode = (layout == 3 or layout == 4 or layout == 7 or layout == 8 or layout == 11 or layout == 12)
+        self.utf8mode   = (layout == 5 or layout == 6 or layout == 7 or layout == 8)
+        self.umlautmode = (layout == 9 or layout == 10 or layout == 11 or layout == 12)
     else -- or, without input parameter, restore layout from current layout modes
-        self.layout = VKLayout(self.shiftmode, self.symbolmode, self.utf8mode)
+        self.layout = VKLayout(self.shiftmode, self.symbolmode, self.utf8mode, self.umlautmode)
     end
     self:addKeys()
 end
@@ -269,8 +273,12 @@ function VirtualKeyboard:setLayout(key)
         self.shiftmode = not self.shiftmode
     elseif key == "Sym" or key == "ABC" then
         self.symbolmode = not self.symbolmode
+    elseif key == "Äéß" then
+        self.umlautmode = not self.umlautmode
+        if self.umlautmode then self.utf8mode = false end
     elseif key == "IM" then
         self.utf8mode = not self.utf8mode
+        if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
     UIManager:setDirty(self, "partial")
