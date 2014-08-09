@@ -46,11 +46,11 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 text_func = function()
                     local domain = nil
                     if self.evernote_domain == "sandbox" then
-                        domain = _("Sandbox")
+                        domain = "Sandbox"
                     elseif self.evernote_domain == "yinxiang" then
-                        domain = _("Yinxiang")
+                        domain = "Yinxiang"
                     else
-                        domain = _("Evernote")
+                        domain = "Evernote"
                     end
                     return self.evernote_token and (_("Logout") .. " " .. domain)
                             or _("Login")

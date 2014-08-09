@@ -126,14 +126,14 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
-                    text = _("<<"),
+                    text = "<<",
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
                     end,
                 },
                 {
-                    text = _(">>"),
+                    text = ">>",
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()

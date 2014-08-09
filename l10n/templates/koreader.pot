@@ -44,16 +44,6 @@ msgid ""
 "5 deg"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:129
-msgid ""
-"<<"
-msgstr ""
-
-#: frontend/ui/widget/dictquicklookup.lua:136
-msgid ""
-">>"
-msgstr ""
-
 #: frontend/apps/reader/modules/readerhighlight.lua:302
 #: frontend/ui/widget/dictquicklookup.lua:152
 msgid ""
@@ -237,7 +227,6 @@ msgid ""
 msgstr ""
 
 #: plugins/evernote.koplugin/main.lua:43
-#: plugins/evernote.koplugin/main.lua:53
 msgid ""
 "Evernote"
 msgstr ""
@@ -808,19 +797,9 @@ msgid ""
 "Writing screen to "
 msgstr ""
 
-#: plugins/evernote.koplugin/main.lua:51
-msgid ""
-"Yinxiang"
-msgstr ""
-
 #: frontend/ui/otamanager.lua:143
 msgid ""
 "Your koreader is updated."
-msgstr ""
-
-#: plugins/zsync.koplugin/main.lua:42
-msgid ""
-"ZSync"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerzooming.lua:320
