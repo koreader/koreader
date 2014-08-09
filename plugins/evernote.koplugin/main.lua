@@ -40,7 +40,7 @@ end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
-        text = "Evernote",
+        text = _("Evernote"),
         sub_item_table = {
             {
                 text_func = function()
