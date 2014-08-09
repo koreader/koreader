@@ -151,7 +151,7 @@ function Search:find()
             s=string.sub(s,n,string.len(s)-3)
         end
 
-        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return unichar(tonumber(w, 16)) end) -- '
+        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return unichar(tonumber(w, 16)) end)
 
         return s
     end
@@ -188,7 +188,7 @@ function Search:find()
             if SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] end
             if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
 
-            if string.find(dummy,upsearch) then
+            if string.find(dummy,upsearch,nil,true) then
                 i = i + 1
                 self.data[i] = {"","","","",""}
             end
