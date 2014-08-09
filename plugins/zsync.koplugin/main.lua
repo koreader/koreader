@@ -39,7 +39,7 @@ end
 
 function ZSync:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
-        text = "ZSync",
+        text = _("ZSync"),
         sub_item_table = {
             {
                 text_func = function()
