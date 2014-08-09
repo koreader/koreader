@@ -21,6 +21,8 @@ local Search = InputContainer:new{
 }
 
 local function unichar (value)
+-- this function is taken from dkjson
+-- http://dkolf.de/src/dkjson-lua.fsl/
     local floor = math.floor
     local strchar = string.char
     if value < 0 then
