@@ -15,6 +15,8 @@ local ProgressWidget = Widget:new{
     bgcolor = 0,
     rectcolor = 10,
     percentage = nil,
+    TOC = {},
+    last = nil,
 }
 
 function ProgressWidget:getSize()
@@ -34,6 +36,15 @@ function ProgressWidget:paintTo(bb, x, y)
     bb:paintRect(x+self.margin_h, y+self.margin_v+self.bordersize,
                 (my_size.w-2*self.margin_h)*self.percentage,
                 (my_size.h-2*(self.margin_v+self.bordersize)), self.rectcolor)
+    if DMINIBAR_PROGRESS_MARKER then
+        if #self.TOC > 0 then
+            for i=1, #self.TOC do
+                v = self.TOC[i]
+                bb:paintRect(x+(my_size.w-2*self.margin_h)*(v.page/self.last), y+self.margin_v+self.bordersize,
+                    2,(my_size.h-2*(self.margin_v+self.bordersize)), self.bordercolor)
+            end
+        end
+    end
 end
 
 function ProgressWidget:setPercentage(percentage)
