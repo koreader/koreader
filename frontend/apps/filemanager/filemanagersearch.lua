@@ -20,6 +20,25 @@ local Search = InputContainer:new{
     results = {},
 }
 
+local function unichar (value)
+    local floor = math.floor
+    local strchar = string.char
+    if value < 0 then
+        return nil
+    elseif value <= 0x007f then
+        return string.char (value)
+    elseif value <= 0x07ff then
+        return string.char (0xc0 + floor(value/0x40),0x80 + (floor(value) % 0x40))
+    elseif value <= 0xffff then
+        return string.char (0xe0 + floor(value/0x1000), 0x80 + (floor(value/0x40) % 0x40), 0x80 + (floor(value) % 0x40))
+    elseif value <= 0x10ffff then
+        return string.char (0xf0 + floor(value/0x40000), 0x80 + (floor(value/0x1000) % 0x40), 0x80 + (floor(value/0x40) % 0x40), 0x80 + (floor(value) % 0x40))
+    else
+        return nil
+    end
+end
+
+
 local function findcalibre(root)
     local t=nil
     for entity in lfs.dir(root) do
@@ -130,43 +149,7 @@ function Search:find()
             s=string.sub(s,n,string.len(s)-3)
         end
 
--- todo: identify \uXXXX values and enter. Better solution: Find a better way how to replace hex-unicodes with \XXX\XXX constructs
---        s=string.gsub(s,"\\","\195\160") -- à
---        s=string.gsub(s,"\\","\195\178") -- ò
---        s=string.gsub(s,"\\","\195\168") -- è
---        s=string.gsub(s,"\\","\195\172") -- ì
---        s=string.gsub(s,"\\","\195\185") -- ù
---        s=string.gsub(s,"\\","\195\161") -- á
---        s=string.gsub(s,"\\","\195\179") -- ó
---
---        s=string.gsub(s,"\\","\195\173") -- í
---        s=string.gsub(s,"\\","\195\186") -- ú
---        s=string.gsub(s,"\\","\195\162") -- â
---        s=string.gsub(s,"\\","\195\180") -- ô
---        s=string.gsub(s,"\\","\195\170") -- ê
---        s=string.gsub(s,"\\","\195\174") -- î
---        s=string.gsub(s,"\\","\195\187") -- û
---        s=string.gsub(s,"\\","\195\163") -- ã
---        s=string.gsub(s,"\\","\195\181") -- õ
---        s=string.gsub(s,"\\","\195\171") -- ë
---        s=string.gsub(s,"\\","\195\175") -- ï
---        s=string.gsub(s,"\\","\195\166") -- æ
---        s=string.gsub(s,"\\","\195\184") -- ø
---        s=string.gsub(s,"\\","\195\167") -- ç
---        s=string.gsub(s,"\\","\195\177") -- ñ
-
-        s=string.gsub(s,"\\u00e9","\195\169") -- é
-        
-        s=string.gsub(s,"\\u00c4","\195\132") -- Ä
-        s=string.gsub(s,"\\u00d6","\195\150") -- Ö
-        s=string.gsub(s,"\\u00dc","\195\156") -- Ü
-
-        s=string.gsub(s,"\\u00e4","\195\164") -- ä
-        s=string.gsub(s,"\\u00fc","\195\188") -- ü
-        s=string.gsub(s,"\\u00f6","\195\182") -- ö
-
-        s=string.gsub(s,"\\u00df","\195\159") -- ß
-        s=string.gsub(s,"\\u2019","'") -- '
+        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return unichar(tonumber(w, 16)) end) -- '
 
         return s
     end
