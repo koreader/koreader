@@ -65,6 +65,8 @@ function ReaderFooter:init()
         width = math.floor(Screen:getWidth() - text_width - self.padding),
         height = self.bar_height,
         percentage = self.progress_percentage,
+        TOC = self.ui.document:getToc(),
+        last = self.pages,
     }
     local horizontal_group = HorizontalGroup:new{}
     local bar_container = RightContainer:new{
