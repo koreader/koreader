@@ -124,11 +124,12 @@ function FileManagerMenu:setUpdateItemTable()
         end
     })
     table.insert(self.tab_item_table.info, {
-        text = _("Search Books (experimental)"),
+        text = _("Search Books"),
         callback = function()
             Search:init()
         end
     })
+    table.insert(self.tab_item_table.info, Screen:SearchOptions())
 end
 
 function FileManagerMenu:onShowMenu()
