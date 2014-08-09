@@ -307,5 +307,53 @@ function Screen:getDPIMenuTable()
     }
 end
 
+function Screen:SearchOptions()
+    return {
+        text = _("Search options"),
+        sub_item_table = {
+            {
+                text = _("Case insensitive"),
+                checked_func = function()
+                    local search_option = SEARCH_CASESENSITIVE
+                    return search_option
+                end,
+                callback = function() SEARCH_CASESENSITIVE = not SEARCH_CASESENSITIVE end
+            },
+            {
+                text = _("Search title"),
+                checked_func = function()
+                    local search_option = SEARCH_TITLE
+                    return search_option
+                end,
+                callback = function() SEARCH_TITLE = not SEARCH_TITLE end
+            },
+            {
+                text = _("Search tags"),
+                checked_func = function()
+                    local search_option = SEARCH_TAGS
+                    return search_option
+                end,
+                callback = function() SEARCH_TAGS = not SEARCH_TAGS end
+            },
+            {
+                text = _("Search Series"),
+                checked_func = function()
+                    local search_option = SEARCH_SERIES
+                    return search_option
+                end,
+                callback = function() SEARCH_SERIES = not SEARCH_SERIES end
+            },
+            {
+                text = _("Case insensitive"),
+                checked_func = function()
+                    local search_option = SEARCH_PATH
+                    return search_option
+                end,
+                callback = function() SEARCH_PATH = not SEARCH_PATH end
+            },
+        }
+    }
+end
+
 return Screen
 
