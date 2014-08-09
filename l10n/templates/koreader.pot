@@ -226,6 +226,11 @@ msgid ""
 "Errors occur when exporting book:"
 msgstr ""
 
+#: plugins/evernote.koplugin/main.lua:43
+msgid ""
+"Evernote"
+msgstr ""
+
 #: frontend/ui/uimanager.lua:468
 msgid ""
 "Every 6 pages"
