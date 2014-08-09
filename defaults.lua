@@ -127,6 +127,8 @@ DMINIBAR_PAGES = true
 DMINIBAR_NEXT_CHAPTER = true
 DMINIBAR_BATTERY = true
 
+DMINIBAR_PROGRESS_MARKER = true
+
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
 
@@ -142,9 +144,9 @@ FRONTLIGHT_SENSITIVITY_DECREASE = 2
 
 -- Set a path to a folder that is filled by Calibre (must contain the file metadata.calibre)
 -- e.g.
--- /mnt/sd/.hidden for Kobo with files in ".hidden" on the SD card
--- /mnt/onboard/MyPath for Kobo with files in "MyPath" on the device itself
--- /mnt/us/documents/ for Kindle files in folder "documents"
+-- "/mnt/sd/.hidden" for Kobo with files in ".hidden" on the SD card
+-- "/mnt/onboard/MyPath" for Kobo with files in "MyPath" on the device itself
+-- "/mnt/us/documents/" for Kindle files in folder "documents"
 LIBRARY_PATH = nil
 
 -- Search parameters
