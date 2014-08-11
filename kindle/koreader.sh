@@ -100,7 +100,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 	if [ $? -eq 0 ] ; then
 		rm "${NEWUPDATE}"
 		logmsg "Update sucessful :)"
-		eips_print_bottom_centered "Update sucessful :)" 1
+		eips_print_bottom_centered "Update successful :)" 1
 	else
 		# Huh ho...
 		logmsg "Update failed :("

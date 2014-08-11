@@ -56,7 +56,7 @@ function PdfDocument:init()
     local ok
     ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)
     if not ok then
-        self.error_message = self.doc -- will contain error message
+        self.error_message = self._document -- will contain error message
         return
     end
     self.is_open = true

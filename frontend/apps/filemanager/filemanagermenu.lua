@@ -28,6 +28,9 @@ function FileManagerMenu:init()
         info = {
             icon = "resources/icons/appbar.pokeball.png",
         },
+        tools = {
+            icon = "resources/icons/appbar.tools.png",
+        },
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
@@ -104,18 +107,6 @@ function FileManagerMenu:setUpdateItemTable()
         end
     })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
-    table.insert(self.tab_item_table.setting, {
-        text = _("Default settings"),
-        callback = function()
-            SetDefaults:ConfirmEdit()
-        end
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Save default settings"),
-        callback = function()
-            SetDefaults:ConfirmSave()
-        end
-    })
     -- info tab
     if Device:isKindle() or Device:isKobo() then
         table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
@@ -136,7 +127,17 @@ function FileManagerMenu:setUpdateItemTable()
             })
         end
     })
-    table.insert(self.tab_item_table.info, {
+    -- tools tab
+    table.insert(self.tab_item_table.tools, {
+        text = _("Set defaults"),
+        callback = function()
+            SetDefaults:ConfirmEdit()
+        end,
+        hold_callback = function()
+            SetDefaults:ConfirmSave()
+        end,
+    })
+    table.insert(self.tab_item_table.tools, {
         text = _("Search books"),
         callback = function()
             Search:init()
@@ -161,6 +162,7 @@ function FileManagerMenu:onShowMenu()
             tab_item_table = {
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
+                self.tab_item_table.tools,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,

@@ -281,7 +281,7 @@ function ReaderHighlight:translate(selected_text)
     end
 end
 
-function ReaderHighlight:onHoldRelease(arg, ges)
+function ReaderHighlight:onHoldRelease()
     if self.selected_word then
         self:lookup(self.selected_word)
         self.selected_word = nil
@@ -345,6 +345,16 @@ function ReaderHighlight:onHoldRelease(arg, ges)
         UIManager:show(self.highlight_dialog)
     end
     return true
+end
+
+function ReaderHighlight:onHighlight()
+    if self.hold_pos then
+        if not self.selected_text then
+            self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
+            DEBUG("selected text:", self.selected_text)
+        end
+        self:saveHighlight()
+    end
 end
 
 function ReaderHighlight:saveHighlight()

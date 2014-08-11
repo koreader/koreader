@@ -133,6 +133,12 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    text = _("Highlight"),
+                    callback = function()
+                        self.ui:handleEvent(Event:new("Highlight"))
+                    end,
+                },
+                {
                     text = ">>",
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
@@ -142,17 +148,24 @@ function DictQuickLookup:update()
             },
             {
                 {
-                    text = _("Highlight"),
+                    text = _("Wikipedia"),
                     enabled = false,
                     callback = function()
-                        self.ui:handleEvent(Event:new("Highlight"))
+                        self.ui:handleEvent(Event:new("HighlightWiki"))
                     end,
                 },
                 {
                     text = _("Add Note"),
                     enabled = false,
                     callback = function()
-                        self.ui:handleEvent(Event:new("AddNote"))
+                        self.ui:handleEvent(Event:new("HighlightAddNote"))
+                    end,
+                },
+                {
+                    text = _("More"),
+                    enabled = false,
+                    callback = function()
+                        self.ui:handleEvent(Event:new("HighlightMore"))
                     end,
                 },
             },

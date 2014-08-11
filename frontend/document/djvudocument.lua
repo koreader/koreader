@@ -37,23 +37,13 @@ function DjvuDocument:init()
     local ok
     ok, self._document = pcall(djvu.openDocument, self.file, self.djvulibre_cache_size)
     if not ok then
-        self.error_message = self.doc -- will contain error message
+        self.error_message = self._document -- will contain error message
         return
     end
     self.is_open = true
     self.info.has_pages = true
     self.info.configurable = true
     self:_readMetadata()
-end
-
-function DjvuDocument:invertTextYAxel(pageno, text_table)
-    local _, height = self.doc:getOriginalPageSize(pageno)
-    for _,text in pairs(text_table) do
-        for _,line in ipairs(text) do
-            line.y0, line.y1 = (height - line.y1), (height - line.y0)
-        end
-    end
-    return text_table
 end
 
 function DjvuDocument:getPageTextBoxes(pageno)

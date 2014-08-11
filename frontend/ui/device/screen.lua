@@ -167,7 +167,8 @@ function Screen:setDPI(dpi)
 end
 
 function Screen:scaleByDPI(px)
-    return math.floor(px * self:getDPI()/167)
+    -- scaled positive px should also be positive
+    return math.ceil(px * self:getDPI()/167)
 end
 
 function Screen:rescaleByDPI(px)
