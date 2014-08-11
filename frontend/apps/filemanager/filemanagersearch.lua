@@ -70,7 +70,12 @@ function Search:init()
 
     -- check if we find the calibre file
     if LIBRARY_PATH == nil then 
-          error = "LIBRARY_PATH in DEFAULTS.LUA is not set!"
+          self.calibrefile = findcalibre("/mnt")
+          if not self.calibrefile then
+              error = "LIBRARY_PATH in DEFAULTS.LUA is not set!"
+          else
+              UIManager:show(InfoMessage:new{text = _("Fount calibre metadata at ") .. self.calibrefile .. _(". Save the default settings!")})
+          end
     else
         if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
             LIBRARY_PATH = LIBRARY_PATH .. "/"
