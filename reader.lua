@@ -77,7 +77,7 @@ function showReaderUI(file, pass)
     DEBUG("opening file", file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-             text = _("File ") .. file .. " does not exist")
+             text = _("File ") .. file .. _(" does not exist")
         })
         return
     end
