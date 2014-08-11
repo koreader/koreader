@@ -71,12 +71,17 @@ local function orderedPairs(t)
 end
 
 function SetDefaults:ConfirmEdit()
-    UIManager:show(ConfirmBox:new{
-        text = _("Wrong settings might crash Koreader! Continue?"),
-        ok_callback = function()
-            self:init()
-        end,
-    })
+    if not SetDefaults.EditConfirmed then
+        UIManager:show(ConfirmBox:new{
+            text = _("Wrong settings might crash Koreader! Continue?"),
+            ok_callback = function()
+                self.EditConfirmed = true
+                self:init()
+            end,
+        })
+    else
+        self:init()
+    end
 end
 
 function SetDefaults:init()
@@ -111,7 +116,6 @@ function SetDefaults:init()
         table.insert(self.results, {
            text = dummy,
            callback = function()
-
                GLOBAL_INPUT_VALUE = tostring(self.bools_value[i])
                self.set_dialog = InputDialog:new{
                    title = self.bools_name[i] .. ":",
@@ -123,6 +127,8 @@ function SetDefaults:init()
                                callback = function()
                                    _G[self.bools_name[i]] = settype(self.set_dialog:getInputText(),type(_G[self.bools_name[i]]))
                                    self:close()
+                                   self.defaults_menu:swithItemTable("Defaults", self.results)
+                                   UIManager:show(menu_container)
                                end,
                             },
                            {
@@ -130,6 +136,8 @@ function SetDefaults:init()
                                enabled = true,
                                callback = function()
                                    self:close()
+                                   self.defaults_menu:swithItemTable("Defaults", self.results)
+                                   UIManager:show(menu_container)
                                end,
                            },
                        },
@@ -248,6 +256,6 @@ function SetDefaults:SaveSettings()
         file:write(dpl[i] .. "\n")
     end
     file:close()
-    UIManager:show(InfoMessage:new{text = _("Default settings successfully saved to \"defaults.persistent.lua\"!")})
+    UIManager:show(InfoMessage:new{text = _("Default settings successfully saved!")})
 end
 return SetDefaults
