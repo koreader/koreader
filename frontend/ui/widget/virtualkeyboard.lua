@@ -107,7 +107,7 @@ local VirtualKeyboard = InputContainer:new{
     inputbox = nil,
     KEYS = {}, -- table to store layouts
     min_layout = 2,
-    max_layout = 13,
+    max_layout = 12,
     layout = 2,
     shiftmode = false,
     symbolmode = false,
@@ -187,6 +187,11 @@ function VirtualKeyboard:init()
         }
     }
     self:initLayout(self.layout)
+    if GLOBAL_INPUT_VALUE then
+        for i = 1, string.len(GLOBAL_INPUT_VALUE) do
+            self:addChar(string.sub(GLOBAL_INPUT_VALUE,i,i))
+        end
+    end    
 end
 
 function VirtualKeyboard:initLayout(layout)
