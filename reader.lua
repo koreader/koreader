@@ -77,12 +77,12 @@ function showReaderUI(file, pass)
     DEBUG("opening file", file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-            text = _("File does not exist")
+             text = _("File ") .. file .. " does not exist")
         })
         return
     end
     UIManager:show(InfoMessage:new{
-        text = _("Opening file") .. file,
+        text = _("Opening file ") .. file,
         timeout = 1,
     })
     UIManager:scheduleIn(0.1, function() doShowReaderUI(file, pass) end)
