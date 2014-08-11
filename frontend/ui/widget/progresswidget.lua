@@ -11,6 +11,7 @@ local ProgressWidget = Widget:new{
     margin_v = 1,
     radius = 2,
     bordersize = 1,
+    toc_marker_width = DMINIBAR_TOC_MARKER_WIDTH,
     bordercolor = 15,
     bgcolor = 0,
     rectcolor = 10,
@@ -28,7 +29,7 @@ function ProgressWidget:paintTo(bb, x, y)
     self.dimen = Geom:new{
         x = x, y = y,
         w = my_size.w,
-        h = my_size.h 
+        h = my_size.h
     }
     bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
     bb:paintBorder(x, y, my_size.w, my_size.h,
@@ -41,7 +42,7 @@ function ProgressWidget:paintTo(bb, x, y)
             for i=1, #self.TOC do
                 v = self.TOC[i]
                 bb:paintRect(x+(my_size.w-2*self.margin_h)*(v.page/self.last), y+self.margin_v+self.bordersize,
-                    2,(my_size.h-2*(self.margin_v+self.bordersize)), self.bordercolor)
+                    self.toc_marker_width,(my_size.h-2*(self.margin_v+self.bordersize)), self.bordercolor)
             end
         end
     end

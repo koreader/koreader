@@ -127,7 +127,12 @@ DMINIBAR_PAGES = true
 DMINIBAR_NEXT_CHAPTER = true
 DMINIBAR_BATTERY = true
 
-DMINIBAR_PROGRESS_MARKER = true
+DMINIBAR_PROGRESS_MARKER = true -- Black notch for each TOC entry
+DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
+
+DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
+DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
+
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
