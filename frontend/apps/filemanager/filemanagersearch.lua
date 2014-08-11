@@ -94,14 +94,14 @@ function Search:init()
     end
     
     if self.calibrefile ~= nil then
-        local dummy = ""
-        if SEARCH_CASESENSITIVE then
-            dummy = "case sensitive)"
-        else
-            dummy = "case insensitive)"
+        LIBRARY_PATH = string.gsub(self.calibrefile,"/[^/]*$","")
+        if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
+            LIBRARY_PATH = LIBRARY_PATH .. "/"
         end
+
+        GLOBAL_INPUT_VALUE = self.search_value
         self.search_dialog = InputDialog:new{
-            title = _("Search Books (" .. dummy),
+            title = _("Search Books"),
             buttons = {
                 {
                     {
@@ -117,6 +117,7 @@ function Search:init()
             width = Screen:getWidth() * 0.8,
             height = Screen:getHeight() * 0.2,
         }
+        GLOBAL_INPUT_VALUE = nil
         self.search_dialog:onShowKeyboard()
         UIManager:show(self.search_dialog)
     else
