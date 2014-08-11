@@ -24,8 +24,8 @@ local ReaderFooter = InputContainer:new{
     progress_text = nil,
     text_font_face = "ffont",
     text_font_size = 14,
-    bar_height = Screen:scaleByDPI(7),
-    height = Screen:scaleByDPI(19),
+    bar_height = Screen:scaleByDPI(DMINIBAR_HEIGHT),
+    height = Screen:scaleByDPI(DMINIBAR_CONTAINER_HEIGHT),
     padding = Screen:scaleByDPI(10),
 }
 
