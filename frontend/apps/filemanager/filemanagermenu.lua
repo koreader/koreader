@@ -13,6 +13,7 @@ local Language = require("ui/language")
 local _ = require("gettext")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local Search = require("apps/filemanager/filemanagersearch")
+local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -73,6 +74,7 @@ function FileManagerMenu:setUpdateItemTable()
             self.ui:toggleHiddenFiles()
         end
     })
+
     table.insert(self.tab_item_table.setting, {
         text = _("Start with last opened file"),
         checked_func = function() return G_reader_settings:readSetting("open_last") end,
@@ -102,7 +104,18 @@ function FileManagerMenu:setUpdateItemTable()
         end
     })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
-
+    table.insert(self.tab_item_table.setting, {
+        text = _("Default settings"),
+        callback = function()
+            SetDefaults:ConfirmEdit()
+        end
+    })
+    table.insert(self.tab_item_table.setting, {
+        text = _("Save default settings"),
+        callback = function()
+            SetDefaults:ConfirmSave()
+        end
+    })
     -- info tab
     if Device:isKindle() or Device:isKobo() then
         table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
@@ -129,7 +142,6 @@ function FileManagerMenu:setUpdateItemTable()
             Search:init()
         end
     })
-    table.insert(self.tab_item_table.info, Screen:SearchOptions())
 end
 
 function FileManagerMenu:onShowMenu()
