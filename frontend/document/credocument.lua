@@ -27,18 +27,15 @@ local CreDocument = Document:new{
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
-function CreDocument.zipContentExt(self, fname)
-    local outfile = "./data/zip_content"
-    local s = ""
-    os.execute("unzip ".."-l \""..fname.."\" > "..outfile)
-    local i = 1
-    if io.open(outfile,"r") then
-        for lines in io.lines(outfile) do
-            if i == 4 then s = lines break else i = i + 1 end
+function CreDocument:zipContentExt(fname)
+    local std_out = io.popen("unzip ".."-qql \""..fname.."\"")
+    if std_out then
+        for line in std_out:lines() do
+            local size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
+            -- return the extention
+            if size and ext then return string.lower(ext) end
         end
     end
-    -- return the extention
-    return string.lower(string.match(s, ".+%.([^.]+)"))
 end
 
 function CreDocument:cacheInit()
@@ -82,7 +79,7 @@ function CreDocument:init()
     if file_type == "zip" then
         -- NuPogodi, 20.05.12: read the content of zip-file
         -- and return extention of the 1st file
-        file_type = self:zipContentExt(self.file)
+        file_type = self:zipContentExt(self.file) or "unknown"
     end
     -- these two format use the same css file
     if file_type == "html" then
@@ -100,7 +97,7 @@ function CreDocument:init()
         Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
     )
     if not ok then
-        self.error_message = self.doc -- will contain error message
+        self.error_message = self._document -- will contain error message
         return
     end
 
