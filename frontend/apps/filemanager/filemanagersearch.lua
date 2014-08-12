@@ -15,6 +15,9 @@ local Search = InputContainer:new{
     path = 3,
     tags = 4,
     series = 5,
+    authors2 = 6,
+    series_index = 7,
+    tags2 = 8,
     count = 0,
     data = {},
     results = {},
@@ -42,17 +45,17 @@ end
 
 
 local function findcalibre(root)
-    local t=nil
+    local t = nil
     for entity in lfs.dir(root) do
         if t then
             break
         else
-                if entity~="." and entity~=".." then
+                if entity ~= "." and entity ~= ".." then
                       local fullPath=root .. "/" .. entity
                 local mode = lfs.attributes(fullPath,"mode")
                 if mode == "file" then
                     if entity == "metadata.calibre" or entity == ".metadata.calibre" then
-                        t = root.."/"..entity
+                        t = root .. "/" .. entity
                     end
                 elseif mode == "directory" then
                     t = findcalibre(fullPath)
@@ -148,13 +151,13 @@ function Search:find()
     local dummy
 
     -- removes leading and closing characters and converts hex-unicodes
-    local ReplaceHexChars = function(s,n)
+    local ReplaceHexChars = function(s,n,j)
         local l=string.len(s)
 
         if string.sub(s,l,l) == "\"" then
             s=string.sub(s,n,string.len(s)-1)
         else
-            s=string.sub(s,n,string.len(s)-3)
+            s=string.sub(s,n,string.len(s)-j)
         end
 
         s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return unichar(tonumber(w, 16)) end)
@@ -164,16 +167,30 @@ function Search:find()
 
     -- ready entries with multiple lines from calibre
     local ReadMultipleLines = function(s)
-        self.data[i][s]=""
+        self.data[i][s] = ""
+        if s == self.authors then
+            self.data[i][self.authors2] = ""
+        elseif s == self.tags then
+            self.data[i][self.tags2] = ""
+        end
         while line ~= "    ], " do
             line = f:read()
             if line ~= "    ], " then
-                self.data[i][s]=self.data[i][s] .. "," .. ReplaceHexChars(line,8)
+                self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line,8,3)
+                if s == self.authors then
+                    self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
+                elseif s == self.tags then
+                    self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. ReplaceHexChars(line,8,3)
+                end
             end
         end
         self.data[i][s] = string.sub(self.data[i][s],2)
+        if s == self.authors then
+            self.data[i][self.authors2] = string.sub(self.data[i][self.authors2],4)
+        elseif s == self.tags then
+            self.data[i][self.tags2] = string.sub(self.data[i][self.tags2],4)
+        end
     end
-
 
     if SEARCH_CASESENSITIVE then
         upsearch = self.search_value
@@ -181,7 +198,7 @@ function Search:find()
         upsearch = string.upper(self.search_value)
     end
     
-    self.data[i] = {"","","","",""}
+    self.data[i] = {"-","-","-","-","-","-","-","-"}
     while line do
         if line == "  }, " or line == "  }" then
             -- new calibre data set
@@ -196,22 +213,25 @@ function Search:find()
 
             if string.find(dummy,upsearch,nil,true) then
                 i = i + 1
-                self.data[i] = {"","","","",""}
             end
+            self.data[i] = {"-","-","-","-","-","-","-","-"}
 
         elseif line == "    \"authors\": [" then -- AUTHORS
             ReadMultipleLines(self.authors)
         elseif line == "    \"tags\": [" then -- TAGS
             ReadMultipleLines(self.tags)
-            elseif string.sub(line,1,11) == "    \"title\"" then -- TITLE
-                    self.data[i][self.title] = ReplaceHexChars(line,15)
-            elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
-                    self.data[i][self.path] = string.sub(line,15,string.len(line)-3)
-            elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
-                    self.data[i][self.series] = ReplaceHexChars(line,16)
-          end
-          line = f:read()
+        elseif string.sub(line,1,11) == "    \"title\"" then -- TITLE
+            self.data[i][self.title] = ReplaceHexChars(line,15,3)
+        elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
+            self.data[i][self.path] = ReplaceHexChars(line,15,3)
+        elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
+            self.data[i][self.series] = ReplaceHexChars(line,16,3)
+        elseif string.sub(line,1,18) == "    \"series_index\"" and line ~= "    \"series_index\": null, " then -- SERIES_INDEX
+            self.data[i][self.series_index] = ReplaceHexChars(line,21,2)
+        end
+        line = f:read()
     end
+
     i = i - 1
     if i > 0 then
         self.count = i
@@ -219,6 +239,17 @@ function Search:find()
     else
         UIManager:show(InfoMessage:new{text = _("No match for " .. self.search_value)})
     end
+end
+
+function Search:onMenuHold(item)
+    item.info = item.info .. item.path
+    local f = io.open(item.path)
+    if f == nil then
+        item.info = item.info .. "\nFile not found!"
+    else
+        item.info = item.info .. "\n" .. tostring(math.floor(100*f:seek("end")/1024/1024 + 0.5)/100) .. " MB"
+    end
+    UIManager:show(InfoMessage:new{text = item.info})
 end
 
 function Search:showresults()
@@ -229,6 +260,7 @@ function Search:showresults()
         width = Screen:getWidth()-50,
         height = Screen:getHeight()-50,
         show_parent = menu_container,
+        onMenuHold = self.onMenuHold,
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -238,9 +270,18 @@ function Search:showresults()
 
     local i = 1
     while i <= self.count do
+        local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
+                      _("Author(s): ") .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
+                      _("Tags: ") .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
+                      _("Series: ") .. (self.data[i][self.series] or "-")
+        if self.data[i][self.series] ~= "-" then
+            dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
+        end
+        dummy = dummy .. "\n \n" .. _("Path: ")
         local book = LIBRARY_PATH .. self.data[i][self.path]
-
         table.insert(self.results, {
+           info = dummy,
+           path = LIBRARY_PATH .. self.data[i][self.path],
            text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
            callback = function()
               if book then
