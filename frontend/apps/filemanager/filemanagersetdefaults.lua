@@ -85,6 +85,17 @@ function SetDefaults:ConfirmEdit()
 end
 
 function SetDefaults:init()
+
+    local function setdisplayname(i)
+        local dummy = self.bools_name[i] .. " = " 
+        if type(_G[self.bools_name[i]]) == "string" and not tonumber(self.bools_value[i]) then
+            dummy = dummy .. "\"" .. tostring(self.bools_value[i]) .. "\"" -- add quotation marks to strings
+        else
+            dummy = dummy .. tostring(self.bools_value[i])
+        end
+        return dummy
+    end
+
     self.bools_name = {}
     self.bools_value = {}
     self.results = {}
@@ -107,14 +118,8 @@ function SetDefaults:init()
     end
 
     for i=1,#self.bools_name do
-        local dummy = self.bools_name[i] .. " = " 
-        if type(_G[self.bools_name[i]]) == "string" and not tonumber(self.bools_value[i]) then
-            dummy = dummy .. "\"" .. tostring(self.bools_value[i]) .. "\"" -- add quotation marks to strings
-        else
-            dummy = dummy .. tostring(self.bools_value[i])
-        end
         table.insert(self.results, {
-           text = dummy,
+           text = setdisplayname(i),
            callback = function()
                GLOBAL_INPUT_VALUE = tostring(self.bools_value[i])
                self.set_dialog = InputDialog:new{
@@ -126,8 +131,10 @@ function SetDefaults:init()
                                enabled = true,
                                callback = function()
                                    _G[self.bools_name[i]] = settype(self.set_dialog:getInputText(),type(_G[self.bools_name[i]]))
+                                   self.bools_value[i] = _G[self.bools_name[i]]
+                                   self.results[i].text = setdisplayname(i)
                                    self:close()
-                                   self.defaults_menu:swithItemTable("Defaults", self.results)
+                                   self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                    UIManager:show(menu_container)
                                end,
                             },
@@ -136,7 +143,6 @@ function SetDefaults:init()
                                enabled = true,
                                callback = function()
                                    self:close()
-                                   self.defaults_menu:swithItemTable("Defaults", self.results)
                                    UIManager:show(menu_container)
                                end,
                            },
