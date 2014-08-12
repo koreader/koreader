@@ -230,14 +230,6 @@ local InboxChooser = InputContainer:new{
 
 function InboxChooser:init()
     self.show_parent = self.show_parent or self
-    local banner = VerticalGroup:new{
-        TextWidget:new{
-            face = Font:getFace("tfont", 24),
-            text = _("Choose inbox"),
-        },
-        VerticalSpan:new{ width = Screen:scaleByDPI(10) }
-    }
-
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
     local root_path = G_reader_settings:readSetting("lastdir") or lfs.currentdir()
@@ -246,9 +238,12 @@ function InboxChooser:init()
         path = root_path,
         show_parent = self.show_parent,
         show_hidden = show_hidden,
-        height = Screen:getHeight() - banner:getSize().h,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
         is_popout = false,
         is_borderless = true,
+        title = _("Choose inbox"),
+        no_title = false,
         dir_filter = function(dirname)
             for _, pattern in ipairs(self.exclude_dirs) do
                 if dirname:match(pattern) then return end
@@ -293,10 +288,7 @@ function InboxChooser:init()
         padding = 0,
         bordersize = 0,
         background = 0,
-        VerticalGroup:new{
-            banner,
-            file_chooser,
-        }
+        file_chooser,
     }
 end
 
