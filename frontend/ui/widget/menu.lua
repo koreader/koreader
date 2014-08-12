@@ -583,12 +583,17 @@ function Menu:updateItems(select_number)
 
 end
 
-function Menu:swithItemTable(new_title, new_item_table)
+function Menu:swithItemTable(new_title, new_item_table, itemnumber)
     if self.menu_title then
         self.menu_title.text = new_title
     end
 
-    self.page = 1
+    if itemnumber then
+        self.page = math.ceil(itemnumber / self.perpage)
+    else
+        self.page = 1    
+    end
+
     self.item_table = new_item_table
     self:updateItems(1)
 end
