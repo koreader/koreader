@@ -246,9 +246,12 @@ function InboxChooser:init()
         path = root_path,
         show_parent = self.show_parent,
         show_hidden = show_hidden,
+        width = Screen:getWidth(),
         height = Screen:getHeight() - banner:getSize().h,
         is_popout = false,
         is_borderless = true,
+        -- FIXME: has_close_button has no effect on menu title
+        has_close_button = true,
         dir_filter = function(dirname)
             for _, pattern in ipairs(self.exclude_dirs) do
                 if dirname:match(pattern) then return end
