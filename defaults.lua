@@ -163,6 +163,9 @@ SEARCH_TAGS = true
 SEARCH_SERIES = true
 SEARCH_PATH = true
 
+-- Light parameter for Kobo
+KOBO_LIGHT_OFF_ON_SUSPEND = false
+KOBO_LIGHT_ON_START = -1          -- -1 or 0-100. -1 leaves light as it is, other sets light on start/wake up
 
 -- ####################################################################
 -- following features are not supported right now
