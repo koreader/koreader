@@ -80,6 +80,7 @@ function UIManager:init()
                     local InfoMessage = require("ui/widget/infomessage")
                     suspend_msg = InfoMessage:new{ text = _("Suspended") }
                 end
+                if KOBO_LIGHT_OFF_ON_SUSPEND then Device:getPowerDevice():setIntensity(0) end
                 self:show(suspend_msg)
                 self:sendEvent(Event:new("FlushSettings"))
                 Device:prepareSuspend()
@@ -90,6 +91,9 @@ function UIManager:init()
                 self:sendEvent(Event:new("Resume"))
                 if suspend_msg then
                     self:close(suspend_msg)
+                end
+                if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+                     Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
                 end
             end
         end
@@ -108,6 +112,9 @@ function UIManager:init()
             else
                 self:sendEvent(input_event)
             end
+        end
+        if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+            Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
