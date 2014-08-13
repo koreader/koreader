@@ -232,6 +232,8 @@ function Search:find()
         line = f:read()
     end
 
+    if f ~= nil then f:close() end
+
     i = i - 1
     if i > 0 then
         self.count = i
@@ -247,7 +249,8 @@ function Search:onMenuHold(item)
     if f == nil then
         item.info = item.info .. "\nFile not found!"
     else
-        item.info = item.info .. "\n" .. tostring(math.floor(100*f:seek("end")/1024/1024 + 0.5)/100) .. " MB"
+        item.info = item.info .. "\n" .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+        f:close()
     end
     UIManager:show(InfoMessage:new{text = item.info})
 end
