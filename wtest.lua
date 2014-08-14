@@ -1,10 +1,5 @@
 #!./koreader-base
 
-require "libs/libkoreader-lfs"
-einkfb = require("ffi/framebuffer")
-input = require("ffi/input")
-freetype = require("ffi/freetype")
-
 require "defaults"
 print(package.path)
 package.path = "?.lua;common/?.lua;frontend/?.lua"

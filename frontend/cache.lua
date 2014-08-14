@@ -2,6 +2,7 @@
 A global LRU cache
 ]]--
 require("MD5")
+local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 
 local function calcFreeMem()

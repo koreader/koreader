@@ -1,11 +1,9 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local einkfb = require("ffi/framebuffer")
 local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
--- Blitbuffer
--- einkfb
 
 --[[
 Codes for rotation modes:

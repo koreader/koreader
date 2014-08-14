@@ -1,12 +1,12 @@
 local AndroidPowerd = require("ui/device/androidpowerd")
 local KindlePowerD = require("ui/device/kindlepowerd")
+local isAndroid, android = pcall(require, "android")
 local KoboPowerD = require("ui/device/kobopowerd")
 local BasePowerD = require("ui/device/basepowerd")
+local lfs = require("libs/libkoreader-lfs")
 local Screen = require("ui/device/screen")
 local util = require("ffi/util")
 local ffi = require("ffi")
-local isAndroid, android = pcall(require, "android")
--- lfs
 
 local Device = {
     screen_saver_mode = false,

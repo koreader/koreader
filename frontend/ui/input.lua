@@ -3,11 +3,12 @@ local GestureDetector = require("ui/gesturedetector")
 local Event = require("ui/event")
 local TimeVal = require("ui/timeval")
 local Screen = require("ui/screen")
+local input = require("ffi/input")
+local util = require("ffi/util")
 local Math = require("optmath")
 local DEBUG = require("dbg")
-local _ = require("gettext")
 local ffi = require("ffi")
-local util = require("ffi/util")
+local _ = require("gettext")
 
 -- constants from <linux/input.h>
 local EV_SYN = 0

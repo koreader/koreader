@@ -1,14 +1,13 @@
-local Geom = require("ui/geometry")
-local Blitbuffer = require("ffi/blitbuffer")
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
+local Configurable = require("configurable")
+local Blitbuffer = require("ffi/blitbuffer")
+local lfs = require("libs/libkoreader-lfs")
 local Geom = require("ui/geometry")
-local Font = require("ui/font")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
-local Configurable = require("configurable")
--- TBD: DrawContext
 
 local CreDocument = Document:new{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h

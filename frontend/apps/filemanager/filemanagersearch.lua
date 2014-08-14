@@ -1,11 +1,12 @@
-local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
-local _ = require("gettext")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local Screen = require("ui/screen")
+local InfoMessage = require("ui/widget/infomessage")
+local lfs = require("libs/libkoreader-lfs")
+local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
+local Screen = require("ui/screen")
+local _ = require("gettext")
 
 local Search = InputContainer:new{
     calibrefile = nil,
@@ -72,7 +73,7 @@ function Search:init()
     self.results = {}
 
     -- check if we find the calibre file
-    if LIBRARY_PATH == nil then 
+    if LIBRARY_PATH == nil then
           self.calibrefile = findcalibre("/mnt")
           if not self.calibrefile then
               error = "LIBRARY_PATH in DEFAULTS.LUA is not set!"
@@ -100,7 +101,7 @@ function Search:init()
             self.calibrefile = findcalibre("/mnt")
         end
     end
-    
+
     if self.calibrefile ~= nil then
         LIBRARY_PATH = string.gsub(self.calibrefile,"/[^/]*$","")
         if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
@@ -197,7 +198,7 @@ function Search:find()
     else
         upsearch = string.upper(self.search_value)
     end
-    
+
     self.data[i] = {"-","-","-","-","-","-","-","-"}
     while line do
         if line == "  }, " or line == "  }" then
