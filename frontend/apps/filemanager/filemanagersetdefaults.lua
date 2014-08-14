@@ -127,7 +127,7 @@ function SetDefaults:init()
                    buttons = {
                        {
                            {
-                               text = _("Ok"),
+                               text = _("OK"),
                                enabled = true,
                                callback = function()
                                    _G[self.bools_name[i]] = settype(self.set_dialog:getInputText(),type(_G[self.bools_name[i]]))
@@ -139,7 +139,7 @@ function SetDefaults:init()
                                end,
                             },
                            {
-                               text = _("cancel"),
+                               text = _("Cancel"),
                                enabled = true,
                                callback = function()
                                    self:close()
