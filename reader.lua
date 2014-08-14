@@ -4,7 +4,6 @@ require "libs/libkoreader-lfs"
 einkfb = require("ffi/framebuffer")
 input = require("ffi/input")
 freetype = require("ffi/freetype")
-Image = require("ffi/mupdfimg")
 
 require "defaults"
 pcall(dofile, "defaults.persistent.lua")

@@ -4,7 +4,6 @@ require "libs/libkoreader-lfs"
 einkfb = require("ffi/framebuffer")
 input = require("ffi/input")
 freetype = require("ffi/freetype")
-Image = require("ffi/mupdfimg")
 
 require "defaults"
 print(package.path)
@@ -64,7 +63,7 @@ end
 
 function TestVisible:paintTo(bb)
     --Draw three lines at the borders to assess what the maximum visible coordinates are
-    
+
     v_line = math.floor(bb:getWidth() / 50)
     h_line = math.floor(bb:getHeight() / 50)
     -- Paint white background for higher contrast
@@ -78,40 +77,40 @@ function TestVisible:paintTo(bb)
         x_num = i*50
         RenderText:renderUtf8Text(bb, x_num, 40, Font:getFace("ffont", 12), x_num, true)
     end
-    
+
     -- Handtunable minimal and maximal visible coordinates
     local x_min = 0 + 4
     local x_max = bb:getWidth() - 4
     local y_min = 0 + 3
     local y_max = bb:getHeight() - 3 - 12
-    
+
     -- Render extremes on screen
     RenderText:renderUtf8Text(bb, 150, 100, Font:getFace("ffont", 22), "x_min = "..x_min, true)
     RenderText:renderUtf8Text(bb, 500, 100, Font:getFace("ffont", 22), "x_max = "..x_max, true)
     RenderText:renderUtf8Text(bb, 100, 150, Font:getFace("ffont", 22), "y_min = "..y_min, true)
     RenderText:renderUtf8Text(bb, 100, 300, Font:getFace("ffont", 22), "y_max = "..y_max, true)
     RenderText:renderUtf8Text(bb, 100, 500, Font:getFace("ffont", 26), "Visible screen size :  "..(x_max-x_min).."x"..(y_max-y_min), true)
-    
+
     -- Three parallel lines at the top
     bb:paintRect(x_min,y_min, x_max, 1 , 10)
     bb:paintRect(x_min,y_min + 3, x_max, 1 , 10)
     bb:paintRect(x_min,y_min + 6, x_max, 1 , 10)
-    
+
     -- Three parallel lines at the bottom
     bb:paintRect(x_min,y_max, x_max, 1 , 10)
     bb:paintRect(x_min,y_max - 3, x_max, 1 , 10)
     bb:paintRect(x_min,y_max - 6, x_max, 1 , 10)
-    
+
     -- Three parallel lines at the left
     bb:paintRect(x_min,y_min, 1, y_max , 10)
     bb:paintRect(x_min + 3,y_min, 1, y_max, 10)
     bb:paintRect(x_min + 6,y_min, 1, y_max, 10)
-    
+
     -- Three parallel lines at the right
     bb:paintRect(x_max,y_min, 1, y_max , 10)
     bb:paintRect(x_max - 3,y_min, 1, y_max, 10)
     bb:paintRect(x_max - 6,y_min, 1, y_max, 10)
-   
+
     --Two lines spaces 600 pixels
     bb:paintRect(100,600, 1, 250 , 10)
     bb:paintRect(700,600, 1, 250 , 10)
