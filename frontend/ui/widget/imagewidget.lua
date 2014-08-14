@@ -36,6 +36,13 @@ function ImageWidget:getSize()
     return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
 end
 
+function ImageWidget:rotate(degree)
+    if not self._bb then
+        self:_render()
+    end
+    self._bb:rotate(degree)
+end
+
 function ImageWidget:paintTo(bb, x, y)
     local size = self:getSize()
     self.dimen = Geom:new{
