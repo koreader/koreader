@@ -1,11 +1,11 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
+local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
--- lfs
 
 local ReaderTypeset = InputContainer:new{
     css_menu_title = _("Set render style"),

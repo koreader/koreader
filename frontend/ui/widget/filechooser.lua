@@ -1,9 +1,9 @@
+local lfs = require("libs/libkoreader-lfs")
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local util = require("ffi/util")
--- lfs
 local ffi = require("ffi")
 ffi.cdef[[
 int strcoll (char *str1, char *str2);

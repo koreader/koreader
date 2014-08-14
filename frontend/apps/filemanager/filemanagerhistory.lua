@@ -1,10 +1,11 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local Menu = require("ui/widget/menu")
 local ButtonDialog = require("ui/widget/buttondialog")
-local Screen = require("ui/screen")
+local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
+local Menu = require("ui/widget/menu")
+local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

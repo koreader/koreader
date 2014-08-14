@@ -1,11 +1,5 @@
 #!./koreader-base
 
-require "libs/libkoreader-lfs"
-einkfb = require("ffi/framebuffer")
-input = require("ffi/input")
-freetype = require("ffi/freetype")
-Image = require("ffi/mupdfimg")
-
 require "defaults"
 pcall(dofile, "defaults.persistent.lua")
 package.path = "?.lua;common/?.lua;frontend/?.lua"
@@ -27,13 +21,14 @@ end
 local DocumentRegistry = require("document/documentregistry")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
+local ReaderUI = require("apps/reader/readerui")
+local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
+local input = require("ffi/input")
 local DEBUG = require("dbg")
-
-local ReaderUI = require("apps/reader/readerui")
 
 local Profiler = nil
 

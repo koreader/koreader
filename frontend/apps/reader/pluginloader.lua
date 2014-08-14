@@ -1,5 +1,5 @@
+local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
--- lfs
 
 local PluginLoader = {
     plugin_path = "plugins"

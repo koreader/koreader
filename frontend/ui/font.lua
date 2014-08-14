@@ -1,3 +1,5 @@
+local lfs = require("libs/libkoreader-lfs")
+local Freetype = require("ffi/freetype")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 
@@ -62,7 +64,7 @@ function Font:getFace(font, size)
             realname = font
         end
         realname = self.fontdir.."/"..realname
-        ok, face = pcall(freetype.newFace, realname, size)
+        ok, face = pcall(Freetype.newFace, realname, size)
         if not ok then
             DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
             return nil

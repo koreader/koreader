@@ -1,5 +1,5 @@
+local lfs = require("libs/libkoreader-lfs")
 local DocSettings = {}
--- lfs
 
 function DocSettings:getHistoryPath(fullpath)
     local i = #fullpath - 1

@@ -1,6 +1,6 @@
 local Widget = require("ui/widget/widget")
+local Image = require("ffi/mupdfimg")
 local Geom = require("ui/geometry")
--- Image
 
 --[[
 ImageWidget shows an image from a file
@@ -10,6 +10,9 @@ local ImageWidget = Widget:new{
     invert = nil,
     dim = nil,
     hide = nil,
+    -- if width or height is given, image will rescale to the given size
+    width = nil,
+    height = nil,
     _bb = nil
 }
 
@@ -20,6 +23,10 @@ function ImageWidget:_render()
     elseif itype == "png" then
         self._bb = Image:fromPNG(self.file)
     end
+    local w, h = self._bb:getWidth(), self._bb:getHeight()
+    if (self.width and self.width ~= w) or (self.height and self.height ~= h) then
+        self._bb = self._bb:scale(self.width or w, self.height or h)
+    end
 end
 
 function ImageWidget:getSize()
@@ -29,12 +36,19 @@ function ImageWidget:getSize()
     return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
 end
 
+function ImageWidget:rotate(degree)
+    if not self._bb then
+        self:_render()
+    end
+    self._bb:rotate(degree)
+end
+
 function ImageWidget:paintTo(bb, x, y)
     local size = self:getSize()
     self.dimen = Geom:new{
         x = x, y = y,
         w = size.w,
-        h = size.h 
+        h = size.h
     }
     if self.hide then return end
     bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
