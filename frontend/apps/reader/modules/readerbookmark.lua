@@ -98,7 +98,7 @@ function ReaderBookmark:onShowBookmark()
     end
 
     local bm_menu = Menu:new{
-        title = "Bookmarks",
+        title = _("Bookmarks"),
         item_table = self.bookmarks,
         is_borderless = true,
         width = Screen:getWidth(),

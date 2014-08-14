@@ -67,11 +67,13 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerbookmark.lua:15
+#: frontend/apps/reader/modules/readerbookmark.lua:101
 msgid ""
 "Bookmarks"
 msgstr ""
 
 #: frontend/apps/reader/modules/readergoto.lua:36
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:142
 #: frontend/ui/widget/confirmbox.lua:29
 #: frontend/ui/widget/touchmenu.lua:547
 #: plugins/evernote.koplugin/main.lua:124
@@ -277,9 +279,80 @@ msgid ""
 "File manager menu"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagermenu.lua:126
+msgid ""
+"Please report bugs to \nhttps://github.com/koreader/koreader/issues"
+msgstr ""
+
 #: frontend/apps/filemanager/filemanager.lua:21
 msgid ""
 "FileManager"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagermenu.lua:141
+#: frontend/apps/filemanager/filemanagersearch.lua:112
+msgid ""
+"Search Books"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:80
+msgid ""
+"Found calibre metadata at "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:98
+msgid ""
+"You must specify at least one field to search at (SEARCH_XXX = true in defaults.lua)"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:116
+msgid ""
+"Find"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:242
+msgid ""
+"No match for "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:276
+msgid ""
+"Title: "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:277
+msgid ""
+"Author(s): "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:278
+msgid ""
+"Tags: "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:279
+msgid ""
+"Series: "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:283
+msgid ""
+"Path: "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:76
+msgid ""
+"Wrong settings might crash Koreader! Continue?"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:182
+msgid ""
+"Are you sure to save the settings to \"defaults.persistent.lua\"?"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:265
+msgid ""
+"Default settings successfully saved!"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:13
@@ -487,6 +560,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:130
 #: frontend/ui/widget/confirmbox.lua:28
 #: frontend/ui/widget/touchmenu.lua:553
 msgid ""
