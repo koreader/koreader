@@ -67,6 +67,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerbookmark.lua:15
+#: frontend/apps/reader/modules/readerbookmark.lua:101
 msgid ""
 "Bookmarks"
 msgstr ""
