@@ -216,7 +216,7 @@ end
 
 function Device:Resume() -- currently only used for kobo devices
     os.execute("echo 0 > /sys/power/state-extended")
-    self.screen:refresh(0)
+    self.screen:refresh(1)
     local powerd = self:getPowerDevice()
     if powerd ~= nil then
         powerd.fl:restore()
