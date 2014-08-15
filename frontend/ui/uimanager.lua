@@ -92,7 +92,7 @@ function UIManager:init()
             if (input_event == "Power" or input_event == "Suspend")
                     and not Device.screen_saver_mode then
                 if not UIManager.suspend_msg then
-                    if KOBO_SCREEN_SAVER then
+                    if type(KOBO_SCREEN_SAVER) == "string" then
                         local file = KOBO_SCREEN_SAVER
                         if lfs.attributes(file, "mode") == "directory" then
                             if string.sub(file,string.len(file)) ~= "/" then
