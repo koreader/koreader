@@ -92,6 +92,8 @@ function Screen:init()
     self.cur_rotation_mode = self.native_rotation_mode
 end
 
+    -- For the Kobo Aura an offset is needed, because the bezel make the
+    -- visible screen smaller.
 function Screen:PhoenixBezelCleaner()
     -- bb.paintRect(x, y, w, h, color)
     self.bb:paintRect(0,0, Screen:getWidth(), Screen:offsetY() , 0 )

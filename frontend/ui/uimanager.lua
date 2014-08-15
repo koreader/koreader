@@ -5,6 +5,7 @@ local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
+local ImageWidget = require("ui/widget/imagewidget")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -55,13 +56,26 @@ local UIManager = {
     _execution_stack = {},
     _dirty = {},
     _zeromqs = {},
+    suspend_msg = nil
 }
 
+function UIManager:getRandomPicture(dir)
+    local pics = {}
+    local i = 0
+    math.randomseed( os.time() )
+    for entry in lfs.dir(dir) do
+        if lfs.attributes(dir .. entry, "mode") == "file" then
+            local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
+            if extension == "jpg" or extension == "jpeg" or extension == "png" then
+                i = i + 1
+                pics[i] = entry
+            end
+        end
+    end
+    return pics[math.random(i)]
+end
 
 function UIManager:init()
-    -- For the Kobo Aura an offset is needed, because the bezel make the
-    -- visible screen smaller.
-
     self.event_handlers = {
         __default__ = function(input_event)
             self:sendEvent(input_event)
@@ -72,16 +86,36 @@ function UIManager:init()
     }
     if Device:isKobo() then
         -- lazy create suspend_msg to avoid dependence loop
-        local suspend_msg = nil
+
         function kobo_power(input_event)
+
             if (input_event == "Power" or input_event == "Suspend")
                     and not Device.screen_saver_mode then
-                if not suspend_msg then
-                    local InfoMessage = require("ui/widget/infomessage")
-                    suspend_msg = InfoMessage:new{ text = _("Suspended") }
+                if not UIManager.suspend_msg then
+                    if KOBO_SCREEN_SAVER then
+                        local file = KOBO_SCREEN_SAVER
+                        if lfs.attributes(file, "mode") == "directory" then
+                            if string.sub(file,string.len(file)) ~= "/" then
+                                file = file .. "/"
+                            end
+                            local dummy = self:getRandomPicture(file)
+                            if dummy then file = file .. dummy end
+                        end
+                        if lfs.attributes(file, "mode") == "file" then
+                            UIManager.suspend_msg = ImageWidget:new{
+                                file = file,
+                                width = Screen:getWidth(),
+                                height = Screen:getHeight(),
+                            }
+                        end
+                    end
+                    if not UIManager.suspend_msg then
+                        local InfoMessage = require("ui/widget/infomessage")
+                        UIManager.suspend_msg = InfoMessage:new{ text = _("Suspended") }
+                    end
                 end
                 if KOBO_LIGHT_OFF_ON_SUSPEND then Device:getPowerDevice():setIntensity(0) end
-                self:show(suspend_msg)
+                self:show(UIManager.suspend_msg)
                 self:sendEvent(Event:new("FlushSettings"))
                 Device:prepareSuspend()
                 self:scheduleIn(2, function() Device:Suspend() end)
@@ -89,14 +123,16 @@ function UIManager:init()
                     and Device.screen_saver_mode then
                 Device:Resume()
                 self:sendEvent(Event:new("Resume"))
-                if suspend_msg then
-                    self:close(suspend_msg)
+                if UIManager.suspend_msg then
+                    self:close(UIManager.suspend_msg)
+                    UIManager.suspend_msg = nil
                 end
                 if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
                      Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
                 end
             end
         end
+
         self.event_handlers["Power"] = kobo_power
         self.event_handlers["Suspend"] = kobo_power
         self.event_handlers["Resume"] = kobo_power
