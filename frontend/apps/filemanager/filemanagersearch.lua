@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local _ = require("gettext")
+local Font = require("ui/font")
 
 local Search = InputContainer:new{
     calibrefile = nil,
@@ -22,6 +23,9 @@ local Search = InputContainer:new{
     count = 0,
     data = {},
     results = {},
+    libraries = {},
+    browse_tags = {},
+    browse_series = {}
 }
 
 local function unichar (value)
@@ -44,6 +48,10 @@ local function unichar (value)
     end
 end
 
+local function fillbrowse()
+    if _browse_tags + _browse_series == 0 then
+    end
+end
 
 local function findcalibre(root)
     local t = nil
@@ -51,8 +59,8 @@ local function findcalibre(root)
         if t then
             break
         else
-                if entity ~= "." and entity ~= ".." then
-                      local fullPath=root .. "/" .. entity
+            if entity ~= "." and entity ~= ".." then
+                local fullPath=root .. "/" .. entity
                 local mode = lfs.attributes(fullPath,"mode")
                 if mode == "file" then
                     if entity == "metadata.calibre" or entity == ".metadata.calibre" then
@@ -73,25 +81,25 @@ function Search:init()
     self.results = {}
 
     -- check if we find the calibre file
-    if LIBRARY_PATH == nil then
+    if SEARCH_LIBRARY_PATH == nil then
           self.calibrefile = findcalibre("/mnt")
           if not self.calibrefile then
-              error = "LIBRARY_PATH in DEFAULTS.LUA is not set!"
+              error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
           else
-              UIManager:show(InfoMessage:new{text = _("Found calibre metadata at ") .. self.calibrefile .. _(". Save the default settings!")})
+              settings_changed = true
           end
     else
-        if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
-            LIBRARY_PATH = LIBRARY_PATH .. "/"
+        if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
+            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
         end
-        if io.open(LIBRARY_PATH .. "metadata.calibre","r") == nil then
-            if io.open(LIBRARY_PATH .. ".metadata.calibre","r") == nil then
-                   error = LIBRARY_PATH .. "metadata.calibre not found!"
+        if io.open(SEARCH_LIBRARY_PATH .. "metadata.calibre","r") == nil then
+            if io.open(SEARCH_LIBRARY_PATH .. ".metadata.calibre","r") == nil then
+                   error = SEARCH_LIBRARY_PATH .. "metadata.calibre not found!"
             else
-                self.calibrefile = LIBRARY_PATH .. ".metadata.calibre"
+                self.calibrefile = SEARCH_LIBRARY_PATH .. ".metadata.calibre"
             end
         else
-            self.calibrefile = LIBRARY_PATH .. "metadata.calibre"
+            self.calibrefile = SEARCH_LIBRARY_PATH .. "metadata.calibre"
         end
 
         if not (SEARCH_AUTHORS or SEARCH_TITLE or SEARCH_PATH or SEARCH_SERIES or SEARCH_TAGS) then
@@ -99,13 +107,16 @@ function Search:init()
             UIManager:show(InfoMessage:new{text = _("You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)")})
         elseif self.calibrefile == nil then
             self.calibrefile = findcalibre("/mnt")
+            if self.calibrefile then
+                settings_changed = true
+            end
         end
     end
 
     if self.calibrefile ~= nil then
-        LIBRARY_PATH = string.gsub(self.calibrefile,"/[^/]*$","")
-        if string.sub(LIBRARY_PATH,string.len(LIBRARY_PATH)) ~= "/" then
-            LIBRARY_PATH = LIBRARY_PATH .. "/"
+        SEARCH_LIBRARY_PATH = string.gsub(self.calibrefile,"/[^/]*$","")
+        if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
+            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
         end
 
         GLOBAL_INPUT_VALUE = self.search_value
@@ -126,6 +137,7 @@ function Search:init()
             width = Screen:getWidth() * 0.8,
             height = Screen:getHeight() * 0.2,
         }
+
         GLOBAL_INPUT_VALUE = nil
         self.search_dialog:onShowKeyboard()
         UIManager:show(self.search_dialog)
@@ -150,6 +162,7 @@ function Search:find()
     local i = 1
     local upsearch
     local dummy
+    local firstrun
 
     -- removes leading and closing characters and converts hex-unicodes
     local ReplaceHexChars = function(s,n,j)
@@ -199,7 +212,11 @@ function Search:find()
         upsearch = string.upper(self.search_value)
     end
 
+    firstrun = true
+
     self.data[i] = {"-","-","-","-","-","-","-","-"}
+    self.libraries[i] = 1
+
     while line do
         if line == "  }, " or line == "  }" then
             -- new calibre data set
@@ -208,15 +225,25 @@ function Search:find()
             if SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] end
             if SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] end
             if SEARCH_PATH then dummy = dummy .. self.data[i][self.path] end
-            if SEARCH_SERIES then dummy = dummy .. self.data[i][self.series] end
-            if SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] end
+            if SEARCH_SERIES then
+                dummy = dummy .. self.data[i][self.series]
+                self.browse_series[self.data[i][self.series]] = true
+            end
+            if SEARCH_TAGS then
+                dummy = dummy .. self.data[i][self.tags]
+                self.browse_tags[self.data[i][self.tags]] = true
+            end
             if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
 
             if string.find(dummy,upsearch,nil,true) then
                 i = i + 1
             end
             self.data[i] = {"-","-","-","-","-","-","-","-"}
-
+            if firstrun then
+                self.libraries[i] = 1
+            else
+                self.libraries[i] = 2
+            end
         elseif line == "    \"authors\": [" then -- AUTHORS
             ReadMultipleLines(self.authors)
         elseif line == "    \"tags\": [" then -- TAGS
@@ -231,12 +258,32 @@ function Search:find()
             self.data[i][self.series_index] = ReplaceHexChars(line,21,2)
         end
         line = f:read()
+
+        if not line and firstrun and SEARCH_LIBRARY_PATH2 then
+            local dummy
+            firstrun = false
+            if f ~= nil then f:close() end
+
+            if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
+                SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"
+            end
+            if io.open(SEARCH_LIBRARY_PATH2 .. "metadata.calibre","r") == nil then
+                if io.open(SEARCH_LIBRARY_PATH2 .. ".metadata.calibre","r") ~= nil then
+                    dummy = SEARCH_LIBRARY_PATH2 .. ".metadata.calibre"
+                end
+            else
+                dummy = SEARCH_LIBRARY_PATH2 .. "metadata.calibre"
+            end
+            if dummy and dummy ~= self.calibrefile then
+                self.calibrefile = dummy
+                f = io.open(self.calibrefile)
+                line = f:read()
+            end
+        end
     end
-
-    if f ~= nil then f:close() end
-
     i = i - 1
     if i > 0 then
+        self.data[i + 1] = nil
         self.count = i
         self:showresults()
     else
@@ -245,13 +292,16 @@ function Search:find()
 end
 
 function Search:onMenuHold(item)
-    item.info = item.info .. item.path
-    local f = io.open(item.path)
-    if f == nil then
-        item.info = item.info .. "\nFile not found!"
-    else
-        item.info = item.info .. "\n" .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
-        f:close()
+    if item.notchecked then
+        item.info = item.info .. item.path
+        local f = io.open(item.path)
+        if f == nil then
+            item.info = item.info .. "\nFile not found!"
+        else
+            item.info = item.info .. "\n" .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+            f:close()
+        end
+        item.notchecked = false
     end
     UIManager:show(InfoMessage:new{text = item.info})
 end
@@ -261,10 +311,11 @@ function Search:showresults()
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-50,
-        height = Screen:getHeight()-50,
+        width = Screen:getWidth()-15,
+        height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
+        cface = Font:getFace("cfont", 22),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -282,10 +333,17 @@ function Search:showresults()
             dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
         end
         dummy = dummy .. "\n \n" .. _("Path: ")
-        local book = LIBRARY_PATH .. self.data[i][self.path]
+        local libpath
+        if self.libraries[i] == 1 then
+            libpath = SEARCH_LIBRARY_PATH
+        else
+            libpath = SEARCH_LIBRARY_PATH2
+        end
+        local book = libpath .. self.data[i][self.path]
         table.insert(self.results, {
            info = dummy,
-           path = LIBRARY_PATH .. self.data[i][self.path],
+           notchecked = true,
+           path = libpath .. self.data[i][self.path],
            text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
            callback = function()
               if book then
@@ -295,6 +353,7 @@ function Search:showresults()
         })
         i = i + 1
     end
+
     self.search_menu:swithItemTable("Search Results", self.results)
     UIManager:show(menu_container)
 end
