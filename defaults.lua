@@ -152,7 +152,8 @@ FRONTLIGHT_SENSITIVITY_DECREASE = 2
 -- "/mnt/sd/.hidden" for Kobo with files in ".hidden" on the SD card
 -- "/mnt/onboard/MyPath" for Kobo with files in "MyPath" on the device itself
 -- "/mnt/us/documents/" for Kindle files in folder "documents"
-LIBRARY_PATH = nil
+SEARCH_LIBRARY_PATH  = ""
+SEARCH_LIBRARY_PATH2 = ""
 
 -- Search parameters
 SEARCH_CASESENSITIVE = false
@@ -166,7 +167,7 @@ SEARCH_PATH = true
 -- Light parameter for Kobo
 KOBO_LIGHT_OFF_ON_SUSPEND = false
 KOBO_LIGHT_ON_START = -1          -- -1 or 0-100. -1 leaves light as it is, other sets light on start/wake up
-KOBO_SCREEN_SAVER = "-"           -- image or directory with pictures or "-"
+KOBO_SCREEN_SAVER = ""           -- image or directory with pictures or "-"
 
 -- ####################################################################
 -- following features are not supported right now
