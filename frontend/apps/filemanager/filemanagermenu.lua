@@ -34,8 +34,18 @@ function FileManagerMenu:init()
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
-                UIManager:close(self.menu_container)
-                self.ui:onClose()
+                if settings_changed then
+                    settings_changed = false
+                    UIManager:show(ConfirmBox:new{
+                        text = _("You have unsaved default settings. Save them now?"),
+                        ok_callback = function()
+                            SetDefaults:SaveSettings()
+                        end,
+                    })
+                else
+                    UIManager:close(self.menu_container)
+                    self.ui:onClose()
+                end
             end,
         },
     }
@@ -141,6 +151,14 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Search books"),
         callback = function()
             Search:init()
+        end
+    })
+    -- home tab
+    table.insert(self.tab_item_table.home, {
+        text = _("Exit"),
+        callback = function()
+            UIManager:close(self.menu_container)
+            self.ui:onClose()
         end
     })
 end
