@@ -79,6 +79,13 @@ function Button:init()
                 },
                 doc = "Tap Button",
             },
+            HoldSelect = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+                doc = "Hold Button",
+            }
         }
     end
 end
@@ -148,6 +155,13 @@ function Button:onTapSelect()
             self[1].invert = false
             UIManager:setDirty(self.show_parent, "partial")
         end)
+    end
+    return true
+end
+
+function Button:onHoldSelect()
+    if self.enabled and self.hold_callback then
+        self.hold_callback()
     end
     return true
 end

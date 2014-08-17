@@ -2,21 +2,24 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
-local TextWidget = require("ui/widget/textwidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
-local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local Screen = require("ui/screen")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-local Font = require("ui/font")
-local Event = require("ui/event")
-local UIManager = require("ui/uimanager")
-local ButtonTable = require("ui/widget/buttontable")
-local Device = require("ui/device")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local CloseButton = require("ui/widget/closebutton")
+local ButtonTable = require("ui/widget/buttontable")
+local InputDialog = require("ui/widget/inputdialog")
+local TextWidget = require("ui/widget/textwidget")
+local LineWidget = require("ui/widget/linewidget")
+local GestureRange = require("ui/gesturerange")
+local Button = require("ui/widget/button")
+local UIManager = require("ui/uimanager")
+local Screen = require("ui/screen")
+local Device = require("ui/device")
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -37,7 +40,7 @@ local DictQuickLookup = InputContainer:new{
 
     title_padding = Screen:scaleByDPI(5),
     title_margin = Screen:scaleByDPI(2),
-    word_padding = Screen:scaleByDPI(2),
+    word_padding = Screen:scaleByDPI(5),
     word_margin = Screen:scaleByDPI(2),
     definition_padding = Screen:scaleByDPI(2),
     definition_margin = Screen:scaleByDPI(2),
@@ -95,16 +98,14 @@ function DictQuickLookup:update()
         }
     }
     -- lookup word
-    local lookup_word = FrameContainer:new{
+    local lookup_word = Button:new{
         padding = self.word_padding,
         margin = self.word_margin,
         bordersize = 0,
-        TextBoxWidget:new{
-            text = self.lookupword,
-            face = self.word_face,
-            bold = true,
-            width = self.width,
-        },
+        text = self.lookupword,
+        text_font_face = "tfont",
+        text_font_size = 22,
+        hold_callback = function() self:lookupInputWord(self.lookupword) end,
     }
     -- word definition
     local definition = FrameContainer:new{
@@ -197,7 +198,7 @@ function DictQuickLookup:update()
             self.dict_bar,
             title_bar,
             -- word
-            CenterContainer:new{
+            LeftContainer:new{
                 dimen = Geom:new{
                     w = title_bar:getSize().w,
                     h = lookup_word:getSize().h,
@@ -316,7 +317,9 @@ end
 
 function DictQuickLookup:onClose()
     UIManager:close(self)
-    self.highlight:handleEvent(Event:new("Tap"))
+    if self.highlight then
+        self.highlight:handleEvent(Event:new("Tap"))
+    end
     return true
 end
 
@@ -327,6 +330,52 @@ function DictQuickLookup:onSwipe(arg, ges)
         self:changeToPrevDict()
     end
     return true
+end
+
+function DictQuickLookup:lookupInputWord(hint)
+    self:onClose()
+    self.input_dialog = InputDialog:new{
+        title = _("Input lookup word"),
+        input_hint = hint or "",
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:closeInputDialog()
+                    end,
+                },
+                {
+                    text = _("Lookup"),
+                    callback = function()
+                        self:closeInputDialog()
+                        self:inputLookup()
+                    end,
+                },
+            }
+        },
+        enter_callback = function()
+            self:closeInputDialog()
+            self:inputLookup()
+        end,
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.input_dialog:onShowKeyboard()
+    UIManager:show(self.input_dialog)
+end
+
+function DictQuickLookup:inputLookup()
+    local word = self.input_dialog:getInputText()
+    if word and word ~= "" then
+        self.ui:handleEvent(Event:new("LookupWord", word))
+    end
+end
+
+function DictQuickLookup:closeInputDialog()
+    self.input_dialog:onClose()
+    UIManager:close(self.input_dialog)
 end
 
 return DictQuickLookup

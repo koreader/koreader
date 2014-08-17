@@ -9,7 +9,7 @@ local _ = require("gettext")
 
 local ReaderDictionary = EventListener:new{}
 
-function ReaderDictionary:onLookupWord(highlight, word, box)
+function ReaderDictionary:onLookupWord(word, box, highlight)
     self.highlight = highlight
     self:stardictLookup(word, box)
 end
@@ -46,18 +46,24 @@ function ReaderDictionary:stardictLookup(word, box)
 end
 
 function ReaderDictionary:showDict(results, box)
-    if results and results[1] and box then
+    if results and results[1] then
         DEBUG("showing quick lookup dictionary window")
-        local align = nil
-        local region = Geom:new{x = 0, w = Screen:getWidth()}
-        if box.y + box.h/2 < Screen:getHeight()/2 then
-            region.y = box.y + box.h
-            region.h = Screen:getHeight() - box.y - box.h
-            align = "top"
-        else
-            region.y = 0
-            region.h = box.y
-            align = "bottom"
+        local align = "center"
+        local region = Geom:new{
+            x = 0, y = 0,
+            w = Screen:getWidth(),
+            h = Screen:getHeight(),
+        }
+        if box then
+            if box.y + box.h/2 < Screen:getHeight()/2 then
+                region.y = box.y + box.h
+                region.h = Screen:getHeight() - box.y - box.h
+                align = "top"
+            else
+                region.y = 0
+                region.h = box.y
+                align = "bottom"
+            end
         end
         UIManager:show(DictQuickLookup:new{
             ui = self.ui,
