@@ -150,7 +150,8 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.tools, {
         text = _("Search books"),
         callback = function()
-            Search:init()
+            Search:getCalibre(1)
+            Search:ShowSearch()
         end
     })
     -- home tab
