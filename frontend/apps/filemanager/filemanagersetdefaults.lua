@@ -131,6 +131,14 @@ function SetDefaults:init()
                         buttons = {
                             {
                                 {
+                                    text = _("Cancel"),
+                                    enabled = true,
+                                    callback = function()
+                                        self:close()
+                                        UIManager:show(menu_container)
+                                    end 
+                                },
+                                {
                                     text = "true",
                                     enabled = true,
                                     callback = function()
@@ -160,14 +168,6 @@ function SetDefaults:init()
                                         UIManager:show(menu_container)
                                     end
                                 },
-                                {
-                                    text = _("Cancel"),
-                                    enabled = true,
-                                    callback = function()
-                                        self:close()
-                                        UIManager:show(menu_container)
-                                    end 
-                                },
                             },
                         },
                         input_type = settings_type,
@@ -189,25 +189,25 @@ function SetDefaults:init()
                         buttons = {
                             {
                                 {
-                                    text = _("OK"),
-                                    enabled = true,
-                                    callback = function()
-                                        self.defaults_value[i] = _G[self.defaults_name[i]]
-                                        if _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
-                                            _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
-                                            settings_changed = true
-                                        end
-                                        self.results[i].text = setdisplayname(i)
-                                        self:close()
-                                        self.defaults_menu:swithItemTable("Defaults", self.results, i)
-                                        UIManager:show(menu_container)
-                                    end,
-                                },
-                                {
                                     text = _("Cancel"),
                                     enabled = true,
                                     callback = function()
                                         self:close()
+                                        UIManager:show(menu_container)
+                                    end,
+                                },
+                                {
+                                    text = _("OK"),
+                                    enabled = true,
+                                    callback = function()
+                                        if _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
+                                            _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
+                                            settings_changed = true
+                                        end
+                                        self.defaults_value[i] = _G[self.defaults_name[i]]
+                                        self.results[i].text = setdisplayname(i)
+                                        self:close()
+                                        self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                         UIManager:show(menu_container)
                                     end,
                                 },
@@ -329,5 +329,6 @@ function SetDefaults:SaveSettings()
     end
     file:close()
     UIManager:show(InfoMessage:new{text = _("Default settings successfully saved!")})
+    settings_changed = false
 end
 return SetDefaults
