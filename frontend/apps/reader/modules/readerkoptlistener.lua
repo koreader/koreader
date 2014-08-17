@@ -20,6 +20,11 @@ function ReaderKoptListener:onReadSettings(config)
     self.document.configurable.contrast = config:readSetting("kopt_contrast") or
                     G_reader_settings:readSetting("kopt_contrast") or 1.0
     self.ui:handleEvent(Event:new("GammaUpdate", 1/self.document.configurable.contrast))
+    -- since K2pdfopt v2.21 negative value of word spacing is also used, for config
+    -- compatability we should manually change previous -1 to a more reasonable -0.2
+    if self.document.configurable.word_spacing == -1 then
+        self.document.configurable.word_spacing = -0.2
+    end
 end
 
 function ReaderKoptListener:onSaveSettings()

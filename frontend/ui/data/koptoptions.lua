@@ -186,8 +186,8 @@ local KoptOptions = {
                 name = "word_spacing",
                 name_text = S.WORD_GAP,
                 toggle = {S.SMALL, S.AUTO, S.LARGE},
-                values = DKOPTREADER_CONFIG_WORD_SAPCINGS,
-                default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING,
+                values = DKOPTREADER_CONFIG_WORD_SPACINGS,
+                default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING,
             },
             {
                 name = "writing_direction",
