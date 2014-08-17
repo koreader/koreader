@@ -68,24 +68,30 @@ function ReaderFont:onSetDimensions(dimen)
 end
 
 function ReaderFont:onReadSettings(config)
-    self.font_face = config:readSetting("font_face") or self.ui.document.default_font
+    self.font_face = config:readSetting("font_face")
+            or self.ui.document.default_font
     self.ui.document:setFontFace(self.font_face)
 
-    self.header_font_face = config:readSetting("header_font_face") or self.ui.document.header_font
+    self.header_font_face = config:readSetting("header_font_face")
+            or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
-    --@TODO change this!  12.01 2013 (houqp)
-    self.font_size = config:readSetting("font_size") or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
+    self.font_size = config:readSetting("font_size")
+            or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
     self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
 
-    self.font_embolden = config:readSetting("font_embolden") or G_reader_settings:readSetting("copt_font_weight") or 0
+    self.font_embolden = config:readSetting("font_embolden")
+            or G_reader_settings:readSetting("copt_font_weight") or 0
     self.ui.document:toggleFontBolder(self.font_embolden)
 
-    --@TODO still missing: line_spacing from settings.reader.lua (so far just decrease/increase in there) 18.07.2014 (WS64)
-    self.line_space_percent = config:readSetting("line_space_percent") or (DKOPTREADER_CONFIG_LINE_SPACING or 1.2)*100
+    self.line_space_percent = config:readSetting("line_space_percent")
+            or G_reader_settings:readSetting("copt_line_spacing")
+            or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 
-    self.gamma_index = config:readSetting("gamma_index") or 15
+    self.gamma_index = config:readSetting("gamma_index")
+            or G_reader_settings:readSetting("copt_font_gamma")
+            or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA
     self.ui.document:setGammaIndex(self.gamma_index)
 
     -- Dirty hack: we have to add folloing call in order to set
@@ -146,25 +152,14 @@ function ReaderFont:onSetFontSize(new_size)
     return true
 end
 
-function ReaderFont:onChangeLineSpace(direction)
-    local msg = ""
-    if direction == "decrease" then
-        self.line_space_percent = self.line_space_percent - 10
-        -- NuPogodi, 15.05.12: reduce lowest space_percent to 80
-        self.line_space_percent = math.max(self.line_space_percent, 80)
-        msg = _("Decrease line space to ")
-    else
-        self.line_space_percent = self.line_space_percent + 10
-        self.line_space_percent = math.min(self.line_space_percent, 200)
-        msg = _("Increase line space to ")
-    end
+function ReaderFont:onSetLineSpace(space)
+    self.line_space_percent = math.min(200, math.max(80, space))
     UIManager:show(Notification:new{
-        text = msg..self.line_space_percent.."%",
+        text = _("Set line space to ")..self.line_space_percent.."%",
         timeout = 1,
     })
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
-
     return true
 end
 
@@ -175,20 +170,13 @@ function ReaderFont:onToggleFontBolder(toggle)
     return true
 end
 
-function ReaderFont:onChangeFontGamma(direction)
-    local msg = ""
-    if direction == "increase" then
-        cre.setGammaIndex(self.gamma_index+2)
-        msg = _("Increase gamma to ")
-    elseif direction == "decrease" then
-        cre.setGammaIndex(self.gamma_index-2)
-        msg = _("Decrease gamma to ")
-    end
-    self.gamma_index = cre.getGammaIndex()
+function ReaderFont:onSetFontGamma(gamma)
+    self.gamma_index = gamma
     UIManager:show(Notification:new{
-        text = msg..self.gamma_index,
+        text = _("Set font gamma to ")..self.gamma_index,
         timeout = 1
     })
+    self.ui.document:setGammaIndex(self.gamma_index)
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
     return true
 end
