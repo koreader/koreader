@@ -7,6 +7,7 @@ local Screen = require("ui/screen")
 local Device = require("ui/device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 local ReaderLink = InputContainer:new{
     link_states = {}
@@ -16,6 +17,7 @@ function ReaderLink:init()
     if Device:isTouchDevice() then
         self:initGesListener()
     end
+    self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderLink:onReadSettings(config)
@@ -50,6 +52,21 @@ function ReaderLink:initGesListener()
     end
 end
 
+function ReaderLink:addToMainMenu(tab_item_table)
+    -- insert table to main reader menu
+    table.insert(tab_item_table.navi, {
+        text = _("Follow links"),
+        checked_func = function()
+            return G_reader_settings:readSetting("follow_links") ~= false
+        end,
+        callback = function()
+            local follow_links = G_reader_settings:readSetting("follow_links")
+            if follow_links == nil then follow_links = true end
+            G_reader_settings:saveSetting("follow_links", not follow_links)
+        end
+    })
+end
+
 function ReaderLink:onSetDimensions(dimen)
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
@@ -58,6 +75,7 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(arg, ges)
+    if G_reader_settings:readSetting("follow_links") == false then return end
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
