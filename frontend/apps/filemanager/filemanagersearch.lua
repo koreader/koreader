@@ -227,6 +227,9 @@ function Search:ShowSearch()
                         callback = function()
                             self.search_dialog:onClose()
                             UIManager:close(self.search_dialog)
+--self.use_previous_search_results = true
+--self.lastsearch = "tags"
+                            self:close()  
                         end,
                     },
                     {
@@ -257,6 +260,7 @@ function Search:ShowSearch()
             UIManager:show(InfoMessage:new{text = self.error .. _( " A search for a " .. calibre .. " file was not successful!"),})
         end
     end
+    
 end
 
 function Search:init()
@@ -266,10 +270,12 @@ function Search:init()
 end
 
 function Search:close()
-    self.search_dialog:onClose()
-    UIManager:close(self.search_dialog)
-    if string.len(self.search_value) > 0 or self.lastsearch ~= "find" then
-        self:find(self.lastsearch)
+    if self.search_value then
+        self.search_dialog:onClose()
+        UIManager:close(self.search_dialog)
+        if string.len(self.search_value) > 0 or self.lastsearch ~= "find" then
+            self:find(self.lastsearch)
+        end
     end
 end
 
@@ -494,9 +500,7 @@ function Search:showresults()
                path = libpath .. self.data[i][self.path],
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
-                  if book then
-                      showReaderUI(book)
-                  end
+                   showReaderUI(book)
                end
             })
             i = i + 1
@@ -508,6 +512,7 @@ function Search:showresults()
 end
 
 function Search:browse(option,run,chosen)
+    local restart_me = false
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
@@ -520,8 +525,17 @@ function Search:browse(option,run,chosen)
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
+
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
+        if restart_me then
+            if string.len(self.search_value) > 0 or self.lastsearch ~= "find" then
+                self.use_previous_search_results = true
+                self:getCalibre(1)
+                self:find(self.lastsearch)
+            end
+        end
+           
     end
     local upsearch
     local dummy
@@ -561,6 +575,7 @@ function Search:browse(option,run,chosen)
             end
         end    
     else
+        restart_me = true
         self.results = {}
         local i = 1
         while i <= self.count do
@@ -592,9 +607,7 @@ function Search:browse(option,run,chosen)
                    notchecked = true,
                    path = libpath .. self.data[i][self.path],
                    callback = function()
-                      if book then
-                          showReaderUI(book)
-                      end
+                       showReaderUI(book)
                    end
                 })
             end
