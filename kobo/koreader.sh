@@ -20,11 +20,30 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# exit from nickel
-killall nickel hindenburg fmon
+# fast and dirty way of check if we are called from nickel
+# through fmon, or from another launcher (KSM or advboot)
+from_nickel=`pidof nickel | wc -c`
 
-# finally call the launcher
-./reader.lua /mnt/onboard 2> crash.log
+if [ $from_nickel -ne 0 ]; then
+    # stop kobo software because is running
+    killall nickel hindenburg fmon 2>/dev/null
+fi
 
-# back to nickel
-./nickel.sh
+# fallback for old fmon (and advboot) users
+if [ `echo $@ | wc -c` -eq 1 ]; then
+    args="/mnt/onboard"
+else
+    args=$@
+fi
+
+./reader.lua $args 2> crash.log
+
+if [ $from_nickel -ne 0 ]; then
+    # start kobo software because was running before koreader
+    ./nickel.sh
+else
+    # if we were called from advboot then we must reboot to go to the menu
+    if [ -d /mnt/onboard/.kobo/advboot ]; then
+        reboot
+    fi
+fi
