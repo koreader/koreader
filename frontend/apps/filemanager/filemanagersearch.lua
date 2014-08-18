@@ -315,7 +315,7 @@ function Search:find(option)
                     local dummy = ReplaceHexChars(line,8,3)
                     self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. dummy
                     self.data[i][self.tags3] = self.data[i][self.tags3] .. "\n" .. dummy
-                    self.browse_tags[dummy] = true
+                    self.browse_tags[dummy] = (self.browse_tags[dummy] or 0) + 1
                 end
             end
         end
@@ -331,6 +331,8 @@ function Search:find(option)
     if not self.use_previous_search_results then
         self.results = {}
         self.data = {}
+        self.browse_series = {}
+        self.browse_tags = {}
 
         if SEARCH_CASESENSITIVE then
             upsearch = self.search_value or ""
@@ -351,9 +353,9 @@ function Search:find(option)
                 if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
                 if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
                 if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
-                if option == "series" or SEARCH_SERIES then
+                if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
                     dummy = dummy .. self.data[i][self.series] .. "\n" 
-                    self.browse_series[self.data[i][self.series]] = true
+                    self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                 end
                 if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
@@ -368,7 +370,13 @@ function Search:find(option)
                             i = i + 1
                         end
                     elseif option == "tags" then
-                        if self.browse_tags[self.data[i][self.tags]] then
+                        local found = false
+                        for j in string.gmatch(self.data[i][self.tags3],"\n[^\n]+") do
+                            if j~="\n" and self.browse_tags[string.sub(j,2)] then
+                                found = true
+                            end
+                        end
+                        if found then
                             i = i + 1
                         end
                     end
@@ -415,7 +423,12 @@ function Search:find(option)
             self:browse(option,1)
         end        
     else
-        UIManager:show(InfoMessage:new{text = _("No match for " .. self.search_value)})
+        if option == "find" then
+            dummy = _("No match for " .. self.search_value)
+        else
+            dummy = _("No ") .. option .. _(" found!")
+        end            
+        UIManager:show(InfoMessage:new{text = dummy})
     end
 end
 
@@ -522,7 +535,7 @@ function Search:browse(option,run,chosen)
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
                     table.insert(self.results, {
-                        text = v,
+                        text = v .. " (" .. tostring(self.browse_series[v]) .. ")",
                         callback = function()
                             self:browse(option,2,v)
                         end
@@ -535,7 +548,7 @@ function Search:browse(option,run,chosen)
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
                     table.insert(self.results, {
-                        text = v,
+                        text = v .. " (" .. tostring(self.browse_tags[v]) .. ")",
                         callback = function()
                             self:browse(option,2,v)
                         end
@@ -547,7 +560,7 @@ function Search:browse(option,run,chosen)
         self.results = {}
         local i = 1
         while i <= self.count do
-            if (option == "series" and chosen == self.data[i][self.series]) or (option == "tags" and string.find("\n" .. chosen .. "\n",self.data[i][self.tags3],nil,true)) then
+            if (option == "tags" and self.data[i][self.tags3]:find("\n" .. chosen .. "\n",nil,true)) or (option == "series" and chosen == self.data[i][self.series]) then
                 local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
                               _("Author(s): ") .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
                               _("Tags: ") .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
