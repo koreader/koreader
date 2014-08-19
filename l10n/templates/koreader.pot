@@ -167,12 +167,12 @@ msgid ""
 "Dewatermark"
 msgstr ""
 
-#: frontend/ui/networkmgr.lua:48
+#: frontend/ui/networkmgr.lua:66
 msgid ""
 "Do you want to Turn off Wifi?"
 msgstr ""
 
-#: frontend/ui/networkmgr.lua:39
+#: frontend/ui/networkmgr.lua:57
 msgid ""
 "Do you want to Turn on Wifi?"
 msgstr ""
