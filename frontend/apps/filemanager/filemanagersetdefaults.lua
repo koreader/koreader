@@ -14,6 +14,7 @@ local SetDefaults = InputContainer:new{
     defaults_value = {},
     results = {},
     defaults_menu = {},
+    already_read = false
 }
 
 local function settype(b,t)
@@ -74,7 +75,7 @@ end
 function SetDefaults:ConfirmEdit()
     if not SetDefaults.EditConfirmed then
         UIManager:show(ConfirmBox:new{
-            text = _("Wrong settings might crash Koreader! Continue?"),
+            text = _("Some changes will just work on the next restart. Wrong settings might crash Koreader! Continue?"),
             ok_callback = function()
                 self.EditConfirmed = true
                 self:init()
@@ -86,16 +87,6 @@ function SetDefaults:ConfirmEdit()
 end
 
 function SetDefaults:init()
-
-    local function setdisplayname(i)
-        local dummy = self.defaults_name[i] .. " = " 
-        if type(_G[self.defaults_name[i]]) == "string" and not tonumber(self.defaults_value[i]) then
-            dummy = dummy .. "\"" .. tostring(self.defaults_value[i]) .. "\"" -- add quotation marks to strings
-        else
-            dummy = dummy .. tostring(self.defaults_value[i])
-        end
-        return dummy
-    end
 
     self.defaults_name = {}
     self.defaults_value = {}
@@ -123,7 +114,7 @@ function SetDefaults:init()
         local settings_type = type(_G[self.defaults_name[i]])
         if settings_type == "boolean" then
             table.insert(self.results, {
-                text = setdisplayname(i),
+                text = self:build_setting(i),
                 callback = function()
                     GLOBAL_INPUT_VALUE = tostring(self.defaults_value[i])
                     self.set_dialog = InputDialog:new{
@@ -147,7 +138,7 @@ function SetDefaults:init()
                                             _G[self.defaults_name[i]] = true
                                             settings_changed = true
                                         end
-                                        self.results[i].text = setdisplayname(i)
+                                        self.results[i].text = self:build_setting(i)
                                         self:close()
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                         UIManager:show(menu_container)
@@ -162,7 +153,7 @@ function SetDefaults:init()
                                             _G[self.defaults_name[i]] = false
                                             settings_changed = true
                                         end
-                                        self.results[i].text = setdisplayname(i)
+                                        self.results[i].text = self:build_setting(i)
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                         self:close()
                                         UIManager:show(menu_container)
@@ -181,7 +172,7 @@ function SetDefaults:init()
             })
         else
             table.insert(self.results, {
-                text = setdisplayname(i),
+                text = self:build_setting(i),
                 callback = function()
                     GLOBAL_INPUT_VALUE = tostring(self.defaults_value[i])
                     self.set_dialog = InputDialog:new{
@@ -200,12 +191,16 @@ function SetDefaults:init()
                                     text = _("OK"),
                                     enabled = true,
                                     callback = function()
-                                        if _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
+                                        if type(_G[self.defaults_name[i]]) == "table" then
+                                            settings_changed = true
+                                            self.defaults_value[i] = self.set_dialog:getInputText()
+                                        elseif _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
                                             _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
                                             settings_changed = true
+                                            self.defaults_value[i] = _G[self.defaults_name[i]]
                                         end
-                                        self.defaults_value[i] = _G[self.defaults_name[i]]
-                                        self.results[i].text = setdisplayname(i)
+                                        
+                                        self.results[i].text = self:build_setting(i)
                                         self:close()
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                         UIManager:show(menu_container)
@@ -228,7 +223,23 @@ function SetDefaults:init()
     UIManager:show(menu_container)
 end
 
+local function getTableValues(t,dtap)
+    local dummy = "{"
+    for n,v in pairs(t) do
+        if dtap:sub(1,4) == "DTAP" or dtap:sub(1,11) == "DDOUBLE_TAP" then
+            dummy = dummy .. tostring(n) .. " = " .. tostring(v) .. ", "
+        elseif tonumber(v) then
+            dummy = dummy .. tostring(v) .. ", "
+        else
+            dummy = dummy .. "\"" .. tostring(v) .. "\", "
+        end
+    end
+    dummy = dummy:sub(1,string.len(dummy) - 2) .. "}"
+    return dummy
+end
+
 function SetDefaults:filldefaults()
+    if not SetDefaults.already_read then
     local i = 0
     for n,v in orderedPairs(_G) do
         if (not string.find(tostring(v), "<")) and (not string.find(tostring(v), ": ")) and string.sub(n,1,1) ~= "_" and string.upper(n) == n and n ~= "GLOBAL_INPUT_VALUE" and n ~= "LIBRARY_PATH" then
@@ -236,6 +247,13 @@ function SetDefaults:filldefaults()
             SetDefaults.defaults_name[i] = n
             SetDefaults.defaults_value[i] = v
         end
+        if string.find(tostring(v), "table: ") and string.upper(n) == n and n ~= "ARGV" and n ~= "_G" then
+            i = i + 1
+            SetDefaults.defaults_name[i] = n
+            SetDefaults.defaults_value[i] = getTableValues(v,n)
+        end
+    end
+    SetDefaults.already_read = true
     end
 end
 
@@ -253,6 +271,18 @@ function SetDefaults:ConfirmSave()
     })
 end
 
+function SetDefaults:build_setting(j)
+    local ret = self.defaults_name[j] .. " = "
+    if type(_G[self.defaults_name[j]]) == "boolean" or type(_G[self.defaults_name[j]]) == "table" then
+        ret = ret .. tostring(self.defaults_value[j])
+    elseif tonumber(self.defaults_value[j]) then
+        ret = ret .. tostring(tonumber(self.defaults_value[j]))
+    else
+        ret = ret .. "\"" .. tostring(self.defaults_value[j]) .. "\""
+    end
+    return ret
+end
+
 function SetDefaults:SaveSettings()
 
     local function fileread(filename,array)
@@ -267,18 +297,6 @@ function SetDefaults:SaveSettings()
             line = file:read()
         end
         file:close()
-    end
-
-    local function build_setting(j)
-        local ret = SetDefaults.defaults_name[j] .. " = "
-        if tonumber(SetDefaults.defaults_value[j]) then
-            ret = ret .. tostring(tonumber(SetDefaults.defaults_value[j]))
-        elseif type(_G[SetDefaults.defaults_name[j]]) == "boolean" then
-            ret = ret .. tostring(SetDefaults.defaults_value[j])
-        else
-            ret = ret .. "\"" .. tostring(SetDefaults.defaults_value[j]) .. "\""
-        end
-        return ret
     end
 
     local filename = "defaults.persistent.lua"
@@ -300,8 +318,8 @@ function SetDefaults:SaveSettings()
     -- handle case "found in persistent", replace it
     for i = 1,#dpl do
         for j=1,#SetDefaults.defaults_name do
-            if string.find(dpl[i],SetDefaults.defaults_name[j]) == 1 then
-                dpl[i] = build_setting(j)
+            if string.find(dpl[i],SetDefaults.defaults_name[j] .. " ") == 1 then
+                dpl[i] = self:build_setting(j)
                 done[j] = true
             end
         end
@@ -310,7 +328,7 @@ function SetDefaults:SaveSettings()
     -- handle case "exists identical in non-persistent", ignore it
     for i = 1,#dl do
         for j=1,#SetDefaults.defaults_name do
-            if dl[i]:gsub("1024[*]1024[*]10","10485760"):gsub("1024[*]1024[*]30","31457280"):gsub("[.]0$",""):gsub("([.][0-9]+)0","%1") == build_setting(j) then
+            if dl[i]:gsub("1/4","0.25"):gsub("2/4","0.5"):gsub("3/4","0.75"):gsub("4/4","1"):gsub("1/8","0.125"):gsub("2/8","0.25"):gsub("3/8","0.375"):gsub("4/8","0.5"):gsub("5/8","0.625"):gsub("6/8","0.75"):gsub("7/8","0.875"):gsub("8/8","1"):gsub("1/16","0.0625"):gsub("15/16","0.9375"):gsub("1024[*]1024[*]10","10485760"):gsub("1024[*]1024[*]30","31457280"):gsub("[.]0$",""):gsub("([.][0-9]+)0","%1") == self:build_setting(j) then
                 done[j] = true
             end
         end
@@ -319,7 +337,7 @@ function SetDefaults:SaveSettings()
     -- handle case "not in persistent and different in non-persistent", add to persistent
     for j=1,#SetDefaults.defaults_name do
         if not done[j] then
-            dpl[#dpl+1] = build_setting(j)
+            dpl[#dpl+1] = self:build_setting(j)
         end
     end
 
@@ -330,5 +348,6 @@ function SetDefaults:SaveSettings()
     file:close()
     UIManager:show(InfoMessage:new{text = _("Default settings successfully saved!")})
     settings_changed = false
+
 end
 return SetDefaults
