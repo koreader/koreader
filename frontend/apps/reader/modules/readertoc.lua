@@ -99,7 +99,7 @@ function ReaderToc:getTocTitleOfCurrentPage()
 end
 
 function ReaderToc:_getChapterPagesLeft(pageno,pages)
-    local i 
+    local i
     local j = 0
 
     if not self.toc then
@@ -288,7 +288,7 @@ end
 
 function ReaderToc:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    table.insert(tab_item_table.navi, {
+    table.insert(tab_item_table.navi, 1, {
         text = self.toc_menu_title,
         callback = function()
             self:onShowToc()

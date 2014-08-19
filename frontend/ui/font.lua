@@ -35,7 +35,7 @@ local Font = {
         infofont = "noto/NotoSans-Regular.ttf",
     },
     fallbacks = {
-        [1] = "droid/DroidSansFallback.ttf",
+        [1] = "droid/DroidSansFallback.ttc",
         [2] = "noto/NotoSans-Regular.ttf",
         [3] = "droid/DroidSans.ttf",
         [4] = "freefont/FreeSans.ttf",

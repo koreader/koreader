@@ -18,10 +18,11 @@ local ImageWidget = Widget:new{
 
 function ImageWidget:_render()
     local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
-    if itype == "jpeg" or itype == "jpg" then
-        self._bb = Image:fromJPEG(self.file)
-    elseif itype == "png" then
-        self._bb = Image:fromPNG(self.file)
+    if itype == "png" or itype == "jpg" or itype == "jpeg"
+            or itype == "tiff" then
+        self._bb = Image:fromFile(self.file, self.width, self.height)
+    else
+        error("Image file type not supported.")
     end
     local w, h = self._bb:getWidth(), self._bb:getHeight()
     if (self.width and self.width ~= w) or (self.height and self.height ~= h) then

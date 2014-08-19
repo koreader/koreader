@@ -18,6 +18,7 @@ emu
 
 koreader-*.zip
 koreader-*.apk
+koreader-*.tar.gz
 
 /.cproject
 /.project

@@ -96,8 +96,8 @@ DKOPTREADER_CONFIG_MAX_COLUMNS = 2        -- range from 1 to 4
 DKOPTREADER_CONFIG_CONTRAST = 1.0        -- range from 0.2 to 2.0
 
 -- word spacing for reflow
-DKOPTREADER_CONFIG_WORD_SAPCINGS = {0.05, -1, 0.375}    -- range from 0.05 to 0.5
-DKOPTREADER_CONFIG_DEFAULT_WORD_SAPCING = -1            -- range from 0.05 to 0.5
+DKOPTREADER_CONFIG_WORD_SPACINGS = {0.05, -0.2, 0.375}    -- range from (+/-)0.05 to (+/-)0.5
+DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING = -0.2            -- range from (+/-)0.05 to (+/-)0.5
 -- document languages for OCR
 DKOPTREADER_CONFIG_DOC_LANGS_TEXT = {"English", "Chinese"}
 DKOPTREADER_CONFIG_DOC_LANGS_CODE = {"eng", "chi_sim"}    -- language code, make sure you have corresponding training data
@@ -113,6 +113,16 @@ DCREREADER_CONFIG_DEFAULT_FONT_SIZE = 22    -- default font size
 DCREREADER_CONFIG_MARGIN_SIZES_SMALL = {5, 10, 5, 10}
 DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM = {10, 15, 10, 15}
 DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {20, 20, 20, 20}
+
+-- crereader font gamma
+DCREREADER_CONFIG_LIGHTER_FONT_GAMMA = 10
+DCREREADER_CONFIG_DEFAULT_FONT_GAMMA = 15
+DCREREADER_CONFIG_DARKER_FONT_GAMMA = 25
+
+-- crereader line space percentage
+DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL = 90
+DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM = 100
+DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE = 120
 
 -- crereader progress bar
 -- 0 for top "full" progress bar

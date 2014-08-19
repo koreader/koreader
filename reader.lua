@@ -38,8 +38,6 @@ function exitReader()
 
     G_reader_settings:close()
 
-    input.closeAll()
-
     -- Close lipc handles
     KindlePowerD:coda()
     ReaderActivityIndicator:coda()
@@ -63,6 +61,9 @@ function exitReader()
             end
         end
     end
+
+    input.closeAll()
+    Screen:close()
 
     if Profiler then Profiler.stop() end
     os.exit(0)

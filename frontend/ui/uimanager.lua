@@ -358,7 +358,7 @@ function UIManager:run()
 
         -- stop when we have no window to show
         if #self._window_stack == 0 then
-            DEBUG("no dialog left to show, would loop endlessly")
+            DEBUG("no dialog left to show")
             self:quit()
             return nil
         end

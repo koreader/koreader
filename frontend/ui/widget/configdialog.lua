@@ -234,7 +234,7 @@ function ConfigOption:init()
             local current_item = nil
             local function value_diff(val1, val2, name)
                 if type(val1) ~= type(val2) then
-                    error("different data types in option", name)
+                    DEBUG("different data types in option")
                 end
                 if type(val1) == "number" then
                     return math.abs(val1 - val2)

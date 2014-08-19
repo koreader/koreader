@@ -37,11 +37,19 @@ local CreOptions = {
             {
                 name = "line_spacing",
                 name_text = S.LINE_SPACING,
-                toggle = {S.DECREASE, S.INCREASE},
-                alternate = false,
-                args = {"decrease", "increase"},
-                default_arg = "decrease",
-                event = "ChangeLineSpace",
+                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
+                values = {
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
+                },
+                default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                event = "SetLineSpace",
+                args = {
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
+                },
             },
             {
                 name = "page_margins",
@@ -53,12 +61,12 @@ local CreOptions = {
                     DCREREADER_CONFIG_MARGIN_SIZES_LARGE,
                 },
                 default_value = DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM,
+                event = "SetPageMargins",
                 args = {
                     DCREREADER_CONFIG_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM,
                     DCREREADER_CONFIG_MARGIN_SIZES_LARGE,
                 },
-                event = "SetPageMargins",
             },
         }
     },
@@ -102,11 +110,19 @@ local CreOptions = {
             {
                 name = "font_gamma",
                 name_text = S.CONTRAST,
-                toggle = {S.DECREASE, S.INCREASE},
-                alternate = false,
-                args = {"decrease", "increase"},
-                default_arg = "increase",
-                event = "ChangeFontGamma",
+                item_text = {S.LIGHTER, S.DEFAULT, S.DARKER},
+                default_value = DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
+                values = {
+                    DCREREADER_CONFIG_LIGHTER_FONT_GAMMA,
+                    DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
+                    DCREREADER_CONFIG_DARKER_FONT_GAMMA,
+                },
+                event = "SetFontGamma",
+                args = {
+                    DCREREADER_CONFIG_LIGHTER_FONT_GAMMA,
+                    DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
+                    DCREREADER_CONFIG_DARKER_FONT_GAMMA,
+                },
             }
         }
     },
