@@ -129,55 +129,55 @@ end
 function Search:getCalibre()
 -- check if we find the calibre file
 -- check 1st file
-        if SEARCH_LIBRARY_PATH == nil then
-              self.metafile_1 = findcalibre("/mnt")
-              if not self.metafile_1 then
-                  self.error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
-              else
-                  settings_changed = true
-              end
-        else
-            if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
-                SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
-            end
-            if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
-                if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
-                    self.error = SEARCH_LIBRARY_PATH .. calibre .. " not found!"
-                else
-                    self.metafile_1 = SEARCH_LIBRARY_PATH .. "." .. calibre
-                end
+    if SEARCH_LIBRARY_PATH == nil then
+          self.metafile_1 = findcalibre("/mnt")
+          if not self.metafile_1 then
+              self.error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
+          else
+              settings_changed = true
+          end
+    else
+        if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
+            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
+        end
+        if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
+            if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
+                self.error = SEARCH_LIBRARY_PATH .. calibre .. " not found!"
             else
-                self.metafile_1 = SEARCH_LIBRARY_PATH .. calibre
+                self.metafile_1 = SEARCH_LIBRARY_PATH .. "." .. calibre
             end
+        else
+            self.metafile_1 = SEARCH_LIBRARY_PATH .. calibre
+        end
 
-            if not (SEARCH_AUTHORS or SEARCH_TITLE or SEARCH_PATH or SEARCH_SERIES or SEARCH_TAGS) then
-                self.metafile_1 = nil
-                UIManager:show(InfoMessage:new{text = _("You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)")})
-            elseif self.metafile_1 == nil then
-                self.metafile_1 = findcalibre("/mnt")
-                if self.metafile_1 then
-                    settings_changed = true
-                end
+        if not (SEARCH_AUTHORS or SEARCH_TITLE or SEARCH_PATH or SEARCH_SERIES or SEARCH_TAGS) then
+            self.metafile_1 = nil
+            UIManager:show(InfoMessage:new{text = _("You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)")})
+        elseif self.metafile_1 == nil then
+            self.metafile_1 = findcalibre("/mnt")
+            if self.metafile_1 then
+                settings_changed = true
             end
         end
+    end
 -- check 2nd file
-        local dummy
+    local dummy
  
-        if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
-            SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"
+    if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
+        SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"
+    end
+    if io.open(SEARCH_LIBRARY_PATH2 .. calibre,"r") == nil then
+        if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre,"r") ~= nil then
+            dummy = SEARCH_LIBRARY_PATH2 .. "." .. calibre
         end
-        if io.open(SEARCH_LIBRARY_PATH2 .. calibre,"r") == nil then
-            if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre,"r") ~= nil then
-                dummy = SEARCH_LIBRARY_PATH2 .. "." .. calibre
-            end
-        else
-            dummy = SEARCH_LIBRARY_PATH2 .. calibre
-        end
-        if dummy and dummy ~= self.metafile_1 then
-            self.metafile_2 = dummy
-        else
-            self.metafile_2 = nil
-        end
+    else
+        dummy = SEARCH_LIBRARY_PATH2 .. calibre
+    end
+    if dummy and dummy ~= self.metafile_1 then
+        self.metafile_2 = dummy
+    else
+        self.metafile_2 = nil
+    end
 
 -- check if they are newer than our own file
     self.use_own_metadata_file = false
@@ -516,11 +516,11 @@ function Search:find(option)
         end        
     else
         if option == "find" then
-            dummy = _("No match for " .. self.search_value)
+            dummy = _("No match for") .. " " .. self.search_value
         else
-            dummy = _("No ") .. option .. _(" found")
+            dummy = _("No") .. " " .. option .. " " .. _("found")
             if string.len(self.search_value) > 0 then
-                dummy = dummy .. _(" matching ") .. self.search_value
+                dummy = dummy .. " " .. _("matching") .. " " .. self.search_value
             end
             dummy = dummy .. "!"
         end            
@@ -536,7 +536,7 @@ function Search:onMenuHold(item)
             if f == nil then
                 item.info = item.info .. "\n" .. _("File not found!")
             else
-                item.info = item.info .. "\n" .. _("Size: ") .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+                item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
                 f:close()
             end
             item.notchecked = false
@@ -566,9 +566,9 @@ function Search:showresults()
         local i = 1
         while i <= self.count do
             local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
-                          _("Author(s): ") .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
-                          _("Tags: ") .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
-                          _("Series: ") .. (self.data[i][self.series] or "-")
+                          _("Author(s):") .. " " .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
+                          _("Tags:") .. " " .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
+                          _("Series:") .. " " .. (self.data[i][self.series] or "-")
             if self.data[i][self.series] ~= "-" then
                 dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
             end
@@ -667,9 +667,9 @@ function Search:browse(option,run,chosen)
         while i <= self.count do
             if (option == "tags" and self.data[i][self.tags3]:find("\t" .. chosen .. "\t",nil,true)) or (option == "series" and chosen == self.data[i][self.series]) then
                 local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
-                              _("Author(s): ") .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
-                              _("Tags: ") .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
-                              _("Series: ") .. (self.data[i][self.series] or "-")
+                              _("Author(s):") .. " " .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
+                              _("Tags:") .. " " .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
+                              _("Series:") .. " " .. (self.data[i][self.series] or "-")
                 if self.data[i][self.series] ~= "-" then
                     dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
                 end
@@ -703,7 +703,7 @@ function Search:browse(option,run,chosen)
     local dummy = ""
     
     if run == 1 then
-        dummy = _("Browse ") .. option
+        dummy = _("Browse") .. " " .. option
     else
         dummy = chosen
     end
