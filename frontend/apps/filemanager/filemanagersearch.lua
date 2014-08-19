@@ -22,6 +22,7 @@ local Search = InputContainer:new{
     authors2 = 6,
     series_index = 7,
     tags2 = 8,
+    tags3 = 9,
     count = 0,
     data = {},
     results = {},
@@ -29,8 +30,56 @@ local Search = InputContainer:new{
     browse_tags = {},
     browse_series = {},
     error = nil,
-    use_previous_search_results = false
+    use_previous_search_results = false,
+    lastsearch = nil,
 }
+
+local function __genOrderedIndex( t )
+-- this function is taken from http://lua-users.org/wiki/SortedIteration
+    local orderedIndex = {}
+    for key in pairs(t) do
+        table.insert( orderedIndex, key )
+    end
+    table.sort( orderedIndex )
+    return orderedIndex
+end
+
+local function orderedNext(t, state)
+-- this function is taken from http://lua-users.org/wiki/SortedIteration
+
+    -- Equivalent of the next function, but returns the keys in the alphabetic
+    -- order. We use a temporary ordered key table that is stored in the
+    -- table being iterated.
+
+    if state == nil then
+        -- the first time, generate the index
+        t.__orderedIndex = __genOrderedIndex( t )
+        key = t.__orderedIndex[1]
+        return key, t[key]
+    end
+    -- fetch the next value
+    key = nil
+    for i = 1,table.getn(t.__orderedIndex) do
+        if t.__orderedIndex[i] == state then
+            key = t.__orderedIndex[i+1]
+        end
+    end
+
+    if key then
+        return key, t[key]
+    end
+
+    -- no more value to return, cleanup
+    t.__orderedIndex = nil
+    return
+end
+
+local function orderedPairs(t)
+-- this function is taken from http://lua-users.org/wiki/SortedIteration
+    -- Equivalent of the pairs() function on tables. Allows to iterate
+    -- in order
+    return orderedNext, t, nil
+end
 
 local function unichar (value)
 -- this function is taken from dkjson
@@ -49,11 +98,6 @@ local function unichar (value)
         return string.char (0xf0 + floor(value/0x40000), 0x80 + (floor(value/0x1000) % 0x40), 0x80 + (floor(value/0x40) % 0x40), 0x80 + (floor(value) % 0x40))
     else
         return nil
-    end
-end
-
-local function fillbrowse()
-    if _browse_tags + _browse_series == 0 then
     end
 end
 
@@ -148,15 +192,57 @@ function Search:ShowSearch()
             buttons = {
                 {
                     {
-                        text = _("Find"),
+                        text = _("Browse series"),
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not settings_changed and self.search_value == dummy then
+                            if not settings_changed and self.search_value == dummy and self.lastsearch == "series" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
                             end
+                            self.lastsearch = "series"
+                            self:close()
+                        end,
+                    },
+                    {
+                        text = _("Browse tags"),
+                        enabled = true,
+                        callback = function()
+                            self.search_value = self.search_dialog:getInputText()
+                            if not settings_changed and self.search_value == dummy and self.lastsearch == "tags" then
+                                 self.use_previous_search_results = true
+                            else
+                                 self.use_previous_search_results = false
+                            end
+                            self.lastsearch = "tags"
+                            self:close()
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Cancel"),
+                        enabled = true,
+                        callback = function()
+                            self.search_dialog:onClose()
+                            UIManager:close(self.search_dialog)
+--self.use_previous_search_results = true
+--self.lastsearch = "tags"
+                            self:close()  
+                        end,
+                    },
+                    {
+                        text = _("Find books"),
+                        enabled = true,
+                        callback = function()
+                            self.search_value = self.search_dialog:getInputText()
+                            if not settings_changed and self.search_value == dummy and self.lastsearch == "find" then
+                                 self.use_previous_search_results = true
+                            else
+                                 self.use_previous_search_results = false
+                            end
+                            self.lastsearch = "find"
                             self:close()
                         end,
                     },
@@ -174,6 +260,7 @@ function Search:ShowSearch()
             UIManager:show(InfoMessage:new{text = self.error .. _( " A search for a " .. calibre .. " file was not successful!"),})
         end
     end
+    
 end
 
 function Search:init()
@@ -183,14 +270,16 @@ function Search:init()
 end
 
 function Search:close()
-    self.search_dialog:onClose()
-    UIManager:close(self.search_dialog)
-    if string.len(self.search_value) > 0 then
-        self:find()
+    if self.search_value then
+        self.search_dialog:onClose()
+        UIManager:close(self.search_dialog)
+        if string.len(self.search_value) > 0 or self.lastsearch ~= "find" then
+            self:find(self.lastsearch)
+        end
     end
 end
 
-function Search:find()
+function Search:find(option)
     local f = io.open(self.calibrefile)
     local line = f:read()
     local i = 1
@@ -220,6 +309,7 @@ function Search:find()
             self.data[i][self.authors2] = ""
         elseif s == self.tags then
             self.data[i][self.tags2] = ""
+            self.data[i][self.tags3] = ""
         end
         while line ~= "    ], " do
             line = f:read()
@@ -228,7 +318,10 @@ function Search:find()
                 if s == self.authors then
                     self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
                 elseif s == self.tags then
-                    self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. ReplaceHexChars(line,8,3)
+                    local dummy = ReplaceHexChars(line,8,3)
+                    self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. dummy
+                    self.data[i][self.tags3] = self.data[i][self.tags3] .. "\n" .. dummy
+                    self.browse_tags[dummy] = (self.browse_tags[dummy] or 0) + 1
                 end
             end
         end
@@ -237,22 +330,25 @@ function Search:find()
             self.data[i][self.authors2] = string.sub(self.data[i][self.authors2],4)
         elseif s == self.tags then
             self.data[i][self.tags2] = string.sub(self.data[i][self.tags2],4)
+            self.data[i][self.tags3] = self.data[i][self.tags3] .. "\n"
         end
     end
 
     if not self.use_previous_search_results then
-        self.reults = {}
+        self.results = {}
         self.data = {}
+        self.browse_series = {}
+        self.browse_tags = {}
 
         if SEARCH_CASESENSITIVE then
-            upsearch = self.search_value
+            upsearch = self.search_value or ""
         else
-            upsearch = string.upper(self.search_value)
+            upsearch = string.upper(self.search_value or "")
         end
 
         firstrun = true
 
-        self.data[i] = {"-","-","-","-","-","-","-","-"}
+        self.data[i] = {"-","-","-","-","-","-","-","-","-"}
         self.libraries[i] = 1
 
         while line do
@@ -260,23 +356,38 @@ function Search:find()
                 -- new calibre data set
 
                 dummy = ""
-                if SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
-                if SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
-                if SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
-                if SEARCH_SERIES then
+                if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
+                if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
+                if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
+                if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
                     dummy = dummy .. self.data[i][self.series] .. "\n" 
-                    self.browse_series[self.data[i][self.series]] = true
+                    self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                 end
-                if SEARCH_TAGS then
-                    dummy = dummy .. self.data[i][self.tags] .. "\n" 
-                    self.browse_tags[self.data[i][self.tags]] = true
-                end
+                if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
 
-                if string.find(dummy,upsearch,nil,true) then
-                    i = i + 1
+                if upsearch ~= "" then
+                    if string.find(dummy,upsearch,nil,true) then
+                        i = i + 1
+                    end
+                else
+                    if option == "series" then
+                        if self.browse_series[self.data[i][self.series]] then
+                            i = i + 1
+                        end
+                    elseif option == "tags" then
+                        local found = false
+                        for j in string.gmatch(self.data[i][self.tags3],"\n[^\n]+") do
+                            if j~="\n" and self.browse_tags[string.sub(j,2)] then
+                                found = true
+                            end
+                        end
+                        if found then
+                            i = i + 1
+                        end
+                    end
                 end
-                self.data[i] = {"-","-","-","-","-","-","-","-"}
+                self.data[i] = {"-","-","-","-","-","-","-","-","-"}
                 if firstrun then
                     self.libraries[i] = 1
                 else
@@ -312,25 +423,40 @@ function Search:find()
     end
     if self.count > 0 then
         self.data[self.count + 1] = nil
-        self:showresults()
+        if option == "find" then
+            self:showresults()
+        else
+            self:browse(option,1)
+        end        
     else
-        UIManager:show(InfoMessage:new{text = _("No match for " .. self.search_value)})
+        if option == "find" then
+            dummy = _("No match for " .. self.search_value)
+        else
+            dummy = _("No ") .. option .. _(" found")
+            if string.len(self.search_value) > 0 then
+                dummy = dummy .. _(" matching ") .. self.search_value
+            end
+            dummy = dummy .. "!"
+        end            
+        UIManager:show(InfoMessage:new{text = dummy})
     end
 end
 
 function Search:onMenuHold(item)
-    if item.notchecked then
-        item.info = item.info .. item.path
-        local f = io.open(item.path)
-        if f == nil then
-            item.info = item.info .. "\nFile not found!"
-        else
-            item.info = item.info .. "\n" .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
-            f:close()
+    if string.len(item.info or "") > 0 then
+        if item.notchecked then
+            item.info = item.info .. item.path
+            local f = io.open(item.path)
+            if f == nil then
+                item.info = item.info .. "\n" .. _("File not found!")
+            else
+                item.info = item.info .. "\n" .. _("Size: ") .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+                f:close()
+            end
+            item.notchecked = false
         end
-        item.notchecked = false
+        UIManager:show(InfoMessage:new{text = item.info})
     end
-    UIManager:show(InfoMessage:new{text = item.info})
 end
 
 function Search:showresults()
@@ -374,15 +500,131 @@ function Search:showresults()
                path = libpath .. self.data[i][self.path],
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
-                  if book then
-                      showReaderUI(book)
-                  end
+                   showReaderUI(book)
                end
             })
             i = i + 1
         end
     end
-    self.search_menu:swithItemTable("Search Results", self.results)
+    table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
+    self.search_menu:swithItemTable(_("Search Results"), self.results)
+    UIManager:show(menu_container)
+end
+
+function Search:browse(option,run,chosen)
+    local restart_me = false
+    local menu_container = CenterContainer:new{
+        dimen = Screen:getSize(),
+    }
+    self.search_menu = Menu:new{
+        width = Screen:getWidth()-15,
+        height = Screen:getHeight()-15,
+        show_parent = menu_container,
+        onMenuHold = self.onMenuHold,
+        cface = Font:getFace("cfont", 22),
+        _manager = self,
+    }
+    table.insert(menu_container, self.search_menu)
+
+    self.search_menu.close_callback = function()
+        UIManager:close(menu_container)
+        if restart_me then
+            if string.len(self.search_value) > 0 or self.lastsearch ~= "find" then
+                self.use_previous_search_results = true
+                self:getCalibre(1)
+                self:find(self.lastsearch)
+            end
+        end
+           
+    end
+    local upsearch
+    local dummy
+    if SEARCH_CASESENSITIVE then
+        upsearch = self.search_value or ""
+    else
+        upsearch = string.upper(self.search_value or "")
+    end
+
+    if run == 1 then
+        self.results = {}
+        if option == "series" then  
+            for v,n in orderedPairs(self.browse_series) do
+                dummy = v
+                if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
+                if string.find(dummy,upsearch,nil,true) then
+                    table.insert(self.results, {
+                        text = v .. " (" .. tostring(self.browse_series[v]) .. ")",
+                        callback = function()
+                            self:browse(option,2,v)
+                        end
+                    })
+                end
+           end
+        else
+            for v,n in orderedPairs(self.browse_tags) do
+                dummy = v
+                if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
+                if string.find(dummy,upsearch,nil,true) then
+                    table.insert(self.results, {
+                        text = v .. " (" .. tostring(self.browse_tags[v]) .. ")",
+                        callback = function()
+                            self:browse(option,2,v)
+                        end
+                    })
+                end
+            end
+        end    
+    else
+        restart_me = true
+        self.results = {}
+        local i = 1
+        while i <= self.count do
+            if (option == "tags" and self.data[i][self.tags3]:find("\n" .. chosen .. "\n",nil,true)) or (option == "series" and chosen == self.data[i][self.series]) then
+                local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
+                              _("Author(s): ") .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
+                              _("Tags: ") .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
+                              _("Series: ") .. (self.data[i][self.series] or "-")
+                if self.data[i][self.series] ~= "-" then
+                    dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
+                end
+                dummy = dummy .. "\n \n" .. _("Path: ")
+                local libpath
+                if self.libraries[i] == 1 then
+                    libpath = SEARCH_LIBRARY_PATH
+                else
+                    libpath = SEARCH_LIBRARY_PATH2
+                end
+                local book = libpath .. self.data[i][self.path]
+                local text
+                if option == "series" then
+                    text = string.format("%6.1f",self.data[i][self.series_index]):gsub(".0$","") .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                else
+                    text = self.data[i][self.authors] .. ": " .. self.data[i][self.title]
+                end
+                table.insert(self.results, {
+                   text = text,
+                   info = dummy,
+                   notchecked = true,
+                   path = libpath .. self.data[i][self.path],
+                   callback = function()
+                       showReaderUI(book)
+                   end
+                })
+            end
+            i = i + 1
+        end
+    end
+    local dummy = ""
+    
+    if run == 1 then
+        dummy = _("Browse ") .. option
+    else
+        dummy = chosen
+    end
+
+    table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
+
+    self.search_menu:swithItemTable(dummy, self.results)
     UIManager:show(menu_container)
 end
 
