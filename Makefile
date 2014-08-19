@@ -144,8 +144,7 @@ koboupdate: all
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
-			KoboRoot.tgz koreader koreader.png README_kobo.txt \
-			-x "koreader/resources/fonts/*" \
+			koreader -x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
 	# generate koboupdate package index file
 	zipinfo -1 koreader-kobo-$(MACHINE)-$(VERSION).zip > \
@@ -153,7 +152,7 @@ koboupdate: all
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-kobo-$(MACHINE)-$(VERSION).zip \
-		koreader/ota/package.index
+		koreader/ota/package.index KoboRoot.tgz koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).tar.gz \

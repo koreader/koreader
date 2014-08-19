@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-08-17 13:46+0000\n"
+"POT-Creation-Date: 2014-08-19 08:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -15,6 +15,16 @@ msgstr ""
 #: reader.lua:76
 msgid ""
 " does not exist"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:435
+msgid ""
+" found"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:437
+msgid ""
+" matching "
 msgstr ""
 
 #: plugins/evernote.koplugin/main.lua:334
@@ -50,7 +60,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:302
-#: frontend/ui/widget/dictquicklookup.lua:158
+#: frontend/ui/widget/dictquicklookup.lua:159
 msgid ""
 "Add Note"
 msgstr ""
@@ -65,7 +75,8 @@ msgid ""
 "Are you sure to save the settings to \"defaults.persistent.lua\"?"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:329
+#: frontend/apps/filemanager/filemanagersearch.lua:483
+#: frontend/apps/filemanager/filemanagersearch.lua:584
 msgid ""
 "Author(s): "
 msgstr ""
@@ -87,10 +98,27 @@ msgid ""
 "Bookmarks"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:164
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:207
+#: frontend/apps/filemanager/filemanagersearch.lua:620
+msgid ""
+"Browse "
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:195
+msgid ""
+"Browse series"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:209
+msgid ""
+"Browse tags"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:225
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:134
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:192
 #: frontend/apps/reader/modules/readergoto.lua:36
 #: frontend/ui/widget/confirmbox.lua:29
+#: frontend/ui/widget/dictquicklookup.lua:344
 #: frontend/ui/widget/touchmenu.lua:547
 #: plugins/evernote.koplugin/main.lua:124
 #: plugins/zsync.koplugin/main.lua:274
@@ -254,7 +282,7 @@ msgid ""
 "Every page"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:158
+#: frontend/apps/filemanager/filemanagermenu.lua:159
 msgid ""
 "Exit"
 msgstr ""
@@ -290,9 +318,14 @@ msgid ""
 "File "
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagermenu.lua:190
+#: frontend/apps/filemanager/filemanagermenu.lua:191
 msgid ""
 "File manager menu"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:451
+msgid ""
+"File not found!"
 msgstr ""
 
 #: frontend/apps/filemanager/filemanager.lua:22
@@ -300,9 +333,9 @@ msgid ""
 "FileManager"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:128
+#: frontend/apps/filemanager/filemanagersearch.lua:236
 msgid ""
-"Find"
+"Find books"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:13
@@ -372,7 +405,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:294
-#: frontend/ui/widget/dictquicklookup.lua:136
+#: frontend/ui/widget/dictquicklookup.lua:137
 msgid ""
 "Highlight"
 msgstr ""
@@ -390,6 +423,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:23
 msgid ""
 "Indentation"
+msgstr ""
+
+#: frontend/ui/widget/dictquicklookup.lua:338
+msgid ""
+"Input lookup word"
 msgstr ""
 
 #: frontend/ui/uimanager.lua:492
@@ -473,13 +511,18 @@ msgid ""
 "Logout"
 msgstr ""
 
+#: frontend/ui/widget/dictquicklookup.lua:350
+msgid ""
+"Lookup"
+msgstr ""
+
 #: frontend/ui/device/screen.lua:277
 msgid ""
 "Medium"
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:333
-#: frontend/ui/widget/dictquicklookup.lua:165
+#: frontend/ui/widget/dictquicklookup.lua:166
 msgid ""
 "More"
 msgstr ""
@@ -495,22 +538,11 @@ msgid ""
 "No definition found."
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:290
+#: frontend/apps/filemanager/filemanagersearch.lua:433
 msgid ""
-"No match for \" .. self.search_value)})\n"
-"    end\n"
-"end\n"
-"\n"
-"function Search:onMenuHold(item)\n"
-"    if item.notchecked then\n"
-"        item.info = item.info .. item.path\n"
-"        local f = io.open(item.path)\n"
-"        if f == nil then\n"
-"            item.info = item.info .. \"\n"
-"File not found!\"\n"
+"No match for \" .. self.search_value)\n"
 "        else\n"
-"            item.info = item.info .. \"\n"
-"\" .. string.format(\"%4.1fM\",lfs.attributes(item.path, \"size"
+"            dummy = _(\"No "
 msgstr ""
 
 #: reader.lua:91
@@ -523,7 +555,7 @@ msgid ""
 "Note: "
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:192
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:200
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
 #: frontend/ui/widget/confirmbox.lua:28
 #: frontend/ui/widget/touchmenu.lua:553
@@ -591,7 +623,8 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:335
+#: frontend/apps/filemanager/filemanagersearch.lua:489
+#: frontend/apps/filemanager/filemanagersearch.lua:590
 msgid ""
 "Path: "
 msgstr ""
@@ -664,9 +697,14 @@ msgid ""
 "Scroll Mode"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:124
+#: frontend/apps/filemanager/filemanagersearch.lua:191
 msgid ""
 "Search Books"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:510
+msgid ""
+"Search Results"
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:151
@@ -674,7 +712,8 @@ msgid ""
 "Search books"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:331
+#: frontend/apps/filemanager/filemanagersearch.lua:485
+#: frontend/apps/filemanager/filemanagersearch.lua:586
 msgid ""
 "Series: "
 msgstr ""
@@ -754,6 +793,11 @@ msgid ""
 "Show page overlap"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagersearch.lua:453
+msgid ""
+"Size: "
+msgstr ""
+
 #: frontend/ui/device/screen.lua:269
 msgid ""
 "Small"
@@ -809,7 +853,8 @@ msgid ""
 "Table of contents"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:330
+#: frontend/apps/filemanager/filemanagersearch.lua:484
+#: frontend/apps/filemanager/filemanagersearch.lua:585
 msgid ""
 "Tags: "
 msgstr ""
@@ -824,7 +869,8 @@ msgid ""
 "This will take effect on next restart."
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:328
+#: frontend/apps/filemanager/filemanagersearch.lua:482
+#: frontend/apps/filemanager/filemanagersearch.lua:583
 msgid ""
 "Title: "
 msgstr ""
@@ -860,7 +906,7 @@ msgid ""
 "View Mode"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:151
+#: frontend/ui/widget/dictquicklookup.lua:152
 msgid ""
 "Wikipedia"
 msgstr ""
@@ -890,7 +936,7 @@ msgid ""
 "You have unsaved default settings. Save them now?"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:107
+#: frontend/apps/filemanager/filemanagersearch.lua:152
 msgid ""
 "You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)"
 msgstr ""
