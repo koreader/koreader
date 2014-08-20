@@ -29,6 +29,7 @@ local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderScreenshot = require("apps/reader/modules/readerscreenshot")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
@@ -137,6 +138,13 @@ function ReaderUI:init()
     })
     -- dictionary
     table.insert(self, ReaderDictionary:new{
+        dialog = self.dialog,
+        view = self[1],
+        ui = self,
+        document = self.document,
+    })
+    -- wikipedia
+    table.insert(self, ReaderWikipedia:new{
         dialog = self.dialog,
         view = self[1],
         ui = self,
