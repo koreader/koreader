@@ -1,5 +1,6 @@
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
+local NetworkMgr = require("ui/networkmgr")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local DEBUG = require("dbg")
@@ -63,8 +64,13 @@ function OTAManager:checkUpdate()
     local r, c, h = http.request{
         url = ota_zsync_file,
         sink = ltn12.sink.file(io.open(local_zsync_file, "w"))}
-    -- parse OTA package version
+    -- prompt users to turn on Wifi if network is unreachable
+    if h == nil then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     if c ~= 200 then return end
+    -- parse OTA package version
     local ota_package = nil
     local zsync = io.open(local_zsync_file, "r")
     if zsync then

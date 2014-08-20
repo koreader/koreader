@@ -79,6 +79,8 @@ function Translator:detect(text)
         local src_lang = result.src
         DEBUG("detected language:", src_lang)
         return src_lang
+    else
+        return self.default_lang
     end
 end
 

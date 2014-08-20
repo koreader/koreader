@@ -1,5 +1,6 @@
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local EventListener = require("ui/widget/eventlistener")
+local NetworkMgr = require("ui/networkmgr")
 local Translator = require("ui/translator")
 local Wikipedia = require("ui/wikipedia")
 local UIManager = require("ui/uimanager")
@@ -17,7 +18,12 @@ local ReaderWikipedia = ReaderDictionary:new{
 }
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
-    local lang = Translator:detect(word) or "en"
+    local ok, lang = pcall(Translator.detect, Translator, word)
+    -- prompt users to turn on Wifi if network is unreachable
+    if not ok and lang and lang:find("Network is unreachable") then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
     local results = {}
