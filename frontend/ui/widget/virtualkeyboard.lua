@@ -41,6 +41,7 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayout(self.key or self.label) end
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
+        self.hold_callback = function () self.keyboard:clear() end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
     end
@@ -83,6 +84,12 @@ function VirtualKey:init()
                     range = self.dimen,
                 },
             },
+            HoldSelect = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+            },
         }
     end
 end
@@ -93,6 +100,15 @@ function VirtualKey:onTapSelect()
         self.callback()
     end
     UIManager:scheduleIn(0.02, function() self:invert(false) end)
+    return true
+end
+
+function VirtualKey:onHoldSelect()
+    self[1].invert = true
+    if self.hold_callback then
+        self.hold_callback()
+    end
+    UIManager:scheduleIn(0.5, function() self:invert(false) end)
     return true
 end
 
@@ -191,7 +207,7 @@ function VirtualKeyboard:init()
         for i = 1, string.len(GLOBAL_INPUT_VALUE) do
             self:addChar(string.sub(GLOBAL_INPUT_VALUE,i,i))
         end
-    end    
+    end
 end
 
 function VirtualKeyboard:initLayout(layout)
@@ -299,6 +315,13 @@ end
 function VirtualKeyboard:delChar()
     DEBUG("delete char")
     self.inputbox:delChar()
+    UIManager:setDirty(self, "partial")
+    UIManager:setDirty(self.inputbox, "partial")
+end
+
+function VirtualKeyboard:clear()
+    DEBUG("clear input")
+    self.inputbox:clear()
     UIManager:setDirty(self, "partial")
     UIManager:setDirty(self.inputbox, "partial")
 end

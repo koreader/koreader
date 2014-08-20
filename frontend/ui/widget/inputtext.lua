@@ -151,6 +151,12 @@ function InputText:delChar()
     UIManager:setDirty(self.parent, "partial")
 end
 
+function InputText:clear()
+    self.text = ""
+    self:initTextBox()
+    UIManager:setDirty(self.parent, "partial")
+end
+
 function InputText:getText()
     return self.text
 end
