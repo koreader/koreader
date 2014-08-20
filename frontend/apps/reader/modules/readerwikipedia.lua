@@ -18,6 +18,7 @@ local ReaderWikipedia = ReaderDictionary:new{
 }
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
+    -- detect language of the text
     local ok, lang = pcall(Translator.detect, Translator, word)
     -- prompt users to turn on Wifi if network is unreachable
     if not ok and lang and lang:find("Network is unreachable") then
@@ -26,6 +27,11 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
     end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
+    -- strip punctuation characters around selected word
+    word = string.gsub(word, "^%p+", '')
+    word = string.gsub(word, "%p+$", '')
+    -- seems lower case phrase has higher hit rate
+    word = string.lower(word)
     local results = {}
     local ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
     if ok and pages then

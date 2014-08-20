@@ -175,7 +175,6 @@ function DictQuickLookup:update()
                     callback = function()
                         UIManager:scheduleIn(0.1, function()
                             self:lookupWikipedia()
-                            self:onClose()
                         end)
                     end,
                 },
