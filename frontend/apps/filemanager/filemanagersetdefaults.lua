@@ -14,7 +14,8 @@ local SetDefaults = InputContainer:new{
     defaults_value = {},
     results = {},
     defaults_menu = {},
-    already_read = false
+    already_read = false,
+    changed = {}
 }
 
 local function settype(b,t)
@@ -111,6 +112,7 @@ function SetDefaults:init()
     end
 
     for i=1,#self.defaults_name do
+        self.changed[i] = false
         local settings_type = type(_G[self.defaults_name[i]])
         if settings_type == "boolean" then
             table.insert(self.results, {
@@ -134,10 +136,9 @@ function SetDefaults:init()
                                     enabled = true,
                                     callback = function()
                                         self.defaults_value[i] = true
-                                        if not _G[self.defaults_name[i]] then
-                                            _G[self.defaults_name[i]] = true
-                                            settings_changed = true
-                                        end
+                                        _G[self.defaults_name[i]] = true
+                                        settings_changed = true
+                                        self.changed[i] = true
                                         self.results[i].text = self:build_setting(i)
                                         self:close()
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
@@ -149,10 +150,9 @@ function SetDefaults:init()
                                     enabled = true,
                                     callback = function()
                                         self.defaults_value[i] = false
-                                        if _G[self.defaults_name[i]] then
-                                            _G[self.defaults_name[i]] = false
-                                            settings_changed = true
-                                        end
+                                        _G[self.defaults_name[i]] = false
+                                        settings_changed = true
+                                        self.changed[i] = true
                                         self.results[i].text = self:build_setting(i)
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
                                         self:close()
@@ -192,14 +192,13 @@ function SetDefaults:init()
                                     enabled = true,
                                     callback = function()
                                         if type(_G[self.defaults_name[i]]) == "table" then
-                                            settings_changed = true
                                             self.defaults_value[i] = self.set_dialog:getInputText()
                                         elseif _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
                                             _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
-                                            settings_changed = true
                                             self.defaults_value[i] = _G[self.defaults_name[i]]
                                         end
-                                        
+                                        settings_changed = true
+                                        self.changed[i] = true
                                         self.results[i].text = self:build_setting(i)
                                         self:close()
                                         self.defaults_menu:swithItemTable("Defaults", self.results, i)
@@ -315,10 +314,14 @@ function SetDefaults:SaveSettings()
     self.filldefaults()
     local done = {}
 
+    for j=1,#SetDefaults.defaults_name do
+        if not self.changed[j] then done[j] = true end
+    end
+
     -- handle case "found in persistent", replace it
     for i = 1,#dpl do
         for j=1,#SetDefaults.defaults_name do
-            if string.find(dpl[i],SetDefaults.defaults_name[j] .. " ") == 1 then
+            if not done[j] and string.find(dpl[i],SetDefaults.defaults_name[j] .. " ") == 1 then
                 dpl[i] = self:build_setting(j)
                 done[j] = true
             end
@@ -328,7 +331,7 @@ function SetDefaults:SaveSettings()
     -- handle case "exists identical in non-persistent", ignore it
     for i = 1,#dl do
         for j=1,#SetDefaults.defaults_name do
-            if dl[i]:gsub("1/4","0.25"):gsub("2/4","0.5"):gsub("3/4","0.75"):gsub("4/4","1"):gsub("1/8","0.125"):gsub("2/8","0.25"):gsub("3/8","0.375"):gsub("4/8","0.5"):gsub("5/8","0.625"):gsub("6/8","0.75"):gsub("7/8","0.875"):gsub("8/8","1"):gsub("1/16","0.0625"):gsub("15/16","0.9375"):gsub("1024[*]1024[*]10","10485760"):gsub("1024[*]1024[*]30","31457280"):gsub("[.]0$",""):gsub("([.][0-9]+)0","%1") == self:build_setting(j) then
+            if not done[j] and dl[i]:gsub("1/4","0.25"):gsub("2/4","0.5"):gsub("3/4","0.75"):gsub("4/4","1"):gsub("1/8","0.125"):gsub("2/8","0.25"):gsub("3/8","0.375"):gsub("4/8","0.5"):gsub("5/8","0.625"):gsub("6/8","0.75"):gsub("7/8","0.875"):gsub("8/8","1"):gsub("1/16","0.0625"):gsub("15/16","0.9375"):gsub("1024[*]1024[*]10","10485760"):gsub("1024[*]1024[*]30","31457280"):gsub("[.]0$",""):gsub("([.][0-9]+)0","%1") == self:build_setting(j) then
                 done[j] = true
             end
         end
