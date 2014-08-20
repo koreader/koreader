@@ -44,7 +44,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
             table.insert(results, result)
         end
         DEBUG("lookup result:", word, results)
-        self:showDict(results, box)
+        self:showDict(word, results, box)
     else
         DEBUG("error:", pages)
         -- dummy results
@@ -56,7 +56,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
             }
         }
         DEBUG("dummy result table:", word, results)
-        self:showDict(results, box)
+        self:showDict(word, results, box)
     end
 end
 

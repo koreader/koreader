@@ -30,7 +30,7 @@ function ReaderDictionary:stardictLookup(word, box)
         local ok, results = pcall(JSON.decode, JSON, results_str)
         if ok and results then
             DEBUG("lookup result table:", word, results)
-            self:showDict(results, box)
+            self:showDict(word, results, box)
         else
             -- dummy results
             results = {
@@ -41,18 +41,20 @@ function ReaderDictionary:stardictLookup(word, box)
                 }
             }
             DEBUG("dummy result table:", word, results)
-            self:showDict(results, box)
+            self:showDict(word, results, box)
         end
     end
 end
 
-function ReaderDictionary:showDict(results, box)
+function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
         DEBUG("showing quick lookup window")
         UIManager:show(DictQuickLookup:new{
             ui = self.ui,
             highlight = self.highlight,
             dialog = self.dialog,
+            -- original lookup word
+            word = word,
             results = results,
             dictionary = self.default_dictionary,
             width = Screen:getWidth() - Screen:scaleByDPI(80),

@@ -404,7 +404,7 @@ function DictQuickLookup:closeInputDialog()
 end
 
 function DictQuickLookup:lookupWikipedia()
-    self.ui:handleEvent(Event:new("LookupWikipedia", self.lookupword, self.word_box))
+    self.ui:handleEvent(Event:new("LookupWikipedia", self.word, self.word_box))
 end
 
 return DictQuickLookup
