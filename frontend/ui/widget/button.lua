@@ -147,7 +147,7 @@ function Button:showHide(show)
 end
 
 function Button:onTapSelect()
-    if self.enabled then
+    if self.enabled and self.callback then
         self[1].invert = true
         UIManager:setDirty(self.show_parent, "partial")
         UIManager:scheduleIn(0.1, function()
