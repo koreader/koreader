@@ -166,8 +166,9 @@ SEARCH_PATH = true
 
 -- Light parameter for Kobo
 KOBO_LIGHT_OFF_ON_SUSPEND = false
-KOBO_LIGHT_ON_START = -1          -- -1 or 0-100. -1 leaves light as it is, other sets light on start/wake up
-KOBO_SCREEN_SAVER = ""           -- image or directory with pictures or "-"
+KOBO_LIGHT_ON_START = -1           -- -1 or 0-100. -1 leaves light as it is, other sets light on start/wake up
+KOBO_SCREEN_SAVER = ""             -- image or directory with pictures or "-"
+KOBO_SCREEN_SAVER_LAST_BOOK = true -- get screensaver from last book if possible
 
 -- ####################################################################
 -- following features are not supported right now
