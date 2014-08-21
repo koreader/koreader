@@ -1,9 +1,10 @@
 local lfs = require("libs/libkoreader-lfs")
+local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
-local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
+local Device = require("ui/device")
 local util = require("ffi/util")
+local DEBUG = require("dbg")
 local ffi = require("ffi")
 ffi.cdef[[
 int strcoll (char *str1, char *str2);
@@ -23,9 +24,12 @@ local FileChooser = Menu:extend{
     show_hidden = nil,
     show_filesize = DSHOWFILESIZE,
     filter = function(filename) return true end,
+    collate = strcoll,
 }
 
 function FileChooser:init()
+    -- disable string collating in Kobo devices. See issue koreader/koreader#686
+    if Device:isKobo() then self.collate = nil end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -52,9 +56,9 @@ function FileChooser:genItemTableFromPath(path)
             end
         end
     end
-    table.sort(dirs, strcoll)
+    table.sort(dirs, self.collate)
     if path ~= "/" then table.insert(dirs, 1, "..") end
-    table.sort(files, strcoll)
+    table.sort(files, self.collate)
 
     local item_table = {}
     for _, dir in ipairs(dirs) do
