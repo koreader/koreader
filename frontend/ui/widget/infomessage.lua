@@ -26,6 +26,10 @@ local InfoMessage = InputContainer:new{
 }
 
 function InfoMessage:init()
+    if not self.image then
+        self.image_width = nil
+        self.image_height = nil
+    end
     if Device:hasKeys() then
         self.key_events = {
             AnyKeyPressed = { { Input.group.Any },
@@ -53,7 +57,9 @@ function InfoMessage:init()
             HorizontalGroup:new{
                 align = "center",
                 ImageWidget:new{
-                    file = "resources/info-i.png"
+                    file = self.image or "resources/info-i.png",
+                    width = self.image_width,
+                    height = self.image_height
                 },
                 HorizontalSpan:new{ width = 10 },
                 TextBoxWidget:new{
