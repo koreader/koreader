@@ -294,8 +294,7 @@ function ReaderHighlight:onHoldRelease()
                         text = _("Highlight"),
                         callback = function()
                             self:saveHighlight()
-                            UIManager:close(self.highlight_dialog)
-                            self:handleEvent(Event:new("Tap"))
+                            self:onClose()
                         end,
                     },
                     {
@@ -303,39 +302,43 @@ function ReaderHighlight:onHoldRelease()
                         enabled = false,
                         callback = function()
                             self:addNote()
-                            UIManager:close(self.highlight_dialog)
-                            self:handleEvent(Event:new("Tap"))
+                            self:onClose()
                         end,
                     },
                 },
                 {
+                    {
+                        text = _("Wikipedia"),
+                        callback = function()
+                            UIManager:scheduleIn(0.1, function()
+                                self:lookupWikipedia()
+                            end)
+                        end,
+                    },
                     {
                         text = _("Translate"),
                         enabled = false,
                         callback = function()
                             self:translate(self.selected_text)
-                            UIManager:close(self.highlight_dialog)
-                            self:handleEvent(Event:new("Tap"))
-                        end,
-                    },
-                    {
-                        text = _("Share"),
-                        enabled = false,
-                        callback = function()
-                            self:shareHighlight()
-                            UIManager:close(self.highlight_dialog)
-                            self:handleEvent(Event:new("Tap"))
+                            self:onClose()
                         end,
                     },
                 },
                 {
                     {
+                        text = _("Share"),
+                        enabled = false,
+                        callback = function()
+                            self:shareHighlight()
+                            self:onClose()
+                        end,
+                    },
+                    {
                         text = _("More"),
                         enabled = false,
                         callback = function()
                             self:moreAction()
-                            UIManager:close(self.highlight_dialog)
-                            self:handleEvent(Event:new("Tap"))
+                            self:onClose()
                         end,
                     },
                 },
@@ -411,6 +414,12 @@ function ReaderHighlight:addNote()
     DEBUG("add Note")
 end
 
+function ReaderHighlight:lookupWikipedia()
+    if self.selected_text then
+        self.ui:handleEvent(Event:new("LookupWikipedia", self.selected_text.text))
+    end
+end
+
 function ReaderHighlight:shareHighlight()
     DEBUG("share highlight")
 end
@@ -434,6 +443,12 @@ end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
+end
+
+function ReaderHighlight:onClose()
+    UIManager:close(self.highlight_dialog)
+    -- clear highlighted text
+    self:handleEvent(Event:new("Tap"))
 end
 
 return ReaderHighlight

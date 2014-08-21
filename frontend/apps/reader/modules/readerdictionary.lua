@@ -12,6 +12,7 @@ local ReaderDictionary = EventListener:new{}
 function ReaderDictionary:onLookupWord(word, box, highlight)
     self.highlight = highlight
     self:stardictLookup(word, box)
+    return true
 end
 
 function ReaderDictionary:stardictLookup(word, box)
@@ -29,7 +30,7 @@ function ReaderDictionary:stardictLookup(word, box)
         local ok, results = pcall(JSON.decode, JSON, results_str)
         if ok and results then
             DEBUG("lookup result table:", word, results)
-            self:showDict(results, box)
+            self:showDict(word, results, box)
         else
             -- dummy results
             results = {
@@ -40,41 +41,26 @@ function ReaderDictionary:stardictLookup(word, box)
                 }
             }
             DEBUG("dummy result table:", word, results)
-            self:showDict(results, box)
+            self:showDict(word, results, box)
         end
     end
 end
 
-function ReaderDictionary:showDict(results, box)
+function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
-        DEBUG("showing quick lookup dictionary window")
-        local align = "center"
-        local region = Geom:new{
-            x = 0, y = 0,
-            w = Screen:getWidth(),
-            h = Screen:getHeight(),
-        }
-        if box then
-            if box.y + box.h/2 < Screen:getHeight()/2 then
-                region.y = box.y + box.h
-                region.h = Screen:getHeight() - box.y - box.h
-                align = "top"
-            else
-                region.y = 0
-                region.h = box.y
-                align = "bottom"
-            end
-        end
+        DEBUG("showing quick lookup window")
         UIManager:show(DictQuickLookup:new{
             ui = self.ui,
             highlight = self.highlight,
             dialog = self.dialog,
+            -- original lookup word
+            word = word,
             results = results,
             dictionary = self.default_dictionary,
             width = Screen:getWidth() - Screen:scaleByDPI(80),
-            height = math.min(region.h*0.7, Screen:getHeight()*0.5),
-            region = region,
-            align = align,
+            word_box = box,
+            -- differentiate between dict and wiki
+            wiki = self.wiki,
         })
     end
 end
@@ -82,6 +68,7 @@ end
 function ReaderDictionary:onUpdateDefaultDict(dict)
     DEBUG("make default dictionary:", dict)
     self.default_dictionary = dict
+    return true
 end
 
 function ReaderDictionary:onReadSettings(config)

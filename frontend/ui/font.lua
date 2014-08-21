@@ -54,6 +54,8 @@ function Font:getFace(font, size)
         font = self.cfont
     end
 
+    -- original size before scaling by screen DPI
+    local orig_size = size
     local size = Screen:scaleByDPI(size)
 
     local face = self.faces[font..size]
@@ -72,7 +74,7 @@ function Font:getFace(font, size)
         self.faces[font..size] = face
     --DEBUG("getFace, found: "..realname.." size:"..size)
     end
-    return { size = size, ftface = face, hash = font..size }
+    return { size = size, orig_size = orig_size, ftface = face, hash = font..size }
 end
 
 function Font:_readList(target, dir, effective_dir)

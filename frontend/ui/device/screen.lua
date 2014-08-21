@@ -171,10 +171,6 @@ function Screen:scaleByDPI(px)
     return math.ceil(px * self:getDPI()/167)
 end
 
-function Screen:rescaleByDPI(px)
-    return math.ceil(px * 167/self:getDPI())
-end
-
 function Screen:getRotationMode()
     return self.cur_rotation_mode
 end

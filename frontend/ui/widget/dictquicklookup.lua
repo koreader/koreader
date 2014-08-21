@@ -37,6 +37,8 @@ local DictQuickLookup = InputContainer:new{
     content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
     width = nil,
     height = nil,
+    -- box of highlighted word, quick lookup window tries to not hide the word
+    word_box = nil,
 
     title_padding = Screen:scaleByDPI(5),
     title_margin = Screen:scaleByDPI(2),
@@ -85,6 +87,26 @@ function DictQuickLookup:init()
 end
 
 function DictQuickLookup:update()
+    -- calculate window dimension and try to not hide highlighted word
+    self.align = "center"
+    self.region = Geom:new{
+        x = 0, y = 0,
+        w = Screen:getWidth(),
+        h = Screen:getHeight(),
+    }
+    if self.word_box then
+        local box = self.word_box
+        if box.y + box.h/2 < Screen:getHeight()/2 then
+            self.region.y = box.y + box.h
+            self.region.h = Screen:getHeight() - box.y - box.h
+            self.align = "top"
+        else
+            self.region.y = 0
+            self.region.h = box.y
+            self.align = "bottom"
+        end
+    end
+    self.height = math.min(self.region.h*0.7, Screen:getHeight()*0.5)
     -- dictionary title
     self.dict_title = FrameContainer:new{
         padding = self.title_padding,
@@ -150,9 +172,10 @@ function DictQuickLookup:update()
             {
                 {
                     text = _("Wikipedia"),
-                    enabled = false,
                     callback = function()
-                        self.ui:handleEvent(Event:new("HighlightWiki"))
+                        UIManager:scheduleIn(0.1, function()
+                            self:lookupWikipedia()
+                        end)
                     end,
                 },
                 {
@@ -225,7 +248,7 @@ function DictQuickLookup:update()
     }
     self[1] = WidgetContainer:new{
         align = self.align,
-        dimen = self.region:copy(),
+        dimen = self.region,
         FrameContainer:new{
             bordersize = 0,
             padding = Screen:scaleByDPI(5),
@@ -336,6 +359,7 @@ function DictQuickLookup:lookupInputWord(hint)
     self:onClose()
     self.input_dialog = InputDialog:new{
         title = _("Input lookup word"),
+        input = hint,
         input_hint = hint or "",
         input_type = "text",
         buttons = {
@@ -369,13 +393,18 @@ end
 function DictQuickLookup:inputLookup()
     local word = self.input_dialog:getInputText()
     if word and word ~= "" then
-        self.ui:handleEvent(Event:new("LookupWord", word))
+        local event = self.wiki and "LookupWikipedia" or "LookupWord"
+        self.ui:handleEvent(Event:new(event, word))
     end
 end
 
 function DictQuickLookup:closeInputDialog()
     self.input_dialog:onClose()
     UIManager:close(self.input_dialog)
+end
+
+function DictQuickLookup:lookupWikipedia()
+    self.ui:handleEvent(Event:new("LookupWikipedia", self.word, self.word_box))
 end
 
 return DictQuickLookup

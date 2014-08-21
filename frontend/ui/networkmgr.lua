@@ -19,20 +19,20 @@ local function kindleEnableWifi(toggle)
 end
 
 local function koboEnableWifi(toggle)
-    if toggle == 1
-	local path = "/etc/wpa_supplicant/wpa_supplicant.conf"
-	os.execute("insmod /drivers/ntx508/wifi/sdio_wifi_pwr.ko 2>/dev/null")
-	os.execute("insmod /drivers/ntx508/wifi/dhd.ko")
-	os.execute("ifconfig eth0 up")
-	os.execute("wlarm_le -i eth0 up")
-	os.execute("wpa_supplicant -s -i eth0 -c "..path.." -C /var/run/wpa_supplicant -B")
-	os.execute("udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1")
+    if toggle == 1 then
+        local path = "/etc/wpa_supplicant/wpa_supplicant.conf"
+        os.execute("insmod /drivers/ntx508/wifi/sdio_wifi_pwr.ko 2>/dev/null")
+        os.execute("insmod /drivers/ntx508/wifi/dhd.ko")
+        os.execute("ifconfig eth0 up")
+        os.execute("wlarm_le -i eth0 up")
+        os.execute("wpa_supplicant -s -i eth0 -c "..path.." -C /var/run/wpa_supplicant -B")
+        os.execute("udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1")
     else
-	os.execute("killall udhcpc wpa_supplicant 2>/dev/null")
-	os.execute("wlarm_le -i eth0 down")
-	os.execute("ifconfig eth0 down")
-	os.execute("rmmod -r dhd")
-	os.execute("rmmod -r sdio_wifi_pwr")
+        os.execute("killall udhcpc wpa_supplicant 2>/dev/null")
+        os.execute("wlarm_le -i eth0 down")
+        os.execute("ifconfig eth0 down")
+        os.execute("rmmod -r dhd")
+        os.execute("rmmod -r sdio_wifi_pwr")
     end
 end
 

@@ -73,8 +73,8 @@ function RenderText:getGlyph(face, charcode, bold, bgcolor, fgcolor)
     local rendered_glyph = face.ftface:renderGlyph(charcode, bgcolor, fgcolor, bold)
     if face.ftface:checkGlyph(charcode) == 0 then
         for index, font in pairs(Font.fallbacks) do
-            -- rescale face size by DPI since it will be scaled in getFace again
-            local fb_face = Font:getFace(font, Screen:rescaleByDPI(face.size))
+            -- use original size before scaling by screen DPI
+            local fb_face = Font:getFace(font, face.orig_size)
             if fb_face.ftface:checkGlyph(charcode) ~= 0 then
                 rendered_glyph = fb_face.ftface:renderGlyph(charcode, bgcolor, fgcolor, bold)
                 --DEBUG("fallback to font", font)

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/koreader/koreader-base/issues\n"
-"POT-Creation-Date: 2014-08-19 08:01+0000\n"
+"POT-Creation-Date: 2014-08-20 07:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,24 +17,14 @@ msgid ""
 " does not exist"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:435
-msgid ""
-" found"
-msgstr ""
-
-#: frontend/apps/filemanager/filemanagersearch.lua:437
-msgid ""
-" matching "
-msgstr ""
-
 #: plugins/evernote.koplugin/main.lua:334
 msgid ""
 " others."
 msgstr ""
 
-#: frontend/ui/uimanager.lua:516
-#: frontend/ui/uimanager.lua:522
-#: frontend/ui/uimanager.lua:528
+#: frontend/ui/uimanager.lua:518
+#: frontend/ui/uimanager.lua:524
+#: frontend/ui/uimanager.lua:530
 msgid ""
 " pages"
 msgstr ""
@@ -59,8 +49,8 @@ msgid ""
 "5 deg"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:302
-#: frontend/ui/widget/dictquicklookup.lua:159
+#: frontend/apps/reader/modules/readerhighlight.lua:301
+#: frontend/ui/widget/dictquicklookup.lua:183
 msgid ""
 "Add Note"
 msgstr ""
@@ -70,19 +60,19 @@ msgid ""
 "Apply"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:249
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:267
 msgid ""
 "Are you sure to save the settings to \"defaults.persistent.lua\"?"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:483
-#: frontend/apps/filemanager/filemanagersearch.lua:584
+#: frontend/apps/filemanager/filemanagersearch.lua:569
+#: frontend/apps/filemanager/filemanagersearch.lua:670
 msgid ""
-"Author(s): "
+"Author(s):"
 msgstr ""
 
 #: frontend/apps/reader/modules/readertypeset.lua:66
-#: frontend/ui/device/screen.lua:262
+#: frontend/ui/device/screen.lua:258
 msgid ""
 "Auto"
 msgstr ""
@@ -98,27 +88,27 @@ msgid ""
 "Bookmarks"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:620
+#: frontend/apps/filemanager/filemanagersearch.lua:706
 msgid ""
-"Browse "
-msgstr ""
-
-#: frontend/apps/filemanager/filemanagersearch.lua:195
-msgid ""
-"Browse series"
+"Browse"
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagersearch.lua:209
 msgid ""
+"Browse series"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:223
+msgid ""
 "Browse tags"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:225
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:134
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:192
+#: frontend/apps/filemanager/filemanagersearch.lua:239
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:125
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:183
 #: frontend/apps/reader/modules/readergoto.lua:36
 #: frontend/ui/widget/confirmbox.lua:29
-#: frontend/ui/widget/dictquicklookup.lua:344
+#: frontend/ui/widget/dictquicklookup.lua:369
 #: frontend/ui/widget/touchmenu.lua:547
 #: plugins/evernote.koplugin/main.lua:124
 #: plugins/zsync.koplugin/main.lua:274
@@ -167,14 +157,14 @@ msgid ""
 "Copy"
 msgstr ""
 
-#: frontend/ui/uimanager.lua:516
-#: frontend/ui/uimanager.lua:522
-#: frontend/ui/uimanager.lua:528
+#: frontend/ui/uimanager.lua:518
+#: frontend/ui/uimanager.lua:524
+#: frontend/ui/uimanager.lua:530
 msgid ""
 "Custom "
 msgstr ""
 
-#: frontend/ui/device/screen.lua:293
+#: frontend/ui/device/screen.lua:289
 msgid ""
 "Custom DPI"
 msgstr ""
@@ -184,7 +174,7 @@ msgid ""
 "Cut"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:331
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:349
 msgid ""
 "Default settings successfully saved!"
 msgstr ""
@@ -236,7 +226,7 @@ msgid ""
 "Downloading may take several minutes..."
 msgstr ""
 
-#: frontend/ui/uimanager.lua:503
+#: frontend/ui/uimanager.lua:505
 msgid ""
 "E-ink full refresh rate"
 msgstr ""
@@ -272,12 +262,12 @@ msgid ""
 "Evernote"
 msgstr ""
 
-#: frontend/ui/uimanager.lua:511
+#: frontend/ui/uimanager.lua:513
 msgid ""
 "Every 6 pages"
 msgstr ""
 
-#: frontend/ui/uimanager.lua:506
+#: frontend/ui/uimanager.lua:508
 msgid ""
 "Every page"
 msgstr ""
@@ -323,7 +313,7 @@ msgid ""
 "File manager menu"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:451
+#: frontend/apps/filemanager/filemanagersearch.lua:537
 msgid ""
 "File not found!"
 msgstr ""
@@ -333,7 +323,7 @@ msgid ""
 "FileManager"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:236
+#: frontend/apps/filemanager/filemanagersearch.lua:247
 msgid ""
 "Find books"
 msgstr ""
@@ -405,7 +395,7 @@ msgid ""
 msgstr ""
 
 #: frontend/apps/reader/modules/readerhighlight.lua:294
-#: frontend/ui/widget/dictquicklookup.lua:137
+#: frontend/ui/widget/dictquicklookup.lua:159
 msgid ""
 "Highlight"
 msgstr ""
@@ -425,17 +415,17 @@ msgid ""
 "Indentation"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:338
+#: frontend/ui/widget/dictquicklookup.lua:362
 msgid ""
 "Input lookup word"
 msgstr ""
 
-#: frontend/ui/uimanager.lua:492
+#: frontend/ui/uimanager.lua:494
 msgid ""
 "Input page number for a full refresh"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:300
+#: frontend/ui/device/screen.lua:296
 msgid ""
 "Input screen DPI"
 msgstr ""
@@ -465,7 +455,7 @@ msgid ""
 "Language"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:285
+#: frontend/ui/device/screen.lua:281
 msgid ""
 "Large"
 msgstr ""
@@ -511,18 +501,18 @@ msgid ""
 "Logout"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:350
+#: frontend/ui/widget/dictquicklookup.lua:375
 msgid ""
 "Lookup"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:277
+#: frontend/ui/device/screen.lua:273
 msgid ""
 "Medium"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:333
-#: frontend/ui/widget/dictquicklookup.lua:166
+#: frontend/apps/reader/modules/readerhighlight.lua:338
+#: frontend/ui/widget/dictquicklookup.lua:190
 msgid ""
 "More"
 msgstr ""
@@ -533,16 +523,19 @@ msgid ""
 "Night mode"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerdictionary.lua:39
+#: frontend/apps/filemanager/filemanagersearch.lua:521
+msgid ""
+"No"
+msgstr ""
+
+#: frontend/apps/reader/modules/readerdictionary.lua:40
 msgid ""
 "No definition found."
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:433
+#: frontend/apps/filemanager/filemanagersearch.lua:519
 msgid ""
-"No match for \" .. self.search_value)\n"
-"        else\n"
-"            dummy = _(\"No "
+"No match for"
 msgstr ""
 
 #: reader.lua:91
@@ -550,12 +543,17 @@ msgid ""
 "No reader engine for this file"
 msgstr ""
 
+#: frontend/apps/reader/modules/readerwikipedia.lua:16
+msgid ""
+"No wiki page found."
+msgstr ""
+
 #: plugins/evernote.koplugin/main.lua:350
 msgid ""
 "Note: "
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:200
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:191
 #: frontend/apps/reader/modules/readerfrontlight.lua:115
 #: frontend/ui/widget/confirmbox.lua:28
 #: frontend/ui/widget/touchmenu.lua:553
@@ -623,8 +621,8 @@ msgid ""
 "Paste"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:489
-#: frontend/apps/filemanager/filemanagersearch.lua:590
+#: frontend/apps/filemanager/filemanagersearch.lua:575
+#: frontend/apps/filemanager/filemanagersearch.lua:676
 msgid ""
 "Path: "
 msgstr ""
@@ -676,7 +674,7 @@ msgid ""
 "Render Quality"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:259
+#: frontend/ui/device/screen.lua:255
 msgid ""
 "Screen DPI"
 msgstr ""
@@ -697,12 +695,12 @@ msgid ""
 "Scroll Mode"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:191
+#: frontend/apps/filemanager/filemanagersearch.lua:205
 msgid ""
 "Search Books"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:510
+#: frontend/apps/filemanager/filemanagersearch.lua:596
 msgid ""
 "Search Results"
 msgstr ""
@@ -712,10 +710,10 @@ msgid ""
 "Search books"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:485
-#: frontend/apps/filemanager/filemanagersearch.lua:586
+#: frontend/apps/filemanager/filemanagersearch.lua:571
+#: frontend/apps/filemanager/filemanagersearch.lua:672
 msgid ""
-"Series: "
+"Series:"
 msgstr ""
 
 #: frontend/ui/widget/configdialog.lua:582
@@ -773,7 +771,7 @@ msgid ""
 "Settings"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:322
+#: frontend/apps/reader/modules/readerhighlight.lua:330
 msgid ""
 "Share"
 msgstr ""
@@ -793,14 +791,19 @@ msgid ""
 "Show page overlap"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:453
+#: frontend/apps/filemanager/filemanagersearch.lua:539
 msgid ""
-"Size: "
+"Size:"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:269
+#: frontend/ui/device/screen.lua:265
 msgid ""
 "Small"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersetdefaults.lua:78
+msgid ""
+"Some changes will just work on the next restart. Wrong settings might crash Koreader! Continue?"
 msgstr ""
 
 #: frontend/apps/filemanager/filemanagermenu.lua:92
@@ -853,10 +856,10 @@ msgid ""
 "Table of contents"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:484
-#: frontend/apps/filemanager/filemanagersearch.lua:585
+#: frontend/apps/filemanager/filemanagersearch.lua:570
+#: frontend/apps/filemanager/filemanagersearch.lua:671
 msgid ""
-"Tags: "
+"Tags:"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:12
@@ -864,13 +867,13 @@ msgid ""
 "Text Align"
 msgstr ""
 
-#: frontend/ui/device/screen.lua:254
+#: frontend/ui/device/screen.lua:250
 msgid ""
 "This will take effect on next restart."
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:482
-#: frontend/apps/filemanager/filemanagersearch.lua:583
+#: frontend/apps/filemanager/filemanagersearch.lua:568
+#: frontend/apps/filemanager/filemanagersearch.lua:669
 msgid ""
 "Title: "
 msgstr ""
@@ -880,7 +883,7 @@ msgid ""
 "Toggle"
 msgstr ""
 
-#: frontend/apps/reader/modules/readerhighlight.lua:313
+#: frontend/apps/reader/modules/readerhighlight.lua:320
 msgid ""
 "Translate"
 msgstr ""
@@ -906,7 +909,10 @@ msgid ""
 "View Mode"
 msgstr ""
 
-#: frontend/ui/widget/dictquicklookup.lua:152
+#: frontend/apps/reader/modules/readerhighlight.lua:311
+#: frontend/apps/reader/modules/readerwikipedia.lua:28
+#: frontend/apps/reader/modules/readerwikipedia.lua:41
+#: frontend/ui/widget/dictquicklookup.lua:174
 msgid ""
 "Wikipedia"
 msgstr ""
@@ -926,17 +932,12 @@ msgid ""
 "Writing screen to "
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersetdefaults.lua:77
-msgid ""
-"Wrong settings might crash Koreader! Continue?"
-msgstr ""
-
 #: frontend/apps/filemanager/filemanagermenu.lua:40
 msgid ""
 "You have unsaved default settings. Save them now?"
 msgstr ""
 
-#: frontend/apps/filemanager/filemanagersearch.lua:152
+#: frontend/apps/filemanager/filemanagersearch.lua:155
 msgid ""
 "You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)"
 msgstr ""
@@ -1022,6 +1023,11 @@ msgid ""
 "default"
 msgstr ""
 
+#: frontend/apps/filemanager/filemanagersearch.lua:521
+msgid ""
+"found"
+msgstr ""
+
 #: frontend/ui/data/strings.lua:62
 msgid ""
 "full"
@@ -1065,6 +1071,11 @@ msgstr ""
 #: frontend/ui/data/strings.lua:35
 msgid ""
 "manual"
+msgstr ""
+
+#: frontend/apps/filemanager/filemanagersearch.lua:523
+msgid ""
+"matching"
 msgstr ""
 
 #: frontend/ui/data/strings.lua:38

@@ -249,7 +249,9 @@ function UIManager:setDirty(widget, refresh_type)
     if not refresh_type then
         refresh_type = "auto"
     end
-    self._dirty[widget] = refresh_type
+    if widget then
+        self._dirty[widget] = refresh_type
+    end
 end
 
 function UIManager:insertZMQ(zeromq)
