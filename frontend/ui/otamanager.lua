@@ -8,9 +8,9 @@ local _ = require("gettext")
 
 local OTAManager = {
     ota_servers = {
-        "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
-        "http://koreader.ak-team.com/",
-        "http://hal9k.ifsc.usp.br/koreader/",
+        "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
+        "http://koreader.ak-team.com:80/",
+        "http://hal9k.ifsc.usp.br:80/koreader/",
     },
     ota_channels = {
         "nightly",
