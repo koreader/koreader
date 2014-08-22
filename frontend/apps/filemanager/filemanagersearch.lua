@@ -8,7 +8,8 @@ local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local _ = require("gettext")
 local Font = require("ui/font")
-local ImageWidget = require("ui/widget/imagewidget")
+--local ImageWidget = require("ui/widget/imagewidget")
+local UIToolbox = require("ui/uitoolbox")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -542,7 +543,7 @@ function Search:onMenuHold(item)
             end
             item.notchecked = false
         end
-        UIManager:show(InfoMessage:new{text = item.info,image = UIManager:getPicture(item.path), image_width=240,image_height = 400})
+        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width=240,image_height = 400})
 
     end
 end
