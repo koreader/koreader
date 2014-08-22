@@ -156,13 +156,13 @@ function PdfDocument:saveHighlight(pageno, item)
     local n = #item.pboxes
     local quadpoints = ffi.new("fz_point[?]", 4*n)
     for i=1, n do
-        quadpoints[4*i-4].x = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[4*i-4].x = item.pboxes[i].x
         quadpoints[4*i-4].y = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[4*i-3].x = item.pboxes[i].x
+        quadpoints[4*i-3].x = item.pboxes[i].x + item.pboxes[i].w
         quadpoints[4*i-3].y = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[4*i-2].x = item.pboxes[i].x
+        quadpoints[4*i-2].x = item.pboxes[i].x + item.pboxes[i].w
         quadpoints[4*i-2].y = item.pboxes[i].y
-        quadpoints[4*i-1].x = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[4*i-1].x = item.pboxes[i].x
         quadpoints[4*i-1].y = item.pboxes[i].y
     end
     local page = self._document:openPage(pageno)
