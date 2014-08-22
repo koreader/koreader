@@ -8,7 +8,6 @@ local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local _ = require("gettext")
 local Font = require("ui/font")
---local ImageWidget = require("ui/widget/imagewidget")
 local UIToolbox = require("ui/uitoolbox")
 
 local calibre = "metadata.calibre"
