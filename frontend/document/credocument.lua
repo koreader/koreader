@@ -3,11 +3,13 @@ local Document = require("document/document")
 local Configurable = require("configurable")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
+local Image = require("ffi/mupdfimg")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
+local ffi = require("ffi")
 
 local CreDocument = Document:new{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
@@ -128,6 +130,16 @@ end
 
 function CreDocument:getPageCount()
     return self._document:getPages()
+end
+
+function CreDocument:getCoverPageImage()
+    self._document:loadDocument(self.file)
+    local data, size = self._document:getCoverPageImageData()
+    if data and size then
+        local image = Image:fromData(data, size)
+        ffi.C.free(data)
+        return image
+    end
 end
 
 function CreDocument:getWordFromPosition(pos)
