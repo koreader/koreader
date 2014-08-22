@@ -685,7 +685,11 @@ function Search:browse(option,run,chosen)
                 local book = libpath .. self.data[i][self.path]
                 local text
                 if option == "series" then
-                    text = string.format("%6.1f",self.data[i][self.series_index]):gsub(".0$","") .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    if self.data[i][self.series_index] == "0.0" then
+                        text = self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    else
+                        text = string.format("%6.1f",self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    end
                 else
                     text = self.data[i][self.authors] .. ": " .. self.data[i][self.title]
                 end
