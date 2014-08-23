@@ -543,9 +543,9 @@ function Search:onMenuHold(item)
             item.notchecked = false
         end
         if Screen:getWidth()/3 < 240 then
-            thumbwidth = Screen:getWidth()/3
+            local thumbwidth = Screen:getWidth()/3
         else
-            thumbwidth = 240
+            local thumbwidth = 240
         end
 	thumbheight = thumbwidth/2*3
         UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbheight})
