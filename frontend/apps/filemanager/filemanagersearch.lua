@@ -547,7 +547,8 @@ function Search:onMenuHold(item)
         else
             thumbwidth = 240
         end
-        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width=thumbwidth,image_height = 400})
+	thumbheight = thumbwidth/2*3
+        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbheight})
 
     end
 end
