@@ -6,6 +6,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
 local ImageWidget = require("ui/widget/imagewidget")
+local UIToolbox = require("ui/uitoolbox")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -59,22 +60,6 @@ local UIManager = {
     suspend_msg = nil
 }
 
-function UIManager:getRandomPicture(dir)
-    local pics = {}
-    local i = 0
-    math.randomseed( os.time() )
-    for entry in lfs.dir(dir) do
-        if lfs.attributes(dir .. entry, "mode") == "file" then
-            local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
-            if extension == "jpg" or extension == "jpeg" or extension == "png" then
-                i = i + 1
-                pics[i] = entry
-            end
-        end
-    end
-    return pics[math.random(i)]
-end
-
 function UIManager:init()
     self.event_handlers = {
         __default__ = function(input_event)
@@ -92,14 +77,22 @@ function UIManager:init()
             if (input_event == "Power" or input_event == "Suspend")
                     and not Device.screen_saver_mode then
                 if not UIManager.suspend_msg then
-                    if type(KOBO_SCREEN_SAVER) == "string" then
-                        local file = KOBO_SCREEN_SAVER
-                        if lfs.attributes(file, "mode") == "directory" then
-                            if string.sub(file,string.len(file)) ~= "/" then
-                                file = file .. "/"
+
+                    local file
+                    if KOBO_SCREEN_SAVER_LAST_BOOK then
+                        file = UIToolbox:getPicture(G_reader_settings:readSetting("lastfile"))
+                    end
+
+                    if type(KOBO_SCREEN_SAVER) == "string" or file then
+                        if not file then
+                            file = KOBO_SCREEN_SAVER
+                            if lfs.attributes(file, "mode") == "directory" then
+                                if string.sub(file,string.len(file)) ~= "/" then
+                                    file = file .. "/"
+                                end
+                                local dummy = UIToolbox:getRandomPicture(file)
+                                if dummy then file = file .. dummy end
                             end
-                            local dummy = self:getRandomPicture(file)
-                            if dummy then file = file .. dummy end
                         end
                         if lfs.attributes(file, "mode") == "file" then
                             UIManager.suspend_msg = ImageWidget:new{

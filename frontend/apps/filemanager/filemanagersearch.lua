@@ -8,6 +8,7 @@ local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local _ = require("gettext")
 local Font = require("ui/font")
+local UIToolbox = require("ui/uitoolbox")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -541,7 +542,8 @@ function Search:onMenuHold(item)
             end
             item.notchecked = false
         end
-        UIManager:show(InfoMessage:new{text = item.info})
+        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width=240,image_height = 400})
+
     end
 end
 
@@ -683,7 +685,11 @@ function Search:browse(option,run,chosen)
                 local book = libpath .. self.data[i][self.path]
                 local text
                 if option == "series" then
-                    text = string.format("%6.1f",self.data[i][self.series_index]):gsub(".0$","") .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    if self.data[i][self.series_index] == "0.0" then
+                        text = self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    else
+                        text = string.format("%6.1f",self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                    end
                 else
                     text = self.data[i][self.authors] .. ": " .. self.data[i][self.title]
                 end
