@@ -12,7 +12,7 @@ function UIToolbox:getPicture(file)
     local function check_extension(cover)
         if cover then
             local itype = string.lower(string.match(cover, ".+%.([^.]+)") or "")
-            if not (itype == "png" or itype == "jpg" or itype == "jpeg" or itype == "tiff") then
+            if not (itype == "png" or itype == "jpg" or itype == "jpeg") then
                 cover = nil
             end
          end
@@ -70,40 +70,63 @@ function UIToolbox:getPicture(file)
         return check_extension(cover)
     end
     
-    local cover
-    if file then
-        pcall(lfs.mkdir("temp"))
-        pcall(os.execute("rm -rf " .. epub_folder))
-        pcall(lfs.mkdir(epub_folder))
-        pcall(os.execute("unzip \"" .. file .. "\" cover.jpeg -oq -d " .. epub_folder))
-        if io.open(epub_folder .. "/cover.jpeg","r") then                                          -- picture in main folder
-            cover = epub_folder .. "/cover.jpeg"                                                    -- found one
-        else
-            pcall(os.execute("unzip \"" .. file .. "\" \"META-INF/container.xml\" -oq -d " .. epub_folder)) -- read container.xml
-            contentopf = getValue(epub_folder .. "/META-INF/container.xml","^%s*<rootfile ","full[-]path=",true)
-            if contentopf then
-                contentpath = contentopf:match("(.*)[/][^/]+")
-                if contentpath then
-                    contentpath = contentpath .. "/"
-                else
-                    contentpath = ""
-                end
-
-                pcall(os.execute("unzip \"" .. file .. "\" \"" .. contentopf .. "\" -oq -d " .. epub_folder))  -- read content.opf
-
-                cover = try_content_opf("^%s*<meta name=\"cover\"","content=",true)  -- Make Room
-                if not cover then cover = try_content_opf('id="cover',"item href=",false) end -- Kishon
-                if not cover then cover = try_content_opf("cover","href=",true) end
-                if not cover then cover = try_content_opf("cover","=",true) end
-                if not cover then cover = try_content_opf("cover","=",false) end
-
-                if not cover then guess("jpg") end
-                if not cover then guess("jpeg") end
-                if not cover then guess("png") end
-            end
+    local function checkoldfile(cover)
+        if io.open(cover) then
+            return cover
         end
     end
-    return check_extension(cover)
+    
+    local cover
+
+    local oldfile = "temp/" .. file:gsub("/","#") .. "."
+
+    cover = checkoldfile(oldfile .. "jpg")
+    if not cover then cover = checkoldfile(oldfile .. "jpeg") end
+    if not cover then cover = checkoldfile(oldfile .. "png") end
+
+    if not cover then
+
+        if file then
+            pcall(lfs.mkdir("temp"))
+            pcall(os.execute("rm -rf " .. epub_folder))
+            pcall(lfs.mkdir(epub_folder))
+            pcall(os.execute("unzip \"" .. file .. "\" cover.jpeg -oq -d " .. epub_folder))
+            if io.open(epub_folder .. "/cover.jpeg","r") then                                          -- picture in main folder
+                cover = epub_folder .. "/cover.jpeg"                                                    -- found one
+            else
+                pcall(os.execute("unzip \"" .. file .. "\" \"META-INF/container.xml\" -oq -d " .. epub_folder)) -- read container.xml
+                contentopf = getValue(epub_folder .. "/META-INF/container.xml","^%s*<rootfile ","full[-]path=",true)
+                if contentopf then
+                    contentpath = contentopf:match("(.*)[/][^/]+")
+                    if contentpath then
+                        contentpath = contentpath .. "/"
+                    else
+                        contentpath = ""
+                    end
+                    pcall(os.execute("unzip \"" .. file .. "\" \"" .. contentopf .. "\" -oq -d " .. epub_folder))  -- read content.opf
+    
+                    cover = try_content_opf("^%s*<meta name=\"cover\"","content=",true)  -- Make Room
+                    if not cover then cover = try_content_opf('id="cover',"item href=",false) end -- Kishon
+                    if not cover then cover = try_content_opf("cover","href=",true) end
+                    if not cover then cover = try_content_opf("cover","=",true) end
+                    if not cover then cover = try_content_opf("cover","=",false) end
+    
+                    if not cover then guess("jpg") end
+                    if not cover then guess("jpeg") end
+                    if not cover then guess("png") end
+                end
+            end
+        end
+        cover=check_extension(cover)
+        if cover then
+            oldfile = oldfile .. string.lower(string.match(cover, ".+%.([^.]+)"))
+            pcall(os.execute('mv "' .. cover .. '" "' .. oldfile .. '"'))
+            cover = oldfile
+            pcall(os.execute('find temp/#mnt#* -mtime +30 -exec rm -v {} \\;'))
+        end
+        pcall(os.execute("rm -rf " .. epub_folder))
+    end
+    return cover
 end
 
 function UIToolbox:getRandomPicture(dir)
