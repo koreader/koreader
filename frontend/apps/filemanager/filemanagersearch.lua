@@ -35,7 +35,7 @@ local Search = InputContainer:new{
     lastsearch = nil,
     use_own_metadata_file = false,
     metafile_1 = nil,
-    metafile_2 = nil,    
+    metafile_2 = nil,
 }
 
 local function __genOrderedIndex( t )
@@ -163,7 +163,7 @@ function Search:getCalibre()
     end
 -- check 2nd file
     local dummy
- 
+
     if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
         SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"
     end
@@ -272,7 +272,7 @@ function Search:ShowSearch()
             UIManager:show(InfoMessage:new{text = self.error .. _( " A search for a " .. calibre .. " file was not successful!"),})
         end
     end
-    
+
 end
 
 function Search:init()
@@ -373,13 +373,13 @@ function Search:find(option)
                 end
                 self.libraries[i] = tonumber(line)
                 line = g:read()
-                
+
                 local dummy = ""
                 if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
                 if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
                 if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
                 if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
-                    dummy = dummy .. self.data[i][self.series] .. "\n" 
+                    dummy = dummy .. self.data[i][self.series] .. "\n"
                     self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                 end
                 if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
@@ -429,7 +429,7 @@ function Search:find(option)
                     if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
                     if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
                     if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
-                        dummy = dummy .. self.data[i][self.series] .. "\n" 
+                        dummy = dummy .. self.data[i][self.series] .. "\n"
                         self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                     end
                     if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
@@ -488,7 +488,7 @@ function Search:find(option)
                 if not line and firstrun then
                     if f ~= nil then f:close() end
                     firstrun = false
-                    
+
                     if self.metafile_2 then
                         f = io.open(self.metafile_2)
                         line = f:read()
@@ -514,7 +514,7 @@ function Search:find(option)
             self:showresults()
         else
             self:browse(option,1)
-        end        
+        end
     else
         if option == "find" then
             dummy = _("No match for") .. " " .. self.search_value
@@ -524,7 +524,7 @@ function Search:find(option)
                 dummy = dummy .. " " .. _("matching") .. " " .. self.search_value
             end
             dummy = dummy .. "!"
-        end            
+        end
         UIManager:show(InfoMessage:new{text = dummy})
     end
 end
@@ -542,12 +542,8 @@ function Search:onMenuHold(item)
             end
             item.notchecked = false
         end
-        if Screen:getWidth()/3 < 240 then
-            local thumbwidth = Screen:getWidth()/3
-        else
-            local thumbwidth = 240
-        end
-	thumbheight = thumbwidth/2*3
+        local thumbwidth = math.min(240, Screen:getWidth()/3)
+        local thumbheight = thumbwidth/2*3
         UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbheight})
 
     end
@@ -629,7 +625,7 @@ function Search:browse(option,run,chosen)
                 self:find(self.lastsearch)
             end
         end
-           
+
     end
     local upsearch
     local dummy
@@ -641,7 +637,7 @@ function Search:browse(option,run,chosen)
 
     if run == 1 then
         self.results = {}
-        if option == "series" then  
+        if option == "series" then
             for v,n in orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
@@ -667,7 +663,7 @@ function Search:browse(option,run,chosen)
                     })
                 end
             end
-        end    
+        end
     else
         restart_me = true
         self.results = {}
@@ -713,7 +709,7 @@ function Search:browse(option,run,chosen)
         end
     end
     local dummy = ""
-    
+
     if run == 1 then
         dummy = _("Browse") .. " " .. option
     else
