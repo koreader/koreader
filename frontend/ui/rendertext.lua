@@ -48,7 +48,7 @@ local function utf8Chars(input)
             end
             for i = pos+1, pos + bytes_left do
                 value = string.byte(input, i)
-                if bit.band(value, 0xC0) == 0x80 then
+                if value and bit.band(value, 0xC0) == 0x80 then
                     glyph = bit.bor(bit.lshift(glyph, 6), bit.band(value, 0x3F))
                 else
                     return i+1, 0xFFFD, "\xFF\xFD"
