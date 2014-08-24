@@ -1,10 +1,11 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Cache = require("cache")
+local ConfirmBox = require("ui/widget/confirmbox")
+local DocSettings = require("docsettings")
+local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
-local DocSettings = require("docsettings")
 local Event = require("ui/event")
-local UIManager = require("ui/uimanager")
+local Cache = require("cache")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -56,8 +57,6 @@ local ReaderUI = InputContainer:new{
     -- the document interface
     document = nil,
 
-    -- initial page or percent inside document on opening
-    start_pos = nil,
     -- password for document unlock
     password = nil,
 
@@ -307,14 +306,36 @@ function ReaderUI:onFlushSettings()
     return true
 end
 
+function ReaderUI:closeDocument()
+    self.document:close()
+    self.document = nil
+end
+
+function ReaderUI:onCloseDocument()
+    if self.document:isEdited() then
+        UIManager:show(ConfirmBox:new{
+            text = _("Do you want to save this document?"),
+            ok_text = _("Yes"),
+            cancel_text = _("No"),
+            ok_callback = function()
+                self:closeDocument()
+            end,
+            cancel_callback = function()
+                self.document:discardChange()
+                self:closeDocument()
+            end,
+        })
+    else
+        self:closeDocument()
+    end
+end
+
 function ReaderUI:onClose()
     DEBUG("closing reader")
     self:saveSettings()
-    self:handleEvent(Event:new("CloseReader"))
     if self.document ~= nil then
-        self.document:close()
-        self.document = nil
-        self.start_pos = nil
+        DEBUG("closing document")
+        self:onCloseDocument()
     end
     UIManager:close(self.dialog)
     -- serialize last used items for later launch
