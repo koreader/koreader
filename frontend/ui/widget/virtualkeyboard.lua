@@ -203,11 +203,6 @@ function VirtualKeyboard:init()
         }
     }
     self:initLayout(self.layout)
-    if GLOBAL_INPUT_VALUE then
-        for i = 1, string.len(GLOBAL_INPUT_VALUE) do
-            self:addChar(string.sub(GLOBAL_INPUT_VALUE,i,i))
-        end
-    end
 end
 
 function VirtualKeyboard:initLayout(layout)
