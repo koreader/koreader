@@ -70,4 +70,13 @@ function NetworkMgr:promptWifiOff()
     })
 end
 
+function NetworkMgr:getWifiStatus()
+    local wifi_status = os.execute("ping -c3 8.8.8.8")
+    if wifi_status == 2 then
+        return false
+    else
+        return true
+    end
+end
+
 return NetworkMgr

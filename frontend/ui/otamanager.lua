@@ -65,10 +65,6 @@ function OTAManager:checkUpdate()
         url = ota_zsync_file,
         sink = ltn12.sink.file(io.open(local_zsync_file, "w"))}
     -- prompt users to turn on Wifi if network is unreachable
-    if h == nil then
-        NetworkMgr:promptWifiOn()
-        return
-    end
     if c ~= 200 then return end
     -- parse OTA package version
     local ota_package = nil
@@ -143,6 +139,10 @@ function OTAManager:getOTAMenuTable()
             {
                 text = _("Check update"),
                 callback = function()
+                    if NetworkMgr:getWifiStatus() == false then
+                        NetworkMgr:promptWifiOn()
+                        return
+                    end 
                     local ota_version = OTAManager:checkUpdate()
                     if ota_version == 0 then
                         UIManager:show(InfoMessage:new{
