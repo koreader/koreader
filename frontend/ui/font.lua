@@ -83,7 +83,8 @@ function Font:_readList(target, dir, effective_dir)
             self:_readList(target, dir.."/"..f, effective_dir..f.."/")
         else
             local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-            if file_type == "ttf" or file_type == "cff" or file_type == "otf" then
+            if file_type == "ttf" or file_type == "ttc"
+                or file_type == "cff" or file_type == "otf" then
                 table.insert(target, effective_dir..f)
             end
         end
