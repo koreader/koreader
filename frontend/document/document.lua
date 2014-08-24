@@ -51,6 +51,9 @@ local Document = {
 
     -- flag to show that the document needs to be unlocked by a password
     is_locked = false,
+
+    -- flag to show that the document is edited and needs to write back to disk
+    is_edited = false,
 }
 
 function Document:new(o)
@@ -83,6 +86,17 @@ function Document:close()
         self.is_open = false
         self._document:close()
     end
+end
+
+-- check if document is edited and needs to write to disk
+function Document:isEdited()
+    return self.is_edited
+end
+
+-- discard change will set is_edited flag to false and implematation of Document
+-- should check the is_edited flag before writing document
+function Document:discardChange()
+    self.is_edited = false
 end
 
 -- this might be overridden by a document implementation
