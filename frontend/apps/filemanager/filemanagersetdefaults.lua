@@ -3,11 +3,13 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
+local Util = require("ffi/util")
 
 local SetDefaults = InputContainer:new{
     defaults_name = {},
@@ -24,54 +26,6 @@ local function settype(b,t)
     else
         return b
     end
-end
-
-
-local function __genOrderedIndex( t )
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-    local orderedIndex = {}
-    for key in pairs(t) do
-        table.insert( orderedIndex, key )
-    end
-    table.sort( orderedIndex )
-    return orderedIndex
-end
-
-local function orderedNext(t, state)
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-
-    -- Equivalent of the next function, but returns the keys in the alphabetic
-    -- order. We use a temporary ordered key table that is stored in the
-    -- table being iterated.
-
-    if state == nil then
-        -- the first time, generate the index
-        t.__orderedIndex = __genOrderedIndex( t )
-        key = t.__orderedIndex[1]
-        return key, t[key]
-    end
-    -- fetch the next value
-    key = nil
-    for i = 1,table.getn(t.__orderedIndex) do
-        if t.__orderedIndex[i] == state then
-            key = t.__orderedIndex[i+1]
-        end
-    end
-
-    if key then
-        return key, t[key]
-    end
-
-    -- no more value to return, cleanup
-    t.__orderedIndex = nil
-    return
-end
-
-local function orderedPairs(t)
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-    -- Equivalent of the pairs() function on tables. Allows to iterate
-    -- in order
-    return orderedNext, t, nil
 end
 
 local function getTableValues(t,dtap)
@@ -108,7 +62,7 @@ function SetDefaults:init()
 
     if not self.already_read then
         local i = 0
-        for n,v in orderedPairs(_G) do
+        for n,v in Util.orderedPairs(_G) do
             if (not string.find(tostring(v), "<")) and (not string.find(tostring(v), ": ")) and string.sub(n,1,1) ~= "_" and string.upper(n) == n and n ~= "LIBRARY_PATH" then
                 i = i + 1
                 self.defaults_name[i] = n
@@ -198,50 +152,107 @@ function SetDefaults:init()
                 end
             })
         else
-            table.insert(self.results, {
-                text = self:build_setting(i),
-                callback = function()
-                    self.set_dialog = InputDialog:new{
-                        title = self.defaults_name[i] .. ":",
-                        input = tostring(self.defaults_value[i]),
-                        buttons = {
-                            {
+            if type(_G[self.defaults_name[i]]) == "table" then
+                table.insert(self.results, {
+                    text = self:build_setting(i),
+                    callback = function()
+                        self.set_dialog = MultiInputDialog:new{
+                            title = self.defaults_name[i] .. ":",
+                            field = _G[self.defaults_name[i]],
+                            buttons = {
                                 {
-                                    text = _("Cancel"),
-                                    enabled = true,
-                                    callback = function()
-                                        self:close()
-                                        UIManager:show(menu_container)
-                                    end,
-                                },
-                                {
-                                    text = _("OK"),
-                                    enabled = true,
-                                    callback = function()
-                                        if type(_G[self.defaults_name[i]]) == "table" then
-                                            self.defaults_value[i] = self.set_dialog:getInputText()
-                                        elseif _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
-                                            _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
-                                            self.defaults_value[i] = _G[self.defaults_name[i]]
-                                        end
-                                        settings_changed = true
-                                        self.changed[i] = true
-                                        self.results[i].text = self:build_setting(i)
-                                        self:close()
-                                        self.defaults_menu:swithItemTable("Defaults", self.results, i)
-                                        UIManager:show(menu_container)
-                                    end,
+                                    {
+                                        text = _("Cancel"),
+                                        enabled = true,
+                                        callback = function()
+                                            self:close()
+                                            UIManager:show(menu_container)
+                                        end,
+                                    },
+                                    {
+                                        text = _("OK"),
+                                        enabled = true,
+                                        callback = function()
+
+                                            _G[self.defaults_name[i]] = MultiInputDialog:getCredential()
+
+                                            self.defaults_value[i] = "{"
+                                            for k,v in Util.orderedPairs(_G[self.defaults_name[i]]) do
+                                                if tonumber(k) then
+                                                    self.defaults_value[i] = self.defaults_value[i] .. v .. ", "
+                                                else
+                                                    self.defaults_value[i] = self.defaults_value[i] .. k .. " = " .. v .. ", "
+                                                end
+                                            end
+                                            self.defaults_value[i] = self.defaults_value[i]:sub(1,self.defaults_value[i]:len()-2) .. "}"
+
+                                            settings_changed = true
+                                            self.changed[i] = true
+                                            
+                                            self.results[i].text = self:build_setting(i)
+
+                                            self:close()
+                                            self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                            UIManager:show(menu_container)
+                                        end,
+                                    },
                                 },
                             },
-                        },
-                        input_type = settings_type,
-                        width = Screen:getWidth() * 0.95,
-                        height = Screen:getHeight() * 0.2,
-                    }
-                    self.set_dialog:onShowKeyboard()
-                    UIManager:show(self.set_dialog)
-                end
-            })
+                            input_type = "number",
+                            width = Screen:getWidth() * 0.95,
+                            height = Screen:getHeight() * 0.2,
+                        }
+                        self.set_dialog:onShowKeyboard()
+                        UIManager:show(self.set_dialog)
+                    end
+                })
+
+            else
+                table.insert(self.results, {
+                    text = self:build_setting(i),
+                    callback = function()
+                        self.set_dialog = InputDialog:new{
+                            title = self.defaults_name[i] .. ":",
+                            input = tostring(self.defaults_value[i]),
+                            buttons = {
+                                {
+                                    {
+                                        text = _("Cancel"),
+                                        enabled = true,
+                                        callback = function()
+                                            self:close()
+                                            UIManager:show(menu_container)
+                                        end,
+                                    },
+                                    {
+                                        text = _("OK"),
+                                        enabled = true,
+                                        callback = function()
+                                            if type(_G[self.defaults_name[i]]) == "table" then
+                                                self.defaults_value[i] = self.set_dialog:getInputText()
+                                            elseif _G[self.defaults_name[i]] ~= settype(self.set_dialog:getInputText(),settings_type) then
+                                                _G[self.defaults_name[i]] = settype(self.set_dialog:getInputText(),settings_type)
+                                                self.defaults_value[i] = _G[self.defaults_name[i]]
+                                            end
+                                            settings_changed = true
+                                            self.changed[i] = true
+                                            self.results[i].text = self:build_setting(i)
+                                            self:close()
+                                            self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                            UIManager:show(menu_container)
+                                        end,
+                                    },
+                                },
+                            },
+                            input_type = settings_type,
+                            width = Screen:getWidth() * 0.95,
+                            height = Screen:getHeight() * 0.2,
+                        }
+                        self.set_dialog:onShowKeyboard()
+                        UIManager:show(self.set_dialog)
+                    end
+                })
+            end            
         end
     end
     self.defaults_menu:swithItemTable("Defaults", self.results)
