@@ -39,8 +39,9 @@ function FileChooser:genItemTableFromPath(path)
     local files = {}
 
     -- lfs.dir directory without permission will give error
-    if pcall(lfs.dir, self.path) then
-        for f in lfs.dir(self.path) do
+    local ok, iter, dir_obj = pcall(lfs.dir, self.path)
+    if ok then
+        for f in iter, dir_obj do
             if self.show_hidden or not string.match(f, "^%.[^.]") then
                 local filename = self.path.."/"..f
                 local filemode = lfs.attributes(filename, "mode")
