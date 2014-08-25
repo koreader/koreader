@@ -9,6 +9,7 @@ local Screen = require("ui/screen")
 local _ = require("gettext")
 local Font = require("ui/font")
 local UIToolbox = require("ui/uitoolbox")
+local Util = require("ffi/util")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -27,7 +28,6 @@ local Search = InputContainer:new{
     count = 0,
     data = {},
     results = {},
-    libraries = {},
     browse_tags = {},
     browse_series = {},
     error = nil,
@@ -37,73 +37,6 @@ local Search = InputContainer:new{
     metafile_1 = nil,
     metafile_2 = nil,
 }
-
-local function __genOrderedIndex( t )
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-    local orderedIndex = {}
-    for key in pairs(t) do
-        table.insert( orderedIndex, key )
-    end
-    table.sort( orderedIndex )
-    return orderedIndex
-end
-
-local function orderedNext(t, state)
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-
-    -- Equivalent of the next function, but returns the keys in the alphabetic
-    -- order. We use a temporary ordered key table that is stored in the
-    -- table being iterated.
-
-    if state == nil then
-        -- the first time, generate the index
-        t.__orderedIndex = __genOrderedIndex( t )
-        key = t.__orderedIndex[1]
-        return key, t[key]
-    end
-    -- fetch the next value
-    key = nil
-    for i = 1,table.getn(t.__orderedIndex) do
-        if t.__orderedIndex[i] == state then
-            key = t.__orderedIndex[i+1]
-        end
-    end
-
-    if key then
-        return key, t[key]
-    end
-
-    -- no more value to return, cleanup
-    t.__orderedIndex = nil
-    return
-end
-
-local function orderedPairs(t)
--- this function is taken from http://lua-users.org/wiki/SortedIteration
-    -- Equivalent of the pairs() function on tables. Allows to iterate
-    -- in order
-    return orderedNext, t, nil
-end
-
-local function unichar (value)
--- this function is taken from dkjson
--- http://dkolf.de/src/dkjson-lua.fsl/
-    local floor = math.floor
-    local strchar = string.char
-    if value < 0 then
-        return nil
-    elseif value <= 0x007f then
-        return string.char (value)
-    elseif value <= 0x07ff then
-        return string.char (0xc0 + floor(value/0x40),0x80 + (floor(value) % 0x40))
-    elseif value <= 0xffff then
-        return string.char (0xe0 + floor(value/0x1000), 0x80 + (floor(value/0x40) % 0x40), 0x80 + (floor(value) % 0x40))
-    elseif value <= 0x10ffff then
-        return string.char (0xf0 + floor(value/0x40000), 0x80 + (floor(value/0x1000) % 0x40), 0x80 + (floor(value/0x40) % 0x40), 0x80 + (floor(value) % 0x40))
-    else
-        return nil
-    end
-end
 
 local function findcalibre(root)
     local t = nil
@@ -307,7 +240,7 @@ function Search:find(option)
             s=string.sub(s,n,string.len(s)-j)
         end
 
-        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return unichar(tonumber(w, 16)) end)
+        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return Util.unichar(tonumber(w, 16)) end)
 
         return s
     end
@@ -363,59 +296,67 @@ function Search:find(option)
         if self.use_own_metadata_file then
             g = io.open(koreaderfile,"r")
             line = g:read()
-            while line do
-
-                for j = 1,9 do
-                    self.data[i][j] = line
-                    line = g:read()
-                end
-                self.libraries[i] = tonumber(line)
+            if line ~= "#metadata.Koreader Version 1.1" then
+                self.use_own_metadata_file =  false
+                g:close()
+            else
                 line = g:read()
+            end
+            if self.use_own_metadata_file then
+                while line do
 
-                local dummy = ""
-                if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
-                if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
-                if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
-                if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
-                    dummy = dummy .. self.data[i][self.series] .. "\n"
-                    self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
-                end
-                if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
-                if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
-
-                for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                    if j~="\t" then
-                        self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
+                    for j = 1,9 do
+                        self.data[i][j] = line
+                        line = g:read()
                     end
-                end
 
-                if upsearch ~= "" then
-                    if string.find(dummy,upsearch,nil,true) then
-                        i = i + 1
+                    local dummy = ""
+                    if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
+                    if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
+                    if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
+                    if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
+                        dummy = dummy .. self.data[i][self.series] .. "\n"
+                        self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                     end
-                else
-                    if option == "series" then
-                        if self.browse_series[self.data[i][self.series]] then
+                    if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
+                    if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
+
+                    for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
+                        if j~="\t" then
+                            self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
+                        end
+                    end
+
+                    if upsearch ~= "" then
+                        if string.find(dummy,upsearch,nil,true) then
                             i = i + 1
                         end
-                    elseif option == "tags" then
-                        local found = false
-                        for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                            if j~="\t" and self.browse_tags[string.sub(j,2)] then
-                                found = true
+                    else
+                        if option == "series" then
+                            if self.browse_series[self.data[i][self.series]] then
+                                i = i + 1
+                            end
+                        elseif option == "tags" then
+                            local found = false
+                            for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
+                                if j~="\t" and self.browse_tags[string.sub(j,2)] then
+                                    found = true
+                                end
+                            end
+                            if found then
+                                i = i + 1
                             end
                         end
-                        if found then
-                            i = i + 1
-                        end
                     end
+                    self.data[i] = {"-","-","-","-","-","-","-","-","-"}
                 end
-                self.data[i] = {"-","-","-","-","-","-","-","-","-"}
+                g.close()
             end
-            g.close()
-        else
+        end
+        if not self.use_own_metadata_file then
             f = io.open(self.metafile_1)
             g = io.open(koreaderfile,"w")
+            g:write("#metadata.Koreader Version 1.1\n")
 
             line = f:read()
             while line do
@@ -433,16 +374,9 @@ function Search:find(option)
                     if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
                     if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
 
-                    if firstrun then
-                        self.libraries[i] = 1
-                    else
-                        self.libraries[i] = 2
-                    end
-
                     for j = 1,9 do
                         g:write(self.data[i][j] .. "\n")
                     end
-                    g:write(tostring(self.libraries[i]) .. "\n")
 
                     if upsearch ~= "" then
                         if string.find(dummy,upsearch,nil,true) then
@@ -476,6 +410,11 @@ function Search:find(option)
                     self.data[i][self.title] = ReplaceHexChars(line,15,3)
                 elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
                     self.data[i][self.path] = ReplaceHexChars(line,15,3)
+                    if firstrun then
+                        self.data[i][self.path] = SEARCH_LIBRARY_PATH .. self.data[i][self.path]
+                    else
+                        self.data[i][self.path] = SEARCH_LIBRARY_PATH2 .. self.data[i][self.path]
+                    end
                 elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
                     self.data[i][self.series] = ReplaceHexChars(line,16,3)
                 elseif string.sub(line,1,18) == "    \"series_index\"" and line ~= "    \"series_index\": null, " then -- SERIES_INDEX
@@ -574,17 +513,11 @@ function Search:showresults()
                 dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
             end
             dummy = dummy .. "\n \n" .. _("Path: ")
-            local libpath
-            if self.libraries[i] == 1 then
-                libpath = SEARCH_LIBRARY_PATH
-            else
-                libpath = SEARCH_LIBRARY_PATH2
-            end
-            local book = libpath .. self.data[i][self.path]
+            local book = self.data[i][self.path]
             table.insert(self.results, {
                info = dummy,
                notchecked = true,
-               path = libpath .. self.data[i][self.path],
+               path = self.data[i][self.path],
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
                    showReaderUI(book)
@@ -635,7 +568,7 @@ function Search:browse(option,run,chosen)
     if run == 1 then
         self.results = {}
         if option == "series" then
-            for v,n in orderedPairs(self.browse_series) do
+            for v,n in Util.orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
@@ -648,7 +581,7 @@ function Search:browse(option,run,chosen)
                 end
            end
         else
-            for v,n in orderedPairs(self.browse_tags) do
+            for v,n in Util.orderedPairs(self.browse_tags) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
@@ -675,13 +608,7 @@ function Search:browse(option,run,chosen)
                     dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
                 end
                 dummy = dummy .. "\n \n" .. _("Path: ")
-                local libpath
-                if self.libraries[i] == 1 then
-                    libpath = SEARCH_LIBRARY_PATH
-                else
-                    libpath = SEARCH_LIBRARY_PATH2
-                end
-                local book = libpath .. self.data[i][self.path]
+                local book = self.data[i][self.path]
                 local text
                 if option == "series" then
                     if self.data[i][self.series_index] == "0.0" then
@@ -696,7 +623,7 @@ function Search:browse(option,run,chosen)
                    text = text,
                    info = dummy,
                    notchecked = true,
-                   path = libpath .. self.data[i][self.path],
+                   path = self.data[i][self.path],
                    callback = function()
                        showReaderUI(book)
                    end
