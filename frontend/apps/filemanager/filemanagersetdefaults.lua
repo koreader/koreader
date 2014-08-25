@@ -109,7 +109,7 @@ function SetDefaults:init()
     if not self.already_read then
         local i = 0
         for n,v in orderedPairs(_G) do
-            if (not string.find(tostring(v), "<")) and (not string.find(tostring(v), ": ")) and string.sub(n,1,1) ~= "_" and string.upper(n) == n and n ~= "GLOBAL_INPUT_VALUE" and n ~= "LIBRARY_PATH" then
+            if (not string.find(tostring(v), "<")) and (not string.find(tostring(v), ": ")) and string.sub(n,1,1) ~= "_" and string.upper(n) == n and n ~= "LIBRARY_PATH" then
                 i = i + 1
                 self.defaults_name[i] = n
                 self.defaults_value[i] = v
@@ -146,9 +146,9 @@ function SetDefaults:init()
             table.insert(self.results, {
                 text = self:build_setting(i),
                 callback = function()
-                    GLOBAL_INPUT_VALUE = tostring(self.defaults_value[i])
                     self.set_dialog = InputDialog:new{
                         title = self.defaults_name[i] .. ":",
+                        input = tostring(self.defaults_value[i]),
                         buttons = {
                             {
                                 {
@@ -193,7 +193,6 @@ function SetDefaults:init()
                         width = Screen:getWidth() * 0.95,
                         height = Screen:getHeight() * 0.2,
                     }
-                    GLOBAL_INPUT_VALUE = nil
                     self.set_dialog:onShowKeyboard()
                     UIManager:show(self.set_dialog)
                 end
@@ -202,9 +201,9 @@ function SetDefaults:init()
             table.insert(self.results, {
                 text = self:build_setting(i),
                 callback = function()
-                    GLOBAL_INPUT_VALUE = tostring(self.defaults_value[i])
                     self.set_dialog = InputDialog:new{
                         title = self.defaults_name[i] .. ":",
+                        input = tostring(self.defaults_value[i]),
                         buttons = {
                             {
                                 {
@@ -239,7 +238,6 @@ function SetDefaults:init()
                         width = Screen:getWidth() * 0.95,
                         height = Screen:getHeight() * 0.2,
                     }
-                    GLOBAL_INPUT_VALUE = nil
                     self.set_dialog:onShowKeyboard()
                     UIManager:show(self.set_dialog)
                 end

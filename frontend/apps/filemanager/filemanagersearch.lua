@@ -200,10 +200,10 @@ end
 
 function Search:ShowSearch()
     if self.metafile_1 ~= nil then
-        GLOBAL_INPUT_VALUE = self.search_value
-        local dummy = GLOBAL_INPUT_VALUE
+        local dummy = self.search_value
         self.search_dialog = InputDialog:new{
             title = _("Search Books"),
+            input = self.search_value,
             buttons = {
                 {
                     {
@@ -263,8 +263,6 @@ function Search:ShowSearch()
             width = Screen:getWidth() * 0.8,
             height = Screen:getHeight() * 0.2,
         }
-
-        GLOBAL_INPUT_VALUE = nil
         self.search_dialog:onShowKeyboard()
         UIManager:show(self.search_dialog)
     else
@@ -543,8 +541,7 @@ function Search:onMenuHold(item)
             item.notchecked = false
         end
         local thumbwidth = math.min(240, Screen:getWidth()/3)
-        local thumbheight = thumbwidth/2*3
-        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbheight})
+        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbwidth/2*3})
 
     end
 end

@@ -4,6 +4,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
 local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
+local DEBUG = require("dbg")
 local ffi = require("ffi")
 ffi.cdef[[
 typedef struct fz_point_s fz_point;
@@ -46,7 +47,6 @@ local PdfDocument = Document:new{
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
-    annot_revision = 0,
 }
 
 function PdfDocument:init()
@@ -152,7 +152,7 @@ function PdfDocument:getPageLinks(pageno)
 end
 
 function PdfDocument:saveHighlight(pageno, item)
-    self.annot_revision = self.annot_revision + 1
+    self.is_edited = true
     local n = #item.pboxes
     local quadpoints = ffi.new("fz_point[?]", 4*n)
     for i=1, n do
@@ -179,11 +179,12 @@ function PdfDocument:saveHighlight(pageno, item)
 end
 
 function PdfDocument:writeDocument()
+    DEBUG("writing document to", self.file)
     self._document:writeDocument(self.file)
 end
 
 function PdfDocument:close()
-    if self.annot_revision ~= 0 then
+    if self.is_edited then
         self:writeDocument()
     end
     Document.close(self)
