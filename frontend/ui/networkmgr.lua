@@ -23,6 +23,7 @@ local function koboEnableWifi(toggle)
         local path = "/etc/wpa_supplicant/wpa_supplicant.conf"
         os.execute("insmod /drivers/ntx508/wifi/sdio_wifi_pwr.ko 2>/dev/null")
         os.execute("insmod /drivers/ntx508/wifi/dhd.ko")
+        os.execute("sleep 1")
         os.execute("ifconfig eth0 up")
         os.execute("wlarm_le -i eth0 up")
         os.execute("wpa_supplicant -s -i eth0 -c "..path.." -C /var/run/wpa_supplicant -B")
