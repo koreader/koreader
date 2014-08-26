@@ -6,6 +6,7 @@ local BasePowerD = require("ui/device/basepowerd")
 local lfs = require("libs/libkoreader-lfs")
 local Screen = require("ui/device/screen")
 local util = require("ffi/util")
+local DEBUG = require("dbg")
 local ffi = require("ffi")
 
 local Device = {
@@ -201,26 +202,54 @@ function Device:outofScreenSaver()
     self.screen_saver_mode = false
 end
 
-function Device:prepareSuspend() -- currently only used for kobo devices
+function Device:onPowerEvent(ev)
+    local Screensaver = require("ui/screensaver")
+    local UIManager = require("ui/uimanager")
+    if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
+        DEBUG("Suspending...")
+        Screensaver:show()
+        self:prepareSuspend()
+        UIManager:scheduleIn(2, function() self:Suspend() end)
+    elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
+        DEBUG("Resuming...")
+        self:Resume()
+        Screensaver:close()
+    end
+end
+
+function Device:prepareSuspend()
     local powerd = self:getPowerDevice()
-    if powerd ~= nil then
+    if powerd.fl ~= nil then
+        -- in no case should the frontlight be turned on in suspend mode
         powerd.fl:sleep()
     end
     self.screen:refresh(0)
     self.screen_saver_mode = true
 end
 
-function Device:Suspend() -- currently only used for kobo devices
-    os.execute("./suspend.sh")
+function Device:Suspend()
+    if self:isKobo() then
+        os.execute("./suspend.sh")
+    end
 end
 
-function Device:Resume() -- currently only used for kobo devices
-    os.execute("echo 0 > /sys/power/state-extended")
+function Device:Resume()
+    if self:isKobo() then
+        os.execute("echo 0 > /sys/power/state-extended")
+    end
     self.screen:refresh(1)
     local powerd = self:getPowerDevice()
-    if powerd ~= nil then
+    if powerd.fl ~= nil then
         powerd.fl:restore()
     end
+    -- FIXME: this conflicts with powerd.fl:restore
+    --[[
+    if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+        if powerd then
+            powerd:setIntensity(math.max(math.min(KOBO_LIGHT_ON_START,100),0))
+        end
+    end
+    --]]
     self.screen_saver_mode = false
 end
 
