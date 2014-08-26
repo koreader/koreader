@@ -514,15 +514,7 @@ function Search:find(option)
             self:browse(option,1)
         end
     else
-        if option == "find" then
-            dummy = _("No match for") .. " " .. self.search_value
-        else
-            dummy = _("No") .. " " .. option .. " " .. _("found")
-            if string.len(self.search_value) > 0 then
-                dummy = dummy .. " " .. _("matching") .. " " .. self.search_value
-            end
-            dummy = dummy .. "!"
-        end
+        dummy = _("No match for") .. " " .. self.search_value
         UIManager:show(InfoMessage:new{text = dummy})
     end
 end
