@@ -9,7 +9,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local Util = require("ffi/util")
+local util = require("ffi/util")
 
 local InfoMessage = require("ui/widget/infomessage")
 local input_field
@@ -32,7 +32,7 @@ function MultiInputDialog:init()
 
     input_field = {}
     local k = 0
-    for i,j in Util.orderedPairs(self.field) do
+    for i,j in util.orderedPairs(self.field) do
         k = k + 1
         input_field[k] = InputText:new{
             text = tostring(i) .. " = " .. tostring(j),
