@@ -2,14 +2,14 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
+local Screensaver = require("ui/screensaver")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
-local _ = require("gettext")
-local Font = require("ui/font")
-local UIToolbox = require("ui/uitoolbox")
 local util = require("ffi/util")
+local Font = require("ui/font")
+local _ = require("gettext")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -472,7 +472,7 @@ function Search:onMenuHold(item)
             item.notchecked = false
         end
         local thumbwidth = math.min(240, Screen:getWidth()/3)
-        UIManager:show(InfoMessage:new{text = item.info,image = UIToolbox:getPicture(item.path), image_width = thumbwidth,image_height = thumbwidth/2*3})
+        UIManager:show(InfoMessage:new{text = item.info,image = Screensaver:getCoverPicture(item.path), image_width = thumbwidth,image_height = thumbwidth/2*3})
 
     end
 end

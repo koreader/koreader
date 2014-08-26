@@ -205,6 +205,7 @@ function Input:initKeyMap()
         [64] = "Alt", -- left alt
         [65] = " ", -- Spacebar
         [67] = "Menu", -- F[1]
+        [68] = "Power", -- F[2]
         [72] = "LPgBack", -- F[6]
         [73] = "LPgFwd", -- F[7]
         [95] = "VPlus", -- F[11]
@@ -237,6 +238,7 @@ function Input:initKeyMap()
         [226] = "Alt", -- left alt
         [44] = " ", -- Spacebar
         [58] = "Menu", -- F[1]
+        [59] = "Power", -- F[2]
         [63] = "LPgBack", -- F[6]
         [64] = "LPgFwd", -- F[7]
         [68] = "VPlus", -- F[11]

@@ -2,11 +2,9 @@ local Device = require("ui/device")
 local Screen = require("ui/screen")
 local Input = require("ui/input")
 local Event = require("ui/event")
+local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local util = require("ffi/util")
-local ImageWidget = require("ui/widget/imagewidget")
-local UIToolbox = require("ui/uitoolbox")
 
 -- initialize output module, this must be initialized before Input
 Screen:init()
@@ -57,7 +55,6 @@ local UIManager = {
     _execution_stack = {},
     _dirty = {},
     _zeromqs = {},
-    suspend_msg = nil
 }
 
 function UIManager:init()
@@ -67,68 +64,20 @@ function UIManager:init()
         end,
         SaveState = function()
             self:sendEvent(Event:new("FlushSettings"))
-        end
+        end,
+        Power = function(input_event)
+            Device:onPowerEvent(input_event)
+        end,
     }
     if Device:isKobo() then
-        -- lazy create suspend_msg to avoid dependence loop
-
-        function kobo_power(input_event)
-
-            if (input_event == "Power" or input_event == "Suspend")
-                    and not Device.screen_saver_mode then
-                if not UIManager.suspend_msg then
-
-                    local file
-                    if KOBO_SCREEN_SAVER_LAST_BOOK then
-                        file = UIToolbox:getPicture(G_reader_settings:readSetting("lastfile"))
-                    end
-
-                    if type(KOBO_SCREEN_SAVER) == "string" or file then
-                        if not file then
-                            file = KOBO_SCREEN_SAVER
-                            if lfs.attributes(file, "mode") == "directory" then
-                                if string.sub(file,string.len(file)) ~= "/" then
-                                    file = file .. "/"
-                                end
-                                local dummy = UIToolbox:getRandomPicture(file)
-                                if dummy then file = file .. dummy end
-                            end
-                        end
-                        if lfs.attributes(file, "mode") == "file" then
-                            UIManager.suspend_msg = ImageWidget:new{
-                                file = file,
-                                width = Screen:getWidth(),
-                                height = Screen:getHeight(),
-                            }
-                        end
-                    end
-                    if not UIManager.suspend_msg then
-                        local InfoMessage = require("ui/widget/infomessage")
-                        UIManager.suspend_msg = InfoMessage:new{ text = _("Suspended") }
-                    end
-                end
-                if KOBO_LIGHT_OFF_ON_SUSPEND then Device:getPowerDevice():setIntensity(0) end
-                self:show(UIManager.suspend_msg)
-                self:sendEvent(Event:new("FlushSettings"))
-                Device:prepareSuspend()
-                self:scheduleIn(2, function() Device:Suspend() end)
-            elseif (input_event == "Power" or input_event == "Resume")
-                    and Device.screen_saver_mode then
-                Device:Resume()
-                self:sendEvent(Event:new("Resume"))
-                if UIManager.suspend_msg then
-                    self:close(UIManager.suspend_msg)
-                    UIManager.suspend_msg = nil
-                end
-                if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
-                     Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
-                end
-            end
+        self.event_handlers["Suspend"] = function(input_event)
+            self:sendEvent(Event:new("FlushSettings"))
+            Device:onPowerEvent(input_event)
         end
-
-        self.event_handlers["Power"] = kobo_power
-        self.event_handlers["Suspend"] = kobo_power
-        self.event_handlers["Resume"] = kobo_power
+        self.event_handlers["Resume"] = function(input_event)
+            Device:onPowerEvent(input_event)
+            self:sendEvent(Event:new("Resume"))
+        end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
         end
@@ -152,6 +101,7 @@ function UIManager:init()
         end
         self.event_handlers["OutOfSS"] = function()
             Device:outofScreenSaver()
+            self:sendEvent(Event:new("Resume"))
         end
         self.event_handlers["Charging"] = function()
             Device:usbPlugIn()
