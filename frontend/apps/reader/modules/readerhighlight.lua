@@ -108,7 +108,7 @@ function ReaderHighlight:onSetDimensions(dimen)
     end
 end
 
-function ReaderHighlight:onTap(arg, ges)
+function ReaderHighlight:clear()
     if self.hold_pos then
         if self.ui.document.info.has_pages then
             self.view.highlight.temp[self.hold_pos.page] = nil
@@ -120,10 +120,15 @@ function ReaderHighlight:onTap(arg, ges)
         UIManager:setDirty(self.dialog, "partial")
         return true
     end
-    if self.ui.document.info.has_pages then
-        return self:onTapPageSavedHighlight(ges)
-    else
-        return self:onTapXPointerSavedHighlight(ges)
+end
+
+function ReaderHighlight:onTap(arg, ges)
+    if not self:clear() then
+        if self.ui.document.info.has_pages then
+            return self:onTapPageSavedHighlight(ges)
+        else
+            return self:onTapXPointerSavedHighlight(ges)
+        end
     end
 end
 
@@ -448,7 +453,7 @@ end
 function ReaderHighlight:onClose()
     UIManager:close(self.highlight_dialog)
     -- clear highlighted text
-    self:handleEvent(Event:new("Tap"))
+    self:clear()
 end
 
 return ReaderHighlight
