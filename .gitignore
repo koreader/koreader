@@ -20,10 +20,15 @@ koreader-*.zip
 koreader-*.apk
 koreader-*.tar.gz
 
+l10n/*
+!l10n/Makefile
+!l10n/README.md
+
 /.cproject
 /.project
 
 koreader-arm-linux-androideabi
 koreader-arm-linux-gnueabi
+koreader-arm-linux-gnueabihf
 koreader-x86_64-linux-gnu
 
