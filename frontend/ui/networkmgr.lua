@@ -70,4 +70,12 @@ function NetworkMgr:promptWifiOff()
     })
 end
 
+function NetworkMgr:getWifiStatus()
+    if os.execute("ping -c3 8.8.8.8") == 0 then
+        return true
+    else
+        return false
+    end
+end
+
 return NetworkMgr
