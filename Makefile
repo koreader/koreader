@@ -175,6 +175,7 @@ android-toolchain:
 	$(MAKE) -C $(KOR_BASE) android-toolchain
 
 pot:
+	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
