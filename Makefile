@@ -178,6 +178,8 @@ pot:
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
+	# push source file to Transifex
+	$(MAKE) -i -C l10n bootstrap push
 
 po:
-	$(MAKE) -i -C l10n bootstrap update
+	$(MAKE) -i -C l10n bootstrap pull

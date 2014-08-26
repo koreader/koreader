@@ -5,4 +5,4 @@
 2. configure the client:
    http://support.transifex.com/customer/portal/articles/1000855-configuring-the-client
 
-3. pull changes from transifex: `make update`
+3. pull changes from transifex: `make pull`
