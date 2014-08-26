@@ -9,7 +9,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
-local Util = require("ffi/util")
+local util = require("ffi/util")
 
 local SetDefaults = InputContainer:new{
     defaults_name = {},
@@ -62,7 +62,7 @@ function SetDefaults:init()
 
     if not self.already_read then
         local i = 0
-        for n,v in Util.orderedPairs(_G) do
+        for n,v in util.orderedPairs(_G) do
             if (not string.find(tostring(v), "<")) and (not string.find(tostring(v), ": ")) and string.sub(n,1,1) ~= "_" and string.upper(n) == n and n ~= "LIBRARY_PATH" then
                 i = i + 1
                 self.defaults_name[i] = n
@@ -111,7 +111,7 @@ function SetDefaults:init()
                                     callback = function()
                                         self:close()
                                         UIManager:show(menu_container)
-                                    end 
+                                    end
                                 },
                                 {
                                     text = "true",
@@ -177,7 +177,7 @@ function SetDefaults:init()
                                             _G[self.defaults_name[i]] = MultiInputDialog:getCredential()
 
                                             self.defaults_value[i] = "{"
-                                            for k,v in Util.orderedPairs(_G[self.defaults_name[i]]) do
+                                            for k,v in util.orderedPairs(_G[self.defaults_name[i]]) do
                                                 if tonumber(k) then
                                                     self.defaults_value[i] = self.defaults_value[i] .. v .. ", "
                                                 else
@@ -188,7 +188,7 @@ function SetDefaults:init()
 
                                             settings_changed = true
                                             self.changed[i] = true
-                                            
+
                                             self.results[i].text = self:build_setting(i)
 
                                             self:close()
@@ -252,7 +252,7 @@ function SetDefaults:init()
                         UIManager:show(self.set_dialog)
                     end
                 })
-            end            
+            end
         end
     end
     self.defaults_menu:swithItemTable("Defaults", self.results)

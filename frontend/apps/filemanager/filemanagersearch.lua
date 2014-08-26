@@ -9,7 +9,7 @@ local Screen = require("ui/screen")
 local _ = require("gettext")
 local Font = require("ui/font")
 local UIToolbox = require("ui/uitoolbox")
-local Util = require("ffi/util")
+local util = require("ffi/util")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -240,7 +240,7 @@ function Search:find(option)
             s=string.sub(s,n,string.len(s)-j)
         end
 
-        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return Util.unichar(tonumber(w, 16)) end)
+        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return util.unichar(tonumber(w, 16)) end)
 
         return s
     end
@@ -568,7 +568,7 @@ function Search:browse(option,run,chosen)
     if run == 1 then
         self.results = {}
         if option == "series" then
-            for v,n in Util.orderedPairs(self.browse_series) do
+            for v,n in util.orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
@@ -581,7 +581,7 @@ function Search:browse(option,run,chosen)
                 end
            end
         else
-            for v,n in Util.orderedPairs(self.browse_tags) do
+            for v,n in util.orderedPairs(self.browse_tags) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy,upsearch,nil,true) then
