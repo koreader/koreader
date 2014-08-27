@@ -229,6 +229,7 @@ end
 
 function Device:Suspend()
     if self:isKobo() then
+        if KOBO_LIGHT_OFF_ON_SUSPEND then self:getPowerDevice():setIntensity(0) end
         os.execute("./suspend.sh")
     end
 end
@@ -236,20 +237,16 @@ end
 function Device:Resume()
     if self:isKobo() then
         os.execute("echo 0 > /sys/power/state-extended")
-    end
-    self.screen:refresh(1)
-    local powerd = self:getPowerDevice()
-    if powerd.fl ~= nil then
-        powerd.fl:restore()
-    end
-    -- FIXME: this conflicts with powerd.fl:restore
-    --[[
-    if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+        local powerd = self:getPowerDevice()
         if powerd then
-            powerd:setIntensity(math.max(math.min(KOBO_LIGHT_ON_START,100),0))
+            if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+                powerd:setIntensity(math.max(math.min(KOBO_LIGHT_ON_START,100),0))
+            elseif powerd.fl ~= nil then
+                powerd.fl:restore()
+            end
         end
     end
-    --]]
+    self.screen:refresh(1)
     self.screen_saver_mode = false
 end
 
