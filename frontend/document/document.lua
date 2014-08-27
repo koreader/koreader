@@ -212,6 +212,10 @@ function Document:getOCRWord(pageno, rect)
     return nil
 end
 
+function Document:getCoverPageImage()
+    return nil
+end
+
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local hash = "renderpg|"..self.file.."|"..pageno.."|"..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
     local page_size = self:getPageDimensions(pageno, zoom, rotation)

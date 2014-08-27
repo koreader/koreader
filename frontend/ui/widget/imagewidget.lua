@@ -27,6 +27,7 @@ ImageWidget shows an image from a file
 --]]
 local ImageWidget = Widget:new{
     file = nil,
+    image = nil,
     invert = nil,
     dim = nil,
     hide = nil,
@@ -36,7 +37,11 @@ local ImageWidget = Widget:new{
     _bb = nil
 }
 
-function ImageWidget:_render()
+function ImageWidget:_loadimage()
+    self._bb = self.image
+end
+
+function ImageWidget:_loadfile()
     local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
     if itype == "png" or itype == "jpg" or itype == "jpeg"
             or itype == "tiff" then
@@ -57,6 +62,16 @@ function ImageWidget:_render()
         end
     else
         error("Image file type not supported.")
+    end
+end
+
+function ImageWidget:_render()
+    if self.image then
+        self:_loadimage()
+    elseif self.file then
+        self:_loadfile()
+    else
+        error("cannot render image")
     end
     local w, h = self._bb:getWidth(), self._bb:getHeight()
     if (self.width and self.width ~= w) or (self.height and self.height ~= h) then
@@ -89,6 +104,13 @@ function ImageWidget:paintTo(bb, x, y)
     end
     if self.dim then
         bb:dimRect(x, y, size.w, size.h)
+    end
+end
+
+function ImageWidget:free()
+    if self.image then
+        self.image:free()
+        self.image = nil
     end
 end
 

@@ -26,10 +26,6 @@ local InfoMessage = InputContainer:new{
 }
 
 function InfoMessage:init()
-    if not self.image then
-        self.image_width = nil
-        self.image_height = nil
-    end
     if Device:hasKeys() then
         self.key_events = {
             AnyKeyPressed = { { Input.group.Any },
@@ -48,6 +44,18 @@ function InfoMessage:init()
             }
         }
     end
+    local image_widget = nil
+    if self.image then
+        image_widget = ImageWidget:new{
+            image = self.image,
+            width = self.image_width,
+            height = self.image_height,
+        }
+    else
+        image_widget = ImageWidget:new{
+            file = "resources/info-i.png",
+        }
+    end
     -- we construct the actual content here because self.text is only available now
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
@@ -56,11 +64,7 @@ function InfoMessage:init()
             background = 0,
             HorizontalGroup:new{
                 align = "center",
-                ImageWidget:new{
-                    file = self.image or "resources/info-i.png",
-                    width = self.image_width,
-                    height = self.image_height
-                },
+                image_widget,
                 HorizontalSpan:new{ width = 10 },
                 TextBoxWidget:new{
                     text = self.text,

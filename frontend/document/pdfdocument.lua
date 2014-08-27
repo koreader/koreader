@@ -210,6 +210,10 @@ function PdfDocument:getPageDimensions(pageno, zoom, rotation)
     return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
 end
 
+function PdfDocument:getCoverPageImage()
+    return self.koptinterface:getCoverPageImage(self)
+end
+
 function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
 end
