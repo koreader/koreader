@@ -333,25 +333,26 @@ function Search:find(option)
                             self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
                         end
                     end
-
-                    if upsearch ~= "" then
-                        if string.find(dummy,upsearch,nil,true) then
-                            i = i + 1
-                        end
-                    else
-                        if option == "series" then
-                            if self.browse_series[self.data[i][self.series]] then
+                    if DocumentRegistry:getProvider(self.data[i][self.path]) then
+                        if upsearch ~= "" then
+                            if string.find(dummy,upsearch,nil,true) then
                                 i = i + 1
                             end
-                        elseif option == "tags" then
-                            local found = false
-                            for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                                if j~="\t" and self.browse_tags[string.sub(j,2)] then
-                                    found = true
+                        else
+                            if option == "series" then
+                                if self.browse_series[self.data[i][self.series]] then
+                                    i = i + 1
                                 end
-                            end
-                            if found then
-                                i = i + 1
+                            elseif option == "tags" then
+                                local found = false
+                                for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
+                                    if j~="\t" and self.browse_tags[string.sub(j,2)] then
+                                        found = true
+                                    end
+                                end
+                                if found then
+                                    i = i + 1
+                                end
                             end
                         end
                     end
