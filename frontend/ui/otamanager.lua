@@ -90,6 +90,40 @@ function OTAManager:checkUpdate()
     end
 end
 
+function OTAManager:fetchAndProcessUpdate()
+    local ota_version = OTAManager:checkUpdate()
+    if ota_version == 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("Your koreader is updated."),
+        })
+    elseif ota_version == nil then
+        UIManager:show(InfoMessage:new{
+            text = _("OTA server is not available."),
+        })
+    elseif ota_version then
+        UIManager:show(ConfirmBox:new{
+            text = _("Do you want to update to version ")..ota_version.."?",
+            ok_callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = _("Downloading may take several minutes..."),
+                    timeout = 3,
+                })
+                UIManager:scheduleIn(1, function()
+                    if OTAManager:zsync() == 0 then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Koreader will be updated on next restart."),
+                        })
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text = _("Error updating Koreader."),
+                        })
+                    end
+                end)
+            end
+        })
+    end
+end
+
 function OTAManager:_buildLocalPackage()
     return os.execute(string.format(
         "./tar cvf %s -C .. -T %s --no-recursion",
@@ -142,33 +176,7 @@ function OTAManager:getOTAMenuTable()
                     if NetworkMgr:getWifiStatus() == false then
                         NetworkMgr:promptWifiOn()
                     else
-                        local ota_version = OTAManager:checkUpdate()
-                        if ota_version == 0 then
-                            UIManager:show(InfoMessage:new{
-                                text = _("Your koreader is updated."),
-                            })
-                        elseif ota_version == nil then
-                            UIManager:show(InfoMessage:new{
-                                text = _("OTA server is not available."),
-                            })
-                        elseif ota_version then
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Do you want to update to version ")..ota_version.."?",
-                                ok_callback = function()
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("Downloading may take several minutes..."),
-                                        timeout = 3,
-                                    })
-                                    UIManager:scheduleIn(1, function()
-                                        if OTAManager:zsync() == 0 then
-                                            UIManager:show(InfoMessage:new{
-                                                text = _("Koreader will be updated on next restart."),
-                                            })
-                                        end
-                                    end)
-                                end
-                            })
-                        end
+                        OTAManager.fetchAndProcessUpdate()
                     end
                 end
             },
