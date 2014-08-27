@@ -102,6 +102,10 @@ function DjvuDocument:getPageDimensions(pageno, zoom, rotation)
     return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
 end
 
+function DjvuDocument:getCoverPageImage()
+    return self.koptinterface:getCoverPageImage(self)
+end
+
 function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
 end
