@@ -15,29 +15,6 @@ local Document = {
     -- file name
     file = nil,
 
-    info = {
-        -- whether the document is pageable
-        has_pages = false,
-        -- whether words can be provided
-        has_words = false,
-        -- whether hyperlinks can be provided
-        has_hyperlinks = false,
-        -- whether (native to format) annotations can be provided
-        has_annotations = false,
-
-        -- whether pages can be rotated
-        is_rotatable = false,
-
-        number_of_pages = 0,
-        -- if not pageable, length of the document in pixels
-        doc_height = 0,
-
-        -- other metadata
-        title = "",
-        author = "",
-        date = ""
-    },
-
     links = {},
 
     GAMMA_NO_GAMMA = 1.0,
@@ -68,6 +45,28 @@ end
 -- base document initialization should be called on each document init
 function Document:_init()
     self.configurable = Configurable:new()
+    self.info = {
+        -- whether the document is pageable
+        has_pages = false,
+        -- whether words can be provided
+        has_words = false,
+        -- whether hyperlinks can be provided
+        has_hyperlinks = false,
+        -- whether (native to format) annotations can be provided
+        has_annotations = false,
+
+        -- whether pages can be rotated
+        is_rotatable = false,
+
+        number_of_pages = 0,
+        -- if not pageable, length of the document in pixels
+        doc_height = 0,
+
+        -- other metadata
+        title = "",
+        author = "",
+        date = ""
+    }
 end
 
 -- override this method to open a document
