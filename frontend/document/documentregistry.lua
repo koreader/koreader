@@ -2,7 +2,8 @@
 This is a registry for document providers
 ]]--
 local DocumentRegistry = {
-    providers = { }
+    registry = {},
+    providers = {},
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider)
@@ -20,9 +21,31 @@ function DocumentRegistry:getProvider(file)
 end
 
 function DocumentRegistry:openDocument(file)
-    local provider = self:getProvider(file)
-    if provider ~= nil then
-        return provider:new{file = file}
+    if not self.registry[file] then
+        local provider = self:getProvider(file)
+        if provider ~= nil then
+            self.registry[file] = {
+                doc = provider:new{file = file},
+                refs = 1,
+            }
+        end
+    else
+        self.registry[file].refs = self.registry[file].refs + 1
+    end
+    return self.registry[file].doc
+end
+
+function DocumentRegistry:closeDocument(file)
+    if self.registry[file] then
+        self.registry[file].refs = self.registry[file].refs - 1
+        if self.registry[file].refs == 0 then
+            self.registry[file] = nil
+            return 0
+        else
+            return self.registry[file].refs
+        end
+    else
+        error("Try to close unregistered file.")
     end
 end
 
