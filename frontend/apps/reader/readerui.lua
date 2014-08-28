@@ -220,9 +220,9 @@ function ReaderUI:init()
             document = self.document,
         })
     else
-        -- make sure we load document first before calling any callback
+        -- make sure we render document first before calling any callback
         table.insert(self.postInitCallback, function()
-            self.document:loadDocument()
+            self.document:render()
         end)
         -- typeset controller
         table.insert(self, ReaderTypeset:new{
