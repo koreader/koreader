@@ -81,7 +81,8 @@ end
 
 -- this might be overridden by a document implementation
 function Document:close()
-    if self.is_open then
+    local DocumentRegistry = require("document/documentregistry")
+    if self.is_open and DocumentRegistry:closeDocument(self.file) == 0 then
         self.is_open = false
         self._document:close()
     end

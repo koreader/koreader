@@ -17,6 +17,7 @@ local CreDocument = Document:new{
     PAGE_VIEW_MODE = 1,
 
     _document = false,
+    _loaded = false,
     engine_initilized = false,
 
     line_space_percent = 100,
@@ -120,9 +121,16 @@ function CreDocument:init()
     self.info.configurable = true
 end
 
+function CreDocument:loadDocument()
+    if not self._loaded then
+        self._document:loadDocument(self.file)
+        self._loaded = true
+    end
+end
+
 function CreDocument:render()
     -- load document before rendering
-    self._document:loadDocument(self.file)
+    self:loadDocument()
     self._document:renderDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
@@ -139,7 +147,7 @@ end
 
 function CreDocument:getCoverPageImage()
     -- don't need to render document in order to get cover image
-    self._document:loadDocument(self.file)
+    self:loadDocument()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local image = Image:fromData(data, size)
