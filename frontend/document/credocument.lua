@@ -108,19 +108,24 @@ function CreDocument:init()
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
 
+    -- set visible page count in landscape
+    if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
+        < DCREREADER_TWO_PAGE_THRESHOLD then
+        self:setVisiblePageCount(1)
+    end
+
     self.is_open = true
     self.info.has_pages = false
     self:_readMetadata()
     self.info.configurable = true
 end
 
-function CreDocument:loadDocument()
+function CreDocument:render()
+    -- load document before rendering
     self._document:loadDocument(self.file)
+    self._document:renderDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
-    end
-    if math.max(Screen:getWidth(),Screen:getHeight())/Screen:getDPI() < DCREREADER_TWO_PAGE_THRESHOLD then
-        self:setVisiblePageCount(1)
     end
 end
 
@@ -133,6 +138,7 @@ function CreDocument:getPageCount()
 end
 
 function CreDocument:getCoverPageImage()
+    -- don't need to render document in order to get cover image
     self._document:loadDocument(self.file)
     local data, size = self._document:getCoverPageImageData()
     if data and size then
