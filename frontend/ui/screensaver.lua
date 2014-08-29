@@ -67,15 +67,13 @@ function Screensaver:show()
                    file = file .. "/"
                 end
                 self.suspend_msg = self:getRandomImage(file)
-            else
-                if lfs.attributes(file, "mode") == "file" then
-                    local ImageWidget = require("ui/widget/imagewidget")
-                    self.suspend_msg = ImageWidget:new{
-                        file = file,
-                        width = Screen:getWidth(),
-                        height = Screen:getHeight(),
-                    }
-                end
+            elseif lfs.attributes(file, "mode") == "file" then
+                local ImageWidget = require("ui/widget/imagewidget")
+                self.suspend_msg = ImageWidget:new{
+                    file = file,
+                    width = Screen:getWidth(),
+                    height = Screen:getHeight(),
+                }
             end
         end
     end
