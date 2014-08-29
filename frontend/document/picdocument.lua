@@ -11,8 +11,7 @@ function PicDocument:init()
     if not pic then pic = require("ffi/pic") end
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then
-        self.error_message = "failed to open jpeg image"
-        return
+        error("Failed to open jpeg image")
     end
 
     self.info.has_pages = true
