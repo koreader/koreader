@@ -57,14 +57,26 @@ function Screensaver:show()
     if KOBO_SCREEN_SAVER_LAST_BOOK then
         local lastfile = G_reader_settings:readSetting("lastfile")
         self.suspend_msg = self:getCoverImage(lastfile)
-    -- then screensaver directory image
-    elseif type(KOBO_SCREEN_SAVER) == "string" then
-        local file = KOBO_SCREEN_SAVER
-        if lfs.attributes(file, "mode") == "directory" then
-            if string.sub(file,string.len(file)) ~= "/" then
-                file = file .. "/"
+    end
+    -- then screensaver directory or file image
+    if not self.suspend_msg then
+        if type(KOBO_SCREEN_SAVER) == "string" then
+            local file = KOBO_SCREEN_SAVER
+            if lfs.attributes(file, "mode") == "directory" then
+                if string.sub(file,string.len(file)) ~= "/" then
+                   file = file .. "/"
+                end
+                self.suspend_msg = self:getRandomImage(file)
+            else
+                if lfs.attributes(file, "mode") == "file" then
+                    local ImageWidget = require("ui/widget/imagewidget")
+                    self.suspend_msg = ImageWidget:new{
+                        file = file,
+                        width = Screen:getWidth(),
+                        height = Screen:getHeight(),
+                    }
+                end
             end
-            self.suspend_msg = self:getRandomImage(file)
         end
     end
     -- fallback to suspended message
