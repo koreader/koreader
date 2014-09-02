@@ -76,7 +76,6 @@ function CreDocument:init()
     self:engineInit()
     self.configurable:loadDefaults(self.options)
 
-    local ok
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
     if file_type == "zip" then
         -- NuPogodi, 20.05.12: read the content of zip-file
@@ -95,12 +94,12 @@ function CreDocument:init()
 
     -- @TODO check the default view_mode to a global user configurable
     -- variable  22.12 2012 (houqp)
+    local ok
     ok, self._document = pcall(cre.newDocView,
         Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
     )
     if not ok then
-        self.error_message = self._document -- will contain error message
-        return
+        error(self._document)  -- will contain error message
     end
 
     -- adjust font sizes according to screen dpi

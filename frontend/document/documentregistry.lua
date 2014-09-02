@@ -1,3 +1,5 @@
+local DEBUG = require("dbg")
+
 --[[
 This is a registry for document providers
 ]]--
@@ -24,15 +26,22 @@ function DocumentRegistry:openDocument(file)
     if not self.registry[file] then
         local provider = self:getProvider(file)
         if provider ~= nil then
-            self.registry[file] = {
-                doc = provider:new{file = file},
-                refs = 1,
-            }
+            local ok, doc = pcall(provider.new, provider, {file = file})
+            if ok then
+                self.registry[file] = {
+                    doc = doc,
+                    refs = 1,
+                }
+            else
+                DEBUG("cannot open document", file, doc)
+            end
         end
     else
         self.registry[file].refs = self.registry[file].refs + 1
     end
-    return self.registry[file].doc
+    if self.registry[file] then
+        return self.registry[file].doc
+    end
 end
 
 function DocumentRegistry:closeDocument(file)

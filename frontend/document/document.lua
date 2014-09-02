@@ -24,7 +24,6 @@ local Document = {
 
     -- flag to show whether the document was opened successfully
     is_open = false,
-    error_message = nil,
 
     -- flag to show that the document needs to be unlocked by a password
     is_locked = false,
