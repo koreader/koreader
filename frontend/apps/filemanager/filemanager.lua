@@ -20,8 +20,6 @@ local util = require("ffi/util")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },

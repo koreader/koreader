@@ -591,7 +591,7 @@ function Menu:swithItemTable(new_title, new_item_table, itemnumber)
     if itemnumber then
         self.page = math.ceil(itemnumber / self.perpage)
     else
-        self.page = 1    
+        self.page = 1
     end
 
     self.item_table = new_item_table

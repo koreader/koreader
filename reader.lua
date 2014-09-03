@@ -69,8 +69,8 @@ function exitReader()
     os.exit(0)
 end
 
-function showReaderUI(file, pass)
-    DEBUG("opening file", file)
+function showReaderUI(file)
+    DEBUG("show reader ui")
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = _("File ") .. file .. _(" does not exist")
@@ -81,10 +81,11 @@ function showReaderUI(file, pass)
         text = _("Opening file ") .. file,
         timeout = 1,
     })
-    UIManager:scheduleIn(0.1, function() doShowReaderUI(file, pass) end)
+    UIManager:scheduleIn(0.1, function() doShowReaderUI(file) end)
 end
 
-function doShowReaderUI(file, pass)
+function doShowReaderUI(file)
+    DEBUG("opening file", file)
     local document = DocumentRegistry:openDocument(file)
     if not document then
         UIManager:show(InfoMessage:new{
@@ -95,15 +96,14 @@ function doShowReaderUI(file, pass)
 
     G_reader_settings:saveSetting("lastfile", file)
     local reader = ReaderUI:new{
-        dialog = readerwindow,
         dimen = Screen:getSize(),
         document = document,
-        password = pass
     }
     UIManager:show(reader)
 end
 
 function showHomePage(path)
+    DEBUG("show home page")
     G_reader_settings:saveSetting("lastdir", path)
     UIManager:show(FileManager:new{
         dimen = Screen:getSize(),
@@ -199,8 +199,6 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
         showReaderUI(ARGV[argidx])
     elseif open_last and last_file then
         showReaderUI(last_file)
-        UIManager:run()
-        showHomePage(ARGV[argidx])
     else
         showHomePage(ARGV[argidx])
     end
