@@ -1,9 +1,13 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local DocumentRegistry = require("document/documentregistry")
+local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
+local lfs = require("libs/libkoreader-lfs")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
+local Screen = require("ui/screen")
 local Event = require("ui/event")
 local Cache = require("cache")
 local DEBUG = require("dbg")
@@ -289,6 +293,39 @@ function ReaderUI:init()
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
+end
+
+function ReaderUI:showReader(file)
+    DEBUG("show reader ui")
+    if lfs.attributes(file, "mode") ~= "file" then
+        UIManager:show(InfoMessage:new{
+             text = _("File ") .. file .. _(" does not exist")
+        })
+        return
+    end
+    UIManager:show(InfoMessage:new{
+        text = _("Opening file ") .. file,
+        timeout = 1,
+    })
+    UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
+end
+
+function ReaderUI:doShowReader(file)
+    DEBUG("opening file", file)
+    local document = DocumentRegistry:openDocument(file)
+    if not document then
+        UIManager:show(InfoMessage:new{
+            text = _("No reader engine for this file")
+        })
+        return
+    end
+
+    G_reader_settings:saveSetting("lastfile", file)
+    local reader = ReaderUI:new{
+        dimen = Screen:getSize(),
+        document = document,
+    }
+    UIManager:show(reader)
 end
 
 function ReaderUI:onSetDimensions(dimen)

@@ -475,6 +475,12 @@ function Menu:init()
         }
         self.ges_events.Close = self.on_close_ges
     end
+
+    if Device:hasNoKeyboard() then
+        -- remove menu item shortcut for K4
+        self.is_enable_shortcut = false
+    end
+
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close menu" }

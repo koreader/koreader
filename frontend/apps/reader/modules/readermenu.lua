@@ -43,8 +43,8 @@ function ReaderMenu:init()
             callback = function()
                 self.ui:onClose()
                 UIManager:quit()
-                local lastdir = G_reader_settings:readSetting("lastdir")
-                showHomePage(lastdir)
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager:showFiles()
             end,
         },
         home = {

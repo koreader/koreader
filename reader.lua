@@ -18,13 +18,8 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
-local DocumentRegistry = require("document/documentregistry")
-local FileManager = require("apps/filemanager/filemanager")
-local InfoMessage = require("ui/widget/infomessage")
-local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
-local Menu = require("ui/widget/menu")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
 local input = require("ffi/input")
@@ -32,7 +27,7 @@ local DEBUG = require("dbg")
 
 local Profiler = nil
 
-function exitReader()
+local function exitReader()
     local KindlePowerD = require("ui/device/kindlepowerd")
     local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 
@@ -69,50 +64,6 @@ function exitReader()
     os.exit(0)
 end
 
-function showReaderUI(file)
-    DEBUG("show reader ui")
-    if lfs.attributes(file, "mode") ~= "file" then
-        UIManager:show(InfoMessage:new{
-             text = _("File ") .. file .. _(" does not exist")
-        })
-        return
-    end
-    UIManager:show(InfoMessage:new{
-        text = _("Opening file ") .. file,
-        timeout = 1,
-    })
-    UIManager:scheduleIn(0.1, function() doShowReaderUI(file) end)
-end
-
-function doShowReaderUI(file)
-    DEBUG("opening file", file)
-    local document = DocumentRegistry:openDocument(file)
-    if not document then
-        UIManager:show(InfoMessage:new{
-            text = _("No reader engine for this file")
-        })
-        return
-    end
-
-    G_reader_settings:saveSetting("lastfile", file)
-    local reader = ReaderUI:new{
-        dimen = Screen:getSize(),
-        document = document,
-    }
-    UIManager:show(reader)
-end
-
-function showHomePage(path)
-    DEBUG("show home page")
-    G_reader_settings:saveSetting("lastdir", path)
-    UIManager:show(FileManager:new{
-        dimen = Screen:getSize(),
-        root_path = path,
-        onExit = function()
-            UIManager:quit()
-        end
-    })
-end
 
 -- option parsing:
 local longopts = {
@@ -121,7 +72,7 @@ local longopts = {
     help = "h",
 }
 
-function showusage()
+local function showusage()
     print("usage: ./reader.lua [OPTION] ... path")
     print("Read all the books on your E-Ink reader")
     print("")
@@ -164,11 +115,6 @@ while argidx <= #ARGV do
     end
 end
 
-if Device:hasNoKeyboard() then
-    -- remove menu item shortcut for K4
-    Menu.is_enable_shortcut = false
-end
-
 -- read some global reader setting here:
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")
@@ -195,16 +141,27 @@ do
 end
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
+    local file = nil
     if lfs.attributes(ARGV[argidx], "mode") == "file" then
-        showReaderUI(ARGV[argidx])
+        file = ARGV[argidx]
     elseif open_last and last_file then
-        showReaderUI(last_file)
+        file = last_file
+    end
+    -- if file is given in command line argument or open last document is set true
+    -- the given file or the last file is opened in the reader
+    if file then
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file)
+    -- we assume a directory is given in command line argument
+    -- the filemanger will show the files in that path
     else
-        showHomePage(ARGV[argidx])
+        local FileManager = require("apps/filemanager/filemanager")
+        FileManager:showFiles(ARGV[argidx])
     end
     UIManager:run()
 elseif last_file then
-    showReaderUI(last_file)
+    local ReaderUI = require("apps/reader/readerui")
+    ReaderUI:showReader(last_file)
     UIManager:run()
 else
     return showusage()
