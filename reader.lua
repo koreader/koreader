@@ -130,7 +130,8 @@ if G_reader_settings:readSetting("night_mode") then
     Screen.bb:invert()
 end
 
-do
+-- restore kobo frontlight settings
+if Device:isKobo() then
     local powerd = Device:getPowerDevice()
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
