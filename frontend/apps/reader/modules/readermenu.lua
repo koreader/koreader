@@ -190,6 +190,11 @@ function ReaderMenu:onShowReaderMenu()
     return true
 end
 
+function ReaderMenu:onCloseReaderMenu()
+    UIManager:close(self.menu_container)
+    return true
+end
+
 function ReaderMenu:onTapShowMenu()
     self.ui:handleEvent(Event:new("ShowConfigMenu"))
     self.ui:handleEvent(Event:new("ShowReaderMenu"))
