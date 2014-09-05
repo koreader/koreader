@@ -1,15 +1,16 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local ButtonTable = require("ui/widget/buttontable")
 local TextWidget = require("ui/widget/textwidget")
 local LineWidget = require("ui/widget/linewidget")
 local InputText = require("ui/widget/inputtext")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local Font = require("ui/font")
-local Geom = require("ui/geometry")
+local RenderText = require("ui/rendertext")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
+local Geom = require("ui/geometry")
+local Font = require("ui/font")
 
 local InputDialog = InputContainer:new{
     title = "",
@@ -33,6 +34,15 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    local title_width = RenderText:sizeUtf8Text(0, self.width,
+            self.title_face, self.title, true).x
+    if title_width > self.width then
+        local indicator = "  >> "
+        local indicator_w = RenderText:sizeUtf8Text(0, self.width,
+                self.title_face, indicator, true).x
+        self.title = RenderText:getSubTextByWidth(self.title, self.title_face,
+                self.width - indicator_w, true) .. indicator
+    end
     self.title = FrameContainer:new{
         padding = self.title_padding,
         margin = self.title_margin,
