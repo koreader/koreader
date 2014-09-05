@@ -133,6 +133,7 @@ end
 
 -- register & show a widget
 function UIManager:show(widget, x, y)
+    self._running = true
     -- put widget on top of stack
     table.insert(self._window_stack, {x = x or 0, y = y or 0, widget = widget})
     -- and schedule it to be painted
@@ -226,6 +227,12 @@ end
 -- signal to quit
 function UIManager:quit()
     self._running = false
+    for i = #self._window_stack, 1, -1 do
+        table.remove(self._window_stack, i)
+    end
+    for i = #self._execution_stack, 1, -1 do
+        table.remove(self._execution_stack, i)
+    end
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
         table.remove(self._zeromqs, i)

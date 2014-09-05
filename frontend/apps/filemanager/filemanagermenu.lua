@@ -31,6 +31,14 @@ function FileManagerMenu:init()
         tools = {
             icon = "resources/icons/appbar.tools.png",
         },
+        opdscatalog = {
+            icon = "resources/icons/appbar.magnify.browse.png",
+            callback = function()
+                self:onCloseFileManagerMenu()
+                local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
+                OPDSCatalog:showCatalog()
+             end,
+        },
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
@@ -182,6 +190,7 @@ function FileManagerMenu:onShowMenu()
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
                 self.tab_item_table.tools,
+                self.tab_item_table.opdscatalog,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,
@@ -209,6 +218,11 @@ function FileManagerMenu:onShowMenu()
     self.menu_container = menu_container
     UIManager:show(menu_container)
 
+    return true
+end
+
+function FileManagerMenu:onCloseFileManagerMenu()
+    UIManager:close(self.menu_container)
     return true
 end
 

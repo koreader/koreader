@@ -20,8 +20,6 @@ local util = require("ffi/util")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
@@ -68,7 +66,8 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onFileSelect(file)
-        showReaderUI(file)
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file)
         return true
     end
 
@@ -162,6 +161,19 @@ function FileManager:onClose()
         self:onExit()
     end
     return true
+end
+
+function FileManager:showFiles(path)
+    DEBUG("show home page")
+    path = path or G_reader_settings:readSetting("lastdir")
+    G_reader_settings:saveSetting("lastdir", path)
+    UIManager:show(FileManager:new{
+        dimen = Screen:getSize(),
+        root_path = path,
+        onExit = function()
+            UIManager:quit()
+        end
+    })
 end
 
 function FileManager:copyFile(file)

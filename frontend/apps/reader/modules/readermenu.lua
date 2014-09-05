@@ -38,13 +38,22 @@ function ReaderMenu:init()
         plugins = {
             icon = "resources/icons/appbar.tools.png",
         },
+        filemanager = {
+            icon = "resources/icons/appbar.cabinet.files.png",
+            callback = function()
+                self.ui:onClose()
+                UIManager:quit()
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager:showFiles()
+            end,
+        },
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
                 self.ui:handleEvent(Event:new("RestoreScreenMode",
                     G_reader_settings:readSetting("screen_mode") or "portrait"))
-                UIManager:close(self.menu_container)
                 self.ui:onClose()
+                UIManager:quit()
             end,
         },
     }
@@ -150,6 +159,7 @@ function ReaderMenu:onShowReaderMenu()
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
                 self.tab_item_table.plugins,
+                self.tab_item_table.filemanager,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,
@@ -177,6 +187,11 @@ function ReaderMenu:onShowReaderMenu()
     self.menu_container = menu_container
     UIManager:show(menu_container)
 
+    return true
+end
+
+function ReaderMenu:onCloseReaderMenu()
+    UIManager:close(self.menu_container)
     return true
 end
 

@@ -11,6 +11,7 @@ local FocusManager = require("ui/widget/focusmanager")
 local TextWidget = require("ui/widget/textwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local Button = require("ui/widget/button")
@@ -302,6 +303,9 @@ local Menu = FocusManager:new{
 
     item_group = nil,
     page_info = nil,
+    page_return = nil,
+
+    paths = {},  -- table to trace navigation path
 
     -- set this to true to not paint as popup menu
     is_borderless = false,
@@ -377,17 +381,13 @@ function Menu:init()
         bordersize = 0,
         show_parent = self,
     }
-     self.page_info_spacer = Button:new{
-        icon = "resources/icons/appbar.spacer.png",
-        callback = function() end,    -- NoOp
-        bordersize = 0,
-        show_parent = self,
+    self.page_info_spacer = HorizontalSpan:new{
+        width = Screen:scaleByDPI(32),
     }
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
-    self.page_info_spacer:hide()
 
     self.page_info_text = TextWidget:new{
         text = "",
@@ -403,6 +403,21 @@ function Menu:init()
         self.page_info_last_chev,
     }
 
+    -- return button
+    self.page_return_arrow = Button:new{
+        icon = "resources/icons/appbar.arrow.left.up.png",
+        callback = function() self:onReturn() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_return_arrow:hide()
+    self.return_button = HorizontalGroup:new{
+        HorizontalSpan:new{
+            width = Screen:scaleByDPI(5),
+        },
+        self.page_return_arrow,
+    }
+
     local header = VerticalGroup:new{
         VerticalSpan:new{width = self.header_padding},
         self.title_bar,
@@ -411,6 +426,16 @@ function Menu:init()
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
         self.page_info,
+    }
+    local page_return = BottomContainer:new{
+        dimen = self.dimen:copy(),
+        WidgetContainer:new{
+            dimen = Geom:new{
+                w = Screen:getWidth(),
+                h = self.page_return_arrow:getSize().h,
+            },
+            self.return_button,
+        }
     }
 
     local content = nil
@@ -421,7 +446,8 @@ function Menu:init()
                 align = "left",
                 body,
             },
-            footer
+            page_return,
+            footer,
         }
     else
         content = OverlapGroup:new{
@@ -431,7 +457,8 @@ function Menu:init()
                 header,
                 body,
             },
-            footer
+            page_return,
+            footer,
         }
     end
 
@@ -475,6 +502,12 @@ function Menu:init()
         }
         self.ges_events.Close = self.on_close_ges
     end
+
+    if Device:hasNoKeyboard() then
+        -- remove menu item shortcut for K4
+        self.is_enable_shortcut = false
+    end
+
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close menu" }
@@ -509,6 +542,7 @@ function Menu:updateItems(select_number)
     self.layout = {}
     self.item_group:clear()
     self.page_info:resetLayout()
+    self.return_button:resetLayout()
     self:_recalculateDimen()
 
     -- default to select the first item
@@ -565,33 +599,30 @@ function Menu:updateItems(select_number)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
         self.page_info_last_chev:showHide(self.page_num > 2)
-        self.page_info_spacer:showHide(self.page_num > 2)
+        self.page_return_arrow:showHide(self.onReturn ~= nil)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
         self.page_info_first_chev:enableDisable(self.page > 1)
         self.page_info_last_chev:enableDisable(self.page < self.page_num)
+        self.page_return_arrow:enableDisable(#self.paths > 0)
     else
         self.page_info_text.text = _("no choices available")
     end
 
-    -- FIXME: this is a dirty hack to clear previous menus
---    UIManager.repaint_all = true
-    --UIManager:setDirty(self)
---nicolua
+    -- nicolua
+    -- FIXMED: dirty hack to clear previous menus
     UIManager:setDirty(self.show_parent or self)
 
 end
 
 function Menu:swithItemTable(new_title, new_item_table, itemnumber)
-    if self.menu_title then
+    if self.menu_title and new_title then
         self.menu_title.text = new_title
     end
 
     if itemnumber then
         self.page = math.ceil(itemnumber / self.perpage)
-    else
-        self.page = 1    
     end
 
     self.item_table = new_item_table
@@ -666,6 +697,9 @@ function Menu:onMenuHold(item)
 end
 
 function Menu:onNextPage()
+    if self.onNext and self.page == self.page_num - 1 then
+        self:onNext()
+    end
     if self.page < self.page_num then
         self.page = self.page + 1
         self:updateItems(1)
