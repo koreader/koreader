@@ -206,6 +206,13 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
         local function build_href(href)
             if href:match("^http") then
                 return href
+            elseif href:match("^//") then
+                local parsed = url.parse(item_url or base_url)
+                if parsed and parsed.scheme then
+                    return parsed.scheme .. ":" .. href
+                else
+                    return "http:" .. href
+                end
             elseif base_url then
                 return base_url .. "/" .. href
             elseif item_url then
@@ -302,7 +309,7 @@ end
 function OPDSBrowser:downloadFile(title, format, remote_url)
     -- download to last opened dir
     -- TODO: let the user select where to store the downloaded file?
-    local lastdir = G_reader_settings:readSetting("lastdir")
+    local lastdir = G_reader_settings:readSetting("lastdir") or "."
     local local_path = lastdir .. "/" .. title .. "." .. string.lower(format)
     DEBUG("downloading file", local_path, "from", remote_url)
 

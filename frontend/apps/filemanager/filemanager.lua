@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local Font = require("ui/font")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
+local Device = require("ui/device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -163,9 +164,21 @@ function FileManager:onClose()
     return true
 end
 
+function FileManager:getDefaultDir()
+    if Device:isKindle() then
+        return "/mnt/us/documents"
+    elseif Device:isKobo() then
+        return "/mnt/onboard"
+    elseif Device.isAndroid then
+        return "/sdcard"
+    else
+        return "."
+    end
+end
+
 function FileManager:showFiles(path)
     DEBUG("show home page")
-    path = path or G_reader_settings:readSetting("lastdir")
+    path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     UIManager:show(FileManager:new{
         dimen = Screen:getSize(),
