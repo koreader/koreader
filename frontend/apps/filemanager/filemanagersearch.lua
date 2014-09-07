@@ -3,6 +3,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
+local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
@@ -531,7 +532,7 @@ function Search:showresults()
                path = self.data[i][self.path],
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
-                   showReaderUI(book)
+                   ReaderUI:showReader(book)
                end
             })
             i = i + 1
@@ -636,7 +637,7 @@ function Search:browse(option,run,chosen)
                    notchecked = true,
                    path = self.data[i][self.path],
                    callback = function()
-                       showReaderUI(book)
+                       ReaderUI:showReader(book)
                    end
                 })
             end
