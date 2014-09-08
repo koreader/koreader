@@ -206,13 +206,6 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
         local function build_href(href)
             if href:match("^http") then
                 return href
-            elseif href:match("^//") then
-                local parsed = url.parse(item_url or base_url)
-                if parsed and parsed.scheme then
-                    return parsed.scheme .. ":" .. href
-                else
-                    return "http:" .. href
-                end
             elseif base_url then
                 return base_url .. "/" .. href
             elseif item_url then
@@ -307,10 +300,20 @@ function OPDSBrowser:appendCatalog(url, baseurl)
 end
 
 function OPDSBrowser:downloadFile(title, format, remote_url)
-    -- download to last opened dir
-    -- TODO: let the user select where to store the downloaded file?
-    local lastdir = G_reader_settings:readSetting("lastdir") or "."
-    local local_path = lastdir .. "/" .. title .. "." .. string.lower(format)
+    -- download to last opened dir or OPDS_DOWNLOADS
+    local lastdir = G_reader_settings:readSetting("lastdir")
+    if OPDS_DOWNLOADS and (string.sub(OPDS_DOWNLOADS,1,5)=="/mnt/") then -- prevent to write on the root of the device for Kindle and Kobo. 
+                                                                         -- TO DO: Add check for Android. util.isAndroid always returns true on my Kobo, so it is useless.
+        lastdir = OPDS_DOWNLOADS
+    end
+    if string.sub(lastdir,string.len(lastdir)) ~= "/" then
+        lastdir = lastdir .. "/"
+        pcall(lfs.mkdir(lastdir))
+        if not lfs.attributes(lastdir,"mode")=="directory" then
+            lastdir = G_reader_settings:readSetting("lastdir") .. "/"
+        end
+    end
+    local local_path = lastdir .. title .. "." .. string.lower(format)
     DEBUG("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
@@ -324,10 +327,14 @@ function OPDSBrowser:downloadFile(title, format, remote_url)
     if c == 200 then
         DEBUG("file downloaded successfully to", local_path)
         UIManager:show(InfoMessage:new{
-            text = _("File is successfully saved to:\n") .. local_path,
+            text = _("File successfully saved to:\n") .. local_path,
             timeout = 3,
         })
     else
+        UIManager:show(InfoMessage:new{
+            text = _("Could not save file to:\n") .. local_path,
+            timeout = 3,
+        })
         DEBUG("response", {r, c, h})
     end
 end
