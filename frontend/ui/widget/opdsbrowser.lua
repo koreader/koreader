@@ -36,6 +36,8 @@ local CatalogCache = Cache:new{
 
 local OPDSBrowser = Menu:extend{
     opds_servers = {},
+    calibre_name = _("Local calibre catalog"),
+
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
     acquisition_rel = "http://opds-spec.org/acquisition",
@@ -68,6 +70,19 @@ function OPDSBrowser:addServerFromInput(fields)
         url = fields[2],
     })
     G_reader_settings:saveSetting("opds_servers", servers)
+    self:init()
+end
+
+function OPDSBrowser:editCalibreFromInput(fields)
+    DEBUG("input calibre server", fields)
+    local calibre = G_reader_settings:readSetting("calibre_opds") or {}
+    if fields[1] then
+        calibre.host = fields[1]
+    end
+    if tonumber(fields[2]) then
+        calibre.port = fields[2]
+    end
+    G_reader_settings:saveSetting("calibre_opds", calibre)
     self:init()
 end
 
@@ -110,6 +125,47 @@ function OPDSBrowser:addNewCatalog()
     UIManager:show(self.add_server_dialog)
 end
 
+function OPDSBrowser:editCalibreServer()
+    local calibre = G_reader_settings:readSetting("calibre_opds") or {}
+    self.add_server_dialog = MultiInputDialog:new{
+        title = _("Edit local calibre host and port"),
+        fields = {
+            {
+                -- TODO: get IP address of current device
+                text = calibre.host or "192.168.1.1",
+                hint = _("Calibre host"),
+            },
+            {
+                text = calibre.port and tostring(calibre.port) or "8080",
+                hint = _("Calibre port"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self.add_server_dialog:onClose()
+                        UIManager:close(self.add_server_dialog)
+                    end
+                },
+                {
+                    text = _("Apply"),
+                    callback = function()
+                        self.add_server_dialog:onClose()
+                        UIManager:close(self.add_server_dialog)
+                        self:editCalibreFromInput(MultiInputDialog:getFields())
+                    end
+                },
+            },
+        },
+        width = Screen:getWidth() * 0.95,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.add_server_dialog:onShowKeyboard()
+    UIManager:show(self.add_server_dialog)
+end
+
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
     for i, server in ipairs(self.opds_servers) do
@@ -129,6 +185,25 @@ function OPDSBrowser:genItemTableFromRoot()
             baseurl = server.baseurl,
             deletable = true,
             editable = true,
+        })
+    end
+    local calibre_opds = G_reader_settings:readSetting("calibre_opds") or {}
+    local calibre_callback = nil
+    if not calibre_opds.host or not calibre_opds.port then
+        table.insert(item_table, {
+            text = self.calibre_name,
+            callback = function()
+                self:editCalibreServer()
+            end,
+            deletable = false,
+        })
+    else
+        table.insert(item_table, {
+            text = self.calibre_name,
+            url = string.format("http://%s:%d/opds",
+                calibre_opds.host, calibre_opds.port),
+            editable = true,
+            deletable = false,
         })
     end
     table.insert(item_table, {
@@ -458,7 +533,7 @@ function OPDSBrowser:editOPDSServer(item)
                     end
                 },
                 {
-                    text = _("Edit"),
+                    text = _("Apply"),
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
@@ -496,7 +571,11 @@ function OPDSBrowser:onMenuHold(item)
                         enabled = item.editable,
                         callback = function()
                             UIManager:close(self.opds_server_dialog)
-                            self:editOPDSServer(item)
+                            if item.text ~= self.calibre_name then
+                                self:editOPDSServer(item)
+                            else
+                                self:editCalibreServer(item)
+                            end
                         end
                     },
                     {
