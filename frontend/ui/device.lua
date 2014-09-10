@@ -207,11 +207,16 @@ function Device:onPowerEvent(ev)
     local UIManager = require("ui/uimanager")
     if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
         DEBUG("Suspending...")
+        -- always suspend in portrait mode
+        self.orig_rotation_mode = Screen:getRotationMode()
+        Screen:setRotationMode(0)
         Screensaver:show()
         self:prepareSuspend()
         UIManager:scheduleIn(2, function() self:Suspend() end)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
+        -- restore to previous rotation mode
+        Screen:setRotationMode(self.orig_rotation_mode)
         self:Resume()
         Screensaver:close()
     end
