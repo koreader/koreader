@@ -41,6 +41,8 @@ function ReaderMenu:init()
         filemanager = {
             icon = "resources/icons/appbar.cabinet.files.png",
             callback = function()
+                self.ui:handleEvent(Event:new("RestoreScreenMode",
+                    G_reader_settings:readSetting("screen_mode") or "portrait"))
                 self.ui:onClose()
                 UIManager:quit()
                 local FileManager = require("apps/filemanager/filemanager")

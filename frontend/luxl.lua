@@ -184,7 +184,7 @@ local LEXER_STATES = {
   -- [35-37] handle actual attribute values
   { state = ST_ATTR_VAL2,     cclass = CCLASS_QUOTE,        next_state = ST_START_TAGNAME_END, event = EVENT_ATTR_VAL },
   { state = ST_ATTR_VAL2,     cclass = CCLASS_LETTERS,      next_state = ST_ATTR_VAL2,         event = EVENT_MARK },
-  { state = ST_ATTR_VAL2,     cclass = CCLASS_SLASH,        next_state = ST_ATTR_VAL2,         event = EVENT_NONE },
+  { state = ST_ATTR_VAL2,     cclass = CCLASS_SLASH,        next_state = ST_ATTR_VAL2,         event = EVENT_MARK },
 
   -- [38] End of table marker
   { state = ST_ERROR,         cclass = CCLASS_NONE,         next_state = ST_ERROR,             event = EVENT_NONE }

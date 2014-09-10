@@ -145,10 +145,10 @@ Title:
 <category scheme="http://purl.org/dc/terms/DCMIType" term="Text"/>
 <dcterms:language>en</dcterms:language>
 <relevance:score>1</relevance:score>
-<link type="application/epub+zip" rel="http://opds-spec.org/acquisition" title="EPUB (with images)" length="647158" href="http://www.gutenberg.org/ebooks/42474.epub.images"/>
-<link type="application/x-mobipocket-ebook" rel="http://opds-spec.org/acquisition" title="Kindle (with images)" length="1553578" href="http://www.gutenberg.org/ebooks/42474.kindle.images"/>
-<link type="image/jpeg" rel="http://opds-spec.org/image" href="http://www.gutenberg.org/cache/epub/42474/pg42474.cover.medium.jpg"/>
-<link type="image/jpeg" rel="http://opds-spec.org/image/thumbnail" href="http://www.gutenberg.org/cache/epub/42474/pg42474.cover.small.jpg"/>
+<link type="application/epub+zip" rel="http://opds-spec.org/acquisition" title="EPUB (with images)" length="647158" href="//www.gutenberg.org/ebooks/42474.epub.images"/>
+<link type="application/x-mobipocket-ebook" rel="http://opds-spec.org/acquisition" title="Kindle (with images)" length="1553578" href="//www.gutenberg.org/ebooks/42474.kindle.images"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image" href="//www.gutenberg.org/cache/epub/42474/pg42474.cover.medium.jpg"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image/thumbnail" href="//www.gutenberg.org/cache/epub/42474/pg42474.cover.small.jpg"/>
 <link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/42474/also/.opds" title="Readers also downloaded??"/>
 <link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/author/2569.opds" title="By Ellis, Edward Sylvester??"/>
 </entry>
@@ -183,6 +183,8 @@ describe("OPDS parser module", function()
         assert.truthy(entries)
         assert.are.same(#entries, 2)
         local entry = entries[2]
+        --DEBUG(entry)
         assert.are.same(entry.title, "1000 Mythological Characters Briefly Described")
+        assert.are.same(entry.link[1].href, "//www.gutenberg.org/ebooks/42474.epub.images")
     end)
 end)
