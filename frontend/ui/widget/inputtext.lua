@@ -34,8 +34,7 @@ local InputText = InputContainer:new{
 }
 
 function InputText:init()
-    self:StringToCharlist(self.text)
-    self:initTextBox()
+    self:initTextBox(self.text)
     self:initKeyboard()
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -49,7 +48,9 @@ function InputText:init()
     end
 end
 
-function InputText:initTextBox()
+function InputText:initTextBox(text)
+    self.text = text
+    self:initCharlist(text)
     local bgcolor, fgcolor = 0.0, self.text == "" and 0.5 or 1.0
 
     local text_widget = nil
@@ -87,6 +88,22 @@ function InputText:initTextBox()
         text_widget,
     }
     self.dimen = self[1]:getSize()
+end
+
+function InputText:initCharlist(text)
+    if text == nil then return end
+    -- clear
+    self.charlist = {}
+    self.charpos = 1
+    local prevcharcode, charcode = 0
+    for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+        charcode = util.utf8charcode(uchar)
+        if prevcharcode then -- utf8
+            self.charlist[#self.charlist+1] = uchar
+        end
+        prevcharcode = charcode
+    end
+    self.charpos = #self.charlist+1
 end
 
 function InputText:initKeyboard()
@@ -137,8 +154,7 @@ function InputText:addChar(char)
     end
     table.insert(self.charlist, self.charpos, char)
     self.charpos = self.charpos + 1
-    self.text = self:CharlistToString()
-    self:initTextBox()
+    self:initTextBox(table.concat(self.charlist))
     UIManager:setDirty(self.parent, "partial")
 end
 
@@ -146,14 +162,12 @@ function InputText:delChar()
     if self.charpos == 1 then return end
     self.charpos = self.charpos - 1
     table.remove(self.charlist, self.charpos)
-    self.text = self:CharlistToString()
-    self:initTextBox()
+    self:initTextBox(table.concat(self.charlist))
     UIManager:setDirty(self.parent, "partial")
 end
 
 function InputText:clear()
-    self.text = ""
-    self:initTextBox()
+    self:initTextBox("")
     UIManager:setDirty(self.parent, "partial")
 end
 
@@ -162,34 +176,8 @@ function InputText:getText()
 end
 
 function InputText:setText(text)
-    self:StringToCharlist(text)
-    self:initTextBox()
+    self:initTextBox(text)
     UIManager:setDirty(self.parent, "partial")
-end
-
-function InputText:StringToCharlist(text)
-    if text == nil then return end
-    -- clear
-    self.charlist = {}
-    self.charpos = 1
-    local prevcharcode, charcode = 0
-    for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-        charcode = util.utf8charcode(uchar)
-        if prevcharcode then -- utf8
-            self.charlist[#self.charlist+1] = uchar
-        end
-        prevcharcode = charcode
-    end
-    self.text = self:CharlistToString()
-    self.charpos = #self.charlist+1
-end
-
-function InputText:CharlistToString()
-    local s, i = ""
-    for i=1, #self.charlist do
-        s = s .. self.charlist[i]
-    end
-    return s
 end
 
 return InputText
