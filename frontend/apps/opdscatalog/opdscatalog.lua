@@ -69,7 +69,7 @@ function OPDSCatalog:showCatalog()
     UIManager:show(OPDSCatalog:new{
         dimen = Screen:getSize(),
         onExit = function()
-            self:onClose()
+            --UIManager:quit()
         end
     })
 end
