@@ -1,6 +1,7 @@
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
+local PathChooser = require("ui/widget/pathchooser")
 local lfs = require("libs/libkoreader-lfs")
 local OPDSParser = require("ui/opdsparser")
 local NetworkMgr = require("ui/networkmgr")
@@ -126,6 +127,8 @@ function OPDSBrowser:genItemTableFromRoot()
             content = server.subtitle,
             url = server.url,
             baseurl = server.baseurl,
+            deletable = true,
+            editable = true,
         })
     end
     table.insert(item_table, {
@@ -150,7 +153,7 @@ function OPDSBrowser:fetchFeed(feed_url)
 
     -- raise error message when network is unavailable
     if headers == nil then
-        error("Network is unreachable")
+        error(code)
     end
 
     local xml = table.concat(sink)
@@ -188,12 +191,15 @@ function OPDSBrowser:getCatalog(feed_url)
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
-        DEBUG(catalog)
+        DEBUG("cannot get catalog info from", feed_url, catalog)
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot get catalog info from ") .. feed_url,
+        })
         return
     end
 
     if ok and catalog then
-        --DEBUG("catalog", catalog)
+        DEBUG("catalog", catalog)
         return catalog
     end
 end
@@ -307,10 +313,10 @@ function OPDSBrowser:appendCatalog(url, baseurl)
 end
 
 function OPDSBrowser:downloadFile(title, format, remote_url)
-    -- download to last opened dir
-    -- TODO: let the user select where to store the downloaded file?
-    local lastdir = G_reader_settings:readSetting("lastdir") or "."
-    local local_path = lastdir .. "/" .. title .. "." .. string.lower(format)
+    -- download to user selected directory or last opened dir
+    local lastdir = G_reader_settings:readSetting("lastdir")
+    local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
+    local local_path = download_dir .. "/" .. title .. "." .. string.lower(format)
     DEBUG("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
@@ -324,11 +330,15 @@ function OPDSBrowser:downloadFile(title, format, remote_url)
     if c == 200 then
         DEBUG("file downloaded successfully to", local_path)
         UIManager:show(InfoMessage:new{
-            text = _("File is successfully saved to:\n") .. local_path,
+            text = _("File successfully saved to:\n") .. local_path,
             timeout = 3,
         })
     else
         DEBUG("response", {r, c, h})
+        UIManager:show(InfoMessage:new{
+            text = _("Could not save file to:\n") .. local_path,
+            timeout = 3,
+        })
     end
 end
 
@@ -363,6 +373,25 @@ function OPDSBrowser:showDownloads(item)
         end
         table.insert(buttons, line)
     end
+    -- set download directory button
+    table.insert(buttons, {
+        {
+            text = _("Set download directory"),
+            callback = function()
+                local lastdir = G_reader_settings:readSetting("lastdir")
+                local download_dir = G_reader_settings:readSetting("download_dir")
+                local path_chooser = PathChooser:new{
+                    title = _("Choose download directory"),
+                    path = download_dir and (download_dir .. "/..") or lastdir,
+                    onConfirm = function(path)
+                        DEBUG("set download directory to", path)
+                        G_reader_settings:saveSetting("download_dir", path)
+                    end,
+                }
+                UIManager:show(path_chooser)
+            end,
+        }
+    })
 
     self.download_dialog = ButtonDialog:new{
         buttons = buttons
@@ -389,6 +418,101 @@ function OPDSBrowser:onMenuSelect(item)
         end
     end
     return true
+end
+
+function OPDSBrowser:editServerFromInput(item, fields)
+    DEBUG("input catalog", fields)
+    local servers = {}
+    for i, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
+        if server.title == item.text or server.url == item.url then
+            server.title = fields[1]
+            server.url = fields[2]
+        end
+        table.insert(servers, server)
+    end
+    G_reader_settings:saveSetting("opds_servers", servers)
+    self:init()
+end
+
+function OPDSBrowser:editOPDSServer(item)
+    DEBUG("edit", item)
+    self.edit_server_dialog = MultiInputDialog:new{
+        title = _("Edit OPDS catalog"),
+        fields = {
+            {
+                text = item.text or "",
+                hint = _("Catalog Name"),
+            },
+            {
+                text = item.url or "",
+                hint = _("Catalog URL"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self.edit_server_dialog:onClose()
+                        UIManager:close(self.edit_server_dialog)
+                    end
+                },
+                {
+                    text = _("Edit"),
+                    callback = function()
+                        self.edit_server_dialog:onClose()
+                        UIManager:close(self.edit_server_dialog)
+                        self:editServerFromInput(item, MultiInputDialog:getFields())
+                    end
+                },
+            },
+        },
+        width = Screen:getWidth() * 0.95,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.edit_server_dialog:onShowKeyboard()
+    UIManager:show(self.edit_server_dialog)
+end
+
+function OPDSBrowser:deleteOPDSServer(item)
+    DEBUG("delete", item)
+    local servers = {}
+    for i, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
+        if server.title ~= item.text or server.url ~= item.url then
+            table.insert(servers, server)
+        end
+    end
+    G_reader_settings:saveSetting("opds_servers", servers)
+    self:init()
+end
+
+function OPDSBrowser:onMenuHold(item)
+    if item.deletable or item.editable then
+        self.opds_server_dialog = ButtonDialog:new{
+            buttons = {
+                {
+                    {
+                        text = _("Edit"),
+                        enabled = item.editable,
+                        callback = function()
+                            UIManager:close(self.opds_server_dialog)
+                            self:editOPDSServer(item)
+                        end
+                    },
+                    {
+                        text = _("Delete"),
+                        enabled = item.deletable,
+                        callback = function()
+                            UIManager:close(self.opds_server_dialog)
+                            self:deleteOPDSServer(item)
+                        end
+                    },
+                },
+            }
+        }
+        UIManager:show(self.opds_server_dialog)
+        return true
+    end
 end
 
 function OPDSBrowser:onReturn()
