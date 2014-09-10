@@ -28,8 +28,6 @@ local FileManager = InputContainer:extend{
 }
 
 function FileManager:init()
-    local exclude_dirs = {"%.sdr$"}
-
     self.show_parent = self.show_parent or self
 
     self.banner = VerticalGroup:new{
@@ -51,12 +49,6 @@ function FileManager:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
-        dir_filter = function(dirname)
-            for _, pattern in ipairs(exclude_dirs) do
-                if dirname:match(pattern) then return end
-            end
-            return true
-        end,
         file_filter = function(filename)
             if DocumentRegistry:getProvider(filename) then
                 return true
@@ -161,6 +153,11 @@ function FileManager:onClose()
     if self.onExit then
         self:onExit()
     end
+    return true
+end
+
+function FileManager:onRefresh()
+    self.file_chooser:refreshPath()
     return true
 end
 

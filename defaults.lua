@@ -48,10 +48,6 @@ DSHOWOVERLAP = false
 -- default to false
 DSHOWHIDDENFILES = false
 
--- show file size in filemanager
--- default to false
-DSHOWFILESIZE = false
-
 -- landscape clockwise rotation
 -- default to true, set to false for counterclockwise rotation
 DLANDSCAPE_CLOCKWISE_ROTATION = true

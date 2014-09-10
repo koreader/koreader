@@ -5,6 +5,7 @@ local Screen = require("ui/screen")
 local Device = require("ui/device")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 local ffi = require("ffi")
 ffi.cdef[[
 int strcoll (char *str1, char *str2);
@@ -22,12 +23,19 @@ local FileChooser = Menu:extend{
     path = lfs.currentdir(),
     parent = nil,
     show_hidden = nil,
-    show_filesize = DSHOWFILESIZE,
     filter = function(filename) return true end,
+    exclude_dirs = {"%.sdr$"},
     collate = strcoll,
 }
 
 function FileChooser:init()
+    -- common dir filter
+    self.dir_filter = function(dirname)
+        for _, pattern in ipairs(self.exclude_dirs) do
+            if dirname:match(pattern) then return end
+        end
+        return true
+    end
     -- disable string collating in Kobo devices. See issue koreader/koreader#686
     if Device:isKobo() then self.collate = nil end
     self.item_table = self:genItemTableFromPath(self.path)
@@ -62,20 +70,39 @@ function FileChooser:genItemTableFromPath(path)
     table.sort(files, self.collate)
 
     local item_table = {}
-    for _, dir in ipairs(dirs) do
-        table.insert(item_table, { text = dir.."/", path = self.path.."/"..dir })
+    for i, dir in ipairs(dirs) do
+        local path = self.path.."/"..dir
+        local items = 0
+        local ok, iter, dir_obj = pcall(lfs.dir, path)
+        if ok then
+            for f in iter, dir_obj do
+                items = items + 1
+            end
+            -- exclude "." and ".."
+            items = items - 2
+        end
+        local istr = items .. (items > 1 and _(" items") or _(" item"))
+        table.insert(item_table, { text = dir.."/", mandatory = istr, path = path})
     end
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file
-        if self.show_filesize then
-            local sstr = string.format("%4.1fM",lfs.attributes(full_path, "size")/1024/1024)
-            table.insert(item_table, { text = file, mandatory = sstr, path = full_path })
+        local file_size = lfs.attributes(full_path, "size")
+        local sstr = ""
+        if file_size > 1024*1024 then
+            sstr = string.format("%4.1f MB", file_size/1024/1024)
+        elseif file_size > 1024 then
+            sstr = string.format("%4.1f KB", file_size/1024)
         else
-            table.insert(item_table, { text = file, path = full_path })
+            sstr = string.format("%d B", file_size)
         end
+        table.insert(item_table, { text = file, mandatory = sstr, path = full_path })
     end
 
     return item_table
+end
+
+function FileChooser:refreshPath()
+    self:swithItemTable(nil, self:genItemTableFromPath(self.path))
 end
 
 function FileChooser:changeToPath(path)
@@ -84,13 +111,9 @@ function FileChooser:changeToPath(path)
     self:refreshPath()
 end
 
-function FileChooser:refreshPath()
-    self:swithItemTable(nil, self:genItemTableFromPath(self.path))
-end
-
 function FileChooser:toggleHiddenFiles()
     self.show_hidden = not self.show_hidden
-    self:swithItemTable(nil, self:genItemTableFromPath(self.path))
+    self:refreshPath()
 end
 
 function FileChooser:onMenuSelect(item)
