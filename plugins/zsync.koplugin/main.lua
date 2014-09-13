@@ -6,7 +6,7 @@ local FileManager = require("apps/filemanager/filemanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local ButtonDialog = require("ui/widget/buttondialog")
-local FileChooser = require("ui/widget/filechooser")
+local PathChooser = require("ui/widget/pathchooser")
 local InfoMessage = require("ui/widget/infomessage")
 local TextWidget = require("ui/widget/textwidget")
 local DocSettings = require("docsettings")
@@ -222,90 +222,6 @@ function ZSync:unpublish()
     self:stopFileMQ()
 end
 
-local InboxChooser = InputContainer:new{
-    title = _("Choose inbox"),
-    dimen = Screen:getSize(),
-    exclude_dirs = {"%.sdr$"},
-}
-
-function InboxChooser:init()
-    self.show_parent = self.show_parent or self
-    local g_show_hidden = G_reader_settings:readSetting("show_hidden")
-    local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
-    local root_path = G_reader_settings:readSetting("lastdir") or lfs.currentdir()
-    local file_chooser = FileChooser:new{
-        -- remeber to adjust the height when new item is added to the group
-        path = root_path,
-        show_parent = self.show_parent,
-        show_hidden = show_hidden,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
-        is_popout = false,
-        is_borderless = true,
-        title = _("Choose inbox"),
-        no_title = false,
-        dir_filter = function(dirname)
-            for _, pattern in ipairs(self.exclude_dirs) do
-                if dirname:match(pattern) then return end
-            end
-            return true
-        end,
-        file_filter = function(filename) end,
-        close_callback = function() UIManager:close(self) end,
-    }
-
-    local on_close_chooser = function() self:onClose() end
-    local on_confirm_inbox = function(inbox) self:onConfirm(inbox) end
-
-    function file_chooser:onFileHold(dir)
-        self.chooser_dialog = self
-        self.button_dialog = ButtonDialog:new{
-            buttons = {
-                {
-                    {
-                        text = _("Confirm"),
-                        callback = function()
-                            UIManager:close(self.button_dialog)
-                            on_confirm_inbox(dir)
-                            on_close_chooser()
-                        end,
-                    },
-                    {
-                        text = _("Cancel"),
-                        callback = function()
-                            UIManager:close(self.button_dialog)
-                            on_close_chooser()
-                        end,
-                    },
-                },
-            },
-        }
-        UIManager:show(self.button_dialog)
-        return true
-    end
-
-    self[1] = FrameContainer:new{
-        padding = 0,
-        bordersize = 0,
-        background = 0,
-        file_chooser,
-    }
-end
-
-function InboxChooser:onClose()
-    UIManager:close(self)
-    return true
-end
-
-function InboxChooser:onConfirm(inbox)
-    if inbox:sub(-3, -1) == "/.." then
-        inbox = inbox:sub(1, -4)
-    end
-    G_reader_settings:saveSetting("lastdir", inbox)
-    self.zsync:onChooseInbox(inbox)
-    return true
-end
-
 function ZSync:onChooseInbox(inbox)
     DEBUG("choose inbox", inbox)
     self.inbox = inbox
@@ -318,8 +234,21 @@ end
 function ZSync:subscribe()
     DEBUG("subscribe documents")
     self.received = {}
-    self.inbox_chooser = InboxChooser:new{zsync = self}
-    UIManager:show(self.inbox_chooser)
+    local lastdir = G_reader_settings:readSetting("lastdir")
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    local zsync = self
+    local path_chooser = PathChooser:new{
+        title = _("Choose inbox"),
+        path = inbox_dir and (inbox_dir .. "/..") or lastdir,
+        onConfirm = function(inbox)
+            if inbox:sub(-3, -1) == "/.." then
+                inbox = inbox:sub(1, -4)
+            end
+            G_reader_settings:saveSetting("inbox_dir", inbox)
+            zsync:onChooseInbox(inbox)
+        end,
+    }
+    UIManager:show(path_chooser)
 end
 
 function ZSync:unsubscribe()
