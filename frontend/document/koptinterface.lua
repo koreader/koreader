@@ -248,6 +248,16 @@ function KoptInterface:getRFPageDimensions(doc, pageno, zoom, rotation)
     return Geom:new{ w = fullwidth, h = fullheight }
 end
 
+--[[
+get first page image
+--]]
+function KoptInterface:getCoverPageImage(doc)
+    local tile = self:renderPage(doc, 1, nil, 1, 0, 1, 0)
+    if tile then
+        return tile.bb
+    end
+end
+
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)

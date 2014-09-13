@@ -56,8 +56,7 @@ function PdfDocument:init()
     local ok
     ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)
     if not ok then
-        self.error_message = self._document -- will contain error message
-        return
+        error(self._document)  -- will contain error message
     end
     self.is_open = true
     self.info.has_pages = true
@@ -66,6 +65,9 @@ function PdfDocument:init()
         self.is_locked = true
     else
         self:_readMetadata()
+    end
+    if not (self.info.number_of_pages > 0) then
+        error("No page found in PDF file")
     end
 end
 
@@ -208,6 +210,10 @@ end
 
 function PdfDocument:getPageDimensions(pageno, zoom, rotation)
     return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
+end
+
+function PdfDocument:getCoverPageImage()
+    return self.koptinterface:getCoverPageImage(self)
 end
 
 function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)

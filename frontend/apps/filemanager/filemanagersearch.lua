@@ -1,14 +1,16 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local DocumentRegistry = require("document/documentregistry")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local Screensaver = require("ui/screensaver")
+local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("ui/screen")
 local util = require("ffi/util")
 local Font = require("ui/font")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local calibre = "metadata.calibre"
@@ -40,19 +42,23 @@ local Search = InputContainer:new{
 
 local function findcalibre(root)
     local t = nil
-    for entity in lfs.dir(root) do
-        if t then
-            break
-        else
-            if entity ~= "." and entity ~= ".." then
-                local fullPath=root .. "/" .. entity
-                local mode = lfs.attributes(fullPath,"mode")
-                if mode == "file" then
-                    if entity == calibre or entity == "." .. calibre then
-                        t = root .. "/" .. entity
+    -- protect lfs.dir which will raise error on no-permission directory
+    local ok, iter, dir_obj = pcall(lfs.dir, root)
+    if ok then
+        for entity in iter, dir_obj do
+            if t then
+                break
+            else
+                if entity ~= "." and entity ~= ".." then
+                    local fullPath=root .. "/" .. entity
+                    local mode = lfs.attributes(fullPath,"mode")
+                    if mode == "file" then
+                        if entity == calibre or entity == "." .. calibre then
+                            t = root .. "/" .. entity
+                        end
+                    elseif mode == "directory" then
+                        t = findcalibre(fullPath)
                     end
-                elseif mode == "directory" then
-                    t = findcalibre(fullPath)
                 end
             end
         end
@@ -61,15 +67,16 @@ local function findcalibre(root)
 end
 
 function Search:getCalibre()
--- check if we find the calibre file
--- check 1st file
+    -- check if we find the calibre file
+    -- check 1st file
     if SEARCH_LIBRARY_PATH == nil then
-          self.metafile_1 = findcalibre("/mnt")
-          if not self.metafile_1 then
-              self.error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
-          else
-              settings_changed = true
-          end
+        DEBUG("search Calibre database")
+        self.metafile_1 = findcalibre("/mnt")
+        if not self.metafile_1 then
+          self.error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
+        else
+          settings_changed = true
+        end
     else
         if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
             SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
@@ -77,6 +84,7 @@ function Search:getCalibre()
         if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
             if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
                 self.error = SEARCH_LIBRARY_PATH .. calibre .. " not found!"
+                DEBUG(self.error)
             else
                 self.metafile_1 = SEARCH_LIBRARY_PATH .. "." .. calibre
             end
@@ -94,7 +102,7 @@ function Search:getCalibre()
             end
         end
     end
--- check 2nd file
+    -- check 2nd file
     local dummy
 
     if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
@@ -326,25 +334,26 @@ function Search:find(option)
                             self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
                         end
                     end
-
-                    if upsearch ~= "" then
-                        if string.find(dummy,upsearch,nil,true) then
-                            i = i + 1
-                        end
-                    else
-                        if option == "series" then
-                            if self.browse_series[self.data[i][self.series]] then
+                    if DocumentRegistry:getProvider(self.data[i][self.path]) then
+                        if upsearch ~= "" then
+                            if string.find(dummy,upsearch,nil,true) then
                                 i = i + 1
                             end
-                        elseif option == "tags" then
-                            local found = false
-                            for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                                if j~="\t" and self.browse_tags[string.sub(j,2)] then
-                                    found = true
+                        else
+                            if option == "series" then
+                                if self.browse_series[self.data[i][self.series]] then
+                                    i = i + 1
                                 end
-                            end
-                            if found then
-                                i = i + 1
+                            elseif option == "tags" then
+                                local found = false
+                                for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
+                                    if j~="\t" and self.browse_tags[string.sub(j,2)] then
+                                        found = true
+                                    end
+                                end
+                                if found then
+                                    i = i + 1
+                                end
                             end
                         end
                     end
@@ -471,8 +480,19 @@ function Search:onMenuHold(item)
             end
             item.notchecked = false
         end
+        local thumbnail = nil
+        local doc = DocumentRegistry:openDocument(item.path)
+        if doc then
+            thumbnail = doc:getCoverPageImage()
+            doc:close()
+        end
         local thumbwidth = math.min(240, Screen:getWidth()/3)
-        UIManager:show(InfoMessage:new{text = item.info,image = Screensaver:getCoverPicture(item.path), image_width = thumbwidth,image_height = thumbwidth/2*3})
+        UIManager:show(InfoMessage:new{
+            text = item.info,
+            image = thumbnail,
+            image_width = thumbwidth,
+            image_height = thumbwidth/2*3
+        })
 
     end
 end
@@ -512,7 +532,7 @@ function Search:showresults()
                path = self.data[i][self.path],
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
-                   showReaderUI(book)
+                   ReaderUI:showReader(book)
                end
             })
             i = i + 1
@@ -617,7 +637,7 @@ function Search:browse(option,run,chosen)
                    notchecked = true,
                    path = self.data[i][self.path],
                    callback = function()
-                       showReaderUI(book)
+                       ReaderUI:showReader(book)
                    end
                 })
             end

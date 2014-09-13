@@ -30,15 +30,13 @@ function DjvuDocument:init()
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     if not validDjvuFile(self.file) then
-        self.error_message = "Not a valid DjVu file"
-        return
+        error("Not a valid DjVu file")
     end
 
     local ok
     ok, self._document = pcall(djvu.openDocument, self.file, self.djvulibre_cache_size)
     if not ok then
-        self.error_message = self._document -- will contain error message
-        return
+        error(self._document)  -- will contain error message
     end
     self.is_open = true
     self.info.has_pages = true
@@ -100,6 +98,10 @@ end
 
 function DjvuDocument:getPageDimensions(pageno, zoom, rotation)
     return self.koptinterface:getPageDimensions(self, pageno, zoom, rotation)
+end
+
+function DjvuDocument:getCoverPageImage()
+    return self.koptinterface:getCoverPageImage(self)
 end
 
 function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)

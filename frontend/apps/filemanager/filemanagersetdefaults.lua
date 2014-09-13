@@ -1,6 +1,5 @@
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -10,6 +9,8 @@ local Screen = require("ui/screen")
 local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
 local util = require("ffi/util")
+local DEBUG = require("dbg")
+local _ = require("gettext")
 
 local SetDefaults = InputContainer:new{
     defaults_name = {},
@@ -156,9 +157,16 @@ function SetDefaults:init()
                 table.insert(self.results, {
                     text = self:build_setting(i),
                     callback = function()
+                        local fields = {}
+                        for m, n in util.orderedPairs(_G[self.defaults_name[i]]) do
+                            fields[m] = {
+                                text = tostring(m) .. " = " .. tostring(n),
+                                hint = "",
+                            }
+                        end
                         self.set_dialog = MultiInputDialog:new{
                             title = self.defaults_name[i] .. ":",
-                            field = _G[self.defaults_name[i]],
+                            fields = fields,
                             buttons = {
                                 {
                                     {
@@ -173,10 +181,13 @@ function SetDefaults:init()
                                         text = _("OK"),
                                         enabled = true,
                                         callback = function()
-
-                                            _G[self.defaults_name[i]] = MultiInputDialog:getCredential()
-
+                                            local fields = {}
+                                            for _, field in ipairs(MultiInputDialog:getFields()) do
+                                                fields[field:match("^[^= ]+")] = field:match("[^= ]+$")
+                                            end
+                                            _G[self.defaults_name[i]] = fields
                                             self.defaults_value[i] = "{"
+                                            DEBUG(_G[self.defaults_name[i]])
                                             for k,v in util.orderedPairs(_G[self.defaults_name[i]]) do
                                                 if tonumber(k) then
                                                     self.defaults_value[i] = self.defaults_value[i] .. v .. ", "

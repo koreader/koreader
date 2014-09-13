@@ -1,7 +1,7 @@
 local BasePowerD = require("ui/device/basepowerd")
 
 local KoboPowerD = BasePowerD:new{
-    fl_min = 1, fl_max = 100,
+    fl_min = 0, fl_max = 100,
     flIntensity = 20,
     restore_settings = true,
     fl = nil,

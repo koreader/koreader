@@ -10,6 +10,7 @@ local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local Language = require("ui/language")
+local DEBUG = require("dbg")
 local _ = require("gettext")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local Search = require("apps/filemanager/filemanagersearch")
@@ -21,6 +22,7 @@ local FileManagerMenu = InputContainer:extend{
 }
 
 function FileManagerMenu:init()
+    local filemanager = self.ui
     self.tab_item_table = {
         setting = {
             icon = "resources/icons/appbar.settings.png",
@@ -30,6 +32,18 @@ function FileManagerMenu:init()
         },
         tools = {
             icon = "resources/icons/appbar.tools.png",
+        },
+        opdscatalog = {
+            icon = "resources/icons/appbar.magnify.browse.png",
+            callback = function()
+                self:onCloseFileManagerMenu()
+                local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
+                function OPDSCatalog:onExit()
+                    DEBUG("refresh filemanager")
+                    filemanager:onRefresh()
+                end
+                OPDSCatalog:showCatalog()
+             end,
         },
         home = {
             icon = "resources/icons/appbar.home.png",
@@ -182,6 +196,7 @@ function FileManagerMenu:onShowMenu()
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
                 self.tab_item_table.tools,
+                self.tab_item_table.opdscatalog,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,
@@ -209,6 +224,11 @@ function FileManagerMenu:onShowMenu()
     self.menu_container = menu_container
     UIManager:show(menu_container)
 
+    return true
+end
+
+function FileManagerMenu:onCloseFileManagerMenu()
+    UIManager:close(self.menu_container)
     return true
 end
 

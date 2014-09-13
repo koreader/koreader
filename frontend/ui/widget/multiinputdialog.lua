@@ -17,12 +17,11 @@ local input_field
 local MultiInputDialog = InputDialog:extend{
     field = {},
     field_hint = {},
+    fields = {},
 }
 
 function MultiInputDialog:init()
-
     -- init title and buttons in base class
-
     InputDialog.init(self)
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
@@ -32,14 +31,14 @@ function MultiInputDialog:init()
 
     input_field = {}
     local k = 0
-    for i,j in util.orderedPairs(self.field) do
+    for i, field in ipairs(self.fields) do
         k = k + 1
         input_field[k] = InputText:new{
-            text = tostring(i) .. " = " .. tostring(j),
-            hint = tostring(self.field_hint[j]) or "",
+            text = field.text or "",
+            hint = field.hint or "",
             face = self.input_face,
             width = self.width * 0.9,
-            focused = true,
+            focused = k == 1 and true or false,
             scroll = false,
             parent = self,
         }
@@ -83,15 +82,12 @@ function MultiInputDialog:init()
     UIManager.full_refresh = true
 end
 
-function MultiInputDialog:getCredential()
-    local field = {}
-    local dummy
-    for i=1,#input_field do
-        dummy = input_field[i].text
-        field[dummy:match("^[^= ]+")] = dummy:match("[^= ]+$")
+function MultiInputDialog:getFields()
+    local fields = {}
+    for i=1, #input_field do
+        table.insert(fields, input_field[i].text)
     end
-
-    return field
+    return fields
 end
 
 function MultiInputDialog:onSwitchFocus(inputbox)

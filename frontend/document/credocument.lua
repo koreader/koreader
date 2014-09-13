@@ -17,6 +17,7 @@ local CreDocument = Document:new{
     PAGE_VIEW_MODE = 1,
 
     _document = false,
+    _loaded = false,
     engine_initilized = false,
 
     line_space_percent = 100,
@@ -75,7 +76,6 @@ function CreDocument:init()
     self:engineInit()
     self.configurable:loadDefaults(self.options)
 
-    local ok
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
     if file_type == "zip" then
         -- NuPogodi, 20.05.12: read the content of zip-file
@@ -94,12 +94,12 @@ function CreDocument:init()
 
     -- @TODO check the default view_mode to a global user configurable
     -- variable  22.12 2012 (houqp)
+    local ok
     ok, self._document = pcall(cre.newDocView,
         Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
     )
     if not ok then
-        self.error_message = self._document -- will contain error message
-        return
+        error(self._document)  -- will contain error message
     end
 
     -- adjust font sizes according to screen dpi
@@ -108,6 +108,12 @@ function CreDocument:init()
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
 
+    -- set visible page count in landscape
+    if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
+        < DCREREADER_TWO_PAGE_THRESHOLD then
+        self:setVisiblePageCount(1)
+    end
+
     self.is_open = true
     self.info.has_pages = false
     self:_readMetadata()
@@ -115,12 +121,18 @@ function CreDocument:init()
 end
 
 function CreDocument:loadDocument()
-    self._document:loadDocument(self.file)
+    if not self._loaded then
+        self._document:loadDocument(self.file)
+        self._loaded = true
+    end
+end
+
+function CreDocument:render()
+    -- load document before rendering
+    self:loadDocument()
+    self._document:renderDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
-    end
-    if math.max(Screen:getWidth(),Screen:getHeight())/Screen:getDPI() < DCREREADER_TWO_PAGE_THRESHOLD then
-        self:setVisiblePageCount(1)
     end
 end
 
@@ -133,7 +145,8 @@ function CreDocument:getPageCount()
 end
 
 function CreDocument:getCoverPageImage()
-    self._document:loadDocument(self.file)
+    -- don't need to render document in order to get cover image
+    self:loadDocument()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local image = Image:fromData(data, size)

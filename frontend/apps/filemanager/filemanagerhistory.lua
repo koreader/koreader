@@ -1,6 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
@@ -78,36 +79,25 @@ function FileManagerHistory:addToMainMenu(tab_item_table)
 end
 
 function FileManagerHistory:updateItemTable()
-    function readHistDir(re)
-        local sorted_files = {}
-        for f in lfs.dir(history_dir) do
-            local path = history_dir..f
-            if lfs.attributes(path, "mode") == "file" then
-                table.insert(sorted_files, {file = f, date = lfs.attributes(path, "modification")})
-            end
-        end
-        table.sort(sorted_files, function(v1,v2) return v1.date > v2.date end)
-        for _, v in pairs(sorted_files) do
-            table.insert(re, {
-                dir = DocSettings:getPathFromHistory(v.file),
-                name = DocSettings:getNameFromHistory(v.file),
-                histfile = v.file,
+    self.hist = {}
+
+    for f in lfs.dir(history_dir) do
+        local path = history_dir..f
+        if lfs.attributes(path, "mode") == "file" then
+            local name = DocSettings:getNameFromHistory(f)
+            table.insert(self.hist, {
+                date = lfs.attributes(path, "modification"),
+                text = name,
+                histfile = f,
+                callback = function()
+                    ReaderUI:showReader(
+                        DocSettings:getPathFromHistory(f).. "/" .. name)
+                end
             })
         end
     end
+    table.sort(self.hist, function(v1, v2) return v1.date > v2.date end)
 
-    self.hist = {}
-    local last_files = {}
-    readHistDir(last_files)
-    for _,v in pairs(last_files) do
-        table.insert(self.hist, {
-            text = v.name,
-            histfile = v.histfile,
-            callback = function()
-                showReaderUI(v.dir .. "/" .. v.name)
-            end
-        })
-    end
     self.hist_menu:swithItemTable(self.hist_menu_title, self.hist)
 end
 
