@@ -17,7 +17,6 @@ local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
-local Device = require("ui/device")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
@@ -149,13 +148,6 @@ function FileManager:init()
     })
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
-
-    if Device:hasKeys() then
-        self.key_events = {
-            Close = { { "Home" }, doc = "exit file manager" },
-        }
-    end
-
 end
 
 function FileManager:toggleHiddenFiles()

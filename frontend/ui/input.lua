@@ -435,8 +435,6 @@ function Input:init()
             else -- kobo touch (trilogy)
                 -- FIXME some touch models should be treated as the other models,
                 -- depending on board revision
-                -- Kobo Touch also has one key!
-                self.event_map[102] = "Home"
                 function Input:eventAdjustHook(ev)
                     if ev.code == ABS_X then
                         -- We always have to substract from the physical x,
