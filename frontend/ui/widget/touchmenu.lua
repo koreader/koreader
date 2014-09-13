@@ -321,14 +321,14 @@ function TouchMenu:init()
     }
     if NetworkMgr:getWifiStatus() == true then
         self.net_info = Button:new{
-            icon = "resources/icons/appbar.globe.wire.png",
+            icon = "resources/icons/appbar.wifi.enabled.png",
             callback = function() self:netToggle() end,
             bordersize = 0,
             show_parent = self,
         }
     else
         self.net_info = Button:new{
-            icon = "resources/icons/appbar.globe.wire.grey.png",
+            icon = "resources/icons/appbar.wifi.disabled.png",
             callback = function() self:netToggle() end,
             bordersize = 0,
             show_parent = self,
