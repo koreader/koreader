@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local Font = require("ui/font")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
+local Device = require("ui/device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -20,8 +21,6 @@ local util = require("ffi/util")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
@@ -29,8 +28,6 @@ local FileManager = InputContainer:extend{
 }
 
 function FileManager:init()
-    local exclude_dirs = {"%.sdr$"}
-
     self.show_parent = self.show_parent or self
 
     self.banner = VerticalGroup:new{
@@ -52,12 +49,6 @@ function FileManager:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
-        dir_filter = function(dirname)
-            for _, pattern in ipairs(exclude_dirs) do
-                if dirname:match(pattern) then return end
-            end
-            return true
-        end,
         file_filter = function(filename)
             if DocumentRegistry:getProvider(filename) then
                 return true
@@ -68,7 +59,8 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onFileSelect(file)
-        showReaderUI(file)
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file)
         return true
     end
 
@@ -162,6 +154,36 @@ function FileManager:onClose()
         self:onExit()
     end
     return true
+end
+
+function FileManager:onRefresh()
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:getDefaultDir()
+    if Device:isKindle() then
+        return "/mnt/us/documents"
+    elseif Device:isKobo() then
+        return "/mnt/onboard"
+    elseif Device.isAndroid then
+        return "/sdcard"
+    else
+        return "."
+    end
+end
+
+function FileManager:showFiles(path)
+    DEBUG("show home page")
+    path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
+    G_reader_settings:saveSetting("lastdir", path)
+    UIManager:show(FileManager:new{
+        dimen = Screen:getSize(),
+        root_path = path,
+        onExit = function()
+            UIManager:quit()
+        end
+    })
 end
 
 function FileManager:copyFile(file)
