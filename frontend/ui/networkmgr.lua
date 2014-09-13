@@ -72,9 +72,11 @@ function NetworkMgr:promptWifiOff()
 end
 
 function NetworkMgr:getWifiStatus()
-    if os.execute("ping -c3 8.8.8.8") == 0 then
+    if os.execute("ping -q -c1 `ip r | grep default | cut -d ' ' -f 3`") == 0 then
+        DEBUG("Default Gateway Ping successful")
         return true
     else
+        DEBUG("Default Gateway Ping not successful")
         return false
     end
 end
