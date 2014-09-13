@@ -319,12 +319,21 @@ function TouchMenu:init()
         text = "",
         face = self.fface,
     }
-    self.net_info = Button:new{
-        icon = "resources/icons/appbar.globe.wire.grey.png",
-        callback = function() self:netToggle() end,
-        bordersize = 0,
-        show_parent = self,
-    }
+    if NetworkMgr:getWifiStatus() == true then
+        self.net_info = Button:new{
+            icon = "resources/icons/appbar.globe.wire.png",
+            callback = function() self:netToggle() end,
+            bordersize = 0,
+            show_parent = self,
+        }
+    else
+        self.net_info = Button:new{
+            icon = "resources/icons/appbar.globe.wire.grey.png",
+            callback = function() self:netToggle() end,
+            bordersize = 0,
+            show_parent = self,
+        }
+    end
     self.device_info = HorizontalGroup:new{
         self.time_info,
         self.net_info,
@@ -442,11 +451,6 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
     self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
-    DEBUG(self.net_info.icon)
-    if NetworkMgr:getWifiStatus() == true then
-    self.net_info.icon = "resources/icons/appbar.globe.wire.png"
-    end
-    DEBUG(self.net_info.icon)
     -- FIXME: this is a dirty hack to clear previous menus
     -- refert to issue #664
     UIManager.repaint_all = true
