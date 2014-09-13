@@ -315,25 +315,17 @@ function TouchMenu:init()
         self.page_info_text,
         self.page_info_right_chev
     }
+    --group for device info
     self.time_info = TextWidget:new{
         text = "",
         face = self.fface,
     }
-    if NetworkMgr:getWifiStatus() == true then
-        self.net_info = Button:new{
-            icon = "resources/icons/appbar.wifi.enabled.png",
-            callback = function() self:netToggle() end,
-            bordersize = 0,
-            show_parent = self,
-        }
-    else
-        self.net_info = Button:new{
-            icon = "resources/icons/appbar.wifi.disabled.png",
-            callback = function() self:netToggle() end,
-            bordersize = 0,
-            show_parent = self,
-        }
-    end
+    self.net_info = Button:new{
+        icon = "resources/icons/appbar.wifi.png",
+        callback = function() self:netToggle() end,
+        bordersize = 0,
+        show_parent = self,
+    }
     self.device_info = HorizontalGroup:new{
         self.time_info,
         self.net_info,
@@ -371,7 +363,6 @@ function TouchMenu:init()
     }
 
     self:switchMenuTab(1)
-    DEBUG(self.net_info.icon)
     self:updateItems()
 end
 
@@ -451,15 +442,15 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
     self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
+    self.net_info.label_widget.dim = not NetworkMgr:getWifiStatus()
     -- FIXME: this is a dirty hack to clear previous menus
     -- refert to issue #664
     UIManager.repaint_all = true
 end
 
 function TouchMenu:netToggle()
-    if NetworkMgr:getWifiStatus() == true then
+    if self.net_info.label_widget.dim == false then
         NetworkMgr:promptWifiOff()
-        self.net_info.icon = "resources/icons/appbar.globe.wire.png"
     else
         NetworkMgr:promptWifiOn()
     end
