@@ -616,12 +616,25 @@ function Menu:updateItems(select_number)
 
 end
 
+--[[
+    May be a typo of switchItemTable?
+    the itemnumber paramter determines menu page number after switching item table
+    1. itemnumber >= 0
+        the page number is calculated with items per page
+    2. itemnumber == nil
+        the page number is 1
+    3. itemnumber is negative number
+        the page number is not changed, used when item_table is appended with
+        new entries
+--]]
 function Menu:swithItemTable(new_title, new_item_table, itemnumber)
     if self.menu_title and new_title then
         self.menu_title.text = new_title
     end
 
-    if itemnumber then
+    if itemnumber == nil then
+        self.page = 1
+    elseif itemnumber >= 0 then
         self.page = math.ceil(itemnumber / self.perpage)
     end
 

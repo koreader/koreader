@@ -383,7 +383,7 @@ function OPDSBrowser:appendCatalog(url, baseurl)
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
-    self:swithItemTable(nil, self.item_table)
+    self:swithItemTable(nil, self.item_table, -1)
     return true
 end
 
