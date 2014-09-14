@@ -50,7 +50,7 @@ function Button:init()
         self.width = widget_size.w
     end
     -- set FrameContainer content
-    self[1] = FrameContainer:new{
+    self.frame = FrameContainer:new{
         margin = self.margin,
         bordersize = self.bordersize,
         background = self.background,
@@ -65,11 +65,12 @@ function Button:init()
         }
     }
     if self.preselect then
-        self[1].color = 15
+        self.frame.color = 15
     else
-        self[1].color = 5
+        self.frame.color = 5
     end
-    self.dimen = self[1]:getSize()
+    self.dimen = self.frame:getSize()
+    self[1] = self.frame
     if Device:isTouchDevice() then
         self.ges_events = {
             TapSelect = {
@@ -128,6 +129,8 @@ end
 
 function Button:hide()
     if self.icon then
+        self.frame.orig_background = self[1].background
+        self.frame.background = nil
         self.label_widget.hide = true
     end
 end
@@ -135,6 +138,7 @@ end
 function Button:show()
     if self.icon then
         self.label_widget.hide = false
+        self.frame.background = self[1].old_background
     end
 end
 

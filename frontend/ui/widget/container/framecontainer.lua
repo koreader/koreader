@@ -30,7 +30,7 @@ function FrameContainer:paintTo(bb, x, y)
     self.dimen = Geom:new{
         x = x, y = y,
         w = my_size.w,
-        h = my_size.h 
+        h = my_size.h
     }
     local container_width = self.width or my_size.w
     local container_height = self.height or my_size.h
