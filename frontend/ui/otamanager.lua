@@ -114,8 +114,11 @@ function OTAManager:fetchAndProcessUpdate()
                             text = _("Koreader will be updated on next restart."),
                         })
                     else
-                        UIManager:show(InfoMessage:new{
-                            text = _("Error updating Koreader."),
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Error updating Koreader. Would you like to delete temporary files?"),
+                            ok_callback = function()
+                                os.execute("rm ota/ko*")
+                            end,
                         })
                     end
                 end)
