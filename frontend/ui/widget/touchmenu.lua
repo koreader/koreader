@@ -20,6 +20,7 @@ local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local NetworkMgr = require("ui/networkmgr")
 
 --[[
 TouchMenuItem widget
@@ -314,10 +315,28 @@ function TouchMenu:init()
         self.page_info_text,
         self.page_info_right_chev
     }
+    --group for device info
     self.time_info = TextWidget:new{
         text = "",
         face = self.fface,
     }
+    if Device:isKindle() or Device:isKobo() then
+        self.net_info = Button:new{
+            icon = "resources/icons/appbar.wifi.png",
+            callback = function() self:netToggle() end,
+            bordersize = 0,
+            show_parent = self,
+        }
+        self.net_info.label_widget.dim = not NetworkMgr:getWifiStatus()
+        self.device_info = HorizontalGroup:new{
+            self.time_info,
+            self.net_info,
+        } 
+    else 
+        self.device_info = HorizontalGroup:new{
+            self.time_info,
+        } 
+    end
     local footer_width = self.width - self.padding*2 - self.bordersize*2
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
@@ -337,7 +356,7 @@ function TouchMenu:init()
         },
         RightContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
-            self.time_info,
+            self.device_info,
         }
     }
 
@@ -433,6 +452,15 @@ function TouchMenu:updateItems()
     -- FIXME: this is a dirty hack to clear previous menus
     -- refert to issue #664
     UIManager.repaint_all = true
+end
+
+function TouchMenu:netToggle()
+    if NetworkMgr:getWifiStatus() == true then
+        NetworkMgr:promptWifiOff()
+    else
+        NetworkMgr:promptWifiOn()
+    end
+    self:closeMenu()
 end
 
 function TouchMenu:switchMenuTab(tab_num)

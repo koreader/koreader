@@ -72,11 +72,15 @@ function NetworkMgr:promptWifiOff()
 end
 
 function NetworkMgr:getWifiStatus()
-    if os.execute("ping -c3 8.8.8.8") == 0 then
-        return true
-    else
-        return false
-    end
+    local default_string = io.popen("ip r | grep default")
+    local result = default_string:read()
+    if result ~= nil then
+        local gateway = string.match(result,"%d+.%d+.%d+.%d+")
+        if os.execute("ping -q -c1 "..gateway) == 0 then
+            return true
+      end -- ping to gateway
+    end -- test for empty string
+    return false
 end
 
 return NetworkMgr
