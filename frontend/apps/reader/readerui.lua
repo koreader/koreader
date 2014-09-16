@@ -256,7 +256,6 @@ function ReaderUI:init()
             ui = self
         })
         if KOBO_SCREEN_SAVER_LAST_BOOK then
-            table.insert(self, self.excludescreensaver) -- hold reference to excludescreensaver menu
             -- excludescreensaver menu
             table.insert(self, ReaderExcludeScreensaver:new{
                 dialog = self.dialog,
