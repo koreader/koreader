@@ -39,6 +39,7 @@ local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local PluginLoader = require("apps/reader/pluginloader")
+local ReaderExcludeScreensaver = require("apps/reader/modules/readerexcludescreensaver")
 
 --[[
 This is an abstraction for a reader interface
@@ -254,6 +255,14 @@ function ReaderUI:init()
             view = self[1],
             ui = self
         })
+        if KOBO_SCREEN_SAVER_LAST_BOOK then
+            -- excludescreensaver menu
+            table.insert(self, ReaderExcludeScreensaver:new{
+                dialog = self.dialog,
+                view = self[1],
+                ui = self
+            })
+        end
     end
     -- configuable controller
     if self.document.info.configurable then
