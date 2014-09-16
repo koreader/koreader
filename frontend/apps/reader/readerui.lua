@@ -255,13 +255,15 @@ function ReaderUI:init()
             view = self[1],
             ui = self
         })
-        table.insert(self, self.excludescreensaver) -- hold reference to excludescreensaver menu
-        -- excludescreensaver menu
-        table.insert(self, ReaderExcludeScreensaver:new{
-            dialog = self.dialog,
-            view = self[1],
-            ui = self
-        })
+        if KOBO_SCREEN_SAVER_LAST_BOOK then
+            table.insert(self, self.excludescreensaver) -- hold reference to excludescreensaver menu
+            -- excludescreensaver menu
+            table.insert(self, ReaderExcludeScreensaver:new{
+                dialog = self.dialog,
+                view = self[1],
+                ui = self
+            })
+        end
     end
     -- configuable controller
     if self.document.info.configurable then
