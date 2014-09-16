@@ -56,7 +56,12 @@ function Screensaver:show()
     -- first check book cover image
     if KOBO_SCREEN_SAVER_LAST_BOOK then
         local lastfile = G_reader_settings:readSetting("lastfile")
-        self.suspend_msg = self:getCoverImage(lastfile)
+        local historyfile = lastfile:gsub("/","#")
+        historyfile = "./history/[" .. historyfile:gsub("(.*#)([^#]+)","%1] %2") .. ".lua"
+        local ok,exclude = pcall(dofile,historyfile)
+        if ok and (exclude["exclude_screensaver"] or 0) == 0 then
+            self.suspend_msg = self:getCoverImage(lastfile)
+        end
     end
     -- then screensaver directory or file image
     if not self.suspend_msg then
