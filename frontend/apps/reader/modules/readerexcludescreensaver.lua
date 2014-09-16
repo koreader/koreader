@@ -3,7 +3,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderExcludeScreensaver = InputContainer:new{
-    menu_title = _("Exclude book from screensaver"),
+    menu_title = _("Use this book's cover as screensaver"),
     exclude = 0
 }
 
