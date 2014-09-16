@@ -39,6 +39,7 @@ local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local PluginLoader = require("apps/reader/pluginloader")
+local ReaderExcludeScreensaver = require("apps/reader/modules/readerexcludescreensaver")
 
 --[[
 This is an abstraction for a reader interface
@@ -250,6 +251,13 @@ function ReaderUI:init()
         table.insert(self, self.hyphenation) -- hold reference to hyphenation menu
         -- rolling controller
         table.insert(self, ReaderRolling:new{
+            dialog = self.dialog,
+            view = self[1],
+            ui = self
+        })
+        table.insert(self, self.excludescreensaver) -- hold reference to excludescreensaver menu
+        -- excludescreensaver menu
+        table.insert(self, ReaderExcludeScreensaver:new{
             dialog = self.dialog,
             view = self[1],
             ui = self
