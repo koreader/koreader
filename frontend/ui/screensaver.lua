@@ -1,6 +1,7 @@
 local DocumentRegistry = require("document/documentregistry")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
+local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -56,7 +57,12 @@ function Screensaver:show()
     -- first check book cover image
     if KOBO_SCREEN_SAVER_LAST_BOOK then
         local lastfile = G_reader_settings:readSetting("lastfile")
-        self.suspend_msg = self:getCoverImage(lastfile)
+        local data = DocSettings:open(lastfile)
+        local exclude = data:readSetting("exclude_screensaver")
+        if ok and not exclude then
+            self.suspend_msg = self:getCoverImage(lastfile)
+        end
+
     end
     -- then screensaver directory or file image
     if not self.suspend_msg then
