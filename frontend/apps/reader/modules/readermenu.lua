@@ -139,6 +139,20 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
+    
+    --typeset tab
+    if KOBO_SCREEN_SAVER_LAST_BOOK then
+        local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
+        table.insert(self.tab_item_table.typeset, {
+            text = _("Use this book's cover as screensaver"),
+            checked_func = function() return not (self.ui.doc_settings:readSetting("exclude_screensaver") or false) end,
+            callback = function()
+                local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
+                self.ui.doc_settings:saveSetting("exclude_screensaver", not exclude)
+                self.ui:saveSettings()
+            end
+        })
+    end
 end
 
 function ReaderMenu:onShowReaderMenu()
