@@ -17,6 +17,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
+    exclude = false,
     tab_item_table = nil,
     registered_widgets = {},
 }
@@ -67,6 +68,8 @@ function ReaderMenu:init()
             Close = { { "Back" }, doc = "close menu" },
         }
     end
+    
+    self.exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
 end
 
 function ReaderMenu:initGesListener()
@@ -139,6 +142,19 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
+    
+    --typeset tab
+    if KOBO_SCREEN_SAVER_LAST_BOOK then
+        table.insert(self.tab_item_table.typeset, {
+            text = _("Use this book's cover as screensaver"),
+            checked_func = function() return not self.exclude end,
+            callback = function()
+                self.exclude = not self.exclude
+                self.ui.doc_settings:saveSetting("exclude_screensaver", self.exclude)
+                self.ui:saveSettings()
+            end
+        })
+    end
 end
 
 function ReaderMenu:onShowReaderMenu()
