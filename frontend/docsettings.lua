@@ -2,7 +2,7 @@ local lfs = require("libs/libkoreader-lfs")
 local DocSettings = {}
 
 function DocSettings:getHistoryPath(fullpath)
-    return "./history/[" .. fullpath:gsub("/","#"):gsub("(.*#)([^#]+)","%1] %2") .. ".lua"
+    return "./history/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
