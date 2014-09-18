@@ -2,18 +2,7 @@ local lfs = require("libs/libkoreader-lfs")
 local DocSettings = {}
 
 function DocSettings:getHistoryPath(fullpath)
-    local i = #fullpath - 1
-    -- search for last slash
-    while i > 0 do
-        if fullpath:sub(i,i) == "/" then
-            break
-        end
-        i = i - 1
-    end
-    -- construct path to configuration file in history dir
-    local filename = fullpath:sub(i+1, -1)
-    local basename = fullpath:sub(1, i)
-    return "./history/["..basename:gsub("/","#").."] "..filename..".lua"
+    return "./history/[" .. fullpath:gsub("/","#"):gsub("(.*#)([^#]+)","%1] %2") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
