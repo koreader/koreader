@@ -68,12 +68,12 @@ function CalibreCompanion:find_calibre_server()
         -- broadcast anything to calibre ports and listen to the reply
         local sent, err = udp:sendto("hello", "255.255.255.255", port)
         if not err then
-            local dgram, err = udp:receivefrom()
-            if dgram then
+            local dgram, host = udp:receivefrom()
+            if dgram and host then
                 -- replied diagram has greet message from calibre and calibre hostname
                 -- calibre opds port and calibre socket port we will later connect to
-                local _, host, _, port = dgram:match("(.-)%(on (.-)%);(.-),(.-)$")
-                return socket.dns.toip(host), port
+                local _, hostname, _, port = dgram:match("(.-)%(on (.-)%);(.-),(.-)$")
+                return host, port
             end
         end
     end
