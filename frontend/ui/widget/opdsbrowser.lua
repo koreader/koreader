@@ -45,6 +45,7 @@ local OPDSBrowser = Menu:extend{
 
     formats = {
         ["application/epub+zip"] = "EPUB",
+        ["application/fb2+zip"] = "FB2",
         ["application/pdf"] = "PDF",
         ["text/plain"] = "TXT",
         ["application/x-mobipocket-ebook"] = "MOBI",
