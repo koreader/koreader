@@ -231,7 +231,6 @@ end
 function PdfDocument:register(registry)
     registry:addProvider("pdf", "application/pdf", self)
     registry:addProvider("cbz", "application/cbz", self)
-    registry:addProvider("zip", "application/zip", self)
     registry:addProvider("xps", "application/xps", self)
 end
 
