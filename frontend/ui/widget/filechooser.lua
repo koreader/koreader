@@ -82,11 +82,15 @@ function FileChooser:genItemTableFromPath(path)
             items = items - 2
         end
         local istr = items .. (items > 1 and _(" items") or _(" item"))
-        table.insert(item_table, { text = dir.."/", mandatory = istr, path = path})
+        table.insert(item_table, {
+            text = dir.."/",
+            mandatory = istr,
+            path = path
+        })
     end
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file
-        local file_size = lfs.attributes(full_path, "size")
+        local file_size = lfs.attributes(full_path, "size") or 0
         local sstr = ""
         if file_size > 1024*1024 then
             sstr = string.format("%4.1f MB", file_size/1024/1024)
@@ -95,7 +99,20 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
-        table.insert(item_table, { text = file, mandatory = sstr, path = full_path })
+        table.insert(item_table, {
+            text = file,
+            mandatory = sstr,
+            path = full_path
+        })
+    end
+    -- lfs.dir iterated node string may be encoded with some weird codepage on Windows
+    -- we need to encode them to utf-8
+    if ffi.os == "Windows" then
+        for k, v in pairs(item_table) do
+            if v.text then
+                v.text = util.multiByteToUTF8(v.text) or ""
+            end
+        end
     end
 
     return item_table
