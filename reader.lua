@@ -3,7 +3,17 @@
 require "defaults"
 pcall(dofile, "defaults.persistent.lua")
 package.path = "?.lua;common/?.lua;frontend/?.lua"
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
+package.cpath = "?.so;common/?.so;common/?.dll;/usr/lib/lua/?.so"
+
+local ffi = require("ffi")
+if ffi.os == "Windows" then
+    ffi.cdef[[
+        int _putenv(const char *envvar);
+    ]]
+    ffi.C._putenv("PATH=libs;common;")
+    --ffi.C._putenv("EMULATE_READER_W=480")
+    --ffi.C._putenv("EMULATE_READER_H=600")
+end
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")
