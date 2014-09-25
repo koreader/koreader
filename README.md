@@ -1,9 +1,9 @@
 KOReader [![Build Status][travis-icon]][travis-link]
 ========
 
-KOReader is a document viewer application, originally created for usage on the
-Kindle e-ink reader. It currently supports Kindle 5 (Touch), Kindle Paperwhite
-, Kobo and Android devices.
+KOReader is a document viewer application, originally created for Kindle 
+e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
+Kobo, Android(2.3+) devices.
 
 KOReader started as the KindlePDFViewer application, but it supports much more
 formats than PDF now. Among them are DJVU, FB2, EPUB, TXT, CBZ, HTML.
@@ -40,6 +40,8 @@ Cross compile toolchains are available for Ubuntu users through these commands:
 sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
 # for Kobo
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+# for Win32
+sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686 
 ```
 
 A recent version of Android SDK/NDK and `ant` are needed in order to build Koreader for Android
@@ -49,7 +51,7 @@ sudo apt-get install ant
 ```
 
 You might also need SDL library packages if you want to compile and run 
-Koreader on PC. Fedora users can install `SDL` and `SDL-devel`.
+Koreader on your Linux PC. Fedora users can install `SDL` and `SDL-devel`.
 Ubuntu users probably need to run:
 ```
 sudo apt-get install libsdl1.2-dev
@@ -104,12 +106,17 @@ Then, build installable package for Android:
 make TARGET=android clean androidupdate
 ```
 
-For emulating
+For emulating Koreader on Linux and Windows
 -------------
 
-To build an emulator on current machine just run:
+To build an emulator on current Linux machine just run:
 ```
 make clean && make
+```
+
+If you want to compile the emulator for Windows you need to run:
+```
+make TARGET=win32 clean && make TARGET=win32
 ```
 
 To run koreader on your developing machine 
@@ -162,13 +169,12 @@ build time when the source have been built. Ccache support has been added to
 KOReader's build system. Before using it, you need to install a ccache in your
 system.
 
-* in ubuntu use:`sudo apt-get install ccache`
-* in fedora use:`sudo yum install ccache`
+* in Ubuntu use:`sudo apt-get install ccache`
+* in Fedora use:`sudo yum install ccache`
 * install from source:
   * get latest ccache source from http://ccache.samba.org/download.html
   * unarchieve the source package in a directory
   * cd to that directory and use:`./configure && make && sudo make install`
-* after using ccache, make a clean build will only take 15sec. Enjoy!
 * to disable ccache, use `export USE_NO_CCACHE=1` before make.
 * for more detail about ccache. visit:
 
