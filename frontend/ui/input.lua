@@ -345,16 +345,17 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
 
     if util.isEmulated() then
-        os.remove("/tmp/emu_event")
-        os.execute("mkfifo /tmp/emu_event")
-        input.open("/tmp/emu_event")
+        if not util.isWindows() then
+            os.remove("/tmp/emu_event")
+            os.execute("mkfifo /tmp/emu_event")
+            input.open("/tmp/emu_event")
+        end
         -- SDL key codes
         if not util.haveSDL2() then
             self.event_map = self.sdl_event_map
         else
             self.event_map = self.sdl2_event_map
         end
-
     else
         local dev_mod = Device:getModel()
         if not Device:isKobo() then

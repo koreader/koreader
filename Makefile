@@ -32,7 +32,7 @@ all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
 	mkdir -p $(INSTALL_DIR)/koreader
-ifdef EMULATE_READER
+ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	# create symlink instead of copying files in development mode
 	cd $(INSTALL_DIR)/koreader && \
@@ -52,6 +52,10 @@ ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 endif
+ifdef WIN32
+	# install runtime libraries for win32
+	cd $(INSTALL_DIR)/koreader && cp ../../windows/*.dll .
+endif
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
@@ -60,7 +64,7 @@ endif
 	mkdir -p $(INSTALL_DIR)/koreader/data/tessdata
 	mkdir -p $(INSTALL_DIR)/koreader/fonts/host
 	mkdir -p $(INSTALL_DIR)/koreader/ota
-ifndef EMULATE_READER
+ifeq ($(or $(EMULATE_READER),$(WIN32)),)
 	# clean up, remove unused files for releases
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 	rm $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttc
