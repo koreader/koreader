@@ -1,8 +1,3 @@
-local socket = require('socket')
-local url = require('socket.url')
-local http = require('socket.http')
-local https = require('ssl.https')
-local ltn12 = require('ltn12')
 local JSON = require("JSON")
 local DEBUG = require("dbg")
 
@@ -33,6 +28,12 @@ end
 --  return decoded JSON table from Wikipedia
 --]]
 function Wikipedia:loadPage(text, lang, intro, plain)
+    local socket = require('socket')
+    local url = require('socket.url')
+    local http = require('socket.http')
+    local https = require('ssl.https')
+    local ltn12 = require('ltn12')
+
     local request, sink = {}, {}
     local query = ""
     self.wiki_params.exintro = intro and "" or nil

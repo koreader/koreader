@@ -1,8 +1,3 @@
-local socket = require('socket')
-local url = require('socket.url')
-local http = require('socket.http')
-local https = require('ssl.https')
-local ltn12 = require('ltn12')
 local JSON = require("JSON")
 local DEBUG = require("dbg")
 
@@ -36,6 +31,12 @@ end
 --  return decoded JSON table from translate server
 --]]
 function Translator:loadPage(target_lang, source_lang, text)
+    local socket = require('socket')
+    local url = require('socket.url')
+    local http = require('socket.http')
+    local https = require('ssl.https')
+    local ltn12 = require('ltn12')
+
     local request, sink = {}, {}
     local query = ""
     self.trans_params.tl = target_lang
