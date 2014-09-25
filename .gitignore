@@ -30,5 +30,6 @@ l10n/*
 koreader-arm-linux-androideabi
 koreader-arm-linux-gnueabi
 koreader-arm-linux-gnueabihf
+koreader-i686-w64-mingw32
 koreader-x86_64-linux-gnu
 
