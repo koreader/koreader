@@ -139,6 +139,8 @@ DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
 DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
 
+DMINIBAR_FONT_SIZE = 14
+
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true
