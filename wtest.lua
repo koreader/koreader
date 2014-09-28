@@ -22,10 +22,12 @@ local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Menu = require("ui/widget/menu")
 local Widget = require("ui/widget/widget")
+local TextWidget = require("ui/widget/textwidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local AlphaContainer = require("ui/widget/container/alphacontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local TouchMenu = require("ui/widget/touchmenu")
 local InputText = require("ui/widget/inputtext")
@@ -163,16 +165,20 @@ end
 -----------------------------------------------------
 -- example widget: a clock
 -----------------------------------------------------
-Clock = FrameContainer:new{
-    background = 0,
-    bordersize = 1,
-    margin = 0,
-    padding = 1
+Clock = AlphaContainer:new{
+    alpha = 0.7,
+
+    FrameContainer:new{
+        background = 0,
+        bordersize = 1,
+        margin = 0,
+        padding = 1
+    }
 }
 
 function Clock:schedFunc()
-    self[1]:free()
-    self[1] = self:getTextWidget()
+    self[1][1]:free()
+    self[1][1] = self:getTextWidget()
     UIManager:setDirty(self)
     -- reschedule
     -- TODO: wait until next real second shift
@@ -180,7 +186,7 @@ function Clock:schedFunc()
 end
 
 function Clock:onShow()
-    self[1] = self:getTextWidget()
+    self[1][1] = self:getTextWidget()
     self:schedFunc()
 end
 
@@ -341,10 +347,10 @@ inputtext = InputText:new{
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
-UIManager:show(Background:new())
+--UIManager:show(Background:new())
 -- UIManager:show(TestGrid)
 UIManager:show(TestVisible)
---UIManager:show(Clock:new())
+UIManager:show(Clock:new())
 --UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
