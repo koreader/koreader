@@ -322,7 +322,9 @@ function UIManager:run()
         local force_partial_refresh = false
         local force_fast_refresh = false
         for _, widget in ipairs(self._window_stack) do
-            if self.repaint_all or self._dirty[widget.widget] then
+            -- paint if repaint_all is request
+            -- paint also if current widget or any widget underneath is dirty
+            if self.repaint_all or dirty or self._dirty[widget.widget] then
                 widget.widget:paintTo(Screen.bb,
                                       widget.x + Screen:offsetX(),
                                       widget.y + Screen:offsetY())

@@ -332,6 +332,7 @@ function CalibreCompanion:sendBook(arg)
     -- switching to raw data receiving mode
     self.calibre_socket.receiveCallback = function(data)
         --DEBUG("receive file data", #data)
+        --DEBUG("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
         outfile:write(to_write_data)
         to_write_bytes = to_write_bytes - #to_write_data

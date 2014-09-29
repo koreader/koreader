@@ -57,7 +57,13 @@ end
 
 function StreamMessageQueue:waitEvent()
     local data = ""
-    while czmq.zpoller_wait(self.poller, 0) ~= nil do
+    -- Successive zframes may be tens or hundreds in some cases
+    -- if they are concatenated in a single loop it may run up memory of the
+    -- machine. And it did happened when receiving file data from Calibre server.
+    -- Here we receive only receive 10 packages at most in one waitEvent loop, and
+    -- call receiveCallback immediately.
+    local wait_packages = 10
+    while czmq.zpoller_wait(self.poller, 0) ~= nil and wait_packages > 0 do
         local id_frame = czmq.zframe_recv(self.socket)
         if id_frame ~= nil then
             local id = self:handleZframe(id_frame)
@@ -66,6 +72,7 @@ function StreamMessageQueue:waitEvent()
         if frame ~= nil then
             data = data .. (self:handleZframe(frame) or "")
         end
+        wait_packages = wait_packages - 1
     end
     if self.receiveCallback and data ~= "" then
         self.receiveCallback(data)
