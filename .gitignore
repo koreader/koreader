@@ -32,4 +32,5 @@ koreader-arm-linux-gnueabi
 koreader-arm-linux-gnueabihf
 koreader-i686-w64-mingw32
 koreader-x86_64-linux-gnu
+koreader-x86_64-pc-linux-gnu
 
