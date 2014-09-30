@@ -314,7 +314,7 @@ function Search:find(option)
                 while line do
 
                     for j = 1,9 do
-                        self.data[i][j] = line
+                        self.data[i][j] = line or ""
                         line = g:read()
                     end
 
