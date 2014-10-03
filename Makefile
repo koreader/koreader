@@ -14,8 +14,13 @@ export PATH:=$(CURDIR)/$(KOR_BASE)/toolchain/android-toolchain/bin:$(PATH)
 MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 INSTALL_DIR=koreader-$(MACHINE)
 
-ANDROID_DIR=android
+# platform directories
+PLATFORM_DIR=platform
+KINDLE_DIR=$(PLATFORM_DIR)/kindle
+KOBO_DIR=$(PLATFORM_DIR)/kobo
+ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
+WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
@@ -54,7 +59,7 @@ ifdef ANDROID
 endif
 ifdef WIN32
 	# install runtime libraries for win32
-	cd $(INSTALL_DIR)/koreader && cp ../../windows/*.dll .
+	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
@@ -102,11 +107,11 @@ kindleupdate: all
 	# remove old package if any
 	rm -f koreader-kindle-$(MACHINE)-$(VERSION).zip
 	# Kindle launching scripts
-	ln -sf ../kindle/extensions $(INSTALL_DIR)/
-	ln -sf ../kindle/launchpad $(INSTALL_DIR)/
-	ln -sf ../../kindle/koreader.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../kindle/libkohelper.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../kindle/kotar_cpoint $(INSTALL_DIR)/koreader
+	ln -sf ../$(KINDLE_DIR)/extensions $(INSTALL_DIR)/
+	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
+	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
+	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
+	ln -sf ../../$(KINDLE_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
 	# create new package
 	# Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
@@ -137,13 +142,13 @@ koboupdate: all
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
 	# Kobo launching scripts
 	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
-	ln -sf ../../../../../kobo/fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
+	ln -sf ../../../../../$(KOBO_DIR)/fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
 	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
-	cp kobo/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
-	cp kobo/koreader.sh $(INSTALL_DIR)/koreader
-	cp kobo/suspend.sh $(INSTALL_DIR)/koreader
-	cp kobo/nickel.sh $(INSTALL_DIR)/koreader
+	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
+	cp $(KOBO_DIR)/koreader.sh $(INSTALL_DIR)/koreader
+	cp $(KOBO_DIR)/suspend.sh $(INSTALL_DIR)/koreader
+	cp $(KOBO_DIR)/nickel.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
