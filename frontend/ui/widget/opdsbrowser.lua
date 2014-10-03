@@ -40,7 +40,7 @@ local OPDSBrowser = Menu:extend{
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
-    acquisition_rel = "http://opds-spec.org/acquisition",
+    acquisition_rel = "^http://opds%-spec%.org/acquisition",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
 
     formats = {
@@ -331,7 +331,7 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
                         if link.type:find(self.catalog_type) then
                             item.url = build_href(link.href)
                         end
-                        if link.rel == self.acquisition_rel then
+                        if link.rel and link.rel:match(self.acquisition_rel) then
                             table.insert(item.acquisitions, {
                                 type = link.type,
                                 href = build_href(link.href),
