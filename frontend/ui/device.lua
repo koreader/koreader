@@ -1,8 +1,4 @@
-local AndroidPowerd = require("ui/device/androidpowerd")
-local KindlePowerD = require("ui/device/kindlepowerd")
 local isAndroid, android = pcall(require, "android")
-local KoboPowerD = require("ui/device/kobopowerd")
-local BasePowerD = require("ui/device/basepowerd")
 local lfs = require("libs/libkoreader-lfs")
 local Screen = require("ui/device/screen")
 local util = require("ffi/util")
@@ -288,12 +284,16 @@ function Device:getPowerDevice()
     else
         local model = self:getModel()
         if model == "KindleTouch" or model == "KindlePaperWhite" or model == "KindlePaperWhite2" then
+            local KindlePowerD = require("ui/device/kindlepowerd")
             self.powerd = KindlePowerD:new{model = model}
         elseif self:isKobo() then
+            local KoboPowerD = require("ui/device/kobopowerd")
             self.powerd = KoboPowerD:new()
         elseif self.isAndroid then
+            local AndroidPowerd = require("ui/device/androidpowerd")
             self.powerd = AndroidPowerd:new()
         else -- emulated FrontLight
+            local BasePowerD = require("ui/device/basepowerd")
             self.powerd = BasePowerD:new()
         end
     end
@@ -321,5 +321,14 @@ function Device:isSpecialOffers()
     end
     return self.is_special_offers
 end
+
+-- FIXME: this is a dirty hack, normally we don't need to get power device this early,
+-- but Kobo devices somehow may need to init the frontlight module at startup?
+-- because `kobolight = require("ffi/kobolight")` used to be in the `koreader-base` script
+-- and run as the first line of koreader script no matter which device you are running on, 
+-- which is utterly ugly. So I refactored it into the `init` method of `kobopowerd` and
+-- `kobolight` will be init here. It's pretty safe to comment this line for non-kobo devices
+-- so if kobo users find this line is useless, please don't hesitate to get rid of it.
+local dummy_powerd = Device:getPowerDevice()
 
 return Device

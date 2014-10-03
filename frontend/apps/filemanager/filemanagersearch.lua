@@ -3,7 +3,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
@@ -498,6 +497,7 @@ function Search:onMenuHold(item)
 end
 
 function Search:showresults()
+    local ReaderUI = require("apps/reader/readerui")
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
@@ -544,6 +544,7 @@ function Search:showresults()
 end
 
 function Search:browse(option,run,chosen)
+    local ReaderUI = require("apps/reader/readerui")
     local restart_me = false
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
