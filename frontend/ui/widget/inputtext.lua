@@ -51,7 +51,7 @@ end
 function InputText:initTextBox(text)
     self.text = text
     self:initCharlist(text)
-    local bgcolor, fgcolor = 0.0, self.text == "" and 0.5 or 1.0
+    local fgcolor = 0.0, self.text == "" and 0.5 or 1.0
 
     local text_widget = nil
     local show_text = self.text
@@ -65,7 +65,6 @@ function InputText:initTextBox(text)
         text_widget = ScrollTextWidget:new{
             text = show_text,
             face = self.face,
-            bgcolor = bgcolor,
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,
@@ -74,7 +73,6 @@ function InputText:initTextBox(text)
         text_widget = TextBoxWidget:new{
             text = show_text,
             face = self.face,
-            bgcolor = bgcolor,
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,

@@ -23,7 +23,7 @@ end
 
 function FixedTextWidget:paintTo(bb, x, y)
     RenderText:renderUtf8Text(bb, x, y+self._height, self.face, self.text, true, self.bold,
-                self.bgcolor, self.fgcolor)
+                self.fgcolor)
 end
 
 return FixedTextWidget

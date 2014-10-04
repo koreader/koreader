@@ -20,13 +20,12 @@ local ToggleLabel = TextWidget:new{
 }
 
 function ToggleLabel:paintTo(bb, x, y)
-    RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bold, self.bgcolor, self.fgcolor)
+    RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bold, self.fgcolor)
 end
 
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleByDPI(216),
     height = Screen:scaleByDPI(30),
-    bgcolor = 0, -- unfoused item color
     fgcolor = 7, -- focused item color
 }
 
@@ -91,12 +90,10 @@ function ToggleSwitch:update()
         if pos == i then
             self.toggle_content[i].color = self.fgcolor
             self.toggle_content[i].background = self.fgcolor
-            self.toggle_content[i][1][1].bgcolor = self.fgcolor/15
             self.toggle_content[i][1][1].fgcolor = 0.0
         else
             self.toggle_content[i].color = self.bgcolor
             self.toggle_content[i].background = self.bgcolor
-            self.toggle_content[i][1][1].bgcolor = 0.0
             self.toggle_content[i][1][1].fgcolor = 1.0
         end
     end
