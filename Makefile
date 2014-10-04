@@ -1,5 +1,5 @@
 # koreader-base directory
-KOR_BASE?=koreader-base
+KOR_BASE?=base
 
 # the repository might not have been checked out yet, so make this
 # able to fail:
