@@ -13,7 +13,6 @@ local TextBoxWidget = Widget:new{
     text = nil,
     face = nil,
     bold = nil,
-    bgcolor = 0.0, -- [0.0, 1.0]
     fgcolor = 1.0, -- [0.0, 1.0]
     width = 400, -- in pixels
     height = nil,
@@ -217,7 +216,7 @@ function TextBoxWidget:_render(v_list)
         for _,w in ipairs(l) do
             --@TODO Don't use kerning for monospaced fonts.    (houqp)
             -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-            RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true, self.bold, self.bgcolor, self.fgcolor)
+            RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true, self.bold, self.fgcolor)
             pen_x = pen_x + w.width
         end
         y = y + line_height_px + font_height

@@ -80,7 +80,6 @@ function TouchMenuItem:init()
             },
             TextWidget:new{
                 text = self.item.text or self.item.text_func(),
-                bgcolor = 0.0,
                 fgcolor = item_enabled ~= false and 1.0 or 0.5,
                 face = self.face,
             },
