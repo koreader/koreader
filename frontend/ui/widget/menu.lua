@@ -70,7 +70,6 @@ function ItemShortCutIcon:init()
             TextWidget:new{
                 text = self.key,
                 face = sc_face,
-                bgcolor = background/15,
             },
         },
     }

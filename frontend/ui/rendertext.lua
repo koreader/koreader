@@ -2,6 +2,7 @@ local Font = require("ui/font")
 local Screen = require("ui/screen")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local BlitBuffer = require("ffi/blitbuffer")
 local DEBUG = require("dbg")
 
 --[[
@@ -61,22 +62,20 @@ local function utf8Chars(input)
     return read_next_glyph, input, 1
 end
 
-function RenderText:getGlyph(face, charcode, bold, bgcolor, fgcolor)
-    if bgcolor == nil then bgcolor = 0.0 end
-    if fgcolor == nil then fgcolor = 1.0 end
-    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and 1 or 0).."|"..bgcolor.."|"..fgcolor
+function RenderText:getGlyph(face, charcode, bold)
+    local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and 1 or 0)
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
         return glyph[1]
     end
-    local rendered_glyph = face.ftface:renderGlyph(charcode, bgcolor, fgcolor, bold)
+    local rendered_glyph = face.ftface:renderGlyph(charcode, bold)
     if face.ftface:checkGlyph(charcode) == 0 then
         for index, font in pairs(Font.fallbacks) do
             -- use original size before scaling by screen DPI
             local fb_face = Font:getFace(font, face.orig_size)
             if fb_face.ftface:checkGlyph(charcode) ~= 0 then
-                rendered_glyph = fb_face.ftface:renderGlyph(charcode, bgcolor, fgcolor, bold)
+                rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
                 --DEBUG("fallback to font", font)
                 break
             end
@@ -143,10 +142,16 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
 end
 
-function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, bgcolor, fgcolor, width)
+function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgcolor, width)
     if not text then
         DEBUG("renderUtf8Text called without text");
         return 0
+    end
+
+    if not fgcolor then
+        fgcolor = BlitBuffer.Color8(0xFF)
+    elseif type(fgcolor) == "number" then
+        fgcolor = BlitBuffer.Color8(fgcolor*0xFF)
     end
 
     -- may still need more adaptive pen placement when kerning,
@@ -159,15 +164,16 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, bgco
     end
     for _, charcode, uchar in utf8Chars(text) do
         if pen_x < text_width then
-            local glyph = self:getGlyph(face, charcode, bold, bgcolor, fgcolor)
+            local glyph = self:getGlyph(face, charcode, bold)
             if kerning and (prevcharcode ~= 0) then
                 pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
             end
-            buffer:blitFrom(
+            buffer:colorblitFrom(
                 glyph.bb,
                 x + pen_x + glyph.l, y - glyph.t,
                 0, 0,
-                glyph.bb:getWidth(), glyph.bb:getHeight())
+                glyph.bb:getWidth(), glyph.bb:getHeight(),
+                fgcolor)
             pen_x = pen_x + glyph.ax
             prevcharcode = charcode
         end -- if pen_x < text_width

@@ -34,7 +34,6 @@ function Button:init()
     if self.text then
         self.label_widget = TextWidget:new{
             text = self.text,
-            bgcolor = 0.0,
             fgcolor = self.enabled and 1.0 or 0.5,
             bold = true,
             face = Font:getFace(self.text_font_face, self.text_font_size)
