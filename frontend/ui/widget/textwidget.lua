@@ -10,7 +10,6 @@ local TextWidget = Widget:new{
     text = nil,
     face = nil,
     bold = nil,
-    bgcolor = 0.0, -- [0.0, 1.0]
     fgcolor = 1.0, -- [0.0, 1.0]
     _bb = nil,
     _length = 0,
@@ -48,7 +47,7 @@ function TextWidget:paintTo(bb, x, y)
     --bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
     --@TODO Don't use kerning for monospaced fonts.    (houqp)
     RenderText:renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true, self.bold,
-                self.bgcolor, self.fgcolor, self.width)
+                self.fgcolor, self.width)
 end
 
 function TextWidget:free()
