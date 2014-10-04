@@ -5,7 +5,7 @@ local KoboPowerD = BasePowerD:new{
     flIntensity = 20,
     restore_settings = true,
     fl = nil,
-    
+
     batt_capacity_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/capacity",
     is_charging_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/charge_now",
     battCapacity = nil,
@@ -13,6 +13,7 @@ local KoboPowerD = BasePowerD:new{
 }
 
 function KoboPowerD:init()
+    local kobolight = require("ffi/kobolight")
     local ok, light = pcall(kobolight.open)
     if ok then self.fl = light end
 end

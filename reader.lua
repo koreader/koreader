@@ -1,4 +1,4 @@
-#!./koreader-base
+#!./luajit
 
 require "defaults"
 pcall(dofile, "defaults.persistent.lua")
@@ -100,6 +100,7 @@ local function showusage()
     return
 end
 
+local ARGV = arg
 local argidx = 1
 while argidx <= #ARGV do
     local arg = ARGV[argidx]

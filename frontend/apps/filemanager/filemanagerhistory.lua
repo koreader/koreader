@@ -1,7 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local ReaderUI = require("apps/reader/readerui")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
@@ -79,6 +78,7 @@ function FileManagerHistory:addToMainMenu(tab_item_table)
 end
 
 function FileManagerHistory:updateItemTable()
+    local ReaderUI = require("apps/reader/readerui")
     self.hist = {}
 
     for f in lfs.dir(history_dir) do

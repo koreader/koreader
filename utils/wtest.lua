@@ -1,4 +1,5 @@
-#!./koreader-base
+-- widget test utility
+-- usage: ./luajit util/wtest.lua
 
 require "defaults"
 print(package.path)
