@@ -26,6 +26,7 @@ end
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleByDPI(216),
     height = Screen:scaleByDPI(30),
+    bgcolor = 0, -- unfoused item color
     fgcolor = 7, -- focused item color
 }
 
