@@ -299,6 +299,8 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
                 return base_url .. "/" .. href
             elseif item_url then
                 local parsed = url.parse(item_url)
+                -- get rid of query field of base url
+                parsed.query = nil
                 -- update item url with href parts(mostly path and query)
                 for k, v in pairs(url.parse(href) or {}) do
                     if k == "path" then
