@@ -51,7 +51,7 @@ end
 function InputText:initTextBox(text)
     self.text = text
     self:initCharlist(text)
-    local fgcolor = 0.0, self.text == "" and 0.5 or 1.0
+    local fgcolor = self.text == "" and 0.5 or 1.0
 
     local text_widget = nil
     local show_text = self.text
