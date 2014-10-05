@@ -83,4 +83,10 @@ function NetworkMgr:getWifiStatus()
     return false
 end
 
+-- set network proxy if global variable NETWORK_PROXY is defined
+if NETWORK_PROXY then
+    local http = require("socket.http")
+    http.PROXY = NETWORK_PROXY
+end
+
 return NetworkMgr

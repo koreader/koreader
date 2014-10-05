@@ -178,6 +178,11 @@ KOBO_LIGHT_ON_START = -1           -- -1 or 0-100. -1 leaves light as it is, oth
 KOBO_SCREEN_SAVER = ""             -- image or directory with pictures or "-"
 KOBO_SCREEN_SAVER_LAST_BOOK = true -- get screensaver from last book if possible
 
+-- Network proxy settings
+-- proxy url should be a string in the format of "http://localhost:3128"
+-- proxy authentication is not supported yet.
+NETWORK_PROXY = nil
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################
