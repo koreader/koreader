@@ -17,9 +17,13 @@ install:
     - git clone https://github.com/Olivine-Labs/busted/
     - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
     - sudo luarocks install luacov
+    - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
 
 script:
     - make fetchthirdparty all
     - sudo cp base/build/*/luajit /usr/bin/
     - make testfront
     - make coverage
+
+after_success:
+    - cd koreader-*/koreader && luacov-coveralls -v

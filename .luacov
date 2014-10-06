@@ -18,7 +18,7 @@ return {
   runreport = true,
 
   -- Delete stats file after reporting?
-  deletestats = true,
+  deletestats = false,
 
   -- Patterns for files to include when reporting
   -- all will be included if nothing is listed
