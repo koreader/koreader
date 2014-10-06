@@ -19,7 +19,7 @@ install:
     - sudo luarocks install luacov
 
 script:
-    - make fetchthirdparty
-    - make
+    - make fetchthirdparty all
+    - sudo cp base/build/*/luajit /usr/bin/
     - make testfront
     - make coverage
