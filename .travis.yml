@@ -16,8 +16,10 @@ install:
     - sudo apt-get install libsdl1.2-dev luarocks
     - git clone https://github.com/Olivine-Labs/busted/
     - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
+    - sudo luarocks install luacov
 
 script:
     - make fetchthirdparty
     - make
     - make testfront
+    - make coverage

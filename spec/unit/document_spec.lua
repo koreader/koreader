@@ -1,6 +1,6 @@
 require "defaults"
-package.path = "?.lua;common/?.lua;frontend/?.lua"
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
+package.path = "?.lua;common/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;" .. package.cpath
 
 -- global einkfb for Screen
 einkfb = require("ffi/framebuffer")
