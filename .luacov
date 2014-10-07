@@ -25,6 +25,8 @@ return {
   -- (exclude overrules include, do not include
   -- the .lua extension)
   ['include'] = {
+    'frontend/.*$',
+    'plugins/.*$',
   },
 
   -- Patterns for files to exclude when reporting

@@ -1,20 +1,5 @@
-require "defaults"
-package.path = "?.lua;common/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;" .. package.cpath
-
--- global einkfb for Screen
-einkfb = require("ffi/framebuffer")
--- do not show SDL window
-einkfb.dummy = true
-
-local Screen = require("ui/screen")
-local DocSettings = require("docsettings")
-G_reader_settings = DocSettings:open(".reader")
+require("commonrequire")
 local DocumentRegistry = require("document/documentregistry")
-local DEBUG = require("dbg")
-
--- screen should be inited for crengine
-Screen:init()
 
 describe("PDF document module", function()
     local sample_pdf = "spec/front/unit/data/tall.pdf"

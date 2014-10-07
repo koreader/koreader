@@ -146,4 +146,13 @@ function DocSettings:close()
     self:flush()
 end
 
+function DocSettings:clear()
+    if self.history_file then
+        os.remove(self.history_file)
+    end
+    if self.sidecar_file then
+        os.remove(self.sidecar_file)
+    end
+end
+
 return DocSettings
