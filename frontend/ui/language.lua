@@ -49,7 +49,7 @@ function Language:getLangMenuTable()
                 self:genLanguageSubItem("Catalá", "ca"),
                 -- self:genLanguageSubItem("svenska", "sv"),
                 self:genLanguageSubItem("Türkçe", "tr"),
-                self:genLanguageSubItem("Ukranian", "uk"),
+                self:genLanguageSubItem("Українська", "uk"),
                 -- self:genLanguageSubItem("Tiếng Việt", "vi"),
                 -- self:genLanguageSubItem("Viet Nam", "vi_VN"),
                 self:genLanguageSubItem("简体中文", "zh_CN"),
