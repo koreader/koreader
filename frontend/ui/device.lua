@@ -22,7 +22,7 @@ local Device = {
 
 Screen.device = Device
 
-function Set (list)
+function Set(list)
     local set = {}
     for _, l in ipairs(list) do set[l] = true end
     return set
@@ -47,7 +47,8 @@ function Device:getModel()
         local k4_set = Set { "0E", "23" }
         local touch_set = Set { "0F", "11", "10", "12" }
         local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
-        local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17", "60", "F4", "F9", "62", "61", "5F" }
+        local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
+                              "60", "F4", "F9", "62", "61", "5F" }
 
         if k2_set[kindle_devcode] then
             self.model = "Kindle2"
@@ -321,14 +322,5 @@ function Device:isSpecialOffers()
     end
     return self.is_special_offers
 end
-
--- FIXME: this is a dirty hack, normally we don't need to get power device this early,
--- but Kobo devices somehow may need to init the frontlight module at startup?
--- because `kobolight = require("ffi/kobolight")` used to be in the `koreader-base` script
--- and run as the first line of koreader script no matter which device you are running on, 
--- which is utterly ugly. So I refactored it into the `init` method of `kobopowerd` and
--- `kobolight` will be init here. It's pretty safe to comment this line for non-kobo devices
--- so if kobo users find this line is useless, please don't hesitate to get rid of it.
-local dummy_powerd = Device:getPowerDevice()
 
 return Device
