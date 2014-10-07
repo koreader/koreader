@@ -155,16 +155,15 @@ Title:
 </feed>
 ]]
 
-package.path = "?.lua;common/?.lua;frontend/?.lua;" .. package.path
-
+require("commonrequire")
 local OPDSParser = require("ui/opdsparser")
 local DEBUG = require("dbg")
-DEBUG:turnOn()
 
 describe("OPDS parser module #nocov", function()
     it("should parse OPDS navigation catalog", function()
         local catalog = OPDSParser:parse(navigation_sample)
         local feed = catalog.feed
+        --DEBUG(feed)
         assert.truthy(feed)
         assert.are.same(feed.title, "Project Gutenberg")
         local entries = feed.entry

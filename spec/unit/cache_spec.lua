@@ -1,24 +1,7 @@
-require "defaults"
-package.path = "?.lua;common/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;" .. package.cpath
-
-require "libs/libkoreader-lfs"
--- global einkfb for Screen
-einkfb = require("ffi/framebuffer")
--- do not show SDL window
-einkfb.dummy = true
-Blitbuffer = require("ffi/blitbuffer")
-
-local Screen = require("ui/screen")
-local DocSettings = require("docsettings")
-G_reader_settings = DocSettings:open(".reader")
+require("commonrequire")
 local DocumentRegistry = require("document/documentregistry")
 local Cache = require("cache")
 local DEBUG = require("dbg")
---DEBUG:turnOn()
-
--- screen should be inited for crengine
-Screen:init()
 
 describe("Cache module", function()
     local sample_pdf = "spec/front/unit/data/sample.pdf"

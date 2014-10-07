@@ -1,22 +1,6 @@
-require "defaults"
-package.path = "?.lua;common/?.lua;frontend/?.lua"
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
-
--- global einkfb for Screen
-einkfb = require("ffi/framebuffer")
--- do not show SDL window
-einkfb.dummy = true
-Blitbuffer = require("ffi/blitbuffer")
-
-local Screen = require("ui/screen")
-local DocSettings = require("docsettings")
-G_reader_settings = DocSettings:open(".reader")
+require("commonrequire")
 local DocumentRegistry = require("document/documentregistry")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
-
--- screen should be inited for crengine
-Screen:init()
 
 function logDuration(filename, pageno, dur)
     local file = io.open(filename, "a+")
