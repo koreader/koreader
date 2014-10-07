@@ -6,25 +6,59 @@ KOReader
 
 KOReader is a document viewer application, originally created for Kindle 
 e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
-Kobo, Android(2.3+) devices.
+Kobo and Android (2.3+) devices. Developers can also run Koreader emulator
+for development purpose on desktop PC with Linux or Windows operating system.
 
-KOReader started as the KindlePDFViewer application, but it supports much more
-formats than PDF now. Among them are DJVU, FB2, EPUB, TXT, CBZ, HTML.
+Main features for users
+-----------------------
 
-KOReader is a frontend written in Lua and uses the API presented by the
-koreader-base framework. KOReader implements a GUI and is currently targeted
-at touch-based devices - for the classic user interface for button-driven
-e-ink devices (like the Kindle 2, Kindle DX, Kindle 3, Kindle 4) see the
-KindlePDFviewer legacy project or - especially for the Kindle 4 - have a look
-at its fork Librerator.
+* supports multi-format documents including:
+  * paged fixed-layout formats: PDF, DjVu and CBZ
+  * reflowable e-book formats: ePub, fb2, mobi, doc, chm and plain text
+  * scanned PDF/DjVu documents can also be reflowed with built-in K2pdfopt
+* use StarDict dictionaries / Wikipedia to lookup words
+* highlights can be exported to Evernote cloud account
+* highly customizable reader view and typeset
+  * setting arbitrary page margins / line space
+  * choosing external fonts and styles
+  * built-in multi-lingual hyphenation dictionaries
+* supports adding custom online OPDS catalogs
+* calibre integration
+  * send ebooks from calibre library to koreader wirelessly
+  * browser calibre library and download ebooks via calibre OPDS server
+* can share ebooks to other koreader devices wirelessly
+* various optimizations for e-ink devices
+  * paginated menus without animation
+  * adjustable text contrast
+* multi-lingual user interface
+* online Over-The-Air software update
 
-This application is distributed under the GNU AGPL v3 license (read the [COPYING](COPYING) file).
+Highlights for developlers
+--------------------------
+
+* frontend written in Lua scripting language
+  * running on multi-platform with only one code-base maintained
+  * developing koreader in any editor without compilation
+  * high runtime efficiency by LuaJIT acceleration
+  * light-weight widget toolkit for small memory footprint
+  * extensible with plugin system
+* interfaced backends for documents parsing and rendering
+  * high quality document backend libraries like MuPDF, DjvuLibre and Crengine
+  * interacting with frontend via LuaJIT FFI for best performence
+* in active development
+  * contributed by 28 and more developers around the world
+  * continuous integration with Travis CI
+  * with unit tests and code coverage test
+  * automatic release of nightly builds
+* free as in free speech
+  * licensed under Affero GPL v3
+  * all dependencies are free software
 
 Check out the [KOReader wiki](https://github.com/koreader/koreader/wiki) to learn 
 more about this project.
 
-Prerequisites
-========
+Building Prerequisites
+======================
 
 Instructions about how to get and compile the source are intended for a linux
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
