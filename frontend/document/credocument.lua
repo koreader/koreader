@@ -108,12 +108,6 @@ function CreDocument:init()
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
 
-    -- set visible page count in landscape
-    if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
-        < DCREREADER_TWO_PAGE_THRESHOLD then
-        self:setVisiblePageCount(1)
-    end
-
     self.is_open = true
     self.info.has_pages = false
     self:_readMetadata()
@@ -130,6 +124,11 @@ end
 function CreDocument:render()
     -- load document before rendering
     self:loadDocument()
+    -- set visible page count in landscape
+    if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
+        < DCREREADER_TWO_PAGE_THRESHOLD then
+        self:setVisiblePageCount(1)
+    end
     self._document:renderDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
