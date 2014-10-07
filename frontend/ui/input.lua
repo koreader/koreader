@@ -345,11 +345,8 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
 
     if util.isEmulated() then
-        if not util.isWindows() then
-            os.remove("/tmp/emu_event")
-            os.execute("mkfifo /tmp/emu_event")
-            input.open("/tmp/emu_event")
-        end
+        -- open SDL if it's not dummy input device
+        if not self.dummy then input.open() end
         -- SDL key codes
         if not util.haveSDL2() then
             self.event_map = self.sdl_event_map

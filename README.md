@@ -1,4 +1,4 @@
-KOReader [![Build Status][travis-icon]][travis-link]
+KOReader [![Build Status][travis-icon]][travis-link] [![Coverage Status][coverage-icon]][coverage-link]
 ========
 
 KOReader is a document viewer application, originally created for Kindle 
@@ -189,4 +189,5 @@ http://ccache.samba.org
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
-
+[coverage-icon]:https://coveralls.io/repos/koreader/koreader/badge.png
+[coverage-link]:https://coveralls.io/r/koreader/koreader
