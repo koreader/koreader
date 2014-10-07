@@ -153,15 +153,41 @@ function ReaderToc:getPreviousChapter(cur_pageno, level)
     return previous_chapter
 end
 
+function ReaderToc:isChapterBegin(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local _begin = false
+    for i = 1, #ticks do
+        if ticks[i] == cur_pageno then
+            _begin = true
+            break
+        end
+    end
+    return _begin
+end
+
+function ReaderToc:isChapterEnd(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local _end= false
+    for i = 1, #ticks do
+        if ticks[i] - 1 == cur_pageno then
+            _end = true
+            break
+        end
+    end
+    return _end
+end
+
 function ReaderToc:getChapterPagesLeft(pageno, level)
+    --if self:isChapterEnd(pageno, level) then return 0 end
     local next_chapter = self:getNextChapter(pageno, level)
     if next_chapter then
-        next_chapter = next_chapter - pageno
+        next_chapter = next_chapter - pageno - 1
     end
     return next_chapter
 end
 
 function ReaderToc:getChapterPagesDone(pageno, level)
+    if self:isChapterBegin(pageno, level) then return 0 end
     local previous_chapter = self:getPreviousChapter(pageno, level)
     if previous_chapter then
         previous_chapter = pageno - previous_chapter
