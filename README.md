@@ -1,6 +1,4 @@
-KOReader
-[![Build Status][travis-icon]][travis-link]
-[![Coverage Status][coverage-icon]][coverage-link]
+KOReader [![Build Status][travis-icon]][travis-link] [![Coverage Status][coverage-icon]][coverage-link]
 ========
 
 KOReader is a document viewer application, originally created for Kindle 
