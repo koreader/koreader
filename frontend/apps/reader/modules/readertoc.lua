@@ -13,6 +13,7 @@ local _ = require("gettext")
 
 local ReaderToc = InputContainer:new{
     toc = nil,
+    ticks = {},
     toc_menu_title = _("Table of contents"),
 }
 
@@ -60,30 +61,17 @@ function ReaderToc:onPageUpdate(pageno)
 end
 
 function ReaderToc:fillToc()
+    if self.toc and #self.toc > 0 then return end
     self.toc = self.ui.document:getToc()
 end
 
--- _getTocTitleByPage wrapper, so specific reader
--- can tranform pageno according its need
 function ReaderToc:getTocTitleByPage(pn_or_xp)
-    local page = pn_or_xp
+    self:fillToc()
+    if #self.toc == 0 then return "" end
+    local pageno = pn_or_xp
     if type(pn_or_xp) == "string" then
-        page = self.ui.document:getPageFromXPointer(pn_or_xp)
+        pageno = self.ui.document:getPageFromXPointer(pn_or_xp)
     end
-    return self:_getTocTitleByPage(page)
-end
-
-function ReaderToc:_getTocTitleByPage(pageno)
-    if not self.toc then
-        -- build toc when needed.
-        self:fillToc()
-    end
-
-    -- no table of content
-    if #self.toc == 0 then
-        return ""
-    end
-
     local pre_entry = self.toc[1]
     for _k,_v in ipairs(self.toc) do
         if _v.page > pageno then
@@ -98,135 +86,91 @@ function ReaderToc:getTocTitleOfCurrentPage()
     return self:getTocTitleByPage(self.pageno)
 end
 
-function ReaderToc:_getChapterPagesLeft(pageno,pages)
-    local i
-    local j = 0
-
-    if not self.toc then
-        -- build toc when needed.
-        self:fillToc()
-    end
-
-    -- no table of content
-    if #self.toc == 0 then
-        return ""
-    end
-
-    if #self.toc > 0 then
-        for i = 1, #self.toc do
-            v = self.toc[i]
-            if v.page > pageno then
-                j = v.page
-                break
-            end
+function ReaderToc:getMaxDepth()
+    self:fillToc()
+    local max_depth = 0
+    for _, v in ipairs(self.toc) do
+        if v.depth > max_depth then
+            max_depth = v.depth
         end
     end
-    if j == 0 then
-        if pages > 0 then
-            return pages-pageno
+    return max_depth
+end
+
+--[[
+TOC ticks is a list of page number in ascending order of TOC nodes at certain level
+positive level counts nodes of the depth level (level 1 for depth 1)
+non-positive level counts nodes of reversed depth level (level -1 for max_depth-1)
+--]]
+function ReaderToc:getTocTicks(level)
+    if self.ticks[level] then return self.ticks[level] end
+    -- build toc ticks if not found
+    self:fillToc()
+    local ticks = {}
+
+    if #self.toc > 0 then
+        local depth = nil
+        if level > 0 then
+            depth = level
         else
-            return ""
+            depth = self:getMaxDepth() + level
         end
-    else
-        return j-pageno-1
-    end
-end
-
-function ReaderToc:_getChapterPagesDone(pageno)
-    local i
-    local j = 0
-
-    if not self.toc then
-        -- build toc when needed.
-        self:fillToc()
-    end
-
-    -- no table of content
-    if #self.toc == 0 then
-        return ""
-    end
-
-    if #self.toc > 0 then
-        for i = 1, #self.toc do
-            v = self.toc[i]
-            if v.page >= pageno then
-                break
-            end
-            j = v.page
-        end
-    end
-    if j < 2 then
-        return ""
-    else
-        return j-pageno
-    end
-end
-
-function ReaderToc:_getPreviousChapter(pageno)
-    local i
-    local j = 0
-
-    if not self.toc then
-        -- build toc when needed.
-        self:fillToc()
-    end
-
-    -- no table of content
-    if #self.toc == 0 then
-        return ""
-    end
-
-    if #self.toc > 0 then
-        for i = 1, #self.toc do
-            v = self.toc[i]
-            if v.page >= pageno then
-                break
-            end
-            j = v.page
-        end
-    end
-    if j >= pageno then
-        return ""
-    else
-        return j
-    end
-end
-
-function ReaderToc:_getNextChapter(pageno)
-    local i
-    local j = 0
-
-    if not self.toc then
-        -- build toc when needed.
-        self:fillToc()
-    end
-
-    -- no table of content
-    if #self.toc == 0 then
-        return ""
-    end
-
-    if #self.toc > 0 then
-        for i = 1, #self.toc do
-            v = self.toc[i]
-            if v.page >= pageno then
-                j = v.page
-                break
+        for _, v in ipairs(self.toc) do
+            if v.depth == depth then
+                table.insert(ticks, v.page)
             end
         end
+        -- normally the ticks are sorted already but in rare cases
+        -- toc nodes may be not in ascending order
+        table.sort(ticks)
+        -- cache ticks only if ticks are available
+        self.ticks[level] = ticks
     end
-    if j < pageno then
-        return ""
-    else
-        return j
-    end
+    return ticks
 end
 
+function ReaderToc:getNextChapter(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local next_chapter = nil
+    for i = 1, #ticks do
+        if ticks[i] > cur_pageno then
+            next_chapter = ticks[i]
+            break
+        end
+    end
+    return next_chapter
+end
+
+function ReaderToc:getPreviousChapter(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local previous_chapter = nil
+    for i = 1, #ticks do
+        if ticks[i] >= cur_pageno then
+            break
+        end
+        previous_chapter = ticks[i]
+    end
+    return previous_chapter
+end
+
+function ReaderToc:getChapterPagesLeft(pageno, level)
+    local next_chapter = self:getNextChapter(pageno, level)
+    if next_chapter then
+        next_chapter = next_chapter - pageno
+    end
+    return next_chapter
+end
+
+function ReaderToc:getChapterPagesDone(pageno, level)
+    local previous_chapter = self:getPreviousChapter(pageno, level)
+    if previous_chapter then
+        previous_chapter = pageno - previous_chapter
+    end
+    return previous_chapter
+end
 
 function ReaderToc:onShowToc()
-    if not self.toc then
-        self:fillToc()
-    end
+    self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
         for _,v in ipairs(self.toc) do
