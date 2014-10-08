@@ -247,18 +247,12 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onDoubleTapForward()
-    local i = self.ui.toc:_getNextChapter(self.current_page+self.ui.document:getVisiblePageCount())
-    if i ~= "" then
-        self:onGotoPage(i)
-    end
+    self:onGotoPage(self.ui.toc:getNextChapter(self.current_page))
     return true
 end
 
 function ReaderRolling:onDoubleTapBackward()
-    local i = self.ui.toc:_getPreviousChapter(self.current_page)
-    if i ~= "" then
-        self:onGotoPage(i)
-    end
+    self:onGotoPage(self.ui.toc:getPreviousChapter(self.current_page))
     return true
 end
 
@@ -414,7 +408,9 @@ function ReaderRolling:gotoPercent(new_percent)
 end
 
 function ReaderRolling:onGotoPage(number)
-    self:gotoPage(number)
+    if number then
+        self:gotoPage(number)
+    end
     return true
 end
 

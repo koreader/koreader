@@ -20,6 +20,7 @@ local ReaderFooter = InputContainer:new{
     visible = true,
     pageno = nil,
     pages = nil,
+    toc_level = 0,
     progress_percentage = 0.0,
     progress_text = nil,
     text_font_face = "ffont",
@@ -37,35 +38,39 @@ function ReaderFooter:init()
     self.pageno = self.view.state.page
     self.pages = self.view.document:getPageCount()
 
-    local progress_text_default = ""
+    local text_default = ""
     if DMINIBAR_ALL_AT_ONCE then
+        local info = {}
+        if DMINIBAR_BATTERY then
+            table.insert(info, "B:100%")
+        end
         if DMINIBAR_TIME then
-            progress_text_default = progress_text_default .. " | WW:WW"
+            table.insert(info, "WW:WW")
         end
         if DMINIBAR_PAGES then
-            progress_text_default = progress_text_default .. " | 0000 / 0000"
+            table.insert(info, "0000 / 0000")
         end
         if DMINIBAR_NEXT_CHAPTER then
-            progress_text_default = progress_text_default .. " | => 000"
+            table.insert(info, "=> 000")
         end
-        if DMINIBAR_BATTERY then
-            progress_text_default = progress_text_default .. " | B:100%"
-        end
-        progress_text_default = string.sub(progress_text_default, 4)
+        text_default = table.concat(info, " | ")
     else
-        progress_text_default = string.format(" %d / %d ", self.pages, self.pages)
+        text_default = string.format(" %d / %d ", self.pages, self.pages)
     end
 
     self.progress_text = TextWidget:new{
-        text = progress_text_default,
+        text = text_default,
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     local text_width = self.progress_text:getSize().w
+    local ticks = (self.ui.toc and DMINIBAR_PROGRESS_MARKER)
+            and self.ui.toc:getTocTicks(self.toc_level) or {}
     self.progress_bar = ProgressWidget:new{
         width = math.floor(Screen:getWidth() - text_width - self.padding),
         height = self.bar_height,
         percentage = self.progress_percentage,
-        TOC = self.ui.document:getToc(),
+        ticks = ticks,
+        tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         last = self.pages,
     }
     local horizontal_group = HorizontalGroup:new{}
@@ -121,42 +126,55 @@ function ReaderFooter:init()
     self:applyFooterMode()
 end
 
-function ReaderFooter:fillToc()
-    self.toc = self.ui.document:getToc()
+function ReaderFooter:getBatteryInfo()
+    local powerd = Device:getPowerDevice()
+    --local state = powerd:isCharging() and -1 or powerd:getCapacity()
+    return "B:" .. powerd:getCapacity() .. "%"
+end
+
+function ReaderFooter:getTimeInfo()
+    return os.date("%H:%M")
+end
+
+function ReaderFooter:getProgressInfo()
+    return string.format("%d / %d", self.pageno, self.pages)
+end
+
+function ReaderFooter:getNextChapterInfo()
+    local left = self.ui.toc:getChapterPagesLeft(self.pageno, self.toc_level)
+    return "=> " .. (left and left or self.pages - self.pageno)
 end
 
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
     if DMINIBAR_ALL_AT_ONCE then
-        self.progress_text.text = ""
+        local info = {}
         if DMINIBAR_BATTERY then
-            local powerd = Device:getPowerDevice()
-            local state = powerd:isCharging() and -1 or powerd:getCapacity()
-            self.progress_text.text = self.progress_text.text .. " | B:" .. powerd:getCapacity() .. "%"
+            table.insert(info, self:getBatteryInfo())
         end
         if DMINIBAR_TIME then
-            self.progress_text.text = self.progress_text.text .. " | " .. os.date("%H:%M")
+            table.insert(info, self:getTimeInfo())
         end
         if DMINIBAR_PAGES then
-            self.progress_text.text = self.progress_text.text .. " | " .. string.format("%d / %d", self.pageno, self.pages)
+            table.insert(info, self:getProgressInfo())
         end
         if DMINIBAR_NEXT_CHAPTER then
-            self.progress_text.text = self.progress_text.text .. " | => " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+            table.insert(info, self:getNextChapterInfo())
         end
-        self.progress_text.text = string.sub(self.progress_text.text, 4)
+        self.progress_text.text = table.concat(info, " | ")
     else
+        local info = ""
         if self.mode == 1 then
-            self.progress_text.text = string.format("%d / %d", self.pageno, self.pages)
+            info = self:getProgressInfo()
         elseif self.mode == 2 then
-            self.progress_text.text = os.date("%H:%M")
+            info = self:getTimeInfo()
         elseif self.mode == 3 then
-            self.progress_text.text = "=> " .. self.ui.toc:_getChapterPagesLeft(self.pageno,self.pages)
+            info = self:getNextChapterInfo()
         elseif self.mode == 4 then
-            local powerd = Device:getPowerDevice()
-            local state = powerd:isCharging() and -1 or powerd:getCapacity()
-            self.progress_text.text = "B:" .. powerd:getCapacity() .. "%"
+            info = self:getBatteryInfo()
         end
+        self.progress_text.text = info
     end
 
 end
@@ -166,9 +184,10 @@ function ReaderFooter:updateFooterPos()
     self.progress_bar.percentage = self.position / self.doc_height
 
     if self.show_time then
-        self.progress_text.text = os.date("%H:%M")
+        self.progress_text.text = self:getTimeInfo()
     else
-        self.progress_text.text = string.format("%1.f", self.progress_bar.percentage*100).."%"
+        local percentage = self.progress_bar.percentage
+        self.progress_text.text = string.format("%1.f", percentage*100) .. "%"
     end
 end
 
