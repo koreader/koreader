@@ -17,7 +17,9 @@ function ReaderLink:init()
     if Device:isTouchDevice() then
         self:initGesListener()
     end
-    self.ui.menu:registerToMainMenu(self)
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self)
+    end)
 end
 
 function ReaderLink:onReadSettings(config)

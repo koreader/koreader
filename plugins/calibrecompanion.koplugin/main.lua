@@ -22,6 +22,7 @@ local dummy = require("ffi/zeromq_h")
     More details can be found at calibre/devices/smart_device_app/driver.py.
 --]]
 local CalibreCompanion = InputContainer:new{
+    name = "calibrecompanion",
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server

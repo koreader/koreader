@@ -12,7 +12,9 @@ local _ = require("gettext")
 local ReaderHighlight = InputContainer:new{}
 
 function ReaderHighlight:init()
-    self.ui.menu:registerToMainMenu(self)
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self)
+    end)
 end
 
 function ReaderHighlight:initGesListener()
