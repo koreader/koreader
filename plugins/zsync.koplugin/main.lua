@@ -28,6 +28,7 @@ int rmdir(const char *);
 
 local dummy = require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
+    name = "zsync",
 }
 
 function ZSync:init()

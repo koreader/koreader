@@ -13,6 +13,7 @@ local slt2 = require('slt2')
 local MyClipping = require("clip")
 
 local EvernoteExporter = InputContainer:new{
+    name = "evernote",
     login_title = _("Login to Evernote"),
     notebook_name = _("Koreader Notes"),
     evernote_domain = nil,
