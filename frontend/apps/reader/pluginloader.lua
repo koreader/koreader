@@ -26,8 +26,8 @@ function PluginLoader:loadPlugins()
             package.path = package_path
             package.cpath = package_cpath
             if ok then
-                module.name = module.name or "unknownplugin"
                 module.path = path
+                module.name = module.name or path:match("/(.-)%.koplugin")
                 table.insert(self.plugins, module)
             end
         end
