@@ -24,16 +24,17 @@ Main features for users
   * built-in multi-lingual hyphenation dictionaries
 * supports adding custom online OPDS catalogs
 * calibre integration
-  * send ebooks from calibre library to koreader wirelessly
+  * search calibre metadata on your koreader device
+  * send ebooks from calibre library to your koreader device wirelessly
   * browser calibre library and download ebooks via calibre OPDS server
-* can share ebooks to other koreader devices wirelessly
+* can share ebooks with other koreader devices wirelessly
 * various optimizations for e-ink devices
   * paginated menus without animation
   * adjustable text contrast
 * multi-lingual user interface
 * online Over-The-Air software update
 
-Highlights for developlers
+Highlights for developers
 --------------------------
 
 * frontend written in Lua scripting language
