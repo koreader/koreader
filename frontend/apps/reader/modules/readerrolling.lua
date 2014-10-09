@@ -247,12 +247,14 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onDoubleTapForward()
-    self:onGotoPage(self.ui.toc:getNextChapter(self.current_page))
+    local pageno = self.current_page + self.ui.document:getVisiblePageCount()
+    self:onGotoPage(self.ui.toc:getNextChapter(pageno, 0))
     return true
 end
 
 function ReaderRolling:onDoubleTapBackward()
-    self:onGotoPage(self.ui.toc:getPreviousChapter(self.current_page))
+    local pageno = self.current_page
+    self:onGotoPage(self.ui.toc:getPreviousChapter(pageno, 0))
     return true
 end
 
