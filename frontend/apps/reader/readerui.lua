@@ -67,6 +67,15 @@ local ReaderUI = InputContainer:new{
     postInitCallback = nil,
 }
 
+function ReaderUI:registerModule(name, module, always_active)
+    if name then self[name] = module end
+    table.insert(always_active and self.active_widgets or self, module)
+end
+
+function ReaderUI:registerPostInitCallback(callback)
+    table.insert(self.postInitCallback, callback)
+end
+
 function ReaderUI:init()
     self.postInitCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
@@ -83,204 +92,194 @@ function ReaderUI:init()
     self.doc_settings = DocSettings:open(self.document.file)
 
     -- a view container (so it must be child #1!)
-    self[1] = ReaderView:new{
+    self:registerModule("view", ReaderView:new{
         dialog = self.dialog,
         dimen = self.dimen,
         ui = self,
         document = self.document,
-    }
-    -- reader menu controller
-    -- hold reference to menu widget
-    self.menu = ReaderMenu:new{
-        view = self[1],
-        ui = self
-    }
-    -- link
-    table.insert(self, ReaderLink:new{
+    })
+    -- goto link controller
+    self:registerModule("link", ReaderLink:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self,
         document = self.document,
     })
     -- text highlight
-    table.insert(self, ReaderHighlight:new{
+    self:registerModule("highlight", ReaderHighlight:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self,
         document = self.document,
     })
     -- menu widget should be registered after link widget and highlight widget
     -- so that taps on link and highlight areas won't popup reader menu
-    table.insert(self, self.menu)
+    -- reader menu controller
+    self:registerModule("menu", ReaderMenu:new{
+        view = self.view,
+        ui = self
+    })
     -- rotation controller
-    table.insert(self, ReaderRotation:new{
+    self:registerModule("rotation", ReaderRotation:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self
     })
     -- Table of content controller
-    -- hold reference to bm widget
-    self.toc = ReaderToc:new{
+    self:registerModule("toc", ReaderToc:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self
-    }
-    table.insert(self, self.toc)
+    })
     -- bookmark controller
-    table.insert(self, ReaderBookmark:new{
+    self:registerModule("bookmark", ReaderBookmark:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self
     })
     -- reader goto controller
-    table.insert(self, ReaderGoto:new{
+    -- "goto" being a dirty keyword in Lua?
+    self:registerModule("gotopage", ReaderGoto:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self,
         document = self.document,
     })
     -- dictionary
-    table.insert(self, ReaderDictionary:new{
+    self:registerModule("dictionary", ReaderDictionary:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self,
         document = self.document,
     })
     -- wikipedia
-    table.insert(self, ReaderWikipedia:new{
+    self:registerModule("wikipedia", ReaderWikipedia:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self,
         document = self.document,
     })
     -- screenshot controller
-    table.insert(self.active_widgets, ReaderScreenshot:new{
+    self:registerModule("screenshot", ReaderScreenshot:new{
         dialog = self.dialog,
-        view = self[1],
+        view = self.view,
         ui = self
-    })
+    }, true)
     -- frontlight controller
     if Device:hasFrontlight() then
-        table.insert(self, ReaderFrontLight:new{
+        self:registerModule("frontlight", ReaderFrontLight:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
     end
     -- configuable controller
     if self.document.info.configurable then
         -- config panel controller
-        table.insert(self, ReaderConfig:new{
+        self:registerModule("config", ReaderConfig:new{
             configurable = self.document.configurable,
             options = self.document.options,
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
-        if not self.document.info.has_pages then
-            -- cre option controller
-            table.insert(self, ReaderCoptListener:new{
+        if self.document.info.has_pages then
+            -- kopt option controller
+            self:registerModule("koptlistener", ReaderKoptListener:new{
                 dialog = self.dialog,
-                view = self[1],
+                view = self.view,
+                ui = self,
+                document = self.document,
+            })
+        else
+            -- cre option controller
+            self:registerModule("crelistener", ReaderCoptListener:new{
+                dialog = self.dialog,
+                view = self.view,
                 ui = self,
                 document = self.document,
             })
         end
+        -- activity indicator when some configurations take long take to affect
+        self:registerModule("activityindicator", ReaderActivityIndicator:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self,
+            document = self.document,
+        })
     end
     -- for page specific controller
     if self.document.info.has_pages then
         -- cropping controller
-        table.insert(self, ReaderCropping:new{
+        self:registerModule("cropping", ReaderCropping:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self,
             document = self.document,
         })
         -- paging controller
-        table.insert(self, ReaderPaging:new{
+        self:registerModule("paging", ReaderPaging:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
         -- zooming controller
-        local zoom = ReaderZooming:new{
+        self:registerModule("zooming", ReaderZooming:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
-        }
-        table.insert(self, zoom)
+        })
         -- panning controller
-        table.insert(self, ReaderPanning:new{
+        self:registerModule("panning", ReaderPanning:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
         -- hinting controller
-        table.insert(self, ReaderHinting:new{
+        self:registerModule("hinting", ReaderHinting:new{
             dialog = self.dialog,
-            zoom = zoom,
-            view = self[1],
+            zoom = self.zooming,
+            view = self.view,
             ui = self,
             document = self.document,
         })
     else
         -- make sure we render document first before calling any callback
-        table.insert(self.postInitCallback, function()
+        self:registerPostInitCallback(function()
             self.document:render()
         end)
         -- typeset controller
-        table.insert(self, ReaderTypeset:new{
+        self:registerModule("typeset", ReaderTypeset:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
         -- font menu
-        self.font = ReaderFont:new{
+        self:registerModule("font", ReaderFont:new{
             dialog = self.dialog,
-            view = self[1],
-            ui = self
-        }
-        table.insert(self, self.font) -- hold reference to font menu
-        -- hyphenation menu
-        self.hyphenation = ReaderHyphenation:new{
-            dialog = self.dialog,
-            view = self[1],
-            ui = self
-        }
-        table.insert(self, self.hyphenation) -- hold reference to hyphenation menu
-        -- rolling controller
-        table.insert(self, ReaderRolling:new{
-            dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self
         })
-    end
-    -- configuable controller
-    if self.document.info.configurable then
-        if self.document.info.has_pages then
-            -- kopt option controller
-            table.insert(self, ReaderKoptListener:new{
-                dialog = self.dialog,
-                view = self[1],
-                ui = self,
-                document = self.document,
-            })
-        end
-        -- activity indicator
-        table.insert(self, ReaderActivityIndicator:new{
+        -- hyphenation menu
+        self:registerModule("hyphenation", ReaderHyphenation:new{
             dialog = self.dialog,
-            view = self[1],
-            ui = self,
-            document = self.document,
+            view = self.view,
+            ui = self
+        })
+        -- rolling controller
+        self:registerModule("rolling", ReaderRolling:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self
         })
     end
 
     -- koreader plugins
     for _,module in ipairs(PluginLoader:loadPlugins()) do
-        DEBUG("Loaded plugin", module.path)
-        table.insert(self, module:new{
+        DEBUG("Loaded plugin", module.name, "at", module.path)
+        self:registerModule(module.name, module:new{
             dialog = self.dialog,
-            view = self[1],
+            view = self.view,
             ui = self,
             document = self.document,
         })
