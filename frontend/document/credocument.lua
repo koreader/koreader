@@ -330,6 +330,11 @@ function CreDocument:setViewMode(new_mode)
     end
 end
 
+function CreDocument:setViewDimen(dimen)
+    DEBUG("CreDocument: set view dimen", dimen)
+    self._document:setViewDimen(dimen.w, dimen.h)
+end
+
 function CreDocument:setHeaderFont(new_font)
     if new_font then
         DEBUG("CreDocument: set header font", new_font)

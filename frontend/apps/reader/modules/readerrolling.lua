@@ -1,4 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Screen = require("ui/screen")
 local Device = require("ui/device")
 local Geom = require("ui/geometry")
@@ -8,8 +9,27 @@ local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local ReaderPanning = require("apps/reader/modules/readerpanning")
 
+--[[
+    Rolling is just like paging in page-based documents except that
+    sometimes (in scroll mode) there is no concept of page number to indicate
+    current progress.
+    There are three kind of progress measurements for credocuments.
+    1. page number (in page mode)
+    2. progress percentage (in scroll mode)
+    3. xpointer (in document dom structure)
+    We found that the first two measurements are not suitable for keeping a
+    record of the real progress. For example, when switching screen orientation
+    from portrait to landscape, or switching view mode from page to scroll, the
+    internal xpointer should not be used as the view dimen/mode is changed and
+    crengine's pagination mechanism will find a closest xpointer for the new view.
+    So if we change the screen orientation or view mode back, we cannot find the
+    original place since the internal xpointer is changed, which is counter-
+    intuitive as users didn't goto any other page.
+    The solution is that we keep a record of the internal xpointer and only change
+    it in explicit page turning. And use that xpointer for non-page-turning
+    rendering.
+--]]
 local ReaderRolling = InputContainer:new{
     old_doc_height = nil,
     old_page = nil,
@@ -17,6 +37,7 @@ local ReaderRolling = InputContainer:new{
     -- only used for page view mode
     current_page= nil,
     doc_height = nil,
+    xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = true,
     overlap = 20,
@@ -152,36 +173,36 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = soe
     end
     local last_xp = config:readSetting("last_xpointer")
+    local last_per = config:readSetting("last_percent")
     if last_xp then
         table.insert(self.ui.postInitCallback, function()
-            self:gotoXPointer(last_xp)
+            self.xpointer = last_xp
+            self:gotoXPointer(self.xpointer)
             -- we have to do a real jump in self.ui.document._document to
             -- update status information in CREngine.
-            self.ui.document:gotoXPointer(last_xp)
+            self.ui.document:gotoXPointer(self.xpointer)
         end)
-    end
     -- we read last_percent just for backward compatibility
-    if not last_xp then
-        local last_per = config:readSetting("last_percent")
-        if last_per then
-            table.insert(self.ui.postInitCallback, function()
-                self:gotoPercent(last_per)
-                -- we have to do a real pos change in self.ui.document._document
-                -- to update status information in CREngine.
-                self.ui.document:gotoPos(self.current_pos)
-            end)
+    elseif last_per then
+        table.insert(self.ui.postInitCallback, function()
+            self:gotoPercent(last_per)
+            -- we have to do a real pos change in self.ui.document._document
+            -- to update status information in CREngine.
+            self.ui.document:gotoPos(self.current_pos)
+            self.xpointer = self.ui.document:getXPointer()
+        end)
+    else
+        if self.view.view_mode == "page" then
+            self.ui:handleEvent(Event:new("PageUpdate", 1))
         end
+        self.xpointer = self.ui.document:getXPointer()
     end
-    if self.view.view_mode == "page" then
-        self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
-    end
-    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
     self.ui.doc_settings:saveSetting("last_percent", nil)
-    self.ui.doc_settings:saveSetting("last_xpointer", self.ui.document:getXPointer())
+    self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 end
 
@@ -247,7 +268,8 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onDoubleTapForward()
-    local pageno = self.current_page + self.ui.document:getVisiblePageCount()
+    local visible_page_count = self.ui.document:getVisiblePageCount()
+    local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
     self:onGotoPage(self.ui.toc:getNextChapter(pageno, 0))
     return true
 end
@@ -268,6 +290,14 @@ function ReaderRolling:onGotoPercent(percent)
     return true
 end
 
+function ReaderRolling:onGotoPage(number)
+    if number then
+        self:gotoPage(number)
+    end
+    self.xpointer = self.ui.document:getXPointer()
+    return true
+end
+
 function ReaderRolling:onGotoViewRel(diff)
     DEBUG("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
     if self.view.view_mode == "scroll" then
@@ -284,6 +314,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local page_count = self.ui.document:getVisiblePageCount()
         self:gotoPage(self.current_page + diff*page_count)
     end
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
@@ -292,6 +323,7 @@ function ReaderRolling:onPanning(args, key)
     local _, dy = unpack(args)
     DEBUG("key =", key)
     self:gotoPos(self.current_pos + dy * self.panning_steps.normal)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
@@ -303,6 +335,7 @@ end
 --[[
     remember to signal this event when the document has been zoomed,
     font has been changed, or line height has been changed.
+    Note that xpointer should not be changed.
 --]]
 function ReaderRolling:onUpdatePos()
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
@@ -316,7 +349,7 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        self:gotoXPointer(self.ui.document:getXPointer())
+        self:gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -324,6 +357,7 @@ function ReaderRolling:updatePos()
     UIManager.repaint_all = true
 end
 
+-- FIXME: there should no other way to update xpointer
 function ReaderRolling:onUpdateXPointer()
     local xp = self.ui.document:getXPointer()
     if self.view.view_mode == "page" then
@@ -334,16 +368,20 @@ function ReaderRolling:onUpdateXPointer()
     return true
 end
 
+--[[
+    switching screen mode should not change current page number
+--]]
 function ReaderRolling:onChangeViewMode()
     self.ui.document:_readMetadata()
     self.old_doc_height = self.ui.document.info.doc_height
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    self:gotoXPointer(self.ui.document:getXPointer())
-    if self.view.view_mode == "scroll" then
-        self.current_pos = self.ui.document:getCurrentPos()
+    if self.xpointer then
+        self:gotoXPointer(self.xpointer)
     else
-        self.current_page = self.ui.document:getCurrentPage()
+        table.insert(self.ui.postInitCallback, function()
+            self:gotoXPointer(self.xpointer)
+        end)
     end
     return true
 end
@@ -357,15 +395,17 @@ function ReaderRolling:onRedrawCurrentView()
     return true
 end
 
-function ReaderRolling:onSetDimensions()
+function ReaderRolling:onSetDimensions(dimen)
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
         self:initGesListener()
     end
+    self.ui.document:setViewDimen(Screen:getSize())
 end
 
 function ReaderRolling:onChangeScreenMode(mode)
     self.ui:handleEvent(Event:new("SetScreenMode", mode))
+    self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
     self:onUpdatePos()
 end
@@ -392,6 +432,10 @@ function ReaderRolling:gotoPos(new_pos)
     self.ui:handleEvent(Event:new("PosUpdate", new_pos))
 end
 
+function ReaderRolling:gotoPercent(new_percent)
+    self:gotoPos(new_percent * self.doc_height / 10000)
+end
+
 function ReaderRolling:gotoPage(new_page)
     self.ui.document:gotoPage(new_page)
     self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
@@ -403,17 +447,6 @@ function ReaderRolling:gotoXPointer(xpointer)
     else
         self:gotoPos(self.ui.document:getPosFromXPointer(xpointer))
     end
-end
-
-function ReaderRolling:gotoPercent(new_percent)
-    self:gotoPos(new_percent * self.doc_height / 10000)
-end
-
-function ReaderRolling:onGotoPage(number)
-    if number then
-        self:gotoPage(number)
-    end
-    return true
 end
 
 --[[
