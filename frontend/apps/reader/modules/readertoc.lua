@@ -53,6 +53,7 @@ end
 
 function ReaderToc:onUpdateToc()
     self.toc = nil
+    self.ticks = {}
     return true
 end
 
