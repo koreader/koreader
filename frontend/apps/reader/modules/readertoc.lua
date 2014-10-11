@@ -101,7 +101,8 @@ end
 --[[
 TOC ticks is a list of page number in ascending order of TOC nodes at certain level
 positive level counts nodes of the depth level (level 1 for depth 1)
-non-positive level counts nodes of reversed depth level (level -1 for max_depth-1)
+negative level counts nodes of reversed depth level (level -1 for max_depth)
+zero level counts leaf nodes of the toc tree
 --]]
 function ReaderToc:getTocTicks(level)
     if self.ticks[level] then return self.ticks[level] end
@@ -110,15 +111,26 @@ function ReaderToc:getTocTicks(level)
     local ticks = {}
 
     if #self.toc > 0 then
-        local depth = nil
-        if level > 0 then
-            depth = level
+        if level == 0 then
+            local depth = 0
+            for i = #self.toc, 1, -1 do
+                local v = self.toc[i]
+                if v.depth >= depth then
+                    table.insert(ticks, v.page)
+                end
+                depth = v.depth
+            end
         else
-            depth = self:getMaxDepth() + level
-        end
-        for _, v in ipairs(self.toc) do
-            if v.depth == depth then
-                table.insert(ticks, v.page)
+            local depth = nil
+            if level > 0 then
+                depth = level
+            else
+                depth = self:getMaxDepth() + level + 1
+            end
+            for _, v in ipairs(self.toc) do
+                if v.depth == depth then
+                    table.insert(ticks, v.page)
+                end
             end
         end
         -- normally the ticks are sorted already but in rare cases
