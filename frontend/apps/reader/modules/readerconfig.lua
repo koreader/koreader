@@ -78,7 +78,7 @@ function ReaderConfig:onCloseCallback()
 end
 
 -- event handler for readercropping
-function ReaderConfig:onCloseConfig()
+function ReaderConfig:onCloseConfigMenu()
     self.config_dialog:closeDialog()
 end
 

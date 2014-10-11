@@ -67,7 +67,7 @@ local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
     if mode == "auto" then return end
-    self.ui:handleEvent(Event:new("CloseConfig"))
+    self.ui:handleEvent(Event:new("CloseConfigMenu"))
     -- backup original view dimen
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
     -- backup original view bgcolor

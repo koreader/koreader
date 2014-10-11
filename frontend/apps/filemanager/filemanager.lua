@@ -175,15 +175,19 @@ end
 
 function FileManager:showFiles(path)
     DEBUG("show home page")
+    local screen_mode = G_reader_settings:readSetting("fm_screen_mode") or "portrait"
+    Screen:setScreenMode(screen_mode)
     path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     UIManager:show(FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
         onExit = function()
+            self.is_running = false
             UIManager:quit()
         end
     })
+    self.is_running = true
 end
 
 function FileManager:copyFile(file)

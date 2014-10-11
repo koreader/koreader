@@ -41,19 +41,18 @@ function ReaderMenu:init()
         filemanager = {
             icon = "resources/icons/appbar.cabinet.files.png",
             callback = function()
-                self.ui:handleEvent(Event:new("RestoreScreenMode",
-                    G_reader_settings:readSetting("screen_mode") or "portrait"))
                 self.ui:onClose()
-                UIManager:quit()
+                self:onTapCloseMenu()
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager:showFiles()
+                if not FileManager.is_running then
+                    UIManager:quit()
+                    FileManager:showFiles()
+                end
             end,
         },
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
-                self.ui:handleEvent(Event:new("RestoreScreenMode",
-                    G_reader_settings:readSetting("screen_mode") or "portrait"))
                 self.ui:onClose()
                 UIManager:quit()
             end,
@@ -139,7 +138,7 @@ function ReaderMenu:setUpdateItemTable()
             })
         end
     })
-    
+
     --typeset tab
     if KOBO_SCREEN_SAVER_LAST_BOOK then
         local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
@@ -215,6 +214,11 @@ function ReaderMenu:onTapShowMenu()
     self.ui:handleEvent(Event:new("ShowConfigMenu"))
     self.ui:handleEvent(Event:new("ShowReaderMenu"))
     return true
+end
+
+function ReaderMenu:onTapCloseMenu()
+    self.ui:handleEvent(Event:new("CloseReaderMenu"))
+    self.ui:handleEvent(Event:new("CloseConfigMenu"))
 end
 
 function ReaderMenu:onSetDimensions(dimen)
