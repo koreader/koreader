@@ -545,15 +545,6 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
     return true
 end
 
--- for returning to FileManager
-function ReaderView:onRestoreScreenMode(old_mode)
-    if old_mode == "landscape" or old_mode == "portrait" then
-        Screen:setScreenMode(old_mode)
-        self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
-    end
-    return true
-end
-
 function ReaderView:onSetDimensions(dimensions)
     self:resetLayout()
     self.dimen = dimensions

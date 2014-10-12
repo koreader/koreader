@@ -173,10 +173,13 @@ function FileManager:getDefaultDir()
     end
 end
 
+function FileManager:restoreScreenMode()
+    local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
+    Screen:setScreenMode(screen_mode or "portrait")
+end
+
 function FileManager:showFiles(path)
     DEBUG("show home page")
-    local screen_mode = G_reader_settings:readSetting("fm_screen_mode") or "portrait"
-    Screen:setScreenMode(screen_mode)
     path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     UIManager:show(FileManager:new{
