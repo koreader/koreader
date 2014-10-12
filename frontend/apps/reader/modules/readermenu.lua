@@ -43,7 +43,10 @@ function ReaderMenu:init()
             callback = function()
                 self.ui:onClose()
                 self:onTapCloseMenu()
+                -- screen orientation is independent for docview and filemanager
+                -- so we need to restore the screen mode for the filemanager
                 local FileManager = require("apps/filemanager/filemanager")
+                FileManager:restoreScreenMode()
                 if not FileManager.is_running then
                     UIManager:quit()
                     FileManager:showFiles()
