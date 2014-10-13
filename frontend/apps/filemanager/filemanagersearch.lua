@@ -261,9 +261,9 @@ function Search:find(option)
             self.data[i][self.tags2] = ""
             self.data[i][self.tags3] = ""
         end
-        while line ~= "    ], " do
+        while line ~= "    ], " and line ~= "    ]" do
             line = f:read()
-            if line ~= "    ], " then
+            if line ~= "    ], " and line ~= "    ]" then
                 self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line,8,3)
                 if s == self.authors then
                     self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
