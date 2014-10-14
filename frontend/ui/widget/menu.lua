@@ -160,28 +160,51 @@ function MenuItem:init()
     end
 
     local mandatory = self.mandatory and ""..self.mandatory.." " or ""
-    local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true).x
+    local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face,
+                    ""..mandatory, true, self.bold).x
 
-    w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, self.text, true).x
-    if w + mandatory_w >= self.content_width then
-        if Device:isTouchDevice() then
-        else
+    local state_button_width = self.state_size.w or 0
+    w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
+                    self.text, true, self.bold).x
+    if w + mandatory_w + state_button_width >= self.content_width then
+        if Device:hasKeyboard() then
             self.active_key_events.ShowItemDetail = {
                 {"Right"}, doc = "show item detail"
             }
         end
         local indicator = "  >> "
-        local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, indicator, true).x
+        local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
+                        indicator, true, self.bold).x
         self.text = RenderText:getSubTextByWidth(self.text, self.face,
-            self.content_width - indicator_w - mandatory_w, true) .. indicator
+            self.content_width - indicator_w - mandatory_w - state_button_width,
+            true, self.bold) .. indicator
     end
 
+    local state_button = self.state or HorizontalSpan:new{
+        width = state_button_width,
+    }
+    local state_indent = self.state and self.state.indent or ""
+    local state_container = LeftContainer:new{
+        dimen = Geom:new{w = self.content_width/2, h = self.dimen.h},
+        HorizontalGroup:new{
+            HorizontalSpan:new{
+                width = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
+                                state_indent, true, self.bold).x,
+            },
+            state_button
+        }
+    }
     local text_container = LeftContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
-        TextWidget:new{
-            text = self.text,
-            face = self.face,
-            bold = self.bold,
+        HorizontalGroup:new{
+            HorizontalSpan:new{
+                width = self.state_size.w,
+            },
+            TextWidget:new{
+                text = self.text,
+                face = self.face,
+                bold = self.bold,
+            }
         }
     }
 
@@ -195,6 +218,7 @@ function MenuItem:init()
     }
 
     self._underline_container = UnderlineContainer:new{
+        vertical_align = "center",
         dimen = Geom:new{
             w = self.content_width,
             h = self.dimen.h
@@ -203,16 +227,17 @@ function MenuItem:init()
             align = "center",
             OverlapGroup:new{
                 dimen = Geom:new{w = self.content_width, h = self.dimen.h},
+                state_container,
                 text_container,
                 mandatory_container,
             },
         }
     }
-
     self[1] = FrameContainer:new{
         bordersize = 0,
         padding = 0,
         HorizontalGroup:new{
+            align = "center",
             HorizontalSpan:new{ width = 5 },
             ItemShortCutIcon:new{
                 dimen = shortcut_icon_dimen,
@@ -569,6 +594,8 @@ function Menu:updateItems(select_number)
             end
             local item_tmp = MenuItem:new{
                 show_parent = self.show_parent,
+                state = self.item_table[i].state,
+                state_size = self.state_size or {},
                 text = self.item_table[i].text,
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i,
