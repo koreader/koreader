@@ -41,7 +41,7 @@ function Button:init()
     else
         self.label_widget = ImageWidget:new{
             file = self.icon,
-            dim = self.enabled,
+            dim = not self.enabled,
         }
     end
     local widget_size = self.label_widget:getSize()
