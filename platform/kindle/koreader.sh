@@ -83,6 +83,7 @@ cd "${KOREADER_DIR}"
 
 # Handle pending OTA update
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ] ; then
 	logmsg "Updating koreader . . ."
 	# Look for our own GNU tar build to do a fancy progress tracking...
@@ -98,7 +99,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 	fi
 	# Cleanup behind us...
 	if [ $? -eq 0 ] ; then
-		rm "${NEWUPDATE}"
+		mv "${NEWUPDATE}" "${INSTALLED}"
 		logmsg "Update sucessful :)"
 		eips_print_bottom_centered "Update successful :)" 1
 	else

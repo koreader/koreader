@@ -5,10 +5,11 @@ export LC_ALL="en_US.UTF-8"
 KOREADER_DIR=/mnt/onboard/.kobo/koreader
 
 # update to new version from OTA directory
-NEWUPDATE=${KOREADER_DIR}/ota/koreader.updated.tar
+NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f $NEWUPDATE ]; then
     # TODO: any graphic indication for the updating progress?
-    cd /mnt/onboard/.kobo && tar xf $NEWUPDATE && rm $NEWUPDATE
+    cd /mnt/onboard/.kobo && tar xf $NEWUPDATE && mv $NEWUPDATE $INSTALLED
 fi
 
 # we're always starting from our working directory
