@@ -148,7 +148,7 @@ function Screen:getDPI()
         self.dpi = 212
     elseif model == "Kobo_phoenix" then
         self.dpi = 212.8
-    elseif model == "Kobo_dragon" then
+    elseif model == "Kobo_dragon" or model == "Kobo_dahlia" then
         self.dpi = 265
     elseif model == "Kobo_pixie" then
         self.dpi = 200
