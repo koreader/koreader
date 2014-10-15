@@ -45,6 +45,7 @@ function ReaderToc:init()
             },
         }
     end
+    self:resetToc()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -56,10 +57,14 @@ function ReaderToc:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function ReaderToc:onUpdateToc()
+function ReaderToc:resetToc()
     self.toc = nil
     self.ticks = {}
     self.collapsed_toc = {}
+end
+
+function ReaderToc:onUpdateToc()
+    self:resetToc()
     return true
 end
 
