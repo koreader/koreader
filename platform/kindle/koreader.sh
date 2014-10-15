@@ -83,6 +83,7 @@ cd "${KOREADER_DIR}"
 
 # Handle pending OTA update
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ] ; then
 	logmsg "Updating koreader . . ."
 	# Look for our own GNU tar build to do a fancy progress tracking...
@@ -98,7 +99,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 	fi
 	# Cleanup behind us...
 	if [ $? -eq 0 ] ; then
-		rm "${NEWUPDATE}"
+		mv "${NEWUPDATE}" "${INSTALLED}"
 		logmsg "Update sucessful :)"
 		eips_print_bottom_centered "Update successful :)" 1
 	else
@@ -114,10 +115,12 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# accept input ports for zsync plugin
 logmsg "Setting up IPTables rules . . ."
+# accept input ports for zsync plugin
 iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
 iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+# accept input ports for calibre companion
+iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
 
 # bind-mount system fonts
 if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts > /dev/null 2>&1 ; then
@@ -251,8 +254,9 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-# restore firewall rules
 logmsg "Restoring IPTables rules . . ."
+# restore firewall rules
+iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
 iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
 iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
 

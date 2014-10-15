@@ -1,6 +1,7 @@
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/networkmgr")
+local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local DEBUG = require("dbg")
@@ -128,6 +129,11 @@ function OTAManager:fetchAndProcessUpdate()
 end
 
 function OTAManager:_buildLocalPackage()
+    -- TODO: validate the installed package?
+    local installed_package = lfs.currentdir() .. "/" .. self.installed_package
+    if lfs.attributes(installed_package, "mode") == "file" then
+        return 0
+    end
     return os.execute(string.format(
         "./tar cvf %s -C .. -T %s --no-recursion",
         self.installed_package, self.package_indexfile))
