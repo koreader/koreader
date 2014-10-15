@@ -9,6 +9,7 @@ local Configurable = require("configurable")
 local DjvuDocument = Document:new{
     _document = false,
     -- libdjvulibre manages its own additional cache, default value is hard written in c module.
+    is_djvu = true,
     djvulibre_cache_size = nil,
     dc_null = DrawContext.new(),
     options = KoptOptions,
