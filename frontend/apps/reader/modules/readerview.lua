@@ -1,12 +1,13 @@
+local ReaderFlipping = require("apps/reader/modules/readerflipping")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
+local ReaderDogear = require("apps/reader/modules/readerdogear")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
-local ReaderFlipping = require("apps/reader/modules/readerflipping")
-local ReaderFooter = require("apps/reader/modules/readerfooter")
-local ReaderDogear = require("apps/reader/modules/readerdogear")
+local _ = require("gettext")
 
 local ReaderView = OverlapGroup:new{
     document = nil,
@@ -669,6 +670,28 @@ function ReaderView:autoSaveSettings()
             self.auto_save_paging_count = self.auto_save_paging_count + 1
         end
     end
+end
+
+function ReaderView:getRenderModeMenuTable()
+    local view = self
+    local function make_mode(text, mode)
+        return {
+            text = text,
+            checked_func = function() return view.render_mode == mode end,
+            callback = function() view.render_mode = mode end,
+        }
+    end
+    return  {
+        text = _("DjVu render mode"),
+        sub_item_table = {
+            make_mode(_("COLOUR (works for both colour and b&w pages)"), 0),
+            make_mode(_("BLACK & WHITE (for b&w pages only, much faster)"), 1),
+            make_mode(_("COLOUR ONLY (slightly faster than COLOUR)"), 2),
+            make_mode(_("MASK ONLY (for b&w pages only)"), 3),
+            make_mode(_("COLOUR BACKGROUND (show only background)"), 4),
+            make_mode(_("COLOUR FOREGROUND (show only foreground)"), 5),
+        }
+    }
 end
 
 return ReaderView

@@ -112,6 +112,9 @@ function ReaderMenu:setUpdateItemTable()
         end
     })
     table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
+    if self.ui.document.is_djvu then
+        table.insert(self.tab_item_table.setting, self.view:getRenderModeMenuTable())
+    end
     table.insert(self.tab_item_table.setting, {
         text = _("Show advanced options"),
         checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
