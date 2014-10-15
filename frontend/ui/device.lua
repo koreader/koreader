@@ -158,7 +158,7 @@ function Device:hasFrontlight()
     if self.has_front_light ~= nil then return self.has_front_light end
     local model = self:getModel()
     self.has_front_light = (model == "KindlePaperWhite") or (model == "KindlePaperWhite2")
-                        or (model == "Kobo_dragon") or (model == "Kobo_kraken") or (model == "Kobo_phoenix")
+                        or (model == "Kobo_dahlia") or (model == "Kobo_dragon") or (model == "Kobo_kraken") or (model == "Kobo_phoenix")
                         or util.isEmulated()
     return self.has_front_light
 end
