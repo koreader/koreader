@@ -209,19 +209,22 @@ end
 function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom = nil
-    local page_size = {}
+    local page_size = self.ui.document:getNativePageDimensions(pageno)
     if self.zoom_mode == "content"
     or self.zoom_mode == "contentwidth"
     or self.zoom_mode == "contentheight" then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
-        --self.view:handleEvent(Event:new("BBoxUpdate", page_size))
-        self.view:onBBoxUpdate(ubbox_dimen)
-        page_size = ubbox_dimen
+        -- if bbox is larger than the native page dimension render the full page
+        -- See discussion in koreader/koreader#970.
+        if ubbox_dimen.w <= page_size.w and ubbox_dimen.h <= page_size.h then
+            page_size = ubbox_dimen
+            self.view:onBBoxUpdate(ubbox_dimen)
+        else
+            self.view:onBBoxUpdate(nil)
+        end
     else
         -- otherwise, operate on full page
         self.view:onBBoxUpdate(nil)
-        page_size = self.ui.document:getNativePageDimensions(pageno)
-        --page_size = self.ui.document:getPageDimensions(pageno, 1, 0)
     end
     -- calculate zoom value:
     local zoom_w = self.dimen.w / page_size.w
