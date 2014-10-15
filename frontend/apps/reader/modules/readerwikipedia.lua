@@ -11,11 +11,16 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 -- Wikipedia as a special dictionary
-local ReaderWikipedia = ReaderDictionary:new{
+local ReaderWikipedia = ReaderDictionary:extend{
     -- identify itself
     wiki = true,
     no_page = _("No wiki page found."),
 }
+
+-- the super "class" ReaderDictionary has already registers a menu entry
+-- we should override the init function in ReaderWikipedia
+function ReaderWikipedia:init()
+end
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
     -- detect language of the text
