@@ -1,13 +1,30 @@
-local EventListener = require("ui/widget/eventlistener")
-local UIManager = require("ui/uimanager")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local JSON = require("JSON")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
-local ReaderDictionary = EventListener:new{}
+local ReaderDictionary = InputContainer:new{}
+
+function ReaderDictionary:init()
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderDictionary:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.plugins, {
+        text = _("Dictionary lookup"),
+        tap_input = {
+            title = _("Input word to lookup"),
+            type = "text",
+            callback = function(input)
+                self:onLookupWord(input)
+            end,
+        },
+    })
+end
 
 function ReaderDictionary:onLookupWord(word, box, highlight)
     self.highlight = highlight
