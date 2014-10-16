@@ -44,19 +44,7 @@ local Screen = {
 
 function Screen:init()
     self.bb = self.fb.bb
-    if self.device:getModel() ~= 'Kobo_phoenix' then
-        function Screen:getSize()
-            return Screen:getSizeBB()
-        end
-        function Screen:getWidth()
-            return Screen:getWidthBB()
-        end
-        function Screen:getHeight()
-            return Screen:getHeightBB()
-        end
-        function self:offsetX() return 0 end
-        function self:offsetY() return 0 end
-    else
+    if self.device:getModel() == 'Kobo_phoenix' then
         function Screen:getSize()
             return Screen:getSizePhoenix()
         end
@@ -80,6 +68,38 @@ function Screen:init()
         function self:offsetY()
             return 1
         end
+    elseif self.device:getModel() == 'Kobo_dahlia' then
+        function Screen:getSize()
+            return Screen:getSizePhoenix()
+        end
+        function Screen:getWidth()
+            return Screen:getWidthDahlia()
+        end
+        function Screen:getHeight()
+            return Screen:getHeightDahlia()
+        end
+        function self:offsetX()
+            return 0
+        end
+        function self:offsetY()
+            if Screen.cur_rotation_mode == 0 or Screen.cur_rotation_mode == 3 then
+                return 10
+            else
+                return 0
+            end
+        end
+    else
+        function Screen:getSize()
+            return Screen:getSizeBB()
+        end
+        function Screen:getWidth()
+            return Screen:getWidthBB()
+        end
+        function Screen:getHeight()
+            return Screen:getHeightBB()
+        end
+        function self:offsetX() return 0 end
+        function self:offsetY() return 0 end
     end
     self.blitbuffer_rotation_mode = self.bb:getRotation()
     -- asking the framebuffer for orientation is error prone,
@@ -121,6 +141,12 @@ function Screen:getWidthBB()
     return self.bb:getWidth()
 end
 
+function Screen:getWidthDahlia()
+    if self.cur_rotation_mode == 0 then return 1080
+    else return 1430
+    end
+end
+
 function Screen:getWidthPhoenix()
     if self.cur_rotation_mode == 0 then return 752
     else return 1012
@@ -129,6 +155,12 @@ end
 
 function Screen:getHeightBB()
     return self.bb:getHeight()
+end
+
+function Screen:getHeightDahlia()
+    if self.cur_rotation_mode == 0 then return 1430
+    else return 1080
+    end
 end
 
 function Screen:getHeightPhoenix()
