@@ -26,7 +26,6 @@ return {
   -- the .lua extension)
   ['include'] = {
     'frontend/.*$',
-    'plugins/.*$',
   },
 
   -- Patterns for files to exclude when reporting
