@@ -17,6 +17,8 @@ local EvernoteExporter = InputContainer:new{
     login_title = _("Login to Evernote"),
     notebook_name = _("Koreader Notes"),
     evernote_domain = nil,
+    notemarks = _("Note: "),
+    clipping_dir = "./clipboard",
 
     evernote_token,
     notebook_guid,
@@ -30,6 +32,7 @@ function EvernoteExporter:init()
     self.evernote_username = settings.username or ""
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
+    self.html_export = settings.html_export or false
 
     self.parser = MyClipping:new{
         my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -82,7 +85,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
             {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
-                    return self.evernote_token ~= nil
+                    return self.evernote_token ~= nil or self.html_export ~= false
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
@@ -98,7 +101,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
             {
                 text = _("Export all notes in your library"),
                 enabled_func = function()
-                    return self.evernote_token ~= nil
+                    return self.evernote_token ~= nil or self.html_export ~= false
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
@@ -109,6 +112,13 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                         text = _("Exporting may take several minutes..."),
                         timeout = 1,
                     })
+                end
+            },
+            {
+                text = _("Export to local HTML files"),
+                checked_func = function() return self.html_export end,
+                callback = function()
+                    self.html_export = not self.html_export
                 end
             },
         }
@@ -205,22 +215,23 @@ function EvernoteExporter:doLogin(username, password)
         })
     end
 
-    self:saveSettings()
+    self:onSaveSettings()
 end
 
 function EvernoteExporter:logout()
     self.evernote_token = nil
     self.notebook_guid = nil
     self.evernote_domain = nil
-    self:saveSettings()
+    self:onSaveSettings()
 end
 
-function EvernoteExporter:saveSettings()
+function EvernoteExporter:onSaveSettings()
     local settings = {
         domain = self.evernote_domain,
         username = self.evernote_username,
         token = self.evernote_token,
         notebook = self.notebook_guid,
+        html_export = self.html_export,
     }
     G_reader_settings:saveSetting("evernote", settings)
 end
@@ -231,14 +242,8 @@ function EvernoteExporter:getExportNotebook(client)
 end
 
 function EvernoteExporter:exportCurrentNotes(view)
-    local EvernoteClient = require("EvernoteClient")
-    local client = EvernoteClient:new{
-        domain = self.evernote_domain,
-        authToken = self.evernote_token,
-    }
-
     local clippings = self.parser:parseCurrentDoc(view)
-    self:exportClippings(client, clippings)
+    self:exportClippings(clippings)
 end
 
 function EvernoteExporter:updateHistoryClippings(clippings, new_clippings)
@@ -274,12 +279,6 @@ function EvernoteExporter:updateMyClippings(clippings, new_clippings)
 end
 
 function EvernoteExporter:exportAllNotes()
-    local EvernoteClient = require("EvernoteClient")
-    local client = EvernoteClient:new{
-        domain = self.evernote_domain,
-        authToken = self.evernote_token,
-    }
-
     local clippings = self.config:readSetting("clippings") or {}
     clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
     clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
@@ -291,12 +290,22 @@ function EvernoteExporter:exportAllNotes()
         end
     end
     --DEBUG("clippings", clippings)
-    self:exportClippings(client, clippings)
+    self:exportClippings(clippings)
     self.config:saveSetting("clippings", clippings)
     self.config:flush()
 end
 
-function EvernoteExporter:exportClippings(client, clippings)
+function EvernoteExporter:exportClippings(clippings)
+    local client = nil
+    local exported_stamp = "html"
+    if not self.html_export then
+        client = require("EvernoteClient"):new{
+            domain = self.evernote_domain,
+            authToken = self.evernote_token,
+        }
+        exported_stamp = self.notebook_guid
+    end
+
     local export_count, error_count = 0, 0
     local export_title, error_title
     for title, booknotes in pairs(clippings) do
@@ -305,9 +314,15 @@ function EvernoteExporter:exportClippings(client, clippings)
         end
         -- check if booknotes are exported in this notebook
         -- so that booknotes will still be exported after switching user account
-        if booknotes.exported[self.notebook_guid] ~= true then
-            local ok, err = pcall(self.exportBooknotes, self,
+        if booknotes.exported[exported_stamp] ~= true then
+            local ok, err
+            if self.html_export then
+                ok, err = pcall(self.exportBooknotesToHTML, self,
+                        title, booknotes)
+            else
+                ok, err = pcall(self.exportBooknotesToEvernote, self,
                         client, title, booknotes)
+            end
             -- error reporting
             if not ok and err and err:find("Transport not open") then
                 NetworkMgr:promptWifiOn()
@@ -320,7 +335,7 @@ function EvernoteExporter:exportClippings(client, clippings)
                 DEBUG("Exported notes in book:", title)
                 export_count = export_count + 1
                 export_title = title
-                booknotes.exported[self.notebook_guid] = true
+                booknotes.exported[exported_stamp] = true
             end
         end
     end
@@ -345,10 +360,10 @@ function EvernoteExporter:exportClippings(client, clippings)
     UIManager:show(InfoMessage:new{ text = msg })
 end
 
-function EvernoteExporter:exportBooknotes(client, title, booknotes)
+function EvernoteExporter:exportBooknotesToEvernote(client, title, booknotes)
     local content = slt2.render(self.template, {
         booknotes = booknotes,
-        notemarks = _("Note: "),
+        notemarks = self.notemarks,
     })
     --DEBUG("content", content)
     local note_guid = client:findNoteByTitle(title, self.notebook_guid)
@@ -368,6 +383,19 @@ function EvernoteExporter:exportBooknotes(client, title, booknotes)
         client:createNote(title, content, resources, {}, self.notebook_guid)
     else
         client:updateNote(note_guid, title, content, resources, {}, self.notebook_guid)
+    end
+end
+
+function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
+    local content = slt2.render(self.template, {
+        booknotes = booknotes,
+        notemarks = self.notemarks,
+    })
+    --DEBUG("content", content)
+    local html = io.open(self.clipping_dir .. "/" .. title .. ".html", "w")
+    if html then
+        html:write(content)
+        html:close()
     end
 end
 
