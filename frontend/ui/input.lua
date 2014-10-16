@@ -472,13 +472,13 @@ function Input:init()
         end
     end
 
-    if Device:getModel() ~= 'Kobo_phoenix' and Device:getModel() ~= 'Kobo_dahlia' then
+    if Device:getModel() == 'Kobo_phoenix' or Device:getModel() == 'Kobo_dahlia' then
         function Input:handleTouchEv(ev)
-            return Input:handleTypeBTouchEv(ev)
+            return Input:handlePhoenixTouchEv(ev)
         end
     else
         function Input:handleTouchEv(ev)
-            return Input:handlePhoenixTouchEv(ev)
+            return Input:handleTypeBTouchEv(ev)
         end
     end
 end
