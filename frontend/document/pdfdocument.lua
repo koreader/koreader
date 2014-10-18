@@ -5,56 +5,20 @@ local Document = require("document/document")
 local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
 local DEBUG = require("dbg")
-local ffi = require("ffi")
-ffi.cdef[[
-typedef struct fz_point_s fz_point;
-struct fz_point_s {
-    float x, y;
-};
-typedef enum {
-    FZ_ANNOT_TEXT,
-    FZ_ANNOT_LINK,
-    FZ_ANNOT_FREETEXT,
-    FZ_ANNOT_LINE,
-    FZ_ANNOT_SQUARE,
-    FZ_ANNOT_CIRCLE,
-    FZ_ANNOT_POLYGON,
-    FZ_ANNOT_POLYLINE,
-    FZ_ANNOT_HIGHLIGHT,
-    FZ_ANNOT_UNDERLINE,
-    FZ_ANNOT_SQUIGGLY,
-    FZ_ANNOT_STRIKEOUT,
-    FZ_ANNOT_STAMP,
-    FZ_ANNOT_CARET,
-    FZ_ANNOT_INK,
-    FZ_ANNOT_POPUP,
-    FZ_ANNOT_FILEATTACHMENT,
-    FZ_ANNOT_SOUND,
-    FZ_ANNOT_MOVIE,
-    FZ_ANNOT_WIDGET,
-    FZ_ANNOT_SCREEN,
-    FZ_ANNOT_PRINTERMARK,
-    FZ_ANNOT_TRAPNET,
-    FZ_ANNOT_WATERMARK,
-    FZ_ANNOT_3D
-} fz_annot_type;
-]]
 
 local PdfDocument = Document:new{
     _document = false,
-    -- muPDF manages its own additional cache
-    mupdf_cache_size = 5 * 1024 * 1024,
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
 }
 
 function PdfDocument:init()
-    local pdf = require("libs/libkoreader-pdf")
+    local pdf = require("ffi/mupdf")
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok
-    ok, self._document = pcall(pdf.openDocument, self.file, self.mupdf_cache_size)
+    ok, self._document = pcall(pdf.openDocument, self.file)
     if not ok then
         error(self._document)  -- will contain error message
     end

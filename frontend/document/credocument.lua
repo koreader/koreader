@@ -3,7 +3,6 @@ local Document = require("document/document")
 local Configurable = require("configurable")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
-local Image = require("ffi/mupdfimg")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
@@ -148,7 +147,8 @@ function CreDocument:getCoverPageImage()
     self:loadDocument()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
-        local image = Image:fromData(data, size)
+        local Mupdf = require("ffi/mupdf")
+        local image = Mupdf:renderImage(data, size)
         ffi.C.free(data)
         return image
     end
