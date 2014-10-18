@@ -79,10 +79,14 @@ function Screen:init()
             return Screen:getHeightDahlia()
         end
         function self:offsetX()
-            return 0
+            if Screen.cur_rotation_mode == 3 then
+                return 10
+            else
+                return 0
+            end
         end
         function self:offsetY()
-            if Screen.cur_rotation_mode == 0 or Screen.cur_rotation_mode == 3 then
+            if Screen.cur_rotation_mode == 0 then
                 return 10
             else
                 return 0
