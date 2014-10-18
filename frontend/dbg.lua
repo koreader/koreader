@@ -21,6 +21,7 @@ local function LvDEBUG(lv, ...)
         android.LOGI("#"..line)
     else
         print("#"..line)
+        io.flush()
     end
 end
 
