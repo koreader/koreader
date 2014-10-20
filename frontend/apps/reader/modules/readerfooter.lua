@@ -21,6 +21,7 @@ local ReaderFooter = InputContainer:new{
     pageno = nil,
     pages = nil,
     toc_level = 0,
+    max_ticks = 50,
     progress_percentage = 0.0,
     progress_text = nil,
     text_font_face = "ffont",
@@ -63,8 +64,14 @@ function ReaderFooter:init()
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     local text_width = self.progress_text:getSize().w
-    local ticks = (self.ui.toc and DMINIBAR_PROGRESS_MARKER)
-            and self.ui.toc:getTocTicks(self.toc_level) or {}
+    local ticks = {}
+    if self.ui.toc and DMINIBAR_PROGRESS_MARKER then
+        local max_level = self.ui.toc:getMaxDepth()
+        for i = self.toc_level, -max_level, -1 do
+            ticks = self.ui.toc:getTocTicks(i)
+            if #ticks < self.max_ticks then break end
+        end
+    end
     self.progress_bar = ProgressWidget:new{
         width = math.floor(Screen:getWidth() - text_width - self.padding),
         height = self.bar_height,
