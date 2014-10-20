@@ -305,7 +305,7 @@ function ReaderToc:onShowToc()
     }
 
     function toc_menu:onMenuChoice(item)
-        self.ui:handleEvent(Event:new("PageUpdate", item.page))
+        self.ui:handleEvent(Event:new("GotoPage", item.page))
     end
 
     toc_menu.close_callback = function()

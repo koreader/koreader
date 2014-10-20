@@ -108,11 +108,10 @@ end
 function ReaderLink:onGotoLink(link)
     if self.ui.document.info.has_pages then
         table.insert(self.link_states, self.view.state.page)
-        self.ui:handleEvent(Event:new("PageUpdate", link.page + 1))
+        self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
     else
         table.insert(self.link_states, self.ui.document:getXPointer())
-        self.document:gotoLink(link)
-        self.ui:handleEvent(Event:new("UpdateXPointer"))
+        self.ui:handleEvent(Event:new("GotoXPointer", link))
     end
     return true
 end
@@ -122,14 +121,13 @@ function ReaderLink:onSwipe(arg, ges)
         if self.ui.document.info.has_pages then
             local last_page = table.remove(self.link_states)
             if last_page then
-                self.ui:handleEvent(Event:new("PageUpdate", last_page))
+                self.ui:handleEvent(Event:new("GotoPage", last_page))
                 return true
             end
         else
             local last_xp = table.remove(self.link_states)
             if last_xp then
-                self.ui.document:gotoXPointer(last_xp)
-                self.ui:handleEvent(Event:new("UpdateXPointer"))
+                self.ui:handleEvent(Event:new("GotoXPointer", last_xp))
                 return true
             end
         end
