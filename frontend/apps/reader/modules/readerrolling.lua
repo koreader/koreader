@@ -298,6 +298,12 @@ function ReaderRolling:onGotoPage(number)
     return true
 end
 
+function ReaderRolling:onGotoXPointer(xp)
+    self:gotoXPointer(xp)
+    self.xpointer = xp
+    return true
+end
+
 function ReaderRolling:onGotoViewRel(diff)
     DEBUG("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
     if self.view.view_mode == "scroll" then
@@ -355,17 +361,6 @@ function ReaderRolling:updatePos()
         self.ui:handleEvent(Event:new("UpdateToc"))
     end
     UIManager.repaint_all = true
-end
-
--- FIXME: there should no other way to update xpointer
-function ReaderRolling:onUpdateXPointer()
-    local xp = self.ui.document:getXPointer()
-    if self.view.view_mode == "page" then
-        self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getPageFromXPointer(xp)))
-    else
-        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getPosFromXPointer(xp)))
-    end
-    return true
 end
 
 --[[
