@@ -244,12 +244,14 @@ function ReaderToc:onShowToc()
     -- update collapsible state
     self.expand_button = Button:new{
         icon = "resources/icons/appbar.control.expand.png",
+        width = Screen:scaleByDPI(30),
         bordersize = 0,
         show_parent = self,
     }
 
     self.collapse_button = Button:new{
         icon = "resources/icons/appbar.control.collapse.png",
+        width = Screen:scaleByDPI(30),
         bordersize = 0,
         show_parent = self,
     }

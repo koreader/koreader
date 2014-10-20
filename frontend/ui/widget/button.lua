@@ -72,14 +72,14 @@ function Button:init()
     self[1] = self.frame
     if Device:isTouchDevice() then
         self.ges_events = {
-            TapSelect = {
+            TapSelectButton = {
                 GestureRange:new{
                     ges = "tap",
                     range = self.dimen,
                 },
                 doc = "Tap Button",
             },
-            HoldSelect = {
+            HoldSelectButton = {
                 GestureRange:new{
                     ges = "hold",
                     range = self.dimen,
@@ -149,7 +149,7 @@ function Button:showHide(show)
     end
 end
 
-function Button:onTapSelect()
+function Button:onTapSelectButton()
     if self.enabled and self.callback then
         self[1].invert = true
         UIManager:setDirty(self.show_parent, "partial")
@@ -162,7 +162,7 @@ function Button:onTapSelect()
     return true
 end
 
-function Button:onHoldSelect()
+function Button:onHoldSelectButton()
     if self.enabled and self.hold_callback then
         self.hold_callback()
     end
