@@ -112,6 +112,10 @@ clean:
 	rm -rf $(INSTALL_DIR)
 	$(MAKE) -C $(KOR_BASE) clean
 
+# Don't bundle launchpad on touch devices..
+ifeq ($(TARGET), kindle-legacy)
+KINDLE_LEGACY_LAUNCHER:=launchpad
+endif
 kindleupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
@@ -124,11 +128,7 @@ kindleupdate: all
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
 	# create new package
-	# Don't bundle launchpad on touch devices..
-ifeq ($(TARGET), kindle-legacy)
-	KINDLE_LEGACY_LAUNCHER:=launchpad
-endif
-	cd $(INSTALL_DIR) && \
+	cd $(INSTALL_DIR) && pwd && \
 		zip -9 -r \
 			../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \

@@ -69,7 +69,7 @@ To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `au
 
 Ubuntu users may need to run:
 ```
-sudo apt-get install build-essential libtool
+sudo apt-get install build-essential libtool gcc-multilib
 ```
 
 Cross compile toolchains are available for Ubuntu users through these commands:

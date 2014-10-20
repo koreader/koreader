@@ -456,6 +456,7 @@ function Input:init()
             input.open("/dev/input/event2")
         elseif dev_mod == "KindleDXG" then
             DEBUG("Auto-detected Kindle DXG")
+            input.open("/dev/input/event0")
             input.open("/dev/input/event1")
         elseif dev_mod == "Kindle2" then
             DEBUG("Auto-detected Kindle 2")

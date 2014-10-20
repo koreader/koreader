@@ -55,7 +55,7 @@ function Device:getModel()
         elseif dx_set[kindle_devcode] then
             self.model = "Kindle2"
         elseif dxg_set[kindle_devcode] then
-            self.model = "Kindle2"
+            self.model = "KindleDXG"
         elseif k3_set[kindle_devcode] then
             self.model = "Kindle3"
         elseif k4_set[kindle_devcode] then
@@ -120,7 +120,7 @@ function Device:hasKeyboard()
     if not isAndroid then
         local model = self:getModel()
         self.has_keyboard = (model == "Kindle2") or (model == "Kindle3")
-                            or util.isEmulated()
+                            or (model == "KindleDXG") or util.isEmulated()
     else
         self.has_keyboard = ffi.C.AConfiguration_getKeyboard(android.app.config)
                             == ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
