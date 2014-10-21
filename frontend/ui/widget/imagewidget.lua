@@ -1,6 +1,6 @@
 local Widget = require("ui/widget/widget")
 local CacheItem = require("cacheitem")
-local Image = require("ffi/mupdfimg")
+local Mupdf = require("ffi/mupdf")
 local Geom = require("ui/geometry")
 local Cache = require("cache")
 local DEBUG = require("dbg")
@@ -54,9 +54,9 @@ function ImageWidget:_loadfile()
             -- cache this image
             DEBUG("cache", hash)
             local cache = ImageCacheItem:new{
-                bb = Image:fromFile(self.file, self.width, self.height),
+                bb = Mupdf.renderImageFile(self.file, self.width, self.height),
             }
-            cache.size = cache.bb.pitch * cache.bb.h
+            cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8
             ImageCache:insert(hash, cache)
             self._bb = cache.bb
         end
