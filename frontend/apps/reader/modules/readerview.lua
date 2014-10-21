@@ -289,7 +289,7 @@ function ReaderView:getScrollPageRect(page, rect_p)
     for _, state in ipairs(self.page_states) do
         local trans_p = Geom:new(rect_p):copy()
         trans_p:transformByScale(state.zoom, state.zoom)
-        if page == state.page and state.visible_area:contains(trans_p) then
+        if page == state.page and state.visible_area:intersectWith(trans_p) then
             rect_s.x = rect_s.x + state.offset.x + trans_p.x - state.visible_area.x
             rect_s.y = rect_s.y + state.offset.y + trans_p.y - state.visible_area.y
             rect_s.w = trans_p.w
@@ -339,7 +339,7 @@ function ReaderView:getSinglePageRect(rect_p)
     local rect_s = Geom:new{}
     local trans_p = Geom:new(rect_p):copy()
     trans_p:transformByScale(self.state.zoom, self.state.zoom)
-    if self.visible_area:contains(trans_p) then
+    if self.visible_area:intersectWith(trans_p) then
         rect_s.x = self.state.offset.x + trans_p.x - self.visible_area.x
         rect_s.y = self.state.offset.y + trans_p.y - self.visible_area.y
         rect_s.w = trans_p.w
