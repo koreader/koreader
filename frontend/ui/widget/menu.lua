@@ -270,24 +270,34 @@ function MenuItem:onShowItemDetail()
     return true
 end
 
-function MenuItem:onTapSelect()
+function MenuItem:getGesPosition(ges)
+    local dimen = self[1].dimen
+    return {
+        x = (ges.pos.x - dimen.x)/dimen.w,
+        y = (ges.pos.y - dimen.y)/dimen.h,
+    }
+end
+
+function MenuItem:onTapSelect(arg, ges)
+    local pos = self:getGesPosition(ges)
     self[1].invert = true
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
         UIManager:setDirty(self.show_parent, "partial")
-        self.menu:onMenuSelect(self.table)
+        self.menu:onMenuSelect(self.table, pos)
     end)
     return true
 end
 
-function MenuItem:onHoldSelect()
+function MenuItem:onHoldSelect(arg, ges)
+    local pos = self:getGesPosition(ges)
     self[1].invert = true
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
         UIManager:setDirty(self.show_parent, "partial")
-        self.menu:onMenuHold(self.table)
+        self.menu:onMenuHold(self.table, pos)
     end)
     return true
 end
