@@ -166,6 +166,13 @@ function Geom:notIntersectWith(rect_b)
 end
 
 --[[
+return true if self geom shares area with rect_b
+]]--
+function Geom:intersectWith(rect_b)
+    return not self:notIntersectWith(rect_b)
+end
+
+--[[
 set size of dimension or rectangle to size of given dimension/rectangle
 ]]--
 function Geom:setSizeTo(rect_b)
