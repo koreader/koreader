@@ -18,6 +18,7 @@ local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
@@ -124,7 +125,7 @@ function FileManager:init()
     local fm_ui = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         self.layout,
     }
 

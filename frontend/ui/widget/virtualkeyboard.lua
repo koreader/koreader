@@ -15,6 +15,7 @@ local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local VirtualKey = InputContainer:new{
     key = nil,
@@ -60,7 +61,7 @@ function VirtualKey:init()
     self[1] = FrameContainer:new{
         margin = 0,
         bordersize = self.bordersize,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         radius = 5,
         padding = 0,
         CenterContainer:new{
@@ -266,7 +267,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = self.bordersize,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
         CenterContainer:new{

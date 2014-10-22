@@ -4,10 +4,11 @@ local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Device = require("ui/device")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local LinkBox = InputContainer:new{
     box = nil,
-    color = 8,
+    color = Blitbuffer.gray(0.5),
     radius = 0,
     bordersize = 2,
 }

@@ -5,6 +5,7 @@ local LineWidget = require("ui/widget/linewidget")
 local Button = require("ui/widget/button")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local ButtonTable = VerticalGroup:new{
     width = Screen:getWidth(),
@@ -46,7 +47,7 @@ function ButtonTable:init()
             }
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
-                background = 8,
+                background = Blitbuffer.gray(0.5),
                 dimen = Geom:new{
                     w = self.sep_width,
                     h = button_dim.h,
@@ -67,7 +68,7 @@ end
 function ButtonTable:addHorizontalSep()
     table.insert(self, VerticalSpan:new{ width = Screen:scaleByDPI(2) })
     table.insert(self, LineWidget:new{
-        background = 8,
+        background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.width,
             h = self.sep_width,

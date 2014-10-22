@@ -25,6 +25,7 @@ local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local InfoMessage = require("ui/widget/infomessage")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
 --[[
@@ -44,11 +45,11 @@ function ItemShortCutIcon:init()
     end
 
     local radius = 0
-    local background = 0
+    local background = Blitbuffer.COLOR_WHITE
     if self.style == "rounded_corner" then
         radius = math.floor(self.width/2)
     elseif self.style == "grey_square" then
-        background = 3
+        background = Blitbuffer.gray(0.2)
     end
 
     --@TODO calculate font size by icon size  01.05 2012 (houqp)
@@ -252,13 +253,13 @@ function MenuItem:init()
 end
 
 function MenuItem:onFocus()
-    self._underline_container.color = 15
+    self._underline_container.color = Blitbuffer.COLOR_BLACK
     self.key_events = self.active_key_events
     return true
 end
 
 function MenuItem:onUnfocus()
-    self._underline_container.color = 0
+    self._underline_container.color = Blitbuffer.COLOR_WHITE
     self.key_events = {}
     return true
 end
@@ -497,7 +498,7 @@ function Menu:init()
     end
 
     self[1] = FrameContainer:new{
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         bordersize = self.is_borderless and 0 or 2,
         padding = 0,
         margin = 0,

@@ -11,12 +11,13 @@ local Screen = require("ui/screen")
 local Device = require("ui/device")
 local GestureRange = require("ui/gesturerange")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
 local ToggleLabel = TextWidget:new{
     bold = true,
-    bgcolor = 0,
-    fgcolor = 1,
+    bgcolor = Blitbuffer.COLOR_WHITE,
+    fgcolor = Blitbuffer.COLOR_BLACK,
 }
 
 function ToggleLabel:paintTo(bb, x, y)
@@ -26,8 +27,8 @@ end
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleByDPI(216),
     height = Screen:scaleByDPI(30),
-    bgcolor = 0, -- unfoused item color
-    fgcolor = 7, -- focused item color
+    bgcolor = Blitbuffer.COLOR_WHITE, -- unfoused item color
+    fgcolor = Blitbuffer.gray(0.5), -- focused item color
 }
 
 function ToggleSwitch:init()
@@ -37,7 +38,13 @@ function ToggleSwitch:init()
     local label_font_face = "cfont"
     local label_font_size = 16
 
-    self.toggle_frame = FrameContainer:new{background = 0, color = 7, radius = 7, bordersize = 1, padding = 2,}
+    self.toggle_frame = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        color = Blitbuffer.gray(0.5),
+        radius = 7,
+        bordersize = 1,
+        padding = 2,
+    }
     self.toggle_content = HorizontalGroup:new{}
 
     for i=1,#self.toggle do
@@ -51,8 +58,8 @@ function ToggleSwitch:init()
             label,
         }
         local button = FrameContainer:new{
-            background = 0,
-            color = 7,
+            background = Blitbuffer.COLOR_WHITE,
+            color = Blitbuffer.gray(0.5),
             margin = 0,
             radius = 5,
             bordersize = 1,
@@ -91,11 +98,11 @@ function ToggleSwitch:update()
         if pos == i then
             self.toggle_content[i].color = self.fgcolor
             self.toggle_content[i].background = self.fgcolor
-            self.toggle_content[i][1][1].fgcolor = 0.0
+            self.toggle_content[i][1][1].fgcolor = Blitbuffer.COLOR_WHITE
         else
             self.toggle_content[i].color = self.bgcolor
             self.toggle_content[i].background = self.bgcolor
-            self.toggle_content[i][1][1].fgcolor = 1.0
+            self.toggle_content[i][1][1].fgcolor = Blitbuffer.COLOR_BLACK
         end
     end
 end

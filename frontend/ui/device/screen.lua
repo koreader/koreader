@@ -119,11 +119,14 @@ end
     -- For the Kobo Aura an offset is needed, because the bezel make the
     -- visible screen smaller.
 function Screen:PhoenixBezelCleaner()
-    -- bb.paintRect(x, y, w, h, color)
-    self.bb:paintRect(0,0, Screen:getWidth(), Screen:offsetY() , 0 )
-    self.bb:paintRect(0,0, Screen:offsetX(), Screen:getHeight(), 0 )
-    self.bb:paintRect(Screen:getWidth() + Screen:offsetX(), 0 , Screen:getWidth() - Screen:getWidth() - Screen:offsetX(), Screen:getHeight(), 0 )
-    self.bb:paintRect(0, Screen:getHeight() + Screen:offsetY(), Screen:offsetX(), Screen:getWidth(), 0 )
+    self.bb:paintRect(0,0, Screen:getWidth(), Screen:offsetY(), Blitbuffer.COLOR_WHITE)
+    self.bb:paintRect(0,0, Screen:offsetX(), Screen:getHeight(), Blitbuffer.COLOR_WHITE)
+    self.bb:paintRect(Screen:getWidth() + Screen:offsetX(), 0,
+        Screen:getWidth() - Screen:getWidth() - Screen:offsetX(), Screen:getHeight(),
+        Blitbuffer.COLOR_WHITE)
+    self.bb:paintRect(0, Screen:getHeight() + Screen:offsetY(),
+        Screen:offsetX(), Screen:getWidth(),
+        Blitbuffer.COLOR_WHITE)
 end
 
 function Screen:refresh(refresh_type, waveform_mode, x, y, w, h)

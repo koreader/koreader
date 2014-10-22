@@ -13,6 +13,7 @@ local Geom = require("ui/geometry")
 local Input = require("ui/input")
 local Screen = require("ui/screen")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 Widget that displays an informational message
@@ -61,7 +62,7 @@ function InfoMessage:init()
         dimen = Screen:getSize(),
         FrameContainer:new{
             margin = 2,
-            background = 0,
+            background = Blitbuffer.COLOR_WHITE,
             HorizontalGroup:new{
                 align = "center",
                 image_widget,

@@ -7,6 +7,7 @@ local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
 local ReaderView = OverlapGroup:new{
@@ -22,10 +23,10 @@ local ReaderView = OverlapGroup:new{
         offset = nil,
         bbox = nil,
     },
-    outer_page_color = DOUTER_PAGE_COLOR,
+    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR/15),
     -- hightlight with "lighten" or "underscore" or "invert"
     highlight = {
-        lighten_color = 0.2, -- color range [0.0, 1.0]
+        lighten_factor = 0.2,
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
@@ -34,13 +35,13 @@ local ReaderView = OverlapGroup:new{
     highlight_visible = true,
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = DBACKGROUND_COLOR,
+    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR/15),
     page_states = {},
     scroll_mode = "vertical",
     page_gap = {
         width = Screen:scaleByDPI(8),
         height = Screen:scaleByDPI(8),
-        color = 8,
+        color = Blitbuffer.gray(0.5),
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = DRENDER_MODE, -- default to COLOR
@@ -431,12 +432,12 @@ function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
 
     if drawer == "underscore" then
         self.highlight.line_width = self.highlight.line_width or 2
-        self.highlight.line_color = self.highlight.line_color or 5
+        self.highlight.line_color = self.highlight.line_color or Blitbuffer.gray(0.33)
         bb:paintRect(x, y+h-1, w,
             self.highlight.line_width,
             self.highlight.line_color)
     elseif drawer == "lighten" then
-        bb:lightenRect(x, y, w, h, self.highlight.lighten_color)
+        bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end

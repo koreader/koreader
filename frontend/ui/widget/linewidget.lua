@@ -1,8 +1,9 @@
 local Widget = require("ui/widget/widget")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local LineWidget = Widget:new{
     style = "solid",
-    background = 15,
+    background = Blitbuffer.COLOR_BLACK,
     dimen = nil,
     --@TODO replay dirty hack here  13.03 2013 (houqp)
     empty_segments = nil,

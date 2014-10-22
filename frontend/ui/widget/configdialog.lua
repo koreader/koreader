@@ -24,6 +24,7 @@ local Screen = require("ui/screen")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local MenuBarItem = InputContainer:new{}
 function MenuBarItem:init()
@@ -97,9 +98,9 @@ end
 
 function OptionTextItem:onTapSelect()
     for _, item in pairs(self.items) do
-        item[1].color = 0
+        item[1].color = Blitbuffer.COLOR_WHITE
     end
-    self[1].color = 15
+    self[1].color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
@@ -148,10 +149,10 @@ end
 function OptionIconItem:onTapSelect()
     for _, item in pairs(self.items) do
         --item[1][1].invert = false
-        item[1].color = 0
+        item[1].color = Blitbuffer.COLOR_WHITE
     end
     --self[1][1].invert = true
-    self[1].color = 15
+    self[1].color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
@@ -308,7 +309,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size[d]),
                             },
                             padding = 3,
-                            color = d == current_item and 15 or 0,
+                            color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
                         }
                     else
                         option_item = OptionTextItem:new{
@@ -317,7 +318,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size),
                             },
                             padding = -3,
-                            color = d == current_item and 15 or 0,
+                            color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
                         }
                     end
                     option_items[d] = option_item
@@ -355,7 +356,7 @@ function ConfigOption:init()
                             file = self.options[c].item_icons[d]
                         },
                         padding = -2,
-                        color = d == current_item and 15 or 0,
+                        color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
                     }
                     option_items[d] = option_item
                     option_item.items = option_items
@@ -403,7 +404,7 @@ function ConfigOption:init()
     self.dimen = vertical_group:getSize()
 end
 
-local ConfigPanel = FrameContainer:new{ background = 0, bordersize = 0, }
+local ConfigPanel = FrameContainer:new{ background = Blitbuffer.COLOR_WHITE, bordersize = 0, }
 function ConfigPanel:init()
     local config_options = self.config_dialog.config_options
     local default_option = config_options.default_options and config_options.default_options
@@ -416,7 +417,7 @@ function ConfigPanel:init()
     table.insert(self, panel)
 end
 
-local MenuBar = FrameContainer:new{ background = 0, }
+local MenuBar = FrameContainer:new{ background = Blitbuffer.COLOR_WHITE, }
 function MenuBar:init()
     local config_options = self.config_dialog.config_options
     local menu_items = {}
@@ -519,7 +520,7 @@ function ConfigDialog:update()
         config_dialog = self,
     }
     self.dialog_frame = FrameContainer:new{
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             self.config_panel,
             self.config_menubar,

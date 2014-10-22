@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("ui/device")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 a button widget that shows text or a icon and handles callback when tapped
@@ -22,7 +23,7 @@ local Button = InputContainer:new{
     enabled = true,
     margin = 0,
     bordersize = 3,
-    background = 0,
+    background = Blitbuffer.COLOR_WHITE,
     radius = 15,
     padding = 2,
     width = nil,
@@ -34,7 +35,7 @@ function Button:init()
     if self.text then
         self.label_widget = TextWidget:new{
             text = self.text,
-            fgcolor = self.enabled and 1.0 or 0.5,
+            fgcolor = Blitbuffer.gray(self.enabled and 1.0 or 0.5),
             bold = true,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
@@ -64,9 +65,9 @@ function Button:init()
         }
     }
     if self.preselect then
-        self.frame.color = 15
+        self.frame.color = Blitbuffer.COLOR_BLACK
     else
-        self.frame.color = 5
+        self.frame.color = Blitbuffer.gray(0.33)
     end
     self.dimen = self.frame:getSize()
     self[1] = self.frame
@@ -91,19 +92,19 @@ function Button:init()
 end
 
 function Button:onFocus()
-    self[1].color = 15
+    self[1].color = Blitbuffer.COLOR_BLACK
     return true
 end
 
 function Button:onUnfocus()
-    self[1].color = 5
+    self[1].color = Blitbuffer.gray(0.33)
     return true
 end
 
 function Button:enable()
     self.enabled = true
     if self.text then
-        self.label_widget.fgcolor = self.enabled and 1.0 or 0.5
+        self.label_widget.fgcolor = Blitbuffer.gray(self.enabled and 1.0 or 0.5)
     else
         self.label_widget.dim = not self.enabled
     end
@@ -112,7 +113,7 @@ end
 function Button:disable()
     self.enabled = false
     if self.text then
-        self.label_widget.fgcolor = self.enabled and 1.0 or 0.5
+        self.label_widget.fgcolor = Blitbuffer.gray(self.enabled and 1.0 or 0.5)
     else
         self.label_widget.dim = not self.enabled
     end

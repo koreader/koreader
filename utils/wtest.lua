@@ -37,6 +37,7 @@ local ReaderUI = require("apps/reader/readerui")
 local Dbg = require("dbg")
 local Device = require("ui/device")
 local Screen = require("ui/screen")
+local Blitbuffer = require("ffi/blitbuffer")
 
 -----------------------------------------------------
 -- widget that paints the grid on the background
@@ -50,12 +51,12 @@ function TestGrid:paintTo(bb)
     for i=1,h_line do
         y_num = i*50
         RenderText:renderUtf8Text(bb, 0, y_num+10, Font:getFace("ffont", 12), y_num, true)
-        bb:paintRect(0, y_num, bb:getWidth(), 1, 10)
+        bb:paintRect(0, y_num, bb:getWidth(), 1, Blitbuffer.gray(0.7))
     end
     for i=1,v_line do
         x_num = i*50
         RenderText:renderUtf8Text(bb, x_num, 10, Font:getFace("ffont", 12), x_num, true)
-        bb:paintRect(x_num, 0, 1, bb:getHeight(), 10)
+        bb:paintRect(x_num, 0, 1, bb:getHeight(), Blitbuffer.gray(0.7))
     end
 end
 
@@ -65,7 +66,7 @@ function TestVisible:paintTo(bb)
     v_line = math.floor(bb:getWidth() / 50)
     h_line = math.floor(bb:getHeight() / 50)
     -- Paint white background for higher contrast
-    bb:paintRect(0,0,bb:getWidth(),bb:getHeight() , 0)
+    bb:paintRect(0,0,bb:getWidth(),bb:getHeight(), Blitbuffer.COLOR_WHITE)
     -- Only render gridtext not lines at a more central postition, so it doesn't interfere with the
     for i=1,h_line do
         y_num = i*50
@@ -90,28 +91,28 @@ function TestVisible:paintTo(bb)
     RenderText:renderUtf8Text(bb, 100, 500, Font:getFace("ffont", 26), "Visible screen size :  "..(x_max-x_min).."x"..(y_max-y_min), true)
 
     -- Three parallel lines at the top
-    bb:paintRect(x_min,y_min, x_max, 1 , 10)
-    bb:paintRect(x_min,y_min + 3, x_max, 1 , 10)
-    bb:paintRect(x_min,y_min + 6, x_max, 1 , 10)
+    bb:paintRect(x_min,y_min, x_max, 1 , Blitbuffer.gray(0.7))
+    bb:paintRect(x_min,y_min + 3, x_max, 1 , Blitbuffer.gray(0.7))
+    bb:paintRect(x_min,y_min + 6, x_max, 1 , Blitbuffer.gray(0.7))
 
     -- Three parallel lines at the bottom
-    bb:paintRect(x_min,y_max, x_max, 1 , 10)
-    bb:paintRect(x_min,y_max - 3, x_max, 1 , 10)
-    bb:paintRect(x_min,y_max - 6, x_max, 1 , 10)
+    bb:paintRect(x_min,y_max, x_max, 1 , Blitbuffer.gray(0.7))
+    bb:paintRect(x_min,y_max - 3, x_max, 1 , Blitbuffer.gray(0.7))
+    bb:paintRect(x_min,y_max - 6, x_max, 1 , Blitbuffer.gray(0.7))
 
     -- Three parallel lines at the left
-    bb:paintRect(x_min,y_min, 1, y_max , 10)
-    bb:paintRect(x_min + 3,y_min, 1, y_max, 10)
-    bb:paintRect(x_min + 6,y_min, 1, y_max, 10)
+    bb:paintRect(x_min,y_min, 1, y_max , Blitbuffer.gray(0.7))
+    bb:paintRect(x_min + 3,y_min, 1, y_max, Blitbuffer.gray(0.7))
+    bb:paintRect(x_min + 6,y_min, 1, y_max, Blitbuffer.gray(0.7))
 
     -- Three parallel lines at the right
-    bb:paintRect(x_max,y_min, 1, y_max , 10)
-    bb:paintRect(x_max - 3,y_min, 1, y_max, 10)
-    bb:paintRect(x_max - 6,y_min, 1, y_max, 10)
+    bb:paintRect(x_max,y_min, 1, y_max , Blitbuffer.gray(0.7))
+    bb:paintRect(x_max - 3,y_min, 1, y_max, Blitbuffer.gray(0.7))
+    bb:paintRect(x_max - 6,y_min, 1, y_max, Blitbuffer.gray(0.7))
 
     --Two lines spaces 600 pixels
-    bb:paintRect(100,600, 1, 250 , 10)
-    bb:paintRect(700,600, 1, 250 , 10)
+    bb:paintRect(100,600, 1, 250 , Blitbuffer.gray(0.7))
+    bb:paintRect(700,600, 1, 250 , Blitbuffer.gray(0.7))
     RenderText:renderUtf8Text(bb, 150, 670, Font:getFace("ffont", 26), "Measure inches per 600 pixels", true)
     RenderText:renderUtf8Text(bb, 150, 770, Font:getFace("ffont", 22), "Kobo Aura: 600 pixels/ 2.82 \" = "..(600/2.82).." dpi", true)
 end
@@ -170,7 +171,7 @@ Clock = AlphaContainer:new{
     alpha = 0.7,
 
     FrameContainer:new{
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         bordersize = 1,
         margin = 0,
         padding = 1

@@ -10,6 +10,7 @@ local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local InfoMessage = require("ui/widget/infomessage")
 local input_field
@@ -65,7 +66,7 @@ function MultiInputDialog:init()
         bordersize = 3,
         padding = 0,
         margin = 0,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         VerticalGroupData,
     }
 
