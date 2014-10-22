@@ -21,6 +21,7 @@ local TextWidget = Widget:new{
 --function TextWidget:_render()
     --local h = self.face.size * 1.3
     --self._bb = Blitbuffer.new(self._maxlength, h)
+    --self._bb:fill(Blitbuffer.COLOR_WHITE)
     --self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, true, self.bold)
 --end
 
