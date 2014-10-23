@@ -13,7 +13,7 @@ before_install:
     - sudo apt-get update
 
 install:
-    - sudo apt-get install libsdl1.2-dev luarocks
+    - sudo apt-get install libsdl1.2-dev luarocks nasm
     - git clone https://github.com/Olivine-Labs/busted/
     - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
     - sudo luarocks install luacov
