@@ -69,8 +69,8 @@ end
 function Cache:insert(key, object)
     -- guarantee that we have enough memory in cache
     if(object.size > self.max_memsize) then
-        -- we're not allowed to claim this much at all
-        error("too much memory claimed")
+        DEBUG("too much memory claimed for", key)
+        return
     end
     -- delete objects that least recently used
     -- (they are at the end of the cache_order array)
