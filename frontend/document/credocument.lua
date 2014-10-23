@@ -148,9 +148,11 @@ function CreDocument:getCoverPageImage()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local Mupdf = require("ffi/mupdf")
-        local image = Mupdf.renderImage(data, size)
-        ffi.C.free(data)
-        return image
+        local ok, image = pcall(Mupdf.renderImage, data, size)
+        if ok then
+            ffi.C.free(data)
+            return image
+        end
     end
 end
 
