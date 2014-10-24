@@ -21,6 +21,7 @@ local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local NetworkMgr = require("ui/networkmgr")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 TouchMenuItem widget
@@ -71,7 +72,7 @@ function TouchMenuItem:init()
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
-        color = 15,
+        color = Blitbuffer.COLOR_BLACK,
         HorizontalGroup:new {
             align = "center",
             CenterContainer:new{
@@ -80,7 +81,7 @@ function TouchMenuItem:init()
             },
             TextWidget:new{
                 text = self.item.text or self.item.text_func(),
-                fgcolor = item_enabled ~= false and 1.0 or 0.5,
+                fgcolor = Blitbuffer.gray(item_enabled ~= false and 1.0 or 0.5),
                 face = self.face,
             },
         },
@@ -362,7 +363,7 @@ function TouchMenu:init()
     self[1] = FrameContainer:new{
         padding = self.padding,
         bordersize = self.bordersize,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         -- menubar and footer will be inserted in
         -- item_group in updateItems
         self.item_group,

@@ -9,6 +9,7 @@ local Input = require("ui/input")
 local Screen = require("ui/screen")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local ButtonDialog = InputContainer:new{
     buttons = nil,
@@ -41,7 +42,7 @@ function ButtonDialog:init()
                 buttons = self.buttons,
                 show_parent = self,
             },
-            background = 0,
+            background = Blitbuffer.COLOR_WHITE,
             bordersize = 2,
             radius = 7,
             padding = 2,

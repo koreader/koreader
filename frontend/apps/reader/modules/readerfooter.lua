@@ -14,6 +14,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local ReaderFooter = InputContainer:new{
     mode = 1,
@@ -99,7 +100,7 @@ function ReaderFooter:init()
             dimen = Geom:new{w = Screen:getWidth(), h = self.height*2},
             FrameContainer:new{
                 horizontal_group,
-                background = 0,
+                background = Blitbuffer.COLOR_WHITE,
                 bordersize = 0,
                 padding = 0,
             }

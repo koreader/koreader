@@ -2,6 +2,7 @@ local Widget = require("ui/widget/widget")
 local Screen = require("ui/screen")
 local RenderText = require("ui/rendertext")
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 A TextWidget puts a string on a single line
@@ -10,7 +11,7 @@ local TextWidget = Widget:new{
     text = nil,
     face = nil,
     bold = nil,
-    fgcolor = 1.0, -- [0.0, 1.0]
+    fgcolor = Blitbuffer.COLOR_BLACK,
     _bb = nil,
     _length = 0,
     _height = 0,
@@ -20,6 +21,7 @@ local TextWidget = Widget:new{
 --function TextWidget:_render()
     --local h = self.face.size * 1.3
     --self._bb = Blitbuffer.new(self._maxlength, h)
+    --self._bb:fill(Blitbuffer.COLOR_WHITE)
     --self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, true, self.bold)
 --end
 

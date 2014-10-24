@@ -1,5 +1,6 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 A FrameContainer is some graphics content (1 widget) that is surrounded by a
@@ -7,7 +8,7 @@ frame
 --]]
 local FrameContainer = WidgetContainer:new{
     background = nil,
-    color = 15,
+    color = Blitbuffer.COLOR_BLACK,
     margin = 0,
     radius = 0,
     bordersize = 2,

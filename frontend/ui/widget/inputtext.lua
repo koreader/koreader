@@ -11,6 +11,7 @@ local Screen = require("ui/screen")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local util = require("ffi/util")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local InputText = InputContainer:new{
     text = "",
@@ -51,7 +52,7 @@ end
 function InputText:initTextBox(text)
     self.text = text
     self:initCharlist(text)
-    local fgcolor = self.text == "" and 0.5 or 1.0
+    local fgcolor = Blitbuffer.gray(self.text == "" and 0.5 or 1.0)
 
     local text_widget = nil
     local show_text = self.text
@@ -82,7 +83,7 @@ function InputText:initTextBox(text)
         bordersize = self.bordersize,
         padding = self.padding,
         margin = self.margin,
-        color = self.focused and 15 or 8,
+        color = Blitbuffer.gray(self.focused and 1.0 or 0.5),
         text_widget,
     }
     self.dimen = self[1]:getSize()
@@ -125,12 +126,12 @@ end
 
 function InputText:unfocus()
     self.focused = false
-    self[1].color = 8
+    self[1].color = Blitbuffer.gray(0.5)
 end
 
 function InputText:focus()
     self.focused = true
-    self[1].color = 15
+    self[1].color = Blitbuffer.COLOR_BLACK
 end
 
 function InputText:onShowKeyboard()

@@ -8,6 +8,7 @@ local Screen = require("ui/screen")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local Device = require("ui/device")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 Text widget with vertical scroll bar
@@ -15,7 +16,7 @@ Text widget with vertical scroll bar
 local ScrollTextWidget = InputContainer:new{
     text = nil,
     face = nil,
-    fgcolor = 1.0, -- [0.0, 1.0]
+    fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400,
     height = 20,
     scroll_bar_width = Screen:scaleByDPI(6),

@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local Input = require("ui/input")
 local Screen = require("ui/screen")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 Widget that displays a tiny notification on top of screen
@@ -39,7 +40,7 @@ function Notification:init()
             h = Screen:getHeight()/10,
         },
         FrameContainer:new{
-            background = 0,
+            background = Blitbuffer.COLOR_WHITE,
             radius = 0,
             margin = self.margin,
             padding = self.padding,

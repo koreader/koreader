@@ -16,6 +16,7 @@ local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local util = require("ffi/util")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local OPDSCatalog = InputContainer:extend{
     title = _("OPDS Catalog"),
@@ -58,7 +59,7 @@ function OPDSCatalog:init()
     self[1] = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         opds_browser,
     }
 

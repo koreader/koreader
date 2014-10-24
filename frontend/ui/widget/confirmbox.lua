@@ -16,6 +16,7 @@ local Screen = require("ui/screen")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 -- screen
 
@@ -75,7 +76,7 @@ function ConfirmBox:init()
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         FrameContainer:new{
-            background = 0,
+            background = Blitbuffer.COLOR_WHITE,
             margin = self.margin,
             padding = self.padding,
             VerticalGroup:new{

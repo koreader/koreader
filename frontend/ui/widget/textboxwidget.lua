@@ -13,7 +13,7 @@ local TextBoxWidget = Widget:new{
     text = nil,
     face = nil,
     bold = nil,
-    fgcolor = 1.0, -- [0.0, 1.0]
+    fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400, -- in pixels
     height = nil,
     first_line = 1,
@@ -209,6 +209,7 @@ function TextBoxWidget:_render(v_list)
     local space_w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
     local h = (font_height + line_height_px) * #v_list
     self._bb = Blitbuffer.new(self.width, h)
+    self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height
     local pen_x = 0
     for _,l in ipairs(v_list) do

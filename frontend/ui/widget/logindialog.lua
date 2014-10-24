@@ -8,6 +8,7 @@ local Geom = require("ui/geometry")
 local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local LoginDialog = InputDialog:extend{
     username = "",
@@ -45,7 +46,7 @@ function LoginDialog:init()
         bordersize = 3,
         padding = 0,
         margin = 0,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
             self.title,

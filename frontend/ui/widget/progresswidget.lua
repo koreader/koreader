@@ -1,5 +1,6 @@
 local Widget = require("ui/widget/widget")
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 ProgressWidget shows a progress bar
@@ -11,9 +12,9 @@ local ProgressWidget = Widget:new{
     margin_v = 1,
     radius = 2,
     bordersize = 1,
-    bordercolor = 15,
-    bgcolor = 0,
-    rectcolor = 10,
+    bordercolor = Blitbuffer.COLOR_BLACK,
+    bgcolor = Blitbuffer.COLOR_WHITE,
+    rectcolor = Blitbuffer.gray(0.7),
     percentage = nil,
     ticks = {},
     tick_width = 3,

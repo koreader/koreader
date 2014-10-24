@@ -149,9 +149,7 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgco
     end
 
     if not fgcolor then
-        fgcolor = BlitBuffer.Color8(0xFF)
-    elseif type(fgcolor) == "number" then
-        fgcolor = BlitBuffer.Color8(fgcolor*0xFF)
+        fgcolor = BlitBuffer.COLOR_BLACK
     end
 
     -- may still need more adaptive pen placement when kerning,

@@ -13,6 +13,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local Button = require("ui/widget/button")
 local Math = require("optmath")
 local DEBUG = require("dbg")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local PageCropDialog = VerticalGroup:new{
     ok_text = "OK",
@@ -57,7 +58,7 @@ function PageCropDialog:init()
     table.insert(horizontal_group, cancel_container)
     self[2] = FrameContainer:new{
         horizontal_group,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         bordersize = 0,
         padding = 0,
     }
@@ -72,7 +73,7 @@ function ReaderCropping:onPageCrop(mode)
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
     -- backup original view bgcolor
     self.orig_view_bgcolor = self.view.outer_page_color
-    self.view.outer_page_color = 7 -- gray bgcolor
+    self.view.outer_page_color = Blitbuffer.gray(0.5) -- gray bgcolor
     -- backup original zoom mode as cropping use "page" zoom mode
     self.orig_zoom_mode = self.view.zoom_mode
     -- backup original page scroll

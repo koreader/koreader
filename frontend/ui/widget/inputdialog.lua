@@ -11,6 +11,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("ui/screen")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local Blitbuffer = require("ffi/blitbuffer")
 
 local InputDialog = InputContainer:new{
     title = "",
@@ -72,7 +73,7 @@ function InputDialog:init()
         show_parent = self,
     }
     self.title_bar = LineWidget:new{
-        --background = 8,
+        --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.button_table:getSize().w + self.button_padding,
             h = Screen:scaleByDPI(2),
@@ -84,7 +85,7 @@ function InputDialog:init()
         bordersize = 3,
         padding = 0,
         margin = 0,
-        background = 0,
+        background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
             self.title,

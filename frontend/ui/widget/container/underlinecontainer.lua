@@ -1,5 +1,6 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Geom = require("ui/geometry")
+local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 an UnderlineContainer is a WidgetContainer that is able to paint
@@ -9,7 +10,8 @@ a line under its child node
 local UnderlineContainer = WidgetContainer:new{
     linesize = 2,
     padding = 1,
-    color = 0,
+    -- TODO: shouldn't this default to black instead?
+    color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
 }
 
