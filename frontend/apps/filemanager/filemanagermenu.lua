@@ -1,7 +1,6 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
-local TouchMenu = require("ui/widget/touchmenu")
 local InfoMessage = require("ui/widget/infomessage")
 local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
@@ -190,6 +189,7 @@ function FileManagerMenu:onShowMenu()
 
     local main_menu = nil
     if Device:isTouchDevice() then
+        local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
             tab_item_table = {
@@ -202,17 +202,13 @@ function FileManagerMenu:onShowMenu()
             show_parent = menu_container,
         }
     else
+        local Menu = require("ui/widget/menu")
         main_menu = Menu:new{
             title = _("File manager menu"),
-            item_table = {},
-            width = Screen:getWidth() - 100,
+            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
+            width = Screen:getWidth()-10,
+            show_parent = menu_container,
         }
-
-        for _,item_table in pairs(self.tab_item_table) do
-            for k,v in ipairs(item_table) do
-                table.insert(main_menu.item_table, v)
-            end
-        end
     end
 
     main_menu.close_callback = function ()

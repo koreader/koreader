@@ -833,4 +833,18 @@ function Menu:onSwipe(arg, ges_ev)
     end
 end
 
+function Menu.itemTableFromTouchMenu(t)
+    local item_t = {}
+    for k,v in pairs(t) do
+        local item = { text = k }
+        if v.callback then
+            item.callback = v.callback
+        else
+            item.sub_item_table = v
+        end
+        table.insert(item_t, item)
+    end
+    return item_t
+end
+
 return Menu
