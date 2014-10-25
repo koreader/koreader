@@ -356,15 +356,15 @@ local Menu = FocusManager:new{
 
 function Menu:_recalculateDimen()
     self.dimen.w = self.width
-    -- if height not given, dynamically calculate it
-    self.dimen.h = self.height or (#self.item_table + 2) * Screen:scaleByDPI(36)
-    if self.dimen.h > Screen:getHeight() then
-        self.dimen.h = Screen:getHeight()
-    end
     self.item_dimen = Geom:new{
         w = self.dimen.w,
         h = Screen:scaleByDPI(46), -- hardcoded for now
     }
+    -- if height not given, dynamically calculate it
+    self.dimen.h = self.height or (#self.item_table + 2) * self.item_dimen.h
+    if self.dimen.h > Screen:getHeight() then
+        self.dimen.h = Screen:getHeight()
+    end
     -- header and footer should approximately take up space of 2 items
     self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - (self.no_title and 1 or 2)
     self.page_num = math.ceil(#self.item_table / self.perpage)
@@ -648,9 +648,8 @@ function Menu:updateItems(select_number)
     end
 
     -- nicolua
-    -- FIXMED: dirty hack to clear previous menus
+    -- FIXME: dirty hack to clear previous menus
     UIManager:setDirty(self.show_parent or self)
-
 end
 
 --[[
