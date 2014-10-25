@@ -156,6 +156,18 @@ function ReaderMenu:setUpdateItemTable()
             end
         })
     end
+    if KOBO_SCREEN_SAVER_LAST_BOOK then
+        local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
+        table.insert(self.tab_item_table.typeset, {
+            text = _("Display proportional cover image in screensaver"),
+            checked_func = function() return (self.ui.doc_settings:readSetting("proportional_screensaver") or false) end,
+            callback = function()
+                local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
+                self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional)
+                self.ui:saveSettings()
+            end
+        })
+    end
 end
 
 function ReaderMenu:onShowReaderMenu()
