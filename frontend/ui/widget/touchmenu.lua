@@ -460,7 +460,6 @@ function TouchMenu:netToggle()
     else
         NetworkMgr:promptWifiOn()
     end
-    self:closeMenu()
 end
 
 function TouchMenu:switchMenuTab(tab_num)
