@@ -100,17 +100,18 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
-.PHONY: test
-
 fetchthirdparty:
 	git submodule init
 	git submodule sync
 	git submodule update
 	$(MAKE) -C $(KOR_BASE) fetchthirdparty
 
+VERBOSE ?= @
+Q = $(VERBOSE:1=)
 clean:
 	rm -rf $(INSTALL_DIR)
-	$(MAKE) -C $(KOR_BASE) clean
+	$(Q:@=@echo 'MAKE -C base clean'; &> /dev/null) \
+		$(MAKE) -C $(KOR_BASE) clean
 
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
@@ -204,3 +205,5 @@ pot:
 
 po:
 	$(MAKE) -i -C l10n bootstrap pull
+
+.PHONY: test

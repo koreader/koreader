@@ -88,7 +88,7 @@ end
 
 function ReaderBookmark:onShowBookmark()
     -- build up item_table
-    for k, v in    ipairs(self.bookmarks) do
+    for k, v in ipairs(self.bookmarks) do
         local page = v.page
         -- for CREngine, bookmark page is xpointer
         if type(page) == "string" then

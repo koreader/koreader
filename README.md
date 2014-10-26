@@ -4,7 +4,7 @@
 KOReader
 ========
 
-KOReader is a document viewer application, originally created for Kindle 
+KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
 Kobo and Android (2.3+) devices. Developers can also run Koreader emulator
 for development purpose on desktop PC with Linux or Windows operating system.
@@ -44,10 +44,10 @@ Highlights for developers
   * light-weight widget toolkit for small memory footprint
   * extensible with plugin system
 * interfaced backends for documents parsing and rendering
-  * high quality document backend libraries like MuPDF, DjvuLibre and Crengine
+  * high quality document backend libraries like MuPDF, DjvuLibre and CREngine
   * interacting with frontend via LuaJIT FFI for best performence
 * in active development
-  * contributed by 28 and more developers around the world
+  * contributed by developers around the world
   * continuous integration with Travis CI
   * with unit tests and code coverage test
   * automatic release of nightly builds
@@ -55,7 +55,7 @@ Highlights for developers
   * licensed under Affero GPL v3
   * all dependencies are free software
 
-Check out the [KOReader wiki](https://github.com/koreader/koreader/wiki) to learn 
+Check out the [KOReader wiki](https://github.com/koreader/koreader/wiki) to learn
 more about this project.
 
 Building Prerequisites
@@ -64,7 +64,7 @@ Building Prerequisites
 Instructions about how to get and compile the source are intended for a linux
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
-To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`, 
+To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`,
 `subversion` and `cmake` installed. Version of autoconf need to be greater than 2.64.
 
 Ubuntu users may need to run:
@@ -79,21 +79,18 @@ sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
 # for Kobo
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 # for Win32
-sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686 
+sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
 ```
 
-A recent version of Android SDK/NDK and `ant` are needed in order to build Koreader for Android
-devices.
+A recent version of Android SDK/NDK and `ant` are needed in order to build
+Koreader for Android devices.
 ```
 sudo apt-get install ant
 ```
 
-You might also need SDL library packages if you want to compile and run 
-Koreader on your Linux PC. Fedora users can install `SDL` and `SDL-devel`.
-Ubuntu users probably need to run:
-```
-sudo apt-get install libsdl1.2-dev
-```
+You might also need SDL library packages if you want to compile and run
+koreader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
+Ubuntu users probably need to install `libsdl1.2-dev` package:
 
 Getting the source
 ========
@@ -120,9 +117,9 @@ To build installable package for Kobo:
 make TARGET=kobo clean koboupdate
 ```
 
-To run, you must call the script reader.lua. Run it without arguments to see
-usage notes. Note that the script and the koreader-base binary currently must
-be in the same directory.
+To run, you must call the script `reader.lua`. Run it without arguments to see
+usage notes. Note that the script and the `luajit` binary must be in the same
+directory.
 
 You may checkout our [nightlybuild script][nb-script] to see how to build a
 package from scratch.
@@ -144,7 +141,7 @@ Then, build installable package for Android:
 make TARGET=android clean androidupdate
 ```
 
-For emulating Koreader on Linux and Windows
+For emulating KOReader on Linux and Windows
 -------------
 
 To build an emulator on current Linux machine just run:
@@ -157,20 +154,20 @@ If you want to compile the emulator for Windows you need to run:
 make TARGET=win32 clean && make TARGET=win32
 ```
 
-To run koreader on your developing machine 
+To run koreader on your developing machine
 (you may need to change $(MACHINE) to the arch of your machine such as 'x86_64'):
 ```
 cd koreader-$(MACHINE)/koreader && ./reader.lua -d ../../test
 ```
 
-To run unit tests in Koreader just issue:
+To run unit tests in KOReader:
 ```
 make test
 ```
 
 You may need to checkout the [travis config file][travis-conf] to setup up
-a proper testing environment. Briefly, you need to install `luarocks` and 
-then install `busted` with `luarocks`. The "eng" language data file for 
+a proper testing environment. Briefly, you need to install `luarocks` and
+then install `busted` with `luarocks`. The "eng" language data file for
 tesseract-ocr is also need to test OCR functionality. Finally, make sure
 that `luajit` in your system is at least of version 2.0.2.
 
@@ -190,8 +187,8 @@ modifications with kroeader frontend. NOTE: only support relative path for now.
 Translation
 ========
 
-Please refer to [l10n's README][l10n-readme] to grab the latest translations from
-[the Koreader project on Transifex][koreader-transifex] with this command:
+Please refer to [l10n's README][l10n-readme] to grab the latest translations
+from [the Koreader project on Transifex][koreader-transifex] with this command:
 ```
 make po
 ```
