@@ -119,6 +119,9 @@ end
 
 function PdfDocument:saveHighlight(pageno, item)
     self.is_edited = true
+    local ffi = require("ffi")
+    -- will also need mupdf_h.lua to be evaluated once
+    -- but this is guaranteed at this point
     local n = #item.pboxes
     local quadpoints = ffi.new("fz_point[?]", 4*n)
     for i=1, n do
