@@ -10,15 +10,56 @@ local Screensaver = {
 
 function Screensaver:getCoverImage(file)
     local ImageWidget = require("ui/widget/imagewidget")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local AlphaContainer = require("ui/widget/container/alphacontainer")
+    local image_height
+    local image_width
+    local screen_height = Screen:getHeight()
+    local screen_width = Screen:getWidth()
     local doc = DocumentRegistry:openDocument(file)
     if doc then
         local image = doc:getCoverPageImage()
         doc:close()
+        local lastfile = G_reader_settings:readSetting("lastfile")
+        local data = DocSettings:open(lastfile)
+        local proportional_cover = data:readSetting("proportional_screensaver")
         if image then
-            return ImageWidget:new{
+            if proportional_cover then
+                image_height = image:getHeight()
+                image_width = image:getWidth()
+                local image_ratio = image_width / image_height
+                local screen_ratio = screen_width / screen_height
+                if image_ratio < 1 then
+                    image_height = screen_height
+                    image_width = image_height * image_ratio
+                else
+                    image_width = screen_width
+                    image_height = image_width / image_ratio
+                end
+            else
+                image_height = screen_height
+                image_width = screen_width
+            end
+            local image_widget = ImageWidget:new{
                 image = image,
-                width = Screen:getWidth(),
-                height = Screen:getHeight(),
+                width = image_width,
+                height = image_height,
+            }
+            return AlphaContainer:new{
+                alpha = 1,
+                height = screen_height,
+                width = screen_width,
+                CenterContainer:new{
+                    dimen = Screen:getSize(),
+                    FrameContainer:new{
+                        bordersize = 0,
+                        padding = 0,
+                        height = screen_height,
+                        width = screen_width,
+                        image_widget
+                    }
+                }
             }
         end
     end
