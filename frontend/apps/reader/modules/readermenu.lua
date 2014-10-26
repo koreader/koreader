@@ -10,7 +10,6 @@ local Device = require("ui/device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Screen = require("ui/screen")
-local Screensaver = require("ui/screensaver")
 local Language = require("ui/language")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -146,28 +145,27 @@ function ReaderMenu:setUpdateItemTable()
 
     --typeset tab
     if KOBO_SCREEN_SAVER_LAST_BOOK then
+        local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
         table.insert(self.tab_item_table.typeset, {
-            text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use this book's cover as screensaver"),
-                    checked_func = function() return not (self.ui.doc_settings:readSetting("exclude_screensaver") or false) end,
-                    callback = function()
-                        local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
-                        self.ui.doc_settings:saveSetting("exclude_screensaver", not exclude)
-                        self.ui:saveSettings()
-                    end
-                },
-                {
-                    text = _("Display proportional cover image in screensaver"),
-                    checked_func = function() return (self.ui.doc_settings:readSetting("proportional_screensaver") or false) end,
-                    callback = function()
-                        local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
-                        self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional)
-                        self.ui:saveSettings()
-                    end
-                },
-            }
+            text = _("Use this book's cover as screensaver"),
+            checked_func = function() return not (self.ui.doc_settings:readSetting("exclude_screensaver") or false) end,
+            callback = function()
+                local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
+                self.ui.doc_settings:saveSetting("exclude_screensaver", not exclude)
+                self.ui:saveSettings()
+            end
+        })
+    end
+    if KOBO_SCREEN_SAVER_LAST_BOOK then
+        local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
+        table.insert(self.tab_item_table.typeset, {
+            text = _("Display proportional cover image in screensaver"),
+            checked_func = function() return (self.ui.doc_settings:readSetting("proportional_screensaver") or false) end,
+            callback = function()
+                local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
+                self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional)
+                self.ui:saveSettings()
+            end
         })
     end
 end
