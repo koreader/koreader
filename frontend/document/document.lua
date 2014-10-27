@@ -237,7 +237,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 
     -- prepare cache item with contained blitbuffer
     local tile = TileCacheItem:new{
-        size = size.w * size.h / 2 + 64, -- estimation
+        size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
         bb = Blitbuffer.new(size.w, size.h)
