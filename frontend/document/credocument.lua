@@ -212,10 +212,15 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
-    tile_bb = Blitbuffer.new(rect.w, rect.h)
-    self._document:drawCurrentPage(tile_bb)
-    target:blitFrom(tile_bb, x, y, 0, 0, rect.w, rect.h)
-    tile_bb:free()
+    if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
+        self.buffer:free()
+        self.buffer = nil
+    end
+    if not self.buffer then
+        self.buffer = Blitbuffer.new(rect.w, rect.h)
+    end
+    self._document:drawCurrentPage(self.buffer)
+    target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
