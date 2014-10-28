@@ -39,6 +39,7 @@ local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local PluginLoader = require("apps/reader/pluginloader")
+local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 
 --[[
 This is an abstraction for a reader interface
@@ -165,6 +166,12 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     }, true)
+    -- history view
+    self:registerModule("history", FileManagerHistory:new{
+        dialog = self.dialog,
+        menu = self.menu,
+        ui = self,
+    })
     -- frontlight controller
     if Device:hasFrontlight() then
         self:registerModule("frontlight", ReaderFrontLight:new{
