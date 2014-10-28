@@ -1,5 +1,4 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local PathChooser = require("ui/widget/pathchooser")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
@@ -126,19 +125,14 @@ end
 function CalibreCompanion:setInboxDir(host, port)
     local lastdir = G_reader_settings:readSetting("lastdir") or "."
     local calibre_device = self
-    local path_chooser = PathChooser:new{
+    require("ui/downloadmgr"):new{
         title = _("Choose inbox"),
-        path = lastdir .. "/..",
         onConfirm = function(inbox)
-            if inbox:sub(-3, -1) == "/.." then
-                inbox = inbox:sub(1, -4)
-            end
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             calibre_device:initCalibreMQ(host, port)
         end,
-    }
-    UIManager:show(path_chooser)
+    }:chooseDir()
 end
 
 function CalibreCompanion:connect()
