@@ -1,7 +1,6 @@
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
-local PathChooser = require("ui/widget/pathchooser")
 local lfs = require("libs/libkoreader-lfs")
 local OPDSParser = require("ui/opdsparser")
 local NetworkMgr = require("ui/networkmgr")
@@ -456,17 +455,13 @@ function OPDSBrowser:showDownloads(item)
         {
             text = _("Set download directory"),
             callback = function()
-                local lastdir = G_reader_settings:readSetting("lastdir")
-                local download_dir = G_reader_settings:readSetting("download_dir")
-                local path_chooser = PathChooser:new{
+                require("ui/downloadmgr"):new{
                     title = _("Choose download directory"),
-                    path = download_dir and (download_dir .. "/..") or lastdir,
                     onConfirm = function(path)
                         DEBUG("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                     end,
-                }
-                UIManager:show(path_chooser)
+                }:chooseDir()
             end,
         }
     })

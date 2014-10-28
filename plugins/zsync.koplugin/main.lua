@@ -6,7 +6,6 @@ local FileManager = require("apps/filemanager/filemanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local ButtonDialog = require("ui/widget/buttondialog")
-local PathChooser = require("ui/widget/pathchooser")
 local InfoMessage = require("ui/widget/infomessage")
 local TextWidget = require("ui/widget/textwidget")
 local DocSettings = require("docsettings")
@@ -235,21 +234,14 @@ end
 function ZSync:subscribe()
     DEBUG("subscribe documents")
     self.received = {}
-    local lastdir = G_reader_settings:readSetting("lastdir")
-    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local zsync = self
-    local path_chooser = PathChooser:new{
+    require("ui/downloadmgr"):new{
         title = _("Choose inbox"),
-        path = inbox_dir and (inbox_dir .. "/..") or lastdir,
         onConfirm = function(inbox)
-            if inbox:sub(-3, -1) == "/.." then
-                inbox = inbox:sub(1, -4)
-            end
             G_reader_settings:saveSetting("inbox_dir", inbox)
             zsync:onChooseInbox(inbox)
         end,
-    }
-    UIManager:show(path_chooser)
+    }:chooseDir()
 end
 
 function ZSync:unsubscribe()
