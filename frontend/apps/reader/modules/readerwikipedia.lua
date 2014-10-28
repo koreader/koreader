@@ -65,4 +65,8 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
     end
 end
 
+-- override onSaveSettings in ReaderDictionary
+function ReaderWikipedia:onSaveSettings()
+end
+
 return ReaderWikipedia

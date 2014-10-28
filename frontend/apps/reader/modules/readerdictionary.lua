@@ -112,6 +112,7 @@ function ReaderDictionary:onReadSettings(config)
 end
 
 function ReaderDictionary:onSaveSettings()
+    DEBUG("save default dictionary", self.default_dictionary)
     self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
 end
 
