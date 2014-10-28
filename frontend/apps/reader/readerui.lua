@@ -316,8 +316,13 @@ function ReaderUI:showReader(file)
     UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
 end
 
+local running_instance = nil
 function ReaderUI:doShowReader(file)
     DEBUG("opening file", file)
+    -- keep only one instance running
+    if running_instance then
+        running_instance:onClose()
+    end
     local document = DocumentRegistry:openDocument(file)
     if not document then
         UIManager:show(InfoMessage:new{
@@ -332,6 +337,7 @@ function ReaderUI:doShowReader(file)
         document = document,
     }
     UIManager:show(reader)
+    running_instance = reader
 end
 
 function ReaderUI:onSetDimensions(dimen)
@@ -383,6 +389,7 @@ function ReaderUI:onClose()
     UIManager:close(self.dialog)
     -- serialize last used items for later launch
     Cache:serialize()
+    running_instance = nil
     return true
 end
 
