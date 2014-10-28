@@ -39,6 +39,7 @@ local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local PluginLoader = require("apps/reader/pluginloader")
+local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 
 --[[
 This is an abstraction for a reader interface
@@ -165,6 +166,12 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     }, true)
+    -- history view
+    self:registerModule("history", FileManagerHistory:new{
+        dialog = self.dialog,
+        menu = self.menu,
+        ui = self,
+    })
     -- frontlight controller
     if Device:hasFrontlight() then
         self:registerModule("frontlight", ReaderFrontLight:new{
@@ -309,8 +316,13 @@ function ReaderUI:showReader(file)
     UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
 end
 
+local running_instance = nil
 function ReaderUI:doShowReader(file)
     DEBUG("opening file", file)
+    -- keep only one instance running
+    if running_instance then
+        running_instance:onClose()
+    end
     local document = DocumentRegistry:openDocument(file)
     if not document then
         UIManager:show(InfoMessage:new{
@@ -325,6 +337,7 @@ function ReaderUI:doShowReader(file)
         document = document,
     }
     UIManager:show(reader)
+    running_instance = reader
 end
 
 function ReaderUI:onSetDimensions(dimen)
@@ -376,6 +389,7 @@ function ReaderUI:onClose()
     UIManager:close(self.dialog)
     -- serialize last used items for later launch
     Cache:serialize()
+    running_instance = nil
     return true
 end
 
