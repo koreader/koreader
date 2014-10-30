@@ -96,11 +96,15 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, {
         text = _("Show hidden files"),
         checked_func = function() return self.ui.file_chooser.show_hidden end,
-        callback = function()
-            self.ui:toggleHiddenFiles()
-        end
+        callback = function() self.ui:toggleHiddenFiles() end
     })
-
+    local FileManager = require("apps/filemanager/filemanager")
+    table.insert(self.tab_item_table.setting, self.ui:getSortingMenuTable())
+    table.insert(self.tab_item_table.setting, {
+        text = _("Reverse sorting"),
+        checked_func = function() return self.ui.file_chooser.reverse_collate end,
+        callback = function() self.ui:toggleReverseCollate() end
+    })
     table.insert(self.tab_item_table.setting, {
         text = _("Start with last opened file"),
         checked_func = function() return G_reader_settings:readSetting("open_last") end,

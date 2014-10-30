@@ -25,7 +25,9 @@ local FileChooser = Menu:extend{
     show_hidden = nil,
     filter = function(filename) return true end,
     exclude_dirs = {"%.sdr$"},
-    collate = strcoll,
+    strcoll = strcoll,
+    collate = "strcoll", -- or collate = "access",
+    reverse_collate = false,
 }
 
 function FileChooser:init()
@@ -37,7 +39,7 @@ function FileChooser:init()
         return true
     end
     -- disable string collating in Kobo devices. See issue koreader/koreader#686
-    if Device:isKobo() then self.collate = nil end
+    if Device:isKobo() then self.strcoll = nil end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -52,26 +54,45 @@ function FileChooser:genItemTableFromPath(path)
         for f in iter, dir_obj do
             if self.show_hidden or not string.match(f, "^%.[^.]") then
                 local filename = self.path.."/"..f
-                local filemode = lfs.attributes(filename, "mode")
-                if filemode == "directory" and f ~= "." and f~=".." then
+                local attributes = lfs.attributes(filename)
+                if attributes.mode == "directory" and f ~= "." and f~=".." then
                     if self.dir_filter(filename) then
-                        table.insert(dirs, f)
+                        table.insert(dirs, {name = f, attr = attributes})
                     end
-                elseif filemode == "file" then
+                elseif attributes.mode == "file" then
                     if self.file_filter(filename) then
-                        table.insert(files, f)
+                        table.insert(files, {name = f, attr = attributes})
                     end
                 end
             end
         end
     end
-    table.sort(dirs, self.collate)
-    if path ~= "/" then table.insert(dirs, 1, "..") end
-    table.sort(files, self.collate)
+
+    local sorting = nil
+    local reverse = self.reverse_collate
+    if self.collate == "strcoll" then
+        sorting = self.strcoll and function(a, b)
+                return self.strcoll(a.name, b.name) == not reverse
+            end or function(a, b)
+                return (a.name < b.name) == not reverse
+            end
+    elseif self.collate == "access" then
+        sorting = function(a, b)
+            if reverse then
+                return a.attr.access < b.attr.access
+            else
+                return a.attr.access > b.attr.access
+            end
+        end
+    end
+
+    table.sort(dirs, sorting)
+    if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
+    table.sort(files, sorting)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        local path = self.path.."/"..dir
+        local path = self.path.."/"..dir.name
         local items = 0
         local ok, iter, dir_obj = pcall(lfs.dir, path)
         if ok then
@@ -83,13 +104,13 @@ function FileChooser:genItemTableFromPath(path)
         end
         local istr = items .. (items > 1 and _(" items") or _(" item"))
         table.insert(item_table, {
-            text = dir.."/",
+            text = dir.name.."/",
             mandatory = istr,
             path = path
         })
     end
     for _, file in ipairs(files) do
-        local full_path = self.path.."/"..file
+        local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
         local sstr = ""
         if file_size > 1024*1024 then
@@ -100,7 +121,7 @@ function FileChooser:genItemTableFromPath(path)
             sstr = string.format("%d B", file_size)
         end
         table.insert(item_table, {
-            text = file,
+            text = file.name,
             mandatory = sstr,
             path = full_path
         })
@@ -130,6 +151,16 @@ end
 
 function FileChooser:toggleHiddenFiles()
     self.show_hidden = not self.show_hidden
+    self:refreshPath()
+end
+
+function FileChooser:setCollate(collate)
+    self.collate = collate
+    self:refreshPath()
+end
+
+function FileChooser:toggleReverseCollate()
+    self.reverse_collate = not self.reverse_collate
     self:refreshPath()
 end
 

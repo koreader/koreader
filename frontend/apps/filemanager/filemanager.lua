@@ -148,6 +148,16 @@ function FileManager:toggleHiddenFiles()
     G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
 end
 
+function FileManager:setCollate(collate)
+    self.file_chooser:setCollate(collate)
+    G_reader_settings:saveSetting("collate", self.file_chooser.collate)
+end
+
+function FileManager:toggleReverseCollate()
+    self.file_chooser:toggleReverseCollate()
+    G_reader_settings:saveSetting("reverse_collate", self.file_chooser.reverse_collate)
+end
+
 function FileManager:onClose()
     DEBUG("close filemanager")
     UIManager:close(self)
@@ -220,6 +230,33 @@ end
 
 function FileManager:deleteFile(file)
     util.execute("/bin/rm", "-r", util.realpath(file))
+end
+
+local collates = {
+    strcoll = _("Title"),
+    access = _("Recent"),
+}
+
+function FileManager:getSortingMenuTable()
+    local fm = self
+    local set_collate_table = function(collate)
+        return {
+            text = collates[collate],
+            checked_func = function()
+                return fm.file_chooser.collate == collate
+            end,
+            callback = function() fm:setCollate(collate) end,
+        }
+    end
+    return {
+        text_func = function()
+            return _("Sorting: ") .. collates[fm.file_chooser.collate]
+        end,
+        sub_item_table = {
+            set_collate_table("strcoll"),
+            set_collate_table("access"),
+        }
+    }
 end
 
 return FileManager
