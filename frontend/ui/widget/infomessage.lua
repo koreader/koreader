@@ -21,6 +21,7 @@ Widget that displays an informational message
 it vanishes on key press or after a given timeout
 ]]
 local InfoMessage = InputContainer:new{
+    modal = true,
     face = Font:getFace("infofont", 25),
     text = "",
     timeout = nil, -- in seconds

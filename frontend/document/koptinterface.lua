@@ -107,7 +107,8 @@ function KoptInterface:getContextHash(doc, pageno, bbox)
     local screen_size = Screen:getSize()
     local screen_size_hash = screen_size.w.."|"..screen_size.h
     local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
-    return doc.file.."|"..pageno.."|"..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
+    return doc.file.."|"..doc.mod_time.."|"..pageno.."|"
+            ..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
 end
 
 function KoptInterface:getPageBBox(doc, pageno)
@@ -215,6 +216,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         DEBUG("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
         self.last_context_size = fullwidth * fullheight + 128 -- estimation
         Cache:insert(kctx_hash, ContextCacheItem:new{
+            persistent = true,
             size = self.last_context_size,
             kctx = kc
         })
@@ -289,7 +291,7 @@ function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, ren
         end
         -- prepare cache item with contained blitbuffer
         local tile = TileCacheItem:new{
-            size = fullwidth * fullheight / 2 + 64, -- estimation
+            size = fullwidth * fullheight + 64, -- estimation
             excerpt = Geom:new{ w = fullwidth, h = fullheight },
             pageno = pageno,
         }
@@ -311,7 +313,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     local context_hash = self:getContextHash(doc, pageno, bbox)
     local renderpg_hash = "renderoptpg|"..context_hash..zoom
 
-    local cached = Cache:check(renderpg_hash)
+    local cached = Cache:check(renderpg_hash, TileCacheItem)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
         local bbox = {
@@ -329,7 +331,8 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         local fullwidth, fullheight = kc:getPageDim()
         -- prepare cache item with contained blitbuffer
         local tile = TileCacheItem:new{
-            size = fullwidth * fullheight / 2 + 64, -- estimation
+            persistent = true,
+            size = fullwidth * fullheight + 64, -- estimation
             excerpt = Geom:new{
                 x = 0, y = 0,
                 w = fullwidth,

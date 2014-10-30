@@ -32,21 +32,24 @@ function ReaderDictionary:onLookupWord(word, box, highlight)
     return true
 end
 
-local function tidyCDATA(results)
+local function tidy_markup(results)
     local cdata_tag = "<!%[CDATA%[(.-)%]%]>"
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
+        local def = result.definition
+        -- preserve the <br> tag for line break
+        def = def:gsub("<[bB][rR] ?/?>", "\n")
         -- parse CDATA text in XML
-        if result.definition:find(cdata_tag) then
-            local def = result.definition:gsub(cdata_tag, "%1")
-            -- ignore all tags
-            def = def:gsub("%b<>", "")
+        if def:find(cdata_tag) then
+            def = def:gsub(cdata_tag, "%1")
             -- ignore format strings
             while def:find(format_escape) do
                 def = def:gsub(format_escape, "%1")
             end
-            result.definition = def
         end
+        -- ignore all markup tags
+        def = def:gsub("%b<>", "")
+        result.definition = def
     end
     return results
 end
@@ -66,7 +69,7 @@ function ReaderDictionary:stardictLookup(word, box)
         local ok, results = pcall(JSON.decode, JSON, results_str)
         if ok and results then
             DEBUG("lookup result table:", word, results)
-            self:showDict(word, tidyCDATA(results), box)
+            self:showDict(word, tidy_markup(results), box)
         else
             -- dummy results
             results = {

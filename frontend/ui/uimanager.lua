@@ -132,10 +132,20 @@ function UIManager:init()
 end
 
 -- register & show a widget
+-- modal widget should be always on the top
 function UIManager:show(widget, x, y)
+    DEBUG("show widget", widget.id)
     self._running = true
-    -- put widget on top of stack
-    table.insert(self._window_stack, {x = x or 0, y = y or 0, widget = widget})
+    local window = {x = x or 0, y = y or 0, widget = widget}
+    -- put this window on top of the toppest non-modal window
+    for i = #self._window_stack, 0, -1 do
+        local top_window = self._window_stack[i]
+        -- skip modal window
+        if not top_window or not top_window.widget.modal then
+            table.insert(self._window_stack, i + 1, window)
+            break
+        end
+    end
     -- and schedule it to be painted
     self:setDirty(widget)
     -- tell the widget that it is shown now
@@ -148,6 +158,7 @@ end
 
 -- unregister a widget
 function UIManager:close(widget)
+    DEBUG("close widget", widget.id)
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     local dirty = false
     for i = #self._window_stack, 1, -1 do
@@ -226,6 +237,7 @@ end
 
 -- signal to quit
 function UIManager:quit()
+    DEBUG("quit uimanager")
     self._running = false
     for i = #self._window_stack, 1, -1 do
         table.remove(self._window_stack, i)
