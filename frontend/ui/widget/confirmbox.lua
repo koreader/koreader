@@ -24,6 +24,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 Widget that shows a message and OK/Cancel buttons
 ]]
 local ConfirmBox = InputContainer:new{
+    modal = true,
     text = _("no text"),
     face = Font:getFace("infofont", 25),
     ok_text = _("OK"),
