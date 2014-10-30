@@ -136,8 +136,11 @@ function Cache:serialize()
     -- serialize the most recently used cache
     local cache_size = 0
     for _, key in ipairs(self.cache_order) do
-        if self.cache[key].dump then
-            cache_size = self.cache[key]:dump(cache_path..md5(key)) or 0
+        local cache_item = self.cache[key]
+        -- only dump cache item that requests serialization explicitly
+        if cache_item.persistent and cache_item.dump then
+            DEBUG("dump cache item", key)
+            cache_size = cache_item:dump(cache_path..md5(key)) or 0
             if cache_size > 0 then break end
         end
     end
