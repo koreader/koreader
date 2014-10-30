@@ -103,6 +103,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:setDirty(self.show_parent, "partial")
     end)
     self.menu:onMenuSelect(self.item)
+    return true
 end
 
 function TouchMenuItem:onHoldSelect(arg, ges)
@@ -119,6 +120,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(self.show_parent, "partial")
     end)
     self.menu:onMenuHold(self.item)
+    return true
 end
 
 --[[
@@ -331,11 +333,11 @@ function TouchMenu:init()
         self.device_info = HorizontalGroup:new{
             self.time_info,
             self.net_info,
-        } 
-    else 
+        }
+    else
         self.device_info = HorizontalGroup:new{
             self.time_info,
-        } 
+        }
     end
     local footer_width = self.width - self.padding*2 - self.bordersize*2
     self.footer = HorizontalGroup:new{

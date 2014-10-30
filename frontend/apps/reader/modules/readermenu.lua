@@ -46,7 +46,6 @@ function ReaderMenu:init()
                 local FileManager = require("apps/filemanager/filemanager")
                 FileManager:restoreScreenMode()
                 if not FileManager.is_running then
-                    UIManager:quit()
                     FileManager:showFiles()
                 end
             end,
@@ -91,8 +90,6 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- setting tab
-    -- FIXME: it's curious that if this 'Screen' menu is placed after the Language
-    -- menu submenu in 'Screen' won't be shown. Probably a bug in the touchmenu module.
     table.insert(self.tab_item_table.setting, {
         text = _("Screen settings"),
         sub_item_table = {
@@ -143,27 +140,33 @@ function ReaderMenu:setUpdateItemTable()
         end
     })
 
-    --typeset tab
     if KOBO_SCREEN_SAVER_LAST_BOOK then
-        local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
+        local excluded = function()
+            return self.ui.doc_settings:readSetting("exclude_screensaver") or false
+        end
+        local proportional = function()
+            return self.ui.doc_settings:readSetting("proportional_screensaver") or false
+        end
         table.insert(self.tab_item_table.typeset, {
-            text = _("Use this book's cover as screensaver"),
-            checked_func = function() return not (self.ui.doc_settings:readSetting("exclude_screensaver") or false) end,
-            callback = function()
-                local exclude = self.ui.doc_settings:readSetting("exclude_screensaver") or false
-                self.ui.doc_settings:saveSetting("exclude_screensaver", not exclude)
-                self.ui:saveSettings()
-            end
-        })
-        local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
-        table.insert(self.tab_item_table.typeset, {
-            text = _("Display proportional cover image in screensaver"),
-            checked_func = function() return (self.ui.doc_settings:readSetting("proportional_screensaver") or false) end,
-            callback = function()
-                local proportional = self.ui.doc_settings:readSetting("proportional_screensaver") or false
-                self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional)
-                self.ui:saveSettings()
-            end
+            text = "Screensaver",
+            sub_item_table = {
+                {
+                    text = _("Use this book's cover as screensaver"),
+                    checked_func = function() return not excluded() end,
+                    callback = function()
+                        self.ui.doc_settings:saveSetting("exclude_screensaver", not excluded())
+                        self.ui:saveSettings()
+                    end
+                },
+                {
+                    text = _("Display proportional cover image in screensaver"),
+                    checked_func = function() return proportional() end,
+                    callback = function()
+                        self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional())
+                        self.ui:saveSettings()
+                    end
+                }
+            }
         })
     end
 end
