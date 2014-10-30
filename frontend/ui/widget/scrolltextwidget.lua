@@ -4,10 +4,10 @@ local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local Device = require("ui/device")
+local Device = require("device")
 local Blitbuffer = require("ffi/blitbuffer")
 
 --[[

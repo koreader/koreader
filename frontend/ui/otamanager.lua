@@ -3,7 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/networkmgr")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
-local Device = require("ui/device")
+local Device = require("device")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

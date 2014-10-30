@@ -1,7 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
 local RenderText = require("ui/rendertext")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local Geom = require("ui/geometry")
 
 -- TODO: rename string:gsplit definition

@@ -1,4 +1,4 @@
-local BasePowerD = require("ui/device/basepowerd")
+local BasePowerD = require("device/generic/powerd")
 
 local KoboPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 100,

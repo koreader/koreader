@@ -35,8 +35,8 @@ local InputText = require("ui/widget/inputtext")
 local DocumentRegistry = require("document/documentregistry")
 local ReaderUI = require("apps/reader/readerui")
 local Dbg = require("dbg")
-local Device = require("ui/device")
-local Screen = require("ui/screen")
+local Device = require("device")
+local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")
 
 -----------------------------------------------------

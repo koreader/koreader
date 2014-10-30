@@ -1,7 +1,7 @@
 local TextWidget = require("ui/widget/textwidget")
 local RenderText = require("ui/rendertext")
 local Geom = require("ui/geometry")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 
 --[[
 FixedTextWidget

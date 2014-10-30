@@ -1,13 +1,8 @@
-local BasePowerD = require("ui/device/basepowerd")
+local BasePowerD = require("device/generic/powerd")
 -- liblipclua, see require below
 
 local KindlePowerD = BasePowerD:new{
     fl_min = 0, fl_max = 24,
-    kpw1_frontlight = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
-    kpw2_frontlight = "/sys/class/backlight/max77696-bl/brightness",
-    kt_kpw_capacity = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
-    kpw_charging = "/sys/devices/platform/aplite_charger.0/charging",
-    kt_charging = "/sys/devices/platform/fsl-usb2-udc/charging",
 
     flIntensity = nil,
     battCapacity = nil,
@@ -15,31 +10,10 @@ local KindlePowerD = BasePowerD:new{
     lipc_handle = nil,
 }
 
-function KindlePowerD:new(o)
-    local o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    if o.init then o:init(o.model) end
-    return o
-end
-
-function KindlePowerD:init(model)
+function KindlePowerD:init()
     local lipc = require("liblipclua")
     if lipc then
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
-    end
-
-    if model == "KindleTouch" then
-        self.batt_capacity_file = self.kt_kpw_capacity
-        self.is_charging_file = self.kt_charging
-    elseif model == "KindlePaperWhite" then
-        self.fl_intensity_file = self.kpw1_frontlight
-        self.batt_capacity_file = self.kt_kpw_capacity
-        self.is_charging_file = self.kpw_charging
-    elseif model == "KindlePaperWhite2" then
-        self.fl_intensity_file = self.kpw2_frontlight
-        self.batt_capacity_file = self.kt_kpw_capacity
-        self.is_charging_file = self.kpw_charging
     end
     if self.lipc_handle then
         self.flIntensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
@@ -83,9 +57,10 @@ function KindlePowerD:isChargingHW()
     return self.is_charging == 1
 end
 
-function KindlePowerD:coda()
+function KindlePowerD:__gc()
     if self.lipc_handle then
         self.lipc_handle:close()
+        self.lipc_handle = nil
     end
 end
 

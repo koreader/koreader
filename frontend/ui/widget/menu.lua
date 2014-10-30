@@ -18,9 +18,9 @@ local Button = require("ui/widget/button")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
-local Device = require("ui/device")
-local Screen = require("ui/screen")
-local Input = require("ui/input")
+local Device = require("device")
+local Screen = require("device").screen
+local Input = require("device").input
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local InfoMessage = require("ui/widget/infomessage")
@@ -538,7 +538,7 @@ function Menu:init()
         self.ges_events.Close = self.on_close_ges
     end
 
-    if Device:hasNoKeyboard() then
+    if not Device:hasKeyboard() then
         -- remove menu item shortcut for K4
         self.is_enable_shortcut = false
     end

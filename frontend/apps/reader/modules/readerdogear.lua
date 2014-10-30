@@ -3,9 +3,9 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Device = require("ui/device")
+local Device = require("device")
 local Geom = require("ui/geometry")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local Event = require("ui/event")
 
 local ReaderDogear = InputContainer:new{}

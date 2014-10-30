@@ -1,2 +1,2 @@
 -- compatibility wrapper
-return require("ui/device").screen
+return require("device").screen

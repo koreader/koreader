@@ -1,5 +1,5 @@
 local Widget = require("ui/widget/widget")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local RenderText = require("ui/rendertext")
 local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")

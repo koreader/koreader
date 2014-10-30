@@ -1,15 +1,10 @@
-local Device = require("ui/device")
-local Screen = require("ui/screen")
-local Input = require("ui/input")
+local Device = require("device")
+local Screen = Device.screen
+local Input = require("device").input
 local Event = require("ui/event")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
--- initialize output module, this must be initialized before Input
-Screen:init()
--- initialize the input handling
-Input:init()
 
 -- NOTE: Those have been confirmed on Kindle devices. Might be completely different on Kobo (except for AUTO)!
 local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
@@ -121,7 +116,7 @@ function UIManager:init()
         -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
         self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
         -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so go with the reader behavior
-        if Device:getModel() == "KindlePaperWhite2" then
+        if Device.model == "KindlePaperWhite2" then
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_REAGL
         else
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
@@ -337,9 +332,8 @@ function UIManager:run()
             -- paint if repaint_all is request
             -- paint also if current widget or any widget underneath is dirty
             if self.repaint_all or dirty or self._dirty[widget.widget] then
-                widget.widget:paintTo(Screen.bb,
-                                      widget.x + Screen:offsetX(),
-                                      widget.y + Screen:offsetY())
+                widget.widget:paintTo(Screen.bb, widget.x, widget.y)
+
                 if self._dirty[widget.widget] == "auto" then
                     request_full_refresh = true
                 end

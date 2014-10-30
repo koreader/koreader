@@ -11,11 +11,11 @@ einkfb = require("ffi/framebuffer")
 einkfb.dummy = true
 
 -- init output device
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 Screen:init()
 
 -- init input device (do not show SDL window)
-local Input = require("ui/input")
+local Input = require("device").input
 Input.dummy = true
 
 -- turn on debug

@@ -1,6 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local UIManager = require("ui/uimanager")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
 local _ = require("gettext")
