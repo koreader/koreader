@@ -95,27 +95,47 @@ function VirtualKey:init()
     end
 end
 
+function VirtualKey:update_keyboard()
+    UIManager.update_regions_func = function()
+        DEBUG("update key region", self[1].dimen)
+        return {self[1].dimen}
+    end
+    UIManager:setDirty(self.keyboard, "partial")
+end
+
+function VirtualKey:update_keyboard_inputbox()
+    local inputbox = self.keyboard.inputbox
+    UIManager.update_regions_func = function()
+        DEBUG("update keyboard and inputbox", self[1].dimen, inputbox.dimen)
+        return {self[1].dimen, inputbox.dimen}
+    end
+    UIManager:setDirty(inputbox, "partial")
+    UIManager:setDirty(self.keyboard, "partial")
+end
+
 function VirtualKey:onTapSelect()
     self[1].invert = true
+    self:update_keyboard_inputbox()
     if self.callback then
         self.callback()
     end
-    UIManager:scheduleIn(0.02, function() self:invert(false) end)
+    UIManager:scheduleIn(0.2, function() self:invert(false) end)
     return true
 end
 
 function VirtualKey:onHoldSelect()
     self[1].invert = true
+    self:update_keyboard_inputbox()
     if self.hold_callback then
         self.hold_callback()
     end
-    UIManager:scheduleIn(0.5, function() self:invert(false) end)
+    UIManager:scheduleIn(0.2, function() self:invert(false) end)
     return true
 end
 
 function VirtualKey:invert(invert)
     self[1].invert = invert
-    UIManager:setDirty(self.keyboard, "partial")
+    self:update_keyboard()
 end
 
 local VirtualKeyboard = InputContainer:new{
@@ -298,28 +318,23 @@ function VirtualKeyboard:setLayout(key)
         if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
+    UIManager.update_regions_func = nil
     UIManager:setDirty(self, "partial")
 end
 
 function VirtualKeyboard:addChar(key)
     DEBUG("add char", key)
     self.inputbox:addChar(key)
-    UIManager:setDirty(self, "partial")
-    UIManager:setDirty(self.inputbox, "partial")
 end
 
 function VirtualKeyboard:delChar()
     DEBUG("delete char")
     self.inputbox:delChar()
-    UIManager:setDirty(self, "partial")
-    UIManager:setDirty(self.inputbox, "partial")
 end
 
 function VirtualKeyboard:clear()
     DEBUG("clear input")
     self.inputbox:clear()
-    UIManager:setDirty(self, "partial")
-    UIManager:setDirty(self.inputbox, "partial")
 end
 
 return VirtualKeyboard
