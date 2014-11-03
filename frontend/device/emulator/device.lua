@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
-local Geom = require("ui/geometry")
 
 local function yes() return true end
 
@@ -11,7 +10,6 @@ local Device = Generic:new{
     hasKeys = yes,
     hasFrontlight = yes,
     isTouchDevice = yes,
-    viewport = Geom:new{x=40, y=40, w=550, h=650},
 }
 
 function Device:init()

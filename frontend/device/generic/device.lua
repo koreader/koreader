@@ -40,10 +40,10 @@ end
 
 function Device:init()
     if not self.screen then
-        self.screen = require("device/generic/screen"):new{device = self}
+        self.screen = require("device/screen"):new{device = self}
     end
     if not self.input then
-        self.input = require("device/generic/input"):new{device = self}
+        self.input = require("device/input"):new{device = self}
     end
     if not self.powerd then
         self.powerd = require("device/generic/powerd"):new{device = self}
