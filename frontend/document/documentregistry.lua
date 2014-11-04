@@ -14,9 +14,10 @@ end
 
 function DocumentRegistry:getProvider(file)
     -- TODO: some implementation based on mime types?
-    local extension = string.lower(string.match(file, ".+%.([^.]+)") or "")
     for _, provider in ipairs(self.providers) do
-        if extension == provider.extension then
+        local suffix = string.sub(file, -string.len(provider.extension) - 1)
+        if string.lower(suffix) == "."..provider.extension then
+        -- if extension == provider.extension then
             return provider.provider
         end
     end
@@ -60,9 +61,9 @@ end
 
 -- load implementations:
 
+require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)
-require("document/credocument"):register(DocumentRegistry)
 require("document/picdocument"):register(DocumentRegistry)
 
 return DocumentRegistry
