@@ -61,9 +61,9 @@ end
 
 -- load implementations:
 
+require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)
-require("document/credocument"):register(DocumentRegistry)
 require("document/picdocument"):register(DocumentRegistry)
 
 return DocumentRegistry
