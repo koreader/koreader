@@ -129,6 +129,16 @@ function Input:init()
 end
 
 --[[
+wrapper for FFI input open
+
+Note that we adhere to the "." syntax here for compatibility.
+TODO: clean up separation FFI/this
+--]]
+function Input.open(device)
+    input.open(device)
+end
+
+--[[
 Different device models can implement their own hooks
 and register them.
 --]]
