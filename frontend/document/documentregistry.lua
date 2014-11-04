@@ -16,7 +16,7 @@ function DocumentRegistry:getProvider(file)
     -- TODO: some implementation based on mime types?
     for _, provider in ipairs(self.providers) do
         local suffix = string.sub(file, -string.len(provider.extension) - 1)
-        if suffix == "."..provider.extension then
+        if string.lower(suffix) == "."..provider.extension then
         -- if extension == provider.extension then
             return provider.provider
         end
