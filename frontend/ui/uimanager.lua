@@ -6,6 +6,7 @@ local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
+-- cf. koreader-base/ffi-cdecl/include/mxcfb-kindle.h (UPDATE_MODE_* applies to Kobo, too)
 local UPDATE_MODE_PARTIAL       = 0x0
 local UPDATE_MODE_FULL          = 0x1
 
@@ -25,6 +26,10 @@ local WAVEFORM_MODE_REAGL       = 0x8    -- Ghost compensation waveform
 local WAVEFORM_MODE_REAGLD      = 0x9    -- Ghost compensation waveform with dithering
 
 local WAVEFORM_MODE_AUTO        = 0x101
+
+-- Kobo's headers suck, so invent something to avoid magic numbers...
+local WAVEFORM_MODE_KOBO_REGAL  = 0x7
+
 
 -- there is only one instance of this
 local UIManager = {
@@ -92,6 +97,15 @@ function UIManager:init()
         if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
             Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
         end
+        -- Emulate the stock reader refresh behavior...
+        self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
+        -- Request regal waveform on devices that support it (Aura & H2O)
+        if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
+            self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
+        else
+            -- See the note in the Kindle code path later, the stock reader might be using WAVEFORM_MODE_AUTO
+            self.partial_refresh_waveform_mode = WAVEFORM_MODE_GC16
+        end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
             self:sendEvent(Event:new("FlushSettings"))
@@ -116,7 +130,7 @@ function UIManager:init()
             On a PW2:
                 UI: flash: fc16_fast, non-flash: auto (prefers gc16_fast)
                 Reader: When flash: if to/from img: gc16 (seems to have a larger bias towards this one), else gc16_fast; when non-flash: reagl (w/ UPDATE_MODE_FULL!); Always waits for marker
-                    Note that the bottom status bar is refreshed separately, right after the screen, as a partial, auto (gc16_fast) update, and that's the marker that's waited after...
+                    Note that the bottom status bar is refreshed separately, right after the screen, as a partial, auto (gc16_fast) update, and it is its marker that's waited after...
                     Non flash lasts longer (dual timeout: 14pgs / 7mins).
         --]]
         -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
@@ -405,7 +419,7 @@ function UIManager:run()
                 waveform_mode = self.fast_waveform_mode
             end
             -- And the PW2 REAGL trickery (they're always full refreshes, but there's no black flash)
-            if refresh_type == UPDATE_MODE_PARTIAL and waveform_mode == WAVEFORM_MODE_REAGL then
+            if refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
                 refresh_type = UPDATE_MODE_FULL
             end
             if self.update_regions_func then
@@ -420,7 +434,7 @@ function UIManager:run()
                 Screen:refresh(refresh_type, waveform_mode)
             end
             -- PW2 REAGL refreshes are always full (but without black flash), but we want to keep our black flash timeout working, so don't reset the count on full REAGL refreshes...
-            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL then
+            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= WAVEFORM_MODE_KOBO_REGAL then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
