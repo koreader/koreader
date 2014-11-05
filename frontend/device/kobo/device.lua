@@ -76,7 +76,7 @@ function Kobo:init()
 
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
-    if self.touch_switch_xy and not KOBO_TOUCH_MIRRORED 
+    if self.touch_switch_xy and not KOBO_TOUCH_MIRRORED
     or not self.touch_switch_xy and KOBO_TOUCH_MIRRORED
     then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
