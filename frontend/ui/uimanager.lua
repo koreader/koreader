@@ -6,6 +6,9 @@ local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
+local UPDATE_MODE_PARTIAL       = 0x0
+local UPDATE_MODE_FULL          = 0x1
+
 -- NOTE: Those have been confirmed on Kindle devices. Might be completely different on Kobo (except for AUTO)!
 local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
 local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
@@ -25,7 +28,7 @@ local WAVEFORM_MODE_AUTO        = 0x101
 
 -- there is only one instance of this
 local UIManager = {
-    default_refresh_type = 0, -- 0 for partial refresh, 1 for full refresh
+    default_refresh_type = UPDATE_MODE_PARTIAL,
     default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
     fast_waveform_mode = WAVEFORM_MODE_A2,
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
@@ -107,11 +110,14 @@ function UIManager:init()
         end
         -- Emulate the stock reader refresh behavior...
         --[[
-            NOTE: For ref, on a Touch (debugPaint is my new best friend):
-                UI: gc16_fast
+            NOTE: For ref, on a Touch (debugPaint & a patched strace are your friend!):
+                UI: flash: gc16_fast, non-flash: auto (prefers gc16_fast)
                 Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
             On a PW2:
-                Same as Touch, except reader uses reagl on non-flash, non-flash lasts longer (12 pgs); Always waits for marker
+                UI: flash: fc16_fast, non-flash: auto (prefers gc16_fast)
+                Reader: When flash: if to/from img: gc16 (seems to have a larger bias towards this one), else gc16_fast; when non-flash: reagl (w/ UPDATE_MODE_FULL!); Always waits for marker
+                    Note that the bottom status bar is refreshed separately, right after the screen, as a partial, auto (gc16_fast) update, and that's the marker that's waited after...
+                    Non flash lasts longer (dual timeout: 14pgs / 7mins).
         --]]
         -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
         self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
@@ -385,18 +391,22 @@ function UIManager:run()
         local waveform_mode = self.default_waveform_mode
         if dirty then
             if force_partial_refresh or force_fast_refresh then
-                refresh_type = 0
+                refresh_type = UPDATE_MODE_PARTIAL
             elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-                refresh_type = 1
+                refresh_type = UPDATE_MODE_FULL
             end
             -- Handle the waveform mode selection...
-            if refresh_type == 1 then
+            if refresh_type == UPDATE_MODE_FULL then
                 waveform_mode = self.full_refresh_waveform_mode
             else
                 waveform_mode = self.partial_refresh_waveform_mode
             end
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
+            end
+            -- And the PW2 REAGL trickery (they're always full refreshes, but there's no black flash)
+            if refresh_type == UPDATE_MODE_PARTIAL and waveform_mode == WAVEFORM_MODE_REAGL then
+                refresh_type = UPDATE_MODE_FULL
             end
             if self.update_regions_func then
                 local update_regions = self.update_regions_func()
@@ -409,7 +419,8 @@ function UIManager:run()
             else
                 Screen:refresh(refresh_type, waveform_mode)
             end
-            if self.refresh_type == 1 then
+            -- PW2 REAGL refreshes are always full (but without black flash), but we want to keep our black flash timeout working, so don't reset the count on full REAGL refreshes...
+            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
