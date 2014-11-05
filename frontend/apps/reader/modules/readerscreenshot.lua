@@ -7,7 +7,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 local DEBUG = require("dbg")
 
-local ReaderScreenshot = InputContainer:new{}
+local ReaderScreenshot = InputContainer:new{
+    datetime_name = "screenshots/Screenshot_%Y-%b-%d_%Hh%M.png",
+}
 
 function ReaderScreenshot:init()
     local diagonal = math.sqrt(
@@ -32,16 +34,13 @@ function ReaderScreenshot:init()
     }
 end
 
-function ReaderScreenshot:onScreenshot()
-    if os.execute("screenshot") ~= 0 then
-        local screenshot_name = os.date("screenshots/Screenshot_%Y-%B-%d_%Hh%M.pam")
-        UIManager:show(InfoMessage:new{
-            text = _("Writing screen to ")..screenshot_name,
-            timeout = 2,
-        })
-        Screen.bb:writePAM(screenshot_name)
-        DEBUG(screenshot_name)
-    end
+function ReaderScreenshot:onScreenshot(filename)
+    local screenshot_name = filename or os.date(self.datetime_name)
+    UIManager:show(InfoMessage:new{
+        text = _("Writing screen to ")..screenshot_name,
+        timeout = 2,
+    })
+    Screen:shot(screenshot_name)
     UIManager.full_refresh = true
     return true
 end

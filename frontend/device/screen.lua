@@ -174,10 +174,14 @@ function Screen:restoreFromSavedBB()
     end
 end
 
+function Screen:shot(filename)
+    DEBUG("write PNG file", filename)
+    self.bb:writePNG(filename)
+end
+
 function Screen:close()
     DEBUG("close screen framebuffer")
     self.fb:close()
 end
-
 
 return Screen
