@@ -155,10 +155,15 @@ end
 -- catalogue of predefined hooks:
 function Input:adjustTouchSwitchXY(ev)
     if ev.type == EV_ABS then
-        if ev.code == ABS_X then ev.code = ABS_Y end
-        if ev.code == ABS_Y then ev.code = ABS_X end
-        if ev.code == ABS_MT_POSITION_X then ev.code = ABS_MT_POSITION_Y end
-        if ev.code == ABS_MT_POSITION_Y then ev.code = ABS_MT_POSITION_X end
+        if ev.code == ABS_X then
+            ev.code = ABS_Y
+        elseif ev.code == ABS_Y then
+            ev.code = ABS_X
+        elseif ev.code == ABS_MT_POSITION_X then
+            ev.code = ABS_MT_POSITION_Y
+        elseif ev.code == ABS_MT_POSITION_Y then
+            ev.code = ABS_MT_POSITION_X
+        end
     end
 end
 function Input:adjustTouchScale(ev, by)
@@ -172,17 +177,15 @@ function Input:adjustTouchScale(ev, by)
     end
 end
 function Input:adjustTouchMirrorX(ev, width)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
-            ev.value = width - ev.value
-        end
+    if ev.type == EV_ABS
+    and (ev.code == ABS_X or ev.code == ABS_MT_POSITION_X) then
+        ev.value = width - ev.value
     end
 end
 function Input:adjustTouchMirrorY(ev, height)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
-            ev.value = height - ev.value
-        end
+    if ev.type == EV_ABS
+    and (ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y) then
+        ev.value = height - ev.value
     end
 end
 function Input:adjustTouchTranslate(ev, by)
