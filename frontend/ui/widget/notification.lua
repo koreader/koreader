@@ -4,11 +4,11 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local TextWidget = require("ui/widget/textwidget")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
-local Device = require("ui/device")
+local Device = require("device")
 local UIManager = require("ui/uimanager")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local Input = require("ui/input")
-local Screen = require("ui/screen")
+local Input = require("device").input
+local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")
 
 --[[

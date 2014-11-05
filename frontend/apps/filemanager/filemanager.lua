@@ -11,9 +11,9 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Font = require("ui/font")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local Geom = require("ui/geometry")
-local Device = require("ui/device")
+local Device = require("device")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -177,7 +177,7 @@ function FileManager:getDefaultDir()
         return "/mnt/us/documents"
     elseif Device:isKobo() then
         return "/mnt/onboard"
-    elseif Device.isAndroid then
+    elseif Device.isAndroid() then
         return "/sdcard"
     else
         return "."

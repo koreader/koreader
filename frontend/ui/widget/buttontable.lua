@@ -3,7 +3,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local LineWidget = require("ui/widget/linewidget")
 local Button = require("ui/widget/button")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
 

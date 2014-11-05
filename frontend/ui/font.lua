@@ -1,6 +1,6 @@
 local lfs = require("libs/libkoreader-lfs")
 local Freetype = require("ffi/freetype")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local DEBUG = require("dbg")
 
 local Font = {

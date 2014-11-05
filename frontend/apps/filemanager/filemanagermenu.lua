@@ -4,10 +4,10 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
-local Device = require("ui/device")
+local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local Language = require("ui/language")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -120,7 +120,7 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.setting, {
         text = _("Screen settings"),
         sub_item_table = {
-            Screen:getDPIMenuTable(),
+            require("ui/elements/screen_dpi_menu_table"),
             UIManager:getRefreshMenuTable(),
         },
     })

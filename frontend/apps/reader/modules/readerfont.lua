@@ -3,12 +3,12 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local Notification = require("ui/widget/notification")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Menu = require("ui/widget/menu")
-local Device = require("ui/device")
-local Screen = require("ui/screen")
-local Input = require("ui/input")
+local Device = require("device")
+local Screen = require("device").screen
+local Input = require("device").input
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

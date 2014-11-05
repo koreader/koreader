@@ -1,4 +1,4 @@
-local BasePowerD = require("ui/device/basepowerd")
+local BasePowerD = require("device/generic/powerd")
 
 local AndroidPowerD = BasePowerD:new{
     batt_capacity_file = "/sys/class/power_supply/battery/capacity",

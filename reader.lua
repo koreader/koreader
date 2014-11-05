@@ -30,45 +30,23 @@ end
 
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
-local Device = require("ui/device")
-local Screen = require("ui/screen")
+local Device = require("device")
+local Screen = require("device").screen
 local input = require("ffi/input")
 local DEBUG = require("dbg")
 
 local Profiler = nil
 
 local function exitReader()
-    local KindlePowerD = require("ui/device/kindlepowerd")
     local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 
     G_reader_settings:close()
 
     -- Close lipc handles
-    KindlePowerD:coda()
     ReaderActivityIndicator:coda()
 
-    if not util.isEmulated() then
-        if Device:isKindle3() or (Device:getModel() == "KindleDXG") then
-            -- send double menu key press events to trigger screen refresh
-            os.execute("echo 'send 139' > /proc/keypad;echo 'send 139' > /proc/keypad")
-        end
-        if Device:isTouchDevice() and Device.survive_screen_saver then
-            -- If needed, hack the swipe to unlock screen
-            if Device:isSpecialOffers() then
-                local dev = Device:getTouchInputDev()
-                if dev then
-                    local width, height = Screen:getWidth(), Screen:getHeight()
-                    input.fakeTapInput(dev,
-                        math.min(width, height)/2,
-                        math.max(width, height)-30
-                    )
-                end
-            end
-        end
-    end
-
-    input.closeAll()
-    Screen:close()
+    -- shutdown hardware abstraction
+    Device:exit()
 
     if Profiler then Profiler.stop() end
     os.exit(0)

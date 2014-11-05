@@ -4,8 +4,8 @@ local Notification = require("ui/widget/notification")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
-local Screen = require("ui/screen")
-local Device = require("ui/device")
+local Screen = require("device").screen
+local Device = require("device")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -20,7 +20,7 @@ function ReaderFrontLight:init()
             Adjust = {
                 GestureRange:new{
                     ges = "two_finger_pan",
-                    rate = Device:getModel() ~= 'Kobo_phoenix' and 3.0 or nil,
+                    rate = Device.model ~= 'Kobo_phoenix' and 3.0 or nil,
                 }
             },
             PanRelease= {

@@ -1,5 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Device = require("ui/device")
+local Device = require("device")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

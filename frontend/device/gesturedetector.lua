@@ -1,6 +1,5 @@
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
-local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 
 --[[
@@ -49,10 +48,6 @@ local GestureDetector = {
     TWO_FINGER_TAP_DURATION = 300 * 1000,
     HOLD_INTERVAL = 500 * 1000,
     SWIPE_INTERVAL = 900 * 1000,
-    -- distance parameters
-    DOUBLE_TAP_DISTANCE = 50 * Screen:getDPI() / 167,
-    TWO_FINGER_TAP_REGION = 20 * Screen:getDPI() / 167,
-    PAN_THRESHOLD = 50 * Screen:getDPI() / 167,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
         east = "horizontal",
@@ -76,6 +71,21 @@ local GestureDetector = {
     -- for single/double tap
     last_taps = {},
 }
+
+function GestureDetector:new(o)
+    local o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    if o.init then o:init() end
+    return o
+end
+
+function GestureDetector:init()
+    -- distance parameters
+    self.DOUBLE_TAP_DISTANCE = 50 * self.screen:getDPI() / 167
+    self.TWO_FINGER_TAP_REGION = 20 * self.screen:getDPI() / 167
+    self.PAN_THRESHOLD = 50 * self.screen:getDPI() / 167
+end
 
 function GestureDetector:feedEvent(tevs)
     repeat
@@ -584,10 +594,10 @@ end
   @return adjusted gesture.
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
-    if Screen.cur_rotation_mode == 1 then
+    if self.screen.cur_rotation_mode == 1 then
         -- in landscape mode rotated 270
         if ges.pos then
-            ges.pos.x, ges.pos.y = (Screen:getWidth() - ges.pos.y), (ges.pos.x)
+            ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.y), (ges.pos.x)
         end
         if ges.ges == "swipe" or ges.ges == "pan"
             or ges.ges == "two_finger_swipe"
@@ -621,10 +631,10 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
-    elseif Screen.cur_rotation_mode == 3 then
+    elseif self.screen.cur_rotation_mode == 3 then
         -- in landscape mode rotated 90
         if ges.pos then
-            ges.pos.x, ges.pos.y = (ges.pos.y), (Screen:getHeight() - ges.pos.x)
+            ges.pos.x, ges.pos.y = (ges.pos.y), (self.screen:getHeight() - ges.pos.x)
         end
         if ges.ges == "swipe" or ges.ges == "pan"
             or ges.ges == "two_finger_swipe"

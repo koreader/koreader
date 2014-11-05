@@ -3,7 +3,7 @@ local BasePowerD = {
     fl_max = 10,     -- max frontlight intensity
     flIntensity = nil,   -- frontlight intensity
     battCapacity = nil,  -- battery capacity
-    model = nil,     -- device model
+    device = nil,    -- device object
 
     capacity_pulled_count = 0,
     capacity_cached_count = 10,

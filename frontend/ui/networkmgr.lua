@@ -1,6 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
-local Device = require("ui/device")
+local Device = require("device")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

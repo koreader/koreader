@@ -5,7 +5,7 @@ local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
 

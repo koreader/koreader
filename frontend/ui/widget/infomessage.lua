@@ -1,7 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Font = require("ui/font")
-local Device = require("ui/device")
+local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -10,8 +10,8 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
-local Input = require("ui/input")
-local Screen = require("ui/screen")
+local Input = require("device").input
+local Screen = require("device").screen
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 

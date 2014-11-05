@@ -1,4 +1,4 @@
-local Screen = require("ui/screen")
+local Screen = require("device").screen
 local S = require("ui/data/strings")
 
 local _ = require("gettext")
