@@ -217,6 +217,10 @@ function Document:getCoverPageImage()
     return nil
 end
 
+function Document:findText()
+    return nil
+end
+
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode

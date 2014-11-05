@@ -384,12 +384,14 @@ function UIManager:run()
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
-            if self.update_region_func then
-                local update_region = self.update_region_func()
-                -- in some rare cases update region has 1 pixel offset
-                Screen:refresh(refresh_type, waveform_mode,
-                               update_region.x-1, update_region.y-1,
-                               update_region.w+2, update_region.h+2)
+            if self.update_regions_func then
+                local update_regions = self.update_regions_func()
+                for _, update_region in ipairs(update_regions) do
+                    -- in some rare cases update region has 1 pixel offset
+                    Screen:refresh(refresh_type, waveform_mode,
+                                   update_region.x-1, update_region.y-1,
+                                   update_region.w+2, update_region.h+2)
+                end
             else
                 Screen:refresh(refresh_type, waveform_mode)
             end
@@ -398,7 +400,7 @@ function UIManager:run()
             elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
             end
-            self.update_region_func = nil
+            self.update_regions_func = nil
         end
 
         self:checkTasks()

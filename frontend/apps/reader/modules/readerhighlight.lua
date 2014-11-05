@@ -111,17 +111,22 @@ function ReaderHighlight:onSetDimensions(dimen)
 end
 
 function ReaderHighlight:clear()
+    if self.ui.document.info.has_pages then
+        self.view.highlight.temp = {}
+    else
+        self.ui.document:clearSelection()
+    end
+    UIManager:setDirty(self.dialog, "partial")
     if self.hold_pos then
-        if self.ui.document.info.has_pages then
-            self.view.highlight.temp[self.hold_pos.page] = nil
-        else
-            self.ui.document:clearSelection()
-        end
         self.hold_pos = nil
         self.selected_text = nil
-        UIManager:setDirty(self.dialog, "partial")
         return true
     end
+end
+
+function ReaderHighlight:onClearHighlight()
+    self:clear()
+    return true
 end
 
 function ReaderHighlight:onTap(arg, ges)
@@ -333,11 +338,10 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = _("Share"),
-                        enabled = false,
+                        text = _("Search"),
                         callback = function()
-                            self:shareHighlight()
-                            self:onClose()
+                            self:onHighlightSearch()
+                            UIManager:close(self.highlight_dialog)
                         end,
                     },
                     {
@@ -357,14 +361,18 @@ function ReaderHighlight:onHoldRelease()
     return true
 end
 
-function ReaderHighlight:onHighlight()
+function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
             DEBUG("selected text:", self.selected_text)
         end
-        self:saveHighlight()
     end
+end
+
+function ReaderHighlight:onHighlight()
+    self:highlightFromHoldPos()
+    self:saveHighlight()
 end
 
 function ReaderHighlight:saveHighlight()
@@ -424,6 +432,14 @@ end
 function ReaderHighlight:lookupWikipedia()
     if self.selected_text then
         self.ui:handleEvent(Event:new("LookupWikipedia", self.selected_text.text))
+    end
+end
+
+function ReaderHighlight:onHighlightSearch()
+    DEBUG("search highlight")
+    self:highlightFromHoldPos()
+    if self.selected_text then
+        self.ui:handleEvent(Event:new("ShowSearchDialog", self.selected_text.text))
     end
 end
 

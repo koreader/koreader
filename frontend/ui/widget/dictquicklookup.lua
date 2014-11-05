@@ -187,10 +187,10 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = _("More"),
-                    enabled = false,
+                    text = _("Search"),
                     callback = function()
-                        self.ui:handleEvent(Event:new("HighlightMore"))
+                        self.ui:handleEvent(Event:new("HighlightSearch"))
+                        UIManager:close(self)
                     end,
                 },
             },
@@ -286,10 +286,10 @@ function DictQuickLookup:changeDictionary(index)
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     self:update()
 
-    UIManager.update_region_func = function()
+    UIManager.update_regions_func = function()
         local update_region = self.dict_frame.dimen:combine(orig_dimen)
-        DEBUG("update region", update_region)
-        return update_region
+        DEBUG("update dict region", update_region)
+        return {update_region}
     end
 end
 

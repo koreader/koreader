@@ -465,6 +465,9 @@ function TouchMenu:netToggle()
 end
 
 function TouchMenu:switchMenuTab(tab_num)
+    if self.touch_menu_callback then
+        self.touch_menu_callback()
+    end
     if self.tab_item_table[tab_num].callback then
         self.tab_item_table[tab_num].callback()
     end
@@ -516,6 +519,9 @@ function TouchMenu:onSwipe(arg, ges_ev)
 end
 
 function TouchMenu:onMenuSelect(item)
+    if self.touch_menu_callback then
+        self.touch_menu_callback()
+    end
     if item.tap_input then
         self:closeMenu()
         self:onMenuInput(item.tap_input)
@@ -547,6 +553,9 @@ function TouchMenu:onMenuSelect(item)
 end
 
 function TouchMenu:onMenuHold(item)
+    if self.touch_menu_callback then
+        self.touch_menu_callback()
+    end
     if item.hold_input then
         self:closeMenu()
         self:onMenuInput(item.hold_input)
