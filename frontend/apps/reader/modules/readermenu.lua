@@ -208,7 +208,11 @@ function ReaderMenu:onShowReaderMenu()
     end
 
     main_menu.close_callback = function ()
-        UIManager:close(menu_container)
+        self.ui:handleEvent(Event:new("CloseReaderMenu"))
+    end
+
+    main_menu.touch_menu_callback = function ()
+        self.ui:handleEvent(Event:new("CloseConfigMenu"))
     end
 
     menu_container[1] = main_menu
