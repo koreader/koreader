@@ -187,10 +187,10 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = _("More"),
-                    enabled = false,
+                    text = _("Search"),
                     callback = function()
-                        self.ui:handleEvent(Event:new("HighlightMore"))
+                        self.ui:handleEvent(Event:new("HighlightSearch"))
+                        UIManager:close(self)
                     end,
                 },
             },

@@ -312,6 +312,7 @@ function CreDocument:setFontFace(new_font_face)
 end
 
 function CreDocument:clearSelection()
+    DEBUG("clear selection")
     self._document:clearSelection()
 end
 
@@ -416,6 +417,11 @@ end
 function CreDocument:setStatusLineProp(prop)
     DEBUG("CreDocument: set status line property", prop)
     self._document:setStringProperty("window.status.line", prop)
+end
+
+function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
+    DEBUG("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
+    return self._document:findText(pattern, origin, reverse, caseInsensitive)
 end
 
 function CreDocument:register(registry)

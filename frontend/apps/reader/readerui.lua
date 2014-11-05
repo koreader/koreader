@@ -37,9 +37,10 @@ local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local PluginLoader = require("apps/reader/pluginloader")
-local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 
 --[[
 This is an abstraction for a reader interface
@@ -280,6 +281,12 @@ function ReaderUI:init()
             ui = self
         })
     end
+    -- fulltext search
+    self:registerModule("search", ReaderSearch:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self
+    })
 
     -- koreader plugins
     for _,module in ipairs(PluginLoader:loadPlugins()) do
