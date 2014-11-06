@@ -35,7 +35,7 @@ function ReaderRotation:init()
                         w = Screen:getWidth(),
                         h = Screen:getHeight(),
                     },
-                    rate = 0.3
+                    rate = 0.3,
                 }
             },
         }
