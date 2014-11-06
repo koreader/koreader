@@ -153,6 +153,10 @@ end
 
 -- unregister a widget
 function UIManager:close(widget)
+    if not widget then
+        DEBUG("widget not exist to be closed")
+        return
+    end
     DEBUG("close widget", widget.id)
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     local dirty = false
