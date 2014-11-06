@@ -94,6 +94,7 @@ function ReaderMenu:setUpdateItemTable()
         text = _("Screen settings"),
         sub_item_table = {
             require("ui/elements/screen_dpi_menu_table"),
+            require("ui/elements/screen_eink_opt_menu_table"),
             UIManager:getRefreshMenuTable(),
         },
     })
