@@ -35,7 +35,7 @@ local WAVEFORM_MODE_KOBO_REGAL  = 0x7
 local UIManager = {
     default_refresh_type = UPDATE_MODE_PARTIAL,
     default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
-    fast_waveform_mode = WAVEFORM_MODE_A2,
+    fast_waveform_mode = WAVEFORM_MODE_A2, -- FIXME: Is this OK on Kobo?
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     -- force to repaint all the widget is stack, will be reset to false
@@ -99,13 +99,15 @@ function UIManager:init()
         end
         -- Emulate the stock reader refresh behavior...
         self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
-        -- Request regal waveform on devices that support it (Aura & H2O)
+        -- Request REGAL waveform on devices that support it (Aura & H2O)
         if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
         else
-            -- See the note in the Kindle code path later, the stock reader might be using WAVEFORM_MODE_AUTO
+            -- See the note in the Kindle code path later, the stock reader might be using AUTO
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GC16
         end
+        -- NOTE: Mostly from lack of data, don't try anything fancier with our PARTIAL, regional updates...
+        --self.default_waveform_mode = WAVEFORM_MODE_AUTO
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
             self:sendEvent(Event:new("FlushSettings"))
@@ -125,12 +127,12 @@ function UIManager:init()
         -- Emulate the stock reader refresh behavior...
         --[[
             NOTE: For ref, on a Touch (debugPaint & a patched strace are your friend!):
-                UI: flash: gc16_fast, non-flash: auto (prefers gc16_fast)
-                Reader: When flash: if to/from img: gc16, else gc16_fast; when non-flash: auto (seems to prefer gl16_fast); Waiting for marker only on flash
+                UI: flash: GC16_FAST, non-flash: AUTO (prefers GC16_FAST)
+                Reader: When flash: if to/from img: GC16, else GC16_FAST; when non-flash: AUTO (seems to prefer GL16_FAST); Waiting for marker only on flash
             On a PW2:
-                UI: flash: fc16_fast, non-flash: auto (prefers gc16_fast)
-                Reader: When flash: if to/from img: gc16 (seems to have a larger bias towards this one), else gc16_fast; when non-flash: reagl (w/ UPDATE_MODE_FULL!); Always waits for marker
-                    Note that the bottom status bar is refreshed separately, right after the screen, as a partial, auto (gc16_fast) update, and it is its marker that's waited after...
+                UI: flash: GC16_FAST, non-flash: AUTO (prefers GC16_FAST)
+                Reader: When flash: if to/from img: GC16, else GC16_FAST; when non-flash: REAGL (w/ UPDATE_MODE_FULL!); Always waits for marker
+                    Note that the bottom status bar region is refreshed separately, right after the screen, as a PARTIAL, AUTO (GC16_FAST) update, and it's this marker that's waited after...
                     Non flash lasts longer (dual timeout: 14pgs / 7mins).
         --]]
         -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
@@ -140,9 +142,11 @@ function UIManager:init()
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_REAGL
         else
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
-            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also use WAVEFORM_MODE_AUTO ;). I have *no* idea how the driver makes its choice though...
+            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;). I have *no* idea how the driver makes its choice though...
             --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
         end
+        -- Default to GC16_FAST (will be used for PARTIAL, regional updates)
+        self.default_waveform_mode = WAVEFORM_MODE_GC16_FAST
     end
 end
 
@@ -418,10 +422,15 @@ function UIManager:run()
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
-            -- And the PW2 REAGL trickery (they're always full refreshes, but there's no black flash)
-            -- FIXME: Possibly a bad idea if self.update_regions_func is set and we actually really want a partial update? Fallback to default_waveform_mode (or GC16_FAST on Kindle)
-            if refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
+            -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior (REAGL updates are always FULL, but there's no black flash)
+            if not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
                 refresh_type = UPDATE_MODE_FULL
+            end
+            -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
+            if self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and not force_fast_refresh then
+                -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REGAL-aware devices ;).
+                -- Here, we're actually interested in handling regional updates (which happen to be PARTIAL by definition), and not 'PARTIAL' updates that actually refresh the whole screen.
+                waveform_mode = self.default_waveform_mode
             end
             if self.update_regions_func then
                 local update_regions = self.update_regions_func()
@@ -434,7 +443,7 @@ function UIManager:run()
             else
                 Screen:refresh(refresh_type, waveform_mode)
             end
-            -- PW2 REAGL refreshes are always full (but without black flash), but we want to keep our black flash timeout working, so don't reset the count on full REAGL refreshes...
+            -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the count on FULL REAGL refreshes...
             if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= WAVEFORM_MODE_KOBO_REGAL then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
