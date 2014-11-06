@@ -90,7 +90,7 @@ function Device:onPowerEvent(ev)
         self.screen:setRotationMode(0)
         Screensaver:show()
         self:prepareSuspend()
-        UIManager:scheduleIn(2, function() self:Suspend() end)
+        UIManager:scheduleIn(10, self.Suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
         -- restore to previous rotation mode
@@ -113,6 +113,8 @@ function Device:Suspend()
 end
 
 function Device:Resume()
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.Suspend)
     self.screen:refresh(1)
     self.screen_saver_mode = false
 end
