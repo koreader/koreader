@@ -201,8 +201,6 @@ function ReaderFont:setFont(face)
         self.ui.document:setFontFace(face)
         -- signal readerrolling to update pos in new height
         self.ui:handleEvent(Event:new("UpdatePos"))
-
-        UIManager:close(msg)
     end
 end
 
