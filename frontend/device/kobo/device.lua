@@ -119,7 +119,7 @@ function Kobo:Resume()
     if self.powerd then
         if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
             self.powerd:setIntensity(math.max(math.min(KOBO_LIGHT_ON_START,100),0))
-        elseif powerd.fl ~= nil then
+        elseif self.powerd.fl ~= nil then
             self.powerd.fl:restore()
         end
     end
