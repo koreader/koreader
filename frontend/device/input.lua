@@ -126,6 +126,15 @@ function Input:init()
     self.event_map[10001] = "OutOfSS" -- go out of screen saver
     self.event_map[10020] = "Charging"
     self.event_map[10021] = "NotCharging"
+
+    -- user custom event map
+    local ok, custom_event_map = pcall(dofile, "custom.event.map.lua")
+    if ok then
+        DEBUG("custom event map", custom_event_map)
+        for key, value in pairs(custom_event_map) do
+            self.event_map[key] = value
+        end
+    end
 end
 
 --[[
