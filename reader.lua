@@ -17,8 +17,6 @@ end
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")
-local util = require("ffi/util")
-
 -- read settings and check for language override
 -- has to be done before requiring other files because
 -- they might call gettext on load
@@ -27,31 +25,6 @@ local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
 end
-
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
-local Device = require("device")
-local Screen = require("device").screen
-local input = require("ffi/input")
-local DEBUG = require("dbg")
-
-local Profiler = nil
-
-local function exitReader()
-    local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
-
-    G_reader_settings:close()
-
-    -- Close lipc handles
-    ReaderActivityIndicator:coda()
-
-    -- shutdown hardware abstraction
-    Device:exit()
-
-    if Profiler then Profiler.stop() end
-    os.exit(0)
-end
-
 
 -- option parsing:
 local longopts = {
@@ -78,6 +51,11 @@ local function showusage()
     return
 end
 
+-- should check DEBUG option in arg and turn on DEBUG before loading other
+-- modules, otherwise DEBUG in some modules may not be printed.
+local DEBUG = require("dbg")
+
+local Profiler = nil
 local ARGV = arg
 local argidx = 1
 while argidx <= #ARGV do
@@ -103,6 +81,12 @@ while argidx <= #ARGV do
         break
     end
 end
+
+local lfs = require("libs/libkoreader-lfs")
+local UIManager = require("ui/uimanager")
+local Device = require("device")
+local Screen = require("device").screen
+local Font = require("ui/font")
 
 -- read some global reader setting here:
 -- font
@@ -158,6 +142,21 @@ elseif last_file then
     UIManager:run()
 else
     return showusage()
+end
+
+local function exitReader()
+    local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+
+    G_reader_settings:close()
+
+    -- Close lipc handles
+    ReaderActivityIndicator:coda()
+
+    -- shutdown hardware abstraction
+    Device:exit()
+
+    if Profiler then Profiler.stop() end
+    os.exit(0)
 end
 
 exitReader()
