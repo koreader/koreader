@@ -140,6 +140,10 @@ function FileManager:init()
         menu = self.menu
     })
 
+    if Device:hasKeys() then
+        self.key_events.Close = { {"Home"}, doc = "close filemanager" }
+    end
+
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
