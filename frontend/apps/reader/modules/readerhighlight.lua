@@ -66,40 +66,44 @@ end
 function ReaderHighlight:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
     table.insert(tab_item_table.typeset, {
-        text = _("Set highlight drawer "),
+        text = _("Highlight"),
         sub_item_table = self:genHighlightDrawerMenu(),
     })
 end
 
+local highlight_style = {
+    lighten = _("Lighten"),
+    underscore = _("Underscore"),
+    invert = _("Invert"),
+}
+
 function ReaderHighlight:genHighlightDrawerMenu()
+    local get_highlight_style = function(style)
+        return {
+            text = highlight_style[style],
+            checked_func = function()
+                return self.view.highlight.saved_drawer == style
+            end,
+            enabled_func = function()
+                return not self.view.highlight.disabled
+            end,
+            callback = function()
+                self.view.highlight.saved_drawer = style
+            end
+        }
+    end
     return {
         {
-            text = _("Lighten"),
-            checked_func = function()
-                return self.view.highlight.saved_drawer == "lighten"
+            text_func = function()
+                return self.view.highlight.disabled and _("Enable") or _("Disable")
             end,
             callback = function()
-                self.view.highlight.saved_drawer = "lighten"
+                self.view.highlight.disabled = not self.view.highlight.disabled
             end
         },
-        {
-            text = _("Underscore"),
-            checked_func = function()
-                return self.view.highlight.saved_drawer == "underscore"
-            end,
-            callback = function()
-                self.view.highlight.saved_drawer = "underscore"
-            end
-        },
-        {
-            text = _("Invert"),
-            checked_func = function()
-                return self.view.highlight.saved_drawer == "invert"
-            end,
-            callback = function()
-                self.view.highlight.saved_drawer = "invert"
-            end
-        },
+        get_highlight_style("lighten"),
+        get_highlight_style("underscore"),
+        get_highlight_style("invert"),
     }
 end
 
@@ -218,6 +222,8 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
 end
 
 function ReaderHighlight:onHold(arg, ges)
+    -- disable hold gesture if highlighting is disabled
+    if self.view.highlight.disabled then return true end
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     DEBUG("hold position in page", self.hold_pos)
     if not self.hold_pos then
@@ -462,10 +468,12 @@ end
 
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
+    self.view.highlight.disabled = config:readSetting("highlight_disabled") or false
 end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
+    self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
 end
 
 function ReaderHighlight:onClose()
