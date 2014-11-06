@@ -419,7 +419,7 @@ function UIManager:run()
                 waveform_mode = self.fast_waveform_mode
             end
             -- And the PW2 REAGL trickery (they're always full refreshes, but there's no black flash)
-            -- FIXME: Possibly a bad idea if self.update_regions_func is set and we actually really want a partial update?
+            -- FIXME: Possibly a bad idea if self.update_regions_func is set and we actually really want a partial update? Fallback to default_waveform_mode (or GC16_FAST on Kindle)
             if refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
                 refresh_type = UPDATE_MODE_FULL
             end
