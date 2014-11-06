@@ -67,15 +67,18 @@ end
 local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
-    if mode == "auto" then return end
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
+    -- backup original zoom mode as cropping use "page" zoom mode
+    self.orig_zoom_mode = self.view.zoom_mode
+    if mode == "auto" then
+        self:setCropZoomMode(true)
+        return
+    end
     -- backup original view dimen
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
     -- backup original view bgcolor
     self.orig_view_bgcolor = self.view.outer_page_color
     self.view.outer_page_color = Blitbuffer.gray(0.5) -- gray bgcolor
-    -- backup original zoom mode as cropping use "page" zoom mode
-    self.orig_zoom_mode = self.view.zoom_mode
     -- backup original page scroll
     self.orig_page_scroll = self.view.page_scroll
     self.view.page_scroll = false
@@ -143,16 +146,20 @@ function ReaderCropping:exitPageCrop(confirmed)
     if self.orig_reflow_mode == 1 then
         self.ui:handleEvent(Event:new("RestoreZoomMode"))
     else
-        if confirmed then
-            -- if original zoom mode is not "content", set zoom mode to "contentwidth"
-            self.ui:handleEvent(Event:new("SetZoomMode",
-                self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "contentwidth"))
-            self.ui:handleEvent(Event:new("InitScrollPageStates"))
-        else
-            self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
-        end
+        self:setCropZoomMode(confirmed)
     end
     UIManager.repaint_all = true
+end
+
+function ReaderCropping:setCropZoomMode(confirmed)
+    if confirmed then
+        -- if original zoom mode is not "content", set zoom mode to "contentwidth"
+        self.ui:handleEvent(Event:new("SetZoomMode",
+            self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "contentwidth"))
+        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    else
+        self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
+    end
 end
 
 function ReaderCropping:onReadSettings(config)
