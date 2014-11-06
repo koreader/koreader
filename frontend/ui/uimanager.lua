@@ -426,9 +426,9 @@ function UIManager:run()
             if not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
                 refresh_type = UPDATE_MODE_FULL
             end
-            -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
+            -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
             if self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and not force_fast_refresh then
-                -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REGAL-aware devices ;).
+                -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
                 -- Here, we're actually interested in handling regional updates (which happen to be PARTIAL by definition), and not 'PARTIAL' updates that actually refresh the whole screen.
                 waveform_mode = self.default_waveform_mode
             end
@@ -443,7 +443,7 @@ function UIManager:run()
             else
                 Screen:refresh(refresh_type, waveform_mode)
             end
-            -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the count on FULL REAGL refreshes...
+            -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
             if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= WAVEFORM_MODE_KOBO_REGAL then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
