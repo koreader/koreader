@@ -191,6 +191,16 @@ function UIManager:scheduleIn(seconds, action)
     self:schedule(when, action)
 end
 
+function UIManager:unschedule(action)
+    for i = #self._execution_stack, 1, -1 do
+        local task = self._execution_stack[i]
+        if task.action == action then
+            -- remove from table
+            table.remove(self._execution_stack, i)
+        end
+    end
+end
+
 -- register a widget to be repainted
 function UIManager:setDirty(widget, refresh_type)
     -- "auto": request full refresh
