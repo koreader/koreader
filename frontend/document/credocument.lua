@@ -184,13 +184,15 @@ end
 function CreDocument:getTextFromPositions(pos0, pos1)
     local text_range = self._document:getTextFromPositions(pos0.x, pos0.y, pos1.x, pos1.y)
     DEBUG("CreDocument: get text range", text_range)
-    local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
-    return {
-        text = text_range.text,
-        pos0 = text_range.pos0,
-        pos1 = text_range.pos1,
-        --sboxes = line_boxes,     -- boxes on screen
-    }
+    if text_range then
+        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+        return {
+            text = text_range.text,
+            pos0 = text_range.pos0,
+            pos1 = text_range.pos1,
+            --sboxes = line_boxes,     -- boxes on screen
+        }
+    end
 end
 
 function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
