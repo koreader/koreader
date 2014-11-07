@@ -78,13 +78,13 @@ function Screen:setViewport(viewport)
         self.viewport.w, self.viewport.h)
 end
 
-function Screen:refresh(refresh_type, waveform_mode, x, y, w, h)
+function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
     if self.viewport and x and y then
         -- adapt to viewport
         x = x + self.viewport.x
         y = y + self.viewport.y
     end
-    self.fb:refresh(refresh_type, waveform_mode, x, y, w, h)
+    self.fb:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
 end
 
 function Screen:getSize()
