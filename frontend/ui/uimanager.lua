@@ -107,6 +107,7 @@ function UIManager:init()
         -- Request REGAL waveform mode on devices that support it (Aura & H2O)
         if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
+            -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
             self.wait_for_every_marker = true
         else
             -- See the note in the Kindle code path later, the stock reader might be using AUTO
@@ -148,7 +149,7 @@ function UIManager:init()
         -- Request REAGL waveform mode on devices that support it (PW2, KT2, KV) [FIXME: Is that actually true of the KT2?]
         if Device.model == "KindlePaperWhite2" or Device.model == "KindleBasic" or Device.model == "KindleVoyage" then
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_REAGL
-            -- We need to wait for every update marker when using REAGL waveform modes
+            -- We need to wait for every update marker when using REAGL waveform modes. That mostly means we always use MXCFB_WAIT_FOR_UPDATE_SUBMISSION.
             self.wait_for_every_marker = true
         else
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
@@ -444,14 +445,6 @@ function UIManager:run()
                 -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
                 -- Here, we're actually interested in handling regional updates (which happen to be PARTIAL by definition), and not 'PARTIAL' updates that actually refresh the whole screen.
                 waveform_mode = self.default_waveform_mode
-            end
-            -- If the update is FULL or REAGL, wait for the previous update marker!
-            -- FIXME: Given the previous tests, could be folded into only check for UPDATE_FULL, in which case it can move to framebuffer_linux, and the whole wait_for_* can go away?
-            -- Except the fact that we probably need to wait for submission for partials on Kindle...
-            if refresh_type == UPDATE_MODE_FULL or (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
-                wait_for_marker = true
-            else
-                wait_for_marker = false
             end
             if self.update_regions_func then
                 local update_regions = self.update_regions_func()
