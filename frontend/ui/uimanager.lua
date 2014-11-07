@@ -26,7 +26,7 @@ local WAVEFORM_MODE_REAGL       = 0x8    -- Ghost compensation waveform
 local WAVEFORM_MODE_REAGLD      = 0x9    -- Ghost compensation waveform with dithering
 -- Kindle Basic/Kindle Voyage
 local WAVEFORM_MODE_GL4         = 0xA    -- 2-bit from white transition
--- TODO: Use me in night mode on those devices!
+-- TODO: Use me in night mode on those devices?
 local WAVEFORM_MODE_GL16_INV    = 0xB    -- High fidelity for black transition
 
 local WAVEFORM_MODE_AUTO        = 0x101

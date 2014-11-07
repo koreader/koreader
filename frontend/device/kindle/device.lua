@@ -192,6 +192,7 @@ function KindleVoyage:init()
     Kindle.init(self)
 
     self.input.open("/dev/input/event1")
+    -- TODO: Handle the page turn 'buttons'!
 end
 
 --[[
