@@ -65,7 +65,6 @@ local KindleVoyage = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     display_dpi = 300,
-    -- FIXME!
     touch_dev = "/dev/input/event1",
 }
 
