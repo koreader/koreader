@@ -375,6 +375,9 @@ function OPDSBrowser:updateCatalog(url, baseurl)
     if #menu_table > 0 then
         --DEBUG("menu table", menu_table)
         self:swithItemTable(nil, menu_table)
+        if self.page_num <= 1 then
+            self:onNext()
+        end
         return true
     end
 end
