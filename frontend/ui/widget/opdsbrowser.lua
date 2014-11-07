@@ -611,7 +611,8 @@ end
 function OPDSBrowser:onNext()
     DEBUG("fetch next page catalog")
     local hrefs = self.item_table.hrefs
-    if hrefs and hrefs.next then
+    local page_num = self.page_num
+    while page_num == self.page_num and hrefs and hrefs.next do
         self:appendCatalog(hrefs.next)
     end
     return true
