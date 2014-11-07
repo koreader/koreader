@@ -156,8 +156,8 @@ function KindlePaperWhite2:init()
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
 
     Kindle.init(self)
@@ -165,34 +165,33 @@ function KindlePaperWhite2:init()
     self.input.open("/dev/input/event1")
 end
 
--- FIXME!
 function KindleBasic:init()
     self.screen = require("device/screen"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
 
     Kindle.init(self)
 
+    -- FIXME!
     self.input.open("/dev/input/event0")
 end
 
--- FIXME!
 function KindleVoyage:init()
     self.screen = require("device/screen"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
 
     Kindle.init(self)
 
     self.input.open("/dev/input/event1")
-    -- TODO: Handle the page turn 'buttons'!
+    -- TODO: Handle the page turn 'buttons'! (/dev/input/event2)
 end
 
 --[[
