@@ -7,7 +7,7 @@ local ReaderActivityIndicator = EventListener:new{}
 
 function ReaderActivityIndicator:init()
     local dev_mod = Device.model
-    if dev_mod == "KindlePaperWhite" or dev_mod == "KindlePaperWhite2" or dev_mod == "KindleTouch" then
+    if dev_mod == "KindlePaperWhite" or dev_mod == "KindlePaperWhite2" or dev_mod == "KindleVoyage" or dev_mod == "KindleBasic" or dev_mod == "KindleTouch" then
         require "liblipclua"
         self.lipc_handle = lipc.init("com.github.koreader.activityindicator")
     end

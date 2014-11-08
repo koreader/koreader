@@ -53,6 +53,21 @@ local KindlePaperWhite2 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
+local KindleBasic = Kindle:new{
+    model = "KindleBasic",
+    isTouchDevice = yes,
+    -- FIXME!
+    touch_dev = "/dev/input/event0",
+}
+
+local KindleVoyage = Kindle:new{
+    model = "KindleVoyage",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/event1",
+}
+
 function Kindle2:init()
     self.screen = require("device/screen"):new{device = self}
     self.input = require("device/input"):new{
@@ -140,13 +155,42 @@ function KindlePaperWhite2:init()
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
 
     Kindle.init(self)
 
     self.input.open("/dev/input/event1")
+end
+
+function KindleBasic:init()
+    self.screen = require("device/screen"):new{device = self}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+    }
+
+    Kindle.init(self)
+
+    -- FIXME!
+    self.input.open("/dev/input/event0")
+end
+
+function KindleVoyage:init()
+    self.screen = require("device/screen"):new{device = self}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open("/dev/input/event1")
+    -- TODO: Handle the page turn 'buttons'! (/dev/input/event2)
 end
 
 --[[
@@ -188,6 +232,8 @@ function KindleTouch:exit()
 end
 KindlePaperWhite.exit = KindleTouch.exit
 KindlePaperWhite2.exit = KindleTouch.exit
+KindleBasic.exit = KindleTouch.exit
+KindleVoyage.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -223,6 +269,8 @@ local touch_set = Set { "0F", "11", "10", "12" }
 local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
 local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
                   "60", "F4", "F9", "62", "61", "5F" }
+local kt2_set = Set { "C6" }
+local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -240,6 +288,10 @@ elseif pw_set[kindle_devcode] then
     return KindlePaperWhite
 elseif pw2_set[kindle_devcode] then
     return KindlePaperWhite2
+elseif kt2_set[kindle_devcode] then
+    return KindleBasic
+elseif kv_set[kindle_devcode] then
+    return KindleVoyage
 end
 
 error("unknown Kindle model "..kindle_devcode)
