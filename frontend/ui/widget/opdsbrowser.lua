@@ -375,6 +375,9 @@ function OPDSBrowser:updateCatalog(url, baseurl)
     if #menu_table > 0 then
         --DEBUG("menu table", menu_table)
         self:swithItemTable(nil, menu_table)
+        if self.page_num <= 1 then
+            self:onNext()
+        end
         return true
     end
 end
@@ -611,7 +614,8 @@ end
 function OPDSBrowser:onNext()
     DEBUG("fetch next page catalog")
     local hrefs = self.item_table.hrefs
-    if hrefs and hrefs.next then
+    local page_num = self.page_num
+    while page_num == self.page_num and hrefs and hrefs.next do
         self:appendCatalog(hrefs.next)
     end
     return true
