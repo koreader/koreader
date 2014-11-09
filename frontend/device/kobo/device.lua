@@ -108,9 +108,6 @@ function Kobo:getFirmwareVersion()
 end
 
 function Kobo:Suspend()
-    if KOBO_LIGHT_OFF_ON_SUSPEND then
-        self.powerd:setIntensity(0)
-    end
     os.execute("./suspend.sh")
 end
 
