@@ -103,7 +103,7 @@ end
 local open_last = G_reader_settings:readSetting("open_last")
 -- night mode
 if G_reader_settings:readSetting("night_mode") then
-    Screen.bb:invert()
+    Screen:toggleNightMode()
 end
 
 -- restore kobo frontlight settings

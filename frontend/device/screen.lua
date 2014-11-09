@@ -142,7 +142,7 @@ function Screen:getScreenMode()
 end
 
 function Screen:setRotationMode(mode)
-    self.fb.bb:rotateAbsolute(-90 * (mode - self.native_rotation_mode - self.blitbuffer_rotation_mode))
+    self.bb:rotateAbsolute(-90 * (mode - self.native_rotation_mode - self.blitbuffer_rotation_mode))
     self.cur_rotation_mode = mode
 end
 
@@ -157,6 +157,15 @@ function Screen:setScreenMode(mode)
         elseif self.cur_rotation_mode == 1 or self.cur_rotation_mode == 3 then
             self:setRotationMode((self.cur_rotation_mode + 2) % 4)
         end
+    end
+end
+
+function Screen:toggleNightMode()
+    self.bb:invert()
+    if self.viewport then
+        -- invert and blank out the full framebuffer when we are working on a viewport
+        self.fb.bb:invert()
+        self.fb.bb:fill(Blitbuffer.COLOR_WHITE)
     end
 end
 
