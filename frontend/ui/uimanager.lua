@@ -232,6 +232,12 @@ function UIManager:scheduleIn(seconds, action)
     self:schedule(when, action)
 end
 
+-- unschedule an execution task
+-- in order to unschedule anonymous functions, store a reference
+-- for example:
+-- self.anonymousFunction = function() self:regularFunction() end
+-- UIManager:scheduleIn(10, self.anonymousFunction)
+-- UIManager:unschedule(self.anonymousFunction)
 function UIManager:unschedule(action)
     for i = #self._execution_stack, 1, -1 do
         local task = self._execution_stack[i]
