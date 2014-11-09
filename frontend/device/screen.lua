@@ -160,6 +160,15 @@ function Screen:setScreenMode(mode)
     end
 end
 
+function Screen:toggleNightMode()
+    self.bb:invert()
+    if self.viewport then
+        -- invert and blank out the full framebuffer when we are working on a viewport
+        self.fb.bb:invert()
+        self.fb.bb:fill(Blitbuffer.COLOR_WHITE)
+    end
+end
+
 function Screen:saveCurrentBB()
     if self.saved_bb then self.saved_bb:free() end
     self.saved_bb = self.bb:copy()

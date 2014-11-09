@@ -129,7 +129,7 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return G_reader_settings:readSetting("night_mode") end,
         callback = function()
             local night_mode = G_reader_settings:readSetting("night_mode") or false
-            Screen.bb:invert()
+            Screen:toggleNightMode()
             G_reader_settings:saveSetting("night_mode", not night_mode)
         end
     })
