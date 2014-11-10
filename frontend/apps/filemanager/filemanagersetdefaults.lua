@@ -159,10 +159,10 @@ function SetDefaults:init()
                     callback = function()
                         local fields = {}
                         for m, n in util.orderedPairs(_G[self.defaults_name[i]]) do
-                            fields[m] = {
+                            table.insert(fields, {
                                 text = tostring(m) .. " = " .. tostring(n),
                                 hint = "",
-                            }
+                            })
                         end
                         self.set_dialog = MultiInputDialog:new{
                             title = self.defaults_name[i] .. ":",
