@@ -74,7 +74,7 @@ function Device:outofScreenSaver()
         -- Blitbuffer.
         util.usleep(1500000)
         self.screen:restoreFromSavedBB()
-        self.screen:refresh(0)
+        self.screen:refresh(1)
         self.survive_screen_saver = true
     end
     self.screen_saver_mode = false
@@ -105,7 +105,7 @@ function Device:prepareSuspend()
         -- in no case should the frontlight be turned on in suspend mode
         self.powerd.fl:sleep()
     end
-    self.screen:refresh(0)
+    self.screen:refresh(1)
     self.screen_saver_mode = true
 end
 
