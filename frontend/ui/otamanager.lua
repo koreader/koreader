@@ -77,14 +77,25 @@ function OTAManager:checkUpdate()
         end
         zsync:close()
     end
-    local local_version = io.open("git-rev", "r"):read()
-    local ota_version = nil
-    if ota_package then
-        ota_version = ota_package:match(".-(v%d.-)%.tar")
+    local normalized_version = function(rev)
+        local version = rev:match("(v%d.-)-g"):gsub("[^%d]", "")
+        return tonumber(version)
     end
+    local local_ok, local_version = pcall(function()
+        local rev_file = io.open("git-rev", "r")
+        if rev_file then
+            local rev = rev_file:read()
+            rev_file:close()
+            return normalized_version(rev)
+        end
+    end)
+    local ota_ok, ota_version = pcall(function()
+        return normalized_version(ota_package)
+    end)
     -- return ota package version if package on OTA server has version
     -- larger than the local package version
-    if ota_version and ota_version > local_version then
+    if local_ok and ota_ok and ota_version and local_version and
+        ota_version > local_version then
         return ota_version
     elseif ota_version and ota_version == local_version then
         return 0
