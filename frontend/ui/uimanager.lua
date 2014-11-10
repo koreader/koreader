@@ -43,6 +43,7 @@ local UIManager = {
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
+    regal_always_full = true,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -109,6 +110,13 @@ function UIManager:init()
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
             -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
             self.wait_for_every_marker = true
+            -- The H2O appears to be the odd duck... Nickel uses AUTO for PARTIAL updates instead of asking for REGAL specifically...
+            -- Unfortunately, since we might start before nickel, and it might be doing something tricky w/ MXCFB_SET_WAVEFORM_MODES, try something else...
+            -- Namely, ask for REGAL, but don't switch them to FULL
+            if Device.model == "Kobo_dahlia" then
+                self.regal_always_full = false
+                --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
+            end
         else
             -- See the note in the Kindle code path later, the stock reader might be using AUTO
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GC16
@@ -442,8 +450,8 @@ function UIManager:run()
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
-            -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior (REAGL updates are always FULL, but there's no black flash)
-            if not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
+            -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
+            if self.regal_always_full and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
