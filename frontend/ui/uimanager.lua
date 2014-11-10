@@ -10,7 +10,7 @@ local _ = require("gettext")
 local UPDATE_MODE_PARTIAL       = 0x0
 local UPDATE_MODE_FULL          = 0x1
 
--- NOTE: Those have been confirmed on Kindle devices. Might be completely different on Kobo (except for AUTO)!
+-- Kindle waveform update modes
 local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
 local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
 local WAVEFORM_MODE_GC16        = 0x2    -- High fidelity (flashing)
@@ -29,17 +29,25 @@ local WAVEFORM_MODE_GL4         = 0xA    -- 2-bit from white transition
 -- TODO: Use me in night mode on those devices?
 local WAVEFORM_MODE_GL16_INV    = 0xB    -- High fidelity for black transition
 
-local WAVEFORM_MODE_AUTO        = 0x101
+-- Kobo waveform update modes
+local NTX_WFM_MODE_INIT         = 0x0    -- WAVEFORM_MODE_INIT
+local NTX_WFM_MODE_DU           = 0x1    -- WAVEFORM_MODE_DU
+local NTX_WFM_MODE_GC16         = 0x2    -- WAVEFORM_MODE_GC16
+local NTX_WFM_MODE_GC4          = 0x3    -- WAVEFORM_MODE_GC4
+local NTX_WFM_MODE_A2           = 0x4    -- WAVEFORM_MODE_A2
+local NTX_WFM_MODE_GL16         = 0x5    -- WAVEFORM_MODE_GL16
+local NTX_WFM_MODE_GLR16        = 0x6    -- WAVEFORM_MODE_REAGL
+local NTX_WFM_MODE_GLD16        = 0x7    -- WAVEFORM_MODE_REAGLD
 
--- Kobo's headers suck, so invent something to avoid magic numbers...
-local WAVEFORM_MODE_KOBO_REGAL  = 0x7
+-- Common
+local WAVEFORM_MODE_AUTO        = 0x101
 
 
 -- there is only one instance of this
 local UIManager = {
     default_refresh_type = UPDATE_MODE_PARTIAL,
     default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
-    fast_waveform_mode = WAVEFORM_MODE_A2, -- FIXME: Is this OK on Kobo?
+    fast_waveform_mode = WAVEFORM_MODE_A2,
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
@@ -104,22 +112,21 @@ function UIManager:init()
             Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
         end
         -- Emulate the stock reader's refresh behavior...
-        self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
-        -- Request REGAL waveform mode on devices that support it (Aura & H2O)
+        self.full_refresh_waveform_mode = NTX_WFM_MODE_GC16
+        -- Request REAGLD waveform mode on devices that support it (Aura & H2O)
         if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
+            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GLD16
             -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
             self.wait_for_every_marker = true
-            -- The H2O appears to be the odd duck... Nickel uses AUTO for PARTIAL updates instead of asking for REGAL specifically...
-            -- Unfortunately, since we might start before nickel, and it might be doing something tricky w/ MXCFB_SET_WAVEFORM_MODES, try something else...
-            -- Namely, ask for REGAL, but don't switch them to FULL
+            -- The H2O appears to be the odd duck... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
+            -- For now, try asking for REAGLD, but don't switch them to FULL, since that triggers a black flash on the H2O...
             if Device.model == "Kobo_dahlia" then
                 self.regal_always_full = false
                 --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             end
         else
             -- See the note in the Kindle code path later, the stock reader might be using AUTO
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_GC16
+            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GL16
             self.wait_for_every_marker = false
         end
         -- Let the driver decide what to do with PARTIAL, regional updates...
@@ -451,7 +458,7 @@ function UIManager:run()
                 waveform_mode = self.fast_waveform_mode
             end
             -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
-            if self.regal_always_full and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
+            if self.regal_always_full and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
@@ -472,7 +479,7 @@ function UIManager:run()
                 Screen:refresh(refresh_type, waveform_mode, wait_for_marker)
             end
             -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
-            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= WAVEFORM_MODE_KOBO_REGAL then
+            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
