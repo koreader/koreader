@@ -8,7 +8,7 @@ local _ = require("gettext")
 local DEBUG = require("dbg")
 
 local ReaderScreenshot = InputContainer:new{
-    datetime_name = "screenshots/Screenshot_%Y-%b-%d_%Hh%M.png",
+    datetime_name = "screenshots/Screenshot_%Y-%b-%d_%H%M%S.png",
 }
 
 function ReaderScreenshot:init()
