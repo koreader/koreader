@@ -46,6 +46,7 @@ function FileManager:init()
         path = self.root_path,
         show_parent = self.show_parent,
         show_hidden = show_hidden,
+        width = Screen:getWidth(),
         height = Screen:getHeight() - self.banner:getSize().h,
         is_popout = false,
         is_borderless = true,
