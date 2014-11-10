@@ -54,7 +54,7 @@ local KoboPhoenix = Kobo:new{
     touch_phoenix_protocol = true,
     display_dpi = 212.8,
     -- bezel:
-    viewport = Geom:new{x=6, y=12, w=752, h=1012},
+    viewport = Geom:new{x=0, y=0, w=752, h=1012},
 }
 
 function Kobo:init()
