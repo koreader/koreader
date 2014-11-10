@@ -257,7 +257,7 @@ function DictQuickLookup:update()
         }
     }
     UIManager.repaint_all = true
-    UIManager.full_refresh = true
+    UIManager.partial_refresh = true
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
