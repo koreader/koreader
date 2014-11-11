@@ -280,7 +280,6 @@ function ReaderFooter:onTapFooter(arg, ges)
         h = self.height
     }
     UIManager.update_regions_func = function()
-       DEBUG("update readerfooter region", region)
        return {region}
     end
     UIManager:setDirty(self.view.dialog, "partial")

@@ -2,7 +2,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
 
 --[[
 Button with a big icon image! Designed for touch device
@@ -42,7 +41,6 @@ end
 function IconButton:onTapClickButton()
     self.image.invert = true
     UIManager.update_regions_func = function()
-        DEBUG("update iconbutton region", self[1].dimen)
         return {self[1].dimen}
     end
 
