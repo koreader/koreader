@@ -463,7 +463,7 @@ function UIManager:run()
                 waveform_mode = self.fast_waveform_mode
             end
             -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
-            if self.regal_always_full and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            if self.regal_always_full and not force_partial_refresh and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
