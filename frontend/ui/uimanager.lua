@@ -120,6 +120,10 @@ function UIManager:init()
             self.wait_for_every_marker = true
             -- The H2O appears to be the odd duck... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
             -- For now, try asking for REAGLD, but don't switch them to FULL, since that triggers a black flash on the H2O...
+            -- Strangely enough, if I follow the kernel sources correctly, and they aren't using dirty tricks (like enabling some switches at compile time...),
+            -- PARTIAL, AUTO updates should default to NTX_WFM_MODE_GL16 on the H2O, which isn't REAGL at all, so, err, WTF?
+            -- FIXME: Either live like this, or try switchng to NTX_WFM_MODE_GLR16, which appears to be the right thing for PARTIAL REAGL,
+            -- or simply stop trying to figure it out and go AUTO...
             if Device.model == "Kobo_dahlia" then
                 self.regal_always_full = false
                 --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
