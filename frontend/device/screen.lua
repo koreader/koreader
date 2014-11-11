@@ -148,6 +148,9 @@ end
 
 function Screen:setRotationMode(mode)
     self.bb:rotateAbsolute(-90 * (mode - self.native_rotation_mode - self.blitbuffer_rotation_mode))
+    if self.viewport then
+        self.fb.bb:setRotation(self.bb:getRotation())
+    end
     self.cur_rotation_mode = mode
 end
 
