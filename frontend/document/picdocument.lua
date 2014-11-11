@@ -17,11 +17,11 @@ function PicDocument:init()
     self.info.has_pages = true
     self.info.configurable = false
 
-    self:readMetadata()
+    self:_readMetadata()
 end
 
-function PicDocument:readMetadata()
-    self.info.number_of_pages = 1
+function PicDocument:getUsedBBox(pageno)
+    return { x0 = 0, y0 = 0, x1 = self._document.width, y1 = self._document.height }
 end
 
 function PicDocument:register(registry)
