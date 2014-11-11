@@ -35,6 +35,7 @@ local KindleTouch = Kindle:new{
     model = "KindleTouch",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event3",
+    has_fake_events = true,
 }
 
 local KindlePaperWhite = Kindle:new{
@@ -43,6 +44,7 @@ local KindlePaperWhite = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event0",
+    has_fake_events = true,
 }
 
 local KindlePaperWhite2 = Kindle:new{
@@ -51,6 +53,7 @@ local KindlePaperWhite2 = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event1",
+    has_fake_events = true,
 }
 
 local KindleBasic = Kindle:new{
@@ -58,6 +61,7 @@ local KindleBasic = Kindle:new{
     isTouchDevice = yes,
     -- FIXME!
     touch_dev = "/dev/input/event0",
+    has_fake_events = true,
 }
 
 local KindleVoyage = Kindle:new{
@@ -66,6 +70,7 @@ local KindleVoyage = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
+    has_fake_events = true,
 }
 
 function Kindle2:init()
