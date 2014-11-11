@@ -49,10 +49,6 @@ function Device:init()
         self.powerd = require("device/generic/powerd"):new{device = self}
     end
 
-    if self.has_fake_events then
-        self.input.open("fake_events")
-    end
-
     if self.viewport then
         self.screen:setViewport(self.viewport)
         self.input:registerEventAdjustHook(
