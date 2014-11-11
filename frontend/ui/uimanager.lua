@@ -462,14 +462,14 @@ function UIManager:run()
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
-            -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
-            if self.regal_always_full and not force_partial_refresh and not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            -- If the device is REAGL-aware, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
+            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and self.regal_always_full and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
-            -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
-            if self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and not force_fast_refresh then
+            -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
+            if force_partial_refresh then
                 -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
-                -- Here, we're actually interested in handling regional updates (which happen to be PARTIAL by definition), and not 'PARTIAL' updates that actually refresh the whole screen.
+                -- Here, we're actually interested in handling PARTIAL, regional (be it properly flagged or not) updates, and not the PARTIAL updates from the reader that actually refresh the whole screen (i.e., those between black flashes).
                 waveform_mode = self.default_waveform_mode
             end
             if self.update_regions_func then
