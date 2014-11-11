@@ -4,6 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local GestureRange = require("ui/gesturerange")
+local NetworkMgr = require("ui/networkmgr")
 local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
@@ -100,6 +101,13 @@ function ReaderMenu:setUpdateItemTable()
             require("ui/elements/screen_eink_opt_menu_table"),
             UIManager:getRefreshMenuTable(),
         },
+    })
+    table.insert(self.tab_item_table.setting, {
+        text = _("Network settings"),
+        sub_item_table = {
+            NetworkMgr:getWifiMenuTable(),
+            NetworkMgr:getProxyMenuTable(),
+        }
     })
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
