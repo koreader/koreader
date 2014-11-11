@@ -151,6 +151,8 @@ function TouchMenuBar:init()
     self.icon_widgets = {}
     -- hold icon seperators
     self.icon_seps = {}
+    -- hold all icon buttons
+    self.icon_buttons = {}
     -- the start_seg for first icon_widget should be 0
     -- we asign negative here to offset it in the loop
     local start_seg = -icon_sep_width
@@ -165,6 +167,8 @@ function TouchMenuBar:init()
         table.insert(self.icon_widgets, HorizontalGroup:new{
             spacing, ib, spacing,
         })
+
+        table.insert(self.icon_buttons, ib)
 
         -- we have to use local variable here for closure callback
         local _start_seg = end_seg + icon_sep_width
@@ -228,6 +232,9 @@ function TouchMenuBar:init()
     self.dimen = Geom:new{ w = self.width, h = self.height }
 end
 
+function TouchMenuBar:switchToTab(index)
+    self.icon_buttons[index].callback()
+end
 
 --[[
 TouchMenu widget for hierarchical menus
@@ -371,7 +378,7 @@ function TouchMenu:init()
         self.item_group,
     }
 
-    self:switchMenuTab(1)
+    self.bar:switchToTab(self.last_index or 1)
     self:updateItems()
 end
 
@@ -465,6 +472,9 @@ function TouchMenu:netToggle()
 end
 
 function TouchMenu:switchMenuTab(tab_num)
+    if self.tab_item_table[tab_num].remember ~= false then
+        self.last_index = tab_num
+    end
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end

@@ -38,9 +38,10 @@ function ReaderMenu:init()
         },
         filemanager = {
             icon = "resources/icons/appbar.cabinet.files.png",
+            remember = false,
             callback = function()
-                self.ui:onClose()
                 self:onTapCloseMenu()
+                self.ui:onClose()
                 -- screen orientation is independent for docview and filemanager
                 -- so we need to restore the screen mode for the filemanager
                 local FileManager = require("apps/filemanager/filemanager")
@@ -52,7 +53,9 @@ function ReaderMenu:init()
         },
         home = {
             icon = "resources/icons/appbar.home.png",
+            remember = false,
             callback = function()
+                self:onTapCloseMenu()
                 self.ui:onClose()
                 UIManager:quit()
             end,
@@ -187,6 +190,7 @@ function ReaderMenu:onShowReaderMenu()
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
+            last_index = self.last_tab_index,
             tab_item_table = {
                 self.tab_item_table.navi,
                 self.tab_item_table.typeset,
@@ -225,6 +229,9 @@ function ReaderMenu:onShowReaderMenu()
 end
 
 function ReaderMenu:onCloseReaderMenu()
+    self.last_tab_index = self.menu_container[1].last_index
+    DEBUG("remember menu tab index", self.last_tab_index)
+    self:onSaveSettings()
     UIManager:close(self.menu_container)
     return true
 end
@@ -247,7 +254,12 @@ function ReaderMenu:onSetDimensions(dimen)
     end
 end
 
+function ReaderMenu:onReadSettings(config)
+    self.last_tab_index = config:readSetting("menu_tab_index") or 1
+end
+
 function ReaderMenu:onSaveSettings()
+    self.ui.doc_settings:saveSetting("menu_tab_index", self.last_tab_index)
 end
 
 function ReaderMenu:registerToMainMenu(widget)
