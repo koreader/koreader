@@ -51,7 +51,6 @@ local UIManager = {
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
-    reagl_always_full = true,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -118,22 +117,19 @@ function UIManager:init()
             self.partial_refresh_waveform_mode = NTX_WFM_MODE_GLD16
             -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
             self.wait_for_every_marker = true
-            -- The H2O appears to be the odd duck out... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
-            -- For now, try asking for REAGLD, but don't switch them to FULL, since that triggers a black flash on the H2O...
-            -- Strangely enough, if I follow the kernel sources correctly, and they aren't using dirty tricks (like enabling some switches at compile time...),
-            -- PARTIAL, AUTO updates should default to NTX_WFM_MODE_GL16 on the H2O, which isn't REAGL at all, so, err, WTF?
-            -- FIXME: Either live with it, or try switchng to NTX_WFM_MODE_GLR16, which appears to be the right thing for PARTIAL REAGL,
-            -- or simply stop trying to figure it out and go AUTO...
+            -- NOTE: The H2O appears to be the odd duck out... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
+            -- If we try to ask for FULL REAGLD updates, like on the Aura and the PW2, we get a black flash!
+            -- The driver appears to be using some custom Kobo logic (that they only enable in their producttion build?) altering the behavior of AUTO to favor REAGL modes...
+            -- Long story short: do the same as nickel: use AUTO, and hope for the best...
             if Device.model == "Kobo_dahlia" then
-                self.reagl_always_full = false
-                --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
+                self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             end
         else
             -- See the note in the Kindle code path later, the stock reader might be using AUTO
             self.partial_refresh_waveform_mode = NTX_WFM_MODE_GL16
             self.wait_for_every_marker = false
         end
-        -- Let the driver decide what to do with PARTIAL, regional updates...
+        -- Let the driver decide what to do with PARTIAL UI updates...
         self.default_waveform_mode = WAVEFORM_MODE_AUTO
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
@@ -178,7 +174,7 @@ function UIManager:init()
             -- Only wait for update markers on FULL updates
             self.wait_for_every_marker = false
         end
-        -- Default to GC16_FAST (will be used for PARTIAL, regional updates)
+        -- Default to GC16_FAST (will be used for PARTIAL UI updates)
         self.default_waveform_mode = WAVEFORM_MODE_GC16_FAST
     end
 end
@@ -461,9 +457,12 @@ function UIManager:run()
             end
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
+                -- FIXME: Should we also avoid doing an MXCFB_WAIT_FOR_UPDATE_SUBMISSION for this update?
+                --wait_for_marker = false
             end
-            -- If the device is REAGL-aware, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
-            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and self.reagl_always_full and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            -- If the device is REAGL-aware, we're specifically asking for a REAGL update, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior
+            -- (On most device, REAGL updates are always FULL, but there's no black flash. On devices where this isn't the case [H2O], we're letting the driver do the job by using AUTO).
+            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
