@@ -10,7 +10,7 @@ local _ = require("gettext")
 local UPDATE_MODE_PARTIAL       = 0x0
 local UPDATE_MODE_FULL          = 0x1
 
--- NOTE: Those have been confirmed on Kindle devices. Might be completely different on Kobo (except for AUTO)!
+-- Kindle waveform update modes
 local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
 local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
 local WAVEFORM_MODE_GC16        = 0x2    -- High fidelity (flashing)
@@ -29,20 +29,29 @@ local WAVEFORM_MODE_GL4         = 0xA    -- 2-bit from white transition
 -- TODO: Use me in night mode on those devices?
 local WAVEFORM_MODE_GL16_INV    = 0xB    -- High fidelity for black transition
 
-local WAVEFORM_MODE_AUTO        = 0x101
+-- Kobo waveform update modes
+local NTX_WFM_MODE_INIT         = 0x0    -- WAVEFORM_MODE_INIT
+local NTX_WFM_MODE_DU           = 0x1    -- WAVEFORM_MODE_DU
+local NTX_WFM_MODE_GC16         = 0x2    -- WAVEFORM_MODE_GC16
+local NTX_WFM_MODE_GC4          = 0x3    -- WAVEFORM_MODE_GC4
+local NTX_WFM_MODE_A2           = 0x4    -- WAVEFORM_MODE_A2
+local NTX_WFM_MODE_GL16         = 0x5    -- WAVEFORM_MODE_GL16
+local NTX_WFM_MODE_GLR16        = 0x6    -- WAVEFORM_MODE_REAGL
+local NTX_WFM_MODE_GLD16        = 0x7    -- WAVEFORM_MODE_REAGLD
 
--- Kobo's headers suck, so invent something to avoid magic numbers...
-local WAVEFORM_MODE_KOBO_REGAL  = 0x7
+-- Common
+local WAVEFORM_MODE_AUTO        = 0x101
 
 
 -- there is only one instance of this
 local UIManager = {
     default_refresh_type = UPDATE_MODE_PARTIAL,
     default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
-    fast_waveform_mode = WAVEFORM_MODE_A2, -- FIXME: Is this OK on Kobo?
+    fast_waveform_mode = WAVEFORM_MODE_A2,
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
+    reagl_always_full = true,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -103,15 +112,25 @@ function UIManager:init()
             Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
         end
         -- Emulate the stock reader's refresh behavior...
-        self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
-        -- Request REGAL waveform mode on devices that support it (Aura & H2O)
+        self.full_refresh_waveform_mode = NTX_WFM_MODE_GC16
+        -- Request REAGLD waveform mode on devices that support it (Aura & H2O)
         if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_KOBO_REGAL
+            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GLD16
             -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
             self.wait_for_every_marker = true
+            -- The H2O appears to be the odd duck out... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
+            -- For now, try asking for REAGLD, but don't switch them to FULL, since that triggers a black flash on the H2O...
+            -- Strangely enough, if I follow the kernel sources correctly, and they aren't using dirty tricks (like enabling some switches at compile time...),
+            -- PARTIAL, AUTO updates should default to NTX_WFM_MODE_GL16 on the H2O, which isn't REAGL at all, so, err, WTF?
+            -- FIXME: Either live with it, or try switchng to NTX_WFM_MODE_GLR16, which appears to be the right thing for PARTIAL REAGL,
+            -- or simply stop trying to figure it out and go AUTO...
+            if Device.model == "Kobo_dahlia" then
+                self.reagl_always_full = false
+                --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
+            end
         else
             -- See the note in the Kindle code path later, the stock reader might be using AUTO
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_GC16
+            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GL16
             self.wait_for_every_marker = false
         end
         -- Let the driver decide what to do with PARTIAL, regional updates...
@@ -153,7 +172,8 @@ function UIManager:init()
             self.wait_for_every_marker = true
         else
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
-            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;). I have *no* idea how the driver makes its choice though...
+            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;).
+            -- That said, we *should* be making more or less the same decisions as AUTO on our own, if I followed things correctly...
             --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             -- Only wait for update markers on FULL updates
             self.wait_for_every_marker = false
@@ -442,14 +462,14 @@ function UIManager:run()
             if force_fast_refresh then
                 waveform_mode = self.fast_waveform_mode
             end
-            -- If the device is REAGL-aware, and we're doing a reader refresh (i.e., PARTIAL, but not regional), apply some trickery to match the stock reader's behavior (REAGL updates are always FULL, but there's no black flash)
-            if not self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == WAVEFORM_MODE_KOBO_REGAL) then
+            -- If the device is REAGL-aware, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
+            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and self.reagl_always_full and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
-            -- If we truly asked for a PARTIAL, regional update, it's likely for an UI element, so fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate than the one we use in the reader
-            if self.update_regions_func and refresh_type == UPDATE_MODE_PARTIAL and not force_fast_refresh then
+            -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
+            if force_partial_refresh then
                 -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
-                -- Here, we're actually interested in handling regional updates (which happen to be PARTIAL by definition), and not 'PARTIAL' updates that actually refresh the whole screen.
+                -- Here, we're actually interested in handling PARTIAL, regional (be it properly flagged or not) updates, and not the PARTIAL updates from the reader that actually refresh the whole screen (i.e., those between black flashes).
                 waveform_mode = self.default_waveform_mode
             end
             if self.update_regions_func then
@@ -464,7 +484,7 @@ function UIManager:run()
                 Screen:refresh(refresh_type, waveform_mode, wait_for_marker)
             end
             -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
-            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= WAVEFORM_MODE_KOBO_REGAL then
+            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
                 self.refresh_count = 0
             elseif not force_partial_refresh and not force_full_refresh then
                 self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT

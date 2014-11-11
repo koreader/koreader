@@ -58,6 +58,9 @@ end
 
 function MenuBarItem:invert(invert)
     self[1].invert = invert
+    UIManager.update_regions_func = function()
+        return {self[1].dimen}
+    end
     UIManager:setDirty(self.config, "partial")
 end
 
@@ -104,6 +107,9 @@ function OptionTextItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
+    UIManager.update_regions_func = function()
+        return {self[1].dimen}
+    end
     UIManager:setDirty(self.config, "partial")
     return true
 end
@@ -156,6 +162,9 @@ function OptionIconItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
+    UIManager.update_regions_func = function()
+        return {self[1].dimen}
+    end
     UIManager:setDirty(self.config, "partial")
     return true
 end

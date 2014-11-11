@@ -240,6 +240,12 @@ function ReaderHighlight:onHold(arg, ges)
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
         end
+        --[[
+        UIManager.update_regions_func = function()
+            DEBUG("update ReaderHighlight onHold region", self.selected_word.sbox)
+            return {self.selected_word.sbox}
+        end
+        --]]
         UIManager:setDirty(self.dialog, "partial")
     end
     return true

@@ -145,6 +145,9 @@ function ToggleSwitch:onTapSelect(arg, gev)
     --]]
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args, self.events, self.position)
+    UIManager.update_regions_func = function()
+        return {self.dimen}
+    end
     UIManager:setDirty(self.config, "partial")
     return true
 end
