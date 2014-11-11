@@ -97,6 +97,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if enabled == false then return end
 
     self.item_frame.invert = true
+    UIManager.update_regions_func = function()
+        return {self.dimen}
+    end
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
@@ -114,6 +117,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if enabled == false then return end
 
     self.item_frame.invert = true
+    UIManager.update_regions_func = function()
+        return {self.dimen}
+    end
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
