@@ -1,7 +1,7 @@
 --[[
 A global LRU cache
 ]]--
-require("MD5")
+local md5 = require("MD5")
 local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 
@@ -35,7 +35,7 @@ local cache_path = lfs.currentdir().."/cache/"
 --[[
 -- return a snapshot of disk cached items for subsequent check
 --]]
-function getDiskCache()
+local function getDiskCache()
     local cached = {}
     for key_md5 in lfs.dir(cache_path) do
         local file = cache_path..key_md5

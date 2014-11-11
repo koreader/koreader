@@ -1,7 +1,7 @@
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
-require("MD5")
+local md5 = require("MD5")
 -- lfs
 
 local MyClipping = {
