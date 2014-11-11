@@ -139,7 +139,7 @@ function ReaderRolling:initGesListener()
                     w = Screen:getWidth(),
                     h = Screen:getHeight(),
                 },
-                rate = Screen.eink and 4.0 or nil,
+                rate = Screen.eink and 4.0 or 10.0,
             }
         },
         DoubleTapForward = {
