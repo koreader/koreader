@@ -51,7 +51,7 @@ local UIManager = {
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
-    regal_always_full = true,
+    reagl_always_full = true,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -125,7 +125,7 @@ function UIManager:init()
             -- FIXME: Either live like this, or try switchng to NTX_WFM_MODE_GLR16, which appears to be the right thing for PARTIAL REAGL,
             -- or simply stop trying to figure it out and go AUTO...
             if Device.model == "Kobo_dahlia" then
-                self.regal_always_full = false
+                self.reagl_always_full = false
                 --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             end
         else
@@ -463,7 +463,7 @@ function UIManager:run()
                 waveform_mode = self.fast_waveform_mode
             end
             -- If the device is REAGL-aware, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior if needed (On *some* devices, REAGL updates are always FULL, but there's no black flash)
-            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and self.regal_always_full and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and self.reagl_always_full and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
