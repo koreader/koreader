@@ -80,9 +80,14 @@ end
 
 function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
     if self.viewport and x and y then
-        -- adapt to viewport
-        x = x + self.viewport.x
-        y = y + self.viewport.y
+        -- adapt to viewport, depending on rotation
+        if self.cur_rotation_mode == 0 or self.cur_rotation_mode == 2 then
+            x = x + self.viewport.x
+            y = y + self.viewport.y
+        else
+            x = x + self.viewport.y
+            y = y + self.viewport.x
+        end
     end
     self.fb:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
 end
