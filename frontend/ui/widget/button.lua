@@ -153,6 +153,9 @@ end
 function Button:onTapSelectButton()
     if self.enabled and self.callback then
         self[1].invert = true
+        UIManager.update_regions_func = function()
+            return {self[1].dimen}
+        end
         UIManager:setDirty(self.show_parent, "partial")
         UIManager:scheduleIn(0.1, function()
             self.callback()

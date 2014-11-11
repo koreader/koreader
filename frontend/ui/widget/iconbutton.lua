@@ -43,7 +43,6 @@ function IconButton:onTapClickButton()
     UIManager.update_regions_func = function()
         return {self[1].dimen}
     end
-
     UIManager:setDirty(self.show_parent, "partial")
     -- make sure button reacts before doing callback
     UIManager:scheduleIn(0.1, function()
