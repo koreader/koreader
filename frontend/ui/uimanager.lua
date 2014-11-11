@@ -172,7 +172,8 @@ function UIManager:init()
             self.wait_for_every_marker = true
         else
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
-            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;). I have *no* idea how the driver makes its choice though...
+            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;).
+            -- That said, we *should* be making more or less the same decisions as AUTO on our own, if I followed things correctly...
             --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             -- Only wait for update markers on FULL updates
             self.wait_for_every_marker = false
