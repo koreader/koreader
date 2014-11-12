@@ -66,7 +66,32 @@ function Cache:new(o)
     return o
 end
 
+-- internal: remove reference in cache_order list
+function Cache:_unref(key)
+    for i = #self.cache_order, 1, -1 do
+        if self.cache_order[i] == key then
+            table.remove(self.cache_order, i)
+        end
+    end
+end
+
+-- internal: free cache item
+function Cache:_free(key)
+    if not self.cache[key] then return end
+    self.current_memsize = self.current_memsize - self.cache[key].size
+    self.cache[key]:onFree()
+    self.cache[key] = nil
+end
+
+-- drop an item named via key from the cache
+function Cache:drop(key)
+    self:_unref(key)
+    self:_free(key)
+end
+
 function Cache:insert(key, object)
+    -- make sure that one key only exists once: delete existing
+    self:drop(key)
     -- guarantee that we have enough memory in cache
     if(object.size > self.max_memsize) then
         DEBUG("too much memory claimed for", key)
@@ -76,9 +101,7 @@ function Cache:insert(key, object)
     -- (they are at the end of the cache_order array)
     while self.current_memsize + object.size > self.max_memsize do
         local removed_key = table.remove(self.cache_order)
-        self.current_memsize = self.current_memsize - self.cache[removed_key].size
-        self.cache[removed_key]:onFree()
-        self.cache[removed_key] = nil
+        self:_free(removed_key)
     end
     -- insert new object in front of the LRU order
     table.insert(self.cache_order, 1, key)
@@ -94,11 +117,7 @@ function Cache:check(key, ItemClass)
     if self.cache[key] then
         if self.cache_order[1] ~= key then
             -- put key in front of the LRU list
-            for k, v in ipairs(self.cache_order) do
-                if v == key then
-                    table.remove(self.cache_order, k)
-                end
-            end
+            self:_unref(key)
             table.insert(self.cache_order, 1, key)
         end
         return self.cache[key]
