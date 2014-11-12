@@ -47,7 +47,7 @@ end
 function SetDefaults:ConfirmEdit()
     if not SetDefaults.EditConfirmed then
         UIManager:show(ConfirmBox:new{
-            text = _("Some changes will just work on the next restart. Wrong settings might crash Koreader! Continue?"),
+            text = _("Some changes will just work on the next restart. Wrong settings might crash KOReader! Continue?"),
             ok_callback = function()
                 self.EditConfirmed = true
                 self:init()
@@ -277,7 +277,7 @@ end
 
 function SetDefaults:ConfirmSave()
     UIManager:show(ConfirmBox:new{
-        text = _("Are you sure to save the settings to \"defaults.persistent.lua\"?"),
+        text = _("Are you sure you want to save the settings to \"defaults.persistent.lua\"?"),
         ok_callback = function()
             self:SaveSettings()
         end,
@@ -353,7 +353,7 @@ function SetDefaults:SaveSettings()
         file:write(dpl[i] .. "\n")
     end
     file:close()
-    UIManager:show(InfoMessage:new{text = _("Default settings successfully saved!")})
+    UIManager:show(InfoMessage:new{text = _("Default settings were saved successfully!")})
     settings_changed = false
 end
 return SetDefaults
