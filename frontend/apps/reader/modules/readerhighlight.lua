@@ -120,7 +120,7 @@ function ReaderHighlight:clear()
     else
         self.ui.document:clearSelection()
     end
-    UIManager:setDirty(self.dialog, "partial")
+    UIManager:setDirty(self.dialog, "full")
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
