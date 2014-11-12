@@ -35,7 +35,6 @@ local KindleTouch = Kindle:new{
     model = "KindleTouch",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event3",
-    has_fake_events = true,
 }
 
 local KindlePaperWhite = Kindle:new{
@@ -44,7 +43,6 @@ local KindlePaperWhite = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event0",
-    has_fake_events = true,
 }
 
 local KindlePaperWhite2 = Kindle:new{
@@ -53,7 +51,6 @@ local KindlePaperWhite2 = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event1",
-    has_fake_events = true,
 }
 
 local KindleBasic = Kindle:new{
@@ -61,7 +58,6 @@ local KindleBasic = Kindle:new{
     isTouchDevice = yes,
     -- FIXME!
     touch_dev = "/dev/input/event0",
-    has_fake_events = true,
 }
 
 local KindleVoyage = Kindle:new{
@@ -70,7 +66,6 @@ local KindleVoyage = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
-    has_fake_events = true,
 }
 
 function Kindle2:init()
@@ -138,6 +133,7 @@ function KindleTouch:init()
     -- event1 in KindleTouch is "imx-yoshi Headset" (useless)
     self.input.open("/dev/input/event2") -- Home button
     self.input.open("/dev/input/event3") -- touchscreen
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -153,6 +149,7 @@ function KindlePaperWhite:init()
     Kindle.init(self)
 
     self.input.open("/dev/input/event0")
+    self.input.open("fake_events")
 end
 
 function KindlePaperWhite2:init()
@@ -167,6 +164,7 @@ function KindlePaperWhite2:init()
     Kindle.init(self)
 
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
 end
 
 function KindleBasic:init()
@@ -181,6 +179,7 @@ function KindleBasic:init()
 
     -- FIXME!
     self.input.open("/dev/input/event0")
+    self.input.open("fake_events")
 end
 
 function KindleVoyage:init()
@@ -196,6 +195,7 @@ function KindleVoyage:init()
 
     self.input.open("/dev/input/event1")
     -- TODO: Handle the page turn 'buttons'! (/dev/input/event2)
+    self.input.open("fake_events")
 end
 
 --[[
