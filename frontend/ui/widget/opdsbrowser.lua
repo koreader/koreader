@@ -35,7 +35,7 @@ local CatalogCache = Cache:new{
 
 local OPDSBrowser = Menu:extend{
     opds_servers = {},
-    calibre_name = _("Local Calibre catalog"),
+    calibre_name = _("Local calibre catalog"),
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",

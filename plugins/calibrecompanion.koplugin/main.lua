@@ -114,9 +114,9 @@ function CalibreCompanion:initCalibreMQ(host, port)
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
     end
-    DEBUG("connected to Calibre", host, port)
+    DEBUG("connected to calibre", host, port)
     UIManager:show(InfoMessage:new{
-        text = _("Connected to Calibre server at ") .. host .. ":" .. port,
+        text = _("Connected to calibre server at ") .. host .. ":" .. port,
         timeout = 1,
     })
 end
@@ -147,14 +147,14 @@ function CalibreCompanion:connect()
     else
         DEBUG("cannot connect to calibre")
         UIManager:show(InfoMessage:new{
-            text = _("Cannot connect to Calibre."),
+            text = _("Cannot connect to calibre."),
         })
         return
     end
 end
 
 function CalibreCompanion:disconnect()
-    DEBUG("disconnect from Calibre")
+    DEBUG("disconnect from calibre")
     self.calibre_socket:stop()
     UIManager:removeZMQ(self.calibre_messagequeue)
     self.calibre_socket = nil
