@@ -228,11 +228,16 @@ end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
+    local hash_excerpt = hash.."|"..tostring(rect)
+
+    local tile = Cache:check(hash, TileCacheItem) or Cache:check(hash_excerpt)
+    if tile then return tile end
+
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
     local size = page_size
     -- we prefer to render the full page, if it fits into cache
-    if not Cache:willAccept(size.w * size.h / 2) then
+    if not Cache:willAccept(size.w * size.h + 64) then
         -- whole page won't fit into cache
         DEBUG("rendering only part of the page")
         -- TODO: figure out how to better segment the page
@@ -242,7 +247,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
             return
         end
         -- only render required part
-        hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode).."|"..tostring(rect)
+        hash = hash_excerpt
         size = rect
     end
 
@@ -286,11 +291,8 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
-    local hash_full_page = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
-    if not Cache:check(hash_full_page, TileCacheItem) then
-        DEBUG("hinting page", pageno)
-        self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
-    end
+    DEBUG("hinting page", pageno)
+    self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
 end
 
 --[[
@@ -302,16 +304,7 @@ Draw page content to blitbuffer.
 @rect: visible_area inside document page
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
-    local hash_full_page = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
-    local hash_excerpt = hash_full_page.."|"..tostring(rect)
-    local tile = Cache:check(hash_full_page, TileCacheItem)
-    if not tile then
-        tile = Cache:check(hash_excerpt)
-        if not tile then
-            DEBUG("rendering")
-            tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-        end
-    end
+    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     DEBUG("now painting", tile, rect)
     target:blitFrom(tile.bb,
         x, y,
