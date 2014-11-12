@@ -7,7 +7,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderGoto = InputContainer:new{
-    goto_menu_title = _("Go To"),
+    goto_menu_title = _("Go to"),
     goto_dialog_title = _("Go to Page or Location"),
 }
 

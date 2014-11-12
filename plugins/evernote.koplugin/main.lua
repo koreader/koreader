@@ -149,7 +149,7 @@ function EvernoteExporter:login()
                         end)
 
                         UIManager:show(InfoMessage:new{
-                            text = _("Logging in please wait..."),
+                            text = _("Logging in. Please wait..."),
                             timeout = 1,
                         })
                     end,

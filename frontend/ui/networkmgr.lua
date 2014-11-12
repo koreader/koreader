@@ -56,7 +56,7 @@ end
 
 function NetworkMgr:promptWifiOn()
     UIManager:show(ConfirmBox:new{
-        text = _("Do you want to Turn on Wifi?"),
+        text = _("Do you want to turn on Wifi?"),
         ok_callback = function()
             self:turnOnWifi()
         end,
@@ -65,7 +65,7 @@ end
 
 function NetworkMgr:promptWifiOff()
     UIManager:show(ConfirmBox:new{
-        text = _("Do you want to Turn off Wifi?"),
+        text = _("Do you want to turn off Wifi?"),
         ok_callback = function()
             self:turnOffWifi()
         end,

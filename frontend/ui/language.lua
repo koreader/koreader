@@ -10,7 +10,7 @@ function Language:changeLanguage(lang_locale)
     _.changeLang(lang_locale)
     G_reader_settings:saveSetting("language", lang_locale)
     UIManager:show(InfoMessage:new{
-        text = _("Please restart reader for new language setting to take effect."),
+        text = _("Please restart KOReader for the new language setting to take effect."),
         timeout = 3,
     })
 end

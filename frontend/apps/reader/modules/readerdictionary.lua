@@ -17,7 +17,7 @@ function ReaderDictionary:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Dictionary lookup"),
         tap_input = {
-            title = _("Input word to lookup"),
+            title = _("Enter word to look up"),
             type = "text",
             callback = function(input)
                 self:onLookupWord(input)

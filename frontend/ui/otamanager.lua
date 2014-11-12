@@ -106,7 +106,7 @@ function OTAManager:fetchAndProcessUpdate()
     local ota_version = OTAManager:checkUpdate()
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
-            text = _("Your koreader is updated."),
+            text = _("Your KOReader is up to date."),
         })
     elseif ota_version == nil then
         UIManager:show(InfoMessage:new{
@@ -123,11 +123,11 @@ function OTAManager:fetchAndProcessUpdate()
                 UIManager:scheduleIn(1, function()
                     if OTAManager:zsync() == 0 then
                         UIManager:show(InfoMessage:new{
-                            text = _("Koreader will be updated on next restart."),
+                            text = _("KOReader will be updated on next restart."),
                         })
                     else
                         UIManager:show(ConfirmBox:new{
-                            text = _("Error updating Koreader. Would you like to delete temporary files?"),
+                            text = _("Error updating KOReader. Would you like to delete temporary files?"),
                             ok_callback = function()
                                 os.execute("rm ota/ko*")
                             end,
@@ -191,7 +191,7 @@ function OTAManager:getOTAMenuTable()
         text = _("OTA update"),
         sub_item_table = {
             {
-                text = _("Check update"),
+                text = _("Check for update"),
                 callback = function()
                     if NetworkMgr:getWifiStatus() == false then
                         NetworkMgr:promptWifiOn()
