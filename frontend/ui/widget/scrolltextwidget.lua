@@ -77,6 +77,9 @@ function ScrollTextWidget:onScrollText(arg, ges)
         self.text_widget:scrollUp()
         self:updateScrollBar(self.text_widget)
     end
+    UIManager.update_regions_func = function()
+        return {self.dimen}
+    end
     UIManager:setDirty(self.dialog, "partial")
 end
 
