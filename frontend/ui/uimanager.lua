@@ -125,8 +125,8 @@ function UIManager:init()
                 self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             end
         else
-            -- See the note in the Kindle code path later, the stock reader might be using AUTO
-            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GL16
+            -- Let the driver handle it on those models (asking for NTX_WFM_MODE_GL16 appears to be a very bad idea, #1146)
+            self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             self.wait_for_every_marker = false
         end
         -- Let the driver decide what to do with PARTIAL UI updates...
