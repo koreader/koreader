@@ -81,12 +81,22 @@ end
 function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
     if self.viewport and x and y then
         -- adapt to viewport, depending on rotation
-        if self.cur_rotation_mode == 0 or self.cur_rotation_mode == 2 then
+        if self.cur_rotation_mode == 0 then
+            -- (0,0) is at top left of screen
             x = x + self.viewport.x
             y = y + self.viewport.y
-        else
-            x = x + self.viewport.y
+        elseif self.cur_rotation_mode == 1 then
+            -- (0,0) is at bottom left of screen
+            x = x + (self.fb.bb:getHeight()-self.viewport.h)
             y = y + self.viewport.x
+        elseif self.cur_rotation_mode == 2 then
+            -- (0,0) is at bottom right of screen
+            x = x + (self.fb.bb:getWidth()-self.viewport.w)
+            y = y + (self.fb.bb:getHeight()-self.viewport.h)
+        else
+            -- (0,0) is at top right of screen
+            x = x + self.viewport.y
+            y = y + (self.fb.bb:getWidth()-self.viewport.w)
         end
     end
     self.fb:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
