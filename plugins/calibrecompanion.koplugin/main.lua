@@ -145,9 +145,9 @@ function CalibreCompanion:connect()
             self:setInboxDir(host, port)
         end
     else
-        DEBUG("cannot connect to calibre")
+        DEBUG("cannot connect to calibre server")
         UIManager:show(InfoMessage:new{
-            text = _("Cannot connect to calibre."),
+            text = _("Cannot connect to calibre server."),
         })
         return
     end
