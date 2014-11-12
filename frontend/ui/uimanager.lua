@@ -462,7 +462,7 @@ function UIManager:run()
             end
             -- If the device is REAGL-aware, we're specifically asking for a REAGL update, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior
             -- (On most device, REAGL updates are always FULL, but there's no black flash. On devices where this isn't the case [H2O], we're letting the driver do the job by using AUTO).
-            if not force_partial_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            if not force_partial_refresh and not force_fast_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
                 refresh_type = UPDATE_MODE_FULL
             end
             -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
