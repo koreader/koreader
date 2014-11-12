@@ -100,11 +100,13 @@ function TouchMenuItem:onTapSelect(arg, ges)
         return {self.dimen}
     end
     UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.1, function()
+        self.menu:onMenuSelect(self.item)
+    end)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
         UIManager:setDirty(self.show_parent, "partial")
     end)
-    self.menu:onMenuSelect(self.item)
     return true
 end
 
@@ -120,11 +122,13 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         return {self.dimen}
     end
     UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.1, function()
+        self.menu:onMenuHold(self.item)
+    end)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
         UIManager:setDirty(self.show_parent, "partial")
     end)
-    self.menu:onMenuHold(self.item)
     return true
 end
 
