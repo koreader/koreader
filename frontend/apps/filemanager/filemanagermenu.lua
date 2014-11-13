@@ -2,6 +2,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
+local NetworkMgr = require("ui/networkmgr")
 local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
@@ -123,6 +124,13 @@ function FileManagerMenu:setUpdateItemTable()
             require("ui/elements/screen_dpi_menu_table"),
             UIManager:getRefreshMenuTable(),
         },
+    })
+    table.insert(self.tab_item_table.setting, {
+        text = _("Network settings"),
+        sub_item_table = {
+            NetworkMgr:getWifiMenuTable(),
+            NetworkMgr:getProxyMenuTable(),
+        }
     })
     table.insert(self.tab_item_table.setting, {
         text = _("Night mode"),
