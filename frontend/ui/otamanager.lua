@@ -78,8 +78,8 @@ function OTAManager:checkUpdate()
         zsync:close()
     end
     local normalized_version = function(rev)
-        local version = rev:match("(v%d.-)-g"):gsub("[^%d]", "")
-        return tonumber(version)
+        local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
+        return tonumber(year .. month .. (revision or "0"):format("%.4d"))
     end
     local local_ok, local_version = pcall(function()
         local rev_file = io.open("git-rev", "r")
@@ -96,14 +96,14 @@ function OTAManager:checkUpdate()
     -- larger than the local package version
     if local_ok and ota_ok and ota_version and local_version and
         ota_version > local_version then
-        return ota_version
+        return ota_version, local_version
     elseif ota_version and ota_version == local_version then
         return 0
     end
 end
 
 function OTAManager:fetchAndProcessUpdate()
-    local ota_version = OTAManager:checkUpdate()
+    local ota_version, local_version = OTAManager:checkUpdate()
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
             text = _("Your KOReader is up to date."),
@@ -114,7 +114,9 @@ function OTAManager:fetchAndProcessUpdate()
         })
     elseif ota_version then
         UIManager:show(ConfirmBox:new{
-            text = _("Do you want to update to version ")..ota_version.."?",
+            text = _("Do you want to update?\n") ..
+                    _("Installed version: ") .. local_version .. "\n" ..
+                    _("Available version: ") .. ota_version .. "\n",
             ok_callback = function()
                 UIManager:show(InfoMessage:new{
                     text = _("Downloading may take several minutes..."),
