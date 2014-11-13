@@ -152,7 +152,7 @@ function ReaderMenu:setUpdateItemTable()
         end
     })
 
-    if KOBO_SCREEN_SAVER_LAST_BOOK then
+    if Device:isKobo() and KOBO_SCREEN_SAVER_LAST_BOOK then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
