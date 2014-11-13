@@ -106,9 +106,15 @@ function FileManager:init()
                         text = _("Delete"),
                         callback = function()
                             local path = util.realpath(file)
-                            deleteFile(file)
-                            self:refreshPath()
+                            local ConfirmBox = require("ui/widget/confirmbox")
                             UIManager:close(self.file_dialog)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Are you sure that you want to delete this file?\n") .. file .. ("\nIf you delete a file, it is permanently lost"),
+                                ok_callback = function()
+                                    deleteFile(file)
+                                    self:refreshPath()
+                                end,
+                            })
                         end,
                     },
                 },
@@ -234,7 +240,19 @@ function FileManager:pasteHere(file)
 end
 
 function FileManager:deleteFile(file)
-    util.execute("/bin/rm", "-r", util.realpath(file))
+    local InfoMessage = require("ui/widget/infomessage")
+    local rm = util.execute("/bin/rm", "-r", util.realpath(file))
+    DEBUG("File to remove", util.realpath(file))
+    DEBUG("rm status", rm)
+    if rm == 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("Successfully deleted\n") .. file,
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("An error occurred while trying to delete\n") .. file,
+        })
+    end
 end
 
 local collates = {
@@ -255,7 +273,7 @@ function FileManager:getSortingMenuTable()
     end
     return {
         text_func = function()
-            return _("Sorting: ") .. collates[fm.file_chooser.collate]
+            return _("Sort order: ") .. collates[fm.file_chooser.collate]
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
