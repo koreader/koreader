@@ -54,7 +54,7 @@ local ReaderView = OverlapGroup:new{
     -- dimen for current viewing page
     page_area = Geom:new{},
     -- dimen for area to dim
-    dim_area = Geom:new{w = 0, h = 0},
+    dim_area = nil,
     -- has footer
     footer_visible = nil,
     -- has dogear
@@ -69,7 +69,13 @@ local ReaderView = OverlapGroup:new{
 function ReaderView:init()
     -- fix recalculate from close document pageno
     self.state.page = nil
+    -- fix inherited dim_area for following opened documents
+    self:resetDimArea()
     self:resetLayout()
+end
+
+function ReaderView:resetDimArea()
+    self.dim_area = Geom:new{w = 0, h = 0}
 end
 
 function ReaderView:resetLayout()
