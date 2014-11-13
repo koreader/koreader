@@ -136,15 +136,20 @@ function ReaderPaging:onSaveSettings()
 end
 
 function ReaderPaging:addToMainMenu(tab_item_table)
-    if self.ui.document.info.has_pages then
-        table.insert(tab_item_table.typeset, {
-            text = _("Show page overlap"),
-            checked_func = function() return self.show_overlap_enable end,
-            callback = function()
-                self.show_overlap_enable = not self.show_overlap_enable
+    table.insert(tab_item_table.typeset, {
+        text = _("Show page overlap"),
+        enabled_func = function()
+            return not self.view.page_scroll and self.zoom_mode ~= "page"
+                    and not self.zoom_mode:find("height")
+        end,
+        checked_func = function() return self.show_overlap_enable end,
+        callback = function()
+            self.show_overlap_enable = not self.show_overlap_enable
+            if not self.show_overlap_enable then
+                self.view:resetDimArea()
             end
-        })
-    end
+        end
+    })
 end
 
 --[[

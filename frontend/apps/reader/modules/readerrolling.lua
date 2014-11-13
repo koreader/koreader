@@ -39,7 +39,7 @@ local ReaderRolling = InputContainer:new{
     doc_height = nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
-    show_overlap_enable = true,
+    show_overlap_enable = nil,
     overlap = 20,
 }
 
@@ -94,6 +94,7 @@ function ReaderRolling:init()
         self.old_doc_height = self.doc_height
         self.old_page = self.ui.document.info.number_of_pages
     end)
+    self.ui.menu:registerToMainMenu(self)
 end
 
 -- This method will  be called in onSetDimensions handler
@@ -168,10 +169,6 @@ function ReaderRolling:initGesListener()
 end
 
 function ReaderRolling:onReadSettings(config)
-    local soe = config:readSetting("show_overlap_enable")
-    if not soe then
-        self.show_overlap_enable = soe
-    end
     local last_xp = config:readSetting("last_xpointer")
     local last_per = config:readSetting("last_percent")
     if last_xp then
@@ -197,6 +194,10 @@ function ReaderRolling:onReadSettings(config)
         end
         self.xpointer = self.ui.document:getXPointer()
     end
+    self.show_overlap_enable = config:readSetting("show_overlap_enable")
+    if self.show_overlap_enable == nil then
+        self.show_overlap_enable = DSHOWOVERLAP
+    end
 end
 
 function ReaderRolling:onSaveSettings()
@@ -204,6 +205,21 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("last_percent", nil)
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
+end
+
+function ReaderRolling:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.typeset, {
+        text = _("Show page overlap"),
+        enabled_func = function() return self.view.view_mode ~= "page" end,
+        checked_func = function() return self.show_overlap_enable end,
+        callback = function()
+            self.show_overlap_enable = not self.show_overlap_enable
+            if not self.show_overlap_enable then
+                self.view:resetDimArea()
+            end
+        end
+    })
 end
 
 function ReaderRolling:getLastPercent()
