@@ -241,8 +241,8 @@ end
 
 function FileManager:deleteFile(file)
     local InfoMessage = require("ui/widget/infomessage")
-    local rm = util.execute("/bin/rm", "-r", util.realpath(file))
     DEBUG("File to remove", util.realpath(file))
+    local rm = util.execute("/bin/rm", "-r", util.realpath(file))
     DEBUG("rm status", rm)
     if rm == 0 then
         UIManager:show(InfoMessage:new{
