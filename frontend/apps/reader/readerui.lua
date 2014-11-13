@@ -318,7 +318,7 @@ function ReaderUI:showReader(file)
     end
     UIManager:show(InfoMessage:new{
         text = _("Opening file ") .. file,
-        timeout = 1,
+        timeout = 0.1,
     })
     UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
 end
