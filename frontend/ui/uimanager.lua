@@ -467,7 +467,7 @@ function UIManager:repaint()
         -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
         if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
             self.refresh_count = 0
-        elseif not force_partial_refresh and not force_full_refresh then
+        elseif not force_partial_refresh and not force_full_refresh and not self.update_regions_func then
             self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
         end
         self.update_regions_func = nil
