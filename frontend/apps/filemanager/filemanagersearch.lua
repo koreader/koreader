@@ -72,7 +72,7 @@ function Search:getCalibre()
         DEBUG("search Calibre database")
         self.metafile_1 = findcalibre("/mnt")
         if not self.metafile_1 then
-          self.error = "SEARCH_LIBRARY_PATH in DEFAULTS.LUA is not set!"
+          self.error = _("SEARCH_LIBRARY_PATH should be defined in DEFAULTS.LUA.")
         else
           settings_changed = true
         end
@@ -82,7 +82,7 @@ function Search:getCalibre()
         end
         if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
             if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
-                self.error = SEARCH_LIBRARY_PATH .. calibre .. " not found!"
+                self.error = SEARCH_LIBRARY_PATH .. calibre .. " " .. _("not found.")
                 DEBUG(self.error)
             else
                 self.metafile_1 = SEARCH_LIBRARY_PATH .. "." .. calibre
@@ -207,7 +207,7 @@ function Search:ShowSearch()
         UIManager:show(self.search_dialog)
     else
         if self.error then
-            UIManager:show(InfoMessage:new{text = self.error .. _( " A search for a " .. calibre .. " file was not successful!"),})
+            UIManager:show(InfoMessage:new{text = self.error .. ("\n") .. _( "Unable to find a calibre metadata file."),})
         end
     end
 
