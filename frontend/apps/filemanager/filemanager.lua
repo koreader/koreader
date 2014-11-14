@@ -247,6 +247,7 @@ function FileManager:deleteFile(file)
     if rm == 0 then
         UIManager:show(InfoMessage:new{
             text = _("Successfully deleted\n") .. file,
+            timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
