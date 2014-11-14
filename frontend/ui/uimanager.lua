@@ -430,7 +430,7 @@ function UIManager:repaint()
     if dirty then
         if force_partial_refresh or force_fast_refresh then
             refresh_type = UPDATE_MODE_PARTIAL
-        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+        elseif force_full_refresh or (self.refresh_count == self.FULL_REFRESH_COUNT - 1 and not self.update_regions_func) then
             refresh_type = UPDATE_MODE_FULL
         end
         -- Handle the waveform mode selection...
