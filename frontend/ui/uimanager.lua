@@ -63,6 +63,8 @@ local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
     refresh_count = 0,
+    -- only update specific regions of the screen
+    update_regions_func = nil,
 
     event_handlers = nil,
 
@@ -470,8 +472,8 @@ function UIManager:repaint()
         elseif not force_partial_refresh and not force_full_refresh and not self.update_regions_func then
             self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
         end
-        self.update_regions_func = nil
     end
+    self.update_regions_func = nil
 end
 
 -- this is the main loop of the UI controller
