@@ -274,7 +274,7 @@ local touch_set = Set { "0F", "11", "10", "12" }
 local pw_set = Set { "24", "1B", "1D", "1F", "1C", "20" }
 local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
                   "60", "F4", "F9", "62", "61", "5F" }
-local kt2_set = Set { "C6" }
+local kt2_set = Set { "C6", "DD" }
 local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 
 if k2_set[kindle_devcode] then
