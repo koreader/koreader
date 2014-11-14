@@ -373,6 +373,104 @@ function UIManager:checkTasks()
     return wait_until
 end
 
+-- repaint dirty widgets
+function UIManager:repaint()
+    local dirty = false
+    local request_full_refresh = false
+    local force_full_refresh = false
+    local force_partial_refresh = false
+    local force_fast_refresh = false
+    for _, widget in ipairs(self._window_stack) do
+        -- paint if repaint_all is request
+        -- paint also if current widget or any widget underneath is dirty
+        if self.repaint_all or dirty or self._dirty[widget.widget] then
+            widget.widget:paintTo(Screen.bb, widget.x, widget.y)
+
+            if self._dirty[widget.widget] == "auto" then
+                request_full_refresh = true
+            end
+            if self._dirty[widget.widget] == "full" then
+                force_full_refresh = true
+            end
+            if self._dirty[widget.widget] == "partial" then
+                force_partial_refresh = true
+            end
+            if self._dirty[widget.widget] == "fast" then
+                force_fast_refresh = true
+            end
+            -- and remove from list after painting
+            self._dirty[widget.widget] = nil
+            -- trigger repaint
+            dirty = true
+        end
+    end
+
+    if self.full_refresh then
+        dirty = true
+        force_full_refresh = true
+    end
+
+    if self.partial_refresh then
+        dirty = true
+        force_partial_refresh = true
+    end
+
+    self.repaint_all = false
+    self.full_refresh = false
+    self.partial_refresh = false
+
+    local refresh_type = self.default_refresh_type
+    local waveform_mode = self.default_waveform_mode
+    local wait_for_marker = self.wait_for_every_marker
+    if dirty then
+        if force_partial_refresh or force_fast_refresh then
+            refresh_type = UPDATE_MODE_PARTIAL
+        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+            refresh_type = UPDATE_MODE_FULL
+        end
+        -- Handle the waveform mode selection...
+        if refresh_type == UPDATE_MODE_FULL then
+            waveform_mode = self.full_refresh_waveform_mode
+        else
+            waveform_mode = self.partial_refresh_waveform_mode
+        end
+        if force_fast_refresh then
+            waveform_mode = self.fast_waveform_mode
+            -- FIXME: Should we also avoid doing an MXCFB_WAIT_FOR_UPDATE_SUBMISSION for this update?
+            --wait_for_marker = false
+        end
+        -- If the device is REAGL-aware, we're specifically asking for a REAGL update, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior
+        -- (On most device, REAGL updates are always FULL, but there's no black flash. On devices where this isn't the case [H2O], we're letting the driver do the job by using AUTO).
+        if not force_partial_refresh and not force_fast_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
+            refresh_type = UPDATE_MODE_FULL
+        end
+        -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
+        if force_partial_refresh then
+            -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
+            -- Here, we're actually interested in handling PARTIAL, regional (be it properly flagged or not) updates, and not the PARTIAL updates from the reader that actually refresh the whole screen (i.e., those between black flashes).
+            waveform_mode = self.default_waveform_mode
+        end
+        if self.update_regions_func then
+            local update_regions = self.update_regions_func()
+            for _, update_region in ipairs(update_regions) do
+                -- in some rare cases update region has 1 pixel offset
+                Screen:refresh(refresh_type, waveform_mode, wait_for_marker,
+                               update_region.x-1, update_region.y-1,
+                               update_region.w+2, update_region.h+2)
+            end
+        else
+            Screen:refresh(refresh_type, waveform_mode, wait_for_marker)
+        end
+        -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
+        if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
+            self.refresh_count = 0
+        elseif not force_partial_refresh and not force_full_refresh then
+            self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
+        end
+        self.update_regions_func = nil
+    end
+end
+
 -- this is the main loop of the UI controller
 -- it is intended to manage input events and delegate
 -- them to dialogs
@@ -393,102 +491,6 @@ function UIManager:run()
             DEBUG("no dialog left to show")
             self:quit()
             return nil
-        end
-
-        -- repaint dirty widgets
-        local dirty = false
-        local request_full_refresh = false
-        local force_full_refresh = false
-        local force_partial_refresh = false
-        local force_fast_refresh = false
-        for _, widget in ipairs(self._window_stack) do
-            -- paint if repaint_all is request
-            -- paint also if current widget or any widget underneath is dirty
-            if self.repaint_all or dirty or self._dirty[widget.widget] then
-                widget.widget:paintTo(Screen.bb, widget.x, widget.y)
-
-                if self._dirty[widget.widget] == "auto" then
-                    request_full_refresh = true
-                end
-                if self._dirty[widget.widget] == "full" then
-                    force_full_refresh = true
-                end
-                if self._dirty[widget.widget] == "partial" then
-                    force_partial_refresh = true
-                end
-                if self._dirty[widget.widget] == "fast" then
-                    force_fast_refresh = true
-                end
-                -- and remove from list after painting
-                self._dirty[widget.widget] = nil
-                -- trigger repaint
-                dirty = true
-            end
-        end
-
-        if self.full_refresh then
-            dirty = true
-            force_full_refresh = true
-        end
-
-        if self.partial_refresh then
-            dirty = true
-            force_partial_refresh = true
-        end
-
-        self.repaint_all = false
-        self.full_refresh = false
-        self.partial_refresh = false
-
-        local refresh_type = self.default_refresh_type
-        local waveform_mode = self.default_waveform_mode
-        local wait_for_marker = self.wait_for_every_marker
-        if dirty then
-            if force_partial_refresh or force_fast_refresh then
-                refresh_type = UPDATE_MODE_PARTIAL
-            elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-                refresh_type = UPDATE_MODE_FULL
-            end
-            -- Handle the waveform mode selection...
-            if refresh_type == UPDATE_MODE_FULL then
-                waveform_mode = self.full_refresh_waveform_mode
-            else
-                waveform_mode = self.partial_refresh_waveform_mode
-            end
-            if force_fast_refresh then
-                waveform_mode = self.fast_waveform_mode
-                -- FIXME: Should we also avoid doing an MXCFB_WAIT_FOR_UPDATE_SUBMISSION for this update?
-                --wait_for_marker = false
-            end
-            -- If the device is REAGL-aware, we're specifically asking for a REAGL update, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior
-            -- (On most device, REAGL updates are always FULL, but there's no black flash. On devices where this isn't the case [H2O], we're letting the driver do the job by using AUTO).
-            if not force_partial_refresh and not force_fast_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
-                refresh_type = UPDATE_MODE_FULL
-            end
-            -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
-            if force_partial_refresh then
-                -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
-                -- Here, we're actually interested in handling PARTIAL, regional (be it properly flagged or not) updates, and not the PARTIAL updates from the reader that actually refresh the whole screen (i.e., those between black flashes).
-                waveform_mode = self.default_waveform_mode
-            end
-            if self.update_regions_func then
-                local update_regions = self.update_regions_func()
-                for _, update_region in ipairs(update_regions) do
-                    -- in some rare cases update region has 1 pixel offset
-                    Screen:refresh(refresh_type, waveform_mode, wait_for_marker,
-                                   update_region.x-1, update_region.y-1,
-                                   update_region.w+2, update_region.h+2)
-                end
-            else
-                Screen:refresh(refresh_type, waveform_mode, wait_for_marker)
-            end
-            -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
-            if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
-                self.refresh_count = 0
-            elseif not force_partial_refresh and not force_full_refresh then
-                self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
-            end
-            self.update_regions_func = nil
         end
 
         self:checkTasks()
