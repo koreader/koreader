@@ -1,5 +1,6 @@
 local lfs = require("libs/libkoreader-lfs")
 local DocSettings = {}
+local dump = require("dump")
 
 function DocSettings:getHistoryPath(fullpath)
     return "./history/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
@@ -71,49 +72,6 @@ function DocSettings:delSetting(key)
     self.data[key] = nil
 end
 
-function DocSettings:dump(data, max_lv)
-    local out = {}
-    self:_serialize(data, out, 0, max_lv)
-    return table.concat(out)
-end
-
--- simple serialization function, won't do uservalues, functions, loops
-function DocSettings:_serialize(what, outt, indent, max_lv)
-    if not max_lv then
-        max_lv = math.huge
-    end
-
-    if indent > max_lv then
-        return
-    end
-
-    if type(what) == "table" then
-        local didrun = false
-        table.insert(outt, "{")
-        for k, v in pairs(what) do
-            if didrun then
-                table.insert(outt, ",")
-            end
-            table.insert(outt, "\n")
-            table.insert(outt, string.rep("\t", indent+1))
-            table.insert(outt, "[")
-            self:_serialize(k, outt, indent+1, max_lv)
-            table.insert(outt, "] = ")
-            self:_serialize(v, outt, indent+1, max_lv)
-            didrun = true
-        end
-        if didrun then
-            table.insert(outt, "\n")
-            table.insert(outt, string.rep("\t", indent))
-        end
-        table.insert(outt, "}")
-    elseif type(what) == "string" then
-        table.insert(outt, string.format("%q", what))
-    elseif type(what) == "number" or type(what) == "boolean" then
-        table.insert(outt, tostring(what))
-    end
-end
-
 function DocSettings:flush()
     -- write serialized version of the data table into
     --  i) history directory in root directory of koreader
@@ -130,13 +88,12 @@ function DocSettings:flush()
         pcall(table.insert, serials, io.open(self.sidecar_file, "w"))
     end
     os.setlocale('C', 'numeric')
-    local out = {"-- we can read Lua syntax here!\nreturn "}
-    self:_serialize(self.data, out, 0)
-    table.insert(out, "\n")
-    local s_out = table.concat(out)
+    local s_out = dump(self.data)
     for _, f_out in ipairs(serials) do
         if f_out ~= nil then
+            f_out:write("-- we can read Lua syntax here!\nreturn ")
             f_out:write(s_out)
+            f_out:write("\n")
             f_out:close()
         end
     end
