@@ -428,9 +428,9 @@ function UIManager:repaint()
     local waveform_mode = self.default_waveform_mode
     local wait_for_marker = self.wait_for_every_marker
     if dirty then
-        if force_partial_refresh or force_fast_refresh then
+        if force_partial_refresh or force_fast_refresh or self.update_regions_func then
             refresh_type = UPDATE_MODE_PARTIAL
-        elseif force_full_refresh or (self.refresh_count == self.FULL_REFRESH_COUNT - 1 and not self.update_regions_func) then
+        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             refresh_type = UPDATE_MODE_FULL
         end
         -- Handle the waveform mode selection...
