@@ -47,7 +47,7 @@ end
 function SetDefaults:ConfirmEdit()
     if not SetDefaults.EditConfirmed then
         UIManager:show(ConfirmBox:new{
-            text = _("Some changes will just work on the next restart. Wrong settings might crash KOReader! Continue?"),
+            text = _("Some changes will not work until the next restart. Be careful; the wrong settings might crash KOReader!\nAre you sure you want to continue?"),
             ok_callback = function()
                 self.EditConfirmed = true
                 self:init()

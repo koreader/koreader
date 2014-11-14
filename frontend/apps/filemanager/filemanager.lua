@@ -109,7 +109,7 @@ function FileManager:init()
                             local ConfirmBox = require("ui/widget/confirmbox")
                             UIManager:close(self.file_dialog)
                             UIManager:show(ConfirmBox:new{
-                                text = _("Are you sure that you want to delete this file?\n") .. file .. ("\nIf you delete a file, it is permanently lost"),
+                                text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                                 ok_callback = function()
                                     deleteFile(file)
                                     self:refreshPath()
@@ -247,6 +247,7 @@ function FileManager:deleteFile(file)
     if rm == 0 then
         UIManager:show(InfoMessage:new{
             text = _("Successfully deleted\n") .. file,
+            timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
