@@ -69,6 +69,7 @@ local UIManager = {
     _running = true,
     _window_stack = {},
     _execution_stack = {},
+    _execution_stack_dirty = false,
     _dirty = {},
     _zeromqs = {},
 }
@@ -232,6 +233,7 @@ end
 -- schedule an execution task
 function UIManager:schedule(time, action)
     table.insert(self._execution_stack, { time = time, action = action })
+    self._execution_stack_dirty = true
 end
 
 -- schedule task in a certain amount of seconds (fractions allowed) from now
@@ -370,7 +372,8 @@ function UIManager:checkTasks()
             end
         end
     until all_tasks_checked
-    return wait_until
+    self._execution_stack_dirty = false
+    return wait_until, now
 end
 
 -- repaint dirty widgets
@@ -477,26 +480,31 @@ end
 function UIManager:run()
     self._running = true
     while self._running do
-        local now = { util.gettime() }
-        local wait_until = self:checkTasks()
+        local wait_until, now
+        -- run this in a loop, so that paints can trigger events
+        -- that will be honored when calculating the time to wait
+        -- for input events:
+        repeat
+            wait_until, now = self:checkTasks()
 
-        --DEBUG("---------------------------------------------------")
-        --DEBUG("exec stack", self._execution_stack)
-        --DEBUG("window stack", self._window_stack)
-        --DEBUG("dirty stack", self._dirty)
-        --DEBUG("---------------------------------------------------")
+            --DEBUG("---------------------------------------------------")
+            --DEBUG("exec stack", self._execution_stack)
+            --DEBUG("window stack", self._window_stack)
+            --DEBUG("dirty stack", self._dirty)
+            --DEBUG("---------------------------------------------------")
 
-        -- stop when we have no window to show
-        if #self._window_stack == 0 then
-            DEBUG("no dialog left to show")
-            self:quit()
-            return nil
-        end
+            -- stop when we have no window to show
+            if #self._window_stack == 0 then
+                DEBUG("no dialog left to show")
+                self:quit()
+                return nil
+            end
 
-        self:checkTasks()
+            self:repaint()
+        until not self._execution_stack_dirty
 
         -- wait for next event
-        -- note that we will skip that if in the meantime we have tasks that are ready to run
+        -- note that we will skip that if we have tasks that are ready to run
         local input_event = nil
         if not wait_until then
             if #self._zeromqs > 0 then
@@ -509,7 +517,7 @@ function UIManager:run()
                     end
                 end
             else
-                -- no pending task, wait endlessly
+                -- no pending task, wait without timeout
                 input_event = Input:waitEvent()
             end
         elseif wait_until[1] > now[1]
