@@ -1,4 +1,4 @@
-local DocSettings = require("docsettings") -- for dump method
+local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
 
 local Dbg = {
@@ -12,7 +12,7 @@ local function LvDEBUG(lv, ...)
     local line = ""
     for i,v in ipairs({...}) do
         if type(v) == "table" then
-            line = line .. " " .. DocSettings:dump(v, lv)
+            line = line .. " " .. dump(v, lv)
         else
             line = line .. " " .. tostring(v)
         end
