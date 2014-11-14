@@ -95,11 +95,13 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
-    self.item_frame.invert = true
-    UIManager.update_regions_func = function()
-        return {self.dimen}
-    end
-    UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.0, function()
+        self.item_frame.invert = true
+        UIManager.update_regions_func = function()
+            return {self.dimen}
+        end
+        UIManager:setDirty(self.show_parent, "partial")
+    end)
     UIManager:scheduleIn(0.1, function()
         self.menu:onMenuSelect(self.item)
     end)
@@ -117,11 +119,13 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then return end
 
-    self.item_frame.invert = true
-    UIManager.update_regions_func = function()
-        return {self.dimen}
-    end
-    UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.0, function()
+        self.item_frame.invert = true
+        UIManager.update_regions_func = function()
+            return {self.dimen}
+        end
+        UIManager:setDirty(self.show_parent, "partial")
+    end)
     UIManager:scheduleIn(0.1, function()
         self.menu:onMenuHold(self.item)
     end)
@@ -454,7 +458,7 @@ function TouchMenu:updateItems()
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
     self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
     -- FIXME: this is a dirty hack to clear previous menus
-    -- refert to issue #664
+    -- refer to issue #664 (in kindlepdfviewer)
     UIManager.repaint_all = true
 end
 
@@ -533,7 +537,7 @@ function TouchMenu:onMenuSelect(item)
                 callback = item.callback_func()
             end
             if callback then
-                -- put stuff in scheduler so we can See
+                -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
                 UIManager:scheduleIn(0.1, function()
                     self:closeMenu()
