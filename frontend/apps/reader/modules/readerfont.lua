@@ -20,7 +20,16 @@ local ReaderFont = InputContainer:new{
     face_table = nil,
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
+    cur_face_idx = nil,
 }
+
+function ReaderFont:_changeSel(k)
+    if self.cur_face_idx then
+        self.face_table[self.cur_face_idx].checked = false
+    end
+    self.face_table[k].checked = true
+    self.cur_face_idx = k
+end
 
 function ReaderFont:init()
     if Device:hasKeyboard() then
@@ -49,9 +58,13 @@ function ReaderFont:init()
     self.face_table = {}
     local face_list = cre.getFontFaces()
     for k,v in ipairs(face_list) do
+        if v == self.font_face then
+            self.cur_face_idx = k
+        end
         table.insert(self.face_table, {
             text = v,
             callback = function()
+                self:_changeSel(k)
                 self:setFont(v)
             end,
             hold_callback = function()
@@ -101,6 +114,12 @@ function ReaderFont:onReadSettings(config)
     table.insert(self.ui.postInitCallback, function()
         self.ui:handleEvent(Event:new("UpdatePos"))
     end)
+
+    for k,v in ipairs(self.face_table) do
+        if v.text == self.font_face then
+            self:_changeSel(k)
+        end
+    end
 end
 
 function ReaderFont:onShowFontMenu()
