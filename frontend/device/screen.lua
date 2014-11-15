@@ -87,7 +87,7 @@ function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h
             y = y + self.viewport.y
         elseif self.cur_rotation_mode == 1 then
             -- (0,0) is at bottom left of screen
-            x = x + (self.fb.bb:getHeight()-self.viewport.h)
+            x = x + (self.fb.bb:getWidth()-self.viewport.h)
             y = y + self.viewport.x
         elseif self.cur_rotation_mode == 2 then
             -- (0,0) is at bottom right of screen
@@ -96,7 +96,7 @@ function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h
         else
             -- (0,0) is at top right of screen
             x = x + self.viewport.y
-            y = y + (self.fb.bb:getWidth()-self.viewport.w)
+            y = y + (self.fb.bb:getHeight()-self.viewport.w)
         end
     end
     self.fb:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
