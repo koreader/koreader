@@ -11,9 +11,9 @@ local ReaderHyphenation = InputContainer:new{
 
 function ReaderHyphenation:_changeSel(k)
     if self.cur_hyph_idx then
-        self.hyph_table[self.cur_hyph_idx].selected = false
+        self.hyph_table[self.cur_hyph_idx].checked = false
     end
-    self.hyph_table[k].selected = true
+    self.hyph_table[k].checked = true
     self.cur_hyph_idx = k
 end
 
