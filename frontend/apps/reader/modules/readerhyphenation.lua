@@ -32,7 +32,7 @@ function ReaderHyphenation:init()
                     text = _("Change Hyphenation to ")..v,
                 })
                 self:_changeSel(k)
-                cre.setHyphDictionary(v)
+                self.ui.document:setHyphDictionary(v)
                 self.ui.toc:onUpdateToc()
             end
         })
@@ -43,7 +43,7 @@ end
 function ReaderHyphenation:onReadSettings(config)
     local hyph_alg = config:readSetting("hyph_alg")
     if hyph_alg then
-        cre.setHyphDictionary(hyph_alg)
+        self.ui.document:setHyphDictionary(hyph_alg)
     end
     self.hyph_alg = cre.getSelectedHyphDict()
     for k,v in ipairs(self.hyph_table) do
