@@ -313,6 +313,13 @@ function CreDocument:setFontFace(new_font_face)
     end
 end
 
+function CreDocument:setHyphDictionary(new_hyph_dictionary)
+    if new_hyph_dictionary then
+        DEBUG("CreDocument: set hyphenation dictionary", new_hyph_dictionary)
+        self._document:setStringProperty("crengine.hyphenation.directory", new_hyph_dictionary)
+    end
+end
+
 function CreDocument:clearSelection()
     DEBUG("clear selection")
     self._document:clearSelection()
