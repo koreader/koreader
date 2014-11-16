@@ -13,6 +13,7 @@ local Language = require("ui/language")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 
@@ -176,7 +177,11 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Search books"),
         callback = function()
             Search:getCalibre()
-            Search:ShowSearch()
+            if Search.metafile_1 ~= nil then
+                Search:ShowSearch()
+            else -- fallback to filename search if no calibre metadata file
+                FileSearcher:init()
+            end
         end
     })
     -- home tab
