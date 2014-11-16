@@ -384,7 +384,7 @@ end
 -- repaint dirty widgets
 function UIManager:repaint()
     local dirty = false
-    local is_an_auto_refresh = false
+    local request_full_refresh = false
     local force_full_refresh = false
     local force_partial_refresh = false
     local force_fast_refresh = false
@@ -395,8 +395,8 @@ function UIManager:repaint()
             widget.widget:paintTo(Screen.bb, widget.x, widget.y)
 
             if self._dirty[widget.widget] == "auto" then
-                -- Most likely a 'reader' refresh.
-                is_an_auto_refresh = true
+                -- Most likely a 'reader' refresh. 'request' in the sense once we hit our FULL_REFRESH_COUNT ;).
+                request_full_refresh = true
             end
             if self._dirty[widget.widget] == "full" then
                 force_full_refresh = true
