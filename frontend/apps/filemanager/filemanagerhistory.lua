@@ -28,7 +28,7 @@ function FileManagerHistory:onMenuHold(item)
         buttons = {
             {
                 {
-                    text = _("Delete"),
+                    text = _("Remove this item from history"),
                     callback = function()
                         os.remove(history_dir..item.histfile)
                         self._manager:updateItemTable()
