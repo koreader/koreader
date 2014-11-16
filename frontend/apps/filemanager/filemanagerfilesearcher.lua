@@ -54,8 +54,7 @@ end
 function FileSearcher:setSearchResults()
     local ReaderUI = require("apps/reader/readerui")
     local keywords = self.search_value
-    DEBUG("keywords", keywords)
-    DEBUG("self.files", self.files)
+    --DEBUG("self.files", self.files)
     self.results = {}
     if keywords == " " then -- one space to show all files
         self.results = self.files
@@ -72,7 +71,7 @@ function FileSearcher:setSearchResults()
             end
         end
     end
-    DEBUG("self.results", self.results)
+    --DEBUG("self.results", self.results)
     self.keywords = keywords
     self.items = #self.results
 end
