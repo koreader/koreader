@@ -73,8 +73,14 @@ function FileChooser:genItemTableFromPath(path)
     local sorting = nil
     local reverse = self.reverse_collate
     if self.collate == "strcoll" then
-        sorting = function(a, b)
-            return self.strcoll(a.name, b.name) == not reverse
+        if DALPHA_SORT_CASE_INSENSITIVE then
+            sorting = function(a, b)
+                return self.strcoll(string.lower(a.name), string.lower(b.name)) == not reverse
+            end
+        else
+            sorting = function(a, b)
+                return self.strcoll(a.name, b.name) == not reverse
+            end
         end
     elseif self.collate == "access" then
         sorting = function(a, b)
