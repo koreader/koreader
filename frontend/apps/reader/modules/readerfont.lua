@@ -57,6 +57,9 @@ function ReaderFont:init()
             hold_callback = function()
                 self:makeDefault(v)
             end,
+            checked_func = function()
+                return v == self.font_face
+            end
         })
         face_list[k] = {text = v}
     end
