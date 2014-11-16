@@ -142,7 +142,7 @@ function Search:ShowSearch()
     if self.metafile_1 ~= nil then
         local dummy = self.search_value
         self.search_dialog = InputDialog:new{
-            title = _("Search Books"),
+            title = _("Search books"),
             input = self.search_value,
             buttons = {
                 {
