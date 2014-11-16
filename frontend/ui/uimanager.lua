@@ -51,6 +51,7 @@ local UIManager = {
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
+    wait_for_ui_markers = false,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -131,6 +132,8 @@ function UIManager:init()
             -- Let the driver handle it on those models (asking for NTX_WFM_MODE_GL16 appears to be a very bad idea, #1146)
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             self.wait_for_every_marker = false
+            -- NOTE: Let's see if a bit of waiting works around potential timing issues on Kobos when doing *UI* refreshes in fast succession. (Not a concern on Kindle, where we have MXCFB_WAIT_FOR_UPDATE_SUBMISSION).
+            self.wait_for_ui_markers = true
         end
         -- Let the driver decide what to do with PARTIAL UI updates...
         self.default_waveform_mode = WAVEFORM_MODE_AUTO
@@ -430,6 +433,10 @@ function UIManager:repaint()
     if dirty then
         if force_partial_refresh or force_fast_refresh or self.update_regions_func then
             refresh_type = UPDATE_MODE_PARTIAL
+            -- Override wait_for_marker if we need to enable the Kobo timing workaround on UI refreshes
+            if self.wait_for_ui_markers then
+                wait_for_marker = true
+            end
         elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             refresh_type = UPDATE_MODE_FULL
         end
