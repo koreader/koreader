@@ -8,12 +8,12 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local ffi = require("ffi")
 ffi.cdef[[
-int strcoll (char *str1, char *str2);
+int strcoll (const char *str1, const char *str2);
 ]]
 
 -- string sort function respecting LC_COLLATE
 local function strcoll(str1, str2)
-    return ffi.C.strcoll(ffi.cast("char*", str1), ffi.cast("char*", str2)) <= 0
+    return ffi.C.strcoll(str1, str2) < 0
 end
 
 local FileChooser = Menu:extend{
@@ -38,8 +38,10 @@ function FileChooser:init()
         end
         return true
     end
-    -- disable string collating in Kobo devices. See issue koreader/koreader#686
-    if Device:isKobo() then self.strcoll = nil end
+    -- circumvent string collating in Kobo devices. See issue koreader/koreader#686
+    if Device:isKobo() then
+        self.strcoll = function(a, b) return a < b end
+    end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -71,11 +73,9 @@ function FileChooser:genItemTableFromPath(path)
     local sorting = nil
     local reverse = self.reverse_collate
     if self.collate == "strcoll" then
-        sorting = self.strcoll and function(a, b)
-                return self.strcoll(a.name, b.name) == not reverse
-            end or function(a, b)
-                return (a.name < b.name) == not reverse
-            end
+        sorting = function(a, b)
+            return self.strcoll(a.name, b.name) == not reverse
+        end
     elseif self.collate == "access" then
         sorting = function(a, b)
             if reverse then
