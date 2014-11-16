@@ -13,17 +13,16 @@ local function _serialize(what, outt, indent, max_lv, history)
         return
     end
 
-    history = history or {}
-    for up, item in ipairs(history) do
-        if item == what then
-            insert(outt, "nil --[[ LOOP:\n")
-            insert(outt, string.rep("\t", indent - up))
-            insert(outt, "^------- ]]")
-            return
-        end
-    end
-
     if type(what) == "table" then
+        history = history or {}
+        for up, item in ipairs(history) do
+            if item == what then
+                insert(outt, "nil --[[ LOOP:\n")
+                insert(outt, string.rep("\t", indent - up))
+                insert(outt, "^------- ]]")
+                return
+            end
+        end
         local new_history = { what, unpack(history) }
         local didrun = false
         insert(outt, "{")
