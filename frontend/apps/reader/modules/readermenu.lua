@@ -160,7 +160,7 @@ function ReaderMenu:setUpdateItemTable()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
         table.insert(self.tab_item_table.typeset, {
-            text = "Screensaver",
+            text = _("Screensaver"),
             sub_item_table = {
                 {
                     text = _("Use this book's cover as screensaver"),
