@@ -1,7 +1,9 @@
+local AlphaContainer = require("ui/widget/container/alphacontainer")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local ImageWidget = require("ui/widget/imagewidget")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -92,6 +94,12 @@ function ReaderView:resetLayout()
         view = self,
         ui = self.ui,
     }
+    self.arrow = AlphaContainer:new{
+        alpha = 0.6,
+        ImageWidget:new{
+            file = "resources/icons/appbar.control.expand.png",
+        }
+    }
     self[1] = self.dogear
     self[2] = self.footer
     self[3] = self.flipping
@@ -121,12 +129,16 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
-    if self.document.view_mode ~= "page"
-    and self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
-        bb:dimRect(
-            self.dim_area.x, self.dim_area.y,
-            self.dim_area.w, self.dim_area.h
-        )
+    if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+        --DEBUG("dim area", self.dim_area)
+        if self.page_overlap_style == "dim" then
+            bb:dimRect(
+                self.dim_area.x, self.dim_area.y,
+                self.dim_area.w, self.dim_area.h
+            )
+        elseif self.page_overlap_style == "arrow" then
+            self.arrow:paintTo(bb, 0, self.dim_area.h)
+        end
     end
     -- draw saved highlight
     if self.highlight_visible then
@@ -599,6 +611,7 @@ function ReaderView:onReadSettings(config)
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
+    self.page_overlap_style = config:readSetting("page_overlap_style") or "dim"
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -666,6 +679,7 @@ function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("rotation_mode", self.cur_rotation_mode)
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
+    self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
 
 function ReaderView:autoSaveSettings()
@@ -698,6 +712,30 @@ function ReaderView:getRenderModeMenuTable()
             make_mode(_("COLOUR BACKGROUND (show only background)"), 4),
             make_mode(_("COLOUR FOREGROUND (show only foreground)"), 5),
         }
+    }
+end
+
+local page_overlap_styles = {
+    arrow = _("Arrow"),
+    dim = _("Gray out"),
+}
+
+function ReaderView:genOverlapStyleMenu()
+    local view = self
+    local get_overlap_style = function(style)
+        return {
+            text = page_overlap_styles[style],
+            checked_func = function()
+                return view.page_overlap_style == style
+            end,
+            callback = function()
+                view.page_overlap_style = style
+            end
+        }
+    end
+    return {
+        get_overlap_style("arrow"),
+        get_overlap_style("dim"),
     }
 end
 
