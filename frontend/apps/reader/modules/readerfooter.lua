@@ -33,10 +33,6 @@ local ReaderFooter = InputContainer:new{
 }
 
 function ReaderFooter:init()
-    if self.ui.document.info.has_pages then
-        DMINIBAR_NEXT_CHAPTER = false
-    end
-
     self.pageno = self.view.state.page
     self.pages = self.view.document:getPageCount()
 
