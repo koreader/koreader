@@ -430,7 +430,7 @@ end
 
 function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
     DEBUG("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
-    return self._document:findText(pattern, origin, reverse, caseInsensitive)
+    return self._document:findText(pattern, origin, reverse, caseInsensitive and 1 or 0)
 end
 
 function CreDocument:register(registry)

@@ -934,11 +934,7 @@ end
 transform position in native page to reflowed page
 ]]--
 function KoptInterface:nativeToReflowPosTransform(doc, pageno, pos)
-    local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = Cache:check(kctx_hash)
-    local kc = self:waitForContext(cached.kctx)
+    local kc = self:getCachedContext(doc, pageno)
     --DEBUG("transform native pos", pos)
     local rpos = {}
     rpos.x, rpos.y = kc:nativeToReflowPosTransform(pos.x, pos.y)
@@ -950,11 +946,7 @@ end
 transform position in reflowed page to native page
 ]]--
 function KoptInterface:reflowToNativePosTransform(doc, pageno, abs_pos, rel_pos)
-    local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = Cache:check(kctx_hash)
-    local kc = self:waitForContext(cached.kctx)
+    local kc = self:getCachedContext(doc, pageno)
     --kc:setDebug()
     --DEBUG("transform reflowed pos", abs_pos, rel_pos)
     local npos = {}
@@ -1070,6 +1062,111 @@ function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
         return res_rect
     else
         return rect
+    end
+end
+
+local function all_matches(boxes, pattern, caseInsensitive)
+    -- pattern list of single words
+    local plist = {}
+    -- split utf-8 characters
+    for words in pattern:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
+        -- split space seperated words
+        for word in words:gmatch("[^%s]+") do
+            table.insert(plist, caseInsensitive and word:lower() or word)
+        end
+    end
+    -- return mached word indices from index i, j
+    local function match(i, j)
+        local pindex = 1
+        local matched_indices = {}
+        while true do
+            if #boxes[i] < j then
+                j = j - #boxes[i]
+                i = i + 1
+            end
+            if i > #boxes then break end
+            local box = boxes[i][j]
+            local word = caseInsensitive and box.word:lower() or box.word
+            if word:match(plist[pindex]) then
+                table.insert(matched_indices, {i, j})
+                if pindex == #plist then
+                    return matched_indices
+                else
+                    j = j + 1
+                    pindex = pindex + 1
+                end
+            else
+                break
+            end
+        end
+    end
+    return coroutine.wrap(function()
+        for i, line in ipairs(boxes) do
+            for j, box in ipairs(line) do
+                local matches = match(i, j)
+                if matches then
+                    coroutine.yield(matches)
+                end
+            end
+        end
+    end)
+end
+
+function KoptInterface:findAllMatches(doc, pattern, caseInsensitive, page)
+    local text_boxes = doc:getPageTextBoxes(page)
+    if not text_boxes then return end
+    --DEBUG("boxes", text_boxes)
+    local matches = {}
+    for indices in all_matches(text_boxes or {}, pattern, caseInsensitive) do
+        for _, index in ipairs(indices) do
+            local i, j = unpack(index)
+            local word = text_boxes[i][j]
+            local word_box = {
+                x = word.x0, y = word.y0,
+                w = word.x1 - word.x0,
+                h = word.y1 - word.y0,
+            }
+            -- rects will be transformed to reflowed page rects if needed
+            table.insert(matches, self:nativeToPageRectTransform(doc, page, word_box))
+        end
+    end
+    return matches
+end
+
+function KoptInterface:findText(doc, pattern, origin, reverse, caseInsensitive, pageno)
+    DEBUG("Koptinterface: find text", pattern, origin, reverse, caseInsensitive, pageno)
+    local last_pageno = doc:getPageCount()
+    local start_page, end_page
+    if reverse == 1 then
+        -- backward
+        if origin == 0 then
+            -- from end of current page to first page
+            start_page, end_page = pageno, 1
+        elseif origin == -1 then
+            -- from the last page to end of current page
+            start_page, end_page = last_pageno, pageno + 1
+        elseif origin == 1 then
+            start_page, end_page = pageno - 1, 1
+        end
+    else
+        -- forward
+        if origin == 0 then
+            -- from current page to the last page
+            start_page, end_page = pageno, last_pageno
+        elseif origin == -1 then
+            -- from the first page to current page
+            start_page, end_page = 1, pageno - 1
+        elseif origin == 1 then
+            -- from next page to the last page
+            start_page, end_page = pageno + 1, last_pageno
+        end
+    end
+    for i = start_page, end_page, (reverse == 1) and -1 or 1 do
+        local matches = self:findAllMatches(doc, pattern, caseInsensitive, i)
+        if #matches > 0 then
+            matches.page = i
+            return matches
+        end
     end
 end
 
