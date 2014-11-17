@@ -105,6 +105,10 @@ function DjvuDocument:getCoverPageImage()
     return self.koptinterface:getCoverPageImage(self)
 end
 
+function DjvuDocument:findText(pattern, origin, reverse, caseInsensitive, page)
+    return self.koptinterface:findText(self, pattern, origin, reverse, caseInsensitive, page)
+end
+
 function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
 end

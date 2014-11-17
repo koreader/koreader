@@ -8,7 +8,7 @@ local _ = require("gettext")
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
-    case_insensitive = 1, -- default to case insensitive
+    case_insensitive = true, -- default to case insensitive
 }
 
 function ReaderSearch:init()
@@ -33,7 +33,12 @@ function ReaderSearch:onShowSearchDialog(text)
         return function()
             local res = search_func(self, text, param)
             if res then
-                self.ui.link:onGotoLink(res[1].start)
+                if self.ui.document.info.has_pages then
+                    self.ui.link:onGotoLink({page = res.page - 1})
+                    self.view.highlight.temp[res.page] = res
+                else
+                    self.ui.link:onGotoLink(res[1].start)
+                end
             end
         end
     end
@@ -73,7 +78,8 @@ end
 function ReaderSearch:search(pattern, origin)
     local direction = self.direction
     local case = self.case_insensitive
-    return self.ui.document:findText(pattern, origin, direction, case)
+    local page = self.view.state.page
+    return self.ui.document:findText(pattern, origin, direction, case, page)
 end
 
 function ReaderSearch:searchFromStart(pattern)
