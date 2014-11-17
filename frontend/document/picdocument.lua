@@ -25,8 +25,10 @@ function PicDocument:getUsedBBox(pageno)
 end
 
 function PicDocument:register(registry)
-    registry:addProvider("jpeg", "application/jpeg", self)
-    registry:addProvider("jpg", "application/jpeg", self)
+    registry:addProvider("jpeg", "image/jpeg", self)
+    registry:addProvider("jpg", "image/jpeg", self)
+    registry:addProvider("png", "image/png", self)
+    registry:addProvider("gif", "image/gif", self)
 end
 
 return PicDocument
