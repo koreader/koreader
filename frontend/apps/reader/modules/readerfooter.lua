@@ -65,8 +65,10 @@ function ReaderFooter:init()
     if self.ui.toc and DMINIBAR_PROGRESS_MARKER then
         local max_level = self.ui.toc:getMaxDepth()
         for i = 1, max_level do
-            ticks = self.ui.toc:getTocTicks(i)
-            if #ticks < self.max_ticks then break end
+            ticks_backup = self.ui.toc:getTocTicks(i)
+            if i == 1 then ticks = ticks_backup end
+            if #ticks_backup >= self.max_ticks then break end
+            ticks = ticks_backup
         end
     end
     self.progress_bar = ProgressWidget:new{
