@@ -136,19 +136,32 @@ function ReaderPaging:onSaveSettings()
 end
 
 function ReaderPaging:addToMainMenu(tab_item_table)
+    -- FIXME: repeated code with page overlap menu for readerrolling
+    -- needs to keep only one copy of the logic as for the DRY principle.
+    -- The difference between the two menus is only the enabled func.
+    local page_overlap_menu = {
+        {
+            text_func = function()
+                return self.show_overlap_enable and _("Disable") or _("Enable")
+            end,
+            callback = function()
+                self.show_overlap_enable = not self.show_overlap_enable
+                if not self.show_overlap_enable then
+                    self.view:resetDimArea()
+                end
+            end
+        },
+    }
+    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
+        table.insert(page_overlap_menu, menu_entry)
+    end
     table.insert(tab_item_table.typeset, {
-        text = _("Show page overlap"),
+        text = _("Page overlap"),
         enabled_func = function()
             return not self.view.page_scroll and self.zoom_mode ~= "page"
                     and not self.zoom_mode:find("height")
         end,
-        checked_func = function() return self.show_overlap_enable end,
-        callback = function()
-            self.show_overlap_enable = not self.show_overlap_enable
-            if not self.show_overlap_enable then
-                self.view:resetDimArea()
-            end
-        end
+        sub_item_table = page_overlap_menu,
     })
 end
 
