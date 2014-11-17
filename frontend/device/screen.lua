@@ -80,23 +80,52 @@ end
 
 function Screen:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
     if self.viewport and x and y then
-        -- adapt to viewport, depending on rotation
+        --[[
+            we need to adapt the coordinates when we have a viewport.
+            this adaptation depends on the rotation:
+
+          0,0               fb.w
+            +---+---------------------------+---+
+            |   |v.y                     v.y|   |
+            |v.x|                           |vx2|
+            +---+---------------------------+---+
+            |   |           v.w             |   |
+            |   |                           |   |
+            |   |                           |   |
+            |   |v.h     (viewport)         |   |
+            |   |                           |   | fb.h
+            |   |                           |   |
+            |   |                           |   |
+            |   |                           |   |
+            +---+---------------------------+---+
+            |v.x|                           |vx2|
+            |   |vy2                     vy2|   |
+            +---+---------------------------+---+
+
+            The viewport offset v.y/v.x only applies when rotation is 0 degrees.
+            For other rotations (0,0 is in one of the other edges), we need to
+            recalculate the offsets.
+        --]]
+
+        local vx2 = self.screen_size.w - (self.viewport.x + self.viewport.w)
+        local vy2 = self.screen_size.h - (self.viewport.y + self.viewport.h)
+
         if self.cur_rotation_mode == 0 then
             -- (0,0) is at top left of screen
             x = x + self.viewport.x
             y = y + self.viewport.y
         elseif self.cur_rotation_mode == 1 then
             -- (0,0) is at bottom left of screen
-            x = x + (self.fb.bb:getWidth()-self.viewport.h)
+            x = x + vy2
             y = y + self.viewport.x
         elseif self.cur_rotation_mode == 2 then
             -- (0,0) is at bottom right of screen
-            x = x + (self.fb.bb:getWidth()-self.viewport.w)
-            y = y + (self.fb.bb:getHeight()-self.viewport.h)
+            x = x + vx2
+            y = y + vy2
         else
             -- (0,0) is at top right of screen
             x = x + self.viewport.y
-            y = y + (self.fb.bb:getHeight()-self.viewport.w)
+            y = y + vx2
         end
     end
     self.fb:refresh(refresh_type, waveform_mode, wait_for_marker, x, y, w, h)
