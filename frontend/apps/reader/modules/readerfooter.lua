@@ -64,7 +64,7 @@ function ReaderFooter:init()
     local ticks = {}
     if self.ui.toc and DMINIBAR_PROGRESS_MARKER then
         local max_level = self.ui.toc:getMaxDepth()
-        for i = self.toc_level, -max_level, -1 do
+        for i = 1, max_level do
             ticks = self.ui.toc:getTocTicks(i)
             if #ticks < self.max_ticks then break end
         end
