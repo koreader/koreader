@@ -53,7 +53,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromStart("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(8, pageno)
+                assert.are.equal(7, pageno)
             end
             for i = 1, 5, 1 do
                 rolling:gotoPage(i)
@@ -62,12 +62,12 @@ describe("Readersearch module", function()
             end
         end)
         it("should find the last occurrence", function()
-            for i = 100, 200, 10 do
+            for i = 100, 180, 10 do
                 rolling:gotoPage(i)
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(208, pageno)
+                assert.are.equal(198, pageno)
             end
             for i = 230, 235, 1 do
                 rolling:gotoPage(i)
