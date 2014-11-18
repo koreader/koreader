@@ -39,11 +39,13 @@ function IconButton:initGesListener()
 end
 
 function IconButton:onTapClickButton()
-    self.image.invert = true
-    UIManager.update_regions_func = function()
-        return {self[1].dimen}
-    end
-    UIManager:setDirty(self.show_parent, "partial")
+    UIManager:scheduleIn(0.0, function()
+        self.image.invert = true
+        UIManager.update_regions_func = function()
+            return {self[1].dimen}
+        end
+        UIManager:setDirty(self.show_parent, "partial")
+    end)
     -- make sure button reacts before doing callback
     UIManager:scheduleIn(0.1, function()
         self.callback()

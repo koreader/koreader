@@ -51,6 +51,7 @@ local UIManager = {
     full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
     wait_for_every_marker = false,
+    wait_for_ui_markers = false,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -63,6 +64,8 @@ local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
     refresh_count = 0,
+    -- only update specific regions of the screen
+    update_regions_func = nil,
 
     event_handlers = nil,
 
@@ -129,6 +132,8 @@ function UIManager:init()
             -- Let the driver handle it on those models (asking for NTX_WFM_MODE_GL16 appears to be a very bad idea, #1146)
             self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
             self.wait_for_every_marker = false
+            -- NOTE: Let's see if a bit of waiting works around potential timing issues on Kobos when doing *UI* refreshes in fast succession. (Not a concern on Kindle, where we have MXCFB_WAIT_FOR_UPDATE_SUBMISSION).
+            self.wait_for_ui_markers = true
         end
         -- Let the driver decide what to do with PARTIAL UI updates...
         self.default_waveform_mode = WAVEFORM_MODE_AUTO
@@ -390,6 +395,7 @@ function UIManager:repaint()
             widget.widget:paintTo(Screen.bb, widget.x, widget.y)
 
             if self._dirty[widget.widget] == "auto" then
+                -- Most likely a 'reader' refresh. 'request' in the sense once we hit our FULL_REFRESH_COUNT ;).
                 request_full_refresh = true
             end
             if self._dirty[widget.widget] == "full" then
@@ -426,8 +432,12 @@ function UIManager:repaint()
     local waveform_mode = self.default_waveform_mode
     local wait_for_marker = self.wait_for_every_marker
     if dirty then
-        if force_partial_refresh or force_fast_refresh then
+        if force_partial_refresh or force_fast_refresh or self.update_regions_func then
             refresh_type = UPDATE_MODE_PARTIAL
+            -- Override wait_for_marker if we need to enable the Kobo timing workaround on UI refreshes
+            if self.wait_for_ui_markers then
+                wait_for_marker = true
+            end
         elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             refresh_type = UPDATE_MODE_FULL
         end
@@ -467,11 +477,11 @@ function UIManager:repaint()
         -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
         if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
             self.refresh_count = 0
-        elseif not force_partial_refresh and not force_full_refresh then
+        elseif not force_partial_refresh and not force_full_refresh and not self.update_regions_func then
             self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
         end
-        self.update_regions_func = nil
     end
+    self.update_regions_func = nil
 end
 
 -- this is the main loop of the UI controller
