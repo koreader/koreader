@@ -22,7 +22,7 @@ local ReaderFooter = InputContainer:new{
     pageno = nil,
     pages = nil,
     toc_level = 0,
-    max_ticks = 50,
+    max_ticks = 100,
     progress_percentage = 0.0,
     progress_text = nil,
     text_font_face = "ffont",
@@ -61,19 +61,23 @@ function ReaderFooter:init()
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     local text_width = self.progress_text:getSize().w
-    local ticks = {}
+    local ticks_candidates = {}
     if self.ui.toc and DMINIBAR_PROGRESS_MARKER then
         local max_level = self.ui.toc:getMaxDepth()
-        for i = self.toc_level, -max_level, -1 do
-            ticks = self.ui.toc:getTocTicks(i)
-            if #ticks < self.max_ticks then break end
+        for i = 0, -max_level, -1 do
+            local ticks = self.ui.toc:getTocTicks(i)
+            if #ticks < self.max_ticks then
+                table.insert(ticks_candidates, ticks)
+            end
         end
+        -- find the finest toc ticks by sorting out the largest one
+        table.sort(ticks_candidates, function(a, b) return #a > #b end)
     end
     self.progress_bar = ProgressWidget:new{
         width = math.floor(Screen:getWidth() - text_width - self.padding),
         height = self.bar_height,
         percentage = self.progress_percentage,
-        ticks = ticks,
+        ticks = ticks_candidates[1] or {},
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         last = self.pages,
     }
