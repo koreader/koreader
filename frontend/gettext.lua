@@ -77,6 +77,8 @@ function GetText_mt.__index.changeLang(new_lang)
                     s = line:match("^%s*\"(.*)\"%s*$")
                 end
                 if what and s then
+                    -- unescape \n or msgid won't match
+                    s = s:gsub("\\n", "\n")
                     data[what] = (data[what] or "") .. s
                 end
             end
