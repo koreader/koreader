@@ -18,6 +18,7 @@ local Device = require("device")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local util = require("ffi/util
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
@@ -451,7 +452,7 @@ function TouchMenu:updateItems()
 
     table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleByDPI(2)})
     table.insert(self.item_group, self.footer)
-    self.page_info_text.text = _("Page ")..self.page.."/"..self.page_num
+    self.page_info_text.text = util.template(_("Page %1 of %2"), self.page, self.page_num)
     self.page_info_left_chev:showHide(self.page_num > 1)
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)

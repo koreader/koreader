@@ -24,6 +24,7 @@ local Input = require("device").input
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local InfoMessage = require("ui/widget/infomessage")
+local util = require("ffi/util")
 local DEBUG = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
@@ -631,7 +632,7 @@ function Menu:updateItems(select_number)
             self.item_group[select_number]:onFocus()
         end
         -- update page information
-        self.page_info_text.text = _("page ")..self.page.."/"..self.page_num
+        self.page_info_text.text = util.template(_("page %1 of %2"), self.page, self.page_num)
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
