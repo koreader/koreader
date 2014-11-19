@@ -94,7 +94,7 @@ function ReaderBookmark:onShowBookmark()
         if type(page) == "string" then
             page = self.ui.document:getPageFromXPointer(v.page)
         end
-        v.text = "Page "..page.." "..v.notes.." @ "..v.datetime
+        v.text = _("Page") .. " " .. page .. " " .. v.notes .. " @ " .. v.datetime
     end
 
     local bm_menu = Menu:new{

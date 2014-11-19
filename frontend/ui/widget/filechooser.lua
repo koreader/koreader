@@ -108,7 +108,7 @@ function FileChooser:genItemTableFromPath(path)
             -- exclude "." and ".."
             items = items - 2
         end
-        local istr = items .. (items > 1 and _(" items") or _(" item"))
+        local istr = util.template(items == 0 and _("0 items") or _("1 item") or items > 1 and _("%1 items"), items)
         table.insert(item_table, {
             text = dir.name.."/",
             mandatory = istr,
