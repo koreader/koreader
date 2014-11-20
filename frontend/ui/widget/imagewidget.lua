@@ -1,4 +1,5 @@
 local Widget = require("ui/widget/widget")
+local Screen = require("device").screen
 local CacheItem = require("cacheitem")
 local Mupdf = require("ffi/mupdf")
 local Geom = require("ui/geometry")
@@ -34,6 +35,8 @@ local ImageWidget = Widget:new{
     -- if width or height is given, image will rescale to the given size
     width = nil,
     height = nil,
+    -- if autoscale is true image will be rescaled according to screen dpi
+    autoscale = false,
     _bb = nil
 }
 
@@ -73,9 +76,16 @@ function ImageWidget:_render()
     else
         error("cannot render image")
     end
-    local w, h = self._bb:getWidth(), self._bb:getHeight()
-    if (self.width and self.width ~= w) or (self.height and self.height ~= h) then
-        self._bb = self._bb:scale(self.width or w, self.height or h)
+    local native_w, native_h = self._bb:getWidth(), self._bb:getHeight()
+    local scaled_w, scaled_h = self.width, self.height
+    if self.autoscale then
+        local dpi_scale = Screen:getDPI() / 167
+        -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))
+        local scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
+        scaled_w, scaled_h = scale * native_w, scale * native_h
+    end
+    if (scaled_w and scaled_w ~= native_w) or (scaled_h and scaled_h ~= native_h) then
+        self._bb = self._bb:scale(scaled_w or native_w, scaled_h or native_h)
     end
 end
 

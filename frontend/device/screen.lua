@@ -169,8 +169,11 @@ function Screen:setDPI(dpi)
 end
 
 function Screen:scaleByDPI(px)
+    local dpi = self:getDPI()
+    -- larger screen needs larger scale
+    local size_scale = math.min(self:getWidth(), self:getHeight())/dpi/3.6
     -- scaled positive px should also be positive
-    return math.ceil(px * self:getDPI()/167)
+    return math.ceil(px * size_scale * dpi/167)
 end
 
 function Screen:getRotationMode()

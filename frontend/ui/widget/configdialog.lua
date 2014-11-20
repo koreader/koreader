@@ -1,68 +1,30 @@
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
-local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextWidget = require("ui/widget/textwidget")
-local FixedTextWidget = require("ui/widget/fixedtextwidget")
-local ProgressWidget = require("ui/widget/progresswidget")
-local ToggleSwitch = require("ui/widget/toggleswitch")
-local ConfirmBox = require("ui/widget/confirmbox")
-local Font = require("ui/font")
-local Device = require("device")
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local RectSpan = require("ui/widget/rectspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local FixedTextWidget = require("ui/widget/fixedtextwidget")
+local ProgressWidget = require("ui/widget/progresswidget")
+local ToggleSwitch = require("ui/widget/toggleswitch")
+local ConfirmBox = require("ui/widget/confirmbox")
+local ImageWidget = require("ui/widget/imagewidget")
+local TextWidget = require("ui/widget/textwidget")
+local IconButton = require("ui/widget/iconbutton")
+local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
+local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Event = require("ui/event")
+local Device = require("device")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
-
-local MenuBarItem = InputContainer:new{}
-function MenuBarItem:init()
-    self.dimen = self[1]:getSize()
-    -- we need this table per-instance, so we declare it here
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Select Menu Item",
-            },
-        }
-    else
-        self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
-        }
-    end
-end
-
-function MenuBarItem:onTapSelect()
-    UIManager:scheduleIn(0.0, function() self:invert(true) end)
-    UIManager:scheduleIn(0.1, function()
-        UIManager:sendEvent(Event:new("ShowConfigPanel", self.index))
-    end)
-    UIManager:scheduleIn(0.5, function() self:invert(false) end)
-    return true
-end
-
-function MenuBarItem:invert(invert)
-    self[1].invert = invert
-    UIManager.update_regions_func = function()
-        return {self[1].dimen}
-    end
-    UIManager:setDirty(self.config, "partial")
-end
 
 local OptionTextItem = InputContainer:new{}
 function OptionTextItem:init()
@@ -433,18 +395,18 @@ function MenuBar:init()
     local icons_width = 0
     local icons_height = 0
     for c = 1, #config_options do
-        local menu_icon = ImageWidget:new{
-            file = config_options[c].icon
+        local menu_icon = IconButton:new{
+            show_parent = self.config_dialog,
+            icon_file = config_options[c].icon,
+            callback = function()
+                self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
+            end,
         }
         local icon_dimen = menu_icon:getSize()
         icons_width = icons_width + icon_dimen.w
         icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
 
-        menu_items[c] = MenuBarItem:new{
-            menu_icon,
-            index = c,
-            config = self.config_dialog,
-        }
+        menu_items[c] = menu_icon
     end
 
     local spacing = HorizontalSpan:new{

@@ -11,12 +11,14 @@ local IconButton = InputContainer:new{
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
+    autoscale = true,
     callback = function() end,
 }
 
 function IconButton:init()
     self.image = ImageWidget:new{
-        file = self.icon_file
+        file = self.icon_file,
+        autoscale = self.autoscale,
     }
 
     self.show_parent = self.show_parent or self
