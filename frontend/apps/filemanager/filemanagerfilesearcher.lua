@@ -89,7 +89,15 @@ function FileSearcher:close()
         if string.len(self.search_value) > 0 then
             self:readDir() -- TODO this probably doesn't need to be repeated once it's been done
             self:setSearchResults() -- TODO doesn't have to be repeated if the search term is the same
-            self:showSearchResults() -- TODO something about no results
+            if #self.results > 0 then
+                self:showSearchResults() -- TODO something about no results
+            else
+                UIManager:show(
+                    InfoMessage:new{
+                        text = util.template(_("Found no files matching '%1'."), self.search_value)
+                    }
+                )
+            end
         end
     end
 end
