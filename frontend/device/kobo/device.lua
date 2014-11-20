@@ -52,7 +52,7 @@ local KoboPhoenix = Kobo:new{
     model = "Kobo_phoenix",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
-    display_dpi = 212.8,
+    display_dpi = 212,
     -- the bezel covers 12 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
 }
