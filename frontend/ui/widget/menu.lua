@@ -323,7 +323,7 @@ local Menu = FocusManager:new{
     width = 500,
     -- height will be calculated according to item number if not given
     height = nil,
-    header_padding = Screen:scaleByDPI(10),
+    header_padding = Screen:scaleBySize(10),
     dimen = Geom:new{},
     item_table = {},
     item_shortcuts = {
@@ -359,7 +359,7 @@ function Menu:_recalculateDimen()
     self.dimen.w = self.width
     self.item_dimen = Geom:new{
         w = self.dimen.w,
-        h = Screen:scaleByDPI(46), -- hardcoded for now
+        h = Screen:scaleBySize(46), -- hardcoded for now
     }
     -- if height not given, dynamically calculate it
     self.dimen.h = self.height or (#self.item_table + 2) * self.item_dimen.h
@@ -418,7 +418,7 @@ function Menu:init()
         show_parent = self,
     }
     self.page_info_spacer = HorizontalSpan:new{
-        width = Screen:scaleByDPI(32),
+        width = Screen:scaleBySize(32),
     }
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
@@ -449,7 +449,7 @@ function Menu:init()
     self.page_return_arrow:hide()
     self.return_button = HorizontalGroup:new{
         HorizontalSpan:new{
-            width = Screen:scaleByDPI(5),
+            width = Screen:scaleBySize(5),
         },
         self.page_return_arrow,
     }

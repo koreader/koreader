@@ -20,14 +20,14 @@ function ReaderScreenshot:init()
         TapDiagonal = {
             GestureRange:new{
                 ges = "two_finger_tap",
-                scale = {diagonal - Screen:scaleByDPI(200), diagonal},
+                scale = {diagonal - Screen:scaleBySize(200), diagonal},
                 rate = 1.0,
             }
         },
         SwipeDiagonal = {
             GestureRange:new{
                 ges = "swipe",
-                scale = {diagonal - Screen:scaleByDPI(200), diagonal},
+                scale = {diagonal - Screen:scaleBySize(200), diagonal},
                 rate = 1.0,
             }
         },

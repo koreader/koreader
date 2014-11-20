@@ -15,8 +15,8 @@ local ButtonTable = VerticalGroup:new{
             {text="Cancel", enabled=false, callback=nil},
         },
     },
-    sep_width = Screen:scaleByDPI(1),
-    padding = Screen:scaleByDPI(2),
+    sep_width = Screen:scaleBySize(1),
+    padding = Screen:scaleBySize(2),
 
     zero_sep = false,
     button_font_face = "cfont",
@@ -66,7 +66,7 @@ function ButtonTable:init()
 end
 
 function ButtonTable:addHorizontalSep()
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleByDPI(2) })
+    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(2) })
     table.insert(self, LineWidget:new{
         background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
@@ -74,7 +74,7 @@ function ButtonTable:addHorizontalSep()
             h = self.sep_width,
         }
     })
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleByDPI(2) })
+    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(2) })
 end
 
 return ButtonTable

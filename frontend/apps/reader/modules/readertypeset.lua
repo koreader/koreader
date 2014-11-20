@@ -157,10 +157,10 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
 end
 
 function ReaderTypeset:onSetPageMargins(margins)
-    local left = Screen:scaleByDPI(margins[1])
-    local top = Screen:scaleByDPI(margins[2])
-    local right = Screen:scaleByDPI(margins[3])
-    local bottom = Screen:scaleByDPI(margins[4])
+    local left = Screen:scaleBySize(margins[1])
+    local top = Screen:scaleBySize(margins[2])
+    local right = Screen:scaleBySize(margins[3])
+    local bottom = Screen:scaleBySize(margins[4])
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true

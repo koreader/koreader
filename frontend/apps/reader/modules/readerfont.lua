@@ -81,7 +81,7 @@ function ReaderFont:onReadSettings(config)
 
     self.font_size = config:readSetting("font_size")
             or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
-    self.ui.document:setFontSize(Screen:scaleByDPI(self.font_size))
+    self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
     self.font_embolden = config:readSetting("font_embolden")
             or G_reader_settings:readSetting("copt_font_weight") or 0
@@ -149,7 +149,7 @@ function ReaderFont:onSetFontSize(new_size)
         text = _("Set font size to ")..self.font_size,
         timeout = 1,
     })
-    self.ui.document:setFontSize(Screen:scaleByDPI(new_size))
+    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
 
     return true

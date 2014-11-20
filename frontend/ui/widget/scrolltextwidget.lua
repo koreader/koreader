@@ -19,8 +19,8 @@ local ScrollTextWidget = InputContainer:new{
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400,
     height = 20,
-    scroll_bar_width = Screen:scaleByDPI(6),
-    text_scroll_span = Screen:scaleByDPI(6),
+    scroll_bar_width = Screen:scaleBySize(6),
+    text_scroll_span = Screen:scaleBySize(6),
     dialog = nil,
 }
 
@@ -38,12 +38,12 @@ function ScrollTextWidget:init()
         enable = visible_line_count < total_line_count,
         low = 0,
         high = visible_line_count/total_line_count,
-        width = Screen:scaleByDPI(6),
+        width = Screen:scaleBySize(6),
         height = self.height,
     }
     local horizontal_group = HorizontalGroup:new{}
     table.insert(horizontal_group, self.text_widget)
-    table.insert(horizontal_group, HorizontalSpan:new{width = Screen:scaleByDPI(6)})
+    table.insert(horizontal_group, HorizontalSpan:new{width = Screen:scaleBySize(6)})
     table.insert(horizontal_group, self.v_scroll_bar)
     self[1] = horizontal_group
     self.dimen = Geom:new(self[1]:getSize())

@@ -155,7 +155,7 @@ local VirtualKeyboard = InputContainer:new{
     height = 256,
     bordersize = 2,
     padding = 2,
-    key_padding = Screen:scaleByDPI(6),
+    key_padding = Screen:scaleBySize(6),
 }
 
 function VirtualKeyboard:init()

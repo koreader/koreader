@@ -20,7 +20,7 @@ local PageCropDialog = VerticalGroup:new{
     cancel_text = "Cancel",
     ok_callback = function() end,
     cancel_callback = function() end,
-    button_width = math.floor(Screen:scaleByDPI(70)),
+    button_width = math.floor(Screen:scaleBySize(70)),
 }
 
 function PageCropDialog:init()

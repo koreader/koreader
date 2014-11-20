@@ -25,8 +25,8 @@ function ToggleLabel:paintTo(bb, x, y)
 end
 
 local ToggleSwitch = InputContainer:new{
-    width = Screen:scaleByDPI(216),
-    height = Screen:scaleByDPI(30),
+    width = Screen:scaleBySize(216),
+    height = Screen:scaleBySize(30),
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfoused item color
     fgcolor = Blitbuffer.gray(0.5), -- focused item color
     font_face = "cfont",

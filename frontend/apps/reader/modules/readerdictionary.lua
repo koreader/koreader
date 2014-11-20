@@ -96,7 +96,7 @@ function ReaderDictionary:showDict(word, results, box)
             word = word,
             results = results,
             dictionary = self.default_dictionary,
-            width = Screen:getWidth() - Screen:scaleByDPI(80),
+            width = Screen:getWidth() - Screen:scaleBySize(80),
             word_box = box,
             -- differentiate between dict and wiki
             wiki = self.wiki,
