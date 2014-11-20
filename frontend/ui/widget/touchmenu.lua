@@ -261,7 +261,6 @@ local TouchMenu = InputContainer:new{
     item_height = Screen:scaleByDPI(50),
     bordersize = Screen:scaleByDPI(2),
     padding = Screen:scaleByDPI(5),
-    footer_height = 48 + Screen:scaleByDPI(5),
     fface = Font:getFace("ffont", 20),
     width = nil,
     height = nil,
@@ -346,25 +345,26 @@ function TouchMenu:init()
     self.device_info = HorizontalGroup:new{
         self.time_info,
     }
+    local up_button = IconButton:new{
+        icon_file = "resources/icons/appbar.chevron.up.png",
+        show_parent = self.show_parent,
+        callback = function()
+            self:backToUpperMenu()
+        end,
+    }
     local footer_width = self.width - self.padding*2 - self.bordersize*2
+    local footer_height = up_button:getSize().h + Screen:scaleByDPI(2)
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
-            IconButton:new{
-                invert = true,
-                icon_file = "resources/icons/appbar.chevron.up.png",
-                show_parent = self.show_parent,
-                callback = function()
-                    self:backToUpperMenu()
-                end,
-            },
+            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
+            up_button,
         },
         CenterContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
+            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
             self.page_info,
         },
         RightContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = self.footer_height},
+            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
             self.device_info,
         }
     }
