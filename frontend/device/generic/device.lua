@@ -40,7 +40,7 @@ end
 
 function Device:init()
     if not self.screen then
-        self.screen = require("device/screen"):new{device = self}
+        error("screen/framebuffer must be implemented")
     end
     if not self.input then
         self.input = require("device/input"):new{device = self}

@@ -58,7 +58,7 @@ local KoboPhoenix = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,

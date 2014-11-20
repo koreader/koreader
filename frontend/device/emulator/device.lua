@@ -13,13 +13,19 @@ local Device = Generic:new{
 }
 
 function Device:init()
-    self.screen = require("device/screen"):new{device = self}
-    self.input = require("device/input"):new{
-        device = self,
-        event_map = util.haveSDL2()
-            and require("device/emulator/event_map_sdl2")
-            or require("device/emulator/event_map_sdl"),
-    }
+    if util.haveSDL2() then
+        self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self}
+        self.input = require("device/input"):new{
+            device = self,
+            event_map = require("device/emulator/event_map_sdl2"),
+        }
+    else
+        self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self}
+        self.input = require("device/input"):new{
+            device = self,
+            event_map = require("device/emulator/event_map_sdl"),
+        }
+    end
 
     Generic.init(self)
 end
