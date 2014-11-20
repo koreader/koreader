@@ -190,7 +190,7 @@ function EvernoteExporter:doLogin(username, password)
         return
     elseif not ok and token then
         UIManager:show(InfoMessage:new{
-            text = _("Error occurs when login:") .. "\n" .. token,
+            text = _("An error occurred while logging in:") .. "\n" .. token,
         })
         return
     end
@@ -205,13 +205,13 @@ function EvernoteExporter:doLogin(username, password)
         return
     elseif not ok and guid then
         UIManager:show(InfoMessage:new{
-            text = _("Error occurs when login:") .. "\n" .. guid,
+            text = _("An error occurred while logging in:") .. "\n" .. guid,
         })
     elseif ok and guid then
         self.evernote_token = token
         self.notebook_guid = guid
         UIManager:show(InfoMessage:new{
-            text = _("Login to Evernote successfully"),
+            text = _("Logged in to Evernote successfully."),
         })
     end
 
@@ -340,21 +340,21 @@ function EvernoteExporter:exportClippings(clippings)
         end
     end
 
-    local msg = "Not exported anything."
+    local msg = "Nothing was exported."
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
         if all_count == 1 then
-            msg = _("Exported notes in book:") .. "\n" .. export_title
+            msg = _("Exported notes from book:") .. "\n" .. export_title
         else
-            msg = _("Exported notes in book:") .. "\n" .. export_title
+            msg = _("Exported notes from book:") .. "\n" .. export_title
             msg = msg .. "\n" .. _("and ") .. all_count-1 .. _(" others.")
         end
     elseif error_count > 0 then
         if all_count == 1 then
-            msg = _("Error occurs when exporting book:") .. "\n" .. error_title
+            msg = _("An error occurred while trying to export notes from book:") .. "\n" .. error_title
         else
-            msg = _("Errors occur when exporting book:") .. "\n" .. error_title
-            msg = msg .. "\n" .. _("and ") .. error_count-1 .. (" others.")
+            msg = _("Multiple errors occurred while trying to export notes from book:") .. "\n" .. error_title
+            msg = msg .. "\n" .. _("and ") .. error_count-1 .. _(" others.")
         end
     end
     UIManager:show(InfoMessage:new{ text = msg })
