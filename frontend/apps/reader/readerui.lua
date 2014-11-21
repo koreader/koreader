@@ -11,6 +11,7 @@ local Screen = require("device").screen
 local Event = require("ui/event")
 local Cache = require("cache")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderView = require("apps/reader/modules/readerview")
@@ -312,12 +313,12 @@ function ReaderUI:showReader(file)
     DEBUG("show reader ui")
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-             text = _("File ") .. file .. _(" does not exist")
+             text = T( _("File '%1' does not exist."), file)
         })
         return
     end
     UIManager:show(InfoMessage:new{
-        text = _("Opening file ") .. file,
+        text = T( _("Opening file '%1'."), file),
         timeout = 0.1,
     })
     UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
@@ -333,7 +334,7 @@ function ReaderUI:doShowReader(file)
     local document = DocumentRegistry:openDocument(file)
     if not document then
         UIManager:show(InfoMessage:new{
-            text = _("No reader engine for this file")
+            text = _("No reader engine for this file.")
         })
         return
     end
