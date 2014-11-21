@@ -34,7 +34,6 @@ function ReaderFrontLight:init()
                 }
             },
         }
-        self.ui.menu:registerToMainMenu(self)
     end
 
 end
@@ -79,20 +78,10 @@ function ReaderFrontLight:onPanRelease(arg, ges)
     return self:onShowIntensity()
 end
 
-function ReaderFrontLight:addToMainMenu(tab_item_table)
-    -- insert fldial command to setting tab of reader menu
-    table.insert(tab_item_table.setting, {
-        text = _("Frontlight settings"),
-        callback = function()
-            self:onShowFlDialog()
-        end,
-    })
-end
-
 function ReaderFrontLight:onShowFlDialog()
     local powerd = Device:getPowerDevice()
     self.fl_dialog = InputDialog:new{
-        title = _("Frontlight Level"),
+        title = _("Frontlight level"),
         input_hint = ("(%d - %d)"):format(powerd.fl_min, powerd.fl_max),
         buttons = {
             {
