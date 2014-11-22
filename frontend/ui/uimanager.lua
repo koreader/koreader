@@ -352,12 +352,11 @@ function UIManager:repaint()
             local update_regions = self.update_regions_func()
             for _, update_region in ipairs(update_regions) do
                 -- in some rare cases update region has 1 pixel offset
-                refresh(Screen, refresh_type, waveform_mode, wait_for_marker,
-                               update_region.x-1, update_region.y-1,
+                refresh(Screen, update_region.x-1, update_region.y-1,
                                update_region.w+2, update_region.h+2)
             end
         else
-            refresh(Screen, refresh_type, waveform_mode, wait_for_marker)
+            refresh(Screen)
         end
     end
 end
