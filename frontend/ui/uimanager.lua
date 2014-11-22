@@ -355,6 +355,7 @@ function UIManager:repaint()
                 refresh(Screen, update_region.x-1, update_region.y-1,
                                update_region.w+2, update_region.h+2)
             end
+            self.update_regions_func = nil
         else
             refresh(Screen)
         end
