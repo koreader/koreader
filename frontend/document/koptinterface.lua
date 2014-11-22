@@ -23,6 +23,7 @@ local ContextCacheItem = CacheItem:new{}
 
 function ContextCacheItem:onFree()
     if self.kctx.free then
+        KoptInterface:waitForContext(self.kctx)
         DEBUG("free koptcontext", self.kctx)
         self.kctx:free()
     end
