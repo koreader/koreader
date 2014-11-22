@@ -4,14 +4,11 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local GestureRange = require("ui/gesturerange")
-local NetworkMgr = require("ui/networkmgr")
-local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Screen = require("device").screen
-local Language = require("ui/language")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -93,64 +90,25 @@ function ReaderMenu:setUpdateItemTable()
         widget:addToMainMenu(self.tab_item_table)
     end
 
-    -- setting tab
-    table.insert(self.tab_item_table.setting, {
-        text = _("Screen settings"),
-        sub_item_table = {
-            require("ui/elements/screen_dpi_menu_table"),
-            require("ui/elements/screen_eink_opt_menu_table"),
-            UIManager:getRefreshMenuTable(),
-        },
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Network settings"),
-        sub_item_table = {
-            NetworkMgr:getWifiMenuTable(),
-            NetworkMgr:getProxyMenuTable(),
-        }
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Night mode"),
-        checked_func = function() return G_reader_settings:readSetting("night_mode") end,
-        callback = function()
-            local night_mode = G_reader_settings:readSetting("night_mode") or false
-            Screen:toggleNightMode()
-            G_reader_settings:saveSetting("night_mode", not night_mode)
-        end
-    })
-    table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
-    if self.ui.document.is_djvu then
-        table.insert(self.tab_item_table.setting, self.view:getRenderModeMenuTable())
+    -- settings tab
+    -- insert common settings
+    for i, common_setting in ipairs(require("ui/elements/common_settings_menu_table")) do
+        table.insert(self.tab_item_table.setting, common_setting)
     end
-    table.insert(self.tab_item_table.setting, {
-        text = _("Show advanced options"),
-        checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
-        callback = function()
-            local show_advanced = G_reader_settings:readSetting("show_advanced") or false
-            G_reader_settings:saveSetting("show_advanced", not show_advanced)
-        end
-    })
+    -- insert DjVu render mode submenu just before the last entry (show advanced)
+    -- this is a bit of a hack
+    if self.ui.document.is_djvu then
+        table.insert(
+            self.tab_item_table.setting,
+            #self.tab_item_table.setting,
+            self.view:getRenderModeMenuTable())
+    end
 
     -- info tab
-    if Device:isKindle() or Device:isKobo() then
-        table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    -- insert common info
+    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
+        table.insert(self.tab_item_table.info, common_setting)
     end
-    table.insert(self.tab_item_table.info, {
-        text = _("Version"),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = io.open("git-rev", "r"):read(),
-            })
-        end
-    })
-    table.insert(self.tab_item_table.info, {
-        text = _("Help"),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
-            })
-        end
-    })
 
     if Device:isKobo() and KOBO_SCREEN_SAVER_LAST_BOOK then
         local excluded = function()

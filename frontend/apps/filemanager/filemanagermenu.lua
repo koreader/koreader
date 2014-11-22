@@ -1,18 +1,13 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
-local InfoMessage = require("ui/widget/infomessage")
-local NetworkMgr = require("ui/networkmgr")
-local OTAManager = require("ui/otamanager")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local Language = require("ui/language")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
@@ -116,56 +111,20 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("open_last", not open_last)
         end
     })
-    if Device:hasFrontlight() then
-        ReaderFrontLight:addToMainMenu(self.tab_item_table)
+    -- insert common settings
+    for i, common_setting in ipairs(require("ui/elements/common_settings_menu_table")) do
+        table.insert(self.tab_item_table.setting, common_setting)
     end
-    table.insert(self.tab_item_table.setting, {
-        text = _("Screen settings"),
-        sub_item_table = {
-            require("ui/elements/screen_dpi_menu_table"),
-            UIManager:getRefreshMenuTable(),
-        },
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Network settings"),
-        sub_item_table = {
-            NetworkMgr:getWifiMenuTable(),
-            NetworkMgr:getProxyMenuTable(),
-        }
-    })
-    table.insert(self.tab_item_table.setting, {
-        text = _("Night mode"),
-        checked_func = function() return G_reader_settings:readSetting("night_mode") end,
-        callback = function()
-            local night_mode = G_reader_settings:readSetting("night_mode") or false
-            Screen:toggleNightMode()
-            G_reader_settings:saveSetting("night_mode", not night_mode)
-        end
-    })
-    table.insert(self.tab_item_table.setting, Language:getLangMenuTable())
+
     -- info tab
-    if Device:isKindle() or Device:isKobo() then
-        table.insert(self.tab_item_table.info, OTAManager:getOTAMenuTable())
+    -- insert common info
+    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
+        table.insert(self.tab_item_table.info, common_setting)
     end
-    table.insert(self.tab_item_table.info, {
-        text = _("Version"),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = io.open("git-rev", "r"):read(),
-            })
-        end
-    })
-    table.insert(self.tab_item_table.info, {
-        text = _("Help"),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = _("Please report bugs to \nhttps://github.com/koreader/koreader/issues"),
-            })
-        end
-    })
+
     -- tools tab
     table.insert(self.tab_item_table.tools, {
-        text = _("Set defaults"),
+        text = _("Change defaults file"),
         callback = function()
             SetDefaults:ConfirmEdit()
         end,
