@@ -402,12 +402,14 @@ function ReaderHighlight:saveHighlight()
         hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S")
         hl_item["drawer"] = self.view.highlight.saved_drawer
         table.insert(self.view.highlight.saved[page], hl_item)
+        --[[
+        -- disable exporting hightlights to My Clippings
+        -- since it's not portable and there is a better Evernote plugin
+        -- to do the same thing
         if self.selected_text.text ~= "" then
-            -- disable exporting hightlights to My Clippings
-            -- since it's not potable and there is a better Evernote plugin
-            -- to do the same thing
-            --self:exportToClippings(page, hl_item)
+            self:exportToClippings(page, hl_item)
         end
+        --]]
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
@@ -415,6 +417,7 @@ function ReaderHighlight:saveHighlight()
     --DEBUG("saved hightlights", self.view.highlight.saved[page])
 end
 
+--[[
 function ReaderHighlight:exportToClippings(page, item)
     DEBUG("export highlight to clippings", item)
     local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
@@ -431,6 +434,7 @@ function ReaderHighlight:exportToClippings(page, item)
         os.setlocale(current_locale)
     end
 end
+--]]
 
 function ReaderHighlight:exportToDocument(page, item)
     DEBUG("export highlight to document", item)

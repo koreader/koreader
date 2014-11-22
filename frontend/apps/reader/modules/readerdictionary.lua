@@ -68,7 +68,7 @@ function ReaderDictionary:stardictLookup(word, box)
         --DEBUG("result str:", word, results_str)
         local ok, results = pcall(JSON.decode, JSON, results_str)
         if ok and results then
-            DEBUG("lookup result table:", word, results)
+            --DEBUG("lookup result table:", word, results)
             self:showDict(word, tidy_markup(results), box)
         else
             -- dummy results
@@ -88,7 +88,7 @@ end
 function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
         DEBUG("showing quick lookup window")
-        UIManager:show(DictQuickLookup:new{
+        self.dict_window = DictQuickLookup:new{
             ui = self.ui,
             highlight = self.highlight,
             dialog = self.dialog,
@@ -100,7 +100,8 @@ function ReaderDictionary:showDict(word, results, box)
             word_box = box,
             -- differentiate between dict and wiki
             wiki = self.wiki,
-        })
+        }
+        UIManager:show(self.dict_window)
     end
 end
 
