@@ -120,6 +120,8 @@ function Input:init()
         screen = self.device.screen,
         input = self,
     }
+    -- allow access to device object in FFI API
+    input.device = self.device
 
     -- set up fake event map
     self.event_map[10000] = "IntoSS" -- go into screen saver
