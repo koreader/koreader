@@ -26,7 +26,7 @@ local KoptOptions = {
             {
                 name = "trim_page",
                 name_text = S.PAGE_CROP,
-                width = 225,
+                width = 261,
                 toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO},
                 alternate = false,
                 values = {0, 1, 2},

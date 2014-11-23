@@ -139,11 +139,26 @@ end
 
 local ConfigOption = CenterContainer:new{}
 function ConfigOption:init()
+    -- make default styles
     local default_name_font_size = 20
     local default_item_font_size = 16
     local default_items_spacing = 30
     local default_option_height = 50
     local default_option_padding = 15
+    local max_option_name_width = 0
+    for c = 1, #self.options do
+        local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
+        local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
+        local option_name_width = TextWidget:new{
+            text = self.options[c].name_text,
+            face = Font:getFace(name_font_face, name_font_size),
+        }:getSize().w
+        max_option_name_width = math.max(max_option_name_width, option_name_width)
+    end
+    local default_name_align_right = math.max((max_option_name_width + Screen:scaleByDPI(10))/Screen:getWidth(), 0.33)
+    local default_item_align_center = 1 - default_name_align_right
+
+    -- fill vertical group of config tab
     local vertical_group = VerticalGroup:new{}
     table.insert(vertical_group, VerticalSpan:new{
         width = Screen:scaleByDPI(default_option_padding),
@@ -152,8 +167,8 @@ function ConfigOption:init()
     for c = 1, #self.options do
         local show_default = not self.options[c].advanced or show_advanced
         if self.options[c].show ~= false and show_default then
-            local name_align = self.options[c].name_align_right and self.options[c].name_align_right or 0.33
-            local item_align = self.options[c].item_align_center and self.options[c].item_align_center or 0.66
+            local name_align = self.options[c].name_align_right and self.options[c].name_align_right or default_name_align_right
+            local item_align = self.options[c].item_align_center and self.options[c].item_align_center or default_item_align_center
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
@@ -168,9 +183,9 @@ function ConfigOption:init()
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = Screen:getWidth()*name_align, h = option_height},
                 }
-                local option_name =    TextWidget:new{
-                        text = self.options[c].name_text,
-                        face = Font:getFace(name_font_face, name_font_size),
+                local option_name = TextWidget:new{
+                    text = self.options[c].name_text,
+                    face = Font:getFace(name_font_face, name_font_size),
                 }
                 table.insert(option_name_container, option_name)
                 table.insert(horizontal_group, option_name_container)
@@ -350,6 +365,8 @@ function ConfigOption:init()
                 local toggle_width = Screen:scaleByDPI(self.options[c].width or 216)
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
+                    font_face = item_font_face,
+                    font_size = item_font_size,
                     name = self.options[c].name,
                     name_text = self.options[c].name_text,
                     toggle = self.options[c].toggle,
