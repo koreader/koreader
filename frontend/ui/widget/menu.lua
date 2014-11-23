@@ -675,6 +675,12 @@ function Menu:swithItemTable(new_title, new_item_table, itemnumber)
         self.page = math.ceil(itemnumber / self.perpage)
     end
 
+    -- make sure current page is in right page range
+    local max_pages = math.ceil(#new_item_table / self.perpage)
+    if self.page > max_pages then
+        self.page = max_pages
+    end
+
     self.item_table = new_item_table
     self:updateItems(1)
 end
