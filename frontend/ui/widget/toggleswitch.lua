@@ -29,14 +29,13 @@ local ToggleSwitch = InputContainer:new{
     height = Screen:scaleByDPI(30),
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfoused item color
     fgcolor = Blitbuffer.gray(0.5), -- focused item color
+    font_face = "cfont",
+    font_size = 16,
 }
 
 function ToggleSwitch:init()
     self.n_pos = #self.toggle
     self.position = nil
-
-    local label_font_face = "cfont"
-    local label_font_size = 16
 
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
@@ -51,7 +50,7 @@ function ToggleSwitch:init()
         local label = ToggleLabel:new{
             align = "center",
             text = self.toggle[i],
-            face = Font:getFace(label_font_face, label_font_size),
+            face = Font:getFace(self.font_face, self.font_size),
         }
         local content = CenterContainer:new{
             dimen = Geom:new{w = self.width/self.n_pos, h = self.height},
