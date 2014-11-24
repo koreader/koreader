@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local isAndroid, android = pcall(require, "android")
 local ffi = require("ffi")
+local DEBUG = require("dbg")
 
 local function yes() return true end
 
@@ -18,8 +19,13 @@ function Device:init()
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(self, ev)
+            DEBUG("Android application event", ev.code)
             if ev.code == ffi.C.APP_CMD_SAVE_STATE then
                 return "SaveState"
+            elseif ev.code == ffi.C.APP_CMD_GAINED_FOCUS then
+                self.device.screen:refreshFull()
+            elseif ev.code == ffi.C.APP_CMD_WINDOW_REDRAW_NEEDED then
+                self.device.screen:refreshFull()
             end
         end,
     }
