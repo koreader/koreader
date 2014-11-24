@@ -37,7 +37,7 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    Generic:init()
+    Generic.init(self)
 end
 
 return Device
