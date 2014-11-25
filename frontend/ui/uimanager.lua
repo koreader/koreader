@@ -6,52 +6,8 @@ local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
--- cf. koreader-base/ffi-cdecl/include/mxcfb-kindle.h (UPDATE_MODE_* applies to Kobo, too)
-local UPDATE_MODE_PARTIAL       = 0x0
-local UPDATE_MODE_FULL          = 0x1
-
--- Kindle waveform update modes
-local WAVEFORM_MODE_INIT        = 0x0    -- Screen goes to white (clears)
-local WAVEFORM_MODE_DU          = 0x1    -- Grey->white/grey->black
-local WAVEFORM_MODE_GC16        = 0x2    -- High fidelity (flashing)
-local WAVEFORM_MODE_GC4         = WAVEFORM_MODE_GC16 -- For compatibility
-local WAVEFORM_MODE_GC16_FAST   = 0x3    -- Medium fidelity
-local WAVEFORM_MODE_A2          = 0x4    -- Faster but even lower fidelity
-local WAVEFORM_MODE_GL16        = 0x5    -- High fidelity from white transition
-local WAVEFORM_MODE_GL16_FAST   = 0x6    -- Medium fidelity from white transition
--- Kindle FW >= 5.3
-local WAVEFORM_MODE_DU4         = 0x7    -- Medium fidelity 4 level of gray direct update
--- Kindle PW2
-local WAVEFORM_MODE_REAGL       = 0x8    -- Ghost compensation waveform
-local WAVEFORM_MODE_REAGLD      = 0x9    -- Ghost compensation waveform with dithering
--- Kindle Basic/Kindle Voyage
-local WAVEFORM_MODE_GL4         = 0xA    -- 2-bit from white transition
--- TODO: Use me in night mode on those devices?
-local WAVEFORM_MODE_GL16_INV    = 0xB    -- High fidelity for black transition
-
--- Kobo waveform update modes
-local NTX_WFM_MODE_INIT         = 0x0    -- WAVEFORM_MODE_INIT
-local NTX_WFM_MODE_DU           = 0x1    -- WAVEFORM_MODE_DU
-local NTX_WFM_MODE_GC16         = 0x2    -- WAVEFORM_MODE_GC16
-local NTX_WFM_MODE_GC4          = 0x3    -- WAVEFORM_MODE_GC4
-local NTX_WFM_MODE_A2           = 0x4    -- WAVEFORM_MODE_A2
-local NTX_WFM_MODE_GL16         = 0x5    -- WAVEFORM_MODE_GL16
-local NTX_WFM_MODE_GLR16        = 0x6    -- WAVEFORM_MODE_REAGL
-local NTX_WFM_MODE_GLD16        = 0x7    -- WAVEFORM_MODE_REAGLD
-
--- Common
-local WAVEFORM_MODE_AUTO        = 0x101
-
-
 -- there is only one instance of this
 local UIManager = {
-    default_refresh_type = UPDATE_MODE_PARTIAL,
-    default_waveform_mode = WAVEFORM_MODE_GC16, -- high fidelity waveform
-    fast_waveform_mode = WAVEFORM_MODE_A2,
-    full_refresh_waveform_mode = WAVEFORM_MODE_GC16,
-    partial_refresh_waveform_mode = WAVEFORM_MODE_GC16,
-    wait_for_every_marker = false,
-    wait_for_ui_markers = false,
     -- force to repaint all the widget is stack, will be reset to false
     -- after each ui loop
     repaint_all = false,
@@ -114,29 +70,6 @@ function UIManager:init()
         if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
             Device:getPowerDevice():setIntensity( math.max( math.min(KOBO_LIGHT_ON_START,100) ,0) )
         end
-        -- Emulate the stock reader's refresh behavior...
-        self.full_refresh_waveform_mode = NTX_WFM_MODE_GC16
-        -- Request REAGLD waveform mode on devices that support it (Aura & H2O)
-        if Device.model == "Kobo_phoenix" or Device.model == "Kobo_dahlia" then
-            self.partial_refresh_waveform_mode = NTX_WFM_MODE_GLD16
-            -- Since Kobo doesn't have MXCFB_WAIT_FOR_UPDATE_SUBMISSION, enabling this currently has no effect :).
-            self.wait_for_every_marker = true
-            -- NOTE: The H2O appears to be the odd duck out... Nickel uses AUTO for PARTIAL updates instead of asking for REAGLD specifically...
-            -- If we try to ask for FULL REAGLD updates, like on the Aura and the PW2, we get a black flash!
-            -- The driver appears to be using some custom Kobo logic (that they only enable in their producttion build?) altering the behavior of AUTO to favor REAGL modes...
-            -- Long story short: do the same as nickel: use AUTO, and hope for the best...
-            if Device.model == "Kobo_dahlia" then
-                self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
-            end
-        else
-            -- Let the driver handle it on those models (asking for NTX_WFM_MODE_GL16 appears to be a very bad idea, #1146)
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
-            self.wait_for_every_marker = false
-            -- NOTE: Let's see if a bit of waiting works around potential timing issues on Kobos when doing *UI* refreshes in fast succession. (Not a concern on Kindle, where we have MXCFB_WAIT_FOR_UPDATE_SUBMISSION).
-            self.wait_for_ui_markers = true
-        end
-        -- Let the driver decide what to do with PARTIAL UI updates...
-        self.default_waveform_mode = WAVEFORM_MODE_AUTO
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
             self:sendEvent(Event:new("FlushSettings"))
@@ -153,35 +86,6 @@ function UIManager:init()
             Device:usbPlugOut()
             self:sendEvent(Event:new("NotCharging"))
         end
-        -- Emulate the stock reader's refresh behavior...
-        --[[
-            NOTE: For ref, on a Touch (debugPaint & a patched strace are your friend!):
-                UI: flash: GC16_FAST, non-flash: AUTO (prefers GC16_FAST)
-                Reader: When flash: if to/from img: GC16, else GC16_FAST; when non-flash: AUTO (seems to prefer GL16_FAST); Waiting for marker only on flash
-            On a PW2:
-                UI: flash: GC16_FAST, non-flash: AUTO (prefers GC16_FAST)
-                Reader: When flash: if to/from img: GC16, else GC16_FAST; when non-flash: REAGL (w/ UPDATE_MODE_FULL!); Always waits for marker
-                    Note that the bottom status bar region is refreshed separately, right after the screen, as a PARTIAL, AUTO (GC16_FAST) update, and it's this marker that's waited after...
-                    Non flash lasts longer (dual timeout: 14pgs / 7mins).
-        --]]
-        -- We don't really have an easy way to know if we're refreshing the UI, or a page, or if said page contains an image, so go with the highest fidelity option
-        -- We spend much more time in the reader than the UI, and our UI isn't very graphic anyway, so we'll follow the reader's behaviour above all
-        self.full_refresh_waveform_mode = WAVEFORM_MODE_GC16
-        -- Request REAGL waveform mode on devices that support it (PW2, KT2, KV) [FIXME: Is that actually true of the KT2?]
-        if Device.model == "KindlePaperWhite2" or Device.model == "KindleBasic" or Device.model == "KindleVoyage" then
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_REAGL
-            -- We need to wait for every update marker when using REAGL waveform modes. That mostly means we always use MXCFB_WAIT_FOR_UPDATE_SUBMISSION.
-            self.wait_for_every_marker = true
-        else
-            self.partial_refresh_waveform_mode = WAVEFORM_MODE_GL16_FAST
-            -- NOTE: Or we could go back to what KOReader did before fa55acc in koreader-base, which was also to use AUTO ;).
-            -- That said, we *should* be making more or less the same decisions as AUTO on our own, if I followed things correctly...
-            --self.partial_refresh_waveform_mode = WAVEFORM_MODE_AUTO
-            -- Only wait for update markers on FULL updates
-            self.wait_for_every_marker = false
-        end
-        -- Default to GC16_FAST (will be used for PARTIAL UI updates)
-        self.default_waveform_mode = WAVEFORM_MODE_GC16_FAST
     end
 end
 
@@ -217,6 +121,7 @@ function UIManager:close(widget)
         return
     end
     DEBUG("close widget", widget.id)
+    -- TODO: Why do we the following?
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     local dirty = false
     for i = #self._window_stack, 1, -1 do
@@ -383,105 +288,78 @@ end
 
 -- repaint dirty widgets
 function UIManager:repaint()
+    -- flag in which we will record if we did any repaints at all
+    -- will trigger a refresh if set.
     local dirty = false
-    local request_full_refresh = false
-    local force_full_refresh = false
-    local force_partial_refresh = false
+
+    -- we use this to record requests for certain refresh types
+    -- TODO: fix this, see below
+    local force_full_refresh = self.full_refresh
+    self.full_refresh = false
+
+    local force_partial_refresh = self.partial_refresh
+    self.partial_refresh = false
+
     local force_fast_refresh = false
+
     for _, widget in ipairs(self._window_stack) do
         -- paint if repaint_all is request
         -- paint also if current widget or any widget underneath is dirty
         if self.repaint_all or dirty or self._dirty[widget.widget] then
             widget.widget:paintTo(Screen.bb, widget.x, widget.y)
 
-            if self._dirty[widget.widget] == "auto" then
-                -- Most likely a 'reader' refresh. 'request' in the sense once we hit our FULL_REFRESH_COUNT ;).
-                request_full_refresh = true
-            end
+            -- self._dirty[widget.widget] may also be "auto"
             if self._dirty[widget.widget] == "full" then
                 force_full_refresh = true
-            end
-            if self._dirty[widget.widget] == "partial" then
+            elseif self._dirty[widget.widget] == "partial" then
                 force_partial_refresh = true
-            end
-            if self._dirty[widget.widget] == "fast" then
+            elseif self._dirty[widget.widget] == "fast" then
                 force_fast_refresh = true
             end
+
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
+
             -- trigger repaint
             dirty = true
         end
     end
-
-    if self.full_refresh then
-        dirty = true
-        force_full_refresh = true
-    end
-
-    if self.partial_refresh then
-        dirty = true
-        force_partial_refresh = true
-    end
-
     self.repaint_all = false
-    self.full_refresh = false
-    self.partial_refresh = false
 
-    local refresh_type = self.default_refresh_type
-    local waveform_mode = self.default_waveform_mode
-    local wait_for_marker = self.wait_for_every_marker
     if dirty then
-        if force_partial_refresh or force_fast_refresh or self.update_regions_func then
-            refresh_type = UPDATE_MODE_PARTIAL
-            -- Override wait_for_marker if we need to enable the Kobo timing workaround on UI refreshes
-            if self.wait_for_ui_markers then
-                wait_for_marker = true
-            end
-        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            refresh_type = UPDATE_MODE_FULL
-        end
-        -- Handle the waveform mode selection...
-        if refresh_type == UPDATE_MODE_FULL then
-            waveform_mode = self.full_refresh_waveform_mode
-        else
-            waveform_mode = self.partial_refresh_waveform_mode
-        end
+        -- select proper refresh mode
+        -- TODO: fix this. We should probably do separate refreshes
+        -- by regional refreshes (e.g. fast refresh, some partial refreshes)
+        -- and full-screen full refresh
+        local refresh
+
         if force_fast_refresh then
-            waveform_mode = self.fast_waveform_mode
-            -- FIXME: Should we also avoid doing an MXCFB_WAIT_FOR_UPDATE_SUBMISSION for this update?
-            --wait_for_marker = false
+            refresh = Screen.refreshFast
+        elseif force_partial_refresh then
+            refresh = Screen.refreshPartial
+        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+            refresh = Screen.refreshFull
+            -- a full refresh will reset the counter which leads to an automatic full refresh
+            self.refresh_count = 0
+        else
+            -- default
+            refresh = Screen.refreshPartial
+            -- increment refresh counter in this case
+            self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         end
-        -- If the device is REAGL-aware, we're specifically asking for a REAGL update, and we're doing a PARTIAL *reader* refresh, apply some trickery to match the stock reader's behavior
-        -- (On most device, REAGL updates are always FULL, but there's no black flash. On devices where this isn't the case [H2O], we're letting the driver do the job by using AUTO).
-        if not force_partial_refresh and not force_fast_refresh and refresh_type == UPDATE_MODE_PARTIAL and (waveform_mode == WAVEFORM_MODE_REAGL or waveform_mode == NTX_WFM_MODE_GLD16) then
-            refresh_type = UPDATE_MODE_FULL
-        end
-        -- On the other hand, if we asked for a PARTIAL *UI* refresh, fall back to the default waveform mode, which is tailored per-device to hopefully be more appropriate in this instance than the one we use in the reader.
-        if force_partial_refresh then
-            -- NOTE: Using default_waveform_mode might seem counter-intuitive when we have partial_refresh_waveform_mode, but partial_refresh_waveform_mode is mostly there as a means to flag REAGL-aware devices ;).
-            -- Here, we're actually interested in handling PARTIAL, regional (be it properly flagged or not) updates, and not the PARTIAL updates from the reader that actually refresh the whole screen (i.e., those between black flashes).
-            waveform_mode = self.default_waveform_mode
-        end
+
         if self.update_regions_func then
             local update_regions = self.update_regions_func()
             for _, update_region in ipairs(update_regions) do
                 -- in some rare cases update region has 1 pixel offset
-                Screen:refresh(refresh_type, waveform_mode, wait_for_marker,
-                               update_region.x-1, update_region.y-1,
+                refresh(Screen, update_region.x-1, update_region.y-1,
                                update_region.w+2, update_region.h+2)
             end
+            self.update_regions_func = nil
         else
-            Screen:refresh(refresh_type, waveform_mode, wait_for_marker)
-        end
-        -- REAGL refreshes are always FULL (but without a black flash), but we want to keep our black flash timeout working, so don't reset the counter on FULL REAGL refreshes...
-        if refresh_type == UPDATE_MODE_FULL and waveform_mode ~= WAVEFORM_MODE_REAGL and waveform_mode ~= NTX_WFM_MODE_GLD16 then
-            self.refresh_count = 0
-        elseif not force_partial_refresh and not force_full_refresh and not self.update_regions_func then
-            self.refresh_count = (self.refresh_count + 1)%self.FULL_REFRESH_COUNT
+            refresh(Screen)
         end
     end
-    self.update_regions_func = nil
 end
 
 -- this is the main loop of the UI controller

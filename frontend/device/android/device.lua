@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local isAndroid, android = pcall(require, "android")
 local ffi = require("ffi")
+local DEBUG = require("dbg")
 
 local function yes() return true end
 
@@ -12,14 +13,19 @@ local Device = Generic:new{
 }
 
 function Device:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_android"):new{device = self}
     self.powerd = require("device/android/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(self, ev)
+            DEBUG("Android application event", ev.code)
             if ev.code == ffi.C.APP_CMD_SAVE_STATE then
                 return "SaveState"
+            elseif ev.code == ffi.C.APP_CMD_GAINED_FOCUS then
+                self.device.screen:refreshFull()
+            elseif ev.code == ffi.C.APP_CMD_WINDOW_REDRAW_NEEDED then
+                self.device.screen:refreshFull()
             end
         end,
     }
@@ -37,7 +43,7 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    Generic:init()
+    Generic.init(self)
 end
 
 return Device

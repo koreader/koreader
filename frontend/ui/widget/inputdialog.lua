@@ -27,11 +27,11 @@ local InputDialog = InputContainer:new{
     title_face = Font:getFace("tfont", 22),
     input_face = Font:getFace("cfont", 20),
 
-    title_padding = Screen:scaleByDPI(5),
-    title_margin = Screen:scaleByDPI(2),
-    input_padding = Screen:scaleByDPI(10),
-    input_margin = Screen:scaleByDPI(10),
-    button_padding = Screen:scaleByDPI(14),
+    title_padding = Screen:scaleBySize(5),
+    title_margin = Screen:scaleBySize(2),
+    input_padding = Screen:scaleBySize(10),
+    input_margin = Screen:scaleBySize(10),
+    button_padding = Screen:scaleBySize(14),
 }
 
 function InputDialog:init()
@@ -76,7 +76,7 @@ function InputDialog:init()
         --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.button_table:getSize().w + self.button_padding,
-            h = Screen:scaleByDPI(2),
+            h = Screen:scaleBySize(2),
         }
     }
 

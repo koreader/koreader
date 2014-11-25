@@ -56,7 +56,7 @@ function Font:getFace(font, size)
 
     -- original size before scaling by screen DPI
     local orig_size = size
-    local size = Screen:scaleByDPI(size)
+    local size = Screen:scaleBySize(size)
 
     local face = self.faces[font..size]
     -- build face if not found

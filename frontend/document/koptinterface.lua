@@ -919,10 +919,10 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
             local link = page_links[i]
             -- enlarge tappable link box
             local lbox = Geom:new{
-                x = link.x0 - Screen:scaleByDPI(5),
-                y = link.y0 - Screen:scaleByDPI(5),
-                w = link.x1 - link.x0 + Screen:scaleByDPI(10),
-                h = link.y1 - link.y0 + Screen:scaleByDPI(10)
+                x = link.x0 - Screen:scaleBySize(5),
+                y = link.y0 - Screen:scaleBySize(5),
+                w = link.x1 - link.x0 + Screen:scaleBySize(10),
+                h = link.y1 - link.y0 + Screen:scaleBySize(10)
             }
             if inside_box(pos, lbox) and link.page then
                 return link, lbox

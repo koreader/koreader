@@ -69,7 +69,7 @@ local KindleVoyage = Kindle:new{
 }
 
 function Kindle2:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
@@ -79,7 +79,7 @@ function Kindle2:init()
 end
 
 function KindleDXG:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
@@ -90,7 +90,7 @@ function KindleDXG:init()
 end
 
 function Kindle3:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
@@ -101,7 +101,7 @@ function Kindle3:init()
 end
 
 function Kindle4:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),
@@ -114,7 +114,7 @@ end
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 function KindleTouch:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
@@ -138,7 +138,7 @@ function KindleTouch:init()
 end
 
 function KindlePaperWhite:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
@@ -153,7 +153,7 @@ function KindlePaperWhite:init()
 end
 
 function KindlePaperWhite2:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
@@ -168,7 +168,7 @@ function KindlePaperWhite2:init()
 end
 
 function KindleBasic:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
@@ -183,7 +183,7 @@ function KindleBasic:init()
 end
 
 function KindleVoyage:init()
-    self.screen = require("device/screen"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",

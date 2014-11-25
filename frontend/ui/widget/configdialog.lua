@@ -161,7 +161,7 @@ function ConfigOption:init()
     -- fill vertical group of config tab
     local vertical_group = VerticalGroup:new{}
     table.insert(vertical_group, VerticalSpan:new{
-        width = Screen:scaleByDPI(default_option_padding),
+        width = Screen:scaleBySize(default_option_padding),
     })
     local show_advanced = G_reader_settings:readSetting("show_advanced") or false
     for c = 1, #self.options do
@@ -173,10 +173,10 @@ function ConfigOption:init()
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
-            local option_height = Screen:scaleByDPI(self.options[c].height and self.options[c].height or default_option_height)
+            local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or default_option_height)
             local item_spacing_with = self.options[c].spacing and self.options[c].spacing or default_items_spacing
             local items_spacing = HorizontalSpan:new{
-                width = Screen:scaleByDPI(item_spacing_with)
+                width = Screen:scaleBySize(item_spacing_with)
             }
             local horizontal_group = HorizontalGroup:new{}
             if self.options[c].name_text then
@@ -284,7 +284,7 @@ function ConfigOption:init()
                 local max_item_spacing = (Screen:getWidth() * item_align -
                         middle_item:getSize().w * items_count) / items_count
                 local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, Screen:scaleByDPI(item_spacing_with))
+                    width = math.min(max_item_spacing, Screen:scaleBySize(item_spacing_with))
                 }
                 for d = 1, #self.options[c].item_text do
                     local option_item = nil
@@ -334,7 +334,7 @@ function ConfigOption:init()
                 local max_item_spacing = (Screen:getWidth() * item_align -
                         first_item:getSize().w * items_count) / items_count
                 local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, Screen:scaleByDPI(item_spacing_with))
+                    width = math.min(max_item_spacing, Screen:scaleBySize(item_spacing_with))
                 }
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
@@ -362,7 +362,7 @@ function ConfigOption:init()
 
             if self.options[c].toggle then
                 local max_toggle_width = Screen:getWidth() / 2
-                local toggle_width = Screen:scaleByDPI(self.options[c].width or 216)
+                local toggle_width = Screen:scaleBySize(self.options[c].width or 216)
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
                     font_face = item_font_face,

@@ -149,16 +149,16 @@ local TouchMenuBar = InputContainer:new{
 }
 
 function TouchMenuBar:init()
-    local icon_sep_width = Screen:scaleByDPI(2)
+    local icon_sep_width = Screen:scaleBySize(2)
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
     local ib = IconButton:new{icon_file = self.icons[1]}
     local content_width = ib:getSize().w * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
     local spacing = HorizontalSpan:new{
-        width = math.min(spacing_width, Screen:scaleByDPI(20))
+        width = math.min(spacing_width, Screen:scaleBySize(20))
     }
-    self.height = ib:getSize().h + Screen:scaleByDPI(10)
+    self.height = ib:getSize().h + Screen:scaleBySize(10)
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
     -- build up image widget for menu icon bar
@@ -192,7 +192,7 @@ function TouchMenuBar:init()
             self.bar_sep = LineWidget:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = Screen:scaleByDPI(2),
+                    h = Screen:scaleBySize(2),
                 },
                 empty_segments = {
                     {
@@ -205,7 +205,7 @@ function TouchMenuBar:init()
         local icon_sep = LineWidget:new{
             style = k == 1 and "solid" or "none",
             dimen = Geom:new{
-                w = Screen:scaleByDPI(2),
+                w = Screen:scaleBySize(2),
                 h = self.height,
             }
         }
@@ -258,9 +258,9 @@ local TouchMenu = InputContainer:new{
     -- for returnning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
-    item_height = Screen:scaleByDPI(50),
-    bordersize = Screen:scaleByDPI(2),
-    padding = Screen:scaleByDPI(5),
+    item_height = Screen:scaleBySize(50),
+    bordersize = Screen:scaleBySize(2),
+    padding = Screen:scaleBySize(5),
     fface = Font:getFace("ffont", 20),
     width = nil,
     height = nil,
@@ -353,7 +353,7 @@ function TouchMenu:init()
         end,
     }
     local footer_width = self.width - self.padding*2 - self.bordersize*2
-    local footer_height = up_button:getSize().h + Screen:scaleByDPI(2)
+    local footer_height = up_button:getSize().h + Screen:scaleBySize(2)
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
@@ -450,7 +450,7 @@ function TouchMenu:updateItems()
         end -- if i <= self.items
     end -- for c=1, self.perpage
 
-    table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleByDPI(2)})
+    table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleBySize(2)})
     table.insert(self.item_group, self.footer)
     self.page_info_text.text = util.template(_("Page %1 of %2"), self.page, self.page_num)
     self.page_info_left_chev:showHide(self.page_num > 1)

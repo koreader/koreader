@@ -36,7 +36,7 @@ function FileManager:init()
             face = Font:getFace("tfont", 24),
             text = self.title,
         },
-        VerticalSpan:new{ width = Screen:scaleByDPI(10) }
+        VerticalSpan:new{ width = Screen:scaleBySize(10) }
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")

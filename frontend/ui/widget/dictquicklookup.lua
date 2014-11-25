@@ -41,13 +41,13 @@ local DictQuickLookup = InputContainer:new{
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
 
-    title_padding = Screen:scaleByDPI(5),
-    title_margin = Screen:scaleByDPI(2),
-    word_padding = Screen:scaleByDPI(5),
-    word_margin = Screen:scaleByDPI(2),
-    definition_padding = Screen:scaleByDPI(2),
-    definition_margin = Screen:scaleByDPI(2),
-    button_padding = Screen:scaleByDPI(14),
+    title_padding = Screen:scaleBySize(5),
+    title_margin = Screen:scaleBySize(2),
+    word_padding = Screen:scaleBySize(5),
+    word_margin = Screen:scaleBySize(2),
+    definition_padding = Screen:scaleBySize(2),
+    definition_margin = Screen:scaleBySize(2),
+    button_padding = Screen:scaleBySize(14),
 }
 
 function DictQuickLookup:init()
@@ -202,7 +202,7 @@ function DictQuickLookup:update()
         --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = button_table:getSize().w + self.button_padding,
-            h = Screen:scaleByDPI(2),
+            h = Screen:scaleBySize(2),
         }
     }
 
@@ -252,7 +252,7 @@ function DictQuickLookup:update()
         dimen = self.region,
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleByDPI(5),
+            padding = Screen:scaleBySize(5),
             self.dict_frame,
         }
     }
