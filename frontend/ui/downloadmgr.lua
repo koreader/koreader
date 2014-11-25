@@ -1,5 +1,6 @@
 local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
+local Screen = require("device").screen
 local util = require("ffi/util")
 local _ = require("gettext")
 
@@ -20,6 +21,7 @@ function DownloadMgr:chooseDir()
     local download_dir = G_reader_settings:readSetting("download_dir")
     local path_chooser = PathChooser:new{
         title = self.title,
+        height = Screen:getHeight(),
         path = download_dir and (download_dir .. "/..") or lastdir,
         show_hidden = G_reader_settings:readSetting("show_hidden"),
         onConfirm = function(path)
