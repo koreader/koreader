@@ -5,7 +5,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 
 local DownloadMgr = {
-    title = _("Choose download directory"),
+    title = _("Long press to choose download directory"),
     onConfirm = function() end,
 }
 
