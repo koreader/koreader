@@ -17,8 +17,6 @@ local function strcoll(str1, str2)
 end
 
 local FileChooser = Menu:extend{
-    height = Screen:getHeight(),
-    width = Screen:getWidth(),
     no_title = true,
     path = lfs.currentdir(),
     parent = nil,
@@ -32,6 +30,8 @@ local FileChooser = Menu:extend{
 }
 
 function FileChooser:init()
+    self.width = Screen:getWidth()
+    self.height = Screen:getHeight()
     -- common dir filter
     self.dir_filter = function(dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
