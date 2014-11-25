@@ -45,7 +45,12 @@ function ReaderMenu:init()
                 local FileManager = require("apps/filemanager/filemanager")
                 FileManager:restoreScreenMode()
                 if not FileManager.is_running then
-                    FileManager:showFiles()
+                    local lastdir = nil
+                    local last_file = G_reader_settings:readSetting("lastfile")
+                    if last_file then
+                        lastdir = last_file:match("(.*)/")
+                    end
+                    FileManager:showFiles(lastdir)
                 end
             end,
         },
