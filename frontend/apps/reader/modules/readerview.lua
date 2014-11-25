@@ -223,7 +223,7 @@ function ReaderView:getScreenPageArea(page)
             return area
         end
     else
-        return self.dimen:copy()
+        return self.dimen
     end
 end
 
