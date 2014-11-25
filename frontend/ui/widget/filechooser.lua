@@ -31,7 +31,6 @@ local FileChooser = Menu:extend{
 
 function FileChooser:init()
     self.width = Screen:getWidth()
-    self.height = Screen:getHeight()
     -- common dir filter
     self.dir_filter = function(dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
