@@ -29,17 +29,8 @@ function FileManagerMenu:init()
         tools = {
             icon = "resources/icons/appbar.tools.png",
         },
-        opdscatalog = {
+        search = {
             icon = "resources/icons/appbar.magnify.browse.png",
-            callback = function()
-                self:onCloseFileManagerMenu()
-                local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
-                function OPDSCatalog:onExit()
-                    DEBUG("refresh filemanager")
-                    filemanager:onRefresh()
-                end
-                OPDSCatalog:showCatalog()
-             end,
         },
         home = {
             icon = "resources/icons/appbar.home.png",
@@ -124,7 +115,7 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- tools tab
     table.insert(self.tab_item_table.tools, {
-        text = _("Change defaults file"),
+        text = _("Advanced settings"),
         callback = function()
             SetDefaults:ConfirmEdit()
         end,
@@ -133,16 +124,32 @@ function FileManagerMenu:setUpdateItemTable()
         end,
     })
     table.insert(self.tab_item_table.tools, {
-        text = _("Search books"),
+        text = _("OPDS catalog"),
+        callback = function()
+            local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
+            function OPDSCatalog:onExit()
+                DEBUG("refresh filemanager")
+                filemanager:onRefresh()
+            end
+            OPDSCatalog:showCatalog()
+        end,
+    })
+
+    -- search tab
+    table.insert(self.tab_item_table.search, {
+        text = _("Find a book in calibre catalog"),
         callback = function()
             Search:getCalibre()
-            if Search.metafile_1 ~= nil then
-                Search:ShowSearch()
-            else -- fallback to filename search if no calibre metadata file
-                FileSearcher:init()
-            end
+            Search:ShowSearch()
         end
     })
+    table.insert(self.tab_item_table.search, {
+        text = _("Find a file"),
+        callback = function()
+            FileSearcher:init(self.ui.file_chooser.path)
+        end
+    })
+
     -- home tab
     table.insert(self.tab_item_table.home, {
         text = _("Exit"),
@@ -172,7 +179,7 @@ function FileManagerMenu:onShowMenu()
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
                 self.tab_item_table.tools,
-                self.tab_item_table.opdscatalog,
+                self.tab_item_table.search,
                 self.tab_item_table.home,
             },
             show_parent = menu_container,
