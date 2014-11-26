@@ -78,7 +78,6 @@ end
 
 function FileSearcher:init(search_path)
     self.path = search_path or lfs.currentdir()
-    --self.path = ('/home/frans/Dropbox')
     self:showSearch()
 end
 
