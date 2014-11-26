@@ -64,7 +64,10 @@ function ReaderDictionary:stardictLookup(word, box)
         -- escape quotes and other funny characters in word
         local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
         local results_str = nil
-        if std_out then results_str = std_out:read("*all") end
+        if std_out then
+            results_str = std_out:read("*all")
+            std_out:close()
+        end
         --DEBUG("result str:", word, results_str)
         local ok, results = pcall(JSON.decode, JSON, results_str)
         if ok and results then
