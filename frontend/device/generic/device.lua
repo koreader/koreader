@@ -76,7 +76,7 @@ function Device:outofScreenSaver()
         -- Blitbuffer.
         util.usleep(1500000)
         self.screen:restoreFromSavedBB()
-        self.screen:refresh(1)
+        self.screen:refreshFull()
         self.survive_screen_saver = true
     end
     self.screen_saver_mode = false
@@ -107,7 +107,7 @@ function Device:prepareSuspend()
         -- in no case should the frontlight be turned on in suspend mode
         self.powerd.fl:sleep()
     end
-    self.screen:refresh(1)
+    self.screen:refreshFull()
     self.screen_saver_mode = true
 end
 
@@ -117,7 +117,7 @@ end
 function Device:Resume()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.Suspend)
-    self.screen:refresh(1)
+    self.screen:refreshFull()
     self.screen_saver_mode = false
 end
 
@@ -131,7 +131,7 @@ end
 function Device:usbPlugOut()
     if self.charging_mode == true and self.screen_saver_mode == false then
         self.screen:restoreFromSavedBB()
-        self.screen:refresh(0)
+        self.screen:refreshFull()
     end
 
     --@TODO signal filemanager for file changes  13.06 2012 (houqp)
