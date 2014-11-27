@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local lfs = require("libs/libkoreader-lfs")
 local Geom = require("ui/geometry")
+local DEBUG = require("dbg")
 
 local function yes() return true end
 
@@ -13,6 +14,8 @@ local Kobo = Generic:new{
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
+    -- enforce protrait mode on Kobos:
+    isAlwaysPortrait = yes,
 }
 
 -- TODO: hasKeys for some devices?
@@ -27,6 +30,8 @@ local KoboTrilogy = Kobo:new{
 local KoboPixie = Kobo:new{
     model = "Kobo_pixie",
     display_dpi = 200,
+    -- bezel:
+    viewport = Geom:new{x=0, y=2, w=596, h=794},
 }
 
 -- Kobo Aura H2O:
@@ -36,7 +41,7 @@ local KoboDahlia = Kobo:new{
     touch_phoenix_protocol = true,
     display_dpi = 265,
     -- bezel:
-    viewport = Geom:new{x=0, y=10, w=1080, h=1430},
+    viewport = Geom:new{x=0, y=10, w=1080, h=1420},
 }
 
 -- Kobo Aura HD:
@@ -64,7 +69,7 @@ local KoboPhoenix = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
@@ -74,11 +79,6 @@ function Kobo:init()
             [116] = "Power",
         }
     }
-
-    Generic.init(self)
-
-    self.input.open("/dev/input/event0") -- Light button and sleep slider
-    self.input.open("/dev/input/event1")
 
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
@@ -98,6 +98,11 @@ function Kobo:init()
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
     end
+
+    Generic.init(self)
+
+    self.input.open("/dev/input/event0") -- Light button and sleep slider
+    self.input.open("/dev/input/event1")
 end
 
 function Kobo:getCodeName()

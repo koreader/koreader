@@ -13,7 +13,7 @@ local Device = Generic:new{
 }
 
 function Device:init()
-    self.screen = require("ffi/framebuffer_android"):new{device = self}
+    self.screen = require("ffi/framebuffer_android"):new{device = self, debug = DEBUG}
     self.powerd = require("device/android/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
