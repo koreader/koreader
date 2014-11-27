@@ -41,7 +41,7 @@ local KoboDahlia = Kobo:new{
     touch_phoenix_protocol = true,
     display_dpi = 265,
     -- bezel:
-    viewport = Geom:new{x=0, y=10, w=1080, h=1430},
+    viewport = Geom:new{x=0, y=10, w=1080, h=1420},
 }
 
 -- Kobo Aura HD:
