@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local lfs = require("libs/libkoreader-lfs")
 local Geom = require("ui/geometry")
+local DEBUG = require("dbg")
 
 local function yes() return true end
 
@@ -13,6 +14,8 @@ local Kobo = Generic:new{
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
+    -- enforce protrait mode on Kobos:
+    isAlwaysPortrait = yes,
 }
 
 -- TODO: hasKeys for some devices?
@@ -27,6 +30,8 @@ local KoboTrilogy = Kobo:new{
 local KoboPixie = Kobo:new{
     model = "Kobo_pixie",
     display_dpi = 200,
+    -- bezel:
+    viewport = Geom:new{x=0, y=2, w=596, h=794},
 }
 
 -- Kobo Aura H2O:
@@ -64,7 +69,7 @@ local KoboPhoenix = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,

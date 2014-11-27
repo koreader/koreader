@@ -29,6 +29,8 @@ local Device = {
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,
+    -- enforce portrait orientation on display, no matter how configured at startup
+    isAlwaysPortrait = no,
 }
 
 function Device:new(o)
@@ -42,7 +44,6 @@ function Device:init()
     if not self.screen then
         error("screen/framebuffer must be implemented")
     end
-    self.screen.debug = DEBUG
 
     DEBUG("initializing for device", self.model)
     DEBUG("framebuffer resolution:", self.screen:getSize())
