@@ -44,6 +44,9 @@ function Device:init()
     end
     self.screen.debug = DEBUG
 
+    DEBUG("initializing for device", self.model)
+    DEBUG("framebuffer resolution:", self.screen:getSize())
+
     if not self.input then
         self.input = require("device/input"):new{device = self}
     end
@@ -52,6 +55,7 @@ function Device:init()
     end
 
     if self.viewport then
+        DEBUG("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
