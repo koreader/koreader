@@ -75,11 +75,6 @@ function Kobo:init()
         }
     }
 
-    Generic.init(self)
-
-    self.input.open("/dev/input/event0") -- Light button and sleep slider
-    self.input.open("/dev/input/event1")
-
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
     if self.touch_switch_xy and not KOBO_TOUCH_MIRRORED
@@ -98,6 +93,11 @@ function Kobo:init()
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
     end
+
+    Generic.init(self)
+
+    self.input.open("/dev/input/event0") -- Light button and sleep slider
+    self.input.open("/dev/input/event1")
 end
 
 function Kobo:getCodeName()
