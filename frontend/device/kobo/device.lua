@@ -17,16 +17,19 @@ local Kobo = Generic:new{
 
 -- TODO: hasKeys for some devices?
 
+-- Kobo Touch:
 local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
     touch_switch_xy = false,
 }
 
+-- Kobo Mini:
 local KoboPixie = Kobo:new{
     model = "Kobo_pixie",
     display_dpi = 200,
 }
 
+-- Kobo Aura H2O:
 local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
@@ -36,18 +39,21 @@ local KoboDahlia = Kobo:new{
     viewport = Geom:new{x=0, y=10, w=1080, h=1430},
 }
 
+-- Kobo Aura HD:
 local KoboDragon = Kobo:new{
     model = "Kobo_dragon",
     hasFrontlight = yes,
     display_dpi = 265,
 }
 
+-- Kobo Glo:
 local KoboKraken = Kobo:new{
     model = "Kobo_kraken",
     hasFrontlight = yes,
     display_dpi = 212,
 }
 
+-- Kobo Aura:
 local KoboPhoenix = Kobo:new{
     model = "Kobo_phoenix",
     hasFrontlight = yes,
