@@ -503,7 +503,7 @@ function Menu:init()
         bordersize = self.is_borderless and 0 or 2,
         padding = 0,
         margin = 0,
-        radius = math.floor(self.dimen.w/20),
+        radius = self.is_popout and math.floor(self.dimen.w/20) or 0,
         content
     }
 
