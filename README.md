@@ -66,10 +66,12 @@ OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`,
 `subversion` and `cmake` installed. Version of autoconf need to be greater than 2.64.
+You also need nasm and of course gcc or clang - if you want to cross-compile for other
+architecture, you need a proper cross-compile toolchain.
 
 Ubuntu users may need to run:
 ```
-sudo apt-get install build-essential libtool gcc-multilib
+sudo apt-get install build-essential libtool gcc-multilib nasm
 ```
 
 Cross compile toolchains are available for Ubuntu users through these commands:
