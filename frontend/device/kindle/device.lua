@@ -226,7 +226,7 @@ function KindleTouch:exit()
     if isSpecialOffers() then
         -- fake a touch event
         if self.touch_dev then
-            local width, height = Screen:getScreenWidth(), Screen:getScreenHeight()
+            local width, height = self.screen:getScreenWidth(), self.screen:getScreenHeight()
             require("ffi/input").fakeTapInput(self.touch_dev,
                 math.min(width, height)/2,
                 math.max(width, height)-30

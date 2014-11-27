@@ -394,14 +394,22 @@ function ReaderHighlight:saveHighlight()
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end
-        local hl_item = {}
-        hl_item["text"] = self.selected_text.text
-        hl_item["pos0"] = self.selected_text.pos0
-        hl_item["pos1"] = self.selected_text.pos1
-        hl_item["pboxes"] = self.selected_text.pboxes
-        hl_item["datetime"] = os.date("%Y-%m-%d %H:%M:%S")
-        hl_item["drawer"] = self.view.highlight.saved_drawer
+        local datetime = os.date("%Y-%m-%d %H:%M:%S")
+        local hl_item = {
+            datetime = datetime,
+            text = self.selected_text.text,
+            pos0 = self.selected_text.pos0,
+            pos1 = self.selected_text.pos1,
+            pboxes = self.selected_text.pboxes,
+            drawer = self.view.highlight.saved_drawer,
+        }
         table.insert(self.view.highlight.saved[page], hl_item)
+        self.ui.bookmark:addBookmark({
+            page = self.ui.document.info.has_pages and page or self.selected_text.pos0,
+            datetime = datetime,
+            notes = self.selected_text.text,
+            highlighted = true,
+        })
         --[[
         -- disable exporting hightlights to My Clippings
         -- since it's not portable and there is a better Evernote plugin
@@ -469,7 +477,11 @@ end
 
 function ReaderHighlight:deleteHighlight(page, i)
     DEBUG("delete highlight")
-    table.remove(self.view.highlight.saved[page], i)
+    local removed = table.remove(self.view.highlight.saved[page], i)
+    self.ui.bookmark:removeBookmark({
+        page = self.ui.document.info.has_pages and removed.page or removed.pos0,
+        datetime = removed.datetime,
+    })
 end
 
 function ReaderHighlight:editHighlight()

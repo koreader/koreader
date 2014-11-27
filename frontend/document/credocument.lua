@@ -419,7 +419,7 @@ function CreDocument:setBatteryState(state)
 end
 
 function CreDocument:isXPointerInCurrentPage(xp)
-    DEBUG("CreDocument: check in page", xp)
+    DEBUG("CreDocument: check xpointer in current page", xp)
     return self._document:isXPointerInCurrentPage(xp)
 end
 

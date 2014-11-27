@@ -20,4 +20,4 @@ Input.dummy = true
 
 -- turn on debug
 local DEBUG = require("dbg")
-DEBUG:turnOn()
+--DEBUG:turnOn()
