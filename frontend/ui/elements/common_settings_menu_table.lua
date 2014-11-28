@@ -16,6 +16,7 @@ if Device:hasFrontlight() then
         end,
     })
 end
+
 table.insert(common_settings, {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:readSetting("night_mode") end,
@@ -37,7 +38,7 @@ table.insert(common_settings, {
     sub_item_table = {
         require("ui/elements/screen_dpi_menu_table"),
         require("ui/elements/screen_eink_opt_menu_table"),
-        UIManager:getRefreshMenuTable(),
+        require("ui/elements/refresh_menu_table"),
     },
 })
 table.insert(common_settings, Language:getLangMenuTable())
