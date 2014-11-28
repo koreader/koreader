@@ -256,16 +256,15 @@ function FileManager:deleteFile(file)
     end
 end
 
-local collates = {
-    strcoll = _("Title"),
-    access = _("Recent"),
-}
-
 function FileManager:getSortingMenuTable()
     local fm = self
+    local collates = {
+        strcoll = {_("by title"), _("Sort by title")},
+        access = {_("by date"), _("Sort by date")},
+    }
     local set_collate_table = function(collate)
         return {
-            text = collates[collate],
+            text = collates[collate][2],
             checked_func = function()
                 return fm.file_chooser.collate == collate
             end,
@@ -274,7 +273,10 @@ function FileManager:getSortingMenuTable()
     end
     return {
         text_func = function()
-            return _("Sort order: ") .. collates[fm.file_chooser.collate]
+            return util.template(
+                _("Sort order: %1"),
+                collates[fm.file_chooser.collate][1]
+            )
         end,
         sub_item_table = {
             set_collate_table("strcoll"),

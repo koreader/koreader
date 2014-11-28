@@ -5,6 +5,7 @@ local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local OTAManager = {
@@ -114,9 +115,11 @@ function OTAManager:fetchAndProcessUpdate()
         })
     elseif ota_version then
         UIManager:show(ConfirmBox:new{
-            text = _("Do you want to update?\n") ..
-                    _("Installed version: ") .. local_version .. "\n" ..
-                    _("Available version: ") .. ota_version .. "\n",
+            text = T(
+                _("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
+                local_version,
+                ota_version
+            ),
             ok_callback = function()
                 UIManager:show(InfoMessage:new{
                     text = _("Downloading may take several minutes..."),

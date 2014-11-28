@@ -461,19 +461,34 @@ function UIManager:getRefreshMenuTable()
                 callback = function() UIManager:setRefreshRate(6) end,
             },
             {
-                text_func = function() return _("Custom ") .. "1: " .. custom_1() .. _(" pages") end,
+                text_func = function()
+                    return util.template(
+                        _("Custom 1: %1 pages"),
+                        custom_1()
+                    )
+                end,
                 checked_func = function() return UIManager:getRefreshRate() == custom_1() end,
                 callback = function() UIManager:setRefreshRate(custom_1()) end,
                 hold_input = custom_input("refresh_rate_1")
             },
             {
-                text_func = function() return _("Custom ") .. "2: " .. custom_2() .. _(" pages") end,
+                text_func = function()
+                    return util.template(
+                        _("Custom 2: %1 pages"),
+                        custom_2()
+                    )
+                end,
                 checked_func = function() return UIManager:getRefreshRate() == custom_2() end,
                 callback = function() UIManager:setRefreshRate(custom_2()) end,
                 hold_input = custom_input("refresh_rate_2")
             },
             {
-                text_func = function() return _("Custom ") .. "3: " .. custom_3() .. _(" pages") end,
+                text_func = function()
+                    return util.template(
+                        _("Custom 3: %1 pages"),
+                        custom_3()
+                    )
+                end,
                 checked_func = function() return UIManager:getRefreshRate() == custom_3() end,
                 callback = function() UIManager:setRefreshRate(custom_3()) end,
                 hold_input = custom_input("refresh_rate_3")
