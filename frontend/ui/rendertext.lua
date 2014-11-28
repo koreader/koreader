@@ -44,7 +44,7 @@ local function utf8Chars(input)
             else
                 return pos+1, 0xFFFD, "\xFF\xFD"
             end
-            if string.len(input) < (pos + bytes_left - 1) then
+            if string.len(input) < (pos + bytes_left) then
                 return pos+1, 0xFFFD, "\xFF\xFD"
             end
             for i = pos+1, pos + bytes_left do
@@ -52,7 +52,9 @@ local function utf8Chars(input)
                 if bit.band(value, 0xC0) == 0x80 then
                     glyph = bit.bor(bit.lshift(glyph, 6), bit.band(value, 0x3F))
                 else
-                    return i+1, 0xFFFD, "\xFF\xFD"
+                    -- invalid UTF8 continuation - don't be greedy, just skip
+                    -- the initial char of the sequence.
+                    return pos+1, 0xFFFD, "\xFF\xFD"
                 end
             end
             -- TODO: check for valid ranges here!
