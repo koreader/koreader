@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
@@ -111,6 +112,10 @@ end
 function ReaderDictionary:onUpdateDefaultDict(dict)
     DEBUG("make default dictionary:", dict)
     self.default_dictionary = dict
+    UIManager:show(InfoMessage:new{
+        text = _("This is now the default dictionary for this document."),
+        timeout = 2,
+    })
     return true
 end
 
