@@ -37,6 +37,8 @@ local ImageWidget = Widget:new{
     height = nil,
     -- if autoscale is true image will be rescaled according to screen dpi
     autoscale = false,
+    -- when alpha is set to true, alpha values from the image will be honored
+    alpha = false,
     _bb = nil
 }
 
@@ -108,7 +110,11 @@ function ImageWidget:paintTo(bb, x, y)
         w = size.w,
         h = size.h
     }
-    bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+    if self.alpha == true then
+        bb:alphablitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+    else
+        bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+    end
     if self.invert then
         bb:invertRect(x, y, size.w, size.h)
     end
