@@ -3,8 +3,8 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
-
 local NetworkMgr = {}
 
 local function kindleEnableWifi(toggle)
@@ -121,7 +121,7 @@ function NetworkMgr:getProxyMenuTable()
     end
     return {
         text_func = function()
-            return _("HTTP proxy ") .. (proxy_enabled() and proxy() or "")
+            return T(_("HTTP proxy %1"), (proxy_enabled() and proxy() or ""))
         end,
         checked_func = function() return proxy_enabled() end,
         callback = function()

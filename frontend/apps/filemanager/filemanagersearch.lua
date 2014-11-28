@@ -10,6 +10,7 @@ local Screen = require("device").screen
 local util = require("ffi/util")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local calibre = "metadata.calibre"
@@ -517,10 +518,10 @@ function Search:showresults()
         self.results = {}
         local i = 1
         while i <= self.count do
-            local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
-                          _("Author(s):") .. " " .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
-                          _("Tags:") .. " " .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
-                          _("Series:") .. " " .. (self.data[i][self.series] or "-")
+            local dummy = T(_("Title: %1"), (self.data[i][self.title] or "-")) .. "\n \n" ..
+                          T(_("Author(s): %1"), (self.data[i][self.authors2] or "-")) .. "\n \n" ..
+                          T(_("Tags: %1"), (self.data[i][self.tags2] or "-")) .. "\n \n" ..
+                          T(_("Series: %1"), (self.data[i][self.series] or "-"))
             if self.data[i][self.series] ~= "-" then
                 dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
             end

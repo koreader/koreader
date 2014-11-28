@@ -7,8 +7,8 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
-
 local slt2 = require('slt2')
 local MyClipping = require("clip")
 
@@ -346,15 +346,21 @@ function EvernoteExporter:exportClippings(clippings)
         if all_count == 1 then
             msg = _("Exported notes from book:") .. "\n" .. export_title
         else
-            msg = _("Exported notes from book:") .. "\n" .. export_title
-            msg = msg .. "\n" .. _("and ") .. all_count-1 .. _(" others.")
+            msg = T(
+                _("Exported notes from book:\n%1\nand %2 others."),
+                export_title,
+                all_count-1
+            )
         end
     elseif error_count > 0 then
         if all_count == 1 then
             msg = _("An error occurred while trying to export notes from book:") .. "\n" .. error_title
         else
-            msg = _("Multiple errors occurred while trying to export notes from book:") .. "\n" .. error_title
-            msg = msg .. "\n" .. _("and ") .. error_count-1 .. _(" others.")
+            msg = T(
+                _("Multiple errors occurred while trying to export notes from book:\n%1\nand %2 others."),
+                error_title,
+                error_count-1
+            )
         end
     end
     UIManager:show(InfoMessage:new{ text = msg })
