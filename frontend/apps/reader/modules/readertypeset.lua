@@ -5,6 +5,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderTypeset = InputContainer:new{
@@ -149,7 +150,10 @@ end
 function ReaderTypeset:makeDefaultFloatingPunctuation()
     local toggler = self.floating_punctuation == 1 and _("On") or _("Off")
     UIManager:show(ConfirmBox:new{
-        text = _("Set default floating punctuation to ")..toggler.."?",
+        text = T(
+            _("Set default floating punctuation to %1?"),
+            toggler
+        ),
         ok_callback = function()
             G_reader_settings:saveSetting("floating_punctuation", self.floating_punctuation)
         end,

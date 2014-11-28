@@ -8,6 +8,7 @@ local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderZooming = InputContainer:new{
@@ -338,7 +339,10 @@ end
 
 function ReaderZooming:makeDefault(zoom_mode)
     UIManager:show(ConfirmBox:new{
-        text = _("Set default zoom mode to ")..zoom_mode.."?",
+        text = T(
+            _("Set default zoom mode to %1?"),
+            zoom_mode
+        ),
         ok_callback = function()
             G_reader_settings:saveSetting("zoom_mode", zoom_mode)
         end,

@@ -4,8 +4,9 @@ local Screen = require("device").screen
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
-local _ = require("gettext")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
+local _ = require("gettext")
 
 local ReaderScreenshot = InputContainer:new{
     datetime_name = "screenshots/Screenshot_%Y-%b-%d_%H%M%S.png",
@@ -37,7 +38,7 @@ end
 function ReaderScreenshot:onScreenshot(filename)
     local screenshot_name = filename or os.date(self.datetime_name)
     UIManager:show(InfoMessage:new{
-        text = _("Writing screen to ")..screenshot_name,
+        text = T( _("Saving screenshot to %1."), screenshot_name),
         timeout = 2,
     })
     Screen:shot(screenshot_name)

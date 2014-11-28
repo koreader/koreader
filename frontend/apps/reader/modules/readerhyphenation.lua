@@ -1,6 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderHyphenation = InputContainer:new{
@@ -17,7 +18,7 @@ function ReaderHyphenation:init()
             callback = function()
                 self.hyph_alg = v
                 UIManager:show(InfoMessage:new{
-                    text = _("Change Hyphenation to ")..v,
+                    text = T( _("Changed hyphenation to %1."), v),
                 })
                 self.ui.document:setHyphDictionary(v)
                 self.ui.toc:onUpdateToc()

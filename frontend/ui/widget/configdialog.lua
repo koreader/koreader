@@ -24,6 +24,7 @@ local Event = require("ui/event")
 local Device = require("device")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local OptionTextItem = InputContainer:new{}
@@ -568,7 +569,11 @@ end
 
 function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
     UIManager:show(ConfirmBox:new{
-        text = _("Set default ")..(name_text or "").._(" to ")..labels[position].."?",
+        text = T(
+            _("Set default %1 to %2?"),
+            (name_text or ""),
+            labels[position]
+        ),
         ok_callback = function()
             local name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])

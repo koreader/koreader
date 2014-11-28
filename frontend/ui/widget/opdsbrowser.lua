@@ -268,7 +268,10 @@ function OPDSBrowser:getCatalog(feed_url)
     elseif not ok and catalog then
         DEBUG("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = _("Cannot get catalog info from ") .. feed_url,
+            text = util.template(
+                _("Cannot get catalog info from %1"),
+                (feed_url or "")
+            ),
         })
         return
     end
