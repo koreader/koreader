@@ -7,6 +7,7 @@ local Screen = require("device").screen
 local JSON = require("JSON")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderDictionary = InputContainer:new{}
 
@@ -113,7 +114,7 @@ function ReaderDictionary:onUpdateDefaultDict(dict)
     DEBUG("make default dictionary:", dict)
     self.default_dictionary = dict
     UIManager:show(InfoMessage:new{
-        text = _("This is now the default dictionary for this document."),
+        text = T(_("%1 is now the default dictionary for this document."), dict),
         timeout = 2,
     })
     return true
