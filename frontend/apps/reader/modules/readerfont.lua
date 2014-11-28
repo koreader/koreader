@@ -10,6 +10,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderFont = InputContainer:new{
@@ -210,7 +211,7 @@ end
 function ReaderFont:makeDefault(face)
     if face then
         UIManager:show(ConfirmBox:new{
-            text = _("Set default font to ")..face.."?",
+            text = T( _("Set default font to %1?"), face),
             ok_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
             end,
