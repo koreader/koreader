@@ -2,11 +2,11 @@ local _ = require("gettext")
 
 local S = {}
 
-S.SCREEN_MODE = _("Screen Mode")
+S.SCREEN_MODE = _("Orientation")
 S.PAGE_CROP = _("Page Crop")
 S.FULL_SCREEN = _("Full Screen")
 S.SCROLL_MODE = _("Scroll Mode")
-S.PAGE_MARGIN = _("Page Margin")
+S.PAGE_MARGIN = _("Margin")
 S.LINE_SPACING = _("Line Spacing")
 S.COLUMNS = _("Columns")
 S.TEXT_ALIGN = _("Text Align")
