@@ -67,7 +67,7 @@ function OPDSBrowser:addServerFromInput(fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     table.insert(servers, {
         title = fields[1],
-        url = fields[2],
+        url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
     })
     G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
@@ -92,7 +92,7 @@ function OPDSBrowser:addNewCatalog()
         fields = {
             {
                 text = "",
-                hint = _("Catalog Name"),
+                hint = _("Catalog name"),
             },
             {
                 text = "",
@@ -288,7 +288,7 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
     if catalog then
         local feed = catalog.feed or catalog
         local function build_href(href)
-            if href:match("^http") then
+            if href:match("^http://") then
                 return href
             elseif href:match("^//") then
                 local parsed = url.parse(item_url or base_url)
@@ -332,7 +332,7 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
                 item.acquisitions = {}
                 if entry.link then
                     for i, link in ipairs(entry.link) do
-                        if link.type:find(self.catalog_type) and not link.rel then
+                        if link.type:find(self.catalog_type) then
                             item.url = build_href(link.href)
                         end
                         if link.rel and link.rel:match(self.acquisition_rel) then
@@ -505,7 +505,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
     for i, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
-            server.url = fields[2]
+            server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
         end
         table.insert(servers, server)
     end
