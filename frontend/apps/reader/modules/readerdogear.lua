@@ -13,6 +13,7 @@ local ReaderDogear = InputContainer:new{}
 function ReaderDogear:init()
     local widget = ImageWidget:new{
         file = "resources/icons/dogear.png",
+        alpha = true,
     }
     self[1] = RightContainer:new{
         dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
