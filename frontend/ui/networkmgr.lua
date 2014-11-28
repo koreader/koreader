@@ -130,12 +130,12 @@ function NetworkMgr:getProxyMenuTable()
             end
             if not proxy() then
                 UIManager:show(InfoMessage:new{
-                    text = _("Tips:\nlong press on this menu entry to configure HTTP proxy."),
+                    text = _("Tip:\nLong press on this menu entry to configure HTTP proxy."),
                 })
             end
         end,
         hold_input = {
-            title = _("input proxy address"),
+            title = _("Enter proxy address"),
             type = "text",
             hint = proxy() or "",
             callback = function(input)

@@ -147,7 +147,7 @@ function ReaderFont:onSetFontSize(new_size)
 
     self.font_size = new_size
     UIManager:show(Notification:new{
-        text = _("Set font size to ")..self.font_size,
+        text = T( _("Font size set to %1."), self.font_size),
         timeout = 1,
     })
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
@@ -159,7 +159,7 @@ end
 function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(80, space))
     UIManager:show(Notification:new{
-        text = _("Set line space to ")..self.line_space_percent.."%",
+        text = T( _("Line spacing set to %1%."), self.line_space_percent),
         timeout = 1,
     })
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
@@ -177,7 +177,7 @@ end
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     UIManager:show(Notification:new{
-        text = _("Set font gamma to ")..self.gamma_index,
+        text = T( _("Font gamma set to %1."), self.gamma_index),
         timeout = 1
     })
     self.ui.document:setGammaIndex(self.gamma_index)
@@ -198,7 +198,7 @@ function ReaderFont:setFont(face)
     if face and self.font_face ~= face then
         self.font_face = face
         UIManager:show(Notification:new{
-            text = _("Redrawing with font ")..face,
+            text = T( _("Redrawing with font %1."), face),
             timeout = 1,
         })
 

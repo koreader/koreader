@@ -59,7 +59,7 @@ function ReaderFrontLight:onShowIntensity()
     local powerd = Device:getPowerDevice()
     if powerd.flIntensity ~= nil then
         UIManager:show(Notification:new{
-            text = _("Frontlight intensity is set to ")..powerd.flIntensity,
+            text = T( _("Frontlight intensity is set to %1."), powerd.flIntensity),
             timeout = 1.0,
         })
     end
