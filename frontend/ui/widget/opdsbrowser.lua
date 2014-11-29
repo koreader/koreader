@@ -332,7 +332,7 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
                 item.acquisitions = {}
                 if entry.link then
                     for i, link in ipairs(entry.link) do
-                        if link.type:find(self.catalog_type) then
+                        if link.type:find(self.catalog_type) and (not link.rel or link.rel == 'subsection') then
                             item.url = build_href(link.href)
                         end
                         if link.rel and link.rel:match(self.acquisition_rel) then
