@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Device = require("device")
 local DEBUG = require("dbg")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderFrontLight = InputContainer:new{
