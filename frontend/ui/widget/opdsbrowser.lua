@@ -40,6 +40,7 @@ local OPDSBrowser = Menu:extend{
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
     acquisition_rel = "^http://opds%-spec%.org/acquisition",
+    image_rel = "http://opds-spec.org/image",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
 
     formats = {
