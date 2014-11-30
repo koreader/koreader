@@ -283,8 +283,12 @@ function OPDSBrowser:getCatalog(feed_url)
 end
 
 function OPDSBrowser:genItemTableFromURL(item_url, base_url)
-    local item_table = {}
     local catalog = self:getCatalog(item_url or base_url)
+    return self:genItemTableFromCatalog(catalog, item_url, base_url)
+end
+
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, base_url)
+    local item_table = {}
     if catalog then
         local feed = catalog.feed or catalog
         local function build_href(href)
@@ -332,7 +336,7 @@ function OPDSBrowser:genItemTableFromURL(item_url, base_url)
                 item.acquisitions = {}
                 if entry.link then
                     for i, link in ipairs(entry.link) do
-                        if link.type:find(self.catalog_type) and (not link.rel or link.rel == 'subsection') then
+                        if link.type:find(self.catalog_type) and (not link.rel or link.rel == "subsection" or link.rel == "http://opds-spec.org/sort/popular" or link.rel == "http://opds-spec.org/sort/new") then
                             item.url = build_href(link.href)
                         end
                         if link.rel and link.rel:match(self.acquisition_rel) then
