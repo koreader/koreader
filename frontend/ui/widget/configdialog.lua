@@ -522,8 +522,14 @@ end
 
 function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
+    local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
     self:update()
-    UIManager:setDirty("all")
+    UIManager:setDirty("all", function()
+        local refresh_dimen =
+            old_dimen and old_dimen:combine(self.dialog_frame.dimen)
+            or self.dialog_frame.dimen
+        return "partial", refresh_dimen
+    end)
     return true
 end
 
