@@ -61,17 +61,18 @@ more about this project.
 Building Prerequisites
 ======================
 
-Instructions about how to get and compile the source are intended for a linux
+These instructions for how to get and compile the source are intended for a Linux
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`,
-`subversion` and `cmake` installed. Version of autoconf need to be greater than 2.64.
-You also need nasm and of course gcc or clang - if you want to cross-compile for other
-architecture, you need a proper cross-compile toolchain.
+`subversion` and `cmake` installed, as well as a version of `autoconf` greater than 2.64.
+You also need `nasm` and of course a compiler like `gcc` or `clang`. If you want to
+cross-compile for other architectures, you need a proper cross-compile toolchain.
 
-Ubuntu users may need to run:
+Users of Debian and Ubuntu can install the required packages using:
 ```
-sudo apt-get install build-essential libtool gcc-multilib nasm
+sudo apt-get install build-essential libtool gcc-multilib \
+patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev
 ```
 
 Cross compile toolchains are available for Ubuntu users through these commands:
@@ -196,6 +197,28 @@ make po
 ```
 If your language is not listed on the Transifex project, please don't hesitate
 to send a language request [here][koreader-transifex].
+
+Variables in translation
+-------
+
+Some strings contain variables that should remain unaltered in translation.
+For example:
+
+```lua
+The title of the book is %1 and its author is %2.
+```
+This might be displayed as:
+```lua
+The title of the book is The Republic and its author is Plato.
+```
+To aid localization the variables may be freely positioned:
+```lua
+De auteur van het boek is %2 en de titel is %1.
+```
+That would result in:
+```lua
+De auteur van het boek is Plato en de titel is The Republic.
+```
 
 Use ccache
 ==========
