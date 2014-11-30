@@ -70,10 +70,9 @@ function OptionTextItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
-    UIManager.update_regions_func = function()
-        return {self[1].dimen}
-    end
-    UIManager:setDirty(self.config, "partial")
+    UIManager:setDirty(self.config, function()
+        return "partial", self[1].dimen
+    end)
     return true
 end
 
@@ -125,10 +124,9 @@ function OptionIconItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
-    UIManager.update_regions_func = function()
-        return {self[1].dimen}
-    end
-    UIManager:setDirty(self.config, "partial")
+    UIManager:setDirty(self.config, function()
+        return "partial", self[1].dimen
+    end)
     return true
 end
 
@@ -524,8 +522,14 @@ end
 
 function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
+    local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
     self:update()
-    UIManager.repaint_all = true
+    UIManager:setDirty("all", function()
+        local refresh_dimen =
+            old_dimen and old_dimen:combine(self.dialog_frame.dimen)
+            or self.dialog_frame.dimen
+        return "partial", refresh_dimen
+    end)
     return true
 end
 
@@ -563,7 +567,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         if events then
             self:onConfigEvents(events, position)
         end
-        UIManager.repaint_all = true
+        UIManager:setDirty("all")
     end)
 end
 

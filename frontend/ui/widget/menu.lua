@@ -283,6 +283,7 @@ end
 function MenuItem:onTapSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
+    -- TODO: regional refresh
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
@@ -295,6 +296,7 @@ end
 function MenuItem:onHoldSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
+    -- TODO: regional refresh
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
@@ -574,6 +576,7 @@ function Menu:init()
 end
 
 function Menu:updateItems(select_number)
+    local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
     self.layout = {}
     self.item_group:clear()
@@ -648,9 +651,12 @@ function Menu:updateItems(select_number)
         self.page_info_text.text = _("no choices available")
     end
 
-    -- nicolua
-    -- FIXME: dirty hack to clear previous menus
-    UIManager:setDirty(self.show_parent or self)
+    UIManager:setDirty("all", function()
+        local refresh_dimen =
+            old_dimen and old_dimen:combine(self.dimen)
+            or self.dimen
+        return "partial", refresh_dimen
+    end)
 end
 
 --[[

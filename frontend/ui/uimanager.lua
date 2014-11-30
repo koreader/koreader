@@ -2,26 +2,16 @@ local Device = require("device")
 local Screen = Device.screen
 local Input = require("device").input
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
 -- there is only one instance of this
 local UIManager = {
-    -- force to repaint all the widget is stack, will be reset to false
-    -- after each ui loop
-    repaint_all = false,
-    -- force to do full refresh, will be reset to false
-    -- after each ui loop
-    full_refresh = false,
-    -- force to do partial refresh, will be reset to false
-    -- after each ui loop
-    partial_refresh = false,
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
     refresh_count = 0,
-    -- only update specific regions of the screen
-    update_regions_func = nil,
 
     event_handlers = nil,
 
@@ -31,6 +21,8 @@ local UIManager = {
     _execution_stack_dirty = false,
     _dirty = {},
     _zeromqs = {},
+    _refresh_stack = {},
+    _refresh_func_stack = {},
 }
 
 function UIManager:init()
@@ -105,7 +97,7 @@ function UIManager:show(widget, x, y)
         end
     end
     -- and schedule it to be painted
-    self:setDirty(widget)
+    self:setDirty(widget, "partial")
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
@@ -135,7 +127,7 @@ function UIManager:close(widget)
     if dirty then
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
-            self:setDirty(self._window_stack[i].widget)
+            self:setDirty(self._window_stack[i].widget, "partial")
         end
     end
 end
@@ -176,16 +168,49 @@ function UIManager:unschedule(action)
     end
 end
 
--- register a widget to be repainted
-function UIManager:setDirty(widget, refresh_type)
-    -- "auto": request full refresh
-    -- "full": force full refresh
-    -- "partial": partial refresh
-    if not refresh_type then
-        refresh_type = "auto"
-    end
+--[[
+register a widget to be repainted and enqueue a refresh
+
+the second parameter (refreshtype) can either specify a refreshtype
+(optionally in combination with a refreshregion - which is suggested)
+or a function that returns refreshtype AND refreshregion and is called
+after painting the widget.
+
+E.g.:
+UIManager:setDirty(self.widget, "partial")
+UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
+UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
+--]]
+function UIManager:setDirty(widget, refreshtype, refreshregion)
     if widget then
-        self._dirty[widget] = refresh_type
+        if widget == "all" then
+            -- special case: set all top-level widgets as being "dirty".
+            for i = 1, #self._window_stack do
+                self._dirty[self._window_stack[i].widget] = true
+            end
+        else
+            self._dirty[widget] = true
+            if DEBUG.is_on then
+                -- when debugging, we check if we get handed a valid widget,
+                -- which would be a dialog that was previously passed via show()
+                local found = false
+                for i = 1, #self._window_stack do
+                    if self._window_stack[i].widget == widget then found = true end
+                end
+                if not found then
+                    DEBUG("INFO: invalid widget for setDirty()", debug.traceback())
+                end
+            end
+        end
+    end
+    -- handle refresh information
+    if not refreshtype then return end
+    if type(refreshtype) == "function" then
+        -- callback, will be issued after painting
+        table.insert(self._refresh_func_stack, refreshtype)
+    else
+        -- otherwise, enqueue refresh
+        self:_refresh(refreshtype, refreshregion)
     end
 end
 
@@ -252,7 +277,7 @@ function UIManager:sendEvent(event)
     end
 end
 
-function UIManager:checkTasks()
+function UIManager:_checkTasks()
     local now = { util.gettime() }
 
     -- check if we have timed events in our queue and search next one
@@ -286,36 +311,85 @@ function UIManager:checkTasks()
     return wait_until, now
 end
 
+-- precedence of refresh modes:
+local refresh_modes = { fast = 1, ui = 2, partial = 3, full = 4 }
+-- refresh methods in framebuffer implementation
+local refresh_methods = {
+    fast = "refreshFast",
+    ui = "refreshUI",
+    partial = "refreshPartial",
+    full = "refreshFull",
+}
+
+--[[
+refresh mode comparision
+
+will return the mode that takes precedence
+--]]
+local function update_mode(mode1, mode2)
+    if refresh_modes[mode1] > refresh_modes[mode2] then
+        return mode1
+    else
+        return mode2
+    end
+end
+
+--[[
+enqueue a refresh
+
+Widgets call this in their paintTo() method in order to notify
+UIManager that a certain part of the screen is to be refreshed.
+
+mode:   refresh mode ("full", "partial", "ui", "fast")
+region: Rect() that specifies the region to be updated
+        optional, update will affect whole screen if not specified.
+        Note that this should be the exception.
+--]]
+function UIManager:_refresh(mode, region)
+    -- default mode is partial    
+    mode = mode or "partial"
+    -- special case: full screen partial update
+    -- will get promoted every self.FULL_REFRESH_COUNT updates
+    if not region and mode == "partial" then
+        self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
+        if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
+            DEBUG("promote refresh to full refresh")
+            mode = "full"
+        end
+    end
+
+    -- if no region is specified, define default region
+    region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
+
+    for i = 1, #self._refresh_stack do
+        -- check for collision with updates that are already enqueued
+        if region:intersectWith(self._refresh_stack[i].region) then
+            -- combine both refreshes' regions
+            local combined = region:combine(self._refresh_stack[i].region)
+            -- update the mode, if needed
+            local mode = update_mode(mode, self._refresh_stack[i].mode)
+            -- remove colliding update
+            table.remove(self._refresh_stack, i)
+            -- and try again with combined data
+            return self:_refresh(mode, combined)
+        end
+    end
+    -- if we hit no (more) collides, enqueue the update
+    table.insert(self._refresh_stack, {mode = mode, region = region})
+end
+
 -- repaint dirty widgets
-function UIManager:repaint()
+function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
     -- will trigger a refresh if set.
     local dirty = false
 
-    -- we use this to record requests for certain refresh types
-    -- TODO: fix this, see below
-    local force_full_refresh = self.full_refresh
-    self.full_refresh = false
-
-    local force_partial_refresh = self.partial_refresh
-    self.partial_refresh = false
-
-    local force_fast_refresh = false
-
     for _, widget in ipairs(self._window_stack) do
-        -- paint if repaint_all is request
-        -- paint also if current widget or any widget underneath is dirty
-        if self.repaint_all or dirty or self._dirty[widget.widget] then
-            widget.widget:paintTo(Screen.bb, widget.x, widget.y)
-
-            -- self._dirty[widget.widget] may also be "auto"
-            if self._dirty[widget.widget] == "full" then
-                force_full_refresh = true
-            elseif self._dirty[widget.widget] == "partial" then
-                force_partial_refresh = true
-            elseif self._dirty[widget.widget] == "fast" then
-                force_fast_refresh = true
-            end
+        -- paint if current widget or any widget underneath is dirty
+        if dirty or self._dirty[widget.widget] then
+            -- pass hint to widget that we got when setting widget dirty
+            -- the widget can use this to decide which parts should be refreshed
+            widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
@@ -324,42 +398,30 @@ function UIManager:repaint()
             dirty = true
         end
     end
-    self.repaint_all = false
 
-    if dirty then
-        -- select proper refresh mode
-        -- TODO: fix this. We should probably do separate refreshes
-        -- by regional refreshes (e.g. fast refresh, some partial refreshes)
-        -- and full-screen full refresh
-        local refresh
-
-        if force_fast_refresh then
-            refresh = Screen.refreshFast
-        elseif force_partial_refresh then
-            refresh = Screen.refreshPartial
-        elseif force_full_refresh or self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            refresh = Screen.refreshFull
-            -- a full refresh will reset the counter which leads to an automatic full refresh
-            self.refresh_count = 0
-        else
-            -- default
-            refresh = Screen.refreshPartial
-            -- increment refresh counter in this case
-            self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
-        end
-
-        if self.update_regions_func then
-            local update_regions = self.update_regions_func()
-            for _, update_region in ipairs(update_regions) do
-                -- in some rare cases update region has 1 pixel offset
-                refresh(Screen, update_region.x-1, update_region.y-1,
-                               update_region.w+2, update_region.h+2)
-            end
-            self.update_regions_func = nil
-        else
-            refresh(Screen)
-        end
+    -- execute pending refresh functions
+    for _, refreshfunc in ipairs(self._refresh_func_stack) do
+        local refreshtype, region = refreshfunc()
+        if refreshtype then self:_refresh(refreshtype, region) end
     end
+    self._refresh_func_stack = {}
+
+    -- we should have at least one refresh if we did repaint.
+    -- If we don't, we add one now and print a warning if we
+    -- are debugging
+    if dirty and #self._refresh_stack == 0 then
+        DEBUG("WARNING: no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
+        self:_refresh("partial")
+    end
+
+    -- execute refreshes:
+    for _, refresh in ipairs(self._refresh_stack) do
+        DEBUG("triggering refresh", refresh)
+        Screen[refresh_methods[refresh.mode]](Screen,
+            refresh.region.x - 1, refresh.region.y - 1,
+            refresh.region.w + 2, refresh.region.h + 2)
+    end
+    self._refresh_stack = {}
 end
 
 -- this is the main loop of the UI controller
@@ -373,7 +435,7 @@ function UIManager:run()
         -- that will be honored when calculating the time to wait
         -- for input events:
         repeat
-            wait_until, now = self:checkTasks()
+            wait_until, now = self:_checkTasks()
 
             --DEBUG("---------------------------------------------------")
             --DEBUG("exec stack", self._execution_stack)
@@ -388,7 +450,7 @@ function UIManager:run()
                 return nil
             end
 
-            self:repaint()
+            self:_repaint()
         until not self._execution_stack_dirty
 
         -- wait for next event
@@ -429,72 +491,6 @@ function UIManager:run()
             end
         end
     end
-end
-
-function UIManager:getRefreshMenuTable()
-    local function custom_1() return G_reader_settings:readSetting("refresh_rate_1") or 12 end
-    local function custom_2() return G_reader_settings:readSetting("refresh_rate_2") or 22 end
-    local function custom_3() return G_reader_settings:readSetting("refresh_rate_3") or 99 end
-    local function custom_input(name)
-        return {
-            title = _("Input page number for a full refresh"),
-            type = "number",
-            hint = "(1 - 99)",
-            callback = function(input)
-                local rate = tonumber(input)
-                G_reader_settings:saveSetting(name, rate)
-                UIManager:setRefreshRate(rate)
-            end,
-        }
-    end
-    return {
-        text = _("E-ink full refresh rate"),
-        sub_item_table = {
-            {
-                text = _("Every page"),
-                checked_func = function() return UIManager:getRefreshRate() == 1 end,
-                callback = function() UIManager:setRefreshRate(1) end,
-            },
-            {
-                text = _("Every 6 pages"),
-                checked_func = function() return UIManager:getRefreshRate() == 6 end,
-                callback = function() UIManager:setRefreshRate(6) end,
-            },
-            {
-                text_func = function()
-                    return util.template(
-                        _("Custom 1: %1 pages"),
-                        custom_1()
-                    )
-                end,
-                checked_func = function() return UIManager:getRefreshRate() == custom_1() end,
-                callback = function() UIManager:setRefreshRate(custom_1()) end,
-                hold_input = custom_input("refresh_rate_1")
-            },
-            {
-                text_func = function()
-                    return util.template(
-                        _("Custom 2: %1 pages"),
-                        custom_2()
-                    )
-                end,
-                checked_func = function() return UIManager:getRefreshRate() == custom_2() end,
-                callback = function() UIManager:setRefreshRate(custom_2()) end,
-                hold_input = custom_input("refresh_rate_2")
-            },
-            {
-                text_func = function()
-                    return util.template(
-                        _("Custom 3: %1 pages"),
-                        custom_3()
-                    )
-                end,
-                checked_func = function() return UIManager:getRefreshRate() == custom_3() end,
-                callback = function() UIManager:setRefreshRate(custom_3()) end,
-                hold_input = custom_input("refresh_rate_3")
-            },
-        }
-    }
 end
 
 UIManager:init()

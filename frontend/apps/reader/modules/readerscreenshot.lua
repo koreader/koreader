@@ -42,7 +42,8 @@ function ReaderScreenshot:onScreenshot(filename)
         timeout = 2,
     })
     Screen:shot(screenshot_name)
-    UIManager.full_refresh = true
+    -- trigger full refresh
+    UIManager:setDirty(nil, "full")
     return true
 end
 

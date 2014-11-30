@@ -71,6 +71,7 @@ function ReaderSearch:onShowSearchDialog(text)
     }
     local res = do_search(self.searchFromCurrent, text, 0)()
     UIManager:show(self.search_dialog)
+    -- TODO: regional
     UIManager:setDirty(self.dialog, "partial")
     return true
 end

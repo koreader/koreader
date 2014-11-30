@@ -256,8 +256,7 @@ function DictQuickLookup:update()
             self.dict_frame,
         }
     }
-    UIManager.repaint_all = true
-    UIManager.partial_refresh = true
+    UIManager:setDirty("all", "partial")
 end
 
 function DictQuickLookup:isPrevDictAvaiable()

@@ -87,8 +87,7 @@ function LoginDialog:init()
         },
         self.dialog_frame,
     }
-    UIManager.repaint_all = true
-    UIManager.full_refresh = true
+    UIManager:setDirty("all", "full")
 end
 
 function LoginDialog:getCredential()
