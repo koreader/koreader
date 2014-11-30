@@ -408,6 +408,7 @@ function TouchMenu:_recalculateDimen()
 end
 
 function TouchMenu:updateItems()
+    local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculateDimen()
     self.item_group:clear()
     table.insert(self.item_group, self.bar)
@@ -460,11 +461,13 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
     self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
-    -- FIXME: this is a dirty hack to clear previous menus
-    -- refer to issue #664 (in kindlepdfviewer)
-    -- TODO: regional refresh
-    UIManager:setDirty("all", "partial")
-    --UIManager:setDirty(self.show_parent or self, "partial")
+
+    UIManager:setDirty("all", function()
+        local refresh_dimen =
+            old_dimen and old_dimen:combine(self.dimen)
+            or self.dimen
+        return "partial", refresh_dimen
+    end)
 end
 
 function TouchMenu:switchMenuTab(tab_num)
@@ -493,6 +496,8 @@ function TouchMenu:backToUpperMenu()
         self.item_table = table.remove(self.item_table_stack)
         self.page = 1
         self:updateItems()
+    else
+        self:closeMenu()
     end
 end
 

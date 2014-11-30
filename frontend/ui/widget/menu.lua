@@ -576,6 +576,7 @@ function Menu:init()
 end
 
 function Menu:updateItems(select_number)
+    local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
     self.layout = {}
     self.item_group:clear()
@@ -650,11 +651,12 @@ function Menu:updateItems(select_number)
         self.page_info_text.text = _("no choices available")
     end
 
-    -- nicolua
-    -- FIXME: dirty hack to clear previous menus
-    -- TODO: regional refresh
-    UIManager:setDirty("all", "partial")
-    --UIManager:setDirty(self.show_parent or self, "partial")
+    UIManager:setDirty("all", function()
+        local refresh_dimen =
+            old_dimen and old_dimen:combine(self.dimen)
+            or self.dimen
+        return "partial", refresh_dimen
+    end)
 end
 
 --[[
