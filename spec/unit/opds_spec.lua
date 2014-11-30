@@ -54,6 +54,107 @@ which contains *all* Project Gutenberg metadata in one RDF/XML file.
 </feed>
 ]]
 
+local acquisition_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+DON'T USE THIS PAGE FOR SCRAPING.
+
+Seriously. You'll only get your IP blocked.
+
+Download http://www.gutenberg.org/feeds/catalog.rdf.bz2 instead,
+which contains *all* Project Gutenberg metadata in one RDF/XML file.
+
+--><feed xmlns="http://www.w3.org/2005/Atom" xmlns:opds="http://opds-spec.org/2010/catalog" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:relevance="http://a9.com/-/opensearch/extensions/relevance/1.0/" xml:base="http://m.gutenberg.org:80/ebooks/42474.opds">
+<id>http://m.gutenberg.org:80/ebooks/42474.opds</id>
+<updated>2014-09-03T12:16:15Z</updated>
+<title>1000 Mythological Characters Briefly Described by Edward Sylvester Ellis</title>
+<subtitle>Free ebooks since 1971.</subtitle>
+<author>
+<name>Marcello Perathoner</name>
+<uri>http://www.gutenberg.org</uri>
+<email>webmaster@gutenberg.org</email>
+</author>
+<icon>http://m.gutenberg.org:80/pics/favicon.png</icon>
+<link rel="search" type="application/opensearchdescription+xml" title="Project Gutenberg Catalog Search" href="http://m.gutenberg.org:80/catalog/osd-books.xml"/>
+<link rel="self" title="This Page" type="application/atom+xml;profile=opds-catalog" href="/ebooks/42474.opds"/>
+<link rel="alternate" type="text/html" title="HTML Page" href="/ebooks/42474"/>
+<link rel="start" title="Start Page" type="application/atom+xml;profile=opds-catalog" href="/ebooks.opds/"/>
+<opensearch:itemsPerPage>25</opensearch:itemsPerPage>
+<opensearch:startIndex>1</opensearch:startIndex>
+<entry>
+<updated>2014-09-03T12:16:15Z</updated>
+<title>1000 Mythological Characters Briefly Described</title>
+<content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<p>This edition had all images removed.</p>
+<p>
+Title:
+1000 Mythological Characters Briefly Described<br />Adapted to Private Schools, High Schools and Academies
+</p>
+<p>Author: Ellis, Edward Sylvester, 1840-1916</p>
+<p>Ebook No.: 42474</p>
+<p>Published: Apr 7, 2013</p>
+<p>Downloads: 1209</p>
+<p>Language: English</p>
+<p>Category: Text</p>
+<p>Rights: Public domain in the USA.</p>
+</div>
+</content>
+<id>urn:gutenberg:42474:2</id>
+<published>2013-04-07T00:00:00+00:00</published>
+<rights>Public domain in the USA.</rights>
+<author>
+<name>Ellis, Edward Sylvester</name>
+</author>
+<category scheme="http://purl.org/dc/terms/DCMIType" term="Text"/>
+<dcterms:language>en</dcterms:language>
+<relevance:score>1</relevance:score>
+<link type="application/epub+zip" rel="http://opds-spec.org/acquisition" title="EPUB (no images)" length="144227" href="http://www.gutenberg.org/ebooks/42474.epub.noimages"/>
+<link type="application/x-mobipocket-ebook" rel="http://opds-spec.org/acquisition" title="Kindle (no images)" length="550643" href="http://www.gutenberg.org/ebooks/42474.kindle.noimages"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image" href="http://www.gutenberg.org/cache/epub/42474/pg42474.cover.medium.jpg"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image/thumbnail" href="http://www.gutenberg.org/cache/epub/42474/pg42474.cover.small.jpg"/>
+<link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/42474/also/.opds" title="Readers also downloaded??"/>
+<link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/author/2569.opds" title="By Ellis, Edward Sylvester??"/>
+</entry>
+<entry>
+<updated>2014-09-03T12:16:15Z</updated>
+<title>1000 Mythological Characters Briefly Described</title>
+<content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<p>This edition has images.</p>
+<p>
+Title:
+1000 Mythological Characters Briefly Described<br />Adapted to Private Schools, High Schools and Academies
+</p>
+<p>Author: Ellis, Edward Sylvester, 1840-1916</p>
+<p>Ebook No.: 42474</p>
+<p>Published: Apr 7, 2013</p>
+<p>Downloads: 1209</p>
+<p>Language: English</p>
+<p>Category: Text</p>
+<p>Rights: Public domain in the USA.</p>
+</div>
+</content>
+<id>urn:gutenberg:42474:3</id>
+<published>2013-04-07T00:00:00+00:00</published>
+<rights>Public domain in the USA.</rights>
+<author>
+<name>Ellis, Edward Sylvester</name>
+</author>
+<category scheme="http://purl.org/dc/terms/DCMIType" term="Text"/>
+<dcterms:language>en</dcterms:language>
+<relevance:score>1</relevance:score>
+<link type="application/epub+zip" rel="http://opds-spec.org/acquisition" title="EPUB (with images)" length="647158" href="//www.gutenberg.org/ebooks/42474.epub.images"/>
+<link type="application/x-mobipocket-ebook" rel="http://opds-spec.org/acquisition" title="Kindle (with images)" length="1553578" href="//www.gutenberg.org/ebooks/42474.kindle.images"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image" href="//www.gutenberg.org/cache/epub/42474/pg42474.cover.medium.jpg"/>
+<link type="image/jpeg" rel="http://opds-spec.org/image/thumbnail" href="//www.gutenberg.org/cache/epub/42474/pg42474.cover.small.jpg"/>
+<link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/42474/also/.opds" title="Readers also downloaded??"/>
+<link type="application/atom+xml;profile=opds-catalog" rel="related" href="/ebooks/author/2569.opds" title="By Ellis, Edward Sylvester??"/>
+</entry>
+</feed>
+]]
+
 local popular_new_sample = [[
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:opds4l="http://www.feedbooks.com/opds4l" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xml:lang="en" xmlns:app="http://www.w3.org/2007/app" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog">
@@ -105,30 +206,101 @@ local popular_new_sample = [[
 </feed>
 ]]
 
+local facet_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+ <feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog"> <id>tag:root:authors:Санд</id>
+ <title>Книги по авторам</title>
+ <updated>2014-11-30T17:27:27+01:00</updated>
+ <icon>/favicon.ico</icon>
+ <link href="/opds-opensearch.xml" rel="search" type="application/opensearchdescription+xml" />
+ <link href="/opds/search?searchTerm={searchTerms}" rel="search" type="application/atom+xml" />
+ <link href="/opds" rel="start" type="application/atom+xml;profile=opds-catalog" />
+ <link href="/opds/authors/%D0%A1%D0%B0%D0%BD%D0%B4/1" rel="next" type="application/atom+xml;profile=opds-catalog" />
+ <entry> <updated>2014-11-30T17:27:27+01:00</updated>
+ <id>tag:author:75357</id>
+ <title>Санд Жаклин</title>
+ <content type="text">6 книг</content>
+ <link href="/opds/author/75357" type="application/atom+xml;profile=opds-catalog" />
+ <link href="/opds/authorsequences/75357" rel="http://www.feedbooks.com/opds/facet" type="application/atom+xml;profile=opds-catalog" title="Книги автора по сериям" />
+ <link href="/opds/authorsequenceless/75357" rel="http://www.feedbooks.com/opds/facet" type="application/atom+xml;profile=opds-catalog" title="Книги автора вне серий" />
+</entry>
+</feed>
+]]
+
 require("commonrequire")
 local OPDSParser = require("ui/opdsparser")
-local OPDSBrowser = require("ui/widget/opdsbrowser")
 local DEBUG = require("dbg")
 
-describe("OPDS browser module #nocov", function()
-    it("should generate URL on rel=subsection", function()
-        local catalog = OPDSParser:parse(navigation_sample)
-        local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://m.gutenberg.org/ebooks.opds/?format=opds")
-        --DEBUG(item_table)
-        
-        assert.truthy(item_table)
-        assert.are.same(item_table[1].title, "Popular")
-        assert.are.same(item_table[1].url, "http://m.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
+describe("OPDS module", function()
+    describe("OPDS parser module #nocov", function()
+        it("should parse OPDS navigation catalog", function()
+            local catalog = OPDSParser:parse(navigation_sample)
+            local feed = catalog.feed
+            --DEBUG(feed)
+            assert.truthy(feed)
+            assert.are.same(feed.title, "Project Gutenberg")
+            local entries = feed.entry
+            assert.truthy(entries)
+            assert.are.same(#entries, 3)
+            local entry = entries[3]
+            assert.are.same(entry.title, "Random")
+            assert.are.same(entry.id, "http://m.gutenberg.org/ebooks/search.opds/?sort_order=random")
+        end)
+        it("should parse OPDS acquisition catalog", function()
+            local catalog = OPDSParser:parse(acquisition_sample)
+            local feed = catalog.feed
+            --DEBUG(feed)
+            assert.truthy(feed)
+            local entries = feed.entry
+            assert.truthy(entries)
+            assert.are.same(#entries, 2)
+            local entry = entries[2]
+            --DEBUG(entry)
+            assert.are.same(entry.title, "1000 Mythological Characters Briefly Described")
+            assert.are.same(entry.link[1].href, "//www.gutenberg.org/ebooks/42474.epub.images")
+        end)
     end)
-    it("should generate URL on rel=popular and rel=new", function()
-        local catalog = OPDSParser:parse(popular_new_sample)
-        local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
-        --DEBUG(item_table)
-        
-        assert.truthy(item_table)
-        assert.are.same(item_table[1].title, "Most Popular")
-        assert.are.same(item_table[1].url, "http://www.feedbooks.com/books/top.atom")
-        assert.are.same(item_table[2].title, "Recently Added")
-        assert.are.same(item_table[2].url, "http://www.feedbooks.com/books/recent.atom")
+    describe("OPDS browser module", function()
+        local OPDSBrowser = require("ui/widget/opdsbrowser")
+
+        describe("URL generation", function()
+            it("should generate URL on rel=subsection", function()
+                local catalog = OPDSParser:parse(navigation_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://m.gutenberg.org/ebooks.opds/?format=opds")
+                --DEBUG(item_table)
+
+                assert.truthy(item_table)
+                assert.are.same(item_table[1].title, "Popular")
+                assert.are.same(item_table[1].url, "http://m.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
+            end)
+            it("should generate URL on rel=popular and rel=new", function()
+                local catalog = OPDSParser:parse(popular_new_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
+                --DEBUG(item_table)
+
+                assert.truthy(item_table)
+                assert.are.same(item_table[1].title, "Most Popular")
+                assert.are.same(item_table[1].url, "http://www.feedbooks.com/books/top.atom")
+                assert.are.same(item_table[2].title, "Recently Added")
+                assert.are.same(item_table[2].url, "http://www.feedbooks.com/books/recent.atom")
+            end)
+            it("should use the main URL for faceted links as long as faceted links aren't properly supported", function()
+                local catalog = OPDSParser:parse(facet_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
+                --DEBUG(item_table)
+
+                assert.truthy(item_table)
+                assert.are.same(item_table[1].url, "http://flibusta.net/opds/author/75357")
+            end)
+        end)
+
+        it("should not fill item table incorrectly with thumbnail or image URL", function()
+            local catalog = OPDSParser:parse(facet_sample)
+            local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
+            --DEBUG(item_table)
+
+            assert.truthy(item_table)
+            assert.are_not.same(item_table[1].image, "http://flibusta.net/opds/author/75357")
+        end)
     end)
 end)
