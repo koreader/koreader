@@ -267,20 +267,13 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.mode = 0
         end
         self:applyFooterMode()
+        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     end
     if self.pageno then
         self:updateFooterPage()
     else
         self:updateFooterPos()
     end
-    local region = Geom:new{
-        x = 0,
-        y = Screen:getHeight() - self.height,
-        w = Screen:getWidth(),
-        h = self.height
-    }
-    UIManager:setDirty(self.view.dialog, "partial", region)
-    G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     return true
 end
 
