@@ -63,4 +63,9 @@ function ButtonDialog:onClose()
     return true
 end
 
+function ButtonDialog:paintTo(...)
+    InputContainer.paintTo(self, ...)
+    self.dimen = self[1][1].dimen -- FrameContainer
+end
+
 return ButtonDialog
