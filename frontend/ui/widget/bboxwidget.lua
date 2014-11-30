@@ -190,7 +190,7 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
         y1 = Math.round(bottom_right.y)
     }
 
-    UIManager.repaint_all = true
+    UIManager:setDirty("all")
 end
 
 function BBoxWidget:getModifiedPageBBox()

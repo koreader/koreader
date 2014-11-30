@@ -154,16 +154,16 @@ function Button:onTapSelectButton()
     if self.enabled and self.callback then
         UIManager:scheduleIn(0.0, function()
             self[1].invert = true
-            UIManager.update_regions_func = function()
-                return {self[1].dimen}
-            end
-            UIManager.repaint_all = true -- FIXME: Why?
-            UIManager:setDirty(self.show_parent, "partial")
+            UIManager:setDirty(self.show_parent, function()
+                return "partial", self[1].dimen
+            end)
         end)
         UIManager:scheduleIn(0.1, function()
             self.callback()
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, "partial")
+            UIManager:setDirty(self.show_parent, function()
+                return "partial", self[1].dimen
+            end)
         end)
     end
     return true

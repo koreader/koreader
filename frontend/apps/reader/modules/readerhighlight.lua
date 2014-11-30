@@ -120,7 +120,6 @@ function ReaderHighlight:clear()
     else
         self.ui.document:clearSelection()
     end
-    UIManager:setDirty(self.dialog, "full")
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
@@ -240,13 +239,9 @@ function ReaderHighlight:onHold(arg, ges)
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
         end
-        --[[
-        UIManager.update_regions_func = function()
-            DEBUG("update ReaderHighlight onHold region", self.selected_word.sbox)
-            return {self.selected_word.sbox}
-        end
-        --]]
         UIManager:setDirty(self.dialog, "partial")
+        -- TODO: only mark word?
+        -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
     end
     return true
 end
@@ -265,7 +260,12 @@ function ReaderHighlight:onHoldPan(arg, ges)
 
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     DEBUG("holdpan position in page", self.holdpan_pos)
+    local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+    if self.selected_text and old_text and old_text == self.selected_text.text then
+        -- no modification
+        return
+    end
     DEBUG("selected text:", self.selected_text)
     if self.selected_text then
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes

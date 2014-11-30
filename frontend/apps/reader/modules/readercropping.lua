@@ -148,7 +148,6 @@ function ReaderCropping:exitPageCrop(confirmed)
     else
         self:setCropZoomMode(confirmed)
     end
-    UIManager.repaint_all = true
 end
 
 function ReaderCropping:setCropZoomMode(confirmed)

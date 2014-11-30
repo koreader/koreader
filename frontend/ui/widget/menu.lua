@@ -283,6 +283,7 @@ end
 function MenuItem:onTapSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
+    -- TODO: regional refresh
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
@@ -295,6 +296,7 @@ end
 function MenuItem:onHoldSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
+    -- TODO: regional refresh
     UIManager:setDirty(self.show_parent, "partial")
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
@@ -650,7 +652,9 @@ function Menu:updateItems(select_number)
 
     -- nicolua
     -- FIXME: dirty hack to clear previous menus
-    UIManager:setDirty(self.show_parent or self)
+    -- TODO: regional refresh
+    UIManager:setDirty("all", "partial")
+    --UIManager:setDirty(self.show_parent or self, "partial")
 end
 
 --[[

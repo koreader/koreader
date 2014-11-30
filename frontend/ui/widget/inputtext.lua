@@ -154,7 +154,9 @@ function InputText:addChar(char)
     table.insert(self.charlist, self.charpos, char)
     self.charpos = self.charpos + 1
     self:initTextBox(table.concat(self.charlist))
-    UIManager:setDirty(self.parent, "partial")
+    UIManager:setDirty(self.parent, function()
+        return "ui", self.dimen
+    end)
 end
 
 function InputText:delChar()
@@ -162,12 +164,14 @@ function InputText:delChar()
     self.charpos = self.charpos - 1
     table.remove(self.charlist, self.charpos)
     self:initTextBox(table.concat(self.charlist))
-    UIManager:setDirty(self.parent, "partial")
+    UIManager:setDirty(self.parent, "ui")
 end
 
 function InputText:clear()
     self:initTextBox("")
-    UIManager:setDirty(self.parent, "partial")
+    UIManager:setDirty(self.parent, function()
+        return "ui", self.dimen
+    end)
 end
 
 function InputText:getText()
@@ -176,7 +180,9 @@ end
 
 function InputText:setText(text)
     self:initTextBox(text)
-    UIManager:setDirty(self.parent, "partial")
+    UIManager:setDirty(self.parent, function()
+        return "partial", self.dimen
+    end)
 end
 
 return InputText

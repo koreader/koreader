@@ -98,17 +98,18 @@ function TouchMenuItem:onTapSelect(arg, ges)
 
     UIManager:scheduleIn(0.0, function()
         self.item_frame.invert = true
-        UIManager.update_regions_func = function()
-            return {self.dimen}
-        end
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self.dimen
+        end)
     end)
     UIManager:scheduleIn(0.1, function()
         self.menu:onMenuSelect(self.item)
     end)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self.dimen
+        end)
     end)
     return true
 end
@@ -122,17 +123,18 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
     UIManager:scheduleIn(0.0, function()
         self.item_frame.invert = true
-        UIManager.update_regions_func = function()
-            return {self.dimen}
-        end
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self.dimen
+        end)
     end)
     UIManager:scheduleIn(0.1, function()
         self.menu:onMenuHold(self.item)
     end)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self.dimen
+        end)
     end)
     return true
 end
@@ -460,7 +462,9 @@ function TouchMenu:updateItems()
     self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
     -- FIXME: this is a dirty hack to clear previous menus
     -- refer to issue #664 (in kindlepdfviewer)
-    UIManager.repaint_all = true
+    -- TODO: regional refresh
+    UIManager:setDirty("all", "partial")
+    --UIManager:setDirty(self.show_parent or self, "partial")
 end
 
 function TouchMenu:switchMenuTab(tab_num)

@@ -96,21 +96,22 @@ function VirtualKey:init()
 end
 
 function VirtualKey:update_keyboard()
-    UIManager.update_regions_func = function()
+    UIManager:setDirty(self.keyboard, function()
         DEBUG("update key region", self[1].dimen)
-        return {self[1].dimen}
-    end
-    UIManager:setDirty(self.keyboard, "partial")
+        return "ui", self[1].dimen
+    end)
 end
 
 function VirtualKey:update_keyboard_inputbox()
     local inputbox = self.keyboard.inputbox
-    UIManager.update_regions_func = function()
-        DEBUG("update keyboard and inputbox", self[1].dimen, inputbox.dimen)
-        return {self[1].dimen, inputbox.dimen}
-    end
-    UIManager:setDirty(inputbox, "partial")
-    UIManager:setDirty(self.keyboard, "partial")
+    UIManager:setDirty(self.keyboard, function()
+        DEBUG("update inputbox", inputbox.dimen)
+        return "ui", inputbox.dimen
+    end)
+    UIManager:setDirty(self.keyboard, function()
+        DEBUG("update keyboard", self[1].dimen)
+        return "ui", self[1].dimen
+    end)
 end
 
 function VirtualKey:onTapSelect()
@@ -318,8 +319,13 @@ function VirtualKeyboard:setLayout(key)
         if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
-    UIManager.update_regions_func = nil
-    UIManager:setDirty(self, "partial")
+    UIManager:setDirty(self, function()
+        -- correct coordinates of keyboard
+        local dimen = self.dimen:copy()
+        dimen.y = Screen:getHeight() - dimen.h
+        DEBUG("update keyboard layout", dimen)
+        return "partial", dimen
+    end)
 end
 
 function VirtualKeyboard:addChar(key)

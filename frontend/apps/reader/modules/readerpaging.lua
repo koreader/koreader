@@ -314,7 +314,8 @@ function ReaderPaging:onSwipe(arg, ges)
             self:onPagingRel(-1)
         end
     else
-        UIManager.full_refresh = true
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
     end
 end
 
@@ -343,7 +344,8 @@ function ReaderPaging:onPanRelease(arg, ges)
         end
     else
         self.last_pan_relative_y = 0
-        UIManager.full_refresh = true
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
     end
 end
 
@@ -649,7 +651,7 @@ function ReaderPaging:onScrollPageRel(diff)
     end
     -- update current pageno to the very last part in current view
     self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
-    UIManager:setDirty(self.view.dialog)
+    UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:onGotoPageRel(diff)

@@ -43,16 +43,17 @@ end
 function IconButton:onTapClickButton()
     UIManager:scheduleIn(0.0, function()
         self.image.invert = true
-        UIManager.update_regions_func = function()
-            return {self[1].dimen}
-        end
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self[1].dimen
+        end)
     end)
     -- make sure button reacts before doing callback
     UIManager:scheduleIn(0.1, function()
         self.callback()
         self.image.invert = false
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, function()
+            return "partial", self[1].dimen
+        end)
     end)
     return true
 end

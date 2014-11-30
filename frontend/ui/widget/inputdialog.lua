@@ -116,8 +116,8 @@ function InputDialog:init()
         },
         self.dialog_frame,
     }
-    UIManager.repaint_all = true
-    UIManager.full_refresh = true
+    -- do a full refresh - is this really needed?
+    UIManager:setDirty("all", "full")
 end
 
 function InputDialog:onShowKeyboard()
