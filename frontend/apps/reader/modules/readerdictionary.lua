@@ -106,7 +106,7 @@ function ReaderDictionary:showDict(word, results, box)
             -- differentiate between dict and wiki
             wiki = self.wiki,
         }
-        UIManager:show(self.dict_window)
+        UIManager:show(self.dict_window, nil, nil, "none")
     end
 end
 
