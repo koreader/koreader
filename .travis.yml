@@ -23,7 +23,7 @@ script:
     - make fetchthirdparty all
     - sudo cp base/build/*/luajit /usr/bin/
     - make testfront
-    - make coverage
 
 after_success:
+    - make coverage
     - cd koreader-*/koreader && luacov-coveralls -v
