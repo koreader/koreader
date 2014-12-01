@@ -161,6 +161,7 @@ function FileManagerMenu:setUpdateItemTable()
 end
 
 function FileManagerMenu:onShowMenu()
+    local tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
     if #self.tab_item_table.setting == 0 then
         self:setUpdateItemTable()
     end
@@ -175,6 +176,7 @@ function FileManagerMenu:onShowMenu()
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
+            last_index = tab_index,
             tab_item_table = {
                 self.tab_item_table.setting,
                 self.tab_item_table.info,
@@ -195,7 +197,7 @@ function FileManagerMenu:onShowMenu()
     end
 
     main_menu.close_callback = function ()
-        UIManager:close(menu_container)
+        self:onCloseFileManagerMenu()
     end
 
     menu_container[1] = main_menu
@@ -207,6 +209,9 @@ function FileManagerMenu:onShowMenu()
 end
 
 function FileManagerMenu:onCloseFileManagerMenu()
+    local last_tab_index = self.menu_container[1].last_index
+    DEBUG("remember menu tab index", last_tab_index)
+    G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
     return true
 end

@@ -226,7 +226,7 @@ function ReaderMenu:onSetDimensions(dimen)
 end
 
 function ReaderMenu:onReadSettings(config)
-    self.last_tab_index = config:readSetting("menu_tab_index") or 1
+    self.last_tab_index = config:readSetting("readermenu_tab_index") or 1
 end
 
 function ReaderMenu:onSaveSettings()
