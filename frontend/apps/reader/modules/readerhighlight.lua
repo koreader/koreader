@@ -368,7 +368,9 @@ function ReaderHighlight:onHoldRelease()
             },
             tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
         }
-        UIManager:show(self.highlight_dialog)
+        UIManager:show(self.highlight_dialog, nil, nil, function()
+            return "partial", self.highlight_dialog.dimen
+        end)
     end
     return true
 end

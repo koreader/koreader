@@ -83,7 +83,8 @@ end
 
 -- register & show a widget
 -- modal widget should be always on the top
-function UIManager:show(widget, x, y)
+-- for refreshtype & refreshregion see description of setDirty()
+function UIManager:show(widget, x, y, refreshtype, refreshregion)
     DEBUG("show widget", widget.id)
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
@@ -97,7 +98,7 @@ function UIManager:show(widget, x, y)
         end
     end
     -- and schedule it to be painted
-    self:setDirty(widget, "partial")
+    self:setDirty(widget, refreshtype or "partial", refreshregion)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
@@ -107,7 +108,8 @@ function UIManager:show(widget, x, y)
 end
 
 -- unregister a widget
-function UIManager:close(widget)
+-- for refreshtype & refreshregion see description of setDirty()
+function UIManager:close(widget, refreshtype, refreshregion)
     if not widget then
         DEBUG("widget not exist to be closed")
         return
@@ -127,8 +129,9 @@ function UIManager:close(widget)
     if dirty then
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
-            self:setDirty(self._window_stack[i].widget, "partial")
+            self:setDirty(self._window_stack[i].widget)
         end
+        self:_refresh(refreshtype, refreshregion)
     end
 end
 
@@ -204,7 +207,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         end
     end
     -- handle refresh information
-    if not refreshtype then return end
+    if not refreshtype or refreshtype == "none" then return end
     if type(refreshtype) == "function" then
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)

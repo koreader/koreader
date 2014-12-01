@@ -344,8 +344,8 @@ function ReaderPaging:onPanRelease(arg, ges)
         end
     else
         self.last_pan_relative_y = 0
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+        -- trigger partial refresh
+        UIManager:setDirty(nil, "partial")
     end
 end
 

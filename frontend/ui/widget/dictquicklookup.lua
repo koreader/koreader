@@ -88,6 +88,7 @@ function DictQuickLookup:init()
 end
 
 function DictQuickLookup:update()
+    local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     -- calculate window dimension and try to not hide highlighted word
     self.align = "center"
     self.region = Geom:new{
@@ -256,7 +257,12 @@ function DictQuickLookup:update()
             self.dict_frame,
         }
     }
-    UIManager:setDirty("all", "partial")
+
+    UIManager:setDirty("all", function()
+        local update_region = self.dict_frame.dimen:combine(orig_dimen)
+        DEBUG("update dict region", update_region)
+        return "partial", update_region
+    end)
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
@@ -282,14 +288,7 @@ function DictQuickLookup:changeDictionary(index)
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
 
-    local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     self:update()
-
-    UIManager.update_regions_func = function()
-        local update_region = self.dict_frame.dimen:combine(orig_dimen)
-        DEBUG("update dict region", update_region)
-        return {update_region}
-    end
 end
 
 function DictQuickLookup:changeToDefaultDict()
