@@ -231,8 +231,8 @@ require("commonrequire")
 local OPDSParser = require("ui/opdsparser")
 local DEBUG = require("dbg")
 
-describe("OPDS module", function()
-    describe("OPDS parser module #nocov", function()
+describe("OPDS module #nocov", function()
+    describe("OPDS parser module", function()
         it("should parse OPDS navigation catalog", function()
             local catalog = OPDSParser:parse(navigation_sample)
             local feed = catalog.feed
