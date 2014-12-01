@@ -384,6 +384,10 @@ function TouchMenu:init()
     self:updateItems()
 end
 
+function TouchMenu:onCloseWidget()
+    UIManager:setDirty(nil, "partial", self.dimen)
+end
+
 function TouchMenu:_recalculateDimen()
     self.dimen.w = self.width
 

@@ -579,6 +579,10 @@ function Menu:init()
     end
 end
 
+function Menu:onCloseWidget()
+    UIManager:setDirty(nil, "partial", self.dimen)
+end
+
 function Menu:updateItems(select_number)
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
