@@ -116,8 +116,18 @@ function InputDialog:init()
         },
         self.dialog_frame,
     }
-    -- do a full refresh - is this really needed?
-    UIManager:setDirty("all", "full")
+end
+
+function InputDialog:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self.dialog_frame.dimen
+    end)
+end
+
+function InputDialog:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self.dialog_frame.dimen
+    end)
 end
 
 function InputDialog:onShowKeyboard()

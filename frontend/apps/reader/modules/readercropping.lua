@@ -64,6 +64,20 @@ function PageCropDialog:init()
     }
 end
 
+function PageCropDialog:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1].dimen:combine(self[2].dimen)
+    end)
+    return true
+end
+
+function PageCropDialog:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self[1].dimen:combine(self[2].dimen)
+    end)
+    return true
+end
+
 local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)

@@ -265,6 +265,20 @@ function DictQuickLookup:update()
     end)
 end
 
+function DictQuickLookup:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self.dict_frame.dimen
+    end)
+    return true
+end
+
+function DictQuickLookup:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self.dict_frame.dimen
+    end)
+    return true
+end
+
 function DictQuickLookup:isPrevDictAvaiable()
     return self.dict_index > 1
 end

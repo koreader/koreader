@@ -102,21 +102,9 @@ function VirtualKey:update_keyboard()
     end)
 end
 
-function VirtualKey:update_keyboard_inputbox()
-    local inputbox = self.keyboard.inputbox
-    UIManager:setDirty(self.keyboard, function()
-        DEBUG("update inputbox", inputbox.dimen)
-        return "ui", inputbox.dimen
-    end)
-    UIManager:setDirty(self.keyboard, function()
-        DEBUG("update keyboard", self[1].dimen)
-        return "ui", self[1].dimen
-    end)
-end
-
 function VirtualKey:onTapSelect()
     self[1].invert = true
-    self:update_keyboard_inputbox()
+    self:update_keyboard()
     if self.callback then
         self.callback()
     end
@@ -126,7 +114,7 @@ end
 
 function VirtualKey:onHoldSelect()
     self[1].invert = true
-    self:update_keyboard_inputbox()
+    self:update_keyboard()
     if self.hold_callback then
         self.hold_callback()
     end
@@ -227,6 +215,22 @@ function VirtualKeyboard:init()
     self:initLayout(self.layout)
 end
 
+function VirtualKeyboard:_refresh()
+    UIManager:setDirty(self, function()
+        return "partial", self[1][1].dimen
+    end)
+end
+
+function VirtualKeyboard:onShow()
+    self:_refresh()
+    return true
+end
+
+function VirtualKeyboard:onCloseWidget()
+    self:_refresh()
+    return true
+end
+
 function VirtualKeyboard:initLayout(layout)
     local function VKLayout(b1, b2, b3, b4)
         local function boolnum(bool)
@@ -319,13 +323,7 @@ function VirtualKeyboard:setLayout(key)
         if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
-    UIManager:setDirty(self, function()
-        -- correct coordinates of keyboard
-        local dimen = self.dimen:copy()
-        dimen.y = Screen:getHeight() - dimen.h
-        DEBUG("update keyboard layout", dimen)
-        return "partial", dimen
-    end)
+    self:_refresh()
 end
 
 function VirtualKeyboard:addChar(key)

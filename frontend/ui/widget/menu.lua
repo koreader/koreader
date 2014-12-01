@@ -283,11 +283,13 @@ end
 function MenuItem:onTapSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
-    -- TODO: regional refresh
-    UIManager:setDirty(self.show_parent, "partial")
+    local refreshfunc = function()
+        return "partial", self[1].dimen
+    end
+    UIManager:setDirty(self.show_parent, refreshfunc)
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, refreshfunc)
         self.menu:onMenuSelect(self.table, pos)
     end)
     return true
@@ -296,11 +298,13 @@ end
 function MenuItem:onHoldSelect(arg, ges)
     local pos = self:getGesPosition(ges)
     self[1].invert = true
-    -- TODO: regional refresh
-    UIManager:setDirty(self.show_parent, "partial")
+    local refreshfunc = function()
+        return "partial", self[1].dimen
+    end
+    UIManager:setDirty(self.show_parent, refreshfunc)
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
-        UIManager:setDirty(self.show_parent, "partial")
+        UIManager:setDirty(self.show_parent, refreshfunc)
         self.menu:onMenuHold(self.table, pos)
     end)
     return true

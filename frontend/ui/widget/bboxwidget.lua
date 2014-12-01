@@ -15,6 +15,7 @@ local BBoxWidget = InputContainer:new{
     screen_bbox = nil,
     linesize = 2,
     fine_factor = 10,
+    dimen = Geom:new(),
 }
 
 function BBoxWidget:init()
@@ -55,6 +56,9 @@ function BBoxWidget:getSize()
 end
 
 function BBoxWidget:paintTo(bb, x, y)
+    self.dimen = self.view.dimen:copy()
+    self.dimen.x, self.dimen.y = x, y
+
     -- As getScreenBBox uses view states, screen_bbox initialization is postponed.
     self.screen_bbox = self.screen_bbox or self:getScreenBBox(self.page_bbox)
     local bbox = self.screen_bbox

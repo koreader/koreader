@@ -520,6 +520,12 @@ function ConfigDialog:update()
     }
 end
 
+function ConfigDialog:onCloseWidget()
+    UIManager:setDirty("all", function()
+        return "partial", self.dialog_frame.dimen
+    end)
+end
+
 function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
     local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
