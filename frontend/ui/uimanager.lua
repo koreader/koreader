@@ -350,8 +350,7 @@ region: Rect() that specifies the region to be updated
         Note that this should be the exception.
 --]]
 function UIManager:_refresh(mode, region)
-    -- default mode is partial    
-    mode = mode or "partial"
+    if not mode then return end
     -- special case: full screen partial update
     -- will get promoted every self.FULL_REFRESH_COUNT updates
     if not region and mode == "partial" then
