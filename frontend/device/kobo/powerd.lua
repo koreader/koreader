@@ -13,9 +13,11 @@ local KoboPowerD = BasePowerD:new{
 }
 
 function KoboPowerD:init()
-    local kobolight = require("ffi/kobolight")
-    local ok, light = pcall(kobolight.open)
-    if ok then self.fl = light end
+    if self.device.hasFrontlight() then
+        local kobolight = require("ffi/kobolight")
+        local ok, light = pcall(kobolight.open)
+        if ok then self.fl = light end
+    end
 end
 
 function KoboPowerD:toggleFrontlight()
