@@ -70,7 +70,9 @@ local KoboPhoenix = Kobo:new{
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
-    self.powerd = require("device/kobo/powerd"):new{device = self}
+    if self.hasFrontlight then
+        self.powerd = require("device/kobo/powerd"):new{device = self}
+    end
     self.input = require("device/input"):new{
         device = self,
         event_map = {
