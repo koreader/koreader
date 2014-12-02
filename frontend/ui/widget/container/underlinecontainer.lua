@@ -29,6 +29,11 @@ end
 
 function UnderlineContainer:paintTo(bb, x, y)
     local container_size = self:getSize()
+    self.dimen = Geom:new{
+        x = x, y = y,
+        w = container_size.w,
+        h = container_size.h
+    }
     local content_size = self:getContentSize()
     local p_y = y
     if self.vertical_align == "center" then
