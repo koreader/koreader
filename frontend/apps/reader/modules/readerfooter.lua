@@ -274,6 +274,7 @@ function ReaderFooter:onTapFooter(arg, ges)
     else
         self:updateFooterPos()
     end
+    UIManager:setDirty(self.view.dialog, "partial", self[1][1][1].dimen)
     return true
 end
 
