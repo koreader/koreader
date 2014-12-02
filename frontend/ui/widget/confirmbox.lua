@@ -87,7 +87,18 @@ function ConfirmBox:init()
             }
         }
     }
+end
 
+function ConfirmBox:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self[1][1].dimen
+    end)
+end
+
+function ConfirmBox:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
 end
 
 function ConfirmBox:onClose()

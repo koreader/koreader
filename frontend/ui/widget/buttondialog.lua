@@ -50,6 +50,18 @@ function ButtonDialog:init()
     }
 end
 
+function ButtonDialog:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self[1][1].dimen
+    end)
+end
+
+function ButtonDialog:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
+end
+
 function ButtonDialog:onTapClose()
     UIManager:close(self)
     if self.tap_close_callback then

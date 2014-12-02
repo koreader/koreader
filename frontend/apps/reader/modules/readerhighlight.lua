@@ -241,6 +241,7 @@ function ReaderHighlight:onHold(arg, ges)
         end
         UIManager:setDirty(self.dialog, "partial")
         -- TODO: only mark word?
+        -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
     end
     return true
@@ -368,9 +369,7 @@ function ReaderHighlight:onHoldRelease()
             },
             tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
         }
-        UIManager:show(self.highlight_dialog, nil, nil, function()
-            return "partial", self.highlight_dialog.dimen
-        end)
+        UIManager:show(self.highlight_dialog)
     end
     return true
 end

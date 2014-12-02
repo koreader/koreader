@@ -20,7 +20,6 @@ local Notification = InputContainer:new{
     timeout = nil,
     margin = 5,
     padding = 5,
-    closed = false,
 }
 
 function Notification:init()
@@ -56,25 +55,27 @@ function Notification:init()
     }
 end
 
-function Notification:close()
-    if not self.closed then
-        self.closed = true
-        UIManager:close(self, "partial", self[1][1].dimen)
-    end
+function Notification:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
+    return true
 end
 
 function Notification:onShow()
     -- triggered by the UIManager after we got successfully shown (not yet painted)
+    UIManager:setDirty(self, function()
+        return "partial", self[1][1].dimen
+    end)
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function() self:close() end)
+        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
-    self.closed = false
     return true
 end
 
 function Notification:onAnyKeyPressed()
     -- triggered by our defined key events
-    self:close()
+    UIManager:close(self)
     return true
 end
 

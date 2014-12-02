@@ -128,8 +128,11 @@ function Screensaver:show()
     -- fallback to suspended message
     if not self.suspend_msg then
         self.suspend_msg = InfoMessage:new{ text = _("Suspended") }
+        UIManager:show(self.suspend_msg)
+    else
+        -- refresh whole screen for other types
+        UIManager:show(self.suspend_msg, "full")
     end
-    UIManager:show(self.suspend_msg)
 end
 
 function Screensaver:close()

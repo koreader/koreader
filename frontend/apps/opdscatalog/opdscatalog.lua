@@ -62,7 +62,18 @@ function OPDSCatalog:init()
         background = Blitbuffer.COLOR_WHITE,
         opds_browser,
     }
+end
 
+function OPDSCatalog:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self[1].dimen
+    end)
+end
+
+function OPDSCatalog:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1].dimen
+    end)
 end
 
 function OPDSCatalog:showCatalog()

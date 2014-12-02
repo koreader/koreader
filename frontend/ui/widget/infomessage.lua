@@ -25,7 +25,6 @@ local InfoMessage = InputContainer:new{
     face = Font:getFace("infofont", 25),
     text = "",
     timeout = nil, -- in seconds
-    closed = false,
 }
 
 function InfoMessage:init()
@@ -79,30 +78,32 @@ function InfoMessage:init()
     }
 end
 
-function InfoMessage:close()
-    if not self.closed then
-        self.closed = true
-        UIManager:close(self, "partial", self[1][1].dimen)
-    end
+function InfoMessage:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
+    return true
 end
 
 function InfoMessage:onShow()
     -- triggered by the UIManager after we got successfully shown (not yet painted)
+    UIManager:setDirty(self, function()
+        return "partial", self[1][1].dimen
+    end)
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function() self:close() end)
+        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
-    self.closed = false
     return true
 end
 
 function InfoMessage:onAnyKeyPressed()
     -- triggered by our defined key events
-    self:close()
+    UIManager:close(self)
     return true
 end
 
 function InfoMessage:onTapClose()
-    self:close()
+    UIManager:close(self)
     return true
 end
 

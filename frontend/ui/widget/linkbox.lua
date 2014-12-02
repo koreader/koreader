@@ -33,7 +33,17 @@ function LinkBox:paintTo(bb)
             self.bordersize, self.color, self.radius)
 end
 
+function LinkBox:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self.box
+    end)
+    return true
+end
+
 function LinkBox:onShow()
+    UIManager:setDirty(self, function()
+        return "partial", self.box
+    end)
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function()
             UIManager:close(self)
