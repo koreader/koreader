@@ -44,6 +44,7 @@ function FileManager:init()
     local file_chooser = FileChooser:new{
         -- remeber to adjust the height when new item is added to the group
         path = self.root_path,
+        collate = G_reader_settings:readSetting("collate") or "strcoll",
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
