@@ -2,6 +2,10 @@
 -- project folder as '.luacov' for project specific configuration
 -- @class module
 -- @name luacov.defaults
+
+-- global flag to indicate coverage test
+LUACOV = true
+
 return {
 
   -- default filename to load for config options if not provided
