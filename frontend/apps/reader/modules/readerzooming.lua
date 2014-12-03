@@ -295,6 +295,9 @@ function ReaderZooming:addToMainMenu(tab_item_table)
     if self.ui.document.info.has_pages then
         table.insert(tab_item_table.typeset, {
             text = _("Switch zoom mode"),
+            enabled_func = function()
+                return self.ui.document.configurable.text_wrap ~= 1
+            end,
             sub_item_table = {
                 {
                     text = _("Zoom to fit content width"),
