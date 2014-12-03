@@ -230,7 +230,7 @@ function ReaderMenu:onReadSettings(config)
 end
 
 function ReaderMenu:onSaveSettings()
-    self.ui.doc_settings:saveSetting("menu_tab_index", self.last_tab_index)
+    self.ui.doc_settings:saveSetting("readermenu_tab_index", self.last_tab_index)
 end
 
 function ReaderMenu:registerToMainMenu(widget)
