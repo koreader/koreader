@@ -123,6 +123,7 @@ function ReaderHighlight:clear()
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
+        UIManager:setDirty(self.dialog, "partial")
         return true
     end
 end
@@ -278,7 +279,7 @@ function ReaderHighlight:onHoldPan(arg, ges)
             self.selected_word = nil
         end
     end
-    UIManager:setDirty(self.dialog, "partial")
+    UIManager:setDirty(self.dialog, "ui")
 end
 
 function ReaderHighlight:lookup(selected_word)
