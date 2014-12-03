@@ -76,6 +76,7 @@ function ReaderDictionary:stardictLookup(word, box)
             --DEBUG("lookup result table:", word, results)
             self:showDict(word, tidy_markup(results), box)
         else
+            DEBUG("JSON data cannot be decoded", results)
             -- dummy results
             results = {
                 {

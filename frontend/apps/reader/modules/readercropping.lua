@@ -85,7 +85,9 @@ function ReaderCropping:onPageCrop(mode)
     -- backup original zoom mode as cropping use "page" zoom mode
     self.orig_zoom_mode = self.view.zoom_mode
     if mode == "auto" then
-        self:setCropZoomMode(true)
+        if self.document.configurable.text_wrap ~= 1 then
+            self:setCropZoomMode(true)
+        end
         return
     end
     -- backup original view dimen

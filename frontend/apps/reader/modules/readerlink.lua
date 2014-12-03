@@ -90,7 +90,7 @@ function ReaderLink:onTap(arg, ges)
                 if sbox then
                     UIManager:show(LinkBox:new{
                         box = sbox,
-                        timeout = 0.5,
+                        timeout = FOLLOW_LINK_TIMEOUT,
                         callback = function() self:onGotoLink(link) end
                     })
                     return true
