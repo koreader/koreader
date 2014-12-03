@@ -58,6 +58,11 @@ DCREREADER_TWO_PAGE_THRESHOLD = 7
 -- page overlap pixels
 DOVERLAPPIXELS = 30
 
+-- timeout to show link rectangle around links
+-- default to 0.5 second
+-- set to 0 to disable showing rectangle and follow link immediately
+FOLLOW_LINK_TIMEOUT = 0.5
+
 -- customizable tap zones(rectangles)
 -- x: x coordinate of top left corner in proportion of screen width
 -- y: y coordinate of top left corner in proportion of screen height
