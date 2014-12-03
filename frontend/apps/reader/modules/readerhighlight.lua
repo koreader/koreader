@@ -480,7 +480,7 @@ function ReaderHighlight:deleteHighlight(page, i)
     DEBUG("delete highlight")
     local removed = table.remove(self.view.highlight.saved[page], i)
     self.ui.bookmark:removeBookmark({
-        page = self.ui.document.info.has_pages and removed.page or removed.pos0,
+        page = self.ui.document.info.has_pages and page or removed.pos0,
         datetime = removed.datetime,
     })
 end
