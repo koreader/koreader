@@ -580,7 +580,14 @@ function Menu:init()
 end
 
 function Menu:onCloseWidget()
-    UIManager:setDirty(nil, "partial", self.dimen)
+    -- FIXME:
+    -- we cannot refresh regionally using the dimen field
+    -- because some menus without menu title use VerticalGroup to include
+    -- a text widget which is not calculated into the dimen.
+    -- For example, it's a dirty hack to use two menus(one this menu and one
+    -- touch menu) in the filemanager in order to capture tap gesture to popup
+    -- the filemanager menu.
+    UIManager:setDirty(nil, "partial")
 end
 
 function Menu:updateItems(select_number)
