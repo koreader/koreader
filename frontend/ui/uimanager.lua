@@ -353,12 +353,16 @@ function UIManager:_refresh(mode, region)
     if not mode then return end
     -- special case: full screen partial update
     -- will get promoted every self.FULL_REFRESH_COUNT updates
-    if not region and mode == "partial" then
+    -- since _refresh can be called mutiple times via setDirty called in
+    -- different widget before a real screen repaint, we should make sure
+    -- refresh_count is incremented by only once at most for each repaint
+    if not region and mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             DEBUG("promote refresh to full refresh")
             mode = "full"
         end
+        self.refresh_counted = true
     end
 
     -- if no region is specified, define default region
@@ -425,6 +429,7 @@ function UIManager:_repaint()
             refresh.region.w + 2, refresh.region.h + 2)
     end
     self._refresh_stack = {}
+    self.refresh_counted = false
 end
 
 -- this is the main loop of the UI controller
