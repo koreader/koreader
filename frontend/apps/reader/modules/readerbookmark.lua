@@ -91,12 +91,17 @@ function ReaderBookmark:importSavedHighlight(config)
     if not config:readSetting("highlights_imported") then
         for page, marks in pairs(textmarks) do
             for _, mark in ipairs(marks) do
-                self:addBookmark({
-                    page = self.ui.document.info.has_pages and page or mark.pos0,
-                    datetime = mark.datetime,
-                    notes = mark.text,
-                    highlighted = true,
-                })
+                local page = self.ui.document.info.has_pages and page or mark.pos0
+                -- highlights saved by some old versions don't have pos0 field
+                -- we just ignore those highlights
+                if page then
+                    self:addBookmark({
+                        page = page,
+                        datetime = mark.datetime,
+                        notes = mark.text,
+                        highlighted = true,
+                    })
+                end
             end
         end
     end
