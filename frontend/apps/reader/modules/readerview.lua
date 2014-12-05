@@ -558,6 +558,7 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
         else
             Screen:setScreenMode(new_mode)
         end
+        UIManager:setDirty(self.dialog, "full")
         self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     end
