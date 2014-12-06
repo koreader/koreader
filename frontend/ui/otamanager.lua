@@ -80,7 +80,7 @@ function OTAManager:checkUpdate()
     end
     local normalized_version = function(rev)
         local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-        return tonumber(year .. month .. (revision or "0"):format("%.4d"))
+        return tonumber(year .. month .. string.format("%.4d", revision or "0"))
     end
     local local_ok, local_version = pcall(function()
         local rev_file = io.open("git-rev", "r")
