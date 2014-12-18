@@ -604,7 +604,7 @@ function Menu:updateItems(select_number)
         select_number = 1
     end
 
-    for c = 1, self.perpage do
+    for c = 1, math.min(self.perpage, #self.item_table) do
         -- calculate index in item_table
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
