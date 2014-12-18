@@ -3,7 +3,6 @@ local DocumentRegistry = require("document/documentregistry")
 local ReaderUI = require("apps/reader/readerui")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
 
 describe("Readerui module", function()
     local sample_epub = "spec/front/unit/data/leaves.epub"
