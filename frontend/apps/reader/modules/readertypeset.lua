@@ -39,7 +39,10 @@ function ReaderTypeset:onReadSettings(config)
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 
     -- set page margins
-    self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+    self:onSetPageMargins(
+        config:readSetting("copt_page_margins") or
+        G_reader_settings:readSetting("copt_page_margins") or
+        DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 
     -- default to enable floating punctuation
     -- the floating punctuation should not be boolean value for the following
