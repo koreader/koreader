@@ -27,13 +27,22 @@ function ReaderTypeset:onReadSettings(config)
         self.css = self.ui.document.default_css
     end
 
-    -- default to enable embedded css
     self.embedded_css = config:readSetting("embedded_css")
-    if self.embedded_css == nil then self.embedded_css = true end
+    if self.embedded_css == nil then
+        -- default to enable embedded css
+        -- note that it's a bit confusing here:
+        -- global settins store 0/1, while document settings store false/true
+        -- we leave it that way for now to maintain backwards compatibility
+        local global = G_reader_settings:readSetting("copt_embedded_css")
+        self.embedded_css = (global == nil or global == 1) and true or false
+    end
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 
     -- set page margins
-    self:onSetPageMargins(config:readSetting("copt_page_margins") or DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+    self:onSetPageMargins(
+        config:readSetting("copt_page_margins") or
+        G_reader_settings:readSetting("copt_page_margins") or
+        DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 
     -- default to enable floating punctuation
     -- the floating punctuation should not be boolean value for the following
