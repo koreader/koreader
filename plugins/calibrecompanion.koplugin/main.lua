@@ -81,7 +81,7 @@ end
 
 function CalibreCompanion:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
-        text = _("Calibre Companion"),
+        text = _("Calibre wireless connection"),
         sub_item_table = {
             {
                 text_func = function()
