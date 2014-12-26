@@ -24,6 +24,7 @@ local Kobo = Generic:new{
 local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
     touch_switch_xy = false,
+    hasKeys = yes,
 }
 
 -- Kobo Mini:
@@ -76,6 +77,7 @@ function Kobo:init()
         event_map = {
             [59] = "Power_SleepCover",
             [90] = "Light",
+            [102] = "Home",
             [116] = "Power",
         }
     }
