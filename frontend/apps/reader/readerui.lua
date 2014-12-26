@@ -5,6 +5,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local lfs = require("libs/libkoreader-lfs")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
+local NetworkMgr = require("ui/networkmgr")
 local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = require("device").screen
@@ -307,6 +308,7 @@ function ReaderUI:init()
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
+    G_wifi_status = NetworkMgr:getWifiStatus()
 end
 
 function ReaderUI:showReader(file)

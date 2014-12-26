@@ -10,6 +10,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local ButtonDialog = require("ui/widget/buttondialog")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
+local NetworkMgr = require("ui/networkmgr")
 local Font = require("ui/font")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -153,6 +154,7 @@ function FileManager:init()
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+    G_wifi_status = NetworkMgr:getWifiStatus()
 end
 
 function FileManager:toggleHiddenFiles()
