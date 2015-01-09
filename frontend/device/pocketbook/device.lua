@@ -18,6 +18,7 @@ function PocketBook:init()
     -- this example uses the mxcfb framebuffer driver:
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
 
+    self.input = require("device/input"):new{device = self}
     -- we inject an input hook for debugging purposes. You probably don't want
     -- it after everything is implemented.
     self.input:registerEventAdjustHook(function(event)
