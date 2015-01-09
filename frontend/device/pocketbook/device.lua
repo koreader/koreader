@@ -29,8 +29,6 @@ function PocketBook:init()
 
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
-    self.input.open("/dev/input/event2")
-    self.input.open("/dev/input/event3")
     Generic.init(self)
 end
 
