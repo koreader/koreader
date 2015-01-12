@@ -143,8 +143,8 @@ wrapper for FFI input open
 Note that we adhere to the "." syntax here for compatibility.
 TODO: clean up separation FFI/this
 --]]
-function Input.open(device, kobo_events)
-    input.open(device, kobo_events and 1 or 0)
+function Input.open(device, is_emu_events)
+    input.open(device, is_emu_events and 1 or 0)
 end
 
 --[[
