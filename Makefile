@@ -18,6 +18,7 @@ INSTALL_DIR=koreader-$(MACHINE)
 PLATFORM_DIR=platform
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
+POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 WIN32_DIR=$(PLATFORM_DIR)/win32
@@ -177,6 +178,32 @@ koboupdate: all
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).tar.gz \
+		-T koreader/ota/package.index --no-recursion
+
+pbupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any
+	rm -f koreader-pocketbook-$(MACHINE)-$(VERSION).zip
+	# Pocketbook launching script
+	mkdir -p $(INSTALL_DIR)/applications
+	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications
+	# create new package
+	cd $(INSTALL_DIR) && \
+		zip -9 -r \
+			../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
+			koreader applications -x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
+	# generate koboupdate package index file
+	zipinfo -1 koreader-pocketbook-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
+		koreader/ota/package.index
+	# make gzip pbupdate for zsync OTA update
+	cd $(INSTALL_DIR) && \
+		tar czafh ../koreader-pocketbook-$(MACHINE)-$(VERSION).tar.gz \
 		-T koreader/ota/package.index --no-recursion
 
 androidupdate: all

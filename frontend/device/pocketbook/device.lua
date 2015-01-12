@@ -6,29 +6,30 @@ local function yes() return true end
 local PocketBook = Generic:new{
     -- both the following are just for testing similar behaviour
     -- see ffi/framebuffer_mxcfb.lua
-    model = "KindlePaperWhite",
-    isKindle = yes,
+    model = "PocketBook",
+    isPocketBook = yes,
 
     isTouchDevice = yes,
     display_dpi = 212,
-    touch_dev = "/dev/input/event0",
+    touch_dev = "/dev/input/event1", -- probably useless
+    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 function PocketBook:init()
     -- this example uses the mxcfb framebuffer driver:
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
 
-    self.input = require("device/input"):new{device = self}
+    self.input = require("device/input"):new{device = self, debug = DEBUG}
     -- we inject an input hook for debugging purposes. You probably don't want
     -- it after everything is implemented.
     self.input:registerEventAdjustHook(function(event)
-        DEBUG("got event:", event)
     end)
 
     -- no backlight management yet
 
-    self.input.open("/dev/input/event0")
-    self.input.open("/dev/input/event1")
+    os.remove(self.emu_events_dev)
+	os.execute("mkfifo " .. self.emu_events_dev)
+    self.input.open(self.emu_events_dev, 1)
     Generic.init(self)
 end
 
