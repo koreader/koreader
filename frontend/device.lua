@@ -21,6 +21,16 @@ local function probeDevice()
         return require("device/kobo/device")
     end
 
+    local pbook_test_fd = lfs.attributes("/ebrmain")
+    if pbook_test_fd then
+        return require("device/pocketbook/device")
+    end
+
+    -- add new ports here:
+    if --[[ implement a proper test instead --]] false then
+        return require("device/newport/device")
+    end
+
     error("did not find a hardware abstraction for this platform")
 end
 
