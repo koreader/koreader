@@ -143,8 +143,8 @@ wrapper for FFI input open
 Note that we adhere to the "." syntax here for compatibility.
 TODO: clean up separation FFI/this
 --]]
-function Input.open(device)
-    input.open(device)
+function Input.open(device, is_emu_events)
+    input.open(device, is_emu_events and 1 or 0)
 end
 
 --[[
@@ -341,6 +341,7 @@ function Input:handleTouchEv(ev)
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
             if touch_ges then
+                --DEBUG("ges", touch_ges)
                 return Event:new("Gesture",
                     self.gesture_detector:adjustGesCoordinate(touch_ges)
                 )
