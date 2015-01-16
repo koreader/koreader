@@ -44,6 +44,7 @@ function NetworkMgr:turnOnWifi()
     elseif Device:isKobo() then
         koboEnableWifi(1)
     end
+    G_wifi_status = true
 end
 
 function NetworkMgr:turnOffWifi()
@@ -52,6 +53,7 @@ function NetworkMgr:turnOffWifi()
     elseif Device:isKobo() then
         koboEnableWifi(0)
     end
+    G_wifi_status = false
 end
 
 function NetworkMgr:promptWifiOn()
@@ -101,7 +103,7 @@ function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wifi connection"),
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
-        checked_func = function() return NetworkMgr:getWifiStatus() end,
+        checked_func = function() G_wifi_status = NetworkMgr:getWifiStatus() return G_wifi_status end,
         callback = function()
             if NetworkMgr:getWifiStatus() then
                 NetworkMgr:promptWifiOff()

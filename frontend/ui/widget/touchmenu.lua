@@ -14,6 +14,7 @@ local IconButton = require("ui/widget/iconbutton")
 local GestureRange = require("ui/gesturerange")
 local Button = require("ui/widget/button")
 local UIManager = require("ui/uimanager")
+local NetworkMgr = require("ui/networkmgr")
 local Device = require("device")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -344,9 +345,23 @@ function TouchMenu:init()
         text = "",
         face = self.fface,
     }
-    self.device_info = HorizontalGroup:new{
-        self.time_info,
-    }
+    if Device:isKindle() or Device:isKobo() then
+        self.net_info = Button:new{
+            icon = "resources/icons/appbar.wifi.png",
+            callback = function() self:netToggle() end,
+            bordersize = 0,
+            show_parent = self,
+         }
+         self.net_info.label_widget.dim = not G_wifi_status
+         self.device_info = HorizontalGroup:new{
+             self.time_info,
+             self.net_info,
+         }
+    else
+         self.device_info = HorizontalGroup:new{
+            self.time_info,
+         }
+    end
     local up_button = IconButton:new{
         icon_file = "resources/icons/appbar.chevron.up.png",
         show_parent = self.show_parent,
@@ -472,6 +487,14 @@ function TouchMenu:updateItems()
             or self.dimen
         return "partial", refresh_dimen
     end)
+end
+
+function TouchMenu:netToggle()
+    if G_wifi_status == true then
+        NetworkMgr:promptWifiOff()
+    else
+        NetworkMgr:promptWifiOn()
+    end
 end
 
 function TouchMenu:switchMenuTab(tab_num)
