@@ -29,10 +29,10 @@ function ReaderPaging:init()
         self.key_events = {
             GotoNextPage = {
                 {Input.group.PgFwd}, doc = "go to next page",
-                event = "GotoPageRel", args = 1 },
+                event = "PagingRel", args = 1 },
             GotoPrevPage = {
                 {Input.group.PgBack}, doc = "go to previous page",
-                event = "GotoPageRel", args = -1 },
+                event = "PagingRel", args = -1 },
 
             GotoFirst = {
                 {"1"}, doc = "go to start", event = "GotoPercent", args = 0},
