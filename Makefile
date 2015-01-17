@@ -203,8 +203,8 @@ pbupdate: all
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
-			applications system -x "koreader/resources/fonts/*" \
-			"koreader/resources/icons/src/*" "koreader/spec/*"
+			applications system -x "applications/koreader/resources/fonts/*" \
+			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*"
 	# generate koboupdate package index file
 	zipinfo -1 koreader-pocketbook-$(MACHINE)-$(VERSION).zip > \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
