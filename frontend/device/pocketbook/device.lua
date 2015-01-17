@@ -74,6 +74,7 @@ local PocketBook840 = PocketBook:new{
 
 function PocketBook840:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = {
