@@ -11,6 +11,8 @@ local EVT_KEYPRESS = 25
 local EVT_KEYUP = 26
 local EVT_KEYRELEASE = 26
 local EVT_KEYREPEAT = 28
+local EVT_FOREGROUND = 151
+local EVT_BACKGROUND = 152
 
 local KEY_POWER  = 0x01
 local KEY_DELETE = 0x08
@@ -34,42 +36,26 @@ local KEY_COVERCLOSE	= 0x03
 local function yes() return true end
 
 local PocketBook = Generic:new{
-    -- both the following are just for testing similar behaviour
-    -- see ffi/framebuffer_mxcfb.lua
     model = "PocketBook",
     isPocketBook = yes,
-
-    isTouchDevice = yes,
-    display_dpi = 212,
-    touch_dev = "/dev/input/event1", -- probably useless
-    emu_events_dev = "/var/dev/shm/emu_events",
+    isInBackGroud = false,
 }
 
 function PocketBook:init()
-    -- this example uses the mxcfb framebuffer driver:
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
-
-    self.input = require("device/input"):new{
-        device = self,
-        debug = DEBUG,
-        event_map = {
-            [25] = "LPgBack",
-            [24] = "LPgFwd",
-            [1002] = "Power",
-        }
-    }
-    -- we inject an input hook for debugging purposes. You probably don't want
-    -- it after everything is implemented.
     self.input:registerEventAdjustHook(function(_input, ev)
         DEBUG("ev", ev)
         if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
             ev.code = ev.code
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
             ev.type = 1 -- EV_KEY
+        elseif ev.type == EVT_BACKGROUND then
+            isInBackGroud = true
+            self:onPowerEvent("Power")
+        elseif isInBackGroud and ev.type == EVT_FOREGROUND then
+            isInBackGroud = false
+            self:onPowerEvent("Power")
         end
     end)
-
-    -- no backlight management yet
 
     os.remove(self.emu_events_dev)
 	os.execute("mkfifo " .. self.emu_events_dev)
@@ -77,7 +63,25 @@ function PocketBook:init()
     Generic.init(self)
 end
 
--- maybe additional implementations are needed for other models,
--- testing on PocketBook Lux 2 for now.
+local PocketBook840 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    display_dpi = 250,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
 
-return PocketBook
+function PocketBook840:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [25] = "LPgBack",
+            [24] = "LPgFwd",
+            [1002] = "Power",
+        }
+    }
+    PocketBook.init(self)
+end
+
+-- should check device model before return to support other PocketBook models
+return PocketBook840

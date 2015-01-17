@@ -9,8 +9,13 @@ KOR_BASE?=base
 VERSION=$(shell git describe HEAD)
 REVISION=$(shell git rev-parse --short HEAD)
 
-# subdirectory we use to build the installation bundle
-export PATH:=$(CURDIR)/$(KOR_BASE)/toolchain/android-toolchain/bin:$(PATH)
+# set PATH to find CC in managed toolchains
+ifeq ($(TARGET), android)
+	PATH:=$(CURDIR)/$(KOR_BASE)/$(ANDROID_TOOLCHAIN)/bin:$(PATH)
+else ifeq ($(TARGET), pocketbook)
+	PATH:=$(CURDIR)/$(KOR_BASE)/$(POCKETBOOK_TOOLCHAIN)/bin:$(PATH)
+endif
+
 MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 INSTALL_DIR=koreader-$(MACHINE)
 
@@ -187,24 +192,31 @@ pbupdate: all
 	rm -f koreader-pocketbook-$(MACHINE)-$(VERSION).zip
 	# Pocketbook launching script
 	mkdir -p $(INSTALL_DIR)/applications
+	mkdir -p $(INSTALL_DIR)/system/bin
+	mkdir -p $(INSTALL_DIR)/system/config
+
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications
+	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/system/bin
+	cp $(POCKETBOOK_DIR)/extensions.cfg $(INSTALL_DIR)/system/config
+	cp -rfL $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
-			koreader applications -x "koreader/resources/fonts/*" \
+			applications system -x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*"
 	# generate koboupdate package index file
 	zipinfo -1 koreader-pocketbook-$(MACHINE)-$(VERSION).zip > \
-		$(INSTALL_DIR)/koreader/ota/package.index
-	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+		$(INSTALL_DIR)/applications/koreader/ota/package.index
+	echo "applications/koreader/ota/package.index" >> \
+		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
-		koreader/ota/package.index
+		applications/koreader/ota/package.index
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-pocketbook-$(MACHINE)-$(VERSION).tar.gz \
-		-T koreader/ota/package.index --no-recursion
+		-T applications/koreader/ota/package.index --no-recursion
 
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module

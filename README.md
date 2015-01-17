@@ -6,7 +6,7 @@ KOReader
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
-Kobo and Android (2.3+) devices. Developers can also run Koreader emulator
+Kobo, PocketBook 840 and Android (2.3+) devices. Developers can also run Koreader emulator
 for development purpose on desktop PC with Linux or Windows operating system.
 
 Main features for users
@@ -118,6 +118,16 @@ make TARGET=kindle clean kindleupdate
 To build installable package for Kobo:
 ```
 make TARGET=kobo clean koboupdate
+```
+
+To build installable package for PocketBook you need first to obtain the SDK
+from PocketBook:
+```
+make pocketbook-toolchain
+```
+then similarly with Kindle and Kobo building run this command:
+```
+make TARGET=pocketbook clean pbupdate
 ```
 
 To run, you must call the script `reader.lua`. Run it without arguments to see
