@@ -234,6 +234,9 @@ androiddev: androidupdate
 android-toolchain:
 	$(MAKE) -C $(KOR_BASE) android-toolchain
 
+pocketbook-toolchain:
+	$(MAKE) -C $(KOR_BASE) pocketbook-toolchain
+
 pot:
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
