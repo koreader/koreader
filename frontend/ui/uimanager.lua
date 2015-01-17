@@ -39,7 +39,6 @@ function UIManager:init()
     }
     if Device:isKobo() then
         self.event_handlers["Suspend"] = function(input_event)
-            self:sendEvent(Event:new("FlushSettings"))
             Device:onPowerEvent(input_event)
         end
         self.event_handlers["Resume"] = function(input_event)
@@ -64,7 +63,6 @@ function UIManager:init()
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
-            self:sendEvent(Event:new("FlushSettings"))
             Device:intoScreenSaver()
         end
         self.event_handlers["OutOfSS"] = function()

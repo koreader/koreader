@@ -1,3 +1,4 @@
+local Event = require("ui/event")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 
@@ -69,10 +70,12 @@ function Device:getPowerDevice()
 end
 
 function Device:intoScreenSaver()
+    local UIManager = require("ui/uimanager")
     if self.charging_mode == false and self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
         self.screen_saver_mode = true
     end
+    UIManager:sendEvent(Event:new("FlushSettings"))
 end
 
 function Device:outofScreenSaver()
@@ -97,6 +100,7 @@ function Device:onPowerEvent(ev)
         self.screen:setRotationMode(0)
         Screensaver:show()
         self:prepareSuspend()
+        UIManager:sendEvent(Event:new("FlushSettings"))
         UIManager:scheduleIn(10, self.Suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
