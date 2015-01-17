@@ -38,7 +38,7 @@ local function yes() return true end
 local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
-    isInBackGroud = false,
+    isInBackGround = false,
 }
 
 function PocketBook:init()
@@ -49,11 +49,13 @@ function PocketBook:init()
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
             ev.type = 1 -- EV_KEY
         elseif ev.type == EVT_BACKGROUND then
-            isInBackGroud = true
+            isInBackGround = true
             self:onPowerEvent("Power")
-        elseif isInBackGroud and ev.type == EVT_FOREGROUND then
-            isInBackGroud = false
+        elseif isInBackGround and ev.type == EVT_FOREGROUND then
+            isInBackGround = false
             self:onPowerEvent("Power")
+        elseif not isInBackGround and ev.type == EVT_FOREGROUND then
+            self.screen:refreshPartial()
         end
     end)
 
