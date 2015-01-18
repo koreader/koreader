@@ -43,7 +43,7 @@ local PocketBook = Generic:new{
 
 function PocketBook:init()
     self.input:registerEventAdjustHook(function(_input, ev)
-        DEBUG("ev", ev)
+        --DEBUG("ev", ev.type, ev.code, ev.value)
         if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
             ev.code = ev.code
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
