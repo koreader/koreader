@@ -37,6 +37,17 @@ function BasePowerD:read_int_file(file)
     end
 end
 
+function BasePowerD:read_str_file(file)
+    local fd =  io.open(file, "r")
+    if fd then
+        local str = fd:read("*all")
+        fd:close()
+        return str
+    else
+        return ""
+    end
+end
+
 function BasePowerD:setIntensity(intensity)
     intensity = intensity < self.fl_min and self.fl_min or intensity
     intensity = intensity > self.fl_max and self.fl_max or intensity

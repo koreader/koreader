@@ -2,7 +2,7 @@
 export LC_ALL="en_US.UTF-8"
 
 # working directory of koreader
-KOREADER_DIR=/mnt/ext1/koreader
+KOREADER_DIR=/mnt/ext1/applications/koreader
 
 # update to new version from OTA directory
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
@@ -21,7 +21,13 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-./reader.lua /mnt/ext1 2> crash.log
+if [ `echo $@ | wc -c` -eq 1 ]; then
+    args="/mnt/ext1/"
+else
+    args="$@"
+fi
+
+./reader.lua "$args" 2> crash.log
 
 if pidof reader.lua > /dev/null 2>&1 ; then
 	killall -TERM reader.lua
