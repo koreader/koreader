@@ -210,6 +210,9 @@ pbupdate: all
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	echo "applications/koreader/ota/package.index" >> \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
+	# hack file path when running tar in parent directory of koreader
+	sed -i -e 's/^/..\//' \
+		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
 		applications/koreader/ota/package.index

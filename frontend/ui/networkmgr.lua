@@ -73,17 +73,8 @@ function NetworkMgr:promptWifiOff()
 end
 
 function NetworkMgr:getWifiStatus()
-    local default_string = io.popen("ip r | grep default")
-    if not default_string then return false end
-    local result = default_string:read()
-    default_string:close()
-    if result ~= nil then
-        local gateway = string.match(result,"%d+.%d+.%d+.%d+")
-        if gateway and os.execute("ping -q -c1 "..gateway) == 0 then
-            return true
-      end -- ping to gateway
-    end -- test for empty string
-    return false
+    local socket = require("socket")
+    return socket.dns.toip("www.google.com") ~= nil
 end
 
 function NetworkMgr:setHTTPProxy(proxy)
