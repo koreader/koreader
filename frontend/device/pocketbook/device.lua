@@ -78,8 +78,8 @@ function PocketBook840:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = {
-            [25] = "LPgBack",
-            [24] = "LPgFwd",
+            [24] = "LPgBack",
+            [25] = "LPgFwd",
             [1002] = "Power",
         }
     }
