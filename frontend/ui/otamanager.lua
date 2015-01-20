@@ -28,6 +28,8 @@ function OTAManager:getOTAModel()
         return "kindle"
     elseif Device:isKobo() then
         return "kobo"
+    elseif Device:isPocketBook() then
+        return "pocketbook"
     else
         return ""
     end
