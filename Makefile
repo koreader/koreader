@@ -203,7 +203,7 @@ pbupdate: all
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
 			../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
-			applications system -x "applications/koreader/resources/fonts/*" \
+			applications -x "applications/koreader/resources/fonts/*" \
 			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*"
 	# generate koboupdate package index file
 	zipinfo -1 koreader-pocketbook-$(MACHINE)-$(VERSION).zip > \
@@ -214,12 +214,12 @@ pbupdate: all
 	sed -i -e 's/^/..\//' \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
-		applications/koreader/ota/package.index
+	cd $(INSTALL_DIR) && zip -ru ../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
+		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
-	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-pocketbook-$(MACHINE)-$(VERSION).tar.gz \
-		-T applications/koreader/ota/package.index --no-recursion
+	cd $(INSTALL_DIR)/applications && \
+		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).tar.gz \
+		-T koreader/ota/package.index --no-recursion
 
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
