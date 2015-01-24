@@ -25,6 +25,7 @@ local Device = {
     -- (these are functions!)
     isKindle = no,
     isKobo = no,
+    isPocketBook = no,
     isAndroid = no,
     isEmulator = no,
 
