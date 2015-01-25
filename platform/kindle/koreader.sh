@@ -115,6 +115,9 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
+# export font directory
+export FONTDIR="/mnt/us/fonts"
+
 logmsg "Setting up IPTables rules . . ."
 # accept input ports for zsync plugin
 iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
