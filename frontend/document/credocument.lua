@@ -58,8 +58,8 @@ function CreDocument:engineInit()
         -- we need to initialize the CRE font list
         local fonts = Font:getFontList()
         for _k, _v in ipairs(fonts) do
-            if _v:sub(1, 4) ~= "urw/" then
-                local ok, err = pcall(cre.registerFont, Font.fontdir..'/'.._v)
+            if not _v:find("/urw/") then
+                local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
                     DEBUG(err)
                 end

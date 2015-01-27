@@ -41,7 +41,7 @@ local Font = {
         [4] = "freefont/FreeSans.ttf",
     },
 
-    fontdir = os.getenv("FONTDIR") or "./fonts",
+    fontdir = "./fonts",
 
     -- face table
     faces = {},
@@ -77,23 +77,27 @@ function Font:getFace(font, size)
     return { size = size, orig_size = orig_size, ftface = face, hash = font..size }
 end
 
-function Font:_readList(target, dir, effective_dir)
+function Font:_readList(target, dir)
     for f in lfs.dir(dir) do
         if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
-            self:_readList(target, dir.."/"..f, effective_dir..f.."/")
+            self:_readList(target, dir.."/"..f)
         else
             local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
             if file_type == "ttf" or file_type == "ttc"
                 or file_type == "cff" or file_type == "otf" then
-                table.insert(target, effective_dir..f)
+                table.insert(target, dir.."/"..f)
             end
         end
     end
 end
 
 function Font:getFontList()
-    fontlist = {}
-    self:_readList(fontlist, self.fontdir, "")
+    local fontlist = {}
+    self:_readList(fontlist, self.fontdir)
+    -- multiple path should be joined with semicolon in FONTDIR env variable
+    for dir in string.gmatch(os.getenv("FONTDIR") or "", "([^;]+)") do
+        self:_readList(fontlist, dir)
+    end
     table.sort(fontlist)
     return fontlist
 end
