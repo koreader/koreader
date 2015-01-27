@@ -21,8 +21,8 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# export font directory
-export FONTDIR="/mnt/onboard/fonts"
+# export external font directory
+export EXT_FONT_DIR="/mnt/onboard/fonts"
 
 # fast and dirty way of check if we are called from nickel
 # through fmon, or from another launcher (KSM or advboot)

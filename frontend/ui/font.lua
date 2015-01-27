@@ -78,7 +78,10 @@ function Font:getFace(font, size)
 end
 
 function Font:_readList(target, dir)
-    for f in lfs.dir(dir) do
+    -- lfs.dir non-exsitent directory will give error, weird!
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if not ok then return end
+    for f in iter, dir_obj do
         if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
             self:_readList(target, dir.."/"..f)
         else
@@ -95,7 +98,7 @@ function Font:getFontList()
     local fontlist = {}
     self:_readList(fontlist, self.fontdir)
     -- multiple path should be joined with semicolon in FONTDIR env variable
-    for dir in string.gmatch(os.getenv("FONTDIR") or "", "([^;]+)") do
+    for dir in string.gmatch(os.getenv("EXT_FONT_DIR") or "", "([^;]+)") do
         self:_readList(fontlist, dir)
     end
     table.sort(fontlist)
