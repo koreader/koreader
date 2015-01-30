@@ -56,8 +56,7 @@ local KindlePaperWhite2 = Kindle:new{
 local KindleBasic = Kindle:new{
     model = "KindleBasic",
     isTouchDevice = yes,
-    -- FIXME!
-    touch_dev = "/dev/input/event0",
+    touch_dev = "/dev/input/event1",
 }
 
 local KindleVoyage = Kindle:new{
@@ -177,8 +176,7 @@ function KindleBasic:init()
 
     Kindle.init(self)
 
-    -- FIXME!
-    self.input.open("/dev/input/event0")
+    self.input.open("/dev/input/event1")
     self.input.open("fake_events")
 end
 
