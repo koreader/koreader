@@ -262,6 +262,21 @@ function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
     end
 end
 
+function ReaderBookmark:isBookmarkSame(item1, item2)
+    if item1.notes ~= item2.notes then return end
+    if self.ui.document.info.has_pages then
+        if not item2.pos0 or not item2.pos1 then return end
+        local zoom1 = item1.pos0.zoom
+        local zoom1 = item2.pos0.zoom
+        return item2.pos0 and item2.pos1 and item1.pos0.page == item2.pos0.page
+        and item1.pos0.x == item2.pos0.x and item1.pos0.y == item2.pos0.y
+        and item1.pos1.x == item2.pos1.x and item1.pos1.y == item2.pos1.y
+    else
+        return item1.page == item2.page
+        and item1.pos0 == item2.pos0 and item1.pos1 == item2.pos1
+    end
+end
+
 -- binary insert of sorted bookmarks
 function ReaderBookmark:addBookmark(item)
     local _start, _middle, _end, direction = 1, 1, #self.bookmarks, 0
@@ -269,7 +284,10 @@ function ReaderBookmark:addBookmark(item)
         local v = self.bookmarks[_middle]
         _middle = math.floor((_start + _end)/2)
         -- won't add duplicated bookmarks
-        if item.page == self.bookmarks[_middle].page then return end
+        if self:isBookmarkSame(item, self.bookmarks[_middle]) then
+            DEBUG("skip adding duplicated bookmark")
+            return
+        end
         if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
             _end, direction = _middle - 1, 0
         else
