@@ -95,7 +95,9 @@ function ReaderToc:getTocTitleByPage(pn_or_xp)
 end
 
 function ReaderToc:getTocTitleOfCurrentPage()
-    return self:getTocTitleByPage(self.pageno)
+    if self.pageno then
+        return self:getTocTitleByPage(self.pageno)
+    end
 end
 
 function ReaderToc:getMaxDepth()
@@ -220,7 +222,7 @@ function ReaderToc:getChapterPagesDone(pageno, level)
 end
 
 function ReaderToc:updateCurrentNode()
-    if #self.collapsed_toc > 0 then
+    if #self.collapsed_toc > 0 and self.pageno then
         for i, v in ipairs(self.collapsed_toc) do
             if v.page > self.pageno then
                 self.collapsed_toc.current = i > 1 and i - 1 or 1
