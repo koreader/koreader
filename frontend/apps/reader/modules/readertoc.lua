@@ -283,6 +283,7 @@ function ReaderToc:onShowToc()
         state_size = button_size,
         ui = self.ui,
         is_borderless = true,
+        is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         cface = Font:getFace("cfont", 20),
