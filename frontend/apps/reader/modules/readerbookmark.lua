@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Menu = require("ui/widget/menu")
 local Device = require("device")
 local GestureRange = require("ui/gesturerange")
@@ -204,6 +205,26 @@ function ReaderBookmark:onShowBookmark()
         bookmark:gotoBookmark(item.page)
     end
 
+    function bm_menu:onMenuHold(item)
+        self.remove_bookmark_dialog = ButtonDialog:new{
+            buttons = {
+                {
+                    {
+                        text = _("Remove this bookmark"),
+                        callback = function()
+                            bookmark:removeBookmark(item)
+                            bm_menu:swithItemTable(nil, bookmark.bookmarks, -1)
+                            UIManager:close(self.remove_bookmark_dialog)
+                        end,
+                    },
+                },
+            },
+        }
+
+        UIManager:show(self.remove_bookmark_dialog)
+        return true
+    end
+
     bm_menu.close_callback = function()
         UIManager:close(self.bookmark_menu)
     end
@@ -247,6 +268,8 @@ function ReaderBookmark:addBookmark(item)
     while _start <= _end do
         local v = self.bookmarks[_middle]
         _middle = math.floor((_start + _end)/2)
+        -- won't add duplicated bookmarks
+        if item.page == self.bookmarks[_middle].page then return end
         if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
             _end, direction = _middle - 1, 0
         else
