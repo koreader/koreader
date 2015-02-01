@@ -213,7 +213,9 @@ end
 
 function FileManager:restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
-    Screen:setScreenMode(screen_mode or "portrait")
+    if Screen:getScreenMode() ~= screen_mode then
+        Screen:setScreenMode(screen_mode or "portrait")
+    end
     UIManager:setDirty(self, "full")
 end
 
