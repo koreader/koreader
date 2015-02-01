@@ -575,8 +575,8 @@ function Menu:init()
         -- if the table is not yet initialized, this call
         -- must be done manually:
         self.page = math.ceil((self.item_table.current or 1) / self.perpage)
-        self:updateItems(1)
     end
+    self:updateItems(1)
 end
 
 function Menu:onCloseWidget()
