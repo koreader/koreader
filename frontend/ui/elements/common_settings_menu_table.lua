@@ -23,6 +23,7 @@ table.insert(common_settings, {
     callback = function()
         local night_mode = G_reader_settings:readSetting("night_mode") or false
         Screen:toggleNightMode()
+        UIManager:setDirty(nil, "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)
     end
 })
