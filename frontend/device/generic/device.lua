@@ -70,6 +70,7 @@ function Device:getPowerDevice()
     return self.powerd
 end
 
+-- ONLY used for Kindle devices
 function Device:intoScreenSaver()
     local UIManager = require("ui/uimanager")
     if self.charging_mode == false and self.screen_saver_mode == false then
@@ -79,18 +80,19 @@ function Device:intoScreenSaver()
     UIManager:sendEvent(Event:new("FlushSettings"))
 end
 
+-- ONLY used for Kindle devices
 function Device:outofScreenSaver()
     if self.screen_saver_mode == true and self.charging_mode == false then
         -- wait for native system update screen before we recover saved
         -- Blitbuffer.
         util.usleep(1500000)
         self.screen:restoreFromSavedBB()
-        self.screen:refreshFull()
-        self.survive_screen_saver = true
+        self:resume()
     end
     self.screen_saver_mode = false
 end
 
+-- ONLY used for Kobo and PocketBook devices
 function Device:onPowerEvent(ev)
     local Screensaver = require("ui/screensaver")
     if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
@@ -102,12 +104,12 @@ function Device:onPowerEvent(ev)
         Screensaver:show()
         self:prepareSuspend()
         UIManager:sendEvent(Event:new("FlushSettings"))
-        UIManager:scheduleIn(10, self.Suspend)
+        UIManager:scheduleIn(10, self.suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
         -- restore to previous rotation mode
         self.screen:setRotationMode(self.orig_rotation_mode)
-        self:Resume()
+        self:resume()
         Screensaver:close()
     end
 end
@@ -121,14 +123,15 @@ function Device:prepareSuspend()
     self.screen_saver_mode = true
 end
 
-function Device:Suspend()
+function Device:suspend()
 end
 
-function Device:Resume()
+function Device:resume()
     local UIManager = require("ui/uimanager")
-    UIManager:unschedule(self.Suspend)
+    UIManager:unschedule(self.suspend)
     self.screen:refreshFull()
     self.screen_saver_mode = false
+    self.powerd:refreshCapacity()
 end
 
 function Device:usbPlugIn()
