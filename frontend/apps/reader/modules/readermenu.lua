@@ -40,11 +40,10 @@ function ReaderMenu:init()
             callback = function()
                 self:onTapCloseMenu()
                 self.ui:onClose()
-                -- screen orientation is independent for docview and filemanager
-                -- so we need to restore the screen mode for the filemanager
                 local FileManager = require("apps/filemanager/filemanager")
-                FileManager:restoreScreenMode()
-                if not FileManager.is_running then
+                if FileManager.instance then
+                    FileManager.instance:resetDimen(Screen:getSize())
+                else
                     local lastdir = nil
                     local last_file = G_reader_settings:readSetting("lastfile")
                     if last_file then
