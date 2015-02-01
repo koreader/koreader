@@ -77,21 +77,30 @@ function ReaderToc:fillToc()
     self.toc = self.ui.document:getToc()
 end
 
-function ReaderToc:getTocTitleByPage(pn_or_xp)
+function ReaderToc:getTocIndexByPage(pn_or_xp)
     self:fillToc()
-    if #self.toc == 0 then return "" end
+    if #self.toc == 0 then return end
     local pageno = pn_or_xp
     if type(pn_or_xp) == "string" then
         pageno = self.ui.document:getPageFromXPointer(pn_or_xp)
     end
-    local pre_entry = self.toc[1]
+    local pre_index = 1
     for _k,_v in ipairs(self.toc) do
         if _v.page > pageno then
             break
         end
-        pre_entry = _v
+        pre_index = _k
     end
-    return self:cleanUpTocTitle(pre_entry.title)
+    return pre_index
+end
+
+function ReaderToc:getTocTitleByPage(pn_or_xp)
+    local index = self:getTocIndexByPage(pn_or_xp)
+    if index then
+        return self:cleanUpTocTitle(self.toc[index].title)
+    else
+        return ""
+    end
 end
 
 function ReaderToc:getTocTitleOfCurrentPage()
@@ -226,6 +235,19 @@ function ReaderToc:updateCurrentNode()
         for i, v in ipairs(self.collapsed_toc) do
             if v.page > self.pageno then
                 self.collapsed_toc.current = i > 1 and i - 1 or 1
+                return
+            end
+        end
+        self.collapsed_toc.current = #self.collapsed_toc
+    end
+end
+
+function ReaderToc:expandCurrentNode()
+    local current_node_index = self:getTocIndexByPage(self.pageno)
+    if current_node_index then
+        for i = current_node_index - 1, 1, -1 do
+            if self.toc[i+1].depth > self.toc[i].depth then
+                self:expandToc(i)
                 break
             end
         end
@@ -326,6 +348,9 @@ function ReaderToc:onShowToc()
 
     self.toc_menu = toc_menu
 
+    -- auto expand the parent node of current page
+    self:expandCurrentNode()
+
     UIManager:show(menu_container)
 
     return true
@@ -333,6 +358,9 @@ end
 
 -- expand TOC node of index in raw toc table
 function ReaderToc:expandToc(index)
+    for k, v in ipairs(self.expanded_nodes) do
+        if v == index then return end
+    end
     table.insert(self.expanded_nodes, index)
     local cur_node = self.toc[index]
     local cur_depth = cur_node.depth
@@ -364,6 +392,12 @@ end
 
 -- collapse TOC node of index in raw toc table
 function ReaderToc:collapseToc(index)
+    for k, v in ipairs(self.expanded_nodes) do
+        if v == index then
+            table.remove(self.expanded_nodes, k)
+            break
+        end
+    end
     local cur_node = self.toc[index]
     local cur_depth = cur_node.depth
     local i = 1
