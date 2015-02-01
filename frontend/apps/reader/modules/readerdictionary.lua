@@ -59,9 +59,7 @@ end
 function ReaderDictionary:stardictLookup(word, box)
     DEBUG("lookup word:", word, box)
     if word then
-        -- strip ASCII punctuation characters around selected word
-        -- and strip any generic punctuation (U+2000 - U+206F) in the word
-        word = word:gsub("\226[\128-\131][\128-\191]",''):gsub("^%p+",''):gsub("%p+$",'')
+        word = require("util").stripePunctuations(word)
         DEBUG("stripped word:", word)
         -- escape quotes and other funny characters in word
         local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
