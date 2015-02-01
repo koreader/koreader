@@ -58,8 +58,11 @@ function ReaderMenu:init()
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
-                self.ui:onClose()
-                UIManager:quit()
+                UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
+                local FileManager = require("apps/filemanager/filemanager")
+                if FileManager.instance then
+                    FileManager.instance:onClose()
+                end
             end,
         },
     }

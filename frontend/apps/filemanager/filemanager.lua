@@ -227,7 +227,6 @@ function FileManager:showFiles(path)
         root_path = path,
         onExit = function()
             self.instance = nil
-            UIManager:quit()
         end
     }
     UIManager:show(file_manager)
