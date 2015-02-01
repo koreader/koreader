@@ -38,11 +38,17 @@ local function koboEnableWifi(toggle)
     end
 end
 
+local function pocketbookEnableWifi(toggle)
+    os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
+end
+
 function NetworkMgr:turnOnWifi()
     if Device:isKindle() then
         kindleEnableWifi(1)
     elseif Device:isKobo() then
         koboEnableWifi(1)
+    elseif Device:isPocketBook() then
+        pocketbookEnableWifi(1)
     end
 end
 
@@ -51,6 +57,8 @@ function NetworkMgr:turnOffWifi()
         kindleEnableWifi(0)
     elseif Device:isKobo() then
         koboEnableWifi(0)
+    elseif Device:isPocketBook() then
+        pocketbookEnableWifi(0)
     end
 end
 

@@ -126,6 +126,9 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
 end
 
 function EvernoteExporter:login()
+    if NetworkMgr:getWifiStatus() == false then
+        NetworkMgr:promptWifiOn()
+    end
     self.login_dialog = LoginDialog:new{
         title = self.login_title,
         username = self.evernote_username or "",
@@ -185,10 +188,7 @@ function EvernoteExporter:doLogin(username, password)
     self.evernote_username = username
     local ok, token = pcall(oauth.getToken, oauth)
     -- prompt users to turn on Wifi if network is unreachable
-    if not ok and token and token:find("Network is unreachable") then
-        NetworkMgr:promptWifiOn()
-        return
-    elseif not ok and token then
+    if not ok and token then
         UIManager:show(InfoMessage:new{
             text = _("An error occurred while logging in:") .. "\n" .. token,
         })
