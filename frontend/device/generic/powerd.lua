@@ -73,6 +73,10 @@ function BasePowerD:getCapacity()
     end
 end
 
+function BasePowerD:refreshCapacity()
+    self:getCapacityHW()
+end
+
 function BasePowerD:isCharging()
     return self:isChargingHW()
 end

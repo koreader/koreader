@@ -120,11 +120,11 @@ function Kobo:getFirmwareVersion()
     version_file:close()
 end
 
-function Kobo:Suspend()
+function Kobo:suspend()
     os.execute("./suspend.sh")
 end
 
-function Kobo:Resume()
+function Kobo:resume()
     os.execute("echo 0 > /sys/power/state-extended")
     if self.powerd then
         if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
@@ -134,7 +134,7 @@ function Kobo:Resume()
         end
     end
 
-    Generic.Resume(self)
+    Generic.resume(self)
 end
 
 -------------- device probe ------------
