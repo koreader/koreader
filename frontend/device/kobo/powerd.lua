@@ -7,7 +7,7 @@ local KoboPowerD = BasePowerD:new{
     fl = nil,
 
     batt_capacity_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/capacity",
-    is_charging_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/charge_now",
+    is_charging_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/status",
     battCapacity = nil,
     is_charging = nil,
 }
@@ -45,8 +45,8 @@ function KoboPowerD:getCapacityHW()
 end
 
 function KoboPowerD:isChargingHW()
-    self.is_charging = self:read_int_file(self.is_charging_file)
-    return self.is_charging == 1
+    self.is_charging = self:read_str_file(self.is_charging_file) == "Charging\n"
+    return self.is_charging
 end
 
 return KoboPowerD
