@@ -26,7 +26,7 @@ local FileChooser = Menu:extend{
     strcoll = strcoll,
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
-    path_pages = {}, -- store last browsed location(page) for each path
+    path_items = {}, -- store last browsed location(item index) for each path
 }
 
 function FileChooser:init()
@@ -150,12 +150,11 @@ end
 
 function FileChooser:updateItems(select_number)
     Menu.updateItems(self, select_number) -- call parent's updateItems()
-    self.path_pages[self.path] = self.page
+    self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
 function FileChooser:refreshPath()
-    self.page = self.path_pages[self.path] or 1
-    self:swithItemTable(nil, self:genItemTableFromPath(self.path), -1)
+    self:swithItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
 end
 
 function FileChooser:changeToPath(path)

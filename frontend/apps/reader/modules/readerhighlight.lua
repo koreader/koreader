@@ -392,7 +392,8 @@ end
 function ReaderHighlight:saveHighlight()
     DEBUG("save highlight")
     local page = self.hold_pos.page
-    if self.hold_pos and self.selected_text then
+    if self.hold_pos and self.selected_text and self.selected_text.pos0
+        and self.selected_text.pos1 then
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end
@@ -408,6 +409,8 @@ function ReaderHighlight:saveHighlight()
         table.insert(self.view.highlight.saved[page], hl_item)
         self.ui.bookmark:addBookmark({
             page = self.ui.document.info.has_pages and page or self.selected_text.pos0,
+            pos0 = self.selected_text.pos0,
+            pos1 = self.selected_text.pos1,
             datetime = datetime,
             notes = self.selected_text.text,
             highlighted = true,

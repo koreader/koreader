@@ -15,12 +15,18 @@ local OTAManager = {
         "http://hal9k.ifsc.usp.br:80/koreader/",
     },
     ota_channels = {
+        "stable",
         "nightly",
     },
     zsync_template = "koreader-%s-latest-%s.zsync",
     installed_package = "ota/koreader.installed.tar",
     package_indexfile = "ota/package.index",
     updated_package = "ota/koreader.updated.tar",
+}
+
+local ota_channels = {
+    stable = _("stable"),
+    nightly = _("develop"),
 }
 
 function OTAManager:getOTAModel()
@@ -65,11 +71,14 @@ function OTAManager:checkUpdate()
     local ota_zsync_file = self:getOTAServer() .. zsync_file
     local local_zsync_file = "ota/" .. zsync_file
     -- download zsync file from OTA server
+    DEBUG("downloading zsync file", ota_zsync_file)
     local r, c, h = http.request{
         url = ota_zsync_file,
         sink = ltn12.sink.file(io.open(local_zsync_file, "w"))}
-    -- prompt users to turn on Wifi if network is unreachable
-    if c ~= 200 then return end
+    if c ~= 200 then
+        DEBUG("cannot find zsync file", c)
+        return
+    end
     -- parse OTA package version
     local ota_package = nil
     local zsync = io.open(local_zsync_file, "r")
@@ -98,7 +107,7 @@ function OTAManager:checkUpdate()
     -- return ota package version if package on OTA server has version
     -- larger than the local package version
     if local_ok and ota_ok and ota_version and local_version and
-        ota_version > local_version then
+        ota_version ~= local_version then
         return ota_version, local_version
     elseif ota_version and ota_version == local_version then
         return 0
@@ -113,7 +122,7 @@ function OTAManager:fetchAndProcessUpdate()
         })
     elseif ota_version == nil then
         UIManager:show(InfoMessage:new{
-            text = _("OTA server is not available."),
+            text = _("OTA package is not available."),
         })
     elseif ota_version then
         UIManager:show(ConfirmBox:new{
@@ -184,7 +193,7 @@ function OTAManager:genChannelList()
     local channels = {}
     for _, channel in ipairs(self.ota_channels) do
         local channel_item = {
-            text = channel,
+            text = ota_channels[channel],
             checked_func = function() return self:getOTAChannel() == channel end,
             callback = function() self:setOTAChannel(channel) end
         }

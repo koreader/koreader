@@ -29,6 +29,7 @@ function ReaderSearch:addToMainMenu(tab_item_table)
 end
 
 function ReaderSearch:onShowSearchDialog(text)
+    text = require("util").stripePunctuations(text)
     local do_search = function(search_func, text, param)
         return function()
             local res = search_func(self, text, param)

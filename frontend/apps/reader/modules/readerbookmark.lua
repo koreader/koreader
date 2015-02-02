@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Menu = require("ui/widget/menu")
 local Device = require("device")
 local GestureRange = require("ui/gesturerange")
@@ -204,6 +205,26 @@ function ReaderBookmark:onShowBookmark()
         bookmark:gotoBookmark(item.page)
     end
 
+    function bm_menu:onMenuHold(item)
+        self.remove_bookmark_dialog = ButtonDialog:new{
+            buttons = {
+                {
+                    {
+                        text = _("Remove this bookmark"),
+                        callback = function()
+                            bookmark:removeBookmark(item)
+                            bm_menu:swithItemTable(nil, bookmark.bookmarks, -1)
+                            UIManager:close(self.remove_bookmark_dialog)
+                        end,
+                    },
+                },
+            },
+        }
+
+        UIManager:show(self.remove_bookmark_dialog)
+        return true
+    end
+
     bm_menu.close_callback = function()
         UIManager:close(self.bookmark_menu)
     end
@@ -241,12 +262,32 @@ function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
     end
 end
 
+function ReaderBookmark:isBookmarkSame(item1, item2)
+    if item1.notes ~= item2.notes then return end
+    if self.ui.document.info.has_pages then
+        if not item2.pos0 or not item2.pos1 then return end
+        local zoom1 = item1.pos0.zoom
+        local zoom1 = item2.pos0.zoom
+        return item2.pos0 and item2.pos1 and item1.pos0.page == item2.pos0.page
+        and item1.pos0.x == item2.pos0.x and item1.pos0.y == item2.pos0.y
+        and item1.pos1.x == item2.pos1.x and item1.pos1.y == item2.pos1.y
+    else
+        return item1.page == item2.page
+        and item1.pos0 == item2.pos0 and item1.pos1 == item2.pos1
+    end
+end
+
 -- binary insert of sorted bookmarks
 function ReaderBookmark:addBookmark(item)
     local _start, _middle, _end, direction = 1, 1, #self.bookmarks, 0
     while _start <= _end do
         local v = self.bookmarks[_middle]
         _middle = math.floor((_start + _end)/2)
+        -- won't add duplicated bookmarks
+        if self:isBookmarkSame(item, self.bookmarks[_middle]) then
+            DEBUG("skip adding duplicated bookmark")
+            return
+        end
         if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
             _end, direction = _middle - 1, 0
         else

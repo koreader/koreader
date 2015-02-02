@@ -155,6 +155,20 @@ function FileManager:init()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
+function FileManager:resetDimen(dimen)
+    self.dimen = dimen
+    -- backup the root path and path items
+    self.root_path = self.file_chooser.path
+    local path_items_backup = {}
+    for k, v in pairs(self.file_chooser.path_items) do
+        path_items_backup[k] = v
+    end
+    -- reinit filemanager
+    self:init()
+    self.file_chooser.path_items = path_items_backup
+    self:onRefresh()
+end
+
 function FileManager:toggleHiddenFiles()
     self.file_chooser:toggleHiddenFiles()
     G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
@@ -172,6 +186,7 @@ end
 
 function FileManager:onClose()
     DEBUG("close filemanager")
+    G_reader_settings:saveSetting("fm_screen_mode", Screen:getScreenMode())
     UIManager:close(self)
     if self.onExit then
         self:onExit()
@@ -198,7 +213,9 @@ end
 
 function FileManager:restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
-    Screen:setScreenMode(screen_mode or "portrait")
+    if Screen:getScreenMode() ~= screen_mode then
+        Screen:setScreenMode(screen_mode or "portrait")
+    end
     UIManager:setDirty(self, "full")
 end
 
@@ -206,15 +223,16 @@ function FileManager:showFiles(path)
     DEBUG("show home page")
     path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
-    UIManager:show(FileManager:new{
+    self:restoreScreenMode()
+    local file_manager = FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
         onExit = function()
-            self.is_running = false
-            UIManager:quit()
+            self.instance = nil
         end
-    })
-    self.is_running = true
+    }
+    UIManager:show(file_manager)
+    self.instance = file_manager
 end
 
 function FileManager:copyFile(file)
