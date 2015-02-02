@@ -34,6 +34,7 @@ local Kindle4 = Kindle:new{
 local KindleTouch = Kindle:new{
     model = "KindleTouch",
     isTouchDevice = yes,
+    hasKeys = yes,
     touch_dev = "/dev/input/event3",
 }
 
@@ -63,6 +64,7 @@ local KindleVoyage = Kindle:new{
     model = "KindleVoyage",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
 }
@@ -188,11 +190,18 @@ function KindleVoyage:init()
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [104] = "LPgBack",
+            [109] = "LPgFwd",
+        },
+    }
 
     Kindle.init(self)
 
     self.input.open("/dev/input/event1")
-    -- TODO: Handle the page turn 'buttons'! (/dev/input/event2)
+    self.input.open("/dev/input/event2")
     self.input.open("fake_events")
 end
 
