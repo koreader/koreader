@@ -303,8 +303,6 @@ function ReaderToc:onShowToc()
         end
     end
 
-    self:updateCurrentNode()
-
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
@@ -353,8 +351,11 @@ function ReaderToc:onShowToc()
 
     self.toc_menu = toc_menu
 
+    self:updateCurrentNode()
     -- auto expand the parent node of current page
     self:expandParentNode(self:getTocIndexByPage(self.pageno))
+    -- auto goto page of the current toc entry
+    self.toc_menu:swithItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
     UIManager:show(menu_container)
 
