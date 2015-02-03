@@ -59,11 +59,10 @@ function ReaderLink:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.navi, {
         text = _("Follow links"),
         checked_func = function()
-            return G_reader_settings:readSetting("follow_links") ~= false
+            return G_reader_settings:readSetting("follow_links") == true
         end,
         callback = function()
             local follow_links = G_reader_settings:readSetting("follow_links")
-            if follow_links == nil then follow_links = true end
             G_reader_settings:saveSetting("follow_links", not follow_links)
         end
     })
@@ -77,7 +76,7 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(arg, ges)
-    if G_reader_settings:readSetting("follow_links") == false then return end
+    if G_reader_settings:readSetting("follow_links") ~= true then return end
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then

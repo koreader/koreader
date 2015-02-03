@@ -242,14 +242,19 @@ function ReaderToc:updateCurrentNode()
     end
 end
 
-function ReaderToc:expandCurrentNode()
-    local current_node_index = self:getTocIndexByPage(self.pageno)
-    if current_node_index then
-        for i = current_node_index - 1, 1, -1 do
-            if self.toc[i+1].depth > self.toc[i].depth then
-                self:expandToc(i)
-                break
+function ReaderToc:expandParentNode(index)
+    if index then
+        local nodes_to_expand = {}
+        local depth = self.toc[index].depth
+        for i = index - 1, 1, -1 do
+            if depth > self.toc[i].depth then
+                depth = self.toc[i].depth
+                table.insert(nodes_to_expand, i)
             end
+            if depth == 1 then break end
+        end
+        for i = #nodes_to_expand, 1, -1 do
+            self:expandToc(nodes_to_expand[i])
         end
     end
 end
@@ -297,8 +302,6 @@ function ReaderToc:onShowToc()
             depth = v.depth
         end
     end
-
-    self:updateCurrentNode()
 
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
@@ -348,8 +351,11 @@ function ReaderToc:onShowToc()
 
     self.toc_menu = toc_menu
 
+    self:updateCurrentNode()
     -- auto expand the parent node of current page
-    self:expandCurrentNode()
+    self:expandParentNode(self:getTocIndexByPage(self.pageno))
+    -- auto goto page of the current toc entry
+    self.toc_menu:swithItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
     UIManager:show(menu_container)
 
@@ -372,6 +378,9 @@ function ReaderToc:expandToc(index)
             break
         end
     end
+    -- either the toc entry of index has no child nodes
+    -- or it's parent nodes are not expanded yet
+    if not collapsed_index then return end
     for i = index + 1, #self.toc do
         local v = self.toc[i]
         if v.depth == cur_depth + 1 then
