@@ -28,7 +28,7 @@ local function koboEnableWifi(toggle)
         os.execute("wlarm_le -i eth0 up")
         os.execute("pidof wpa_supplicant >/dev/null || wpa_supplicant -s -i eth0 -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B")
         os.execute("sleep 1")
-        os.execute("sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 &")
+        os.execute("/sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 &")
     else
         os.execute("killall udhcpc wpa_supplicant 2>/dev/null")
         os.execute("wlarm_le -i eth0 down")
