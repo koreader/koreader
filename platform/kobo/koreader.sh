@@ -55,6 +55,7 @@ if [ -n "$PLATFORM" ]; then
   elif [ ! -e /etc/u-boot/$PLATFORM/u-boot.mmc ]; then
     PLATFORM=ntx508
   fi
+  export PLATFORM
 fi
 # end of value check of PLATFORM
 
