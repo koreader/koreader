@@ -40,6 +40,28 @@ else
     args=$@
 fi
 
+# check whether PLATFORM has a value assigned by rcS
+# PLATFORM is used in koreader for the path to the WiFi drivers
+if [ -n "$PLATFORM" ]; then 
+  PLATFORM=freescale
+  if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
+    CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
+    PLATFORM=$CPU-ntx
+  fi
+
+  if [ $PLATFORM == freescale ]; then
+    if [ ! -s /lib/firmware/imx/epdc_E60_V220.fw ]; then
+      mkdir -p /lib/firmware/imx
+      dd if=/dev/mmcblk0 bs=512K skip=10 count=1 | zcat > /lib/firmware/imx/epdc_E60_V220.fw
+      sync
+    fi
+  elif [ ! -e /etc/u-boot/$PLATFORM/u-boot.mmc ]; then
+    PLATFORM=ntx508
+  fi
+  export PLATFORM
+fi
+# end of value check of PLATFORM
+
 ./reader.lua $args 2> crash.log
 
 if [ $from_nickel -ne 0 ]; then
