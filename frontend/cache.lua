@@ -122,7 +122,7 @@ function Cache:check(key, ItemClass)
         end
         return self.cache[key]
     elseif ItemClass then
-        local cached = self.cached[md5(key)]
+        local cached = self.cached[md5:sum(key)]
         if cached then
             local item = ItemClass:new{}
             local ok, msg = pcall(item.load, item, cached)
@@ -159,7 +159,7 @@ function Cache:serialize()
         -- only dump cache item that requests serialization explicitly
         if cache_item.persistent and cache_item.dump then
             DEBUG("dump cache item", key)
-            cache_size = cache_item:dump(cache_path..md5(key)) or 0
+            cache_size = cache_item:dump(cache_path..md5:sum(key)) or 0
             if cache_size > 0 then break end
         end
     end

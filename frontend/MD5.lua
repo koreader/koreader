@@ -208,14 +208,25 @@ local function bin2str(output, input, len)
     end
 end
 
-local function md5(luastr)
+local md5 = {}
+
+function md5:new()
+    self.ctx = ffi.new("MD5_CTX")
+    MD5Init(self.ctx)
+end
+
+function md5:update(luastr)
+    MD5Update(self.ctx, ffi.cast("const char*", luastr), #luastr)
+end
+
+function md5:sum(luastr)
     local buf = ffi.new("char[33]")
     local hash = ffi.new("uint8_t[16]")
-    local ctx = ffi.new("MD5_CTX")
-
-    MD5Init(ctx)
-    MD5Update(ctx, ffi.cast("const char*", luastr), #luastr)
-    MD5Final(hash, ctx)
+    if luastr then
+        md5:new()
+        md5:update(luastr)
+    end
+    MD5Final(hash, self.ctx)
 
     bin2str(buf, hash, ffi.sizeof(hash))
 
