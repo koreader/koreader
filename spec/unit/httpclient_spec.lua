@@ -2,7 +2,7 @@ require("commonrequire")
 local UIManager = require("ui/uimanager")
 local HTTPClient = require("httpclient")
 local DEBUG = require("dbg")
-DEBUG:turnOn()
+--DEBUG:turnOn()
 
 describe("HTTP client module", function()
     local requests = 0
