@@ -1,18 +1,28 @@
 #!./luajit
 
+-- load default settings
 require "defaults"
 pcall(dofile, "defaults.persistent.lua")
-package.path = "?.lua;common/?.lua;frontend/?.lua"
-package.cpath = "?.so;common/?.so;common/?.dll;/usr/lib/lua/?.so"
 
+-- set search path for 'require()'
+package.path = "common/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;" .. package.cpath
+
+-- set search path for 'ffi.load()'
 local ffi = require("ffi")
+local util = require("ffi/util")
+ffi.cdef[[
+    char *getenv(const char *name);
+    int putenv(const char *envvar);
+    int _putenv(const char *envvar);
+]]
 if ffi.os == "Windows" then
-    ffi.cdef[[
-        int _putenv(const char *envvar);
-    ]]
     ffi.C._putenv("PATH=libs;common;")
-    --ffi.C._putenv("EMULATE_READER_W=480")
-    --ffi.C._putenv("EMULATE_READER_H=600")
+else
+    ffi.C.putenv("LD_LIBRARY_PATH="
+        .. util.realpath("libs") .. ":"
+        .. util.realpath("common") ..":"
+        .. ffi.string(ffi.C.getenv("LD_LIBRARY_PATH")))
 end
 
 local DocSettings = require("docsettings")
