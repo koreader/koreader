@@ -14,14 +14,13 @@ before_install:
 
 install:
     - sudo apt-get install libsdl1.2-dev luarocks nasm
-    - git clone https://github.com/Olivine-Labs/busted/
-    - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
-    - sudo luarocks install luacov
+    - sudo luarocks install busted luacov
     - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
 
 script:
     - make fetchthirdparty all
     - sudo cp base/build/*/luajit /usr/bin/
+    - sudo ln -sf /usr/bin/luajit /usr/bin/lua
     - make testfront
 
 after_success:

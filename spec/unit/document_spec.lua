@@ -3,6 +3,7 @@ local DocumentRegistry = require("document/documentregistry")
 
 describe("PDF document module", function()
     local sample_pdf = "spec/front/unit/data/tall.pdf"
+    local doc
     it("should open document", function()
         doc = DocumentRegistry:openDocument(sample_pdf)
         assert.truthy(doc)
@@ -38,6 +39,7 @@ end)
 
 describe("EPUB document module", function()
     local sample_epub = "spec/front/unit/data/leaves.epub"
+    local doc
     it("should open document", function()
         doc = DocumentRegistry:openDocument(sample_epub)
         assert.truthy(doc)
