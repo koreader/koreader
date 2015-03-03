@@ -14,7 +14,8 @@ before_install:
 
 install:
     - sudo apt-get install libsdl1.2-dev luarocks nasm
-    - sudo luarocks install busted luacov
+    - sudo luarocks install busted
+    - sudo luarocks install luacov
     - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
 
 script:
