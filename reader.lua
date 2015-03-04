@@ -18,11 +18,6 @@ ffi.cdef[[
 ]]
 if ffi.os == "Windows" then
     ffi.C._putenv("PATH=libs;common;")
-else
-    ffi.C.putenv("LD_LIBRARY_PATH="
-        .. util.realpath("libs") .. ":"
-        .. util.realpath("common") ..":"
-        .. ffi.string(ffi.C.getenv("LD_LIBRARY_PATH")))
 end
 
 local DocSettings = require("docsettings")

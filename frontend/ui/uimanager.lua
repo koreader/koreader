@@ -6,6 +6,7 @@ local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local ffi = require("ffi")
 
 -- there is only one instance of this
 local UIManager = {
@@ -246,6 +247,7 @@ end
 function UIManager:quit()
     DEBUG("quit uimanager")
     self._running = false
+    self._run_forever = nil
     for i = #self._window_stack, 1, -1 do
         table.remove(self._window_stack, i)
     end
@@ -255,6 +257,10 @@ function UIManager:quit()
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
         table.remove(self._zeromqs, i)
+    end
+    if self.looper then
+        self.looper:close()
+        self.looper = nil
     end
 end
 
@@ -430,73 +436,110 @@ function UIManager:_repaint()
     self.refresh_counted = false
 end
 
+function UIManager:handleInput()
+    local wait_until, now
+    -- run this in a loop, so that paints can trigger events
+    -- that will be honored when calculating the time to wait
+    -- for input events:
+    repeat
+        wait_until, now = self:_checkTasks()
+
+        --DEBUG("---------------------------------------------------")
+        --DEBUG("exec stack", self._execution_stack)
+        --DEBUG("window stack", self._window_stack)
+        --DEBUG("dirty stack", self._dirty)
+        --DEBUG("---------------------------------------------------")
+
+        -- stop when we have no window to show
+        if #self._window_stack == 0 and not self._run_forever then
+            DEBUG("no dialog left to show")
+            self:quit()
+            return nil
+        end
+
+        self:_repaint()
+    until not self._execution_stack_dirty
+
+    -- wait for next event
+    -- note that we will skip that if we have tasks that are ready to run
+    local input_event = nil
+    if not wait_until then
+        if #self._zeromqs > 0 then
+            -- pending message queue, wait 100ms for input
+            input_event = Input:waitEvent(1000*100)
+            if not input_event or input_event.handler == "onInputError" then
+                for _, zeromq in ipairs(self._zeromqs) do
+                    input_event = zeromq:waitEvent()
+                    if input_event then break end
+                end
+            end
+        else
+            -- no pending task, wait without timeout
+            input_event = Input:waitEvent(self.INPUT_TIMEOUT)
+        end
+    elseif wait_until[1] > now[1]
+    or wait_until[1] == now[1] and wait_until[2] > now[2] then
+        local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }
+        if wait_for.us < 0 then
+            wait_for.s = wait_for.s - 1
+            wait_for.us = 1000000 + wait_for.us
+        end
+        -- wait until next task is pending
+        input_event = Input:waitEvent(wait_for.us, wait_for.s)
+    end
+
+    -- delegate input_event to handler
+    if input_event then
+        local handler = self.event_handlers[input_event]
+        if handler then
+            handler(input_event)
+        else
+            self.event_handlers["__default__"](input_event)
+        end
+    end
+
+    -- handle next input
+    self:handleTask(function() self:handleInput() end)
+end
+
+-- handle task(callback function) in Turbo I/O looper
+-- or run task immediately if looper is not available
+function UIManager:handleTask(task)
+    if self.looper then
+        DEBUG("handle task in turbo I/O looper")
+        self.looper:add_callback(task)
+    else
+        DEBUG("run task")
+        task()
+    end
+end
+
+function UIManager:initLooper()
+    if not self.looper then
+        TURBO_SSL = true
+        local turbo = require("turbo")
+        self.looper = turbo.ioloop.instance()
+    end
+end
+
 -- this is the main loop of the UI controller
 -- it is intended to manage input events and delegate
 -- them to dialogs
 function UIManager:run()
     self._running = true
-    while self._running do
-        local wait_until, now
-        -- run this in a loop, so that paints can trigger events
-        -- that will be honored when calculating the time to wait
-        -- for input events:
-        repeat
-            wait_until, now = self:_checkTasks()
-
-            --DEBUG("---------------------------------------------------")
-            --DEBUG("exec stack", self._execution_stack)
-            --DEBUG("window stack", self._window_stack)
-            --DEBUG("dirty stack", self._dirty)
-            --DEBUG("---------------------------------------------------")
-
-            -- stop when we have no window to show
-            if #self._window_stack == 0 then
-                DEBUG("no dialog left to show")
-                self:quit()
-                return nil
-            end
-
-            self:_repaint()
-        until not self._execution_stack_dirty
-
-        -- wait for next event
-        -- note that we will skip that if we have tasks that are ready to run
-        local input_event = nil
-        if not wait_until then
-            if #self._zeromqs > 0 then
-                -- pending message queue, wait 100ms for input
-                input_event = Input:waitEvent(1000*100)
-                if not input_event or input_event.handler == "onInputError" then
-                    for _, zeromq in ipairs(self._zeromqs) do
-                        input_event = zeromq:waitEvent()
-                        if input_event then break end
-                    end
-                end
-            else
-                -- no pending task, wait without timeout
-                input_event = Input:waitEvent()
-            end
-        elseif wait_until[1] > now[1]
-        or wait_until[1] == now[1] and wait_until[2] > now[2] then
-            local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }
-            if wait_for.us < 0 then
-                wait_for.s = wait_for.s - 1
-                wait_for.us = 1000000 + wait_for.us
-            end
-            -- wait until next task is pending
-            input_event = Input:waitEvent(wait_for.us, wait_for.s)
-        end
-
-        -- delegate input_event to handler
-        if input_event then
-            local handler = self.event_handlers[input_event]
-            if handler then
-                handler(input_event)
-            else
-                self.event_handlers["__default__"](input_event)
-            end
-        end
+    if ffi.os == "Windows" then
+        self:handleInput()
+    else
+        self:initLooper()
+        self:handleTask(function() self:handleInput() end)
+        self.looper:start()
     end
+end
+
+-- run uimanager forever for testing purpose
+function UIManager:runForever()
+    self._run_forever = true
+    self:run()
 end
 
 UIManager:init()

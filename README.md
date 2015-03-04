@@ -253,12 +253,12 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
-[travis-badge]:https://travis-ci.org/koreader/koreader.png?branch=master
+[travis-badge]:https://travis-ci.org/koreader/koreader.svg?branch=master
 [travis-link]:https://travis-ci.org/koreader/koreader
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
-[coverage-badge]:https://coveralls.io/repos/koreader/koreader/badge.png
+[coverage-badge]:https://coveralls.io/repos/koreader/koreader/badge.svg
 [coverage-link]:https://coveralls.io/r/koreader/koreader
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
