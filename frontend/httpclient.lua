@@ -36,6 +36,7 @@ function HTTPClient:request(request, response_callback, error_callback)
         UIManager.INPUT_TIMEOUT = self.INPUT_TIMEOUT
         self.input_timeouts = self.input_timeouts + 1
         local turbo = require("turbo")
+        turbo.log.categories.success = false
         local res = coroutine.yield(
             turbo.async.HTTPClient():fetch(request.url, request))
         -- reset INPUT_TIMEOUT to nil when all HTTP requests are fullfilled.
