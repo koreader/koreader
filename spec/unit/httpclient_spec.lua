@@ -9,12 +9,8 @@ describe("HTTP client module", function()
     local function response_callback(res)
         requests = requests - 1
         if requests == 0 then UIManager:quit() end
+        assert(not res.error, "error occurs")
         assert(res.body)
-    end
-    local function error_callback(res)
-        requests = requests - 1
-        if requests == 0 then UIManager:quit() end
-        assert(false, "error occurs")
     end
     local async_client = HTTPClient:new()
     it("should get response from async GET request", function()
@@ -27,7 +23,7 @@ describe("HTTP client module", function()
         for _, url in ipairs(urls) do
             async_client:request({
                 url = url,
-            }, response_callback, error_callback)
+            }, response_callback)
         end
         UIManager:runForever()
     end)

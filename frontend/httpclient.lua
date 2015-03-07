@@ -22,7 +22,7 @@ function HTTPClient:removeHeader(header)
     self.headers[header] = nil
 end
 
-function HTTPClient:request(request, response_callback, error_callback)
+function HTTPClient:request(request, response_callback)
     request.on_headers = function(headers)
         for header, value in pairs(self.headers) do
             headers[header] = value
@@ -36,15 +36,15 @@ function HTTPClient:request(request, response_callback, error_callback)
         UIManager.INPUT_TIMEOUT = self.INPUT_TIMEOUT
         self.input_timeouts = self.input_timeouts + 1
         local turbo = require("turbo")
+        -- disable success and warning logs
         turbo.log.categories.success = false
-        local res = coroutine.yield(
-            turbo.async.HTTPClient():fetch(request.url, request))
+        turbo.log.categories.warning = false
+        local client = turbo.async.HTTPClient({verify_ca = "none"})
+        local res = coroutine.yield(client:fetch(request.url, request))
         -- reset INPUT_TIMEOUT to nil when all HTTP requests are fullfilled.
         self.input_timeouts = self.input_timeouts - 1
         UIManager.INPUT_TIMEOUT = self.input_timeouts > 0 and self.INPUT_TIMEOUT or nil
-        if res.error and error_callback then
-            error_callback(res)
-        elseif response_callback then
+        if response_callback then
             response_callback(res)
         end
     end)
