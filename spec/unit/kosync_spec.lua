@@ -5,7 +5,7 @@ local UIManager = require("ui/uimanager")
 local HTTPClient = require("httpclient")
 local DEBUG = require("dbg")
 local md5 = require("MD5")
-DEBUG:turnOn()
+--DEBUG:turnOn()
 
 local service = [[
 {
