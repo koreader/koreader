@@ -22,6 +22,6 @@ indent_size = 8
 indent_style = tab
 indent_size = 8
 
-[*.{js,json,css,scss,sass,html,handlebars,tpl}]
+[*.{js,css,scss,sass,html,handlebars,tpl}]
 indent_style = space
 indent_size = 2

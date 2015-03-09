@@ -1,0 +1,49 @@
+{
+    "base_url" : "https://vislab.bjmu.edu.cn:7200/",
+    "name" : "koreader-sync-api",
+    "methods" : {
+        "register" : {
+            "path" : "/users/create",
+            "method" : "POST",
+            "required_params" : [
+                "username",
+                "password",
+            ],
+            "payload" : [
+                "username",
+                "password",
+            ],
+            "expected_status" : [201, 402]
+        },
+        "authorize" : {
+            "path" : "/users/auth",
+            "method" : "GET",
+            "expected_status" : [200, 401]
+        },
+        "update_progress" : {
+            "path" : "/syncs/progress",
+            "method" : "PUT",
+            "required_params" : [
+                "document",
+                "progress",
+                "percentage",
+                "device",
+            ],
+            "payload" : [
+                "document",
+                "progress",
+                "percentage",
+                "device",
+            ],
+            "expected_status" : [200, 202, 401]
+        },
+        "get_progress" : {
+            "path" : "/syncs/progress/:document",
+            "method" : "GET",
+            "required_params" : [
+                "document",
+            ],
+            "expected_status" : [200, 401]
+        },
+    }
+}

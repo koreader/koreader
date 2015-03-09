@@ -131,8 +131,18 @@ end
 function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
-    self.ui.doc_settings:saveSetting("percent_finished", self.current_page/self.number_of_pages)
+    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
+end
+
+function ReaderPaging:getLastProgress()
+    return self:getTopPage()
+end
+
+function ReaderPaging:getLastPercent()
+    if self.current_page > 0 and self.number_of_pages > 0 then
+        return self.current_page/self.number_of_pages
+    end
 end
 
 function ReaderPaging:addToMainMenu(tab_item_table)

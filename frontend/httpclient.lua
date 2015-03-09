@@ -2,7 +2,6 @@ local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 
 local HTTPClient = {
-    headers = {},
     input_timeouts = 0,
     INPUT_TIMEOUT = 100*1000,
 }
@@ -14,20 +13,7 @@ function HTTPClient:new()
     return o
 end
 
-function HTTPClient:addHeader(header, value)
-    self.headers[header] = value
-end
-
-function HTTPClient:removeHeader(header)
-    self.headers[header] = nil
-end
-
 function HTTPClient:request(request, response_callback)
-    request.on_headers = function(headers)
-        for header, value in pairs(self.headers) do
-            headers[header] = value
-        end
-    end
     request.connect_timeout = 10
     request.request_timeout = 20
     UIManager:initLooper()

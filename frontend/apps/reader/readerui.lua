@@ -368,7 +368,8 @@ function ReaderUI:closeDocument()
     self.document = nil
 end
 
-function ReaderUI:onCloseDocument()
+function ReaderUI:notifyCloseDocument()
+    self:handleEvent(Event:new("CloseDocument"))
     if self.document:isEdited() then
         UIManager:show(ConfirmBox:new{
             text = _("Do you want to save this document?"),
@@ -392,7 +393,7 @@ function ReaderUI:onClose()
     self:saveSettings()
     if self.document ~= nil then
         DEBUG("closing document")
-        self:onCloseDocument()
+        self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, "full")
     -- serialize last used items for later launch

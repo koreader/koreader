@@ -55,12 +55,35 @@ describe("Lua Spore modules #nocov", function()
     end)
 end)
 
-describe("Lua Spore modules with async request #nocov", function()
+describe("Lua Spore modules with async http request #nocov", function()
     local Spore = require("Spore")
     local client = Spore.new_from_string(service)
-    client:enable("Format.JSON")
-    package.loaded['Spore.Middleware.Async'] = {}
     local async_http_client = HTTPClient:new()
+    package.loaded['Spore.Middleware.AsyncHTTP'] = {}
+    require('Spore.Middleware.AsyncHTTP').call = function(args, req)
+        req:finalize()
+        local result
+        async_http_client:request({
+            url = req.url,
+            method = req.method,
+            body = req.env.spore.payload,
+            on_headers = function(headers)
+                for header, value in pairs(req.headers) do
+                    if type(header) == 'string' then
+                        headers:add(header, value)
+                    end
+                end
+            end,
+        }, function(res)
+            result = res
+            -- Turbo HTTP client uses code instead of status
+            -- change to status so that Spore can understand
+            result.status = res.code
+            coroutine.resume(args.thread)
+            UIManager.INPUT_TIMEOUT = 100 -- no need in production
+        end)
+        return coroutine.create(function() coroutine.yield(result) end)
+    end
     it("should complete GET request", function()
         UIManager:quit()
         local co = coroutine.create(function()
@@ -69,22 +92,10 @@ describe("Lua Spore modules with async request #nocov", function()
             UIManager:quit()
             assert.are.same(res.body.args, info)
         end)
-        require('Spore.Middleware.Async').call = function(self, req)
-            req:finalize()
-            local result
-            async_http_client:request({
-                url = req.url,
-                method = req.method,
-            }, function(res)
-                result = res
-                coroutine.resume(co)
-                UIManager.INPUT_TIMEOUT = 100 -- no need in production
-            end)
-            return coroutine.create(function() coroutine.yield(result) end)
-        end
-        client:enable("Async")
+        client:reset_middlewares()
+        client:enable("Format.JSON")
+        client:enable("AsyncHTTP", {thread = co})
         coroutine.resume(co)
-        UIManager.INPUT_TIMEOUT = 100
         UIManager:runForever()
     end)
     it("should complete POST request", function()
@@ -95,22 +106,10 @@ describe("Lua Spore modules with async request #nocov", function()
             UIManager:quit()
             assert.are.same(res.body.json, info)
         end)
-        require('Spore.Middleware.Async').call = function(self, req)
-            req:finalize()
-            local result
-            async_http_client:request({
-                url = req.url,
-                method = req.method,
-            }, function(res)
-                result = res
-                coroutine.resume(co)
-                UIManager.INPUT_TIMEOUT = 100 -- no need in production
-            end)
-            return coroutine.create(function() coroutine.yield(result) end)
-        end
-        client:enable("Async")
+        client:reset_middlewares()
+        client:enable("Format.JSON")
+        client:enable("AsyncHTTP", {thread = co})
         coroutine.resume(co)
-        UIManager.INPUT_TIMEOUT = 100
         UIManager:runForever()
     end)
 end)
