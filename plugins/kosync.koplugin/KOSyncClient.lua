@@ -47,6 +47,8 @@ function KOSyncClient:init()
             -- Turbo HTTP client uses code instead of status
             -- change to status so that Spore can understand
             result.status = res.code
+            -- fallback to sync http request
+            if result.error then result = nil end
             coroutine.resume(args.thread)
         end)
         return coroutine.create(function() coroutine.yield(result) end)

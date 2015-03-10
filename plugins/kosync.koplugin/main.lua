@@ -8,6 +8,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Device = require("device")
 local Event = require("ui/event")
+local Math = require("optmath")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -23,8 +24,11 @@ function KOSync:init()
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_username = settings.username or ""
     self.kosync_userkey = settings.userkey
+    self.kosync_auto_sync = settings.auto_sync or true
     self.ui:registerPostInitCallback(function()
-        UIManager:scheduleIn(1, function() self:getProgress() end)
+        if self.kosync_auto_sync then
+            UIManager:scheduleIn(1, function() self:getProgress() end)
+        end
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -44,6 +48,23 @@ function KOSync:addToMainMenu(tab_item_table)
                         function() self:login() end
                 end,
             },
+            {
+                text = _("Auto Sync"),
+                checked_func = function() return self.kosync_auto_sync end,
+                callback = function()
+                    self.kosync_auto_sync = not self.kosync_auto_sync
+                end,
+            },
+            {
+                text = _("Sync now"),
+                enabled_func = function()
+                    return self.kosync_userkey ~= nil
+                end,
+                callback = function()
+                    self:updateProgress()
+                    self:getProgress(true)
+                end,
+            }
         }
     })
 end
@@ -174,8 +195,8 @@ function KOSync:doLogin(username, password)
 end
 
 function KOSync:logout()
-    self.kosync_username = nil
     self.kosync_userkey = nil
+    self.kosync_auto_sync = true
     self:onSaveSettings()
 end
 
@@ -225,7 +246,7 @@ function KOSync:updateProgress()
     end
 end
 
-function KOSync:getProgress()
+function KOSync:getProgress(manual)
     if self.kosync_username and self.kosync_userkey then
         local KOSyncClient = require("KOSyncClient")
         local client = KOSyncClient:new{
@@ -237,15 +258,21 @@ function KOSync:getProgress()
             doc_digest, function(ok, body)
                 DEBUG("get progress for", self.view.document.file, ok, body)
                 if body and body.percentage then
+                    local progress = self:getLastProgress()
                     local percentage = self:getLastPercent()
                     DEBUG("current progress", percentage)
-                    if (body.percentage - percentage) > 0.0001 then
+                    if body.percentage > percentage and body.progress ~= progress then
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Sync to furthest location from '%1'?"),
-                                body.device),
+                            text = T(_("Sync to furthest location %1% from device '%2'?"),
+                                Math.round(body.percentage*100), body.device),
                             ok_callback = function()
                                 self:syncToProgress(body.progress)
                             end,
+                        })
+                    elseif manual and body.progress == progress then
+                        UIManager:show(InfoMessage:new{
+                            text = _("We are already synchronized."),
+                            timeout = 1.0,
                         })
                     end
                 end
@@ -260,13 +287,16 @@ function KOSync:onSaveSettings()
     local settings = {
         username = self.kosync_username,
         userkey = self.kosync_userkey,
+        auto_sync = self.kosync_auto_sync,
     }
     G_reader_settings:saveSetting("kosync", settings)
 end
 
 function KOSync:onCloseDocument()
     DEBUG("on close document")
-    self:updateProgress()
+    if self.kosync_auto_sync then
+        self:updateProgress()
+    end
 end
 
 return KOSync
