@@ -14,15 +14,20 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local md5 = require("MD5")
 
+local l10n = {
+    _("Unknown server error."),
+    _("Unauthorized"),
+    _("Username is already registered."),
+}
+
 local KOSync = InputContainer:new{
     name = "kosync",
-    register_title = _("Register an account in Koreader server"),
-    login_title = _("Login to Koreader server"),
+    title = _("Register/login to Koreader server"),
 }
 
 function KOSync:init()
     local settings = G_reader_settings:readSetting("kosync") or {}
-    self.kosync_username = settings.username or ""
+    self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = settings.auto_sync or true
     self.ui:registerPostInitCallback(function()
@@ -49,7 +54,7 @@ function KOSync:addToMainMenu(tab_item_table)
                 end,
             },
             {
-                text = _("Auto Sync"),
+                text = _("Auto sync"),
                 checked_func = function() return self.kosync_auto_sync end,
                 callback = function()
                     self.kosync_auto_sync = not self.kosync_auto_sync
@@ -74,7 +79,7 @@ function KOSync:login()
         NetworkMgr:promptWifiOn()
     end
     self.login_dialog = LoginDialog:new{
-        title = self.kosync_username and self.login_title or self.register_title,
+        title = self.title,
         username = self.kosync_username or "",
         buttons = {
             {
@@ -103,7 +108,7 @@ function KOSync:login()
                 },
                 {
                     text = _("Register"),
-                    enabled = not self.kosync and true or false,
+                    enabled = true,
                     callback = function()
                         local username, password = self:getCredential()
                         self:closeDialog()
@@ -272,7 +277,7 @@ function KOSync:getProgress(manual)
                     elseif manual and body.progress == progress then
                         UIManager:show(InfoMessage:new{
                             text = _("We are already synchronized."),
-                            timeout = 1.0,
+                            timeout = 3,
                         })
                     end
                 end
