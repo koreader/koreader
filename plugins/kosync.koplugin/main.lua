@@ -35,7 +35,7 @@ end
 
 function KOSync:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
-        text = _("Progress Sync"),
+        text = _("Progress sync"),
         sub_item_table = {
             {
                 text_func = function()
