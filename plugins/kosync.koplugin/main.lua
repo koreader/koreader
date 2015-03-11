@@ -29,7 +29,7 @@ function KOSync:init()
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
-    self.kosync_auto_sync = settings.auto_sync or true
+    self.kosync_auto_sync = not (settings.auto_sync == false)
     self.ui:registerPostInitCallback(function()
         if self.kosync_auto_sync then
             UIManager:scheduleIn(1, function() self:getProgress() end)
