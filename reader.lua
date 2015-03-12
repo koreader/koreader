@@ -138,7 +138,8 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
     -- the filemanger will show the files in that path
     else
         local FileManager = require("apps/filemanager/filemanager")
-        FileManager:showFiles(ARGV[argidx])
+        local home_dir = G_reader_settings:readSetting("home_dir") or ARGV[argidx]
+        FileManager:showFiles(home_dir)
     end
     UIManager:run()
 elseif last_file then

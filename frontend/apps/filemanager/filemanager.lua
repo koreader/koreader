@@ -75,51 +75,64 @@ function FileManager:init()
 
     function file_chooser:onFileHold(file)
         --DEBUG("hold file", file)
-        self.file_dialog = ButtonDialog:new{
-            buttons = {
+        local buttons = {
+            {
                 {
-                    {
-                        text = _("Copy"),
-                        callback = function()
-                            copyFile(file)
-                            UIManager:close(self.file_dialog)
-                        end,
-                    },
-                    {
-                        text = _("Paste"),
-                        enabled = fileManager.clipboard and true or false,
-                        callback = function()
-                            pasteHere(file)
-                            self:refreshPath()
-                            UIManager:close(self.file_dialog)
-                        end,
-                    },
+                    text = _("Copy"),
+                    callback = function()
+                        copyFile(file)
+                        UIManager:close(self.file_dialog)
+                    end,
                 },
                 {
-                    {
-                        text = _("Cut"),
-                        callback = function()
-                            cutFile(file)
-                            UIManager:close(self.file_dialog)
-                        end,
-                    },
-                    {
-                        text = _("Delete"),
-                        callback = function()
-                            local path = util.realpath(file)
-                            local ConfirmBox = require("ui/widget/confirmbox")
-                            UIManager:close(self.file_dialog)
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
-                                ok_callback = function()
-                                    deleteFile(file)
-                                    self:refreshPath()
-                                end,
-                            })
-                        end,
-                    },
+                    text = _("Paste"),
+                    enabled = fileManager.clipboard and true or false,
+                    callback = function()
+                        pasteHere(file)
+                        self:refreshPath()
+                        UIManager:close(self.file_dialog)
+                    end,
                 },
             },
+            {
+                {
+                    text = _("Cut"),
+                    callback = function()
+                        cutFile(file)
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Delete"),
+                    callback = function()
+                        local path = util.realpath(file)
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:close(self.file_dialog)
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                            ok_callback = function()
+                                deleteFile(file)
+                                self:refreshPath()
+                            end,
+                        })
+                    end,
+                },
+            },
+        }
+        if lfs.attributes(file, "mode") == "directory" then
+            local realpath = util.realpath(file)
+            table.insert(buttons, {
+                {
+                    text = _("Set as HOME directory"),
+                    callback = function()
+                        G_reader_settings:saveSetting("home_dir", realpath)
+                        UIManager:close(self.file_dialog)
+                    end
+                }
+            })
+        end
+        self.file_dialog = ButtonDialog:new{
+            buttons = buttons,
         }
         UIManager:show(self.file_dialog)
         return true
