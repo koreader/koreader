@@ -385,8 +385,26 @@ function ReaderHighlight:highlightFromHoldPos()
 end
 
 function ReaderHighlight:onHighlight()
-    self:highlightFromHoldPos()
     self:saveHighlight()
+end
+
+function ReaderHighlight:getHighlightBookmarkItem()
+    if self.hold_pos and not self.selected_text then
+        self:highlightFromHoldPos()
+    end
+    if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        local datetime = os.date("%Y-%m-%d %H:%M:%S")
+        local page = self.ui.document.info.has_pages and
+                self.hold_pos.page or self.selected_text.pos0
+        return {
+            page = page,
+            pos0 = self.selected_text.pos0,
+            pos1 = self.selected_text.pos1,
+            datetime = datetime,
+            notes = self.selected_text.text,
+            highlighted = true,
+        }
+    end
 end
 
 function ReaderHighlight:saveHighlight()
@@ -407,14 +425,10 @@ function ReaderHighlight:saveHighlight()
             drawer = self.view.highlight.saved_drawer,
         }
         table.insert(self.view.highlight.saved[page], hl_item)
-        self.ui.bookmark:addBookmark({
-            page = self.ui.document.info.has_pages and page or self.selected_text.pos0,
-            pos0 = self.selected_text.pos0,
-            pos1 = self.selected_text.pos1,
-            datetime = datetime,
-            notes = self.selected_text.text,
-            highlighted = true,
-        })
+        local bookmark_item = self:getHighlightBookmarkItem()
+        if bookmark_item then
+            self.ui.bookmark:addBookmark(bookmark_item)
+        end
         --[[
         -- disable exporting hightlights to My Clippings
         -- since it's not portable and there is a better Evernote plugin

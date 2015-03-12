@@ -297,6 +297,23 @@ function ReaderBookmark:addBookmark(item)
     table.insert(self.bookmarks, _middle + direction, item)
 end
 
+-- binary search of sorted bookmarks
+function ReaderBookmark:isBookmarkAdded(item)
+    local _start, _middle, _end, direction = 1, 1, #self.bookmarks, 0
+    while _start <= _end do
+        local v = self.bookmarks[_middle]
+        _middle = math.floor((_start + _end)/2)
+        if self:isBookmarkSame(item, self.bookmarks[_middle]) then
+            return true
+        end
+        if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
+            _end, direction = _middle - 1, 0
+        else
+            _start, direction = _middle + 1, 1
+        end
+    end
+end
+
 -- binary search to remove bookmark
 function ReaderBookmark:removeBookmark(item)
     local _start, _middle, _end = 1, 1, #self.bookmarks
