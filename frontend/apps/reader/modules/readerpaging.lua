@@ -799,6 +799,11 @@ function ReaderPaging:onGotoPage(number)
     return true
 end
 
+function ReaderPaging:onGotoRelativePage(number)
+    self:gotoPage(self.current_page + number)
+    return true
+end
+
 function ReaderPaging:onGotoPercentage(percentage)
     if percentage < 0 then percentage = 0 end
     if percentage > 1 then percentage = 1 end

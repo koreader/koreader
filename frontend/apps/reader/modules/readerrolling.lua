@@ -331,6 +331,14 @@ function ReaderRolling:onGotoPage(number)
     return true
 end
 
+function ReaderRolling:onGotoRelativePage(number)
+    if number then
+        self:gotoPage(self.current_page + number)
+    end
+    self.xpointer = self.ui.document:getXPointer()
+    return true
+end
+
 function ReaderRolling:onGotoXPointer(xp)
     self:gotoXPointer(xp)
     self.xpointer = xp
