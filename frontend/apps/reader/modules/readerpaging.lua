@@ -126,6 +126,7 @@ function ReaderPaging:onReadSettings(config)
     if self.show_overlap_enable == nil then
         self.show_overlap_enable = DSHOWOVERLAP
     end
+    self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
 end
 
 function ReaderPaging:onSaveSettings()
@@ -133,6 +134,7 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
+    self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
 end
 
 function ReaderPaging:getLastProgress()
@@ -259,7 +261,7 @@ function ReaderPaging:enterFlippingMode()
     self.view.page_scroll = false
     Input.disable_double_tap = false
     DGESDETECT_DISABLE_DOUBLE_TAP = false
-    self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+    self.ui:handleEvent(Event:new("SetZoomMode", self.flipping_zoom_mode))
 end
 
 function ReaderPaging:exitFlippingMode()
@@ -268,6 +270,7 @@ function ReaderPaging:exitFlippingMode()
     self.view.page_scroll = self.orig_scroll_mode
     DGESDETECT_DISABLE_DOUBLE_TAP = self.DGESDETECT_DISABLE_DOUBLE_TAP
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
+    self.flipping_zoom_mode = self.view.zoom_mode
     DEBUG("restore zoom mode", self.orig_zoom_mode)
     self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
 end
