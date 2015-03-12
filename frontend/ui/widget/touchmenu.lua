@@ -546,7 +546,8 @@ function TouchMenu:onMenuSelect(item)
             sub_item_table = item.sub_item_table_func()
         end
         if sub_item_table == nil then
-            local callback = item.callback
+            -- keep menu opened if this item is a check option
+            local callback, refresh = item.callback, item.checked or item.checked_func
             if item.callback_func then
                 callback = item.callback_func()
             end
@@ -554,8 +555,12 @@ function TouchMenu:onMenuSelect(item)
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
                 UIManager:scheduleIn(0.1, function()
-                    self:closeMenu()
                     callback()
+                    if refresh then
+                        self:updateItems()
+                    else
+                        self:closeMenu()
+                    end
                 end)
             end
         else
