@@ -46,7 +46,7 @@ function ReaderFooter:init()
         battery = true,
         time = true,
         page_progress = true,
-        left_pages = true,
+        pages_left = true,
         percentage = true,
     }
     local text_default = ""
@@ -61,7 +61,7 @@ function ReaderFooter:init()
         if self.settings.page_progress then
             table.insert(info, "0000 / 0000")
         end
-        if self.settings.left_pages then
+        if self.settings.pages_left then
             table.insert(info, "=> 000")
         end
         if self.settings.percentage then
@@ -157,7 +157,7 @@ local options = {
     battery = _("Battery status"),
     time = _("Current time"),
     page_progress = ("Current page"),
-    left_pages = ("Left pages in this chapter"),
+    pages_left = ("Pages left in this chapter"),
     percentage = ("Progress percentage"),
 }
 
@@ -188,7 +188,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             get_minibar_option("battery"),
             get_minibar_option("time"),
             get_minibar_option("page_progress"),
-            get_minibar_option("left_pages"),
+            get_minibar_option("pages_left"),
             get_minibar_option("percentage"),
         }
     })
@@ -231,7 +231,7 @@ function ReaderFooter:updateFooterPage()
         if self.settings.page_progress then
             table.insert(info, self:getProgressInfo())
         end
-        if self.settings.left_pages then
+        if self.settings.pages_left then
             table.insert(info, self:getNextChapterInfo())
         end
         if self.settings.percentage then
@@ -329,7 +329,7 @@ function ReaderFooter:onTapFooter(arg, ges)
         if (self.mode == 2) and not self.settings.time then
             self.mode = 3
         end
-        if (self.mode == 3) and not self.settings.left_pages then
+        if (self.mode == 3) and not self.settings.pages_left then
             self.mode = 4
         end
         if (self.mode == 4) and not self.settings.battery then
