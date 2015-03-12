@@ -468,7 +468,8 @@ function ReaderHighlight:onHighlightSearch()
     DEBUG("search highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        self.ui:handleEvent(Event:new("ShowSearchDialog", self.selected_text.text))
+        local text = require("util").stripePunctuations(self.selected_text.text)
+        self.ui:handleEvent(Event:new("ShowSearchDialog", text))
     end
 end
 
