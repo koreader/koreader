@@ -7,6 +7,7 @@ local ProgressWidget = require("ui/widget/progresswidget")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = require("device").screen
@@ -14,7 +15,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
-local Blitbuffer = require("ffi/blitbuffer")
+local _ = require("gettext")
 
 local ReaderFooter = InputContainer:new{
     mode = 1,
@@ -30,26 +31,41 @@ local ReaderFooter = InputContainer:new{
     bar_height = Screen:scaleBySize(DMINIBAR_HEIGHT),
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
     padding = Screen:scaleBySize(10),
+    settings = {},
 }
 
 function ReaderFooter:init()
     self.pageno = self.view.state.page
     self.pages = self.view.document:getPageCount()
 
+    self.settings = G_reader_settings:readSetting("footer") or {
+        disabled = false,
+        all_at_once = false,
+        progress_bar = true,
+        toc_markers = true,
+        battery = true,
+        time = true,
+        page_progress = true,
+        pages_left = true,
+        percentage = true,
+    }
     local text_default = ""
-    if DMINIBAR_ALL_AT_ONCE then
+    if self.settings.all_at_once then
         local info = {}
-        if DMINIBAR_BATTERY then
+        if self.settings.battery then
             table.insert(info, "B:100%")
         end
-        if DMINIBAR_TIME then
+        if self.settings.time then
             table.insert(info, "WW:WW")
         end
-        if DMINIBAR_PAGES then
+        if self.settings.page_progress then
             table.insert(info, "0000 / 0000")
         end
-        if DMINIBAR_NEXT_CHAPTER then
+        if self.settings.pages_left then
             table.insert(info, "=> 000")
+        end
+        if self.settings.percentage then
+            table.insert(info, "R:100%")
         end
         text_default = table.concat(info, " | ")
     else
@@ -62,7 +78,7 @@ function ReaderFooter:init()
     }
     local text_width = self.progress_text:getSize().w
     local ticks_candidates = {}
-    if self.ui.toc and DMINIBAR_PROGRESS_MARKER then
+    if self.ui.toc and self.settings.toc_markers then
         local max_level = self.ui.toc:getMaxDepth()
         for i = 0, -max_level, -1 do
             local ticks = self.ui.toc:getTocTicks(i)
@@ -90,7 +106,7 @@ function ReaderFooter:init()
         dimen = Geom:new{ w = text_width, h = self.height },
         self.progress_text,
     }
-    if DMINIBAR_PROGRESSBAR then
+    if self.settings.progress_bar then
         table.insert(horizontal_group, bar_container)
     end
     table.insert(horizontal_group, text_container)
@@ -134,6 +150,50 @@ function ReaderFooter:init()
     self:applyFooterMode()
 end
 
+local options = {
+    all_at_once = _("Show all at once"),
+    progress_bar = _("Progress bar"),
+    toc_markers = _("Chapter markers"),
+    battery = _("Battery status"),
+    time = _("Current time"),
+    page_progress = ("Current page"),
+    pages_left = ("Pages left in this chapter"),
+    percentage = ("Progress percentage"),
+}
+
+function ReaderFooter:addToMainMenu(tab_item_table)
+    local get_minibar_option = function(option)
+        return {
+            text = options[option],
+            checked_func = function()
+                return self.settings[option] == true
+            end,
+            enabled_func = function()
+                return not self.settings.diabled
+            end,
+            callback = function()
+                self.settings[option] = not self.settings[option]
+                G_reader_settings:saveSetting("footer", self.settings)
+                self:init()
+                UIManager:setDirty("all", "partial")
+            end,
+        }
+    end
+    table.insert(tab_item_table.setting, {
+        text = _("Status bar"),
+        sub_item_table = {
+            get_minibar_option("all_at_once"),
+            get_minibar_option("progress_bar"),
+            get_minibar_option("toc_markers"),
+            get_minibar_option("battery"),
+            get_minibar_option("time"),
+            get_minibar_option("page_progress"),
+            get_minibar_option("pages_left"),
+            get_minibar_option("percentage"),
+        }
+    })
+end
+
 function ReaderFooter:getBatteryInfo()
     local powerd = Device:getPowerDevice()
     --local state = powerd:isCharging() and -1 or powerd:getCapacity()
@@ -153,22 +213,29 @@ function ReaderFooter:getNextChapterInfo()
     return "=> " .. (left and left or self.pages - self.pageno)
 end
 
+function ReaderFooter:getProgressPercentage()
+    return string.format("R:%1.f%%", self.progress_bar.percentage * 100)
+end
+
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    if DMINIBAR_ALL_AT_ONCE then
+    if self.settings.all_at_once then
         local info = {}
-        if DMINIBAR_BATTERY then
+        if self.settings.battery then
             table.insert(info, self:getBatteryInfo())
         end
-        if DMINIBAR_TIME then
+        if self.settings.time then
             table.insert(info, self:getTimeInfo())
         end
-        if DMINIBAR_PAGES then
+        if self.settings.page_progress then
             table.insert(info, self:getProgressInfo())
         end
-        if DMINIBAR_NEXT_CHAPTER then
+        if self.settings.pages_left then
             table.insert(info, self:getNextChapterInfo())
+        end
+        if self.settings.percentage then
+            table.insert(info, self:getProgressPercentage())
         end
         self.progress_text.text = table.concat(info, " | ")
     else
@@ -181,10 +248,11 @@ function ReaderFooter:updateFooterPage()
             info = self:getNextChapterInfo()
         elseif self.mode == 4 then
             info = self:getBatteryInfo()
+        elseif self.mode == 5 then
+            info = self:getProgressPercentage()
         end
         self.progress_text.text = info
     end
-
 end
 
 function ReaderFooter:updateFooterPos()
@@ -223,6 +291,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 2 for footer time info
     -- 3 for footer next_chapter info
     -- 4 for battery status
+    -- 5 for progress percentage
     if mode ~= nil then self.mode = mode end
     if self.mode == 0 then
         self.view.footer_visible = false
@@ -250,20 +319,23 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        self.mode = (self.mode + 1) % 5
-        if DMINIBAR_ALL_AT_ONCE and (self.mode > 1) then
+        self.mode = (self.mode + 1) % 6
+        if self.settings.all_at_once and (self.mode > 1) then
             self.mode = 0
         end
-        if (self.mode == 1) and not DMINIBAR_PAGES then
+        if (self.mode == 1) and not self.settings.page_progress then
             self.mode = 2
         end
-        if (self.mode == 2) and not DMINIBAR_TIME then
+        if (self.mode == 2) and not self.settings.time then
             self.mode = 3
         end
-        if (self.mode == 3) and not DMINIBAR_NEXT_CHAPTER then
+        if (self.mode == 3) and not self.settings.pages_left then
             self.mode = 4
         end
-        if (self.mode == 4) and not DMINIBAR_BATTERY then
+        if (self.mode == 4) and not self.settings.battery then
+            self.mode = 5
+        end
+        if (self.mode == 5) and not self.settings.percentage then
             self.mode = 0
         end
         self:applyFooterMode()

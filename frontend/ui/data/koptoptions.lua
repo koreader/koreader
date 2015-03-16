@@ -62,7 +62,7 @@ local KoptOptions = {
                 name = "page_margin",
                 name_text = S.PAGE_MARGIN,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
-                values = {0.05, 0.10, 0.15},
+                values = {0.05, 0.10, 0.25},
                 default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
                 event = "MarginUpdate",
             },

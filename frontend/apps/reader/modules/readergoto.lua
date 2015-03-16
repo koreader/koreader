@@ -31,7 +31,7 @@ function ReaderGoto:onShowGotoDialog()
         title = self.goto_dialog_title,
         input_hint = "(1 - "..self.document:getPageCount()..")",
         buttons = {
-            {    
+            {
                 {
                     text = _("Cancel"),
                     enabled = true,
@@ -50,15 +50,13 @@ function ReaderGoto:onShowGotoDialog()
                     text = _("Location"),
                     enabled = not self.document.info.has_pages,
                     callback = function()
-                        self:gotoLocation()
+                        self:gotoPage()
                     end,
                 },
             },
         },
         input_type = "number",
-        enter_callback = self.document.info.has_pages 
-            and function() self:gotoPage() end 
-            or function() self:gotoLocation() end,
+        enter_callback = function() self:gotoPage() end,
         width = Screen:getWidth() * 0.8,
         height = Screen:getHeight() * 0.2,
     }
@@ -72,21 +70,17 @@ function ReaderGoto:close()
 end
 
 function ReaderGoto:gotoPage()
-    local number = tonumber(self.goto_dialog:getInputText())
+    local page_number = self.goto_dialog:getInputText()
+    local relative_sign = page_number:sub(1, 1)
+    local number = tonumber(page_number)
     if number then
-        self.ui:handleEvent(Event:new("GotoPage", number))
+        if relative_sign == "+" or relative_sign == "-" then
+            self.ui:handleEvent(Event:new("GotoRelativePage", number))
+        else
+            self.ui:handleEvent(Event:new("GotoPage", number))
+        end
+        self:close()
     end
-    self:close()
-    return true
-end
-
-function ReaderGoto:gotoLocation()
-    local number = tonumber(self.goto_dialog:getInputText())
-    if number then
-        self.ui:handleEvent(Event:new("GotoPage", number))
-    end
-    self:close()
-    return true
 end
 
 return ReaderGoto

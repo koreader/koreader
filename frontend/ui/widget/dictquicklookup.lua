@@ -158,9 +158,11 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = _("Highlight"),
+                    text = self:getHighlightText(),
+                    enabled = select(2, self:getHighlightText()),
                     callback = function()
                         self.ui:handleEvent(Event:new("Highlight"))
+                        self:update()
                     end,
                 },
                 {
@@ -277,6 +279,21 @@ function DictQuickLookup:onShow()
         return "partial", self.dict_frame.dimen
     end)
     return true
+end
+
+function DictQuickLookup:getHighlightedItem()
+    return self.ui.highlight:getHighlightBookmarkItem()
+end
+
+function DictQuickLookup:getHighlightText()
+    local item = self:getHighlightedItem()
+    if not item then
+        return _("Highlight"), false
+    elseif self.ui.bookmark:isBookmarkAdded(item) then
+        return _("Unhighlight"), false
+    else
+        return _("Highlight"), true
+    end
 end
 
 function DictQuickLookup:isPrevDictAvaiable()

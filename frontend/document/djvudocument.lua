@@ -123,6 +123,7 @@ end
 
 function DjvuDocument:register(registry)
     registry:addProvider("djvu", "application/djvu", self)
+    registry:addProvider("djv", "application/djvu", self)
 end
 
 return DjvuDocument

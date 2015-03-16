@@ -73,14 +73,17 @@ function ReaderView:init()
     self.state.page = nil
     -- fix inherited dim_area for following opened documents
     self:resetDimArea()
-    self:resetLayout()
+    self:addWidgets()
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self.footer)
+    end)
 end
 
 function ReaderView:resetDimArea()
     self.dim_area = Geom:new{w = 0, h = 0}
 end
 
-function ReaderView:resetLayout()
+function ReaderView:addWidgets()
     self.dogear = ReaderDogear:new{
         view = self,
         ui = self.ui,
@@ -103,6 +106,12 @@ function ReaderView:resetLayout()
     self[1] = self.dogear
     self[2] = self.footer
     self[3] = self.flipping
+end
+
+function ReaderView:resetLayout()
+    for i, widget in ipairs(self) do
+        widget:init()
+    end
 end
 
 function ReaderView:paintTo(bb, x, y)

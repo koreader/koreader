@@ -131,21 +131,10 @@ DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE = 120
 DCREREADER_PROGRESS_BAR = 1
 
 -- configure "mini" progress bar
-DMINIBAR_ALL_AT_ONCE = false
-DMINIBAR_PROGRESSBAR = true
-DMINIBAR_TIME = true
-DMINIBAR_PAGES = true
-DMINIBAR_NEXT_CHAPTER = true
-DMINIBAR_BATTERY = true
-
-DMINIBAR_PROGRESS_MARKER = true -- Black notch for each TOC entry
 DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
-
 DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
-
 DMINIBAR_FONT_SIZE = 14
-
 
 -- gesture detector defaults
 DGESDETECT_DISABLE_DOUBLE_TAP = true

@@ -208,6 +208,10 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
 end
 
+function ReaderRolling:getLastProgress()
+    return self.xpointer
+end
+
 function ReaderRolling:addToMainMenu(tab_item_table)
     -- FIXME: repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
@@ -322,6 +326,14 @@ end
 function ReaderRolling:onGotoPage(number)
     if number then
         self:gotoPage(number)
+    end
+    self.xpointer = self.ui.document:getXPointer()
+    return true
+end
+
+function ReaderRolling:onGotoRelativePage(number)
+    if number then
+        self:gotoPage(self.current_page + number)
     end
     self.xpointer = self.ui.document:getXPointer()
     return true

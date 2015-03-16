@@ -97,13 +97,15 @@ function Device:onPowerEvent(ev)
     local Screensaver = require("ui/screensaver")
     if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
         local UIManager = require("ui/uimanager")
+        -- flushing settings first in case the screensaver takes too long time that
+        -- flushing has no chance to run
+        UIManager:sendEvent(Event:new("FlushSettings"))
         DEBUG("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
         Screensaver:show()
         self:prepareSuspend()
-        UIManager:sendEvent(Event:new("FlushSettings"))
         UIManager:scheduleIn(10, self.suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
