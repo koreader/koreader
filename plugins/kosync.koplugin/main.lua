@@ -266,7 +266,8 @@ function KOSync:getProgress(manual)
                     local progress = self:getLastProgress()
                     local percentage = self:getLastPercent()
                     DEBUG("current progress", percentage)
-                    if body.percentage > percentage and body.progress ~= progress then
+                    if body.percentage > percentage
+                        and tostring(body.progress) ~= tostring(progress) then
                         UIManager:show(ConfirmBox:new{
                             text = T(_("Sync to furthest location %1% from device '%2'?"),
                                 Math.round(body.percentage*100), body.device),
