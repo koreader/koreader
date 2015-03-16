@@ -63,6 +63,7 @@ function OptionTextItem:init()
 end
 
 function OptionTextItem:onTapSelect()
+    if not self.enabled then return true end
     for _, item in pairs(self.items) do
         item[1].color = Blitbuffer.COLOR_WHITE
     end
@@ -115,6 +116,7 @@ function OptionIconItem:init()
 end
 
 function OptionIconItem:onTapSelect()
+    if not self.enabled then return true end
     for _, item in pairs(self.items) do
         --item[1][1].invert = false
         item[1].color = Blitbuffer.COLOR_WHITE
@@ -177,6 +179,10 @@ function ConfigOption:init()
             local items_spacing = HorizontalSpan:new{
                 width = Screen:scaleBySize(item_spacing_with)
             }
+            local enabled = true
+            if self.options[c].enabled_func then
+                enabled = self.options[c].enabled_func(self.config.configurable)
+            end
             local horizontal_group = HorizontalGroup:new{}
             if self.options[c].name_text then
                 local option_name_container = RightContainer:new{
@@ -185,25 +191,10 @@ function ConfigOption:init()
                 local option_name = TextWidget:new{
                     text = self.options[c].name_text,
                     face = Font:getFace(name_font_face, name_font_size),
+                    fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                 }
                 table.insert(option_name_container, option_name)
                 table.insert(horizontal_group, option_name_container)
-            end
-
-            if self.options[c].widget == "ProgressWidget" then
-                local widget_container = CenterContainer:new{
-                    dimen = Geom:new{
-                        w = Screen:getWidth()*self.options[c].widget_align_center,
-                        h = option_height
-                    }
-                }
-                local widget = ProgressWidget:new{
-                    width = self.options[c].width,
-                    height = self.options[c].height,
-                    percentage = self.options[c].percentage,
-                }
-                table.insert(widget_container, widget)
-                table.insert(horizontal_group, widget_container)
             end
 
             local option_items_container = CenterContainer:new{
@@ -292,18 +283,22 @@ function ConfigOption:init()
                             FixedTextWidget:new{
                                 text = self.options[c].item_text[d],
                                 face = Font:getFace(item_font_face, item_font_size[d]),
+                                fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
                             padding = 3,
-                            color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                            enabled = enabled,
                         }
                     else
                         option_item = OptionTextItem:new{
                             TextWidget:new{
                                 text = self.options[c].item_text[d],
                                 face = Font:getFace(item_font_face, item_font_size),
+                                fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
                             padding = -3,
-                            color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                            enabled = enabled,
                         }
                     end
                     option_items[d] = option_item
@@ -338,10 +333,12 @@ function ConfigOption:init()
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
                         icon = ImageWidget:new{
-                            file = self.options[c].item_icons[d]
+                            file = self.options[c].item_icons[d],
+                            dim = not enabled,
                         },
                         padding = -2,
-                        color = d == current_item and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                        color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                        enabled = enabled,
                     }
                     option_items[d] = option_item
                     option_item.items = option_items
@@ -375,6 +372,7 @@ function ConfigOption:init()
                     event = self.options[c].event,
                     events = self.options[c].events,
                     config = self.config,
+                    enabled = enabled,
                 }
                 local position = current_item
                 switch:setPosition(position)
@@ -573,6 +571,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         if events then
             self:onConfigEvents(events, position)
         end
+        self:update()
         UIManager:setDirty("all")
     end)
 end

@@ -31,6 +31,7 @@ local ToggleSwitch = InputContainer:new{
     fgcolor = Blitbuffer.gray(0.5), -- focused item color
     font_face = "cfont",
     font_size = 16,
+    enabled = true,
 }
 
 function ToggleSwitch:init()
@@ -43,6 +44,7 @@ function ToggleSwitch:init()
         radius = 7,
         bordersize = 1,
         padding = 2,
+        dim = not self.enabled,
     }
     self.toggle_content = HorizontalGroup:new{}
 
@@ -124,6 +126,7 @@ function ToggleSwitch:togglePosition(position)
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
+    if not self.enabled then return true end
     local position = math.ceil(
         (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
     )

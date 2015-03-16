@@ -1,7 +1,18 @@
 local Screen = require("device").screen
 local S = require("ui/data/strings")
-
 local _ = require("gettext")
+
+local function enable_if_equals(configurable, option, value)
+    return configurable[option] == value
+end
+
+local function enable_if_greater_than(configurable, option, value)
+    return configurable[option] > value
+end
+
+local function enable_if_less_than(configurable, option, value)
+    return configurable[option] < value
+end
 
 local KoptOptions = {
     prefix = 'kopt',
@@ -84,6 +95,9 @@ local KoptOptions = {
                 },
                 values = {1,2,3},
                 default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "justification",
@@ -98,6 +112,9 @@ local KoptOptions = {
                 values = {-1,0,1,2,3},
                 default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
                 advanced = true,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
         }
     },
@@ -114,6 +131,9 @@ local KoptOptions = {
                 values = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0},
                 default_value = DKOPTREADER_CONFIG_FONT_SIZE,
                 event = "FontSizeUpdate",
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "font_fine_tune",
@@ -125,6 +145,9 @@ local KoptOptions = {
                 args = {-0.05, 0.05},
                 alternate = false,
                 height = 60,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             }
         }
     },
@@ -188,6 +211,9 @@ local KoptOptions = {
                 toggle = {S.SMALL, S.AUTO, S.LARGE},
                 values = DKOPTREADER_CONFIG_WORD_SPACINGS,
                 default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "writing_direction",
@@ -195,6 +221,9 @@ local KoptOptions = {
                 toggle = {S.LTR, S.RTL, S.TBRTL},
                 values = {0, 1, 2},
                 default_value = 0,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "quality",
@@ -203,6 +232,9 @@ local KoptOptions = {
                 values={0.5, 1.0, 1.5},
                 default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
                 advanced = true,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "forced_ocr",
@@ -220,6 +252,9 @@ local KoptOptions = {
                 default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
                 event = "DefectSizeUpdate",
                 show = false,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "auto_straighten",
@@ -228,6 +263,9 @@ local KoptOptions = {
                 values = {0, 5, 10},
                 default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
                 show = false,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
             {
                 name = "detect_indent",
@@ -236,6 +274,9 @@ local KoptOptions = {
                 values = {1, 0},
                 default_value = DKOPTREADER_CONFIG_DETECT_INDENT,
                 show = false,
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "text_wrap", 1)
+                end,
             },
         }
     },
