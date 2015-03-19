@@ -4,6 +4,8 @@
 KOReader
 ========
 
+[![Join the chat at https://gitter.im/koreader/koreader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
 Kobo, PocketBook 840 and Android (2.3+) devices. Developers can also run Koreader emulator
