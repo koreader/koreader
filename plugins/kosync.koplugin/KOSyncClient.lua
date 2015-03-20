@@ -25,13 +25,13 @@ function KOSyncClient:init()
         req.headers['x-auth-user'] = args.username
         req.headers['x-auth-key'] = args.userkey
     end
-    local HTTPClient = require("httpclient")
-    local async_http_client = HTTPClient:new()
     package.loaded['Spore.Middleware.AsyncHTTP'] = {}
     require('Spore.Middleware.AsyncHTTP').call = function(args, req)
+        -- disable async http if Turbo looper is missing
+        if not UIManager.looper then return end
         req:finalize()
         local result
-        async_http_client:request({
+        require("httpclient"):new():request({
             url = req.url,
             method = req.method,
             body = req.env.spore.payload,
@@ -47,8 +47,6 @@ function KOSyncClient:init()
             -- Turbo HTTP client uses code instead of status
             -- change to status so that Spore can understand
             result.status = res.code
-            -- fallback to sync http request
-            if result.error then result = nil end
             coroutine.resume(args.thread)
         end)
         return coroutine.create(function() coroutine.yield(result) end)
@@ -119,7 +117,7 @@ function KOSyncClient:update_progress(username, password,
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
-    UIManager.INPUT_TIMEOUT = 100
+    if UIManager.looper then UIManager.INPUT_TIMEOUT = 100 end
 end
 
 function KOSyncClient:get_progress(username, password,
@@ -146,7 +144,7 @@ function KOSyncClient:get_progress(username, password,
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
-    UIManager.INPUT_TIMEOUT = 100
+    if UIManager.looper then UIManager.INPUT_TIMEOUT = 100 end
 end
 
 return KOSyncClient

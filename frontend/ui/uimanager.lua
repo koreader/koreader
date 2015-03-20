@@ -498,24 +498,14 @@ function UIManager:handleInput()
         end
     end
 
-    -- handle next input
-    self:handleTask(function() self:handleInput() end)
-end
-
--- handle task(callback function) in Turbo I/O looper
--- or run task immediately if looper is not available
-function UIManager:handleTask(task)
     if self.looper then
-        DEBUG("handle task in turbo I/O looper")
-        self.looper:add_callback(task)
-    else
-        DEBUG("run task")
-        task()
+        DEBUG("handle input in turbo I/O looper")
+        self.looper:add_callback(function() self:handleInput() end)
     end
 end
 
 function UIManager:initLooper()
-    if not self.looper then
+    if not self.looper and not Device.isAndroid() and ffi.os ~= "Windows" then
         TURBO_SSL = true
         local turbo = require("turbo")
         self.looper = turbo.ioloop.instance()
@@ -527,11 +517,15 @@ end
 -- them to dialogs
 function UIManager:run()
     self._running = true
-    if ffi.os == "Windows" then
-        self:handleInput()
+    self:initLooper()
+    -- currently there is no Turbo support for Android and Windows
+    -- use our own main loop
+    if not self.looper then
+        while self._running do
+            self:handleInput()
+        end
     else
-        self:initLooper()
-        self:handleTask(function() self:handleInput() end)
+        self.looper:add_callback(function() self:handleInput() end)
         self.looper:start()
     end
 end
