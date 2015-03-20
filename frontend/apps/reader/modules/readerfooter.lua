@@ -156,9 +156,9 @@ local options = {
     toc_markers = _("Chapter markers"),
     battery = _("Battery status"),
     time = _("Current time"),
-    page_progress = ("Current page"),
-    pages_left = ("Pages left in this chapter"),
-    percentage = ("Progress percentage"),
+    page_progress = _("Current page"),
+    pages_left = _("Pages left in this chapter"),
+    percentage = _("Progress percentage"),
 }
 
 function ReaderFooter:addToMainMenu(tab_item_table)
