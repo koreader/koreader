@@ -23,6 +23,9 @@ local file = A.jni:context(A.app.activity.vm, function(JNI)
 end)
 A.LOGI("intent file path " .. (file or ""))
 
+-- run koreader patch before koreader startup
+pcall(function() dofile("/sdcard/koreader/patch.lua") end)
+
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}
 dofile(A.dir.."/reader.lua")
