@@ -4,7 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local JSON = require("JSON")
+local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -69,7 +69,7 @@ function ReaderDictionary:stardictLookup(word, box)
             std_out:close()
         end
         --DEBUG("result str:", word, results_str)
-        local ok, results = pcall(JSON.decode, JSON, results_str)
+        local ok, results = pcall(JSON.decode, results_str)
         if ok and results then
             --DEBUG("lookup result table:", word, results)
             self:showDict(word, tidy_markup(results), box)

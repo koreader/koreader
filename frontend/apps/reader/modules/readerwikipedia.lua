@@ -6,7 +6,6 @@ local Wikipedia = require("ui/wikipedia")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local JSON = require("JSON")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
