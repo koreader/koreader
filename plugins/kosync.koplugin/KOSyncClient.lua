@@ -117,7 +117,7 @@ function KOSyncClient:update_progress(username, password,
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
-    if UIManager.looper then UIManager.INPUT_TIMEOUT = 100 end
+    if UIManager.looper then UIManager:setInputTimeout() end
 end
 
 function KOSyncClient:get_progress(username, password,
@@ -144,7 +144,7 @@ function KOSyncClient:get_progress(username, password,
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
-    if UIManager.looper then UIManager.INPUT_TIMEOUT = 100 end
+    if UIManager.looper then UIManager:setInputTimeout() end
 end
 
 return KOSyncClient

@@ -162,7 +162,7 @@ function KOSync:doRegister(username, password)
             })
         else
             UIManager:show(InfoMessage:new{
-                text = _(body.message or "Unknown server error"),
+                text = _(body and body.message or "Unknown server error"),
             })
         end
     end
@@ -191,7 +191,7 @@ function KOSync:doLogin(username, password)
             })
         else
             UIManager:show(InfoMessage:new{
-                text = _(body.message or "Unknown server error"),
+                text = _(body and body.message or "Unknown server error"),
             })
         end
     end
