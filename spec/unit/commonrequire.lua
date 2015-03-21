@@ -1,6 +1,6 @@
 require "defaults"
-package.path = "?.lua;common/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;" .. package.cpath
+package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
 -- global reader settings
 local DocSettings = require("docsettings")

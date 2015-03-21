@@ -93,7 +93,7 @@ $(INSTALL_DIR)/koreader/.luacov:
 		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
 
 testfront: $(INSTALL_DIR)/koreader/.busted
-	cd $(INSTALL_DIR)/koreader && busted -l ./luajit
+	cd $(INSTALL_DIR)/koreader && busted -l ./luajit --exclude-tags=notest
 
 test:
 	$(MAKE) -C $(KOR_BASE) test

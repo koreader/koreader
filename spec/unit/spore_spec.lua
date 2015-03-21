@@ -1,5 +1,3 @@
-package.path = "rocks/share/lua/5.1/?.lua;" .. package.path
-package.cpath = "rocks/lib/lua/5.1/?.so;" .. package.cpath
 require("commonrequire")
 local UIManager = require("ui/uimanager")
 local HTTPClient = require("httpclient")
@@ -39,7 +37,7 @@ local service = [[
 }
 ]]
 
-describe("Lua Spore modules #nocov", function()
+describe("Lua Spore modules #notest #nocov", function()
     local Spore = require("Spore")
     local client = Spore.new_from_string(service)
     client:enable('Format.JSON')
@@ -55,7 +53,7 @@ describe("Lua Spore modules #nocov", function()
     end)
 end)
 
-describe("Lua Spore modules with async http request #nocov", function()
+describe("Lua Spore modules with async http request #notest #nocov", function()
     local Spore = require("Spore")
     local client = Spore.new_from_string(service)
     local async_http_client = HTTPClient:new()
