@@ -2,7 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
-local JSON = require("JSON")
+local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -184,7 +184,7 @@ function CalibreCompanion:onReceiveJSON(data)
         else
             return
         end
-        local ok, json = pcall(JSON.decode, JSON, json_data)
+        local ok, json = pcall(JSON.decode, json_data)
         if ok and json then
             DEBUG("received json table", json)
             local opcode = json[1]
@@ -215,7 +215,7 @@ function CalibreCompanion:onReceiveJSON(data)
 end
 
 function CalibreCompanion:sendJsonData(opname, data)
-    local ok, json = pcall(JSON.encode, JSON, {self.opcodes[opname], data})
+    local ok, json = pcall(JSON.encode, {self.opcodes[opname], data})
     if ok and json then
         -- length of json data should be before the real json data
         self.calibre_socket:send(tostring(#json)..json)
