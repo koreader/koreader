@@ -1,4 +1,4 @@
-local JSON = require("JSON")
+local JSON = require("json")
 local DEBUG = require("dbg")
 
 --[[
@@ -61,7 +61,7 @@ function Wikipedia:loadPage(text, lang, intro, plain)
 
     local content = table.concat(sink)
     if content ~= "" then
-        local ok, result = pcall(JSON.decode, JSON, content)
+        local ok, result = pcall(JSON.decode, content)
         if ok and result then
             DEBUG("wiki result", result)
             return result

@@ -436,6 +436,14 @@ function UIManager:_repaint()
     self.refresh_counted = false
 end
 
+function UIManager:setInputTimeout(timeout)
+    self.INPUT_TIMEOUT = timeout or 200*1000
+end
+
+function UIManager:resetInputTimeout()
+    self.INPUT_TIMEOUT = nil
+end
+
 function UIManager:handleInput()
     local wait_until, now
     -- run this in a loop, so that paints can trigger events
@@ -500,7 +508,17 @@ function UIManager:handleInput()
 
     if self.looper then
         DEBUG("handle input in turbo I/O looper")
-        self.looper:add_callback(function() self:handleInput() end)
+        self.looper:add_callback(function()
+            -- FIXME: force close looper when there is unhandled error,
+            -- otherwise the looper will hang. Any better solution?
+            xpcall(function() self:handleInput() end, function(err)
+                io.stderr:write(err .. "\n")
+                io.stderr:write(debug.traceback() .. "\n")
+                io.stderr:flush()
+                self.looper:close()
+                os.exit(1)
+            end)
+        end)
     end
 end
 

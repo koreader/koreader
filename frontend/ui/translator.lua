@@ -1,4 +1,4 @@
-local JSON = require("JSON")
+local JSON = require("json")
 local DEBUG = require("dbg")
 
 --[[
@@ -64,7 +64,7 @@ function Translator:loadPage(target_lang, source_lang, text)
 
     local content = table.concat(sink)
     if content ~= "" then
-        local ok, result = pcall(JSON.decode, JSON, content)
+        local ok, result = pcall(JSON.decode, content)
         if ok and result then
             --DEBUG("translate result", result)
             return result

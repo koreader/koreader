@@ -1,5 +1,3 @@
-package.path = "rocks/share/lua/5.1/?.lua;" .. package.path
-package.cpath = "rocks/lib/lua/5.1/?.so;" .. package.cpath
 require("commonrequire")
 local UIManager = require("ui/uimanager")
 local HTTPClient = require("httpclient")
@@ -9,7 +7,7 @@ local md5 = require("MD5")
 
 local service = [[
 {
-    "base_url" : "https://192.168.1.101:7200",
+    "base_url" : "https://vislab.bjmu.edu.cn:7200",
     "name" : "api",
     "methods" : {
         "register" : {
