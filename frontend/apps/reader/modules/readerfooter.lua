@@ -351,6 +351,7 @@ function ReaderFooter:onTapFooter(arg, ges)
 end
 
 function ReaderFooter:onHoldFooter(arg, ges)
+    if self.mode == 0 then return end
     self.ui:handleEvent(Event:new("ShowGotoDialog"))
     return true
 end
