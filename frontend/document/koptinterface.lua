@@ -620,7 +620,9 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         kc:setZoom(30/rect.h)
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
+        --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
+        --DEBUG(word_w, word_h)
         local ok, word = pcall(
             kc.getTOCRWord, kc, "src",
             0, 0, word_w, word_h,
