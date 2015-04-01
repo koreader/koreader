@@ -8,7 +8,7 @@ KOReader
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
-Kobo, PocketBook 840 and Android (2.3+) devices. Developers can also run Koreader emulator
+Kobo, PocketBook and Android (2.3+) devices. Developers can also run Koreader emulator
 for development purpose on desktop PC with Linux or Windows operating system.
 
 Main features for users
