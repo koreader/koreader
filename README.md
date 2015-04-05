@@ -70,6 +70,7 @@ To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `au
 `subversion` and `cmake` installed, as well as a version of `autoconf` greater than 2.64.
 You also need `nasm` and of course a compiler like `gcc` or `clang`. If you want to
 cross-compile for other architectures, you need a proper cross-compile toolchain.
+Your GCC should be at least of version 4.7 for both native and cross compiling.
 
 Users of Debian and Ubuntu can install the required packages using:
 ```

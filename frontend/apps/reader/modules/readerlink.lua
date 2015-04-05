@@ -54,17 +54,42 @@ function ReaderLink:initGesListener()
     end
 end
 
+local function is_follow_links_on()
+    return G_reader_settings:readSetting("follow_links") ~= false
+end
+
+local function swipe_to_go_back()
+    return G_reader_settings:readSetting("swipe_to_go_back") ~= false
+end
+
 function ReaderLink:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
     table.insert(tab_item_table.navi, {
         text = _("Follow links"),
-        checked_func = function()
-            return G_reader_settings:readSetting("follow_links") == true
-        end,
-        callback = function()
-            local follow_links = G_reader_settings:readSetting("follow_links")
-            G_reader_settings:saveSetting("follow_links", not follow_links)
-        end
+        sub_item_table = {
+            {
+                text_func = function()
+                    return is_follow_links_on() and _("Disable") or _("Enable")
+                end,
+                callback = function()
+                    G_reader_settings:saveSetting("follow_links",
+                        not is_follow_links_on())
+                end
+            },
+            {
+                text = _("Go back"),
+                enabled_func = function() return #self.link_states > 0 end,
+                callback = function() self:onGoBackLink() end,
+            },
+            {
+                text = _("Swipe to go back"),
+                checked_func = function() return swipe_to_go_back() end,
+                callback = function()
+                    G_reader_settings:saveSetting("swipe_to_go_back",
+                        not swipe_to_go_back())
+                end,
+            },
+        }
     })
 end
 
@@ -76,7 +101,7 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(arg, ges)
-    if G_reader_settings:readSetting("follow_links") ~= true then return end
+    if not is_follow_links_on() then return end
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
@@ -115,21 +140,18 @@ function ReaderLink:onGotoLink(link)
     return true
 end
 
+function ReaderLink:onGoBackLink()
+    local last_page_or_xp = table.remove(self.link_states)
+    if last_page_or_xp then
+        local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
+        self.ui:handleEvent(Event:new(event, last_page_or_xp))
+        return true
+    end
+end
+
 function ReaderLink:onSwipe(arg, ges)
-    if ges.direction == "east" then
-        if self.ui.document.info.has_pages then
-            local last_page = table.remove(self.link_states)
-            if last_page then
-                self.ui:handleEvent(Event:new("GotoPage", last_page))
-                return true
-            end
-        else
-            local last_xp = table.remove(self.link_states)
-            if last_xp then
-                self.ui:handleEvent(Event:new("GotoXPointer", last_xp))
-                return true
-            end
-        end
+    if ges.direction == "east" and swipe_to_go_back() then
+        return self:onGoBackLink()
     end
 end
 
