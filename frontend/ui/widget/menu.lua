@@ -431,9 +431,25 @@ function Menu:init()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
 
-    self.page_info_text = TextWidget:new{
+    self.page_info_text = Button:new{
         text = "",
-        face = self.fface,
+        hold_input = {
+            title = _("Input page number"),
+            type = "number",
+            hint_func = function()
+                return "(" .. "1 - " .. self.page_num .. ")"
+            end,
+            callback = function(input)
+                local page = tonumber(input)
+                if page >= 1 and page <= self.page_num then
+                    self:onGotoPage(page)
+                end
+            end,
+        },
+        bordersize = 0,
+        text_font_face = "cfont",
+        text_font_size = 20,
+        text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
         self.page_info_first_chev,
@@ -650,7 +666,7 @@ function Menu:updateItems(select_number)
             self.item_group[select_number]:onFocus()
         end
         -- update page information
-        self.page_info_text.text = util.template(_("page %1 of %2"), self.page, self.page_num)
+        self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
@@ -663,7 +679,7 @@ function Menu:updateItems(select_number)
         self.page_info_last_chev:enableDisable(self.page < self.page_num)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
-        self.page_info_text.text = _("no choices available")
+        self.page_info_text:setText(_("no choices available"))
     end
 
     UIManager:setDirty("all", function()
@@ -809,6 +825,12 @@ end
 
 function Menu:onLastPage()
     self.page = self.page_num
+    self:updateItems(1)
+    return true
+end
+
+function Menu:onGotoPage(page)
+    self.page = page
     self:updateItems(1)
     return true
 end

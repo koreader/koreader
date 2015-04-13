@@ -1,16 +1,16 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textwidget")
-local ImageWidget = require("ui/widget/imagewidget")
-local Font = require("ui/font")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
-local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local ImageWidget = require("ui/widget/imagewidget")
+local TextWidget = require("ui/widget/textwidget")
+local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
 local Device = require("device")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
 a button widget that shows text or a icon and handles callback when tapped
@@ -29,6 +29,7 @@ local Button = InputContainer:new{
     width = nil,
     text_font_face = "cfont",
     text_font_size = 20,
+    text_font_bold = true,
 }
 
 function Button:init()
@@ -36,7 +37,7 @@ function Button:init()
         self.label_widget = TextWidget:new{
             text = self.text,
             fgcolor = Blitbuffer.gray(self.enabled and 1.0 or 0.5),
-            bold = true,
+            bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
     else
@@ -89,6 +90,18 @@ function Button:init()
             }
         }
     end
+end
+
+function Button:setText(text)
+    self.text = text
+    self.width = nil
+    self:init()
+end
+
+function Button:setIcon(icon)
+    self.icon = icon
+    self.width = nil
+    self:init()
 end
 
 function Button:onFocus()
@@ -165,6 +178,8 @@ function Button:onTapSelectButton()
                 return "partial", self[1].dimen
             end)
         end)
+    elseif self.tap_input then
+        self:onInput(self.tap_input)
     end
     return true
 end
@@ -172,6 +187,8 @@ end
 function Button:onHoldSelectButton()
     if self.enabled and self.hold_callback then
         self.hold_callback()
+    elseif self.hold_input then
+        self:onInput(self.hold_input)
     end
     return true
 end
