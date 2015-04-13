@@ -1,7 +1,10 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Event = require("ui/event")
+local UIManager = require("ui/uimanager")
+local Screen = require("device").screen
 local Geom = require("ui/geometry")
+local Event = require("ui/event")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 --[[
 an InputContainer is an WidgetContainer that handles input events
@@ -91,6 +94,45 @@ function InputContainer:onGesture(ev)
             end
         end
     end
+end
+
+function InputContainer:onInput(input)
+    local InputDialog = require("ui/widget/inputdialog")
+    self.input_dialog = InputDialog:new{
+        title = input.title or "",
+        input_hint = input.hint_func and input.hint_func() or input.hint or "",
+        input_type = input.type or "number",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:closeInputDialog()
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    callback = function()
+                        input.callback(self.input_dialog:getInputText())
+                        self:closeInputDialog()
+                    end,
+                },
+            },
+        },
+        enter_callback = function()
+            input.callback(self.input_dialog:getInputText())
+            self:closeInputDialog()
+        end,
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.input_dialog:onShowKeyboard()
+    UIManager:show(self.input_dialog)
+end
+
+function InputContainer:closeInputDialog()
+    self.input_dialog:onClose()
+    UIManager:close(self.input_dialog)
 end
 
 return InputContainer

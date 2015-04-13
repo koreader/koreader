@@ -7,7 +7,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local VerticalSpan = require("ui/widget/verticalspan")
-local InputDialog = require("ui/widget/inputdialog")
 local TextWidget = require("ui/widget/textwidget")
 local LineWidget = require("ui/widget/linewidget")
 local IconButton = require("ui/widget/iconbutton")
@@ -539,7 +538,7 @@ function TouchMenu:onMenuSelect(item)
     end
     if item.tap_input then
         self:closeMenu()
-        self:onMenuInput(item.tap_input)
+        self:onInput(item.tap_input)
     else
         local sub_item_table = item.sub_item_table
         if item.sub_item_table_func then
@@ -578,7 +577,7 @@ function TouchMenu:onMenuHold(item)
     end
     if item.hold_input then
         self:closeMenu()
-        self:onMenuInput(item.hold_input)
+        self:onInput(item.hold_input)
     else
         local callback = item.hold_callback
         if item.hold_callback_func then
@@ -592,44 +591,6 @@ function TouchMenu:onMenuHold(item)
         end
     end
     return true
-end
-
-function TouchMenu:onMenuInput(input)
-    self.input_dialog = InputDialog:new{
-        title = input.title or "",
-        input_hint = input.hint or "",
-        input_type = input.type or "number",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        self:closeInputDialog()
-                    end,
-                },
-                {
-                    text = _("OK"),
-                    callback = function()
-                        input.callback(self.input_dialog:getInputText())
-                        self:closeInputDialog()
-                    end,
-                },
-            },
-        },
-        enter_callback = function()
-            input.callback(self.input_dialog:getInputText())
-            self:closeInputDialog()
-        end,
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
-    }
-    self.input_dialog:onShowKeyboard()
-    UIManager:show(self.input_dialog)
-end
-
-function TouchMenu:closeInputDialog()
-    self.input_dialog:onClose()
-    UIManager:close(self.input_dialog)
 end
 
 function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
