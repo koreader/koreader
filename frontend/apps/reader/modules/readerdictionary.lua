@@ -4,15 +4,23 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
+local Device = require("device")
 local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderDictionary = InputContainer:new{}
+local ReaderDictionary = InputContainer:new{
+    data_dir = nil,
+}
 
 function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
+    if Device:isAndroid() then
+        self.data_dir = "/sdcard/koreader/data/dict"
+    else
+        self.data_dir = os.getenv("STARDICT_DATA_DIR") or "data/dict"
+    end
 end
 
 function ReaderDictionary:addToMainMenu(tab_item_table)
@@ -62,7 +70,8 @@ function ReaderDictionary:stardictLookup(word, box)
         word = require("util").stripePunctuations(word)
         DEBUG("stripped word:", word)
         -- escape quotes and other funny characters in word
-        local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "..("%q"):format(word), "r")
+        local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "
+            .. ("%q"):format(word) .. " --data-dir " .. self.data_dir, "r")
         local results_str = nil
         if std_out then
             results_str = std_out:read("*all")

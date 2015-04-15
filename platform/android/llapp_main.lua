@@ -26,6 +26,9 @@ A.LOGI("intent file path " .. (file or ""))
 -- run koreader patch before koreader startup
 pcall(function() dofile("/sdcard/koreader/patch.lua") end)
 
+-- set proper permission for sdcv
+io.popen("chmod 755 ./sdcv")
+
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}
 dofile(A.dir.."/reader.lua")
