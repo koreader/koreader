@@ -121,8 +121,9 @@ function OTAManager:fetchAndProcessUpdate()
             text = _("Your KOReader is up to date."),
         })
     elseif ota_version == nil then
+        local channel = ota_channels[OTAManager:getOTAChannel()]
         UIManager:show(InfoMessage:new{
-            text = _("OTA package is not available."),
+            text = T(_("OTA package is not available on %1 channel."), channel),
         })
     elseif ota_version then
         UIManager:show(ConfirmBox:new{
@@ -212,7 +213,7 @@ function OTAManager:getOTAMenuTable()
                     if NetworkMgr:getWifiStatus() == false then
                         NetworkMgr:promptWifiOn()
                     else
-                        OTAManager.fetchAndProcessUpdate()
+                        OTAManager:fetchAndProcessUpdate()
                     end
                 end
             },

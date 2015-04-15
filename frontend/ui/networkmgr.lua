@@ -82,7 +82,7 @@ end
 
 function NetworkMgr:getWifiStatus()
     local socket = require("socket")
-    return socket.dns.toip("www.google.com") ~= nil
+    return socket.dns.toip("www.example.com") ~= nil
 end
 
 function NetworkMgr:setHTTPProxy(proxy)
