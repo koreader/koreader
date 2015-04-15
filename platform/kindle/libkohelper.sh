@@ -22,6 +22,13 @@ case "${kmodel}" in
 		EIPS_X_RES=16
 		EIPS_Y_RES=24		# Manually mesured, should be accurate.
 	;;
+	"13" | "54" | "2A" | "4F" | "52" | "53" )
+		# Kindle Voyage
+		SCREEN_X_RES=1072
+		SCREEN_Y_RES=1448
+		EIPS_X_RES=16
+		EIPS_Y_RES=24		# Manually mesured, should be accurate.
+	;;
 	* )
 		# Handle legacy devices...
 		if [ -f "/etc/rc.d/functions" ] && grep "EIPS" "/etc/rc.d/functions" > /dev/null 2>&1 ; then
