@@ -27,7 +27,7 @@ A.LOGI("intent file path " .. (file or ""))
 pcall(function() dofile("/sdcard/koreader/patch.lua") end)
 
 -- set proper permission for sdcv
-io.popen("chmod 755 ./sdcv")
+A.execute("chmod", "755", "./sdcv")
 
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}

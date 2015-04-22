@@ -70,12 +70,18 @@ function ReaderDictionary:stardictLookup(word, box)
         word = require("util").stripePunctuations(word)
         DEBUG("stripped word:", word)
         -- escape quotes and other funny characters in word
-        local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "
-            .. ("%q"):format(word) .. " --data-dir " .. self.data_dir, "r")
         local results_str = nil
-        if std_out then
-            results_str = std_out:read("*all")
-            std_out:close()
+        if Device:isAndroid() then
+            local A = require("android")
+            results_str = A.stdout("./sdcv", "--utf8-input", "--utf8-output",
+                    "-nj", word, "--data-dir", self.data_dir)
+        else
+            local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "
+                .. ("%q"):format(word) .. " --data-dir " .. self.data_dir, "r")
+            if std_out then
+                results_str = std_out:read("*all")
+                std_out:close()
+            end
         end
         --DEBUG("result str:", word, results_str)
         local ok, results = pcall(JSON.decode, results_str)
