@@ -3,8 +3,7 @@ local Widget = require("ui/widget/widget")
 local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
-
--- TODO: rename string:gsplit definition
+local util = require("util")
 
 --[[
 A TextWidget that handles long text wrapping
@@ -64,45 +63,6 @@ function TextBoxWidget:_wrapGreedyAlg(h_list)
     return v_list
 end
 
---[[
-Lua doesn't have a string.split() function and most of the time
-you don't really need it because string.gmatch() is enough.
-However string.gmatch() has one significant disadvantage for me:
-You can't split a string while matching both the delimited
-strings and the delimiters themselves without tracking positions
-and substrings. The string.gsplit() function below takes care of
-this problem.
-Author: Peter Odding
-License: MIT/X11
-Source: http://snippets.luacode.org/snippets/String_splitting_130
---]]
-function string:gsplit(pattern, capture)
-    pattern = pattern and tostring(pattern) or '%s+'
-    if (''):find(pattern) then
-        error('pattern matches empty string!', 2)
-    end
-    return coroutine.wrap(function()
-        local index = 1
-        repeat
-            local first, last = self:find(pattern, index)
-            if first and last then
-                if index < first then
-                    coroutine.yield(self:sub(index, first - 1))
-                end
-                if capture then
-                    coroutine.yield(self:sub(first, last))
-                end
-                index = last + 1
-            else
-                if index <= #self then
-                    coroutine.yield(self:sub(index))
-                end
-                break
-            end
-        until index > #self
-    end)
-end
-
 function TextBoxWidget:_getVerticalList(alg)
     if self.vertical_list then
         return self.vertical_list
@@ -110,10 +70,10 @@ function TextBoxWidget:_getVerticalList(alg)
     -- build horizontal list
     local h_list = {}
     local line_count = 0
-    for line in self.text:gsplit("\n", true) do
+    for line in util.gsplit(self.text, "\n", true) do
         for words in line:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
-            for word in words:gsplit("%s+", true) do
-                for w in word:gsplit("%p+", true) do
+            for word in util.gsplit(words, "%s+", true) do
+                for w in util.gsplit(word, "%p+", true) do
                     local word_box = {}
                     word_box.word = w
                     word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true, self.bold).x

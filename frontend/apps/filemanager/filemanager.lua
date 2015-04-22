@@ -26,6 +26,10 @@ local FileManager = InputContainer:extend{
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
     onExit = function() end,
+
+    mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
+    cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
+    rm_bin = Device:isAndroid() and "/system/bin/rm" or "/bin/rm",
 }
 
 function FileManager:init()
@@ -265,9 +269,9 @@ function FileManager:pasteHere(file)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
         if self.cutfile then
-            util.execute("/bin/mv", orig, dest)
+            util.execute(self.mv_bin, orig, dest)
         else
-            util.execute("/bin/cp", "-r", orig, dest)
+            util.execute(self.cp_bin, "-r", orig, dest)
         end
     end
 end
@@ -275,7 +279,7 @@ end
 function FileManager:deleteFile(file)
     local InfoMessage = require("ui/widget/infomessage")
     DEBUG("File to remove", util.realpath(file))
-    local rm = util.execute("/bin/rm", "-rf", util.realpath(file))
+    local rm = util.execute(self.rm_bin, "-rf", util.realpath(file))
     DEBUG("rm status", rm)
     if rm == 0 then
         UIManager:show(InfoMessage:new{
