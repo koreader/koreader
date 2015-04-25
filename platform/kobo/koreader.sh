@@ -39,7 +39,7 @@ fi
 
 # check whether PLATFORM has a value assigned by rcS
 # PLATFORM is used in koreader for the path to the WiFi drivers
-if [ -n "$PLATFORM" ]; then 
+if [ ! -n "$PLATFORM" ]; then 
   PLATFORM=freescale
   if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
     CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
@@ -66,7 +66,7 @@ if [ $from_nickel -ne 0 ]; then
     ./nickel.sh
 else
     # if we were called from advboot then we must reboot to go to the menu
-    if [ -d /mnt/onboard/.kobo/advboot ]; then
+   if [ "$(pidof ksmhome.sh | wc -w)" -lt "1" ]; then
         reboot
     fi
 fi
