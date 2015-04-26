@@ -148,7 +148,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args, self.events, self.position)
     UIManager:setDirty(self.config, function()
-        return "partial", self.dimen
+        return "ui", self.dimen
     end)
     return true
 end

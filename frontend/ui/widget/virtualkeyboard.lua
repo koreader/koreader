@@ -216,6 +216,7 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:_refresh()
+    -- TODO: Ideally, ui onShow & partial onClose
     UIManager:setDirty(self, function()
         return "partial", self[1][1].dimen
     end)

@@ -120,7 +120,7 @@ end
 
 function InputDialog:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self.dialog_frame.dimen
+        return "ui", self.dialog_frame.dimen
     end)
 end
 
