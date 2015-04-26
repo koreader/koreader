@@ -1,5 +1,5 @@
 #!/bin/sh
-PATH="${PATH}:/usr/sbin:/sbin"
+PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib"
 
 # Handle the rotation weirdness on some devices
 cur_rotate="$(cat "/sys/class/graphics/fb0/rotate")"
@@ -9,19 +9,21 @@ cur_rotate="$(cat "/sys/class/graphics/fb0/rotate")"
 
 # environment needed by nickel, from /etc/init.d/rcS:
 
-INTERFACE="wlan0"
-WIFI_MODULE="ar6000"
-if [ "${PLATFORM}" != "freescale" ] ; then
-	INTERFACE="eth0"
-	WIFI_MODULE="dhd"
+if [ ! -n "${WIFI_MODULE_PATH}" ] ; then
+	INTERFACE="wlan0"
+	WIFI_MODULE="ar6000"
+	if [ "${PLATFORM}" != "freescale" ] ; then
+		INTERFACE="eth0"
+		WIFI_MODULE="dhd"
+	fi
+	export INTERFACE
+	export WIFI_MODULE
+	export WIFI_MODULE_PATH="/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
 fi
-export INTERFACE
-export WIFI_MODULE
 
 export NICKEL_HOME="/mnt/onboard/.kobo"
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 
-export WIFI_MODULE_PATH="/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
 export LANG="en_US.UTF-8"
 
 

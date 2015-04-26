@@ -35,6 +35,12 @@ if pkill -0 nickel ; then
 fi
 
 if [ "${from_nickel}" == "true" ] ; then
+	# Siphon a few things from nickel's env...
+	eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
+	export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+	# Keep the dbus session around, and remember it for later...
+	#export DBUS_SESSION_BUS_ADDRESS="$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | sed -n 's/^DBUS_SESSION_BUS_ADDRESS=\(.*\)/\1/p')"
+
 	# flush disks, might help avoid trashing nickel's DB...
 	sync
 	# stop kobo software because it's running
@@ -48,7 +54,13 @@ else
 	args="$@"
 fi
 
-# check whether PLATFORM has a value assigned by rcS
+# check whether PLATFORM & PRODUCT have a value assigned by rcS
+if [ ! -n "${PRODUCT}" ] ; then
+	PRODUCT="$(/bin/kobo_config.sh)"
+	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
+	export PRODUCT
+fi
+
 # PLATFORM is used in koreader for the path to the WiFi drivers
 if [ ! -n "${PLATFORM}" ] ; then
 	PLATFORM="freescale"
