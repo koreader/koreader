@@ -72,12 +72,10 @@ fi
 
 if [ "${from_nickel}" == "true" ] ; then
 	# start kobo software because was running before koreader
-	./nickel.sh
+	./nickel.sh &
 else
 	# if we were called from advboot then we must reboot to go to the menu
-	if [ -d "/mnt/onboard/.kobo/advboot" ] ; then
-	# FIXME: This is not precise enough, cf. #1503; but that alternate proposition is way too drastic, it doesn't account for people running neither KSM nor advboot
-	#if ! pkill -0 ksmhome.sh ; then
+	if ! pkill -0 ksmhome.sh ; then
 		reboot
 	fi
 fi
