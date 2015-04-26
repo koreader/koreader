@@ -76,7 +76,7 @@ if [ "${from_nickel}" == "true" ] ; then
 else
 	# if we were called from advboot then we must reboot to go to the menu
 	if [ -d "/mnt/onboard/.kobo/advboot" ] ; then
-	# NOTE: ! pkill -0 ksmhome.sh is too drastic, it doesn't account for people running neither KSM nor advboot
+	# FIXME: This is not precise enough, cf. #1503; but that alternate proposition is way too drastic, it doesn't account for people running neither KSM nor advboot
 	#if ! pkill -0 ksmhome.sh ; then
 		reboot
 	fi
