@@ -31,10 +31,14 @@ export LANG="en_US.UTF-8"
 
 (
 	/usr/local/Kobo/pickel disable.rtc.alarm
+
 	if [ ! -e "/etc/wpa_supplicant/wpa_supplicant.conf" ] ; then
 		cp "/etc/wpa_supplicant/wpa_supplicant.conf.template" "/etc/wpa_supplicant/wpa_supplicant.conf"
 	fi
+
+	# FWIW, that appears to be gone from recent rcS scripts. AFAICT, still harmless, though.
 	echo 1 > "/sys/devices/platform/mxc_dvfs_core.0/enable"
+
 	/sbin/hwclock -s -u
 ) &
 
