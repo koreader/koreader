@@ -29,7 +29,8 @@ export LANG="en_US.UTF-8"
 # cover all firmware versions from 2.6.1 to 3.4.1 (tested on a kobo
 # mini with 3.4.1 firmware)
 
-( /usr/local/Kobo/pickel disable.rtc.alarm
+(
+	/usr/local/Kobo/pickel disable.rtc.alarm
 	if [ ! -e "/etc/wpa_supplicant/wpa_supplicant.conf" ] ; then
 		cp "/etc/wpa_supplicant/wpa_supplicant.conf.template" "/etc/wpa_supplicant/wpa_supplicant.conf"
 	fi
