@@ -1,7 +1,7 @@
 #!/bin/sh
-export PATH=$PATH:/sbin:/usr/sbin
+export PATH="${PATH}:/sbin:/usr/sbin"
 
-#disable wifi
+# disable wifi
 if lsmod | grep -q sdio_wifi_pwr ; then
 	wlarm_le -i eth0 down
 	ifconfig eth0 down
@@ -9,7 +9,7 @@ if lsmod | grep -q sdio_wifi_pwr ; then
 	rmmod -r sdio_wifi_pwr
 fi
 
-#go to sleep
+# go to sleep
 sync
 echo 1 > /sys/power/state-extended
 echo mem > /sys/power/state
