@@ -35,7 +35,9 @@ if pkill -0 nickel ; then
 fi
 
 if [ "${from_nickel}" == "true" ] ; then
-	# stop kobo software because is running
+	# flush disks, might help avoid trashing nickel's DB...
+	sync
+	# stop kobo software because it's running
 	killall nickel hindenburg fmon 2>/dev/null
 fi
 
