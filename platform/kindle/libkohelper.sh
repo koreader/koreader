@@ -24,7 +24,7 @@ case "${kmodel}" in
 	;;
 	"13" | "54" | "2A" | "4F" | "52" | "53" )
 		# Kindle Voyage
-		SCREEN_X_RES=1072
+		SCREEN_X_RES=1088	# NOTE: Yes, 1088, not 1072 or 1080...
 		SCREEN_Y_RES=1448
 		EIPS_X_RES=16
 		EIPS_Y_RES=24		# Manually mesured, should be accurate.
