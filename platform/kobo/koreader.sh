@@ -84,15 +84,12 @@ fi
 
 if [ "${from_nickel}" == "true" ] ; then
 	# start kobo software because it was running before koreader
-	#./nickel.sh &
-
-	# FIXME: This appears to be horribly broken: nickel restarts, but deadlocks instantly (requiring a paperclip to reboot...).
-	# So, eff it, and just reboot instead, that barely takes more time anyway.
-	# NOTE: H2O, 3.12.1
-	reboot
+	./nickel.sh &
 else
 	# if we were called from advboot then we must reboot to go to the menu
 	if ! pkill -0 ksmhome.sh ; then
 		reboot
 	fi
 fi
+
+return 0

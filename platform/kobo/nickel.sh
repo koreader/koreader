@@ -45,7 +45,6 @@ export LANG="en_US.UTF-8"
 ) &
 
 if [ ! -e "/usr/local/Kobo/platforms/libkobo.so" ] ; then
-	# FIXME: Should we really bother with the QWS_* stuff?
 	export QWS_KEYBOARD="imx508kbd:/dev/input/event0"
 	export QT_PLUGIN_PATH="/usr/local/Kobo/plugins"
 	if [ -e "/usr/local/Kobo/plugins/gfxdrivers/libimxepd.so" ] ; then
@@ -54,18 +53,19 @@ if [ ! -e "/usr/local/Kobo/platforms/libkobo.so" ] ; then
 		export QWS_DISPLAY="Transformed:imx508:Rot90"
 		export QWS_MOUSE_PROTO="tslib_nocal:/dev/input/event1"
 	fi
-	/usr/local/Kobo/hindenburg &
-	/usr/local/Kobo/nickel -qws -skipFontLoad
+	/usr/local/Kobo/hindenburg > /dev/null 2>&1 &
+	/usr/local/Kobo/nickel -qws -skipFontLoad > /dev/null 2>&1 &
 else
-	/usr/local/Kobo/hindenburg &
+	/usr/local/Kobo/hindenburg > /dev/null 2>&1 &
 	lsmod | grep -q lowmem || insmod "/drivers/${PLATFORM}/misc/lowmem.ko" &
 	if grep -q "dhcpcd=true" "/mnt/onboard/.kobo/Kobo/Kobo eReader.conf" ; then
 		dhcpcd -d -t 10 &
 	fi
-	/usr/local/Kobo/nickel -platform kobo -skipFontLoad
+	/usr/local/Kobo/nickel -platform kobo -skipFontLoad > /dev/null 2>&1 &
 fi
 
-# FIXME: Is this even reachable? (i.e., does nickel fork in the bg?)
 # Rotation weirdness, part II
 echo "${cur_rotate}" > "/sys/class/graphics/fb0/rotate"
 cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
+
+return 0
