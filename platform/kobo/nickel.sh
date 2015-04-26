@@ -45,6 +45,7 @@ export LANG="en_US.UTF-8"
 ) &
 
 if [ ! -e "/usr/local/Kobo/platforms/libkobo.so" ] ; then
+	# FIXME: Should we really bother with the QWS_* stuff?
 	export QWS_KEYBOARD="imx508kbd:/dev/input/event0"
 	export QT_PLUGIN_PATH="/usr/local/Kobo/plugins"
 	if [ -e "/usr/local/Kobo/plugins/gfxdrivers/libimxepd.so" ] ; then
@@ -64,6 +65,7 @@ else
 	/usr/local/Kobo/nickel -platform kobo -skipFontLoad
 fi
 
+# FIXME: Is this even reachable? (i.e., does nickel fork in the bg?)
 # Rotation weirdness, part II
 echo "${cur_rotate}" > "/sys/class/graphics/fb0/rotate"
 cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
