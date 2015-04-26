@@ -686,7 +686,7 @@ function Menu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "partial", refresh_dimen
+        return "ui", refresh_dimen
     end)
 end
 
