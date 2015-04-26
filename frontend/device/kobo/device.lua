@@ -41,8 +41,8 @@ local KoboDahlia = Kobo:new{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 265,
-    -- bezel:
-    viewport = Geom:new{x=0, y=10, w=1080, h=1430},
+    -- the bezel covers the top 11 pixels:
+    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
 }
 
 -- Kobo Aura HD:
