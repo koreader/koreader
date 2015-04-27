@@ -77,7 +77,7 @@ update_koreader()
 		# Install it!
 		logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
 		if [ "${koreader_pkg_type}" == "tgz" ] ; then
-			tar -C "/mnt/us" -xf "${found_koreader_package}"
+			tar -C "/mnt/us" -xzf "${found_koreader_package}"
 		else
 			unzip -q -o "${found_koreader_package}" -d "/mnt/us"
 		fi
