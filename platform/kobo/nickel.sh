@@ -4,7 +4,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib"
 # Handle the rotation weirdness on some devices
 cur_rotate="$(cat "/sys/class/graphics/fb0/rotate")"
 
-# start fmon again:
+# start fmon again. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 ( usleep 400000; /etc/init.d/on-animator.sh ) &
 
 # environment needed by nickel, from /etc/init.d/rcS:
@@ -27,9 +27,9 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 export LANG="en_US.UTF-8"
 
 
-# start nickel again (from tshering's start menu v0.4), this should
-# cover all firmware versions from 2.6.1 to 3.4.1 (tested on a kobo
-# mini with 3.4.1 firmware)
+# start nickel again (inspired from KSM, vlasovsoft & the base rcS), this should
+# cover at least firmware versions from 2.6.1 to 3.12.1 (tested on a kobo
+# mini with 3.4.1 firmware & a H2O on 3.12.1)
 
 (
 	/usr/local/Kobo/pickel disable.rtc.alarm
