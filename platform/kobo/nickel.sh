@@ -53,6 +53,7 @@ if [ ! -e "/usr/local/Kobo/platforms/libkobo.so" ] ; then
 		export QWS_DISPLAY="Transformed:imx508:Rot90"
 		export QWS_MOUSE_PROTO="tslib_nocal:/dev/input/event1"
 	fi
+	# NOTE: Send the output to the void, to avoid spamming the shell with the output of the string of killall commands they periodically send
 	/usr/local/Kobo/hindenburg > /dev/null 2>&1 &
 	/usr/local/Kobo/nickel -qws -skipFontLoad > /dev/null 2>&1 &
 else
