@@ -108,9 +108,14 @@ function Kobo:init()
 end
 
 function Kobo:getCodeName()
-    local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "r")
-    local codename = std_out:read()
-    std_out:close()
+    -- Try to get it from the env first
+    local codename = os.getenv("PRODUCT")
+    -- If that fails, run the script ourselves
+    if not codename then
+        local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "r")
+        codename = std_out:read()
+        std_out:close()
+    end
     return codename
 end
 
