@@ -196,7 +196,7 @@ describe("ReaderBookmark module", function()
         it("should get next bookmark for certain page", function()
             assert.are.same(15, readerui.bookmark:getNextBookmarkedPage(10))
         end)
-        it("should search/add bookmarks properly #now", function()
+        it("should search/add bookmarks properly", function()
             -- clear bookmarks created by previous tests
             readerui.bookmark.bookmarks = {}
             local p1 = { x = 0, y = 0, page = 100 }
