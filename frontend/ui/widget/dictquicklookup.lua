@@ -276,7 +276,7 @@ end
 
 function DictQuickLookup:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self.dict_frame.dimen
+        return "ui", self.dict_frame.dimen
     end)
     return true
 end

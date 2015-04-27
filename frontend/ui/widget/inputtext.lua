@@ -89,7 +89,7 @@ function InputText:initTextBox(text)
     self.dimen = self[1]:getSize()
 
     UIManager:setDirty(self.parent, function()
-        return "partial", self[1].dimen
+        return "ui", self[1].dimen
     end)
 end
 

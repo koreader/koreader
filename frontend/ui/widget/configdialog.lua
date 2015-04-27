@@ -72,7 +72,7 @@ function OptionTextItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "partial", self[1].dimen
+        return "ui", self[1].dimen
     end)
     return true
 end
@@ -127,7 +127,7 @@ function OptionIconItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "partial", self[1].dimen
+        return "ui", self[1].dimen
     end)
     return true
 end
@@ -532,7 +532,7 @@ function ConfigDialog:onShowConfigPanel(index)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
             or self.dialog_frame.dimen
-        return "partial", refresh_dimen
+        return "ui", refresh_dimen
     end)
     return true
 end

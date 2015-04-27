@@ -42,7 +42,7 @@ end
 
 function LinkBox:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self.box
+        return "ui", self.box
     end)
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function()

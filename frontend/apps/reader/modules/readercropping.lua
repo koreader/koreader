@@ -73,7 +73,7 @@ end
 
 function PageCropDialog:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self[1].dimen:combine(self[2].dimen)
+        return "ui", self[1].dimen:combine(self[2].dimen)
     end)
     return true
 end

@@ -133,7 +133,7 @@ function ReaderBookmark:onToggleBookmark()
     end
     self:toggleBookmark(pn_or_xp)
     self.view.dogear_visible = not self.view.dogear_visible
-    UIManager:setDirty(self.view.dialog, "partial")
+    UIManager:setDirty(self.view.dialog, "ui")
     return true
 end
 

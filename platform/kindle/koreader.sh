@@ -208,7 +208,7 @@ fi
 ./reader.lua "$@" 2> crash.log
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
-if pidof reader.lua > /dev/null 2>&1 ; then
+if pkill -0 reader.lua ; then
 	logmsg "Sending a SIGTERM to stray KOreader processes . . ."
 	killall -TERM reader.lua
 fi

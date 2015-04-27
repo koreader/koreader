@@ -43,9 +43,16 @@ update_koreader()
 
 	found_koreader_package="false"
 	# Try to find a koreader package... Behavior undefined if there are multiple packages...
+	for file in /mnt/us/koreader-kindle-*.tar.gz ; do
+		if [ -f "${file}" ] ; then
+			found_koreader_package="${file}"
+			koreader_pkg_type="tgz"
+		fi
+	done
 	for file in /mnt/us/koreader-kindle-*.zip ; do
 		if [ -f "${file}" ] ; then
 			found_koreader_package="${file}"
+			koreader_pkg_type="zip"
 		fi
 	done
 
@@ -61,11 +68,19 @@ update_koreader()
 		fi
 
 		# Get the version of the package...
-		koreader_pkg_ver="${found_koreader_package%.*}"
+		if [ "${koreader_pkg_type}" == "tgz" ] ; then
+			koreader_pkg_ver="${found_koreader_package%.*.*}"
+		else
+			koreader_pkg_ver="${found_koreader_package%.*}"
+		fi
 		koreader_pkg_ver="${koreader_pkg_ver#*-v}"
 		# Install it!
 		logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
-		unzip -q -o "${found_koreader_package}" -d "/mnt/us"
+		if [ "${koreader_pkg_type}" == "tgz" ] ; then
+			tar -C "/mnt/us" -xzf "${found_koreader_package}"
+		else
+			unzip -q -o "${found_koreader_package}" -d "/mnt/us"
+		fi
 		if [ $? -eq 0 ] ; then
 			logmsg "Update to v${koreader_pkg_ver} successful :)"
 			# Cleanup behind us...

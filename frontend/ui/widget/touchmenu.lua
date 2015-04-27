@@ -98,7 +98,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
     UIManager:scheduleIn(0.0, function()
         self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
-            return "partial", self.dimen
+            return "ui", self.dimen
         end)
     end)
     UIManager:scheduleIn(0.1, function()
@@ -107,7 +107,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
         UIManager:setDirty(self.show_parent, function()
-            return "partial", self.dimen
+            return "ui", self.dimen
         end)
     end)
     return true
@@ -123,7 +123,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     UIManager:scheduleIn(0.0, function()
         self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
-            return "partial", self.dimen
+            return "ui", self.dimen
         end)
     end)
     UIManager:scheduleIn(0.1, function()
@@ -132,7 +132,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
         UIManager:setDirty(self.show_parent, function()
-            return "partial", self.dimen
+            return "ui", self.dimen
         end)
     end)
     return true
@@ -469,7 +469,7 @@ function TouchMenu:updateItems()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "partial", refresh_dimen
+        return "ui", refresh_dimen
     end)
 end
 

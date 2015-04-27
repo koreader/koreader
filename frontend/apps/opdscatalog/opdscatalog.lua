@@ -66,7 +66,7 @@ end
 
 function OPDSCatalog:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self[1].dimen
+        return "ui", self[1].dimen
     end)
 end
 

@@ -52,7 +52,7 @@ end
 
 function ButtonDialog:onShow()
     UIManager:setDirty(self, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
