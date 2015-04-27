@@ -8,7 +8,6 @@ local Screen = require("device").screen
 local Input = require("device").input
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")

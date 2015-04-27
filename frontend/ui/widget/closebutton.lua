@@ -1,10 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Font = require("ui/font")
 
 --[[
@@ -25,7 +22,7 @@ function CloseButton:init()
         padding = 0,
         text_widget
     }
-    
+
     self.dimen = text_widget:getSize():copy()
 
     self.ges_events.Close = {

@@ -14,7 +14,7 @@ local _ = require("gettext")
 
 local FileSearcher = InputContainer:new{
     search_dialog = nil,
-    
+
     --filesearcher
     -- state buffer
     dirs = {},
@@ -22,7 +22,7 @@ local FileSearcher = InputContainer:new{
     results = {},
     items = 0,
     commands = nil,
-    
+
     --filemanagersearch
     use_previous_search_results = false,
     lastsearch = nil,
@@ -33,7 +33,7 @@ function FileSearcher:readDir()
     DEBUG("self.path", self.path)
     self.files = {}
     while #self.dirs ~= 0 do
-        new_dirs = {}
+        local new_dirs = {}
         -- handle each dir
         for __, d in pairs(self.dirs) do
             -- handle files in d
@@ -104,7 +104,7 @@ end
 function FileSearcher:showSearch()
     local dummy = self.search_value
     self.search_dialog = InputDialog:new{
-        title = _("Search for books by filename"),             
+        title = _("Search for books by filename"),
         input = self.search_value,
         buttons = {
             {
@@ -139,7 +139,6 @@ function FileSearcher:showSearch()
 end
 
 function FileSearcher:showSearchResults()
-    local ReaderUI = require("apps/reader/readerui")
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }

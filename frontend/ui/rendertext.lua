@@ -1,5 +1,4 @@
 local Font = require("ui/font")
-local Screen = require("device").screen
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")

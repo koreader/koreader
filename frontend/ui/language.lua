@@ -4,7 +4,7 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 
-Language = {}
+local Language = {}
 
 function Language:changeLanguage(lang_locale)
     _.changeLang(lang_locale)

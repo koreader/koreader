@@ -9,7 +9,7 @@ local DEBUG = require("dbg")
 local sample_epub = "spec/front/unit/data/juliet.epub"
 local sample_pdf = "spec/front/unit/data/sample.pdf"
 
-describe("Readerbookmark module", function()
+describe("ReaderBookmark module", function()
     local function highlight_text(readerui, pos0, pos1)
         readerui.highlight:onHold(nil, { pos = pos0 })
         readerui.highlight:onHoldPan(nil, { pos = pos1 })
@@ -36,6 +36,7 @@ describe("Readerbookmark module", function()
         end)
         UIManager:run()
     end
+
     describe("bookmark for EPUB document", function()
         local page = 10
         local readerui
@@ -48,6 +49,17 @@ describe("Readerbookmark module", function()
             UIManager:quit()
             UIManager:show(readerui)
             readerui.rolling:gotoPage(10)
+        end)
+        it("should does bookmark comparison properly", function()
+            assert.truthy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, },
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, },
+                { notes = 'bar', page = 1, pos0 = 0, pos1 = 2, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo0', page = 1, pos0 = 0, pos1 = 0, },
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, }))
         end)
         it("should show dogear after togglering non-bookmarked page", function()
             toggler_dogear(readerui)
@@ -111,6 +123,34 @@ describe("Readerbookmark module", function()
             UIManager:show(readerui)
             readerui.paging:gotoPage(10)
         end)
+        it("should does bookmark comparison properly", function()
+            assert.truthy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', pos0 = { page = 1 , x = 2, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, },
+                { notes = 'foo', pos0 = { page = 1 , x = 2, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, },
+                { notes = 'foo', page = 1, pos1 = 2, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, },
+                { notes = 'foo', page = 1, pos0 = 2, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', pos0 = { page = 1 , x = 2, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, },
+                { notes = 'foo', pos0 = { page = 2 , x = 2, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', pos0 = { page = 1 , x = 1, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, },
+                { notes = 'foo', pos0 = { page = 1 , x = 2, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, }))
+            assert.falsy(readerui.bookmark:isBookmarkSame(
+                { notes = 'foo', pos0 = { page = 1 , x = 1, y = 3},
+                  pos1 = { page = 1, x = 20, y = 3 }, },
+                { notes = 'foo', pos0 = { page = 1 , x = 1, y = 3},
+                  pos1 = { page = 1, x = 20, y = 2 }, }))
+        end)
         it("should show dogear after togglering non-bookmarked page", function()
             toggler_dogear(readerui)
             Screen:shot("screenshots/reader_bookmark_dogear_pdf.png")
@@ -155,6 +195,31 @@ describe("Readerbookmark module", function()
         end)
         it("should get next bookmark for certain page", function()
             assert.are.same(15, readerui.bookmark:getNextBookmarkedPage(10))
+        end)
+        it("should search/add bookmarks properly #now", function()
+            DEBUG:turnOn()
+            local p1 = { x = 0, y = 0, page = 100 }
+            local bm1 = { notes = 'foo', page = 10,
+                          pos0 = { x = 0, y = 0, page = 100 }, pos1 = p1, }
+            assert.falsy(readerui.bookmark:isBookmarkAdded(bm1))
+            readerui.bookmark:addBookmark(bm1)
+            assert.are.same(readerui.bookmark.bookmarks, {bm1})
+
+            local bm2 = { notes = 'foo', page = 1,
+                          pos0 = { x = 0, y = 0, page = 1 }, pos1 = p1, }
+            assert.falsy(readerui.bookmark:isBookmarkAdded(bm2))
+            readerui.bookmark:addBookmark(bm2)
+            assert.are.same({bm1, bm2}, readerui.bookmark.bookmarks)
+
+            local bm3 = { notes = 'foo', page = 5,
+                          pos0 = { x = 0, y = 0, page = 5 }, pos1 = p1, }
+            assert.falsy(readerui.bookmark:isBookmarkAdded(bm3))
+            readerui.bookmark:addBookmark(bm3)
+            assert.are.same({bm1, bm3, bm2}, readerui.bookmark.bookmarks)
+
+            assert.truthy(readerui.bookmark:isBookmarkAdded(bm1))
+            assert.truthy(readerui.bookmark:isBookmarkAdded(bm2))
+            assert.truthy(readerui.bookmark:isBookmarkAdded(bm3))
         end)
     end)
 end)

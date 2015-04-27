@@ -1,8 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
-local ConfirmBox = require("ui/widget/confirmbox")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
@@ -158,7 +155,7 @@ function ReaderMenu:onShowReaderMenu()
         dimen = Screen:getSize(),
     }
 
-    local main_menu = nil
+    local main_menu
     if Device:isTouchDevice() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{

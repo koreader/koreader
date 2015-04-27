@@ -47,7 +47,7 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:addChar(self.key) end
     end
 
-    local label_widget = nil
+    local label_widget
     if self.icon then
         label_widget = ImageWidget:new{
             file = self.icon,
@@ -289,7 +289,6 @@ function VirtualKeyboard:addKeys()
         end
     end
 
-    local size = vertical_group:getSize()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = self.bordersize,

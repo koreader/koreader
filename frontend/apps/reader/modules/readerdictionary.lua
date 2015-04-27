@@ -2,7 +2,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Device = require("device")
 local JSON = require("json")

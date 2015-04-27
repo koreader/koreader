@@ -302,7 +302,7 @@ function Search:find(option)
         self.data[i] = {"-","-","-","-","-","-","-","-","-"}
 
         if self.use_own_metadata_file then
-            g = io.open(koreaderfile,"r")
+            local g = io.open(koreaderfile, "r")
             line = g:read()
             if line ~= "#metadata.Koreader Version 1.1" then
                 self.use_own_metadata_file =  false

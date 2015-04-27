@@ -18,7 +18,6 @@ local FileManagerMenu = InputContainer:extend{
 }
 
 function FileManagerMenu:init()
-    local filemanager = self.ui
     self.tab_item_table = {
         setting = {
             icon = "resources/icons/appbar.settings.png",
@@ -171,7 +170,7 @@ function FileManagerMenu:onShowMenu()
         dimen = Screen:getSize(),
     }
 
-    local main_menu = nil
+    local main_menu
     if Device:isTouchDevice() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
