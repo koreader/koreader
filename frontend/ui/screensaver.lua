@@ -29,7 +29,6 @@ function Screensaver:getCoverImage(file)
                 image_height = image:getHeight()
                 image_width = image:getWidth()
                 local image_ratio = image_width / image_height
-                local screen_ratio = screen_width / screen_height
                 if image_ratio < 1 then
                     image_height = screen_height
                     image_width = image_height * image_ratio

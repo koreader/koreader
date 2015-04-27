@@ -74,7 +74,7 @@ Your GCC should be at least of version 4.7 for both native and cross compiling.
 
 Users of Debian and Ubuntu can install the required packages using:
 ```
-sudo apt-get install build-essential libtool gcc-multilib \
+sudo apt-get install build-essential libtool gcc-multilib libffi-dev \
 patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev
 ```
 
@@ -179,6 +179,11 @@ cd koreader-$(MACHINE)/koreader && ./reader.lua -d ../../test
 To run unit tests in KOReader:
 ```
 make test
+```
+
+To run Lua static-analysis for KOReader:
+```
+make statick-check
 ```
 
 You may need to checkout the [travis config file][travis-conf] to setup up

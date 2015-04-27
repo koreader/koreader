@@ -18,7 +18,7 @@ local DjvuDocument = Document:new{
 
 -- check DjVu magic string to validate
 local function validDjvuFile(filename)
-    f = io.open(filename, "r")
+    local f = io.open(filename, "r")
     if not f then return false end
     local magic = f:read(8)
     f:close()

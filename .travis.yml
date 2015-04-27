@@ -22,13 +22,13 @@ install:
     # install an older version of lua_cliargs for busted v1.10.0
     - sudo luarocks install lua_cliargs 2.1-2
     # recent versions of busted may cause some weird segmentation faults
-    - git clone https://github.com/Olivine-Labs/busted/
+    - travis_retry git clone https://github.com/Olivine-Labs/busted/
     - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
-    - sudo luarocks install luacov
-    - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
+    - travis_retry sudo luarocks install luacov
+    - travis_retry sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
 
 script:
-    - make fetchthirdparty all
+    - travis_retry make fetchthirdparty all
     - sudo cp base/build/*/luajit /usr/bin/
     - make testfront
 

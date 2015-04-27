@@ -48,7 +48,7 @@ function CreDocument:cacheInit()
 end
 
 function CreDocument:engineInit()
-    if not engine_initilized then
+    if not self.engine_initilized then
         -- initialize cache
         self:cacheInit()
 
@@ -66,7 +66,7 @@ function CreDocument:engineInit()
             end
         end
 
-        engine_initilized = true
+        self.engine_initilized = true
     end
 end
 

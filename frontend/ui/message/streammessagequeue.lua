@@ -1,10 +1,9 @@
 local ffi = require("ffi")
 local DEBUG = require("dbg")
-local util = require("ffi/util")
 local Event = require("ui/event")
 local MessageQueue = require("ui/message/messagequeue")
 
-local dummy = require("ffi/zeromq_h")
+local _ = require("ffi/zeromq_h")
 local zmq = ffi.load("libs/libzmq.so.4")
 local czmq = ffi.load("libs/libczmq.so.1")
 
@@ -25,7 +24,7 @@ function StreamMessageQueue:start()
     end
     local id_size = ffi.new("size_t[1]", 256)
     local buffer = ffi.new("uint8_t[?]", id_size[0])
-    local rc = zmq.zmq_getsockopt(self.socket, ffi.C.ZMQ_IDENTITY, buffer, id_size)
+    rc = zmq.zmq_getsockopt(self.socket, ffi.C.ZMQ_IDENTITY, buffer, id_size)
     self.id = ffi.string(buffer, id_size[0])
     DEBUG("id", #self.id, self.id)
 end

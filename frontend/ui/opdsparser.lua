@@ -32,7 +32,7 @@ function OPDSParser:createFlatXTable(xlex, currentelement)
     local attribute_count = 0;
 
     -- start reading the thing
-    local txt = nil;
+    local txt
     for event, offset, size in xlex:Lexemes() do
         txt = ffi.string(xlex.buf + offset, size)
 

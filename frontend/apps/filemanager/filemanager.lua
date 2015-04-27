@@ -109,7 +109,6 @@ function FileManager:init()
                 {
                     text = _("Delete"),
                     callback = function()
-                        local path = util.realpath(file)
                         local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{

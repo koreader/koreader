@@ -6,7 +6,6 @@ local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local history_dir = "./history/"

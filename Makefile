@@ -251,4 +251,9 @@ pot:
 po:
 	$(MAKE) -i -C l10n bootstrap pull
 
+static-check:
+	@if which luacheck > /dev/null; then luacheck frontend; else \
+		echo "[!] luacheck not found. "\
+		"you can install it with 'luarocks install luacheck'"; fi
+
 .PHONY: test

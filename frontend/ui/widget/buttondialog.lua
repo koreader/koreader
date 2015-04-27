@@ -5,7 +5,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
-local Input = require("device").input
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")

@@ -3,7 +3,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Device = require("device")
 local DEBUG = require("dbg")
