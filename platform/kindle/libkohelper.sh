@@ -29,6 +29,13 @@ case "${kmodel}" in
 		EIPS_X_RES=16
 		EIPS_Y_RES=24		# Manually mesured, should be accurate.
 	;;
+	"C6" | "DD" )
+		# KT2...
+		SCREEN_X_RES=608	# NOTE: Might actually be 600...
+		SCREEN_Y_RES=800
+		EIPS_X_RES=16
+		EIPS_Y_RES=24
+	;;
 	* )
 		# Handle legacy devices...
 		if [ -f "/etc/rc.d/functions" ] && grep "EIPS" "/etc/rc.d/functions" > /dev/null 2>&1 ; then
