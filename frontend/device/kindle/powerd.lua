@@ -15,10 +15,12 @@ function KindlePowerD:init()
     if lipc then
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
-    if self.lipc_handle then
-        self.flIntensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-    else
-        self.flIntensity = self:read_int_file(self.fl_intensity_file)
+    if self.device.hasFrontlight() then
+        if self.lipc_handle ~= nil then
+            self.flIntensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+        else
+            self.flIntensity = self:read_int_file(self.fl_intensity_file)
+        end
     end
 end
 
