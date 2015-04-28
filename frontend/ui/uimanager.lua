@@ -523,8 +523,9 @@ function UIManager:handleInput()
 end
 
 function UIManager:initLooper()
-    if not self.looper and not Device.isAndroid() and ffi.os ~= "Windows" then
+    if not self.looper and ffi.os ~= "Windows" then
         TURBO_SSL = true
+        __TURBO_USE_LUASOCKET__ = true
         local turbo = require("turbo")
         self.looper = turbo.ioloop.instance()
     end
@@ -536,7 +537,7 @@ end
 function UIManager:run()
     self._running = true
     self:initLooper()
-    -- currently there is no Turbo support for Android and Windows
+    -- currently there is no Turbo support for Windows
     -- use our own main loop
     if not self.looper then
         while self._running do

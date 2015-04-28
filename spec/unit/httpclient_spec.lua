@@ -18,6 +18,9 @@ describe("HTTP client module", function()
         local urls = {
             "http://www.example.com",
             "http://www.example.org",
+            "http://www.example.net",
+            "https://www.example.com",
+            "https://www.example.org",
         }
         requests = #urls
         for _, url in ipairs(urls) do

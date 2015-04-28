@@ -24,7 +24,7 @@ function HTTPClient:request(request, response_callback)
         -- disable success and warning logs
         turbo.log.categories.success = false
         turbo.log.categories.warning = false
-        local client = turbo.async.HTTPClient({verify_ca = "none"})
+        local client = turbo.async.HTTPClient({verify_ca = false})
         local res = coroutine.yield(client:fetch(request.url, request))
         self.input_timeouts = self.input_timeouts - 1
         -- reset INPUT_TIMEOUT to nil when all HTTP requests are fullfilled.
