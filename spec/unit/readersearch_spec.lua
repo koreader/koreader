@@ -67,7 +67,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(198, pageno)
+                assert.are.equal(190, pageno)
             end
             for i = 230, 235, 1 do
                 rolling:gotoPage(i)
@@ -87,7 +87,7 @@ describe("Readersearch module", function()
                 doc:gotoXPointer(words[1].start)
                 words = search:searchNext("Verona", 0)
             end
-            assert.are.equal(13, count)
+            assert.are.equal(14, count)
         end)
     end)
     describe("search API for PDF documents", function()
