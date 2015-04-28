@@ -16,13 +16,13 @@ local function probeDevice()
         return require("device/kindle/device")
     end
 
-    local kg_test_fd = lfs.attributes("/bin/kobo_config.sh")
-    if kg_test_fd then
+    local kg_test_stat = lfs.attributes("/bin/kobo_config.sh")
+    if kg_test_stat then
         return require("device/kobo/device")
     end
 
-    local pbook_test_fd = lfs.attributes("/ebrmain")
-    if pbook_test_fd then
+    local pbook_test_stat = lfs.attributes("/ebrmain")
+    if pbook_test_stat then
         return require("device/pocketbook/device")
     end
 
