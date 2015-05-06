@@ -26,11 +26,24 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 
 export LANG="en_US.UTF-8"
 
+# Make sure we kill the WiFi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
+# NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
+if lsmod | grep -q sdio_wifi_pwr ; then
+	wlarm_le -i ${INTERFACE} down
+	ifconfig ${INTERFACE} down
+	# NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. If re-specifying -r starts to fail one day, switch to rmmod without args, or modprobe -r.
+	rmmod -r ${WIFI_MODULE}
+	rmmod -r sdio_wifi_pwr
+fi
+
+# Flush buffers to disk, who knows.
+sync
 
 # start nickel again (inspired from KSM, vlasovsoft & the base rcS), this should
 # cover at least firmware versions from 2.6.1 to 3.12.1 (tested on a kobo
 # mini with 3.4.1 firmware & a H2O on 3.12.1)
 
+# NOTE: Since we're not cold booting, this is technically redundant... On the other hand, it doesn't really hurt either ;).
 (
 	/usr/local/Kobo/pickel disable.rtc.alarm
 
@@ -44,6 +57,7 @@ export LANG="en_US.UTF-8"
 	/sbin/hwclock -s -u
 ) &
 
+# Hey there, nickel!
 if [ ! -e "/usr/local/Kobo/platforms/libkobo.so" ] ; then
 	export QWS_KEYBOARD="imx508kbd:/dev/input/event0"
 	export QT_PLUGIN_PATH="/usr/local/Kobo/plugins"
