@@ -207,6 +207,12 @@ function Input:adjustTouchTranslate(ev, by)
         end
     end
 end
+function Input:adjustTouchAlyssum(ev)
+	ev.time = TimeVal:now()
+	if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
+		ev.value = ev.value - 1
+	end
+end
 
 function Input:setTimeout(cb, tv_out)
     local item = {

@@ -69,6 +69,15 @@ local KoboPhoenix = Kobo:new{
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
 }
 
+-- Kobo Glo HD:
+local KoboAlyssum = Kobo:new{
+    model = "Kobo_alyssum",
+    hasFrontlight = yes,
+	touch_phoenix_protocol = true,
+	touch_alyssum_protocol = true,
+    display_dpi = 300,
+}
+
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kobo/powerd"):new{device = self}
@@ -96,6 +105,10 @@ function Kobo:init()
             self.screen:getScreenWidth()
         )
     end
+	
+	if self.touch_alyssum_protocol then
+		self.input:registerEventAdjustHook(self.input.adjustTouchAlyssum)
+	end
 
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
@@ -158,6 +171,8 @@ elseif codename == "trilogy" then
     return KoboTrilogy
 elseif codename == "pixie" then
     return KoboPixie
+elseif codename == "alyssum" then
+	return KoboAlyssum
 else
     error("unrecognized Kobo model "..codename)
 end
