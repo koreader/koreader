@@ -73,8 +73,8 @@ local KoboPhoenix = Kobo:new{
 local KoboAlyssum = Kobo:new{
     model = "Kobo_alyssum",
     hasFrontlight = yes,
-	touch_phoenix_protocol = true,
-	touch_alyssum_protocol = true,
+    touch_phoenix_protocol = true,
+    touch_alyssum_protocol = true,
     display_dpi = 300,
 }
 
@@ -105,10 +105,10 @@ function Kobo:init()
             self.screen:getScreenWidth()
         )
     end
-	
-	if self.touch_alyssum_protocol then
-		self.input:registerEventAdjustHook(self.input.adjustTouchAlyssum)
-	end
+
+    if self.touch_alyssum_protocol then
+        self.input:registerEventAdjustHook(self.input.adjustTouchAlyssum)
+    end
 
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
@@ -172,7 +172,7 @@ elseif codename == "trilogy" then
 elseif codename == "pixie" then
     return KoboPixie
 elseif codename == "alyssum" then
-	return KoboAlyssum
+    return KoboAlyssum
 else
     error("unrecognized Kobo model "..codename)
 end
