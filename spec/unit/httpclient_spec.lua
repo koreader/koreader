@@ -12,12 +12,6 @@ describe("HTTP client module", function()
         assert(not res.error, "error occurs")
         assert(res.body)
     end
-    setup(function()
-        DUSE_TURBO_LIB = true
-    end)
-    teardown(function()
-        DUSE_TURBO_LIB = false
-    end)
     local async_client = HTTPClient:new()
     it("should get response from async GET request", function()
         UIManager:quit()
