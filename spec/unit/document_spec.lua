@@ -53,6 +53,18 @@ describe("EPUB document module", function()
     it("should calculate fast digest", function()
         assert.is_equal(doc:fastDigest(), "59d481d168cca6267322f150c5f6a2a3")
     end)
+    it("should register droid sans fallback", function()
+        local fonts_registry = {
+            "Droid Sans Fallback",
+            "Droid Sans Mono",
+            "FreeSans",
+            "FreeSerif",
+            "Noto Sans",
+            "Noto Serif",
+        }
+        local face_list = cre.getFontFaces()
+        assert.are.same(fonts_registry, face_list)
+    end)
     it("should close document", function()
         doc:close()
     end)

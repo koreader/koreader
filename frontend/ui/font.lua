@@ -105,12 +105,4 @@ function Font:getFontList()
     return fontlist
 end
 
-function Font:update()
-    for _k, _v in ipairs(self.faces) do
-        _v:done()
-    end
-    self.faces = {}
-    clearGlyphCache()
-end
-
 return Font
