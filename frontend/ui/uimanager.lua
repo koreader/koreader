@@ -523,7 +523,7 @@ function UIManager:handleInput()
 end
 
 function UIManager:initLooper()
-    if not self.looper and ffi.os ~= "Windows" then
+    if DUSE_TURBO_LIB and not self.looper then
         TURBO_SSL = true
         __TURBO_USE_LUASOCKET__ = true
         local turbo = require("turbo")

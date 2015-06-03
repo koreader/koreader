@@ -182,6 +182,10 @@ KOBO_SCREEN_SAVER_LAST_BOOK = true -- get screensaver from last book if possible
 -- proxy authentication is not supported yet.
 NETWORK_PROXY = nil
 
+-- Experimental features
+-- Use turbo library to handle async HTTP request
+DUSE_TURBO_LIB = false
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################
