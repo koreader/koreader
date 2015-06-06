@@ -186,6 +186,9 @@ NETWORK_PROXY = nil
 -- Use turbo library to handle async HTTP request
 DUSE_TURBO_LIB = false
 
+-- Custom font dir for Android
+ANDROID_FONT_DIR = "/system/fonts;/sdcard/koreader/fonts"
+
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################

@@ -1,6 +1,7 @@
 local lfs = require("libs/libkoreader-lfs")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
+local Device = require("device")
 local DEBUG = require("dbg")
 
 local Font = {
@@ -94,11 +95,19 @@ function Font:_readList(target, dir)
     end
 end
 
+function Font:_getExternalFontDir()
+    if Device:isAndroid() then
+        return ANDROID_FONT_DIR
+    else
+        return os.getenv("EXT_FONT_DIR")
+    end
+end
+
 function Font:getFontList()
     local fontlist = {}
     self:_readList(fontlist, self.fontdir)
-    -- multiple path should be joined with semicolon in FONTDIR env variable
-    for dir in string.gmatch(os.getenv("EXT_FONT_DIR") or "", "([^;]+)") do
+    -- multiple paths should be joined with semicolon
+    for dir in string.gmatch(self:_getExternalFontDir() or "", "([^;]+)") do
         self:_readList(fontlist, dir)
     end
     table.sort(fontlist)
