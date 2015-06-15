@@ -1,6 +1,7 @@
 local TileCacheItem = require("document/tilecacheitem")
 local KOPTContext = require("ffi/koptcontext")
 local Document = require("document/document")
+local DataStorage = require("datastorage")
 local CacheItem = require("cacheitem")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -11,7 +12,7 @@ local util = require("ffi/util")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
-    tessocr_data = "data",
+    tessocr_data = DataStorage:getDataDir() .. "/data",
     ocr_lang = "eng",
     ocr_type = 3, -- default 0, for more accuracy use 3
     last_context_size = nil,

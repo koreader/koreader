@@ -29,7 +29,7 @@ ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources defaults.lua l10n \
+INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n \
 		git-rev README.md COPYING
 
 # for gettext
