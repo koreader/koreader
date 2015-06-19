@@ -359,10 +359,9 @@ function ReaderHighlight:onHoldRelease()
                         end,
                     },
                     {
-                        text = _("More"),
-                        enabled = false,
+                        text = _("Dictionary"),
                         callback = function()
-                            self:moreAction()
+                            self:onHighlightDictLookup()
                             self:onClose()
                         end,
                     },
@@ -484,6 +483,15 @@ function ReaderHighlight:onHighlightSearch()
     if self.selected_text then
         local text = require("util").stripePunctuations(self.selected_text.text)
         self.ui:handleEvent(Event:new("ShowSearchDialog", text))
+    end
+end
+
+function ReaderHighlight:onHighlightDictLookup()
+    DEBUG("dictionary lookup highlight")
+    self:highlightFromHoldPos()
+    if self.selected_text then
+        local text = require("util").stripePunctuations(self.selected_text.text)
+        self.ui:handleEvent(Event:new("LookupWord", text))
     end
 end
 

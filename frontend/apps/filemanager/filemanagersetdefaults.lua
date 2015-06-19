@@ -1,10 +1,11 @@
 local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local DataStorage = require("datastorage")
+local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
@@ -319,16 +320,16 @@ function SetDefaults:SaveSettings()
         file:close()
     end
 
-    local filename = "defaults.persistent.lua"
+    local persistent_filename = DataStorage:getDataDir() .. "/defaults.persistent.lua"
     local file
-    if io.open(filename,"r") == nil then
-        file = io.open(filename, "w")
+    if io.open(persistent_filename,"r") == nil then
+        file = io.open(persistent_filename, "w")
         file:write("-- For configuration changes that persists between (nightly) releases\n")
         file:close()
     end
 
     local dpl = {}
-    fileread("defaults.persistent.lua",dpl)
+    fileread(persistent_filename, dpl)
     local dl = {}
     fileread("defaults.lua",dl)
     self.results = {}
@@ -355,12 +356,16 @@ function SetDefaults:SaveSettings()
         end
     end
 
-    file = io.open("defaults.persistent.lua", "w")
-    for i = 1,#dpl do
-        file:write(dpl[i] .. "\n")
+    file = io.open(persistent_filename, "w")
+    if file then
+        for i = 1,#dpl do
+            file:write(dpl[i] .. "\n")
+        end
+        file:close()
+        UIManager:show(InfoMessage:new{
+            text = _("Default settings were saved successfully!"),
+        })
     end
-    file:close()
-    UIManager:show(InfoMessage:new{text = _("Default settings were saved successfully!")})
     settings_changed = false
 end
 return SetDefaults

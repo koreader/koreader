@@ -2,7 +2,8 @@
 
 -- load default settings
 require "defaults"
-pcall(dofile, "defaults.persistent.lua")
+local DataStorage = require("datastorage")
+pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
 -- set search path for 'require()'
 package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
