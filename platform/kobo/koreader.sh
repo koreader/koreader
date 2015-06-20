@@ -87,9 +87,9 @@ if [ "${from_nickel}" == "true" ] ; then
 	./nickel.sh &
 else
 	# if we were called from advboot then we must reboot to go to the menu
-	# NOTE: This is actually achieved by checking if KSM is running:
+	# NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
 	#       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
-	if ! pgrep -f ksmhome.sh > /dev/null 2>&1 ; then
+	if ! pgrep -f kbmenu > /dev/null 2>&1 ; then
 		reboot
 	fi
 fi
