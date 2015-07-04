@@ -203,7 +203,8 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     text = _("Delete"),
                     callback = function()
                         self:deleteHighlight(page, index)
-                        UIManager:close(self.edit_highlight_dialog)
+                        -- other part outside of the dialog may be dirty
+                        UIManager:close(self.edit_highlight_dialog, "ui")
                     end,
                 },
                 {
