@@ -511,16 +511,20 @@ end
 function TouchMenu:onNextPage()
     if self.page < self.page_num then
         self.page = self.page + 1
+    elseif self.page == self.page_num then
+	self.page = 1
+    end 
         self:updateItems()
-    end
     return true
 end
 
 function TouchMenu:onPrevPage()
     if self.page > 1 then
         self.page = self.page - 1
-        self:updateItems()
+    elseif self.page == 1 then
+        self.page = self.page_num
     end
+	self:updateItems()
     return true
 end
 
