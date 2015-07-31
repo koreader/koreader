@@ -56,15 +56,17 @@ function FileChooser:genItemTableFromPath(path)
         for f in iter, dir_obj do
             if self.show_hidden or not string.match(f, "^%.[^.]") then
                 local filename = self.path.."/"..f
-                local attributes = lfs.attributes(filename)
-                if attributes.mode == "directory" and f ~= "." and f~=".." then
-                    if self.dir_filter(filename) then
-                        table.insert(dirs, {name = f, attr = attributes})
-                    end
-                elseif attributes.mode == "file" then
-                    if self.file_filter(filename) then
-                        table.insert(files, {name = f, attr = attributes})
-                    end
+                if lfs.attributes(filename)~=nil then
+                   local attributes = lfs.attributes(filename)
+                   if attributes.mode == "directory" and f ~= "." and f~=".." then
+                      if self.dir_filter(filename) then
+                         table.insert(dirs, {name = f, attr = attributes})
+                      end
+             	   elseif attributes.mode == "file" then
+                      if self.file_filter(filename) then
+                         table.insert(files, {name = f, attr = attributes})   
+                      end
+                   end
                 end
             end
         end
