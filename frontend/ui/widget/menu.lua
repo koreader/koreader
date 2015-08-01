@@ -815,7 +815,7 @@ function Menu:onPrevPage()
     if self.page > 1 then
         self.page = self.page - 1
     elseif self.page == 1 then
-        self.page =self.page_num
+        self.page = self.page_num
     end
     self:updateItems(1)
     return true
