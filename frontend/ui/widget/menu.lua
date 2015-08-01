@@ -805,6 +805,8 @@ function Menu:onNextPage()
         if end_position ~= self.selected.y then
             self:updateItems(end_position)
         end
+        self.page = 1
+        self:updateItems(1)
     end
     return true
 end
@@ -812,6 +814,8 @@ end
 function Menu:onPrevPage()
     if self.page > 1 then
         self.page = self.page - 1
+    elseif self.page == 1 then
+        self.page =self.page_num
     end
     self:updateItems(1)
     return true
