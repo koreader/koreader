@@ -66,16 +66,17 @@ Building Prerequisites
 These instructions for how to get and compile the source are intended for a Linux
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
-To get and compile the source you must have `patch`, `wget`, `unzip`, `git`, `autoconf`,
-`subversion` and `cmake` installed, as well as a version of `autoconf` greater than 2.64.
-You also need `nasm` and of course a compiler like `gcc` or `clang`. If you want to
-cross-compile for other architectures, you need a proper cross-compile toolchain.
-Your GCC should be at least of version 4.7 for both native and cross compiling.
+To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
+`subversion`, `cmake` and `luarocks` installed, as well as a version of `autoconf`
+greater than 2.64. You also need `nasm` and of course a compiler like `gcc`
+or `clang`. If you want to cross-compile for other architectures, you need a proper
+cross-compile toolchain. Your GCC should be at least of version 4.7 for both native
+and cross compiling.
 
 Users of Debian and Ubuntu can install the required packages using:
 ```
 sudo apt-get install build-essential libtool gcc-multilib libffi-dev \
-patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev
+patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev luarocks
 ```
 
 Cross compile toolchains are available for Ubuntu users through these commands:
