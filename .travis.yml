@@ -3,35 +3,65 @@
 
 language: c
 
+sudo: false
+
 compiler:
-    - gcc
+  - gcc
 
 env:
-    - EMULATE_READER=1 USE_NO_CCACHE=1
+  - EMULATE_READER=1
+
+cache:
+  directories:
+    - $HOME/.ccache
+#  - base
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - libsdl1.2-dev
+      - luarocks
+      # for luasec
+      - libssl1.0.0
+      - nasm
+      # OpenSSL likes this (package contains makedepend)
+      - xutils-dev
 
 before_install:
-    - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    - sudo apt-get update -qq
-    - sudo apt-get install -qq g++-4.8
-    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
-    - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
+  # don't do this for clang
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  # in case anything ignores the environment variables, override through PATH
+  - mkdir bin
+  - ln -s $(which gcc-4.8) bin/cc
+  - ln -s $(which gcc-4.8) bin/gcc
+  - ln -s $(which c++-4.8) bin/c++
+  - ln -s $(which g++-4.8) bin/g++
+  - export PATH=$PWD/bin:$PATH
 
 install:
-    # nasm for building libpng
-    - sudo apt-get install libsdl1.2-dev luarocks nasm
-    # install an older version of lua_cliargs for busted v1.10.0
-    - sudo luarocks install lua_cliargs 2.1-2
-    # recent versions of busted may cause some weird segmentation faults
-    - travis_retry git clone https://github.com/Olivine-Labs/busted/
-    - cd busted && git checkout v1.10.0 && sudo luarocks make && cd ..
-    - travis_retry sudo luarocks install luacov
-    - travis_retry sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
+  - mkdir $HOME/.luarocks
+  - cp /etc/luarocks/config.lua $HOME/.luarocks/config.lua
+  - echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
+  - travis_retry luarocks --local install lua_cliargs
+  # versions older than 1.10ish and <2.0.rc10-0ish of busted may cause some weird segmentation faults
+  - travis_retry git clone https://github.com/Olivine-Labs/busted/
+  - cd busted && git checkout v2.0.rc10-0 && luarocks --local make busted-2.0.rc10-0.rockspec && cd ..
+  - travis_retry luarocks --local install luacov
+  # luasec doesn't automatically detect 64-bit libs
+  - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
+  - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
+  # add local rocks to $PATH
+  # on newer luarocks, `luarocks path --bin` would suffice because it includes the PATH now
+  - eval $(luarocks path --bin)
+  - export PATH=$PATH:$HOME/.luarocks/bin
 
 script:
-    - travis_retry make fetchthirdparty all
-    - sudo cp base/build/*/luajit /usr/bin/
-    - make testfront
+  - travis_retry make fetchthirdparty all
+  - travis_retry make testfront
 
 after_success:
-    - make coverage
-    - cd koreader-*/koreader && luacov-coveralls -v
+  - make coverage
+  - cd koreader-*/koreader && luacov-coveralls -v

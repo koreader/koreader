@@ -93,14 +93,14 @@ $(INSTALL_DIR)/koreader/.luacov:
 		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
 
 testfront: $(INSTALL_DIR)/koreader/.busted
-	cd $(INSTALL_DIR)/koreader && busted -l ./luajit --exclude-tags=notest
+	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) --exclude-tags=notest
 
 test:
 	$(MAKE) -C $(KOR_BASE) test
 	$(MAKE) testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
-	cd $(INSTALL_DIR)/koreader && busted -c -l ./luajit --exclude-tags=nocov
+	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) --coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
