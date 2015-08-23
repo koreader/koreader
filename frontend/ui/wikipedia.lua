@@ -7,7 +7,7 @@ local DEBUG = require("dbg")
 --]]
 
 local Wikipedia = {
-   wiki_server = "http://%s.wikipedia.org",
+   wiki_server = "https://%s.wikipedia.org",
    wiki_path = "/w/api.php",
    wiki_params = {
        action = "query",
@@ -59,8 +59,13 @@ function Wikipedia:loadPage(text, lang, intro, plain)
         error("Network is unreachable")
     end
 
+    if status ~= "HTTP/1.1 200 OK" then
+        DEBUG("HTTP status not okay:", status)
+        return
+    end
+
     local content = table.concat(sink)
-    if content ~= "" then
+    if content ~= "" and string.sub(content, 1,1) == "{" then
         local ok, result = pcall(JSON.decode, content)
         if ok and result then
             DEBUG("wiki result", result)
@@ -68,6 +73,8 @@ function Wikipedia:loadPage(text, lang, intro, plain)
         else
             DEBUG("error:", result)
         end
+    else
+        DEBUG("not JSON:", content)
     end
 end
 

@@ -62,8 +62,13 @@ function Translator:loadPage(target_lang, source_lang, text)
         error("Network is unreachable")
     end
 
+    if status ~= "HTTP/1.1 200 OK" then
+        DEBUG("HTTP status not okay:", status)
+        return
+    end
+
     local content = table.concat(sink)
-    if content ~= "" then
+    if content ~= "" and string.sub(content, 1,1) == "{" then
         local ok, result = pcall(JSON.decode, content)
         if ok and result then
             --DEBUG("translate result", result)
@@ -71,6 +76,8 @@ function Translator:loadPage(target_lang, source_lang, text)
         else
             DEBUG("error:", result)
         end
+    else
+        DEBUG("not JSON:", content)
     end
 end
 
