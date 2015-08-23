@@ -83,4 +83,9 @@ fi
 echo "${cur_rotate}" > "/sys/class/graphics/fb0/rotate"
 cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
 
+# Handle sdcard
+if [ -e "/dev/mmcblk1p1" ] ; then
+	echo sd add /dev/mmcblk1p1 >> /tmp/nickel-hardware-status &
+fi
+
 return 0
