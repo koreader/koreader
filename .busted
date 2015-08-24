@@ -1,7 +1,7 @@
 return {
 	default = {
 		verbose = true,
-		ROOT = "spec/front/unit",
+		ROOT = {"spec/front/unit"},
 		lpath = "spec/front/unit/?.lua",
 	},
 }
