@@ -20,7 +20,7 @@ end
 
 function ReaderTypeset:onReadSettings(config)
     self.css = config:readSetting("css")
-    if self.css and self.css ~= "" then
+    if self.css then
         self.ui.document:setStyleSheet(self.css)
     else
         self.ui.document:setStyleSheet(self.ui.document.default_css)
@@ -69,7 +69,7 @@ function ReaderTypeset:genStyleSheetMenu()
         {
             text = _("clear all external styles"),
             callback = function()
-                self:setStyleSheet(nil)
+                self:setStyleSheet("")
             end
         },
         {
@@ -96,9 +96,6 @@ function ReaderTypeset:setStyleSheet(new_css)
     if new_css ~= self.css then
         --DEBUG("setting css to ", new_css)
         self.css = new_css
-        if new_css == nil then
-            new_css = ""
-        end
         self.ui.document:setStyleSheet(new_css)
         self.ui:handleEvent(Event:new("UpdatePos"))
     end
