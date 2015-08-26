@@ -19,8 +19,8 @@ function ReaderTypeset:init()
 end
 
 function ReaderTypeset:onReadSettings(config)
-    self.css = config:readSetting("css")
-    if self.css and self.css ~= "" then
+    self.css = config:readSetting("css") or G_reader_settings:readSetting("copt_css")
+    if self.css then
         self.ui.document:setStyleSheet(self.css)
     else
         self.ui.document:setStyleSheet(self.ui.document.default_css)
@@ -65,40 +65,43 @@ function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
 end
 
 function ReaderTypeset:genStyleSheetMenu()
+    local style_table = {}
     local file_list = {
         {
             text = _("clear all external styles"),
-            callback = function()
-                self:setStyleSheet(nil)
-            end
+            css = ""
         },
         {
             text = _("Auto"),
-            callback = function()
-                self:setStyleSheet(self.ui.document.default_css)
-            end
+            css = self.ui.document.default_css
         },
     }
     for f in lfs.dir("./data") do
         if lfs.attributes("./data/"..f, "mode") == "file" and string.match(f, "%.css$") then
             table.insert(file_list, {
                 text = f,
-                callback = function()
-                    self:setStyleSheet("./data/"..f)
-                end
+                css = "./data/"..f
             })
         end
     end
-    return file_list
+    for i,file in ipairs(file_list) do
+        table.insert(style_table, {
+            text = file["text"],
+            callback = function()
+                self:setStyleSheet(file["css"])
+            end,
+            hold_callback = function()
+                self:makeDefaultStyleSheet(file["css"], file["text"])
+            end
+        })
+    end
+    return style_table
 end
 
 function ReaderTypeset:setStyleSheet(new_css)
     if new_css ~= self.css then
         --DEBUG("setting css to ", new_css)
         self.css = new_css
-        if new_css == nil then
-            new_css = ""
-        end
         self.ui.document:setStyleSheet(new_css)
         self.ui:handleEvent(Event:new("UpdatePos"))
     end
@@ -167,6 +170,18 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
             G_reader_settings:saveSetting("floating_punctuation", self.floating_punctuation)
         end,
     })
+end
+
+function ReaderTypeset:makeDefaultStyleSheet(css, text)
+    text = text or css
+    if css then
+        UIManager:show(ConfirmBox:new{
+            text = T( _("Set default style to %1?"), text),
+            ok_callback = function()
+                G_reader_settings:saveSetting("copt_css", css)
+            end,
+        })
+    end
 end
 
 function ReaderTypeset:onSetPageMargins(margins)
