@@ -1,7 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Notification = require("ui/widget/notification")
-local ConfirmBox = require("ui/widget/confirmbox")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Menu = require("ui/widget/menu")
 local Device = require("device")
 local Screen = require("device").screen
@@ -209,10 +209,15 @@ end
 
 function ReaderFont:makeDefault(face)
     if face then
-        UIManager:show(ConfirmBox:new{
-            text = T( _("Set default font to %1?"), face),
-            ok_callback = function()
+        UIManager:show(MultiConfirmBox:new{
+            text = T( _("Set default or fallback font to %1?"), face),
+            choise1_text = ("default"),
+            choise1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
+            end,
+            choise2_text = ("fallback"),
+            choise2_callback = function()
+                G_reader_settings:saveSetting("fallback_font", face)
             end,
         })
     end
