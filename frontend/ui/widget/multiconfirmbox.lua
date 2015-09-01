@@ -21,17 +21,17 @@ local Blitbuffer = require("ffi/blitbuffer")
 -- screen
 
 --[[
-Widget that shows a message and Choise1/Choise2/Cancel buttons
+Widget that shows a message and choice1/choice2/Cancel buttons
 ]]
 local MultiConfirmBox = InputContainer:new{
     modal = true,
     text = _("no text"),
     face = Font:getFace("infofont", 25),
-    choise1_text = _("Choise1"),
-    choise2_text = _("Choise2"),
+    choice1_text = _("Choice1"),
+    choice2_text = _("Choice2"),
     cancel_text = _("Cancel"),
-    choise1_callback = function() end,
-    choise2_callback = function() end,
+    choice1_callback = function() end,
+    choice2_callback = function() end,
     cancel_callback = function() end,
     margin = 5,
     padding = 5,
@@ -65,16 +65,16 @@ function MultiConfirmBox:init()
                     end,
                 },
                 {
-                    text = self.choise1_text,
+                    text = self.choice1_text,
                     callback = function()
-                        self.choise1_callback()
+                        self.choice1_callback()
                         UIManager:close(self)
                     end,
                 },
                 {
-                    text = self.choise2_text,
+                    text = self.choice2_text,
                     callback = function()
-                        self.choise2_callback()
+                        self.choice2_callback()
                         UIManager:close(self)
                     end,
                 },
@@ -119,9 +119,9 @@ end
 function MultiConfirmBox:onSelect()
     DEBUG("selected:", self.selected.x)
     if self.selected.x == 1 then
-        self:choise1_callback()
+        self:choice1_callback()
     elseif self.selected.x == 2 then
-        self:choise2_callback()
+        self:choice2_callback()
     elseif self.selected.x == 0 then
         self:cancle_callback()
     end
