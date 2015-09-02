@@ -210,8 +210,8 @@ end
 function ReaderFont:makeDefault(face)
     if face then
         UIManager:show(MultiConfirmBox:new{
-            text = T( _([[Set %1 to be the default or the fallback font? ]] 
-                      ..[[The fallback font is used on characters not in active font.]]), face),
+            text = T( _([[Set %1 as default or fallback font? The fallback font ]] 
+                      ..[[displays characters not found in the active font.]]), face),
             choice1_text = ("Default"),
             choice1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
