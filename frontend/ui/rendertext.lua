@@ -75,10 +75,13 @@ function RenderText:getGlyph(face, charcode, bold)
         for index, font in pairs(Font.fallbacks) do
             -- use original size before scaling by screen DPI
             local fb_face = Font:getFace(font, face.orig_size)
-            if fb_face.ftface:checkGlyph(charcode) ~= 0 then
-                rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
-                --DEBUG("fallback to font", font)
-                break
+            if fb_face ~= nil then
+            -- for some characters it cannot find in Fallbacks, it will crash here
+                if fb_face.ftface:checkGlyph(charcode) ~= 0 then
+                    rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
+                    --DEBUG("fallback to font", font)
+                    break
+                end 
             end
         end
     end
