@@ -55,11 +55,11 @@ describe("EPUB document module", function()
     end)
     it("should register droid sans fallback", function()
         local fonts_registry = {
-            "Droid Sans Fallback",
             "Droid Sans Mono",
             "FreeSans",
             "FreeSerif",
             "Noto Sans",
+            "Noto Sans CJK SC",
             "Noto Serif",
         }
         local face_list = cre.getFontFaces()

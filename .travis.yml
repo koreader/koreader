@@ -14,7 +14,6 @@ env:
 cache:
   directories:
     - $HOME/.ccache
-#  - base
 
 addons:
   apt:
@@ -46,9 +45,9 @@ install:
   - cp /etc/luarocks/config.lua $HOME/.luarocks/config.lua
   - echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
   - travis_retry luarocks --local install lua_cliargs
-  # versions older than 1.10ish and <2.0.rc10-0ish of busted may cause some weird segmentation faults
-  - travis_retry git clone https://github.com/Olivine-Labs/busted/
-  - cd busted && git checkout v2.0.rc10-0 && luarocks --local make busted-2.0.rc10-0.rockspec && cd ..
+  - travis_retry luarocks --local install busted
+  #- travis_retry luarocks --local install busted 1.11.1-1
+  #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
   - travis_retry luarocks --local install luacov
   # luasec doesn't automatically detect 64-bit libs
   - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
@@ -60,7 +59,7 @@ install:
 
 script:
   - travis_retry make fetchthirdparty all
-  - travis_retry make testfront
+  - make testfront
 
 after_success:
   - make coverage
