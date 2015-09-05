@@ -69,6 +69,14 @@ local KindleVoyage = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
+local KindlePaperWhite3 = Kindle:new{
+    model = "KindlePaperWhite3",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/event1",
+}
+
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
     self.input = require("device/input"):new{
@@ -205,6 +213,21 @@ function KindleVoyage:init()
     self.input.open("fake_events")
 end
 
+function KindlePaperWhite3:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
+end
+
 --[[
 Test if a kindle device has Special Offers
 --]]
@@ -246,6 +269,7 @@ KindlePaperWhite.exit = KindleTouch.exit
 KindlePaperWhite2.exit = KindleTouch.exit
 KindleBasic.exit = KindleTouch.exit
 KindleVoyage.exit = KindleTouch.exit
+KindlePaperWhite3.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -269,6 +293,7 @@ end
 local kindle_sn = io.open("/proc/usid", "r")
 if not kindle_sn then return end
 local kindle_devcode = string.sub(kindle_sn:read(),3,4)
+local kindle_devcode_v2 = string.sub(kindle_sn:read(),4,6)
 kindle_sn:close()
 
 -- NOTE: Update me when new devices come out :)
@@ -283,6 +308,7 @@ local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
                   "60", "F4", "F9", "62", "61", "5F" }
 local kt2_set = Set { "C6", "DD" }
 local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
+local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7" }
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -304,6 +330,8 @@ elseif kt2_set[kindle_devcode] then
     return KindleBasic
 elseif kv_set[kindle_devcode] then
     return KindleVoyage
+elseif pw3_set[kindle_devcode_v2] then
+    return KindlePaperWhite3
 end
 
 error("unknown Kindle model "..kindle_devcode)
