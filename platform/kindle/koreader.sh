@@ -121,12 +121,15 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directory
 export EXT_FONT_DIR="/mnt/us/fonts"
 
-logmsg "Setting up IPTables rules . . ."
-# accept input ports for zsync plugin
-iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
-# accept input ports for calibre companion
-iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+# Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
+if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
+	logmsg "Setting up IPTables rules . . ."
+	# accept input ports for zsync plugin
+	iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+	iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+	# accept input ports for calibre companion
+	iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+fi
 
 # bind-mount system fonts
 if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts > /dev/null 2>&1 ; then
@@ -235,15 +238,18 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
 	logmsg "Resuming cvm . . ."
 	killall -cont cvm
+	# We need to handle the screen refresh ourselves, frontend/device/kindle/device.lua's Kindle3.exit is called before we resume cvm ;).
+	echo 'send 139' > /proc/keypad
+	echo 'send 139' > /proc/keypad
 fi
 
 # Restart framework (if need be)
 if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
 	logmsg "Restarting framework . . ."
 	if [ "${INIT_TYPE}" == "sysv" ] ; then
-		/etc/init.d/framework start
+		cd / && env -u LD_LIBRARY_PATH /etc/init.d/framework start
 	else
-		start lab126_gui
+		cd / && env -u LD_LIBRARY_PATH start lab126_gui
 	fi
 fi
 
@@ -260,9 +266,11 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-logmsg "Restoring IPTables rules . . ."
-# restore firewall rules
-iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
+	logmsg "Restoring IPTables rules . . ."
+	# restore firewall rules
+	iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+	iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+	iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+fi
 
