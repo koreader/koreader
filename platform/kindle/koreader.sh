@@ -121,8 +121,8 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directory
 export EXT_FONT_DIR="/mnt/us/fonts"
 
-# Don't try to setup iptables on devices where it doesn't make sense to...
-if [ -e "/lib/modules/$(uname -r)/kernel/net/ipv4/netfilter/ip_tables.ko" ] ; then
+# Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
+if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
 	logmsg "Setting up IPTables rules . . ."
 	# accept input ports for zsync plugin
 	iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
@@ -266,7 +266,7 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-if [ -e "/lib/modules/$(uname -r)/kernel/net/ipv4/netfilter/ip_tables.ko" ] ; then
+if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
 	logmsg "Restoring IPTables rules . . ."
 	# restore firewall rules
 	iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
