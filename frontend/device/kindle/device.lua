@@ -289,12 +289,12 @@ local function Set(list)
 end
 
 
-local kindle_sn = io.open("/proc/usid", "r")
-if not kindle_sn then return end
-local kindle_devcode = string.sub(kindle_sn:read(),3,4)
-kindle_sn:seek("set")
-local kindle_devcode_v2 = string.sub(kindle_sn:read(),4,6)
-kindle_sn:close()
+local kindle_sn_fd = io.open("/proc/usid", "r")
+if not kindle_sn_fd then return end
+local kindle_sn = kindle_sn_fd:read()
+kindle_sn_fd:close()
+local kindle_devcode = string.sub(kindle_sn,3,4)
+local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
 
 -- NOTE: Update me when new devices come out :)
 local k2_set = Set { "02", "03" }
