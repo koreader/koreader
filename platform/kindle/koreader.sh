@@ -121,12 +121,15 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directory
 export EXT_FONT_DIR="/mnt/us/fonts"
 
-logmsg "Setting up IPTables rules . . ."
-# accept input ports for zsync plugin
-iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
-# accept input ports for calibre companion
-iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+# Don't try to setup iptables on devices where it doesn't make sense to...
+if [ -e "/lib/modules/$(uname -r)/kernel/net/ipv4/netfilter/ip_tables.ko" ] ; then
+	logmsg "Setting up IPTables rules . . ."
+	# accept input ports for zsync plugin
+	iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+	iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+	# accept input ports for calibre companion
+	iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+fi
 
 # bind-mount system fonts
 if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts > /dev/null 2>&1 ; then
@@ -263,9 +266,11 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-logmsg "Restoring IPTables rules . . ."
-# restore firewall rules
-iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+if [ -e "/lib/modules/$(uname -r)/kernel/net/ipv4/netfilter/ip_tables.ko" ] ; then
+	logmsg "Restoring IPTables rules . . ."
+	# restore firewall rules
+	iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
+	iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
+	iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+fi
 
