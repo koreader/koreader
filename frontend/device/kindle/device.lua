@@ -20,7 +20,7 @@ local KindleDXG = Kindle:new{
     hasKeys = yes,
 }
 
-local Kindle3 = Kindle2:new{
+local Kindle3 = Kindle:new{
     model = "Kindle3",
     hasKeyboard = yes,
     hasKeys = yes,
@@ -104,8 +104,8 @@ function Kindle3:init()
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
     }
+    self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
-    self.input.open("/dev/input/event2")
     Kindle.init(self)
 end
 
@@ -115,7 +115,6 @@ function Kindle4:init()
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),
     }
-    self.input.event_map = require("device/kindle/event_map_kindle4")
     self.input.open("/dev/input/event1")
     Kindle.init(self)
 end
