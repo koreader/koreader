@@ -235,6 +235,9 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
 	logmsg "Resuming cvm . . ."
 	killall -cont cvm
+	# We need to handle the screen refresh ourselves, frontend/device/kindle/device.lua's Kindle3.exit is called before we resume cvm ;).
+	echo 'send 139' > /proc/keypad
+	echo 'send 139' > /proc/keypad
 fi
 
 # Restart framework (if need be)
