@@ -293,6 +293,7 @@ end
 local kindle_sn = io.open("/proc/usid", "r")
 if not kindle_sn then return end
 local kindle_devcode = string.sub(kindle_sn:read(),3,4)
+kindle_sn:seek("set")
 local kindle_devcode_v2 = string.sub(kindle_sn:read(),4,6)
 kindle_sn:close()
 
