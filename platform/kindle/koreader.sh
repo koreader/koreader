@@ -241,9 +241,9 @@ fi
 if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
 	logmsg "Restarting framework . . ."
 	if [ "${INIT_TYPE}" == "sysv" ] ; then
-		/etc/init.d/framework start
+		cd / && env -u LD_LIBRARY_PATH /etc/init.d/framework start
 	else
-		start lab126_gui
+		cd / && env -u LD_LIBRARY_PATH start lab126_gui
 	fi
 fi
 
