@@ -115,6 +115,7 @@ function Kindle4:init()
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),
     }
+    self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
     Kindle.init(self)
 end
