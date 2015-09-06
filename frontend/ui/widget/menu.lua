@@ -166,8 +166,9 @@ function MenuItem:init()
                     ""..mandatory, true, self.bold).x
 
     local state_button_width = self.state_size.w or 0
+    local my_text = self.text and ""..self.text or ""
     w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                    self.text, true, self.bold).x
+                    ""..my_text, true, self.bold).x
     if w + mandatory_w + state_button_width >= self.content_width then
         if Device:hasKeyboard() then
             self.active_key_events.ShowItemDetail = {
@@ -177,7 +178,7 @@ function MenuItem:init()
         local indicator = "  >> "
         local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                         indicator, true, self.bold).x
-        self.text = RenderText:getSubTextByWidth(self.text, self.face,
+        self.text = RenderText:getSubTextByWidth(my_text, self.face,
             self.content_width - indicator_w - mandatory_w - state_button_width,
             true, self.bold) .. indicator
     end
