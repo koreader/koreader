@@ -8,6 +8,7 @@ local DEBUG = require("dbg")
 
 local PdfDocument = Document:new{
     _document = false,
+    is_pdf = true,
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,

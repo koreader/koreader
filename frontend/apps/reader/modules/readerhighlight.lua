@@ -384,9 +384,11 @@ function ReaderHighlight:highlightFromHoldPos()
     end
 end
 
+--[[
 function ReaderHighlight:onHighlight()
     self:saveHighlight()
 end
+]]
 
 function ReaderHighlight:getHighlightBookmarkItem()
     if self.hold_pos and not self.selected_text then
@@ -408,6 +410,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
 end
 
 function ReaderHighlight:saveHighlight()
+    self:handleEvent(Event:new("Highlight"))
     DEBUG("save highlight")
     local page = self.hold_pos.page
     if self.hold_pos and self.selected_text and self.selected_text.pos0
@@ -469,6 +472,7 @@ function ReaderHighlight:exportToDocument(page, item)
 end
 
 function ReaderHighlight:addNote()
+    self:handleEvent(Event:new("addNote"))
     DEBUG("add Note")
 end
 

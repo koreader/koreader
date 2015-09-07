@@ -4,6 +4,7 @@ local pic = nil
 
 local PicDocument = Document:new{
     _document = false,
+    is_pic = true,
     dc_null = DrawContext.new()
 }
 
