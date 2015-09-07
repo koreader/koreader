@@ -20,7 +20,7 @@ describe("Readersearch module", function()
         it("should search backward", function()
             rolling:gotoPage(10)
             assert.truthy(search:searchFromCurrent("Verona", 1))
-            for i = 1, 100, 10 do
+            for i = 10, 100, 10 do
                 rolling:gotoPage(i)
                 local words = search:searchFromCurrent("Verona", 1)
                 if words then
@@ -55,7 +55,7 @@ describe("Readersearch module", function()
                 local pageno = doc:getPageFromXPointer(words[1].start)
                 assert.are.equal(7, pageno)
             end
-            for i = 1, 5, 1 do
+            for i = 2, 6, 1 do
                 rolling:gotoPage(i)
                 local words = search:searchFromStart("Verona")
                 assert(words == nil)
@@ -67,7 +67,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(190, pageno)
+                assert.are.equal(199, pageno)
             end
             for i = 230, 235, 1 do
                 rolling:gotoPage(i)
@@ -87,7 +87,7 @@ describe("Readersearch module", function()
                 doc:gotoXPointer(words[1].start)
                 words = search:searchNext("Verona", 0)
             end
-            assert.are.equal(14, count)
+            assert.are.equal(13, count)
         end)
     end)
     describe("search API for PDF documents", function()
