@@ -499,6 +499,7 @@ function ReaderRolling:updateBatteryState()
     DEBUG("update battery state")
     if self.view.view_mode == "page" then
         local powerd = Device:getPowerDevice()
+        -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h
         local state = powerd:isCharging() and -1 or powerd:getCapacity()
         if state then
             self.ui.document:setBatteryState(state)

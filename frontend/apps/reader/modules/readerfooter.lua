@@ -196,8 +196,7 @@ end
 
 function ReaderFooter:getBatteryInfo()
     local powerd = Device:getPowerDevice()
-    --local state = powerd:isCharging() and -1 or powerd:getCapacity()
-    return "B:" .. powerd:getCapacity() .. "%"
+    return "B:" .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
 end
 
 function ReaderFooter:getTimeInfo()
