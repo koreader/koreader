@@ -463,7 +463,7 @@ function TouchMenu:updateItems()
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
-    self.time_info.text = os.date("%H:%M").." @ "..Device:getPowerDevice():getCapacity().."%"
+    self.time_info.text = os.date("%H:%M").." @ "..(Device:getPowerDevice():isCharging() and "+" or "")..Device:getPowerDevice():getCapacity().."%"
 
     UIManager:setDirty("all", function()
         local refresh_dimen =
