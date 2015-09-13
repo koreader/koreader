@@ -39,7 +39,7 @@ local OPDSCatalog = InputContainer:extend{
         {
             title = "Internet Archive",
             subtitle = "Internet Archive Catalog",
-            baseurl = "http://bookserver.archive.org/catalog/",
+            url = "http://bookserver.archive.org/catalog/",
         },
     },
     onExit = function() end,

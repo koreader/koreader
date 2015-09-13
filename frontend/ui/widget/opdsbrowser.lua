@@ -174,7 +174,6 @@ function OPDSBrowser:genItemTableFromRoot()
             text = server.title,
             content = server.subtitle,
             url = server.url,
-            baseurl = server.baseurl,
         })
     end
     local added_servers = G_reader_settings:readSetting("opds_servers") or {}
@@ -183,7 +182,6 @@ function OPDSBrowser:genItemTableFromRoot()
             text = server.title,
             content = server.subtitle,
             url = server.url,
-            baseurl = server.baseurl,
             deletable = true,
             editable = true,
         })
@@ -283,40 +281,18 @@ function OPDSBrowser:getCatalog(feed_url)
     end
 end
 
-function OPDSBrowser:genItemTableFromURL(item_url, base_url)
-    local catalog = self:getCatalog(item_url or base_url)
-    return self:genItemTableFromCatalog(catalog, item_url, base_url)
+function OPDSBrowser:genItemTableFromURL(item_url)
+    local catalog = self:getCatalog(item_url)
+    return self:genItemTableFromCatalog(catalog, item_url)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, base_url)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
     if catalog then
         local feed = catalog.feed or catalog
         local function build_href(href)
-            if href:match("^http://") then
-                return href
-            elseif href:match("^//") then
-                local parsed = url.parse(item_url or base_url)
-                if parsed and parsed.scheme then
-                    return parsed.scheme .. ":" .. href
-                else
-                    return "http:" .. href
-                end
-            elseif base_url then
-                return base_url .. "/" .. href
-            elseif item_url then
-                local parsed = url.parse(item_url)
-                -- get rid of query field of base url
-                parsed.query = nil
-                -- update item url with href parts(mostly path and query)
-                for k, v in pairs(url.parse(href) or {}) do
-                    if k == "path" then
-                        v = "/" .. v
-                    end
-                    parsed[k] = v
-                end
-                return url.build(parsed)
-            end
+            --DEBUG("building href", item_url, href)
+            return url.absolute(item_url, href)
         end
         local hrefs = {}
         if feed.link then
@@ -333,7 +309,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, base_url)
         if feed.entry then
             for i, entry in ipairs(feed.entry) do
                 local item = {}
-                item.baseurl = base_url
                 item.acquisitions = {}
                 if entry.link then
                     for i, link in ipairs(entry.link) do
@@ -343,6 +318,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, base_url)
                         if link.rel and link.rel:match(self.acquisition_rel) then
                             table.insert(item.acquisitions, {
                                 type = link.type,
+                                --DEBUG("building acquisition url", link);
                                 href = build_href(link.href),
                             })
                         end
@@ -378,8 +354,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, base_url)
     return item_table
 end
 
-function OPDSBrowser:updateCatalog(url, baseurl)
-    local menu_table = self:genItemTableFromURL(url, baseurl)
+function OPDSBrowser:updateCatalog(url)
+    local menu_table = self:genItemTableFromURL(url)
     if #menu_table > 0 then
         --DEBUG("menu table", menu_table)
         self:swithItemTable(nil, menu_table)
@@ -390,8 +366,8 @@ function OPDSBrowser:updateCatalog(url, baseurl)
     end
 end
 
-function OPDSBrowser:appendCatalog(url, baseurl)
-    local new_table = self:genItemTableFromURL(url, baseurl)
+function OPDSBrowser:appendCatalog(url)
+    local new_table = self:genItemTableFromURL(url)
     for i, item in ipairs(new_table) do
         table.insert(self.item_table, item)
     end
@@ -495,9 +471,8 @@ function OPDSBrowser:onMenuSelect(item)
     else
         table.insert(self.paths, {
             url = item.url,
-            baseurl = item.baseurl,
         })
-        if not self:updateCatalog(item.url, item.baseurl) then
+        if not self:updateCatalog(item.url) then
             table.remove(self.paths)
         end
     end
@@ -610,7 +585,7 @@ function OPDSBrowser:onReturn()
         local path = self.paths[#self.paths]
         if path then
             -- return to last path
-            self:updateCatalog(path.url, path.baseurl)
+            self:updateCatalog(path.url)
         else
             -- return to root path, we simply reinit opdsbrowser
             self:init()
