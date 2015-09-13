@@ -4,7 +4,10 @@ local HTTPClient = require("httpclient")
 local DEBUG = require("dbg")
 --DEBUG:turnOn()
 
-describe("HTTP client module", function()
+-- set true to test httpclient
+DUSE_TURBO_LIB = false
+
+describe("HTTP client module #notest #nocov", function()
     local requests = 0
     local function response_callback(res)
         requests = requests - 1
