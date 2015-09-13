@@ -13,6 +13,7 @@ local ReaderConfig = InputContainer:new{
 }
 
 function ReaderConfig:init()
+    if not self.dimen then self.dimen = Geom:new{} end
     if Device:hasKeyboard() then
         self.key_events = {
             ShowConfigMenu = { { "AA" }, doc = "show config dialog" },

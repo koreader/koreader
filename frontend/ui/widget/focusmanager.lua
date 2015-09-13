@@ -32,7 +32,9 @@ local FocusManager = InputContainer:new{
 }
 
 function FocusManager:init()
-    self.selected = { x = 1, y = 1 }
+    if not self.selected then
+        self.selected = { x = 1, y = 1 }
+    end
     self.key_events = {
         -- these will all generate the same event, just with different arguments
         FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
@@ -60,7 +62,7 @@ function FocusManager:onFocusMove(args)
             break  -- abort when we run into horizontal borders
         end
 
-        -- move cyclic in vertical direction
+        -- call widget wrap callbacks in vertical direction
         if self.selected.y + dy > #self.layout then
             if not self:onWrapLast() then
                 break
@@ -97,6 +99,10 @@ end
 function FocusManager:onWrapLast()
     self.selected.y = 1
     return true
+end
+
+function FocusManager:getFocusItem()
+    return self.layout[self.selected.y][self.selected.x]
 end
 
 return FocusManager

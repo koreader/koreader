@@ -49,18 +49,17 @@ local Font = {
 
 
 function Font:getFace(font, size)
-    if not font then
-        -- default to content font
-        font = self.cfont
-    end
+    -- default to content font
+    if not font then font = self.cfont end
 
     -- original size before scaling by screen DPI
     local orig_size = size
     local size = Screen:scaleBySize(size)
 
-    local face = self.faces[font..size]
+    local hash = font..size
+    local face_obj = self.faces[hash]
     -- build face if not found
-    if not face then
+    if not face_obj then
         local realname = self.fontmap[font]
         if not realname then
             realname = font
@@ -71,10 +70,16 @@ function Font:getFace(font, size)
             DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
             return nil
         end
-        self.faces[font..size] = face
-    --DEBUG("getFace, found: "..realname.." size:"..size)
+        face_obj = {
+            size = size,
+            orig_size = orig_size,
+            ftface = face,
+            hash = hash
+        }
+        self.faces[hash] = face_obj
+    -- DEBUG("getFace, found: "..realname.." size:"..size)
     end
-    return { size = size, orig_size = orig_size, ftface = face, hash = font..size }
+    return face_obj
 end
 
 function Font:_readList(target, dir)

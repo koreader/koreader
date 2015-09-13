@@ -1,13 +1,16 @@
-local VerticalGroup = require("ui/widget/verticalgroup")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local FocusManager = require("ui/widget/focusmanager")
 local LineWidget = require("ui/widget/linewidget")
-local Button = require("ui/widget/button")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
+local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
+local Device = require("device")
+local Screen = Device.screen
 
-local ButtonTable = VerticalGroup:new{
+local ButtonTable = FocusManager:new{
     width = Screen:getWidth(),
     buttons = {
         {
@@ -24,7 +27,8 @@ local ButtonTable = VerticalGroup:new{
 }
 
 function ButtonTable:init()
-    --local vertical_group = VerticalGroup:new{}
+    self.container = VerticalGroup:new{ width = self.width }
+    table.insert(self, self.container)
     if self.zero_sep then
         self:addHorizontalSep()
     end
@@ -53,28 +57,42 @@ function ButtonTable:init()
                     h = button_dim.h,
                 }
             }
+            self.buttons[i][j] = button
             table.insert(horizontal_group, button)
             if j < #line then
                 table.insert(horizontal_group, vertical_sep)
             end
         end -- end for each button
-        table.insert(self, horizontal_group)
+        table.insert(self.container, horizontal_group)
         if i < #self.buttons then
             self:addHorizontalSep()
         end
     end -- end for each button line
+    if Device:hasKeys() then
+        self.layout = self.buttons
+        self.layout[1][1]:onFocus()
+        self.key_events.SelectByKeyPress = { {{"Press", "Enter"}} }
+    else
+        self.key_events = {}  -- deregister all key press event listeners
+    end
 end
 
 function ButtonTable:addHorizontalSep()
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(2) })
-    table.insert(self, LineWidget:new{
+    table.insert(self.container,
+                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+    table.insert(self.container, LineWidget:new{
         background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.width,
             h = self.sep_width,
         }
     })
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(2) })
+    table.insert(self.container,
+                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+end
+
+function ButtonTable:onSelectByKeyPress()
+    self:getFocusItem().callback()
 end
 
 return ButtonTable

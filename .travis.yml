@@ -12,6 +12,7 @@ env:
   - EMULATE_READER=1
 
 cache:
+  apt: true
   directories:
     - $HOME/.ccache
 
