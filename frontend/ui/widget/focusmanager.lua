@@ -101,4 +101,8 @@ function FocusManager:onWrapLast()
     return true
 end
 
+function FocusManager:getFocusItem()
+    return self.layout[self.selected.y][self.selected.x]
+end
+
 return FocusManager

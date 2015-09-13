@@ -66,9 +66,7 @@ function Button:init()
         }
     }
     if self.preselect then
-        self.frame.color = Blitbuffer.COLOR_BLACK
-    else
-        self.frame.color = Blitbuffer.gray(0.33)
+        self:onFocus()
     end
     self.dimen = self.frame:getSize()
     self[1] = self.frame
@@ -105,12 +103,12 @@ function Button:setIcon(icon)
 end
 
 function Button:onFocus()
-    self[1].color = Blitbuffer.COLOR_BLACK
+    self.frame.invert = true
     return true
 end
 
 function Button:onUnfocus()
-    self[1].color = Blitbuffer.gray(0.33)
+    self.frame.invert = false
     return true
 end
 
