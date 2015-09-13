@@ -48,13 +48,12 @@ function InputContainer:_init()
         end
     end
     self.ges_events = new_ges_events
-
-    if not self.dimen then
-        self.dimen = Geom:new{}
-    end
 end
 
 function InputContainer:paintTo(bb, x, y)
+    if not self.dimen then
+        self.dimen = self[1]:getSize()
+    end
     self.dimen.x = x
     self.dimen.y = y
     if self[1] then

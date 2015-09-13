@@ -31,8 +31,8 @@ definition.
 --]]
 function Widget:new(o)
     o = self:extend(o)
-    -- Both o._init and o.init are called on object create. But o._init is used
-    -- for base widget initialization (basic component used to build other
+    -- Both o._init and o.init are called on object creation. But o._init is
+    -- used for base widget initialization (basic component used to build other
     -- widgets). While o.init is for higher level widgets, for example Menu
     -- Widget
     if o._init then o:_init() end

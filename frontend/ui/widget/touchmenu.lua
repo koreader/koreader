@@ -274,6 +274,7 @@ local TouchMenu = InputContainer:new{
 }
 
 function TouchMenu:init()
+    if not self.dimen then self.dimen = Geom:new{} end
     self.show_parent = self.show_parent or self
     if not self.close_callback then
         self.close_callback = function()

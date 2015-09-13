@@ -7,14 +7,13 @@ WidgetContainer is a container for another Widget
 local WidgetContainer = Widget:new()
 
 function WidgetContainer:init()
-    if not self.dimen then
-        self.dimen = Geom:new{}
-    end
-    if not self.dimen.w then
-        self.dimen.w = self[1].getSize().w
-    end
-    if not self.dimen.h then
-        self.dimen.h = self[1].getSize().h
+    if self.dimen then
+        if not self.dimen.w then
+            self.dimen.w = self[1].getSize().w
+        end
+        if not self.dimen.h then
+            self.dimen.h = self[1].getSize().h
+        end
     end
 end
 
