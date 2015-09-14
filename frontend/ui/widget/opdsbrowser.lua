@@ -1,6 +1,7 @@
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
+local LoginDialog = require("ui/widget/logindialog")
 local lfs = require("libs/libkoreader-lfs")
 local OPDSParser = require("ui/opdsparser")
 local NetworkMgr = require("ui/networkmgr")
@@ -20,6 +21,7 @@ local socket = require('socket')
 local http = require('socket.http')
 local https = require('ssl.https')
 local ltn12 = require('ltn12')
+local mime = require('mime')
 
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
@@ -214,12 +216,37 @@ function OPDSBrowser:genItemTableFromRoot()
     return item_table
 end
 
+function OPDSBrowser:getBasicAuthentication(host)
+    local authentications = G_reader_settings:readSetting("www-auth") or {}
+    return authentications[host]
+end
+
+function OPDSBrowser:setBasicAuthentication(host, username, password)
+    local authentications = G_reader_settings:readSetting("www-auth") or {}
+    authentications[host] = {
+        username = username,
+        password = password,
+    }
+    G_reader_settings:saveSetting("www-auth", authentications)
+end
+
+function OPDSBrowser:getAuthorizationHeader(host)
+    local auth = self:getBasicAuthentication(host)
+    if auth then
+        local authorization = auth.username .. ':' .. auth.password
+        return {
+            Authorization = "Basic " .. mime.b64(authorization),
+        }
+    end
+end
+
 function OPDSBrowser:fetchFeed(feed_url)
     local headers, request, sink = {}, {}, {}
     local parsed = url.parse(feed_url)
     request['url'] = feed_url
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
+    request['headers'] = self:getAuthorizationHeader(parsed.host)
     DEBUG("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -230,11 +257,70 @@ function OPDSBrowser:fetchFeed(feed_url)
         error(code)
     end
 
-    local xml = table.concat(sink)
-    if xml ~= "" then
-        --DEBUG("xml", xml)
-        return xml
+    --DEBUG("response", code, headers, status)
+    if code == 401 and status and status:find("Unauthorized") then
+        self._coroutine = coroutine.running() or self._coroutine
+        self:fetchWithLogin(parsed.host, function()
+            return self:fetchFeed(feed_url)
+        end)
+        if coroutine.running() then
+            local result = coroutine.yield()
+            return result
+        end
+    else
+        local xml = table.concat(sink)
+        if xml ~= "" then
+            --DEBUG("xml", xml)
+            return xml
+        end
     end
+end
+
+function OPDSBrowser:fetchWithLogin(host, callback)
+    self.login_dialog = LoginDialog:new{
+        title = _("Login to OPDS server"),
+        username = "",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    enabled = true,
+                    callback = function()
+                        self:closeDialog()
+                    end,
+                },
+                {
+                    text = _("Login"),
+                    enabled = true,
+                    callback = function()
+                        local username, password = self:getCredential()
+                        self:setBasicAuthentication(host, username, password)
+                        self:closeDialog()
+                        UIManager:scheduleIn(0.5, function()
+                            local res = callback()
+                            if res then
+                                coroutine.resume(self._coroutine, res)
+                            end
+                        end)
+                    end,
+                },
+            },
+        },
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.4,
+    }
+
+    self.login_dialog:onShowKeyboard()
+    UIManager:show(self.login_dialog)
+end
+
+function OPDSBrowser:closeDialog()
+    self.login_dialog:onClose()
+    UIManager:close(self.login_dialog)
+end
+
+function OPDSBrowser:getCredential()
+    return self.login_dialog:getCredential()
 end
 
 function OPDSBrowser:parseFeed(feed_url)
@@ -388,6 +474,7 @@ function OPDSBrowser:downloadFile(title, format, remote_url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local r, c, h = httpRequest{
         url = remote_url,
+        headers = self:getAuthorizationHeader(parsed.host),
         sink = ltn12.sink.file(io.open(local_path, "w")),
     }
 

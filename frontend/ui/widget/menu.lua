@@ -291,7 +291,11 @@ function MenuItem:onTapSelect(arg, ges)
     UIManager:scheduleIn(0.1, function()
         self[1].invert = false
         UIManager:setDirty(self.show_parent, refreshfunc)
-        self.menu:onMenuSelect(self.table, pos)
+        DEBUG("creating coroutine for menu select")
+        local co = coroutine.create(function()
+            self.menu:onMenuSelect(self.table, pos)
+        end)
+        coroutine.resume(co)
     end)
     return true
 end
