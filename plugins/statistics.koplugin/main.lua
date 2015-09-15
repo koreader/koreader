@@ -11,6 +11,7 @@ local TimeVal = require("ui/timeval")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local tableutil = require("tableutil")
+local T = require("ffi/util").template
 
 local statistics_dir = "./statistics"
 
@@ -260,7 +261,7 @@ function ReaderStatistics:getDatesForBook(book)
 
     table.insert(result, { text = _(book.title) })
     for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date > t[a].date end) do
-        table.insert(result, { text = _(k), mandatory = _("Pages(") .. v.count .. _(") Time: ") .. os.date("!%X", v.read) })
+        table.insert(result, { text = _(k), mandatory = T(_("Pages (%1) Time: %2"), v.count, os.date("!%X", v.read)) })
     end
 
     return result
