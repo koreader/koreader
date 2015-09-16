@@ -37,6 +37,7 @@ function MultiInputDialog:init()
         input_field[k] = InputText:new{
             text = field.text or "",
             hint = field.hint or "",
+            input_type = field.input_type or "string",
             face = self.input_face,
             width = self.width * 0.9,
             focused = k == 1 and true or false,
