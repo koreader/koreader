@@ -27,6 +27,7 @@ local KOSync = InputContainer:new{
 
 function KOSync:init()
     local settings = G_reader_settings:readSetting("kosync") or {}
+    self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = not (settings.auto_sync == false)
@@ -69,9 +70,26 @@ function KOSync:addToMainMenu(tab_item_table)
                     self:updateProgress()
                     self:getProgress(true)
                 end,
-            }
+            },
+            {
+                text = _("Custom sync server"),
+                tap_input = {
+                    title = _("Custom progress sync server address"),
+                    input = self.kosync_custom_server or "https://",
+                    type = "text",
+                    callback = function(input)
+                        self:setCustomServer(input)
+                    end,
+                },
+            },
         }
     })
+end
+
+function KOSync:setCustomServer(server)
+    DEBUG("set custom server", server)
+    self.kosync_custom_server = server ~= "" and server or nil
+    self:onSaveSettings()
 end
 
 function KOSync:login()
@@ -144,6 +162,7 @@ end
 function KOSync:doRegister(username, password)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
+        custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
     local userkey = md5:sum(password)
@@ -173,6 +192,7 @@ end
 function KOSync:doLogin(username, password)
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
+        custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
     local userkey = md5:sum(password)
@@ -234,6 +254,7 @@ function KOSync:updateProgress()
     if self.kosync_username and self.kosync_userkey then
         local KOSyncClient = require("KOSyncClient")
         local client = KOSyncClient:new{
+            custom_url = self.kosync_custom_server,
             service_spec = self.path .. "/api.json"
         }
         local doc_digest = self.view.document:fastDigest()
@@ -255,6 +276,7 @@ function KOSync:getProgress(manual)
     if self.kosync_username and self.kosync_userkey then
         local KOSyncClient = require("KOSyncClient")
         local client = KOSyncClient:new{
+            custom_url = self.kosync_custom_server,
             service_spec = self.path .. "/api.json"
         }
         local doc_digest = self.view.document:fastDigest()
@@ -291,6 +313,7 @@ end
 
 function KOSync:onSaveSettings()
     local settings = {
+        custom_server = self.kosync_custom_server,
         username = self.kosync_username,
         userkey = self.kosync_userkey,
         auto_sync = self.kosync_auto_sync,
