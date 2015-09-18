@@ -3,6 +3,7 @@ local DEBUG = require("dbg")
 
 local KOSyncClient = {
     service_spec = nil,
+    custom_url = nil,
 }
 
 function KOSyncClient:new(o)
@@ -15,7 +16,9 @@ end
 
 function KOSyncClient:init()
     local Spore = require("Spore")
-    self.client = Spore.new_from_spec(self.service_spec)
+    self.client = Spore.new_from_spec(self.service_spec, {
+        base_url = self.custom_url,
+    })
     package.loaded['Spore.Middleware.GinClient'] = {}
     require('Spore.Middleware.GinClient').call = function(self, req)
         req.headers['accept'] = "application/vnd.koreader.v1+json"

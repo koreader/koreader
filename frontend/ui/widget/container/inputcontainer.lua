@@ -99,6 +99,7 @@ function InputContainer:onInput(input)
     local InputDialog = require("ui/widget/inputdialog")
     self.input_dialog = InputDialog:new{
         title = input.title or "",
+        input = input.input,
         input_hint = input.hint_func and input.hint_func() or input.hint or "",
         input_type = input.type or "number",
         buttons = {
