@@ -64,7 +64,7 @@ end
 
 function ReaderStatistics:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
-        text = _("Statistic"),
+        text = _("Statistics"),
         sub_item_table = {
             self:getStatisticEnabledMenuTable(),
             self:getStatisticSettingsMenuTable(),
@@ -133,7 +133,7 @@ function ReaderStatistics:updateSettings()
                     end
                 },
                 {
-                    text = _("Update"),
+                    text = _("Apply"),
                     callback = function()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
