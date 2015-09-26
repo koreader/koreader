@@ -112,6 +112,11 @@ end
 
 function Kindle4:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/platform/fsl-usb2-udc/charging",
+    }
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_kindle4"),

@@ -11,8 +11,8 @@ local KindlePowerD = BasePowerD:new{
 }
 
 function KindlePowerD:init()
-    local lipc = require("liblipclua")
-    if lipc then
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
     if self.device.hasFrontlight() then

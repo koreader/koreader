@@ -8,9 +8,9 @@ local _ = require("gettext")
 local NetworkMgr = {}
 
 local function kindleEnableWifi(toggle)
-    local lipc = require("liblipclua")
+    local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
-    if lipc then
+    if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
