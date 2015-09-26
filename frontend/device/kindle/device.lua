@@ -79,6 +79,10 @@ local KindlePaperWhite3 = Kindle:new{
 
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        is_charging_file = "/sys/devices/platform/charger/charging",
+    }
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
@@ -90,6 +94,10 @@ end
 
 function KindleDXG:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        is_charging_file = "/sys/devices/platform/charger/charging",
+    }
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
@@ -101,6 +109,11 @@ end
 
 function Kindle3:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        batt_capacity_file = "/sys/devices/system/luigi_battery/luigi_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/platform/fsl-usb2-udc/charging",
+    }
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/kindle/event_map_keyboard"),
