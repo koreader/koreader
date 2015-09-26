@@ -150,7 +150,7 @@ kindleupdate: all
 		koreader/ota/package.index
 	# make gzip kindleupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-kindle-$(MACHINE)-$(VERSION).tar.gz \
+		tar czafh ../koreader-kindle-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index --no-recursion
 
 koboupdate: all
@@ -182,7 +182,7 @@ koboupdate: all
 		koreader/ota/package.index KoboRoot.tgz koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).tar.gz \
+		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index --no-recursion
 
 pbupdate: all
@@ -218,7 +218,7 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).tar.gz \
+		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index --no-recursion
 
 androidupdate: all
