@@ -16,6 +16,7 @@ local Device = {
     -- hardware feature tests: (these are functions!)
     hasKeyboard = no,
     hasKeys = no,
+    hasDPad = no,
     isTouchDevice = no,
     hasFrontlight = no,
 

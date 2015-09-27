@@ -12,23 +12,27 @@ local Kindle2 = Kindle:new{
     model = "Kindle2",
     hasKeyboard = yes,
     hasKeys = yes,
+    hasDPad = yes,
 }
 
 local KindleDXG = Kindle:new{
     model = "KindleDXG",
     hasKeyboard = yes,
     hasKeys = yes,
+    hasDPad = yes,
 }
 
 local Kindle3 = Kindle:new{
     model = "Kindle3",
     hasKeyboard = yes,
     hasKeys = yes,
+    hasDPad = yes,
 }
 
 local Kindle4 = Kindle:new{
     model = "Kindle4",
     hasKeys = yes,
+    hasDPad = yes,
 }
 
 local KindleTouch = Kindle:new{

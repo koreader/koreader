@@ -9,6 +9,7 @@ local Device = Generic:new{
     isEmulator = yes,
     hasKeyboard = yes,
     hasKeys = yes,
+    hasDPad = yes,
     hasFrontlight = yes,
     isTouchDevice = yes,
 }
