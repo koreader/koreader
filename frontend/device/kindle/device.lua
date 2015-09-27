@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local DEBUG = require("dbg")
 
 local function yes() return true end
+local function no() return false end
 
 local Kindle = Generic:new{
     model = "Kindle",
@@ -71,6 +72,7 @@ local KindleVoyage = Kindle:new{
     hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
+    needsScreenRefreshAfterResume = no,
 }
 
 local KindlePaperWhite3 = Kindle:new{
