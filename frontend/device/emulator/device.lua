@@ -3,14 +3,17 @@ local util = require("ffi/util")
 local DEBUG = require("dbg")
 
 local function yes() return true end
+local function no() return false end
 
 local Device = Generic:new{
     model = "Emulator",
     isEmulator = yes,
     hasKeyboard = yes,
     hasKeys = yes,
+    hasDPad = yes,
     hasFrontlight = yes,
     isTouchDevice = yes,
+    needsScreenRefreshAfterResume = no,
 }
 
 function Device:init()

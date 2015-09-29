@@ -4,10 +4,12 @@ local ffi = require("ffi")
 local DEBUG = require("dbg")
 
 local function yes() return true end
+local function no() return false end
 
 local Device = Generic:new{
     model = "Android",
     hasKeys = yes,
+    hasDPad = no,
     isAndroid = yes,
     firmware_rev = "none",
     display_dpi = ffi.C.AConfiguration_getDensity(android.app.config),

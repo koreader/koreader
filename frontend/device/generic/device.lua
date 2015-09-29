@@ -2,6 +2,7 @@ local Event = require("ui/event")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 
+local function yes() return true end
 local function no() return false end
 
 local Device = {
@@ -16,6 +17,7 @@ local Device = {
     -- hardware feature tests: (these are functions!)
     hasKeyboard = no,
     hasKeys = no,
+    hasDPad = no,
     isTouchDevice = no,
     hasFrontlight = no,
 
@@ -33,6 +35,8 @@ local Device = {
     viewport = nil,
     -- enforce portrait orientation on display, no matter how configured at startup
     isAlwaysPortrait = no,
+    -- needs full screen refresh when resumed from screensaver?
+    needsScreenRefreshAfterResume = yes,
 }
 
 function Device:new(o)
@@ -131,7 +135,9 @@ end
 function Device:resume()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
-    self.screen:refreshFull()
+    if self:needsScreenRefreshAfterResume() then
+        self.screen:refreshFull()
+    end
     self.screen_saver_mode = false
     self.powerd:refreshCapacity()
 end
