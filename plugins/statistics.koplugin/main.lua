@@ -309,7 +309,7 @@ end
 --https://gist.github.com/jesseadams/791673
 function ReaderStatistics:secondsToClock(seconds)
     local seconds = tonumber(seconds)
-    if seconds == 0 then
+    if seconds == 0 or seconds ~= seconds then
         return "00:00:00";
     else
         local hours = string.format("%02.f", math.floor(seconds / 3600));
