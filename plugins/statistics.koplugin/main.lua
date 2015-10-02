@@ -228,12 +228,12 @@ function ReaderStatistics:updateCurrentStat()
         dates[os.date("%Y-%m-%d", v.time)] = ""
     end
 
-    table.insert(stats, { text = _("Current period"), mandatory = os.date("!%X", self.current_period) })
-    table.insert(stats, { text = _("Total time"), mandatory = os.date("!%X", self.data.total_time) })
+    table.insert(stats, { text = _("Current period"), mandatory = self:secondsToClock(self.current_period) })
+    table.insert(stats, { text = _("Total time"), mandatory = self:secondsToClock(self.data.total_time) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
     table.insert(stats, { text = _("Total days"), mandatory = tableutil.tablelength(dates) })
-    table.insert(stats, { text = _("Average time per page"), mandatory = os.date("!%X", self.data.total_time / tableutil.tablelength(self.data.details)) })
+    table.insert(stats, { text = _("Average time per page"), mandatory = self:secondsToClock(self.data.total_time / tableutil.tablelength(self.data.details)) })
     table.insert(stats, { text = _("Read pages/Total pages"), mandatory = tableutil.tablelength(self.data.details) .. "/" .. self.data.pages })
     return stats
 end
@@ -261,7 +261,7 @@ function ReaderStatistics:getDatesForBook(book)
 
     table.insert(result, { text = book.title })
     for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date > t[a].date end) do
-        table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, os.date("!%X", v.read)) })
+        table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, self:secondsToClock(v.read)) })
     end
 
     return result
@@ -278,23 +278,24 @@ function ReaderStatistics:updateTotalStat()
             if book_result and book_result.title ~= self.data.title then
                 table.insert(total_stats, {
                     text = book_result.title,
-                    mandatory = os.date("!%X", tonumber(book_result.total_time)),
+                    mandatory = self:secondsToClock(book_result.total_time),
                     callback = function()
                         self.total_status:swithItemTable(nil, self:getDatesForBook(book_result))
                         UIManager:show(self.total_menu)
                         return true
                     end,
                 })
-                total_books_time = total_books_time + book_result.total_time
+                total_books_time = total_books_time + tonumber(book_result.total_time)
             end
         end
     end
     total_books_time = total_books_time + tonumber(self.data.total_time)
-    table.insert(total_stats, 1, { text = _("All time"), mandatory = os.date("!%X", total_books_time) })
+
+    table.insert(total_stats, 1, { text = _("All time"), mandatory = self:secondsToClock(total_books_time) })
     table.insert(total_stats, 2, { text = _("----------------------------------------------------") })
     table.insert(total_stats, 3, {
         text = self.data.title,
-        mandatory = os.date("!%X", tonumber(self.data.total_time)),
+        mandatory = self:secondsToClock(self.data.total_time),
         callback = function()
             self.total_status:swithItemTable(nil, self:getDatesForBook(self.data))
             UIManager:show(self.total_menu)
@@ -303,6 +304,21 @@ function ReaderStatistics:updateTotalStat()
     })
     return total_stats
 end
+
+
+--https://gist.github.com/jesseadams/791673
+function ReaderStatistics:secondsToClock(seconds)
+    local seconds = tonumber(seconds)
+    if seconds == 0 then
+        return "00:00:00";
+    else
+        local hours = string.format("%02.f", math.floor(seconds / 3600));
+        local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)));
+        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60));
+        return hours .. ":" .. mins .. ":" .. secs
+    end
+end
+
 
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
