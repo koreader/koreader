@@ -256,7 +256,10 @@ end
 get first page image
 --]]
 function KoptInterface:getCoverPageImage(doc)
-    local tile = self:renderPage(doc, 1, nil, 1, 0, 1, 0)
+    local native_size = Document.getNativePageDimensions(doc, 1)
+    local screen_size = Screen:getSize()
+    local zoom = math.min(screen_size.w / native_size.w, screen_size.h / native_size.h)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1, 0)
     if tile then
         return tile.bb
     end
