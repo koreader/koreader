@@ -158,6 +158,8 @@ kindleupdate: all
 	cd $(INSTALL_DIR) && zip -u ../koreader-kindle-$(MACHINE)-$(VERSION).zip \
 		koreader/ota/package.index
 	# make gzip kindleupdate for zsync OTA update
+	# note that the targz file extension is intended to keep ISP from caching
+	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-kindle-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index --no-recursion
