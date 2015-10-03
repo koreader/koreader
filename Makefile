@@ -17,15 +17,24 @@ else ifeq ($(TARGET), pocketbook)
 endif
 
 MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
-INSTALL_DIR=koreader-$(MACHINE)
+
+ifdef TARGET
+	DIST:=$(TARGET)
+else
+	DIST:=emulator
+endif
+
+INSTALL_DIR=koreader-$(DIST)-$(MACHINE)
 
 # platform directories
 PLATFORM_DIR=platform
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
+UBUNTUTOUCH_DIR=$(PLATFORM_DIR)/ubuntu-touch
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
+UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
@@ -221,6 +230,46 @@ pbupdate: all
 		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index --no-recursion
 
+utupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any
+	rm -f koreader-ubuntu-touch-$(MACHINE)-$(VERSION).click
+
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.sh $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/manifest.json $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.apparmor $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.png $(INSTALL_DIR)/koreader
+	ln -sf ../../../$(UBUNTUTOUCH_SDL_DIR)/lib/arm-linux-gnueabihf/libSDL2.so $(INSTALL_DIR)/koreader/libs
+
+	# create new package
+	cd $(INSTALL_DIR) && pwd && \
+		zip -9 -r \
+			../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip \
+			koreader -x "koreader/resources/fonts/*" "koreader/ota/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*"
+
+	# generate update package index file
+	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip \
+		koreader/ota/package.index
+	# make gzip update for zsync OTA update
+	cd $(INSTALL_DIR) && \
+		tar czafh ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index --no-recursion
+
+	# generate ubuntu touch click package
+	rm -rf $(INSTALL_DIR)/tmp && mkdir -p $(INSTALL_DIR)/tmp
+	cd $(INSTALL_DIR)/tmp && \
+		unzip ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip && \
+		click build koreader && \
+		mv *.click ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).click
+
+
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
 	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
@@ -230,6 +279,19 @@ androidupdate: all
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) apk
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
+
+update:
+ifeq ($(TARGET), kindle)
+	make kindleupdate
+else ifeq ($(TARGET), kobo)
+	make koboupdate
+else ifeq ($(TARGET), pocketbook)
+	make pbupdate
+else ifeq ($(TARGET), ubuntu-touch)
+	make utupdate
+else ifeq ($(TARGET), android)
+	make androidupdate
+endif
 
 androiddev: androidupdate
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev

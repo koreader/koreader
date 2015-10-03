@@ -2,8 +2,8 @@ local isAndroid, android = pcall(require, "android")
 local util = require("ffi/util")
 
 local function probeDevice()
-    if util.isEmulated() then
-        return require("device/emulator/device")
+    if util.isSDL() then
+        return require("device/sdl/device")
     end
 
     if isAndroid then

@@ -1,8 +1,9 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
-local DocSettings = require("docsettings")
 local NetworkMgr = require("ui/networkmgr")
+local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Event = require("ui/event")
@@ -18,7 +19,7 @@ local EvernoteExporter = InputContainer:new{
     notebook_name = _("Koreader Notes"),
     evernote_domain = nil,
     notemarks = _("Note: "),
-    clipping_dir = "./clipboard",
+    clipping_dir = DataStorage:getDataDir() .. "/clipboard",
 
     evernote_token,
     notebook_guid,

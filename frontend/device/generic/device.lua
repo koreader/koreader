@@ -29,7 +29,7 @@ local Device = {
     isKobo = no,
     isPocketBook = no,
     isAndroid = no,
-    isEmulator = no,
+    isSDL = no,
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,

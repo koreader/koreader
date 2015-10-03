@@ -1,10 +1,13 @@
 local lfs = require("libs/libkoreader-lfs")
-local DocSettings = {}
-local dump = require("dump")
 local DataStorage = require("datastorage")
+local dump = require("dump")
+
+local DocSettings = {}
+
+local history_dir = DataStorage:getDataDir() .. "/history/"
 
 function DocSettings:getHistoryPath(fullpath)
-    return "./history/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return history_dir .. "[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
@@ -29,9 +32,6 @@ function DocSettings:open(docfile)
         -- we handle reader setting as special case
         history_path = DataStorage:getDataDir() .. "/settings.reader.lua"
     else
-        if lfs.attributes("./history", "mode") ~= "directory" then
-            lfs.mkdir("history")
-        end
         history_path = self:getHistoryPath(docfile)
 
         local sidecar = docfile:match("(.*)%.")..".sdr"

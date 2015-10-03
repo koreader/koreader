@@ -75,7 +75,7 @@ and cross compiling.
 
 Users of Debian and Ubuntu can install the required packages using:
 ```
-sudo apt-get install build-essential libtool gcc-multilib libffi-dev \
+sudo apt-get install build-essential libtool gcc-multilib libffi-dev linux-libc-dev:i386 \
 patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev luarocks
 ```
 

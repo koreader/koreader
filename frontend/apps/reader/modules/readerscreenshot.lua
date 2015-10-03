@@ -1,15 +1,18 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InfoMessage = require("ui/widget/infomessage")
+local GestureRange = require("ui/gesturerange")
+local DataStorage = require("datastorage")
+local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = require("device").screen
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
+local screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
+
 local ReaderScreenshot = InputContainer:new{
-    datetime_name = "screenshots/Screenshot_%Y-%b-%d_%H%M%S.png",
+    datetime_name = screenshots_dir .. "Screenshot_%Y-%b-%d_%H%M%S.png",
 }
 
 function ReaderScreenshot:init()

@@ -1,0 +1,15 @@
+{
+    "architecture": "armhf",
+    "description": "An ebook reader application supports PDF, DJVU, EPUB, FB2 and much more, running on Kindle, Kobo, PocketBook, Ubuntu touch and Android devices",
+    "framework": "ubuntu-sdk-14.10",
+    "hooks": {
+        "koreader": {
+            "apparmor": "koreader.apparmor",
+            "desktop": "koreader.desktop"
+        }
+    },
+    "maintainer": "Huang Xin <chrox.huang@gmail.com>",
+    "name": "org.koreader.koreader",
+    "title": "Koreader for Ubuntu touch",
+    "version": "0.0.1"
+}
