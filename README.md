@@ -83,7 +83,7 @@ Cross compile toolchains are available for Ubuntu users through these commands:
 ```
 # for Kindle
 sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
-# for Kobo
+# for Kobo and Ubuntu touch
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 # for Win32
 sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
@@ -111,17 +111,17 @@ make fetchthirdparty
 Building & Running & Testing
 ========
 
-For real eink devices
+For real reader devices
 ---------------------
 
 To build installable package for Kindle:
 ```
-make TARGET=kindle clean kindleupdate
+make TARGET=kindle clean update
 ```
 
 To build installable package for Kobo:
 ```
-make TARGET=kobo clean koboupdate
+make TARGET=kobo clean update
 ```
 
 To build installable package for PocketBook you need first to obtain the SDK
@@ -131,7 +131,12 @@ make pocketbook-toolchain
 ```
 then similarly with Kindle and Kobo building run this command:
 ```
-make TARGET=pocketbook clean pbupdate
+make TARGET=pocketbook clean update
+```
+
+To build installable package for Ubuntu touch
+```
+make TARGET=ubuntu-touch clean update
 ```
 
 To run, you must call the script `reader.lua`. Run it without arguments to see
@@ -174,7 +179,7 @@ make TARGET=win32 clean && make TARGET=win32
 To run koreader on your developing machine
 (you may need to change $(MACHINE) to the arch of your machine such as 'x86_64'):
 ```
-cd koreader-$(MACHINE)/koreader && ./reader.lua -d ../../test
+cd koreader-emulator-$(MACHINE)/koreader && ./reader.lua -d ../../test
 ```
 
 To run unit tests in KOReader:
