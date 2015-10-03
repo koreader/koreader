@@ -3,6 +3,7 @@ local Document = require("document/document")
 local Configurable = require("configurable")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = require("device").screen
@@ -44,7 +45,7 @@ function CreDocument:cacheInit()
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
     end
-    cre.initCache("./cache/cr3cache", 1024*1024*32)
+    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32)
 end
 
 function CreDocument:engineInit()

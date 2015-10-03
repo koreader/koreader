@@ -39,8 +39,10 @@ end
 function Dbg:logEv(ev)
     local log = ev.type.."|"..ev.code.."|"
                 ..ev.value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
-    self.ev_log:write(log)
-    self.ev_log:flush()
+    if self.ev_log then
+        self.ev_log:write(log)
+        self.ev_log:flush()
+    end
 end
 
 function Dbg:traceback()

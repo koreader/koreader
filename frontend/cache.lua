@@ -3,6 +3,7 @@ A global LRU cache
 ]]--
 local md5 = require("MD5")
 local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
 
 local function calcFreeMem()
@@ -30,7 +31,7 @@ local function calcCacheMemSize()
     return math.min(max, math.max(min, calc))
 end
 
-local cache_path = lfs.currentdir().."/cache/"
+local cache_path = DataStorage:getDataDir() .. "/cache/"
 
 --[[
 -- return a snapshot of disk cached items for subsequent check

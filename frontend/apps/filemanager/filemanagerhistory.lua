@@ -2,13 +2,14 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local _ = require("gettext")
 
-local history_dir = "./history/"
+local history_dir = DataStorage:getDataDir() .. "/history/"
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),

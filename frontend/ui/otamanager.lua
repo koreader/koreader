@@ -2,11 +2,14 @@ local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/networkmgr")
 local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
+
+local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
 local OTAManager = {
     ota_servers = {
@@ -19,9 +22,9 @@ local OTAManager = {
         "nightly",
     },
     zsync_template = "koreader-%s-latest-%s.zsync",
-    installed_package = "ota/koreader.installed.tar",
+    installed_package = ota_dir .. "/koreader.installed.tar",
     package_indexfile = "ota/package.index",
-    updated_package = "ota/koreader.updated.tar",
+    updated_package = ota_dir .. "/koreader.updated.tar",
 }
 
 local ota_channels = {
@@ -69,7 +72,7 @@ function OTAManager:checkUpdate()
 
     local zsync_file = self:getZsyncFilename()
     local ota_zsync_file = self:getOTAServer() .. zsync_file
-    local local_zsync_file = "ota/" .. zsync_file
+    local local_zsync_file = ota_dir .. zsync_file
     -- download zsync file from OTA server
     DEBUG("downloading zsync file", ota_zsync_file)
     local r, c, h = http.request{
@@ -146,7 +149,7 @@ function OTAManager:fetchAndProcessUpdate()
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
                             ok_callback = function()
-                                os.execute("rm ota/ko*")
+                                os.execute("rm " .. ota_dir .. "/ko*")
                             end,
                         })
                     end
@@ -172,7 +175,7 @@ function OTAManager:zsync()
         return os.execute(string.format(
         "./zsync -i %s -o %s -u %s %s",
         self.installed_package, self.updated_package,
-        self:getOTAServer(), "ota/" .. self:getZsyncFilename()
+        self:getOTAServer(), ota_dir .. self:getZsyncFilename()
         ))
     end
 end

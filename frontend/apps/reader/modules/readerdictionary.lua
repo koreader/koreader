@@ -1,6 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
+local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Device = require("device")
@@ -15,11 +16,8 @@ local ReaderDictionary = InputContainer:new{
 
 function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
-    if Device:isAndroid() then
-        self.data_dir = "/sdcard/koreader/data/dict"
-    else
-        self.data_dir = os.getenv("STARDICT_DATA_DIR") or "data/dict"
-    end
+    self.data_dir = os.getenv("STARDICT_DATA_DIR") or
+        DataStorage:getDataDir() .. "/data/dict"
 end
 
 function ReaderDictionary:addToMainMenu(tab_item_table)

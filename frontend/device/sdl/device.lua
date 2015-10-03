@@ -6,8 +6,8 @@ local function yes() return true end
 local function no() return false end
 
 local Device = Generic:new{
-    model = "Emulator",
-    isEmulator = yes,
+    model = "SDL",
+    isSDL = yes,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -32,13 +32,13 @@ function Device:init()
         self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = DEBUG}
         self.input = require("device/input"):new{
             device = self,
-            event_map = require("device/emulator/event_map_sdl2"),
+            event_map = require("device/sdl/event_map_sdl2"),
         }
     else
         self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self, debug = DEBUG}
         self.input = require("device/input"):new{
             device = self,
-            event_map = require("device/emulator/event_map_sdl"),
+            event_map = require("device/sdl/event_map_sdl"),
         }
     end
 

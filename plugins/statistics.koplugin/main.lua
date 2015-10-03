@@ -12,8 +12,9 @@ local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local tableutil = require("tableutil")
+local DataStorage = require("datastorage")
 
-local statistics_dir = "./statistics"
+local statistics_dir = DataStorage:getDataDir() .. "/statistics"
 
 local ReaderStatistics = InputContainer:new {
     last_time = nil,
@@ -382,7 +383,7 @@ end
 function ReaderStatistics:importFromFile(item)
     item = string.gsub(item, "^%s*(.-)%s*$", "%1") --trim
     if lfs.attributes(statistics_dir, "mode") ~= "directory" then
-        lfs.mkdir("statistics")
+        lfs.mkdir(statistics_dir)
     end
     local statisticFile = statistics_dir .. "/" .. item
     local ok, stored = pcall(dofile, statisticFile)
