@@ -59,7 +59,7 @@ local function is_follow_links_on()
 end
 
 local function swipe_to_go_back()
-    return G_reader_settings:readSetting("swipe_to_go_back") ~= false
+    return G_reader_settings:readSetting("swipe_to_go_back") == true
 end
 
 function ReaderLink:addToMainMenu(tab_item_table)
