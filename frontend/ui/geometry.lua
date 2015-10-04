@@ -1,3 +1,4 @@
+local Math = require("optmath")
 local DEBUG = require("dbg")
 
 --[[
@@ -62,8 +63,8 @@ scale rectangle (grow to bottom and to the right) or dimension
 if a single factor is given, it is applied to both width and height
 ]]--
 function Geom:scaleBy(zx, zy)
-    self.w = self.w * zx
-    self.h = self.h * (zy or zx)
+    self.w = Math.round(self.w * zx)
+    self.h = Math.round(self.h * (zy or zx))
     return self
 end
 
@@ -71,8 +72,8 @@ end
 this method also takes care of x and y
 ]]--
 function Geom:transformByScale(zx, zy)
-    self.x = self.x * zx
-    self.y = self.y * (zx or zy)
+    self.x = Math.round(self.x * zx)
+    self.y = Math.round(self.y * (zx or zy))
     self:scaleBy(zx, zy)
 end
 
@@ -327,8 +328,8 @@ return the midpoint of two geoms
 ]]--
 function Geom:midpoint(geom)
     return Geom:new{
-        x = (self.x + geom.x) / 2,
-        y = (self.y + geom.y) / 2,
+        x = Math.round((self.x + geom.x) / 2),
+        y = Math.round((self.y + geom.y) / 2),
         w = 0, h = 0,
     }
 end
@@ -338,8 +339,8 @@ return center point in this geom
 ]]--
 function Geom:center()
     return Geom:new{
-        x = self.x + self.w / 2,
-        y = self.y + self.h / 2,
+        x = self.x + Math.round(self.w / 2),
+        y = self.y + Math.round(self.h / 2),
         w = 0, h = 0,
     }
 end

@@ -24,11 +24,7 @@ end
 function ReaderWikipedia:onLookupWikipedia(word, box)
     -- detect language of the text
     local ok, lang = pcall(Translator.detect, Translator, word)
-    -- prompt users to turn on Wifi if network is unreachable
-    if not ok and lang and lang:find("Network is unreachable") then
-        NetworkMgr:promptWifiOn()
-        return
-    end
+    if not ok then return end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
     -- strip punctuation characters around selected word
