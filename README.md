@@ -4,12 +4,12 @@
 KOReader
 ========
 
-[![Join the chat at https://gitter.im/koreader/koreader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat][gitter-badge]][gitter-link]
 
 KOReader is a document viewer application, originally created for Kindle
-e-ink readers. It currently runs on Kindle 5 (Touch), Kindle Paperwhite,
-Kobo, PocketBook and Android (2.3+) devices. Developers can also run Koreader emulator
-for development purpose on desktop PC with Linux or Windows operating system.
+e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
+and Android (2.3+) devices. Developers can also run Koreader emulator
+for development purpose on desktop PC with Linux and Windows operating system.
 
 Main features for users
 -----------------------
@@ -67,7 +67,7 @@ These instructions for how to get and compile the source are intended for a Linu
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
-`subversion`, `cmake` and `luarocks` installed, as well as a version of `autoconf`
+`cmake` and `luarocks` installed, as well as a version of `autoconf`
 greater than 2.64. You also need `nasm` and of course a compiler like `gcc`
 or `clang`. If you want to cross-compile for other architectures, you need a proper
 cross-compile toolchain. Your GCC should be at least of version 4.7 for both native
@@ -75,9 +75,11 @@ and cross compiling.
 
 Users of Debian and Ubuntu can install the required packages using:
 ```
-sudo apt-get install build-essential libtool gcc-multilib libffi-dev linux-libc-dev:i386 \
-patch wget unzip git autoconf subversion cmake nasm libsdl1.2-dev luarocks
+sudo apt-get install build-essential git patch wget unzip \
+autoconf cmake libtool nasm luarocks \
+libssl-dev libffi-dev libsdl2-dev linux-libc-dev:i386
 ```
+Note that the `linux-libc-dev:i386` package is only necessary for x86_64 machines.
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 ```
@@ -95,9 +97,15 @@ Koreader for Android devices.
 sudo apt-get install ant
 ```
 
+In order to build Koreader package for Ubuntu Touch, the `click` package management
+tool is needed, Ubuntu users can install it with:
+```
+sudo apt-get install click
+```
+
 You might also need SDL library packages if you want to compile and run
-koreader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
-Ubuntu users probably need to install `libsdl1.2-dev` package:
+Koreader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
+Ubuntu users probably need to install `libsdl2-dev` package:
 
 Getting the source
 ========
@@ -134,7 +142,7 @@ then similarly with Kindle and Kobo building run this command:
 make TARGET=pocketbook clean update
 ```
 
-To build installable package for Ubuntu touch
+To build installable package for Ubuntu Touch
 ```
 make TARGET=ubuntu-touch clean update
 ```
@@ -176,7 +184,7 @@ If you want to compile the emulator for Windows you need to run:
 make TARGET=win32 clean && make TARGET=win32
 ```
 
-To run koreader on your developing machine
+To run Koreader on your developing machine
 (you may need to change $(MACHINE) to the arch of your machine such as 'x86_64'):
 ```
 cd koreader-emulator-$(MACHINE)/koreader && ./reader.lua -d ../../test
@@ -276,3 +284,5 @@ http://ccache.samba.org
 [coverage-badge]:https://coveralls.io/repos/koreader/koreader/badge.svg
 [coverage-link]:https://coveralls.io/r/koreader/koreader
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
+[gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
+[gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
