@@ -206,6 +206,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         -- If kctx is not cached, create one and get reflowed bmp in foreground.
         local kc = self:createContext(doc, pageno, bbox)
         local page = doc._document:openPage(pageno)
+        DEBUG("reflowing page", pageno, "in foreground")
         -- reflow page
         --local secs, usecs = util.gettime()
         page:reflow(kc, 0)

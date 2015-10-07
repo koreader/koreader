@@ -21,3 +21,30 @@ Input.dummy = true
 -- turn on debug
 local DEBUG = require("dbg")
 --DEBUG:turnOn()
+
+function assertAlmostEquals(expected, actual, margin)
+    if type(actual) ~= 'number' or type(expected) ~= 'number'
+        or type(margin) ~= 'number' then
+        error('assertAlmostEquals: must supply only number arguments.', 2)
+    end
+
+    assert(math.abs(expected - actual) <= margin,
+        'Values are not almost equal\n'
+            .. 'Expected: ' .. expected .. ' with margin of ' .. margin
+            .. ', received: ' .. actual
+    )
+end
+
+function assertNotAlmostEquals(expected, actual, margin)
+    if type(actual) ~= 'number' or type(expected) ~= 'number'
+        or type(margin) ~= 'number' then
+        error('assertAlmostEquals: must supply only number arguments.', 2)
+    end
+
+    assert(math.abs(expected - actual) > margin,
+        'Values are almost equal\n'
+            .. 'Expected: ' .. expected .. ' with margin of ' .. margin
+            .. ', received: ' .. actual
+    )
+end
+
