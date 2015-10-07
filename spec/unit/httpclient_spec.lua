@@ -1,6 +1,5 @@
 require("commonrequire")
 local UIManager = require("ui/uimanager")
-local HTTPClient = require("httpclient")
 local DEBUG = require("dbg")
 --DEBUG:turnOn()
 
@@ -15,8 +14,9 @@ describe("HTTP client module #notest #nocov", function()
         assert(not res.error, "error occurs")
         assert(res.body)
     end
-    local async_client = HTTPClient:new()
     it("should get response from async GET request", function()
+        local HTTPClient = require("httpclient")
+        local async_client = HTTPClient:new()
         UIManager:quit()
         local urls = {
             "http://www.example.com",
