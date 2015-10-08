@@ -32,17 +32,17 @@ function PdfDocument:init()
         self:_readMetadata()
     end
     if not (self.info.number_of_pages > 0) then
-        error("No page found in PDF file")
+        --error("No page found in PDF file")
     end
 end
 
 function PdfDocument:unlock(password)
     if not self._document:authenticatePassword(password) then
-        self._document:close()
-        return false, "wrong password"
+        return false
     end
     self.is_locked = false
-    return self:_readMetadata()
+    self:_readMetadata()
+    return true
 end
 
 function PdfDocument:getPageTextBoxes(pageno)

@@ -60,6 +60,7 @@ function InputDialog:init()
         face = self.input_face,
         width = self.width * 0.9,
         input_type = self.input_type,
+        text_type = self.text_type,
         enter_callback = self.enter_callback,
         scroll = false,
         parent = self,

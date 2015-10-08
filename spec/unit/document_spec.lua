@@ -13,6 +13,12 @@ describe("PDF document module", function()
         assert.are.same(dimen.w, 567)
         assert.are.same(dimen.h, 1418)
     end)
+    it("should get cover image", function()
+        local image = doc:getCoverPageImage()
+        assert.truthy(image)
+        assert.are.same(320, image:getWidth())
+        assert.are.same(800, image:getHeight())
+    end)
     local pos0 = {page = 1, x = 0, y = 20}
     local pos1 = {page = 1, x = 300, y = 120}
     local pboxes = {

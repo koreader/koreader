@@ -102,14 +102,14 @@ $(INSTALL_DIR)/koreader/.luacov:
 		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
 
 testfront: $(INSTALL_DIR)/koreader/.busted
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) --exclude-tags=notest
+	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) -o verbose_print --exclude-tags=notest
 
 test:
 	$(MAKE) -C $(KOR_BASE) test
 	$(MAKE) testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) --coverage --exclude-tags=nocov
+	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) -o verbose_print --coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
@@ -241,6 +241,7 @@ utupdate: all
 	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(UBUNTUTOUCH_DIR)/manifest.json $(INSTALL_DIR)/koreader
 	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.apparmor $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.apparmor.openstore $(INSTALL_DIR)/koreader
 	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
 	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.png $(INSTALL_DIR)/koreader
 	ln -sf ../../../$(UBUNTUTOUCH_SDL_DIR)/lib/arm-linux-gnueabihf/libSDL2.so $(INSTALL_DIR)/koreader/libs

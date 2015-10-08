@@ -1,6 +1,5 @@
 require("commonrequire")
 local UIManager = require("ui/uimanager")
-local HTTPClient = require("httpclient")
 local DEBUG = require("dbg")
 local md5 = require("MD5")
 --DEBUG:turnOn()
@@ -58,6 +57,7 @@ local service = [[
 ]]
 
 describe("KOSync modules #notest #nocov", function()
+    local HTTPClient = require("httpclient")
     local Spore = require("Spore")
     local client = Spore.new_from_string(service)
     package.loaded['Spore.Middleware.GinClient'] = {}

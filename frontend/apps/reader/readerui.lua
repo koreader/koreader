@@ -1,6 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local lfs = require("libs/libkoreader-lfs")
 local DocSettings = require("docsettings")
@@ -321,7 +322,13 @@ function ReaderUI:showReader(file)
         text = T( _("Opening file '%1'."), file),
         timeout = 0.1,
     })
-    UIManager:scheduleIn(0.1, function() self:doShowReader(file) end)
+    UIManager:scheduleIn(0.1, function()
+        DEBUG("creating coroutine for showing reader")
+        local co = coroutine.create(function()
+            self:doShowReader(file)
+        end)
+        coroutine.resume(co)
+    end)
 end
 
 local running_instance = nil
@@ -338,6 +345,17 @@ function ReaderUI:doShowReader(file)
         })
         return
     end
+    if document.is_locked then
+        DEBUG("document is locked")
+        self._coroutine = coroutine.running() or self._coroutine
+        self:unlockDocumentWithPassword(document)
+        if coroutine.running() then
+            local unlock_success = coroutine.yield()
+            if not unlock_success then
+                return
+            end
+        end
+    end
 
     G_reader_settings:saveSetting("lastfile", file)
     local reader = ReaderUI:new{
@@ -346,6 +364,54 @@ function ReaderUI:doShowReader(file)
     }
     UIManager:show(reader)
     running_instance = reader
+end
+
+function ReaderUI:unlockDocumentWithPassword(document, try_again)
+    DEBUG("show input password dialog")
+    self.password_dialog = InputDialog:new{
+        title = try_again and _("Password is incorrect, try again?")
+            or _("Input document password"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    enabled = true,
+                    callback = function()
+                        self:closeDialog()
+                        coroutine.resume(self._coroutine)
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    enabled = true,
+                    callback = function()
+                        local success = self:onVerifyPassword(document)
+                        self:closeDialog()
+                        if success then
+                            coroutine.resume(self._coroutine, success)
+                        else
+                            self:unlockDocumentWithPassword(document, true)
+                        end
+                    end,
+                },
+            },
+        },
+        text_type = "password",
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.2,
+    }
+    self.password_dialog:onShowKeyboard()
+    UIManager:show(self.password_dialog)
+end
+
+function ReaderUI:onVerifyPassword(document)
+    local password = self.password_dialog:getInputText()
+    return document:unlock(password)
+end
+
+function ReaderUI:closeDialog()
+    self.password_dialog:onClose()
+    UIManager:close(self.password_dialog)
 end
 
 function ReaderUI:onSetDimensions(dimen)
