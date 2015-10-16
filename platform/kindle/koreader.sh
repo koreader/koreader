@@ -261,8 +261,14 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 		#lipc-set-prop com.lab126.pillow disableEnablePillow enable
 		logmsg "Restoring the status bar . . ."
 		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
-		# Poke the search bar too, so that we get a proper refresh ;)
-		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "search_bar", "function": "nativeBridge.hideMe(); nativeBridge.showMe();"}'
+		# And now we want to poke something to refresh the UI...
+		if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ] ; then
+			# FIXME: The old search_bar method doesn't seem to work anymore since FW 5.6.5... Get at least the homescreen back. We're still missing the men :/.
+			lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
+		else
+			# Poke the search bar too, so that we get a proper refresh ;)
+			lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "search_bar", "function": "nativeBridge.hideMe(); nativeBridge.showMe();"}'
+		fi
 	fi
 fi
 
