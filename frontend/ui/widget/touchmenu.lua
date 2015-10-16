@@ -381,6 +381,8 @@ function TouchMenu:init()
     }
 
     self.bar:switchToTab(self.last_index or 1)
+    -- Make sure we always show an up to date battery status when first opening the menu...
+    Device:getPowerDevice():refreshCapacity()
     self:updateItems()
 end
 

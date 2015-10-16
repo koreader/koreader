@@ -74,7 +74,8 @@ function BasePowerD:getCapacity()
 end
 
 function BasePowerD:refreshCapacity()
-    self:getCapacityHW()
+    -- We want our next getCapacity call to actually pull up to date info instead of a cached value ;)
+    self.capacity_pulled_count = self.capacity_cached_count
 end
 
 function BasePowerD:isCharging()
