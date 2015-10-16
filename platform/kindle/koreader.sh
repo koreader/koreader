@@ -41,7 +41,8 @@ if [ "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # Keep track of what we do with pillow...
-PILLOW_DISABLED="no"
+PILLOW_HARD_DISABLED="no"
+PILLOW_SOFT_DISABLED="no"
 
 # Keep track of if we were started through KUAL
 FROM_KUAL="no"
@@ -177,12 +178,18 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
 	if [ "$count" == "" -o "$count" == "0" ] ; then
-		#logmsg "Disabling pillow . . ."
-		#lipc-set-prop com.lab126.pillow disableEnablePillow disable
-		logmsg "Hiding the status bar . . ."
-		# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
-		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
-		PILLOW_DISABLED="yes"
+		# NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
+		if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ] ; then
+			# FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
+			logmsg "Disabling pillow . . ."
+			lipc-set-prop com.lab126.pillow disableEnablePillow disable
+			PILLOW_HARD_DISABLED="yes"
+		else
+			logmsg "Hiding the status bar . . ."
+			# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
+			lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
+			PILLOW_SOFT_DISABLED="yes"
+		fi
 		if [ "${NO_SLEEP}" == "no" ] ; then
 			# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing the title bar
 			usleep 250000
@@ -253,16 +260,16 @@ if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
 	fi
 fi
 
-# display chrome bar (upstart & framework up only)
+# Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
-	# Only if we actually killed it...
-	if [ "${PILLOW_DISABLED}" == "yes" ] ; then
-		#logmsg "Enabling pillow . . ."
-		#lipc-set-prop com.lab126.pillow disableEnablePillow enable
+	# Depending on the FW version, we may have handled things in two different manners...
+	if [ "${PILLOW_HARD_DISABLED}" == "yes" ] ; then
+		logmsg "Enabling pillow . . ."
+		lipc-set-prop com.lab126.pillow disableEnablePillow enable
+	fi
+	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
 		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
-		# Poke the search bar too, so that we get a proper refresh ;)
-		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "search_bar", "function": "nativeBridge.hideMe(); nativeBridge.showMe();"}'
 	fi
 fi
 
