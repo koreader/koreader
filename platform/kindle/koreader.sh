@@ -41,7 +41,8 @@ if [ "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # Keep track of what we do with pillow...
-PILLOW_DISABLED="no"
+PILLOW_HARD_DISABLED="no"
+PILLOW_SOFT_DISABLED="no"
 
 # Keep track of if we were started through KUAL
 FROM_KUAL="no"
