@@ -309,6 +309,7 @@ pot:
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \
+		`find utils -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 	# push source file to Transifex
 	$(MAKE) -i -C l10n bootstrap push
