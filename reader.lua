@@ -112,7 +112,7 @@ if G_reader_settings:readSetting("night_mode") then
     Screen:toggleNightMode()
 end
 
--- restore kobo frontlight settings
+-- restore kobo frontlight settings and probe kobo touch coordinates
 if Device:isKobo() then
     local powerd = Device:getPowerDevice()
     if powerd and powerd.restore_settings then
@@ -120,6 +120,9 @@ if Device:isKobo() then
         intensity = intensity or powerd.flIntensity
         powerd:setIntensityWithoutHW(intensity)
         -- powerd:setIntensity(intensity)
+    end
+    if Device:getCodeName() == "trilogy" then
+        require("utils/kobo_touch_proble")
     end
 end
 

@@ -38,7 +38,7 @@ UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n \
+INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n utils \
 		git-rev README.md COPYING
 
 # for gettext
