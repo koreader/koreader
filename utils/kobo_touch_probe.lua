@@ -1,5 +1,5 @@
 -- touch probe utility
--- usage: ./luajit util/kobo_touch_proble.lua
+-- usage: ./luajit util/kobo_touch_probe.lua
 
 require "defaults"
 package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path

@@ -122,7 +122,7 @@ if Device:isKobo() then
         -- powerd:setIntensity(intensity)
     end
     if Device:getCodeName() == "trilogy" then
-        require("utils/kobo_touch_proble")
+        require("utils/kobo_touch_probe")
     end
 end
 
