@@ -421,8 +421,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 if type(entry.title) == "string" then
                     title = entry.title
                 elseif type(entry.title) == "table" then
-                    if entry.title.type == "text/xhtml" then
-                        title = entry.title.div or title
+                    if type(entry.title.type) == "string" and entry.title.div ~= "" then
+                        title = entry.title.div
                     end
                 end
                 if title == "Unknown" then
