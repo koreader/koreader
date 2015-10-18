@@ -79,6 +79,17 @@ function DictQuickLookup:init()
                     }
                 },
             },
+            HoldWord = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = function() return self.dimen end,
+                },
+                -- callback function when HoldWord is handled as args
+                args = function(word)
+                    self.ui:handleEvent(Event:new("LookupWord",
+                        word, self.word_box))
+                end
+            },
         }
         table.insert(self.dict_bar,
             CloseButton:new{

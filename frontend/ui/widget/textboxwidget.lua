@@ -1,9 +1,14 @@
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
+local GestureRange = require("ui/gesturerange")
 local RenderText = require("ui/rendertext")
+local UIManager = require("ui/uimanager")
+local Device = require("device")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
+local DEBUG = require("dbg")
 
 --[[
 A TextWidget that handles long text wrapping
@@ -31,14 +36,21 @@ function TextBoxWidget:init()
         v_list = self:_getVerticalList()
     end
     self:_render(v_list)
+    self.dimen = Geom:new(self:getSize())
 end
 
 function TextBoxWidget:_wrapGreedyAlg(h_list)
+    local line_height = (1 + self.line_height) * self.face.size
     local cur_line_width = 0
     local cur_line = {}
     local v_list = {}
 
     for k,w in ipairs(h_list) do
+        w.box = {
+            x = cur_line_width,
+            w = w.width,
+            h = line_height,
+        }
         cur_line_width = cur_line_width + w.width
         if w.word == "\n" then
             if cur_line_width > 0 then
@@ -164,6 +176,7 @@ function TextBoxWidget:_getNextVerticalList()
 end
 
 function TextBoxWidget:_render(v_list)
+    self.rendering_vlist = v_list
     local font_height = self.face.size
     local line_height_px = self.line_height * font_height
     local space_w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
@@ -175,6 +188,7 @@ function TextBoxWidget:_render(v_list)
     for _,l in ipairs(v_list) do
         pen_x = 0
         for _,w in ipairs(l) do
+            w.box.y = y - line_height_px - font_height
             --@TODO Don't use kerning for monospaced fonts.    (houqp)
             -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
             RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true, self.bold, self.fgcolor)
@@ -223,6 +237,7 @@ function TextBoxWidget:getSize()
 end
 
 function TextBoxWidget:paintTo(bb, x, y)
+    self.dimen.x, self.dimen.y = x, y
     bb:blitFrom(self._bb, x, y, 0, 0, self.width, self._bb:getHeight())
 end
 
@@ -231,6 +246,24 @@ function TextBoxWidget:free()
         self._bb:free()
         self._bb = nil
     end
+end
+
+function TextBoxWidget:onHoldWord(callback, ges)
+    local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
+    for _, l in ipairs(self.rendering_vlist) do
+        for _, w in ipairs(l) do
+            local box = w.box
+            if x > box.x and x < box.x + box.w and
+                y > box.y and y < box.y + box.h then
+                DEBUG("found word", w, "at", x, y)
+                if callback then
+                    callback(w.word)
+                end
+                break
+            end
+        end
+    end
+    return true
 end
 
 return TextBoxWidget
