@@ -38,7 +38,7 @@ UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n \
+INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n utils \
 		git-rev README.md COPYING
 
 # for gettext
@@ -309,6 +309,7 @@ pot:
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \
+		`find utils -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 	# push source file to Transifex
 	$(MAKE) -i -C l10n bootstrap push

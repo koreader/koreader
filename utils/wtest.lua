@@ -3,8 +3,8 @@
 
 require "defaults"
 print(package.path)
-package.path = "?.lua;common/?.lua;frontend/?.lua"
-package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so"
+package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
+package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
 local DocSettings = require("docsettings")
 local _ = require("gettext")
