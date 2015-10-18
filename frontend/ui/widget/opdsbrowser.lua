@@ -428,8 +428,13 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 if title == "Unknown" then
                     DEBUG("Cannot handle title", entry.title)
                 end
+                local author = "Unknown Author"
+                if type(entry.author) == "table" and entry.author.name then
+                    author = entry.author.name
+                end
                 item.text = title
                 item.title = title
+                item.author = author
                 item.id = entry.id
                 item.content = entry.content
                 item.updated = entry.updated
@@ -462,11 +467,11 @@ function OPDSBrowser:appendCatalog(url)
     return true
 end
 
-function OPDSBrowser:downloadFile(title, format, remote_url)
+function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
     local lastdir = G_reader_settings:readSetting("lastdir")
     local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
-    local local_path = download_dir .. "/" .. title .. "." .. string.lower(format)
+    local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     DEBUG("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
@@ -510,7 +515,7 @@ function OPDSBrowser:showDownloads(item)
                     button.text = format
                     button.callback = function()
                         UIManager:scheduleIn(1, function()
-                            self:downloadFile(item.title, format, acquisition.href)
+                            self:downloadFile(item, format, acquisition.href)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
