@@ -83,23 +83,25 @@ function Font:getFace(font, size)
 end
 
 function checkfont(f)
-    local exclusive_system_font = {
-    --these kindle system fonts can not be used by freetype and will give error
-        "HYGothicBold.ttf",
-        "HYGothicMedium.ttf",
-        "HYMyeongJoBold.ttf",
-        "HYMyeongJoMedium.ttf",
-        "MYingHeiTBold.ttf",
-        "MYingHeiTMedium.ttf",
-        "SongTBold.ttf",
-        "SongTMedium.ttf"
-        }
-    for _,value in ipairs(exclusive_system_font) do
-        if value == f then
-            return true
+    if Device:isKindle() then
+        local exclusive_system_font = {
+        --these kindle system fonts can not be used by freetype and will give error
+            "HYGothicBold.ttf",
+            "HYGothicMedium.ttf",
+            "HYMyeongJoBold.ttf",
+            "HYMyeongJoMedium.ttf",
+            "MYingHeiTBold.ttf",
+            "MYingHeiTMedium.ttf",
+            "SongTBold.ttf",
+            "SongTMedium.ttf"
+            }
+        for _,value in ipairs(exclusive_system_font) do
+            if value == f then
+                return true
+            end
         end
+    else return false
     end
-    return false
 end
 
 function Font:_readList(target, dir)
