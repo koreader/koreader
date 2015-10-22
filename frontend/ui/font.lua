@@ -47,7 +47,6 @@ local Font = {
     faces = {},
 }
 
-
 function Font:getFace(font, size)
     -- default to content font
     if not font then font = self.cfont end
@@ -82,25 +81,23 @@ function Font:getFace(font, size)
     return face_obj
 end
 
-function checkfont(f)
+--[[
+    These fonts from Kindle system cannot be loaded by Freetype.
+--]]
+local kindle_fonts_blacklist = {
+    ["HYGothicBold.ttf"] = true,
+    ["HYGothicMedium.ttf"] = true,
+    ["HYMyeongJoBold.ttf"] = true,
+    ["HYMyeongJoMedium.ttf"] = true,
+    ["MYingHeiTBold.ttf"] = true,
+    ["MYingHeiTMedium.ttf"] = true,
+    ["SongTBold.ttf"] = true,
+    ["SongTMedium.ttf"] = true,
+}
+
+local function isInFontsBlacklist(f)
     if Device:isKindle() then
-        local exclusive_system_font = {
-        --these kindle system fonts can not be used by freetype and will give error
-            "HYGothicBold.ttf",
-            "HYGothicMedium.ttf",
-            "HYMyeongJoBold.ttf",
-            "HYMyeongJoMedium.ttf",
-            "MYingHeiTBold.ttf",
-            "MYingHeiTMedium.ttf",
-            "SongTBold.ttf",
-            "SongTMedium.ttf"
-            }
-        for _,value in ipairs(exclusive_system_font) do
-            if value == f then
-                return true
-            end
-        end
-    else return false
+        return kindle_fonts_blacklist[f]
     end
 end
 
@@ -115,7 +112,7 @@ function Font:_readList(target, dir)
             local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
             if file_type == "ttf" or file_type == "ttc"
                 or file_type == "cff" or file_type == "otf" then
-                if checkfont(f) ~=true then
+                if not isInFontsBlacklist(f) then
                     table.insert(target, dir.."/"..f)
                 end
             end
