@@ -82,6 +82,26 @@ function Font:getFace(font, size)
     return face_obj
 end
 
+function checkfont(f)
+    local exclusive_system_font = {
+    --these kindle system fonts can not be used by freetype and will give error
+        "HYGothicBold.ttf",
+        "HYGothicMedium.ttf",
+        "HYMyeongJoBold.ttf",
+        "HYMyeongJoMedium.ttf",
+        "MYingHeiTBold.ttf",
+        "MYingHeiTMedium.ttf",
+        "SongTBold.ttf",
+        "SongTMedium.ttf"
+        }
+    for _,value in ipairs(exclusive_system_font) do
+        if value == f then
+            return true
+        end
+    end
+    return false
+end
+
 function Font:_readList(target, dir)
     -- lfs.dir non-exsitent directory will give error, weird!
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
@@ -93,7 +113,9 @@ function Font:_readList(target, dir)
             local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
             if file_type == "ttf" or file_type == "ttc"
                 or file_type == "cff" or file_type == "otf" then
-                table.insert(target, dir.."/"..f)
+                if checkfont(f) ~=true then
+                    table.insert(target, dir.."/"..f)
+                end
             end
         end
     end
