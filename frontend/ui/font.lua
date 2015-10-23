@@ -47,7 +47,6 @@ local Font = {
     faces = {},
 }
 
-
 function Font:getFace(font, size)
     -- default to content font
     if not font then font = self.cfont end
@@ -82,6 +81,26 @@ function Font:getFace(font, size)
     return face_obj
 end
 
+--[[
+    These fonts from Kindle system cannot be loaded by Freetype.
+--]]
+local kindle_fonts_blacklist = {
+    ["HYGothicBold.ttf"] = true,
+    ["HYGothicMedium.ttf"] = true,
+    ["HYMyeongJoBold.ttf"] = true,
+    ["HYMyeongJoMedium.ttf"] = true,
+    ["MYingHeiTBold.ttf"] = true,
+    ["MYingHeiTMedium.ttf"] = true,
+    ["SongTBold.ttf"] = true,
+    ["SongTMedium.ttf"] = true,
+}
+
+local function isInFontsBlacklist(f)
+    if Device:isKindle() then
+        return kindle_fonts_blacklist[f]
+    end
+end
+
 function Font:_readList(target, dir)
     -- lfs.dir non-exsitent directory will give error, weird!
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
@@ -93,7 +112,9 @@ function Font:_readList(target, dir)
             local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
             if file_type == "ttf" or file_type == "ttc"
                 or file_type == "cff" or file_type == "otf" then
-                table.insert(target, dir.."/"..f)
+                if not isInFontsBlacklist(f) then
+                    table.insert(target, dir.."/"..f)
+                end
             end
         end
     end
