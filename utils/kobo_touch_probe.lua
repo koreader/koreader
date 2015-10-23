@@ -91,7 +91,7 @@ if KOBO_TOUCH_MIRRORED == nil then
         UIManager:show(TouchProbe:new{})
         UIManager:run()
     -- otherwise, we will use probed result
-    else
-        KOBO_TOUCH_MIRRORED = switch_xy
+    elseif switch_xy then
+        Input:registerEventAdjustHook(Input.adjustTouchSwitchXY)
     end
 end
