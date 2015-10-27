@@ -92,7 +92,7 @@ function ReaderStatistics:getStatisticEnabledMenuTable()
             if self.is_enabled then
                 self:initData()
             end
-            self:onSaveSettings()
+            self:saveSettings()
         end,
     }
 end
@@ -138,7 +138,7 @@ function ReaderStatistics:updateSettings()
                     callback = function()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
-                        self:onSaveSettings(MultiInputDialog:getFields())
+                        self:saveSettings(MultiInputDialog:getFields())
                     end
                 },
             },
@@ -409,20 +409,18 @@ function ReaderStatistics:onAddNote()
 end
 
 -- in case when screensaver starts
-function ReaderStatistics:onFlushSettings()
-    self:onSaveSettings()
+function ReaderStatistics:onSaveSettings()
+    self:saveSettings()
     self:exportToFile()
     self.current_period = 0
-    return true
 end
 
 -- screensaver off
 function ReaderStatistics:onResume()
     self.current_period = 0
-    return true
 end
 
-function ReaderStatistics:onSaveSettings(fields)
+function ReaderStatistics:saveSettings(fields)
     if fields then
         self.page_min_read_sec = tonumber(fields[1])
         self.page_max_read_sec = tonumber(fields[2])

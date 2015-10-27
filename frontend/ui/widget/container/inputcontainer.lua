@@ -52,7 +52,8 @@ end
 
 function InputContainer:paintTo(bb, x, y)
     if not self.dimen then
-        self.dimen = self[1]:getSize()
+        local content_size = self[1]:getSize()
+        self.dimen = Geom:new{w = content_size.w, h = content_size.h}
     end
     self.dimen.x = x
     self.dimen.y = y
