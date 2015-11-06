@@ -80,6 +80,7 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setHeaderFont(self.header_font_face)
 
     self.font_size = config:readSetting("font_size")
+            or G_reader_settings:readSetting("copt_font_size")
             or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
