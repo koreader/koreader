@@ -76,7 +76,7 @@ and cross compiling.
 Users of Debian and Ubuntu can install the required packages using:
 ```
 sudo apt-get install build-essential git patch wget unzip \
-autoconf cmake libtool nasm luarocks \
+gettext autoconf cmake libtool nasm luarocks \
 libssl-dev libffi-dev libsdl2-dev linux-libc-dev:i386
 ```
 Note that the `linux-libc-dev:i386` package is only necessary for x86_64 machines.
