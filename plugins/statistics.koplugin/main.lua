@@ -47,6 +47,7 @@ function ReaderStatistics:init()
     self.page_min_read_sec = tonumber(settings.min_sec)
     self.page_max_read_sec = tonumber(settings.max_sec)
     self.is_enabled = not (settings.is_enabled == false)
+    --self.current_page = tonumber(settings.current_page)
 
     self.last_time = TimeVal:now()
     UIManager:scheduleIn(0.1, function() self:initData() end)
@@ -229,13 +230,17 @@ function ReaderStatistics:updateCurrentStat()
         dates[os.date("%Y-%m-%d", v.time)] = ""
     end
 
+    local read_pages = tableutil.tablelength(self.data.details)
+    local average_time_per_page = self.data.total_time / read_pages
+
     table.insert(stats, { text = _("Current period"), mandatory = self:secondsToClock(self.current_period) })
+    table.insert(stats, { text = _("Time to read"), mandatory = self:secondsToClock(self.view.state.page * average_time_per_page) })
     table.insert(stats, { text = _("Total time"), mandatory = self:secondsToClock(self.data.total_time) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
     table.insert(stats, { text = _("Total days"), mandatory = tableutil.tablelength(dates) })
-    table.insert(stats, { text = _("Average time per page"), mandatory = self:secondsToClock(self.data.total_time / tableutil.tablelength(self.data.details)) })
-    table.insert(stats, { text = _("Read pages/Total pages"), mandatory = tableutil.tablelength(self.data.details) .. "/" .. self.data.pages })
+    table.insert(stats, { text = _("Average time per page"), mandatory = self:secondsToClock(average_time_per_page) })
+    table.insert(stats, { text = _("Read pages/Total pages"), mandatory = read_pages .. "/" .. self.data.pages })
     return stats
 end
 
@@ -261,7 +266,7 @@ function ReaderStatistics:getDatesForBook(book)
     end
 
     table.insert(result, { text = book.title })
-    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date > t[a].date end) do
+    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
         table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, self:secondsToClock(v.read)) })
     end
 
@@ -292,7 +297,7 @@ function ReaderStatistics:updateTotalStat()
     end
     total_books_time = total_books_time + tonumber(self.data.total_time)
 
-    table.insert(total_stats, 1, { text = _("All time"), mandatory = self:secondsToClock(total_books_time) })
+    table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = self:secondsToClock(total_books_time) })
     table.insert(total_stats, 2, { text = _("----------------------------------------------------") })
     table.insert(total_stats, 3, {
         text = self.data.title,
@@ -324,7 +329,7 @@ end
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
     if props.title == "No document" or props.title == "" then --sometime crengine returns "No document" try to get one more time
-    props = self.view.document:getProps()
+      props = self.view.document:getProps()
     end
     return props
 end
