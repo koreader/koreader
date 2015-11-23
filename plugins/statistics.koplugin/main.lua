@@ -6,15 +6,17 @@ local Screen = require("device").screen
 local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
+local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local tableutil = require("tableutil")
-local DataStorage = require("datastorage")
 
-local statistics_dir = DataStorage:getDataDir() .. "/statistics"
+local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
+local history_dir = DataStorage:getDataDir() .. "/history/"
 
 local ReaderStatistics = InputContainer:new {
     last_time = nil,
@@ -27,8 +29,8 @@ local ReaderStatistics = InputContainer:new {
         authors = "",
         language = "",
         series = "",
-        details = {},
-        total_time = 0,
+        performance_in_pages = {},
+        total_time_in_sec = 0,
         highlights = 0,
         notes = 0,
         pages = 0,
@@ -47,18 +49,20 @@ function ReaderStatistics:init()
     self.page_min_read_sec = tonumber(settings.min_sec)
     self.page_max_read_sec = tonumber(settings.max_sec)
     self.is_enabled = not (settings.is_enabled == false)
-    --self.current_page = tonumber(settings.current_page)
-
     self.last_time = TimeVal:now()
-    UIManager:scheduleIn(0.1, function() self:initData() end)
 end
 
-function ReaderStatistics:initData()
+function ReaderStatistics:initData(config)
     --first execution
     if self.is_enabled then
         local book_properties = self:getBookProperties()
-        self.data = self:importFromFile(book_properties.title .. ".stat")
         self:savePropertiesInToData(book_properties)
+        if config.data.stats then
+            self.data = config.data.stats
+        else
+           --first time merge data
+            self:inplaceMigration();
+        end
         self.data.pages = self.view.document:getPageCount()
         return
     end
@@ -85,13 +89,13 @@ function ReaderStatistics:getStatisticEnabledMenuTable()
         callback = function()
             -- if was enabled, have to save data to file
             if self.last_time and self.is_enabled then
-                self:exportToFile(self:getBookProperties())
+                self.ui.doc_settings:saveSetting("stats", self.data)
             end
 
             self.is_enabled = not self.is_enabled
             -- if was disabled have to get data from file
             if self.is_enabled then
-                self:initData()
+                self:initData(self.ui.doc_settings)
             end
             self:saveSettings()
         end,
@@ -226,16 +230,16 @@ function ReaderStatistics:updateCurrentStat()
     local stats = {}
     local dates = {}
 
-    for k, v in pairs(self.data.details) do
-        dates[os.date("%Y-%m-%d", v.time)] = ""
+    for k, v in pairs(self.data.performance_in_pages) do
+        dates[os.date("%Y-%m-%d", k)] = ""
     end
 
-    local read_pages = tableutil.tablelength(self.data.details)
-    local average_time_per_page = self.data.total_time / read_pages
+    local read_pages = tableutil.tablelength(self.data.performance_in_pages)
+    local average_time_per_page = self.data.total_time_in_sec / read_pages
 
     table.insert(stats, { text = _("Current period"), mandatory = self:secondsToClock(self.current_period) })
-    table.insert(stats, { text = _("Time to read"), mandatory = self:secondsToClock(self.view.state.page * average_time_per_page) })
-    table.insert(stats, { text = _("Total time"), mandatory = self:secondsToClock(self.data.total_time) })
+    table.insert(stats, { text = _("Time to read"), mandatory = self:secondsToClock(self.data.pages * average_time_per_page) })
+    table.insert(stats, { text = _("Total time"), mandatory = self:secondsToClock(self.data.total_time_in_sec) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
     table.insert(stats, { text = _("Total days"), mandatory = tableutil.tablelength(dates) })
@@ -244,9 +248,9 @@ function ReaderStatistics:updateCurrentStat()
     return stats
 end
 
-function ReaderStatistics:getDatesForBook(book)
+-- For backward compatibility
+function ReaderStatistics:getDatesForBookOldFormat(book)
     local dates = {}
-    local result = {}
 
     for k, v in pairs(book.details) do
         local date_text = os.date("%Y-%m-%d", v.time)
@@ -265,11 +269,40 @@ function ReaderStatistics:getDatesForBook(book)
         end
     end
 
-    table.insert(result, { text = book.title })
+    return self:generateReadBooksTable(book.title, dates)
+end
+
+
+function ReaderStatistics:getDatesForBook(book)
+    local dates = {}
+
+    for k, v in pairs(book.performance_in_pages) do
+        local date_text = os.date("%Y-%m-%d", k)
+        if not dates[date_text] then
+            dates[date_text] = {
+                date = k,
+                read = v,
+                count = 1
+            }
+        else
+            dates[date_text] = {
+                read = dates[date_text].read + v,
+                count = dates[date_text].count + 1,
+                date = dates[date_text].date
+            }
+        end
+    end
+
+    return self:generateReadBooksTable(book.title, dates)
+end
+
+
+function ReaderStatistics:generateReadBooksTable(title, dates)
+    local result = {}
+    table.insert(result, { text = title })
     for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
         table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, self:secondsToClock(v.read)) })
     end
-
     return result
 end
 
@@ -277,31 +310,17 @@ end
 function ReaderStatistics:updateTotalStat()
     local total_stats = {}
     local total_books_time = 0
-    for curr_file in lfs.dir(statistics_dir) do
-        local path = statistics_dir .. "/" .. curr_file
-        if lfs.attributes(path, "mode") == "file" then
-            local book_result = self:importFromFile(curr_file)
-            if book_result and book_result.title ~= self.data.title then
-                table.insert(total_stats, {
-                    text = book_result.title,
-                    mandatory = self:secondsToClock(book_result.total_time),
-                    callback = function()
-                        self.total_status:swithItemTable(nil, self:getDatesForBook(book_result))
-                        UIManager:show(self.total_menu)
-                        return true
-                    end,
-                })
-                total_books_time = total_books_time + tonumber(book_result.total_time)
-            end
-        end
-    end
-    total_books_time = total_books_time + tonumber(self.data.total_time)
+
+    local proceded_titles = self:getStatisticsFromHistory(total_stats, total_books_time)
+    self:getOldStatisticsFromDirectory(proceded_titles, total_stats, total_books_time)
+
+    total_books_time = total_books_time + tonumber(self.data.total_time_in_sec)
 
     table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = self:secondsToClock(total_books_time) })
     table.insert(total_stats, 2, { text = _("----------------------------------------------------") })
     table.insert(total_stats, 3, {
         text = self.data.title,
-        mandatory = self:secondsToClock(self.data.total_time),
+        mandatory = self:secondsToClock(self.data.total_time_in_sec),
         callback = function()
             self.total_status:swithItemTable(nil, self:getDatesForBook(self.data))
             UIManager:show(self.total_menu)
@@ -311,6 +330,55 @@ function ReaderStatistics:updateTotalStat()
     return total_stats
 end
 
+function ReaderStatistics:getStatisticsFromHistory(total_stats, total_books_time)
+    local titles = {}
+    for curr_file in lfs.dir(history_dir) do
+        local path = history_dir .. curr_file
+        if lfs.attributes(path, "mode") == "file" then
+            local book_result = self:importFromFile(history_dir, curr_file)
+            local book_stats = book_result.stats
+            if book_stats and book_stats.title ~= self.data.title then
+                titles[book_stats.title] = true
+                table.insert(total_stats, {
+                    text = book_stats.title,
+                    mandatory = self:secondsToClock(book_stats.total_time_in_sec),
+                    callback = function()
+                        self.total_status:swithItemTable(nil, self:getDatesForBook(book_stats))
+                        UIManager:show(self.total_menu)
+                        return true
+                    end,
+                })
+                total_books_time = total_books_time + tonumber(book_stats.total_time_in_sec)
+            end
+        end
+    end
+    return titles
+end
+
+-- For backward compatibility
+function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_stats, total_books_time)
+    if lfs.attributes(statistics_dir, "mode") ~= "directory" then
+        return
+    end
+    for curr_file in lfs.dir(statistics_dir) do
+        local path = statistics_dir .. curr_file
+        if lfs.attributes(path, "mode") == "file" then
+            local book_result = self:importFromFile(statistics_dir, curr_file)
+            if book_result and book_result.title ~= self.data.title and not exlude_titles[book_result.title] then
+                table.insert(total_stats, {
+                    text = book_result.title,
+                    mandatory = self:secondsToClock(book_result.total_time_in_sec),
+                    callback = function()
+                        self.total_status:swithItemTable(nil, self:getDatesForBookOldFormat(book_result))
+                        UIManager:show(self.total_menu)
+                        return true
+                    end,
+                })
+                total_books_time = total_books_time + tonumber(book_result.total_time_in_sec)
+            end
+        end
+    end
+end
 
 --https://gist.github.com/jesseadams/791673
 function ReaderStatistics:secondsToClock(seconds)
@@ -346,37 +414,13 @@ function ReaderStatistics:onPageUpdate(pageno)
 
         if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
             self.current_period = self.current_period + diff_time
-            self.data.total_time = self.data.total_time + diff_time
-            local timeData = {
-                time = curr_time.sec,
-                read = diff_time,
-                page = pageno
-            }
-            table.insert(self.data.details, timeData)
+            self.data.total_time_in_sec = self.data.total_time_in_sec + diff_time
+            self.data.performance_in_pages[curr_time.sec] = pageno
         end
 
         self.last_time = curr_time
     end
 end
-
-function ReaderStatistics:exportToFile(book_properties)
-    if book_properties then
-        self:savePropertiesInToData(book_properties)
-    end
-
-    local statistics = io.open(statistics_dir .. "/" .. self.data.title .. ".stat", "w")
-    if statistics then
-        local current_locale = os.setlocale()
-        os.setlocale("C")
-        local data = dump(self.data)
-        statistics:write("return ")
-        statistics:write(data)
-        statistics:write("\n")
-        statistics:close()
-        os.setlocale(current_locale)
-    end
-end
-
 
 function ReaderStatistics:savePropertiesInToData(item)
     self.data.title = item.title
@@ -385,12 +429,24 @@ function ReaderStatistics:savePropertiesInToData(item)
     self.data.series = item.series
 end
 
-function ReaderStatistics:importFromFile(item)
-    item = string.gsub(item, "^%s*(.-)%s*$", "%1") --trim
-    if lfs.attributes(statistics_dir, "mode") ~= "directory" then
-        lfs.mkdir(statistics_dir)
+
+-- For backward compatibility
+function ReaderStatistics:inplaceMigration()
+    local oldData = self:importFromFile(statistics_dir, self.data.title .. ".stat")
+    if oldData then
+        for k, v in pairs(oldData.details) do
+            self.data.performance_in_pages[v.time] = v.page
+        end
     end
-    local statisticFile = statistics_dir .. "/" .. item
+end
+
+-- For backward compatibility
+function ReaderStatistics:importFromFile(base_path, item)
+    item = string.gsub(item, "^%s*(.-)%s*$", "%1") --trim
+    if lfs.attributes(base_path .. item, "mode") == "directory" then
+        return
+    end
+    local statisticFile = base_path .. item
     local ok, stored = pcall(dofile, statisticFile)
     if ok then
         return stored
@@ -401,7 +457,7 @@ end
 
 function ReaderStatistics:onCloseDocument()
     if self.last_time and self.is_enabled then
-        self:exportToFile()
+        self.ui.doc_settings:saveSetting("stats", self.data)
     end
 end
 
@@ -416,7 +472,7 @@ end
 -- in case when screensaver starts
 function ReaderStatistics:onSaveSettings()
     self:saveSettings()
-    self:exportToFile()
+    self.ui.doc_settings:saveSetting("stats", self.data)
     self.current_period = 0
 end
 
@@ -439,6 +495,9 @@ function ReaderStatistics:saveSettings(fields)
     G_reader_settings:saveSetting("statistics", settings)
 end
 
+function ReaderStatistics:onReadSettings(config)
+    UIManager:scheduleIn(0.1, function() self:initData(config) end)
+end
 
 return ReaderStatistics
 
