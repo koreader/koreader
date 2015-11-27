@@ -1,4 +1,3 @@
-
 local util = {}
 
 function util.stripePunctuations(word)
@@ -45,6 +44,32 @@ function util.gsplit(str, pattern, capture)
             end
         until index > #str
     end)
+end
+
+--https://gist.github.com/jesseadams/791673
+function util.secondsToClock(seconds, withoutSeconds)
+    local seconds = tonumber(seconds)
+    if seconds == 0 or seconds ~= seconds then
+        if withoutSeconds then
+            return "00:00";
+        else
+            return "00:00:00";
+        end
+    else
+        local hours = string.format("%02.f", math.floor(seconds / 3600));
+        local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)));
+        if withoutSeconds then
+            return hours .. ":" .. mins
+        end
+        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60));
+        return hours .. ":" .. mins .. ":" .. secs
+    end
+end
+
+function util.tablelength(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
 end
 
 return util

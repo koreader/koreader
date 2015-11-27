@@ -16,6 +16,7 @@ local Event = require("ui/event")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local util  = require("util")
 
 local ReaderFooter = InputContainer:new{
     mode = 1,
@@ -48,6 +49,8 @@ function ReaderFooter:init()
         page_progress = true,
         pages_left = true,
         percentage = true,
+        book_time_to_read = true,
+        chapter_time_to_read = true,
     }
     local text_default = ""
     if self.settings.all_at_once then
@@ -66,6 +69,12 @@ function ReaderFooter:init()
         end
         if self.settings.percentage then
             table.insert(info, "R:100%")
+        end
+        if self.settings.book_time_to_read then
+            table.insert(info, "TB: 00:00")
+        end
+        if self.settings.chapter_time_to_read then
+            table.insert(info, "TC: 00:00")
         end
         text_default = table.concat(info, " | ")
     else
@@ -159,6 +168,8 @@ local options = {
     page_progress = _("Current page"),
     pages_left = _("Pages left in this chapter"),
     percentage = _("Progress percentage"),
+    book_time_to_read = _("Book time to read"),
+    chapter_time_to_read = _("Chapter time to read"),
 }
 
 function ReaderFooter:addToMainMenu(tab_item_table)
@@ -190,6 +201,8 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             get_minibar_option("page_progress"),
             get_minibar_option("pages_left"),
             get_minibar_option("percentage"),
+            get_minibar_option("book_time_to_read"),
+            get_minibar_option("chapter_time_to_read"),
         }
     })
 end
@@ -216,6 +229,26 @@ function ReaderFooter:getProgressPercentage()
     return string.format("R:%1.f%%", self.progress_bar.percentage * 100)
 end
 
+function ReaderFooter:getBookTimeToRead()
+    return self:getDataFromStatistics("TB: ", self.pages)
+end
+
+function ReaderFooter:getChapterTimeToRead()
+    local left = self.ui.toc:getChapterPagesLeft(self.pageno, self.toc_level)
+    return self:getDataFromStatistics("TC: ", (left and left or self.pages - self.pageno))
+end
+
+
+function ReaderFooter:getDataFromStatistics(title, pages)
+    local statistics_data = self.ui.doc_settings:readSetting("stats")
+    if statistics_data and statistics_data.performance_in_pages then
+        local read_pages = util.tablelength(statistics_data.performance_in_pages)
+        local average_time_per_page = statistics_data.total_time_in_sec / read_pages
+        return title .. util.secondsToClock(pages * average_time_per_page, true)
+    end
+end
+
+
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
@@ -236,6 +269,12 @@ function ReaderFooter:updateFooterPage()
         if self.settings.percentage then
             table.insert(info, self:getProgressPercentage())
         end
+        if self.settings.book_time_to_read then
+            table.insert(info, self:getBookTimeToRead())
+        end
+        if self.settings.chapter_time_to_read then
+            table.insert(info, self:getChapterTimeToRead())
+        end
         self.progress_text.text = table.concat(info, " | ")
     else
         local info = ""
@@ -249,6 +288,10 @@ function ReaderFooter:updateFooterPage()
             info = self:getBatteryInfo()
         elseif self.mode == 5 then
             info = self:getProgressPercentage()
+        elseif self.mode == 6 then
+            info = self:getBookTimeToRead()
+        elseif self.mode == 7 then
+            info = self:getChapterTimeToRead()
         end
         self.progress_text.text = info
     end
@@ -291,6 +334,8 @@ function ReaderFooter:applyFooterMode(mode)
     -- 3 for footer next_chapter info
     -- 4 for battery status
     -- 5 for progress percentage
+    -- 6 for from statistics book time to read
+    -- 7 for from statistics chapter time to read
     if mode ~= nil then self.mode = mode end
     if self.mode == 0 then
         self.view.footer_visible = false
@@ -318,7 +363,7 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        self.mode = (self.mode + 1) % 6
+        self.mode = (self.mode + 1) % 8
         if self.settings.all_at_once and (self.mode > 1) then
             self.mode = 0
         end
@@ -335,6 +380,12 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.mode = 5
         end
         if (self.mode == 5) and not self.settings.percentage then
+            self.mode = 6
+        end
+        if (self.mode == 6) and not self.settings.book_time_to_read then
+            self.mode = 7
+        end
+        if (self.mode == 7) and not self.settings.chapter_time_to_read then
             self.mode = 0
         end
         self:applyFooterMode()
