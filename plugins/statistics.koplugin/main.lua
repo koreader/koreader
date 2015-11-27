@@ -13,6 +13,7 @@ local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local util = require("util")
 local tableutil = require("tableutil")
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
@@ -234,16 +235,16 @@ function ReaderStatistics:updateCurrentStat()
         dates[os.date("%Y-%m-%d", k)] = ""
     end
 
-    local read_pages = tableutil.tablelength(self.data.performance_in_pages)
+    local read_pages = util.tablelength(self.data.performance_in_pages)
     local average_time_per_page = self.data.total_time_in_sec / read_pages
 
-    table.insert(stats, { text = _("Current period"), mandatory = self:secondsToClock(self.current_period) })
-    table.insert(stats, { text = _("Time to read"), mandatory = self:secondsToClock(self.data.pages * average_time_per_page) })
-    table.insert(stats, { text = _("Total time"), mandatory = self:secondsToClock(self.data.total_time_in_sec) })
+    table.insert(stats, { text = _("Current period"), mandatory = util.secondsToClock(self.current_period, false) })
+    table.insert(stats, { text = _("Time to read"), mandatory = util.secondsToClock(self.data.pages * average_time_per_page, false) })
+    table.insert(stats, { text = _("Total time"), mandatory = util.secondsToClock(self.data.total_time_in_sec, false) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
-    table.insert(stats, { text = _("Total days"), mandatory = tableutil.tablelength(dates) })
-    table.insert(stats, { text = _("Average time per page"), mandatory = self:secondsToClock(average_time_per_page) })
+    table.insert(stats, { text = _("Total days"), mandatory = util.tablelength(dates) })
+    table.insert(stats, { text = _("Average time per page"), mandatory = util.secondsToClock(average_time_per_page, false) })
     table.insert(stats, { text = _("Read pages/Total pages"), mandatory = read_pages .. "/" .. self.data.pages })
     return stats
 end
@@ -301,7 +302,7 @@ function ReaderStatistics:generateReadBooksTable(title, dates)
     local result = {}
     table.insert(result, { text = title })
     for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
-        table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, self:secondsToClock(v.read)) })
+        table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, util.secondsToClock(v.read, false)) })
     end
     return result
 end
@@ -316,11 +317,12 @@ function ReaderStatistics:updateTotalStat()
 
     total_books_time = total_books_time + tonumber(self.data.total_time_in_sec)
 
-    table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = self:secondsToClock(total_books_time) })
+    DEBUG ("TOTALSTATS", total_stats)
+    table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = util.secondsToClock(total_books_time, false) })
     table.insert(total_stats, 2, { text = _("----------------------------------------------------") })
     table.insert(total_stats, 3, {
         text = self.data.title,
-        mandatory = self:secondsToClock(self.data.total_time_in_sec),
+        mandatory = util.secondsToClock(self.data.total_time_in_sec, false),
         callback = function()
             self.total_status:swithItemTable(nil, self:getDatesForBook(self.data))
             UIManager:show(self.total_menu)
@@ -341,7 +343,7 @@ function ReaderStatistics:getStatisticsFromHistory(total_stats, total_books_time
                 titles[book_stats.title] = true
                 table.insert(total_stats, {
                     text = book_stats.title,
-                    mandatory = self:secondsToClock(book_stats.total_time_in_sec),
+                    mandatory = util.secondsToClock(book_stats.total_time_in_sec, false),
                     callback = function()
                         self.total_status:swithItemTable(nil, self:getDatesForBook(book_stats))
                         UIManager:show(self.total_menu)
@@ -367,32 +369,18 @@ function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_sta
             if book_result and book_result.title ~= self.data.title and not exlude_titles[book_result.title] then
                 table.insert(total_stats, {
                     text = book_result.title,
-                    mandatory = self:secondsToClock(book_result.total_time_in_sec),
+                    mandatory = util.secondsToClock(book_result.total_time, false),
                     callback = function()
                         self.total_status:swithItemTable(nil, self:getDatesForBookOldFormat(book_result))
                         UIManager:show(self.total_menu)
                         return true
                     end,
                 })
-                total_books_time = total_books_time + tonumber(book_result.total_time_in_sec)
+                total_books_time = total_books_time + tonumber(book_result.total_time)
             end
         end
     end
 end
-
---https://gist.github.com/jesseadams/791673
-function ReaderStatistics:secondsToClock(seconds)
-    local seconds = tonumber(seconds)
-    if seconds == 0 or seconds ~= seconds then
-        return "00:00:00";
-    else
-        local hours = string.format("%02.f", math.floor(seconds / 3600));
-        local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)));
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60));
-        return hours .. ":" .. mins .. ":" .. secs
-    end
-end
-
 
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
@@ -419,6 +407,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         end
 
         self.last_time = curr_time
+        self.ui.doc_settings:saveSetting("stats", self.data)
     end
 end
 
