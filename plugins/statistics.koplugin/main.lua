@@ -236,10 +236,11 @@ function ReaderStatistics:updateCurrentStat()
     end
 
     local read_pages = util.tablelength(self.data.performance_in_pages)
+    local current_page = self.ui.document:getCurrentPage()
     local average_time_per_page = self.data.total_time_in_sec / read_pages
 
     table.insert(stats, { text = _("Current period"), mandatory = util.secondsToClock(self.current_period, false) })
-    table.insert(stats, { text = _("Time to read"), mandatory = util.secondsToClock(self.data.pages * average_time_per_page, false) })
+    table.insert(stats, { text = _("Time to read"), mandatory = util.secondsToClock((self.data.pages - current_page) * average_time_per_page, false) })
     table.insert(stats, { text = _("Total time"), mandatory = util.secondsToClock(self.data.total_time_in_sec, false) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })

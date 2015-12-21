@@ -230,7 +230,8 @@ function ReaderFooter:getProgressPercentage()
 end
 
 function ReaderFooter:getBookTimeToRead()
-    return self:getDataFromStatistics("TB: ", self.pages)
+    local current_page = self.view.document:getCurrentPage()
+    return self:getDataFromStatistics("TB: ", self.pages - current_page)
 end
 
 function ReaderFooter:getChapterTimeToRead()
