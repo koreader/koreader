@@ -242,11 +242,13 @@ end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
     local statistics_data = self.ui.doc_settings:readSetting("stats")
+    local sec = 'na'
     if statistics_data and statistics_data.performance_in_pages then
         local read_pages = util.tablelength(statistics_data.performance_in_pages)
         local average_time_per_page = statistics_data.total_time_in_sec / read_pages
-        return title .. util.secondsToClock(pages * average_time_per_page, true)
+        sec = util.secondsToClock(pages * average_time_per_page, true)
     end
+    return title .. sec
 end
 
 
