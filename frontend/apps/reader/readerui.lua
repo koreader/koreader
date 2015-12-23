@@ -331,7 +331,7 @@ function ReaderUI:showReader(file)
         if err ~= nil then
             print '[!] doShowReader coroutine crashed:'
             print(debug.traceback(co, err, 1))
-            UIManager._running = false
+            UIManager.quit()
         end
     end)
 end
