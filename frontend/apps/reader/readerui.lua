@@ -327,7 +327,12 @@ function ReaderUI:showReader(file)
         local co = coroutine.create(function()
             self:doShowReader(file)
         end)
-        coroutine.resume(co)
+        local ok, err = coroutine.resume(co)
+        if err ~= nil then
+            print '[!] doShowReader coroutine crashed:'
+            print(debug.traceback(co, err, 1))
+            UIManager._running = false
+        end
     end)
 end
 
