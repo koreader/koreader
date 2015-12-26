@@ -9,10 +9,11 @@ describe("Readerfooter module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
+        readerui.view.footer.settings.page_progress = true
         readerui.view.footer.settings.all_at_once = true
         readerui.view.footer:updateFooterPage()
         timeinfo = readerui.view.footer:getTimeInfo()
-        assert.are.same('B:0% | '..timeinfo..' | => 0 | R:100% | TB: 00:00 | TC: 00:00',
+        assert.are.same('B:0% | '..timeinfo..' | 1 / 1 | => 0 | R:100% | TB: 00:00 | TC: 00:00',
                         readerui.view.footer.progress_text.text)
     end)
 
@@ -21,10 +22,11 @@ describe("Readerfooter module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
+        readerui.view.footer.settings.page_progress = true
         readerui.view.footer.settings.all_at_once = true
         readerui.view.footer:updateFooterPage()
         timeinfo = readerui.view.footer:getTimeInfo()
-        assert.are.same('B:0% | '..timeinfo..' | => 1 | R:50% | TB: na | TC: na',
+        assert.are.same('B:0% | '..timeinfo..' | 1 / 2 | => 1 | R:50% | TB: na | TC: na',
                         readerui.view.footer.progress_text.text)
     end)
 end)
