@@ -8,6 +8,8 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local ffi = require("ffi")
 
+local MILLION = 1000000
+
 -- there is only one instance of this
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
@@ -18,8 +20,8 @@ local UIManager = {
 
     _running = true,
     _window_stack = {},
-    _execution_stack = {},
-    _execution_stack_dirty = false,
+    _task_queue = {},
+    _task_queue_dirty = false,
     _dirty = {},
     _zeromqs = {},
     _refresh_stack = {},
@@ -136,22 +138,51 @@ function UIManager:close(widget, refreshtype, refreshregion)
     end
 end
 
--- schedule an execution task
+-- schedule an execution task, task queue is in ascendant order
 function UIManager:schedule(time, action)
-    table.insert(self._execution_stack, { time = time, action = action })
-    self._execution_stack_dirty = true
+    local p, s, e = 1, 1, #self._task_queue
+    if e ~= 0 then
+        local us = time[1] * MILLION + time[2]
+        -- do a binary insert
+        repeat
+            p = math.floor(s + (e - s) / 2)
+            local ptime = self._task_queue[p].time
+            local ptus = ptime[1] * MILLION + ptime[2]
+            if us > ptus then
+                if s == e then
+                    p = e + 1
+                    break
+                elseif s + 1 == e then
+                    s = e
+                else
+                    s = p
+                end
+            elseif us < ptus then
+                e = p
+                if s == e then
+                    break
+                end
+            else
+                -- for fairness, it's better to make p+1 is strictly less than p
+                -- might want to revisit here in the future
+                break
+            end
+        until e < s
+    end
+    table.insert(self._task_queue, p, { time = time, action = action })
+    self._task_queue_dirty = true
 end
 
 -- schedule task in a certain amount of seconds (fractions allowed) from now
 function UIManager:scheduleIn(seconds, action)
     local when = { util.gettime() }
     local s = math.floor(seconds)
-    local usecs = (seconds - s) * 1000000
+    local usecs = (seconds - s) * MILLION
     when[1] = when[1] + s
     when[2] = when[2] + usecs
-    if when[2] > 1000000 then
+    if when[2] > MILLION then
         when[1] = when[1] + 1
-        when[2] = when[2] - 1000000
+        when[2] = when[2] - MILLION
     end
     self:schedule(when, action)
 end
@@ -163,11 +194,11 @@ end
 -- UIManager:scheduleIn(10, self.anonymousFunction)
 -- UIManager:unschedule(self.anonymousFunction)
 function UIManager:unschedule(action)
-    for i = #self._execution_stack, 1, -1 do
-        local task = self._execution_stack[i]
+    for i = #self._task_queue, 1, -1 do
+        local task = self._task_queue[i]
         if task.action == action then
             -- remove from table
-            table.remove(self._execution_stack, i)
+            table.remove(self._task_queue, i)
         end
     end
 end
@@ -245,14 +276,15 @@ end
 
 -- signal to quit
 function UIManager:quit()
-    DEBUG("quit uimanager")
+    DEBUG("quiting uimanager")
+    self._task_queue_dirty = false
     self._running = false
     self._run_forever = nil
     for i = #self._window_stack, 1, -1 do
         table.remove(self._window_stack, i)
     end
-    for i = #self._execution_stack, 1, -1 do
-        table.remove(self._execution_stack, i)
+    for i = #self._task_queue, 1, -1 do
+        table.remove(self._task_queue, i)
     end
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
@@ -287,35 +319,36 @@ end
 
 function UIManager:_checkTasks()
     local now = { util.gettime() }
-
-    -- check if we have timed events in our queue and search next one
+    local now_us = now[1] * MILLION + now[2]
     local wait_until = nil
-    local all_tasks_checked
-    repeat
-        all_tasks_checked = true
-        for i = #self._execution_stack, 1, -1 do
-            local task = self._execution_stack[i]
-            if not task.time
-                or task.time[1] < now[1]
-                or task.time[1] == now[1] and task.time[2] < now[2] then
-                -- task is pending to be executed right now. do it.
-                task.action()
-                -- and remove from table
-                table.remove(self._execution_stack, i)
-                -- start loop again, since new tasks might be on the
-                -- queue now
-                all_tasks_checked = false
-            elseif not wait_until
-                or wait_until[1] > task.time[1]
-                or wait_until[1] == task.time[1] and wait_until[2] > task.time[2] then
-                -- task is to be run in the future _and_ is scheduled
-                -- earlier than the tasks we looked at already
-                -- so adjust to the currently examined task instead.
-                wait_until = task.time
-            end
+
+    while true do
+        st_size = #self._task_queue
+        if st_size == 0 then
+            -- all tasks checked
+            break
         end
-    until all_tasks_checked
-    self._execution_stack_dirty = false
+        local task = self._task_queue[1]
+        local task_us = 0
+        if task.time ~= nil then
+            task_us = task.time[1] * MILLION + task.time[2]
+        end
+        if task_us <= now_us then
+            -- remove from table
+            table.remove(self._task_queue, 1)
+            -- task is pending to be executed right now. do it.
+            -- NOTE: be careful that task.action() might modify
+            -- _task_queue here. So need to avoid race condition
+            task.action()
+        else
+            -- queue is sorted in ascendant order, safe to assume all items
+            -- are future tasks for now
+            wait_until = task.time
+            break
+        end
+    end
+
+    self._task_queue_dirty = false
     return wait_until, now
 end
 
@@ -451,9 +484,8 @@ function UIManager:handleInput()
     -- for input events:
     repeat
         wait_until, now = self:_checkTasks()
-
         --DEBUG("---------------------------------------------------")
-        --DEBUG("exec stack", self._execution_stack)
+        --DEBUG("exec stack", self._task_queue)
         --DEBUG("window stack", self._window_stack)
         --DEBUG("dirty stack", self._dirty)
         --DEBUG("---------------------------------------------------")
@@ -466,7 +498,7 @@ function UIManager:handleInput()
         end
 
         self:_repaint()
-    until not self._execution_stack_dirty
+    until not self._task_queue_dirty
 
     -- wait for next event
     -- note that we will skip that if we have tasks that are ready to run
@@ -490,7 +522,7 @@ function UIManager:handleInput()
         local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }
         if wait_for.us < 0 then
             wait_for.s = wait_for.s - 1
-            wait_for.us = 1000000 + wait_for.us
+            wait_for.us = MILLION + wait_for.us
         end
         -- wait until next task is pending
         input_event = Input:waitEvent(wait_for.us, wait_for.s)
