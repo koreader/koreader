@@ -24,6 +24,7 @@ koreader-*.click
 l10n/*
 !l10n/Makefile
 !l10n/README.md
+i18n
 
 /.cproject
 /.project
