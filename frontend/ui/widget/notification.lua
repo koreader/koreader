@@ -6,7 +6,6 @@ local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Device = require("device")
 local UIManager = require("ui/uimanager")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
 local Input = require("device").input
 local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")

@@ -18,7 +18,6 @@ local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 

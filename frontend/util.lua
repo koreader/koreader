@@ -47,8 +47,8 @@ function util.gsplit(str, pattern, capture)
 end
 
 --https://gist.github.com/jesseadams/791673
-function util.secondsToClock(seconds, withoutSeconds)
-    local seconds = tonumber(seconds)
+function util.secondsToClock(sec, withoutSeconds)
+    local seconds = tonumber(sec)
     if seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
             return "00:00";

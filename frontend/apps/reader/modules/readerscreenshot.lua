@@ -42,7 +42,7 @@ function ReaderScreenshot:onScreenshot(filename)
     local screenshot_name = filename or os.date(self.datetime_name)
     UIManager:show(InfoMessage:new{
         text = T( _("Saving screenshot to %1."), screenshot_name),
-        timeout = 2,
+        timeout = 3,
     })
     Screen:shot(screenshot_name)
     -- trigger full refresh

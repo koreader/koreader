@@ -19,6 +19,7 @@ emu
 koreader-*.zip
 koreader-*.apk
 koreader-*.tar.gz
+koreader-*.targz
 koreader-*.click
 
 l10n/*

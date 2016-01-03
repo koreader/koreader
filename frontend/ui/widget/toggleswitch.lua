@@ -10,7 +10,6 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Device = require("device")
 local GestureRange = require("ui/gesturerange")
-local DEBUG = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
@@ -130,7 +129,6 @@ function ToggleSwitch:onTapSelect(arg, gev)
     local position = math.ceil(
         (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
     )
-    --DEBUG("toggle position:", position)
     self:togglePosition(position)
     --[[
     if self.values then

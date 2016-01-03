@@ -2,7 +2,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local PathChooser = FileChooser:extend{
