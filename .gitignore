@@ -6,7 +6,6 @@ lua
 lua-*
 .reader.kpdfview.lua
 .vimrc
-git-rev
 *.o
 tags
 test/*

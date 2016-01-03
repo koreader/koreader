@@ -39,7 +39,7 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
 INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n utils \
-		git-rev README.md COPYING
+		README.md COPYING
 
 # for gettext
 DOMAIN=koreader
@@ -50,8 +50,8 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
-	echo $(VERSION) > git-rev
 	install -d $(INSTALL_DIR)/koreader
+	rm -f $(INSTALL_DIR)/koreader/git-rev; echo $(VERSION) > $(INSTALL_DIR)/koreader/git-rev
 ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	# create symlink instead of copying files in development mode
