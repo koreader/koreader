@@ -51,7 +51,7 @@ XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
 	echo $(VERSION) > git-rev
-	mkdir -p $(INSTALL_DIR)/koreader
+	install -d $(INSTALL_DIR)/koreader
 ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	# create symlink instead of copying files in development mode
@@ -79,11 +79,7 @@ endif
 	# install plugins
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
-	mkdir -p $(INSTALL_DIR)/koreader/screenshots
-	mkdir -p $(INSTALL_DIR)/koreader/data/dict
-	mkdir -p $(INSTALL_DIR)/koreader/data/tessdata
-	mkdir -p $(INSTALL_DIR)/koreader/fonts/host
-	mkdir -p $(INSTALL_DIR)/koreader/ota
+	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
 	# clean up, remove unused files for releases
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
