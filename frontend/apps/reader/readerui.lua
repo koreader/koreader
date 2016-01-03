@@ -329,7 +329,7 @@ function ReaderUI:showReader(file)
             self:doShowReader(file)
         end)
         local ok, err = coroutine.resume(co)
-        if err ~= nil then
+        if err ~= nil or ok == false then
             print '[!] doShowReader coroutine crashed:'
             print(debug.traceback(co, err, 1))
             UIManager.quit()
