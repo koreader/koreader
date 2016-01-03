@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
+local Screenshoter = require("ui/widget/screenshoter")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -33,7 +34,6 @@ local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
-local ReaderScreenshot = require("apps/reader/modules/readerscreenshot")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
@@ -164,7 +164,8 @@ function ReaderUI:init()
         document = self.document,
     })
     -- screenshot controller
-    self:registerModule("screenshot", ReaderScreenshot:new{
+    self:registerModule("screenshot", Screenshoter:new{
+        prefix = 'Reader',
         dialog = self.dialog,
         view = self.view,
         ui = self

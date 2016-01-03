@@ -3,22 +3,23 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local DocumentRegistry = require("document/documentregistry")
-local TextWidget = require("ui/widget/textwidget")
-local FileChooser = require("ui/widget/filechooser")
-local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local Screenshoter = require("ui/widget/screenshoter")
 local ButtonDialog = require("ui/widget/buttondialog")
+local VerticalSpan = require("ui/widget/verticalspan")
+local FileChooser = require("ui/widget/filechooser")
+local TextWidget = require("ui/widget/textwidget")
+local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
-local Font = require("ui/font")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
-local Device = require("device")
 local Event = require("ui/event")
+local Device = require("device")
+local util = require("ffi/util")
+local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local util = require("ffi/util")
-local Blitbuffer = require("ffi/blitbuffer")
 
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
@@ -158,6 +159,7 @@ function FileManager:init()
     self.menu = FileManagerMenu:new{
         ui = self
     }
+    table.insert(self, Screenshoter:new{ prefix = 'FileManager' })
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,

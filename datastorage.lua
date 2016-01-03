@@ -7,14 +7,14 @@ local DataStorage = {}
 function DataStorage:getDataDir()
     local data_dir
     if isAndroid then
-        data_dir = "/sdcard/koreader/"
+        data_dir = "/sdcard/koreader"
     elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
         local app_id = os.getenv("APP_ID")
         local package_name = app_id:match("^(.-)_")
         -- confinded ubuntu app has write access to this dir
         data_dir = os.getenv("XDG_DATA_HOME") .. "/" .. package_name
     else
-        data_dir = "./"
+        data_dir = "."
     end
     if lfs.attributes(data_dir, "mode") ~= "directory" then
         lfs.mkdir(data_dir)

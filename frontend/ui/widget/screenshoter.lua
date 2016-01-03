@@ -3,19 +3,18 @@ local InfoMessage = require("ui/widget/infomessage")
 local GestureRange = require("ui/gesturerange")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
 
-local ReaderScreenshot = InputContainer:new{
-    datetime_name = screenshots_dir .. "Screenshot_%Y-%b-%d_%H%M%S.png",
+local Screenshoter = InputContainer:new{
+    prefix = 'Screenshot',
 }
 
-function ReaderScreenshot:init()
+function Screenshoter:init()
+    local screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
+    self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%b-%d_%H%M%S.png"
     local diagonal = math.sqrt(
         math.pow(Screen:getWidth(), 2) +
         math.pow(Screen:getHeight(), 2)
@@ -38,8 +37,8 @@ function ReaderScreenshot:init()
     }
 end
 
-function ReaderScreenshot:onScreenshot(filename)
-    local screenshot_name = filename or os.date(self.datetime_name)
+function Screenshoter:onScreenshot(filename)
+    local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
     UIManager:show(InfoMessage:new{
         text = T( _("Saving screenshot to %1."), screenshot_name),
         timeout = 3,
@@ -50,12 +49,12 @@ function ReaderScreenshot:onScreenshot(filename)
     return true
 end
 
-function ReaderScreenshot:onTapDiagonal()
+function Screenshoter:onTapDiagonal()
     return self:onScreenshot()
 end
 
-function ReaderScreenshot:onSwipeDiagonal()
+function Screenshoter:onSwipeDiagonal()
     return self:onScreenshot()
 end
 
-return ReaderScreenshot
+return Screenshoter
