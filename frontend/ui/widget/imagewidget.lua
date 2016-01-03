@@ -58,7 +58,7 @@ function ImageWidget:_loadfile()
         else
             -- cache this image
             DEBUG("cache", hash)
-            local cache = ImageCacheItem:new{
+            cache = ImageCacheItem:new{
                 bb = Mupdf.renderImageFile(self.file, self.width, self.height),
             }
             cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8

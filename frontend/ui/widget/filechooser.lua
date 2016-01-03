@@ -4,7 +4,6 @@ local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local Device = require("device")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local ffi = require("ffi")
 ffi.cdef[[

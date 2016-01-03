@@ -66,7 +66,7 @@ function FileManager:init()
     }
     self.file_chooser = file_chooser
 
-    function file_chooser:onFileSelect(file)
+    function file_chooser:onFileSelect(file)  -- luacheck: ignore
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
         return true
@@ -78,8 +78,7 @@ function FileManager:init()
     local deleteFile = function(file) self:deleteFile(file) end
     local fileManager = self
 
-    function file_chooser:onFileHold(file)
-        --DEBUG("hold file", file)
+    function file_chooser:onFileHold(file)  -- luacheck: ignore
         local buttons = {
             {
                 {

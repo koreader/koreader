@@ -6,7 +6,6 @@ local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local ffi = require("ffi")
 
 local MILLION = 1000000
 
@@ -323,8 +322,8 @@ function UIManager:_checkTasks()
     local wait_until = nil
 
     while true do
-        st_size = #self._task_queue
-        if st_size == 0 then
+        local nu_task = #self._task_queue
+        if nu_task == 0 then
             -- all tasks checked
             break
         end
