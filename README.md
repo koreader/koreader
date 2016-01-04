@@ -197,7 +197,7 @@ make test
 
 To run Lua static-analysis for KOReader:
 ```
-make statick-check
+make static-check
 ```
 
 You may need to checkout the [travis config file][travis-conf] to setup up
