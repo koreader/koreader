@@ -1,18 +1,14 @@
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
-local util = require("ffi/util")
 local Blitbuffer = require("ffi/blitbuffer")
 
-local InfoMessage = require("ui/widget/infomessage")
 local input_field
 
 local MultiInputDialog = InputDialog:extend{

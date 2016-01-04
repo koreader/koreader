@@ -6,7 +6,6 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local FocusManager = require("ui/widget/focusmanager")
 local TextWidget = require("ui/widget/textwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -54,7 +53,7 @@ function ItemShortCutIcon:init()
     end
 
     --@TODO calculate font size by icon size  01.05 2012 (houqp)
-    local sc_face = nil
+    local sc_face
     if self.key:len() > 1 then
         sc_face = Font:getFace("ffont", 14)
     else
@@ -167,7 +166,7 @@ function MenuItem:init()
 
     local state_button_width = self.state_size.w or 0
     local my_text = self.text and ""..self.text or ""
-    w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
+    local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                     ""..my_text, true, self.bold).x
     if w + mandatory_w + state_button_width >= self.content_width then
         if Device:hasKeyboard() then
@@ -245,7 +244,6 @@ function MenuItem:init()
             ItemShortCutIcon:new{
                 dimen = shortcut_icon_dimen,
                 key = self.shortcut,
-                radius = shortcut_icon_r,
                 style = self.shortcut_style,
             },
             HorizontalSpan:new{ width = 10 },
@@ -501,7 +499,7 @@ function Menu:init()
         }
     }
 
-    local content = nil
+    local content
     if self.no_title then
         content = OverlapGroup:new{
             dimen = self.dimen:copy(),
@@ -855,7 +853,7 @@ function Menu:onClose()
         self:onCloseAllMenus()
     else
         -- back to parent menu
-        parent_item_table = table.remove(self.item_table_stack, table_length)
+        local parent_item_table = table.remove(self.item_table_stack, table_length)
         self:swithItemTable(parent_item_table.title, parent_item_table)
     end
     return true

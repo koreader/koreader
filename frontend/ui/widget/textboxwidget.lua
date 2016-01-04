@@ -1,10 +1,6 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
-local GestureRange = require("ui/gesturerange")
 local RenderText = require("ui/rendertext")
-local UIManager = require("ui/uimanager")
-local Device = require("device")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
@@ -29,7 +25,7 @@ local TextBoxWidget = Widget:new{
 }
 
 function TextBoxWidget:init()
-    local v_list = nil
+    local v_list
     if self.height then
         v_list = self:_getCurrentVerticalList()
     else
@@ -81,7 +77,6 @@ function TextBoxWidget:_getVerticalList(alg)
     end
     -- build horizontal list
     local h_list = {}
-    local line_count = 0
     for line in util.gsplit(self.text, "\n", true) do
         for words in line:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
             for word in util.gsplit(words, "%s+", true) do
@@ -179,12 +174,11 @@ function TextBoxWidget:_render(v_list)
     self.rendering_vlist = v_list
     local font_height = self.face.size
     local line_height_px = self.line_height * font_height
-    local space_w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, " ", true).x
     local h = (font_height + line_height_px) * #v_list
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height
-    local pen_x = 0
+    local pen_x
     for _,l in ipairs(v_list) do
         pen_x = 0
         for _,w in ipairs(l) do

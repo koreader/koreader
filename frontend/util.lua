@@ -48,7 +48,7 @@ end
 
 --https://gist.github.com/jesseadams/791673
 function util.secondsToClock(seconds, withoutSeconds)
-    local seconds = tonumber(seconds)
+    seconds = tonumber(seconds)
     if seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
             return "00:00";

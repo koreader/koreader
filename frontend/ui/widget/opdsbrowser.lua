@@ -2,20 +2,17 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
 local LoginDialog = require("ui/widget/logindialog")
-local lfs = require("libs/libkoreader-lfs")
 local OPDSParser = require("ui/opdsparser")
 local NetworkMgr = require("ui/networkmgr")
 local UIManager = require("ui/uimanager")
 local CacheItem = require("cacheitem")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local Device = require("device")
 local url = require('socket.url')
 local util = require("ffi/util")
 local Cache = require("cache")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local ffi = require("ffi")
 
 local socket = require('socket')
 local http = require('socket.http')
@@ -189,7 +186,6 @@ function OPDSBrowser:genItemTableFromRoot()
         })
     end
     local calibre_opds = G_reader_settings:readSetting("calibre_opds") or {}
-    local calibre_callback = nil
     if not calibre_opds.host or not calibre_opds.port then
         table.insert(item_table, {
             text = self.calibre_name,
@@ -241,7 +237,7 @@ function OPDSBrowser:getAuthorizationHeader(host)
 end
 
 function OPDSBrowser:fetchFeed(feed_url)
-    local headers, request, sink = {}, {}, {}
+    local request, sink = {}, {}
     local parsed = url.parse(feed_url)
     request['url'] = feed_url
     request['method'] = 'GET'
@@ -324,7 +320,7 @@ function OPDSBrowser:getCredential()
 end
 
 function OPDSBrowser:parseFeed(feed_url)
-    local feed = nil
+    local feed
     local hash = "opds|catalog|" .. feed_url
     local cache = CatalogCache:check(hash)
     if cache then
@@ -333,10 +329,7 @@ function OPDSBrowser:parseFeed(feed_url)
         DEBUG("cache", hash)
         feed = self:fetchFeed(feed_url)
         if feed then
-            local cache = CatalogCacheItem:new{
-                feed = feed
-            }
-            CatalogCache:insert(hash, cache)
+            CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
         end
     end
     if feed then
@@ -417,7 +410,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                     end
                 end
                 local title = "Unknown"
-                local title_type = type(entry.title)
                 if type(entry.title) == "string" then
                     title = entry.title
                 elseif type(entry.title) == "table" then
@@ -445,8 +437,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     return item_table
 end
 
-function OPDSBrowser:updateCatalog(url)
-    local menu_table = self:genItemTableFromURL(url)
+function OPDSBrowser:updateCatalog(item_table_url)
+    local menu_table = self:genItemTableFromURL(item_table_url)
     if #menu_table > 0 then
         --DEBUG("menu table", menu_table)
         self:swithItemTable(nil, menu_table)
@@ -457,8 +449,8 @@ function OPDSBrowser:updateCatalog(url)
     end
 end
 
-function OPDSBrowser:appendCatalog(url)
-    local new_table = self:genItemTableFromURL(url)
+function OPDSBrowser:appendCatalog(item_table_url)
+    local new_table = self:genItemTableFromURL(item_table_url)
     for i, item in ipairs(new_table) do
         table.insert(self.item_table, item)
     end

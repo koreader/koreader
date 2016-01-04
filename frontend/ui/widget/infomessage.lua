@@ -46,7 +46,7 @@ function InfoMessage:init()
             }
         }
     end
-    local image_widget = nil
+    local image_widget
     if self.image then
         image_widget = ImageWidget:new{
             image = self.image,

@@ -6,7 +6,6 @@ lua
 lua-*
 .reader.kpdfview.lua
 .vimrc
-git-rev
 *.o
 tags
 test/*
@@ -19,6 +18,7 @@ emu
 koreader-*.zip
 koreader-*.apk
 koreader-*.tar.gz
+koreader-*.targz
 koreader-*.click
 
 l10n/*

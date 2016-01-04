@@ -6,7 +6,6 @@ local InputText = require("ui/widget/inputtext")
 local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 

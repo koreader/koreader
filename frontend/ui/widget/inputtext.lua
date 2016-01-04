@@ -5,11 +5,9 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = require("device").screen
 local Font = require("ui/font")
-local DEBUG = require("dbg")
 local util = require("ffi/util")
 local Blitbuffer = require("ffi/blitbuffer")
 
@@ -54,7 +52,6 @@ function InputText:initTextBox(text)
     self:initCharlist(text)
     local fgcolor = Blitbuffer.gray(self.text == "" and 0.5 or 1.0)
 
-    local text_widget = nil
     local show_text = self.text
     if self.text_type == "password" and show_text ~= "" then
         show_text = self.text:gsub("(.-).", function() return "*" end)
@@ -62,6 +59,7 @@ function InputText:initTextBox(text)
     elseif show_text == "" then
         show_text = self.hint
     end
+    local text_widget
     if self.scroll then
         text_widget = ScrollTextWidget:new{
             text = show_text,
