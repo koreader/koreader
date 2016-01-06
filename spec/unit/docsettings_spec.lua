@@ -1,0 +1,10 @@
+require("commonrequire")
+local doc = require("docsettings")
+
+describe("docsettings module", function()
+    it("should generate sidecar directory path", function()
+        assert.Equals("../../foo.sdr", doc:getSidecarDir("../../foo.pdf"))
+        assert.Equals("/foo/bar.sdr", doc:getSidecarDir("/foo/bar.pdf"))
+        assert.Equals("baz.sdr", doc:getSidecarDir("baz.pdf"))
+    end)
+end)
