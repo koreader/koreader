@@ -1,4 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
+local NickelConf = require("device/kobo/nickel_conf")
 
 local KoboPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 100,
@@ -29,15 +30,11 @@ end
 function KoboPowerD:setIntensityHW()
     if self.fl ~= nil then
         self.fl:setBrightness(self.flIntensity)
+        if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+            NickelConf.frontLightLevel.set(self.flIntensity)
+        end
     end
 end
-
-function KoboPowerD:setIntensitySW()
-    if self.fl ~= nil then
-        self.fl:restoreBrightness(self.flIntensity)
-    end
-end
-
 
 function KoboPowerD:getCapacityHW()
     self.battCapacity = self:read_int_file(self.batt_capacity_file)
