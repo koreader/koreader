@@ -6,6 +6,10 @@ local DocSettings = {}
 
 local history_dir = DataStorage:getDataDir() .. "/history/"
 
+function DocSettings:getSidecarDir(doc_path)
+    return doc_path:match("(.*)%.")..".sdr"
+end
+
 function DocSettings:getHistoryPath(fullpath)
     return history_dir .. "[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
 end
@@ -34,7 +38,7 @@ function DocSettings:open(docfile)
     else
         history_path = self:getHistoryPath(docfile)
 
-        local sidecar = docfile:match("(.*)%.")..".sdr"
+        local sidecar = self:getSidecarDir(docfile)
         if lfs.attributes(sidecar, "mode") ~= "directory" then
             lfs.mkdir(sidecar)
         end

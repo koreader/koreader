@@ -11,6 +11,7 @@ local FileChooser = require("ui/widget/filechooser")
 local TextWidget = require("ui/widget/textwidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
+local docsettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -277,18 +278,35 @@ function FileManager:pasteHere(file)
 end
 
 function FileManager:deleteFile(file)
+    local ok, err
     local InfoMessage = require("ui/widget/infomessage")
-    DEBUG("File to remove", util.realpath(file))
-    local rm = util.execute(self.rm_bin, "-rf", util.realpath(file))
-    DEBUG("rm status", rm)
-    if rm == 0 then
+    local file_abs_path = util.realpath(file)
+    if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = _("Successfully deleted\n") .. file,
+            text = util.template(_("File %1 not found"), file),
+        })
+        return
+    end
+
+    local is_doc = DocumentRegistry:getProvider(file_abs_path)
+    ok, err = os.remove(file_abs_path)
+    if err == nil then
+        if is_doc ~= nil then
+            -- also delete history/settings for documents
+            local sidecar_dir = docsettings:getSidecarDir(file_abs_path)
+            if lfs.attributes(sidecar_dir, "mode") == "directory" then
+                util.purgeDir(sidecar_dir)
+            end
+            local legacy_history_file = docsettings:getHistoryPath(file)
+            ok, err = os.remove(legacy_history_file)
+        end
+        UIManager:show(InfoMessage:new{
+            text = util.template(_("Successfully deleted %1"), file),
             timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _("An error occurred while trying to delete\n") .. file,
+            text = util.template(_("An error occurred while trying to delete %1"), file),
         })
     end
 end

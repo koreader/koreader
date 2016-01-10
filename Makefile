@@ -124,6 +124,10 @@ clean:
 	$(Q:@=@echo 'MAKE -C base clean'; &> /dev/null) \
 		$(MAKE) -C $(KOR_BASE) clean
 
+dist-clean: clean
+	rm -rf $(INSTALL_DIR)
+	$(MAKE) -C $(KOR_BASE) dist-clean
+
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
 KINDLE_LEGACY_LAUNCHER:=launchpad

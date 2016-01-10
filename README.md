@@ -108,18 +108,17 @@ Koreader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
 Ubuntu users probably need to install `libsdl2-dev` package:
 
 Getting the source
-========
+==================
 
 ```
 git clone https://github.com/koreader/koreader.git
-cd koreader
-make fetchthirdparty
+cd koreader && make fetchthirdparty
 ```
 
-Building & Running & Testing
-========
+Building, Running and Testing
+=============================
 
-For real reader devices
+For EReader devices (kindle, kobo, pocketbook)
 ---------------------
 
 To build installable package for Kindle:

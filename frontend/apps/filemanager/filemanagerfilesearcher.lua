@@ -41,7 +41,7 @@ function FileSearcher:readDir()
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath)
                 if attributes.mode == "directory" and f ~= "." and f~=".." then
-                    table.insert(new_dirs, d.."/"..f)
+                    table.insert(new_dirs, fullpath)
                 elseif attributes.mode == "file" and DocumentRegistry:getProvider(fullpath) then
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 end
