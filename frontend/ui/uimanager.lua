@@ -6,7 +6,6 @@ local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local NickelConf = require("device/kobo/nickel_conf")
 
 local MILLION = 1000000
 
@@ -63,9 +62,11 @@ function UIManager:init()
         end
         local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
         if kobo_light_on_start then
+            local new_intensity
             if kobo_light_on_start >= 0 then
                 new_intensity = math.min(kobo_light_on_start, 100)
             elseif kobo_light_on_start == -2 then
+                local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel:get()
             end
             if new_intensity then
