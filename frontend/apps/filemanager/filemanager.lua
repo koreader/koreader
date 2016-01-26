@@ -234,7 +234,6 @@ function FileManager:restoreScreenMode()
     if Screen:getScreenMode() ~= screen_mode then
         Screen:setScreenMode(screen_mode or "portrait")
     end
-    UIManager:setDirty(self, "full")
 end
 
 function FileManager:showFiles(path)
