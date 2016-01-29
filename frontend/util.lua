@@ -46,7 +46,7 @@ function util.gsplit(str, pattern, capture)
     end)
 end
 
---https://gist.github.com/jesseadams/791673
+-- https://gist.github.com/jesseadams/791673
 function util.secondsToClock(seconds, withoutSeconds)
     seconds = tonumber(seconds)
     if seconds == 0 or seconds ~= seconds then
@@ -66,7 +66,8 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
-function util.tablelength(T)
+-- returns number of keys in a table
+function util.tableSize(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end
     return count
