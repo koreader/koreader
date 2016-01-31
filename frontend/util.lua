@@ -73,4 +73,11 @@ function util.tableSize(T)
     return count
 end
 
+-- append all elements from t2 into t1
+function util.arrayAppend(t1, t2)
+    for _,v in ipairs(t2) do
+        table.insert(t1, v)
+    end
+end
+
 return util
