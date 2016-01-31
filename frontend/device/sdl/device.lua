@@ -16,6 +16,10 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
 }
 
+if os.getenv("DISABLE_TOUCH") == "1" then
+    Device.isTouchDevice = no
+end
+
 function Device:init()
     -- allows to set a viewport via environment variable
     -- syntax is Lua table syntax, e.g. EMULATE_READER_VIEWPORT="{x=10,w=550,y=5,h=790}"
@@ -41,6 +45,8 @@ function Device:init()
             event_map = require("device/sdl/event_map_sdl"),
         }
     end
+
+    self.keyboard_layout = require("device/sdl/keyboard_layout")
 
     if portrait then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
