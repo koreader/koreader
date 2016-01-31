@@ -34,10 +34,13 @@ local TouchMenu = require("ui/widget/touchmenu")
 local InputText = require("ui/widget/inputtext")
 local DocumentRegistry = require("document/documentregistry")
 local ReaderUI = require("apps/reader/readerui")
-local Dbg = require("dbg")
+local DEBUG = require("dbg")
 local Device = require("device")
 local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")
+local InputText = require("ui/widget/inputtext")
+
+DEBUG:turnOn()
 
 -----------------------------------------------------
 -- widget that paints the grid on the background
@@ -260,9 +263,8 @@ readerwindow = CenterContainer:new{
 reader = ReaderUI:new{
     dialog = readerwindow,
     dimen = Geom:new{ w = Screen:getWidth() - 100, h = Screen:getHeight() - 100 },
-    document = DocumentRegistry:openDocument("test/2col.pdf")
-    --document = DocumentRegistry:openDocument("test/djvu3spec.djvu")
-    --document = DocumentRegistry:openDocument("./README.TXT")
+    document = DocumentRegistry:openDocument("spec/front/unit/data/2col.pdf")
+    --document = DocumentRegistry:openDocument("spec/front/unit/data/djvu3spec.djvu")
 }
 readerwindow[1][1] = reader
 
@@ -341,9 +343,14 @@ touch_menu = TouchMenu:new{
     },
 }
 
-inputtext = InputText:new{
+local TestInputText = InputText:new{
     width = 400,
-    height = 300,
+    enter_callback = function() print("Entered") end,
+    scroll = false,
+    input_type = "number",
+    parent = {
+        onSwitchFocus = false,
+    },
 }
 
 -----------------------------------------------------------------------
@@ -358,6 +365,7 @@ UIManager:show(Clock:new())
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)
 --UIManager:show(keyboard)
--- UIManager:show(inputtext)
+UIManager:show(TestInputText)
+TestInputText:onShowKeyboard()
 
 UIManager:run()

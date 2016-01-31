@@ -1,4 +1,4 @@
-local isAndroid, android = pcall(require, "android")
+local isAndroid, _ = pcall(require, "android")
 local util = require("ffi/util")
 
 local function probeDevice()

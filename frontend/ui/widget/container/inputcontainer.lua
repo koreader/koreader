@@ -3,7 +3,6 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[
@@ -89,7 +88,6 @@ end
 function InputContainer:onGesture(ev)
     for name, gsseq in pairs(self.ges_events) do
         for _, gs_range in ipairs(gsseq) do
-            --DEBUG("gs_range", gs_range)
             if gs_range:match(ev) then
                 local eventname = gsseq.event or name
                 return self:handleEvent(Event:new(eventname, gsseq.args, ev))
