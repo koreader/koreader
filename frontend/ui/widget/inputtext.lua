@@ -1,15 +1,15 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Screen = require("device").screen
+local Screen = Device.screen
 local Font = require("ui/font")
 local util = require("ffi/util")
-local Blitbuffer = require("ffi/blitbuffer")
+local Keyboard
 
 local InputText = InputContainer:new{
     text = "",
@@ -32,10 +32,10 @@ local InputText = InputContainer:new{
     focused = true,
 }
 
-function InputText:init()
-    self:initTextBox(self.text)
-    self:initKeyboard()
-    if Device:isTouchDevice() then
+-- only use PhysicalKeyboard if the device does not have touch screen
+if Device.isTouchDevice() then
+    Keyboard = require("ui/widget/virtualkeyboard")
+    function InputText:initEventListener()
         self.ges_events = {
             TapTextBox = {
                 GestureRange:new{
@@ -45,6 +45,21 @@ function InputText:init()
             }
         }
     end
+
+    function InputText:onTapTextBox()
+        if self.parent.onSwitchFocus then
+            self.parent:onSwitchFocus(self)
+        end
+    end
+else
+    Keyboard = require("ui/widget/physicalkeyboard")
+    function InputText:initEventListener() end
+end
+
+function InputText:init()
+    self:initTextBox(self.text)
+    self:initKeyboard()
+    self:initEventListener()
 end
 
 function InputText:initTextBox(text)
@@ -112,18 +127,11 @@ function InputText:initKeyboard()
     if self.input_type == "number" then
         keyboard_layout = 3
     end
-    self.keyboard = VirtualKeyboard:new{
+    self.keyboard = Keyboard:new{
         layout = keyboard_layout,
         inputbox = self,
         width = Screen:getWidth(),
-        height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
     }
-end
-
-function InputText:onTapTextBox()
-    if self.parent.onSwitchFocus then
-        self.parent:onSwitchFocus(self)
-    end
 end
 
 function InputText:unfocus()

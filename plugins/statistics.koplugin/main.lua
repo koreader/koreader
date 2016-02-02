@@ -235,7 +235,7 @@ function ReaderStatistics:updateCurrentStat()
         dates[os.date("%Y-%m-%d", k)] = ""
     end
 
-    local read_pages = util.tablelength(self.data.performance_in_pages)
+    local read_pages = util.tableSize(self.data.performance_in_pages)
     local current_page = self.ui.document:getCurrentPage()
     local average_time_per_page = self.data.total_time_in_sec / read_pages
 
@@ -244,7 +244,7 @@ function ReaderStatistics:updateCurrentStat()
     table.insert(stats, { text = _("Total time"), mandatory = util.secondsToClock(self.data.total_time_in_sec, false) })
     table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
     table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
-    table.insert(stats, { text = _("Total days"), mandatory = util.tablelength(dates) })
+    table.insert(stats, { text = _("Total days"), mandatory = util.tableSize(dates) })
     table.insert(stats, { text = _("Average time per page"), mandatory = util.secondsToClock(average_time_per_page, false) })
     table.insert(stats, { text = _("Read pages/Total pages"), mandatory = read_pages .. "/" .. self.data.pages })
     return stats

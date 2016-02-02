@@ -3,7 +3,6 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[
@@ -51,19 +50,21 @@ function InputContainer:_init()
 end
 
 function InputContainer:paintTo(bb, x, y)
+    if self[1] == nil then
+        return
+    end
+
     if not self.dimen then
         local content_size = self[1]:getSize()
         self.dimen = Geom:new{w = content_size.w, h = content_size.h}
     end
     self.dimen.x = x
     self.dimen.y = y
-    if self[1] then
-        if self.vertical_align == "center" then
-            local content_size = self[1]:getSize()
-            self[1]:paintTo(bb, x, y + math.floor((self.dimen.h - content_size.h)/2))
-        else
-            self[1]:paintTo(bb, x, y)
-        end
+    if self.vertical_align == "center" then
+        local content_size = self[1]:getSize()
+        self[1]:paintTo(bb, x, y + math.floor((self.dimen.h - content_size.h)/2))
+    else
+        self[1]:paintTo(bb, x, y)
     end
 end
 
@@ -87,7 +88,6 @@ end
 function InputContainer:onGesture(ev)
     for name, gsseq in pairs(self.ges_events) do
         for _, gs_range in ipairs(gsseq) do
-            --DEBUG("gs_range", gs_range)
             if gs_range:match(ev) then
                 local eventname = gsseq.event or name
                 return self:handleEvent(Event:new(eventname, gsseq.args, ev))
@@ -97,6 +97,10 @@ function InputContainer:onGesture(ev)
 end
 
 function InputContainer:onInput(input)
+    if self.enter_callback == nil then
+        return
+    end
+
     local InputDialog = require("ui/widget/inputdialog")
     self.input_dialog = InputDialog:new{
         title = input.title or "",

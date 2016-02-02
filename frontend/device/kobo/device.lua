@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device")
-local lfs = require("libs/libkoreader-lfs")
 local Geom = require("ui/geometry")
 local DEBUG = require("dbg")
 

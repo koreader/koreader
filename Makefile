@@ -54,10 +54,10 @@ all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo $(VERSION) > $(INSTALL_DIR)/koreader/git-rev
 ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
-	# create symlink instead of copying files in development mode
+	@echo "[*] create symlink instead of copying files in development mode"
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/* .
-	# install front spec only for the emulator
+	@echo "[*] install front spec only for the emulator"
 	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
 		ln -sf ../../../../spec ./front
 	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
@@ -73,15 +73,16 @@ ifdef ANDROID
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 endif
 ifdef WIN32
-	# install runtime libraries for win32
+	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
-	# install plugins
+	@echo "[*] Install plugins"
 	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
+	@echo "[*] Installresources"
 	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
-	# clean up, remove unused files for releases
+	@echo "[*] Clean up, remove unused files for releases"
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 	rm -rf $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttf
 endif
@@ -285,6 +286,8 @@ androidupdate: all
 
 update:
 ifeq ($(TARGET), kindle)
+	make kindleupdate
+else ifeq ($(TARGET), kindle-legacy)
 	make kindleupdate
 else ifeq ($(TARGET), kobo)
 	make koboupdate

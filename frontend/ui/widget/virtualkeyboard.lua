@@ -10,8 +10,8 @@ local ImageWidget = require("ui/widget/imagewidget")
 local TextWidget = require("ui/widget/textwidget")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
-local Screen = require("device").screen
 local Device = require("device")
+local Screen = Device.screen
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
@@ -26,7 +26,7 @@ local VirtualKey = InputContainer:new{
     callback = nil,
 
     width = nil,
-    height = nil,
+    height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
     bordersize = 2,
     face = Font:getFace("infont", 22),
 }

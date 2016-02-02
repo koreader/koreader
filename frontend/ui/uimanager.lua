@@ -85,7 +85,7 @@ end
 -- modal widget should be always on the top
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:show(widget, refreshtype, refreshregion, x, y)
-    DEBUG("show widget", widget.id)
+    DEBUG("show widget", widget._name)
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
     -- put this window on top of the toppest non-modal window

@@ -112,43 +112,34 @@ Getting the source
 
 ```
 git clone https://github.com/koreader/koreader.git
-cd koreader && make fetchthirdparty
+cd koreader && ./kodev fetch-thirdparty
 ```
 
 Building, Running and Testing
 =============================
 
-For EReader devices (kindle, kobo, pocketbook)
+For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
 ---------------------
 
 To build installable package for Kindle:
 ```
-make TARGET=kindle clean update
+./kodev release kindle
 ```
 
 To build installable package for Kobo:
 ```
-make TARGET=kobo clean update
+./kodev release kobo
 ```
 
-To build installable package for PocketBook you need first to obtain the SDK
-from PocketBook:
+To build installable package for PocketBook:
 ```
-make pocketbook-toolchain
-```
-then similarly with Kindle and Kobo building run this command:
-```
-make TARGET=pocketbook clean update
+./kodev release pocketbook
 ```
 
 To build installable package for Ubuntu Touch
 ```
-make TARGET=ubuntu-touch clean update
+./kodev release ubuntu-touch
 ```
-
-To run, you must call the script `reader.lua`. Run it without arguments to see
-usage notes. Note that the script and the `luajit` binary must be in the same
-directory.
 
 You may checkout our [nightlybuild script][nb-script] to see how to build a
 package from scratch.
@@ -159,15 +150,9 @@ For Android devices
 Make sure the "android" and "ndk-build" tools are in your PATH variable
 and the NDK variable points to the root directory of the Android NDK.
 
-First, run this command to make a standalone android cross compiling toolchain
-from NDK:
+Then, run this command to build installable package for Android:
 ```
-make android-toolchain
-```
-
-Then, build installable package for Android:
-```
-make TARGET=android clean androidupdate
+./kodev release android
 ```
 
 For emulating KOReader on Linux and Windows
@@ -175,21 +160,20 @@ For emulating KOReader on Linux and Windows
 
 To build an emulator on current Linux machine just run:
 ```
-make clean && make
+./kodev build
 ```
 
 If you want to compile the emulator for Windows you need to run:
 ```
-make TARGET=win32 clean && make TARGET=win32
+./kodev build win32
 ```
 
 To run Koreader on your developing machine
-(you may need to change $(MACHINE) to the arch of your machine such as 'x86_64'):
 ```
-cd koreader-emulator-$(MACHINE)/koreader && ./reader.lua -d ../../test
+./kodev run ./test
 ```
 
-To run unit tests in KOReader:
+To run unit tests:
 ```
 make test
 ```

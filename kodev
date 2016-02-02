@@ -1,0 +1,272 @@
+#!/bin/bash
+
+CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+function setup_env {
+    files=("./koreader-emulator-*/koreader")
+    export EMU_DIR=${files[0]}
+}
+
+function kodev-fetch-thirdparty {
+    make fetchthirdparty
+}
+
+SUPPORTED_TARGETS="
+    kindle          For kindle with touch support
+    kindle-legacy   For kindle2/3/4/DXG
+    kobo
+    android
+    pocketbook
+    ubuntu-touch
+    emu             (*default) If no TARGET is given, assume emulator
+    win32
+"
+
+function kodev-build {
+    BUILD_HELP_MSG="
+usage: build <TARGET>
+
+TARGET:
+${SUPPORTED_TARGETS}"
+
+    case $1 in
+        -h | --help)
+            echo "${BUILD_HELP_MSG}"
+            exit 0
+            ;;
+        kindle)
+            make TARGET=kindle
+            ;;
+        kobo)
+            make TARGET=kobo
+            ;;
+        kindle-legacy)
+            make TARGET=kindle-legacy
+            ;;
+        android)
+            if [ ! -d ${CURDIR}/base/toolchain/android-toolchain ]; then
+                make android-toolchain
+            fi
+            make TARGET=android
+            ;;
+        pocketbook)
+            if [ ! -d ${CURDIR}/base/toolchain/pocketbook-toolchain ]; then
+                make pocketbook-toolchain
+            fi
+            make TARGET=pocketbook
+            ;;
+        ubuntu-touch)
+            make TARGET=ubuntu-touch
+            ;;
+        win32)
+            make TARGET=win32
+            ;;
+        *)
+            make
+            setup_env
+            ;;
+    esac
+}
+
+function kodev-clean {
+    CLEAN_HELP_MSG="
+usage: clean <TARGET>
+
+TARGET:
+${SUPPORTED_TARGETS}"
+
+    case $1 in
+        -h | --help)
+            echo "${CLEAN_HELP_MSG}"
+            exit 0
+            ;;
+        kindle)
+            make TARGET=kindle clean
+            ;;
+        kobo)
+            make TARGET=kobo clean
+            ;;
+        kindle-legacy)
+            make TARGET=kindle-legacy clean
+            ;;
+        android)
+            make TARGET=android clean
+            ;;
+        pocketbook)
+            make TARGET=pocketbook clean
+            ;;
+        ubuntu-touch)
+            make TARGET=ubuntu-touch clean
+            ;;
+        win32)
+            make TARGET=win32 clean
+            ;;
+        *)
+            make clean
+            ;;
+    esac
+}
+
+function kodev-release {
+    # SUPPORTED_RELEASE_TARGETS=$(echo ${SUPPORTED_TARGETS} | sed 's/win32//')
+    SUPPORTED_RELEASE_TARGETS="${SUPPORTED_TARGETS/emu*/""}"
+    RELEASE_HELP_MSG="
+usage: release <TARGET>
+
+TARGET:
+${SUPPORTED_RELEASE_TARGETS}"
+
+    if [ $# -lt 1 ]; then
+        echo "${RELEASE_HELP_MSG}"
+        exit 1
+    fi
+
+    case $1 in
+        -h | --help)
+            echo "${RELEASE_HELP_MSG}"
+            exit 0
+            ;;
+        kindle)
+            kodev-build kindle
+            make TARGET=kindle update
+            ;;
+        kobo)
+            kodev-build kobo
+            make TARGET=kobo update
+            ;;
+        kindle-legacy)
+            kodev-build kindle-legacy
+            make TARGET=kindle-legacy update
+            ;;
+        android)
+            kodev-build android
+            make TARGET=android update
+            ;;
+        pocketbook)
+            kodev-build pocketbook
+            make TARGET=pocketbook update
+            ;;
+        ubuntu-touch)
+            kodev-build pocketbook
+            make TARGET=ubuntu-touch update
+            ;;
+        *)
+            echo "Unsupported target for release: $1."
+            echo "${RELEASE_HELP_MSG}"
+            exit 1
+            ;;
+    esac
+}
+
+
+function kodev-wbuilder {
+    kodev-build
+    echo "[*] Running wbuilder.lua..."
+    pushd ${EMU_DIR}
+    EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./utils/wbuilder.lua
+    popd
+}
+
+function kodev-run {
+    RUN_HELP_MSG="
+usage: run <OPTIONS> <ARGS>
+
+OPTIONS:
+
+    --no-build          run reader without rebuilding
+    --disable-touch     use this if you want to simulate keyboard only devices
+    "
+    while [[ $1 == '--'* ]]; do
+        PARAM=`echo $1 | awk -F= '{print $1}'`
+        VALUE=`echo $1 | awk -F= '{print $2}'`
+        case $PARAM in
+            --disable-touch)
+                export DISABLE_TOUCH=1
+                ;;
+            --no-build)
+                no_build=true
+                ;;
+            -h | --help)
+                echo "${RUN_HELP_MSG}"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${RUN_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+    if [ ! ${no_build} ]; then
+        echo "[*] Building KOReader..."
+        kodev-build
+    else
+        setup_env
+    fi
+
+    echo "[*] Running KOReader..."
+    pushd ${EMU_DIR}
+
+    if [ $# -lt 1 ]; then
+        args=${CURDIR}/test
+    else
+        args="$1"
+        [[ $args != /* ]] && args="${CURDIR}/$1"
+    fi
+
+    EMULATE_READER_W=540 EMULATE_READER_H=720 ./reader.lua -d $args
+    popd
+}
+
+HELP_MSG="
+usage: $0 COMMAND <ARGS>
+
+Supported commands:
+
+    build       Build KOReader
+    clean       Clean KOReader build
+    run         Run KOReader
+    wbuilder    Run wbuilder.lua script (useful for building new UI widget)
+"
+
+if [ $# -lt 1 ]; then
+    echo "Missing command."
+    echo "${HELP_MSG}"
+    exit 1
+fi
+
+case $1 in
+    fetch-thirdparty)
+        kodev-fetch-thirdparty
+        ;;
+    clean)
+        shift 1
+        kodev-clean $@
+        ;;
+    build)
+        shift 1
+        kodev-build $@
+        ;;
+    release)
+        shift 1
+        kodev-release $@
+        ;;
+    wbuilder)
+        kodev-wbuilder
+        ;;
+    run)
+        shift 1
+        kodev-run $@
+        ;;
+    --help | -h)
+        echo "${HELP_MSG}"
+        exit 0
+        ;;
+    *)
+        echo "Unknown command: $1."
+        echo "${HELP_MSG}"
+        exit 1
+        ;;
+esac
