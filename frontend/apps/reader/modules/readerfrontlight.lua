@@ -46,10 +46,14 @@ function ReaderFrontLight:onAdjust(arg, ges)
         DEBUG("step = ", step)
         local delta_int = self.steps[step] or self.steps[#self.steps]
         DEBUG("delta_int = ", delta_int)
+        local new_intensity
         if ges.direction == "north" then
-            powerd:setIntensity(powerd.flIntensity + delta_int)
+            new_intensity = powerd.flIntensity + delta_int
         elseif ges.direction == "south" then
-            powerd:setIntensity(powerd.flIntensity - delta_int)
+            new_intensity = powerd.flIntensity - delta_int
+        end
+        if new_intensity ~= nil then
+            powerd:setIntensity(new_intensity)
         end
     end
     return true
@@ -121,7 +125,6 @@ end
 
 function ReaderFrontLight:close()
     self.fl_dialog:onClose()
-    G_reader_settings:saveSetting("frontlight_intensity", Device:getPowerDevice().flIntensity)
     UIManager:close(self.fl_dialog)
 end
 
