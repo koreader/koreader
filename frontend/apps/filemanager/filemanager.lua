@@ -22,6 +22,25 @@ local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
+function getDefaultDir()
+    if Device:isKindle() then
+        return "/mnt/us/documents"
+    elseif Device:isKobo() then
+        return "/mnt/onboard"
+    elseif Device.isAndroid() then
+        return "/sdcard"
+    else
+        return "."
+    end
+end
+
+function restoreScreenMode()
+    local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
+    if Screen:getScreenMode() ~= screen_mode then
+        Screen:setScreenMode(screen_mode or "portrait")
+    end
+end
+
 local FileManager = InputContainer:extend{
     title = _("FileManager"),
     root_path = lfs.currentdir(),
@@ -217,42 +236,6 @@ function FileManager:onRefresh()
     return true
 end
 
-function FileManager:getDefaultDir()
-    if Device:isKindle() then
-        return "/mnt/us/documents"
-    elseif Device:isKobo() then
-        return "/mnt/onboard"
-    elseif Device.isAndroid() then
-        return "/sdcard"
-    else
-        return "."
-    end
-end
-
-function FileManager:restoreScreenMode()
-    local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
-    if Screen:getScreenMode() ~= screen_mode then
-        Screen:setScreenMode(screen_mode or "portrait")
-    end
-    UIManager:setDirty(self, "full")
-end
-
-function FileManager:showFiles(path)
-    DEBUG("show home page")
-    path = path or G_reader_settings:readSetting("lastdir") or self:getDefaultDir()
-    G_reader_settings:saveSetting("lastdir", path)
-    self:restoreScreenMode()
-    local file_manager = FileManager:new{
-        dimen = Screen:getSize(),
-        root_path = path,
-        onExit = function()
-            self.instance = nil
-        end
-    }
-    UIManager:show(file_manager)
-    self.instance = file_manager
-end
-
 function FileManager:copyFile(file)
     self.cutfile = false
     self.clipboard = file
@@ -338,6 +321,21 @@ function FileManager:getSortingMenuTable()
             set_collate_table("access"),
         }
     }
+end
+
+function FileManager:showFiles(path)
+    path = path or G_reader_settings:readSetting("lastdir") or getDefaultDir()
+    G_reader_settings:saveSetting("lastdir", path)
+    restoreScreenMode()
+    local file_manager = FileManager:new{
+        dimen = Screen:getSize(),
+        root_path = path,
+        onExit = function()
+            self.instance = nil
+        end
+    }
+    UIManager:show(file_manager)
+    self.instance = file_manager
 end
 
 return FileManager
