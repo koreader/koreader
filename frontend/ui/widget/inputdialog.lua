@@ -24,6 +24,9 @@ local InputDialog = InputContainer:new{
     width = nil,
     height = nil,
 
+    text_width = nil,
+    text_height = nil,
+
     title_face = Font:getFace("tfont", 22),
     input_face = Font:getFace("cfont", 20),
 
@@ -58,7 +61,8 @@ function InputDialog:init()
         text = self.input,
         hint = self.input_hint,
         face = self.input_face,
-        width = self.width * 0.9,
+        width = self.text_width or self.width * 0.9,
+        height = self.text_height or nil,
         input_type = self.input_type,
         text_type = self.text_type,
         enter_callback = self.enter_callback,
