@@ -12,6 +12,11 @@ local re_FrontLightLevel = "^FrontLightLevel%s*=%s*(" .. re_BrightnessValue .. "
 local re_PowerOptionsSection = "^%[PowerOptions%]%s*"
 local re_AnySection = "^%[.*%]%s*"
 
+
+function NickelConf._set_kobo_conf_path(new_path)
+    kobo_conf_path = new_path
+end
+
 function NickelConf.frontLightLevel.get()
 
     local new_intensity
@@ -50,8 +55,8 @@ function NickelConf.frontLightLevel.get()
 end
 
 function NickelConf.frontLightLevel.set(new_intensity)
-	assert(new_intensity >= 0 and new_intensity <= 100,
-		"Wrong brightness value given!")
+    assert(new_intensity >= 0 and new_intensity <= 100,
+           "Wrong brightness value given!")
 
     local kobo_conf
     local old_intensity
