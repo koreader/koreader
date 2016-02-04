@@ -206,6 +206,11 @@ OPTIONS:
         setup_env
     fi
 
+    if [ ! -d ${EMU_DIR} ]; then
+        echo "Failed to find emulator directory! Please try build command first."
+        exit 1
+    fi
+
     echo "[*] Running KOReader..."
     pushd ${EMU_DIR}
 
