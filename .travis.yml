@@ -45,15 +45,15 @@ install:
   - git clone https://github.com/torch/luajit-rocks.git
   - pushd luajit-rocks
   - git checkout 6529891
-  - cmake . -DWITH_LUA52=ON -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
+  - cmake . -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
   - make install
   - popd
   - export PATH=$PATH:${TRAVIS_BUILD_DIR}/install/bin
   - mkdir $HOME/.luarocks
   - cp ${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua $HOME/.luarocks/config.lua
   - echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
-  - travis_retry luarocks --local install ansicolors
   - travis_retry luarocks --local install luafilesystem
+  - travis_retry luarocks --local install ansicolors
   - travis_retry luarocks --local install busted 2.0.rc11-0
   #- travis_retry luarocks --local install busted 1.11.1-1
   #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
@@ -62,14 +62,12 @@ install:
   - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
   - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
   # add local rocks to $PATH
-  # on newer luarocks, `luarocks path --bin` would suffice because it includes the PATH now
-  - luarocks path --bin
   - eval $(luarocks path --bin)
 
 script:
   - travis_retry make fetchthirdparty
   - make all
-  - make testfront
+  - travis_retry make testfront
 
 after_success:
   - make coverage
