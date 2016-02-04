@@ -2,6 +2,15 @@
 
 CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+function assert_return_zero {
+    if [ $1 -ne 0 ]; then
+        if [ ! -z $2 ]; then
+            echo $2
+        fi
+        exit 1
+    fi
+}
+
 function setup_env {
     files=("./koreader-emulator-*/koreader")
     export EMU_DIR=${files[0]}
@@ -36,33 +45,43 @@ ${SUPPORTED_TARGETS}"
             ;;
         kindle)
             make TARGET=kindle
+            assert_return_zero $?
             ;;
         kobo)
             make TARGET=kobo
+            assert_return_zero $?
             ;;
         kindle-legacy)
             make TARGET=kindle-legacy
+            assert_return_zero $?
             ;;
         android)
             if [ ! -d ${CURDIR}/base/toolchain/android-toolchain ]; then
                 make android-toolchain
+                assert_return_zero $?
             fi
             make TARGET=android
+            assert_return_zero $?
             ;;
         pocketbook)
             if [ ! -d ${CURDIR}/base/toolchain/pocketbook-toolchain ]; then
                 make pocketbook-toolchain
+                assert_return_zero $?
             fi
             make TARGET=pocketbook
+            assert_return_zero $?
             ;;
         ubuntu-touch)
             make TARGET=ubuntu-touch
+            assert_return_zero $?
             ;;
         win32)
             make TARGET=win32
+            assert_return_zero $?
             ;;
         *)
             make
+            assert_return_zero $? "Failed to build emulator!"
             setup_env
             ;;
     esac
@@ -225,6 +244,34 @@ OPTIONS:
     popd
 }
 
+function kodev-test {
+    TEST_HELP_MSG="
+usage: test [front|base] <TEST_NAME>
+
+    TEST_NAME is optional. If no TEST_NAME is given, all tests will be run.
+    "
+
+    if [ $# -lt 1 ]; then
+        echo "${TEST_HELP_MSG}"
+        exit 1
+    fi
+
+    setup_env
+    make ${EMU_DIR}/.busted
+    pushd ${EMU_DIR}
+
+    test_path=./spec/$1/unit
+
+    if [ ! -z $2 ]; then
+        test_path="${test_path}/$2"
+    fi
+    busted --exclude-tags=notest ${test_path}
+
+    popd
+}
+
+
+
 HELP_MSG="
 usage: $0 COMMAND <ARGS>
 
@@ -264,6 +311,10 @@ case $1 in
     run)
         shift 1
         kodev-run $@
+        ;;
+    test)
+        shift 1
+        kodev-test $@
         ;;
     --help | -h)
         echo "${HELP_MSG}"
