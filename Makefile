@@ -90,9 +90,8 @@ endif
 $(KOR_BASE)/$(OUTPUT_DIR)/luajit:
 	$(MAKE) -C $(KOR_BASE)
 
-$(INSTALL_DIR)/koreader/.busted:
-	test -e $(INSTALL_DIR)/koreader/.busted || \
-		ln -sf ../../.busted $(INSTALL_DIR)/koreader
+$(INSTALL_DIR)/koreader/.busted: .busted
+	ln -sf ../../.busted $(INSTALL_DIR)/koreader
 
 $(INSTALL_DIR)/koreader/.luacov:
 	test -e $(INSTALL_DIR)/koreader/.luacov || \
