@@ -18,6 +18,8 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local util  = require("util")
 
+local auto_refresh_scheduled = false
+
 local ReaderFooter = InputContainer:new{
     mode = 1,
     visible = true,
@@ -157,10 +159,14 @@ function ReaderFooter:init()
     end
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     self:applyFooterMode()
+    if self.settings.auto_refresh_time and not auto_refresh_scheduled then
+        self:autoRefreshTime()
+    end
 end
 
 local options = {
     all_at_once = _("Show all at once"),
+    auto_refresh_time = _("Auto refresh time"),
     progress_bar = _("Progress bar"),
     toc_markers = _("Chapter markers"),
     battery = _("Battery status"),
@@ -180,7 +186,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
                 return self.settings[option] == true
             end,
             enabled_func = function()
-                return not self.settings.diabled
+                return not self.settings.disabled
             end,
             callback = function()
                 self.settings[option] = not self.settings[option]
@@ -194,6 +200,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
         text = _("Status bar"),
         sub_item_table = {
             get_minibar_option("all_at_once"),
+            get_minibar_option("auto_refresh_time"),
             get_minibar_option("progress_bar"),
             get_minibar_option("toc_markers"),
             get_minibar_option("battery"),
@@ -205,6 +212,19 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             get_minibar_option("chapter_time_to_read"),
         }
     })
+end
+
+function ReaderFooter:autoRefreshTime()
+    if self.settings.auto_refresh_time then
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")) , function()
+            self:autoRefreshTime()
+            self:updateFooterPage()
+            UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+        end)
+        auto_refresh_scheduled = true
+    else
+        auto_refresh_scheduled = false
+    end
 end
 
 function ReaderFooter:getBatteryInfo()
@@ -244,7 +264,6 @@ function ReaderFooter:getChapterTimeToRead()
     return self:getDataFromStatistics("TC: ", (left and left or self.pages - self.pageno))
 end
 
-
 function ReaderFooter:getDataFromStatistics(title, pages)
     local statistics_data = self.ui.doc_settings:readSetting("stats")
     local sec = 'na'
@@ -255,7 +274,6 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     end
     return title .. sec
 end
-
 
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
