@@ -23,7 +23,6 @@ addons:
     packages:
       - g++-4.8
       - libsdl1.2-dev
-      - luarocks
       # for luasec
       - libssl1.0.0
       - nasm
@@ -42,10 +41,19 @@ before_install:
   - export PATH=$PWD/bin:$PATH
 
 install:
+  # install our own updated luarocks
+  - git clone https://github.com/torch/luajit-rocks.git
+  - pushd luajit-rocks
+  - git checkout 6529891
+  - cmake . -DWITH_LUA52=ON -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
+  - make install
+  - popd
+  - export PATH=$PATH:${TRAVIS_BUILD_DIR}/install/bin
   - mkdir $HOME/.luarocks
-  - cp /etc/luarocks/config.lua $HOME/.luarocks/config.lua
+  - cp ${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua $HOME/.luarocks/config.lua
   - echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
   - travis_retry luarocks --local install ansicolors
+  - travis_retry luarocks --local install luafilesystem
   - travis_retry luarocks --local install busted 2.0.rc11-0
   #- travis_retry luarocks --local install busted 1.11.1-1
   #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
@@ -55,11 +63,12 @@ install:
   - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
   # add local rocks to $PATH
   # on newer luarocks, `luarocks path --bin` would suffice because it includes the PATH now
+  - luarocks path --bin
   - eval $(luarocks path --bin)
-  - export PATH=$PATH:$HOME/.luarocks/bin
 
 script:
-  - travis_retry make fetchthirdparty all
+  - travis_retry make fetchthirdparty
+  - make all
   - make testfront
 
 after_success:
