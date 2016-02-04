@@ -67,7 +67,7 @@ install:
 script:
   - travis_retry make fetchthirdparty
   - make all
-  - make testfront
+  - travis_retry make testfront
 
 after_success:
   - make coverage
