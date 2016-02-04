@@ -1,3 +1,6 @@
+--[[--
+MD5 hash library.
+  ]]
 
 local ffi = require "ffi"
 local bit = require "bit"
@@ -210,15 +213,22 @@ end
 
 local md5 = {}
 
+--- Create a new md5 hashing instance.
+---- @return md5 instance
 function md5:new()
     self.ctx = ffi.new("MD5_CTX")
     MD5Init(self.ctx)
 end
 
+--- Feed content to md5 hashing instance.
+---- @param luastr Lua string
 function md5:update(luastr)
     MD5Update(self.ctx, ffi.cast("const char*", luastr), #luastr)
 end
 
+--- Calcualte md5 sum.
+---- @param luastr Lua string
+---- @return md5 sum in Lua string
 function md5:sum(luastr)
     local buf = ffi.new("char[33]")
     local hash = ffi.new("uint8_t[16]")

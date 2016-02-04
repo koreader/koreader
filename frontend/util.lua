@@ -1,3 +1,7 @@
+--[[--
+Miscellaneous helper functions for KOReader frontend.
+  ]]
+
 local util = {}
 
 function util.stripePunctuations(word)
@@ -66,7 +70,9 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
--- returns number of keys in a table
+--- Returns number of keys in a table.
+---- @param T Lua table
+---- @return number of keys in table T
 function util.tableSize(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end

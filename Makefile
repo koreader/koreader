@@ -127,6 +127,7 @@ clean:
 dist-clean: clean
 	rm -rf $(INSTALL_DIR)
 	$(MAKE) -C $(KOR_BASE) dist-clean
+	$(MAKE) -C doc clean
 
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
@@ -324,4 +325,7 @@ static-check:
 		echo "[!] luacheck not found. "\
 		"you can install it with 'luarocks install luacheck'"; fi
 
-.PHONY: test
+doc:
+	make -C doc
+
+.PHONY: test doc

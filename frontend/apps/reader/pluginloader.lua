@@ -19,16 +19,16 @@ function PluginLoader:loadPlugins()
             local package_cpath = package.cpath
             package.path = path.."/?.lua;"..package.path
             package.cpath = path.."/lib/?.so;"..package.cpath
-            local ok, module = pcall(dofile, mainfile)
+            local ok, plugin_module = pcall(dofile, mainfile)
             if not ok then
-                DEBUG("Error when loading", mainfile, module)
+                DEBUG("Error when loading", mainfile, plugin_module)
             end
             package.path = package_path
             package.cpath = package_cpath
             if ok then
-                module.path = path
-                module.name = module.name or path:match("/(.-)%.koplugin")
-                table.insert(self.plugins, module)
+                plugin_module.path = path
+                plugin_module.name = plugin_module.name or path:match("/(.-)%.koplugin")
+                table.insert(self.plugins, plugin_module)
             end
         end
     end
@@ -44,4 +44,3 @@ function PluginLoader:loadPlugins()
 end
 
 return PluginLoader
-

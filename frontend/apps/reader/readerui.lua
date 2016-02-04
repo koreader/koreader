@@ -71,9 +71,9 @@ local ReaderUI = InputContainer:new{
     postInitCallback = nil,
 }
 
-function ReaderUI:registerModule(name, module, always_active)
-    if name then self[name] = module end
-    table.insert(always_active and self.active_widgets or self, module)
+function ReaderUI:registerModule(name, ui_module, always_active)
+    if name then self[name] = ui_module end
+    table.insert(always_active and self.active_widgets or self, ui_module)
 end
 
 function ReaderUI:registerPostInitCallback(callback)
@@ -298,9 +298,9 @@ function ReaderUI:init()
     })
 
     -- koreader plugins
-    for _,module in ipairs(PluginLoader:loadPlugins()) do
-        DEBUG("Loaded plugin", module.name, "at", module.path)
-        self:registerModule(module.name, module:new{
+    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        self:registerModule(plugin_module.name, plugin_module:new{
             dialog = self.dialog,
             view = self.view,
             ui = self,

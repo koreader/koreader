@@ -1,5 +1,5 @@
---[[
-Simple math helper function
+--[[--
+Simple math helper functions
 ]]--
 
 local Math = {}
