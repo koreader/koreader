@@ -12,6 +12,7 @@ test/*
 *.tar
 *.log
 spec/unit/data
+doc/html
 
 emu
 
