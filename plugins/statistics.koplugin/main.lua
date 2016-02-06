@@ -490,6 +490,7 @@ function ReaderStatistics:saveSettings(fields)
 end
 
 function ReaderStatistics:onReadSettings(config)
+    -- delay initialization for accurate total pages count of the doc
     UIManager:scheduleIn(0.1, function() self:initData(config) end)
 end
 
