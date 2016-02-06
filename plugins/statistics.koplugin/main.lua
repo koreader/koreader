@@ -405,10 +405,14 @@ function ReaderStatistics:onPageUpdate(pageno)
             self.current_period = self.current_period + diff_time
             self.data.total_time_in_sec = self.data.total_time_in_sec + diff_time
             self.data.performance_in_pages[curr_time.sec] = pageno
+            -- we cannot save stats each time this is a page update event,
+            -- because the self.data may not even be initialized when such a event
+            -- comes, which will render a blank stats written into doc settings
+            -- and all previous stats are totally wiped out.
+            self.ui.doc_settings:saveSetting("stats", self.data)
         end
 
         self.last_time = curr_time
-        self.ui.doc_settings:saveSetting("stats", self.data)
     end
 end
 
