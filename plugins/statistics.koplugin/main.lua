@@ -58,9 +58,7 @@ function ReaderStatistics:initData(config)
     if self.is_enabled then
         local book_properties = self:getBookProperties()
         self:savePropertiesInToData(book_properties)
-        if config.data.stats then
-            self.data = config.data.stats
-        else
+        if not self.data then
            --first time merge data
             self:inplaceMigration();
         end
@@ -490,9 +488,12 @@ function ReaderStatistics:saveSettings(fields)
 end
 
 function ReaderStatistics:onReadSettings(config)
-    -- delay initialization for accurate total pages count of the doc
-    UIManager:scheduleIn(0.1, function() self:initData(config) end)
+    self.data = config.data.stats
+end
+
+function ReaderStatistics:onPostRenderDocument()
+    -- we have correct page count now, do the actual initialization work
+    self:initData()
 end
 
 return ReaderStatistics
-
