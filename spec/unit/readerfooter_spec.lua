@@ -13,7 +13,8 @@ describe("Readerfooter module", function()
         readerui.view.footer.settings.all_at_once = true
         readerui.view.footer:updateFooterPage()
         timeinfo = readerui.view.footer:getTimeInfo()
-        assert.are.same('B:0% | '..timeinfo..' | 1 / 1 | => 0 | R:100% | TB: 00:00 | TC: 00:00',
+        -- stats has not been initialized here, so we get na TB and TC
+        assert.are.same('B:0% | '..timeinfo..' | 1 / 1 | => 0 | R:100% | TB: na | TC: na',
                         readerui.view.footer.progress_text.text)
     end)
 
