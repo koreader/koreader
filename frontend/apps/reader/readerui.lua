@@ -259,11 +259,14 @@ function ReaderUI:init()
         self:registerPostInitCallback(function()
             self.document:loadDocument()
 
-            -- read additional settings after the document has been loaded
-            -- (but not rendered yet)
+            -- used to read additional settings after the document has been
+            -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
             self.document:render()
+
+            -- CREngine only reports correct page count after rendering is done
+            self:handleEvent(Event:new("PostRenderDocument", self.doc_settings))
         end)
         -- typeset controller
         self:registerModule("typeset", ReaderTypeset:new{

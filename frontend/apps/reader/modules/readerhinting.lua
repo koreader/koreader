@@ -7,8 +7,8 @@ local ReaderHinting = EventListener:new{
 function ReaderHinting:onHintPage()
     if not self.view.hinting then return true end
     for i=1, DHINTCOUNT do
-        if self.view.state.page + i <= self.ui.document.info.number_of_pages then
-            self.ui.document:hintPage(
+        if self.view.state.page + i <= self.document.info.number_of_pages then
+            self.document:hintPage(
                 self.view.state.page + i,
                 self.zoom:getZoom(self.view.state.page + i),
                 self.view.state.rotation,
