@@ -13,6 +13,7 @@ local ReaderStatus = InputContainer:new {
         modified = "",
     },
     enabled = true,
+    total_pages = 0
 }
 
 function ReaderStatus:init()
@@ -20,6 +21,7 @@ function ReaderStatus:init()
         self.enabled = false
         return
     end
+    self.total_pages = self.document:getPageCount()
     UIManager:scheduleIn(0.1, function() self.ui.menu:registerToMainMenu(self) end)
 end
 
@@ -45,7 +47,12 @@ end
 
 function ReaderStatus:onPageUpdate(pageno)
     if self.enabled then
-        if pageno == self.document:getPageCount() then
+        --in case when pageUpdate event generated before _document:render()
+        if pageno > self.total_pages or self.total_pages == 1 then
+            self.total_pages = self.document:getPageCount()
+        end
+
+        if pageno == self.total_pages and self.total_pages ~= 1 then
             self:showStatus()
         end
     end

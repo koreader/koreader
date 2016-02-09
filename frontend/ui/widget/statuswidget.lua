@@ -14,6 +14,8 @@ local ProgressWidget = require("ui/widget/progresswidget")
 local LineWidget = require("ui/widget/linewidget")
 local TextWidget = require("ui/widget/textwidget")
 local ImageWidget = require("ui/widget/imagewidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+
 local CloseButton = require("ui/widget/closebutton")
 local InputDialog = require("ui/widget/inputdialog")
 
@@ -51,9 +53,8 @@ local StatusWidget = InputContainer:new {
     },
     stats = {
         total_time_in_sec = 0,
-        performance_in_pages = nil,
-        pages = nil,
-
+        performance_in_pages = {},
+        pages = 0,
     }
 }
 
@@ -146,9 +147,9 @@ function StatusWidget:showStatus()
 
     local header_group = HorizontalGroup:new {
         align = "center",
-        self:addHeader(screen_width * 0.95, Screen:scaleBySize(15), _("Progress"))
+        self:addHeader(screen_width * 0.95, Screen:scaleBySize(15), _("Progress")),
+        CloseButton:new { window = self }
     }
-    table.insert(header_group, CloseButton:new { window = self })
 
     table.insert(main_group, header_group)
     table.insert(main_group, cover_with_title_and_author_container)
@@ -375,71 +376,66 @@ function StatusWidget:setStar(num)
     return true
 end
 
---TODO generate from table
 function StatusWidget:generateStatisticsGroup(width, height, days, average, pages)
     local statistics_container = CenterContainer:new {
         dimen = Geom:new { w = width, h = height },
     }
 
     local statistics_group = VerticalGroup:new { align = "left" }
-    local titles_group = HorizontalGroup:new { align = "center" }
-    local data_group = HorizontalGroup:new { align = "center" }
 
-    local tile_width = width * 0.33333
-    local tile_height = height * 0.5
+    local tile_width = width / 3
+    local tile_height = height / 2
 
-    local title_days_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = _("Days"),
-            face = self.small_font_face,
+    local titles_group = HorizontalGroup:new {
+        align = "center",
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = _("Days"),
+                face = self.small_font_face,
+            },
         },
-    }
-    local title_time_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = _("Time"),
-            face = self.small_font_face,
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = _("Time"),
+                face = self.small_font_face,
+            },
         },
-    }
-    local title_read_pages_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = _("Read pages"),
-            face = self.small_font_face,
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = _("Read pages"),
+                face = self.small_font_face,
+            }
         }
     }
 
-    table.insert(titles_group, title_days_container)
-    table.insert(titles_group, title_time_container)
-    table.insert(titles_group, title_read_pages_container)
 
-
-    local days_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = days,
-            face = self.medium_font_face,
+    local data_group = HorizontalGroup:new {
+        align = "center",
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = days,
+                face = self.medium_font_face,
+            },
         },
-    }
-    local average_time_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = average,
-            face = self.medium_font_face,
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = average,
+                face = self.medium_font_face,
+            },
         },
-    }
-    local read_pages_container = CenterContainer:new {
-        dimen = Geom:new { w = tile_width, h = tile_height },
-        TextWidget:new {
-            text = pages,
-            face = self.medium_font_face,
+        CenterContainer:new {
+            dimen = Geom:new { w = tile_width, h = tile_height },
+            TextWidget:new {
+                text = pages,
+                face = self.medium_font_face,
+            }
         }
     }
-
-    table.insert(data_group, days_container)
-    table.insert(data_group, average_time_container)
-    table.insert(data_group, read_pages_container)
 
     table.insert(statistics_group, titles_group)
     table.insert(statistics_group, data_group)
@@ -454,29 +450,16 @@ function StatusWidget:generateTitleAuthorProgressGroup(width, height, title, aut
         dimen = Geom:new { w = width, h = height },
     }
 
-    local title_author_progressbar_group = VerticalGroup:new { align = "left" }
-
-    table.insert(title_author_progressbar_group, VerticalSpan:new { width = height * 0.2 })
-
-    local title_text = self:_getVerticalList(title, width, self.medium_font_face, false)
-
-    for i = 1, util.tableSize(title_text) do
-        local row = {}
-        for y = 1, util.tableSize(title_text[i]) do
-            table.insert(row, title_text[i][y].word)
-        end
-
-        local text_title = TextWidget:new {
-            text = table.concat(row),
+    local title_author_progressbar_group = VerticalGroup:new {
+        align = "center",
+        VerticalSpan:new { width = height * 0.2 },
+        TextBoxWidget:new {
+            text = title,
+            width = width,
             face = self.medium_font_face,
+            alignment = "center",
         }
-        local title_text_container = CenterContainer:new {
-            dimen = Geom:new { w = width, h = text_title:getSize().h },
-            text_title
-        }
-        table.insert(title_author_progressbar_group, title_text_container)
-    end
-
+    }
     local text_author = TextWidget:new {
         text = authors,
         face = self.small_font_face,
@@ -532,78 +515,15 @@ function StatusWidget:onClose()
     return true
 end
 
-
---TODO: MOVE TO UTILS AND CHANGE ALSO TEXTBOXWIDGET
-function StatusWidget:_wrapGreedyAlg(h_list, width)
-    local cur_line_width = 0
-    local cur_line = {}
-    local v_list = {}
-
-    for k, w in ipairs(h_list) do
-        w.box = {
-            x = cur_line_width,
-            w = w.width,
-        }
-        cur_line_width = cur_line_width + w.width
-        if w.word == "\n" then
-            if cur_line_width > 0 then
-                -- hard line break
-                table.insert(v_list, cur_line)
-                cur_line = {}
-                cur_line_width = 0
-            end
-        elseif cur_line_width > width then
-            -- wrap to next line
-            table.insert(v_list, cur_line)
-            cur_line = {}
-            cur_line_width = w.width
-            table.insert(cur_line, w)
-        else
-            table.insert(cur_line, w)
-        end
-    end
-    -- handle last line
-    table.insert(v_list, cur_line)
-
-    return v_list
-end
-
---TODO: MOVE TO UTILS AND CHANGE ALSO TEXTBOXWIDGET
-function StatusWidget:_getVerticalList(text, width, face, bold)
-    -- build horizontal list
-    local h_list = {}
-    for line in util.gsplit(text, "\n", true) do
-        for words in line:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
-            for word in util.gsplit(words, "%s+", true) do
-                for w in util.gsplit(word, "%p+", true) do
-                    local word_box = {}
-                    word_box.word = w
-                    word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, w, true, bold).x
-                    table.insert(h_list, word_box)
-                end
-            end
-        end
-        if line:sub(-1) == "\n" then table.insert(h_list, { word = '\n', width = 0 }) end
-    end
-
-    -- @TODO check alg here 25.04 2012 (houqp)
-    -- @TODO replace greedy algorithm with K&P algorithm  25.04 2012 (houqp)
-    return self:_wrapGreedyAlg(h_list, width)
-end
-
-
 function StatusWidget:getStatisticsSettings()
-    local lastfile = G_reader_settings:readSetting("lastfile")
-    if lastfile then
-        local settings = DocSettings:open(lastfile)
-        if settings then
-            self.stats = settings:readSetting("stats")
-        end
-    end
     if self.settings then
-        local currStats = self.settings:readSetting("stats")
-        self.stats.total_time_in_sec = self.stats.total_time_in_sec + currStats.total_time_in_sec
-        for k, v in pairs(currStats.performance_in_pages) do self.stats.performance_in_pages[k] = v end
+        local stats = self.settings:readSetting("stats")
+        if stats then
+            self.stats.total_time_in_sec = self.stats.total_time_in_sec + stats.total_time_in_sec
+            for k, v in pairs(stats.performance_in_pages) do
+                self.stats.performance_in_pages[k] = v
+            end
+        end
     end
 end
 
