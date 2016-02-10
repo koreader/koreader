@@ -45,7 +45,7 @@ install:
   - git clone https://github.com/torch/luajit-rocks.git
   - pushd luajit-rocks
   - git checkout 6529891
-  - cmake . -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
+  - cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
   - make install
   - popd
   - export PATH=$PATH:${TRAVIS_BUILD_DIR}/install/bin
@@ -62,6 +62,7 @@ install:
   - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
   - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
   - travis_retry luarocks --local install luacheck
+  - travis_retry luarocks --local install lanes  # for parallel luacheck
   # add local rocks to $PATH
   - eval $(luarocks path --bin)
 
@@ -69,7 +70,7 @@ script:
   - travis_retry make fetchthirdparty
   - make all
   - travis_retry make testfront
-  - luacheck --no-color -q frontend | tee ./luacheck.out
+  - luajit $(which luacheck) --no-color -q frontend | tee ./luacheck.out
   - test $(grep Total ./luacheck.out | awk '{print $2}') -le 250
 
 after_success:
