@@ -43,7 +43,7 @@ Highlights for developers
   * running on multi-platform with only one code-base maintained
   * developing koreader in any editor without compilation
   * high runtime efficiency by LuaJIT acceleration
-  * light-weight widget toolkit for small memory footprint
+  * light-weight self-contained widget toolkit with small memory footprint
   * extensible with plugin system
 * interfaced backends for documents parsing and rendering
   * high quality document backend libraries like MuPDF, DjvuLibre and CREngine
@@ -51,7 +51,7 @@ Highlights for developers
 * in active development
   * contributed by developers around the world
   * continuous integration with Travis CI
-  * with unit tests and code coverage test
+  * with unit tests, static analysis and code coverage test
   * automatic release of nightly builds
 * free as in free speech
   * licensed under Affero GPL v3
@@ -147,8 +147,8 @@ package from scratch.
 For Android devices
 -------------------
 
-Make sure the "android" and "ndk-build" tools are in your PATH variable
-and the NDK variable points to the root directory of the Android NDK.
+Make sure the "android" and "ndk-build" tools are in your PATH environment
+variable and the NDK variable points to the root directory of the Android NDK.
 
 Then, run this command to build installable package for Android:
 ```
@@ -163,22 +163,23 @@ To build an emulator on current Linux machine just run:
 ./kodev build
 ```
 
-If you want to compile the emulator for Windows you need to run:
+If you want to compile the emulator for Windows run:
 ```
 ./kodev build win32
 ```
 
-To run Koreader on your developing machine
+To run Koreader on your developing machine:
 ```
-./kodev run ./test
+./kodev run
 ```
 
 To run unit tests:
 ```
-make test
+./kodev test base
+./kodev test front
 ```
 
-To run Lua static-analysis for KOReader:
+To run Lua static analysis:
 ```
 make static-check
 ```
@@ -203,7 +204,7 @@ modifications with kroeader frontend. NOTE: only support relative path for now.
 
 
 Translation
-========
+===========
 
 Please refer to [l10n's README][l10n-readme] to grab the latest translations
 from [the Koreader project on Transifex][koreader-transifex] with this command:
