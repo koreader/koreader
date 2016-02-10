@@ -180,7 +180,16 @@ function TextBoxWidget:_render(v_list)
     local y = font_height
     local pen_x
     for _,l in ipairs(v_list) do
-        pen_x = 0
+        if self.alignment == "center" then
+            local line_len = 0
+            for _,w in ipairs(l) do
+                line_len = line_len + w.width
+            end
+            pen_x = (self.width - line_len)/2
+        else
+            pen_x = 0
+        end
+
         for _,w in ipairs(l) do
             w.box.y = y - line_height_px - font_height
             --@TODO Don't use kerning for monospaced fonts.    (houqp)
