@@ -61,6 +61,7 @@ install:
   # luasec doesn't automatically detect 64-bit libs
   - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
   - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
+  - travis_retry luarocks --local install luacheck
   # add local rocks to $PATH
   - eval $(luarocks path --bin)
 
@@ -68,6 +69,8 @@ script:
   - travis_retry make fetchthirdparty
   - make all
   - travis_retry make testfront
+  - luacheck --no-color -q frontend | tee ./luacheck.out
+  - test $(grep Total ./luacheck.out | awk '{print $2}') -le 250
 
 after_success:
   - make coverage
