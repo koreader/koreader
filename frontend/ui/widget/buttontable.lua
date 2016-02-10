@@ -5,7 +5,6 @@ local FocusManager = require("ui/widget/focusmanager")
 local LineWidget = require("ui/widget/linewidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
-local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = Device.screen

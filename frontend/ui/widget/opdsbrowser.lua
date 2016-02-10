@@ -168,7 +168,7 @@ end
 
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
-    for i, server in ipairs(self.opds_servers) do
+    for _, server in ipairs(self.opds_servers) do
         table.insert(item_table, {
             text = server.title,
             content = server.subtitle,
@@ -176,7 +176,7 @@ function OPDSBrowser:genItemTableFromRoot()
         })
     end
     local added_servers = G_reader_settings:readSetting("opds_servers") or {}
-    for i, server in ipairs(added_servers) do
+    for _, server in ipairs(added_servers) do
         table.insert(item_table, {
             text = server.title,
             content = server.subtitle,
@@ -375,7 +375,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         end
         local hrefs = {}
         if feed.link then
-            for i, link in ipairs(feed.link) do
+            for _, link in ipairs(feed.link) do
                 if link.type:find(self.catalog_type) or
                     link.type:find(self.search_type) then
                     if link.rel and link.href then
@@ -386,11 +386,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         end
         item_table.hrefs = hrefs
         if feed.entry then
-            for i, entry in ipairs(feed.entry) do
+            for _, entry in ipairs(feed.entry) do
                 local item = {}
                 item.acquisitions = {}
                 if entry.link then
-                    for i, link in ipairs(entry.link) do
+                    for _, link in ipairs(entry.link) do
                         if link.type:find(self.catalog_type) and (not link.rel or link.rel == "subsection" or link.rel == "http://opds-spec.org/sort/popular" or link.rel == "http://opds-spec.org/sort/new") then
                             item.url = build_href(link.href)
                         end
@@ -451,7 +451,7 @@ end
 
 function OPDSBrowser:appendCatalog(item_table_url)
     local new_table = self:genItemTableFromURL(item_table_url)
-    for i, item in ipairs(new_table) do
+    for _, item in ipairs(new_table) do
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
@@ -566,7 +566,7 @@ end
 function OPDSBrowser:editServerFromInput(item, fields)
     DEBUG("input catalog", fields)
     local servers = {}
-    for i, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
+    for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
@@ -620,7 +620,7 @@ end
 function OPDSBrowser:deleteOPDSServer(item)
     DEBUG("delete", item)
     local servers = {}
-    for i, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
+    for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
             table.insert(servers, server)
         end

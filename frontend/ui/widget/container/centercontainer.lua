@@ -7,10 +7,11 @@ local CenterContainer = WidgetContainer:new()
 
 function CenterContainer:paintTo(bb, x, y)
     local content_size = self[1]:getSize()
-    if content_size.w > self.dimen.w or content_size.h > self.dimen.h then
+    -- FIXME
+    -- if content_size.w > self.dimen.w or content_size.h > self.dimen.h then
         -- throw error? paint to scrap buffer and blit partially?
         -- for now, we ignore this
-    end
+    -- end
     local x_pos = x
     local y_pos = y
     if self.ignore ~= "height" then
