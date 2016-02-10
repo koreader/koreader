@@ -1,7 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -27,8 +26,6 @@ local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
 local RenderText = require("ui/rendertext")
 
-local DocSettings = require("docsettings")
-local DEBUG = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 
@@ -40,7 +37,7 @@ local _ = require("gettext")
     ["status"] = "Reading"
     ["modified"] = "24.01.2016"
 },]]
-local StatusWidget = InputContainer:new {
+local StatusWidget = InputContainer:new{
     settings = nil,
     thumbnail = nil,
     props = nil,
@@ -69,7 +66,7 @@ function StatusWidget:init()
     self.medium_font_face = Font:getFace("ffont", 20)
     self.large_font_face = Font:getFace("ffont", 25)
 
-    self.star = Button:new {
+    self.star = Button:new{
         icon = "resources/icons/stats.star.empty.png",
         bordersize = 0,
         radius = 0,
@@ -78,7 +75,7 @@ function StatusWidget:init()
         show_parent = self,
     }
 
-    local statusContainer = FrameContainer:new {
+    local statusContainer = FrameContainer:new{
         dimen = Screen:getSize(),
         background = Blitbuffer.COLOR_WHITE,
         bordersize = 0,
@@ -89,7 +86,7 @@ function StatusWidget:init()
 end
 
 function StatusWidget:showStatus()
-    local main_group = VerticalGroup:new { align = "left" }
+    local main_group = VerticalGroup:new{ align = "left" }
 
     local img_width = Screen:scaleBySize(132 * 1.5)
     local img_height = Screen:scaleBySize(184 * 1.5)
@@ -101,7 +98,7 @@ function StatusWidget:showStatus()
 
     local thumb = nil
     if self.thumbnail then
-        thumb = ImageWidget:new {
+        thumb = ImageWidget:new{
             image = self.thumbnail,
             width = img_width,
             height = img_height,
@@ -111,13 +108,13 @@ function StatusWidget:showStatus()
 
     local screen_width = Screen:getWidth()
 
-    local cover_with_title_and_author_container = CenterContainer:new {
-        dimen = Geom:new { w = screen_width, h = img_height },
+    local cover_with_title_and_author_container = CenterContainer:new{
+        dimen = Geom:new{ w = screen_width, h = img_height },
     }
 
-    local cover_with_title_and_author_group = HorizontalGroup:new { align = "top" }
+    local cover_with_title_and_author_group = HorizontalGroup:new{ align = "top" }
 
-    local span = HorizontalSpan:new { width = screen_width * 0.05 }
+    local span = HorizontalSpan:new{ width = screen_width * 0.05 }
 
     table.insert(cover_with_title_and_author_group, span)
 
@@ -145,10 +142,10 @@ function StatusWidget:showStatus()
         statusHeight = Screen:scaleBySize(60)
     end
 
-    local header_group = HorizontalGroup:new {
+    local header_group = HorizontalGroup:new{
         align = "center",
         self:addHeader(screen_width * 0.95, Screen:scaleBySize(15), _("Progress")),
-        CloseButton:new { window = self }
+        CloseButton:new{ window = self }
     }
 
     table.insert(main_group, header_group)
@@ -193,14 +190,14 @@ function StatusWidget:getReadPages(stats)
 end
 
 function StatusWidget:addHeader(width, height, title)
-    local group = HorizontalGroup:new {
+    local group = HorizontalGroup:new{
         align = "center",
-        bordersize = 0
+        bordersize = 0,
     }
 
     local bold = false
 
-    local titleWidget = TextWidget:new {
+    local titleWidget = TextWidget:new{
         text = title,
         face = self.large_font_face,
         bold = bold,
@@ -208,19 +205,19 @@ function StatusWidget:addHeader(width, height, title)
     local titleSize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.large_font_face, title, true, bold)
     local lineWidth = ((width - titleSize.x) * 0.5)
 
-    local line_container = LeftContainer:new {
-        dimen = Geom:new { w = lineWidth, h = height },
-        LineWidget:new {
+    local line_container = LeftContainer:new{
+        dimen = Geom:new{ w = lineWidth, h = height },
+        LineWidget:new{
             background = Blitbuffer.gray(0.2),
-            dimen = Geom:new {
+            dimen = Geom:new{
                 w = lineWidth,
                 h = 2,
             }
         }
     }
 
-    local text_container = CenterContainer:new {
-        dimen = Geom:new { w = titleSize.x, h = height },
+    local text_container = CenterContainer:new{
+        dimen = Geom:new{ w = titleSize.x, h = height },
         titleWidget,
     }
 
@@ -231,8 +228,8 @@ function StatusWidget:addHeader(width, height, title)
 end
 
 function StatusWidget:generateSwitchGroup(width, height, book_status)
-    local switch_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = height },
+    local switch_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
     }
 
     local args = {
@@ -268,7 +265,7 @@ function StatusWidget:generateSwitchGroup(width, height, book_status)
         enabled = true,
     }
 
-    local switch = ToggleSwitch:new {
+    local switch = ToggleSwitch:new{
         width = width * 0.6,
         default_value = config.default_value,
         name = config.name,
@@ -321,7 +318,7 @@ end
 
 function StatusWidget:generateSummaryGroup(width, height, text)
 
-    self.input_note = InputText:new {
+    self.input_note = InputText:new{
         text = text,
         face = self.medium_font_face,
         width = width * 0.95,
@@ -334,16 +331,16 @@ function StatusWidget:generateSummaryGroup(width, height, text)
         hint = _("A few words about the book"),
     }
 
-    local note_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = height },
+    local note_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
         self.input_note
     }
     return note_container
 end
 
 function StatusWidget:generateRateGroup(width, height, rating)
-    self.stars_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = height },
+    self.stars_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
     }
 
     self:setStar(rating)
@@ -354,20 +351,23 @@ function StatusWidget:setStar(num)
     --clear previous data
     self.stars_container:clear()
 
-    local stars_group = HorizontalGroup:new { align = "center" }
+    local stars_group = HorizontalGroup:new{ align = "center" }
     if num then
         self.summary.rating = num
         self:saveSummary()
 
         for i = 1, num do
-            table.insert(stars_group, self.star:new { icon = "resources/icons/stats.star.full.png", callback = function() self:setStar(i) end })
+            table.insert(stars_group, self.star:new{
+                icon = "resources/icons/stats.star.full.png",
+                callback = function() self:setStar(i) end
+            })
         end
     else
         num = 0
     end
 
     for i = num + 1, 5 do
-        table.insert(stars_group, self.star:new { callback = function() self:setStar(i) end })
+        table.insert(stars_group, self.star:new{ callback = function() self:setStar(i) end })
     end
 
     table.insert(self.stars_container, stars_group)
@@ -377,34 +377,34 @@ function StatusWidget:setStar(num)
 end
 
 function StatusWidget:generateStatisticsGroup(width, height, days, average, pages)
-    local statistics_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = height },
+    local statistics_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
     }
 
-    local statistics_group = VerticalGroup:new { align = "left" }
+    local statistics_group = VerticalGroup:new{ align = "left" }
 
     local tile_width = width / 3
     local tile_height = height / 2
 
-    local titles_group = HorizontalGroup:new {
+    local titles_group = HorizontalGroup:new{
         align = "center",
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = _("Days"),
                 face = self.small_font_face,
             },
         },
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = _("Time"),
                 face = self.small_font_face,
             },
         },
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = _("Read pages"),
                 face = self.small_font_face,
             }
@@ -412,25 +412,25 @@ function StatusWidget:generateStatisticsGroup(width, height, days, average, page
     }
 
 
-    local data_group = HorizontalGroup:new {
+    local data_group = HorizontalGroup:new{
         align = "center",
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = days,
                 face = self.medium_font_face,
             },
         },
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = average,
                 face = self.medium_font_face,
             },
         },
-        CenterContainer:new {
-            dimen = Geom:new { w = tile_width, h = tile_height },
-            TextWidget:new {
+        CenterContainer:new{
+            dimen = Geom:new{ w = tile_width, h = tile_height },
+            TextWidget:new{
                 text = pages,
                 face = self.medium_font_face,
             }
@@ -446,34 +446,34 @@ end
 
 function StatusWidget:generateTitleAuthorProgressGroup(width, height, title, authors, current_page, total_pages)
 
-    local title_author_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = height },
+    local title_author_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
     }
 
-    local title_author_progressbar_group = VerticalGroup:new {
+    local title_author_progressbar_group = VerticalGroup:new{
         align = "center",
-        VerticalSpan:new { width = height * 0.2 },
-        TextBoxWidget:new {
+        VerticalSpan:new{ width = height * 0.2 },
+        TextBoxWidget:new{
             text = title,
             width = width,
             face = self.medium_font_face,
             alignment = "center",
         }
     }
-    local text_author = TextWidget:new {
+    local text_author = TextWidget:new{
         text = authors,
         face = self.small_font_face,
         padding = 2,
     }
 
-    local author_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = text_author:getSize().h },
+    local author_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = text_author:getSize().h },
         text_author
     }
 
     table.insert(title_author_progressbar_group, author_container)
 
-    local progressWidget = ProgressWidget:new {
+    local progressWidget = ProgressWidget:new{
         width = width * 0.7,
         height = Screen:scaleBySize(10),
         percentage = current_page / total_pages,
@@ -482,19 +482,19 @@ function StatusWidget:generateTitleAuthorProgressGroup(width, height, title, aut
         last = total_pages,
     }
 
-    local progress_bar_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = progressWidget:getSize().h },
+    local progress_bar_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = progressWidget:getSize().h },
         progressWidget
     }
 
     table.insert(title_author_progressbar_group, progress_bar_container)
-    local text_complete = TextWidget:new {
+    local text_complete = TextWidget:new{
         text = string.format("%1.f", progressWidget.percentage * 100) .. "% " .. _("Completed"),
         face = self.small_font_face,
     }
 
-    local progress_bar_text_container = CenterContainer:new {
-        dimen = Geom:new { w = width, h = text_complete:getSize().h },
+    local progress_bar_text_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = text_complete:getSize().h },
         text_complete
     }
 
@@ -529,7 +529,7 @@ end
 
 
 function StatusWidget:onSwitchFocus(inputbox)
-    self.note_dialog = InputDialog:new {
+    self.note_dialog = InputDialog:new{
         title = "Note",
         input = self.input_note:getText(),
         input_hint = "",
