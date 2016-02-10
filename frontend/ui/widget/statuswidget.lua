@@ -26,6 +26,7 @@ local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
 local RenderText = require("ui/rendertext")
 
+local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
@@ -473,23 +474,27 @@ function StatusWidget:generateTitleAuthorProgressGroup(width, height, title, aut
 
     table.insert(title_author_progressbar_group, author_container)
 
-    local progressWidget = ProgressWidget:new{
+    local read_percentage = current_page / total_pages
+    local progress_height = Screen:scaleBySize(10)
+
+    local progress_bar = ProgressWidget:new{
         width = width * 0.7,
-        height = Screen:scaleBySize(10),
-        percentage = current_page / total_pages,
+        height = progress_height,
+        percentage = read_percentage,
         ticks = {},
         tick_width = 0,
         last = total_pages,
     }
 
-    local progress_bar_container = CenterContainer:new{
-        dimen = Geom:new{ w = width, h = progressWidget:getSize().h },
-        progressWidget
-    }
-
-    table.insert(title_author_progressbar_group, progress_bar_container)
+    table.insert(title_author_progressbar_group,
+        CenterContainer:new{
+            dimen = Geom:new{ w = width, h = progress_bar:getSize().h },
+            progress_bar
+        }
+    )
     local text_complete = TextWidget:new{
-        text = string.format("%1.f", progressWidget.percentage * 100) .. "% " .. _("Completed"),
+        text = template(_("%1% Completed"),
+                        string.format("%1.f", read_percentage * 100)),
         face = self.small_font_face,
     }
 
