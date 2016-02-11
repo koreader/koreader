@@ -144,7 +144,7 @@ local function MD5Update(ctx, buf, len)
     t = band(rshift(t, 3), 0x3f)
 
     if (t > 0) then
-        p = ffi.cast("unsigned char *", ctx.input + t)
+        local p = ffi.cast("unsigned char *", ctx.input + t)
 
         t = 64 - t
         if (len < t) then

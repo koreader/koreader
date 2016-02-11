@@ -22,7 +22,9 @@ function ReaderStatus:init()
         return
     end
     self.total_pages = self.document:getPageCount()
-    UIManager:scheduleIn(0.1, function() self.ui.menu:registerToMainMenu(self) end)
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self)
+    end)
 end
 
 function ReaderStatus:addToMainMenu(tab_item_table)

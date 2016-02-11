@@ -7,8 +7,8 @@ will call a method "onEventName" for an event with name
 --]]
 local EventListener = {}
 
-function EventListener:new(o)
-    local o = o or {}
+function EventListener:new(new_o)
+    local o = new_o or {}
     setmetatable(o, self)
     self.__index = self
     if o.init then o:init() end

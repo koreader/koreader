@@ -27,9 +27,10 @@ local function probeDevice()
     end
 
     -- add new ports here:
-    if --[[ implement a proper test instead --]] false then
-        return require("device/newport/device")
-    end
+    --
+    -- if --[[ implement a proper test instead --]] false then
+    --     return require("device/newport/device")
+    -- end
 
     error("did not find a hardware abstraction for this platform")
 end

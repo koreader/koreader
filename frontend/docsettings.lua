@@ -30,8 +30,8 @@ function DocSettings:getNameFromHistory(hist_name)
 end
 
 function DocSettings:open(docfile)
-    local history_path = nil
-    local sidecar_path = nil
+    local history_path
+    local sidecar_path
     if docfile == ".reader" then
         -- we handle reader setting as special case
         history_path = DataStorage:getDataDir() .. "/settings.reader.lua"

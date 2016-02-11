@@ -1,5 +1,4 @@
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
 
 local HTTPClient = {
     input_timeouts = 0,

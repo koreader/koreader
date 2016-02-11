@@ -90,3 +90,7 @@ read_globals = {
     "lfs",
     "lipc",
 }
+
+exclude_files = {
+    "frontend/luxl.lua",
+}
