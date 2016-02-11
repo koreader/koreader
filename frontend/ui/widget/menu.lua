@@ -8,6 +8,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local FocusManager = require("ui/widget/focusmanager")
 local TextWidget = require("ui/widget/textwidget")
+local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
@@ -107,6 +108,45 @@ end
 function MenuCloseButton:onClose()
     self.menu:onClose()
     return true
+end
+
+--[[
+Widget that displays a solid line in menu
+--]]
+local SeparatorMenuItem = InputContainer:new{
+    style = "solid",
+    dimen = nil,
+    _line_container = nil,
+}
+
+function SeparatorMenuItem:init()
+    self._line_container = CenterContainer:new{
+        vertical_align = "center",
+        dimen = Geom:new {
+            w = self.dimen.w,
+            h = self.dimen.h
+        },
+        HorizontalGroup:new {
+            align = "center",
+            OverlapGroup:new {
+                dimen = Geom:new { w = self.dimen.w, h = Screen:scaleBySize(2) },
+                LineWidget:new {
+                    style = self.style,
+                    dimen = Geom:new { w = self.dimen.w - 30, h = Screen:scaleBySize(2) },
+                }
+            },
+        }
+    }
+
+    self[1] = FrameContainer:new {
+        bordersize = 0,
+        padding = 0,
+        HorizontalGroup:new {
+            align = "center",
+            HorizontalSpan:new { width = 15 },
+            self._line_container
+        }
+    }
 end
 
 --[[
@@ -641,20 +681,27 @@ function Menu:updateItems(select_number)
                     item_shortcut = "Ent"
                 end
             end
-            local item_tmp = MenuItem:new{
-                show_parent = self.show_parent,
-                state = self.item_table[i].state,
-                state_size = self.state_size or {},
-                text = self.item_table[i].text,
-                mandatory = self.item_table[i].mandatory,
-                bold = self.item_table.current == i,
-                face = self.cface,
-                dimen = self.item_dimen:new(),
-                shortcut = item_shortcut,
-                shortcut_style = shortcut_style,
-                table = self.item_table[i],
-                menu = self,
-            }
+            local item_tmp
+            if self.item_table[i].text == "-" then
+                item_tmp = SeparatorMenuItem:new{
+                    dimen = self.item_dimen:new{ h = Screen:scaleBySize(10) },
+                }
+            else
+                item_tmp = MenuItem:new{
+                    show_parent = self.show_parent,
+                    state = self.item_table[i].state,
+                    state_size = self.state_size or {},
+                    text = self.item_table[i].text,
+                    mandatory = self.item_table[i].mandatory,
+                    bold = self.item_table.current == i,
+                    face = self.cface,
+                    dimen = self.item_dimen:new(),
+                    shortcut = item_shortcut,
+                    shortcut_style = shortcut_style,
+                    table = self.item_table[i],
+                    menu = self,
+                }
+            end
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager
             table.insert(self.layout, {item_tmp})

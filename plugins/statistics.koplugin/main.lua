@@ -318,7 +318,7 @@ function ReaderStatistics:updateTotalStat()
 
     DEBUG ("TOTALSTATS", total_stats)
     table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = util.secondsToClock(total_books_time, false) })
-    table.insert(total_stats, 2, { text = _("----------------------------------------------------") })
+    table.insert(total_stats, 2, { text = "-" })
     table.insert(total_stats, 3, {
         text = self.data.title,
         mandatory = util.secondsToClock(self.data.total_time_in_sec, false),
