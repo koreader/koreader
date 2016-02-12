@@ -8,7 +8,7 @@ function util.stripePunctuations(word)
     if not word then return end
     -- strip ASCII punctuation characters around word
     -- and strip any generic punctuation (U+2000 - U+206F) in the word
-    return word:gsub("\226[\128-\131][\128-\191]",''):gsub("^%p+",''):gsub("%p+$",'')
+    return word:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
 --[[
@@ -81,9 +81,17 @@ end
 
 -- append all elements from t2 into t1
 function util.arrayAppend(t1, t2)
-    for _,v in ipairs(t2) do
+    for _, v in ipairs(t2) do
         table.insert(t1, v)
     end
+end
+
+-- Returns the index within this string of the last occurrence of the specified character
+-- or -1 if the character does not occur.
+-- To find . you need to escape it.
+function util.lastIndexOf(string, ch)
+    local i = string:match(".*" .. ch .. "()")
+    if i == nil then return -1 else return i - 1 end
 end
 
 return util

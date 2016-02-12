@@ -97,7 +97,7 @@ function StatusWidget:showStatus()
         img_height = Screen:scaleBySize(184)
     end
 
-    local thumb = nil
+    local thumb
     if self.thumbnail then
         thumb = ImageWidget:new{
             image = self.thumbnail,
@@ -127,7 +127,7 @@ function StatusWidget:showStatus()
             img_height,
             self.props.title,
             self.props.authors,
-            self.document:getCurrentPage(),
+            self.view.state.page, --current page
             self.document:getPageCount()))
     table.insert(cover_with_title_and_author_container, cover_with_title_and_author_group)
 
@@ -312,8 +312,10 @@ end
 
 
 function StatusWidget:saveSummary()
-    self.settings:saveSetting("summary", self.summary)
-    self.settings:flush()
+    if self.summary then
+        self.settings:saveSetting("summary", self.summary)
+        self.settings:flush()
+    end
 end
 
 

@@ -265,9 +265,6 @@ function ReaderUI:init()
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
             self.document:render()
-
-            -- CREngine only reports correct page count after rendering is done
-            self:handleEvent(Event:new("PostRenderDocument", self.doc_settings))
         end)
         -- typeset controller
         self:registerModule("typeset", ReaderTypeset:new{
@@ -304,6 +301,7 @@ function ReaderUI:init()
     self:registerModule("status", ReaderStatus:new{
         ui = self,
         document = self.document,
+        view = self.view,
     })
 
     -- koreader plugins
@@ -324,6 +322,11 @@ function ReaderUI:init()
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
+
+    -- After initialisation notify that document is loaded
+    -- CREngine only reports correct page count after rendering is done
+    -- Need the same event for PDF document
+    self:handleEvent(Event:new("ReaderReady", self.doc_settings))
 end
 
 function ReaderUI:showReader(file)
