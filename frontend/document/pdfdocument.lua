@@ -2,9 +2,9 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
-local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
 local DEBUG = require("dbg")
+local util = require("util")
 
 local PdfDocument = Document:new{
     _document = false,
@@ -158,6 +158,22 @@ function PdfDocument:close()
         self:writeDocument()
     end
     Document.close(self)
+end
+
+function PdfDocument:getProps()
+    local props = self._document:getMetadata()
+    if props.title == "" then
+        local startPos = util.lastIndexOf(self.file, "%/")
+        if startPos > 0  then
+            props.title = string.sub(self.file, startPos + 1, -5) --remove extension .pdf
+        else
+            props.title = string.sub(self.file, 0, -5)
+        end
+    end
+    props.authors = props.author
+    props.series = ""
+    props.language = ""
+    return props
 end
 
 function PdfDocument:getLinkFromPosition(pageno, pos)

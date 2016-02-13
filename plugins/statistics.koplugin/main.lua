@@ -7,8 +7,6 @@ local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
 local DataStorage = require("datastorage")
-local DocSettings = require("docsettings")
-local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
@@ -39,7 +37,7 @@ local ReaderStatistics = InputContainer:new {
 }
 
 function ReaderStatistics:init()
-    if self.ui.document.is_djvu or self.ui.document.is_pdf or self.ui.document.is_pic then
+    if self.ui.document.is_djvu or self.ui.document.is_pic then
         return
     end
 
@@ -234,7 +232,7 @@ function ReaderStatistics:updateCurrentStat()
     end
 
     local read_pages = util.tableSize(self.data.performance_in_pages)
-    local current_page = self.ui.document:getCurrentPage()
+    local current_page = self.view.state.page --get current page from the view
     local average_time_per_page = self.data.total_time_in_sec / read_pages
 
     table.insert(stats, { text = _("Current period"), mandatory = util.secondsToClock(self.current_period, false) })
@@ -316,7 +314,6 @@ function ReaderStatistics:updateTotalStat()
 
     total_books_time = total_books_time + tonumber(self.data.total_time_in_sec)
 
-    DEBUG ("TOTALSTATS", total_stats)
     table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = util.secondsToClock(total_books_time, false) })
     table.insert(total_stats, 2, { text = "-" })
     table.insert(total_stats, 3, {
@@ -384,7 +381,7 @@ end
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
     if props.title == "No document" or props.title == "" then --sometime crengine returns "No document" try to get one more time
-      props = self.view.document:getProps()
+        props = self.view.document:getProps()
     end
     return props
 end
@@ -491,7 +488,7 @@ function ReaderStatistics:onReadSettings(config)
     self.data = config.data.stats
 end
 
-function ReaderStatistics:onPostRenderDocument()
+function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
 end
