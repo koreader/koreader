@@ -19,13 +19,13 @@ function LineWidget:paintTo(bb, x, y)
     else
         if self.empty_segments then
             bb:paintRect(x, y,
-                        self.empty_segments[1].s,
-                        self.dimen.h,
-                        self.background)
+                         self.empty_segments[1].s,
+                         self.dimen.h,
+                         self.background)
             bb:paintRect(x + self.empty_segments[1].e, y,
-                        self.dimen.w - x - self.empty_segments[1].e,
-                        self.dimen.h,
-                        self.background)
+                         self.dimen.w - x - self.empty_segments[1].e,
+                         self.dimen.h,
+                         self.background)
         else
             bb:paintRect(x, y, self.dimen.w, self.dimen.h, self.background)
         end

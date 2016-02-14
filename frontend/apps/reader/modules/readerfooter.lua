@@ -14,7 +14,6 @@ local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local util  = require("util")
 
@@ -54,7 +53,7 @@ function ReaderFooter:init()
         book_time_to_read = true,
         chapter_time_to_read = true,
     }
-    local text_default = ""
+    local text_default
     if self.settings.all_at_once then
         local info = {}
         if self.settings.battery then

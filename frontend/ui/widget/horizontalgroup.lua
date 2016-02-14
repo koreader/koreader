@@ -39,6 +39,8 @@ function HorizontalGroup:paintTo(bb, x, y)
             widget:paintTo(bb, x + self._offsets[i].x, y)
         elseif self.align == "bottom" then
             widget:paintTo(bb, x + self._offsets[i].x, y + size.h - self._offsets[i].y)
+        else
+            print("[!] invalid alignment for HorizontalGroup", self.align)
         end
     end
 end

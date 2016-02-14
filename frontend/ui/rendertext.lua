@@ -18,7 +18,7 @@ local GlyphCache = Cache:new{
 }
 
 -- iterator over UTF8 encoded characters in a string
-local function utf8Chars(input)
+local function utf8Chars(input_text)
     local function read_next_glyph(input, pos)
         if string.len(input) < pos then return nil end
         local value = string.byte(input, pos)
@@ -60,7 +60,7 @@ local function utf8Chars(input)
             return pos+bytes_left+1, glyph, string.sub(input, pos, pos+bytes_left)
         end
     end
-    return read_next_glyph, input, 1
+    return read_next_glyph, input_text, 1
 end
 
 function RenderText:getGlyph(face, charcode, bold)
@@ -81,7 +81,7 @@ function RenderText:getGlyph(face, charcode, bold)
                     rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
                     --DEBUG("fallback to font", font)
                     break
-                end 
+                end
             end
         end
     end

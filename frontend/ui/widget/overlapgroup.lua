@@ -22,14 +22,22 @@ function OverlapGroup:getSize()
         end
     end
 
+    return self._size
+end
+
+function OverlapGroup:initDimen()
+    self:getSize()  -- populate self._size
+    -- sync self._size with self.dimen, self.dimen has higher priority
     if self.dimen.w then
         self._size.w = self.dimen.w
+    else
+        self.dimen.w = self._size.w
     end
     if self.dimen.h then
         self._size.h = self.dimen.h
+    else
+        self.dimen.h = self._size.h
     end
-
-    return self._size
 end
 
 function OverlapGroup:paintTo(bb, x, y)
@@ -37,10 +45,12 @@ function OverlapGroup:paintTo(bb, x, y)
 
     for i, wget in ipairs(self) do
         local wget_size = wget:getSize()
-        if wget.align == "right" then
+        if wget.overlap_align == "right" then
             wget:paintTo(bb, x+size.w-wget_size.w, y)
-        elseif wget.align == "center" then
+        elseif wget.overlap_align == "center" then
             wget:paintTo(bb, x+math.floor((size.w-wget_size.w)/2), y)
+        elseif wget.overlap_offset then
+            wget:paintTo(bb, x+wget.overlap_offset[1], y+wget.overlap_offset[2])
         else
             -- default to left
             wget:paintTo(bb, x, y)

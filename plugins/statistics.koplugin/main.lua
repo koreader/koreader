@@ -1,21 +1,22 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local Menu = require("ui/widget/menu")
 local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
+local joinPath = require("ffi/util").joinPath
 local _ = require("gettext")
 local util = require("util")
 local tableutil = require("tableutil")
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
-local history_dir = DataStorage:getDataDir() .. "/history/"
+local history_dir = DataStorage:getHistoryDir()
 
 local ReaderStatistics = InputContainer:new {
     last_time = nil,
@@ -51,37 +52,37 @@ function ReaderStatistics:init()
     self.last_time = TimeVal:now()
 end
 
+function ReaderStatistics:getBookProperties()
+    local props = self.view.document:getProps()
+    if props.title == "No document" or props.title == "" then
+        -- FIXME: sometimes crengine returns "No document", try one more time
+        props = self.view.document:getProps()
+    end
+    return props
+end
+
 function ReaderStatistics:initData(config)
-    --first execution
+    -- first execution
     if self.is_enabled then
-        local book_properties = self:getBookProperties()
-        self:savePropertiesInToData(book_properties)
         if not self.data then
-           --first time merge data
-            self:inplaceMigration();
+            self.data = { performance_in_pages= {} }
+            self:inplaceMigration();  -- first time merge data
         end
+
+        local book_properties = self:getBookProperties()
+        self.data.title = book_properties.title
+        self.data.authors = book_properties.authors
+        self.data.language = book_properties.language
+        self.data.series = book_properties.series
+
         self.data.pages = self.view.document:getPageCount()
         return
     end
 end
 
-function ReaderStatistics:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
-        text = _("Statistics"),
-        sub_item_table = {
-            self:getStatisticEnabledMenuTable(),
-            self:getStatisticSettingsMenuTable(),
-            self:getStatisticForCurrentBookMenuTable(),
-            self:getStatisticTotalStatisticMenuTable(),
-        }
-    })
-end
-
-function ReaderStatistics:getStatisticEnabledMenuTable()
+function ReaderStatistics:getStatisticEnabledMenuItem()
     return {
-        text_func = function()
-            return _("Enabled")
-        end,
+        text = _("Enabled"),
         checked_func = function() return self.is_enabled end,
         callback = function()
             -- if was enabled, have to save data to file
@@ -95,18 +96,6 @@ function ReaderStatistics:getStatisticEnabledMenuTable()
                 self:initData(self.ui.doc_settings)
             end
             self:saveSettings()
-        end,
-    }
-end
-
-function ReaderStatistics:getStatisticSettingsMenuTable()
-    return {
-        text_func = function()
-            return _("Settings")
-        end,
-        checked_func = function() return false end,
-        callback = function()
-            self:updateSettings()
         end,
     }
 end
@@ -138,9 +127,9 @@ function ReaderStatistics:updateSettings()
                 {
                     text = _("Apply"),
                     callback = function()
+                        self:saveSettings(MultiInputDialog:getFields())
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
-                        self:saveSettings(MultiInputDialog:getFields())
                     end
                 },
             },
@@ -153,101 +142,74 @@ function ReaderStatistics:updateSettings()
     UIManager:show(self.settings_dialog)
 end
 
-function ReaderStatistics:getStatisticForCurrentBookMenuTable()
-    self.status_menu = {}
-
-    local book_status = Menu:new {
-        title = _("Status"),
-        item_table = self:updateCurrentStat(),
-        is_borderless = true,
-        is_popout = false,
-        is_enable_shortcut = false,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
-        cface = Font:getFace("cfont", 20),
-    }
-
-    self.status_menu = CenterContainer:new {
-        dimen = Screen:getSize(),
-        book_status,
-    }
-
-    book_status.close_callback = function()
-        UIManager:close(self.status_menu)
-    end
-
-    book_status.show_parent = self.status_menu
-
-    return {
-        text = _("Current"),
-        enabled_func = function() return true end,
-        checked_func = function() return false end,
-        callback = function()
-            book_status:swithItemTable(nil, self:updateCurrentStat())
-            UIManager:show(self.status_menu)
-            return true
-        end
-    }
+function ReaderStatistics:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.plugins, {
+        text = _("Statistics"),
+        sub_item_table = {
+            self:getStatisticEnabledMenuItem(),
+            {
+                text = _("Settings"),
+                callback = function() self:updateSettings() end,
+            },
+            {
+                text = _("Current book"),
+                callback = function()
+                    UIManager:show(KeyValuePage:new{
+                        title = _("Statistics"),
+                        kv_pairs = self:getCurrentStat(),
+                    })
+                end
+            },
+            {
+                text = _("All books"),
+                callback = function()
+                    total_msg, kv_pairs = self:getTotalStat()
+                    UIManager:show(KeyValuePage:new{
+                        title = total_msg,
+                        kv_pairs = kv_pairs,
+                    })
+                end
+            },
+        },
+    })
 end
 
-function ReaderStatistics:getStatisticTotalStatisticMenuTable()
-    self.total_status = Menu:new {
-        title = _("Total"),
-        item_table = self:updateTotalStat(),
-        is_borderless = true,
-        is_popout = false,
-        is_enable_shortcut = false,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
-        cface = Font:getFace("cfont", 20),
-    }
-
-    self.total_menu = CenterContainer:new {
-        dimen = Screen:getSize(),
-        self.total_status,
-    }
-
-    self.total_status.close_callback = function()
-        UIManager:close(self.total_menu)
-    end
-
-    self.total_status.show_parent = self.total_menu
-
-    return {
-        text = _("Total"),
-        callback = function()
-            self.total_status:swithItemTable(nil, self:updateTotalStat())
-            UIManager:show(self.total_menu)
-            return true
-        end
-    }
-end
-
-function ReaderStatistics:updateCurrentStat()
-    local stats = {}
+function ReaderStatistics:getCurrentStat()
     local dates = {}
-
     for k, v in pairs(self.data.performance_in_pages) do
         dates[os.date("%Y-%m-%d", k)] = ""
     end
+    local total_days = util.tableSize(dates)
 
     local read_pages = util.tableSize(self.data.performance_in_pages)
-    local current_page = self.view.state.page --get current page from the view
-    local average_time_per_page = self.data.total_time_in_sec / read_pages
+    local current_page = self.view.state.page -- get current page from the view
+    local avg_time_per_page = self.data.total_time_in_sec / read_pages
 
-    table.insert(stats, { text = _("Current period"), mandatory = util.secondsToClock(self.current_period, false) })
-    table.insert(stats, { text = _("Time to read"), mandatory = util.secondsToClock((self.data.pages - current_page) * average_time_per_page, false) })
-    table.insert(stats, { text = _("Total time"), mandatory = util.secondsToClock(self.data.total_time_in_sec, false) })
-    table.insert(stats, { text = _("Total highlights"), mandatory = self.data.highlights })
-    table.insert(stats, { text = _("Total notes"), mandatory = self.data.notes })
-    table.insert(stats, { text = _("Total days"), mandatory = util.tableSize(dates) })
-    table.insert(stats, { text = _("Average time per page"), mandatory = util.secondsToClock(average_time_per_page, false) })
-    table.insert(stats, { text = _("Read pages/Total pages"), mandatory = read_pages .. "/" .. self.data.pages })
-    return stats
+    return {
+        { _("Current period"), util.secondsToClock(self.current_period, false) },
+        { _("Time to read"), util.secondsToClock((self.data.pages - current_page) * avg_time_per_page, false) },
+        { _("Total time"), util.secondsToClock(self.data.total_time_in_sec, false) },
+        { _("Total highlights"), self.data.highlights },
+        { _("Total notes"), self.data.notes },
+        { _("Total days"), total_days },
+        { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
+        { _("Read pages/Total pages"), read_pages .. "/" .. self.data.pages },
+    }
+end
+
+function generateReadBooksTable(title, dates)
+    local result = {}
+    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
+        table.insert(result, {
+            k,
+            T(_("Pages (%1) Time: %2"), v.count, util.secondsToClock(v.read, false))
+        })
+    end
+    return result
 end
 
 -- For backward compatibility
-function ReaderStatistics:getDatesForBookOldFormat(book)
+function getDatesForBookOldFormat(book)
     local dates = {}
 
     for k, v in pairs(book.details) do
@@ -267,11 +229,10 @@ function ReaderStatistics:getDatesForBookOldFormat(book)
         end
     end
 
-    return self:generateReadBooksTable(book.title, dates)
+    return generateReadBooksTable(book.title, dates)
 end
 
-
-function ReaderStatistics:getDatesForBook(book)
+function getDatesForBook(book)
     local dates = {}
 
     for k, v in pairs(book.performance_in_pages) do
@@ -283,107 +244,93 @@ function ReaderStatistics:getDatesForBook(book)
                 count = 1
             }
         else
-            dates[date_text] = {
-                read = dates[date_text].read + v,
-                count = dates[date_text].count + 1,
-                date = dates[date_text].date
-            }
+            -- TODO: test this
+            local entry = dates[date_text]
+            entry.read = entry.read + v
+            entry.count = entry.count + 1
         end
     end
 
-    return self:generateReadBooksTable(book.title, dates)
+    return generateReadBooksTable(book.title, dates)
 end
 
+function ReaderStatistics:getTotalStat()
+    local total_stats = {
+        {
+            self.data.title,
+            util.secondsToClock(self.data.total_time_in_sec, false),
+            callback = function()
+                UIManager:show(KeyValuePage:new{
+                    title = self.data.title,
+                    kv_pairs = getDatesForBook(self.data),
+                })
+            end,
+        }
+    }
 
-function ReaderStatistics:generateReadBooksTable(title, dates)
-    local result = {}
-    table.insert(result, { text = title })
-    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
-        table.insert(result, { text = k, mandatory = T(_("Pages (%1) Time: %2"), v.count, util.secondsToClock(v.read, false)) })
-    end
-    return result
-end
-
-
-function ReaderStatistics:updateTotalStat()
-    local total_stats = {}
-    local total_books_time = 0
-
-    local proceded_titles = self:getStatisticsFromHistory(total_stats, total_books_time)
-    self:getOldStatisticsFromDirectory(proceded_titles, total_stats, total_books_time)
-
+    -- find stats for all other books in history
+    local proceded_titles, total_books_time = self:getStatisticsFromHistory(total_stats)
+    total_books_time = total_books_time + self:getOldStatisticsFromDirectory(proceded_titles, total_stats)
     total_books_time = total_books_time + tonumber(self.data.total_time_in_sec)
 
-    table.insert(total_stats, 1, { text = _("Total hours read"), mandatory = util.secondsToClock(total_books_time, false) })
-    table.insert(total_stats, 2, { text = "-" })
-    table.insert(total_stats, 3, {
-        text = self.data.title,
-        mandatory = util.secondsToClock(self.data.total_time_in_sec, false),
-        callback = function()
-            self.total_status:swithItemTable(nil, self:getDatesForBook(self.data))
-            UIManager:show(self.total_menu)
-            return true
-        end,
-    })
-    return total_stats
+    return T(_("Total hours read %1"),
+             util.secondsToClock(total_books_time, false)),
+           total_stats
 end
 
-function ReaderStatistics:getStatisticsFromHistory(total_stats, total_books_time)
+function ReaderStatistics:getStatisticsFromHistory(total_stats)
     local titles = {}
+    local total_books_time = 0
     for curr_file in lfs.dir(history_dir) do
-        local path = history_dir .. curr_file
+        local path = joinPath(history_dir, curr_file)
         if lfs.attributes(path, "mode") == "file" then
             local book_result = self:importFromFile(history_dir, curr_file)
             local book_stats = book_result.stats
             if book_stats and book_stats.title ~= self.data.title then
                 titles[book_stats.title] = true
                 table.insert(total_stats, {
-                    text = book_stats.title,
-                    mandatory = util.secondsToClock(book_stats.total_time_in_sec, false),
+                    book_stats.title,
+                    util.secondsToClock(book_stats.total_time_in_sec, false),
                     callback = function()
-                        self.total_status:swithItemTable(nil, self:getDatesForBook(book_stats))
-                        UIManager:show(self.total_menu)
-                        return true
+                        UIManager:show(KeyValuePage:new{
+                            title = book_stats.title,
+                            kv_pairs = getDatesForBook(book_stats),
+                        })
                     end,
                 })
                 total_books_time = total_books_time + tonumber(book_stats.total_time_in_sec)
             end
         end
     end
-    return titles
+    return titles, total_books_time
 end
 
 -- For backward compatibility
-function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_stats, total_books_time)
+function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_stats)
     if lfs.attributes(statistics_dir, "mode") ~= "directory" then
-        return
+        return 0
     end
+    local total_books_time = 0
     for curr_file in lfs.dir(statistics_dir) do
         local path = statistics_dir .. curr_file
         if lfs.attributes(path, "mode") == "file" then
             local book_result = self:importFromFile(statistics_dir, curr_file)
             if book_result and book_result.title ~= self.data.title and not exlude_titles[book_result.title] then
                 table.insert(total_stats, {
-                    text = book_result.title,
-                    mandatory = util.secondsToClock(book_result.total_time, false),
+                    book_result.title,
+                    util.secondsToClock(book_result.total_time, false),
                     callback = function()
-                        self.total_status:swithItemTable(nil, self:getDatesForBookOldFormat(book_result))
-                        UIManager:show(self.total_menu)
-                        return true
+                        UIManager:show(KeyValuePage:new{
+                            title = book_result.title,
+                            kv_pairs = getDatesForBookOldFormat(book_result),
+                        })
                     end,
                 })
                 total_books_time = total_books_time + tonumber(book_result.total_time)
             end
         end
     end
-end
-
-function ReaderStatistics:getBookProperties()
-    local props = self.view.document:getProps()
-    if props.title == "No document" or props.title == "" then --sometime crengine returns "No document" try to get one more time
-        props = self.view.document:getProps()
-    end
-    return props
+    return total_books_time
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
@@ -411,14 +358,6 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 end
 
-function ReaderStatistics:savePropertiesInToData(item)
-    self.data.title = item.title
-    self.data.authors = item.authors
-    self.data.language = item.language
-    self.data.series = item.series
-end
-
-
 -- For backward compatibility
 function ReaderStatistics:inplaceMigration()
     local oldData = self:importFromFile(statistics_dir, self.data.title .. ".stat")
@@ -431,12 +370,12 @@ end
 
 -- For backward compatibility
 function ReaderStatistics:importFromFile(base_path, item)
-    item = string.gsub(item, "^%s*(.-)%s*$", "%1") --trim
-    if lfs.attributes(base_path .. item, "mode") == "directory" then
+    item = string.gsub(item, "^%s*(.-)%s*$", "%1") -- trim
+    local statistic_file = joinPath(base_path, item)
+    if lfs.attributes(statistic_file, "mode") == "directory" then
         return
     end
-    local statisticFile = base_path .. item
-    local ok, stored = pcall(dofile, statisticFile)
+    local ok, stored = pcall(dofile, statistic_file)
     if ok then
         return stored
     else

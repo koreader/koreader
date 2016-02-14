@@ -94,16 +94,13 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
-    UIManager:scheduleIn(0.0, function()
-        self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
-        end)
+    self.item_frame.invert = true
+    UIManager:setDirty(self.show_parent, function()
+        return "ui", self.dimen
     end)
+    -- yield to main UI loop to invert item
     UIManager:scheduleIn(0.1, function()
         self.menu:onMenuSelect(self.item)
-    end)
-    UIManager:scheduleIn(0.5, function()
         self.item_frame.invert = false
         UIManager:setDirty(self.show_parent, function()
             return "ui", self.dimen

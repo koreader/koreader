@@ -31,9 +31,10 @@ function PdfDocument:init()
     else
         self:_readMetadata()
     end
-    if not (self.info.number_of_pages > 0) then
+    -- TODO: handle this
+    -- if not (self.info.number_of_pages > 0) then
         --error("No page found in PDF file")
-    end
+    -- end
 end
 
 function PdfDocument:unlock(password)

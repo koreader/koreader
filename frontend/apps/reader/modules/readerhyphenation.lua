@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local JSON = require("json")
 local InfoMessage = require("ui/widget/infomessage")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -11,32 +12,35 @@ local ReaderHyphenation = InputContainer:new{
 }
 
 function ReaderHyphenation:init()
-    local lang_data_file = assert(io.open("./data/hyph/languages.json"), "r")
-    lang_data = json.decode(lang_data_file:read("*all"))
-
     self.lang_table = {}
     self.hyph_table = {}
     self.hyph_alg = cre.getSelectedHyphDict()
-    for k,v in ipairs(lang_data) do
-        table.insert(self.hyph_table, {
-            text = v.name,
-            callback = function()
-                self.hyph_alg = v.filename
-                UIManager:show(InfoMessage:new{
-                    text = T( _("Changed hyphenation to %1."), v.name),
-                })
-                self.ui.document:setHyphDictionary(v.filename)
-                self.ui.toc:onUpdateToc()
-            end,
-            checked_func = function()
-                return v.filename == self.hyph_alg
-            end
-        })
 
-        self.lang_table[v.language] = v.filename
-        if v.aliases then
-            for i,alias in ipairs(v.aliases) do
-                self.lang_table[alias] = v.filename
+    local lang_data_file = assert(io.open("./data/hyph/languages.json"), "r")
+    local ok, lang_data = pcall(JSON.decode, lang_data_file:read("*all"))
+
+    if ok and lang_data then
+        for k,v in ipairs(lang_data) do
+            table.insert(self.hyph_table, {
+                text = v.name,
+                callback = function()
+                    self.hyph_alg = v.filename
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Changed hyphenation to %1."), v.name),
+                    })
+                    self.ui.document:setHyphDictionary(v.filename)
+                    self.ui.toc:onUpdateToc()
+                end,
+                checked_func = function()
+                    return v.filename == self.hyph_alg
+                end
+            })
+
+            self.lang_table[v.language] = v.filename
+            if v.aliases then
+                for i,alias in ipairs(v.aliases) do
+                    self.lang_table[alias] = v.filename
+                end
             end
         end
     end

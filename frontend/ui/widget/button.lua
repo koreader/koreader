@@ -9,7 +9,6 @@ local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Device = require("device")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 --[[

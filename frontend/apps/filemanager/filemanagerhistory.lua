@@ -6,10 +6,11 @@ local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
+local joinPath = require("ffi/util").joinPath
 local Screen = require("device").screen
 local _ = require("gettext")
 
-local history_dir = DataStorage:getDataDir() .. "/history/"
+local history_dir = DataStorage:getHistoryDir()
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -30,7 +31,7 @@ function FileManagerHistory:onMenuHold(item)
                 {
                     text = _("Remove this item from history"),
                     callback = function()
-                        os.remove(history_dir..item.histfile)
+                        os.remove(joinPath(history_dir, item.histfile))
                         self._manager:updateItemTable()
                         UIManager:close(self.histfile_dialog)
                     end,
@@ -82,7 +83,7 @@ function FileManagerHistory:updateItemTable()
     self.hist = {}
 
     for f in lfs.dir(history_dir) do
-        local path = history_dir..f
+        local path = joinPath(history_dir, f)
         if lfs.attributes(path, "mode") == "file" then
             local name = DocSettings:getNameFromHistory(f)
             table.insert(self.hist, {
