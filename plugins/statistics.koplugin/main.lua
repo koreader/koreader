@@ -316,7 +316,7 @@ function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_sta
         local path = statistics_dir .. curr_file
         if lfs.attributes(path, "mode") == "file" then
             local book_result = self:importFromFile(statistics_dir, curr_file)
-            if book_result and book_stats.total_time_in_sec > 0
+            if book_result and book_result.total_time > 0
                     and book_result.title ~= self.data.title
                     and not exlude_titles[book_result.title] then
                 table.insert(total_stats, {
@@ -374,15 +374,17 @@ end
 -- For backward compatibility
 function ReaderStatistics:importFromFile(base_path, item)
     item = string.gsub(item, "^%s*(.-)%s*$", "%1") -- trim
-    local statistic_file = joinPath(base_path, item)
-    if lfs.attributes(statistic_file, "mode") == "directory" then
-        return
-    end
-    local ok, stored = pcall(dofile, statistic_file)
-    if ok then
-        return stored
-    else
-        DEBUG(stored)
+    if item ~= ".stat" then
+        local statistic_file = joinPath(base_path, item)
+        if lfs.attributes(statistic_file, "mode") == "directory" then
+            return
+        end
+        local ok, stored = pcall(dofile, statistic_file)
+        if ok then
+            return stored
+        else
+            DEBUG(stored)
+        end
     end
 end
 
