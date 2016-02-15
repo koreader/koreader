@@ -38,7 +38,7 @@ function ReaderStatus:addToMainMenu(tab_item_table)
 end
 
 function ReaderStatus:showStatus()
-    local status_page = status_page:new {
+    local status_page = StatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
         document = self.document,
