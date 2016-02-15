@@ -35,6 +35,18 @@ local Font = {
         -- font for info messages
         infofont = "noto/NotoSans-Regular.ttf",
     },
+    sizemap = {
+        cfont = 24,
+        tfont = 26,
+        ffont = 20,
+        pgfont = 20,
+        scfont = 20,
+        rifont = 16,
+        hpkfont = 20,
+        hfont = 24,
+        infont = 22,
+        infofont = 24,
+    },
     fallbacks = {
         [1] = "noto/NotoSansCJK-Regular.ttf",
         [2] = "noto/NotoSans-Regular.ttf",
@@ -51,6 +63,7 @@ function Font:getFace(font, size)
     -- default to content font
     if not font then font = self.cfont end
 
+    if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
     local size = Screen:scaleBySize(size)
