@@ -104,7 +104,7 @@ function NickelConf.frontLightLevel.set(new_intensity)
         kobo_conf:close()
     end
 
-    kobo_conf_w = assert(io.open(kobo_conf_path, "w"))
+    local kobo_conf_w = assert(io.open(kobo_conf_path, "w"))
     for i, line in ipairs(lines) do
       kobo_conf_w:write(line, "\n")
     end

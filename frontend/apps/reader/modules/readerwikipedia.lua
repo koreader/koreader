@@ -1,7 +1,6 @@
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Translator = require("ui/translator")
 local Wikipedia = require("ui/wikipedia")
-local Screen = require("device").screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -29,7 +28,8 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
     -- seems lower case phrase has higher hit rate
     word = string.lower(word)
     local results = {}
-    local ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
+    local pages
+    ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
     if ok and pages then
         for pageid, page in pairs(pages) do
             local result = {

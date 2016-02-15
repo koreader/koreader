@@ -4,7 +4,6 @@ local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Event = require("ui/event")
-local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -100,7 +99,6 @@ end
 
 function ReaderTypeset:setStyleSheet(new_css)
     if new_css ~= self.css then
-        --DEBUG("setting css to ", new_css)
         self.css = new_css
         self.ui.document:setStyleSheet(new_css)
         self.ui:handleEvent(Event:new("UpdatePos"))
