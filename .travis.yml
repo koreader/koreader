@@ -75,4 +75,4 @@ script:
 
 after_success:
   - make coverage
-  - cd koreader-*/koreader && luacov-coveralls -v
+  - cd koreader-*/koreader && luajit $(which luacov-coveralls) -v
