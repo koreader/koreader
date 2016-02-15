@@ -163,7 +163,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
             {
                 text = _("All books"),
                 callback = function()
-                    total_msg, kv_pairs = self:getTotalStat()
+                    total_msg, kv_pairs = self:getTotalStats()
                     UIManager:show(KeyValuePage:new{
                         title = total_msg,
                         kv_pairs = kv_pairs,
@@ -254,7 +254,7 @@ function getDatesForBook(book)
     return generateReadBooksTable(book.title, dates)
 end
 
-function ReaderStatistics:getTotalStat()
+function ReaderStatistics:getTotalStats()
     local total_stats = {
         {
             self.data.title,
@@ -286,7 +286,8 @@ function ReaderStatistics:getStatisticsFromHistory(total_stats)
         if lfs.attributes(path, "mode") == "file" then
             local book_result = self:importFromFile(history_dir, curr_file)
             local book_stats = book_result.stats
-            if book_stats and book_stats.title ~= self.data.title then
+            if book_stats and book_stats.total_time_in_sec > 0
+                    and book_stats.title ~= self.data.title then
                 titles[book_stats.title] = true
                 table.insert(total_stats, {
                     book_stats.title,
@@ -315,7 +316,9 @@ function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_sta
         local path = statistics_dir .. curr_file
         if lfs.attributes(path, "mode") == "file" then
             local book_result = self:importFromFile(statistics_dir, curr_file)
-            if book_result and book_result.title ~= self.data.title and not exlude_titles[book_result.title] then
+            if book_result and book_stats.total_time_in_sec > 0
+                    and book_result.title ~= self.data.title
+                    and not exlude_titles[book_result.title] then
                 table.insert(total_stats, {
                     book_result.title,
                     util.secondsToClock(book_result.total_time, false),
