@@ -18,8 +18,8 @@ Use this method to define a class that's inherited from current class.
 It only setup the metabale (or prototype chain) and will not initiatie
 a real instance, i.e. call self:init()
 --]]
-function Widget:extend(o)
-    local o = o or {}
+function Widget:extend(from_o)
+    local o = from_o or {}
     setmetatable(o, self)
     self.__index = self
     return o

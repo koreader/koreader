@@ -265,7 +265,7 @@ usage: test [front|base] <TEST_NAME>
     if [ ! -z $2 ]; then
         test_path="${test_path}/$2"
     fi
-    busted --exclude-tags=notest ${test_path}
+    busted -o verbose_print --exclude-tags=notest ${test_path}
 
     popd
 }
@@ -277,10 +277,13 @@ usage: $0 COMMAND <ARGS>
 
 Supported commands:
 
-    build       Build KOReader
-    clean       Clean KOReader build
-    run         Run KOReader
-    wbuilder    Run wbuilder.lua script (useful for building new UI widget)
+    fetch-thirdparty    Fetch thirdparty dependencies for build
+    build               Build KOReader
+    clean               Clean KOReader build
+    release             Build KOReader release package
+    run                 Run KOReader
+    wbuilder            Run wbuilder.lua script (useful for building new UI widget)
+    test                Run tests
 "
 
 if [ $# -lt 1 ]; then

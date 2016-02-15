@@ -25,21 +25,31 @@ local TextWidget = Widget:new{
     --self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, true, self.bold)
 --end
 
+function TextWidget:updateSize()
+    local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
+    if not tsize then
+        self._length = 0
+    else
+        self._length = tsize.x
+    end
+    self._height = self.face.size * 1.5
+end
+
 function TextWidget:getSize()
     --if not self._bb then
         --self:_render()
     --end
     --return { w = self._length, h = self._bb:getHeight() }
-    local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
-    if not tsize then
-        return Geom:new{}
-    end
-    self._length = tsize.x
-    self._height = self.face.size * 1.5
+    self:updateSize()
     return Geom:new{
         w = self._length,
         h = self._height,
     }
+end
+
+function TextWidget:setText(text)
+    self.text = text
+    self:updateSize()
 end
 
 function TextWidget:paintTo(bb, x, y)

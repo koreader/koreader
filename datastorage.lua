@@ -22,6 +22,10 @@ function DataStorage:getDataDir()
     return data_dir
 end
 
+function DataStorage:getHistoryDir()
+    return self:getDataDir() .. "/history"
+end
+
 local function initDataDir()
     local data_dir = DataStorage:getDataDir()
     local sub_data_dirs = {"cache", "clipboard", "data", "history", "ota", "screenshots"}

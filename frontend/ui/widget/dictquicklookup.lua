@@ -91,9 +91,7 @@ function DictQuickLookup:init()
             },
         }
         table.insert(self.dict_bar,
-            CloseButton:new{
-                window = self,
-        })
+                     CloseButton:new{ window = self, })
     end
 end
 

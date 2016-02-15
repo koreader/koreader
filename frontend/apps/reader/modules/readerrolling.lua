@@ -261,17 +261,9 @@ end
 
 function ReaderRolling:onSwipe(arg, ges)
     if ges.direction == "west" or ges.direction == "north" then
-        if DCHANGE_WEST_SWIPE_TO_EAST then
-            self:onGotoViewRel(-1)
-        else
-            self:onGotoViewRel(1)
-        end
+        self:onGotoViewRel(1)
     elseif ges.direction == "east" or ges.direction == "south" then
-        if DCHANGE_EAST_SWIPE_TO_WEST then
-            self:onGotoViewRel(1)
-        else
-            self:onGotoViewRel(-1)
-        end
+        self:onGotoViewRel(-1)
     end
 end
 

@@ -1,11 +1,9 @@
 local CreOptions = require("ui/data/creoptions")
 local Document = require("document/document")
-local Configurable = require("configurable")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
-local Device = require("device")
 local Screen = require("device").screen
 local Font = require("ui/font")
 local DEBUG = require("dbg")
@@ -190,7 +188,7 @@ function CreDocument:getTextFromPositions(pos0, pos1)
     local text_range = self._document:getTextFromPositions(pos0.x, pos0.y, pos1.x, pos1.y)
     DEBUG("CreDocument: get text range", text_range)
     if text_range then
-        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+        -- local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
         return {
             text = text_range.text,
             pos0 = text_range.pos0,

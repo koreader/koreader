@@ -1,6 +1,6 @@
 local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
-local inkview = ffi.load("inkview")
+-- local inkview = ffi.load("inkview")
 
 ffi.cdef[[
 int IsCharging();

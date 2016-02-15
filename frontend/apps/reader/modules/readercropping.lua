@@ -12,7 +12,6 @@ local BBoxWidget = require("ui/widget/bboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local Button = require("ui/widget/button")
 local Math = require("optmath")
-local DEBUG = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 
 local PageCropDialog = VerticalGroup:new{

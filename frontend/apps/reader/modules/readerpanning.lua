@@ -14,8 +14,7 @@ local ReaderPanning = InputContainer:new{
 }
 
 function ReaderPanning:init()
-    if Device:isTouchDevice() then
-    else
+    if Device:hasKeyboard() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             MoveUp = {

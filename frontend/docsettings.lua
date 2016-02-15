@@ -4,14 +4,14 @@ local dump = require("dump")
 
 local DocSettings = {}
 
-local history_dir = DataStorage:getDataDir() .. "/history/"
+local history_dir = DataStorage:getHistoryDir()
 
 function DocSettings:getSidecarDir(doc_path)
     return doc_path:match("(.*)%.")..".sdr"
 end
 
 function DocSettings:getHistoryPath(fullpath)
-    return history_dir .. "[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return history_dir .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)

@@ -1,14 +1,24 @@
+--[[--
+Button widget that shows an "×" and handles closing window when tapped
+
+Example:
+
+    local parent_widget = HorizontalGroup:new{}
+    table.insert(parent_widget, CloseButton:new{
+        window = parent_widget,
+    })
+    UIManager:show(parent_widget)
+
+]]
+
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 
---[[
-a button widget that shows an "×" and handles closing window when tapped
---]]
 local CloseButton = InputContainer:new{
-    align = "right",
+    overlap_align = "right",
     window = nil,
 }
 
@@ -23,7 +33,7 @@ function CloseButton:init()
         text_widget
     }
 
-    self.dimen = text_widget:getSize():copy()
+    self.dimen = text_widget:getSize()
 
     self.ges_events.Close = {
         GestureRange:new{

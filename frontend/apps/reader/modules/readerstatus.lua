@@ -38,14 +38,14 @@ function ReaderStatus:addToMainMenu(tab_item_table)
 end
 
 function ReaderStatus:showStatus()
-    local statusWidget = StatusWidget:new {
+    local status_page = StatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
         document = self.document,
         settings = self.settings,
         view = self.view,
     }
-    UIManager:show(statusWidget)
+    UIManager:show(status_page)
 end
 
 function ReaderStatus:onPageUpdate(pageno)
@@ -66,4 +66,3 @@ function ReaderStatus:onReadSettings(config)
 end
 
 return ReaderStatus
-

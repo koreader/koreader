@@ -33,8 +33,8 @@ local Document = {
     is_edited = false,
 }
 
-function Document:new(o)
-    local o = o or {}
+function Document:new(from_o)
+    local o = from_o or {}
     setmetatable(o, self)
     self.__index = self
     if o._init then o:_init() end
@@ -205,7 +205,7 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
     if bbox.y0 < 0 then bbox.y0 = 0 end
     if bbox.x1 < 0 then bbox.x1 = 0 end
     if bbox.y1 < 0 then bbox.y1 = 0 end
-    local ubbox_dimen = nil
+    local ubbox_dimen
     if (bbox.x0 >= bbox.x1) or (bbox.y0 >= bbox.y1) then
         -- if document's bbox info is corrupted, we use the page size
         ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
@@ -282,7 +282,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     end
 
     -- prepare cache item with contained blitbuffer
-    local tile = TileCacheItem:new{
+    tile = TileCacheItem:new{
         persistent = true,
         size = size.w * size.h + 64, -- estimation
         excerpt = size,

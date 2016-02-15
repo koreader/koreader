@@ -64,8 +64,7 @@ function TestGrid:paintTo(bb)
 end
 
 function TestVisible:paintTo(bb)
-    --Draw three lines at the borders to assess what the maximum visible coordinates are
-
+    -- Draw three lines at the borders to assess what the maximum visible coordinates are
     v_line = math.floor(bb:getWidth() / 50)
     h_line = math.floor(bb:getHeight() / 50)
     -- Paint white background for higher contrast
@@ -165,8 +164,6 @@ function Background:onQuitApplication()
     UIManager:quit()
 end
 
-
-
 -----------------------------------------------------
 -- example widget: a clock
 -----------------------------------------------------
@@ -185,7 +182,6 @@ function Clock:schedFunc()
     self[1][1]:free()
     self[1][1] = self:getTextWidget()
     UIManager:setDirty(self)
-    -- reschedule
     -- TODO: wait until next real second shift
     UIManager:scheduleIn(1, function() self:schedFunc() end)
 end
@@ -250,7 +246,6 @@ M = Menu:new{
     height = 600,
 }
 
-
 -----------------------------------------------------
 -- a reader view widget
 -----------------------------------------------------
@@ -277,72 +272,62 @@ touch_menu = TouchMenu:new{
             icon = "resources/icons/appbar.pokeball.png",
             {
                 text = "item1",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item2",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item3",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item4",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item5",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item6",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item7",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item8",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item9",
-                callback = function()
-                end,
+                callback = function() end,
             },
         },
         {
             icon = "resources/icons/appbar.page.corner.bookmark.png",
             {
                 text = "item10",
-                callback = function()
-                end,
+                callback = function() end,
             },
             {
                 text = "item11",
-                callback = function()
-                end,
+                callback = function() end,
             },
         },
         {
             icon = "resources/icons/appbar.home.png",
-            callback = function()
-                DEBUG("hello world!")
-            end
+            callback = function() DEBUG("hello world!") end
         }
     },
 }
 
+-----------------------------------------------------
+-- input box widget
+-----------------------------------------------------
 local TestInputText = InputText:new{
     width = 400,
     enter_callback = function() print("Entered") end,
@@ -353,11 +338,43 @@ local TestInputText = InputText:new{
     },
 }
 
+-----------------------------------------------------
+-- key value page
+-----------------------------------------------------
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local kvp = KeyValuePage:new{
+    title = 'Statistics',
+    kv_pairs = {
+        {"1 Current period", "00:00:00"},
+        {"2 Time to read", "00:00:00"},
+        {"3 Time to read", "00:00:00"},
+        {"4 Time to read", "00:00:00"},
+        {"5 Time to read", "00:00:00"},
+        {"6 Time to read", "00:00:00"},
+        {"7 Time to read", "00:00:00"},
+        {"8 Time to read", "00:00:00"},
+        {"9 Time to read", "00:00:00"},
+        {"10 Time to read", "00:00:00"},
+        {"11 Time to read", "00:00:00"},
+        "----------------------------",
+        {"12 Time to read", "00:00:00"},
+        {"13 Time to read", "00:00:00"},
+        {"14 Time to read", "00:00:00"},
+        {"15 Time to read", "00:00:00"},
+        {"16 Time to read", "00:00:00"},
+        {"17 Time to read", "00:00:00"},
+        {"18 Time to read", "00:00:00"},
+        {"19 Time to read", "00:00:00"},
+        {"20 Time to read", "00:00:00"},
+        {"21 Time to read", "00:00:00"},
+    },
+}
+
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
 --UIManager:show(Background:new())
--- UIManager:show(TestGrid)
+--UIManager:show(TestGrid)
 UIManager:show(TestVisible)
 UIManager:show(Clock:new())
 --UIManager:show(M)
@@ -365,7 +382,9 @@ UIManager:show(Clock:new())
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)
 --UIManager:show(keyboard)
-UIManager:show(TestInputText)
-TestInputText:onShowKeyboard()
+--UIManager:show(TestInputText)
+--TestInputText:onShowKeyboard()
+
+UIManager:show(kvp)
 
 UIManager:run()

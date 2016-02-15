@@ -185,7 +185,7 @@ function ReaderView:screenToPageTransform(pos)
         end
     else
         pos.page = self.ui.document:getCurrentPage()
-        local last_y = self.ui.document:getCurrentPos()
+        -- local last_y = self.ui.document:getCurrentPos()
         DEBUG("document has no pages at", pos)
         return pos
     end
@@ -293,8 +293,8 @@ function ReaderView:getCurrentPageList()
 end
 
 function ReaderView:getScrollPagePosition(pos)
+    local x_p, y_p
     local x_s, y_s = pos.x, pos.y
-    local x_p, y_p = nil, nil
     for _, state in ipairs(self.page_states) do
         if y_s < state.visible_area.h + state.offset.y then
             y_p = (state.visible_area.y + y_s - state.offset.y) / state.zoom
@@ -482,7 +482,6 @@ end
 This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
-    local page_size = nil
     if self.ui.document.info.has_pages and self.state.page then
         self.page_area = self:getPageArea(
             self.state.page,

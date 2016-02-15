@@ -44,6 +44,7 @@ describe("ReaderBookmark module", function()
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_epub),
             }
+            readerui.status.enabled = false
         end)
         before_each(function()
             UIManager:quit()
@@ -117,6 +118,7 @@ describe("ReaderBookmark module", function()
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
+            readerui.status.enabled = false
         end)
         before_each(function()
             UIManager:quit()

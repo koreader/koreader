@@ -6,7 +6,6 @@ local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Device = require("device")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderLink = InputContainer:new{

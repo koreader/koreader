@@ -9,7 +9,6 @@ local Screen = require("device").screen
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderToc = InputContainer:new{
@@ -143,7 +142,7 @@ function ReaderToc:getTocTicks(level)
                 depth = v.depth
             end
         else
-            local depth = nil
+            local depth
             if level > 0 then
                 depth = level
             else
@@ -261,7 +260,6 @@ end
 
 function ReaderToc:onShowToc()
     self:fillToc()
-    local max_depth = self:getMaxDepth()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
         for _,v in ipairs(self.toc) do
