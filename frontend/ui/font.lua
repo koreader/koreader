@@ -1,3 +1,7 @@
+--[[--
+Font module.
+]]
+
 local lfs = require("libs/libkoreader-lfs")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
@@ -82,6 +86,12 @@ function Font:getFace(font, size)
             DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
             return nil
         end
+        --- Freetype font face wrapper object
+        -- @table FontFaceObj
+        -- @field size size of the font face (after scaled by screen size)
+        -- @field orig_size raw size of the font face (before scale)
+        -- @field ftface font face object from freetype
+        -- @field hash hash key for this font face
         face_obj = {
             size = size,
             orig_size = orig_size,
@@ -89,7 +99,6 @@ function Font:getFace(font, size)
             hash = hash
         }
         self.faces[hash] = face_obj
-    -- DEBUG("getFace, found: "..realname.." size:"..size)
     end
     return face_obj
 end
