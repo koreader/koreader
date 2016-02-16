@@ -2,7 +2,7 @@ local Generic = require("device/generic/device")
 local DEBUG = require("dbg")
 
 local function yes() return true end
-local function no() return false end
+local function no() return false end  -- luacheck: ignore
 
 local Kindle = Generic:new{
     model = "Kindle",

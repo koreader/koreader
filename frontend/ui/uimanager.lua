@@ -567,8 +567,8 @@ end
 
 function UIManager:initLooper()
     if DUSE_TURBO_LIB and not self.looper then
-        TURBO_SSL = true
-        __TURBO_USE_LUASOCKET__ = true
+        TURBO_SSL = true -- luacheck: ignore
+        __TURBO_USE_LUASOCKET__ = true -- luacheck: ignore
         local turbo = require("turbo")
         self.looper = turbo.ioloop.instance()
     end
