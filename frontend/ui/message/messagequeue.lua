@@ -1,11 +1,9 @@
 local ffi = require("ffi")
-local util = require("ffi/util")
 local Event = require("ui/event")
 local DEBUG = require("dbg")
 
-local dummy = require("ffi/zeromq_h")
+local _ = require("ffi/zeromq_h")
 local czmq = ffi.load("libs/libczmq.so.1")
-local zyre = ffi.load("libs/libzyre.so.1")
 
 local MessageQueue = {}
 
@@ -39,7 +37,6 @@ function MessageQueue:handleZMsgs(messages)
     end
     local function pop_string()
         local str_p = czmq.zmsg_popstr(messages[1])
-        local message_size = czmq.zmsg_size(messages[1])
         local res = ffi.string(str_p)
         czmq.zstr_free(ffi.new('char *[1]', str_p))
         drop_message()
@@ -64,7 +61,6 @@ function MessageQueue:handleZMsgs(messages)
         return header
     end
     if #messages == 0 then return end
-    local message_size = czmq.zmsg_size(messages[1])
     local command = pop_string()
     DEBUG("ØMQ message", command)
     if command == "ENTER" then

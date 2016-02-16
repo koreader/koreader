@@ -1,6 +1,5 @@
 local ffi = require("ffi")
 local DEBUG = require("dbg")
-local Event = require("ui/event")
 local MessageQueue = require("ui/message/messagequeue")
 
 local _ = require("ffi/zeromq_h")
@@ -24,7 +23,8 @@ function StreamMessageQueue:start()
     end
     local id_size = ffi.new("size_t[1]", 256)
     local buffer = ffi.new("uint8_t[?]", id_size[0])
-    rc = zmq.zmq_getsockopt(self.socket, ffi.C.ZMQ_IDENTITY, buffer, id_size)
+    -- @todo: check return of zmq_getsockopt
+    zmq.zmq_getsockopt(self.socket, ffi.C.ZMQ_IDENTITY, buffer, id_size)
     self.id = ffi.string(buffer, id_size[0])
     DEBUG("id", #self.id, self.id)
 end
@@ -65,7 +65,7 @@ function StreamMessageQueue:waitEvent()
     while czmq.zpoller_wait(self.poller, 0) ~= nil and wait_packages > 0 do
         local id_frame = czmq.zframe_recv(self.socket)
         if id_frame ~= nil then
-            local id = self:handleZframe(id_frame)
+            self:handleZframe(id_frame)
         end
         local frame = czmq.zframe_recv(self.socket)
         if frame ~= nil then
