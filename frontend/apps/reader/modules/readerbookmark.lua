@@ -92,7 +92,7 @@ function ReaderBookmark:importSavedHighlight(config)
     if not config:readSetting("highlights_imported") then
         for page, marks in pairs(textmarks) do
             for _, mark in ipairs(marks) do
-                local page = self.ui.document.info.has_pages and page or mark.pos0
+                page = self.ui.document.info.has_pages and page or mark.pos0
                 -- highlights saved by some old versions don't have pos0 field
                 -- we just ignore those highlights
                 if page then
@@ -125,7 +125,7 @@ function ReaderBookmark:onSaveSettings()
 end
 
 function ReaderBookmark:onToggleBookmark()
-    local pn_or_xp = nil
+    local pn_or_xp
     if self.ui.document.info.has_pages then
         pn_or_xp = self.view.state.page
     else
@@ -295,16 +295,16 @@ end
 
 -- binary search of sorted bookmarks
 function ReaderBookmark:isBookmarkAdded(item)
-    local _start, _middle, _end, direction = 1, 1, #self.bookmarks, 0
+    local _start, _middle, _end = 1, 1, #self.bookmarks
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
         if self:isBookmarkSame(item, self.bookmarks[_middle]) then
             return true
         end
         if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
-            _end, direction = _middle - 1, 0
+            _end = _middle - 1
         else
-            _start, direction = _middle + 1, 1
+            _start = _middle + 1
         end
     end
     return false

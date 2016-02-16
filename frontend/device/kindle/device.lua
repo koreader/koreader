@@ -147,8 +147,11 @@ function Kindle4:init()
     Kindle.init(self)
 end
 
+-- luacheck: push
+-- luacheck: ignore
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
+-- luacheck: pop
 function KindleTouch:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kindle/powerd"):new{

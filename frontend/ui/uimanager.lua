@@ -422,7 +422,7 @@ function UIManager:_refresh(mode, region)
             -- combine both refreshes' regions
             local combined = region:combine(self._refresh_stack[i].region)
             -- update the mode, if needed
-            local mode = update_mode(mode, self._refresh_stack[i].mode)
+            mode = update_mode(mode, self._refresh_stack[i].mode)
             -- remove colliding update
             table.remove(self._refresh_stack, i)
             -- and try again with combined data

@@ -1,6 +1,8 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local DEBUG = require("dbg")
 
+-- luacheck: push
+-- luacheck: ignore
 local EVT_INIT = 21
 local EVT_EXIT = 22
 local EVT_SHOW = 23
@@ -32,6 +34,7 @@ local KEY_PREV2  = 0x1c
 local KEY_NEXT2  = 0x1d
 local KEY_COVEROPEN	= 0x02
 local KEY_COVERCLOSE	= 0x03
+-- luacheck: pop
 
 local function yes() return true end
 
@@ -49,12 +52,12 @@ function PocketBook:init()
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
             ev.type = 1 -- EV_KEY
         elseif ev.type == EVT_BACKGROUND then
-            isInBackGround = true
+            self.isInBackGround = true
             self:onPowerEvent("Power")
-        elseif isInBackGround and ev.type == EVT_FOREGROUND then
-            isInBackGround = false
+        elseif self.isInBackGround and ev.type == EVT_FOREGROUND then
+            self.isInBackGround = false
             self:onPowerEvent("Power")
-        elseif not isInBackGround and ev.type == EVT_FOREGROUND then
+        elseif not self.isInBackGround and ev.type == EVT_FOREGROUND then
             self.screen:refreshPartial()
         end
     end)

@@ -1,8 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Screen = require("ui/screen")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
@@ -69,7 +67,7 @@ function ReaderSearch:onShowSearchDialog(text)
             self.ui.highlight:clear()
         end,
     }
-    local res = do_search(self.searchFromCurrent, text, 0)()
+    do_search(self.searchFromCurrent, text, 0)()
     UIManager:show(self.search_dialog)
     -- TODO: regional
     UIManager:setDirty(self.dialog, "partial")

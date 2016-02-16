@@ -1,5 +1,5 @@
 local Generic = require("device/generic/device")
-local isAndroid, android = pcall(require, "android")
+local _, android = pcall(require, "android")
 local ffi = require("ffi")
 local DEBUG = require("dbg")
 

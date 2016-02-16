@@ -594,7 +594,7 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
         local cached = Cache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
-            local ok, word = pcall(
+            local _, word = pcall(
                 kc.getTOCRWord, kc, "dst",
                 rect.x, rect.y, rect.w, rect.h,
                 self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
@@ -628,7 +628,7 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
         --DEBUG(word_w, word_h)
-        local ok, word = pcall(
+        local _, word = pcall(
             kc.getTOCRWord, kc, "src",
             0, 0, word_w, word_h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
@@ -655,7 +655,7 @@ end
 function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
     assert(pos0.page == pos1.page)
     assert(pos0.zoom == pos1.zoom)
-    local rect = nil
+    local rect
     if pboxes and #pboxes > 0 then
         local box = pboxes[1]
         rect = Geom:new{
@@ -1060,7 +1060,7 @@ function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
             y = rect.y + rect.h - 5
         }
         local boxes = self:getPageBoxesFromPositions(doc, pageno, pos0, pos1)
-        res_rect = nil
+        local res_rect = nil
         if #boxes > 0 then
             res_rect = boxes[1]
             for _, box in pairs(boxes) do

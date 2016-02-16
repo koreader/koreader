@@ -40,7 +40,7 @@ local Device = {
 }
 
 function Device:new(o)
-    local o = o or {}
+    o = o or {}
     setmetatable(o, self)
     self.__index = self
     return o
