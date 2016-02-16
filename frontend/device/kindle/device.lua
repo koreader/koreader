@@ -72,7 +72,6 @@ local KindleVoyage = Kindle:new{
     hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
-    needsScreenRefreshAfterResume = no,
 }
 
 local KindlePaperWhite3 = Kindle:new{
