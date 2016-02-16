@@ -41,7 +41,7 @@ local Screen = Device.screen
 
 local ellipsis, space = "...", "  "
 local ellipsis_width, space_width
-function truncateTextByWidth(text, face, max_width, prepend_space)
+local function truncateTextByWidth(text, face, max_width, prepend_space)
     if not ellipsis_width then
         ellipsis_width = RenderText:sizeUtf8Text(0, max_width, face, ellipsis).x
     end

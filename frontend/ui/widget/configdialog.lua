@@ -9,7 +9,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FixedTextWidget = require("ui/widget/fixedtextwidget")
-local ProgressWidget = require("ui/widget/progresswidget")
 local ToggleSwitch = require("ui/widget/toggleswitch")
 local ConfirmBox = require("ui/widget/confirmbox")
 local ImageWidget = require("ui/widget/imagewidget")
@@ -176,9 +175,6 @@ function ConfigOption:init()
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
             local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or default_option_height)
             local item_spacing_with = self.options[c].spacing and self.options[c].spacing or default_items_spacing
-            local items_spacing = HorizontalSpan:new{
-                width = Screen:scaleBySize(item_spacing_with)
-            }
             local enabled = true
             if self.options[c].enabled_func then
                 enabled = self.options[c].enabled_func(self.config.configurable)
@@ -224,16 +220,15 @@ function ConfigOption:init()
                     -- check if current value is stored in configurable or calculated in runtime
                     local val = self.options[c].current_func and self.options[c].current_func()
                                 or self.config.configurable[self.options[c].name]
-                    local min_diff = nil
+                    local min_diff
                     if type(val) == "table" then
                         min_diff = value_diff(val[1], self.options[c].values[1][1])
                     else
                         min_diff = value_diff(val, self.options[c].values[1])
                     end
 
-                    local diff = nil
+                    local diff
                     for index, val_ in pairs(self.options[c].values) do
-                        local diff = nil
                         if type(val) == "table" then
                             diff = value_diff(val[1], val_[1])
                         else
@@ -277,7 +272,7 @@ function ConfigOption:init()
                     width = math.min(max_item_spacing, Screen:scaleBySize(item_spacing_with))
                 }
                 for d = 1, #self.options[c].item_text do
-                    local option_item = nil
+                    local option_item
                     if option_items_fixed then
                         option_item = OptionTextItem:new{
                             FixedTextWidget:new{
@@ -584,7 +579,7 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
             labels[position]
         ),
         ok_callback = function()
-            local name = self.config_options.prefix.."_"..name
+            name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])
         end,
     })

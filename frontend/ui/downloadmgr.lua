@@ -9,8 +9,8 @@ local DownloadMgr = {
     onConfirm = function() end,
 }
 
-function DownloadMgr:new(o)
-    local o = o or {}
+function DownloadMgr:new(from_o)
+    local o = from_o or {}
     setmetatable(o, self)
     self.__index = self
     return o

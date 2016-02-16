@@ -52,7 +52,8 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     DEBUG("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local code, headers, status = socket.skip(1, httpRequest(request))
+    -- first argument returned by skip is code
+    local _, headers, status = socket.skip(1, httpRequest(request))
 
     -- raise error message when network is unavailable
     if headers == nil then

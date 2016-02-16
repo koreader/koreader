@@ -75,7 +75,7 @@ function OTAManager:checkUpdate()
     local local_zsync_file = ota_dir .. zsync_file
     -- download zsync file from OTA server
     DEBUG("downloading zsync file", ota_zsync_file)
-    local r, c, h = http.request{
+    local _, c, _ = http.request{
         url = ota_zsync_file,
         sink = ltn12.sink.file(io.open(local_zsync_file, "w"))}
     if c ~= 200 then

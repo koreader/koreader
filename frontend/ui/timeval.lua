@@ -5,8 +5,8 @@ local TimeVal = {
     usec = 0,
 }
 
-function TimeVal:new(o)
-    local o = o or {}
+function TimeVal:new(from_o)
+    local o = from_o or {}
     if o.sec == nil then
         o.sec = 0
     end

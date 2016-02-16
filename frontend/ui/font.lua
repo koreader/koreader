@@ -70,7 +70,7 @@ function Font:getFace(font, size)
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    local size = Screen:scaleBySize(size)
+    size = Screen:scaleBySize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
@@ -81,7 +81,7 @@ function Font:getFace(font, size)
             realname = font
         end
         realname = self.fontdir.."/"..realname
-        ok, face = pcall(Freetype.newFace, realname, size)
+        local ok, face = pcall(Freetype.newFace, realname, size)
         if not ok then
             DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
             return nil
