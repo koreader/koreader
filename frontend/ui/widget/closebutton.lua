@@ -3,7 +3,8 @@ Button widget that shows an "×" and handles closing window when tapped
 
 Example:
 
-    local parent_widget = HorizontalGroup:new{}
+    local CloseButton = require("ui/widget/closebutton")
+    local parent_widget = OverlapGroup:new{}
     table.insert(parent_widget, CloseButton:new{
         window = parent_widget,
     })
