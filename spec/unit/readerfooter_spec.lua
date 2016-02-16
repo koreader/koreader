@@ -1,11 +1,16 @@
 require("commonrequire")
 local DocumentRegistry = require("document/documentregistry")
 local ReaderUI = require("apps/reader/readerui")
+local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
+local purgeDir = require("ffi/util").purgeDir
 
 describe("Readerfooter module", function()
     it("should setup footer for epub without error", function()
         local sample_epub = "spec/front/unit/data/juliet.epub"
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
@@ -20,6 +25,9 @@ describe("Readerfooter module", function()
 
     it("should setup footer for pdf without error", function()
         local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
