@@ -32,25 +32,56 @@ local CloseButton = require("ui/widget/closebutton")
 local UIManager = require("ui/uimanager")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
+local RenderText = require("ui/rendertext")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local Device = require("device")
 local Screen = Device.screen
 
 
+local ellipsis, space = "...", "  "
+local ellipsis_width, space_width
+local function truncateTextByWidth(text, face, max_width, prepend_space)
+    if not ellipsis_width then
+        ellipsis_width = RenderText:sizeUtf8Text(0, max_width, face, ellipsis).x
+    end
+    if not space_width then
+        space_width = RenderText:sizeUtf8Text(0, max_width, face, space).x
+    end
+    local new_txt_width = max_width - ellipsis_width - space_width
+    local sub_txt = RenderText:getSubTextByWidth(text, face, new_txt_width)
+    if prepend_space then
+        return space.. sub_txt .. ellipsis
+    else
+        return sub_txt .. ellipsis .. space
+    end
+end
+
+
 local KeyValueTitle = VerticalGroup:new{
     kv_page = nil,
     title = "",
+    tface = Font:getFace("tfont"),
     align = "left",
 }
 
 function KeyValueTitle:init()
     self.close_button = CloseButton:new{ window = self }
+    local btn_width = self.close_button:getSize().w
+    local title_txt_width = RenderText:sizeUtf8Text(
+                                0, self.width, self.tface, self.title).x
+    local show_title_txt
+    if self.width < (title_txt_width + btn_width) then
+        show_title_txt = truncateTextByWidth(
+                            self.title, self.tface, self.width-btn_width)
+    else
+        show_title_txt = self.title
+    end
     table.insert(self, OverlapGroup:new{
         dimen = { w = self.width },
         TextWidget:new{
-            text = self.title,
-            face = Font:getFace("tfont", 26),
+            text = show_title_txt,
+            face = self.tface,
         },
         self.close_button,
     })
@@ -100,7 +131,7 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface = Font:getFace("cfont", 24),
+    cface = Font:getFace("cfont"),
     width = nil,
     height = nil,
 }
@@ -117,20 +148,40 @@ function KeyValueItem:init()
         }
     end
 
-    self[1] = OverlapGroup:new{
-        dimen = self.dimen:copy(),
-        LeftContainer:new{
+    local key_w = RenderText:sizeUtf8Text(0, self.width, self.cface, self.key).x
+    local value_w = RenderText:sizeUtf8Text(0, self.width, self.cface, self.value).x
+    if key_w + value_w > self.width then
+        -- truncate key or value so they fits in one row
+        if key_w >= value_w then
+            self.show_key = truncateTextByWidth(self.key, self.cface, self.width-value_w)
+            self.show_value = self.value
+        else
+            self.show_value = truncateTextByWidth(self.value, self.cface, self.width-key_w, true)
+            self.show_key = self.key
+        end
+    else
+        self.show_key = self.key
+        self.show_value = self.value
+    end
+
+    self[1] = FrameContainer:new{
+        padding = 0,
+        bordersize = 0,
+        OverlapGroup:new{
             dimen = self.dimen:copy(),
-            TextWidget:new{
-                text = self.key,
-                face = self.cface,
-            }
-        },
-        RightContainer:new{
-            dimen = self.dimen:copy(),
-            TextWidget:new{
-                text = self.value,
-                face = self.cface,
+            LeftContainer:new{
+                dimen = self.dimen:copy(),
+                TextWidget:new{
+                    text = self.show_key,
+                    face = self.cface,
+                }
+            },
+            RightContainer:new{
+                dimen = self.dimen:copy(),
+                TextWidget:new{
+                    text = self.show_value,
+                    face = self.cface,
+                }
             }
         }
     }
@@ -176,8 +227,8 @@ function KeyValuePage:init()
         kv_page = self,
     }
     -- setup main content
-    self.item_padding = self.item_height / 4
-    local line_height = self.item_height + 2 * self.item_padding
+    self.item_margin = self.item_height / 4
+    local line_height = self.item_height + 2 * self.item_margin
     local content_height = self.dimen.h - self.title_bar:getSize().h
     self.items_per_page = math.floor(content_height / line_height)
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
@@ -212,7 +263,7 @@ function KeyValuePage:prevPage()
     end
 end
 
--- make sure self.item_padding and self.item_height are set before calling this
+-- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
@@ -221,7 +272,7 @@ function KeyValuePage:_populateItems()
         if entry == nil then break end
 
         table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_padding })
+                     VerticalSpan:new{ width = self.item_margin })
         if type(entry) == "table" then
             table.insert(
                 self.main_content,
@@ -247,7 +298,7 @@ function KeyValuePage:_populateItems()
             end
         end
         table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_padding })
+                     VerticalSpan:new{ width = self.item_margin })
     end
     self.title_bar:setPageCount(self.show_page, self.pages)
     UIManager:setDirty(self, function()

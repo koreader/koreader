@@ -2,7 +2,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local NetworkMgr = {}

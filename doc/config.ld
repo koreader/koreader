@@ -8,5 +8,5 @@ use_markdown_titles = true
 readme = '../README.md'
 package = ''
 format = 'markdown'
-sort_modules=true
+sort_modules = true
 file = '../frontend'

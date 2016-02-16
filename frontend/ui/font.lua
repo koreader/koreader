@@ -1,3 +1,7 @@
+--[[--
+Font module.
+]]
+
 local lfs = require("libs/libkoreader-lfs")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
@@ -35,6 +39,18 @@ local Font = {
         -- font for info messages
         infofont = "noto/NotoSans-Regular.ttf",
     },
+    sizemap = {
+        cfont = 24,
+        tfont = 26,
+        ffont = 20,
+        pgfont = 20,
+        scfont = 20,
+        rifont = 16,
+        hpkfont = 20,
+        hfont = 24,
+        infont = 22,
+        infofont = 24,
+    },
     fallbacks = {
         [1] = "noto/NotoSansCJK-Regular.ttf",
         [2] = "noto/NotoSans-Regular.ttf",
@@ -51,9 +67,10 @@ function Font:getFace(font, size)
     -- default to content font
     if not font then font = self.cfont end
 
+    if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    local size = Screen:scaleBySize(size)
+    size = Screen:scaleBySize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
@@ -64,11 +81,17 @@ function Font:getFace(font, size)
             realname = font
         end
         realname = self.fontdir.."/"..realname
-        ok, face = pcall(Freetype.newFace, realname, size)
+        local ok, face = pcall(Freetype.newFace, realname, size)
         if not ok then
             DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
             return nil
         end
+        --- Freetype font face wrapper object
+        -- @table FontFaceObj
+        -- @field size size of the font face (after scaled by screen size)
+        -- @field orig_size raw size of the font face (before scale)
+        -- @field ftface font face object from freetype
+        -- @field hash hash key for this font face
         face_obj = {
             size = size,
             orig_size = orig_size,
@@ -76,7 +99,6 @@ function Font:getFace(font, size)
             hash = hash
         }
         self.faces[hash] = face_obj
-    -- DEBUG("getFace, found: "..realname.." size:"..size)
     end
     return face_obj
 end

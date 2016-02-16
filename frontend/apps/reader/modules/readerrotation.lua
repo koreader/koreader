@@ -1,9 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Device = require("device")
 local Event = require("ui/event")
-local GestureRange = require("ui/gesturerange")
 local _ = require("gettext")
 
 local ReaderRotation = InputContainer:new{
@@ -26,7 +23,7 @@ function ReaderRotation:init()
     end
 end
 
--- TODO: reset rotation on new document, maybe on new page?
+-- @TODO: reset rotation on new document, maybe on new page?
 
 function ReaderRotation:onRotate(rotate_by)
     self.current_rotation = (self.current_rotation + rotate_by) % 360

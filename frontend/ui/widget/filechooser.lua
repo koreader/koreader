@@ -99,9 +99,9 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        local path = self.path.."/"..dir.name
+        local subdir_path = self.path.."/"..dir.name
         local items = 0
-        local ok, iter, dir_obj = pcall(lfs.dir, path)
+        ok, iter, dir_obj = pcall(lfs.dir, subdir_path)
         if ok then
             for f in iter, dir_obj do
                 items = items + 1
@@ -116,13 +116,13 @@ function FileChooser:genItemTableFromPath(path)
         table.insert(item_table, {
             text = dir.name.."/",
             mandatory = istr,
-            path = path
+            path = subdir_path
         })
     end
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
-        local sstr = ""
+        local sstr
         if file_size > 1024*1024 then
             sstr = string.format("%4.1f MB", file_size/1024/1024)
         elseif file_size > 1024 then

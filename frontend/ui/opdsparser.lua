@@ -5,7 +5,6 @@
 --]]
 local util = require("ffi/util")
 local luxl = require("luxl")
-local DEBUG = require("dbg")
 local ffi = require("ffi")
 
 local OPDSParser = {}
@@ -18,7 +17,7 @@ local unescape_map  = {
     ["apos"] = "'"
 }
 
-local gsub, char = string.gsub, string.char
+local gsub = string.gsub
 local function unescape(str)
     return gsub(str, '(&(#?)([%d%a]+);)', function(orig, n, s)
         return unescape_map[s] or n=="#" and util.unichar(tonumber(s)) or orig

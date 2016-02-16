@@ -10,7 +10,7 @@ local BasePowerD = {
 }
 
 function BasePowerD:new(o)
-    local o = o or {}
+    o = o or {}
     setmetatable(o, self)
     self.__index = self
     if o.init then o:init() end

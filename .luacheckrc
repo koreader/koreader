@@ -6,6 +6,9 @@ globals = {
 }
 
 read_globals = {
+    "ANDROID_FONT_DIR",
+    "KOBO_TOUCH_MIRRORED",
+    "KOBO_SYNC_BRIGHTNESS_WITH_NICKEL",
     "DRCOUNTMAX",
     "DHINTCOUNT",
     "DFULL_SCREEN",

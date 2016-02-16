@@ -85,7 +85,6 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
     })
-    local FileManager = require("apps/filemanager/filemanager")
     table.insert(self.tab_item_table.setting, self.ui:getSortingMenuTable())
     table.insert(self.tab_item_table.setting, {
         text = _("Reverse sorting"),
@@ -125,10 +124,10 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.tools, {
         text = _("OPDS catalog"),
         callback = function()
+            local FileManager = require("apps/filemanager/filemanager")
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
             function OPDSCatalog:onExit()
-                DEBUG("refresh filemanager")
-                filemanager:onRefresh()
+                FileManager:onRefresh()
             end
             OPDSCatalog:showCatalog()
         end,

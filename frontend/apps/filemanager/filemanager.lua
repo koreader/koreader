@@ -22,7 +22,8 @@ local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
-function getDefaultDir()
+
+local function getDefaultDir()
     if Device:isKindle() then
         return "/mnt/us/documents"
     elseif Device:isKobo() then
@@ -34,7 +35,7 @@ function getDefaultDir()
     end
 end
 
-function restoreScreenMode()
+local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
     if Screen:getScreenMode() ~= screen_mode then
         Screen:setScreenMode(screen_mode or "portrait")
@@ -273,7 +274,7 @@ function FileManager:deleteFile(file)
 
     local is_doc = DocumentRegistry:getProvider(file_abs_path)
     ok, err = os.remove(file_abs_path)
-    if err == nil then
+    if ok and err == nil then
         if is_doc ~= nil then
             -- also delete history/settings for documents
             local sidecar_dir = docsettings:getSidecarDir(file_abs_path)
@@ -281,7 +282,8 @@ function FileManager:deleteFile(file)
                 util.purgeDir(sidecar_dir)
             end
             local legacy_history_file = docsettings:getHistoryPath(file)
-            ok, err = os.remove(legacy_history_file)
+            -- @todo: check return from os.remove
+            os.remove(legacy_history_file)
         end
         UIManager:show(InfoMessage:new{
             text = util.template(_("Successfully deleted %1"), file),

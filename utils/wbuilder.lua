@@ -343,9 +343,11 @@ local TestInputText = InputText:new{
 -----------------------------------------------------
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local kvp = KeyValuePage:new{
-    title = 'Statistics',
+    title = 'Statistics This is a very very log item whose length should exceed the width of the men',
     kv_pairs = {
         {"1 Current period", "00:00:00"},
+        {"This is a very very log item whose length should exceed the width of the menu.", "value"},
+        {"2 Time to read", "00:00:00 00:00:00 00:00:00 00:00:00"},
         {"2 Time to read", "00:00:00"},
         {"3 Time to read", "00:00:00"},
         {"4 Time to read", "00:00:00"},
@@ -377,7 +379,7 @@ local kvp = KeyValuePage:new{
 --UIManager:show(TestGrid)
 UIManager:show(TestVisible)
 UIManager:show(Clock:new())
---UIManager:show(M)
+-- UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)

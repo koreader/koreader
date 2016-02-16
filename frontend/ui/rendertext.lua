@@ -1,3 +1,7 @@
+--[[--
+Text rendering module.
+]]
+
 local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
@@ -5,7 +9,7 @@ local BlitBuffer = require("ffi/blitbuffer")
 local DEBUG = require("dbg")
 
 --[[
-TODO: all these functions should probably be methods on Face objects
+@TODO: all these functions should probably be methods on Face objects
 ]]--
 local RenderText = {}
 
@@ -95,9 +99,18 @@ function RenderText:getGlyph(face, charcode, bold)
     return rendered_glyph
 end
 
+--- Return a substring of a given text that meets the maximum width (in pixels)
+-- restriction.
+--
+-- @string text text to truncate
+-- @tparam ui.font.FontFaceObj face font face for the text
+-- @int width maximum width in pixels
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @treturn string
 function RenderText:getSubTextByWidth(text, face, width, kerning, bold)
     local pen_x = 0
-    local prevcharcode = 0
+    local prevcharcode
     local char_list = {}
     for _, charcode, uchar in utf8Chars(text) do
         if pen_x < width then
@@ -118,6 +131,18 @@ function RenderText:getSubTextByWidth(text, face, width, kerning, bold)
     return table.concat(char_list)
 end
 
+--- Measure rendered size for a given text.
+--
+-- Note this function does not render the text into a bitmap. Use it if you
+-- only care about the size for the rendered result.
+--
+-- @int x start position for a given text (within maximum width)
+-- @int width maximum rendering width in pixels (think of it as size of the bitmap)
+-- @tparam ui.font.FontFaceObj face font face that will be used for rendering
+-- @string text text to measure
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @treturn RenderTextSize
 function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     if not text then
         DEBUG("sizeUtf8Text called without text");
@@ -139,11 +164,16 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
             pen_x = pen_x + glyph.ax
             pen_y_top = math.max(pen_y_top, glyph.t)
             pen_y_bottom = math.max(pen_y_bottom, glyph.bb:getHeight() - glyph.t)
-            --DEBUG("ax:"..glyph.ax.." t:"..glyph.t.." r:"..glyph.r.." h:"..glyph.bb:getHeight().." w:"..glyph.bb:getWidth().." yt:"..pen_y_top.." yb:"..pen_y_bottom)
             prevcharcode = charcode
         end -- if pen_x < (width - x)
     end
-    return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom}
+
+    --- RenderText size information
+    -- @table RenderTextSize
+    -- @field x length of the text on x coordinates
+    -- @field y_top top offset for the text (relative to center of the text)
+    -- @field y_bottom bottom offset for the text (relative to center of the text)
+    return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom }
 end
 
 function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgcolor, width)

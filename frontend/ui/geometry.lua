@@ -20,7 +20,7 @@ local Geom = {
 }
 
 function Geom:new(o)
-    local o = o or {}
+    if not o then o = {} end
     setmetatable(o, self)
     self.__index = self
     return o

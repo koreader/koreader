@@ -6,6 +6,8 @@ local _ = require("gettext")
 local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
 
+-- luacheck: push
+-- luacheck: ignore
 -- constants from <linux/input.h>
 local EV_SYN = 0
 local EV_KEY = 1
@@ -36,6 +38,7 @@ local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 local ABS_MT_TRACKING_ID = 57
 local ABS_MT_PRESSURE = 58
+-- luacheck: pop
 
 --[[
 an interface to get input events
@@ -105,7 +108,7 @@ local Input = {
 }
 
 function Input:new(o)
-    local o = o or {}
+    o = o or {}
     setmetatable(o, self)
     self.__index = self
     if o.init then o:init() end

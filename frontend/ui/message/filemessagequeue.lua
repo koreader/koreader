@@ -1,7 +1,7 @@
 local ffi = require("ffi")
 local DEBUG = require("dbg")
 local MessageQueue = require("ui/message/messagequeue")
-local dummy = require("ffi/zeromq_h")
+local _ = require("ffi/zeromq_h")
 local czmq = ffi.load("libs/libczmq.so.1")
 local filemq = ffi.load("libs/libfmq.so.1")
 

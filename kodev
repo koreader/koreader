@@ -2,7 +2,7 @@
 
 CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-function assert_return_zero {
+function assert_ret_zero {
     if [ $1 -ne 0 ]; then
         if [ ! -z $2 ]; then
             echo $2
@@ -45,43 +45,43 @@ ${SUPPORTED_TARGETS}"
             ;;
         kindle)
             make TARGET=kindle
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         kobo)
             make TARGET=kobo
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         kindle-legacy)
             make TARGET=kindle-legacy
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         android)
             if [ ! -d ${CURDIR}/base/toolchain/android-toolchain ]; then
                 make android-toolchain
-                assert_return_zero $?
+                assert_ret_zero $?
             fi
             make TARGET=android
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         pocketbook)
             if [ ! -d ${CURDIR}/base/toolchain/pocketbook-toolchain ]; then
                 make pocketbook-toolchain
-                assert_return_zero $?
+                assert_ret_zero $?
             fi
             make TARGET=pocketbook
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         ubuntu-touch)
             make TARGET=ubuntu-touch
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         win32)
             make TARGET=win32
-            assert_return_zero $?
+            assert_ret_zero $?
             ;;
         *)
             make
-            assert_return_zero $? "Failed to build emulator!"
+            assert_ret_zero $? "Failed to build emulator!"
             setup_env
             ;;
     esac
@@ -246,10 +246,33 @@ OPTIONS:
 
 function kodev-test {
     TEST_HELP_MSG="
-usage: test [front|base] <TEST_NAME>
+usage: test <OPTIONS> [front|base] <TEST_NAME>
 
     TEST_NAME is optional. If no TEST_NAME is given, all tests will be run.
+
+OPTIONS:
+
+    --tags=TAGS     only run tests with given tags
     "
+    while [[ $1 == '--'* ]]; do
+        PARAM=`echo $1 | awk -F= '{print $1}'`
+        VALUE=`echo $1 | awk -F= '{print $2}'`
+        case $PARAM in
+            --tags)
+                opts="--tags=${VALUE}"
+                ;;
+            -h | --help)
+                echo "${TEST_HELP_MSG}"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${TEST_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift
+    done
 
     if [ $# -lt 1 ]; then
         echo "${TEST_HELP_MSG}"
@@ -265,7 +288,7 @@ usage: test [front|base] <TEST_NAME>
     if [ ! -z $2 ]; then
         test_path="${test_path}/$2"
     fi
-    busted -o verbose_print --exclude-tags=notest ${test_path}
+    busted ${opts} -o verbose_print --exclude-tags=notest ${test_path}
 
     popd
 }
