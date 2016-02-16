@@ -9,7 +9,7 @@ local BlitBuffer = require("ffi/blitbuffer")
 local DEBUG = require("dbg")
 
 --[[
-TODO: all these functions should probably be methods on Face objects
+@TODO: all these functions should probably be methods on Face objects
 ]]--
 local RenderText = {}
 
@@ -99,9 +99,18 @@ function RenderText:getGlyph(face, charcode, bold)
     return rendered_glyph
 end
 
+--- Return a substring of a given text that meets the maximum width (in pixels)
+-- restriction.
+--
+-- @string text text to truncate
+-- @tparam ui.font.FontFaceObj face font face for the text
+-- @int width maximum width in pixels
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @treturn string
 function RenderText:getSubTextByWidth(text, face, width, kerning, bold)
     local pen_x = 0
-    local prevcharcode = 0
+    local prevcharcode
     local char_list = {}
     for _, charcode, uchar in utf8Chars(text) do
         if pen_x < width then
@@ -127,13 +136,13 @@ end
 -- Note this function does not render the text into a bitmap. Use it if you
 -- only care about the size for the rendered result.
 --
----- @int x start position for a given text (within maxium width)
----- @int width maxium rendering width (think of it as size of the bitmap)
----- @tparam ui.font.FontFaceObj face font face that will be used for rendering
----- @string text text to measure
----- @bool[opt=false] kerning whether the text should be measured with kerning
----- @bool[opt=false] bold whether the text should be measured as bold
----- @treturn RenderTextSize
+-- @int x start position for a given text (within maximum width)
+-- @int width maximum rendering width in pixels (think of it as size of the bitmap)
+-- @tparam ui.font.FontFaceObj face font face that will be used for rendering
+-- @string text text to measure
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @treturn RenderTextSize
 function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     if not text then
         DEBUG("sizeUtf8Text called without text");
