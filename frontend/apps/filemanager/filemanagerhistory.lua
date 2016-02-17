@@ -20,6 +20,40 @@ function FileManagerHistory:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function FileManagerHistory:addToMainMenu(tab_item_table)
+    -- insert table to info tab of filemanager menu
+    table.insert(tab_item_table.info, {
+        text = self.hist_menu_title,
+        callback = function()
+            self:onShowHist()
+        end,
+    })
+end
+
+function FileManagerHistory:updateItemTable()
+    local ReaderUI = require("apps/reader/readerui")
+    self.hist = {}
+
+    for f in lfs.dir(history_dir) do
+        local path = joinPath(history_dir, f)
+        if lfs.attributes(path, "mode") == "file" then
+            local name = DocSettings:getNameFromHistory(f)
+            table.insert(self.hist, {
+                date = lfs.attributes(path, "modification"),
+                text = name,
+                histfile = f,
+                callback = function()
+                    ReaderUI:showReader(
+                        DocSettings:getPathFromHistory(f).. "/" .. name)
+                end
+            })
+        end
+    end
+    table.sort(self.hist, function(v1, v2) return v1.date > v2.date end)
+
+    self.hist_menu:swithItemTable(self.hist_menu_title, self.hist)
+end
+
 function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
@@ -66,40 +100,6 @@ function FileManagerHistory:onShowHist()
 
     UIManager:show(menu_container)
     return true
-end
-
-function FileManagerHistory:addToMainMenu(tab_item_table)
-    -- insert table to info tab of filemanager menu
-    table.insert(tab_item_table.info, {
-        text = self.hist_menu_title,
-        callback = function()
-            self:onShowHist()
-        end,
-    })
-end
-
-function FileManagerHistory:updateItemTable()
-    local ReaderUI = require("apps/reader/readerui")
-    self.hist = {}
-
-    for f in lfs.dir(history_dir) do
-        local path = joinPath(history_dir, f)
-        if lfs.attributes(path, "mode") == "file" then
-            local name = DocSettings:getNameFromHistory(f)
-            table.insert(self.hist, {
-                date = lfs.attributes(path, "modification"),
-                text = name,
-                histfile = f,
-                callback = function()
-                    ReaderUI:showReader(
-                        DocSettings:getPathFromHistory(f).. "/" .. name)
-                end
-            })
-        end
-    end
-    table.sort(self.hist, function(v1, v2) return v1.date > v2.date end)
-
-    self.hist_menu:swithItemTable(self.hist_menu_title, self.hist)
 end
 
 return FileManagerHistory
