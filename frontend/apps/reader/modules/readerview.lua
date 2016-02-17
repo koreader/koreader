@@ -77,6 +77,9 @@ function ReaderView:init()
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self.footer)
     end)
+    self.emitHintPageEvent = function()
+        self.ui:handleEvent(Event:new("HintPage", self.hinting))
+    end
 end
 
 function ReaderView:resetDimArea()
@@ -273,9 +276,7 @@ function ReaderView:drawScrollPages(bb, x, y)
             pos.y = pos.y + self.page_gap.height
         end
     end
-    UIManager:scheduleIn(0, function()
-        self.ui:handleEvent(Event:new("HintPage", self.hinting))
-    end)
+    UIManager:nextTick(self.emitHintPageEvent)
 end
 
 function ReaderView:getCurrentPageList()
@@ -347,9 +348,7 @@ function ReaderView:drawSinglePage(bb, x, y)
         self.state.rotation,
         self.state.gamma,
         self.render_mode)
-    UIManager:scheduleIn(0, function()
-        self.ui:handleEvent(Event:new("HintPage", self.hinting))
-    end)
+    UIManager:nextTick(self.emitHintPageEvent)
 end
 
 function ReaderView:getSinglePagePosition(pos)
@@ -746,6 +745,12 @@ function ReaderView:genOverlapStyleMenu()
         get_overlap_style("arrow"),
         get_overlap_style("dim"),
     }
+end
+
+function ReaderView:onCloseDocument()
+    self.hinting = false
+    -- stop any in fly HintPage event
+    UIManager:unschedule(self.emitHintPageEvent)
 end
 
 return ReaderView

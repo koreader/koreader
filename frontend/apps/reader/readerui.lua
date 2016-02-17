@@ -488,7 +488,9 @@ function ReaderUI:onClose()
     UIManager:close(self.dialog, "full")
     -- serialize last used items for later launch
     Cache:serialize()
-    running_instance = nil
+    if running_instance == self then
+        running_instance = nil
+    end
     return true
 end
 
