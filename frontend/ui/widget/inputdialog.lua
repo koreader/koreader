@@ -57,7 +57,7 @@ function InputDialog:init()
             width = self.width,
         }
     }
-    self.input_widget = InputText:new{
+    self._input_widget = InputText:new{
         text = self.input,
         hint = self.input_hint,
         face = self.input_face,
@@ -99,9 +99,9 @@ function InputDialog:init()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.title_bar:getSize().w,
-                    h = self.input_widget:getSize().h,
+                    h = self._input_widget:getSize().h,
                 },
-                self.input_widget,
+                self._input_widget,
             },
             -- buttons
             CenterContainer:new{
@@ -117,10 +117,18 @@ function InputDialog:init()
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = Screen:getHeight() - self.input_widget:getKeyboardDimen().h,
+            h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
         },
         self.dialog_frame,
     }
+end
+
+function InputDialog:getInputText()
+    return self._input_widget:getText()
+end
+
+function InputDialog:setInputText(text)
+    self._input_widget:setText(text)
 end
 
 function InputDialog:onShow()
@@ -136,15 +144,11 @@ function InputDialog:onCloseWidget()
 end
 
 function InputDialog:onShowKeyboard()
-    self.input_widget:onShowKeyboard()
-end
-
-function InputDialog:getInputText()
-    return self.input_widget:getText()
+    self._input_widget:onShowKeyboard()
 end
 
 function InputDialog:onClose()
-    self.input_widget:onCloseKeyboard()
+    self._input_widget:onCloseKeyboard()
 end
 
 return InputDialog
