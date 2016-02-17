@@ -93,7 +93,7 @@ function ReaderFrontLight:onShowFlDialog()
                     text = _("Toggle"),
                     enabled = true,
                     callback = function()
-                        self.fl_dialog.input:setText("")
+                        self.fl_dialog:setInputText("")
                         powerd:toggleFrontlight()
                     end,
                 },
