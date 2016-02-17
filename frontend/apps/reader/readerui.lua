@@ -390,6 +390,10 @@ function ReaderUI:doShowReader(file)
     running_instance = reader
 end
 
+function ReaderUI:_getRunningInstance()
+    return running_instance
+end
+
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
     DEBUG("show input password dialog")
     self.password_dialog = InputDialog:new{
@@ -488,7 +492,9 @@ function ReaderUI:onClose()
     UIManager:close(self.dialog, "full")
     -- serialize last used items for later launch
     Cache:serialize()
-    running_instance = nil
+    if running_instance == self then
+        running_instance = nil
+    end
     return true
 end
 

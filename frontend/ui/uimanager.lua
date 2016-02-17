@@ -198,6 +198,10 @@ function UIManager:scheduleIn(seconds, action)
     self:schedule(when, action)
 end
 
+function UIManager:nextTick(action)
+    return self:scheduleIn(0, action)
+end
+
 -- unschedule an execution task
 -- in order to unschedule anonymous functions, store a reference
 -- for example:

@@ -16,17 +16,17 @@ local ReaderMenu = InputContainer:new{
 
 function ReaderMenu:init()
     self.tab_item_table = {
-        setting = {
-            icon = "resources/icons/appbar.settings.png",
-        },
         navi = {
             icon = "resources/icons/appbar.page.corner.bookmark.png",
         },
-        info = {
-            icon = "resources/icons/appbar.pokeball.png",
-        },
         typeset = {
             icon = "resources/icons/appbar.page.text.png",
+        },
+        setting = {
+            icon = "resources/icons/appbar.settings.png",
+        },
+        info = {
+            icon = "resources/icons/appbar.pokeball.png",
         },
         plugins = {
             icon = "resources/icons/appbar.tools.png",
