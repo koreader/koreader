@@ -385,7 +385,6 @@ UIManager:show(Clock:new())
 --UIManager:show(keyboard)
 --UIManager:show(TestInputText)
 --TestInputText:onShowKeyboard()
-
-UIManager:show(kvp)
+--UIManager:show(kvp)
 
 UIManager:run()
