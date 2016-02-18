@@ -16,7 +16,7 @@ else ifeq ($(TARGET), pocketbook)
 	PATH:=$(CURDIR)/$(KOR_BASE)/$(POCKETBOOK_TOOLCHAIN)/bin:$(PATH)
 endif
 
-MACHINE?=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
+MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
 
 ifdef TARGET
 	DIST:=$(TARGET)
