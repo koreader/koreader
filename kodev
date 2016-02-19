@@ -33,16 +33,36 @@ SUPPORTED_TARGETS="
 
 function kodev-build {
     BUILD_HELP_MSG="
-usage: build <TARGET>
+usage: build <OPTIONS> <TARGET>
+
+OPTIONS:
+
+    -v, --verbose   Build in verbose mode.
 
 TARGET:
 ${SUPPORTED_TARGETS}"
 
+    while [[ $1 == '--'* ]]; do
+        PARAM=`echo $1 | awk -F= '{print $1}'`
+        VALUE=`echo $1 | awk -F= '{print $2}'`
+        case $PARAM in
+            -v | --verbose)
+                export VERBOSE=1
+                ;;
+            -h | --help)
+                echo "${BUILD_HELP_MSG}"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${BUILD_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
     case $1 in
-        -h | --help)
-            echo "${BUILD_HELP_MSG}"
-            exit 0
-            ;;
         kindle)
             make TARGET=kindle
             assert_ret_zero $?
