@@ -1,6 +1,3 @@
-# Travis-CI Build for koreader
-# see travis-ci.org for details
-
 language: c
 
 sudo: false
@@ -29,50 +26,7 @@ addons:
       # OpenSSL likes this (package contains makedepend)
       - xutils-dev
 
-before_install:
-  # don't do this for clang
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-  # in case anything ignores the environment variables, override through PATH
-  - mkdir bin
-  - ln -s $(which gcc-4.8) bin/cc
-  - ln -s $(which gcc-4.8) bin/gcc
-  - ln -s $(which c++-4.8) bin/c++
-  - ln -s $(which g++-4.8) bin/g++
-  - export PATH=$PWD/bin:$PATH
-
-install:
-  # install our own updated luarocks
-  - git clone https://github.com/torch/luajit-rocks.git
-  - pushd luajit-rocks
-  - git checkout 6529891
-  - cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/install
-  - make install
-  - popd
-  - export PATH=$PATH:${TRAVIS_BUILD_DIR}/install/bin
-  - mkdir $HOME/.luarocks
-  - cp ${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua $HOME/.luarocks/config.lua
-  - echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
-  - travis_retry luarocks --local install luafilesystem
-  - travis_retry luarocks --local install ansicolors
-  - travis_retry luarocks --local install busted 2.0.rc11-0
-  #- travis_retry luarocks --local install busted 1.11.1-1
-  #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
-  - travis_retry luarocks --local install luacov
-  # luasec doesn't automatically detect 64-bit libs
-  - travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
-  - travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
-  - travis_retry luarocks --local install luacheck
-  - travis_retry luarocks --local install lanes  # for parallel luacheck
-  # add local rocks to $PATH
-  - eval $(luarocks path --bin)
-
-script:
-  - travis_retry make fetchthirdparty
-  - make all
-  - travis_retry make testfront
-  - luajit $(which luacheck) --no-color -q frontend | tee ./luacheck.out
-  - test $(grep Total ./luacheck.out | awk '{print $2}') -le 63
-
-after_success:
-  - make coverage
-  - cd koreader-*/koreader && luajit $(which luacov-coveralls) -v
+before_install: .ci/before_install.sh
+install: .ci/install.sh
+script: .ci/script.sh
+after_success: .ci/after_success.sh
