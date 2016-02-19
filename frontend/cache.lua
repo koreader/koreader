@@ -1,7 +1,7 @@
 --[[
 A global LRU cache
 ]]--
-local md5 = require("MD5")
+local md5 = require("ffi/MD5")
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
@@ -123,7 +123,7 @@ function Cache:check(key, ItemClass)
         end
         return self.cache[key]
     elseif ItemClass then
-        local cached = self.cached[md5:sum(key)]
+        local cached = self.cached[md5.sum(key)]
         if cached then
             local item = ItemClass:new{}
             local ok, msg = pcall(item.load, item, cached)
@@ -153,14 +153,14 @@ function Cache:serialize()
         cached_size = cached_size + (lfs.attributes(file, "size") or 0)
     end
     table.sort(sorted_caches, function(v1,v2) return v1.time > v2.time end)
-    -- serialize the most recently used cache
+    -- only serialize the most recently used cache
     local cache_size = 0
     for _, key in ipairs(self.cache_order) do
         local cache_item = self.cache[key]
         -- only dump cache item that requests serialization explicitly
         if cache_item.persistent and cache_item.dump then
             DEBUG("dump cache item", key)
-            cache_size = cache_item:dump(cache_path..md5:sum(key)) or 0
+            cache_size = cache_item:dump(cache_path..md5.sum(key)) or 0
             if cache_size > 0 then break end
         end
     end

@@ -1,6 +1,8 @@
 language: c
 
-sudo: false
+# sudo: false
+sudo: true
+dist: trusty
 
 compiler:
   - gcc
