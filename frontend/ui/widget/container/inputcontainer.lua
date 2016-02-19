@@ -97,10 +97,6 @@ function InputContainer:onGesture(ev)
 end
 
 function InputContainer:onInput(input)
-    if self.enter_callback == nil then
-        return
-    end
-
     local InputDialog = require("ui/widget/inputdialog")
     self.input_dialog = InputDialog:new{
         title = input.title or "",
