@@ -41,6 +41,7 @@ if [ "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # Keep track of what we do with pillow...
+AWESOME_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 
@@ -193,6 +194,12 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 			logmsg "Disabling pillow . . ."
 			lipc-set-prop com.lab126.pillow disableEnablePillow disable
 			PILLOW_HARD_DISABLED="yes"
+			# NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
+			if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "572" ] ; then
+				logmsg "Stopping awesome . . ."
+				killall -stop awesome
+				AWESOME_STOPPED="yes"
+			fi
 		else
 			logmsg "Hiding the status bar . . ."
 			# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
@@ -277,7 +284,11 @@ fi
 
 # Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
-	# Depending on the FW version, we may have handled things in two different manners...
+	# Depending on the FW version, we may have handled things in a few different manners...
+	if [ "${AWESOME_STOPPED}" == "yes" ] ; then
+		logmsg "Resuming awesome . . ."
+		killall -cont awesome
+	fi
 	if [ "${PILLOW_HARD_DISABLED}" == "yes" ] ; then
 		logmsg "Enabling pillow . . ."
 		lipc-set-prop com.lab126.pillow disableEnablePillow enable
