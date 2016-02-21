@@ -77,12 +77,12 @@ function LoginDialog:init()
         }
     }
 
-    self.input = self.input_username
+    self._input_widget = self.input_username
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = Screen:getHeight() - self.input:getKeyboardDimen().h,
+            h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
         },
         self.dialog_frame,
     }
@@ -96,13 +96,13 @@ end
 
 function LoginDialog:onSwitchFocus(inputbox)
     -- unfocus current inputbox
-    self.input:unfocus()
-    self.input:onCloseKeyboard()
+    self._input_widget:unfocus()
+    self._input_widget:onCloseKeyboard()
 
     -- focus new inputbox
-    self.input = inputbox
-    self.input:focus()
-    self.input:onShowKeyboard()
+    self._input_widget = inputbox
+    self._input_widget:focus()
+    self._input_widget:onShowKeyboard()
 
     UIManager:show(self)
 end
