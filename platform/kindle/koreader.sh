@@ -292,6 +292,8 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	if [ "${PILLOW_HARD_DISABLED}" == "yes" ] ; then
 		logmsg "Enabling pillow . . ."
 		lipc-set-prop com.lab126.pillow disableEnablePillow enable
+		# NOTE: Try to leave the user with a slightly less FB content that our own last screen... We'll be missing the menu & status bar, but it's better than the alternative...
+		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 	fi
 	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
