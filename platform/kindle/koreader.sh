@@ -147,6 +147,15 @@ if [ -d /mnt/us/fonts ] ; then
 	fi
 fi
 
+# bind-mount csp fonts
+if [ -d /var/local/font/mnt ] ; then
+	mkdir -p ${KOREADER_DIR}/fonts/cspfonts
+	if ! grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts > /dev/null 2>&1 ; then
+		logmsg "Mounting cspfonts . . ."
+		mount -o bind /var/local/font/mnt ${KOREADER_DIR}/fonts/cspfonts
+	fi
+fi
+
 # bind-mount linkfonts
 if [ -d /mnt/us/linkfonts/fonts ] ; then
 	mkdir -p ${KOREADER_DIR}/fonts/linkfonts
@@ -233,6 +242,12 @@ fi
 if grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Unmounting altfonts . . ."
 	umount ${KOREADER_DIR}/fonts/altfonts
+fi
+
+# unmount cspfonts
+if grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts > /dev/null 2>&1 ; then
+	logmsg "Unmounting cspfonts . . ."
+	umount ${KOREADER_DIR}/fonts/cspfonts
 fi
 
 # unmount linkfonts
