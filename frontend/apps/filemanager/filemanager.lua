@@ -6,6 +6,7 @@ local DocumentRegistry = require("document/documentregistry")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Screenshoter = require("ui/widget/screenshoter")
 local ButtonDialog = require("ui/widget/buttondialog")
+local InputDialog = require("ui/widget/inputdialog")
 local VerticalSpan = require("ui/widget/verticalspan")
 local FileChooser = require("ui/widget/filechooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -28,7 +29,7 @@ local function getDefaultDir()
         return "/mnt/us/documents"
     elseif Device:isKobo() then
         return "/mnt/onboard"
-    elseif Device.isAndroid() then
+    elseif Device:isAndroid() then
         return "/sdcard"
     else
         return "."
@@ -97,6 +98,7 @@ function FileManager:init()
     local pasteHere = function(file) self:pasteHere(file) end
     local cutFile = function(file) self:cutFile(file) end
     local deleteFile = function(file) self:deleteFile(file) end
+    local renameFile = function(file) self:renameFile(file) end
     local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
@@ -141,6 +143,40 @@ function FileManager:init()
                         })
                     end,
                 },
+                {
+                    text = _("Rename"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        fileManager.rename_dialog = InputDialog:new{
+                            title = _("Rename file"),
+                            input = util.basename(file),
+                            buttons = {{
+                                {
+                                    text = _("OK"),
+                                    enabled = true,
+                                    callback = function()
+                                        renameFile(file)
+                                        self:refreshPath()
+                                        fileManager.rename_dialog:onClose()
+                                        UIManager:close(fileManager.rename_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Cancel"),
+                                    enabled = true,
+                                    callback = function()
+                                        fileManager.rename_dialog:onClose()
+                                        UIManager:close(fileManager.rename_dialog)
+                                    end,
+                                },
+                            }},
+                            width = Screen:getWidth() * 0.8,
+                            height = Screen:getHeight() * 0.2,
+                        }
+                        fileManager.rename_dialog:onShowKeyboard()
+                        UIManager:show(fileManager.rename_dialog)
+                    end,
+                }
             },
         }
         if lfs.attributes(file, "mode") == "directory" then
@@ -254,7 +290,7 @@ function FileManager:pasteHere(file)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
         if self.cutfile then
-            util.execute(self.mv_bin, orig, dest)
+            self:moveFile(orig, dest)
         else
             util.execute(self.cp_bin, "-r", orig, dest)
         end
@@ -293,6 +329,44 @@ function FileManager:deleteFile(file)
         UIManager:show(InfoMessage:new{
             text = util.template(_("An error occurred while trying to delete %1"), file),
         })
+    end
+end
+
+function FileManager:renameFile(file)
+    local InfoMessage = require("ui/widget/infomessage")
+    if util.basename(file) ~= self.rename_dialog:getInputText() then
+        local dest = util.joinPath(util.dirname(file), self.rename_dialog:getInputText())
+        if self:moveFile(file, dest) then
+            if lfs.attributes(dest, "mode") == "file" then
+                local doc = require("docsettings")
+                local move_history = true;
+                if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
+                   not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
+                   move_history = false
+                end
+                if lfs.attributes(doc:getSidecarDir(file), "mode") == "directory" and
+                   not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
+                   move_history = false
+                end
+                if move_history then
+                    UIManager:show(InfoMessage:new{
+                        text = util.template(_("Successfully renamed from %1 to %2"), file, dest),
+                        timeout = 2,
+                    })
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = util.template(_(
+                            "Failed to move history data of %1 to %2.\n" ..
+                            "The reading history may be lost."), file, dest),
+                    })
+                end
+            end
+        else
+            UIManager:show(InfoMessage:new{
+                text = util.template(
+                           _("Failed to rename from %1 to %2"), file, dest),
+            })
+        end
     end
 end
 
@@ -338,6 +412,14 @@ function FileManager:showFiles(path)
     }
     UIManager:show(file_manager)
     self.instance = file_manager
+end
+
+--[[
+A shortcut to execute mv command (self.mv_bin) with from and to as parameters.
+Returns a boolean value to indicate the result of mv command.
+--]]
+function FileManager:moveFile(from, to)
+    return util.execute(self.mv_bin, from, to) == 0
 end
 
 return FileManager
