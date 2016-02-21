@@ -41,6 +41,7 @@ if [ "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # Keep track of what we do with pillow...
+AWESOME_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 
@@ -147,6 +148,15 @@ if [ -d /mnt/us/fonts ] ; then
 	fi
 fi
 
+# bind-mount csp fonts
+if [ -d /var/local/font/mnt ] ; then
+	mkdir -p ${KOREADER_DIR}/fonts/cspfonts
+	if ! grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts > /dev/null 2>&1 ; then
+		logmsg "Mounting cspfonts . . ."
+		mount -o bind /var/local/font/mnt ${KOREADER_DIR}/fonts/cspfonts
+	fi
+fi
+
 # bind-mount linkfonts
 if [ -d /mnt/us/linkfonts/fonts ] ; then
 	mkdir -p ${KOREADER_DIR}/fonts/linkfonts
@@ -180,10 +190,18 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	if [ "$count" == "" -o "$count" == "0" ] ; then
 		# NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
 		if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ] ; then
+			PILLOW_HARD_DISABLED="yes"
+			# NOTE: Dump the fb so we can restore something useful on exit...
+			cat /dev/fb0 > /var/tmp/koreader-fb.dump
 			# FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
 			logmsg "Disabling pillow . . ."
 			lipc-set-prop com.lab126.pillow disableEnablePillow disable
-			PILLOW_HARD_DISABLED="yes"
+			# NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
+			if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "572" ] ; then
+				logmsg "Stopping awesome . . ."
+				killall -stop awesome
+				AWESOME_STOPPED="yes"
+			fi
 		else
 			logmsg "Hiding the status bar . . ."
 			# NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
@@ -235,6 +253,12 @@ if grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts > /dev/null 2>&1 ; then
 	umount ${KOREADER_DIR}/fonts/altfonts
 fi
 
+# unmount cspfonts
+if grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts > /dev/null 2>&1 ; then
+	logmsg "Unmounting cspfonts . . ."
+	umount ${KOREADER_DIR}/fonts/cspfonts
+fi
+
 # unmount linkfonts
 if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
 	logmsg "Unmounting linkfonts . . ."
@@ -262,10 +286,20 @@ fi
 
 # Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
-	# Depending on the FW version, we may have handled things in two different manners...
+	# Depending on the FW version, we may have handled things in a few different manners...
+	if [ "${AWESOME_STOPPED}" == "yes" ] ; then
+		logmsg "Resuming awesome . . ."
+		killall -cont awesome
+	fi
 	if [ "${PILLOW_HARD_DISABLED}" == "yes" ] ; then
 		logmsg "Enabling pillow . . ."
 		lipc-set-prop com.lab126.pillow disableEnablePillow enable
+		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
+		cat /var/tmp/koreader-fb.dump > /dev/fb0
+		rm -f /var/tmp/koreader-fb.dump
+		# NOTE: In case we ever need an extra full flash refresh...
+		#eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
+		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 	fi
 	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
