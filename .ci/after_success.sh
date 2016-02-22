@@ -10,8 +10,7 @@ pushd koreader-*/koreader
     luajit $(which luacov-coveralls) -v
 popd
 
-if [ $TRAVIS_BRANCH == 'master' ]; then
-
+if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
     travis_retry luarocks --local install ldoc
     # get deploy key for doc repo
     openssl aes-256-cbc -k $doc_build_secret -in .ci/koreader_doc.enc -out ~/.ssh/koreader_doc -d
@@ -37,5 +36,6 @@ if [ $TRAVIS_BRANCH == 'master' ]; then
         commit -a --amend -m 'Automated documentation build from travis-ci.'
     git push -f --quiet origin gh-pages > /dev/null
     echo -e "\n${ANSI_GREEN}Document update pushed."
-
+else
+    echo -e "\n${ANSI_GREEN}Not on official master branch, skip document update."
 fi

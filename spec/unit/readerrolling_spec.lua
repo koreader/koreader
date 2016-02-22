@@ -45,6 +45,17 @@ describe("Readerrolling module", function()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
+        it("should emit EndOfBook event at the end", function()
+            rolling:gotoPage(readerui.document:getPageCount())
+            local called = false
+            readerui.onEndOfBook = function()
+                called = true
+            end
+            rolling:onGotoViewRel(1)
+            rolling:onGotoViewRel(1)
+            assert.is.truthy(called)
+            readerui.onEndOfBook = nil
+        end)
     end)
     describe("test in landscape screen mode", function()
         it("should go to landscape screen mode", function()
@@ -80,6 +91,17 @@ describe("Readerrolling module", function()
                 rolling:onDoubleTapBackward()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
+        end)
+        it("should emit EndOfBook event at the end", function()
+            rolling:gotoPage(readerui.document:getPageCount())
+            local called = false
+            readerui.onEndOfBook = function()
+                called = true
+            end
+            rolling:onGotoViewRel(1)
+            rolling:onGotoViewRel(1)
+            assert.is.truthy(called)
+            readerui.onEndOfBook = nil
         end)
     end)
     describe("switching screen mode should not change current page number", function()

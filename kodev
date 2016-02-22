@@ -12,7 +12,7 @@ function assert_ret_zero {
 }
 
 function setup_env {
-    files=("./koreader-emulator-*/koreader")
+    files=`ls -d ./koreader-emulator-*/koreader`
     export EMU_DIR=${files[0]}
 }
 

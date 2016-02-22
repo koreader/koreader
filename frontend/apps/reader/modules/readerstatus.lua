@@ -21,6 +21,10 @@ function ReaderStatus:init()
         self.enabled = false
         return
     end
+    -- register event listener if enabled
+    self.onEndOfBook = function()
+        self:showStatus()
+    end
     self.total_pages = self.document:getPageCount()
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
@@ -46,19 +50,6 @@ function ReaderStatus:showStatus()
         view = self.view,
     }
     UIManager:show(status_page)
-end
-
-function ReaderStatus:onPageUpdate(pageno)
-    if self.enabled then
-        --in case when pageUpdate event generated before _document:render()
-        if pageno > self.total_pages or self.total_pages == 1 then
-            self.total_pages = self.document:getPageCount()
-        end
-
-        if pageno == self.total_pages and self.total_pages ~= 1 then
-            self:showStatus()
-        end
-    end
 end
 
 function ReaderStatus:onReadSettings(config)
