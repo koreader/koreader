@@ -80,6 +80,9 @@ if [ ! -n "${PLATFORM}" ] ; then
 fi
 # end of value check of PLATFORM
 
+# Remount SD to RW, ignore errors since we may not have sd card
+mount -o remount,rw /mnt/sd || true
+
 ./reader.lua "${args}" 2> crash.log
 
 if [ "${from_nickel}" == "true" ] ; then
