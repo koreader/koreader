@@ -1,7 +1,7 @@
 require("commonrequire")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
-local md5 = require("MD5")
+local md5 = require("ffi/MD5")
 --DEBUG:turnOn()
 
 local service = [[
@@ -70,7 +70,7 @@ describe("KOSync modules #notest #nocov", function()
         req.headers['x-auth-key'] = args.userkey
     end
     -- password should be hashed before submitting to server
-    local username, password = "koreader", md5:sum("koreader")
+    local username, password = "koreader", md5.sum("koreader")
     -- fake progress data
     local doc, percentage, progress, device =
         "41cce710f34e5ec21315e19c99821415", -- fast digest of the document

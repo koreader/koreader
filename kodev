@@ -12,7 +12,7 @@ function assert_ret_zero {
 }
 
 function setup_env {
-    files=("./koreader-emulator-*/koreader")
+    files=`ls -d ./koreader-emulator-*/koreader`
     export EMU_DIR=${files[0]}
 }
 
@@ -33,16 +33,36 @@ SUPPORTED_TARGETS="
 
 function kodev-build {
     BUILD_HELP_MSG="
-usage: build <TARGET>
+usage: build <OPTIONS> <TARGET>
+
+OPTIONS:
+
+    -v, --verbose   Build in verbose mode.
 
 TARGET:
 ${SUPPORTED_TARGETS}"
 
+    while [[ $1 == '-'* ]]; do
+        PARAM=`echo $1 | awk -F= '{print $1}'`
+        VALUE=`echo $1 | awk -F= '{print $2}'`
+        case $PARAM in
+            -v | --verbose)
+                export VERBOSE=1
+                ;;
+            -h | --help)
+                echo "${BUILD_HELP_MSG}"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${BUILD_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift 1
+    done
+
     case $1 in
-        -h | --help)
-            echo "${BUILD_HELP_MSG}"
-            exit 0
-            ;;
         kindle)
             make TARGET=kindle
             assert_ret_zero $?
@@ -195,7 +215,7 @@ OPTIONS:
     --no-build          run reader without rebuilding
     --disable-touch     use this if you want to simulate keyboard only devices
     "
-    while [[ $1 == '--'* ]]; do
+    while [[ $1 == '-'* ]]; do
         PARAM=`echo $1 | awk -F= '{print $1}'`
         VALUE=`echo $1 | awk -F= '{print $2}'`
         case $PARAM in
@@ -254,7 +274,7 @@ OPTIONS:
 
     --tags=TAGS     only run tests with given tags
     "
-    while [[ $1 == '--'* ]]; do
+    while [[ $1 == '-'* ]]; do
         PARAM=`echo $1 | awk -F= '{print $1}'`
         VALUE=`echo $1 | awk -F= '{print $2}'`
         case $PARAM in
@@ -288,7 +308,7 @@ OPTIONS:
     if [ ! -z $2 ]; then
         test_path="${test_path}/$2"
     fi
-    busted ${opts} -o verbose_print --exclude-tags=notest ${test_path}
+    busted --lua=./luajit ${opts} -o ./spec/$1/unit/verbose_print --exclude-tags=notest ${test_path}
 
     popd
 }

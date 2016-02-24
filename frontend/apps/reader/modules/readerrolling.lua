@@ -339,6 +339,11 @@ end
 
 function ReaderRolling:onGotoViewRel(diff)
     DEBUG("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
+    local prev_xp
+    -- save xpointer to check whether we reach the end of the book
+    if diff > 0 then
+        prev_xp = self.xpointer
+    end
     if self.view.view_mode == "scroll" then
         local pan_diff = diff * self.ui.dimen.h
         if self.show_overlap_enable then
@@ -354,6 +359,9 @@ function ReaderRolling:onGotoViewRel(diff)
         self:gotoPage(self.current_page + diff*page_count)
     end
     self.xpointer = self.ui.document:getXPointer()
+    if self.xpointer == prev_xp then
+        self.ui:handleEvent(Event:new("EndOfBook"))
+    end
     return true
 end
 
