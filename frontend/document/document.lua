@@ -109,23 +109,23 @@ end
 -- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
 -- by highlighting in koreader may change the digest value.
 function Document:fastDigest()
-    local md5 = require("MD5")
+    local md5 = require("ffi/MD5")
     local lshift = bit.lshift
     local file = io.open(self.file, 'rb')
     if file then
         local step, size = 1024, 1024
-        md5:new()
+        local m = md5.new()
         for i = -1, 10 do
             file:seek("set", lshift(step, 2*i))
             local sample = file:read(size)
             if sample then
-                md5:update(sample)
+                m:update(sample)
             else
                 break
             end
         end
         file:close()
-        return md5:sum()
+        return m:sum()
     end
 end
 

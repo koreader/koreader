@@ -1,3 +1,6 @@
+set -e
+set -o pipefail
+
 ANSI_RED="\033[31;1m"
 ANSI_GREEN="\033[32;1m"
 ANSI_RESET="\033[0m"
@@ -6,6 +9,8 @@ ANSI_CLEAR="\033[0K"
 travis_retry() {
   local result=0
   local count=1
+  set +e
+
   while [ $count -le 3 ]; do
     [ $result -ne 0 ] && {
       echo -e "\n${ANSI_RED}The command \"$@\" failed. Retrying, $count of 3.${ANSI_RESET}\n" >&2
@@ -21,6 +26,7 @@ travis_retry() {
     echo -e "\n${ANSI_RED}The command \"$@\" failed 3 times.${ANSI_RESET}\n" >&2
   }
 
+  set -e
   return $result
 }
 

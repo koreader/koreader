@@ -429,7 +429,6 @@ function ReaderPaging:getTopPage()
 end
 
 function ReaderPaging:onInitScrollPageStates(orig)
-    --DEBUG.traceback()
     DEBUG("init scroll page states", orig)
     if self.view.page_scroll and self.view.state.page then
         self.orig_page = self.current_page
@@ -447,7 +446,6 @@ function ReaderPaging:onInitScrollPageStates(orig)
                 offset.y = page_area.h * self:getPagePosition(self.current_page)
             end
             local state = self:getNextPageState(blank_area, offset)
-            --DEBUG("init new state", state)
             table.insert(self.view.page_states, state)
             if blank_area.h > 0 then
                 blank_area.h = blank_area.h - self.view.page_gap.height
@@ -559,12 +557,10 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
     -- page undrawn. This should also be true for generating from bottom.
     if offset.y < 0 then offset.y = 0 end
     local state = self:updateTopPageState(top_page_state, blank_area, offset)
-    --DEBUG("updated state", state)
     local page_states = {}
     if state.visible_area.h > 0 then
         table.insert(page_states, state)
     end
-    --DEBUG("blank area", blank_area)
     local current_page = state.page
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
@@ -573,7 +569,6 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
             self:gotoPage(current_page + 1, "scrolling")
             current_page = current_page + 1
             local state = self:getNextPageState(blank_area, Geom:new{})
-            --DEBUG("new state", state)
             table.insert(page_states, state)
         end
     end
@@ -584,12 +579,10 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
     -- scroll up offset should always be less than 0
     if offset.y > 0 then offset.y = 0 end
     local state = self:updateBottomPageState(bottom_page_state, blank_area, offset)
-    --DEBUG("updated state", state)
     local page_states = {}
     if state.visible_area.h > 0 then
         table.insert(page_states, state)
     end
-    --DEBUG("blank area", blank_area)
     local current_page = state.page
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
@@ -598,7 +591,6 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
             self:gotoPage(current_page - 1, "scrolling")
             current_page = current_page - 1
             local state = self:getPrevPageState(blank_area, Geom:new{})
-            --DEBUG("new state", state)
             table.insert(page_states, 1, state)
         end
     end
@@ -637,29 +629,41 @@ function ReaderPaging:calculateOverlap()
 end
 
 function ReaderPaging:onScrollPageRel(diff)
-    DEBUG("scroll relative page:", diff)
-    local blank_area = Geom:new{}
-    blank_area:setSizeTo(self.view.dimen)
-    local overlap = self:calculateOverlap()
     if diff > 0 then
         local last_page_state = table.remove(self.view.page_states)
-        local offset = Geom:new{
-            x = 0,
-            y = last_page_state.visible_area.h - overlap
-        }
-        self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
-    end
-    if diff < 0 then
+        local last_visible_area = last_page_state.visible_area
+        if last_page_state.page == self.number_of_pages and
+                last_visible_area.y + last_visible_area.h >= last_page_state.page_area.h then
+            table.insert(self.view.page_states, last_page_state)
+            self.ui:handleEvent(Event:new("EndOfBook"))
+            return true
+        else
+            local blank_area = Geom:new{}
+            blank_area:setSizeTo(self.view.dimen)
+            local overlap = self:calculateOverlap()
+            local offset = Geom:new{
+                x = 0,
+                y = last_visible_area.h - overlap
+            }
+            self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
+        end
+    elseif diff < 0 then
+        local blank_area = Geom:new{}
+        blank_area:setSizeTo(self.view.dimen)
+        local overlap = self:calculateOverlap()
         local first_page_state = table.remove(self.view.page_states, 1)
         local offset = Geom:new{
             x = 0,
             y = -first_page_state.visible_area.h + overlap
         }
         self.view.page_states = self:genPageStatesFromBottom(first_page_state, blank_area, offset)
+    else
+        return true
     end
     -- update current pageno to the very last part in current view
     self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
     UIManager:setDirty(self.view.dialog, "partial")
+    return true
 end
 
 function ReaderPaging:onGotoPageRel(diff)
@@ -693,7 +697,12 @@ function ReaderPaging:onGotoPageRel(diff)
 
     if new_va:notIntersectWith(self.page_area) then
         -- view area out of page area, do a page turn
-        self:gotoPage(self.current_page + diff)
+        local new_page = self.current_page + diff
+        if diff > 0 and new_page == self.number_of_pages + 1 then
+            self.ui:handleEvent(Event:new("EndOfBook"))
+        else
+            self:gotoPage(new_page)
+        end
         -- if we are going back to previous page, reset
         -- view area to bottom of previous page
         if x_pan_off < 0 then
@@ -701,10 +710,6 @@ function ReaderPaging:onGotoPageRel(diff)
         elseif y_pan_off < 0 then
             self.view:PanningUpdate(0, self.page_area.h)
         end
-        -- reset dim_area
-        --self.view.dim_area.h = 0
-        --self.view.dim_area.w = 0
-        --
     else
         -- not end of page yet, goto next view
         -- adjust panning step according to overlap
@@ -773,17 +778,13 @@ end
 
 -- wrapper for bounds checking
 function ReaderPaging:gotoPage(number, orig)
-    --DEBUG.traceback()
     if number == self.current_page or not number then
         return true
     end
-    if number > self.number_of_pages
-    or number < 1 then
+    if number > self.number_of_pages or number < 1 then
         DEBUG("wrong page number: "..number.."!")
         return false
     end
-    DEBUG("going to page number", number)
-
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig))
     return true
