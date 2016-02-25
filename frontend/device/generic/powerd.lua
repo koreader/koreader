@@ -47,10 +47,13 @@ function BasePowerD:read_str_file(file)
     end
 end
 
-function BasePowerD:setIntensity(intensity)
+function BasePowerD:normalizeIntensity(intensity)
     intensity = intensity < self.fl_min and self.fl_min or intensity
-    intensity = intensity > self.fl_max and self.fl_max or intensity
-    self.flIntensity = intensity
+    return intensity > self.fl_max and self.fl_max or intensity
+end
+
+function BasePowerD:setIntensity(intensity)
+    self.flIntensity = self:normalizeIntensity(intensity)
     self:setIntensityHW()
 end
 
