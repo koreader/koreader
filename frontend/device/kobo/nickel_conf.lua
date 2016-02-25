@@ -5,10 +5,15 @@
 
 local NickelConf = {}
 NickelConf.frontLightLevel = {}
+NickelConf.frontLightState = {}
 
 local kobo_conf_path = '/mnt/onboard/.kobo/Kobo/Kobo eReader.conf'
-local re_BrightnessValue = "[0-9]+"
-local re_FrontLightLevel = "^FrontLightLevel%s*=%s*(" .. re_BrightnessValue .. ")%s*$"
+local front_light_level_str = "FrontLightLevel"
+local front_light_state_str = "FrontLightState"
+-- Nickel will set FrontLightLevel to 0 - 100
+local re_FrontLightLevel = "^" .. front_light_level_str .. "%s*=%s*([0-9]+)%s*$"
+-- Nickel will set FrontLightState to true (light on) or false (light off)
+local re_FrontLightState = "^" .. front_light_state_str .. "%s*=%s*(.+)%s*$"
 local re_PowerOptionsSection = "^%[PowerOptions%]%s*"
 local re_AnySection = "^%[.*%]%s*"
 
@@ -17,24 +22,20 @@ function NickelConf._set_kobo_conf_path(new_path)
     kobo_conf_path = new_path
 end
 
-function NickelConf.frontLightLevel.get()
-
-    local new_intensity
+function NickelConf._read_kobo_conf(re_Match)
+    local value
     local correct_section = false
     local kobo_conf = io.open(kobo_conf_path, "r")
 
     if kobo_conf then
         for line in kobo_conf:lines() do
-            if string.match(line, re_AnySection) then
+            if string.match(line, re_PowerOptionsSection) then
+                correct_section = true
+            elseif string.match(line, re_AnySection) then
                 correct_section = false
-                if string.match(line, re_PowerOptionsSection) then
-                    correct_section = true
-                end
-            end
-            if correct_section then
-                new_intensity = string.match(line, re_FrontLightLevel)
-                if new_intensity then
-                    new_intensity = tonumber(new_intensity)
+            elseif correct_section then
+                value = string.match(line, re_Match)
+                if value then
                     break
                 end
             end
@@ -42,75 +43,108 @@ function NickelConf.frontLightLevel.get()
         kobo_conf:close()
     end
 
-    if not new_intensity then
-        local Device = require("device")
-        local powerd = Device:getPowerDevice()
-        local fallback_FrontLightLevel = powerd.flIntensity or 1
+    return value
+end
 
+function NickelConf.frontLightLevel.get()
+    local new_intensity = NickelConf._read_kobo_conf(re_FrontLightLevel)
+    if new_intensity then
+        new_intensity = tonumber(new_intensity)
+    end
+
+    -- In NickelConfSpec, require("device") won't return KoboDevice
+    local powerd = require("device/kobo/powerd")
+    if new_intensity then
+        return powerd:normalizeIntensity(new_intensity)
+    else
+        local fallback_FrontLightLevel = powerd.flIntensity or 1
         assert(NickelConf.frontLightLevel.set(fallback_FrontLightLevel))
         return fallback_FrontLightLevel
     end
-
-    return new_intensity
 end
 
-function NickelConf.frontLightLevel.set(new_intensity)
-    assert(new_intensity >= 0 and new_intensity <= 100,
-           "Wrong brightness value given!")
+function NickelConf.frontLightState.get()
+    local new_state = NickelConf._read_kobo_conf(re_FrontLightState)
+    if new_state then
+        new_state = (new_state == "true") or false
+    end
 
-    local kobo_conf
-    local old_intensity
-    local remaining_file = ""
+    if new_state == nil then
+        assert(NickelConf.frontLightState.set(false))
+        return false
+    end
+
+    return new_state
+end
+
+function NickelConf._write_kobo_conf(re_Match, key, value)
+    local kobo_conf = io.open(kobo_conf_path, "r")
     local lines = {}
-    local current_position
+    local found = false
+    local remaining
     local correct_section = false
-    local modified_brightness = false
-
-    kobo_conf = io.open(kobo_conf_path, "r")
+    local new_value_line = key .. "=" .. tostring(value)
     if kobo_conf then
+        local pos
         for line in kobo_conf:lines() do
             if string.match(line, re_AnySection) then
                 if correct_section then
                     -- found a new section after having found the correct one,
                     -- therefore the key was missing: let the code below add it
-                    kobo_conf:seek("set", current_position)
+                    kobo_conf:seek("set", pos)
                     break
-                end
-                if string.match(line, re_PowerOptionsSection) then
+                elseif string.match(line, re_PowerOptionsSection) then
                     correct_section = true
                 end
             end
-            old_intensity = string.match(line, re_FrontLightLevel)
-            if correct_section and old_intensity then
-                lines[#lines + 1] = string.gsub(line, re_BrightnessValue, new_intensity, 1)
-                modified_brightness = true
+            local old_value = string.match(line, re_Match)
+            if correct_section and old_value then
+                lines[#lines + 1] = new_value_line
+                found = true
                 break
             else
                 lines[#lines + 1] = line
             end
-            current_position = kobo_conf:seek()
+            pos = kobo_conf:seek()
         end
-    end
 
-    if not modified_brightness then
-        if not correct_section then
-            lines[#lines + 1] = '[PowerOptions]'
-        end
-        lines[#lines + 1] = 'FrontLightLevel=' .. new_intensity
-    end
-
-    if kobo_conf then
-        remaining_file = kobo_conf:read("*a")
+        remaining = kobo_conf:read("*a")
         kobo_conf:close()
+    end
+
+    if not found then
+        if not correct_section then
+            lines[#lines + 1] = "[PowerOptions]"
+        end
+        lines[#lines + 1] = new_value_line
     end
 
     local kobo_conf_w = assert(io.open(kobo_conf_path, "w"))
     for i, line in ipairs(lines) do
       kobo_conf_w:write(line, "\n")
     end
-    kobo_conf_w:write(remaining_file)
+    if remaining then
+        kobo_conf_w:write(remaining)
+    end
     kobo_conf_w:close()
+
     return true
+end
+
+function NickelConf.frontLightLevel.set(new_intensity)
+    assert(new_intensity >= 0 and new_intensity <= 100,
+           "Wrong brightness value given!")
+    return NickelConf._write_kobo_conf(re_FrontLightLevel,
+                                       front_light_level_str,
+                                       new_intensity)
+end
+
+function NickelConf.frontLightState.set(new_state)
+    assert(type(new_state) == "boolean",
+           "Wrong front light state value type (expect boolean)!")
+    return NickelConf._write_kobo_conf(re_FrontLightState,
+                                       front_light_state_str,
+                                       new_state)
 end
 
 return NickelConf
