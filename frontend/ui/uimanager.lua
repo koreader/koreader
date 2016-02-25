@@ -12,7 +12,8 @@ local MILLION = 1000000
 -- there is only one instance of this
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
-    FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
+    FULL_REFRESH_COUNT =
+        G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
     refresh_count = 0,
 
     event_handlers = nil,
@@ -66,6 +67,7 @@ function UIManager:init()
             local new_state
             if kobo_light_on_start >= 0 then
                 new_intensity = math.min(kobo_light_on_start, 100)
+                new_state = true
             elseif kobo_light_on_start == -2 then
                 local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel:get()
@@ -74,11 +76,10 @@ function UIManager:init()
             if new_intensity then
                 -- Since this kobo-specific, we save here and let the code pick
                 -- it up later from the reader settings.
-                G_reader_settings:saveSetting("frontlight_intensity", new_intensity)
+                G_reader_settings:saveSetting(
+                    "frontlight_intensity", new_intensity)
             end
-            if new_state then
-                G_reader_settings:saveSetting("frontlight_state", new_state)
-            end
+            G_reader_settings:saveSetting("frontlight_state", new_state)
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()

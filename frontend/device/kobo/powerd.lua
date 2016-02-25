@@ -2,19 +2,20 @@ local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 
 local KoboPowerD = BasePowerD:new{
-    fl_min = 0, fl_max = 99,
+    fl_min = 1, fl_max = 100,
     flIntensity = 20,
     restore_settings = true,
     fl = nil,
 
     flState = false,
-    batt_capacity_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/capacity",
-    is_charging_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/status",
+    batt_capacity_file =
+        "/sys/devices/platform/pmic_battery.1/" ..
+        "power_supply/mc13892_bat/capacity",
+    is_charging_file =
+        "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/status",
     battCapacity = nil,
     is_charging = nil,
 }
-
-function KoboPowerD:front_light_intensity() return self.flIntensity + 1 end
 
 function KoboPowerD:init()
     if self.device.hasFrontlight() then
@@ -29,7 +30,7 @@ function KoboPowerD:toggleFrontlight()
         if self.flState then
             self.fl:setBrightness(0)
         else
-            self.fl:setBrightness(self.front_light_intensity())
+            self.fl:setBrightness(self.flIntensity)
         end
         self.flState = not self.flState
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
@@ -40,9 +41,9 @@ end
 
 function KoboPowerD:setIntensityHW()
     if self.fl ~= nil then
-        self.fl:setBrightness(self.front_light_intensity())
+        self.fl:setBrightness(self.flIntensity)
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
-            NickelConf.frontLightLevel.set(self.front_light_intensity())
+            NickelConf.frontLightLevel.set(self.flIntensity)
         end
     end
 end
