@@ -63,16 +63,21 @@ function UIManager:init()
         local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
         if kobo_light_on_start then
             local new_intensity
+            local new_state
             if kobo_light_on_start >= 0 then
                 new_intensity = math.min(kobo_light_on_start, 100)
             elseif kobo_light_on_start == -2 then
                 local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel:get()
+                new_state = NickelConf.frontLightState:get()
             end
             if new_intensity then
                 -- Since this kobo-specific, we save here and let the code pick
                 -- it up later from the reader settings.
                 G_reader_settings:saveSetting("frontlight_intensity", new_intensity)
+            end
+            if new_state then
+                G_reader_settings:saveSetting("frontlight_state", new_state)
             end
         end
     elseif Device:isKindle() then

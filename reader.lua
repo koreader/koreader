@@ -119,6 +119,12 @@ if Device:isKobo() then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
         intensity = intensity or powerd.flIntensity
         powerd:setIntensity(intensity)
+        local state = G_reader_settings:readSetting("frontlight_state")
+        state = state or powerd.flState
+        if state then
+            -- Default state is off
+            powerd:toggleFrontlight()
+        end
     end
     if Device:getCodeName() == "trilogy" then
         require("utils/kobo_touch_probe")
