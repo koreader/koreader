@@ -2,6 +2,8 @@ local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 
 local KoboPowerD = BasePowerD:new{
+    -- Do not actively set front light to 0, it may confuse users -- clicking
+    -- hardware button won't take any effect.
     fl_min = 1, fl_max = 100,
     flIntensity = 20,
     restore_settings = true,

@@ -10,10 +10,8 @@ NickelConf.frontLightState = {}
 local kobo_conf_path = '/mnt/onboard/.kobo/Kobo/Kobo eReader.conf'
 local front_light_level_str = "FrontLightLevel"
 local front_light_state_str = "FrontLightState"
-local re_FrontLightLevel =
-    "^" .. front_light_level_str .. "%s*=%s*([0-9]+)%s*$"
-local re_FrontLightState =
-    "^" .. front_light_state_str .. "%s*=%s*(.+)%s*$"
+local re_FrontLightLevel = "^" .. front_light_level_str .. "%s*=%s*([0-9]+)%s*$"
+local re_FrontLightState = "^" .. front_light_state_str .. "%s*=%s*(.+)%s*$"
 local re_PowerOptionsSection = "^%[PowerOptions%]%s*"
 local re_AnySection = "^%[.*%]%s*"
 
@@ -52,11 +50,12 @@ function NickelConf.frontLightLevel.get()
         new_intensity = tonumber(new_intensity)
     end
 
-    if not new_intensity then
-        local Device = require("device")
-        local powerd = Device:getPowerDevice()
+    local Device = require("device")
+    local powerd = Device:getPowerDevice()
+    if new_intensity then
+        return powerd:normalizeIntensity(new_intensity)
+    else
         local fallback_FrontLightLevel = powerd.flIntensity or 1
-
         assert(NickelConf.frontLightLevel.set(fallback_FrontLightLevel))
         return fallback_FrontLightLevel
     end
@@ -70,7 +69,7 @@ function NickelConf.frontLightState.get()
         new_state = (new_state == "true") and true or false
     end
 
-    if not new_state then
+    if new_state == nil then
         assert(NickelConf.frontLightState.set(false))
         return false
     end

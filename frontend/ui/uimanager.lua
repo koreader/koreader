@@ -65,9 +65,11 @@ function UIManager:init()
         if kobo_light_on_start then
             local new_intensity
             local new_state
-            if kobo_light_on_start >= 0 then
+            if kobo_light_on_start > 0 then
                 new_intensity = math.min(kobo_light_on_start, 100)
                 new_state = true
+            elseif kobo_light_on_start == 0 then
+                new_state = false
             elseif kobo_light_on_start == -2 then
                 local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel:get()
