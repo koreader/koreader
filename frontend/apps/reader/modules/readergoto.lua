@@ -8,7 +8,6 @@ local _ = require("gettext")
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),
-    goto_dialog_title = _("Go to Page or Location"),
 }
 
 function ReaderGoto:init()
@@ -26,9 +25,22 @@ function ReaderGoto:addToMainMenu(tab_item_table)
 end
 
 function ReaderGoto:onShowGotoDialog()
-    DEBUG("show goto dialog")
+    local dialog_title, goto_btn
+    if self.document.info.has_pages then
+        dialog_title = _("Go to Page")
+        goto_btn = {
+            text = _("Page"),
+            callback = function() self:gotoPage() end,
+        }
+    else
+        dialog_title = _("Go to Location")
+        goto_btn = {
+            text = _("Location"),
+            callback = function() self:gotoPage() end,
+        }
+    end
     self.goto_dialog = InputDialog:new{
-        title = self.goto_dialog_title,
+        title = dialog_title,
         input_hint = "(1 - "..self.document:getPageCount()..")",
         buttons = {
             {
@@ -39,20 +51,7 @@ function ReaderGoto:onShowGotoDialog()
                         self:close()
                     end,
                 },
-                {
-                    text = _("Page"),
-                    enabled = self.document.info.has_pages,
-                    callback = function()
-                        self:gotoPage()
-                    end,
-                },
-                {
-                    text = _("Location"),
-                    enabled = not self.document.info.has_pages,
-                    callback = function()
-                        self:gotoPage()
-                    end,
-                },
+                goto_btn,
             },
         },
         input_type = "number",
