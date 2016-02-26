@@ -60,4 +60,22 @@ function KoboPowerD:isChargingHW()
     return self.is_charging
 end
 
+-- Turn off front light before suspend.
+function KoboPowerD:beforeSuspend()
+    if self.flState then
+        assert(self.fl ~= nil)
+        self.fl:setBrightness(0)
+    end
+end
+
+-- Restore front light state after resume.
+function KoboPowerD:afterResume()
+    if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+        self:setIntensity(math.min(KOBO_LIGHT_ON_START, 100))
+    elseif self.flState then
+        assert(self.fl ~= nil)
+        self.fl:setBrightness(self.flIntensity)
+    end
+end
+
 return KoboPowerD

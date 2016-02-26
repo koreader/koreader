@@ -33,7 +33,8 @@ local Device = {
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,
-    -- enforce portrait orientation on display, no matter how configured at startup
+    -- enforce portrait orientation on display, no matter how configured at
+    -- startup
     isAlwaysPortrait = no,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
@@ -100,47 +101,41 @@ end
 function Device:onPowerEvent(ev)
     local Screensaver = require("ui/screensaver")
     if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
+        self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
-        -- flushing settings first in case the screensaver takes too long time that
-        -- flushing has no chance to run
+        -- flushing settings first in case the screensaver takes too long time
+        -- that flushing has no chance to run
         UIManager:sendEvent(Event:new("FlushSettings"))
         DEBUG("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
         Screensaver:show()
-        self:prepareSuspend()
+        self.screen:refreshFull()
+        self.screen_saver_mode = true
         UIManager:scheduleIn(10, self.suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
+        self:resume()
         -- restore to previous rotation mode
         self.screen:setRotationMode(self.orig_rotation_mode)
-        self:resume()
+        local UIManager = require("ui/uimanager")
+        UIManager:unschedule(self.suspend)
+        if self:needsScreenRefreshAfterResume() then
+            self.screen:refreshFull()
+        end
+        self.screen_saver_mode = false
+        self.powerd:refreshCapacity()
         Screensaver:close()
+        self.powerd:afterResume()
     end
 end
 
-function Device:prepareSuspend()
-    if self.powerd and self.powerd.fl ~= nil then
-        -- in no case should the frontlight be turned on in suspend mode
-        self.powerd.fl:sleep()
-    end
-    self.screen:refreshFull()
-    self.screen_saver_mode = true
-end
+-- Hardware function to suspend the device
+function Device:suspend() end
 
-function Device:suspend()
-end
-
-function Device:resume()
-    local UIManager = require("ui/uimanager")
-    UIManager:unschedule(self.suspend)
-    if self:needsScreenRefreshAfterResume() then
-        self.screen:refreshFull()
-    end
-    self.screen_saver_mode = false
-    self.powerd:refreshCapacity()
-end
+-- Hardware function to resume the device
+function Device:resume() end
 
 function Device:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
