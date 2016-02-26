@@ -1,14 +1,20 @@
 local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 
+local batt_state_folder =
+        "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
+
 local KoboPowerD = BasePowerD:new{
-    fl_min = 0, fl_max = 100,
+    -- Do not actively set front light to 0, it may confuse users -- pressing
+    -- hardware button won't take any effect.
+    fl_min = 1, fl_max = 100,
     flIntensity = 20,
     restore_settings = true,
     fl = nil,
 
-    batt_capacity_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/capacity",
-    is_charging_file = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/status",
+    flState = false,
+    batt_capacity_file = batt_state_folder .. "capacity",
+    is_charging_file = batt_state_folder .. "status",
     battCapacity = nil,
     is_charging = nil,
 }
@@ -23,7 +29,15 @@ end
 
 function KoboPowerD:toggleFrontlight()
     if self.fl ~= nil then
-        self.fl:toggle()
+        if self.flState then
+            self.fl:setBrightness(0)
+        else
+            self.fl:setBrightness(self.flIntensity)
+        end
+        self.flState = not self.flState
+        if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+            NickelConf.frontLightState.set(self.flState)
+        end
     end
 end
 

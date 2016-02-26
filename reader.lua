@@ -6,8 +6,12 @@ local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
 -- set search path for 'require()'
-package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
-package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
+package.path =
+    "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" ..
+    package.path
+package.cpath =
+    "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" ..
+    package.cpath
 
 -- set search path for 'ffi.load()'
 local ffi = require("ffi")
@@ -117,8 +121,12 @@ if Device:isKobo() then
     local powerd = Device:getPowerDevice()
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
-        intensity = intensity or powerd.flIntensity
-        powerd:setIntensity(intensity)
+        powerd.flIntensity = intensity or powerd.flIntensity
+        local state = G_reader_settings:readSetting("frontlight_state")
+        if state then
+            -- Default state is off
+            powerd:toggleFrontlight()
+        end
     end
     if Device:getCodeName() == "trilogy" then
         require("utils/kobo_touch_probe")
@@ -132,8 +140,8 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
     elseif open_last and last_file then
         file = last_file
     end
-    -- if file is given in command line argument or open last document is set true
-    -- the given file or the last file is opened in the reader
+    -- if file is given in command line argument or open last document is set
+    -- true, the given file or the last file is opened in the reader
     if file then
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
@@ -141,7 +149,8 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
     -- the filemanger will show the files in that path
     else
         local FileManager = require("apps/filemanager/filemanager")
-        local home_dir = G_reader_settings:readSetting("home_dir") or ARGV[argidx]
+        local home_dir =
+            G_reader_settings:readSetting("home_dir") or ARGV[argidx]
         FileManager:showFiles(home_dir)
     end
     UIManager:run()
@@ -154,7 +163,8 @@ else
 end
 
 local function exitReader()
-    local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+    local ReaderActivityIndicator =
+        require("apps/reader/modules/readeractivityindicator")
 
     G_reader_settings:close()
 
