@@ -30,6 +30,33 @@ travis_retry() {
   return $result
 }
 
+retry_cmd() {
+  local result=0
+  local count=1
+  set +e
+
+  retry_cnt=$1
+  shift 1
+
+  while [ $count -le ${retry_cnt} ]; do
+    [ $result -ne 0 ] && {
+      echo -e "\n${ANSI_RED}The command \"$@\" failed. Retrying, $count of ${retry_cnt}${ANSI_RESET}\n" >&2
+    }
+    "$@"
+    result=$?
+    [ $result -eq 0 ] && break
+    count=$(($count + 1))
+    sleep 1
+  done
+
+  [ $count -gt ${retry_cnt} ] && {
+    echo -e "\n${ANSI_RED}The command \"$@\" failed ${retry_cnt} times.${ANSI_RESET}\n" >&2
+  }
+
+  set -e
+  return $result
+}
+
 export PATH=$PWD/bin:$PATH
 export PATH=$PATH:${TRAVIS_BUILD_DIR}/install/bin
 if [ -f ${TRAVIS_BUILD_DIR}/install/bin/luarocks ]; then
