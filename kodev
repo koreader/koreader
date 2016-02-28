@@ -130,6 +130,7 @@ ${SUPPORTED_TARGETS}"
             ;;
         android)
             make TARGET=android clean
+            rm *.apk
             ;;
         pocketbook)
             make TARGET=pocketbook clean
@@ -313,6 +314,36 @@ OPTIONS:
     popd
 }
 
+function kodev-log {
+    LOG_HELP_MSG="
+usage: log <TARGET>
+
+TARGET:
+
+    android
+"
+
+    if [ $# -lt 1 ]; then
+        echo "${LOG_HELP_MSG}"
+        exit 1
+    fi
+
+    case $1 in
+        -h | --help)
+            echo "${LOG_HELP_MSG}"
+            exit 0
+            ;;
+        android)
+            adb logcat 'luajit-launcher:D *:S'
+            ;;
+        *)
+            echo "Unsupported target: $1."
+            echo "${LOG_HELP_MSG}"
+            exit 1
+            ;;
+    esac
+}
+
 
 
 HELP_MSG="
@@ -327,6 +358,7 @@ Supported commands:
     run                 Run KOReader
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
     test                Run tests
+    log                 Tail log stream for a running KOReader app
 "
 
 if [ $# -lt 1 ]; then
@@ -361,6 +393,10 @@ case $1 in
     test)
         shift 1
         kodev-test $@
+        ;;
+    log)
+        shift 1
+        kodev-log $@
         ;;
     --help | -h)
         echo "${HELP_MSG}"
