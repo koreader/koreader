@@ -143,15 +143,6 @@ end
 
 function Kobo:resume()
     os.execute("echo 0 > /sys/power/state-extended")
-    if self.powerd then
-        if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
-            self.powerd:setIntensity(math.max(math.min(KOBO_LIGHT_ON_START,100),0))
-        elseif self.powerd.fl ~= nil then
-            self.powerd.fl:restore()
-        end
-    end
-
-    Generic.resume(self)
 end
 
 -------------- device probe ------------
@@ -175,6 +166,3 @@ elseif codename == "alyssum" then
 else
     error("unrecognized Kobo model "..codename)
 end
-
-
-

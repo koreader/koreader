@@ -22,8 +22,12 @@ function BasePowerD:toggleFrontlight() end
 function BasePowerD:setIntensityHW() end
 function BasePowerD:getCapacityHW() return "0" end
 function BasePowerD:isChargingHW() end
-function BasePowerD:suspendHW() end
-function BasePowerD:wakeUpHW() end
+-- Anything needs to be done before do a real hardware suspend. Such as turn off
+-- front light.
+function BasePowerD:beforeSuspend() end
+-- Anything needs to be done after do a real hardware resume. Such as resume
+-- front light state.
+function BasePowerD:afterResume() end
 
 function BasePowerD:read_int_file(file)
     local fd =  io.open(file, "r")
@@ -68,20 +72,13 @@ function BasePowerD:getCapacity()
 end
 
 function BasePowerD:refreshCapacity()
-    -- We want our next getCapacity call to actually pull up to date info instead of a cached value ;)
+    -- We want our next getCapacity call to actually pull up to date info
+    -- instead of a cached value ;)
     self.capacity_pulled_count = self.capacity_cached_count
 end
 
 function BasePowerD:isCharging()
     return self:isChargingHW()
-end
-
-function BasePowerD:suspend()
-    return self:suspendHW()
-end
-
-function BasePowerD:wakeUp()
-    return self:wakeUpHW()
 end
 
 return BasePowerD
