@@ -375,32 +375,47 @@ function TouchMenu:init()
         self.item_group,
     }
 
-    self.bar:switchToTab(self.last_index or 1)
+    self.item_width = self.width - self.padding*2 - self.bordersize*2
+    self.split_line = HorizontalGroup:new{
+        -- pad with 10 pixel to align with the up arrow in footer
+        HorizontalSpan:new{width = 10},
+        LineWidget:new{
+            style = "dashed",
+            dimen = Geom:new{
+                w = self.item_width - 20,
+                h = 1,
+            }
+        }
+    }
+    self.footer_top_margin = VerticalSpan:new{width = Screen:scaleBySize(2)}
     -- Make sure we always show an up to date battery status when first opening the menu...
     Device:getPowerDevice():refreshCapacity()
-    self:updateItems()
+    self.bar:switchToTab(self.last_index or 1)
 end
 
 function TouchMenu:onCloseWidget()
     UIManager:setDirty(nil, "partial", self.dimen)
 end
 
-function TouchMenu:_recalculateDimen()
-    self.dimen.w = self.width
+function TouchMenu:_recalculatePageLayout()
+    local content_height  -- content == item_list + footer
 
-    -- if height not given, dynamically calculate it
-    if not self.height then
-        self.dimen.h = (#self.item_table + 2) * self.item_height
-                        + self.bar:getSize().h
+    local bar_height = self.bar:getSize().h
+    local footer_height = self.footer:getSize().h
+    if self.height then
+        content_height = self.height - bar_height
     else
-        self.dimen.h = self.height
+        content_height = #self.item_table * self.item_height + footer_height
+        -- split line height
+        content_height = content_height + (#self.item_table - 1)
+        content_height = content_height + self.footer_top_margin:getSize().h
     end
-    -- make sure self.dimen.h does not overflow screen height
-    if self.dimen.h > Screen:getHeight() then
-        self.dimen.h = Screen:getHeight() - self.bar:getSize().h
+    if content_height + bar_height > Screen:getHeight() then
+        content_height = Screen:getHeight() - bar_height
     end
 
-    self.perpage = math.floor(self.dimen.h / self.item_height) - 2
+    local item_list_content_height = content_height - footer_height
+    self.perpage = math.floor(item_list_content_height / self.item_height)
     if self.perpage > self.max_per_page then
         self.perpage = self.max_per_page
     end
@@ -410,11 +425,9 @@ end
 
 function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
-    self:_recalculateDimen()
+    self:_recalculatePageLayout()
     self.item_group:clear()
     table.insert(self.item_group, self.bar)
-
-    local item_width = self.dimen.w - self.padding*2 - self.bordersize*2
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -424,7 +437,7 @@ function TouchMenu:updateItems()
                 item = self.item_table[i],
                 menu = self,
                 dimen = Geom:new{
-                    w = item_width,
+                    w = self.item_width,
                     h = self.item_height,
                 },
                 show_parent = self.show_parent,
@@ -432,36 +445,31 @@ function TouchMenu:updateItems()
             table.insert(self.item_group, item_tmp)
             -- insert split line
             if c ~= self.perpage then
-                table.insert(self.item_group, HorizontalGroup:new{
-                    -- pad with 10 pixel to align with the up arrow in footer
-                    HorizontalSpan:new{width = 10},
-                    LineWidget:new{
-                        style = "dashed",
-                        dimen = Geom:new{
-                            w = item_width - 20,
-                            h = 1,
-                        }
-                    }
-                })
+                table.insert(self.item_group, self.split_line)
             end
         else
             -- item not enough to fill the whole page, break out of loop
-            --table.insert(self.item_group,
-                --VerticalSpan:new{
-                    --width = self.item_height
-                --})
             break
         end -- if i <= self.items
     end -- for c=1, self.perpage
 
-    table.insert(self.item_group, VerticalSpan:new{width = Screen:scaleBySize(2)})
+    table.insert(self.item_group, self.footer_top_margin)
     table.insert(self.item_group, self.footer)
     self.page_info_text.text = util.template(_("Page %1 of %2"), self.page, self.page_num)
     self.page_info_left_chev:showHide(self.page_num > 1)
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
-    self.time_info.text = os.date("%H:%M").." @ "..(Device:getPowerDevice():isCharging() and "+" or "")..Device:getPowerDevice():getCapacity().."%"
+    local time_info_txt = os.date("%H:%M").." @ "
+    if Device:getPowerDevice():isCharging() then
+        time_info_txt = time_info_txt.."+"
+    end
+    time_info_txt = time_info_txt..Device:getPowerDevice():getCapacity().."%"
+    self.time_info:setText(time_info_txt)
+
+    -- recalculate dimen based on new layout
+    self.dimen.w = self.width
+    self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
 
     UIManager:setDirty("all", function()
         local refresh_dimen =
