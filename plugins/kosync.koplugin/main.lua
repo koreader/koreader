@@ -12,7 +12,7 @@ local Math = require("optmath")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
-local md5 = require("MD5")
+local md5 = require("ffi/MD5")
 
 local l10n = {
     _("Unknown server error."),
@@ -165,7 +165,7 @@ function KOSync:doRegister(username, password)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
-    local userkey = md5:sum(password)
+    local userkey = md5.sum(password)
     local ok, status, body = pcall(client.register, client, username, userkey)
     if not ok and status then
         UIManager:show(InfoMessage:new{
@@ -195,7 +195,7 @@ function KOSync:doLogin(username, password)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
-    local userkey = md5:sum(password)
+    local userkey = md5.sum(password)
     local ok, status, body = pcall(client.authorize, client, username, userkey)
     if not ok and status then
         UIManager:show(InfoMessage:new{

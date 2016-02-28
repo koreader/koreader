@@ -1,7 +1,7 @@
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
-local md5 = require("MD5")
+local md5 = require("ffi/MD5")
 -- lfs
 
 local MyClipping = {
@@ -220,7 +220,7 @@ function MyClipping:getImage(image)
         --doc:clipPagePNGFile(image.pos0, image.pos1,
                 --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
         doc:close()
-        if png then return { png = png, hash = md5(png) } end
+        if png then return { png = png, hash = md5.sum(png) } end
     end
 end
 
