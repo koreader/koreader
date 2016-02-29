@@ -52,6 +52,9 @@ function Device:init()
         error("screen/framebuffer must be implemented")
     end
 
+    local is_eink = G_reader_settings:readSetting("eink")
+    self.screen.eink = (is_eink == nill) or is_eink
+
     DEBUG("initializing for device", self.model)
     DEBUG("framebuffer resolution:", self.screen:getSize())
 
