@@ -44,6 +44,7 @@ fi
 export AWESOME_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
+PASSCODE_DISABLED="no"
 
 # Keep track of if we were started through KUAL
 FROM_KUAL="no"
@@ -164,6 +165,14 @@ if [ -d /mnt/us/linkfonts/fonts ] ; then
 		logmsg "Mounting linkfonts . . ."
 		mount -o bind /mnt/us/linkfonts/fonts ${KOREADER_DIR}/fonts/linkfonts
 	fi
+fi
+
+# check if we need to disable the system passcode, because it messes with us in fun and interesting (and, more to the point, intractable) ways...
+# NOTE: The most egregious one being that it inhibits the power button event on wakeup until the passcode is validated, which we can't do, since we capture all input...
+if [ -f "/var/local/system/userpasswdenabled" ] ; then
+	logmsg "Disabling system passcode . . ."
+	rm -f "/var/local/system/userpasswdenabled"
+	PASSCODE_DISABLED="yes"
 fi
 
 # check if we are supposed to shut down the Amazon framework
@@ -313,5 +322,10 @@ if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; th
 	iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
 	iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
 	iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
+fi
+
+if [ "${PASSCODE_DISABLED}" == "yes" ] ; then
+	logmsg "Restoring system passcode . . ."
+	touch "/var/local/system/userpasswdenabled"
 fi
 
