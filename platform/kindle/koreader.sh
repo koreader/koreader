@@ -41,7 +41,7 @@ if [ "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # Keep track of what we do with pillow...
-AWESOME_STOPPED="no"
+export AWESOME_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 
@@ -297,9 +297,9 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
 		cat /var/tmp/koreader-fb.dump > /dev/fb0
 		rm -f /var/tmp/koreader-fb.dump
+		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 		# NOTE: In case we ever need an extra full flash refresh...
 		#eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
-		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 	fi
 	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."

@@ -78,21 +78,32 @@ end
 -- ONLY used for Kindle devices
 function Device:intoScreenSaver()
     local UIManager = require("ui/uimanager")
-    if self.charging_mode == false and self.screen_saver_mode == false then
+    if self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
         self.screen_saver_mode = true
     end
     UIManager:sendEvent(Event:new("FlushSettings"))
+    -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -cont awesome")
+    end
 end
 
 -- ONLY used for Kindle devices
 function Device:outofScreenSaver()
-    if self.screen_saver_mode == true and self.charging_mode == false then
+    -- On FW >= 5.7.2, put awesome to sleep again...
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -stop awesome")
+    end
+    if self.screen_saver_mode == true then
         -- wait for native system update screen before we recover saved
         -- Blitbuffer.
         util.usleep(1500000)
         self.screen:restoreFromSavedBB()
         self:resume()
+        if self:needsScreenRefreshAfterResume() then
+            self.screen:refreshFull()
+        end
     end
     self.screen_saver_mode = false
 end
