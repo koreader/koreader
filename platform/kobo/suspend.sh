@@ -13,4 +13,4 @@ fi
 sync
 echo 1 > /sys/power/state-extended
 sleep 2	# Because reasons?
-echo mem > /sys/power/state
+echo mem > /sys/power/state	# This will return -EBUSY, for some reason...

@@ -62,19 +62,20 @@ end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
-    if self.flState then
-        assert(self.fl ~= nil)
+    if self.fl ~= nil then
+        self.flState = true
         self.fl:setBrightness(0)
     end
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
-    if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
-        self:setIntensity(math.min(KOBO_LIGHT_ON_START, 100))
-    elseif self.flState then
-        assert(self.fl ~= nil)
-        self.fl:setBrightness(self.flIntensity)
+    if self.fl ~= nil then
+        if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
+            self:setIntensity(math.min(KOBO_LIGHT_ON_START, 100))
+        elseif self.flState then
+            self.fl:setBrightness(self.flIntensity)
+        end
     end
 end
 
