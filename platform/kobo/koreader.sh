@@ -29,12 +29,12 @@ export EXT_FONT_DIR="/mnt/onboard/fonts"
 
 # fast and dirty way of check if we are called from nickel
 # through fmon, or from another launcher (KSM or advboot)
-from_nickel="false"
+export FROM_NICKEL="false"
 if pkill -0 nickel ; then
-	from_nickel="true"
+	FROM_NICKEL="true"
 fi
 
-if [ "${from_nickel}" == "true" ] ; then
+if [ "${FROM_NICKEL}" == "true" ] ; then
 	# Siphon a few things from nickel's env...
 	eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
 	export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
@@ -87,7 +87,7 @@ fi
 
 ./reader.lua "${args}" 2> crash.log
 
-if [ "${from_nickel}" == "true" ] ; then
+if [ "${FROM_NICKEL}" == "true" ] ; then
 	# start kobo software because it was running before koreader
 	./nickel.sh &
 else
