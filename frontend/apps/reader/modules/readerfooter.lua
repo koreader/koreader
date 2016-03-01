@@ -17,7 +17,6 @@ local Font = require("ui/font")
 local _ = require("gettext")
 local util  = require("util")
 
-local auto_refresh_scheduled = false
 
 local ReaderFooter = InputContainer:new{
     mode = 1,
@@ -158,8 +157,16 @@ function ReaderFooter:init()
     end
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     self:applyFooterMode()
-    if self.settings.auto_refresh_time and not auto_refresh_scheduled then
-        self:autoRefreshTime()
+    if self.settings.auto_refresh_time then
+        self.autoRefreshTime = function()
+            self:updateFooterPage()
+            UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+        end
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+        self.onCloseDocument = function()
+            UIManager:unschedule(self.autoRefreshTime)
+        end
     end
 end
 
@@ -211,19 +218,6 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             get_minibar_option("chapter_time_to_read"),
         }
     })
-end
-
-function ReaderFooter:autoRefreshTime()
-    if self.settings.auto_refresh_time then
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")) , function()
-            self:autoRefreshTime()
-            self:updateFooterPage()
-            UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
-        end)
-        auto_refresh_scheduled = true
-    else
-        auto_refresh_scheduled = false
-    end
 end
 
 function ReaderFooter:getBatteryInfo()
