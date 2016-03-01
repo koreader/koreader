@@ -15,7 +15,9 @@ fi
 current_wakeup_count="$(cat /sys/power/wakeup_count)"
 echo "[$(date +'%x @ %X')] Kobo Suspend: Current WakeUp count: ${current_wakeup_count}"
 echo 1 > /sys/power/state-extended
-echo "[$(date +'%x @ %X')] Kobo Suspend: Asked for a Sleep mode suspend"
+# NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the kernel to suspend/resume various subsystems
+#       cf. kernel/power/main.c @ L#207
+echo "[$(date +'%x @ %X')] Kobo Suspend: Asked the kernel to put subsystems to sleep"
 sleep 2
 echo "[$(date +'%x @ %X')] Kobo Suspend: Waited for 2s because of reasons..."
 sync
