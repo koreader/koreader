@@ -80,11 +80,9 @@ if [ ! -n "${PLATFORM}" ] ; then
 fi
 # end of value check of PLATFORM
 
-grep ' /mnt/sd ' /proc/mounts | grep 'ro'
-# Remount SD to RW if it's RO
-if [ $? -eq 0 ]
-then
-    mount -o remount,rw /mnt/sd
+# Remount the SD card RW if it's inserted and currently RO
+if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
+	mount -o remount,rw /mnt/sd
 fi
 
 ./reader.lua "${args}" 2> crash.log
