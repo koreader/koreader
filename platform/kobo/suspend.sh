@@ -24,9 +24,11 @@ echo ${current_wakeup_count} > /sys/power/wakeup_count
 echo "[$(date +'%x @ %X')] Kobo Suspend: Wrote WakeUp count: ${current_wakeup_count} ($?)"
 echo mem > /sys/power/state
 echo "[$(date +'%x @ %X')] Kobo Suspend: Asked to suspend to RAM... ZzZ ZzZ ZzZ? ($?)"
-
-## And nickel apparently loops like a crazy person if the write to /sys/power/state returns EBUSY...
-#echo 0 > /sys/power/state-extended
-#echo "Kobo Suspend: Asked to wakeup"
+## NOTE: Ideally, we'd need a way to warn the user that suspending gloriously failed at this point...
+##       We can safely assume that just from a non-zero return code, without looking at the detailed stderr message
+##       (most of the failures we'll see are -EBUSY anyway)
+## For reference, when that happens to nickel, it appears to keep retrying to wakeup & sleep ad nauseam,
+## which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
+## cf. nickel_suspend_strace.txt for more details.
 
 echo "[$(date +'%x @ %X')] Kobo Suspend: END! (WakeUp count: $(cat /sys/power/wakeup_count))"
