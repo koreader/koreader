@@ -13,8 +13,8 @@ local KoboPowerD = BasePowerD:new{
     fl = nil,
 
     -- We will set this value for all kobo models. but it will only be synced
-    -- with nickel's FrontLightState config if the current model has a
-    -- frontlight toggle button.
+    -- with nickel's FrontLightState config if the current nickel firmware
+    -- supports this config.
     is_fl_on = false,
 
     batt_capacity_file = batt_state_folder .. "capacity",
@@ -30,9 +30,9 @@ function KoboPowerD:init()
         if ok then
             self.fl = light
             if NickelConf.frontLightState.get() ~= nil then
-                self.has_fl_toggle_btn = true
+                self.has_fl_state_cfg = true
             else
-                self.has_fl_toggle_btn = false
+                self.has_fl_state_cfg = false
             end
         end
     end
@@ -46,7 +46,7 @@ function KoboPowerD:toggleFrontlight()
             self.fl:setBrightness(self.fl_intensity)
         end
         self.is_fl_on = not self.is_fl_on
-        if self.has_fl_toggle_btn and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+        if self.has_fl_state_cfg and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
             NickelConf.frontLightState.set(self.is_fl_on)
         end
     end
@@ -67,7 +67,7 @@ function KoboPowerD:setIntensityHW()
         end
         if self.is_fl_on ~= is_fl_on then
             self.is_fl_on = is_fl_on
-            if self.has_fl_toggle_btn and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+            if self.has_fl_state_cfg and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
                 NickelConf.frontLightState.set(self.is_fl_on)
             end
         end
