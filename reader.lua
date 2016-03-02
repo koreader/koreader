@@ -122,14 +122,14 @@ if Device:isKobo() then
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
         powerd.fl_intensity = intensity or powerd.fl_intensity
-        local state = G_reader_settings:readSetting("frontlight_state")
-        if state then
-            -- default state is off, turn it on
+        local is_fl_on = G_reader_settings:readSetting("is_frontlight_on")
+        if is_fl_on then
+            -- default is_fl_on is false, turn it on
             powerd:toggleFrontlight()
         else
             -- the light can still be turned on manually outside of koreader
             -- or nickel. so we always set the intensity to 0 here to keep it
-            -- in sync with the default state
+            -- in sync with powerd.is_fl_on (false by default)
             -- NOTE: we cant use setIntensity method here because for kobo the
             -- min intensity is 1 :(
             powerd.fl:setBrightness(0)
