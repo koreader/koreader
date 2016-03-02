@@ -64,23 +64,23 @@ function UIManager:init()
         local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
         if kobo_light_on_start then
             local new_intensity
-            local is_fl_on
+            local is_frontlight_on
             if kobo_light_on_start > 0 then
                 new_intensity = math.min(kobo_light_on_start, 100)
-                is_fl_on = true
+                is_frontlight_on = true
             elseif kobo_light_on_start == 0 then
-                is_fl_on = false
+                is_frontlight_on = false
             elseif kobo_light_on_start == -2 then
                 local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel.get()
-                is_fl_on = NickelConf.frontLightState:get()
-                if is_fl_on == nil then
+                is_frontlight_on = NickelConf.frontLightState:get()
+                if is_frontlight_on == nil then
                     -- this device does not support frontlight toggle,
                     -- we set the value based on frontlight intensity.
                     if new_intensity > 0 then
-                        is_fl_on = true
+                        is_frontlight_on = true
                     else
-                        is_fl_on = false
+                        is_frontlight_on = false
                     end
                 end
             end
@@ -90,7 +90,7 @@ function UIManager:init()
                 G_reader_settings:saveSetting("frontlight_intensity",
                                               new_intensity)
             end
-            G_reader_settings:saveSetting("is_frontlight_on", is_fl_on)
+            G_reader_settings:saveSetting("is_frontlight_on", is_frontlight_on)
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()

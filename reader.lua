@@ -120,11 +120,12 @@ end
 if Device:isKobo() then
     local powerd = Device:getPowerDevice()
     if powerd and powerd.restore_settings then
+        -- UIManager:init() should have sanely set up the frontlight_stuff by this point
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
         powerd.fl_intensity = intensity or powerd.fl_intensity
-        local is_fl_on = G_reader_settings:readSetting("is_frontlight_on")
-        if is_fl_on then
-            -- default is_fl_on is false, turn it on
+        local is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on")
+        if is_frontlight_on then
+            -- default powerd.is_fl_on is false, turn it on
             powerd:toggleFrontlight()
         else
             -- the light can still be turned on manually outside of koreader
