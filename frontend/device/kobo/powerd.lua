@@ -11,8 +11,12 @@ local KoboPowerD = BasePowerD:new{
     fl_intensity = 20,
     restore_settings = true,
     fl = nil,
-    -- this attribute should be synced with nickel's FrontLightState config
+
+    -- We will set this value for all kobo models. but it will only be synced
+    -- with nickel's FrontLightState config if the current model has a
+    -- frontlight toggle button.
     is_fl_on = false,
+
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
     battCapacity = nil,
@@ -23,7 +27,14 @@ function KoboPowerD:init()
     if self.device.hasFrontlight() then
         local kobolight = require("ffi/kobolight")
         local ok, light = pcall(kobolight.open)
-        if ok then self.fl = light end
+        if ok then
+            self.fl = light
+            if NickelConf.frontLightState.get() ~= nil then
+                self.has_fl_toggle_btn = true
+            else
+                self.has_fl_toggle_btn = false
+            end
+        end
     end
 end
 
@@ -35,7 +46,7 @@ function KoboPowerD:toggleFrontlight()
             self.fl:setBrightness(self.fl_intensity)
         end
         self.is_fl_on = not self.is_fl_on
-        if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+        if self.has_fl_toggle_btn and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
             NickelConf.frontLightState.set(self.is_fl_on)
         end
     end
@@ -46,6 +57,19 @@ function KoboPowerD:setIntensityHW()
         self.fl:setBrightness(self.fl_intensity)
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
             NickelConf.frontLightLevel.set(self.fl_intensity)
+        end
+        -- also keep self.is_fl_on in sync with intensity if needed
+        local is_fl_on
+        if self.fl_intensity > 0 then
+            is_fl_on = true
+        else
+            is_fl_on = false
+        end
+        if self.is_fl_on ~= is_fl_on then
+            self.is_fl_on = is_fl_on
+            if self.has_fl_toggle_btn and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+                NickelConf.frontLightState.set(self.is_fl_on)
+            end
         end
     end
 end
