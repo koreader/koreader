@@ -57,9 +57,9 @@ function NickelConf.frontLightLevel.get()
     if new_intensity then
         return powerd:normalizeIntensity(new_intensity)
     else
-        local fallback_FrontLightLevel = powerd.flIntensity or 1
-        assert(NickelConf.frontLightLevel.set(fallback_FrontLightLevel))
-        return fallback_FrontLightLevel
+        local fallback_fl_level = powerd.fl_intensity or 1
+        assert(NickelConf.frontLightLevel.set(fallback_fl_level))
+        return fallback_fl_level
     end
 end
 

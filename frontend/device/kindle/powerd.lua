@@ -4,7 +4,7 @@ local BasePowerD = require("device/generic/powerd")
 local KindlePowerD = BasePowerD:new{
     fl_min = 0, fl_max = 24,
 
-    flIntensity = nil,
+    fl_intensity = nil,
     battCapacity = nil,
     is_charging = nil,
     lipc_handle = nil,
@@ -17,9 +17,9 @@ function KindlePowerD:init()
     end
     if self.device.hasFrontlight() then
         if self.lipc_handle ~= nil then
-            self.flIntensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+            self.fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
         else
-            self.flIntensity = self:read_int_file(self.fl_intensity_file)
+            self.fl_intensity = self:read_int_file(self.fl_intensity_file)
         end
     end
 end
@@ -27,7 +27,7 @@ end
 function KindlePowerD:toggleFrontlight()
     local sysint = self:read_int_file(self.fl_intensity_file)
     if sysint == 0 then
-        self:setIntensity(self.flIntensity)
+        self:setIntensity(self.fl_intensity)
     else
         os.execute("echo -n 0 > " .. self.fl_intensity_file)
     end
@@ -35,9 +35,9 @@ end
 
 function KindlePowerD:setIntensityHW()
     if self.lipc_handle ~= nil then
-        self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.flIntensity)
+        self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.fl_intensity)
     else
-        os.execute("echo -n ".. self.flIntensity .." > " .. self.fl_intensity_file)
+        os.execute("echo -n ".. self.fl_intensity .." > " .. self.fl_intensity_file)
     end
 end
 

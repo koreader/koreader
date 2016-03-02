@@ -8,11 +8,11 @@ local KoboPowerD = BasePowerD:new{
     -- Do not actively set front light to 0, it may confuse users -- pressing
     -- hardware button won't take any effect.
     fl_min = 1, fl_max = 100,
-    flIntensity = 20,
+    fl_intensity = 20,
     restore_settings = true,
     fl = nil,
-
-    flState = false,
+    -- this attribute should be synced with nickel's FrontLightState config
+    is_fl_on = false,
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
     battCapacity = nil,
@@ -29,23 +29,23 @@ end
 
 function KoboPowerD:toggleFrontlight()
     if self.fl ~= nil then
-        if self.flState then
+        if self.is_fl_on then
             self.fl:setBrightness(0)
         else
-            self.fl:setBrightness(self.flIntensity)
+            self.fl:setBrightness(self.fl_intensity)
         end
-        self.flState = not self.flState
+        self.is_fl_on = not self.is_fl_on
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
-            NickelConf.frontLightState.set(self.flState)
+            NickelConf.frontLightState.set(self.is_fl_on)
         end
     end
 end
 
 function KoboPowerD:setIntensityHW()
     if self.fl ~= nil then
-        self.fl:setBrightness(self.flIntensity)
+        self.fl:setBrightness(self.fl_intensity)
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
-            NickelConf.frontLightLevel.set(self.flIntensity)
+            NickelConf.frontLightLevel.set(self.fl_intensity)
         end
     end
 end
@@ -72,8 +72,8 @@ function KoboPowerD:afterResume()
     if self.fl ~= nil then
         if KOBO_LIGHT_ON_START and tonumber(KOBO_LIGHT_ON_START) > -1 then
             self:setIntensity(math.min(KOBO_LIGHT_ON_START, 100))
-        else
-            self.fl:setBrightness(self.flIntensity)
+        elseif self.is_fl_on then
+            self.fl:setBrightness(self.fl_intensity)
         end
     end
 end

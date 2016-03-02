@@ -1,7 +1,7 @@
 local BasePowerD = {
     fl_min = 0,      -- min frontlight intensity
     fl_max = 10,     -- max frontlight intensity
-    flIntensity = nil,   -- frontlight intensity
+    fl_intensity = nil,   -- frontlight intensity
     battCapacity = nil,  -- battery capacity
     device = nil,    -- device object
 
@@ -57,7 +57,7 @@ function BasePowerD:normalizeIntensity(intensity)
 end
 
 function BasePowerD:setIntensity(intensity)
-    self.flIntensity = self:normalizeIntensity(intensity)
+    self.fl_intensity = self:normalizeIntensity(intensity)
     self:setIntensityHW()
 end
 

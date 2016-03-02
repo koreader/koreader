@@ -121,7 +121,7 @@ if Device:isKobo() then
     local powerd = Device:getPowerDevice()
     if powerd and powerd.restore_settings then
         local intensity = G_reader_settings:readSetting("frontlight_intensity")
-        powerd.flIntensity = intensity or powerd.flIntensity
+        powerd.fl_intensity = intensity or powerd.fl_intensity
         local state = G_reader_settings:readSetting("frontlight_state")
         if state then
             -- Default state is off

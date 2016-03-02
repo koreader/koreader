@@ -40,17 +40,17 @@ end
 
 function ReaderFrontLight:onAdjust(arg, ges)
     local powerd = Device:getPowerDevice()
-    if powerd.flIntensity ~= nil then
-        DEBUG("frontlight intensity", powerd.flIntensity)
+    if powerd.fl_intensity ~= nil then
+        DEBUG("frontlight intensity", powerd.fl_intensity)
         local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
         DEBUG("step = ", step)
         local delta_int = self.steps[step] or self.steps[#self.steps]
         DEBUG("delta_int = ", delta_int)
         local new_intensity
         if ges.direction == "north" then
-            new_intensity = powerd.flIntensity + delta_int
+            new_intensity = powerd.fl_intensity + delta_int
         elseif ges.direction == "south" then
-            new_intensity = powerd.flIntensity - delta_int
+            new_intensity = powerd.fl_intensity - delta_int
         end
         if new_intensity ~= nil then
             powerd:setIntensity(new_intensity)
@@ -61,9 +61,9 @@ end
 
 function ReaderFrontLight:onShowIntensity()
     local powerd = Device:getPowerDevice()
-    if powerd.flIntensity ~= nil then
+    if powerd.fl_intensity ~= nil then
         UIManager:show(Notification:new{
-            text = T( _("Frontlight intensity is set to %1."), powerd.flIntensity),
+            text = T( _("Frontlight intensity is set to %1."), powerd.fl_intensity),
             timeout = 1.0,
         })
     end
