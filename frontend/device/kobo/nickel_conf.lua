@@ -68,12 +68,8 @@ function NickelConf.frontLightState.get()
     if new_state then
         new_state = (new_state == "true") or false
     end
-
-    if new_state == nil then
-        assert(NickelConf.frontLightState.set(false))
-        return false
-    end
-
+    -- for devices that do not have toggle button, the entry will be missing
+    -- and we return nil in this case.
     return new_state
 end
 

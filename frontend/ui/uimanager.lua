@@ -74,12 +74,21 @@ function UIManager:init()
                 local NickelConf = require("device/kobo/nickel_conf")
                 new_intensity = NickelConf.frontLightLevel.get()
                 new_state = NickelConf.frontLightState:get()
+                if new_state == nil then
+                    -- this device does not support frontlight toggle,
+                    -- we set the state based on frontlight intensity.
+                    if new_intensity > 0 then
+                        new_state = true
+                    else
+                        new_state = false
+                    end
+                end
             end
+            -- Since this kobo-specific, we save all values in settings here
+            -- and let the code (reader.lua) pick it up later during bootstrap.
             if new_intensity then
-                -- Since this kobo-specific, we save here and let the code pick
-                -- it up later from the reader settings.
-                G_reader_settings:saveSetting(
-                    "frontlight_intensity", new_intensity)
+                G_reader_settings:saveSetting("frontlight_intensity",
+                                              new_intensity)
             end
             G_reader_settings:saveSetting("frontlight_state", new_state)
         end
