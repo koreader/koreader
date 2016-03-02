@@ -57,9 +57,9 @@ function NickelConf.frontLightLevel.get()
     if new_intensity then
         return powerd:normalizeIntensity(new_intensity)
     else
-        local fallback_FrontLightLevel = powerd.flIntensity or 1
-        assert(NickelConf.frontLightLevel.set(fallback_FrontLightLevel))
-        return fallback_FrontLightLevel
+        local fallback_fl_level = powerd.fl_intensity or 1
+        assert(NickelConf.frontLightLevel.set(fallback_fl_level))
+        return fallback_fl_level
     end
 end
 
@@ -68,16 +68,12 @@ function NickelConf.frontLightState.get()
     if new_state then
         new_state = (new_state == "true") or false
     end
-
-    if new_state == nil then
-        assert(NickelConf.frontLightState.set(false))
-        return false
-    end
-
+    -- for devices that do not have toggle button, the entry will be missing
+    -- and we return nil in this case.
     return new_state
 end
 
-function NickelConf._write_kobo_conf(re_Match, key, value)
+function NickelConf._write_kobo_conf(re_Match, key, value, dont_create)
     local kobo_conf = io.open(kobo_conf_path, "r")
     local lines = {}
     local found = false
@@ -112,7 +108,7 @@ function NickelConf._write_kobo_conf(re_Match, key, value)
         kobo_conf:close()
     end
 
-    if not found then
+    if not found and dont_create ~= true then
         if not correct_section then
             lines[#lines + 1] = "[PowerOptions]"
         end
@@ -134,6 +130,9 @@ end
 function NickelConf.frontLightLevel.set(new_intensity)
     assert(new_intensity >= 0 and new_intensity <= 100,
            "Wrong brightness value given!")
+    -- Make sure we're in sync with KOReader on the config level, too
+    G_reader_settings:saveSetting("frontlight_intensity",
+                                              new_intensity)
     return NickelConf._write_kobo_conf(re_FrontLightLevel,
                                        front_light_level_str,
                                        new_intensity)
@@ -144,7 +143,9 @@ function NickelConf.frontLightState.set(new_state)
            "Wrong front light state value type (expect boolean)!")
     return NickelConf._write_kobo_conf(re_FrontLightState,
                                        front_light_state_str,
-                                       new_state)
+                                       new_state,
+                                       -- do not create this entry is missing
+                                       true)
 end
 
 return NickelConf

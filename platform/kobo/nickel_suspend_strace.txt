@@ -1,0 +1,91 @@
+## On the other hand, nickel doesn't seem to fare any better... when the suspend to ram fails, it spends its time doing this over and over:
+# strace -fitv -P /sys/power/state -P /sys/power/state-extended -P /sys/power/wakeup_count -p $(pidof nickel)
+
+strace: Process 4474 attached
+strace: Process 4475 attached
+[pid  4475] 19:38:43 [????????] +++ exited with 0 +++
+[pid  4474] 19:38:43 [2ab4c276] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=4475, si_uid=0, si_status=0, si_utime=1, si_stime=0} ---
+[pid  4474] 19:38:43 [????????] +++ exited with 0 +++
+[pid  3681] 19:38:43 [2f0d8386] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=4474, si_uid=0, si_status=0, si_utime=0, si_stime=2} ---
+[pid  3681] 19:38:46 [2f0d8386] open("/sys/power/wakeup_count", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 24
+[pid  3681] 19:38:46 [2f0d8386] fcntl64(24, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:46 [2f0d63a4] read(24, "3183\n", 16384) = 5
+[pid  3681] 19:38:46 [2f0d63a4] read(24, "", 16379) = 0
+[pid  3681] 19:38:46 [2f0d63a4] read(24, "", 4091) = 0
+[pid  3681] 19:38:46 [2f0d6454] close(24) = 0
+[pid  3681] 19:38:46 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:46 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:46.129858648, st_ctime=2016/02/29-19:38:46.129858648}) = 0
+[pid  3681] 19:38:46 [2f0d62f4] write(26, "1", 1) = 1
+[pid  3681] 19:38:46 [2f0d6454] close(26) = 0
+[pid  3681] 19:38:46 [2f0d8386] open("/sys/power/state", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:46 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=33, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:46.129858648, st_ctime=2016/02/29-19:38:46.129858648}) = 0
+[pid  3681] 19:38:46 [2f0d62f4] write(26, "mem", 3) = -1 EBUSY (Device or resource busy)
+[pid  3681] 19:38:46 [2f0d6454] close(26) = 0
+[pid  3681] 19:38:46 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:46 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:46 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:46.449974712, st_ctime=2016/02/29-19:38:46.449974712}) = 0
+[pid  3681] 19:38:46 [2f0d62f4] write(26, "0", 1) = 1
+[pid  3681] 19:38:46 [2f0d6454] close(26) = 0
+strace: Process 4478 attached
+strace: Process 4479 attached
+[pid  4479] 19:38:47 [????????] +++ exited with 0 +++
+[pid  4478] 19:38:47 [2ab4c276] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=4479, si_uid=0, si_status=0, si_utime=1, si_stime=0} ---
+[pid  4478] 19:38:47 [????????] +++ exited with 0 +++
+[pid  3681] 19:38:47 [2f0d8386] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=4478, si_uid=0, si_status=0, si_utime=1, si_stime=0} ---
+[pid  3681] 19:38:50 [2f0d8386] open("/sys/power/wakeup_count", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 24
+[pid  3681] 19:38:50 [2f0d8386] fcntl64(24, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:08:22.880008624, st_ctime=2016/02/29-19:08:22.880008624}) = 0
+[pid  3681] 19:38:50 [2f0d63a4] read(24, "3185\n", 16384) = 5
+[pid  3681] 19:38:50 [2f0d63a4] read(24, "", 16379) = 0
+[pid  3681] 19:38:50 [2f0d63a4] read(24, "", 4091) = 0
+[pid  3681] 19:38:50 [2f0d6454] close(24) = 0
+[pid  3681] 19:38:50 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:50 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:50.129984109, st_ctime=2016/02/29-19:38:50.129984109}) = 0
+[pid  3681] 19:38:50 [2f0d62f4] write(26, "1", 1) = 1
+[pid  3681] 19:38:50 [2f0d6454] close(26) = 0
+[pid  3681] 19:38:50 [2f0d8386] open("/sys/power/state", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:50 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=33, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:50.129984109, st_ctime=2016/02/29-19:38:50.129984109}) = 0
+[pid  3681] 19:38:50 [2f0d62f4] write(26, "mem", 3) = -1 EBUSY (Device or resource busy)
+[pid  3681] 19:38:50 [2f0d6454] close(26) = 0
+[pid  3681] 19:38:50 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 26
+[pid  3681] 19:38:50 [2f0d8386] fcntl64(26, F_SETFD, FD_CLOEXEC) = 0
+[pid  3681] 19:38:50 [2f232276] fstat64(26, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/02/29-18:18:37.514794262, st_mtime=2016/02/29-19:38:50.440016287, st_ctime=2016/02/29-19:38:50.440016287}) = 0
+[pid  3681] 19:38:50 [2f0d62f4] write(26, "0", 1) = 1
+[pid  3681] 19:38:50 [2f0d6454] close(26) = 0
+
+
+## Compared to a successful suspend/wakeup cycle:
+522   00:59:53 [2f0d8386] --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=1291, si_uid=0, si_status=0, si_utime=0, si_stime=1} ---
+522   00:59:54 [2f0d8386] open("/sys/power/wakeup_count", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 21
+522   00:59:54 [2f0d8386] fcntl64(21, F_SETFD, FD_CLOEXEC) = 0
+522   00:59:54 [2f232276] fstat64(21, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:52:55.478751029, st_mtime=2016/03/01-00:52:55.478751029, st_ctime=2016/03/01-00:52:55.478751029}) = 0
+522   00:59:54 [2f232276] fstat64(21, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:52:55.478751029, st_mtime=2016/03/01-00:52:55.478751029, st_ctime=2016/03/01-00:52:55.478751029}) = 0
+522   00:59:54 [2f232276] fstat64(21, {st_dev=makedev(0, 14), st_ino=36, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:52:55.478751029, st_mtime=2016/03/01-00:52:55.478751029, st_ctime=2016/03/01-00:52:55.478751029}) = 0
+522   00:59:54 [2f0d63a4] read(21, "93\n", 16384) = 3
+522   00:59:54 [2f0d63a4] read(21, "", 16381) = 0
+522   00:59:54 [2f0d63a4] read(21, "", 4093) = 0
+522   00:59:54 [2f0d6454] close(21)     = 0
+522   00:59:54 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 24
+522   00:59:54 [2f0d8386] fcntl64(24, F_SETFD, FD_CLOEXEC) = 0
+522   00:59:54 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:59:54.358750902, st_mtime=2016/03/01-00:59:54.358750902, st_ctime=2016/03/01-00:59:54.358750902}) = 0
+522   00:59:54 [2f0d62f4] write(24, "1", 1) = 1
+522   00:59:54 [2f0d6454] close(24)     = 0
+522   00:59:54 [2f0d8386] open("/sys/power/state", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 24
+522   00:59:54 [2f0d8386] fcntl64(24, F_SETFD, FD_CLOEXEC) = 0
+522   00:59:54 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=33, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:59:54.358750902, st_mtime=2016/03/01-00:59:54.358750902, st_ctime=2016/03/01-00:59:54.358750902}) = 0
+522   00:59:54 [2f0d62f4] write(24, "mem", 3) = 3
+522   01:00:27 [2f0d6454] close(24)     = 0
+522   01:00:27 [2f0d8386] open("/sys/power/state-extended", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0666) = 24
+522   01:00:27 [2f0d8386] fcntl64(24, F_SETFD, FD_CLOEXEC) = 0
+522   01:00:27 [2f232276] fstat64(24, {st_dev=makedev(0, 14), st_ino=38, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=0, st_size=4096, st_atime=2016/03/01-00:59:54.358750902, st_mtime=2016/03/01-01:00:27.398750985, st_ctime=2016/03/01-01:00:27.398750985}) = 0
+522   01:00:27 [2f0d62f4] write(24, "0", 1) = 1
+522   01:00:27 [2f0d6454] close(24)     = 0

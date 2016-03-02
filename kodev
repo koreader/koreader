@@ -130,7 +130,7 @@ ${SUPPORTED_TARGETS}"
             ;;
         android)
             make TARGET=android clean
-            rm *.apk
+            rm -f *.apk
             ;;
         pocketbook)
             make TARGET=pocketbook clean

@@ -143,6 +143,14 @@ end
 
 function Kobo:resume()
     os.execute("echo 0 > /sys/power/state-extended")
+    -- cf. #1862, I can reliably break IR touch input on resume...
+    if os.getenv("FROM_NICKEL") == "true" then
+        local f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
+        if f ~= nil then
+            io.close(f)
+            os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
+        end
+    end
 end
 
 -------------- device probe ------------
