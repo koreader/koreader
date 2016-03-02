@@ -59,7 +59,7 @@ bar=baz
 
             NickelConf._set_kobo_conf_path(fn)
             assert.Equals(NickelConf.frontLightLevel.get(), 20)
-            assert.Equals(NickelConf.frontLightState.get(), false)
+            assert.Equals(NickelConf.frontLightState.get(), nil)
 
             os.remove(fn)
         end)
@@ -83,7 +83,6 @@ FrontLightLevel=6
 FrontLightLevel=6
 [PowerOptions]
 FrontLightLevel=100
-FrontLightState=true
 ]])
             fd:close()
             os.remove(fn)
@@ -99,7 +98,6 @@ FrontLightState=true
             assert.Equals(fd:read("*a"), [[
 [PowerOptions]
 FrontLightLevel=20
-FrontLightState=false
 ]])
             fd:close()
             os.remove(fn)
@@ -153,14 +151,13 @@ bar=baz
             NickelConf.frontLightState.set(true)
 
             fd = io.open(fn, "r")
-            assert.Equals(fd:read("*a"), [[
+            assert.Equals([[
 [PowerOptions]
 foo=bar
 FrontLightLevel=1
-FrontLightState=true
 [OtherThing]
 bar=baz
-]])
+]], fd:read("*a"))
             fd:close()
             os.remove(fn)
         end)
@@ -178,7 +175,6 @@ bar=baz
             assert.Equals([[
 [PowerOptions]
 FrontLightLevel=15
-FrontLightState=false
 ]],
                           fd:read("*a"))
             fd:close()

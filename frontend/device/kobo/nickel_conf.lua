@@ -73,7 +73,7 @@ function NickelConf.frontLightState.get()
     return new_state
 end
 
-function NickelConf._write_kobo_conf(re_Match, key, value)
+function NickelConf._write_kobo_conf(re_Match, key, value, dont_create)
     local kobo_conf = io.open(kobo_conf_path, "r")
     local lines = {}
     local found = false
@@ -108,7 +108,7 @@ function NickelConf._write_kobo_conf(re_Match, key, value)
         kobo_conf:close()
     end
 
-    if not found then
+    if not found and dont_create ~= true then
         if not correct_section then
             lines[#lines + 1] = "[PowerOptions]"
         end
@@ -140,7 +140,9 @@ function NickelConf.frontLightState.set(new_state)
            "Wrong front light state value type (expect boolean)!")
     return NickelConf._write_kobo_conf(re_FrontLightState,
                                        front_light_state_str,
-                                       new_state)
+                                       new_state,
+                                       -- do not create this entry is missing
+                                       true)
 end
 
 return NickelConf
