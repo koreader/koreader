@@ -130,6 +130,9 @@ end
 function NickelConf.frontLightLevel.set(new_intensity)
     assert(new_intensity >= 0 and new_intensity <= 100,
            "Wrong brightness value given!")
+    -- Make sure we're in sync with KOReader on the config level, too
+    G_reader_settings:saveSetting("frontlight_intensity",
+                                              new_intensity)
     return NickelConf._write_kobo_conf(re_FrontLightLevel,
                                        front_light_level_str,
                                        new_intensity)
