@@ -55,6 +55,8 @@ end
 function KoboPowerD:setIntensityHW()
     if self.fl ~= nil then
         self.fl:setBrightness(self.fl_intensity)
+        -- Make sure we persist intensity config in reader setting
+        G_reader_settings:saveSetting("frontlight_intensity", new_intensity)
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
             NickelConf.frontLightLevel.set(self.fl_intensity)
         end
