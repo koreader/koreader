@@ -341,7 +341,7 @@ function ReaderUI:showReader(file)
         text = T( _("Opening file '%1'."), file),
         timeout = 0.1,
     })
-    UIManager:scheduleIn(0.1, function()
+    UIManager:nextTick(function()
         DEBUG("creating coroutine for showing reader")
         local co = coroutine.create(function()
             self:doShowReader(file)
@@ -350,7 +350,7 @@ function ReaderUI:showReader(file)
         if err ~= nil or ok == false then
             print '[!] doShowReader coroutine crashed:'
             print(debug.traceback(co, err, 1))
-            UIManager.quit()
+            UIManager:quit()
         end
     end)
 end
