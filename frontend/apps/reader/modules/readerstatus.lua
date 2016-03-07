@@ -1,5 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local StatusWidget = require("ui/widget/statuswidget")
+local BookStatusWidget = require("ui/widget/bookstatuswidget")
 
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -42,7 +42,7 @@ function ReaderStatus:addToMainMenu(tab_item_table)
 end
 
 function ReaderStatus:showStatus()
-    local status_page = StatusWidget:new {
+    local status_page = BookStatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
         document = self.document,
