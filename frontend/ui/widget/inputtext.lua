@@ -100,7 +100,7 @@ function InputText:initTextBox(text)
         text_widget,
     }
     self.dimen = self[1]:getSize()
-
+    -- FIXME: self.parent is not always in the widget statck (BookStatusWidget)
     UIManager:setDirty(self.parent, function()
         return "ui", self[1].dimen
     end)

@@ -516,7 +516,6 @@ function BookStatusWidget:getStatisticsSettings()
     end
 end
 
-
 function BookStatusWidget:onSwitchFocus(inputbox)
     self.note_dialog = InputDialog:new{
         title = "Note",
