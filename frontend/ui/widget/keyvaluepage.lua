@@ -77,6 +77,7 @@ function KeyValueTitle:init()
     else
         show_title_txt = self.title
     end
+    -- title and close button
     table.insert(self, OverlapGroup:new{
         dimen = { w = self.width },
         TextWidget:new{
@@ -85,12 +86,14 @@ function KeyValueTitle:init()
         },
         self.close_button,
     })
+    -- page count and separation line
     self.page_cnt = FrameContainer:new{
         padding = 4,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        overlap_offset = {0, -18},
+        -- overlap offset x will be updated in setPageCount method
+        overlap_offset = {0, -15},
         TextWidget:new{
             text = "",  -- page count
             fgcolor = Blitbuffer.COLOR_GREY,
@@ -117,8 +120,7 @@ function KeyValueTitle:setPageCount(curr, total)
         return
     end
     self.page_cnt[1]:setText(curr .. "/" .. total)
-    self.page_cnt.overlap_offset[1] = (self.width - self.page_cnt:getSize().w
-                                       - self.close_button:getSize().w)
+    self.page_cnt.overlap_offset[1] = (self.width - self.page_cnt:getSize().w - 10)
     self.title_bottom[2] = self.page_cnt
 end
 

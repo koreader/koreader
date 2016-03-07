@@ -126,7 +126,7 @@ function DictQuickLookup:update()
             text = self.dictionary,
             face = self.title_face,
             bold = true,
-            width = self.width - self.button_padding,
+            width = self.width,
         }
     }
     -- lookup word
@@ -218,7 +218,10 @@ function DictQuickLookup:update()
     }
 
     self.dict_bar = OverlapGroup:new{
-        dimen = {w = button_table:getSize().w, h = self.dict_title:getSize().h},
+        dimen = {
+            w = button_table:getSize().w + self.button_padding,
+            h = self.dict_title:getSize().h
+        },
         self.dict_title,
     }
 
