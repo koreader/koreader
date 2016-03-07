@@ -31,7 +31,7 @@ function CloseButton:init()
         text = "×",
         face = Font:getFace("cfont", 32),
     }
-    padding_span = HorizontalSpan:new{ width = Screen:scaleBySize(14) }
+    local padding_span = HorizontalSpan:new{ width = Screen:scaleBySize(14) }
 
     self[1] = FrameContainer:new{
         bordersize = 0,

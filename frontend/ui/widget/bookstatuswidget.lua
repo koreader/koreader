@@ -25,7 +25,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Screen = require("device").screen
 local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
-local RenderText = require("ui/rendertext")
 
 local template = require("ffi/util").template
 local util = require("util")
@@ -440,7 +439,7 @@ function BookStatusWidget:generateSwitchGroup(width)
     local current_status = self.summary.status
     local position = 2
     for k, v in pairs(args) do
-        if v == curent_status then
+        if v == current_status then
             position = k
         end
     end
