@@ -113,6 +113,25 @@ describe("UIManager spec", function()
         assert.are.same('quux', UIManager._task_queue[5].action)
     end)
 
+    it("should unschedule all the tasks with the same action", function()
+        local now = { util.gettime() }
+        local noop1 = function() end
+        UIManager:quit()
+        UIManager._task_queue = {
+            { time = {now[1] - 15, now[2] }, action = '3' },
+            { time = {now[1] - 10, now[2] }, action = '1' },
+            { time = {now[1], now[2] - 6 }, action = '3' },
+            { time = {now[1], now[2] - 5 }, action = '2' },
+            { time = now, action = '3' },
+        }
+        -- insert into the tail slot
+        UIManager:unschedule('3')
+        assert.are.same({
+            { time = {now[1] - 10, now[2] }, action = '1' },
+            { time = {now[1], now[2] - 5 }, action = '2' },
+        }, UIManager._task_queue)
+    end)
+
     it("should not have race between unschedule and _checkTasks", function()
         local now = { util.gettime() }
         local run_count = 0

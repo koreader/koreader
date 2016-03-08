@@ -309,7 +309,9 @@ OPTIONS:
     if [ ! -z $2 ]; then
         test_path="${test_path}/$2"
     fi
-    busted --lua=./luajit ${opts} -o ./spec/$1/unit/verbose_print --exclude-tags=notest ${test_path}
+    busted --lua=./luajit ${opts} \
+        -o ./spec/$1/unit/verbose_print \
+        --exclude-tags=notest ${test_path}
 
     popd
 }
