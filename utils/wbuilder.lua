@@ -340,36 +340,57 @@ local TestInputText = InputText:new{
 -----------------------------------------------------
 -- key value page
 -----------------------------------------------------
-local KeyValuePage = require("ui/widget/keyvaluepage")
-local kvp = KeyValuePage:new{
-    title = 'Statistics This is a very very log item whose length should exceed the width of the men',
-    kv_pairs = {
-        {"1 Current period", "00:00:00"},
-        {"This is a very very log item whose length should exceed the width of the menu.", "value"},
-        {"2 Time to read", "00:00:00 00:00:00 00:00:00 00:00:00"},
-        {"2 Time to read", "00:00:00"},
-        {"3 Time to read", "00:00:00"},
-        {"4 Time to read", "00:00:00"},
-        {"5 Time to read", "00:00:00"},
-        {"6 Time to read", "00:00:00"},
-        {"7 Time to read", "00:00:00"},
-        {"8 Time to read", "00:00:00"},
-        {"9 Time to read", "00:00:00"},
-        {"10 Time to read", "00:00:00"},
-        {"11 Time to read", "00:00:00"},
-        "----------------------------",
-        {"12 Time to read", "00:00:00"},
-        {"13 Time to read", "00:00:00"},
-        {"14 Time to read", "00:00:00"},
-        {"15 Time to read", "00:00:00"},
-        {"16 Time to read", "00:00:00"},
-        {"17 Time to read", "00:00:00"},
-        {"18 Time to read", "00:00:00"},
-        {"19 Time to read", "00:00:00"},
-        {"20 Time to read", "00:00:00"},
-        {"21 Time to read", "00:00:00"},
-    },
-}
+function testKeyValuePage()
+    local KeyValuePage = require("ui/widget/keyvaluepage")
+    local kvp = KeyValuePage:new{
+        title = 'Statistics This is a very very log item whose length should exceed the width of the men',
+        kv_pairs = {
+            {"1 Current period", "00:00:00"},
+            {"This is a very very log item whose length should exceed the width of the menu.", "value"},
+            {"2 Time to read", "00:00:00 00:00:00 00:00:00 00:00:00"},
+            {"2 Time to read", "00:00:00"},
+            {"3 Time to read", "00:00:00"},
+            {"4 Time to read", "00:00:00"},
+            {"5 Time to read", "00:00:00"},
+            {"6 Time to read", "00:00:00"},
+            {"7 Time to read", "00:00:00"},
+            {"8 Time to read", "00:00:00"},
+            {"9 Time to read", "00:00:00"},
+            {"10 Time to read", "00:00:00"},
+            {"11 Time to read", "00:00:00"},
+            "----------------------------",
+            {"12 Time to read", "00:00:00"},
+            {"13 Time to read", "00:00:00"},
+            {"14 Time to read", "00:00:00"},
+            {"15 Time to read", "00:00:00"},
+            {"16 Time to read", "00:00:00"},
+            {"17 Time to read", "00:00:00"},
+            {"18 Time to read", "00:00:00"},
+            {"19 Time to read", "00:00:00"},
+            {"20 Time to read", "00:00:00"},
+            {"21 Time to read", "00:00:00"},
+        },
+    }
+    UIManager:show(kvp)
+end
+
+function testBookStatus()
+    -- doc = DocumentRegistry:openDocument("spec/front/unit/data/juliet.epub")
+    doc = DocumentRegistry:openDocument("spec/front/unit/data/2col.pdf")
+    reader = ReaderUI:new{
+        dialog = readerwindow,
+        dimen = Geom:new{ w = Screen:getWidth() - 100, h = Screen:getHeight() - 100 },
+        document = doc
+    }
+
+    local status_page = require("ui/widget/bookstatuswidget"):new {
+        thumbnail = doc:getCoverPageImage(),
+        props = doc:getProps(),
+        document = doc,
+        view = reader.view,
+    }
+    UIManager:show(status_page)
+end
 
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
@@ -385,6 +406,7 @@ UIManager:show(Clock:new())
 --UIManager:show(keyboard)
 --UIManager:show(TestInputText)
 --TestInputText:onShowKeyboard()
---UIManager:show(kvp)
+-- testKeyValuePage()
+testBookStatus()
 
 UIManager:run()

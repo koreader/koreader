@@ -171,12 +171,6 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     }, true)
-    -- history view
-    self:registerModule("history", FileManagerHistory:new{
-        dialog = self.dialog,
-        menu = self.menu,
-        ui = self,
-    })
     -- frontlight controller
     if Device:hasFrontlight() then
         self:registerModule("frontlight", ReaderFrontLight:new{
@@ -297,13 +291,17 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     })
-
+    -- book status
     self:registerModule("status", ReaderStatus:new{
         ui = self,
         document = self.document,
         view = self.view,
     })
-
+    -- history view
+    self:registerModule("history", FileManagerHistory:new{
+        dialog = self.dialog,
+        ui = self,
+    })
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
         DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)

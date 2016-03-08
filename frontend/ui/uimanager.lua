@@ -227,9 +227,7 @@ end
 -- UIManager:unschedule(self.anonymousFunction)
 function UIManager:unschedule(action)
     for i = #self._task_queue, 1, -1 do
-        local task = self._task_queue[i]
-        if task.action == action then
-            -- remove from table
+        if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
         end
     end

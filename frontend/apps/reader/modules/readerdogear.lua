@@ -18,6 +18,11 @@ function ReaderDogear:init()
         dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
         widget,
     }
+    self:resetLayout()
+end
+
+function ReaderDogear:resetLayout()
+    self[1].dimen.w = Screen:getWidth()
     if Device:isTouchDevice() then
         self.ges_events = {
             Tap = {

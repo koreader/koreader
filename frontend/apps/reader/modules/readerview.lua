@@ -113,7 +113,7 @@ end
 
 function ReaderView:resetLayout()
     for i, widget in ipairs(self) do
-        widget:init()
+        widget:resetLayout()
     end
 end
 

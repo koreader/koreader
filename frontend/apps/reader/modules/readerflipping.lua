@@ -19,6 +19,11 @@ function ReaderFlipping:init()
         dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
         widget,
     }
+    self:resetLayout()
+end
+
+function ReaderFlipping:resetLayout()
+    self[1].dimen.w = Screen:getWidth()
     if Device:isTouchDevice() then
         self.ges_events = {
             Tap = {

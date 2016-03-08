@@ -39,6 +39,7 @@ function GestureRange:match(gs)
             return false
         end
     end
+
     if self.rate then
         -- This filed restraints the upper limit rate(matches per second).
         -- It's most useful for e-ink devices with less powerfull CPUs and

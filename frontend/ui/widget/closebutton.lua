@@ -14,8 +14,11 @@ Example:
 
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
+local Screen = require("device").screen
 local Font = require("ui/font")
 
 local CloseButton = InputContainer:new{
@@ -28,18 +31,24 @@ function CloseButton:init()
         text = "×",
         face = Font:getFace("cfont", 32),
     }
+    local padding_span = HorizontalSpan:new{ width = Screen:scaleBySize(14) }
+
     self[1] = FrameContainer:new{
         bordersize = 0,
         padding = 0,
-        text_widget
+        HorizontalGroup:new{
+            padding_span,
+            text_widget,
+            padding_span,
+        }
     }
-
-    self.dimen = text_widget:getSize()
 
     self.ges_events.Close = {
         GestureRange:new{
             ges = "tap",
-            range = self.dimen,
+            -- x and y coordinates for the widget is only known after the it is
+            -- drawn. so use callback to get range at runtime.
+            range = function() return self.dimen end,
         },
         doc = "Tap on close button",
     }

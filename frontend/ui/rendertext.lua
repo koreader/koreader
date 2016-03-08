@@ -134,7 +134,7 @@ end
 --- Measure rendered size for a given text.
 --
 -- Note this function does not render the text into a bitmap. Use it if you
--- only care about the size for the rendered result.
+-- only need the estimated size information.
 --
 -- @int x start position for a given text (within maximum width)
 -- @int width maximum rendering width in pixels (think of it as size of the bitmap)
@@ -170,13 +170,27 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
 
     --- RenderText size information
     -- @table RenderTextSize
-    -- @field x length of the text on x coordinates
-    -- @field y_top top offset for the text (relative to center of the text)
-    -- @field y_bottom bottom offset for the text (relative to center of the text)
+    -- @field x length of the text on x coordinate
+    -- @field y_top distance between top-most pixel (scanline) and baseline
+    -- (bearingY)
+    -- @field y_bottom distance between bottom-most pixel (scanline) and
+    -- baseline (height - y_top)
     return { x = pen_x, y_top = pen_y_top, y_bottom = pen_y_bottom }
 end
 
-function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgcolor, width)
+--- Render a given text into a given BlitBuffer
+--
+-- @tparam BlitBuffer dest_bb Buffer to blit into
+-- @int x starting x coordinate position within dest_bb
+-- @int baseline y coordinate for baseline, within dest_bb
+-- @tparam ui.font.FontFaceObj face font face that will be used for rendering
+-- @string text text to render
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @tparam[opt=BlitBuffer.COLOR_BLACK] BlitBuffer.COLOR fgcolor foreground color
+-- @int[opt=nil] width maximum rendering width
+-- @return int width of rendered bitmap
+function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bold, fgcolor, width)
     if not text then
         DEBUG("renderUtf8Text called without text");
         return 0
@@ -190,7 +204,7 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgco
     -- see: http://freetype.org/freetype2/docs/glyphs/glyphs-4.html
     local pen_x = 0
     local prevcharcode = 0
-    local text_width = buffer:getWidth() - x
+    local text_width = dest_bb:getWidth() - x
     if width and width < text_width then
         text_width = width
     end
@@ -200,9 +214,10 @@ function RenderText:renderUtf8Text(buffer, x, y, face, text, kerning, bold, fgco
             if kerning and (prevcharcode ~= 0) then
                 pen_x = pen_x + face.ftface:getKerning(prevcharcode, charcode)
             end
-            buffer:colorblitFrom(
+            dest_bb:colorblitFrom(
                 glyph.bb,
-                x + pen_x + glyph.l, y - glyph.t,
+                x + pen_x + glyph.l,
+                baseline - glyph.t,
                 0, 0,
                 glyph.bb:getWidth(), glyph.bb:getHeight(),
                 fgcolor)

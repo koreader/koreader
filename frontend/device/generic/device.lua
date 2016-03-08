@@ -128,25 +128,25 @@ function Device:onPowerEvent(ev)
         UIManager:scheduleIn(10, self.suspend)
     elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
         DEBUG("Resuming...")
-        self:resume()
-        -- restore to previous rotation mode
-        self.screen:setRotationMode(self.orig_rotation_mode)
         local UIManager = require("ui/uimanager")
         UIManager:unschedule(self.suspend)
+        self:resume()
+        Screensaver:close()
+        -- restore to previous rotation mode
+        self.screen:setRotationMode(self.orig_rotation_mode)
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
         self.screen_saver_mode = false
         self.powerd:refreshCapacity()
-        Screensaver:close()
         self.powerd:afterResume()
     end
 end
 
--- Hardware function to suspend the device
+-- Hardware specific method to suspend the device
 function Device:suspend() end
 
--- Hardware function to resume the device
+-- Hardware specific method to resume the device
 function Device:resume() end
 
 function Device:usbPlugIn()

@@ -85,7 +85,7 @@ function ReaderFooter:init()
         text = text_default,
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
-    local text_width = self.progress_text:getSize().w
+    self.text_width = self.progress_text:getSize().w
     local ticks_candidates = {}
     if self.ui.toc and self.settings.toc_markers then
         local max_level = self.ui.toc:getMaxDepth()
@@ -99,40 +99,67 @@ function ReaderFooter:init()
         table.sort(ticks_candidates, function(a, b) return #a > #b end)
     end
     self.progress_bar = ProgressWidget:new{
-        width = math.floor(Screen:getWidth() - text_width - self.padding),
+        width = nil,  -- width will be updated in self:resetLayout()
         height = self.bar_height,
         percentage = self.progress_percentage,
         ticks = ticks_candidates[1] or {},
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         last = self.pages,
     }
-    local horizontal_group = HorizontalGroup:new{}
-    local bar_container = RightContainer:new{
-        dimen = Geom:new{ w = Screen:getWidth() - text_width, h = self.height },
+    self.horizontal_group = HorizontalGroup:new{}
+    self.bar_container = RightContainer:new{
+        dimen = Geom:new{ w = Screen:getWidth() - self.text_width, h = self.height },
         self.progress_bar,
     }
     local text_container = CenterContainer:new{
-        dimen = Geom:new{ w = text_width, h = self.height },
+        dimen = Geom:new{ w = self.text_width, h = self.height },
         self.progress_text,
     }
     if self.settings.progress_bar then
-        table.insert(horizontal_group, bar_container)
+        table.insert(self.horizontal_group, self.bar_container)
     end
-    table.insert(horizontal_group, text_container)
+    table.insert(self.horizontal_group, text_container)
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
         BottomContainer:new{
             dimen = Geom:new{w = Screen:getWidth(), h = self.height*2},
             FrameContainer:new{
-                horizontal_group,
+                self.horizontal_group,
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = 0,
                 padding = 0,
             }
         }
     }
-    self.dimen = self[1]:getSize()
     self:updateFooterPage()
+
+    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    self:applyFooterMode()
+    self:resetLayout()
+
+    if self.settings.auto_refresh_time then
+        if not self.autoRefreshTime then
+            self.autoRefreshTime = function()
+                self:updateFooterPage()
+                UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+                UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+            end
+        end
+        self.onCloseDocument = function()
+            UIManager:unschedule(self.autoRefreshTime)
+        end
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+    end
+end
+
+function ReaderFooter:resetLayout()
+    self.progress_bar.width = math.floor(Screen:getWidth() - self.text_width - self.padding)
+    self.horizontal_group:resetLayout()
+    self.bar_container.dimen.w = Screen:getWidth() - self.text_width
+    self[1].dimen = Screen:getSize()
+    self[1][1].dimen.w = Screen:getWidth()
+    self.dimen = self[1]:getSize()
+
     local range = Geom:new{
         x = Screen:getWidth()*DTAP_ZONE_MINIBAR.x,
         y = Screen:getHeight()*DTAP_ZONE_MINIBAR.y,
@@ -154,19 +181,6 @@ function ReaderFooter:init()
                 },
             },
         }
-    end
-    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
-    self:applyFooterMode()
-    if self.settings.auto_refresh_time then
-        self.autoRefreshTime = function()
-            self:updateFooterPage()
-            UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
-        end
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
-        self.onCloseDocument = function()
-            UIManager:unschedule(self.autoRefreshTime)
-        end
     end
 end
 
@@ -294,7 +308,7 @@ function ReaderFooter:updateFooterPage()
         if self.settings.chapter_time_to_read then
             table.insert(info, self:getChapterTimeToRead())
         end
-        self.progress_text.text = table.concat(info, " | ")
+        self.progress_text:setText(table.concat(info, " | "))
     else
         local info = ""
         if self.mode == 1 then
@@ -312,7 +326,7 @@ function ReaderFooter:updateFooterPage()
         elseif self.mode == 7 then
             info = self:getChapterTimeToRead()
         end
-        self.progress_text.text = info
+        self.progress_text:setText(info)
     end
 end
 

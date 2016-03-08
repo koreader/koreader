@@ -1,5 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local StatusWidget = require("ui/widget/statuswidget")
+local BookStatusWidget = require("ui/widget/bookstatuswidget")
 
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -20,29 +20,27 @@ function ReaderStatus:init()
     if self.ui.document.is_djvu or self.ui.document.is_pic then
         self.enabled = false
         return
-    end
-    -- register event listener if enabled
-    self.onEndOfBook = function()
-        self:showStatus()
-    end
-    self.total_pages = self.document:getPageCount()
-    self.ui:registerPostInitCallback(function()
+    else
+        self.total_pages = self.document:getPageCount()
         self.ui.menu:registerToMainMenu(self)
-    end)
+        -- register event listener if enabled
+        self.onEndOfBook = function()
+            self:showStatus()
+        end
+    end
 end
 
 function ReaderStatus:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.typeset, {
-        text = _("Status"),
+    table.insert(tab_item_table.info, {
+        text = _("Book status"),
         callback = function()
             self:showStatus()
-            UIManager:setDirty("all")
         end,
     })
 end
 
 function ReaderStatus:showStatus()
-    local status_page = StatusWidget:new {
+    local status_page = BookStatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
         document = self.document,

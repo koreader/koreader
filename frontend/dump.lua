@@ -49,7 +49,7 @@ local function _serialize(what, outt, indent, max_lv, history)
     elseif type(what) == "number" then
         if isUbuntuTouch then
             -- FIXME: the `SDL_CreateRenderer` function in Ubuntu touch somehow
-            -- use a strange locale that formats number like this: 1.10000000000000g+02 
+            -- use a strange locale that formats number like this: 1.10000000000000g+02
             -- which cannot be recognized by loadfile after the number is dumped.
             -- Here the workaround is to preserve enough precision in "%.13e" format.
             insert(outt, string.format("%.13e", what))
@@ -59,7 +59,7 @@ local function _serialize(what, outt, indent, max_lv, history)
     elseif type(what) == "boolean" then
         insert(outt, tostring(what))
     elseif type(what) == "function" then
-        insert(outt, "nil --[[ FUNCTION ]]")
+        insert(outt, tostring(what))
     elseif type(what) == "nil" then
         insert(outt, "nil")
     end
