@@ -31,6 +31,7 @@ if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
     cp -r doc/html/* koreader_doc/
     pushd koreader_doc
 
+    git add .
     echo -e "\n${ANSI_GREEN}Pusing document update..."
     git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
         commit -a --amend -m 'Automated documentation build from travis-ci.'
