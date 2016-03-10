@@ -63,7 +63,7 @@ end
 
 function NetworkMgr:promptWifiOn()
     UIManager:show(ConfirmBox:new{
-        text = _("Do you want to turn on Wifi?"),
+        text = _("Do you want to turn on Wi-Fi?"),
         ok_callback = function()
             self:turnOnWifi()
         end,
@@ -72,7 +72,7 @@ end
 
 function NetworkMgr:promptWifiOff()
     UIManager:show(ConfirmBox:new{
-        text = _("Do you want to turn off Wifi?"),
+        text = _("Do you want to turn off Wi-Fi?"),
         ok_callback = function()
             self:turnOffWifi()
         end,
@@ -97,7 +97,7 @@ end
 
 function NetworkMgr:getWifiMenuTable()
     return {
-        text = _("Wifi connection"),
+        text = _("Wi-Fi connection"),
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:getWifiStatus() end,
         callback = function()
