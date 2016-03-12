@@ -53,6 +53,16 @@ function ReaderFooter:init()
         book_time_to_read = true,
         chapter_time_to_read = true,
     }
+    if self.settings.disabled then
+        self.resetLayout = function() end
+        self.onCloseDocument = function() end
+        self.onPageUpdate = function() end
+        self.onPosUpdate = function() end
+        self.onUpdatePos = function() end
+        self.onSetStatusLine = function() end
+        return
+    end
+
     self.progress_text = TextWidget:new{
         text = '',
         face = Font:getFace(self.text_font_face, self.text_font_size),

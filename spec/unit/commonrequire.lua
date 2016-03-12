@@ -3,6 +3,8 @@ package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" ..
 package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
 -- global reader settings
+local DataStorage = require("datastorage")
+os.remove(DataStorage:getDataDir().."/settings.reader.lua")
 local DocSettings = require("docsettings")
 G_reader_settings = DocSettings:open(".reader")
 
