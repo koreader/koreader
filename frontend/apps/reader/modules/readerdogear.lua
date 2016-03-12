@@ -22,17 +22,22 @@ function ReaderDogear:init()
 end
 
 function ReaderDogear:resetLayout()
-    self[1].dimen.w = Screen:getWidth()
+    local new_screen_width = Screen:getWidth()
+    if new_screen_width == self._last_screen_width then return end
+    local new_screen_height = Screen:getHeight()
+    self._last_screen_width = new_screen_width
+
+    self[1].dimen.w = new_screen_width
     if Device:isTouchDevice() then
         self.ges_events = {
             Tap = {
                 GestureRange:new{
                     ges = "tap",
                     range = Geom:new{
-                        x = Screen:getWidth()*DTAP_ZONE_BOOKMARK.x,
-                        y = Screen:getHeight()*DTAP_ZONE_BOOKMARK.y,
-                        w = Screen:getWidth()*DTAP_ZONE_BOOKMARK.w,
-                        h = Screen:getHeight()*DTAP_ZONE_BOOKMARK.h
+                        x = new_screen_width*DTAP_ZONE_BOOKMARK.x,
+                        y = new_screen_height*DTAP_ZONE_BOOKMARK.y,
+                        w = new_screen_width*DTAP_ZONE_BOOKMARK.w,
+                        h = new_screen_height*DTAP_ZONE_BOOKMARK.h
                     }
                 }
             },
@@ -40,10 +45,10 @@ function ReaderDogear:resetLayout()
                 GestureRange:new{
                     ges = "hold",
                     range = Geom:new{
-                        x = Screen:getWidth()*DTAP_ZONE_BOOKMARK.x,
-                        y = Screen:getHeight()*DTAP_ZONE_BOOKMARK.y,
-                        w = Screen:getWidth()*DTAP_ZONE_BOOKMARK.w,
-                        h = Screen:getHeight()*DTAP_ZONE_BOOKMARK.h
+                        x = new_screen_width*DTAP_ZONE_BOOKMARK.x,
+                        y = new_screen_height*DTAP_ZONE_BOOKMARK.y,
+                        w = new_screen_width*DTAP_ZONE_BOOKMARK.w,
+                        h = new_screen_height*DTAP_ZONE_BOOKMARK.h
                     }
                 }
             }
