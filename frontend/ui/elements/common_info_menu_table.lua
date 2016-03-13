@@ -5,7 +5,8 @@ local _ = require("gettext")
 
 local common_info = {}
 
-if Device:isKindle() or Device:isKobo() or Device:isPocketBook() then
+if Device:isKindle() or Device:isKobo() or Device:isPocketBook()
+    or Device:isAndroid() then
     local OTAManager = require("ui/otamanager")
     table.insert(common_info, OTAManager:getOTAMenuTable())
 end
