@@ -29,11 +29,27 @@ local file = A.jni:context(A.app.activity.vm, function(JNI)
 end)
 A.LOGI("intent file path " .. (file or ""))
 
+-- update koreader from ota
+local function update()
+    local new_update = "/sdcard/koreader/ota/koreader.update.tar"
+    local installed = "/sdcard/koreader/ota/koreader.installed.tar"
+    local update_file = io.open(new_update, "r")
+    if update_file ~= nil then
+        io.close(update_file)
+        if os.execute("tar xf " .. new_update) == 0 then
+            os.execute("mv " .. new_update .. " " .. installed)
+        end
+    end
+
+end
+
 -- run koreader patch before koreader startup
 pcall(function() dofile("/sdcard/koreader/patch.lua") end)
 
 -- set proper permission for sdcv
 A.execute("chmod", "755", "./sdcv")
+A.execute("chmod", "755", "./tar")
+A.execute("chmod", "755", "./zsync")
 
 -- set TESSDATA_PREFIX env var
 ffi.C.putenv("TESSDATA_PREFIX=/sdcard/koreader/data")

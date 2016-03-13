@@ -25,9 +25,9 @@ local OTAManager = {
         "nightly",
     },
     zsync_template = "koreader-%s-latest-%s.zsync",
-    installed_package = ota_dir .. "/koreader.installed.tar",
+    installed_package = ota_dir .. "koreader.installed.tar",
     package_indexfile = "ota/package.index",
-    updated_package = ota_dir .. "/koreader.updated.tar",
+    updated_package = ota_dir .. "koreader.updated.tar",
 }
 
 local ota_channels = {
@@ -42,6 +42,8 @@ function OTAManager:getOTAModel()
         return "kobo"
     elseif Device:isPocketBook() then
         return "pocketbook"
+    elseif Device:isAndroid() then
+        return "android"
     else
         return ""
     end
@@ -152,7 +154,7 @@ function OTAManager:fetchAndProcessUpdate()
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
                             ok_callback = function()
-                                os.execute("rm " .. ota_dir .. "/ko*")
+                                os.execute("rm " .. ota_dir .. "ko*")
                             end,
                         })
                     end
@@ -164,13 +166,19 @@ end
 
 function OTAManager:_buildLocalPackage()
     -- TODO: validate the installed package?
-    local installed_package = lfs.currentdir() .. "/" .. self.installed_package
+    local installed_package = self.installed_package
     if lfs.attributes(installed_package, "mode") == "file" then
         return 0
     end
-    return os.execute(string.format(
-        "./tar cvf %s -C .. -T %s --no-recursion",
-        self.installed_package, self.package_indexfile))
+    if Device:isAndroid() then
+        return os.execute(string.format(
+            "./tar cvf %s -T %s --no-recursion",
+            self.installed_package, self.package_indexfile))
+    else
+        return os.execute(string.format(
+            "./tar cvf %s -C .. -T %s --no-recursion",
+            self.installed_package, self.package_indexfile))
+    end
 end
 
 function OTAManager:zsync()

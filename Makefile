@@ -277,6 +277,22 @@ utupdate: all
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
 	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
+	# create zip package
+	cd $(INSTALL_DIR)/koreader && \
+		zip -9 -r \
+			../../koreader-android-$(MACHINE)-$(VERSION).zip \
+			* -x "resources/fonts/*" "resources/icons/src/*" "spec/*"
+	# generate android update package index file
+	zipinfo -1 koreader-android-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	rm -f koreader-android-$(MACHINE)-$(VERSION).zip
+	echo "ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	cp $(INSTALL_DIR)/koreader/git-rev $(INSTALL_DIR)/koreader/ota-rev
+	# make gzip android update for zsync OTA update
+	cd $(INSTALL_DIR)/koreader && \
+		tar czafh ../../koreader-android-$(MACHINE)-$(VERSION).targz \
+		-T ota/package.index --no-recursion
+	# make android update apk
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
