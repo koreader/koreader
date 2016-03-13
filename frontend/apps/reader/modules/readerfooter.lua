@@ -1,10 +1,10 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
 local Blitbuffer = require("ffi/blitbuffer")
@@ -31,7 +31,8 @@ local ReaderFooter = InputContainer:new{
     text_font_size = DMINIBAR_FONT_SIZE,
     bar_height = Screen:scaleBySize(DMINIBAR_HEIGHT),
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
-    padding = Screen:scaleBySize(10),
+    horizontal_margin = Screen:scaleBySize(10),
+    text_left_margin = Screen:scaleBySize(10),
     settings = {},
 }
 
@@ -52,40 +53,22 @@ function ReaderFooter:init()
         book_time_to_read = true,
         chapter_time_to_read = true,
     }
-    local text_default
-    if self.settings.all_at_once then
-        local info = {}
-        if self.settings.battery then
-            table.insert(info, "B:100%")
-        end
-        if self.settings.time then
-            table.insert(info, "WW:WW")
-        end
-        if self.settings.page_progress then
-            table.insert(info, "0000 / 0000")
-        end
-        if self.settings.pages_left then
-            table.insert(info, "=> 000")
-        end
-        if self.settings.percentage then
-            table.insert(info, "R:100%")
-        end
-        if self.settings.book_time_to_read then
-            table.insert(info, "TB: 00:00")
-        end
-        if self.settings.chapter_time_to_read then
-            table.insert(info, "TC: 00:00")
-        end
-        text_default = table.concat(info, " | ")
-    else
-        text_default = string.format(" %d / %d ", self.pages, self.pages)
+    if self.settings.disabled then
+        self.resetLayout = function() end
+        self.onCloseDocument = function() end
+        self.onPageUpdate = function() end
+        self.onPosUpdate = function() end
+        self.onUpdatePos = function() end
+        self.onSetStatusLine = function() end
+        return
     end
 
     self.progress_text = TextWidget:new{
-        text = text_default,
+        text = '',
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
-    self.text_width = self.progress_text:getSize().w
+    self.text_width = self.progress_text:getSize().w + self.text_left_margin
+    self:applyFooterMode()
     local ticks_candidates = {}
     if self.ui.toc and self.settings.toc_markers then
         local max_level = self.ui.toc:getMaxDepth()
@@ -106,23 +89,22 @@ function ReaderFooter:init()
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         last = self.pages,
     }
-    self.horizontal_group = HorizontalGroup:new{}
-    self.bar_container = RightContainer:new{
-        dimen = Geom:new{ w = Screen:getWidth() - self.text_width, h = self.height },
-        self.progress_bar,
-    }
-    local text_container = CenterContainer:new{
-        dimen = Geom:new{ w = self.text_width, h = self.height },
+    local margin_span = HorizontalSpan:new{width=self.horizontal_margin}
+    local screen_width = Screen:getWidth()
+    self.horizontal_group = HorizontalGroup:new{margin_span}
+    self.text_container = RightContainer:new{
+        dimen = Geom:new{w = self.text_width, h = self.height},
         self.progress_text,
     }
     if self.settings.progress_bar then
-        table.insert(self.horizontal_group, self.bar_container)
+        table.insert(self.horizontal_group, self.progress_bar)
     end
-    table.insert(self.horizontal_group, text_container)
+    table.insert(self.horizontal_group, self.text_container)
+    table.insert(self.horizontal_group, margin_span)
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
         BottomContainer:new{
-            dimen = Geom:new{w = Screen:getWidth(), h = self.height*2},
+            dimen = Geom:new{w = screen_width, h = self.height*2},
             FrameContainer:new{
                 self.horizontal_group,
                 background = Blitbuffer.COLOR_WHITE,
@@ -131,17 +113,14 @@ function ReaderFooter:init()
             }
         }
     }
-    self:updateFooterPage()
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
-    self:applyFooterMode()
     self:resetLayout()
 
     if self.settings.auto_refresh_time then
         if not self.autoRefreshTime then
             self.autoRefreshTime = function()
-                self:updateFooterPage()
-                UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+                self:updateFooter()
                 UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
             end
         end
@@ -152,19 +131,25 @@ function ReaderFooter:init()
     end
 end
 
+-- call this method whenever the screen size changed
 function ReaderFooter:resetLayout()
-    self.progress_bar.width = math.floor(Screen:getWidth() - self.text_width - self.padding)
+    local new_screen_width = Screen:getWidth()
+    if new_screen_width == self._saved_screen_width then return end
+    local new_screen_height = Screen:getHeight()
+
+    self.progress_bar.width = math.floor(new_screen_width - self.text_width - self.horizontal_margin*2)
     self.horizontal_group:resetLayout()
-    self.bar_container.dimen.w = Screen:getWidth() - self.text_width
-    self[1].dimen = Screen:getSize()
-    self[1][1].dimen.w = Screen:getWidth()
+    self[1].dimen.w = new_screen_width
+    self[1].dimen.h = new_screen_height
+    self[1][1].dimen.w = new_screen_width
     self.dimen = self[1]:getSize()
 
+    self._saved_screen_width = new_screen_width
     local range = Geom:new{
-        x = Screen:getWidth()*DTAP_ZONE_MINIBAR.x,
-        y = Screen:getHeight()*DTAP_ZONE_MINIBAR.y,
-        w = Screen:getWidth()*DTAP_ZONE_MINIBAR.w,
-        h = Screen:getHeight()*DTAP_ZONE_MINIBAR.h
+        x = new_screen_width*DTAP_ZONE_MINIBAR.x,
+        y = new_screen_height*DTAP_ZONE_MINIBAR.y,
+        w = new_screen_width*DTAP_ZONE_MINIBAR.w,
+        h = new_screen_height*DTAP_ZONE_MINIBAR.h
     }
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -211,7 +196,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             callback = function()
                 self.settings[option] = not self.settings[option]
                 G_reader_settings:saveSetting("footer", self.settings)
-                self:init()
+                self:updateFooter()
                 UIManager:setDirty("all", "partial")
             end,
         }
@@ -244,7 +229,11 @@ function ReaderFooter:getTimeInfo()
 end
 
 function ReaderFooter:getProgressInfo()
-    return string.format("%d / %d", self.pageno, self.pages)
+    if self.pageno then
+        return string.format("%d / %d", self.pageno, self.pages)
+    else
+        return string.format("%d / %d", self.position, self.doc_height)
+    end
 end
 
 function ReaderFooter:getNextChapterInfo()
@@ -282,9 +271,27 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
+function ReaderFooter:updateFooter()
+    if self.pageno then
+        self:updateFooterPage()
+    else
+        self:updateFooterPos()
+    end
+end
+
 function ReaderFooter:updateFooterPage()
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
+    self:updateFooterText()
+end
+
+function ReaderFooter:updateFooterPos()
+    if type(self.position) ~= "number" then return end
+    self.progress_bar.percentage = self.position / self.doc_height
+    self:updateFooterText()
+end
+
+function ReaderFooter:updateFooterText()
     if self.settings.all_at_once then
         local info = {}
         if self.settings.battery then
@@ -328,18 +335,12 @@ function ReaderFooter:updateFooterPage()
         end
         self.progress_text:setText(info)
     end
-end
-
-function ReaderFooter:updateFooterPos()
-    if type(self.position) ~= "number" then return end
-    self.progress_bar.percentage = self.position / self.doc_height
-
-    if self.show_time then
-        self.progress_text.text = self:getTimeInfo()
-    else
-        local percentage = self.progress_bar.percentage
-        self.progress_text.text = string.format("%1.f", percentage*100) .. "%"
-    end
+    self.text_width = self.progress_text:getSize().w + self.text_left_margin
+    self.progress_bar.width = math.floor(
+        self._saved_screen_width - self.text_width - self.horizontal_margin*2)
+    self.text_container.dimen.w = self.text_width
+    self.horizontal_group:resetLayout()
+    UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
@@ -355,8 +356,9 @@ function ReaderFooter:onPosUpdate(pos)
 end
 
 -- recalculate footer sizes when document page count is updated
+-- see documentation for more info about this event.
 function ReaderFooter:onUpdatePos()
-    UIManager:scheduleIn(0.1, function() self:init() end)
+    self:updateFooter()
 end
 
 function ReaderFooter:applyFooterMode(mode)
@@ -424,12 +426,7 @@ function ReaderFooter:onTapFooter(arg, ges)
         self:applyFooterMode()
         G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     end
-    if self.pageno then
-        self:updateFooterPage()
-    else
-        self:updateFooterPos()
-    end
-    UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+    self:updateFooter()
     return true
 end
 
