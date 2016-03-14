@@ -76,32 +76,31 @@ function BookStatusWidget:init()
         enabled = true,
         show_parent = self,
     }
-
-    local statusContainer = FrameContainer:new{
-        dimen = Screen:getSize(),
+    local screen_size = Screen:getSize()
+    self[1] = FrameContainer:new{
+        width = screen_size.w,
+        height = screen_size.h,
         background = Blitbuffer.COLOR_WHITE,
         bordersize = 0,
         padding = 0,
-        self:showStatus(),
+        self:getStatusContent(screen_size.w),
     }
-    self[1] = statusContainer
 end
 
-function BookStatusWidget:showStatus()
-    local screen_width = Screen:getWidth()
+function BookStatusWidget:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = screen_width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
             CloseButton:new{ window = self },
         },
         self:genBookInfoGroup(),
         self:genHeader(_("Statistics")),
-        self:genStatisticsGroup(screen_width),
+        self:genStatisticsGroup(width),
         self:genHeader(_("Review")),
-        self:genSummaryGroup(screen_width),
+        self:genSummaryGroup(width),
         self:genHeader(_("Update Status")),
-        self:generateSwitchGroup(screen_width),
+        self:generateSwitchGroup(width),
     }
 end
 
