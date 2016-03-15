@@ -29,6 +29,7 @@ export EXT_FONT_DIR="/mnt/onboard/fonts"
 
 # fast and dirty way of check if we are called from nickel
 # through fmon, or from another launcher (KSM or advboot)
+# Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
 export FROM_NICKEL="false"
 if pkill -0 nickel ; then
 	FROM_NICKEL="true"
