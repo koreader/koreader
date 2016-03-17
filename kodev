@@ -213,9 +213,13 @@ usage: run <OPTIONS> <ARGS>
 
 OPTIONS:
 
+    -h, --screen-height set height of the emulator screen (default: 720)
+    -w, --screen-width  set width of the emulator screen (default: 540)
     --no-build          run reader without rebuilding
     --disable-touch     use this if you want to simulate keyboard only devices
     "
+    screen_width=540
+    screen_height=720
     while [[ $1 == '-'* ]]; do
         PARAM=`echo $1 | awk -F= '{print $1}'`
         VALUE=`echo $1 | awk -F= '{print $2}'`
@@ -225,6 +229,12 @@ OPTIONS:
                 ;;
             --no-build)
                 no_build=true
+                ;;
+            -w | --screen-width)
+                screen_width=${VALUE}
+                ;;
+            -h | --screen-height)
+                screen_height=${VALUE}
                 ;;
             -h | --help)
                 echo "${RUN_HELP_MSG}"
@@ -261,7 +271,8 @@ OPTIONS:
         [[ $args != /* ]] && args="${CURDIR}/$1"
     fi
 
-    EMULATE_READER_W=540 EMULATE_READER_H=720 ./reader.lua -d $args
+    EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
+        ./reader.lua -d $args
     popd
 }
 
