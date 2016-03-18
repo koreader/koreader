@@ -242,7 +242,7 @@ logmsg "Starting KOReader . . ."
 if [ "${FROM_KUAL}" == "yes" ] ; then
 	eips_print_bottom_centered "Starting KOReader . . ." 1
 fi
-./reader.lua "$@" 2> crash.log
+./reader.lua "$@" > crash.log 2>&1
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
 if pidof reader.lua > /dev/null 2>&1 ; then

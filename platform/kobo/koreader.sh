@@ -86,7 +86,7 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
 	mount -o remount,rw /mnt/sd
 fi
 
-./reader.lua "${args}" 2> crash.log
+./reader.lua "${args}" > crash.log 2>&1
 
 if [ "${FROM_NICKEL}" == "true" ] ; then
 	# start kobo software because it was running before koreader
