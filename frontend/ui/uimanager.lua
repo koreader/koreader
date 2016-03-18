@@ -41,12 +41,22 @@ function UIManager:init()
         end,
     }
     if Device:isKobo() then
+        -- We do not want auto suspend procedure to waste battery during
+        -- suspend. So let's unschedule it when suspending, and restart it after
+        -- resume.
+        self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function(input_event)
+            if self:_autoSuspendEnabled() then
+                self:unschedule(self.auto_suspend_action)
+            end
             Device:onPowerEvent(input_event)
         end
         self.event_handlers["Resume"] = function(input_event)
             Device:onPowerEvent(input_event)
             self:sendEvent(Event:new("Resume"))
+            if self:_autoSuspendEnabled() then
+                self:_startAutoSuspend()
+            end
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
@@ -168,6 +178,8 @@ end
 
 -- schedule an execution task, task queue is in ascendant order
 function UIManager:schedule(time, action)
+    assert(time[1] >= 0 and time[2] >= 0, "Only positive time allowed")
+    assert(action ~= nil)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         local us = time[1] * MILLION + time[2]
@@ -203,6 +215,7 @@ end
 
 -- schedule task in a certain amount of seconds (fractions allowed) from now
 function UIManager:scheduleIn(seconds, action)
+    assert(seconds >= 0, "Only positive seconds allowed")
     local when = { util.gettime() }
     local s = math.floor(seconds)
     local usecs = (seconds - s) * MILLION
@@ -226,6 +239,7 @@ end
 -- UIManager:scheduleIn(10, self.anonymousFunction)
 -- UIManager:unschedule(self.anonymousFunction)
 function UIManager:unschedule(action)
+    assert(action ~= nil)
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
@@ -352,6 +366,8 @@ function UIManager:_checkTasks()
     local now_us = now[1] * MILLION + now[2]
     local wait_until = nil
 
+    -- task.action may schedule other events
+    self._task_queue_dirty = false
     while true do
         local nu_task = #self._task_queue
         if nu_task == 0 then
@@ -378,7 +394,6 @@ function UIManager:_checkTasks()
         end
     end
 
-    self._task_queue_dirty = false
     return wait_until, now
 end
 
@@ -560,6 +575,9 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
+        if self:_autoSuspendEnabled() then
+            self.last_action_sec = util.gettime()
+        end
         local handler = self.event_handlers[input_event]
         if handler then
             handler(input_event)
@@ -615,6 +633,41 @@ end
 function UIManager:runForever()
     self._run_forever = true
     self:run()
+end
+
+-- Kobo does not have an auto suspend function, so we implement it ourselves.
+function UIManager:_initAutoSuspend()
+    local sec = G_reader_settings:readSetting("auto_suspend_timeout_seconds")
+    if sec then
+        self.auto_suspend_sec = sec
+    else
+        -- default setting is 60 minutes
+        self.auto_suspend_sec = 60 * 60
+    end
+    if self:_autoSuspendEnabled() then
+        self.auto_suspend_action = function()
+            local now = util.gettime()
+            -- Do not repeat auto suspend procedure after suspend.
+            if self.last_action_sec + self.auto_suspend_sec <= now then
+                Device:onPowerEvent("Suspend")
+            else
+                self:scheduleIn(
+                    self.last_action_sec + self.auto_suspend_sec - now,
+                    self.auto_suspend_action)
+            end
+        end
+        self:_startAutoSuspend()
+    end
+end
+
+function UIManager:_startAutoSuspend()
+    assert(self:_autoSuspendEnabled())
+    self.last_action_sec = util.gettime()
+    self:nextTick(self.auto_suspend_action)
+end
+
+function UIManager:_autoSuspendEnabled()
+    return Device:isKobo() and self.auto_suspend_sec > 0
 end
 
 UIManager:init()
