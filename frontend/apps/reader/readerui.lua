@@ -346,8 +346,8 @@ function ReaderUI:showReader(file)
         end)
         local ok, err = coroutine.resume(co)
         if err ~= nil or ok == false then
-            print '[!] doShowReader coroutine crashed:'
-            print(debug.traceback(co, err, 1))
+            io.stderr:write('[!] doShowReader coroutine crashed:\n')
+            io.stderr:write(debug.traceback(co, err, 1))
             UIManager:quit()
         end
     end)

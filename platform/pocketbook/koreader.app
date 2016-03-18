@@ -33,7 +33,7 @@ else
     args="$@"
 fi
 
-./reader.lua "$args" 2> crash.log
+./reader.lua "$args" > crash.log 2>&1
 
 if pidof reader.lua > /dev/null 2>&1 ; then
 	killall -TERM reader.lua
