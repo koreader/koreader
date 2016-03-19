@@ -95,7 +95,6 @@ end
 local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Screen = require("device").screen
 local Font = require("ui/font")
 
 -- read some global reader setting here:
@@ -113,7 +112,7 @@ end
 local open_last = G_reader_settings:readSetting("open_last")
 -- night mode
 if G_reader_settings:readSetting("night_mode") then
-    Screen:toggleNightMode()
+    Device.Screen:toggleNightMode()
 end
 
 -- restore kobo frontlight settings and probe kobo touch coordinates

@@ -38,7 +38,6 @@ local ReaderFooter = InputContainer:new{
 
 function ReaderFooter:init()
     self.pageno = self.view.state.page
-    self.pages = self.view.document:getPageCount()
 
     self.settings = G_reader_settings:readSetting("footer") or {
         disabled = false,
@@ -69,25 +68,13 @@ function ReaderFooter:init()
     }
     self.text_width = self.progress_text:getSize().w + self.text_left_margin
     self:applyFooterMode()
-    local ticks_candidates = {}
-    if self.ui.toc and self.settings.toc_markers then
-        local max_level = self.ui.toc:getMaxDepth()
-        for i = 0, -max_level, -1 do
-            local ticks = self.ui.toc:getTocTicks(i)
-            if #ticks < self.max_ticks then
-                table.insert(ticks_candidates, ticks)
-            end
-        end
-        -- find the finest toc ticks by sorting out the largest one
-        table.sort(ticks_candidates, function(a, b) return #a > #b end)
-    end
     self.progress_bar = ProgressWidget:new{
         width = nil,  -- width will be updated in self:resetLayout()
         height = self.bar_height,
         percentage = self.progress_percentage,
-        ticks = ticks_candidates[1] or {},
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
-        last = self.pages,
+        ticks = nil, -- ticks will be populated in self:updateFooterText
+        last = nil, -- last will be initialized in self:updateFooterText
     }
     local margin_span = HorizontalSpan:new{width=self.horizontal_margin}
     local screen_width = Screen:getWidth()
@@ -292,6 +279,30 @@ function ReaderFooter:updateFooterPos()
 end
 
 function ReaderFooter:updateFooterText()
+    if self.settings.toc_markers and self.progress_bar.ticks == nil then
+        local ticks_candidates = {}
+        if self.ui.toc then
+            local max_level = self.ui.toc:getMaxDepth()
+            for i = 0, -max_level, -1 do
+                local ticks = self.ui.toc:getTocTicks(i)
+                if #ticks < self.max_ticks then
+                    table.insert(ticks_candidates, ticks)
+                end
+            end
+            -- find the finest toc ticks by sorting out the largest one
+            table.sort(ticks_candidates, function(a, b) return #a > #b end)
+        end
+
+        if #ticks_candidates > 0 then
+            self.progress_bar.ticks = ticks_candidates[1]
+            self.progress_bar.last = self.pages
+        else
+            -- we still set ticks here so self.progress_bar.ticks will not be
+            -- initialized again if ticks_candidates is empty
+            self.progress_bar.ticks = {}
+        end
+    end
+
     if self.settings.all_at_once then
         local info = {}
         if self.settings.battery then
@@ -345,7 +356,7 @@ end
 
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
-    self.pages = self.view.document.info.number_of_pages
+    self.pages = self.view.document:getPageCount()
     self:updateFooterPage()
 end
 
@@ -360,6 +371,7 @@ end
 function ReaderFooter:onUpdatePos()
     self:updateFooter()
 end
+
 
 function ReaderFooter:applyFooterMode(mode)
     -- three modes switcher for reader footer

@@ -70,9 +70,8 @@ function ProgressWidget:paintTo(bb, x, y)
                  my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
     if self.ticks then
         for i=1, #self.ticks do
-            local page = self.ticks[i]
             bb:paintRect(
-                x + (my_size.w-2*self.margin_h)*(page/self.last),
+                x + (my_size.w-2*self.margin_h)*(self.ticks[i]/self.last),
                 y + self.margin_v + self.bordersize,
                 self.tick_width,
                 my_size.h-2*(self.margin_v+self.bordersize),

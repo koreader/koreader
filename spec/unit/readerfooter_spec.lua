@@ -32,11 +32,13 @@ describe("Readerfooter module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
-        readerui.view.footer:updateFooter()
-        timeinfo = readerui.view.footer:getTimeInfo()
+        local footer = readerui.view.footer
+        footer:onPageUpdate(1)
+        footer:updateFooter()
+        timeinfo = footer:getTimeInfo()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('B:0% | '..timeinfo..' | 1 / 1 | => 0 | R:100% | TB: na | TC: na',
-                        readerui.view.footer.progress_text.text)
+        assert.are.same('B:0% | '..timeinfo..' | 1 / 202 | => 0 | R:0% | TB: na | TC: na',
+                        footer.progress_text.text)
     end)
 
     it("should setup footer for pdf without error", function()
@@ -130,16 +132,31 @@ describe("Readerfooter module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         local footer = readerui.view.footer
-        readerui.view.document.info.number_of_pages = 5000
         footer:onPageUpdate(1)
-        assert.are.same(207, footer.progress_bar.width)
-        assert.are.same(373, footer.text_width)
+        assert.are.same(215, footer.progress_bar.width)
+        assert.are.same(365, footer.text_width)
 
-        footer:onPageUpdate(1000)
-        assert.are.same(151, footer.progress_bar.width)
-        assert.are.same(429, footer.text_width)
+        footer:onPageUpdate(100)
+        assert.are.same(183, footer.progress_bar.width)
+        assert.are.same(397, footer.text_width)
     end)
 
+    it("should support chapter markers", function()
+        local sample_epub = "spec/front/unit/data/juliet.epub"
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
+        local footer = readerui.view.footer
+        footer:onPageUpdate(1)
+        assert.are.same({
+            2, 4, 7, 8, 24, 31, 38, 45, 55, 56, 59, 71, 77, 92, 97, 100, 113,
+            121, 131, 134, 148, 156, 160, 163, 166, 175, 180, 182
+        }, footer.progress_bar.ticks)
+        assert.are.same(202, footer.progress_bar.last)
+    end)
 
     it("should schedule/unschedule auto refresh time task", function()
         local sample_epub = "spec/front/unit/data/juliet.epub"
