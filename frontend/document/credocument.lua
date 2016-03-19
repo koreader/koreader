@@ -48,6 +48,7 @@ end
 
 function CreDocument:engineInit()
     if not self.engine_initilized then
+        require "libs/libkoreader-cre"
         -- initialize cache
         self:cacheInit()
 
@@ -70,7 +71,6 @@ function CreDocument:engineInit()
 end
 
 function CreDocument:init()
-    require "libs/libkoreader-cre"
     self:engineInit()
     self.configurable:loadDefaults(self.options)
 
