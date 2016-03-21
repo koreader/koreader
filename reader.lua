@@ -112,7 +112,7 @@ end
 local open_last = G_reader_settings:readSetting("open_last")
 -- night mode
 if G_reader_settings:readSetting("night_mode") then
-    Device.Screen:toggleNightMode()
+    Device.screen:toggleNightMode()
 end
 
 -- restore kobo frontlight settings and probe kobo touch coordinates
