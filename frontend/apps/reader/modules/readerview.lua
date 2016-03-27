@@ -557,6 +557,36 @@ function ReaderView:SetZoomCenter(x, y)
     end
 end
 
+function ReaderView:getViewContext()
+    if self.page_scroll then
+        return self.page_states
+    else
+        return {
+            {
+                page = self.state.page,
+                pos = self.state.pos,
+                zoom = self.state.zoom,
+                rotation = self.state.rotation,
+                gamma = self.state.gamma,
+                offset = self.state.offset:copy(),
+                bbox = self.state.bbox,
+            },
+            self.visible_area:copy(),
+            self.page_area:copy(),
+        }
+    end
+end
+
+function ReaderView:restoreViewContext(ctx)
+    if self.page_scroll then
+        self.page_states = ctx
+    else
+        self.state = ctx[1]
+        self.visible_area = ctx[2]
+        self.page_area = ctx[3]
+    end
+end
+
 function ReaderView:onSetScreenMode(new_mode, rotation)
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
