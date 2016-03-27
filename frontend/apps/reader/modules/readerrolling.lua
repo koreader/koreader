@@ -174,7 +174,7 @@ function ReaderRolling:onReadSettings(config)
     if last_xp then
         table.insert(self.ui.postInitCallback, function()
             self.xpointer = last_xp
-            self:gotoXPointer(self.xpointer)
+            self:_gotoXPointer(self.xpointer)
             -- we have to do a real jump in self.ui.document._document to
             -- update status information in CREngine.
             self.ui.document:gotoXPointer(self.xpointer)
@@ -182,7 +182,7 @@ function ReaderRolling:onReadSettings(config)
     -- we read last_percent just for backward compatibility
     elseif last_per then
         table.insert(self.ui.postInitCallback, function()
-            self:gotoPercent(last_per)
+            self:_gotoPercent(last_per)
             -- we have to do a real pos change in self.ui.document._document
             -- to update status information in CREngine.
             self.ui.document:gotoPos(self.current_pos)
@@ -270,9 +270,9 @@ end
 function ReaderRolling:onPan(arg, ges)
     if self.view.view_mode == "scroll" then
         if ges.direction == "north" then
-            self:gotoPos(self.current_pos + ges.distance)
+            self:_gotoPos(self.current_pos + ges.distance)
         elseif ges.direction == "south" then
-            self:gotoPos(self.current_pos - ges.distance)
+            self:_gotoPos(self.current_pos - ges.distance)
         end
     end
     return true
@@ -311,13 +311,14 @@ end
 
 function ReaderRolling:onGotoPercent(percent)
     DEBUG("goto document offset in percent:", percent)
-    self:gotoPercent(percent)
+    self:_gotoPercent(percent)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
 function ReaderRolling:onGotoPage(number)
     if number then
-        self:gotoPage(number)
+        self:_gotoPage(number)
     end
     self.xpointer = self.ui.document:getXPointer()
     return true
@@ -325,16 +326,24 @@ end
 
 function ReaderRolling:onGotoRelativePage(number)
     if number then
-        self:gotoPage(self.current_page + number)
+        self:_gotoPage(self.current_page + number)
     end
     self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
 function ReaderRolling:onGotoXPointer(xp)
-    self:gotoXPointer(xp)
+    self:_gotoXPointer(xp)
     self.xpointer = xp
     return true
+end
+
+function ReaderRolling:getBookLocation()
+    return self.xpointer
+end
+
+function ReaderRolling:onRestoreBookLocation(saved_location)
+    return self:onGotoXPointer(saved_location)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
@@ -353,10 +362,10 @@ function ReaderRolling:onGotoViewRel(diff)
                 pan_diff = pan_diff + self.overlap
             end
         end
-        self:gotoPos(self.current_pos + pan_diff)
+        self:_gotoPos(self.current_pos + pan_diff)
     elseif self.view.view_mode == "page" then
         local page_count = self.ui.document:getVisiblePageCount()
-        self:gotoPage(self.current_page + diff*page_count)
+        self:_gotoPage(self.current_page + diff*page_count)
     end
     self.xpointer = self.ui.document:getXPointer()
     if self.xpointer == prev_xp then
@@ -369,7 +378,7 @@ function ReaderRolling:onPanning(args, key)
     --@TODO disable panning in page view_mode?  22.12 2012 (houqp)
     local _, dy = unpack(args)
     DEBUG("key =", key)
-    self:gotoPos(self.current_pos + dy * self.panning_steps.normal)
+    self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
     return true
 end
@@ -396,7 +405,7 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        self:gotoXPointer(self.xpointer)
+        self:_gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -413,10 +422,10 @@ function ReaderRolling:onChangeViewMode()
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
     if self.xpointer then
-        self:gotoXPointer(self.xpointer)
+        self:_gotoXPointer(self.xpointer)
     else
         table.insert(self.ui.postInitCallback, function()
-            self:gotoXPointer(self.xpointer)
+            self:_gotoXPointer(self.xpointer)
         end)
     end
     return true
@@ -449,7 +458,7 @@ end
 --[[
     PosUpdate event is used to signal other widgets that pos has been changed.
 --]]
-function ReaderRolling:gotoPos(new_pos)
+function ReaderRolling:_gotoPos(new_pos)
     if new_pos == self.current_pos then return end
     if new_pos < 0 then new_pos = 0 end
     if new_pos > self.doc_height then new_pos = self.doc_height end
@@ -468,20 +477,20 @@ function ReaderRolling:gotoPos(new_pos)
     self.ui:handleEvent(Event:new("PosUpdate", new_pos))
 end
 
-function ReaderRolling:gotoPercent(new_percent)
-    self:gotoPos(new_percent * self.doc_height / 10000)
+function ReaderRolling:_gotoPercent(new_percent)
+    self:_gotoPos(new_percent * self.doc_height / 10000)
 end
 
-function ReaderRolling:gotoPage(new_page)
+function ReaderRolling:_gotoPage(new_page)
     self.ui.document:gotoPage(new_page)
     self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
 end
 
-function ReaderRolling:gotoXPointer(xpointer)
+function ReaderRolling:_gotoXPointer(xpointer)
     if self.view.view_mode == "page" then
-        self:gotoPage(self.ui.document:getPageFromXPointer(xpointer))
+        self:_gotoPage(self.ui.document:getPageFromXPointer(xpointer))
     else
-        self:gotoPos(self.ui.document:getPosFromXPointer(xpointer))
+        self:_gotoPos(self.ui.document:getPosFromXPointer(xpointer))
     end
 end
 

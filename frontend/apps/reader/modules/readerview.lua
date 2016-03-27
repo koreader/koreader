@@ -623,7 +623,7 @@ function ReaderView:onSetFullScreen(full_screen)
     self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
 end
 
-function ReaderView:onToggleScrollMode(page_scroll)
+function ReaderView:onSetScrollMode(page_scroll)
     self.page_scroll = page_scroll
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))

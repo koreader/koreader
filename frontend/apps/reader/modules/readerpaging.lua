@@ -1,9 +1,9 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Input = require("device").input
 local GestureRange = require("ui/gesturerange")
 local Device = require("device")
+local Screen = Device.screen
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
@@ -121,7 +121,7 @@ end
 
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
-    self:gotoPage(config:readSetting("last_page") or 1)
+    self:_gotoPage(config:readSetting("last_page") or 1)
     self.show_overlap_enable = config:readSetting("show_overlap_enable")
     if self.show_overlap_enable == nil then
         self.show_overlap_enable = DSHOWOVERLAP
@@ -131,6 +131,7 @@ function ReaderPaging:onReadSettings(config)
 end
 
 function ReaderPaging:onSaveSettings()
+    -- TODO: only save current_page page position
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
@@ -181,9 +182,10 @@ end
 
 --[[
 Set reading position on certain page
-Page position is a fractional number ranging from 0 to 1, indicating the read percentage on
-certain page. With the position information on each page whenever users change font size,
-page margin or line spacing or close and reopen the book, the page view will be roughly the same.
+Page position is a fractional number ranging from 0 to 1, indicating the read
+percentage on certain page. With the position information on each page whenever
+users change font size, page margin or line spacing or close and reopen the
+book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
     DEBUG("set page position", pos)
@@ -244,7 +246,7 @@ function ReaderPaging:onToggleBookmarkFlipping()
         self.view.flipping_visible = self.orig_flipping_mode
         self.view.dogear_visible = self.orig_dogear_mode
         self:exitFlippingMode()
-        self:gotoPage(self.bm_flipping_orig_page)
+        self:_gotoPage(self.bm_flipping_orig_page)
     end
     self.ui:handleEvent(Event:new("SetHinting", not self.bookmark_flipping_mode))
     self.ui:handleEvent(Event:new("ReZoom"))
@@ -292,13 +294,13 @@ function ReaderPaging:pageFlipping(flipping_page, flipping_ges)
     local stp_proportion = flipping_ges.distance / Screen:getWidth()
     local abs_proportion = flipping_ges.distance / Screen:getHeight()
     if flipping_ges.direction == "east" then
-        self:gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:_gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif flipping_ges.direction == "west" then
-        self:gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:_gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif flipping_ges.direction == "south" then
-        self:gotoPage(flipping_page - math.floor(whole*abs_proportion))
+        self:_gotoPage(flipping_page - math.floor(whole*abs_proportion))
     elseif flipping_ges.direction == "north" then
-        self:gotoPage(flipping_page + math.floor(whole*abs_proportion))
+        self:_gotoPage(flipping_page + math.floor(whole*abs_proportion))
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
@@ -316,7 +318,7 @@ function ReaderPaging:onSwipe(arg, ges)
     if self.bookmark_flipping_mode then
         self:bookmarkFlipping(self.current_page, ges)
     elseif self.page_flipping_mode and self.original_page then
-        self:gotoPage(self.original_page)
+        self:_gotoPage(self.original_page)
     elseif ges.direction == "west" then
         self:onPagingRel(1)
     elseif ges.direction == "east" then
@@ -362,10 +364,10 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
-function ReaderPaging:onPageUpdate(new_page_no, orig)
+function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
     self.current_page = new_page_no
-    if orig ~= "scrolling" then
-        self.ui:handleEvent(Event:new("InitScrollPageStates", orig))
+    if self.view.page_scroll and orig_mode ~= "scrolling" then
+        self.ui:handleEvent(Event:new("InitScrollPageStates", orig_mode))
     end
 end
 
@@ -382,7 +384,7 @@ function ReaderPaging:onGotoPercent(percent)
     if dest > self.number_of_pages then
         dest = self.number_of_pages
     end
-    self:gotoPage(dest)
+    self:_gotoPage(dest)
     return true
 end
 
@@ -399,6 +401,26 @@ end
 function ReaderPaging:onPanningRel(diff)
     if self.view.page_scroll then
         self:onScrollPanRel(diff)
+    end
+    self:setPagePosition(self:getTopPage(), self:getTopPosition())
+    return true
+end
+
+function ReaderPaging:getBookLocation()
+    return self.view:getViewContext()
+end
+
+function ReaderPaging:onRestoreBookLocation(saved_location)
+    if self.view.page_scroll then
+        self.view:restoreViewContext(saved_location)
+        self:_gotoPage(self.view.page_states[#self.view.page_states].page,
+                       "scrolling")
+    else
+        -- gotoPage will emit PageUpdate event, which will trigger recalculate
+        -- in ReaderView and resets the view context. So we need to call
+        -- restoreViewContext after gotoPage
+        self:_gotoPage(saved_location[1].page)
+        self.view:restoreViewContext(saved_location)
     end
     self:setPagePosition(self:getTopPage(), self:getTopPosition())
     return true
@@ -428,8 +450,8 @@ function ReaderPaging:getTopPage()
     end
 end
 
-function ReaderPaging:onInitScrollPageStates(orig)
-    DEBUG("init scroll page states", orig)
+function ReaderPaging:onInitScrollPageStates(orig_mode)
+    DEBUG("init scroll page states", orig_mode)
     if self.view.page_scroll and self.view.state.page then
         self.orig_page = self.current_page
         self.view.page_states = {}
@@ -451,10 +473,10 @@ function ReaderPaging:onInitScrollPageStates(orig)
                 blank_area.h = blank_area.h - self.view.page_gap.height
             end
             if blank_area.h > 0 then
-                self:gotoPage(self.current_page + 1, "scrolling")
+                self:_gotoPage(self.current_page + 1, "scrolling")
             end
         end
-        self:gotoPage(self.orig_page, "scrolling")
+        self:_gotoPage(self.orig_page, "scrolling")
     end
     return true
 end
@@ -566,7 +588,7 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
             if self.current_page == self.number_of_pages then break end
-            self:gotoPage(current_page + 1, "scrolling")
+            self:_gotoPage(current_page + 1, "scrolling")
             current_page = current_page + 1
             local state = self:getNextPageState(blank_area, Geom:new{})
             table.insert(page_states, state)
@@ -588,7 +610,7 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
             if self.current_page == 1 then break end
-            self:gotoPage(current_page - 1, "scrolling")
+            self:_gotoPage(current_page - 1, "scrolling")
             current_page = current_page - 1
             local state = self:getPrevPageState(blank_area, Geom:new{})
             table.insert(page_states, 1, state)
@@ -618,7 +640,7 @@ function ReaderPaging:onScrollPanRel(diff)
         self.view.page_states = self:genPageStatesFromBottom(last_page_state, blank_area, offset)
     end
     -- update current pageno to the very last part in current view
-    self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
+    self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
 
     UIManager:setDirty(self.view.dialog, "fast")
 end
@@ -637,16 +659,16 @@ function ReaderPaging:onScrollPageRel(diff)
             table.insert(self.view.page_states, last_page_state)
             self.ui:handleEvent(Event:new("EndOfBook"))
             return true
-        else
-            local blank_area = Geom:new{}
-            blank_area:setSizeTo(self.view.dimen)
-            local overlap = self:calculateOverlap()
-            local offset = Geom:new{
-                x = 0,
-                y = last_visible_area.h - overlap
-            }
-            self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
         end
+
+        local blank_area = Geom:new{}
+        blank_area:setSizeTo(self.view.dimen)
+        local overlap = self:calculateOverlap()
+        local offset = Geom:new{
+            x = 0,
+            y = last_visible_area.h - overlap
+        }
+        self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
     elseif diff < 0 then
         local blank_area = Geom:new{}
         blank_area:setSizeTo(self.view.dimen)
@@ -661,7 +683,7 @@ function ReaderPaging:onScrollPageRel(diff)
         return true
     end
     -- update current pageno to the very last part in current view
-    self:gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
+    self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
     UIManager:setDirty(self.view.dialog, "partial")
     return true
 end
@@ -701,7 +723,7 @@ function ReaderPaging:onGotoPageRel(diff)
         if diff > 0 and new_page == self.number_of_pages + 1 then
             self.ui:handleEvent(Event:new("EndOfBook"))
         else
-            self:gotoPage(new_page)
+            self:_gotoPage(new_page)
         end
         -- if we are going back to previous page, reset
         -- view area to bottom of previous page
@@ -777,7 +799,7 @@ function ReaderPaging:onSetDimensions()
 end
 
 -- wrapper for bounds checking
-function ReaderPaging:gotoPage(number, orig)
+function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
         return true
     end
@@ -786,24 +808,24 @@ function ReaderPaging:gotoPage(number, orig)
         return false
     end
     -- this is an event to allow other controllers to be aware of this change
-    self.ui:handleEvent(Event:new("PageUpdate", number, orig))
+    self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))
     return true
 end
 
 function ReaderPaging:onGotoPage(number)
-    self:gotoPage(number)
+    self:_gotoPage(number)
     return true
 end
 
 function ReaderPaging:onGotoRelativePage(number)
-    self:gotoPage(self.current_page + number)
+    self:_gotoPage(self.current_page + number)
     return true
 end
 
 function ReaderPaging:onGotoPercentage(percentage)
     if percentage < 0 then percentage = 0 end
     if percentage > 1 then percentage = 1 end
-    self:gotoPage(math.floor(percentage*self.number_of_pages))
+    self:_gotoPage(math.floor(percentage*self.number_of_pages))
     return true
 end
 

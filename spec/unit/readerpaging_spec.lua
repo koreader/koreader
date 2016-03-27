@@ -15,7 +15,7 @@ describe("Readerpaging module", function()
 
         it("should emit EndOfBook event at the end", function()
             readerui.zooming:setZoomMode("pageheight")
-            paging:gotoPage(readerui.document:getPageCount())
+            paging:onGotoPage(readerui.document:getPageCount())
             local called = false
             readerui.onEndOfBook = function()
                 called = true
@@ -35,9 +35,9 @@ describe("Readerpaging module", function()
         end)
 
         it("should emit EndOfBook event at the end", function()
-            paging:gotoPage(readerui.document:getPageCount())
+            paging:onGotoPage(readerui.document:getPageCount())
             readerui.zooming:setZoomMode("pageheight")
-            readerui.view:onToggleScrollMode(true)
+            readerui.view:onSetScrollMode(true)
             local called = false
             readerui.onEndOfBook = function()
                 called = true

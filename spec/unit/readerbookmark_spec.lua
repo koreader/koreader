@@ -1,15 +1,20 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local DEBUG = require("dbg")
+describe("ReaderBookmark module #ok", function()
+    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DEBUG
+    local sample_epub, sample_pdf
 
-local sample_epub = "spec/front/unit/data/juliet.epub"
-local sample_pdf = "spec/front/unit/data/sample.pdf"
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        UIManager = require("ui/uimanager")
+        Screen = require("device").screen
+        Geom = require("ui/geometry")
+        DEBUG = require("dbg")
 
-describe("ReaderBookmark module", function()
+        sample_epub = "spec/front/unit/data/juliet.epub"
+        sample_pdf = "spec/front/unit/data/sample.pdf"
+    end)
+
     local function highlight_text(readerui, pos0, pos1)
         readerui.highlight:onHold(nil, { pos = pos0 })
         readerui.highlight:onHoldPan(nil, { pos = pos1 })
@@ -49,7 +54,7 @@ describe("ReaderBookmark module", function()
         before_each(function()
             UIManager:quit()
             UIManager:show(readerui)
-            readerui.rolling:gotoPage(10)
+            readerui.rolling:onGotoPage(10)
         end)
         it("should does bookmark comparison properly", function()
             assert.truthy(readerui.bookmark:isBookmarkSame(
@@ -75,7 +80,7 @@ describe("ReaderBookmark module", function()
         it("should sort bookmarks with descending page numbers", function()
             local pages = {1, 20, 5, 30, 10, 40, 15, 25, 35, 45}
             for _, page in ipairs(pages) do
-                readerui.rolling:gotoPage(page)
+                readerui.rolling:onGotoPage(page)
                 toggler_dogear(readerui)
             end
             readerui.bookmark:onShowBookmark()
@@ -86,7 +91,7 @@ describe("ReaderBookmark module", function()
         it("should keep descending page numbers after removing bookmarks", function()
             local pages = {1, 30, 10, 40, 20}
             for _, page in ipairs(pages) do
-                readerui.rolling:gotoPage(page)
+                readerui.rolling:onGotoPage(page)
                 toggler_dogear(readerui)
             end
             readerui.bookmark:onShowBookmark()
@@ -123,7 +128,7 @@ describe("ReaderBookmark module", function()
         before_each(function()
             UIManager:quit()
             UIManager:show(readerui)
-            readerui.paging:gotoPage(10)
+            readerui.paging:onGotoPage(10)
         end)
         it("should does bookmark comparison properly", function()
             assert.truthy(readerui.bookmark:isBookmarkSame(
@@ -166,7 +171,7 @@ describe("ReaderBookmark module", function()
         it("should sort bookmarks with descending page numbers", function()
             local pages = {1, 20, 5, 30, 10, 40, 15, 25, 35, 45}
             for _, page in ipairs(pages) do
-                readerui.paging:gotoPage(page)
+                readerui.paging:onGotoPage(page)
                 toggler_dogear(readerui)
             end
             readerui.bookmark:onShowBookmark()
@@ -177,7 +182,7 @@ describe("ReaderBookmark module", function()
         it("should keep descending page numbers after removing bookmarks", function()
             local pages = {1, 30, 10, 40, 20}
             for _, page in ipairs(pages) do
-                readerui.paging:gotoPage(page)
+                readerui.paging:onGotoPage(page)
                 toggler_dogear(readerui)
             end
             readerui.bookmark:onShowBookmark()

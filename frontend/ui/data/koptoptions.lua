@@ -56,7 +56,7 @@ local KoptOptions = {
                 toggle = {S.ON, S.OFF},
                 values = {1, 0},
                 default_value = DSCROLL_MODE,
-                event = "ToggleScrollMode",
+                event = "SetScrollMode",
                 args = {true, false},
             },
             {

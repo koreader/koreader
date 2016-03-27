@@ -1,10 +1,14 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local Blitbuffer = require("ffi/blitbuffer")
-local ReaderUI = require("apps/reader/readerui")
-local UIManager = require("ui/uimanager")
-
 describe("Readerview module", function()
+    local DocumentRegistry, Blitbuffer, ReaderUI, UIManager
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        Blitbuffer = require("ffi/blitbuffer")
+        ReaderUI = require("apps/reader/readerui")
+        UIManager = require("ui/uimanager")
+    end)
+
     it("should stop hinting on document close event", function()
         local sample_epub = "spec/front/unit/data/leaves.epub"
         local readerui = ReaderUI:new{
