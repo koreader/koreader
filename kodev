@@ -261,18 +261,18 @@ OPTIONS:
         exit 1
     fi
 
-    echo "[*] Running KOReader..."
+    echo "[*] Running KOReader with arguments: $@..."
     pushd ${EMU_DIR}
 
     if [ $# -lt 1 ]; then
         args=${CURDIR}/test
     else
-        args="$1"
-        [[ $args != /* ]] && args="${CURDIR}/$1"
+        args="$@"
+        [[ $args != /* ]] && args="${CURDIR}/${args}"
     fi
 
     EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
-        ./reader.lua -d $args
+        ./reader.lua -d "$args"
     popd
 }
 
