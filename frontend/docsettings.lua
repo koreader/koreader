@@ -1,6 +1,7 @@
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local dump = require("dump")
+local purgeDir = require("ffi/util").purgeDir
 
 local DocSettings = {}
 
@@ -27,6 +28,11 @@ function DocSettings:getNameFromHistory(hist_name)
     local s = string.len(string.match(hist_name,"%b[]"))
     -- and return the rest of string without 4 last characters (".lua")
     return string.sub(hist_name, s+2, -5)
+end
+
+function DocSettings:purgeDocSettings(doc_path)
+    purgeDir(self:getSidecarDir(doc_path))
+    os.remove(self:getHistoryPath(doc_path))
 end
 
 function DocSettings:open(docfile)

@@ -1,9 +1,10 @@
 describe("ReaderBookmark module #ok", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DEBUG
+    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DEBUG, DocSettings
     local sample_epub, sample_pdf
 
     setup(function()
         require("commonrequire")
+        DocSettings = require("docsettings")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
@@ -46,6 +47,7 @@ describe("ReaderBookmark module #ok", function()
         local page = 10
         local readerui
         setup(function()
+            DocSettings:purgeDocSettings(sample_epub)
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_epub),
             }
@@ -120,6 +122,7 @@ describe("ReaderBookmark module #ok", function()
     describe("bookmark for PDF document", function()
         local readerui
         setup(function()
+            DocSettings:purgeDocSettings(sample_pdf)
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
