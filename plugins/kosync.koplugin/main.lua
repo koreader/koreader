@@ -22,7 +22,7 @@ local l10n = {
 
 local KOSync = InputContainer:new{
     name = "kosync",
-    title = _("Register/login to Koreader server"),
+    title = _("Register/login to KOReader server"),
 }
 
 function KOSync:init()
@@ -177,7 +177,7 @@ function KOSync:doRegister(username, password)
             self.kosync_username = username
             self.kosync_userkey = userkey
             UIManager:show(InfoMessage:new{
-                text = _("Registered to Koreader server successfully."),
+                text = _("Registered to KOReader server successfully."),
             })
         else
             UIManager:show(InfoMessage:new{
@@ -207,7 +207,7 @@ function KOSync:doLogin(username, password)
             self.kosync_username = username
             self.kosync_userkey = userkey
             UIManager:show(InfoMessage:new{
-                text = _("Logged in to Koreader server successfully."),
+                text = _("Logged in to KOReader server successfully."),
             })
         else
             UIManager:show(InfoMessage:new{

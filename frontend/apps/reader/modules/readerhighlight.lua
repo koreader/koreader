@@ -453,7 +453,7 @@ function ReaderHighlight:exportToClippings(page, item)
         local current_locale = os.setlocale()
         os.setlocale("C")
         clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
-        clippings:write("- Koreader Highlight Page "..page.." ")
+        clippings:write("- KOReader Highlight Page "..page.." ")
         clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
         -- My Clippings only holds one line of highlight
         clippings:write(item["text"]:gsub("\n", " ").."\n")

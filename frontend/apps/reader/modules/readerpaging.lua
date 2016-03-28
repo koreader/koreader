@@ -755,7 +755,7 @@ function ReaderPaging:onGotoPageRel(diff)
         -- calculate panning offsets
         local panned_x = new_va.x - self.visible_area.x
         local panned_y = new_va.y - self.visible_area.y
-        -- adjust for crazy float point overflow...
+        -- adjust for crazy floating point overflow...
         if math.abs(panned_x) < 1 then
             panned_x = 0
         end

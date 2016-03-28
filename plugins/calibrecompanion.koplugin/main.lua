@@ -10,7 +10,7 @@ local dummy = require("ffi/zeromq_h")
 
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
-    with Calibre Wireless Server from which users can send documents to Koreader
+    with Calibre Wireless Server from which users can send documents to KOReader
     devices directly with WIFI connection.
 
     Note that Calibre Companion(CC) is a trade mark held by MultiPie Ltd. The
@@ -243,16 +243,16 @@ function CalibreCompanion:getInitInfo(arg)
         passwordHash = "",
         canReceiveBookBinary = true,
         maxBookContentPacketLen = 4096,
-        appName = "Koreader Calibre plugin",
+        appName = "KOReader Calibre plugin",
         ccVersionNumber = 106,
-        deviceName = "Koreader",
+        deviceName = "KOReader",
         canStreamBooks = true,
         versionOK = true,
         canDeleteMultipleBooks = true,
         canSendOkToSendbook = true,
         coverHeight = 240,
         cacheUsesLpaths = true,
-        deviceKind = "Koreader",
+        deviceKind = "KOReader",
     }
     self:sendJsonData('OK', init_info)
 end
@@ -262,10 +262,10 @@ function CalibreCompanion:getDeviceInfo(arg)
     local device_info = {
         device_info = {
            device_store_uuid = G_reader_settings:readSetting("device_store_uuid"),
-           device_name = "Koreader Calibre Companion",
+           device_name = "KOReader Calibre Companion",
         },
         version  = 106,
-        device_version = "koreader",
+        device_version = "KOReader",
     }
     self:sendJsonData('OK', device_info)
 end
