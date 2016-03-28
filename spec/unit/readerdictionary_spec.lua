@@ -21,7 +21,7 @@ describe("Readerdictionary module", function()
         local name = "screenshots/reader_dictionary.png"
         UIManager:quit()
         UIManager:show(readerui)
-        rolling:gotoPage(100)
+        rolling:onGotoPage(100)
         dictionary:onLookupWord("test")
         UIManager:scheduleIn(1, function()
             UIManager:close(dictionary.dict_window)

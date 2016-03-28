@@ -98,7 +98,7 @@ local extensions = {
     [".doc"] = true,
 }
 
--- remove file extensions added by former Koreader
+-- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
 function MyClipping:getTitle(line)

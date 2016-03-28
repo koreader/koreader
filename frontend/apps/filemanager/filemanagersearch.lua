@@ -304,7 +304,7 @@ function Search:find(option)
         if self.use_own_metadata_file then
             local g = io.open(koreaderfile, "r")
             line = g:read()
-            if line ~= "#metadata.Koreader Version 1.1" then
+            if line ~= "#metadata.Koreader Version 1.1" and line ~= "#metadata.koreader Version 1.1" then
                 self.use_own_metadata_file =  false
                 g:close()
             else
@@ -365,7 +365,7 @@ function Search:find(option)
         if not self.use_own_metadata_file then
             f = io.open(self.metafile_1)
             g = io.open(koreaderfile,"w")
-            g:write("#metadata.Koreader Version 1.1\n")
+            g:write("#metadata.koreader Version 1.1\n")
 
             line = f:read()
             while line do

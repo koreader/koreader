@@ -9,7 +9,7 @@ local Event = require("ui/event")
 local _ = require("gettext")
 
 local ReaderLink = InputContainer:new{
-    link_states = {}
+    location_stack = {}
 }
 
 function ReaderLink:init()
@@ -23,7 +23,7 @@ end
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document
-    self.link_states = {}
+    self.location_stack = {}
 end
 
 function ReaderLink:initGesListener()
@@ -77,7 +77,7 @@ function ReaderLink:addToMainMenu(tab_item_table)
             },
             {
                 text = _("Go back"),
-                enabled_func = function() return #self.link_states > 0 end,
+                enabled_func = function() return #self.location_stack > 0 end,
                 callback = function() self:onGoBackLink() end,
             },
             {
@@ -99,7 +99,7 @@ function ReaderLink:onSetDimensions(dimen)
     end
 end
 
-function ReaderLink:onTap(arg, ges)
+function ReaderLink:onTap(_, ges)
     if not is_follow_links_on() then return end
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
@@ -130,25 +130,24 @@ end
 
 function ReaderLink:onGotoLink(link)
     if self.ui.document.info.has_pages then
-        table.insert(self.link_states, self.view.state.page)
+        table.insert(self.location_stack, self.ui.paging:getBookLocation())
         self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
     else
-        table.insert(self.link_states, self.ui.document:getXPointer())
+        table.insert(self.location_stack, self.ui.rolling:getBookLocation())
         self.ui:handleEvent(Event:new("GotoXPointer", link))
     end
     return true
 end
 
 function ReaderLink:onGoBackLink()
-    local last_page_or_xp = table.remove(self.link_states)
-    if last_page_or_xp then
-        local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
-        self.ui:handleEvent(Event:new(event, last_page_or_xp))
-        return true
+    local saved_location = table.remove(self.location_stack)
+    if saved_location then
+        self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
     end
+    return true
 end
 
-function ReaderLink:onSwipe(arg, ges)
+function ReaderLink:onSwipe(_, ges)
     if ges.direction == "east" and swipe_to_go_back() then
         return self:onGoBackLink()
     end

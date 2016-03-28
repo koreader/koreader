@@ -334,7 +334,7 @@ function GestureDetector:handleDoubleTap(tev)
         if self.last_taps[slot] ~= nil then
             self.last_taps[slot] = nil
             -- we are using closure here
-            DEBUG("single tap detected in slot", slot)
+            DEBUG("single tap detected in slot", slot, ges_ev.pos)
             return ges_ev
         end
     end, deadline)

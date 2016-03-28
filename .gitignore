@@ -8,7 +8,7 @@ lua-*
 .vimrc
 *.o
 tags
-test/*
+test/*.sdr
 *.tar
 *.log
 spec/unit/data

@@ -133,7 +133,7 @@ function ReaderHighlight:onClearHighlight()
     return true
 end
 
-function ReaderHighlight:onTap(arg, ges)
+function ReaderHighlight:onTap(_, ges)
     if not self:clear() then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
@@ -222,7 +222,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     return true
 end
 
-function ReaderHighlight:onHold(arg, ges)
+function ReaderHighlight:onHold(_, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
@@ -249,7 +249,7 @@ function ReaderHighlight:onHold(arg, ges)
     return true
 end
 
-function ReaderHighlight:onHoldPan(arg, ges)
+function ReaderHighlight:onHoldPan(_, ges)
     if self.hold_pos == nil then
         DEBUG("no previous hold position")
         return true
@@ -257,7 +257,7 @@ function ReaderHighlight:onHoldPan(arg, ges)
     local page_area = self.view:getScreenPageArea(self.hold_pos.page)
     DEBUG("current page area", page_area)
     if ges.pos:notIntersectWith(page_area) then
-        DEBUG("not inside page area")
+        DEBUG("not inside page area", ges, page_area)
         return true
     end
 
@@ -453,7 +453,7 @@ function ReaderHighlight:exportToClippings(page, item)
         local current_locale = os.setlocale()
         os.setlocale("C")
         clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
-        clippings:write("- Koreader Highlight Page "..page.." ")
+        clippings:write("- KOReader Highlight Page "..page.." ")
         clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
         -- My Clippings only holds one line of highlight
         clippings:write(item["text"]:gsub("\n", " ").."\n")

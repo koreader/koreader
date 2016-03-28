@@ -49,4 +49,3 @@ function assertNotAlmostEquals(expected, actual, margin)
             .. ', received: ' .. actual
     )
 end
-

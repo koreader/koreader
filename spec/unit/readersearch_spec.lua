@@ -18,10 +18,10 @@ describe("Readersearch module", function()
             rolling = readerui.rolling
         end)
         it("should search backward", function()
-            rolling:gotoPage(10)
+            rolling:onGotoPage(10)
             assert.truthy(search:searchFromCurrent("Verona", 1))
             for i = 1, 100, 10 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromCurrent("Verona", 1)
                 if words then
                     for _, word in ipairs(words) do
@@ -33,10 +33,10 @@ describe("Readersearch module", function()
             end
         end)
         it("should search forward", function()
-            rolling:gotoPage(10)
+            rolling:onGotoPage(10)
             assert.truthy(search:searchFromCurrent("Verona", 0))
             for i = 1, 100, 10 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromCurrent("Verona", 0)
                 if words then
                     for _, word in ipairs(words) do
@@ -49,35 +49,35 @@ describe("Readersearch module", function()
         end)
         it("should find the first occurrence", function()
             for i = 10, 100, 10 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromStart("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
                 assert.are.equal(7, pageno)
             end
             for i = 1, 5, 1 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromStart("Verona")
                 assert(words == nil)
             end
         end)
         it("should find the last occurrence", function()
             for i = 100, 180, 10 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
                 assert.are.equal(199, pageno)
             end
             for i = 230, 235, 1 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 local words = search:searchFromEnd("Verona")
                 assert(words == nil)
             end
         end)
         it("should find all occurrences", function()
             local count = 0
-            rolling:gotoPage(1)
+            rolling:onGotoPage(1)
             local words = search:searchFromCurrent("Verona", 0)
             while words do
                 count = count + #words
@@ -129,10 +129,10 @@ describe("Readersearch module", function()
             assert.are.equal(0, #doc.koptinterface:findAllMatches(doc, "e", true, 1))
         end)
         it("should search backward", function()
-            paging:gotoPage(20)
+            paging:onGotoPage(20)
             assert.truthy(search:searchFromCurrent("test", 1))
             for i = 1, 40, 10 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromCurrent("test", 1)
                 if words then
                     DEBUG("search backward: found at page", words.page)
@@ -141,10 +141,10 @@ describe("Readersearch module", function()
             end
         end)
         it("should search forward", function()
-            paging:gotoPage(20)
+            paging:onGotoPage(20)
             assert.truthy(search:searchFromCurrent("test", 0))
             for i = 1, 40, 10 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromCurrent("test", 0)
                 if words then
                     DEBUG("search forward: found at page", words.page)
@@ -154,38 +154,38 @@ describe("Readersearch module", function()
         end)
         it("should find the first occurrence", function()
             for i = 20, 40, 10 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromStart("test")
                 assert.truthy(words)
                 assert.are.equal(10, words.page)
             end
             for i = 1, 10, 2 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromStart("test")
                 assert(words == nil)
             end
         end)
         it("should find the last occurrence", function()
             for i = 10, 30, 10 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromEnd("test")
                 assert.truthy(words)
                 assert.are.equal(32, words.page)
             end
             for i = 40, 50, 2 do
-                paging:gotoPage(i)
+                paging:onGotoPage(i)
                 local words = search:searchFromEnd("test")
                 assert(words == nil)
             end
         end)
         it("should find all occurrences", function()
             local count = 0
-            paging:gotoPage(1)
+            paging:onGotoPage(1)
             local words = search:searchFromCurrent("test", 0)
             while words do
                 count = count + #words
                 --DEBUG("found words", #words, words.page)
-                paging:gotoPage(words.page)
+                paging:onGotoPage(words.page)
                 words = search:searchNext("test", 0)
             end
             assert.are.equal(11, count)

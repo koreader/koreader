@@ -16,13 +16,13 @@ describe("Readerrolling module", function()
         end)
         it("should goto certain page", function()
             for i = 1, 10, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
             end
         end)
         it("should goto relative page", function()
             for i = 20, 40, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onGotoViewRel(1)
                 assert.are.same(i + 1, rolling.current_page)
                 rolling:onGotoViewRel(-1)
@@ -32,7 +32,7 @@ describe("Readerrolling module", function()
         it("should goto next chapter", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onDoubleTapForward()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
@@ -40,13 +40,13 @@ describe("Readerrolling module", function()
         it("should goto previous chapter", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onDoubleTapBackward()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
         it("should emit EndOfBook event at the end", function()
-            rolling:gotoPage(readerui.document:getPageCount())
+            rolling:onGotoPage(readerui.document:getPageCount())
             local called = false
             readerui.onEndOfBook = function()
                 called = true
@@ -63,13 +63,13 @@ describe("Readerrolling module", function()
         end)
         it("should goto certain page", function()
             for i = 1, 10, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
             end
         end)
         it("should goto relative page", function()
             for i = 20, 40, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onGotoViewRel(1)
                 assert.are.same(i + 1, rolling.current_page)
                 rolling:onGotoViewRel(-1)
@@ -79,7 +79,7 @@ describe("Readerrolling module", function()
         it("should goto next chapter", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onDoubleTapForward()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
@@ -87,13 +87,13 @@ describe("Readerrolling module", function()
         it("should goto previous chapter", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
-                rolling:gotoPage(i)
+                rolling:onGotoPage(i)
                 rolling:onDoubleTapBackward()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
         it("should emit EndOfBook event at the end", function()
-            rolling:gotoPage(readerui.document:getPageCount())
+            rolling:onGotoPage(readerui.document:getPageCount())
             local called = false
             readerui.onEndOfBook = function()
                 called = true
