@@ -340,9 +340,12 @@ po:
 	$(MAKE) -i -C l10n bootstrap pull
 
 static-check:
-	@if which luacheck > /dev/null; then luacheck -q frontend; else \
-		echo "[!] luacheck not found. "\
-		"you can install it with 'luarocks install luacheck'"; fi
+	@if which luacheck > /dev/null; then \
+			luacheck -q frontend; \
+		else \
+			echo "[!] luacheck not found. "\
+			"you can install it with 'luarocks install luacheck'"; \
+		fi
 
 doc:
 	make -C doc

@@ -7,6 +7,7 @@ local util = require("ffi/util")
 local dbg = require("dbg")
 local _ = require("gettext")
 
+local noop = function() end
 local MILLION = 1000000
 
 -- there is only one instance of this
@@ -46,17 +47,13 @@ function UIManager:init()
         -- resume.
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function(input_event)
-            if self:_autoSuspendEnabled() then
-                self:unschedule(self.auto_suspend_action)
-            end
+            self:_stopAutoSuspend()
             Device:onPowerEvent(input_event)
         end
         self.event_handlers["Resume"] = function(input_event)
             Device:onPowerEvent(input_event)
             self:sendEvent(Event:new("Resume"))
-            if self:_autoSuspendEnabled() then
-                self:_startAutoSuspend()
-            end
+            self:_startAutoSuspend()
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
@@ -585,9 +582,7 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
-        if self:_autoSuspendEnabled() then
-            self.last_action_sec = util.gettime()
-        end
+        self:_resetAutoSuspendTimer()
         local handler = self.event_handlers[input_event]
         if handler then
             handler(input_event)
@@ -647,6 +642,10 @@ end
 
 -- Kobo does not have an auto suspend function, so we implement it ourselves.
 function UIManager:_initAutoSuspend()
+    local function isAutoSuspendEnabled()
+        return Device:isKobo() and self.auto_suspend_sec > 0
+    end
+
     local sec = G_reader_settings:readSetting("auto_suspend_timeout_seconds")
     if sec then
         self.auto_suspend_sec = sec
@@ -654,7 +653,8 @@ function UIManager:_initAutoSuspend()
         -- default setting is 60 minutes
         self.auto_suspend_sec = 60 * 60
     end
-    if self:_autoSuspendEnabled() then
+
+    if isAutoSuspendEnabled() then
         self.auto_suspend_action = function()
             local now = util.gettime()
             -- Do not repeat auto suspend procedure after suspend.
@@ -666,23 +666,32 @@ function UIManager:_initAutoSuspend()
                     self.auto_suspend_action)
             end
         end
+
+        function UIManager:_startAutoSuspend()
+            self.last_action_sec = util.gettime()
+            self:nextTick(self.auto_suspend_action)
+        end
+        dbg:guard(UIManager, '_startAutoSuspend',
+            function()
+                assert(isAutoSuspendEnabled())
+            end)
+
+        function UIManager:_stopAutoSuspend()
+            self:unschedule(self.auto_suspend_action)
+        end
+
+        function UIManager:_resetAutoSuspendTimer()
+            self.last_action_sec = util.gettime()
+        end
+
         self:_startAutoSuspend()
+    else
+        self._startAutoSuspend = noop
+        self._stopAutoSuspend = noop
     end
 end
 
-function UIManager:_startAutoSuspend()
-    self.last_action_sec = util.gettime()
-    self:nextTick(self.auto_suspend_action)
-end
-dbg:guard(UIManager, '_startAutoSuspend',
-    function(self)
-        assert(self:_autoSuspendEnabled())
-    end)
-
-function UIManager:_autoSuspendEnabled()
-    return Device:isKobo() and self.auto_suspend_sec > 0
-end
+UIManager._resetAutoSuspendTimer = noop
 
 UIManager:init()
 return UIManager
-
