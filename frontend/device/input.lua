@@ -251,9 +251,18 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
-    if ev.value == EVENT_VALUE_KEY_RELEASE
-    and (keycode == "Light" or keycode == "Power") then
-        return keycode
+    if ev.value == EVENT_VALUE_KEY_RELEASE then
+        if keycode == "Light" then
+            return keycode
+        elseif keycode == "Power" then
+            -- Kobo generates Power keycode only, we need to decide whether it's
+            -- power-on or power-off ourselves.
+            if self.device.screen_saver_mode then
+                return "Resume"
+            else
+                return "Suspend"
+            end
+        end
     end
 
     -- handle modifier keys
