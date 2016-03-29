@@ -1,4 +1,4 @@
-describe("ReaderBookmark module #ok", function()
+describe("ReaderBookmark module", function()
     local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DEBUG, DocSettings
     local sample_epub, sample_pdf
 

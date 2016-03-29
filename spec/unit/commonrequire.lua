@@ -21,8 +21,7 @@ local Input = require("device").input
 Input.dummy = true
 
 -- turn on debug
-local DEBUG = require("dbg")
---DEBUG:turnOn()
+--require("dbg"):turnOn()
 
 function assertAlmostEquals(expected, actual, margin)
     if type(actual) ~= 'number' or type(expected) ~= 'number'
