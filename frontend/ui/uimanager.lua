@@ -4,9 +4,10 @@ local Input = require("device").input
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
+local dbg = require("dbg")
 local _ = require("gettext")
 
+local noop = function() end
 local MILLION = 1000000
 
 -- there is only one instance of this
@@ -46,17 +47,13 @@ function UIManager:init()
         -- resume.
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function(input_event)
-            if self:_autoSuspendEnabled() then
-                self:unschedule(self.auto_suspend_action)
-            end
+            self:_stopAutoSuspend()
             Device:onPowerEvent(input_event)
         end
         self.event_handlers["Resume"] = function(input_event)
             Device:onPowerEvent(input_event)
             self:sendEvent(Event:new("Resume"))
-            if self:_autoSuspendEnabled() then
-                self:_startAutoSuspend()
-            end
+            self:_startAutoSuspend()
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
@@ -124,7 +121,7 @@ end
 -- modal widget should be always on the top
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:show(widget, refreshtype, refreshregion, x, y)
-    DEBUG("show widget", widget._name)
+    dbg("show widget", widget._name)
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
     -- put this window on top of the toppest non-modal window
@@ -150,10 +147,10 @@ end
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:close(widget, refreshtype, refreshregion)
     if not widget then
-        DEBUG("widget not exist to be closed")
+        dbg("widget not exist to be closed")
         return
     end
-    DEBUG("close widget", widget.id)
+    dbg("close widget", widget.id)
     -- TODO: Why do we the following?
     Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     local dirty = false
@@ -178,8 +175,6 @@ end
 
 -- schedule an execution task, task queue is in ascendant order
 function UIManager:schedule(time, action)
-    assert(time[1] >= 0 and time[2] >= 0, "Only positive time allowed")
-    assert(action ~= nil)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         local us = time[1] * MILLION + time[2]
@@ -212,10 +207,14 @@ function UIManager:schedule(time, action)
     table.insert(self._task_queue, p, { time = time, action = action })
     self._task_queue_dirty = true
 end
+dbg:guard(UIManager, 'schedule',
+    function(self, time, action)
+        assert(time[1] >= 0 and time[2] >= 0, "Only positive time allowed")
+        assert(action ~= nil)
+    end)
 
 -- schedule task in a certain amount of seconds (fractions allowed) from now
 function UIManager:scheduleIn(seconds, action)
-    assert(seconds >= 0, "Only positive seconds allowed")
     local when = { util.gettime() }
     local s = math.floor(seconds)
     local usecs = (seconds - s) * MILLION
@@ -227,6 +226,10 @@ function UIManager:scheduleIn(seconds, action)
     end
     self:schedule(when, action)
 end
+dbg:guard(UIManager, 'scheduleIn',
+    function(self, seconds, action)
+        assert(seconds >= 0, "Only positive seconds allowed")
+    end)
 
 function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
@@ -239,13 +242,14 @@ end
 -- UIManager:scheduleIn(10, self.anonymousFunction)
 -- UIManager:unschedule(self.anonymousFunction)
 function UIManager:unschedule(action)
-    assert(action ~= nil)
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
         end
     end
 end
+dbg:guard(UIManager, 'unschedule',
+    function(self, action) assert(action ~= nil) end)
 
 --[[
 register a widget to be repainted and enqueue a refresh
@@ -269,17 +273,6 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
             end
         else
             self._dirty[widget] = true
-            if DEBUG.is_on then
-                -- when debugging, we check if we get handed a valid widget,
-                -- which would be a dialog that was previously passed via show()
-                local found = false
-                for i = 1, #self._window_stack do
-                    if self._window_stack[i].widget == widget then found = true end
-                end
-                if not found then
-                    DEBUG("INFO: invalid widget for setDirty()", debug.traceback())
-                end
-            end
         end
     end
     -- handle refresh information
@@ -291,6 +284,20 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         self:_refresh(refreshtype, refreshregion)
     end
 end
+dbg:guard(UIManager, 'setDirty',
+    nil,
+    function(self, widget, refreshtype, refreshregion)
+        if not widget then return end
+        -- when debugging, we check if we get handed a valid widget,
+        -- which would be a dialog that was previously passed via show()
+        local found = false
+        for i = 1, #self._window_stack do
+            if self._window_stack[i].widget == widget then found = true end
+        end
+        if not found then
+            dbg("INFO: invalid widget for setDirty()", debug.traceback())
+        end
+    end)
 
 function UIManager:insertZMQ(zeromq)
     table.insert(self._zeromqs, zeromq)
@@ -308,7 +315,7 @@ end
 -- set full refresh rate for e-ink screen
 -- and make the refresh rate persistant in global reader settings
 function UIManager:setRefreshRate(rate)
-    DEBUG("set screen full refresh rate", rate)
+    dbg("set screen full refresh rate", rate)
     self.FULL_REFRESH_COUNT = rate
     G_reader_settings:saveSetting("full_refresh_count", rate)
 end
@@ -320,7 +327,7 @@ end
 
 -- signal to quit
 function UIManager:quit()
-    DEBUG("quiting uimanager")
+    dbg("quiting uimanager")
     self._task_queue_dirty = false
     self._running = false
     self._run_forever = nil
@@ -441,7 +448,7 @@ function UIManager:_refresh(mode, region)
     if not region and mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            DEBUG("promote refresh to full refresh")
+            dbg("promote refresh to full refresh")
             mode = "full"
         end
         self.refresh_counted = true
@@ -499,13 +506,13 @@ function UIManager:_repaint()
     -- If we don't, we add one now and print a warning if we
     -- are debugging
     if dirty and #self._refresh_stack == 0 then
-        DEBUG("WARNING: no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
+        dbg("WARNING: no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
 
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
-        DEBUG("triggering refresh", refresh)
+        dbg("triggering refresh", refresh)
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)
@@ -529,15 +536,15 @@ function UIManager:handleInput()
     -- for input events:
     repeat
         wait_until, now = self:_checkTasks()
-        --DEBUG("---------------------------------------------------")
-        --DEBUG("exec stack", self._task_queue)
-        --DEBUG("window stack", self._window_stack)
-        --DEBUG("dirty stack", self._dirty)
-        --DEBUG("---------------------------------------------------")
+        --dbg("---------------------------------------------------")
+        --dbg("exec stack", self._task_queue)
+        --dbg("window stack", self._window_stack)
+        --dbg("dirty stack", self._dirty)
+        --dbg("---------------------------------------------------")
 
         -- stop when we have no window to show
         if #self._window_stack == 0 and not self._run_forever then
-            DEBUG("no dialog left to show")
+            dbg("no dialog left to show")
             self:quit()
             return nil
         end
@@ -575,9 +582,7 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
-        if self:_autoSuspendEnabled() then
-            self.last_action_sec = util.gettime()
-        end
+        self:_resetAutoSuspendTimer()
         local handler = self.event_handlers[input_event]
         if handler then
             handler(input_event)
@@ -587,7 +592,7 @@ function UIManager:handleInput()
     end
 
     if self.looper then
-        DEBUG("handle input in turbo I/O looper")
+        dbg("handle input in turbo I/O looper")
         self.looper:add_callback(function()
             -- FIXME: force close looper when there is unhandled error,
             -- otherwise the looper will hang. Any better solution?
@@ -637,6 +642,10 @@ end
 
 -- Kobo does not have an auto suspend function, so we implement it ourselves.
 function UIManager:_initAutoSuspend()
+    local function isAutoSuspendEnabled()
+        return Device:isKobo() and self.auto_suspend_sec > 0
+    end
+
     local sec = G_reader_settings:readSetting("auto_suspend_timeout_seconds")
     if sec then
         self.auto_suspend_sec = sec
@@ -644,7 +653,8 @@ function UIManager:_initAutoSuspend()
         -- default setting is 60 minutes
         self.auto_suspend_sec = 60 * 60
     end
-    if self:_autoSuspendEnabled() then
+
+    if isAutoSuspendEnabled() then
         self.auto_suspend_action = function()
             local now = util.gettime()
             -- Do not repeat auto suspend procedure after suspend.
@@ -656,20 +666,32 @@ function UIManager:_initAutoSuspend()
                     self.auto_suspend_action)
             end
         end
+
+        function UIManager:_startAutoSuspend()
+            self.last_action_sec = util.gettime()
+            self:nextTick(self.auto_suspend_action)
+        end
+        dbg:guard(UIManager, '_startAutoSuspend',
+            function()
+                assert(isAutoSuspendEnabled())
+            end)
+
+        function UIManager:_stopAutoSuspend()
+            self:unschedule(self.auto_suspend_action)
+        end
+
+        function UIManager:_resetAutoSuspendTimer()
+            self.last_action_sec = util.gettime()
+        end
+
         self:_startAutoSuspend()
+    else
+        self._startAutoSuspend = noop
+        self._stopAutoSuspend = noop
     end
 end
 
-function UIManager:_startAutoSuspend()
-    assert(self:_autoSuspendEnabled())
-    self.last_action_sec = util.gettime()
-    self:nextTick(self.auto_suspend_action)
-end
-
-function UIManager:_autoSuspendEnabled()
-    return Device:isKobo() and self.auto_suspend_sec > 0
-end
+UIManager._resetAutoSuspendTimer = noop
 
 UIManager:init()
 return UIManager
-

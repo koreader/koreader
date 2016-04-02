@@ -180,12 +180,21 @@ function ReaderRolling:onReadSettings(config)
             self.ui.document:gotoXPointer(self.xpointer)
         end)
     -- we read last_percent just for backward compatibility
+    -- FIXME: remove this branch with migration script
     elseif last_per then
         table.insert(self.ui.postInitCallback, function()
             self:_gotoPercent(last_per)
-            -- we have to do a real pos change in self.ui.document._document
+            -- _gotoPercent calls _gotoPos, which only updates self.current_pos
+            -- and self.view.
+            -- we need to do a real pos change in self.ui.document._document
             -- to update status information in CREngine.
             self.ui.document:gotoPos(self.current_pos)
+            -- _gotoPercent already calls gotoPos, so no need to emit
+            -- PosUpdate event in scroll mode
+            if self.view.view_mode == "page" then
+                self.ui:handleEvent(
+                    Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+            end
             self.xpointer = self.ui.document:getXPointer()
         end)
     else

@@ -1,10 +1,11 @@
-require("commonrequire")
-local DEBUG = require("dbg")
-local Font = require("ui/font")
-
 describe("Font module", function()
-    local f = nil
+    local Font
+    setup(function()
+        require("commonrequire")
+        Font = require("ui/font")
+    end)
     it("should get face", function()
+        local f
         f = Font:getFace('cfont', 18)
         assert.are_not.equals(f.ftface, nil)
         f = Font:getFace('tfont', 16)
