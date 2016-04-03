@@ -20,6 +20,7 @@ local Device = {
     hasDPad = no,
     isTouchDevice = no,
     hasFrontlight = no,
+    needsTouchScreenProbe = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting

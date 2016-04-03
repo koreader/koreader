@@ -392,6 +392,11 @@ function testBookStatus()
     UIManager:show(status_page)
 end
 
+function testTouchProbe()
+    local TouchProbe = require("utils/kobo_touch_probe")
+    UIManager:show(TouchProbe:new{})
+end
+
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
@@ -407,6 +412,6 @@ UIManager:show(Clock:new())
 --UIManager:show(TestInputText)
 --TestInputText:onShowKeyboard()
 -- testKeyValuePage()
+-- testTouchProbe()
 testBookStatus()
-
 UIManager:run()

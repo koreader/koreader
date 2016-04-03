@@ -137,9 +137,10 @@ if Device:isKobo() then
             end
         end
     end
-    if Device:getCodeName() == "trilogy" then
-        require("utils/kobo_touch_probe")
-    end
+end
+
+if Device:needsTouchScreenProbe() then
+    Device:touchScreenProbe()
 end
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then

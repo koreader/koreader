@@ -153,14 +153,16 @@ and register them.
 --]]
 function Input:registerEventAdjustHook(hook, hook_params)
     local old = self.eventAdjustHook
-    self.eventAdjustHook = function(self, ev)
-        old(self, ev)
-        hook(self, ev, hook_params)
+    self.eventAdjustHook = function(this, ev)
+        old(this, ev)
+        hook(this, ev, hook_params)
     end
 end
+
 function Input:eventAdjustHook(ev)
     -- do nothing by default
 end
+
 -- catalogue of predefined hooks:
 function Input:adjustTouchSwitchXY(ev)
     if ev.type == EV_ABS then
@@ -175,6 +177,7 @@ function Input:adjustTouchSwitchXY(ev)
         end
     end
 end
+
 function Input:adjustTouchScale(ev, by)
     if ev.type == EV_ABS then
         if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
@@ -185,18 +188,21 @@ function Input:adjustTouchScale(ev, by)
         end
     end
 end
+
 function Input:adjustTouchMirrorX(ev, width)
     if ev.type == EV_ABS
     and (ev.code == ABS_X or ev.code == ABS_MT_POSITION_X) then
         ev.value = width - ev.value
     end
 end
+
 function Input:adjustTouchMirrorY(ev, height)
     if ev.type == EV_ABS
     and (ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y) then
         ev.value = height - ev.value
     end
 end
+
 function Input:adjustTouchTranslate(ev, by)
     if ev.type == EV_ABS then
         if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
@@ -207,6 +213,7 @@ function Input:adjustTouchTranslate(ev, by)
         end
     end
 end
+
 function Input:adjustTouchAlyssum(ev)
     ev.time = TimeVal:now()
     if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then

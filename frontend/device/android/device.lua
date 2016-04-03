@@ -21,14 +21,14 @@ function Device:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/android/event_map"),
-        handleMiscEv = function(self, ev)
+        handleMiscEv = function(this, ev)
             DEBUG("Android application event", ev.code)
             if ev.code == ffi.C.APP_CMD_SAVE_STATE then
                 return "SaveState"
             elseif ev.code == ffi.C.APP_CMD_GAINED_FOCUS then
-                self.device.screen:refreshFull()
+                this.device.screen:refreshFull()
             elseif ev.code == ffi.C.APP_CMD_WINDOW_REDRAW_NEEDED then
-                self.device.screen:refreshFull()
+                this.device.screen:refreshFull()
             end
         end,
     }
