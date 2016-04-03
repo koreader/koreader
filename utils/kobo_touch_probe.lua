@@ -11,13 +11,16 @@ local _ = require("gettext")
 -- read settings and check for language override
 -- has to be done before requiring other files because
 -- they might call gettext on load
-G_reader_settings = DocSettings:open(".reader")
+if G_reader_settings == nil then
+    G_reader_settings = DocSettings:open(".reader")
+end
 local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
 end
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ImageWidget = require("ui/widget/imagewidget")
@@ -27,13 +30,14 @@ local UIManager = require("ui/uimanager")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local Device = require("device")
-local Screen = require("device").screen
-local Input = require("device").input
+local Screen = Device.screen
+local Input = Device.input
 local Font = require("ui/font")
-local DEBUG = require("dbg")
---DEBUG:turnOn()
+local dbg = require("dbg")
+--dbg:turnOn()
 
 local TouchProbe = InputContainer:new{
+    curr_probe_step = 1,
 }
 
 function TouchProbe:init()
@@ -49,49 +53,82 @@ function TouchProbe:init()
             }
         },
     }
-    local image_widget = ImageWidget:new{
+    self.image_widget = ImageWidget:new{
         file = "resources/kobo-touch-probe.png",
     }
-    self[1] = OverlapGroup:new{
-        dimen = Screen:getSize(),
-        CenterContainer:new{
-            dimen = Screen:getSize(),
-            TextWidget:new{
-                text = _("Tap the upper right corner"),
-                face = Font:getFace("cfont", 30),
-            },
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+    local img_w, img_h = self.image_widget:getSize().w, self.image_widget:getSize().h
+    self.probe_steps = {
+        {
+            hint_text = _("Tap the lower right corner"),
+            hint_icon_pos = {
+                x = screen_w-img_w,
+                y = screen_h-img_h,
+            }
         },
-        RightContainer:new{
-            dimen = {
-                h = image_widget:getSize().h,
-                w = Screen:getSize().w,
-            },
-            image_widget,
+        {
+            hint_text = _("Tap the upper right corner"),
+            hint_icon_pos = {
+                x = screen_w-img_w,
+                y = 0,
+            }
         },
     }
+    self.hint_text_widget = TextWidget:new{
+        text = '',
+        face = Font:getFace("cfont", 30),
+    }
+    self[1] = FrameContainer:new{
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        OverlapGroup:new{
+            dimen = Screen:getSize(),
+            CenterContainer:new{
+                dimen = Screen:getSize(),
+                self.hint_text_widget,
+            },
+            self.image_widget,
+        },
+    }
+    self:updateProbeInstruction()
 end
 
-function TouchProbe:onTapProbe(arg, ges)
-    --DEBUG("onTapProbe", ges)
-    local need_to_switch_xy = ges.pos.x < ges.pos.y
-    --DEBUG("Need to switch xy", need_to_switch_xy)
+function TouchProbe:updateProbeInstruction()
+    local probe_step = self.probe_steps[self.curr_probe_step]
+    self.image_widget.overlap_offset = {
+        probe_step.hint_icon_pos.x,
+        probe_step.hint_icon_pos.y,
+    }
+    self.hint_text_widget:setText(probe_step.hint_text)
+end
+
+function TouchProbe:saveSwitchXYSetting(need_to_switch_xy)
+    -- save the settings here so device.input can pick it up
     G_reader_settings:saveSetting("kobo_touch_switch_xy", need_to_switch_xy)
-    G_reader_settings:close()
-    if need_to_switch_xy then
-        Input:registerEventAdjustHook(Input.adjustTouchSwitchXY)
-    end
+    G_reader_settings:flush()
     UIManager:quit()
 end
 
--- if user has not set KOBO_TOUCH_MIRRORED yet
-if KOBO_TOUCH_MIRRORED == nil then
-    local switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
-    -- and has no probe before
-    if switch_xy == nil then
-        UIManager:show(TouchProbe:new{})
-        UIManager:run()
-    -- otherwise, we will use probed result
-    elseif switch_xy then
-        Input:registerEventAdjustHook(Input.adjustTouchSwitchXY)
+function TouchProbe:onTapProbe(arg, ges)
+    if self.curr_probe_step == 1 then
+        local shorter_edge = math.min(Screen:getHeight(), Screen:getWidth())
+        if math.min(ges.pos.x, ges.pos.y) < shorter_edge/2 then
+            -- x mirrored, x should be close to zero and y should be close to
+            -- screen height
+            local need_to_switch_xy = ges.pos.x > ges.pos.y
+            self:saveSwitchXYSetting(need_to_switch_xy)
+        else
+            -- x not mirroed, need one more probe
+            self.curr_probe_step = 2
+            self:updateProbeInstruction()
+            UIManager:setDirty(self)
+        end
+    elseif self.curr_probe_step == 2 then
+        -- x not mirrored, y should be close to zero and x should be close
+        -- TouchProbe screen width
+        local need_to_switch_xy = ges.pos.x < ges.pos.y
+        self:saveSwitchXYSetting(need_to_switch_xy)
     end
 end
+
+return TouchProbe

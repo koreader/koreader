@@ -244,7 +244,8 @@ function ReaderBookmark:isBookmarkMatch(item, pn_or_xp)
 end
 
 function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
-    local _start, _middle, _end = 1, 1, #self.bookmarks
+    local _middle
+    local _start, _end = 1, #self.bookmarks
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
         local v = self.bookmarks[_middle]
@@ -295,7 +296,8 @@ end
 
 -- binary search of sorted bookmarks
 function ReaderBookmark:isBookmarkAdded(item)
-    local _start, _middle, _end = 1, 1, #self.bookmarks
+    local _middle
+    local _start, _end = 1, #self.bookmarks
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
         if self:isBookmarkSame(item, self.bookmarks[_middle]) then
@@ -312,7 +314,8 @@ end
 
 -- binary search to remove bookmark
 function ReaderBookmark:removeBookmark(item)
-    local _start, _middle, _end = 1, 1, #self.bookmarks
+    local _middle
+    local _start, _end = 1, #self.bookmarks
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
         local v = self.bookmarks[_middle]

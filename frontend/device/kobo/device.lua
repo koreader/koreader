@@ -1,6 +1,6 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local DEBUG = require("dbg")
+local dbg = require("dbg")
 
 local function yes() return true end
 
@@ -22,6 +22,7 @@ local Kobo = Generic:new{
 -- Kobo Touch:
 local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
+    needsTouchScreenProbe = yes,
     touch_switch_xy = false,
     hasKeys = yes,
 }
@@ -78,7 +79,7 @@ local KoboAlyssum = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
@@ -90,10 +91,43 @@ function Kobo:init()
         }
     }
 
+    Generic.init(self)
+
+    self.input.open("/dev/input/event0") -- Light button and sleep slider
+    self.input.open("/dev/input/event1")
+
+    if not self.needsTouchScreenProbe() then
+        self:initEventAdjustHooks()
+    else
+        -- if touch probe is required, we postpone EventAdjustHook
+        -- initialization to when self:touchScreenProbe is called
+        self.touchScreenProbe = function()
+            -- if user has not set KOBO_TOUCH_MIRRORED yet
+            if KOBO_TOUCH_MIRRORED == nil then
+                local switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
+                -- and has no probe before
+                if switch_xy == nil then
+                    local TouchProbe = require("utils/kobo_touch_probe")
+                    local UIManager = require("ui/uimanager")
+                    UIManager:show(TouchProbe:new{})
+                    UIManager:run()
+                    -- assuming TouchProbe sets kobo_touch_switch_xy config
+                    switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
+                end
+                self.touch_switch_xy = switch_xy
+            end
+            self:initEventAdjustHooks()
+        end
+    end
+end
+
+function Kobo:initEventAdjustHooks()
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
-    if self.touch_switch_xy and not KOBO_TOUCH_MIRRORED
-    or not self.touch_switch_xy and KOBO_TOUCH_MIRRORED
+    -- NOTE: for kobo touch, adjustTouchSwitchXY needs to be called before
+    -- adjustTouchMirrorX
+    if (self.touch_switch_xy and not KOBO_TOUCH_MIRRORED)
+            or (not self.touch_switch_xy and KOBO_TOUCH_MIRRORED)
     then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
     end
@@ -101,7 +135,8 @@ function Kobo:init()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            self.screen:getScreenWidth()
+            -- FIXME: what if we change the screen protrait mode?
+            self.screen:getWidth()
         )
     end
 
@@ -112,11 +147,6 @@ function Kobo:init()
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
     end
-
-    Generic.init(self)
-
-    self.input.open("/dev/input/event0") -- Light button and sleep slider
-    self.input.open("/dev/input/event1")
 end
 
 function Kobo:getCodeName()

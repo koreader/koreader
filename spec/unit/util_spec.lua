@@ -1,8 +1,10 @@
-require("commonrequire")
-
-local util = require("util")
-
 describe("util module", function()
+    local util
+    setup(function()
+        require("commonrequire")
+        util = require("util")
+    end)
+
     it("should strip punctuations around word", function()
         assert.is_equal(util.stripePunctuations("\"hello world\""), "hello world")
         assert.is_equal(util.stripePunctuations("\"hello world?\""), "hello world")
@@ -10,6 +12,7 @@ describe("util module", function()
         assert.is_equal(util.stripePunctuations("“你好“"), "你好")
         assert.is_equal(util.stripePunctuations("“你好?“"), "你好")
     end)
+
     it("should split string with patterns", function()
         local sentence = "Hello world, welcome to KoReader!"
         local words = {}
@@ -18,6 +21,7 @@ describe("util module", function()
         end
         assert.are_same(words, {"Hello", "world,", "welcome", "to", "KoReader!"})
     end)
+
     it("should split command line arguments with quotation", function()
         local command = "./sdcv -nj \"words\" \"a lot\" 'more or less' --data-dir=dict"
         local argv = {}
