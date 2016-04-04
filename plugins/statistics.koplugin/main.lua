@@ -107,14 +107,14 @@ function ReaderStatistics:updateSettings()
             {
                 text = "",
                 input_type = "number",
-                hint = _(T("Min seconds, default is 5, current value: %1",
-                           self.page_min_read_sec)),
+                hint = T(_("Min seconds, default is 5. Current value: %1"),
+                           self.page_min_read_sec),
             },
             {
                 text = "",
                 input_type = "number",
-                hint = _(T("Max seconds, default is 90, current value: %1",
-                           self.page_max_read_sec)),
+                hint = T(_("Max seconds, default is 90. Current value: %1"),
+                           self.page_max_read_sec),
             },
         },
         buttons = {
