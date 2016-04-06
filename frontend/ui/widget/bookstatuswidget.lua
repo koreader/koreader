@@ -50,15 +50,15 @@ local BookStatusWidget = InputContainer:new{
         status = "",
         modified = "",
     },
-    stats = {
-        total_time_in_sec = 0,
-        performance_in_pages = {},
-        pages = 0,
-    }
+    stats = nil
 }
 
 function BookStatusWidget:init()
-    self.stats.pages = self.document:getPageCount()
+    self.stats = {
+        total_time_in_sec = 0,
+        performance_in_pages = {},
+        pages = self.document:getPageCount(),
+    }
     self:getStatisticsSettings()
     if self.settings then
         self.summary = self.settings:readSetting("summary")
