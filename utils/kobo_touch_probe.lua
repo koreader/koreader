@@ -45,11 +45,6 @@ function TouchProbe:init()
         TapProbe = {
             GestureRange:new{
                 ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
             }
         },
     }
