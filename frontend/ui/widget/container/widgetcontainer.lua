@@ -1,6 +1,10 @@
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 
+if require("device"):isAndroid() then
+    require("jit").off(true, true)
+end
+
 --[[
 WidgetContainer is a container for another Widget
 --]]

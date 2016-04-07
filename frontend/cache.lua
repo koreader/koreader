@@ -6,6 +6,10 @@ local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
 
+if require("device"):isAndroid() then
+    require("jit").off(true, true)
+end
+
 local function calcFreeMem()
     local meminfo = io.open("/proc/meminfo", "r")
     local freemem = 0

@@ -8,6 +8,10 @@ local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")
 local DEBUG = require("dbg")
 
+if require("device"):isAndroid() then
+    require("jit").off(true, true)
+end
+
 --[[
 @TODO: all these functions should probably be methods on Face objects
 ]]--

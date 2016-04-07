@@ -5,6 +5,10 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local _ = require("gettext")
 
+if require("device"):isAndroid() then
+    require("jit").off(true, true)
+end
+
 --[[
 an InputContainer is an WidgetContainer that handles input events
 
