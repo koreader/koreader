@@ -176,12 +176,11 @@ function Kobo:resume()
     -- HACK: wait a bit for the kernel to catch up
     os.execute("sleep 0.1")
     -- cf. #1862, I can reliably break IR touch input on resume...
-    if os.getenv("FROM_NICKEL") == "true" then
-        local f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
-        if f ~= nil then
-            io.close(f)
-            os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
-        end
+    -- cf. also #1943 for the rationale behind applying this workaorund in every case...
+    local f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
+    if f ~= nil then
+        io.close(f)
+        os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
     end
 end
 
