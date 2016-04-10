@@ -384,8 +384,10 @@ fi
 
 case $1 in
     activate)
+        echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"
         eval $(luarocks path bin)
+        exec ${SHELL}
         ;;
     fetch-thirdparty)
         kodev-fetch-thirdparty
