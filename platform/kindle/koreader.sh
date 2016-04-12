@@ -217,7 +217,8 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 			lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
 			PILLOW_SOFT_DISABLED="yes"
 		fi
-		if [ "${NO_SLEEP}" == "no" ] ; then
+		# NOTE: We don't need to sleep at all if we've already SIGSTOPped awesome ;)
+		if [ "${NO_SLEEP}" == "no" -a "${AWESOME_STOPPED}" == "no" ] ; then
 			# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing the title bar
 			usleep 250000
 			# NOTE: If we were started from KUAL, we risk getting a list item to popup right over us, so, wait some more...
