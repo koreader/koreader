@@ -197,11 +197,11 @@ fi
 if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
 	if [ "$count" == "" -o "$count" == "0" ] ; then
+		# NOTE: Dump the fb so we can restore something useful on exit...
+		cat /dev/fb0 > /var/tmp/koreader-fb.dump
 		# NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
 		if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ] ; then
 			PILLOW_HARD_DISABLED="yes"
-			# NOTE: Dump the fb so we can restore something useful on exit...
-			cat /dev/fb0 > /var/tmp/koreader-fb.dump
 			# FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
 			logmsg "Disabling pillow . . ."
 			lipc-set-prop com.lab126.pillow disableEnablePillow disable
@@ -217,7 +217,8 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 			lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
 			PILLOW_SOFT_DISABLED="yes"
 		fi
-		if [ "${NO_SLEEP}" == "no" ] ; then
+		# NOTE: We don't need to sleep at all if we've already SIGSTOPped awesome ;)
+		if [ "${NO_SLEEP}" == "no" -a "${AWESOME_STOPPED}" == "no" ] ; then
 			# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing the title bar
 			usleep 250000
 			# NOTE: If we were started from KUAL, we risk getting a list item to popup right over us, so, wait some more...
@@ -312,7 +313,11 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
+		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
+		cat /var/tmp/koreader-fb.dump > /dev/fb0
+		rm -f /var/tmp/koreader-fb.dump
 		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
+		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 	fi
 fi
 
