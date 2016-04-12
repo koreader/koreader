@@ -313,10 +313,10 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
-		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
 		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
 		cat /var/tmp/koreader-fb.dump > /dev/fb0
 		rm -f /var/tmp/koreader-fb.dump
+		lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
 		lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
 	fi
 fi
