@@ -140,8 +140,8 @@ local VirtualKeyboard = InputContainer:new{
     utf8mode = false,
     umlautmode = false,
 
-    width = 600,
-    height = 256,
+    width = Screen:scaleBySize(600),
+    height = Screen:scaleBySize(256),
     bordersize = 2,
     padding = 2,
     key_padding = Screen:scaleBySize(6),
