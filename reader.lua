@@ -117,7 +117,7 @@ end
 
 -- restore kobo frontlight settings and probe kobo touch coordinates
 if Device:isKobo() then
-    if Device.hasFrontlight then
+    if Device:hasFrontlight() then
         local powerd = Device:getPowerDevice()
         if powerd and powerd.restore_settings then
             -- UIManager:init() should have sanely set up the frontlight_stuff by this point
