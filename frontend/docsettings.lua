@@ -56,9 +56,9 @@ function DocSettings:open(docfile)
         sidecar_file = sidecar_path,
         data = {}
     }
-    local ok, stored = pcall(dofile, new.history_file or "")
+    local ok, stored = pcall(dofile, new.sidecar_file or "")
     if not ok then
-        ok, stored = pcall(dofile, new.sidecar_file or "")
+        ok, stored = pcall(dofile, new.history_file or "")
         if not ok then
             -- try legacy conf path, for backward compatibility. this also
             -- takes care of reader legacy setting
