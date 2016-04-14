@@ -8,8 +8,9 @@ KOReader
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
-and Android (2.3+) devices. Developers can also run Koreader emulator
-for development purpose on desktop PC with Linux and Windows operating system.
+and Android (2.3+) devices. Developers can also run KOReader emulator
+for development purpose on desktop PC with Linux and Windows and 
+Mac OSX (experimental for now).
 
 Main features for users
 -----------------------
@@ -91,6 +92,11 @@ sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
 ```
 
+Mac OSX users may need to install these tools:
+```
+brew install gcc48 nasm binutils libtool autoconf automake sdl2
+```
+
 A recent version of Android SDK/NDK and `ant` are needed in order to build
 Koreader for Android devices.
 ```
@@ -155,10 +161,10 @@ Then, run this command to build installable package for Android:
 ./kodev release android
 ```
 
-For emulating KOReader on Linux and Windows
+For emulating KOReader on Linux, Windows and Mac OSX
 -------------
 
-To build an emulator on current Linux machine just run:
+To build an emulator on current Linux or OSX machine:
 ```
 ./kodev build
 ```

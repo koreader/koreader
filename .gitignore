@@ -37,5 +37,6 @@ koreader-kobo-arm-linux-gnueabihf*
 koreader-emulator-i686-w64-mingw32
 koreader-emulator-x86_64-linux-gnu
 koreader-emulator-x86_64-pc-linux-gnu
+koreader-emulator-x86_64-apple-darwin*
 koreader-pocketbook-arm-obreey-linux-gnueabi
 koreader-ubuntu-touch-arm-linux-gnueabihf
