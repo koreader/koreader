@@ -97,11 +97,6 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Font = require("ui/font")
 
--- change some global default values according to the device types
-if Device:isKobo() then
-    KOBO_SCREEN_SAVER = "/mnt/onboard/screensaver"
-end
-
 -- read some global reader settings here:
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")

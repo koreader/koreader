@@ -79,6 +79,9 @@ local KoboAlyssum = Kobo:new{
 }
 
 function Kobo:init()
+    -- Default screensaver folder
+    KOBO_SCREEN_SAVER = "/mnt/onboard/screensaver"
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{

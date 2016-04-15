@@ -8,57 +8,32 @@ local _ = require("gettext")
 local Screensaver = {
 }
 
-function Screensaver:getCoverImage(file)
-    local ImageWidget = require("ui/widget/imagewidget")
-    local CenterContainer = require("ui/widget/container/centercontainer")
-    local FrameContainer = require("ui/widget/container/framecontainer")
-    local AlphaContainer = require("ui/widget/container/alphacontainer")
-    local image_height
-    local image_width
-    local screen_height = Screen:getHeight()
-    local screen_width = Screen:getWidth()
-    local doc = DocumentRegistry:openDocument(file)
-    if doc then
-        local image = doc:getCoverPageImage()
-        doc:close()
-        local lastfile = G_reader_settings:readSetting("lastfile")
-        local data = DocSettings:open(lastfile)
-        local proportional_cover = data:readSetting("proportional_screensaver")
-        if image then
-            return AlphaContainer:new{
-                alpha = 1,
-                height = screen_height,
-                width = screen_width,
-                CenterContainer:new{
-                    dimen = Screen:getSize(),
-                    FrameContainer:new{
-                        bordersize = 0,
-                        padding = 0,
-                        height = screen_height,
-                        width = screen_width,
-                        ImageWidget:new{
-                            image = image,
-                            height = screen_height,
-                            width = screen_width,
-                            overflow = proportional_cover,
-                        }
-                    }
-                }
+local function createWidgetFromImage(imageWidget)
+    if imageWidget then
+        local AlphaContainer = require("ui/widget/container/alphacontainer")
+        local CenterContainer = require("ui/widget/container/centercontainer")
+        return AlphaContainer:new{
+            alpha = 1,
+            height = Screen:getHeight(),
+            width = Screen:getWidth(),
+            CenterContainer:new{
+                dimen = Screen:getSize(),
+                imageWidget,
             }
-        end
+        }
     end
 end
 
-local function createWidget(file)
+local function createWidgetFromFile(file)
     if lfs.attributes(file, "mode") == "file" then
         local ImageWidget = require("ui/widget/imagewidget")
-        return ImageWidget:new{
-            file = file,
-            width = Screen:getWidth(),
-            height = Screen:getHeight(),
-            overflow = true,
-            centering = true,
-        }
+        return createWidgetFromImage(
+                   ImageWidget:new{
+                       file = file,
+                       height = Screen:getHeight(),
+                       width = Screen:getWidth(),
+                       autostretch = true,
+                   })
     end
 end
 
@@ -71,16 +46,37 @@ local function getRandomImage(dir)
     math.randomseed(os.time())
     for entry in lfs.dir(dir) do
         if lfs.attributes(dir .. entry, "mode") == "file" then
-            local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
-            if extension == "jpg" or extension == "jpeg" or extension == "png" then
+            local extension =
+                string.lower(string.match(entry, ".+%.([^.]+)") or "")
+            if extension == "jpg"
+            or extension == "jpeg"
+            or extension == "png" then
                 i = i + 1
                 pics[i] = entry
             end
         end
     end
-    local image = pics[math.random(i)]
-    if image then
-        return createWidget(dir .. image)
+    return createWidgetFromFile(dir .. pics[math.random(i)])
+end
+
+function Screensaver:getCoverImage(file)
+    local ImageWidget = require("ui/widget/imagewidget")
+    local doc = DocumentRegistry:openDocument(file)
+    if doc then
+        local image = doc:getCoverPageImage()
+        doc:close()
+        local lastfile = G_reader_settings:readSetting("lastfile")
+        local data = DocSettings:open(lastfile)
+        local proportional_cover = data:readSetting("proportional_screensaver")
+        if image then
+            return createWidgetFromImage(
+                       ImageWidget:new{
+                           image = image,
+                           height = Screen:getHeight(),
+                           width = Screen:getWidth(),
+                           autostretch = proportional_cover,
+                       })
+        end
     end
 end
 
@@ -105,7 +101,7 @@ function Screensaver:show()
             if lfs.attributes(file, "mode") == "directory" then
                 self.suspend_msg = getRandomImage(file)
             else
-                self.suspend_msg = createWidget(file)
+                self.suspend_msg = createWidgetFromFile(file)
             end
         end
     end
