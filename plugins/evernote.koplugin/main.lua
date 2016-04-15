@@ -16,7 +16,7 @@ local MyClipping = require("clip")
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
     login_title = _("Login to Evernote"),
-    notebook_name = _("Koreader Notes"),
+    notebook_name = _("KOReader Notes"),
     evernote_domain = nil,
     notemarks = _("Note: "),
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
@@ -94,7 +94,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several seconds..."),
+                        text = _("Exporting may take several seconds…"),
                         timeout = 1,
                     })
                 end
@@ -110,7 +110,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several minutes..."),
+                        text = _("Exporting may take several minutes…"),
                         timeout = 1,
                     })
                 end
@@ -153,7 +153,7 @@ function EvernoteExporter:login()
                         end)
 
                         UIManager:show(InfoMessage:new{
-                            text = _("Logging in. Please wait..."),
+                            text = _("Logging in. Please wait…"),
                             timeout = 1,
                         })
                     end,

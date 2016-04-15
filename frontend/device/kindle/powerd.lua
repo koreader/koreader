@@ -27,8 +27,10 @@ end
 function KindlePowerD:toggleFrontlight()
     local sysint = self:read_int_file(self.fl_intensity_file)
     if sysint == 0 then
-        self:setIntensity(self.fl_intensity)
+        -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
+        self:setIntensityHW()
     else
+        -- NOTE: We want to really kill the light, so do it manually (asking lipc to set it to 0 would in fact set it to 1)...
         os.execute("echo -n 0 > " .. self.fl_intensity_file)
     end
 end

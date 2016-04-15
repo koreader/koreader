@@ -37,6 +37,30 @@ function FileChooser:init()
         end
         return true
     end
+    self.list = function(path, dirs, files)
+        -- lfs.dir directory without permission will give error
+        local ok, iter, dir_obj = pcall(lfs.dir, path)
+        if ok then
+            for f in iter, dir_obj do
+                if self.show_hidden or not string.match(f, "^%.[^.]") then
+                    local filename = path.."/"..f
+                    local attributes = lfs.attributes(filename)
+                    if attributes ~= nil then
+                        if attributes.mode == "directory" and f ~= "." and f~=".." then
+                            if self.dir_filter(filename) then
+                                table.insert(dirs, {name = f, attr = attributes})
+                            end
+                        elseif attributes.mode == "file" then
+                            if self.file_filter == nil or self.file_filter(filename) then
+                                table.insert(files, {name = f, attr = attributes})
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     -- circumvent string collating in Kobo devices. See issue koreader/koreader#686
     if Device:isKobo() then
         self.strcoll = function(a, b) return a < b end
@@ -49,27 +73,7 @@ function FileChooser:genItemTableFromPath(path)
     local dirs = {}
     local files = {}
 
-    -- lfs.dir directory without permission will give error
-    local ok, iter, dir_obj = pcall(lfs.dir, self.path)
-    if ok then
-        for f in iter, dir_obj do
-            if self.show_hidden or not string.match(f, "^%.[^.]") then
-                local filename = self.path.."/"..f
-                local attributes = lfs.attributes(filename)
-                if attributes ~= nil then
-                    if attributes.mode == "directory" and f ~= "." and f~=".." then
-                        if self.dir_filter(filename) then
-                            table.insert(dirs, {name = f, attr = attributes})
-                        end
-                    elseif attributes.mode == "file" then
-                        if self.file_filter(filename) then
-                            table.insert(files, {name = f, attr = attributes})
-                        end
-                    end
-                end
-            end
-        end
-    end
+    self.list(path, dirs, files)
 
     local sorting = nil
     local reverse = self.reverse_collate
@@ -99,19 +103,13 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
+        local dirs = {}
+        local files = {}
         local subdir_path = self.path.."/"..dir.name
-        local items = 0
-        ok, iter, dir_obj = pcall(lfs.dir, subdir_path)
-        if ok then
-            for f in iter, dir_obj do
-                items = items + 1
-            end
-            -- exclude "." and ".."
-            items = items - 2
-        end
+        self.list(subdir_path, dirs, files)
+        local items = #dirs + #files
         local istr = util.template(
-            items == 0 and _("0 items")
-            or items == 1 and _("1 item")
+            items == 1 and _("1 item")
             or _("%1 items"), items)
         table.insert(item_table, {
             text = dir.name.."/",

@@ -133,11 +133,11 @@ function OPDSBrowser:editCalibreServer()
             {
                 -- TODO: get IP address of current device
                 text = calibre.host or "192.168.1.1",
-                hint = _("Calibre host"),
+                hint = _("calibre host"),
             },
             {
                 text = calibre.port and tostring(calibre.port) or "8080",
-                hint = _("Calibre port"),
+                hint = _("calibre port"),
             },
         },
         buttons = {
