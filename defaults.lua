@@ -178,7 +178,7 @@ KOBO_LIGHT_ON_START = -2           -- -1, -2 or 0-100. -1 leaves light as it
                                    -- sets light on start/wake up
 KOBO_SYNC_BRIGHTNESS_WITH_NICKEL = true  -- Save brightness set in KOreader
                                          -- with nickel's 'Kobo eReader.conf'
-KOBO_SCREEN_SAVER = ""             -- image or directory with pictures or "-"
+KOBO_SCREEN_SAVER = ""             -- image or directory with pictures or empty
 KOBO_SCREEN_SAVER_LAST_BOOK = true -- get screensaver from last book if possible
 
 -- Network proxy settings

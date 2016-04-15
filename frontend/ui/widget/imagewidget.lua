@@ -39,6 +39,21 @@ local ImageWidget = Widget:new{
     autoscale = false,
     -- when alpha is set to true, alpha values from the image will be honored
     alpha = false,
+    -- when autostretch is set to true, image will be stretched to best fit the
+    -- widget size. i.e. either fit the width or fit the height according to the
+    -- original image size.
+    autostretch = false,
+    -- when overflow is set to true, image will be stretched to fit the widget
+    -- size vertically and horizontally, without impact original aspect ratio.
+    -- But overflow part will be ignored.
+    overflow = false,
+    -- when nostretch is set to true, image won't be stretched.
+    nostretch = false,
+    -- when centering is set to true, image will be placed in the middle of the
+    -- widget. This setting takes effect only with overflow, autostretch and
+    -- nostretch. i.e. only when the image size is not consistent with widget
+    -- size.
+    centering = false,
     _bb = nil
 }
 
@@ -79,15 +94,35 @@ function ImageWidget:_render()
         error("cannot render image")
     end
     local native_w, native_h = self._bb:getWidth(), self._bb:getHeight()
-    local scaled_w, scaled_h = self.width, self.height
+    local w, h
     if self.autoscale then
         local dpi_scale = Screen:getDPI() / 167
         -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))
         local scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
-        scaled_w, scaled_h = scale * native_w, scale * native_h
+        w, h = scale * native_w, scale * native_h
+    elseif self.autostretch then
+        local ratio = native_w / self.width / native_h * self.height
+        if ratio < 1 then
+            h = self.height
+            w = self.width * ratio
+        else
+            h = self.height * ratio
+            w = self.width
+        end
+    elseif self.nostretch then
+        w, h = native_w, native_h
+    elseif self.overflow then
+        local ratio = native_w / self.width / native_h * self.height
+        if ratio < 1 then
+            h = self.height / ratio
+            w = self.width
+        else
+            h = self.height
+            w = self.width / ratio
+        end
     end
-    if (scaled_w and scaled_w ~= native_w) or (scaled_h and scaled_h ~= native_h) then
-        self._bb = self._bb:scale(scaled_w or native_w, scaled_h or native_h)
+    if (w and w ~= native_w) or (h and h ~= native_h) then
+        self._bb = self._bb:scale(w or native_w, h or native_h)
     end
 end
 
@@ -110,6 +145,10 @@ function ImageWidget:paintTo(bb, x, y)
         w = size.w,
         h = size.h
     }
+    if self.centering then
+        x = x - (size.w - self.width) / 2
+        y = y - (size.h - self.height) / 2
+    end
     if self.alpha == true then
         bb:alphablitFrom(self._bb, x, y, 0, 0, size.w, size.h)
     else
