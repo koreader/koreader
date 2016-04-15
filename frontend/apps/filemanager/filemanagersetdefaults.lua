@@ -363,7 +363,7 @@ function SetDefaults:SaveSettings()
         end
         file:close()
         UIManager:show(InfoMessage:new{
-            text = _("Default settings were saved successfully!"),
+            text = _("Default settings saved."),
         })
     end
     settings_changed = false
