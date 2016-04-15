@@ -97,7 +97,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Font = require("ui/font")
 
--- read some global reader settings here:
+-- read some global reader setting here:
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
