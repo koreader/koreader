@@ -142,7 +142,7 @@ function OTAManager:fetchAndProcessUpdate()
             ),
             ok_callback = function()
                 UIManager:show(InfoMessage:new{
-                    text = _("Downloading may take several minutes..."),
+                    text = _("Downloading may take several minutes…"),
                     timeout = 3,
                 })
                 UIManager:scheduleIn(1, function()

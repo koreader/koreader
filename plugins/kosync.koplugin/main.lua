@@ -119,7 +119,7 @@ function KOSync:login()
                         end)
 
                         UIManager:show(InfoMessage:new{
-                            text = _("Logging in. Please wait..."),
+                            text = _("Logging in. Please wait…"),
                             timeout = 1,
                         })
                     end,
@@ -135,7 +135,7 @@ function KOSync:login()
                         end)
 
                         UIManager:show(InfoMessage:new{
-                            text = _("Registering. Please wait..."),
+                            text = _("Registering. Please wait…"),
                             timeout = 1,
                         })
                     end,
@@ -299,7 +299,7 @@ function KOSync:getProgress(manual)
                         })
                     elseif manual and body.progress == progress then
                         UIManager:show(InfoMessage:new{
-                            text = _("We are already synchronized."),
+                            text = _("Already synchronized."),
                             timeout = 3,
                         })
                     end
