@@ -85,7 +85,7 @@ end
 
 function DocSettings:flush()
     -- write serialized version of the data table into
-    --  i) history directory in root directory of koreader
+    --  i) history directory in root directory of KOReader
     -- ii) sidecar directory in the same directory of the document
     if not self.history_file and not self.sidecar_file then
         return

@@ -322,7 +322,7 @@ function FileManager:deleteFile(file)
             os.remove(legacy_history_file)
         end
         UIManager:show(InfoMessage:new{
-            text = util.template(_("Successfully deleted %1"), file),
+            text = util.template(_("Deleted %1"), file),
             timeout = 2,
         })
     else
@@ -350,7 +350,7 @@ function FileManager:renameFile(file)
                 end
                 if move_history then
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_("Successfully renamed from %1 to %2"), file, dest),
+                        text = util.template(_("Renamed from %1 to %2"), file, dest),
                         timeout = 2,
                     })
                 else

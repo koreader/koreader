@@ -177,7 +177,7 @@ function KOSync:doRegister(username, password)
             self.kosync_username = username
             self.kosync_userkey = userkey
             UIManager:show(InfoMessage:new{
-                text = _("Registered to KOReader server successfully."),
+                text = _("Registered to KOReader server."),
             })
         else
             UIManager:show(InfoMessage:new{
@@ -207,7 +207,7 @@ function KOSync:doLogin(username, password)
             self.kosync_username = username
             self.kosync_userkey = userkey
             UIManager:show(InfoMessage:new{
-                text = _("Logged in to KOReader server successfully."),
+                text = _("Logged in to KOReader server."),
             })
         else
             UIManager:show(InfoMessage:new{

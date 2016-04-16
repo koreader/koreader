@@ -55,7 +55,7 @@ describe("FileManager module", function()
         assert.is_not_nil(lfs.attributes(tmp_history))
 
         UIManager.show = function(self, w)
-            assert.Equals(w.text, "Successfully deleted "..tmp_fn)
+            assert.Equals(w.text, "Deleted "..tmp_fn)
         end
         filemanager:deleteFile(tmp_fn)
         UIManager.show = old_show
@@ -90,7 +90,7 @@ describe("FileManager module", function()
         assert.is_not_nil(lfs.attributes(tmp_history))
 
         UIManager.show = function(self, w)
-            assert.Equals(w.text, "Successfully deleted "..tmp_fn)
+            assert.Equals(w.text, "Deleted "..tmp_fn)
         end
         filemanager:deleteFile(tmp_fn)
         UIManager.show = old_show
