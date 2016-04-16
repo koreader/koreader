@@ -128,10 +128,10 @@ if Device:isKobo() then
                 -- default powerd.is_fl_on is false, turn it on
                 powerd:toggleFrontlight()
             else
-                -- the light can still be turned on manually outside of koreader
-                -- or nickel. so we always set the intensity to 0 here to keep it
+                -- the light can still be turned on manually outside of KOReader
+                -- or Nickel. so we always set the intensity to 0 here to keep it
                 -- in sync with powerd.is_fl_on (false by default)
-                -- NOTE: we cant use setIntensity method here because for kobo the
+                -- NOTE: we cant use setIntensity method here because for Kobo the
                 -- min intensity is 1 :(
                 powerd.fl:setBrightness(0)
             end

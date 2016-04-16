@@ -212,7 +212,7 @@ function EvernoteExporter:doLogin(username, password)
         self.evernote_token = token
         self.notebook_guid = guid
         UIManager:show(InfoMessage:new{
-            text = _("Logged in to Evernote successfully."),
+            text = _("Logged in to Evernote."),
         })
     end
 

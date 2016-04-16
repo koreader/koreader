@@ -14,12 +14,12 @@ describe("util module", function()
     end)
 
     it("should split string with patterns", function()
-        local sentence = "Hello world, welcome to KoReader!"
+        local sentence = "Hello world, welcome to KOReader!"
         local words = {}
         for word in util.gsplit(sentence, "%s+", false) do
             table.insert(words, word)
         end
-        assert.are_same(words, {"Hello", "world,", "welcome", "to", "KoReader!"})
+        assert.are_same(words, {"Hello", "world,", "welcome", "to", "KOReader!"})
     end)
 
     it("should split command line arguments with quotation", function()

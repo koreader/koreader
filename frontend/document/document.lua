@@ -100,14 +100,14 @@ function Document:discardChange()
 end
 
 -- calculate partial digest of the document
--- since only PDF documents could be modified by koreader by appending data
+-- since only PDF documents could be modified by KOReader by appending data
 -- at the end of the files when highlighting, we use a non-even sampling
 -- algorithm which samples with larger weight at file head and much smaller
 -- weight at file tail, thus reduces the probability that appended data may change
 -- the digest value.
 -- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
 -- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
--- by highlighting in koreader may change the digest value.
+-- by highlighting in KOReader may change the digest value.
 function Document:fastDigest()
     local md5 = require("ffi/MD5")
     local lshift = bit.lshift
