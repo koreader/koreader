@@ -15,6 +15,8 @@ local Kobo = Generic:new{
     touch_mirrored_x = true,
     -- enforce protrait mode on Kobos:
     isAlwaysPortrait = yes,
+    -- the internal storage mount point users can write to
+    internal_storage_mount_point = "/mnt/onboard/"
 }
 
 -- TODO: hasKeys for some devices?
@@ -79,9 +81,6 @@ local KoboAlyssum = Kobo:new{
 }
 
 function Kobo:init()
-    -- Default screensaver folder
-    KOBO_SCREEN_SAVER = "/mnt/onboard/screensaver"
-
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{

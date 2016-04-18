@@ -1,6 +1,7 @@
 local DocumentRegistry = require("document/documentregistry")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
+local Device = require("device")
+local Screen = Device.screen
 local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -84,7 +85,9 @@ function Screensaver:show()
     DEBUG("show screensaver")
     local InfoMessage = require("ui/widget/infomessage")
     -- first check book cover image
-    if KOBO_SCREEN_SAVER_LAST_BOOK then
+    screen_saver_last_book =
+        G_reader_settings:readSetting("use_lastfile_as_screensaver")
+    if screen_saver_last_book == nil or screen_saver_last_book then
         local lastfile = G_reader_settings:readSetting("lastfile")
         if lastfile then
             local data = DocSettings:open(lastfile)
@@ -96,8 +99,15 @@ function Screensaver:show()
     end
     -- then screensaver directory or file image
     if not self.suspend_msg then
-        if type(KOBO_SCREEN_SAVER) == "string" then
-            local file = KOBO_SCREEN_SAVER
+        local screen_saver_folder =
+            G_reader_settings:readSetting("screensaver_folder")
+        if screen_saver_folder == nil
+        and Device.internal_storage_mount_point ~= nil then
+            screen_saver_folder =
+                Device.internal_storage_mount_point .. "screensaver"
+        end
+        if screen_saver_folder then
+            local file = screen_saver_folder
             if lfs.attributes(file, "mode") == "directory" then
                 self.suspend_msg = getRandomImage(file)
             else
