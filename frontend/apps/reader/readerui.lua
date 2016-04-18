@@ -329,6 +329,7 @@ end
 
 function ReaderUI:showReader(file)
     DEBUG("show reader ui")
+    require("readhistory"):addItem(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T( _("File '%1' does not exist."), file)
