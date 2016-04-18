@@ -9,8 +9,8 @@ local _ = require("gettext")
 local Screensaver = {
 }
 
-local function createWidgetFromImage(imageWidget)
-    if imageWidget then
+local function createWidgetFromImage(image_widget)
+    if image_widget then
         local AlphaContainer = require("ui/widget/container/alphacontainer")
         local CenterContainer = require("ui/widget/container/centercontainer")
         return AlphaContainer:new{
@@ -19,7 +19,7 @@ local function createWidgetFromImage(imageWidget)
             width = Screen:getWidth(),
             CenterContainer:new{
                 dimen = Screen:getSize(),
-                imageWidget,
+                image_widget,
             }
         }
     end
