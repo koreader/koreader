@@ -255,7 +255,6 @@ function ReaderHighlight:onHoldPan(_, ges)
         return true
     end
     local page_area = self.view:getScreenPageArea(self.hold_pos.page)
-    DEBUG("current page area", page_area)
     if ges.pos:notIntersectWith(page_area) then
         DEBUG("not inside page area", ges, page_area)
         return true

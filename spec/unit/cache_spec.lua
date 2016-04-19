@@ -1,15 +1,21 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local Cache = require("cache")
-local DEBUG = require("dbg")
-
 describe("Cache module", function()
-    local sample_pdf = "spec/front/unit/data/sample.pdf"
-    local doc = DocumentRegistry:openDocument(sample_pdf)
+    local DocumentRegistry, Cache, DEBUG
+    local doc
+    local max_page = 1
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        Cache = require("cache")
+        DEBUG = require("dbg")
+
+        local sample_pdf = "spec/front/unit/data/sample.pdf"
+        doc = DocumentRegistry:openDocument(sample_pdf)
+    end)
+
     it("should clear cache", function()
         Cache:clear()
     end)
-    local max_page = 1
+
     it("should serialize blitbuffer", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
             doc:renderPage(pageno, nil, 1, 0, 1.0, 0)
@@ -17,12 +23,14 @@ describe("Cache module", function()
         end
         Cache:clear()
     end)
+
     it("should deserialize blitbuffer", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
             doc:hintPage(pageno, 1, 0, 1.0, 0)
         end
         Cache:clear()
     end)
+
     it("should serialize koptcontext", function()
         doc.configurable.text_wrap = 1
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
@@ -31,7 +39,9 @@ describe("Cache module", function()
             Cache:serialize()
         end
         Cache:clear()
+        doc.configurable.text_wrap = 0
     end)
+
     it("should deserialize koptcontext", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
             doc:renderPage(pageno, nil, 1, 0, 1.0, 0)

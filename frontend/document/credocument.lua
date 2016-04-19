@@ -202,7 +202,7 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
     local line_boxes = {}
     if pos0 and pos1 then
         local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1)
-        --DEBUG("word boxes", word_boxes)
+        -- DEBUG("word boxes", word_boxes)
         for i = 1, #word_boxes do
             local line_box = word_boxes[i]
             table.insert(line_boxes, Geom:new{
@@ -433,7 +433,8 @@ end
 
 function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
     DEBUG("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
-    return self._document:findText(pattern, origin, reverse, caseInsensitive and 1 or 0)
+    return self._document:findText(
+        pattern, origin, reverse, caseInsensitive and 1 or 0)
 end
 
 function CreDocument:register(registry)

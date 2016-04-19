@@ -8,7 +8,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
+local dbg = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
@@ -118,7 +118,7 @@ function ReaderView:resetLayout()
 end
 
 function ReaderView:paintTo(bb, x, y)
-    DEBUG("painting", self.visible_area, "to", x, y)
+    dbg("painting", self.visible_area, "to", x, y)
     if self.page_scroll then
         self:drawPageBackground(bb, x, y)
     else
@@ -142,7 +142,7 @@ function ReaderView:paintTo(bb, x, y)
 
     -- dim last read area
     if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
-        --DEBUG("dim area", self.dim_area)
+        --dbg("dim area", self.dim_area)
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
@@ -189,7 +189,7 @@ function ReaderView:screenToPageTransform(pos)
     else
         pos.page = self.ui.document:getCurrentPage()
         -- local last_y = self.ui.document:getCurrentPos()
-        DEBUG("document has no pages at", pos)
+        dbg("document has no pages at", pos)
         return pos
     end
 end
@@ -519,14 +519,14 @@ function ReaderView:recalculate()
 end
 
 function ReaderView:PanningUpdate(dx, dy)
-    DEBUG("pan by", dx, dy)
+    dbg("pan by", dx, dy)
     local old = self.visible_area:copy()
     self.visible_area:offsetWithin(self.page_area, dx, dy)
     if self.visible_area ~= old then
         -- flag a repaint
         UIManager:setDirty(self.dialog, "partial")
-        DEBUG("on pan: page_area", self.page_area)
-        DEBUG("on pan: visible_area", self.visible_area)
+        dbg("on pan: page_area", self.page_area)
+        dbg("on pan: visible_area", self.visible_area)
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     end
@@ -534,7 +534,7 @@ function ReaderView:PanningUpdate(dx, dy)
 end
 
 function ReaderView:PanningStart(x, y)
-    DEBUG("panning start", x, y)
+    dbg("panning start", x, y)
     if not self.panning_visible_area then
         self.panning_visible_area = self.visible_area:copy()
     end
@@ -611,7 +611,7 @@ function ReaderView:onSetDimensions(dimensions)
 end
 
 function ReaderView:onRestoreDimensions(dimensions)
-    --DEBUG("restore dimen", dimensions)
+    --dbg("restore dimen", dimensions)
     self:resetLayout()
     self.dimen = dimensions
     -- recalculate view

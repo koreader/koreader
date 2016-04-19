@@ -98,7 +98,9 @@ $(INSTALL_DIR)/koreader/.luacov:
 		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
 
 testfront: $(INSTALL_DIR)/koreader/.busted
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) -o verbose_print --exclude-tags=notest
+	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
+		--no-auto-insulate \
+		-o verbose_print --exclude-tags=notest
 
 test:
 	$(MAKE) -C $(KOR_BASE) test

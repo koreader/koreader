@@ -179,7 +179,7 @@ end
 function ReaderStatistics:getCurrentStat()
     local dates = {}
     for k, v in pairs(self.data.performance_in_pages) do
-        dates[os.date("%Y-%m-%d", k)] = ""
+        dates[os.date("%Y-%m-%d", k)] = true
     end
     local total_days = util.tableSize(dates)
 

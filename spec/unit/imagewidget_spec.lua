@@ -1,7 +1,10 @@
-require("commonrequire")
-local ImageWidget = require("ui/widget/imagewidget")
-
 describe("ImageWidget module", function()
+    local ImageWidget
+    setup(function()
+        require("commonrequire")
+        ImageWidget = require("ui/widget/imagewidget")
+    end)
+
     it("should render without error", function()
         local imgw = ImageWidget:new{
             file = "resources/icons/appbar.chevron.up.png"

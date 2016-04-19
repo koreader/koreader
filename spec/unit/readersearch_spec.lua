@@ -1,12 +1,15 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local DEBUG = require("dbg")
-
-local sample_epub = "spec/front/unit/data/juliet.epub"
-local sample_pdf = "spec/front/unit/data/sample.pdf"
-
 describe("Readersearch module", function()
+    local sample_epub = "spec/front/unit/data/juliet.epub"
+    local sample_pdf = "spec/front/unit/data/sample.pdf"
+    local DocumentRegistry, ReaderUI, dbg
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        dbg = require("dbg")
+    end)
+
     describe("search API for EPUB documents", function()
         local doc, search, rolling
         setup(function()
@@ -26,7 +29,7 @@ describe("Readersearch module", function()
                 if words then
                     for _, word in ipairs(words) do
                         local pageno = doc:getPageFromXPointer(word.start)
-                        --DEBUG("found at pageno", pageno)
+                        --dbg("found at pageno", pageno)
                         assert.truthy(pageno <= i)
                     end
                 end
@@ -41,7 +44,7 @@ describe("Readersearch module", function()
                 if words then
                     for _, word in ipairs(words) do
                         local pageno = doc:getPageFromXPointer(word.start)
-                        --DEBUG("found at pageno", pageno)
+                        --dbg("found at pageno", pageno)
                         assert.truthy(pageno >= i)
                     end
                 end
@@ -53,7 +56,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromStart("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(7, pageno)
+                assert.are.equal(9, pageno)
             end
             for i = 1, 5, 1 do
                 rolling:onGotoPage(i)
@@ -67,7 +70,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(199, pageno)
+                assert.are.equal(203, pageno)
             end
             for i = 230, 235, 1 do
                 rolling:onGotoPage(i)
@@ -82,7 +85,7 @@ describe("Readersearch module", function()
             while words do
                 count = count + #words
                 for _, word in ipairs(words) do
-                    --DEBUG("found word", word.start)
+                    --dbg("found word", word.start)
                 end
                 doc:gotoXPointer(words[1].start)
                 words = search:searchNext("Verona", 0)
@@ -135,7 +138,7 @@ describe("Readersearch module", function()
                 paging:onGotoPage(i)
                 local words = search:searchFromCurrent("test", 1)
                 if words then
-                    DEBUG("search backward: found at page", words.page)
+                    dbg("search backward: found at page", words.page)
                     assert.truthy(words.page <= i)
                 end
             end
@@ -147,7 +150,7 @@ describe("Readersearch module", function()
                 paging:onGotoPage(i)
                 local words = search:searchFromCurrent("test", 0)
                 if words then
-                    DEBUG("search forward: found at page", words.page)
+                    dbg("search forward: found at page", words.page)
                     assert.truthy(words.page >= i)
                 end
             end
@@ -184,7 +187,7 @@ describe("Readersearch module", function()
             local words = search:searchFromCurrent("test", 0)
             while words do
                 count = count + #words
-                --DEBUG("found words", #words, words.page)
+                --dbg("found words", #words, words.page)
                 paging:onGotoPage(words.page)
                 words = search:searchNext("test", 0)
             end

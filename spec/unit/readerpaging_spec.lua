@@ -28,6 +28,11 @@ describe("Readerpaging module", function()
 
     describe("Scroll mode", function()
         setup(function()
+            local purgeDir = require("ffi/util").purgeDir
+            local DocSettings = require("docsettings")
+            purgeDir(DocSettings:getSidecarDir(sample_pdf))
+            os.remove(DocSettings:getHistoryPath(sample_pdf))
+
             readerui = require("apps/reader/readerui"):new{
                 document = require("document/documentregistry"):openDocument(sample_pdf),
             }

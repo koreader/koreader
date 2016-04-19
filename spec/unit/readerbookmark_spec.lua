@@ -1,5 +1,5 @@
 describe("ReaderBookmark module", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DEBUG, DocSettings
+    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg, DocSettings
     local sample_epub, sample_pdf
 
     setup(function()
@@ -10,7 +10,7 @@ describe("ReaderBookmark module", function()
         UIManager = require("ui/uimanager")
         Screen = require("device").screen
         Geom = require("ui/geometry")
-        DEBUG = require("dbg")
+        dbg = require("dbg")
 
         sample_epub = "spec/front/unit/data/juliet.epub"
         sample_pdf = "spec/front/unit/data/sample.pdf"
@@ -22,6 +22,7 @@ describe("ReaderBookmark module", function()
         readerui.highlight:onHoldRelease()
         assert.truthy(readerui.highlight.highlight_dialog)
         readerui.highlight:onHighlight()
+        -- TODO: replace scheduleIn with nextTick
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.highlight.highlight_dialog)
             UIManager:close(readerui)
@@ -70,14 +71,16 @@ describe("ReaderBookmark module", function()
                 { notes = 'foo', page = 1, pos0 = 0, pos1 = 2, }))
         end)
         it("should show dogear after togglering non-bookmarked page", function()
+            assert.falsy(readerui.view.dogear_visible)
             toggler_dogear(readerui)
             Screen:shot("screenshots/reader_bookmark_dogear_epub.png")
             assert.truthy(readerui.view.dogear_visible)
         end)
         it("should not show dogear after togglering bookmarked page", function()
+            assert.truthy(readerui.view.dogear_visible)
             toggler_dogear(readerui)
             Screen:shot("screenshots/reader_bookmark_nodogear_epub.png")
-            assert.truthy(not readerui.view.dogear_visible)
+            assert.falsy(readerui.view.dogear_visible)
         end)
         it("should sort bookmarks with descending page numbers", function()
             local pages = {1, 20, 5, 30, 10, 40, 15, 25, 35, 45}
@@ -92,6 +95,7 @@ describe("ReaderBookmark module", function()
         end)
         it("should keep descending page numbers after removing bookmarks", function()
             local pages = {1, 30, 10, 40, 20}
+            readerui.bookmark.bookmarks = {}
             for _, page in ipairs(pages) do
                 readerui.rolling:onGotoPage(page)
                 toggler_dogear(readerui)
@@ -102,7 +106,9 @@ describe("ReaderBookmark module", function()
             assert.are.same(5, #readerui.bookmark.bookmarks)
         end)
         it("should add bookmark by highlighting", function()
-            highlight_text(readerui, Geom:new{ x = 260, y = 60 }, Geom:new{ x = 260, y = 90 })
+            highlight_text(readerui,
+                           Geom:new{ x = 260, y = 60 },
+                           Geom:new{ x = 260, y = 90 })
             readerui.bookmark:onShowBookmark()
             show_bookmark_menu(readerui)
             Screen:shot("screenshots/reader_bookmark_6marks_epub.png")
@@ -111,14 +117,16 @@ describe("ReaderBookmark module", function()
         it("should get previous bookmark for certain page", function()
             local xpointer = readerui.document:getXPointer()
             local bm_xpointer = readerui.bookmark:getPreviousBookmarkedPage(xpointer)
-            assert.are.same(5, readerui.document:getPageFromXPointer(bm_xpointer))
+            assert.are.same(6, #readerui.bookmark.bookmarks)
+            assert.are.same(1, readerui.document:getPageFromXPointer(bm_xpointer))
         end)
         it("should get next bookmark for certain page", function()
             local xpointer = readerui.document:getXPointer()
             local bm_xpointer = readerui.bookmark:getNextBookmarkedPage(xpointer)
-            assert.are.same(15, readerui.document:getPageFromXPointer(bm_xpointer))
+            assert.are.same(20, readerui.document:getPageFromXPointer(bm_xpointer))
         end)
     end)
+
     describe("bookmark for PDF document", function()
         local readerui
         setup(function()

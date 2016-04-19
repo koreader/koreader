@@ -1,15 +1,21 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local Event = require("ui/event")
-local DEBUG = require("dbg")
-
 describe("Readerrolling module", function()
-    local sample_epub = "spec/front/unit/data/juliet.epub"
-    local readerui = ReaderUI:new{
-        document = DocumentRegistry:openDocument(sample_epub),
-    }
-    local rolling = readerui.rolling
+    local DocumentRegistry, ReaderUI, Event, DEBUG
+    local readerui, rolling
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        Event = require("ui/event")
+        DEBUG = require("dbg")
+
+        local sample_epub = "spec/front/unit/data/juliet.epub"
+        readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
+        rolling = readerui.rolling
+    end)
+
     describe("test in portrait screen mode", function()
         it("should goto portrait screen mode", function()
             readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))

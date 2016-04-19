@@ -1,10 +1,14 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-
 describe("PDF document module", function()
-    local sample_pdf = "spec/front/unit/data/tall.pdf"
+    local DocumentRegistry
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+    end)
+
     local doc
     it("should open document", function()
+        local sample_pdf = "spec/front/unit/data/tall.pdf"
         doc = DocumentRegistry:openDocument(sample_pdf)
         assert.truthy(doc)
     end)
@@ -44,9 +48,16 @@ describe("PDF document module", function()
 end)
 
 describe("EPUB document module", function()
-    local sample_epub = "spec/front/unit/data/leaves.epub"
+    local DocumentRegistry
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+    end)
+
     local doc
     it("should open document", function()
+        local sample_epub = "spec/front/unit/data/leaves.epub"
         doc = DocumentRegistry:openDocument(sample_epub)
         assert.truthy(doc)
     end)

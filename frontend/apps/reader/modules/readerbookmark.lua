@@ -132,7 +132,8 @@ function ReaderBookmark:onToggleBookmark()
         pn_or_xp = self.ui.document:getXPointer()
     end
     self:toggleBookmark(pn_or_xp)
-    self.view.dogear_visible = not self.view.dogear_visible
+    self.ui:handleEvent(Event:new("SetDogearVisibility",
+                                  not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
     return true
 end
@@ -236,11 +237,7 @@ function ReaderBookmark:onShowBookmark()
 end
 
 function ReaderBookmark:isBookmarkMatch(item, pn_or_xp)
-    if self.ui.document.info.has_pages then
-        return item.page == pn_or_xp
-    else
-        return self.ui.document:isXPointerInCurrentPage(item.page)
-    end
+    return item.page == pn_or_xp
 end
 
 function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)

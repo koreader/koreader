@@ -38,5 +38,6 @@ describe("PDF reflowing benchmark", function()
         logDuration("pdf_reflowing.log", pageno, dur)
     end
     doc:close()
+    doc.configurable.text_wrap = 0
 end)
 
