@@ -15,6 +15,8 @@ local Kobo = Generic:new{
     touch_mirrored_x = true,
     -- enforce protrait mode on Kobos:
     isAlwaysPortrait = yes,
+    -- the internal storage mount point users can write to
+    internal_storage_mount_point = "/mnt/onboard/"
 }
 
 -- TODO: hasKeys for some devices?
