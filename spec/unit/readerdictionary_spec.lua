@@ -1,16 +1,20 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Event = require("ui/event")
-local DEBUG = require("dbg")
-
 describe("Readerdictionary module", function()
-    local sample_epub = "spec/front/unit/data/leaves.epub"
+    local DocumentRegistry, ReaderUI, lfs, UIManager, Screen, Event, DEBUG
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        lfs = require("libs/libkoreader-lfs")
+        UIManager = require("ui/uimanager")
+        Screen = require("device").screen
+        Event = require("ui/event")
+        DEBUG = require("dbg")
+    end)
+
     local readerui, rolling, dictionary
     setup(function()
+        local sample_epub = "spec/front/unit/data/leaves.epub"
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }

@@ -1,11 +1,12 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local Koptinterface = require("document/koptinterface")
-local Cache = require("cache")
-local DEBUG = require("dbg")
-DEBUG:turnOn()
-
 describe("Koptinterface module", function()
+    local DocumentRegistry, Koptinterface, Cache
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        Koptinterface = require("document/koptinterface")
+        Cache = require("cache")
+    end)
+
     local sample_pdf = "spec/front/unit/data/tall.pdf"
     local doc
 
@@ -55,6 +56,7 @@ describe("Koptinterface module", function()
         doc.configurable.text_wrap = 1
         local kc = Koptinterface:getCachedContext(doc, 1)
         assert.truthy(kc)
+        doc.configurable.text_wrap = 0
     end)
 
     it("should hint reflowed page in background", function()
@@ -63,6 +65,7 @@ describe("Koptinterface module", function()
         -- and wait for reflowing to complete
         local kc = Koptinterface:getCachedContext(doc, 1)
         assert.truthy(kc)
+        doc.configurable.text_wrap = 0
     end)
 
     it("should get native text boxes", function()
@@ -78,6 +81,6 @@ describe("Koptinterface module", function()
         local boxes = Koptinterface:getReflowedTextBoxes(doc, 1)
         local lines_in_reflowed_page = #boxes
         assert.truthy(lines_in_reflowed_page > 60)
+        doc.configurable.text_wrap = 0
     end)
-
 end)

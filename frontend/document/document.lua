@@ -257,10 +257,13 @@ function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
+    local hash_excerpt
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
-    local hash_excerpt = hash.."|"..tostring(rect)
-
-    local tile = Cache:check(hash, TileCacheItem) or Cache:check(hash_excerpt)
+    local tile = Cache:check(hash, TileCacheItem)
+    if not tile then
+        hash_excerpt = hash.."|"..tostring(rect)
+        tile = Cache:check(hash_excerpt)
+    end
     if tile then return tile end
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)

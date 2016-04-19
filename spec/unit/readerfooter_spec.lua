@@ -1,13 +1,18 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local DocSettings = require("docsettings")
-local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
-local purgeDir = require("ffi/util").purgeDir
-local Screen = require("device").screen
-
 describe("Readerfooter module", function()
+    local DocumentRegistry, ReaderUI, DocSettings, UIManager, DEBUG
+    local purgeDir, Screen
+
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        DocSettings = require("docsettings")
+        UIManager = require("ui/uimanager")
+        DEBUG = require("dbg")
+        purgeDir = require("ffi/util").purgeDir
+        Screen = require("device").screen
+    end)
+
     before_each(function()
         G_reader_settings:saveSetting("footer", {
             disabled = false,
@@ -37,7 +42,7 @@ describe("Readerfooter module", function()
         footer:updateFooter()
         timeinfo = footer:getTimeInfo()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('B:0% | '..timeinfo..' | 1 / 202 | => 0 | R:0% | TB: na | TC: na',
+        assert.are.same('B:0% | '..timeinfo..' | 1 / 204 | => 1 | R:0% | TB: na | TC: na',
                         footer.progress_text.text)
     end)
 
@@ -137,8 +142,8 @@ describe("Readerfooter module", function()
         assert.are.same(365, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(183, footer.progress_bar.width)
-        assert.are.same(397, footer.text_width)
+        assert.are.same(191, footer.progress_bar.width)
+        assert.are.same(389, footer.text_width)
     end)
 
     it("should support chapter markers", function()
@@ -152,10 +157,10 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
         assert.are.same({
-            2, 4, 7, 8, 24, 31, 38, 45, 55, 56, 59, 71, 77, 92, 97, 100, 113,
-            121, 131, 134, 148, 156, 160, 163, 166, 175, 180, 182
+            3, 6, 9, 10, 26, 33, 40, 47, 57, 58, 61, 73, 79, 94, 99, 102, 115,
+            123, 133, 136, 151, 159, 163, 167, 170, 179, 184, 186,
         }, footer.progress_bar.ticks)
-        assert.are.same(202, footer.progress_bar.last)
+        assert.are.same(204, footer.progress_bar.last)
     end)
 
     it("should schedule/unschedule auto refresh time task", function()

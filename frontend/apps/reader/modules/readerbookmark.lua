@@ -132,7 +132,8 @@ function ReaderBookmark:onToggleBookmark()
         pn_or_xp = self.ui.document:getXPointer()
     end
     self:toggleBookmark(pn_or_xp)
-    self.view.dogear_visible = not self.view.dogear_visible
+    self.ui:handleEvent(Event:new("SetDogearVisibility",
+                                  not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
     return true
 end

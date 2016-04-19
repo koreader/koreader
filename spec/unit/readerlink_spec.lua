@@ -91,6 +91,8 @@ describe("ReaderLink module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
+        readerui.paging:onGotoPage(1)
+        assert.is.same(1, readerui.paging.current_page)
         readerui.view:onSetScrollMode(true)
         assert.is.same(true, readerui.view.page_scroll)
         readerui.paging:onTapForward()

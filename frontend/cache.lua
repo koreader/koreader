@@ -98,7 +98,7 @@ function Cache:insert(key, object)
     -- make sure that one key only exists once: delete existing
     self:drop(key)
     -- guarantee that we have enough memory in cache
-    if(object.size > self.max_memsize) then
+    if (object.size > self.max_memsize) then
         DEBUG("too much memory claimed for", key)
         return
     end
