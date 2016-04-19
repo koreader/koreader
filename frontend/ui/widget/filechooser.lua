@@ -103,11 +103,12 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        local dirs = {}
-        local files = {}
+        -- count sume of directories and files inside dir
+        local sub_dirs = {}
+        local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
-        self.list(subdir_path, dirs, files)
-        local items = #dirs + #files
+        self.list(subdir_path, sub_dirs, dir_files)
+        local items = #sub_dirs + #dir_files
         local istr = util.template(
             items == 1 and _("1 item")
             or _("%1 items"), items)
