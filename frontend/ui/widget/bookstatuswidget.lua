@@ -57,7 +57,7 @@ function BookStatusWidget:init()
     self.stats = {
         total_time_in_sec = 0,
         performance_in_pages = {},
-        pages = self.document:getPageCount(),
+        total_pages = self.document:getPageCount(),
     }
     self:getStatisticsSettings()
     if self.settings then
@@ -123,8 +123,8 @@ function BookStatusWidget:getStatHours(stats)
 end
 
 function BookStatusWidget:getReadPages(stats)
-    if stats and stats.performance_in_pages and stats.pages then
-        return util.tableSize(stats.performance_in_pages) .. "/" .. stats.pages
+    if stats and stats.performance_in_pages and stats.total_pages then
+        return util.tableSize(stats.performance_in_pages) .. "/" .. stats.total_pages
     end
     return "none"
 end
@@ -253,12 +253,14 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local total_pages = self.document:getPageCount()
+    local total_pages = self.stats.total_pages
     local read_percentage = self.view.state.page / total_pages
     local progress_bar = ProgressWidget:new{
         width = width * 0.7,
         height = Screen:scaleBySize(10),
         percentage = read_percentage,
+        ticks = nil,
+        last = nil,
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
