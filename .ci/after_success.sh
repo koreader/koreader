@@ -5,7 +5,7 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-make coverage
+travis_retry make coverage
 pushd koreader-*/koreader
     luajit $(which luacov-coveralls) -v
 popd

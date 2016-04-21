@@ -1,8 +1,11 @@
-require("commonrequire")
-local Menu = require("ui/widget/menu")
-local DEBUG = require("dbg")
-
 describe("Menu widget", function()
+    local Menu, dbg
+    setup(function()
+        require("commonrequire")
+        Menu = require("ui/widget/menu")
+        dbg = require("dbg")
+    end)
+
     it("should convert item table from touch menu properly", function()
         local cb1 = function() end
         local cb2 = function() end

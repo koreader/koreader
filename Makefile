@@ -107,7 +107,10 @@ test:
 	$(MAKE) testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) -o verbose_print --coverage --exclude-tags=nocov
+	cd $(INSTALL_DIR)/koreader && \
+		./luajit $(shell which busted) -o verbose_print \
+			--no-auto-insulate \
+			--coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
