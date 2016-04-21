@@ -20,12 +20,14 @@ describe("Readerrolling module", function()
         it("should goto portrait screen mode", function()
             readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
         end)
+
         it("should goto certain page", function()
             for i = 1, 10, 5 do
                 rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
             end
         end)
+
         it("should goto relative page", function()
             for i = 20, 40, 5 do
                 rolling:onGotoPage(i)
@@ -35,6 +37,7 @@ describe("Readerrolling module", function()
                 assert.are.same(i, rolling.current_page)
             end
         end)
+
         it("should goto next chapter", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
@@ -43,6 +46,7 @@ describe("Readerrolling module", function()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
         end)
+
         it("should goto previous chapter", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
@@ -51,6 +55,7 @@ describe("Readerrolling module", function()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
+
         it("should emit EndOfBook event at the end of sample epub", function()
             local called = false
             readerui.onEndOfBook = function()
