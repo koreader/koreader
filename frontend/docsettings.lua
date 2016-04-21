@@ -36,38 +36,37 @@ function DocSettings:purgeDocSettings(doc_path)
 end
 
 function DocSettings:open(docfile)
-    local history_path
-    local sidecar_path
+    -- TODO(zijiehe): Remove history_path, use only sidecar.
+    local new = { data = {} }
+    local ok, stored
     if docfile == ".reader" then
         -- we handle reader setting as special case
-        history_path = DataStorage:getDataDir() .. "/settings.reader.lua"
+        new.history_file = DataStorage:getDataDir() .. "/settings.reader.lua"
+
+        ok, stored = pcall(dofile, new.history_file)
     else
-        history_path = self:getHistoryPath(docfile)
+        new.history_file = self:getHistoryPath(docfile)
 
         local sidecar = self:getSidecarDir(docfile)
         if lfs.attributes(sidecar, "mode") ~= "directory" then
             lfs.mkdir(sidecar)
         end
-        sidecar_path = sidecar.."/"..docfile:match(".*%/(.*)")..".lua"
-    end
-    -- construct settings obj
-    local new = {
-        history_file = history_path,
-        sidecar_file = sidecar_path,
-        data = {}
-    }
-    local ok, stored = pcall(dofile, new.sidecar_file or "")
-    if not ok then
-        ok, stored = pcall(dofile, new.history_file or "")
+        new.sidecar_file = sidecar.."/"..docfile:match(".*%/(.*)")..".lua"
+
+        ok, stored = pcall(dofile, new.sidecar_file or "")
         if not ok then
-            -- try legacy conf path, for backward compatibility. this also
-            -- takes care of reader legacy setting
-            ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+            ok, stored = pcall(dofile, new.history_file or "")
+            if not ok then
+                -- try legacy conf path, for backward compatibility. this also
+                -- takes care of reader legacy setting
+                ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+            end
         end
     end
     if ok and stored then
         new.data = stored
     end
+
     return setmetatable(new, { __index = DocSettings})
 end
 

@@ -1,16 +1,10 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local lfs = require("libs/libkoreader-lfs")
-local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
-local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
-local joinPath = require("ffi/util").joinPath
 local Screen = require("device").screen
 local _ = require("gettext")
-
-local history_dir = DataStorage:getHistoryDir()
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -31,27 +25,8 @@ function FileManagerHistory:addToMainMenu(tab_item_table)
 end
 
 function FileManagerHistory:updateItemTable()
-    local ReaderUI = require("apps/reader/readerui")
-    self.hist = {}
-
-    for f in lfs.dir(history_dir) do
-        local path = joinPath(history_dir, f)
-        if lfs.attributes(path, "mode") == "file" then
-            local name = DocSettings:getNameFromHistory(f)
-            table.insert(self.hist, {
-                date = lfs.attributes(path, "modification"),
-                text = name,
-                histfile = f,
-                callback = function()
-                    ReaderUI:showReader(
-                        DocSettings:getPathFromHistory(f).. "/" .. name)
-                end
-            })
-        end
-    end
-    table.sort(self.hist, function(v1, v2) return v1.date > v2.date end)
-
-    self.hist_menu:swithItemTable(self.hist_menu_title, self.hist)
+    self.hist_menu:swithItemTable(self.hist_menu_title,
+                                  require("readhistory").hist)
 end
 
 function FileManagerHistory:onSetDimensions(dimen)
@@ -65,7 +40,7 @@ function FileManagerHistory:onMenuHold(item)
                 {
                     text = _("Remove this item from history"),
                     callback = function()
-                        os.remove(joinPath(history_dir, item.histfile))
+                        require("readhistory"):removeItem(item)
                         self._manager:updateItemTable()
                         UIManager:close(self.histfile_dialog)
                     end,
