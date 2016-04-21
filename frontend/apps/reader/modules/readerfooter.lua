@@ -295,7 +295,7 @@ function ReaderFooter:updateFooterText()
 
         if #ticks_candidates > 0 then
             self.progress_bar.ticks = ticks_candidates[1]
-            self.progress_bar.last = self.pages
+            self.progress_bar.last = self.pages or self.view.document:getPageCount()
         else
             -- we still set ticks here so self.progress_bar.ticks will not be
             -- initialized again if ticks_candidates is empty
