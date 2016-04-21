@@ -15,6 +15,9 @@ Text widget with vertical scroll bar
 --]]
 local ScrollTextWidget = InputContainer:new{
     text = nil,
+	charlist = nil,
+	charpos = nil,
+	editable = false,
     face = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400,
@@ -25,8 +28,12 @@ local ScrollTextWidget = InputContainer:new{
 }
 
 function ScrollTextWidget:init()
+	print("####################################################### ScrollTextWidget width", self.width)
     self.text_widget = TextBoxWidget:new{
         text = self.text,
+		charlist = self.charlist,
+		charpos = self.charpos,
+		editable = self.editable,
         face = self.face,
         fgcolor = self.fgcolor,
         width = self.width - self.scroll_bar_width - self.text_scroll_span,
@@ -38,12 +45,12 @@ function ScrollTextWidget:init()
         enable = visible_line_count < total_line_count,
         low = 0,
         high = visible_line_count/total_line_count,
-        width = Screen:scaleBySize(6),
+        width = self.scroll_bar_width,
         height = self.height,
     }
     local horizontal_group = HorizontalGroup:new{}
     table.insert(horizontal_group, self.text_widget)
-    table.insert(horizontal_group, HorizontalSpan:new{width = Screen:scaleBySize(6)})
+    table.insert(horizontal_group, HorizontalSpan:new{self.text_scroll_span})
     table.insert(horizontal_group, self.v_scroll_bar)
     self[1] = horizontal_group
     self.dimen = Geom:new(self[1]:getSize())
@@ -59,23 +66,13 @@ function ScrollTextWidget:init()
     end
 end
 
-function ScrollTextWidget:updateScrollBar(text)
-    local virtual_line_num = text:getVirtualLineNum()
-    local visible_line_count = text:getVisLineCount()
-    local all_line_count = text:getAllLineCount()
-    self.v_scroll_bar:set(
-        (virtual_line_num - 1) / all_line_count,
-        (virtual_line_num - 1 + visible_line_count) / all_line_count
-    )
-end
-
 function ScrollTextWidget:onScrollText(arg, ges)
     if ges.direction == "north" then
-        self.text_widget:scrollDown()
-        self:updateScrollBar(self.text_widget)
+        low, high = self.text_widget:scrollDown()
+		self.v_scroll_bar:set(low, high)
     elseif ges.direction == "south" then
-        self.text_widget:scrollUp()
-        self:updateScrollBar(self.text_widget)
+        low, high = self.text_widget:scrollUp()
+		self.v_scroll_bar:set(low, high)
     end
     UIManager:setDirty(self.dialog, function()
         return "partial", self.dimen
