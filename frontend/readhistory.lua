@@ -23,11 +23,20 @@ local function buildEntry(input_time, input_file)
 end
 
 function ReadHistory:_sort()
+    for i = #self.hist, 1, -1 do
+        if lfs.attributes(self.hist[i].file, "mode") ~= "file" then
+            table.remove(self.hist, i)
+        end
+    end
     table.sort(self.hist, function(l, r) return l.file < r.file end)
     -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
     for i = #self.hist, 2, -1 do
         if self.hist[i].file == self.hist[i - 1].file then
-            table.remove(self.hist, i)
+            if self.hist[i].time < self.hist[i - 1].time then
+                table.remove(self.hist, i)
+            else
+                table.remove(self.hist,i - 1)
+            end
         end
     end
     table.sort(self.hist, function(v1, v2) return v1.time > v2.time end)
