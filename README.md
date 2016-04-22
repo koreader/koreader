@@ -94,7 +94,7 @@ sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
 
 Mac OSX users may need to install these tools:
 ```
-brew install gcc48 nasm binutils libtool autoconf automake sdl2
+brew install nasm binutils libtool autoconf automake sdl2
 ```
 
 A recent version of Android SDK/NDK and `ant` are needed in order to build

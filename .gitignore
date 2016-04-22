@@ -8,13 +8,15 @@ lua-*
 .vimrc
 *.o
 tags
-test/*.sdr
+test/*
 *.tar
 *.log
 spec/unit/data
 doc/html
-
+git-rev
 emu
+luacov.stats.out
+trace-out.txt
 
 koreader-*.zip
 koreader-*.apk
