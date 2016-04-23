@@ -338,7 +338,7 @@ function ReaderUI:showReader(file)
     end
     UIManager:show(InfoMessage:new{
         text = T( _("Opening file '%1'."), file),
-        timeout = 0.1,
+        timeout = 0.0,
     })
     UIManager:nextTick(function()
         DEBUG("creating coroutine for showing reader")
