@@ -87,7 +87,7 @@ describe("Readersearch module", function()
                 for _, word in ipairs(words) do
                     --dbg("found word", word.start)
                 end
-                doc:gotoXPointer(words[1].start)
+                doc:gotoXPointer(words[#words].start)
                 words = search:searchNext("Verona", 0)
             end
             assert.are.equal(13, count)
