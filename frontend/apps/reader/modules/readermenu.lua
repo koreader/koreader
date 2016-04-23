@@ -38,14 +38,14 @@ function ReaderMenu:init()
                 self:onTapCloseMenu()
                 self.ui:onClose()
                 local FileManager = require("apps/filemanager/filemanager")
+                local lastdir = nil
+                local last_file = G_reader_settings:readSetting("lastfile")
+                if last_file then
+                    lastdir = last_file:match("(.*)/")
+                end
                 if FileManager.instance then
-                    FileManager.instance:resetDimen(Screen:getSize())
+                    FileManager.instance:reinit(lastdir)
                 else
-                    local lastdir = nil
-                    local last_file = G_reader_settings:readSetting("lastfile")
-                    if last_file then
-                        lastdir = last_file:match("(.*)/")
-                    end
                     FileManager:showFiles(lastdir)
                 end
             end,

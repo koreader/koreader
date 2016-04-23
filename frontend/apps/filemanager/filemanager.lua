@@ -229,10 +229,10 @@ function FileManager:init()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
-function FileManager:resetDimen(dimen)
-    self.dimen = dimen
+function FileManager:reinit(path)
+    self.dimen = Screen:getSize()
     -- backup the root path and path items
-    self.root_path = self.file_chooser.path
+    self.root_path = path or self.file_chooser.path
     local path_items_backup = {}
     for k, v in pairs(self.file_chooser.path_items) do
         path_items_backup[k] = v
