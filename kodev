@@ -4,7 +4,7 @@ CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 function assert_ret_zero {
     if [ $1 -ne 0 ]; then
-        if [ ! -z $2 ]; then
+        if [ ! -z "$2" ]; then
             echo $2
         fi
         exit 1
