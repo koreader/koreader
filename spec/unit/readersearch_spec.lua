@@ -93,6 +93,7 @@ describe("Readersearch module", function()
             assert.are.equal(13, count)
         end)
     end)
+
     describe("search API for PDF documents", function()
         local doc, search, paging
         setup(function()

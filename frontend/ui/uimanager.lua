@@ -198,8 +198,8 @@ function UIManager:schedule(time, action)
                     break
                 end
             else
-                -- for fairness, it's better to make p+1 is strictly less than p
-                -- might want to revisit here in the future
+                -- for fairness, it's better to make p+1 is strictly less than
+                -- p might want to revisit here in the future
                 break
             end
         until e < s
