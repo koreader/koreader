@@ -146,13 +146,13 @@ function ReaderFooter:resetLayout()
     self.dimen = self[1]:getSize()
 
     self._saved_screen_width = new_screen_width
-    local range = Geom:new{
-        x = new_screen_width*DTAP_ZONE_MINIBAR.x,
-        y = new_screen_height*DTAP_ZONE_MINIBAR.y,
-        w = new_screen_width*DTAP_ZONE_MINIBAR.w,
-        h = new_screen_height*DTAP_ZONE_MINIBAR.h
-    }
     if Device:isTouchDevice() then
+        local range = Geom:new{
+            x = new_screen_width*DTAP_ZONE_MINIBAR.x,
+            y = new_screen_height*DTAP_ZONE_MINIBAR.y,
+            w = new_screen_width*DTAP_ZONE_MINIBAR.w,
+            h = new_screen_height*DTAP_ZONE_MINIBAR.h
+        }
         self.ges_events = {
             TapFooter = {
                 GestureRange:new{
@@ -202,21 +202,43 @@ function ReaderFooter:addToMainMenu(tab_item_table)
             end,
         }
     end
+    local sub_items = {}
+    if Geom:new{
+           x = DTAP_ZONE_MINIBAR.x,
+           y = DTAP_ZONE_MINIBAR.y,
+           w = DTAP_ZONE_MINIBAR.w,
+           h = DTAP_ZONE_MINIBAR.h
+       }:sizeof() == 0 then
+        table.insert(sub_items, {
+            text = _("Toggle"),
+            enabled_func = function()
+                return not self.view.flipping_visible
+            end,
+            callback = function()
+                if not self.view.flipping_visible then
+                    self:onTapFooter(nil, nil)
+                end
+            end,
+        })
+    end
+    for i, v in ipairs({
+        get_minibar_option("all_at_once"),
+        get_minibar_option("auto_refresh_time"),
+        get_minibar_option("progress_bar"),
+        get_minibar_option("toc_markers"),
+        get_minibar_option("battery"),
+        get_minibar_option("time"),
+        get_minibar_option("page_progress"),
+        get_minibar_option("pages_left"),
+        get_minibar_option("percentage"),
+        get_minibar_option("book_time_to_read"),
+        get_minibar_option("chapter_time_to_read"),
+    }) do
+        table.insert(sub_items, v)
+    end
     table.insert(tab_item_table.setting, {
         text = _("Status bar"),
-        sub_item_table = {
-            get_minibar_option("all_at_once"),
-            get_minibar_option("auto_refresh_time"),
-            get_minibar_option("progress_bar"),
-            get_minibar_option("toc_markers"),
-            get_minibar_option("battery"),
-            get_minibar_option("time"),
-            get_minibar_option("page_progress"),
-            get_minibar_option("pages_left"),
-            get_minibar_option("percentage"),
-            get_minibar_option("book_time_to_read"),
-            get_minibar_option("chapter_time_to_read"),
-        }
+        sub_item_table = sub_items,
     })
 end
 

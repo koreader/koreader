@@ -101,7 +101,9 @@ local Font = require("ui/font")
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
-    Font.fontmap = fontmap
+    for k, v in pairs(fontmap) do
+        Font.fontmap[k] = v
+    end
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
