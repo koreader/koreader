@@ -88,6 +88,13 @@ function ReaderCropping:onPageCrop(mode)
             self:setCropZoomMode(true)
         end
         return
+    elseif mode == "contentwidth" or
+           mode == "contentheight" or
+           mode == "content" then
+        if self.document.configurable.text_wrap ~= 1 then
+            self:setZoomMode(mode)
+        end
+        return
     end
     -- backup original view dimen
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
@@ -168,12 +175,18 @@ end
 function ReaderCropping:setCropZoomMode(confirmed)
     if confirmed then
         -- if original zoom mode is not "content", set zoom mode to "contentwidth"
-        self.ui:handleEvent(Event:new("SetZoomMode",
-            self.orig_zoom_mode:find("content") and self.orig_zoom_mode or "contentwidth"))
+        self:setZoomMode(
+            self.orig_zoom_mode:find("content")
+            and self.orig_zoom_mode
+            or "contentwidth")
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     else
-        self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode))
+        self:setZoomMode(self.orig_zoom_mode)
     end
+end
+
+function ReaderCropping:setZoomMode(mode)
+    self.ui:handleEvent(Event:new("SetZoomMode", mode))
 end
 
 function ReaderCropping:onReadSettings(config)
