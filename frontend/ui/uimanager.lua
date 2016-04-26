@@ -27,6 +27,7 @@ local UIManager = {
     _zeromqs = {},
     _refresh_stack = {},
     _refresh_func_stack = {},
+    _power_ev_handled = false,
 }
 
 function UIManager:init()
@@ -54,6 +55,36 @@ function UIManager:init()
             Device:onPowerEvent(input_event)
             self:sendEvent(Event:new("Resume"))
             self:_startAutoSuspend()
+        end
+        self.event_handlers["PowerPress"] = function(input_event)
+            self._power_ev_handled = false
+            local showPowerOffDialog = function()
+                if self._power_ev_handled then return end
+                self._power_ev_handled = true
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new{
+                    text = _("Power off?"),
+                    ok_callback = function()
+                        local InfoMessage = require("ui/widget/infomessage")
+
+                        UIManager:show(InfoMessage:new{
+                            text = _("Powered off."),
+                        })
+                        -- The message can fail to render if this is executed directly
+                        UIManager:scheduleIn(0.1, function()
+                            self:broadcastEvent(Event:new("Close"))
+                            Device:powerOff()
+                        end)
+                    end,
+                })
+            end
+            UIManager:scheduleIn(3, showPowerOffDialog)
+        end
+        self.event_handlers["PowerRelease"] = function(input_event)
+            if not self._power_ev_handled then
+              self._power_ev_handled = true
+              self.event_handlers["Suspend"]("Suspend")
+            end
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
