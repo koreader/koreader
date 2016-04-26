@@ -144,7 +144,6 @@ local KoptOptions = {
                 event = "FineTuningFontSize",
                 args = {-0.05, 0.05},
                 alternate = false,
-                height = 60,
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
