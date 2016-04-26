@@ -95,4 +95,68 @@ describe("device module", function()
             mock_input.open:revert()
         end)
     end)
+
+    describe("kindle", function()
+        it("should initialize voyager without error", function()
+            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
+            stub(io, "open")
+            io.open.returns({
+                read = function()
+                    return "XX13XX"
+                end,
+                close = function() end
+            })
+            mock_input = require('device/input')
+            stub(mock_input, "open")
+
+            local kindle_dev = require("device/kindle/device")
+            assert.is.same(kindle_dev.model, "KindleVoyage")
+            kindle_dev:init()
+            assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
+            assert.is.same(kindle_dev.input.event_map[109], "LPgFwd")
+            assert.is.same(kindle_dev.powerd.fl_min, 0)
+            assert.is.same(kindle_dev.powerd.fl_max, 24)
+
+            io.open:revert()
+            package.loaded['ffi/framebuffer_mxcfb'] = nil
+            mock_input.open:revert()
+        end)
+
+        it("should toggle frontlight", function()
+            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
+            stub(io, "open")
+            io.open.returns({
+                read = function()
+                    return "12"
+                end,
+                close = function() end
+            })
+            mock_input = require('device/input')
+            stub(mock_input, "open")
+            stub(os, "execute")
+
+            local kindle_dev = require("device/kindle/device")
+            kindle_dev:init()
+
+            assert.is.same(kindle_dev.powerd.fl_intensity, 12)
+            kindle_dev.powerd:setIntensity(5)
+            assert.stub(os.execute).was_called_with(
+                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+            assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+
+            kindle_dev.powerd:toggleFrontlight()
+            assert.stub(os.execute).was_called_with(
+                "echo -n 0 > /sys/class/backlight/max77696-bl/brightness")
+            assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+
+            kindle_dev.powerd:toggleFrontlight()
+            assert.stub(os.execute).was_called_with(
+                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+
+            io.open:revert()
+            package.loaded['ffi/framebuffer_mxcfb'] = nil
+            mock_input.open:revert()
+            os.execute:revert()
+        end)
+    end)
 end)
