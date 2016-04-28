@@ -29,6 +29,67 @@ describe("Readerfooter module", function()
         })
     end)
 
+    it("should setup footer as visible", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(true, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as invisible in full screen mode", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+        local cfg = DocSettings:open(sample_pdf)
+        cfg:saveSetting("kopt_full_screen", 0)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(false, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as visible in mini progress bar mode", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+        local cfg = DocSettings:open(sample_pdf)
+        cfg:saveSetting("kopt_full_screen", 0)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(false, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as invisible", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_epub = "spec/front/unit/data/juliet.epub"
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+        local cfg = DocSettings:open(sample_epub)
+        cfg:saveSetting("copt_status_line", 1)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
+        assert.is.same(true, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
     it("should setup footer for epub without error", function()
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
