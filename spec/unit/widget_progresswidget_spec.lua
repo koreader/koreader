@@ -6,7 +6,7 @@ describe("ProgressWidget widget", function()
         Screen = require("device").screen
     end)
 
-    it("should not crash with nil self.last #ok", function()
+    it("should not crash with nil self.last", function()
         local progress = ProgressWidget:new{
             width = 100,
             height = 50,

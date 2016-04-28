@@ -100,6 +100,41 @@ describe("Readerfooter module", function()
         assert.are.same('TC: na', footer.progress_text.text)
     end)
 
+    it("should rotate through different modes", function()
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        local footer = readerui.view.footer
+        footer.settings.all_at_once = false
+        footer.mode = 0
+        footer:onTapFooter()
+        assert.is.same(1, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(2, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(3, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(4, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(5, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(6, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(7, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
+
+        footer.settings.all_at_once = true
+        footer.mode = 5
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(1, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
+    end)
+
     it("should pick up screen resize in resetLayout", function()
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))

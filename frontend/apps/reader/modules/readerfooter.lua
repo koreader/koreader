@@ -18,9 +18,23 @@ local _ = require("gettext")
 local util  = require("util")
 
 
+local MODE = {
+    off = 0,
+    page_progress = 1,
+    time = 2,
+    pages_left = 3,
+    battery = 4,
+    percentage = 5,
+    book_time_to_read = 6,
+    chapter_time_to_read = 7,
+}
+local MODE_INDEX = {}
+for k,v in pairs(MODE) do
+    MODE_INDEX[v] = k
+end
+
 local ReaderFooter = InputContainer:new{
-    mode = 1,
-    visible = true,
+    mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
     toc_level = 0,
@@ -67,7 +81,6 @@ function ReaderFooter:init()
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
     self.text_width = self.progress_text:getSize().w + self.text_left_margin
-    self:applyFooterMode()
     self.progress_bar = ProgressWidget:new{
         width = nil,  -- width will be updated in self:resetLayout()
         height = self.bar_height,
@@ -101,7 +114,8 @@ function ReaderFooter:init()
         }
     }
 
-    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    self:applyFooterMode(
+        G_reader_settings:readSetting("reader_footer_mode") or self.mode)
     self:resetLayout()
 
     if self.settings.auto_refresh_time then
@@ -328,21 +342,23 @@ function ReaderFooter:updateFooterText()
         end
         self.progress_text:setText(table.concat(info, " | "))
     else
-        local info = ""
-        if self.mode == 1 then
+        local info
+        if self.mode == MODE.page_progress then
             info = self:getProgressInfo()
-        elseif self.mode == 2 then
+        elseif self.mode == MODE.time then
             info = self:getTimeInfo()
-        elseif self.mode == 3 then
+        elseif self.mode == MODE.pages_left then
             info = self:getNextChapterInfo()
-        elseif self.mode == 4 then
+        elseif self.mode == MODE.battery then
             info = self:getBatteryInfo()
-        elseif self.mode == 5 then
+        elseif self.mode == MODE.percentage then
             info = self:getProgressPercentage()
-        elseif self.mode == 6 then
+        elseif self.mode == MODE.book_time_to_read then
             info = self:getBookTimeToRead()
-        elseif self.mode == 7 then
+        elseif self.mode == MODE.chapter_time_to_read then
             info = self:getChapterTimeToRead()
+        else
+            info = ""
         end
         self.progress_text:setText(info)
     end
@@ -384,16 +400,12 @@ function ReaderFooter:applyFooterMode(mode)
     -- 6 for from statistics book time to read
     -- 7 for from statistics chapter time to read
     if mode ~= nil then self.mode = mode end
-    if self.mode == 0 then
-        self.view.footer_visible = false
-    else
-        self.view.footer_visible = true
-    end
+    self.view.footer_visible = (self.mode ~= MODE.off)
 end
 
 function ReaderFooter:onEnterFlippingMode()
     self.orig_mode = self.mode
-    self:applyFooterMode(1)
+    self:applyFooterMode(MODE.page_progress)
 end
 
 function ReaderFooter:onExitFlippingMode()
@@ -410,30 +422,24 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        self.mode = (self.mode + 1) % 8
-        if self.settings.all_at_once and (self.mode > 1) then
-            self.mode = 0
-        end
-        if (self.mode == 1) and not self.settings.page_progress then
-            self.mode = 2
-        end
-        if (self.mode == 2) and not self.settings.time then
-            self.mode = 3
-        end
-        if (self.mode == 3) and not self.settings.pages_left then
-            self.mode = 4
-        end
-        if (self.mode == 4) and not self.settings.battery then
-            self.mode = 5
-        end
-        if (self.mode == 5) and not self.settings.percentage then
-            self.mode = 6
-        end
-        if (self.mode == 6) and not self.settings.book_time_to_read then
-            self.mode = 7
-        end
-        if (self.mode == 7) and not self.settings.chapter_time_to_read then
-            self.mode = 0
+        if self.settings.all_at_once then
+            if self.mode >= 1 then
+                self.mode = MODE.off
+            else
+                self.mode = MODE.page_progress
+            end
+        else
+            self.mode = (self.mode + 1) % 8
+            for i, m in ipairs(MODE_INDEX) do
+                if self.mode == MODE.off then break end
+                if self.mode == i then
+                    if self.settings[m] then
+                        break
+                    else
+                        self.mode = (self.mode + 1) % 8
+                    end
+                end
+            end
         end
         self:applyFooterMode()
         G_reader_settings:saveSetting("reader_footer_mode", self.mode)
@@ -443,13 +449,13 @@ function ReaderFooter:onTapFooter(arg, ges)
 end
 
 function ReaderFooter:onHoldFooter(arg, ges)
-    if self.mode == 0 then return end
+    if self.mode == MODE.off then return end
     self.ui:handleEvent(Event:new("ShowGotoDialog"))
     return true
 end
 
 function ReaderFooter:onSetStatusLine(status_line)
-    self.view.footer_visible = status_line == 1 and true or false
+    self.view.footer_visible = (status_line == 1)
     self.ui.document:setStatusLineProp(status_line)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
