@@ -88,6 +88,8 @@ describe("ReaderLink module", function()
                 zoom = 0.9501187648456056456,
             },
         }
+        -- disable footer
+        G_reader_settings:saveSetting("reader_footer_mode", 0)
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
