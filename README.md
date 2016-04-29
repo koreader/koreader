@@ -90,6 +90,11 @@ sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 # for Win32
 sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
+
+package pkg-config-arm-linux-gnueabihf and pkg-config-arm-linux-gnueabi may
+block you to build for Kobo or Kindle, remove them if you got ld error,
+/usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/
+ld: cannot find -lglib-2.0
 ```
 
 Mac OSX users may need to install these tools:
