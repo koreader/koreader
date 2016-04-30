@@ -85,7 +85,7 @@ DCHANGE_EAST_SWIPE_TO_WEST = false
 -- koptreader config defaults
 DKOPTREADER_CONFIG_FONT_SIZE = 1.0        -- range from 0.1 to 3.0
 DKOPTREADER_CONFIG_TEXT_WRAP = 0        -- 1 = on, 0 = off
-DKOPTREADER_CONFIG_TRIM_PAGE = 1        -- 1 = auto, 0 = manual
+DKOPTREADER_CONFIG_TRIM_PAGE = 5        -- 5 = disabled
 DKOPTREADER_CONFIG_DETECT_INDENT = 1    -- 1 = enable, 0 = disable
 DKOPTREADER_CONFIG_DEFECT_SIZE = 1.0    -- range from 0.0 to 3.0
 DKOPTREADER_CONFIG_PAGE_MARGIN = 0.10    -- range from 0.0 to 1.0

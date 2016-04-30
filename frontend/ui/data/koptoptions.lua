@@ -38,12 +38,27 @@ local KoptOptions = {
                 name = "trim_page",
                 name_text = S.PAGE_CROP,
                 width = 261,
-                toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO},
+                toggle = {
+                    S.MANUAL,
+                    S.AUTO,
+                    S.SEMIAUTO,
+                    S.CONTENTWIDTH,
+                    S.CONTENTHEIGHT,
+                    S.DISABLED,
+                },
                 alternate = false,
-                values = {0, 1, 2},
+                values = {0, 1, 2, 3, 4, 5},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
                 event = "PageCrop",
-                args = {"manual", "auto", "semi-auto"},
+                args = {
+                    "manual",
+                    "auto",
+                    "semi-auto",
+                    "contentwidth",
+                    "contentheight",
+                    "content",
+                },
+                row_count = 2,
             }
         }
     },
@@ -144,7 +159,6 @@ local KoptOptions = {
                 event = "FineTuningFontSize",
                 args = {-0.05, 0.05},
                 alternate = false,
-                height = 60,
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
