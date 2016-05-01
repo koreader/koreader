@@ -347,7 +347,7 @@ function UIManager:quit()
     end
 end
 
--- transmit an event to registered widgets
+-- transmit an event to an active widget
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
     -- top level widget has first access to the event
@@ -364,6 +364,20 @@ function UIManager:sendEvent(event)
             for _, active_widget in ipairs(widget.widget.active_widgets) do
                 if active_widget:handleEvent(event) then return end
             end
+        end
+    end
+end
+
+-- transmit an event to all registered widgets
+function UIManager:broadcastEvent(event)
+    -- the widget's event handler might close widgets in which case
+    -- a simple iterator like ipairs would skip over some entries
+    local i = 1
+    while (i <= #self._window_stack) do
+        local prev_widget = self._window_stack[i].widget
+        self._window_stack[i].widget:handleEvent(event)
+        if (self._window_stack[i].widget == prev_widget) then
+          i = i + 1
         end
     end
 end
