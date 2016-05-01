@@ -37,14 +37,16 @@ fi
 
 if [ "${FROM_NICKEL}" == "true" ] ; then
 	# Detect if we were started from KFMon
+	FROM_KFMON="false"
 	if pkill -0 kfmon ; then
-		FROM_KFMON="true"
-	else
-		FROM_KFMON="false"
+		# That's a start, now check if KFMon truly is our parent...
+		if [ "$(pidof kfmon)" -eq "${PPID}" ] ; then
+			FROM_KFMON="true"
+		fi
 	fi
 
 	if [ "${FROM_KFMON}" == "true" ] ; then
-		# Siphon nickel's full environment, since KFMon inherits such a minimal one...
+		# Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
 		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
 			export ${env}
 		done
@@ -63,6 +65,7 @@ if [ "${FROM_NICKEL}" == "true" ] ; then
 	killall nickel hindenburg sickel fickel fmon 2>/dev/null
 
 	# NOTE: Not particularly critical, we should be safe leaving it up, but since we reboot on exit anyway...
+	#	Keep KFMon up for now to make sure it's not doing anything overly stupid we might have overlooked ;).
 	#if [ "${FROM_KFMON}" == "true" ] ; then
 	#	killall kfmon 2>/dev/null
 	#fi
@@ -115,7 +118,7 @@ if [ "${FROM_NICKEL}" == "true" ] ; then
 		# start kobo software because it was running before koreader
 		./nickel.sh &
 	else
-		# If we were called from KFMon, just reboot, because depending on how the user triggered it, Nickel can get its panties in a serious twist on restore...
+		# If we were called from KFMon, just reboot, because there's always a (hopefully slim to nonexistent, now) chance Nickel will get its panties in a serious twist on restore for one reason or another...
 		# And at best, we'd still restart with broken suspend behavior anyway...
 		reboot
 	fi
