@@ -4,10 +4,11 @@ local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
+local Device = require("device")
+local Screen = Device.screen
+local Input = Device.input
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local Device = require("device")
 local Blitbuffer = require("ffi/blitbuffer")
 
 --[[
@@ -57,6 +58,12 @@ function ScrollTextWidget:init()
             },
         }
     end
+    if Device:hasKeyboard() or Device:hasKeys() then
+        self.key_events = {
+            ScrollDown = {{Input.group.PgFwd}, doc = "scroll down"},
+            ScrollUp = {{Input.group.PgBack}, doc = "scroll up"},
+        }
+    end
 end
 
 function ScrollTextWidget:updateScrollBar(text)
@@ -69,17 +76,36 @@ function ScrollTextWidget:updateScrollBar(text)
     )
 end
 
-function ScrollTextWidget:onScrollText(arg, ges)
-    if ges.direction == "north" then
+function ScrollTextWidget:scrollText(direction)
+    if direction == 0 then return end
+    if direction > 0 then
         self.text_widget:scrollDown()
-        self:updateScrollBar(self.text_widget)
-    elseif ges.direction == "south" then
+    else
         self.text_widget:scrollUp()
-        self:updateScrollBar(self.text_widget)
     end
+    self:updateScrollBar(self.text_widget)
     UIManager:setDirty(self.dialog, function()
         return "partial", self.dimen
     end)
+end
+
+function ScrollTextWidget:onScrollText(arg, ges)
+    if ges.direction == "north" then
+        self:scrollText(1)
+    elseif ges.direction == "south" then
+        self:scrollText(-1)
+    end
+    return true
+end
+
+function ScrollTextWidget:onScrollDown()
+    self:scrollText(1)
+    return true
+end
+
+function ScrollTextWidget:onScrollUp()
+    self:scrollText(-1)
+    return true
 end
 
 return ScrollTextWidget
