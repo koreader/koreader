@@ -36,14 +36,36 @@ if pkill -0 nickel ; then
 fi
 
 if [ "${FROM_NICKEL}" == "true" ] ; then
-	# Siphon a few things from nickel's env...
-	eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
-	export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+	# Detect if we were started from KFMon
+	if pkill -0 kfmon ; then
+		FROM_KFMON="true"
+	else
+		FROM_KFMON="false"
+	fi
+
+	if [ "${FROM_KFMON}" == "true" ] ; then
+		# Siphon nickel's full environment, since KFMon inherits such a minimal one...
+		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
+			export ${env}
+		done
+	else
+		# Siphon a few things from nickel's env...
+		eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
+		export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+	fi
 
 	# flush disks, might help avoid trashing nickel's DB...
 	sync
+	# Double the fun!
+	sleep 1
+	sync
 	# stop kobo software because it's running
-	killall nickel hindenburg fmon 2>/dev/null
+	killall nickel hindenburg sickel fickel fmon 2>/dev/null
+
+	# NOTE: Not particularly critical, we should be safe leaving it up, but since we reboot on exit anyway...
+	#if [ "${FROM_KFMON}" == "true" ] ; then
+	#	killall kfmon 2>/dev/null
+	#fi
 fi
 
 # fallback for old fmon (and advboot) users (-> if no args were passed to the sript, start the FM)
@@ -89,8 +111,14 @@ fi
 ./reader.lua "${args}" > crash.log 2>&1
 
 if [ "${FROM_NICKEL}" == "true" ] ; then
-	# start kobo software because it was running before koreader
-	./nickel.sh &
+	if [ "${FROM_KFMON}" != "true" ] ; then
+		# start kobo software because it was running before koreader
+		./nickel.sh &
+	else
+		# If we were called from KFMon, just reboot, because depending on how the user triggered it, Nickel can get its panties in a serious twist on restore...
+		# And at best, we'd still restart with broken suspend behavior anyway...
+		reboot
+	fi
 else
 	# if we were called from advboot then we must reboot to go to the menu
 	# NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
