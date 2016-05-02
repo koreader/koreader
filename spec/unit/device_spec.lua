@@ -94,6 +94,44 @@ describe("device module", function()
             os.getenv:revert()
             mock_input.open:revert()
         end)
+
+        it("should flush book settings before suspend", function()
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local Device = require("device")
+            local NickelConf = require("device/kobo/nickel_conf")
+
+            stub(NickelConf.frontLightLevel, "get")
+            stub(NickelConf.frontLightState, "get")
+            NickelConf.frontLightLevel.get.returns(1)
+            NickelConf.frontLightState.get.returns(0)
+
+            local UIManager = require("ui/uimanager")
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isKobo")
+
+            Device.isKobo.returns(true)
+            local saved_noop = UIManager._resetAutoSuspendTimer
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isKobo:revert()
+            NickelConf.frontLightLevel.get:revert()
+            NickelConf.frontLightState.get:revert()
+            UIManager._startAutoSuspend = nil
+            UIManager._stopAutoSuspend = nil
+            UIManager._resetAutoSuspendTimer = saved_noop
+            readerui:onClose()
+        end)
     end)
 
     describe("kindle", function()
