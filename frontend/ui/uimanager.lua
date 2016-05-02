@@ -47,16 +47,16 @@ function UIManager:init()
         -- suspend. So let's unschedule it when suspending, and restart it after
         -- resume.
         self:_initAutoSuspend()
-        self.event_handlers["Suspend"] = function(input_event)
+        self.event_handlers["Suspend"] = function()
             self:_stopAutoSuspend()
-            Device:onPowerEvent(input_event)
+            Device:onPowerEvent("Suspend")
         end
-        self.event_handlers["Resume"] = function(input_event)
-            Device:onPowerEvent(input_event)
+        self.event_handlers["Resume"] = function()
+            Device:onPowerEvent("Resume")
             self:sendEvent(Event:new("Resume"))
             self:_startAutoSuspend()
         end
-        self.event_handlers["PowerPress"] = function(input_event)
+        self.event_handlers["PowerPress"] = function()
             self._power_ev_handled = false
             local showPowerOffDialog = function()
                 if self._power_ev_handled then return end
@@ -80,10 +80,10 @@ function UIManager:init()
             end
             UIManager:scheduleIn(3, showPowerOffDialog)
         end
-        self.event_handlers["PowerRelease"] = function(input_event)
+        self.event_handlers["PowerRelease"] = function()
             if not self._power_ev_handled then
               self._power_ev_handled = true
-              self.event_handlers["Suspend"]("Suspend")
+              self.event_handlers["Suspend"]()
             end
         end
         self.event_handlers["Light"] = function()
