@@ -125,7 +125,7 @@ function Search:getCalibre()
     self.use_own_metadata_file = false
     if self.metafile_1 then
         pcall(lfs.mkdir("temp"))
-        if io.open(koreaderfile,"r") then
+        if io.open(koreaderfile, "r") then
             if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_1).modification then
                 if self.metafile_2 then
                     if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_2).modification then
@@ -443,7 +443,9 @@ function Search:find(option)
             end
             g.close()
             if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_1).modification then
-                lfs.touch(koreaderfile, lfs.attributes(self.metafile_1).modification + 1, lfs.attributes(self.metafile_1).modification + 1)
+                lfs.touch(koreaderfile,
+                          lfs.attributes(self.metafile_1).modification + 1,
+                          lfs.attributes(self.metafile_1).modification + 1)
             end
             if self.metafile_2 then
                 if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_2).modification then

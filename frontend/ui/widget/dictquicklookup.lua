@@ -424,8 +424,6 @@ function DictQuickLookup:lookupInputWord(hint)
             self:closeInputDialog()
             self:inputLookup()
         end,
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
     }
     self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)
@@ -440,7 +438,6 @@ function DictQuickLookup:inputLookup()
 end
 
 function DictQuickLookup:closeInputDialog()
-    self.input_dialog:onClose()
     UIManager:close(self.input_dialog)
 end
 

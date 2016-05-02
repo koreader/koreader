@@ -426,8 +426,6 @@ function ReaderUI:unlockDocumentWithPassword(document, try_again)
             },
         },
         text_type = "password",
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
     }
     self.password_dialog:onShowKeyboard()
     UIManager:show(self.password_dialog)

@@ -40,7 +40,7 @@ function MultiInputDialog:init()
             scroll = false,
             parent = self,
         }
-        table.insert(VerticalGroupData,CenterContainer:new{
+        table.insert(VerticalGroupData, CenterContainer:new{
             dimen = Geom:new{
                 w = self.title_bar:getSize().w,
                 h = input_field[k]:getSize().h,

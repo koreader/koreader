@@ -4,6 +4,7 @@ simple serialization function, won't do uservalues, functions, loops
 
 local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
 local insert = table.insert
+local indent_prefix = "    "
 
 local function _serialize(what, outt, indent, max_lv, history)
     if not max_lv then
@@ -19,7 +20,7 @@ local function _serialize(what, outt, indent, max_lv, history)
         for up, item in ipairs(history) do
             if item == what then
                 insert(outt, "nil --[[ LOOP:\n")
-                insert(outt, string.rep("\t", indent - up))
+                insert(outt, string.rep(indent_prefix, indent - up))
                 insert(outt, "^------- ]]")
                 return
             end
@@ -32,7 +33,7 @@ local function _serialize(what, outt, indent, max_lv, history)
                 insert(outt, ",")
             end
             insert(outt, "\n")
-            insert(outt, string.rep("\t", indent+1))
+            insert(outt, string.rep(indent_prefix, indent+1))
             insert(outt, "[")
             _serialize(k, outt, indent+1, max_lv, new_history)
             insert(outt, "] = ")
@@ -41,7 +42,7 @@ local function _serialize(what, outt, indent, max_lv, history)
         end
         if didrun then
             insert(outt, "\n")
-            insert(outt, string.rep("\t", indent))
+            insert(outt, string.rep(indent_prefix, indent))
         end
         insert(outt, "}")
     elseif type(what) == "string" then

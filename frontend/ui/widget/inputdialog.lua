@@ -1,3 +1,40 @@
+--[[--
+Widget for taking user input.
+
+Example:
+
+    local _ = require("gettext")
+    local UIManager = require("ui/uimanager")
+    local sample_input
+    local saveHandler = function()
+        print('Got user input:', sample_input:getInputText())
+    end
+    sample_input = InputDialog:new{
+        title = _("Dialog title"),
+        input = "default value",
+        input_hint = "hint text",
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(sample_input)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = saveHandler,
+                },
+            }
+        },
+        enter_callback = saveHandler,
+    }
+    sample_input:onShowKeyboard()
+    UIManager:show(sample_input)
+
+]]
+
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -38,6 +75,7 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    self.width = self.width or Screen:getWidth() * 0.8
     local title_width = RenderText:sizeUtf8Text(0, self.width,
             self.title_face, self.title, true).x
     if title_width > self.width then
@@ -78,7 +116,6 @@ function InputDialog:init()
         show_parent = self,
     }
     self.title_bar = LineWidget:new{
-        --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.button_table:getSize().w + self.button_padding,
             h = Screen:scaleBySize(2),
@@ -138,6 +175,7 @@ function InputDialog:onShow()
 end
 
 function InputDialog:onCloseWidget()
+    self:onClose()
     UIManager:setDirty(nil, function()
         return "partial", self.dialog_frame.dimen
     end)
