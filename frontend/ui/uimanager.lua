@@ -27,6 +27,7 @@ local UIManager = {
     _zeromqs = {},
     _refresh_stack = {},
     _refresh_func_stack = {},
+    _power_ev_handled = false,
 }
 
 function UIManager:init()
@@ -54,6 +55,36 @@ function UIManager:init()
             Device:onPowerEvent(input_event)
             self:sendEvent(Event:new("Resume"))
             self:_startAutoSuspend()
+        end
+        self.event_handlers["PowerPress"] = function(input_event)
+            self._power_ev_handled = false
+            local showPowerOffDialog = function()
+                if self._power_ev_handled then return end
+                self._power_ev_handled = true
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new{
+                    text = _("Power off?"),
+                    ok_callback = function()
+                        local InfoMessage = require("ui/widget/infomessage")
+
+                        UIManager:show(InfoMessage:new{
+                            text = _("Powered off."),
+                        })
+                        -- The message can fail to render if this is executed directly
+                        UIManager:scheduleIn(0.1, function()
+                            self:broadcastEvent(Event:new("Close"))
+                            Device:powerOff()
+                        end)
+                    end,
+                })
+            end
+            UIManager:scheduleIn(3, showPowerOffDialog)
+        end
+        self.event_handlers["PowerRelease"] = function(input_event)
+            if not self._power_ev_handled then
+              self._power_ev_handled = true
+              self.event_handlers["Suspend"]("Suspend")
+            end
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
@@ -347,7 +378,7 @@ function UIManager:quit()
     end
 end
 
--- transmit an event to registered widgets
+-- transmit an event to an active widget
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
     -- top level widget has first access to the event
@@ -364,6 +395,20 @@ function UIManager:sendEvent(event)
             for _, active_widget in ipairs(widget.widget.active_widgets) do
                 if active_widget:handleEvent(event) then return end
             end
+        end
+    end
+end
+
+-- transmit an event to all registered widgets
+function UIManager:broadcastEvent(event)
+    -- the widget's event handler might close widgets in which case
+    -- a simple iterator like ipairs would skip over some entries
+    local i = 1
+    while (i <= #self._window_stack) do
+        local prev_widget = self._window_stack[i].widget
+        self._window_stack[i].widget:handleEvent(event)
+        if (self._window_stack[i].widget == prev_widget) then
+          i = i + 1
         end
     end
 end
