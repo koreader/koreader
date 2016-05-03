@@ -356,12 +356,12 @@ function ReaderUI:showReader(file)
     end)
 end
 
-local running_instance = nil
+local _running_instance = nil
 function ReaderUI:doShowReader(file)
     dbg("opening file", file)
     -- keep only one instance running
-    if running_instance then
-        running_instance:onClose()
+    if _running_instance then
+        _running_instance:onClose()
     end
     local document = DocumentRegistry:openDocument(file)
     if not document then
@@ -388,11 +388,11 @@ function ReaderUI:doShowReader(file)
         document = document,
     }
     UIManager:show(reader)
-    running_instance = reader
+    _running_instance = reader
 end
 
 function ReaderUI:_getRunningInstance()
-    return running_instance
+    return _running_instance
 end
 
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
@@ -493,8 +493,8 @@ function ReaderUI:onClose()
     UIManager:close(self.dialog, "full")
     -- serialize last used items for later launch
     Cache:serialize()
-    if running_instance == self then
-        running_instance = nil
+    if _running_instance == self then
+        _running_instance = nil
     end
     return true
 end
