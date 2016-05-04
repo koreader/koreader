@@ -220,6 +220,5 @@ elseif codename == "alyssum" then
 elseif codename == "pika" then
     return KoboPika
 else
-else
     error("unrecognized Kobo model "..codename)
 end
