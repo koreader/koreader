@@ -3,16 +3,16 @@
 CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 function assert_ret_zero {
-    if [ $1 -ne 0 ]; then
+    if [ "$1" -ne 0 ]; then
         if [ ! -z "$2" ]; then
-            echo $2
+            echo "$2"
         fi
         exit 1
     fi
 }
 
 function setup_env {
-    files=`ls -d ./koreader-emulator-*/koreader`
+    files=$(ls -d ./koreader-emulator-*/koreader)
     assert_ret_zero $? "Emulator not found, please build it first."
     export EMU_DIR=${files[0]}
 }
@@ -44,8 +44,8 @@ TARGET:
 ${SUPPORTED_TARGETS}"
 
     while [[ $1 == '-'* ]]; do
-        PARAM=`echo $1 | awk -F= '{print $1}'`
-        VALUE=`echo $1 | awk -F= '{print $2}'`
+        PARAM=$(echo "$1" | awk -F= '{print $1}')
+        VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             -v | --verbose)
                 export VERBOSE=1
@@ -77,7 +77,7 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         android)
-            if [ ! -d ${CURDIR}/base/toolchain/android-toolchain ]; then
+            if [ ! -d "${CURDIR}/base/toolchain/android-toolchain" ]; then
                 make android-toolchain
                 assert_ret_zero $?
             fi
@@ -85,7 +85,7 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         pocketbook)
-            if [ ! -d ${CURDIR}/base/toolchain/pocketbook-toolchain ]; then
+            if [ ! -d "${CURDIR}/base/toolchain/pocketbook-toolchain" ]; then
                 make pocketbook-toolchain
                 assert_ret_zero $?
             fi
@@ -131,7 +131,7 @@ ${SUPPORTED_TARGETS}"
             ;;
         android)
             make TARGET=android clean
-            rm -f *.apk
+            rm -f ./*.apk
             ;;
         pocketbook)
             make TARGET=pocketbook clean
@@ -203,7 +203,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
 function kodev-wbuilder {
     kodev-build
     echo "[*] Running wbuilder.lua..."
-    pushd ${EMU_DIR}
+    pushd "${EMU_DIR}"
     EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./utils/wbuilder.lua
     popd
 }
@@ -222,8 +222,8 @@ OPTIONS:
     screen_width=540
     screen_height=720
     while [[ $1 == '-'* ]]; do
-        PARAM=`echo $1 | awk -F= '{print $1}'`
-        VALUE=`echo $1 | awk -F= '{print $2}'`
+        PARAM=$(echo "$1" | awk -F= '{print $1}')
+        VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --disable-touch)
                 export DISABLE_TOUCH=1
@@ -257,18 +257,18 @@ OPTIONS:
         setup_env
     fi
 
-    if [ ! -d ${EMU_DIR} ]; then
+    if [ ! -d "${EMU_DIR}" ]; then
         echo "Failed to find emulator directory! Please try build command first."
         exit 1
     fi
 
-    echo "[*] Running KOReader with arguments: $@..."
-    pushd ${EMU_DIR}
+    echo "[*] Running KOReader with arguments: $*..."
+    pushd "${EMU_DIR}"
 
     if [ $# -lt 1 ]; then
         args=${CURDIR}/test
     else
-        args="$@"
+        args="$*"
         [[ $args != /* ]] && args="${CURDIR}/${args}"
     fi
 
@@ -288,8 +288,8 @@ OPTIONS:
     --tags=TAGS     only run tests with given tags
     "
     while [[ $1 == '-'* ]]; do
-        PARAM=`echo $1 | awk -F= '{print $1}'`
-        VALUE=`echo $1 | awk -F= '{print $2}'`
+        PARAM=$(echo "$1" | awk -F= '{print $1}')
+        VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --tags)
                 opts="--tags=${VALUE}"
@@ -313,19 +313,19 @@ OPTIONS:
     fi
 
     setup_env
-    make ${EMU_DIR}/.busted
-    pushd ${EMU_DIR}
+    make "${EMU_DIR}/.busted"
+    pushd "${EMU_DIR}"
 
-    test_path=./spec/$1/unit
+    test_path="./spec/$1/unit"
 
-    if [ ! -z $2 ]; then
+    if [ ! -z "$2" ]; then
         test_path="${test_path}/$2"
     fi
-    busted --lua=./luajit ${opts} \
+    busted --lua="./luajit ${opts}" \
         --no-auto-insulate \
         --lazy \
-        -o ./spec/$1/unit/verbose_print \
-        --exclude-tags=notest ${test_path}
+        -o "./spec/$1/unit/verbose_print" \
+        --exclude-tags=notest "${test_path}"
 
     popd
 }
@@ -388,38 +388,38 @@ case $1 in
     activate)
         echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"
-        eval $(luarocks path bin)
-        exec ${SHELL}
+        eval "$(luarocks path bin)"
+        exec "${SHELL}"
         ;;
     fetch-thirdparty)
         kodev-fetch-thirdparty
         ;;
     clean)
         shift 1
-        kodev-clean $@
+        kodev-clean "$@"
         ;;
     build)
         shift 1
-        kodev-build $@
+        kodev-build "$@"
         ;;
     release)
         shift 1
-        kodev-release $@
+        kodev-release "$@"
         ;;
     wbuilder)
         kodev-wbuilder
         ;;
     run)
         shift 1
-        kodev-run $@
+        kodev-run "$@"
         ;;
     test)
         shift 1
-        kodev-test $@
+        kodev-test "$@"
         ;;
     log)
         shift 1
-        kodev-log $@
+        kodev-log "$@"
         ;;
     --help | -h)
         echo "${HELP_MSG}"
