@@ -91,7 +91,6 @@ local CreOptions = {
                 event = "ChangeSize",
                 args = {"decrease", "increase"},
                 alternate = false,
-                height = 60,
             }
         }
     },
