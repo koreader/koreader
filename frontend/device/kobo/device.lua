@@ -84,6 +84,7 @@ local KoboAlyssum = Kobo:new{
 local KoboPika = Kobo:new{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
+    touch_alyssum_protocol = true,
 }
 
 function Kobo:init()
