@@ -35,6 +35,16 @@ local CreOptions = {
         icon = "resources/icons/appbar.column.two.large.png",
         options = {
             {
+                name = "view_mode",
+                name_text = S.VIEW_MODE,
+                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
+                values = {1, 0},
+                default_value = 0,
+                args = {"scroll", "page"},
+                default_arg = "page",
+                event = "SetViewMode",
+            },
+            {
                 name = "line_spacing",
                 name_text = S.LINE_SPACING,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
@@ -128,16 +138,6 @@ local CreOptions = {
     {
         icon = "resources/icons/appbar.settings.large.png",
         options = {
-            {
-                name = "view_mode",
-                name_text = S.VIEW_MODE,
-                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
-                values = {1, 0},
-                default_value = 0,
-                args = {"scroll", "page"},
-                default_arg = "page",
-                event = "SetViewMode",
-            },
             {
                 name = "status_line",
                 name_text = S.PROGRESS_BAR,
