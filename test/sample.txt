@@ -1,0 +1,94 @@
+  Lorem ipsum
+  Dolor sit amet, foo@bar.com
+  v0.1, 99 September 7999
+
+  Lorem ipsum dolor sit amet, pri id laudem vulputate disputando, ad mea
+  pericula consetetur. Nusquam detraxit ad sed, tritani mandamus aliquando et
+  has, porro graeco at pri. Sale denique ut sit, mel suas erroribus repudiare
+  ea. Vim probo dicit consequuntur te.
+  ______________________________________________________________________
+
+  Table of Contents
+
+
+  1. Eos ex eius iusto delicata
+
+  2. Illum argumentum sed a
+
+  3. In eum magna iusto integre
+
+
+
+  ______________________________________________________________________
+
+  1. Eos ex eius iusto delicata
+
+
+  Eos ex eius iusto delicata, ius ne facer invenire electram, cu mel assum
+  novum efficiendi. Duo enim eleifend te. Elitr nihil vivendo vix ex, ex homero
+  salutatus sed, ea nec posse commune consetetur. Ea iusto labore docendi his,
+  at per mollis mentitum. Ex esse recteque eos, ex iudicabit gloriatur mei.
+
+  Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue:
+
+  1. Maecenas nec odio et ante tincidunt tempus.
+
+  2. Donec sodales sagittis magna.
+
+  3. Phasellus viverra nulla ut metus varius laoreet.
+
+  Li Europan lingues es membres del sam familie. Lor separat existentie es un
+  myth.
+
+  It va esser tam simplic quam Occidental in fact, it va esser Occidental. A un
+  Angleso it va semblar un simplificat Angles, quam un skeptic Cambridge amico
+  dit me que Occidental es.Li Europan lingues es membres del sam familie. Lor
+  separat existentie es un myth. Por scientie, musica, sport etc, litot Europa
+  usa li sam vocabular. Li lingues differe solmen in li grammatica, li
+  pronunciation e li plu commun vocabules. Omnicos directe al desirabilite de
+  un nov lingua franca: On refusa continuar payar custosi traductores. At
+  solmen va esser necessi far uniform grammatica, pronunciation e plu sommun
+  paroles.
+
+
+  2. Illum argumentum sed a
+
+  Illum argumentum sed ad, vel accumsan noluisse eu. Nam ne minimum consulatu,
+  vim nullam quidam ut. Ea pro temporibus ullamcorper, at case aeque vix. Est
+  id consetetur intellegam. Eu cum oratio gubergren, aeque tritani feugiat vel
+  te.
+
+  ·  Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+     doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
+     veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+
+  ·  Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam
+     nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas
+     nulla pariatur?
+
+  cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod
+  maxime placeat facere.
+
+  To install the tar.gz source, use the commands:
+
+  ______________________________________________________________________
+  ./configure
+  make
+  make install
+  ______________________________________________________________________
+
+
+  Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed
+  quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+  Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur,
+  adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore
+  et dolore magnam aliquam quaerat voluptatem.
+
+
+  3.  In eum magna iusto integre
+
+  In eum magna iusto integre, cu solet commodo constituto pro. Te nec tota
+  altera, diam periculis ius eu, eum te velit partiendo conclusionemque. Diam
+  mnesarchum at usu, agam nonumes at nec. Vix aliquip liberavisse ex, nam at
+  quis choro accusam. Eu his zril graecis, latine legendos inimicus eum at, qui
+  te adolescens adipiscing.

@@ -63,7 +63,7 @@ ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
 		ln -sf ../../test ./data
 else
-	cp -rfL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
+	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
@@ -77,9 +77,9 @@ ifdef WIN32
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
 	@echo "[*] Install plugins"
-	cp -r plugins/* $(INSTALL_DIR)/koreader/plugins/
+	$(RCP) plugins/* $(INSTALL_DIR)/koreader/plugins/
 	@echo "[*] Installresources"
-	cp -rpL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
+	$(RCP) -pL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
 	@echo "[*] Clean up, remove unused files for releases"
@@ -107,7 +107,10 @@ test:
 	$(MAKE) testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
-	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) -o verbose_print --coverage --exclude-tags=nocov
+	cd $(INSTALL_DIR)/koreader && \
+		./luajit $(shell which busted) -o verbose_print \
+			--no-auto-insulate \
+			--coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
 		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \

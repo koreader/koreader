@@ -12,7 +12,7 @@ local Device = require("device")
 local Screen = require("device").screen
 local Event = require("ui/event")
 local Cache = require("cache")
-local DEBUG = require("dbg")
+local dbg = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -304,7 +304,7 @@ function ReaderUI:init()
     })
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        dbg("Loaded plugin", plugin_module.name, "at", plugin_module.path)
         self:registerModule(plugin_module.name, plugin_module:new{
             dialog = self.dialog,
             view = self.view,
@@ -313,7 +313,7 @@ function ReaderUI:init()
         })
     end
 
-    --DEBUG(self.doc_settings)
+    --dbg(self.doc_settings)
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
@@ -328,19 +328,22 @@ function ReaderUI:init()
 end
 
 function ReaderUI:showReader(file)
-    DEBUG("show reader ui")
+    dbg("show reader ui")
+    require("readhistory"):addItem(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-             text = T( _("File '%1' does not exist."), file)
+             text = T(_("File '%1' does not exist."), file)
         })
         return
     end
     UIManager:show(InfoMessage:new{
-        text = T( _("Opening file '%1'."), file),
-        timeout = 0.1,
+        text = T(_("Opening file '%1'."), file),
+        timeout = 0.0,
     })
+    -- doShowReader might block for a long time, so force repaint here
+    UIManager:forceRePaint()
     UIManager:nextTick(function()
-        DEBUG("creating coroutine for showing reader")
+        dbg("creating coroutine for showing reader")
         local co = coroutine.create(function()
             self:doShowReader(file)
         end)
@@ -353,12 +356,12 @@ function ReaderUI:showReader(file)
     end)
 end
 
-local running_instance = nil
+local _running_instance = nil
 function ReaderUI:doShowReader(file)
-    DEBUG("opening file", file)
+    dbg("opening file", file)
     -- keep only one instance running
-    if running_instance then
-        running_instance:onClose()
+    if _running_instance then
+        _running_instance:onClose()
     end
     local document = DocumentRegistry:openDocument(file)
     if not document then
@@ -368,7 +371,7 @@ function ReaderUI:doShowReader(file)
         return
     end
     if document.is_locked then
-        DEBUG("document is locked")
+        dbg("document is locked")
         self._coroutine = coroutine.running() or self._coroutine
         self:unlockDocumentWithPassword(document)
         if coroutine.running() then
@@ -385,15 +388,15 @@ function ReaderUI:doShowReader(file)
         document = document,
     }
     UIManager:show(reader)
-    running_instance = reader
+    _running_instance = reader
 end
 
 function ReaderUI:_getRunningInstance()
-    return running_instance
+    return _running_instance
 end
 
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
-    DEBUG("show input password dialog")
+    dbg("show input password dialog")
     self.password_dialog = InputDialog:new{
         title = try_again and _("Password is incorrect, try again?")
             or _("Input document password"),
@@ -481,17 +484,17 @@ function ReaderUI:notifyCloseDocument()
 end
 
 function ReaderUI:onClose()
-    DEBUG("closing reader")
+    dbg("closing reader")
     self:saveSettings()
     if self.document ~= nil then
-        DEBUG("closing document")
+        dbg("closing document")
         self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, "full")
     -- serialize last used items for later launch
     Cache:serialize()
-    if running_instance == self then
-        running_instance = nil
+    if _running_instance == self then
+        _running_instance = nil
     end
     return true
 end

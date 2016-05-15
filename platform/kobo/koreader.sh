@@ -35,22 +35,47 @@ if pkill -0 nickel ; then
 	FROM_NICKEL="true"
 fi
 
-if [ "${FROM_NICKEL}" == "true" ] ; then
-	# Siphon a few things from nickel's env...
-	eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
-	export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+if [ "${FROM_NICKEL}" = "true" ] ; then
+	# Detect if we were started from KFMon
+	FROM_KFMON="false"
+	if pkill -0 kfmon ; then
+		# That's a start, now check if KFMon truly is our parent...
+		if [ "$(pidof kfmon)" -eq "${PPID}" ] ; then
+			FROM_KFMON="true"
+		fi
+	fi
+
+	if [ "${FROM_KFMON}" = "true" ] ; then
+		# Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
+		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
+			export ${env}
+		done
+	else
+		# Siphon a few things from nickel's env...
+		eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
+		export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+	fi
 
 	# flush disks, might help avoid trashing nickel's DB...
 	sync
+	# Double the fun!
+	sleep 1
+	sync
 	# stop kobo software because it's running
-	killall nickel hindenburg fmon 2>/dev/null
+	killall nickel hindenburg sickel fickel fmon 2>/dev/null
+
+	# NOTE: Not particularly critical, we should be safe leaving it up, but since we reboot on exit anyway...
+	#	Keep KFMon up for now to make sure it's not doing anything overly stupid we might have overlooked ;).
+	#if [ "${FROM_KFMON}" == "true" ] ; then
+	#	killall kfmon 2>/dev/null
+	#fi
 fi
 
 # fallback for old fmon (and advboot) users (-> if no args were passed to the sript, start the FM)
 if [ "$#" -eq 0 ] ; then
 	args="/mnt/onboard"
 else
-	args="$@"
+	args="$*"
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
@@ -68,7 +93,7 @@ if [ ! -n "${PLATFORM}" ] ; then
 		PLATFORM="${CPU}-ntx"
 	fi
 
-	if [ "${PLATFORM}" == "freescale" ] ; then
+	if [ "${PLATFORM}" = "freescale" ] ; then
 		if [ ! -s "/lib/firmware/imx/epdc_E60_V220.fw" ] ; then
 			mkdir -p "/lib/firmware/imx"
 			dd if="/dev/mmcblk0" bs=512K skip=10 count=1 | zcat > "/lib/firmware/imx/epdc_E60_V220.fw"
@@ -88,9 +113,15 @@ fi
 
 ./reader.lua "${args}" > crash.log 2>&1
 
-if [ "${FROM_NICKEL}" == "true" ] ; then
-	# start kobo software because it was running before koreader
-	./nickel.sh &
+if [ "${FROM_NICKEL}" = "true" ] ; then
+	if [ "${FROM_KFMON}" != "true" ] ; then
+		# start kobo software because it was running before koreader
+		./nickel.sh &
+	else
+		# If we were called from KFMon, just reboot, because there's always a (hopefully slim to nonexistent, now) chance Nickel will get its panties in a serious twist on restore for one reason or another...
+		# And at best, we'd still restart with broken suspend behavior anyway...
+		reboot
+	fi
 else
 	# if we were called from advboot then we must reboot to go to the menu
 	# NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:

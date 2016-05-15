@@ -29,6 +29,67 @@ describe("Readerfooter module", function()
         })
     end)
 
+    it("should setup footer as visible", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(true, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as invisible in full screen mode", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+        local cfg = DocSettings:open(sample_pdf)
+        cfg:saveSetting("kopt_full_screen", 0)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(false, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as visible in mini progress bar mode", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        purgeDir(DocSettings:getSidecarDir(sample_pdf))
+        os.remove(DocSettings:getHistoryPath(sample_pdf))
+        local cfg = DocSettings:open(sample_pdf)
+        cfg:saveSetting("kopt_full_screen", 0)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        assert.is.same(false, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
+    it("should setup footer as invisible", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local sample_epub = "spec/front/unit/data/juliet.epub"
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+        local cfg = DocSettings:open(sample_epub)
+        cfg:saveSetting("copt_status_line", 1)
+        cfg:flush()
+
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
+        assert.is.same(true, readerui.view.footer_visible)
+        G_reader_settings:delSetting("reader_footer_mode")
+    end)
+
     it("should setup footer for epub without error", function()
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
@@ -98,6 +159,41 @@ describe("Readerfooter module", function()
         footer.mode = 7
         footer:updateFooter()
         assert.are.same('TC: na', footer.progress_text.text)
+    end)
+
+    it("should rotate through different modes", function()
+        local sample_pdf = "spec/front/unit/data/2col.pdf"
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        local footer = readerui.view.footer
+        footer.settings.all_at_once = false
+        footer.mode = 0
+        footer:onTapFooter()
+        assert.is.same(1, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(2, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(3, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(4, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(5, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(6, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(7, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
+
+        footer.settings.all_at_once = true
+        footer.mode = 5
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(1, footer.mode)
+        footer:onTapFooter()
+        assert.is.same(0, footer.mode)
     end)
 
     it("should pick up screen resize in resetLayout", function()

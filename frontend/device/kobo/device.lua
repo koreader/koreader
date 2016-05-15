@@ -86,12 +86,15 @@ function Kobo:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = {
-            [59] = "Power_SleepCover",
             [90] = "Light",
             [102] = "Home",
             [116] = "Power",
         }
     }
+
+    if not G_reader_settings:readSetting("ignore_power_sleepcover") then
+        self.input.event_map[59] = "Power_SleepCover"
+    end
 
     Generic.init(self)
 
@@ -184,6 +187,10 @@ function Kobo:resume()
         io.close(f)
         os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
     end
+end
+
+function Kobo:powerOff()
+    os.execute("poweroff")
 end
 
 -------------- device probe ------------

@@ -94,7 +94,6 @@ function ReaderView:addWidgets()
     self.footer = ReaderFooter:new{
         view = self,
         ui = self.ui,
-        visible = self.footer_visible,
     }
     self.flipping = ReaderFlipping:new{
         view = self,
@@ -644,7 +643,9 @@ function ReaderView:onReadSettings(config)
     self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
     local status_line = config:readSetting("copt_status_line") or self.document.configurable.status_line
-    self.footer_visible = (full_screen == 0 or status_line == 1) and true or false
+    if full_screen == 0 or status_line == 0 then
+        self.footer_visible = false
+    end
     self:resetLayout()
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false

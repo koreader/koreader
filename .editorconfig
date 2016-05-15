@@ -18,6 +18,10 @@ trim_trailing_whitespace = false
 indent_style = tab
 indent_size = 8
 
+[Makefile.def]
+indent_style = tab
+indent_size = 4
+
 [*.{js,css,scss,sass,html,handlebars,tpl}]
 indent_style = space
 indent_size = 2

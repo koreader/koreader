@@ -14,7 +14,7 @@ Configurable attributes:
  * rectcolor  -- infill color
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
- * last  -- maximum tick
+ * last  -- maximum tick, used with ticks
 
 Example:
 
@@ -68,7 +68,7 @@ function ProgressWidget:paintTo(bb, x, y)
     bb:paintRect(x+self.margin_h, math.ceil(y+self.margin_v+self.bordersize),
                  math.ceil((my_size.w-2*self.margin_h)*self.percentage),
                  my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
-    if self.ticks then
+    if self.ticks and self.last then
         for i=1, #self.ticks do
             bb:paintRect(
                 x + (my_size.w-2*self.margin_h)*(self.ticks[i]/self.last),

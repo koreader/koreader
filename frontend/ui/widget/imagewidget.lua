@@ -87,7 +87,7 @@ function ImageWidget:_render()
         error("cannot render image")
     end
     local native_w, native_h = self._bb:getWidth(), self._bb:getHeight()
-    local w, h
+    local w, h = self.width, self.height
     if self.autoscale then
         local dpi_scale = Screen:getDPI() / 167
         -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))

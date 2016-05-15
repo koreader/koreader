@@ -20,12 +20,14 @@ describe("Readerrolling module", function()
         it("should goto portrait screen mode", function()
             readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
         end)
+
         it("should goto certain page", function()
             for i = 1, 10, 5 do
                 rolling:onGotoPage(i)
                 assert.are.same(i, rolling.current_page)
             end
         end)
+
         it("should goto relative page", function()
             for i = 20, 40, 5 do
                 rolling:onGotoPage(i)
@@ -35,6 +37,7 @@ describe("Readerrolling module", function()
                 assert.are.same(i, rolling.current_page)
             end
         end)
+
         it("should goto next chapter", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
@@ -43,6 +46,7 @@ describe("Readerrolling module", function()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
         end)
+
         it("should goto previous chapter", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
@@ -51,18 +55,58 @@ describe("Readerrolling module", function()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
-        it("should emit EndOfBook event at the end", function()
-            rolling:onGotoPage(readerui.document:getPageCount())
+
+        it("should emit EndOfBook event at the end of sample epub", function()
             local called = false
             readerui.onEndOfBook = function()
                 called = true
             end
+            -- check beginning of the book
+            rolling:onGotoPage(1)
+            assert.is.falsy(called)
+            rolling:onGotoViewRel(-1)
+            rolling:onGotoViewRel(-1)
+            assert.is.falsy(called)
+            -- check end of the book
+            rolling:onGotoPage(readerui.document:getPageCount())
+            assert.is.falsy(called)
             rolling:onGotoViewRel(1)
+            assert.is.truthy(called)
             rolling:onGotoViewRel(1)
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
         end)
+
+        it("should emit EndOfBook event at the end sample txt", function()
+            local sample_txt = "spec/front/unit/data/sample.txt"
+            local txt_readerui = ReaderUI:new{
+                document = DocumentRegistry:openDocument(sample_txt),
+            }
+            local called = false
+            txt_readerui.onEndOfBook = function()
+                called = true
+            end
+            local txt_rolling = txt_readerui.rolling
+            -- check beginning of the book
+            txt_rolling:onGotoPage(1)
+            assert.is.falsy(called)
+            txt_rolling:onGotoViewRel(-1)
+            txt_rolling:onGotoViewRel(-1)
+            assert.is.falsy(called)
+            -- not at the end of the book
+            txt_rolling:onGotoPage(3)
+            assert.is.falsy(called)
+            txt_rolling:onGotoViewRel(1)
+            assert.is.falsy(called)
+            -- at the end of the book
+            txt_rolling:onGotoPage(txt_readerui.document:getPageCount())
+            assert.is.falsy(called)
+            txt_rolling:onGotoViewRel(1)
+            assert.is.truthy(called)
+            readerui.onEndOfBook = nil
+        end)
     end)
+
     describe("test in landscape screen mode", function()
         it("should go to landscape screen mode", function()
             readerui:handleEvent(Event:new("ChangeScreenMode", "landscape"))
@@ -110,6 +154,7 @@ describe("Readerrolling module", function()
             readerui.onEndOfBook = nil
         end)
     end)
+
     describe("switching screen mode should not change current page number", function()
         it("for portrait-landscape-portrait switching", function()
             for i = 80, 100, 10 do

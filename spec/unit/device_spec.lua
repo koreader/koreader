@@ -94,5 +94,107 @@ describe("device module", function()
             os.getenv:revert()
             mock_input.open:revert()
         end)
+
+        it("should flush book settings before suspend", function()
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local Device = require("device")
+            local NickelConf = require("device/kobo/nickel_conf")
+
+            stub(NickelConf.frontLightLevel, "get")
+            stub(NickelConf.frontLightState, "get")
+            NickelConf.frontLightLevel.get.returns(1)
+            NickelConf.frontLightState.get.returns(0)
+
+            local UIManager = require("ui/uimanager")
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isKobo")
+
+            Device.isKobo.returns(true)
+            local saved_noop = UIManager._resetAutoSuspendTimer
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isKobo:revert()
+            NickelConf.frontLightLevel.get:revert()
+            NickelConf.frontLightState.get:revert()
+            UIManager._startAutoSuspend = nil
+            UIManager._stopAutoSuspend = nil
+            UIManager._resetAutoSuspendTimer = saved_noop
+            readerui:onClose()
+        end)
+    end)
+
+    describe("kindle", function()
+        it("should initialize voyager without error", function()
+            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
+            stub(io, "open")
+            io.open.returns({
+                read = function()
+                    return "XX13XX"
+                end,
+                close = function() end
+            })
+            mock_input = require('device/input')
+            stub(mock_input, "open")
+
+            local kindle_dev = require("device/kindle/device")
+            assert.is.same(kindle_dev.model, "KindleVoyage")
+            kindle_dev:init()
+            assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
+            assert.is.same(kindle_dev.input.event_map[109], "LPgFwd")
+            assert.is.same(kindle_dev.powerd.fl_min, 0)
+            assert.is.same(kindle_dev.powerd.fl_max, 24)
+
+            io.open:revert()
+            package.loaded['ffi/framebuffer_mxcfb'] = nil
+            mock_input.open:revert()
+        end)
+
+        it("should toggle frontlight", function()
+            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
+            stub(io, "open")
+            io.open.returns({
+                read = function()
+                    return "12"
+                end,
+                close = function() end
+            })
+            mock_input = require('device/input')
+            stub(mock_input, "open")
+            stub(os, "execute")
+
+            local kindle_dev = require("device/kindle/device")
+            kindle_dev:init()
+
+            assert.is.same(kindle_dev.powerd.fl_intensity, 12)
+            kindle_dev.powerd:setIntensity(5)
+            assert.stub(os.execute).was_called_with(
+                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+            assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+
+            kindle_dev.powerd:toggleFrontlight()
+            assert.stub(os.execute).was_called_with(
+                "echo -n 0 > /sys/class/backlight/max77696-bl/brightness")
+            assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+
+            kindle_dev.powerd:toggleFrontlight()
+            assert.stub(os.execute).was_called_with(
+                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+
+            io.open:revert()
+            package.loaded['ffi/framebuffer_mxcfb'] = nil
+            mock_input.open:revert()
+            os.execute:revert()
+        end)
     end)
 end)

@@ -153,6 +153,9 @@ function Device:suspend() end
 -- Hardware specific method to resume the device
 function Device:resume() end
 
+-- Hardware specific method to power off the device
+function Device:powerOff() end
+
 function Device:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
