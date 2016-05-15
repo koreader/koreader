@@ -18,7 +18,7 @@ local InputText = InputContainer:new{
     charpos = nil, -- position to insert a new char, or the position of the cursor
     input_type = nil,
     text_type = nil,
-	text_widget = nil, -- Text Widget for cursor movement
+    text_widget = nil, -- Text Widget for cursor movement
 
     width = nil,
     height = nil,
@@ -50,15 +50,15 @@ if Device.isTouchDevice() then
     function InputText:onTapTextBox(arg, ges)
         if self.parent.onSwitchFocus then
             self.parent:onSwitchFocus(self)
-		else
-		    local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
-		    local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
-		    if x > 0 and y > 0 then
-		    	self.charpos = self.text_widget:moveCursor(x, y)
-		    	UIManager:setDirty(self.parent, function()
-		    		return "ui", self[1].dimen
-		    	end)
-		    end
+        else
+            local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
+            local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
+            if x > 0 and y > 0 then
+                self.charpos = self.text_widget:moveCursor(x, y)
+                UIManager:setDirty(self.parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end
         end
     end
 else
@@ -74,10 +74,10 @@ end
 
 function InputText:initTextBox(text)
     self.text = text
-	util.splitToChars(text, self.charlist)
-	if self.charpos == nil then
-		self.charpos = #self.charlist + 1
-	end
+    util.splitToChars(text, self.charlist)
+    if self.charpos == nil then
+        self.charpos = #self.charlist + 1
+    end
     local fgcolor = Blitbuffer.gray(self.text == "" and 0.5 or 1.0)
 
     local show_text = self.text
@@ -88,9 +88,9 @@ function InputText:initTextBox(text)
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
             text = show_text,
-			charlist = self.charlist,
-			charpos = self.charpos,
-			editable = true,
+            charlist = self.charlist,
+            charpos = self.charpos,
+            editable = true,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
@@ -99,9 +99,9 @@ function InputText:initTextBox(text)
     else
         self.text_widget = TextBoxWidget:new{
             text = show_text,
-			charlist = self.charlist,
-			charpos = self.charpos,
-			editable = true,
+            charlist = self.charlist,
+            charpos = self.charpos,
+            editable = true,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,

@@ -16,9 +16,9 @@ Text widget with vertical scroll bar
 --]]
 local ScrollTextWidget = InputContainer:new{
     text = nil,
-	charlist = nil,
-	charpos = nil,
-	editable = false,
+    charlist = nil,
+    charpos = nil,
+    editable = false,
     face = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400,
@@ -31,9 +31,9 @@ local ScrollTextWidget = InputContainer:new{
 function ScrollTextWidget:init()
     self.text_widget = TextBoxWidget:new{
         text = self.text,
-		charlist = self.charlist,
-		charpos = self.charpos,
-		editable = self.editable,
+        charlist = self.charlist,
+        charpos = self.charpos,
+        editable = self.editable,
         face = self.face,
         fgcolor = self.fgcolor,
         width = self.width - self.scroll_bar_width - self.text_scroll_span,
@@ -76,10 +76,10 @@ function ScrollTextWidget:scrollText(direction)
     if direction == 0 then return end
     if direction > 0 then
         low, high = self.text_widget:scrollDown()
-		self.v_scroll_bar:set(low, high)
+        self.v_scroll_bar:set(low, high)
     else
         low, high = self.text_widget:scrollUp()
-		self.v_scroll_bar:set(low, high)
+        self.v_scroll_bar:set(low, high)
     end
     UIManager:setDirty(self.dialog, function()
         return "partial", self.dimen
