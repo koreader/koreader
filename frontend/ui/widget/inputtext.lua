@@ -48,16 +48,13 @@ if Device.isTouchDevice() then
     end
 
     function InputText:onTapTextBox(arg, ges)
-		print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT  Text widget", self.text_widget)
         if self.parent.onSwitchFocus then
             self.parent:onSwitchFocus(self)
 		else
 		    local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
 		    local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
 		    if x > 0 and y > 0 then
-		    	print("Move to ", x, y)
 		    	self.charpos = self.text_widget:moveCursor(x, y)
-		    	print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX charpos now at", self.charpos)
 		    	UIManager:setDirty(self.parent, function()
 		    		return "ui", self[1].dimen
 		    	end)
@@ -78,7 +75,6 @@ end
 function InputText:initTextBox(text)
     self.text = text
 	util.splitToChars(text, self.charlist)
-	print("XXXXXX", self.charlist, #self.charlist)
 	if self.charpos == nil then
 		self.charpos = #self.charlist + 1
 	end
@@ -112,7 +108,6 @@ function InputText:initTextBox(text)
             height = self.height,
         }
     end
-	print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII InputText: text_widget", self.text_widget)
     self[1] = FrameContainer:new{
         bordersize = self.bordersize,
         padding = self.padding,

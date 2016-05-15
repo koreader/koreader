@@ -106,7 +106,6 @@ function util.splitToChars(text, tab)
     for k, v in pairs(tab) do
 		tab[k] = nil
 	end
-	print("table", tab)
     local prevcharcode, charcode = 0
     for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
         charcode = BaseUtil.utf8charcode(uchar)
@@ -115,7 +114,6 @@ function util.splitToChars(text, tab)
         end
         prevcharcode = charcode
     end
-	print(table.concat(tab, ","))
 end
 
 -- Test whether a string could be separated by a char for multi-line rendering

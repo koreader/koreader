@@ -29,7 +29,6 @@ local ScrollTextWidget = InputContainer:new{
 }
 
 function ScrollTextWidget:init()
-	print("####################################################### ScrollTextWidget width", self.width)
     self.text_widget = TextBoxWidget:new{
         text = self.text,
 		charlist = self.charlist,

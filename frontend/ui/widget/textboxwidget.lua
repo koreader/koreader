@@ -29,7 +29,6 @@ local TextBoxWidget = Widget:new{
 }
 
 function TextBoxWidget:init()
-	print("XXXXXXXXXXXXXXXXXXXX TextBoxWidget:init() ", self.height)
 	local line_height = (1 + self.line_height) * self.face.size
 	local font_height = self.face.size
 	self.cursor_line = LineWidget:new{
@@ -38,27 +37,15 @@ function TextBoxWidget:init()
             h = line_height,
         }
     }
-	print("########################### Rendering text", self.text)
-	print("########################### charlist", self.charlist)
 	self:_evalCharWidthList()
-	print("########################### char_width_list", self.char_width_list)
-	for k, v in ipairs(self.char_width_list) do
-		print("############################", k, v.char, v.width)
-	end
 	self:_splitCharWidthList()
-	print("######################### Text Widget vetical_string_list", self.vertical_string_list)
-	for k, v in ipairs(self.vertical_string_list) do
-		print("############################", k, v.text, v.offset)
-	end
 	if self.height == nil then
 		self:_renderText(1, #self.vertical_string_list)
 	else
-		print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ scorlling widget", self:getVisLineCount())
 		self:_renderText(1, self:getVisLineCount())
 	end
 	if self.editable then
 		x, y = self:_findCharPos()
-		print("####################### Drawing cursor at ", x, y, self.charpos)
 		self.cursor_line:paintTo(self._bb, x, y)
 	end
 	self.dimen = Geom:new(self:getSize())
@@ -107,16 +94,12 @@ function TextBoxWidget:_splitCharWidthList()
 				break
 			end
 			cur_line_width = cur_line_width + self.char_width_list[idx].width
-			print("++++++++", cur_line_width, idx, self.char_width_list[idx].width, self.char_width_list[idx].char)
 			if cur_line_width > self.width then break else idx = idx + 1 end
 		end
-		print("xxxxxxx Beofre ", cur_line_width, offset, idx, "++++++++++ self.width", self.width)
 		if cur_line_width <= self.width then -- a hard newline or end of string
 			cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
-			print("XXX nature end", cur_line_text, "?????", #self.charlist)
 		else
 			-- Backtrack the string until the length fit into one line.
-			print("XXX overbounded")
 			local c = self.char_width_list[idx].char
 			if util.isSplitable(c) then
 				cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
@@ -125,7 +108,6 @@ function TextBoxWidget:_splitCharWidthList()
 				local adjusted_idx = idx
 				local adjusted_width = cur_line_width
 				repeat
-					print("<----", self.char_width_list[adjusted_idx])
 					adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
 					adjusted_idx = adjusted_idx - 1
 					c = self.char_width_list[adjusted_idx].char
@@ -133,11 +115,9 @@ function TextBoxWidget:_splitCharWidthList()
 				if adjusted_idx == offset then -- a very long english word ocuppying more than one line
 					cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
 					cur_line_width = cur_line_width - self.char_width_list[idx].width
-					print("!!!!! A very long word cut to ", cur_line_text)
 				else
 					cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
 					cur_line_width = adjusted_line_width
-					print("now the text is ", cur_line_text, "(", adjusted_line_width, ")", offset, adjusted_idx)
 					idx = adjusted_idx + 1
 				end
 			end -- endif util.isSplitable(c)
@@ -153,7 +133,6 @@ function TextBoxWidget:_splitCharWidthList()
 end
 
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
-	print("@@@@@@@@@@@@@@@@@@@", start_row_idx, end_row_idx)
     local font_height = self.face.size
     local line_height = (1 + self.line_height) * font_height
 	if start_row_idx < 1 then start_row_idx = 1 end
@@ -162,10 +141,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     local h = line_height *  row_count
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
-	print("XXXX rendering height", h, line_height, start_row_idx, end_row_idx)
 	local y = font_height
 	for i = start_row_idx, end_row_idx do
-		print("printing row", i, self.vertical_string_list[i].text)
 		local line = self.vertical_string_list[i]
 		local pen_x = self.alignment == "center" and (self.width - line.width)/2 or 0
 			--@TODO Don't use kerning for monospaced fonts.    (houqp)
@@ -182,24 +159,18 @@ end
 -- Return the position of the cursor corresponding to `self.charpos`,
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:_findCharPos()
-	print("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF findCharPos", self.charpos)
 	-- Find the line number.
 	local ln = self.height == nil and 1 or self.virtual_line_num
 	while ln + 1 <= #self.vertical_string_list do
 		if self.vertical_string_list[ln + 1].offset > self.charpos then break else ln = ln + 1 end
-		print("XXXXXX", ln, self.vertical_string_list[ln].offset, self.charpos)
 	end
-	print("^^^^^^^^^^^^locating at real line", ln, "virutal line", ln - self.virtual_line_num + 1)
 	-- Find the offset at the current line.
 	local x = 0
-	print("self.char_width_list", self.char_width_list)
 	local offset = self.vertical_string_list[ln].offset
 	while offset < self.charpos do
-		print("+++", offset, self.charpos)
 		x = x + self.char_width_list[offset].width
 		offset = offset + 1
 	end
-	print("^^^^^^^^^^^locating at width ", x)
 	local line_height = (1 + self.line_height) * self.face.size
 	return x + 1, (ln - 1) * line_height -- offset `x` by 1 to avoid overlap
 end
@@ -213,28 +184,21 @@ function TextBoxWidget:moveCursor(x, y)
 	local ln = self.height == nil and 1 or self.virtual_line_num
 	ln = ln + math.ceil(y / line_height) - 1
 	if ln > #self.vertical_string_list then
-		print("&&&&&&&&&&&& Press some empty area....")
 		ln = #self.vertical_string_list
 		x = self.width
 	end
-	print("Real line number", ln, "virtual line number", ln - self.virtual_line_num + 1)
 	local offset = self.vertical_string_list[ln].offset
 	local idx = ln == #self.vertical_string_list and #self.char_width_list or self.vertical_string_list[ln + 1].offset - 1
-	print("XXXX", offset, idx)
 	while offset <= idx do
 		w = w + self.char_width_list[offset].width
-		print("XXXXX", offset, idx, w)
 		if w > x then break else offset = offset + 1 end
 	end
-	print("XXXX After loop", offset, idx, w)
 	if w > x then
 		local w_prev = w - self.char_width_list[offset].width
 		if x - w_prev < w - x then -- the previous one is more closer
 			w = w_prev
 		end
 	end
-	print("$$$$$$$$$$$$$$$$$$$$$$$$ adjusted", w)
-	print("painting", w, ln - self.virtual_line_num + 1)
 	self:free()
 	self:_renderText(1, #self.vertical_string_list)
 	self.cursor_line:paintTo(self._bb, w + 1, (ln - self.virtual_line_num) * line_height)
