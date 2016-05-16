@@ -80,6 +80,13 @@ local KoboAlyssum = Kobo:new{
     display_dpi = 300,
 }
 
+-- Kobo Touch 2.0:
+local KoboPika = Kobo:new{
+    model = "Kobo_pika",
+    touch_phoenix_protocol = true,
+    touch_alyssum_protocol = true,
+}
+
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
@@ -211,6 +218,8 @@ elseif codename == "pixie" then
     return KoboPixie
 elseif codename == "alyssum" then
     return KoboAlyssum
+elseif codename == "pika" then
+    return KoboPika
 else
     error("unrecognized Kobo model "..codename)
 end

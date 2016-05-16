@@ -118,9 +118,14 @@ if [ "${FROM_NICKEL}" = "true" ] ; then
 		# start kobo software because it was running before koreader
 		./nickel.sh &
 	else
-		# If we were called from KFMon, just reboot, because there's always a (hopefully slim to nonexistent, now) chance Nickel will get its panties in a serious twist on restore for one reason or another...
-		# And at best, we'd still restart with broken suspend behavior anyway...
-		reboot
+		if grep -q 'reboot_on_exit=false' /mnt/onboard/.adds/kfmon/config/koreader.ini 2>/dev/null ; then
+			# The user wants to try to restart Nickel instead of rebooting!
+			./nickel.sh &
+		else
+			# By default, if we were called from KFMon, just reboot, because there might be a chance Nickel will get its panties in a serious twist on restore for one reason or another...
+			# And at best, we'd still restart with slightly broken suspend behavior anyway...
+			reboot
+		fi
 	fi
 else
 	# if we were called from advboot then we must reboot to go to the menu
