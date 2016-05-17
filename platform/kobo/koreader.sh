@@ -1,8 +1,12 @@
 #!/bin/sh
+
 export LC_ALL="en_US.UTF-8"
 
 # working directory of koreader
 KOREADER_DIR="${0%/*}"
+
+# execute user defined script first
+sh "${KOREADER_DIR}/before_koreader.sh" || true
 
 # update to new version from OTA directory
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
@@ -111,7 +115,20 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
 	mount -o remount,rw /mnt/sd
 fi
 
-./reader.lua "${args}" > crash.log 2>&1
+while true
+do
+    if [ "${PRESERVE_CRASH_LOG}" ]
+    then
+        ./reader.lua "${args}" > crash.log 2>&1
+    else
+        ./reader.lua "${args}" > /dev/null 2>&1
+    fi
+
+    # Exit if user supposes to close Koreader.
+    if [ $? -eq 0 ]; then break; fi
+    # Exit if user supposes to preserve crash log.
+    if [ "${PRESERVE_CRASH_LOG}" ]; then break; fi
+done
 
 if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
