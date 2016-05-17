@@ -35,7 +35,7 @@ if pkill -0 nickel ; then
 	FROM_NICKEL="true"
 fi
 
-if [ "${FROM_NICKEL}" == "true" ] ; then
+if [ "${FROM_NICKEL}" = "true" ] ; then
 	# Detect if we were started from KFMon
 	FROM_KFMON="false"
 	if pkill -0 kfmon ; then
@@ -45,7 +45,7 @@ if [ "${FROM_NICKEL}" == "true" ] ; then
 		fi
 	fi
 
-	if [ "${FROM_KFMON}" == "true" ] ; then
+	if [ "${FROM_KFMON}" = "true" ] ; then
 		# Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
 		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
 			export ${env}
@@ -75,7 +75,7 @@ fi
 if [ "$#" -eq 0 ] ; then
 	args="/mnt/onboard"
 else
-	args="$@"
+	args="$*"
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
@@ -93,7 +93,7 @@ if [ ! -n "${PLATFORM}" ] ; then
 		PLATFORM="${CPU}-ntx"
 	fi
 
-	if [ "${PLATFORM}" == "freescale" ] ; then
+	if [ "${PLATFORM}" = "freescale" ] ; then
 		if [ ! -s "/lib/firmware/imx/epdc_E60_V220.fw" ] ; then
 			mkdir -p "/lib/firmware/imx"
 			dd if="/dev/mmcblk0" bs=512K skip=10 count=1 | zcat > "/lib/firmware/imx/epdc_E60_V220.fw"
@@ -113,14 +113,19 @@ fi
 
 ./reader.lua "${args}" > crash.log 2>&1
 
-if [ "${FROM_NICKEL}" == "true" ] ; then
+if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
 		# start kobo software because it was running before koreader
 		./nickel.sh &
 	else
-		# If we were called from KFMon, just reboot, because there's always a (hopefully slim to nonexistent, now) chance Nickel will get its panties in a serious twist on restore for one reason or another...
-		# And at best, we'd still restart with broken suspend behavior anyway...
-		reboot
+		if grep -q 'reboot_on_exit=false' /mnt/onboard/.adds/kfmon/config/koreader.ini 2>/dev/null ; then
+			# The user wants to try to restart Nickel instead of rebooting!
+			./nickel.sh &
+		else
+			# By default, if we were called from KFMon, just reboot, because there might be a chance Nickel will get its panties in a serious twist on restore for one reason or another...
+			# And at best, we'd still restart with slightly broken suspend behavior anyway...
+			reboot
+		fi
 	fi
 else
 	# if we were called from advboot then we must reboot to go to the menu

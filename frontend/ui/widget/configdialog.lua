@@ -353,9 +353,14 @@ function ConfigOption:init()
 
             if self.options[c].toggle then
                 local max_toggle_width = Screen:getWidth() / 2
-                local toggle_width = Screen:scaleBySize(self.options[c].width or 216)
+                local toggle_width = Screen:scaleBySize(self.options[c].width
+                                                        or 216)
+                local row_count = self.options[c].row_count or 1
+                local toggle_height = Screen:scaleBySize(self.options[c].height
+                                                         or 30 * row_count)
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
+                    height = toggle_height,
                     font_face = item_font_face,
                     font_size = item_font_size,
                     name = self.options[c].name,
@@ -368,6 +373,7 @@ function ConfigOption:init()
                     events = self.options[c].events,
                     config = self.config,
                     enabled = enabled,
+                    row_count = row_count,
                 }
                 local position = current_item
                 switch:setPosition(position)
