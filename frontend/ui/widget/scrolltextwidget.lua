@@ -74,13 +74,13 @@ end
 
 function ScrollTextWidget:scrollText(direction)
     if direction == 0 then return end
+    local low, high
     if direction > 0 then
         low, high = self.text_widget:scrollDown()
-        self.v_scroll_bar:set(low, high)
     else
         low, high = self.text_widget:scrollUp()
-        self.v_scroll_bar:set(low, high)
     end
+    self.v_scroll_bar:set(low, high)
     UIManager:setDirty(self.dialog, function()
         return "partial", self.dimen
     end)

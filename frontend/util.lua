@@ -99,21 +99,19 @@ end
 
 -- Split string into a list of UTF-8 chars.
 -- @text: the string to be splitted.
--- @tab: the table to store the chars sequentially, must not be nil.
-function util.splitToChars(text, tab)
-    if text == nil then return end
-    -- clear
-    for k, v in pairs(tab) do
-        tab[k] = nil
-    end
-    local prevcharcode, charcode = 0
-    for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-        charcode = BaseUtil.utf8charcode(uchar)
-        if prevcharcode then -- utf8
-            table.insert(tab, uchar)
+function util.splitToChars(text)
+    local tab = {}
+    if text ~= nil then
+        local prevcharcode, charcode = 0
+        for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+            charcode = BaseUtil.utf8charcode(uchar)
+            if prevcharcode then -- utf8
+                table.insert(tab, uchar)
+            end
+            prevcharcode = charcode
         end
-        prevcharcode = charcode
     end
+    return tab
 end
 
 -- Test whether a string could be separated by a char for multi-line rendering

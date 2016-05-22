@@ -30,7 +30,6 @@ local TextBoxWidget = Widget:new{
 
 function TextBoxWidget:init()
     local line_height = (1 + self.line_height) * self.face.size
-    local font_height = self.face.size
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = Screen:scaleBySize(1),
@@ -45,27 +44,22 @@ function TextBoxWidget:init()
         self:_renderText(1, self:getVisLineCount())
     end
     if self.editable then
+        local x, y
         x, y = self:_findCharPos()
         self.cursor_line:paintTo(self._bb, x, y)
     end
     self.dimen = Geom:new(self:getSize())
 end
 
--- Return whether the text widget is editable.
-function TextBoxWidget:isEditable()
-    return self.editable
-end
-
 -- Evaluate the width of each char in `self.charlist`.
 function TextBoxWidget:_evalCharWidthList()
     if self.charlist == nil then
-        self.charlist = {}
-        util.splitToChars(self.text, self.charlist)
+        self.charlist = util.splitToChars(self.text)
         self.charpos = #self.charlist + 1
     end
     self.char_width_list = {}
     for _, v in ipairs(self.charlist) do
-        w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
+        local w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
         table.insert(self.char_width_list, {char = v, width = w})
     end
 end
@@ -76,18 +70,15 @@ function TextBoxWidget:_splitCharWidthList()
     self.vertical_string_list[1] = {text = "Demo hint", offset = 1, width = 0} -- hint for empty string
 
     local idx = 1
-    local offset = 1
-    local cur_line_width = 0
-    local cur_line_text = nil
     local size = #self.char_width_list
     local ln = 1
+    local offset, cur_line_width, cur_line_text
     while idx <= size do
         offset = idx
         -- Appending chars until the accumulated width exceeds `self.width`,
         -- or a newline occurs, or no more chars to consume.
         cur_line_width = 0
         local hard_newline = false
-        cur_line_text = nil
         while idx <= size do
             if self.char_width_list[idx].char == "\n" then
                 hard_newline = true
@@ -117,7 +108,7 @@ function TextBoxWidget:_splitCharWidthList()
                     cur_line_width = cur_line_width - self.char_width_list[idx].width
                 else
                     cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
-                    cur_line_width = adjusted_line_width
+                    cur_line_width = adjusted_width
                     idx = adjusted_idx + 1
                 end
             end -- endif util.isSplitable(c)
@@ -179,7 +170,6 @@ end
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:moveCursor(x, y)
     local w = 0
-    local h = 0
     local line_height = (1 + self.line_height) * self.face.size
     local ln = self.height == nil and 1 or self.virtual_line_num
     ln = ln + math.ceil(y / line_height) - 1

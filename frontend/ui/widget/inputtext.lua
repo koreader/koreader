@@ -14,7 +14,7 @@ local Keyboard
 local InputText = InputContainer:new{
     text = "",
     hint = "demo hint",
-    charlist = {}, -- table to store input string
+    charlist = nil, -- table to store input string
     charpos = nil, -- position to insert a new char, or the position of the cursor
     input_type = nil,
     text_type = nil,
@@ -74,7 +74,7 @@ end
 
 function InputText:initTextBox(text)
     self.text = text
-    util.splitToChars(text, self.charlist)
+    self.charlist = util.splitToChars(text)
     if self.charpos == nil then
         self.charpos = #self.charlist + 1
     end
