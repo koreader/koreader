@@ -321,7 +321,8 @@ OPTIONS:
     if [ ! -z "$2" ]; then
         test_path="${test_path}/$2"
     fi
-    busted --lua="./luajit ${opts}" \
+
+    busted --lua="./luajit" ${opts} \
         --no-auto-insulate \
         --lazy \
         -o "./spec/$1/unit/verbose_print" \

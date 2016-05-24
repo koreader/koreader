@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device")
+local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
 local dbg = require("dbg")
 
@@ -26,6 +27,10 @@ local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
     needsTouchScreenProbe = yes,
     touch_switch_xy = false,
+    -- Some Kobo Touch models' kernel does not generate touch event with epoch
+    -- timestamp. This flag will probe for those models and setup event adjust
+    -- hook accordingly
+    touch_probe_ev_epoch_time = true,
     hasKeys = yes,
 }
 
@@ -133,6 +138,31 @@ function Kobo:init()
     end
 end
 
+local probeEvEpochTime
+-- this function will update itself after the first touch event
+probeEvEpochTime = function(self, ev)
+    -- this check should work if the device has uptime less than 10 years
+    if ev.time.sec <= 315569260 then
+        -- time is seconds since boot, force it to epoch
+        probeEvEpochTime = function(_, _ev)
+            _ev.time = TimeVal:now()
+        end
+        probeEvEpochTime(nil, ev)
+    else
+        -- time is already epoch time, no need to do anything
+        probeEvEpochTime = function(_, _) end
+    end
+end
+
+local ABS_MT_TRACKING_ID = 57
+local EV_ABS = 3
+local adjustTouchAlyssum = function(self, ev)
+    ev.time = TimeVal:now()
+    if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
+        ev.value = ev.value - 1
+    end
+end
+
 function Kobo:initEventAdjustHooks()
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
@@ -153,7 +183,13 @@ function Kobo:initEventAdjustHooks()
     end
 
     if self.touch_alyssum_protocol then
-        self.input:registerEventAdjustHook(self.input.adjustTouchAlyssum)
+        self.input:registerEventAdjustHook(adjustTouchAlyssum)
+    end
+
+    if self.touch_probe_ev_epoch_time then
+        self.input:registerEventAdjustHook(function(_, ev)
+            probeEvEpochTime(_, ev)
+        end)
     end
 
     if self.touch_phoenix_protocol then

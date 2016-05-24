@@ -190,10 +190,14 @@ To run unit tests:
 ./kodev test front
 ```
 
+NOTE: Extra dependencies for tests: busted and ansicolors from luarocks
+
 To run Lua static analysis:
 ```
 make static-check
 ```
+
+NOTE: Extra dependencies for tests: luacheck from luarocks
 
 You may need to checkout the [travis config file][travis-conf] to setup up
 a proper testing environment. Briefly, you need to install `luarocks` and
