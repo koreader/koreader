@@ -291,12 +291,23 @@ function SetDefaults:SaveSettings()
         if not self.changed[j] then checked[j] = true end
     end
 
-    -- handle case "found in persistent" and changed, replace it
+    -- load default value for defaults
+    local defaults = {}
+    local load_defaults = loadfile(defaults_path)
+    setfenv(load_defaults, defaults)
+    load_defaults()
+    -- handle case "found in persistent" and changed, replace/delete it
     for k, v in pairs(persisted_defaults) do
         for j=1, #self.defaults_name do
             if not checked[j]
             and k == self.defaults_name[j] then
-                persisted_defaults[k] = self.defaults_value[j]
+                -- remove from persist if value got reverted back to the
+                -- default one
+                if defaults[k] == self.defaults_value[j] then
+                    persisted_defaults[k] = nil
+                else
+                    persisted_defaults[k] = self.defaults_value[j]
+                end
                 checked[j] = true
             end
         end

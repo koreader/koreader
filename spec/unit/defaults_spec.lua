@@ -87,4 +87,43 @@ DCREREADER_VIEW_MODE = "page"
         fd:close()
         os.remove(persistent_filename)
     end)
+
+    it("should delete entry from defaults.persistent.lua if value is reverted back to default", function()
+        local persistent_filename = DataStorage:getDataDir() .. "/defaults.persistent.lua"
+        local fd = io.open(persistent_filename, "w")
+        fd:write(
+[[-- For configuration changes that persists between updates
+SEARCH_TITLE = true
+DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {
+    [1] = 20,
+    [2] = 20,
+    [3] = 20,
+    [4] = 20
+}
+DCREREADER_VIEW_MODE = "page"
+DHINTCOUNT = 2
+]])
+        fd:close()
+
+        -- in persistent
+        Defaults:init()
+        Defaults.changed[29] = true
+        Defaults.defaults_value[29] = 1
+        Defaults:SaveSettings()
+        fd = io.open(persistent_filename)
+        assert.Equals(
+[[-- For configuration changes that persists between updates
+SEARCH_TITLE = true
+DCREREADER_VIEW_MODE = "page"
+DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {
+    [1] = 20,
+    [2] = 20,
+    [3] = 20,
+    [4] = 20
+}
+]],
+                       fd:read("*a"))
+        fd:close()
+        os.remove(persistent_filename)
+    end)
 end)
