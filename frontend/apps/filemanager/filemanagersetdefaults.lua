@@ -163,6 +163,7 @@ function SetDefaults:init()
                             {
                                 text = _("OK"),
                                 enabled = true,
+                                is_enter_default = true,
                                 callback = function()
                                     local new_table = {}
                                     for _, field in ipairs(MultiInputDialog:getFields()) do
@@ -205,6 +206,7 @@ function SetDefaults:init()
                             cancel_button,
                             {
                                 text = _("OK"),
+                                is_enter_default = true,
                                 enabled = true,
                                 callback = function()
                                     local new_value = self.set_dialog:getInputText()

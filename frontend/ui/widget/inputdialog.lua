@@ -6,9 +6,6 @@ Example:
     local _ = require("gettext")
     local UIManager = require("ui/uimanager")
     local sample_input
-    local saveHandler = function()
-        print('Got user input:', sample_input:getInputText())
-    end
     sample_input = InputDialog:new{
         title = _("Dialog title"),
         input = "default value",
@@ -24,11 +21,15 @@ Example:
                 },
                 {
                     text = _("Save"),
-                    callback = saveHandler,
+                    -- button with is_enter_default set to true will be
+                    -- triggered after user press the enter key from keyboard
+                    is_enter_default = true,
+                    callback = function()
+                        print('Got user input:', sample_input:getInputText())
+                    end,
                 },
             }
         },
-        enter_callback = saveHandler,
     }
     sample_input:onShowKeyboard()
     UIManager:show(sample_input)
@@ -95,6 +96,7 @@ function InputDialog:init()
             width = self.width,
         }
     }
+
     self._input_widget = InputText:new{
         text = self.input,
         hint = self.input_hint,
@@ -103,7 +105,17 @@ function InputDialog:init()
         height = self.text_height or nil,
         input_type = self.input_type,
         text_type = self.text_type,
-        enter_callback = self.enter_callback,
+        enter_callback = self.enter_callback or function()
+            for _,btn_row in ipairs(self.buttons) do
+                for _,btn in ipairs(btn_row) do
+                    require('dbg')('looging for btn', btn)
+                    if btn.is_enter_default then
+                        btn.callback()
+                        return
+                    end
+                end
+            end
+        end,
         scroll = false,
         parent = self,
     }

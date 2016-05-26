@@ -116,6 +116,7 @@ function InputContainer:onInput(input)
                 },
                 {
                     text = _("OK"),
+                    is_enter_default = true,
                     callback = function()
                         input.callback(self.input_dialog:getInputText())
                         self:closeInputDialog()
@@ -123,10 +124,6 @@ function InputContainer:onInput(input)
                 },
             },
         },
-        enter_callback = function()
-            input.callback(self.input_dialog:getInputText())
-            self:closeInputDialog()
-        end,
     }
     self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)

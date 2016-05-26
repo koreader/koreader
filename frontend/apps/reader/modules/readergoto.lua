@@ -27,6 +27,7 @@ function ReaderGoto:onShowGotoDialog()
     if self.document.info.has_pages then
         dialog_title = _("Go to Page")
         goto_btn = {
+            is_enter_default = true,
             text = _("Page"),
             callback = function() self:gotoPage() end,
         }
@@ -34,6 +35,7 @@ function ReaderGoto:onShowGotoDialog()
     else
         dialog_title = _("Go to Location")
         goto_btn = {
+            is_enter_default = true,
             text = _("Location"),
             callback = function() self:gotoPage() end,
         }
@@ -56,7 +58,6 @@ function ReaderGoto:onShowGotoDialog()
             },
         },
         input_type = "number",
-        enter_callback = function() self:gotoPage() end,
     }
     self.goto_dialog:onShowKeyboard()
     UIManager:show(self.goto_dialog)

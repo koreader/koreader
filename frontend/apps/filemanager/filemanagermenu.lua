@@ -143,11 +143,11 @@ function FileManagerMenu:setUpdateItemTable()
                             },
                             {
                                 text = _("Save"),
+                                is_enter_default = true,
                                 callback = save_folder_path,
                             },
                         }
                     },
-                    enter_callback = save_folder_path,
                 }
                 ss_folder_path_input:onShowKeyboard()
                 UIManager:show(ss_folder_path_input)

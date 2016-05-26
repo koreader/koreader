@@ -413,6 +413,7 @@ function DictQuickLookup:lookupInputWord(hint)
                 },
                 {
                     text = _("Lookup"),
+                    is_enter_default = true,
                     callback = function()
                         self:closeInputDialog()
                         self:inputLookup()
@@ -420,10 +421,6 @@ function DictQuickLookup:lookupInputWord(hint)
                 },
             }
         },
-        enter_callback = function()
-            self:closeInputDialog()
-            self:inputLookup()
-        end,
     }
     self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)

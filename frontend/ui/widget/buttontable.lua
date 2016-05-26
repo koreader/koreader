@@ -26,21 +26,26 @@ local ButtonTable = FocusManager:new{
 }
 
 function ButtonTable:init()
+    self.buttons_layout = {}
     self.container = VerticalGroup:new{ width = self.width }
     table.insert(self, self.container)
     if self.zero_sep then
         self:addHorizontalSep()
     end
-    for i = 1, #self.buttons do
+    local row_cnt = #self.buttons
+    for i = 1, row_cnt do
+        self.buttons_layout[i] = {}
         local horizontal_group = HorizontalGroup:new{}
-        local line = self.buttons[i]
-        local sizer_space = self.sep_width * (#line - 1) + 2
-        for j = 1, #line do
+        local row = self.buttons[i]
+        local column_cnt = #row
+        local sizer_space = self.sep_width * (column_cnt - 1) + 2
+        for j = 1, column_cnt do
+            local btn_entry = row[j]
             local button = Button:new{
-                text = line[j].text,
-                enabled = line[j].enabled,
-                callback = line[j].callback,
-                width = (self.width - sizer_space)/#line,
+                text = btn_entry.text,
+                enabled = btn_entry.enabled,
+                callback = btn_entry.callback,
+                width = (self.width - sizer_space)/column_cnt,
                 bordersize = 0,
                 margin = 0,
                 padding = 0,
@@ -56,19 +61,19 @@ function ButtonTable:init()
                     h = button_dim.h,
                 }
             }
-            self.buttons[i][j] = button
+            self.buttons_layout[i][j] = button
             table.insert(horizontal_group, button)
-            if j < #line then
+            if j < column_cnt then
                 table.insert(horizontal_group, vertical_sep)
             end
         end -- end for each button
         table.insert(self.container, horizontal_group)
-        if i < #self.buttons then
+        if i < row_cnt then
             self:addHorizontalSep()
         end
     end -- end for each button line
-    if Device:hasDPad() then
-        self.layout = self.buttons
+    if Device:hasDPad() or Device:hasKeyboard() then
+        self.layout = self.buttons_layout
         self.layout[1][1]:onFocus()
         self.key_events.SelectByKeyPress = { {{"Press", "Enter"}} }
     else

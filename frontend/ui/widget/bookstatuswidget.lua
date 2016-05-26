@@ -534,6 +534,7 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                 },
                 {
                     text = _("OK"),
+                    is_enter_default = true,
                     callback = function()
                         self.input_note:setText(self.note_dialog:getInputText())
                         self:closeInputDialog()
@@ -542,9 +543,6 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                 },
             },
         },
-        enter_callback = function()
-            self:closeInputDialog()
-        end,
     }
     self.note_dialog:onShowKeyboard()
     UIManager:show(self.note_dialog)
