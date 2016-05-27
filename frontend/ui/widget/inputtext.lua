@@ -125,7 +125,7 @@ end
 function InputText:initKeyboard()
     local keyboard_layout = 2
     if self.input_type == "number" then
-        keyboard_layout = 3
+        keyboard_layout = 4
     end
     self.keyboard = Keyboard:new{
         layout = keyboard_layout,
