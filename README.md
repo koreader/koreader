@@ -103,19 +103,19 @@ brew install nasm binutils libtool autoconf automake sdl2
 ```
 
 A recent version of Android SDK/NDK and `ant` are needed in order to build
-Koreader for Android devices.
+KOReader for Android devices.
 ```
 sudo apt-get install ant
 ```
 
-In order to build Koreader package for Ubuntu Touch, the `click` package management
+In order to build KOReader package for Ubuntu Touch, the `click` package management
 tool is needed, Ubuntu users can install it with:
 ```
 sudo apt-get install click
 ```
 
 You might also need SDL library packages if you want to compile and run
-Koreader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
+KOReader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
 Ubuntu users probably need to install `libsdl2-dev` package:
 
 Getting the source
@@ -179,7 +179,7 @@ If you want to compile the emulator for Windows run:
 ./kodev build win32
 ```
 
-To run Koreader on your developing machine:
+To run KOReader on your developing machine:
 ```
 ./kodev run
 ```
@@ -190,10 +190,14 @@ To run unit tests:
 ./kodev test front
 ```
 
+NOTE: Extra dependencies for tests: busted and ansicolors from luarocks
+
 To run Lua static analysis:
 ```
 make static-check
 ```
+
+NOTE: Extra dependencies for tests: luacheck from luarocks
 
 You may need to checkout the [travis config file][travis-conf] to setup up
 a proper testing environment. Briefly, you need to install `luarocks` and
@@ -218,7 +222,7 @@ Translation
 ===========
 
 Please refer to [l10n's README][l10n-readme] to grab the latest translations
-from [the Koreader project on Transifex][koreader-transifex] with this command:
+from [the KOReader project on Transifex][koreader-transifex] with this command:
 ```
 make po
 ```
