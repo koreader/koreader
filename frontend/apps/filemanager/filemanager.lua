@@ -89,6 +89,7 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
+        FileManager.instance:onClose()
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
         return true
