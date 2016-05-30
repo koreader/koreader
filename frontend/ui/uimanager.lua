@@ -381,19 +381,33 @@ end
 -- transmit an event to an active widget
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
+
+    local top_widget = self._window_stack[#self._window_stack]
     -- top level widget has first access to the event
-    if self._window_stack[#self._window_stack].widget:handleEvent(event) then
+    if top_widget.widget:handleEvent(event) then
         return
     end
-
-    -- if the event is not consumed, active widgets can access it
-    for _, widget in ipairs(self._window_stack) do
-        if widget.widget.is_always_active then
-            if widget.widget:handleEvent(event) then return end
+    if top_widget.widget.active_widgets then
+        for _, active_widget in ipairs(top_widget.widget.active_widgets) do
+            if active_widget:handleEvent(event) then return end
         end
-        if widget.widget.active_widgets then
-            for _, active_widget in ipairs(widget.widget.active_widgets) do
-                if active_widget:handleEvent(event) then return end
+    end
+
+    -- if the event is not consumed, active widgets (from top to bottom) can
+    -- access it. NOTE: _window_stack can shrink on close event
+    local checked_widgets = {top_widget}
+    for i = #self._window_stack-1, 1, -1 do
+        local widget = self._window_stack[i]
+        if checked_widgets[widget] == nil then
+            if widget.widget.is_always_active then
+                checked_widgets[widget] = true
+                if widget.widget:handleEvent(event) then return end
+            end
+            if widget.widget.active_widgets then
+                checked_widgets[widget] = true
+                for _, active_widget in ipairs(widget.widget.active_widgets) do
+                    if active_widget:handleEvent(event) then return end
+                end
             end
         end
     end

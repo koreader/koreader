@@ -191,4 +191,83 @@ describe("UIManager spec", function()
                        UIManager.auto_suspend_action)
         Device.isKobo = old_is_kobo
     end)
+
+    it("should check active widgets in order", function()
+        local call_signals = {false, false, false}
+        UIManager._window_stack = {
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[1] = true
+                        return true
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[2] = true
+                        return true
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[3] = true
+                        return true
+                    end
+                }
+            },
+            {widget = {handleEvent = function()end}},
+        }
+
+        UIManager:sendEvent("foo")
+        assert.falsy(call_signals[1])
+        assert.falsy(call_signals[2])
+        assert.truthy(call_signals[3])
+    end)
+
+    it("should handle stack change when checking for active widgets", function()
+        -- this senario should only happen when other active widgets
+        -- are closed by the one widget's handleEvent
+
+        local call_signals = {0, 0, 0}
+        UIManager._window_stack = {
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[1] = call_signals[1] + 1
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[2] = call_signals[2] + 1
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[3] = call_signals[3] + 1
+                        table.remove(UIManager._window_stack, 2)
+                    end
+                }
+            },
+            {widget = {handleEvent = function()end}},
+        }
+
+        UIManager:sendEvent("foo")
+        assert.is.same(call_signals[1], 1)
+        assert.is.same(call_signals[2], 0)
+        assert.is.same(call_signals[3], 1)
+    end)
 end)
