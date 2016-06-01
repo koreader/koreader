@@ -1,7 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
 local Event = require("ui/event")
 local _ = require("gettext")
 
@@ -28,6 +27,7 @@ function ReaderGoto:onShowGotoDialog()
     if self.document.info.has_pages then
         dialog_title = _("Go to Page")
         goto_btn = {
+            is_enter_default = true,
             text = _("Page"),
             callback = function() self:gotoPage() end,
         }
@@ -35,6 +35,7 @@ function ReaderGoto:onShowGotoDialog()
     else
         dialog_title = _("Go to Location")
         goto_btn = {
+            is_enter_default = true,
             text = _("Location"),
             callback = function() self:gotoPage() end,
         }
@@ -57,16 +58,12 @@ function ReaderGoto:onShowGotoDialog()
             },
         },
         input_type = "number",
-        enter_callback = function() self:gotoPage() end,
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
     }
     self.goto_dialog:onShowKeyboard()
     UIManager:show(self.goto_dialog)
 end
 
 function ReaderGoto:close()
-    self.goto_dialog:onClose()
     UIManager:close(self.goto_dialog)
 end
 

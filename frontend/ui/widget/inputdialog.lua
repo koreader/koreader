@@ -1,3 +1,41 @@
+--[[--
+Widget for taking user input.
+
+Example:
+
+    local _ = require("gettext")
+    local UIManager = require("ui/uimanager")
+    local sample_input
+    sample_input = InputDialog:new{
+        title = _("Dialog title"),
+        input = "default value",
+        input_hint = "hint text",
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(sample_input)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    -- button with is_enter_default set to true will be
+                    -- triggered after user press the enter key from keyboard
+                    is_enter_default = true,
+                    callback = function()
+                        print('Got user input:', sample_input:getInputText())
+                    end,
+                },
+            }
+        },
+    }
+    sample_input:onShowKeyboard()
+    UIManager:show(sample_input)
+
+]]
+
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -38,6 +76,7 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    self.width = self.width or Screen:getWidth() * 0.8
     local title_width = RenderText:sizeUtf8Text(0, self.width,
             self.title_face, self.title, true).x
     if title_width > self.width then
@@ -57,6 +96,7 @@ function InputDialog:init()
             width = self.width,
         }
     }
+
     self._input_widget = InputText:new{
         text = self.input,
         hint = self.input_hint,
@@ -65,7 +105,17 @@ function InputDialog:init()
         height = self.text_height or nil,
         input_type = self.input_type,
         text_type = self.text_type,
-        enter_callback = self.enter_callback,
+        enter_callback = self.enter_callback or function()
+            for _,btn_row in ipairs(self.buttons) do
+                for _,btn in ipairs(btn_row) do
+                    require('dbg')('looging for btn', btn)
+                    if btn.is_enter_default then
+                        btn.callback()
+                        return
+                    end
+                end
+            end
+        end,
         scroll = false,
         parent = self,
     }
@@ -78,7 +128,6 @@ function InputDialog:init()
         show_parent = self,
     }
     self.title_bar = LineWidget:new{
-        --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = self.button_table:getSize().w + self.button_padding,
             h = Screen:scaleBySize(2),
@@ -138,6 +187,7 @@ function InputDialog:onShow()
 end
 
 function InputDialog:onCloseWidget()
+    self:onClose()
     UIManager:setDirty(nil, function()
         return "partial", self.dialog_frame.dimen
     end)

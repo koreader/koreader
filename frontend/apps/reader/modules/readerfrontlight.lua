@@ -116,8 +116,6 @@ function ReaderFrontLight:onShowFlDialog()
             },
         },
         input_type = "number",
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
     }
     self.fl_dialog:onShowKeyboard()
     UIManager:show(self.fl_dialog)

@@ -83,7 +83,6 @@ end
 
 function FileSearcher:close()
     if self.search_value then
-        self.search_dialog:onClose()
         UIManager:close(self.search_dialog)
         if string.len(self.search_value) > 0 then
             self:readDir() -- TODO this probably doesn't need to be repeated once it's been done
@@ -131,8 +130,6 @@ function FileSearcher:showSearch()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.2,
     }
     self.search_dialog:onShowKeyboard()
     UIManager:show(self.search_dialog)

@@ -158,7 +158,6 @@ function FileManager:init()
                                     callback = function()
                                         renameFile(file)
                                         self:refreshPath()
-                                        fileManager.rename_dialog:onClose()
                                         UIManager:close(fileManager.rename_dialog)
                                     end,
                                 },
@@ -166,13 +165,10 @@ function FileManager:init()
                                     text = _("Cancel"),
                                     enabled = true,
                                     callback = function()
-                                        fileManager.rename_dialog:onClose()
                                         UIManager:close(fileManager.rename_dialog)
                                     end,
                                 },
                             }},
-                            width = Screen:getWidth() * 0.8,
-                            height = Screen:getHeight() * 0.2,
                         }
                         fileManager.rename_dialog:onShowKeyboard()
                         UIManager:show(fileManager.rename_dialog)

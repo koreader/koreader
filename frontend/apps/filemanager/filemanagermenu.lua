@@ -2,10 +2,11 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
 local GestureRange = require("ui/gesturerange")
+local InputDialog = require("ui/widget/inputdialog")
 local Geom = require("ui/geometry")
-local Screen = require("device").screen
+local Device = require("device")
+local Screen = Device.screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
@@ -14,7 +15,7 @@ local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
-    registered_widgets = {},
+    registered_widgets = nil,
 }
 
 function FileManagerMenu:init()
@@ -93,8 +94,12 @@ function FileManagerMenu:setUpdateItemTable()
     })
     table.insert(self.tab_item_table.setting, {
         text = _("Start with last opened file"),
-        checked_func = function() return G_reader_settings:readSetting("open_last") end,
-        enabled_func = function() return G_reader_settings:readSetting("lastfile") ~= nil end,
+        checked_func = function() return
+            G_reader_settings:readSetting("open_last")
+        end,
+        enabled_func = function() return
+            G_reader_settings:readSetting("lastfile") ~= nil
+        end,
         callback = function()
             local open_last = G_reader_settings:readSetting("open_last") or false
             G_reader_settings:saveSetting("open_last", not open_last)
@@ -112,6 +117,43 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- tools tab
+    if Device.isKobo() then
+        table.insert(self.tab_item_table.tools, {
+            text = _("Screen server folder"),
+            callback = function()
+                local ss_folder_path_input
+                local function save_folder_path()
+                    G_reader_settings:saveSetting(
+                        "screensaver_folder", ss_folder_path_input:getInputText())
+                    UIManager:close(ss_folder_path_input)
+                end
+                local curr_path = G_reader_settings:readSetting("screensaver_folder")
+                ss_folder_path_input = InputDialog:new{
+                    title = _("Screen saver folder"),
+                    input = curr_path,
+                    input_hint = "/mnt/onboard/screensaver",
+                    input_type = "text",
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(ss_folder_path_input)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                is_enter_default = true,
+                                callback = save_folder_path,
+                            },
+                        }
+                    },
+                }
+                ss_folder_path_input:onShowKeyboard()
+                UIManager:show(ss_folder_path_input)
+            end,
+        })
+    end
     table.insert(self.tab_item_table.tools, {
         text = _("Advanced settings"),
         callback = function()
