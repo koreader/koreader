@@ -1,3 +1,5 @@
+local BaseUtil = require("ffi/util")
+
 --[[--
 Miscellaneous helper functions for KOReader frontend.
   ]]
@@ -92,6 +94,29 @@ end
 function util.lastIndexOf(string, ch)
     local i = string:match(".*" .. ch .. "()")
     if i == nil then return -1 else return i - 1 end
+end
+
+
+-- Split string into a list of UTF-8 chars.
+-- @text: the string to be splitted.
+function util.splitToChars(text)
+    local tab = {}
+    if text ~= nil then
+        local prevcharcode, charcode = 0
+        for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+            charcode = BaseUtil.utf8charcode(uchar)
+            if prevcharcode then -- utf8
+                table.insert(tab, uchar)
+            end
+            prevcharcode = charcode
+        end
+    end
+    return tab
+end
+
+-- Test whether a string could be separated by a char for multi-line rendering
+function util.isSplitable(c)
+    return #c > 1 or c == " " or string.match(c, "%p") ~= nil
 end
 
 return util

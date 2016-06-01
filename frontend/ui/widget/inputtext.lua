@@ -8,16 +8,17 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = Device.screen
 local Font = require("ui/font")
-local util = require("ffi/util")
+local util = require("util")
 local Keyboard
 
 local InputText = InputContainer:new{
     text = "",
     hint = "demo hint",
-    charlist = {}, -- table to store input string
-    charpos = 1,
+    charlist = nil, -- table to store input string
+    charpos = nil, -- position to insert a new char, or the position of the cursor
     input_type = nil,
     text_type = nil,
+    text_widget = nil, -- Text Widget for cursor movement
 
     width = nil,
     height = nil,
@@ -46,9 +47,18 @@ if Device.isTouchDevice() then
         }
     end
 
-    function InputText:onTapTextBox()
+    function InputText:onTapTextBox(arg, ges)
         if self.parent.onSwitchFocus then
             self.parent:onSwitchFocus(self)
+        else
+            local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
+            local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
+            if x > 0 and y > 0 then
+                self.charpos = self.text_widget:moveCursor(x, y)
+                UIManager:setDirty(self.parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end
         end
     end
 else
@@ -64,28 +74,34 @@ end
 
 function InputText:initTextBox(text)
     self.text = text
-    self:initCharlist(text)
+    self.charlist = util.splitToChars(text)
+    if self.charpos == nil then
+        self.charpos = #self.charlist + 1
+    end
     local fgcolor = Blitbuffer.gray(self.text == "" and 0.5 or 1.0)
 
     local show_text = self.text
     if self.text_type == "password" and show_text ~= "" then
         show_text = self.text:gsub("(.-).", function() return "*" end)
         show_text = show_text:gsub("(.)$", function() return self.text:sub(-1) end)
-    elseif show_text == "" then
-        show_text = self.hint
     end
-    local text_widget
     if self.scroll then
-        text_widget = ScrollTextWidget:new{
+        self.text_widget = ScrollTextWidget:new{
             text = show_text,
+            charlist = self.charlist,
+            charpos = self.charpos,
+            editable = true,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,
         }
     else
-        text_widget = TextBoxWidget:new{
+        self.text_widget = TextBoxWidget:new{
             text = show_text,
+            charlist = self.charlist,
+            charpos = self.charpos,
+            editable = true,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
@@ -97,29 +113,13 @@ function InputText:initTextBox(text)
         padding = self.padding,
         margin = self.margin,
         color = Blitbuffer.gray(self.focused and 1.0 or 0.5),
-        text_widget,
+        self.text_widget,
     }
     self.dimen = self[1]:getSize()
     -- FIXME: self.parent is not always in the widget statck (BookStatusWidget)
     UIManager:setDirty(self.parent, function()
         return "ui", self[1].dimen
     end)
-end
-
-function InputText:initCharlist(text)
-    if text == nil then return end
-    -- clear
-    self.charlist = {}
-    self.charpos = 1
-    local prevcharcode, charcode = 0
-    for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
-        charcode = util.utf8charcode(uchar)
-        if prevcharcode then -- utf8
-            self.charlist[#self.charlist+1] = uchar
-        end
-        prevcharcode = charcode
-    end
-    self.charpos = #self.charlist+1
 end
 
 function InputText:initKeyboard()

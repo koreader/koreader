@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
+local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -11,193 +12,134 @@ A TextWidget that handles long text wrapping
 --]]
 local TextBoxWidget = Widget:new{
     text = nil,
+    charlist = nil,
+    charpos = nil,
+    char_width_list = nil, -- list of widths of the chars in `charlist`.
+    vertical_string_list = nil,
+    editable = false, -- Editable flag for whether drawing the cursor or not.
+    cursor_line = nil, -- LineWidget to draw the vertical cursor.
     face = nil,
     bold = nil,
+    line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400, -- in pixels
-    height = nil,
-    first_line = 1,
-    virtual_line = 1, -- used by scroll bar
-    line_height = 0.3, -- in em
-    v_list = nil,
+    height = nil, -- nil value indicates unscrollable text widget
+    virtual_line_num = 1, -- used by scroll bar
     _bb = nil,
-    _length = 0,
 }
 
 function TextBoxWidget:init()
-    local v_list
-    if self.height then
-        v_list = self:_getCurrentVerticalList()
+    local line_height = (1 + self.line_height) * self.face.size
+    self.cursor_line = LineWidget:new{
+        dimen = Geom:new{
+            w = Screen:scaleBySize(1),
+            h = line_height,
+        }
+    }
+    self:_evalCharWidthList()
+    self:_splitCharWidthList()
+    if self.height == nil then
+        self:_renderText(1, #self.vertical_string_list)
     else
-        v_list = self:_getVerticalList()
+        self:_renderText(1, self:getVisLineCount())
     end
-    self:_render(v_list)
+    if self.editable then
+        local x, y
+        x, y = self:_findCharPos()
+        self.cursor_line:paintTo(self._bb, x, y)
+    end
     self.dimen = Geom:new(self:getSize())
 end
 
-function TextBoxWidget:_wrapGreedyAlg(h_list)
-    local line_height = (1 + self.line_height) * self.face.size
-    local cur_line_width = 0
-    local cur_line = {}
-    local v_list = {}
-
-    for k,w in ipairs(h_list) do
-        w.box = {
-            x = cur_line_width,
-            w = w.width,
-            h = line_height,
-        }
-        cur_line_width = cur_line_width + w.width
-        if w.word == "\n" then
-            if cur_line_width > 0 then
-                -- hard line break
-                table.insert(v_list, cur_line)
-                cur_line = {}
-                cur_line_width = 0
-            end
-        elseif cur_line_width > self.width then
-            -- wrap to next line
-            table.insert(v_list, cur_line)
-            cur_line = {}
-            cur_line_width = w.width
-            table.insert(cur_line, w)
-        else
-            table.insert(cur_line, w)
-        end
+-- Evaluate the width of each char in `self.charlist`.
+function TextBoxWidget:_evalCharWidthList()
+    if self.charlist == nil then
+        self.charlist = util.splitToChars(self.text)
+        self.charpos = #self.charlist + 1
     end
-    -- handle last line
-    table.insert(v_list, cur_line)
-
-    return v_list
+    self.char_width_list = {}
+    for _, v in ipairs(self.charlist) do
+        local w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
+        table.insert(self.char_width_list, {char = v, width = w})
+    end
 end
 
-function TextBoxWidget:_getVerticalList(alg)
-    if self.vertical_list then
-        return self.vertical_list
-    end
-    -- build horizontal list
-    local h_list = {}
-    for line in util.gsplit(self.text, "\n", true) do
-        for words in line:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
-            for word in util.gsplit(words, "%s+", true) do
-                for w in util.gsplit(word, "%p+", true) do
-                    local word_box = {}
-                    word_box.word = w
-                    word_box.width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, w, true, self.bold).x
-                    table.insert(h_list, word_box)
+-- Split the text into logical lines to fit into the text box.
+function TextBoxWidget:_splitCharWidthList()
+    self.vertical_string_list = {}
+    self.vertical_string_list[1] = {text = "Demo hint", offset = 1, width = 0} -- hint for empty string
+
+    local idx = 1
+    local size = #self.char_width_list
+    local ln = 1
+    local offset, cur_line_width, cur_line_text
+    while idx <= size do
+        offset = idx
+        -- Appending chars until the accumulated width exceeds `self.width`,
+        -- or a newline occurs, or no more chars to consume.
+        cur_line_width = 0
+        local hard_newline = false
+        while idx <= size do
+            if self.char_width_list[idx].char == "\n" then
+                hard_newline = true
+                break
+            end
+            cur_line_width = cur_line_width + self.char_width_list[idx].width
+            if cur_line_width > self.width then break else idx = idx + 1 end
+        end
+        if cur_line_width <= self.width then -- a hard newline or end of string
+            cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
+        else
+            -- Backtrack the string until the length fit into one line.
+            local c = self.char_width_list[idx].char
+            if util.isSplitable(c) then
+                cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
+                cur_line_width = cur_line_width - self.char_width_list[idx].width
+            else
+                local adjusted_idx = idx
+                local adjusted_width = cur_line_width
+                repeat
+                    adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                    adjusted_idx = adjusted_idx - 1
+                    c = self.char_width_list[adjusted_idx].char
+                until adjusted_idx > offset and util.isSplitable(c)
+                if adjusted_idx == offset then -- a very long english word ocuppying more than one line
+                    cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
+                    cur_line_width = cur_line_width - self.char_width_list[idx].width
+                else
+                    cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
+                    cur_line_width = adjusted_width
+                    idx = adjusted_idx + 1
                 end
-            end
+            end -- endif util.isSplitable(c)
+        end -- endif cur_line_width > self.width
+        self.vertical_string_list[ln] = {text = cur_line_text, offset = offset, width = cur_line_width}
+        if hard_newline then
+            idx = idx + 1
+            self.vertical_string_list[ln + 1] = {text = "", offset = idx, width = 0}
         end
-        if line:sub(-1) == "\n" then table.insert(h_list, {word = '\n', width = 0}) end
+        ln = ln + 1
+        -- Make sure `idx` point to the next char to be processed in the next loop.
     end
-
-    -- @TODO check alg here 25.04 2012 (houqp)
-    -- @TODO replace greedy algorithm with K&P algorithm  25.04 2012 (houqp)
-    self.vertical_list = self:_wrapGreedyAlg(h_list)
-    return self.vertical_list
 end
 
-function TextBoxWidget:_getCurrentVerticalList()
-    local line_height = (1 + self.line_height) * self.face.size
-    local v_list = self:_getVerticalList()
-    local current_v_list = {}
-    local height = 0
-    for i = self.first_line, #v_list do
-        if height < self.height - line_height then
-            table.insert(current_v_list, v_list[i])
-            height = height + line_height
-        else
-            break
-        end
-    end
-    return current_v_list
-end
-
-function TextBoxWidget:_getPreviousVerticalList()
-    local line_height = (1 + self.line_height) * self.face.size
-    local v_list = self:_getVerticalList()
-    local previous_v_list = {}
-    local height = 0
-    if self.first_line == 1 then
-        return self:_getCurrentVerticalList()
-    end
-    self.virtual_line = self.first_line
-    for i = self.first_line - 1, 1, -1 do
-        if height < self.height - line_height then
-            table.insert(previous_v_list, 1, v_list[i])
-            height = height + line_height
-            self.virtual_line = self.virtual_line - 1
-        else
-            break
-        end
-    end
-    for i = self.first_line, #v_list do
-        if height < self.height - line_height then
-            table.insert(previous_v_list, v_list[i])
-            height = height + line_height
-        else
-            break
-        end
-    end
-    if self.first_line > #previous_v_list then
-        self.first_line = self.first_line - #previous_v_list
-    else
-        self.first_line = 1
-    end
-    return previous_v_list
-end
-
-function TextBoxWidget:_getNextVerticalList()
-    local line_height = (1 + self.line_height) * self.face.size
-    local v_list = self:_getVerticalList()
-    local current_v_list = self:_getCurrentVerticalList()
-    local next_v_list = {}
-    local height = 0
-    if self.first_line + #current_v_list > #v_list then
-        return current_v_list
-    end
-    self.virtual_line = self.first_line
-    for i = self.first_line + #current_v_list, #v_list do
-        if height < self.height - line_height then
-            table.insert(next_v_list, v_list[i])
-            height = height + line_height
-            self.virtual_line = self.virtual_line + 1
-        else
-            break
-        end
-    end
-    self.first_line = self.first_line + #current_v_list
-    return next_v_list
-end
-
-function TextBoxWidget:_render(v_list)
-    self.rendering_vlist = v_list
+function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     local font_height = self.face.size
-    local line_height_px = self.line_height * font_height
-    local h = (font_height + line_height_px) * #v_list
+    local line_height = (1 + self.line_height) * font_height
+    if start_row_idx < 1 then start_row_idx = 1 end
+    if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
+    local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
+    local h = line_height *  row_count
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height
-    local pen_x
-    for _,l in ipairs(v_list) do
-        if self.alignment == "center" then
-            local line_len = 0
-            for _,w in ipairs(l) do
-                line_len = line_len + w.width
-            end
-            pen_x = (self.width - line_len)/2
-        else
-            pen_x = 0
-        end
-
-        for _,w in ipairs(l) do
-            w.box.y = y - line_height_px - font_height
+    for i = start_row_idx, end_row_idx do
+        local line = self.vertical_string_list[i]
+        local pen_x = self.alignment == "center" and (self.width - line.width)/2 or 0
             --@TODO Don't use kerning for monospaced fonts.    (houqp)
             -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-            RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, w.word, true, self.bold, self.fgcolor)
-            pen_x = pen_x + w.width
-        end
-        y = y + line_height_px + font_height
+        RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line.text, true, self.bold, self.fgcolor)
+        y = y + line_height
     end
 --    -- if text is shorter than one line, shrink to text's width
 --    if #v_list == 1 then
@@ -205,13 +147,52 @@ function TextBoxWidget:_render(v_list)
 --    end
 end
 
-function TextBoxWidget:getVirtualLineNum()
-    return self.virtual_line
+-- Return the position of the cursor corresponding to `self.charpos`,
+-- Be aware of virtual line number of the scorllTextWidget.
+function TextBoxWidget:_findCharPos()
+    -- Find the line number.
+    local ln = self.height == nil and 1 or self.virtual_line_num
+    while ln + 1 <= #self.vertical_string_list do
+        if self.vertical_string_list[ln + 1].offset > self.charpos then break else ln = ln + 1 end
+    end
+    -- Find the offset at the current line.
+    local x = 0
+    local offset = self.vertical_string_list[ln].offset
+    while offset < self.charpos do
+        x = x + self.char_width_list[offset].width
+        offset = offset + 1
+    end
+    local line_height = (1 + self.line_height) * self.face.size
+    return x + 1, (ln - 1) * line_height -- offset `x` by 1 to avoid overlap
 end
 
-function TextBoxWidget:getAllLineCount()
-    local v_list = self:_getVerticalList()
-    return #v_list
+-- Click event: Move the cursor to a new location with (x, y), in pixels.
+-- Be aware of virtual line number of the scorllTextWidget.
+function TextBoxWidget:moveCursor(x, y)
+    local w = 0
+    local line_height = (1 + self.line_height) * self.face.size
+    local ln = self.height == nil and 1 or self.virtual_line_num
+    ln = ln + math.ceil(y / line_height) - 1
+    if ln > #self.vertical_string_list then
+        ln = #self.vertical_string_list
+        x = self.width
+    end
+    local offset = self.vertical_string_list[ln].offset
+    local idx = ln == #self.vertical_string_list and #self.char_width_list or self.vertical_string_list[ln + 1].offset - 1
+    while offset <= idx do
+        w = w + self.char_width_list[offset].width
+        if w > x then break else offset = offset + 1 end
+    end
+    if w > x then
+        local w_prev = w - self.char_width_list[offset].width
+        if x - w_prev < w - x then -- the previous one is more closer
+            w = w_prev
+        end
+    end
+    self:free()
+    self:_renderText(1, #self.vertical_string_list)
+    self.cursor_line:paintTo(self._bb, w + 1, (ln - self.virtual_line_num) * line_height)
+    return offset
 end
 
 function TextBoxWidget:getVisLineCount()
@@ -219,16 +200,35 @@ function TextBoxWidget:getVisLineCount()
     return math.floor(self.height / line_height)
 end
 
-function TextBoxWidget:scrollDown()
-    local next_v_list = self:_getNextVerticalList()
-    self:free()
-    self:_render(next_v_list)
+function TextBoxWidget:getAllLineCount()
+    return #self.vertical_string_list
 end
 
+
+-- TODO: modify `charpos` so that it can render the cursor
+function TextBoxWidget:scrollDown()
+    local visible_line_count = self:getVisLineCount()
+    if self.virtual_line_num + visible_line_count <= #self.vertical_string_list then
+        self:free()
+        self.virtual_line_num = self.virtual_line_num + visible_line_count
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
+    end
+    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list 
+end
+
+-- TODO: modify `charpos` so that it can render the cursor
 function TextBoxWidget:scrollUp()
-    local previous_v_list = self:_getPreviousVerticalList()
-    self:free()
-    self:_render(previous_v_list)
+    local visible_line_count = self:getVisLineCount()
+    if self.virtual_line_num > 1 then
+        self:free()
+        if self.virtual_line_num <= visible_line_count then
+            self.virtual_line_num = 1
+        else
+            self.virtual_line_num = self.virtual_line_num - visible_line_count
+        end
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
+    end
+    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list 
 end
 
 function TextBoxWidget:getSize()
