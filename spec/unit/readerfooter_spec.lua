@@ -101,9 +101,10 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
         footer:updateFooter()
-        timeinfo = footer:getTimeInfo()
+        local timeinfo = footer:getTimeInfo()
+        local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('B:0% | '..timeinfo..' | 1 / 204 | => 1 | R:0% | TB: na | TC: na',
+        assert.are.same('B:0% | '..timeinfo..' | 1 / '..page_count..' | => 1 | R:0% | TB: na | TC: na',
                         footer.progress_text.text)
     end)
 
@@ -116,7 +117,7 @@ describe("Readerfooter module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui.view.footer:updateFooter()
-        timeinfo = readerui.view.footer:getTimeInfo()
+        local timeinfo = readerui.view.footer:getTimeInfo()
         assert.are.same('B:0% | '..timeinfo..' | 1 / 2 | => 1 | R:50% | TB: na | TC: na',
                         readerui.view.footer.progress_text.text)
     end)
@@ -132,7 +133,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         footer:resetLayout()
         footer:updateFooter()
-        timeinfo = readerui.view.footer:getTimeInfo()
+        local timeinfo = readerui.view.footer:getTimeInfo()
         assert.are.same('B:0% | '..timeinfo..' | 1 / 2 | => 1 | R:50% | TB: na | TC: na',
                         footer.progress_text.text)
         footer.mode = 1
@@ -252,11 +253,9 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same({
-            3, 6, 9, 10, 26, 33, 40, 47, 57, 58, 61, 73, 79, 94, 99, 102, 115,
-            123, 133, 136, 151, 159, 163, 167, 170, 179, 184, 186,
-        }, footer.progress_bar.ticks)
-        assert.are.same(204, footer.progress_bar.last)
+        local page_count = readerui.document:getPageCount()
+        assert.are.same(28, #footer.progress_bar.ticks)
+        assert.are.same(page_count, footer.progress_bar.last)
     end)
 
     it("should schedule/unschedule auto refresh time task", function()

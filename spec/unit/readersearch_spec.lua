@@ -56,7 +56,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromStart("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(9, pageno)
+                assert.truthy(pageno < 10)
             end
             for i = 1, 5, 1 do
                 rolling:onGotoPage(i)
@@ -70,7 +70,7 @@ describe("Readersearch module", function()
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                assert.are.equal(203, pageno)
+                assert.truthy(pageno > 200)
             end
             for i = 230, 235, 1 do
                 rolling:onGotoPage(i)
