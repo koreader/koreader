@@ -1,8 +1,11 @@
-require("commonrequire")
-local lfs = require("libs/libkoreader-lfs")
-local NickelConf = require("device/kobo/nickel_conf")
-
 describe("Nickel configuation module", function()
+    local lfs, NickelConf
+    setup(function()
+        require("commonrequire")
+        lfs = require("libs/libkoreader-lfs")
+        NickelConf = require("device/kobo/nickel_conf")
+    end)
+
     describe("Frontlight module", function()
         it("should read value", function()
             local fn = os.tmpname()
