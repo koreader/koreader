@@ -11,6 +11,12 @@ function assert_ret_zero {
     fi
 }
 
+function check_submodules {
+    if [ -n "`git submodule status | grep -E '^\-'`" ]; then
+        kodev-fetch-thirdparty
+    fi
+}
+
 function setup_env {
     files=$(ls -d ./koreader-emulator-*/koreader)
     assert_ret_zero $? "Emulator not found, please build it first."
@@ -101,6 +107,7 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
+            check_submodules
             make
             assert_ret_zero $? "Failed to build emulator!"
             setup_env
