@@ -7,6 +7,15 @@ local DocSettings = {}
 
 local history_dir = DataStorage:getHistoryDir()
 
+local function buildCandidate(file_path)
+    if lfs.attributes(file_path, "mode") == "file" then
+        return { file_path, lfs.attributes(file_path, "modification") }
+    else
+        return nil
+    end
+end
+
+-- Sidecar directory is the file without _last_ suffix.
 function DocSettings:getSidecarDir(doc_path)
     return doc_path:match("(.*)%.")..".sdr"
 end
@@ -51,15 +60,39 @@ function DocSettings:open(docfile)
         if lfs.attributes(sidecar, "mode") ~= "directory" then
             lfs.mkdir(sidecar)
         end
-        new.sidecar_file = sidecar.."/"..docfile:match(".*%/(.*)")..".lua"
+        -- If there is a file which has a same name as the sidecar directory, or
+        -- the file system is read-only, we should not waste time to read it.
+        if lfs.attributes(sidecar, "mode") == "directory" then
+            -- New sidecar file name is metadata.{file last suffix}.lua. So we
+            -- can handle two files with only different suffixes.
+            new.sidecar_file = sidecar.."/metadata."..
+                               docfile:match(".*%.(.*)")..".lua"
+        end
 
-        ok, stored = pcall(dofile, new.sidecar_file or "")
-        if not ok then
-            ok, stored = pcall(dofile, new.history_file or "")
-            if not ok then
-                -- try legacy conf path, for backward compatibility. this also
-                -- takes care of reader legacy setting
-                ok, stored = pcall(dofile, docfile..".kpdfview.lua")
+        local candidates = {}
+        -- New sidecar file
+        table.insert(candidates, buildCandidate(new.sidecar_file));
+        -- Legacy sidecar file
+        table.insert(candidates, buildCandidate(
+            self:getSidecarDir(docfile).."/"..
+            docfile:match(".*%/(.*)")..".lua"))
+        -- Legacy history folder
+        table.insert(candidates, buildCandidate(new.history_file));
+        -- Legacy kpdfview setting
+        table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"));
+        table.sort(candidates, function(l, r)
+                                   if l == nil then
+                                       return false
+                                   elseif r == nil then
+                                       return true
+                                   else
+                                       return l[2] > r[2]
+                                   end
+                               end)
+        for _, k in pairs(candidates) do
+            ok, stored = pcall(dofile, k[1])
+            if ok then
+                break
             end
         end
     end
@@ -83,28 +116,26 @@ function DocSettings:delSetting(key)
 end
 
 function DocSettings:flush()
-    -- write serialized version of the data table into
-    --  i) history directory in root directory of KOReader
-    -- ii) sidecar directory in the same directory of the document
+    -- write serialized version of the data table into one of
+    --  i) sidecar directory in the same directory of the document or
+    -- ii) history directory in root directory of KOReader
     if not self.history_file and not self.sidecar_file then
         return
     end
 
-    local serials = {}
-    if self.history_file then
-        pcall(table.insert, serials, io.open(self.history_file, "w"))
-    end
-    if self.sidecar_file then
-        pcall(table.insert, serials, io.open(self.sidecar_file, "w"))
-    end
-    os.setlocale('C', 'numeric')
+    -- If we can write to sidecar_file, we do not need to write to history_file
+    -- anymore.
+    local serials = { self.sidecar_file, self.history_file }
     local s_out = dump(self.data)
-    for _, f_out in ipairs(serials) do
+    os.setlocale('C', 'numeric')
+    for _, f in pairs(serials) do
+        local f_out = io.open(f, "w")
         if f_out ~= nil then
             f_out:write("-- we can read Lua syntax here!\nreturn ")
             f_out:write(s_out)
             f_out:write("\n")
             f_out:close()
+            break
         end
     end
 end
