@@ -12,7 +12,7 @@ local FileChooser = require("ui/widget/filechooser")
 local TextWidget = require("ui/widget/textwidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local lfs = require("libs/libkoreader-lfs")
-local docsettings = require("docsettings")
+local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
@@ -309,14 +309,7 @@ function FileManager:deleteFile(file)
     ok, err = os.remove(file_abs_path)
     if ok and err == nil then
         if is_doc ~= nil then
-            -- also delete history/settings for documents
-            local sidecar_dir = docsettings:getSidecarDir(file_abs_path)
-            if lfs.attributes(sidecar_dir, "mode") == "directory" then
-                util.purgeDir(sidecar_dir)
-            end
-            local legacy_history_file = docsettings:getHistoryPath(file)
-            -- @todo: check return from os.remove
-            os.remove(legacy_history_file)
+            DocSettings:open(file):purge()
         end
         UIManager:show(InfoMessage:new{
             text = util.template(_("Deleted %1"), file),

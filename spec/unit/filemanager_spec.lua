@@ -1,13 +1,14 @@
-require("commonrequire")
-local FileManager = require("apps/filemanager/filemanager")
-local lfs = require("libs/libkoreader-lfs")
-local docsettings = require("docsettings")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local util = require("ffi/util")
-local DEBUG = require("dbg")
-
 describe("FileManager module", function()
+    local FileManager, lfs, docsettings, UIManager, Screen, util
+    setup(function()
+        require("commonrequire")
+        FileManager = require("apps/filemanager/filemanager")
+        lfs = require("libs/libkoreader-lfs")
+        docsettings = require("docsettings")
+        UIManager = require("ui/uimanager")
+        Screen = require("device").screen
+        util = require("ffi/util")
+    end)
     it("should show file manager", function()
         UIManager:quit()
         local filemanager = FileManager:new{

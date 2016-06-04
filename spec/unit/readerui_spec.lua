@@ -1,20 +1,21 @@
-require("commonrequire")
-local DocumentRegistry = require("document/documentregistry")
-local ReaderUI = require("apps/reader/readerui")
-local DocSettings = require("docsettings")
-local UIManager = require("ui/uimanager")
-
 describe("Readerui module", function()
+    local DocumentRegistry, ReaderUI, DocSettings, UIManager
     local sample_epub = "spec/front/unit/data/leaves.epub"
     local readerui
     setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        DocSettings = require("docsettings")
+        UIManager = require("ui/uimanager")
+
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
     end)
     it("should save settings", function()
         -- remove history settings and sidecar settings
-        DocSettings:open(sample_epub):clear()
+        DocSettings:open(sample_epub):purge()
         local doc_settings = DocSettings:open(sample_epub)
         assert.are.same(doc_settings.data, {})
         readerui:saveSettings()
