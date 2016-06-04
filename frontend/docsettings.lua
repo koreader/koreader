@@ -69,27 +69,27 @@ function DocSettings:open(docfile)
                                docfile:match(".*%.(.*)")..".lua"
         end
 
-        local candidates = {}
+        new.candidates = {}
         -- New sidecar file
-        table.insert(candidates, buildCandidate(new.sidecar_file));
+        table.insert(new.candidates, buildCandidate(new.sidecar_file));
         -- Legacy sidecar file
-        table.insert(candidates, buildCandidate(
+        table.insert(new.candidates, buildCandidate(
             self:getSidecarDir(docfile).."/"..
             docfile:match(".*%/(.*)")..".lua"))
         -- Legacy history folder
-        table.insert(candidates, buildCandidate(new.history_file));
+        table.insert(new.candidates, buildCandidate(new.history_file));
         -- Legacy kpdfview setting
-        table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"));
-        table.sort(candidates, function(l, r)
-                                   if l == nil then
-                                       return false
-                                   elseif r == nil then
-                                       return true
-                                   else
-                                       return l[2] > r[2]
-                                   end
-                               end)
-        for _, k in pairs(candidates) do
+        table.insert(new.candidates, buildCandidate(docfile..".kpdfview.lua"));
+        table.sort(new.candidates, function(l, r)
+                                       if l == nil then
+                                           return false
+                                       elseif r == nil then
+                                           return true
+                                       else
+                                           return l[2] > r[2]
+                                       end
+                                   end)
+        for _, k in pairs(new.candidates) do
             ok, stored = pcall(dofile, k[1])
             if ok then
                 break
@@ -135,6 +135,19 @@ function DocSettings:flush()
             f_out:write(s_out)
             f_out:write("\n")
             f_out:close()
+
+            if self.candidates ~= nil
+            and not G_reader_settings:readSetting(
+                        "preserve_legacy_docsetting") then
+                for _, k in pairs(self.candidates) do
+                    if k[1] ~= f then
+                        os.remove(k[1])
+                        -- We should not remove sidecar folder, as it may
+                        -- contain Kindle history files.
+                    end
+                end
+            end
+
             break
         end
     end
