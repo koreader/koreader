@@ -1,3 +1,17 @@
+--[[--
+A TextWidget that handles long text wrapping
+
+Example:
+
+    local Foo = TextBoxWidget:new{
+        face = Font:getFace("cfont", 25),
+        text = 'We can show multiple lines.\nFoo.\nBar.',
+        -- width = Screen:getWidth()*2/3,
+    }
+    UIManager:show(Foo)
+
+]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local Widget = require("ui/widget/widget")
 local LineWidget = require("ui/widget/linewidget")
@@ -5,11 +19,7 @@ local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
-local DEBUG = require("dbg")
 
---[[
-A TextWidget that handles long text wrapping
---]]
 local TextBoxWidget = Widget:new{
     text = nil,
     charlist = nil,
@@ -29,11 +39,11 @@ local TextBoxWidget = Widget:new{
 }
 
 function TextBoxWidget:init()
-    local line_height = (1 + self.line_height) * self.face.size
+    self.line_height_px = (1 + self.line_height) * self.face.size
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = Screen:scaleBySize(1),
-            h = line_height,
+            h = self.line_height_px,
         }
     }
     self:_evalCharWidthList()
@@ -51,7 +61,7 @@ function TextBoxWidget:init()
     self.dimen = Geom:new(self:getSize())
 end
 
--- Evaluate the width of each char in `self.charlist`.
+-- Split `self.text` into `self.charlist` and evaluate the width of each char in it.
 function TextBoxWidget:_evalCharWidthList()
     if self.charlist == nil then
         self.charlist = util.splitToChars(self.text)
@@ -66,8 +76,9 @@ end
 
 -- Split the text into logical lines to fit into the text box.
 function TextBoxWidget:_splitCharWidthList()
-    self.vertical_string_list = {}
-    self.vertical_string_list[1] = {text = "Demo hint", offset = 1, width = 0} -- hint for empty string
+    self.vertical_string_list = {
+        {text = "Demo hint", offset = 1, width = 0} -- hint for empty string
+    }
 
     local idx = 1
     local size = #self.char_width_list
@@ -113,10 +124,15 @@ function TextBoxWidget:_splitCharWidthList()
                 end
             end -- endif util.isSplitable(c)
         end -- endif cur_line_width > self.width
-        self.vertical_string_list[ln] = {text = cur_line_text, offset = offset, width = cur_line_width}
+        self.vertical_string_list[ln] = {
+            text = cur_line_text,
+            offset = offset,
+            width = cur_line_width
+        }
         if hard_newline then
             idx = idx + 1
-            self.vertical_string_list[ln + 1] = {text = "", offset = idx, width = 0}
+            -- FIXME: reuse newline entry
+            self.vertical_string_list[ln+1] = {text = "", offset = idx, width = 0}
         end
         ln = ln + 1
         -- Make sure `idx` point to the next char to be processed in the next loop.
@@ -125,11 +141,10 @@ end
 
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     local font_height = self.face.size
-    local line_height = (1 + self.line_height) * font_height
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
     local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
-    local h = line_height *  row_count
+    local h = self.line_height_px *  row_count
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height
@@ -139,7 +154,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
             --@TODO Don't use kerning for monospaced fonts.    (houqp)
             -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
         RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line.text, true, self.bold, self.fgcolor)
-        y = y + line_height
+        y = y + self.line_height_px
     end
 --    -- if text is shorter than one line, shrink to text's width
 --    if #v_list == 1 then
@@ -162,17 +177,15 @@ function TextBoxWidget:_findCharPos()
         x = x + self.char_width_list[offset].width
         offset = offset + 1
     end
-    local line_height = (1 + self.line_height) * self.face.size
-    return x + 1, (ln - 1) * line_height -- offset `x` by 1 to avoid overlap
+    return x + 1, (ln - 1) * self.line_height_px -- offset `x` by 1 to avoid overlap
 end
 
 -- Click event: Move the cursor to a new location with (x, y), in pixels.
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:moveCursor(x, y)
     local w = 0
-    local line_height = (1 + self.line_height) * self.face.size
     local ln = self.height == nil and 1 or self.virtual_line_num
-    ln = ln + math.ceil(y / line_height) - 1
+    ln = ln + math.ceil(y / self.line_height_px) - 1
     if ln > #self.vertical_string_list then
         ln = #self.vertical_string_list
         x = self.width
@@ -191,13 +204,13 @@ function TextBoxWidget:moveCursor(x, y)
     end
     self:free()
     self:_renderText(1, #self.vertical_string_list)
-    self.cursor_line:paintTo(self._bb, w + 1, (ln - self.virtual_line_num) * line_height)
+    self.cursor_line:paintTo(self._bb, w + 1,
+                             (ln - self.virtual_line_num) * self.line_height_px)
     return offset
 end
 
 function TextBoxWidget:getVisLineCount()
-    local line_height = (1 + self.line_height) * self.face.size
-    return math.floor(self.height / line_height)
+    return math.floor(self.height / self.line_height_px)
 end
 
 function TextBoxWidget:getAllLineCount()
@@ -213,7 +226,7 @@ function TextBoxWidget:scrollDown()
         self.virtual_line_num = self.virtual_line_num + visible_line_count
         self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
     end
-    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list 
+    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
 end
 
 -- TODO: modify `charpos` so that it can render the cursor
@@ -228,7 +241,7 @@ function TextBoxWidget:scrollUp()
         end
         self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
     end
-    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list 
+    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
 end
 
 function TextBoxWidget:getSize()
@@ -252,21 +265,48 @@ function TextBoxWidget:free()
 end
 
 function TextBoxWidget:onHoldWord(callback, ges)
+    if not callback then return end
+
     local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
-    for _, l in ipairs(self.rendering_vlist) do
-        for _, w in ipairs(l) do
-            local box = w.box
-            if x > box.x and x < box.x + box.w and
-                y > box.y and y < box.y + box.h then
-                DEBUG("found word", w, "at", x, y)
-                if callback then
-                    callback(w.word)
+    local line_num = math.ceil(y / self.line_height_px)
+    local line = self.vertical_string_list[line_num]
+
+    if line then
+        local char_start = line.offset
+        local char_end  -- char_end is non-inclusive
+        if line_num >= #self.vertical_string_list then
+            char_end = #self.char_width_list + 1
+        else
+            char_end = self.vertical_string_list[line_num+1].offset
+        end
+        local char_probe_x = 0
+        local idx = char_start
+        -- find which character the touch is holding
+        while idx < char_end do
+            local c = self.char_width_list[idx]
+            -- FIXME: this might break if kerning is enabled
+            char_probe_x = char_probe_x + c.width
+            if char_probe_x > x then
+                -- ignore spaces
+                if c.char == " " then break end
+                -- now find which word the character is in
+                local words = util.splitToWords(line.text)
+                local probe_idx = char_start
+                for _,w in ipairs(words) do
+                    -- +1 for word separtor
+                    probe_idx = probe_idx + string.len(w)
+                    if idx <= probe_idx then
+                        callback(w)
+                        return
+                    end
                 end
                 break
             end
+            idx = idx + 1
         end
     end
-    return true
+
+    return
 end
 
 return TextBoxWidget
