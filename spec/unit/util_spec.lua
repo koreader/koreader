@@ -37,4 +37,19 @@ describe("util module", function()
         end
         assert.are_same(argv, {"./sdcv", "-nj", "words", "a lot", "more or less", "--data-dir=dict"})
     end)
+
+    it("should split line into words", function()
+        local words = util.splitToWords("one two,three  four . five")
+        assert.are_same(words, {
+            "one",
+            " ",
+            "two",
+            ",",
+            "three",
+            "  ",
+            "four",
+            " . ",
+            "five",
+        })
+    end)
 end)

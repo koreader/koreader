@@ -48,7 +48,7 @@ describe("ReaderBookmark module", function()
         local page = 10
         local readerui
         setup(function()
-            DocSettings:purgeDocSettings(sample_epub)
+            DocSettings:open(sample_epub):purge()
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_epub),
             }
@@ -130,7 +130,7 @@ describe("ReaderBookmark module", function()
     describe("bookmark for PDF document", function()
         local readerui
         setup(function()
-            DocSettings:purgeDocSettings(sample_pdf)
+            DocSettings:open(sample_pdf):purge()
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_pdf),
             }

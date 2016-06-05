@@ -5,7 +5,8 @@ local purgeDir = require("ffi/util").purgeDir
 
 local DocSettings = {}
 
-local history_dir = DataStorage:getHistoryDir()
+local HISTORY_DIR = DataStorage:getHistoryDir()
+local READER_SETTING_FILE = DataStorage:getDataDir() .. "/settings.reader.lua"
 
 local function buildCandidate(file_path)
     if lfs.attributes(file_path, "mode") == "file" then
@@ -21,7 +22,7 @@ function DocSettings:getSidecarDir(doc_path)
 end
 
 function DocSettings:getHistoryPath(fullpath)
-    return history_dir .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
@@ -39,24 +40,19 @@ function DocSettings:getNameFromHistory(hist_name)
     return string.sub(hist_name, s+2, -5)
 end
 
-function DocSettings:purgeDocSettings(doc_path)
-    purgeDir(self:getSidecarDir(doc_path))
-    os.remove(self:getHistoryPath(doc_path))
-end
-
 function DocSettings:open(docfile)
     -- TODO(zijiehe): Remove history_path, use only sidecar.
     local new = { data = {} }
     local ok, stored
     if docfile == ".reader" then
         -- we handle reader setting as special case
-        new.history_file = DataStorage:getDataDir() .. "/settings.reader.lua"
-
+        new.history_file = READER_SETTING_FILE
         ok, stored = pcall(dofile, new.history_file)
     else
         new.history_file = self:getHistoryPath(docfile)
 
         local sidecar = self:getSidecarDir(docfile)
+        new.sidecar = sidecar
         if lfs.attributes(sidecar, "mode") ~= "directory" then
             lfs.mkdir(sidecar)
         end
@@ -67,19 +63,19 @@ function DocSettings:open(docfile)
             -- can handle two files with only different suffixes.
             new.sidecar_file = sidecar.."/metadata."..
                                docfile:match(".*%.(.*)")..".lua"
+            new.legacy_sidecar_file = sidecar.."/"..
+                                      docfile:match(".*%/(.*)")..".lua"
         end
 
         local candidates = {}
         -- New sidecar file
-        table.insert(candidates, buildCandidate(new.sidecar_file));
+        table.insert(candidates, buildCandidate(new.sidecar_file))
         -- Legacy sidecar file
-        table.insert(candidates, buildCandidate(
-            self:getSidecarDir(docfile).."/"..
-            docfile:match(".*%/(.*)")..".lua"))
+        table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
         -- Legacy history folder
-        table.insert(candidates, buildCandidate(new.history_file));
+        table.insert(candidates, buildCandidate(new.history_file))
         -- Legacy kpdfview setting
-        table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"));
+        table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"))
         table.sort(candidates, function(l, r)
                                    if l == nil then
                                        return false
@@ -100,7 +96,7 @@ function DocSettings:open(docfile)
         new.data = stored
     end
 
-    return setmetatable(new, { __index = DocSettings})
+    return setmetatable(new, {__index = DocSettings})
 end
 
 function DocSettings:readSetting(key)
@@ -144,12 +140,12 @@ function DocSettings:close()
     self:flush()
 end
 
-function DocSettings:clear()
+function DocSettings:purge()
     if self.history_file then
         os.remove(self.history_file)
     end
-    if self.sidecar_file then
-        os.remove(self.sidecar_file)
+    if lfs.attributes(self.sidecar, "mode") == "directory" then
+        purgeDir(self.sidecar)
     end
 end
 

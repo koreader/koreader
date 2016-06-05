@@ -30,9 +30,9 @@ function Dbg:turnOn()
     self.is_on = true
 
     Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
-    Dbg.guard = function(_, module, method, pre_guard, post_guard)
-        local old_method = module[method]
-        module[method] = function(...)
+    Dbg.guard = function(_, mod, method, pre_guard, post_guard)
+        local old_method = mod[method]
+        mod[method] = function(...)
             if pre_guard then
                 pre_guard(...)
             end

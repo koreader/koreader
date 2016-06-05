@@ -81,12 +81,14 @@ function DictQuickLookup:init()
             HoldWord = {
                 GestureRange:new{
                     ges = "hold",
-                    range = function() return self.dimen end,
+                    range = function()
+                        return self.region
+                    end,
                 },
                 -- callback function when HoldWord is handled as args
                 args = function(word)
-                    self.ui:handleEvent(Event:new("LookupWord",
-                        word, self.word_box))
+                    self.ui:handleEvent(
+                        Event:new("LookupWord", word, self.word_box))
                 end
             },
         }
@@ -293,6 +295,7 @@ function DictQuickLookup:onShow()
 end
 
 function DictQuickLookup:getHighlightedItem()
+    if not self.ui then return end
     return self.ui.highlight:getHighlightBookmarkItem()
 end
 
