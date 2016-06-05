@@ -141,13 +141,15 @@ end
 local probeEvEpochTime
 -- this function will update itself after the first touch event
 probeEvEpochTime = function(self, ev)
-    -- this check should work if the device has uptime less than 10 years
-    if ev.time.sec <= 315569260 then
+    local now = TimeVal:now()
+    -- This check should work as long as main UI loop is not blocked for more
+    -- than 10 minute before handling the first touch event.
+    if ev.time.sec <= now.sec - 600 then
         -- time is seconds since boot, force it to epoch
         probeEvEpochTime = function(_, _ev)
             _ev.time = TimeVal:now()
         end
-        probeEvEpochTime(nil, ev)
+        ev.time = now
     else
         -- time is already epoch time, no need to do anything
         probeEvEpochTime = function(_, _) end
