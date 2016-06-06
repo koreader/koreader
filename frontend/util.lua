@@ -1,16 +1,18 @@
-local BaseUtil = require("ffi/util")
-
 --[[--
 Miscellaneous helper functions for KOReader frontend.
-  ]]
+]]
 
+local BaseUtil = require("ffi/util")
 local util = {}
 
-function util.stripePunctuations(word)
-    if not word then return end
-    -- strip ASCII punctuation characters around word
-    -- and strip any generic punctuation (U+2000 - U+206F) in the word
-    return word:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
+--- Strip all punctuations and spaces in a string.
+---- @string text the string to be stripped
+---- @treturn string stripped text
+function util.stripePunctuations(text)
+    if not text then return end
+    -- strip ASCII punctuation characters around text
+    -- and strip any generic punctuation (U+2000 - U+206F) in the text
+    return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
 --[[
@@ -74,7 +76,7 @@ end
 
 --- Returns number of keys in a table.
 ---- @param T Lua table
----- @return number of keys in table T
+---- @treturn int number of keys in table T
 function util.tableSize(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end
@@ -97,8 +99,9 @@ function util.lastIndexOf(string, ch)
 end
 
 
--- Split string into a list of UTF-8 chars.
--- @text: the string to be splitted.
+--- Split string into a list of UTF-8 chars.
+---- @string text the string to be splitted.
+---- @treturn table list of UTF-8 chars
 function util.splitToChars(text)
     local tab = {}
     if text ~= nil then
@@ -112,6 +115,20 @@ function util.splitToChars(text)
         end
     end
     return tab
+end
+
+--- Split text into a list of words, spaces and punctuations.
+---- @string text text to split
+---- @treturn table list of words, spaces and punctuations
+function util.splitToWords(text)
+    -- TODO: write test
+    local wlist = {}
+    for words in text:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
+        for word in util.gsplit(words, "[%s%p]+", true) do
+            table.insert(wlist, word)
+        end
+    end
+    return wlist
 end
 
 -- Test whether a string could be separated by a char for multi-line rendering

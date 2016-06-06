@@ -314,7 +314,13 @@ function ReaderFooter:updateFooterPos()
     self:updateFooterText()
 end
 
+-- updateFooterText will start as a noop. After onReaderReady event is
+-- received, it will initialized as _updateFooterText
 function ReaderFooter:updateFooterText()
+end
+
+-- only call this function after document is fully loaded
+function ReaderFooter:_updateFooterText()
     if self.settings.toc_markers and self.progress_bar.ticks == nil then
         local ticks_candidates = {}
         if self.ui.toc then
@@ -410,6 +416,10 @@ function ReaderFooter:onUpdatePos()
     self:updateFooter()
 end
 
+function ReaderFooter:onReaderReady()
+    self.updateFooterText = self._updateFooterText
+    self:updateFooter()
+end
 
 function ReaderFooter:applyFooterMode(mode)
     -- three modes switcher for reader footer

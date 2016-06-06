@@ -321,7 +321,7 @@ function ReaderUI:init()
         v()
     end
 
-    -- After initialisation notify that document is loaded
+    -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
