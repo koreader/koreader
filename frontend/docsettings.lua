@@ -63,15 +63,19 @@ function DocSettings:open(docfile)
             -- can handle two files with only different suffixes.
             new.sidecar_file = sidecar.."/metadata."..
                                docfile:match(".*%.(.*)")..".lua"
+            if docfile:find("/") then
+                new.legacy_sidecar_file = sidecar.."/"..
+                                          docfile:match(".*%/(.*)")..".lua"
+            else
+                new.legacy_sidecar_file = sidecar.."/"..docfile..".lua"
+            end
         end
 
         new.candidates = {}
         -- New sidecar file
         table.insert(new.candidates, buildCandidate(new.sidecar_file))
         -- Legacy sidecar file
-        table.insert(new.candidates, buildCandidate(
-            sidecar.."/"..
-            docfile:match(".*%/(.*)")..".lua"))
+        table.insert(new.candidates, buildCandidate(new.legacy_sidecar_file))
         -- Legacy history folder
         table.insert(new.candidates, buildCandidate(new.history_file))
         -- Legacy kpdfview setting

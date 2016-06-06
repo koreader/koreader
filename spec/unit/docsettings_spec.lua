@@ -1,40 +1,76 @@
 describe("docsettings module", function()
-    local docsettings
+    local docsettings, lfs
 
     setup(function()
         require("commonrequire")
         docsettings = require("docsettings")
+        lfs = require("libs/libkoreader-lfs")
     end)
     it("should generate sidecar directory path", function()
         assert.Equals("../../foo.sdr", docsettings:getSidecarDir("../../foo.pdf"))
         assert.Equals("/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
         assert.Equals("baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
+
     it("should read legacy history file", function()
         local file = "file.pdf"
         local d = docsettings:open(file)
         d:saveSetting("a", "b")
+        d:saveSetting("c", "d")
         d:close()
         -- Now the sidecar file should be written.
 
-        assert.False(os.rename(d.sidecar_file, d.history_file) == nil)
-        d = docsettings:open(file)
-        assert.Equals(d:readSetting("a"), "b")
-        d:close()
-        -- history_file should be removed as sidecar_file is preferred.
+        local legacy_files = {
+            d.history_file,
+            d.sidecar .. "/file.pdf.lua",
+            "file.pdf.kpdfview.lua",
+        }
+
+        for _, f in pairs(legacy_files) do
+            assert.False(os.rename(d.sidecar_file, f) == nil)
+            d = docsettings:open(file)
+            assert.True(os.remove(d.sidecar_file) == nil)
+            -- Legacy history files should not be removed before flush has been
+            -- called.
+            assert.Equals(lfs.attributes(f, "mode"), "file")
+            assert.Equals(d:readSetting("a"), "b")
+            assert.Equals(d:readSetting("c"), "d")
+            assert.Equals(d:readSetting("e"), nil)
+            d:close()
+            -- legacy history files should be removed as sidecar_file is
+            -- preferred.
+            assert.True(os.remove(f) == nil)
+        end
+
         assert.False(os.remove(d.sidecar_file) == nil)
-        assert.True(os.remove(d.history_file) == nil)
+        d:purge()
+    end)
 
-        assert.False(os.rename(d.sidecar_file, d.sidecar .. "/file.lua") == nil)
-        d = docsettings:open(file)
-        assert.Equals(d:readSetting("a"), "b")
+    it("should respect newest history file", function()
+        local file = "file.pdf"
+        local d = docsettings:open(file)
+
+        local legacy_files = {
+            d.history_file,
+            d.sidecar .. "/file.pdf.lua",
+            "file.pdf.kpdfview.lua",
+        }
+
+        -- docsettings:flush will remove legacy files.
+        for i, v in pairs(legacy_files) do
+            d:saveSetting("a", i)
+            d:flush()
+            assert.False(os.rename(d.sidecar_file, v.."1") == nil)
+        end
+
         d:close()
+        for _, v in pairs(legacy_files) do
+            assert.False(os.rename(v.."1", v) == nil)
+        end
 
-        assert.False(os.rename(d.sidecar_file, "file.kpdfview.lua") == nil)
         d = docsettings:open(file)
-        assert.Equals(d:readSetting("a"), "b")
+        assert.Equals(d:readSetting("a"), #legacy_files)
         d:close()
-
         d:purge()
     end)
 end)
