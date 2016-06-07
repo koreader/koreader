@@ -119,7 +119,7 @@ function FileManagerMenu:setUpdateItemTable()
     -- tools tab
     if Device.isKobo() then
         table.insert(self.tab_item_table.tools, {
-            text = _("Screen server folder"),
+            text = _("Screensaver folder"),
             callback = function()
                 local ss_folder_path_input
                 local function save_folder_path()
@@ -129,7 +129,7 @@ function FileManagerMenu:setUpdateItemTable()
                 end
                 local curr_path = G_reader_settings:readSetting("screensaver_folder")
                 ss_folder_path_input = InputDialog:new{
-                    title = _("Screen saver folder"),
+                    title = _("Screensaver folder"),
                     input = curr_path,
                     input_hint = "/mnt/onboard/screensaver",
                     input_type = "text",
