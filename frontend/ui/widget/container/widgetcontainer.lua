@@ -16,10 +16,10 @@ function WidgetContainer:init()
             self:initDimen()
         else
             if not self.dimen.w then
-                self.dimen.w = self[1].getSize().w
+                self.dimen.w = self[1]:getSize().w
             end
             if not self.dimen.h then
-                self.dimen.h = self[1].getSize().h
+                self.dimen.h = self[1]:getSize().h
             end
         end
     end
