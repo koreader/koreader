@@ -228,12 +228,19 @@ function ReaderZooming:getZoom(pageno)
         self.view:onBBoxUpdate(nil)
     end
     -- calculate zoom value:
-    local zoom_w = self.dimen.w / page_size.w
-    local zoom_h = self.dimen.h / page_size.h
-    if self.rotation % 180 ~= 0 then
+    local zoom_w = self.dimen.w
+    local zoom_h = self.dimen.h
+    if self.ui.view.footer_visible then
+        zoom_h = zoom_h - self.ui.view.footer.progress_text:getSize().h
+    end
+    if self.rotation % 180 == 0 then
+        -- No rotation or rotated by 180 degrees
+        zoom_w = zoom_w / page_size.w
+        zoom_h = zoom_h / page_size.h
+    else
         -- rotated by 90 or 270 degrees
-        zoom_w = self.dimen.w / page_size.h
-        zoom_h = self.dimen.h / page_size.w
+        zoom_w = zoom_w / page_size.h
+        zoom_h = zoom_h / page_size.w
     end
     if self.zoom_mode == "content" or self.zoom_mode == "page" then
         if zoom_w < zoom_h then
