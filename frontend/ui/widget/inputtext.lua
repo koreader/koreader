@@ -113,7 +113,7 @@ function InputText:initTextBox(text)
         bordersize = self.bordersize,
         padding = self.padding,
         margin = self.margin,
-        color = Blitbuffer.gray(self.focused and 1.0 or 0.5),
+        color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
         self.text_widget,
     }
     self.dimen = self[1]:getSize()
@@ -138,7 +138,7 @@ end
 function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
-    self[1].color = Blitbuffer.gray(0.5)
+    self[1].color = Blitbuffer.COLOR_GREY
 end
 
 function InputText:focus()

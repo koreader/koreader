@@ -8,7 +8,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 
 local LinkBox = InputContainer:new{
     box = nil,
-    color = Blitbuffer.gray(0.5),
+    color = Blitbuffer.COLOR_GREY,
     radius = 0,
     bordersize = 2,
 }

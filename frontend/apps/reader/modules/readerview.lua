@@ -43,7 +43,7 @@ local ReaderView = OverlapGroup:new{
     page_gap = {
         width = Screen:scaleBySize(8),
         height = Screen:scaleBySize(8),
-        color = Blitbuffer.gray(0.5),
+        color = Blitbuffer.COLOR_GREY,
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = DRENDER_MODE, -- default to COLOR

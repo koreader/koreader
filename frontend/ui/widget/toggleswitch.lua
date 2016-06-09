@@ -28,7 +28,7 @@ local ToggleSwitch = InputContainer:new{
     width = Screen:scaleBySize(216),
     height = Screen:scaleBySize(30),
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfoused item color
-    fgcolor = Blitbuffer.gray(0.5), -- focused item color
+    fgcolor = Blitbuffer.COLOR_GREY, -- focused item color
     font_face = "cfont",
     font_size = 16,
     enabled = true,
@@ -42,7 +42,7 @@ function ToggleSwitch:init()
 
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        color = Blitbuffer.gray(0.5),
+        color = Blitbuffer.COLOR_GREY,
         radius = 7,
         bordersize = 1,
         padding = 2,
@@ -70,7 +70,7 @@ function ToggleSwitch:init()
         }
         local button = FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,
-            color = Blitbuffer.gray(0.5),
+            color = Blitbuffer.COLOR_GREY,
             margin = 0,
             radius = 5,
             bordersize = 1,
