@@ -277,13 +277,6 @@ local KoptOptions = {
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
             },
-            {
-               name = "inverse_reading_order",
-               name_text = S.INVERSE_READING_ORDER,
-               toggle = {S.ON, S.OFF},
-               values = {1, 0},
-               default_value = DKOPTREADER_CONFIG_INVERSE_READING_ORDER,
-            },
         }
     },
 }
