@@ -34,6 +34,7 @@ local ReaderRolling = InputContainer:new{
     old_doc_height = nil,
     old_page = nil,
     current_pos = 0,
+    inverse_reading_order = false,
     -- only used for page view mode
     current_page= nil,
     doc_height = nil,
@@ -97,7 +98,7 @@ function ReaderRolling:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- This method will  be called in onSetDimensions handler
+-- This method will be called in onSetDimensions handler
 function ReaderRolling:initGesListener()
     self.ges_events = {
         TapForward = {
@@ -166,6 +167,7 @@ function ReaderRolling:initGesListener()
             }
         },
     }
+    self:updateReadOrder()
 end
 
 function ReaderRolling:onReadSettings(config)
@@ -207,6 +209,8 @@ function ReaderRolling:onReadSettings(config)
     if self.show_overlap_enable == nil then
         self.show_overlap_enable = DSHOWOVERLAP
     end
+    self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+    self:updateReadOrder()
 end
 
 function ReaderRolling:onSaveSettings()
@@ -215,6 +219,7 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
+    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
 end
 
 function ReaderRolling:getLastProgress()
@@ -269,10 +274,22 @@ function ReaderRolling:onTapBackward()
 end
 
 function ReaderRolling:onSwipe(arg, ges)
-    if ges.direction == "west" or ges.direction == "north" then
+    if ges.direction == "north" then
         self:onGotoViewRel(1)
-    elseif ges.direction == "east" or ges.direction == "south" then
+    elseif ges.direction == "south" then
         self:onGotoViewRel(-1)
+    elseif ges.direction == "west" then
+        if self.inverse_reading_order then
+            self:onPagingRel(-1)
+        else
+            self:onPagingRel(1)
+        end
+    elseif ges.direction == "east" then
+        if self.inverse_reading_order then
+            self:onPagingRel(1)
+        else
+            self:onPagingRel(-1)
+        end
     end
 end
 
@@ -522,6 +539,56 @@ function ReaderRolling:updateBatteryState()
         if state then
             self.ui.document:setBatteryState(state)
         end
+    end
+end
+
+function ReaderRolling:updateReadOrder()
+    if self.inverse_reading_order then
+        self.ges_events.TapForward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*(1-DTAP_ZONE_FORWARD.x-DTAP_ZONE_FORWARD.w),
+                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                }
+            }
+        }
+        self.ges_events.TapBackward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*(1-DTAP_ZONE_BACKWARD.x-DTAP_ZONE_BACKWARD.w),
+                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                }
+            }
+        }
+    else
+                self.ges_events.TapForward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
+                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                }
+            }
+        }
+        self.ges_events.TapBackward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
+                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                }
+            }
+        }
     end
 end
 

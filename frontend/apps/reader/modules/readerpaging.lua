@@ -131,6 +131,7 @@ function ReaderPaging:onReadSettings(config)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+    self:updateReadOrder()
 end
 
 function ReaderPaging:onSaveSettings()
@@ -859,9 +860,9 @@ function ReaderPaging:updateReadOrder()
                     y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
                     w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
                     h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
-                },
+                }
             }
-        },
+        }
         self.ges_events.TapBackward = {
             GestureRange:new{
                 ges = "tap",
@@ -870,9 +871,9 @@ function ReaderPaging:updateReadOrder()
                     y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
                     w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
                     h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
-                },
+                }
             }
-        },
+        }
     else
                 self.ges_events.TapForward = {
             GestureRange:new{
