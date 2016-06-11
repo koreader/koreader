@@ -395,7 +395,7 @@ function UIManager:sendEvent(event)
     -- if the event is not consumed, active widgets (from top to bottom) can
     -- access it. NOTE: _window_stack can shrink on close event
     local checked_widgets = {top_widget}
-    for i = #self._window_stack-1, 1, -1 do
+    for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i]
         if checked_widgets[widget] == nil then
             if widget.widget.is_always_active then
