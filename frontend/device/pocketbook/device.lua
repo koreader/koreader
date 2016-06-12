@@ -38,6 +38,11 @@ local KEY_COVERCLOSE	= 0x03
 
 local function yes() return true end
 
+local function pocketbookEnableWifi(toggle)
+    os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
+end
+
+
 local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
@@ -71,6 +76,16 @@ function PocketBook:init()
 	os.execute("mkfifo " .. self.emu_events_dev)
     self.input.open(self.emu_events_dev, 1)
     Generic.init(self)
+end
+
+function PocketBook:initNetworkManager(NetworkMgr)
+    NetworkMgr.turnOnWifi = function()
+        pocketbookEnableWifi(1)
+    end
+
+    NetworkMgr.turnOffWifi = function()
+        pocketbookEnableWifi(0)
+    end
 end
 
 local PocketBook840 = PocketBook:new{

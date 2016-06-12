@@ -4,62 +4,15 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local T = require("ffi/util").template
 local _ = require("gettext")
+
+
 local NetworkMgr = {}
 
-local function kindleEnableWifi(toggle)
-    local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
-    if haslipc and lipc then
-        lipc_handle = lipc.init("com.github.koreader.networkmgr")
-    end
-    if lipc_handle then
-        lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", toggle)
-        lipc_handle:close()
-    end
-end
+-- Device specific method, needs to be initialized in Device:initNetworkManager
+function NetworkMgr:turnOnWifi() end
 
-local function koboEnableWifi(toggle)
-    if toggle == 1 then
-        os.execute("lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko")
-        os.execute("lsmod | grep -q dhd || insmod /drivers/$PLATFORM/wifi/dhd.ko")
-        os.execute("sleep 2")
-        os.execute("ifconfig eth0 up")
-        os.execute("wlarm_le -i eth0 up")
-        os.execute("pidof wpa_supplicant >/dev/null || cd / && env -u LD_LIBRARY_PATH wpa_supplicant -s -i eth0 -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B")
-        os.execute("sleep 1")
-        os.execute("cd / && env -u LD_LIBRARY_PATH /sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 &")
-    else
-        os.execute("killall udhcpc default.script wpa_supplicant 2>/dev/null")
-        os.execute("wlarm_le -i eth0 down")
-        os.execute("ifconfig eth0 down")
-        os.execute("rmmod -r dhd")
-        os.execute("rmmod -r sdio_wifi_pwr")
-    end
-end
-
-local function pocketbookEnableWifi(toggle)
-    os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
-end
-
-function NetworkMgr:turnOnWifi()
-    if Device:isKindle() then
-        kindleEnableWifi(1)
-    elseif Device:isKobo() then
-        koboEnableWifi(1)
-    elseif Device:isPocketBook() then
-        pocketbookEnableWifi(1)
-    end
-end
-
-function NetworkMgr:turnOffWifi()
-    if Device:isKindle() then
-        kindleEnableWifi(0)
-    elseif Device:isKobo() then
-        koboEnableWifi(0)
-    elseif Device:isPocketBook() then
-        pocketbookEnableWifi(0)
-    end
-end
+-- Device specific method, needs to be initialized in Device:initNetworkManager
+function NetworkMgr:turnOffWifi() end
 
 function NetworkMgr:promptWifiOn()
     UIManager:show(ConfirmBox:new{
@@ -151,5 +104,7 @@ end
 if NETWORK_PROXY then
     NetworkMgr:setHTTPProxy(NETWORK_PROXY)
 end
+
+Device:initNetworkManager(NetworkMgr)
 
 return NetworkMgr
