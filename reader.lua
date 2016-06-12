@@ -25,12 +25,12 @@ if ffi.os == "Windows" then
     ffi.C._putenv("PATH=libs;common;")
 end
 
-local DocSettings = require("docsettings")
 local _ = require("gettext")
 -- read settings and check for language override
 -- has to be done before requiring other files because
 -- they might call gettext on load
-G_reader_settings = DocSettings:open(".reader")
+G_reader_settings = require("luasettings"):open(
+    DataStorage:getDataDir().."/settings.reader.lua")
 local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
