@@ -232,9 +232,7 @@ describe("UIManager spec", function()
     end)
 
     it("should handle stack change when checking for active widgets", function()
-        -- this senario should only happen when other active widgets
-        -- are closed by the one widget's handleEvent
-
+        -- senario 1: 2nd widget removes the 3rd widget in the stack
         local call_signals = {0, 0, 0}
         UIManager._window_stack = {
             {
@@ -268,6 +266,41 @@ describe("UIManager spec", function()
         UIManager:sendEvent("foo")
         assert.is.same(call_signals[1], 1)
         assert.is.same(call_signals[2], 0)
+        assert.is.same(call_signals[3], 1)
+
+        -- senario 2: top widget removes itself
+        call_signals = {0, 0, 0}
+        UIManager._window_stack = {
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[1] = call_signals[1] + 1
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[2] = call_signals[2] + 1
+                    end
+                }
+            },
+            {
+                widget = {
+                    is_always_active = true,
+                    handleEvent = function()
+                        call_signals[3] = call_signals[3] + 1
+                        table.remove(UIManager._window_stack, 3)
+                    end
+                }
+            },
+        }
+
+        UIManager:sendEvent("foo")
+        assert.is.same(call_signals[1], 1)
+        assert.is.same(call_signals[2], 1)
         assert.is.same(call_signals[3], 1)
     end)
 end)
