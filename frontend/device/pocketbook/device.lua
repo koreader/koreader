@@ -57,6 +57,10 @@ function PocketBook:init()
         elseif self.isInBackGround and ev.type == EVT_FOREGROUND then
             self.isInBackGround = false
             self:onPowerEvent("Power")
+        elseif ev.type == EVT_EXIT then
+            -- auto shutdown event from inkview framework, gracefully close
+            -- everything and let the framework shutdown the device
+            self:broadcastEvent(Event:new("Close"))
         elseif not self.isInBackGround and ev.type == EVT_FOREGROUND then
             self.screen:refreshPartial()
         end
