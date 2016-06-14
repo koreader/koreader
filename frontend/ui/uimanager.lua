@@ -181,8 +181,6 @@ function UIManager:close(widget, refreshtype, refreshregion)
         return
     end
     dbg("close widget", widget.id)
-    -- TODO: Why do we the following?
-    Input.disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP
     local dirty = false
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then

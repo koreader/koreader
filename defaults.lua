@@ -136,9 +136,6 @@ DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEI
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
 DMINIBAR_FONT_SIZE = 14
 
--- gesture detector defaults
-DGESDETECT_DISABLE_DOUBLE_TAP = true
-
 -- change this to any numerical value if you want to antomatically save settings when turning pages
 DAUTO_SAVE_PAGING_COUNT = nil
 

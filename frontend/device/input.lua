@@ -88,7 +88,7 @@ local Input = {
     },
 
     timer_callbacks = {},
-    disable_double_tap = DGESDETECT_DISABLE_DOUBLE_TAP,
+    disable_double_tap = true,
 
     -- keyboard state:
     modifiers = {

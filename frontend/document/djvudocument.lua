@@ -69,8 +69,8 @@ function DjvuDocument:getOCRText(pageno, tboxes)
     return self.koptinterface:getOCRText(self, pageno, tboxes)
 end
 
-function DjvuDocument:getPageRegions(pageno)
-    return self.koptinterface:getPageRegions(self, pageno)
+function DjvuDocument:getPageBlock(pageno, x, y)
+    return self.koptinterface:getPageBlock(self, pageno, x, y)
 end
 
 function DjvuDocument:getUsedBBox(pageno)
