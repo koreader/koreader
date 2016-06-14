@@ -19,6 +19,7 @@ local ReaderPaging = InputContainer:new{
     show_overlap_enable = nil,
     overlap = Screen:scaleBySize(DOVERLAPPIXELS),
 
+    inverse_reading_order = false,
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
     flip_steps = {0,1,2,5,10,20,50,100}
@@ -117,6 +118,7 @@ function ReaderPaging:initGesListener()
             }
         },
     }
+    self:updateReadOrder()
 end
 
 function ReaderPaging:onReadSettings(config)
@@ -128,6 +130,8 @@ function ReaderPaging:onReadSettings(config)
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
+    self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+    self:updateReadOrder()
 end
 
 function ReaderPaging:onSaveSettings()
@@ -138,6 +142,7 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
+    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
 end
 
 function ReaderPaging:getLastProgress()
@@ -177,6 +182,14 @@ function ReaderPaging:addToMainMenu(tab_item_table)
                     and not self.zoom_mode:find("height")
         end,
         sub_item_table = page_overlap_menu,
+    })
+    table.insert(tab_item_table.typeset, {
+        text = _("Read from right to left"),
+        checked_func = function() return self.inverse_reading_order end,
+        callback = function()
+            self.inverse_reading_order = not self.inverse_reading_order
+            self:updateReadOrder()
+        end,
     })
 end
 
@@ -320,9 +333,17 @@ function ReaderPaging:onSwipe(arg, ges)
     elseif self.page_flipping_mode and self.original_page then
         self:_gotoPage(self.original_page)
     elseif ges.direction == "west" then
-        self:onPagingRel(1)
+        if self.inverse_reading_order then
+            self:onPagingRel(-1)
+        else
+            self:onPagingRel(1)
+        end
     elseif ges.direction == "east" then
-        self:onPagingRel(-1)
+        if self.inverse_reading_order then
+            self:onPagingRel(1)
+        else
+            self:onPagingRel(-1)
+        end
     else
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
@@ -827,6 +848,56 @@ function ReaderPaging:onGotoPercentage(percentage)
     if percentage > 1 then percentage = 1 end
     self:_gotoPage(math.floor(percentage*self.number_of_pages))
     return true
+end
+
+function ReaderPaging:updateReadOrder()
+    if self.inverse_reading_order then
+        self.ges_events.TapForward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*(1-DTAP_ZONE_FORWARD.x-DTAP_ZONE_FORWARD.w),
+                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                }
+            }
+        }
+        self.ges_events.TapBackward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*(1-DTAP_ZONE_BACKWARD.x-DTAP_ZONE_BACKWARD.w),
+                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                }
+            }
+        }
+    else
+                self.ges_events.TapForward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
+                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                }
+            }
+        }
+        self.ges_events.TapBackward = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
+                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
+                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
+                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                }
+            }
+        }
+    end
 end
 
 return ReaderPaging

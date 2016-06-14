@@ -28,6 +28,7 @@ S.EMBEDDED_STYLE = _("Embedded Style")
 S.WRITING_DIR = _("Writing Direction")
 S.PROGRESS_BAR = _("Progress Bar")
 S.FORCED_OCR = _("Forced OCR")
+S.INVERSE_READING_ORDER = _("Inverse Order")
 
 S.ON = _("on")
 S.OFF = _("off")
