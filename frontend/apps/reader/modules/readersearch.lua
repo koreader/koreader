@@ -75,6 +75,8 @@ function ReaderSearch:onShowSearchDialog(text)
 end
 
 function ReaderSearch:search(pattern, origin)
+    DEBUG("search pattern", pattern)
+    if pattern == nil or pattern == '' then return end
     local direction = self.direction
     local case = self.case_insensitive
     local page = self.view.state.page

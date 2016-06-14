@@ -1087,6 +1087,7 @@ local function all_matches(boxes, pattern, caseInsensitive)
     local function match(i, j)
         local pindex = 1
         local matched_indices = {}
+        if #plist == 0 then return end
         while true do
             if #boxes[i] < j then
                 j = j - #boxes[i]
