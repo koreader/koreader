@@ -8,8 +8,8 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(#Defaults.defaults_name, 78)
-        assert.is_same(Defaults.defaults_name[29], 'DHINTCOUNT')
+        assert.is_same(#Defaults.defaults_name, 77)
+        assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -19,14 +19,14 @@ describe("defaults module", function()
         -- not in persistent but checked in defaults
         Defaults.changed[14] = true
         Defaults.changed[19] = true
-        Defaults.changed[29] = true
-        Defaults.changed[64] = true
-        Defaults.changed[78] = true
+        Defaults.changed[28] = true
+        Defaults.changed[63] = true
+        Defaults.changed[77] = true
         Defaults:SaveSettings()
-        assert.is_same(#Defaults.defaults_name, 78)
-        assert.is_same(Defaults.defaults_name[29], 'DHINTCOUNT')
-        assert.is_same(Defaults.defaults_name[78], 'SEARCH_TITLE')
-        assert.is_same(Defaults.defaults_name[64], 'DTAP_ZONE_MENU')
+        assert.is_same(#Defaults.defaults_name, 77)
+        assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
+        assert.is_same(Defaults.defaults_name[77], 'SEARCH_TITLE')
+        assert.is_same(Defaults.defaults_name[63], 'DTAP_ZONE_MENU')
         assert.is_same(Defaults.defaults_name[19], 'DCREREADER_VIEW_MODE')
         assert.is_same(Defaults.defaults_name[14],
                        'DCREREADER_CONFIG_MARGIN_SIZES_LARGE')
@@ -54,10 +54,10 @@ DTAP_ZONE_MENU = {
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[29] = true
-        Defaults.defaults_value[29] = 2
-        Defaults.changed[64] = true
-        Defaults.defaults_value[64] = {
+        Defaults.changed[28] = true
+        Defaults.defaults_value[28] = 2
+        Defaults.changed[63] = true
+        Defaults.defaults_value[63] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -107,8 +107,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[29] = true
-        Defaults.defaults_value[29] = 1
+        Defaults.changed[28] = true
+        Defaults.defaults_value[28] = 1
         Defaults:SaveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(

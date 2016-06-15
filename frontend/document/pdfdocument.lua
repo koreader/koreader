@@ -77,8 +77,8 @@ function PdfDocument:getOCRText(pageno, tboxes)
     return self.koptinterface:getOCRText(self, pageno, tboxes)
 end
 
-function PdfDocument:getPageRegions(pageno)
-    return self.koptinterface:getPageRegions(self, pageno)
+function PdfDocument:getPageBlock(pageno, x, y)
+    return self.koptinterface:getPageBlock(self, pageno, x, y)
 end
 
 function PdfDocument:getUsedBBox(pageno)

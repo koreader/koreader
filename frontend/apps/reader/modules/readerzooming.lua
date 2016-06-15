@@ -113,7 +113,7 @@ function ReaderZooming:onReadSettings(config)
 end
 
 function ReaderZooming:onSaveSettings()
-    self.ui.doc_settings:saveSetting("zoom_mode", self.zoom_mode)
+    self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
 end
 
 function ReaderZooming:onSpread(arg, ges)
@@ -141,7 +141,6 @@ end
 function ReaderZooming:onToggleFreeZoom(arg, ges)
     if self.zoom_mode ~= "free" then
         self.orig_zoom = self.zoom
-        self.orig_zoom_mode = self.zoom_mode
         local xpos, ypos
         self.zoom, xpos, ypos = self:getRegionalZoomCenter(self.current_page, ges.pos)
         DEBUG("zoom center", self.zoom, xpos, ypos)
@@ -152,7 +151,7 @@ function ReaderZooming:onToggleFreeZoom(arg, ges)
         end
         self.view:SetZoomCenter(xpos, ypos)
     else
-        self.ui:handleEvent(Event:new("SetZoomMode", self.orig_zoom_mode or "page"))
+        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
     end
 end
 
@@ -207,6 +206,20 @@ function ReaderZooming:onReZoom()
     return true
 end
 
+function ReaderZooming:onEnterFlippingMode(zoom_mode)
+    self.orig_zoom_mode = self.zoom_mode
+    if zoom_mode == "free" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+    else
+        self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
+    end
+end
+
+function ReaderZooming:onExitFlippingMode(zoom_mode)
+    self.orig_zoom_mode = nil
+    self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
+end
+
 function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom = nil
@@ -254,22 +267,19 @@ end
 function ReaderZooming:getRegionalZoomCenter(pageno, pos)
     local p_pos = self.view:getSinglePagePosition(pos)
     local page_size = self.ui.document:getNativePageDimensions(pageno)
-    local pos_x = p_pos.x / page_size.w / p_pos.zoom
-    local pos_y = p_pos.y / page_size.h / p_pos.zoom
-    local regions = self.ui.document:getPageRegions(pageno)
-    DEBUG("get page regions", regions)
+    local pos_x = p_pos.x / page_size.w
+    local pos_y = p_pos.y / page_size.h
+    local block = self.ui.document:getPageBlock(pageno, pos_x, pos_y)
     local margin = self.ui.document.configurable.page_margin * Screen:getDPI()
-    for i = 1, #regions do
-        if regions[i].x0 <= pos_x and pos_x <= regions[i].x1
-            and regions[i].y0 <= pos_y and pos_y <= regions[i].y1 then
-            local zoom = 1/(regions[i].x1 - regions[i].x0)
-            zoom = zoom/(1 + 3*margin/zoom/page_size.w)
-            local xpos = (regions[i].x0 + regions[i].x1)/2 * zoom * page_size.w
-            local ypos = p_pos.y / p_pos.zoom * zoom
-            return zoom, xpos, ypos
-        end
+    if block then
+        local zoom = self.dimen.w / page_size.w / (block.x1 - block.x0)
+        zoom = zoom/(1 + 3*margin/zoom/page_size.w)
+        local xpos = (block.x0 + block.x1)/2 * zoom * page_size.w
+        local ypos = p_pos.y / p_pos.zoom * zoom
+        return zoom, xpos, ypos
     end
-    return 2
+    local zoom = 2*self.dimen.w / page_size.w
+    return zoom/(1 + 3*margin/zoom/page_size.w)
 end
 
 function ReaderZooming:setZoom()

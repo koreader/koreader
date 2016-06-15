@@ -540,10 +540,11 @@ end
 --[[
 get page regions in native page via optical method,
 --]]
-function KoptInterface:getPageRegions(doc, pageno)
+function KoptInterface:getPageBlock(doc, pageno, x, y)
+    local kctx = nil
     local bbox = doc:getPageBBox(pageno)
     local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "pageregions|"..context_hash
+    local hash = "pageblocks|"..context_hash
     local cached = Cache:check(hash)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -553,17 +554,19 @@ function KoptInterface:getPageRegions(doc, pageno)
             y1 = page_size.h,
         }
         local kc = self:createContext(doc, pageno, bbox)
-        kc:setZoom(1.0)
+        local screen_size = Screen:getSize()
+        -- leptonica needs a source image of at least 300dpi
+        kc:setZoom(screen_size.w / page_size.w * 300 / self.screen_dpi)
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
-        local regions = kc:getPageRegions()
-        Cache:insert(hash, CacheItem:new{ pageregions = regions })
+        kc:findPageBlocks()
+        Cache:insert(hash, CacheItem:new{ kctx = kc })
         page:close()
-        kc:free()
-        return regions
+        kctx = kc
     else
-        return cached.pageregions
+        kctx = cached.kctx
     end
+    return kctx:getPageBlock(x, y)
 end
 
 --[[
