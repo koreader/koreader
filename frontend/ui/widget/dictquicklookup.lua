@@ -108,11 +108,11 @@ function DictQuickLookup:update()
     }
     if self.word_box then
         local box = self.word_box
-        if box.y + box.h/2 < Screen:getHeight()/2 then
+        if box.y + box.h/2 < Screen:getHeight()*0.3 then
             self.region.y = box.y + box.h
             self.region.h = Screen:getHeight() - box.y - box.h
             self.align = "top"
-        else
+        elseif box.y + box.h/2 > Screen:getHeight()*0.7 then
             self.region.y = 0
             self.region.h = box.y
             self.align = "bottom"
