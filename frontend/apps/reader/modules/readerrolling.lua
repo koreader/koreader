@@ -280,15 +280,15 @@ function ReaderRolling:onSwipe(arg, ges)
         self:onGotoViewRel(-1)
     elseif ges.direction == "west" then
         if self.inverse_reading_order then
-            self:onPagingRel(-1)
+            self:onGotoViewRel(-1)
         else
-            self:onPagingRel(1)
+            self:onGotoViewRel(1)
         end
     elseif ges.direction == "east" then
         if self.inverse_reading_order then
-            self:onPagingRel(1)
+            self:onGotoViewRel(1)
         else
-            self:onPagingRel(-1)
+            self:onGotoViewRel(-1)
         end
     end
 end
