@@ -303,4 +303,46 @@ describe("UIManager spec", function()
         assert.is.same(call_signals[2], 1)
         assert.is.same(call_signals[3], 1)
     end)
+
+    it("should handle stack change when broadcasting events", function()
+        UIManager._window_stack = {
+            {
+                widget = {
+                    handleEvent = function()
+                        UIManager._window_stack[1] = nil
+                    end
+                }
+            },
+        }
+        UIManager:broadcastEvent("foo")
+        assert.is.same(#UIManager._window_stack, 0)
+
+        UIManager._window_stack = {
+            {
+                widget = {
+                    handleEvent = function()
+                        UIManager._window_stack[1] = nil
+                        UIManager._window_stack[2] = nil
+                        UIManager._window_stack[3] = nil
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.falsy(true);
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.falsy(true);
+                    end
+                }
+            },
+        }
+        UIManager:broadcastEvent("foo")
+        assert.is.same(#UIManager._window_stack, 0)
+    end)
 end)

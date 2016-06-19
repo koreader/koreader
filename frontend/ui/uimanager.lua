@@ -418,8 +418,12 @@ function UIManager:broadcastEvent(event)
     while (i <= #self._window_stack) do
         local prev_widget = self._window_stack[i].widget
         self._window_stack[i].widget:handleEvent(event)
-        if (self._window_stack[i].widget == prev_widget) then
-          i = i + 1
+        local top_widget = self._window_stack[i]
+        if top_widget == nil then
+            -- top widget closed itself
+            break
+        elseif (top_window.widget == prev_widget) then
+            i = i + 1
         end
     end
 end
