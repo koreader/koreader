@@ -182,10 +182,13 @@ function UIManager:close(widget, refreshtype, refreshregion)
     end
     dbg("close widget", widget.id)
     local dirty = false
+    -- first send close event to widget
+    widget:handleEvent(Event:new("CloseWidget"))
+    -- then remove all reference to that widget on stack and update
+    -- disable_double_tap accordingly
+    Input.disable_double_tap = false
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
-            -- tell the widget that it is closed now
-            widget:handleEvent(Event:new("CloseWidget"))
             table.remove(self._window_stack, i)
             dirty = true
         elseif self._window_stack[i].widget.disable_double_tap then
@@ -315,7 +318,7 @@ end
 dbg:guard(UIManager, 'setDirty',
     nil,
     function(self, widget, refreshtype, refreshregion)
-        if not widget then return end
+        if not widget or widget == "all" then return end
         -- when debugging, we check if we get handed a valid widget,
         -- which would be a dialog that was previously passed via show()
         local found = false
@@ -562,9 +565,8 @@ function UIManager:_repaint()
     end
     self._refresh_func_stack = {}
 
-    -- we should have at least one refresh if we did repaint.
-    -- If we don't, we add one now and print a warning if we
-    -- are debugging
+    -- we should have at least one refresh if we did repaint.  If we don't, we
+    -- add one now and log a warning if we are debugging
     if dirty and #self._refresh_stack == 0 then
         dbg("WARNING: no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")

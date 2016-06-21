@@ -345,4 +345,23 @@ describe("UIManager spec", function()
         UIManager:broadcastEvent("foo")
         assert.is.same(#UIManager._window_stack, 0)
     end)
+
+    it("should handle stack change when closing widgets", function()
+        local widget_1 = {handleEvent = function()end}
+        local widget_2  = {
+            handleEvent = function()
+                UIManager:close(widget_1)
+            end
+        }
+        local widget_3 = {handleEvent = function()end}
+        UIManager._window_stack = {
+            {widget = widget_1},
+            {widget = widget_2},
+            {widget = widget_3},
+        }
+        UIManager:close(widget_2)
+
+        assert.is.same(1, #UIManager._window_stack)
+        assert.is.same(widget_3, UIManager._window_stack[1].widget)
+    end)
 end)
