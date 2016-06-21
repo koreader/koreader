@@ -95,7 +95,6 @@ function ReaderDictionary:stardictLookup(word, box)
                     definition = _("No definition found."),
                 }
             }
-            DEBUG("dummy result table:", word, results)
             self:showDict(word, results, box)
         end
     end
@@ -103,7 +102,7 @@ end
 
 function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
-        DEBUG("showing quick lookup window")
+        DEBUG("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
             ui = self.ui,
             highlight = self.highlight,
