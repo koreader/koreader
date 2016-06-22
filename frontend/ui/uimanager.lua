@@ -637,13 +637,10 @@ function UIManager:handleInput()
         end
     elseif wait_until[1] > now[1]
     or wait_until[1] == now[1] and wait_until[2] > now[2] then
-        local wait_for = { s = wait_until[1] - now[1], us = wait_until[2] - now[2] }
-        if wait_for.us < 0 then
-            wait_for.s = wait_for.s - 1
-            wait_for.us = MILLION + wait_for.us
-        end
         -- wait until next task is pending
-        input_event = Input:waitEvent(wait_for.us, wait_for.s)
+        local wait_us = (wait_until[1] - now[1]) * MILLION
+                        + (wait_until[2] - now[2])
+        input_event = Input:waitEvent(wait_us)
     end
 
     -- delegate input_event to handler
