@@ -1,3 +1,5 @@
+local DEBUG = require("dbg")
+
 local BasePowerD = {
     fl_min = 0,          -- min frontlight intensity
     fl_max = 10,         -- max frontlight intensity
@@ -59,6 +61,7 @@ end
 function BasePowerD:setIntensity(intensity)
     if intensity == self.fl_intensity then return end
     self.fl_intensity = self:normalizeIntensity(intensity)
+    DEBUG("set light intensity", self.fl_intensity)
     self:setIntensityHW()
 end
 
