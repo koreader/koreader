@@ -37,9 +37,11 @@ local function update()
     local update_file = io.open(new_update, "r")
     if update_file ~= nil then
         io.close(update_file)
+        A.showProgress()
         if os.execute("tar xf " .. new_update) == 0 then
             os.execute("mv " .. new_update .. " " .. installed)
         end
+        A.dismissProgress()
     end
 
 end

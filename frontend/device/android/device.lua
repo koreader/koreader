@@ -11,6 +11,7 @@ local Device = Generic:new{
     hasKeys = yes,
     hasDPad = no,
     isAndroid = yes,
+    hasFrontlight = yes,
     firmware_rev = "none",
     display_dpi = ffi.C.AConfiguration_getDensity(android.app.config),
 }
