@@ -473,21 +473,20 @@ end
 
 -- main event handling:
 
-function Input:waitEvent(timeout_us, timeout_s)
+function Input:waitEvent(timeout_us)
     -- wrapper for input.waitForEvents that will retry for some cases
     local ok, ev
-    local wait_deadline = TimeVal:now() + TimeVal:new{
-            sec = timeout_s,
-            usec = timeout_us
-        }
     while true do
         if #self.timer_callbacks > 0 then
+            local wait_deadline = TimeVal:now() + TimeVal:new{
+                usec = timeout_us
+            }
             -- we don't block if there is any timer, set wait to 10us
             while #self.timer_callbacks > 0 do
                 ok, ev = pcall(input.waitForEvent, 100)
                 if ok then break end
                 local tv_now = TimeVal:now()
-                if ((not timeout_us and not timeout_s) or tv_now < wait_deadline) then
+                if (not timeout_us or tv_now < wait_deadline) then
                     -- check whether timer is up
                     if tv_now >= self.timer_callbacks[1].deadline then
                         local touch_ges = self.timer_callbacks[1].callback()
