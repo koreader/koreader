@@ -61,6 +61,16 @@ function TextBoxWidget:init()
     self.dimen = Geom:new(self:getSize())
 end
 
+function TextBoxWidget:unfocus()
+    self.editable = false
+    self:init()
+end
+
+function TextBoxWidget:focus()
+    self.editable = true
+    self:init()
+end
+
 -- Split `self.text` into `self.charlist` and evaluate the width of each char in it.
 function TextBoxWidget:_evalCharWidthList()
     if self.charlist == nil then
@@ -77,7 +87,7 @@ end
 -- Split the text into logical lines to fit into the text box.
 function TextBoxWidget:_splitCharWidthList()
     self.vertical_string_list = {
-        {text = "Demo hint", offset = 1, width = 0} -- hint for empty string
+        {text = self.text, offset = 1, width = 0} -- hint for empty string
     }
 
     local idx = 1
