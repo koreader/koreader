@@ -72,6 +72,14 @@ function ScrollTextWidget:init()
     end
 end
 
+function ScrollTextWidget:unfocus()
+    self.text_widget:unfocus()
+end
+
+function ScrollTextWidget:focus()
+    self.text_widget:focus()
+end
+
 function ScrollTextWidget:scrollText(direction)
     if direction == 0 then return end
     local low, high

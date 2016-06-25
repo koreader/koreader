@@ -50,15 +50,14 @@ if Device.isTouchDevice() then
     function InputText:onTapTextBox(arg, ges)
         if self.parent.onSwitchFocus then
             self.parent:onSwitchFocus(self)
-        else
-            local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
-            local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
-            if x > 0 and y > 0 then
-                self.charpos = self.text_widget:moveCursor(x, y)
-                UIManager:setDirty(self.parent, function()
-                    return "ui", self[1].dimen
-                end)
-            end
+        end
+        local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
+        local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
+        if x > 0 and y > 0 then
+            self.charpos = self.text_widget:moveCursor(x, y)
+            UIManager:setDirty(self.parent, function()
+                return "ui", self[1].dimen
+            end)
         end
     end
 else
@@ -84,13 +83,15 @@ function InputText:initTextBox(text)
     if self.text_type == "password" and show_text ~= "" then
         show_text = self.text:gsub("(.-).", function() return "*" end)
         show_text = show_text:gsub("(.)$", function() return self.text:sub(-1) end)
+    elseif show_text == "" then
+        show_text = self.hint
     end
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
             text = show_text,
             charlist = self.charlist,
             charpos = self.charpos,
-            editable = true,
+            editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
@@ -101,7 +102,7 @@ function InputText:initTextBox(text)
             text = show_text,
             charlist = self.charlist,
             charpos = self.charpos,
-            editable = true,
+            editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
@@ -136,11 +137,13 @@ end
 
 function InputText:unfocus()
     self.focused = false
+    self.text_widget:unfocus()
     self[1].color = Blitbuffer.gray(0.5)
 end
 
 function InputText:focus()
     self.focused = true
+    self.text_widget:focus()
     self[1].color = Blitbuffer.COLOR_BLACK
 end
 
@@ -185,6 +188,7 @@ function InputText:getText()
 end
 
 function InputText:setText(text)
+    self.charpos = nil
     self:initTextBox(text)
     UIManager:setDirty(self.parent, function()
         return "partial", self[1].dimen
