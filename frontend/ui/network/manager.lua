@@ -1,6 +1,8 @@
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
+local LuaSettings = require("luasettings")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -8,26 +10,37 @@ local _ = require("gettext")
 
 local NetworkMgr = {}
 
--- Device specific method, needs to be initialized in Device:initNetworkManager
+function NetworkMgr:init()
+    self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
+end
+
+-- Following methods are Device specific which need to be initialized in
+-- Device:initNetworkManager. Some of them can be set by calling
+-- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
-
--- Device specific method, needs to be initialized in Device:initNetworkManager
 function NetworkMgr:turnOffWifi() end
+function NetworkMgr:getNetworkList() end
+function NetworkMgr:getCurrentNetwork() end
+function NetworkMgr:authenticateNetwork() end
+function NetworkMgr:disconnectNetwork() end
+function NetworkMgr:obtainIP() end
+function NetworkMgr:releaseIP() end
+-- End of device specific methods
 
-function NetworkMgr:promptWifiOn()
+function NetworkMgr:promptWifiOn(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_callback = function()
-            self:turnOnWifi()
+            self:turnOnWifi(complete_callback)
         end,
     })
 end
 
-function NetworkMgr:promptWifiOff()
+function NetworkMgr:promptWifiOff(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn off Wi-Fi?"),
         ok_callback = function()
-            self:turnOffWifi()
+            self:turnOffWifi(complete_callback)
         end,
     })
 end
@@ -53,11 +66,15 @@ function NetworkMgr:getWifiMenuTable()
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:getWifiStatus() end,
-        callback = function()
+        callback = function(menu)
+            local complete_callback = function()
+                -- notify touch menu to update item check state
+                menu:updateItems()
+            end
             if NetworkMgr:getWifiStatus() then
-                NetworkMgr:promptWifiOff()
+                NetworkMgr:promptWifiOff(complete_callback)
             else
-                NetworkMgr:promptWifiOn()
+                NetworkMgr:promptWifiOn(complete_callback)
             end
         end
     }
@@ -98,6 +115,44 @@ function NetworkMgr:getProxyMenuTable()
             end,
         }
     }
+end
+
+function NetworkMgr:showNetworkMenu(complete_callback)
+    local info = InfoMessage:new{text = _("Scanning…")}
+    UIManager:show(info)
+    UIManager:nextTick(function()
+        local network_list = self:getNetworkList()
+        UIManager:close(info)
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+            connect_callback = complete_callback,
+        })
+    end)
+end
+
+function NetworkMgr:saveNetwork(setting)
+    if not self.nw_settings then self:init() end
+    self.nw_settings:saveSetting(setting.ssid, {
+        ssid = setting.ssid,
+        password = setting.password,
+        flags = setting.flags,
+    })
+    self.nw_settings:flush()
+end
+
+function NetworkMgr:deleteNetwork(setting)
+    if not self.nw_settings then self:init() end
+    self.nw_settings:delSetting(setting.ssid)
+    self.nw_settings:flush()
+end
+
+function NetworkMgr:getAllSavedNetworks()
+    if not self.nw_settings then self:init() end
+    return self.nw_settings
+end
+
+function NetworkMgr:setWirelessBackend(name, options)
+    require("ui/network/"..name).init(self, options)
 end
 
 -- set network proxy if global variable NETWORK_PROXY is defined

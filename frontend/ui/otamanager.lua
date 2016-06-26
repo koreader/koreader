@@ -1,6 +1,6 @@
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
-local NetworkMgr = require("ui/networkmgr")
+local NetworkMgr = require("ui/network/manager")
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")

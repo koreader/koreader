@@ -564,7 +564,7 @@ function TouchMenu:onMenuSelect(item)
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
                 UIManager:scheduleIn(0.1, function()
-                    callback()
+                    callback(self)
                     if refresh then
                         self:updateItems()
                     else

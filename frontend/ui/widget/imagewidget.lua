@@ -1,3 +1,16 @@
+--[[--
+ImageWidget shows an image from a file
+
+Example:
+
+        UIManager:show(ImageWidget:new{
+            file = "resources/info-i.png",
+            -- Make sure alpha is set to true if png has transparent background
+            -- alpha = true,
+        })
+
+]]
+
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 local CacheItem = require("cacheitem")
@@ -23,9 +36,6 @@ function ImageCacheItem:onFree()
     end
 end
 
---[[
-ImageWidget shows an image from a file
---]]
 local ImageWidget = Widget:new{
     file = nil,
     image = nil,

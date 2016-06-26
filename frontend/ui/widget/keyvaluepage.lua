@@ -39,7 +39,7 @@ local Device = require("device")
 local Screen = Device.screen
 
 
-local ellipsis, space = "...", "  "
+local ellipsis, space = "…", "  "
 local ellipsis_width, space_width
 local function truncateTextByWidth(text, face, max_width, prepend_space)
     if not ellipsis_width then

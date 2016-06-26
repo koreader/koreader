@@ -6,7 +6,6 @@ local purgeDir = require("ffi/util").purgeDir
 local DocSettings = {}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
-local READER_SETTING_FILE = DataStorage:getDataDir() .. "/settings.reader.lua"
 
 local function buildCandidate(file_path)
     if lfs.attributes(file_path, "mode") == "file" then
@@ -42,62 +41,55 @@ end
 
 function DocSettings:open(docfile)
     -- TODO(zijiehe): Remove history_path, use only sidecar.
-    local new = { data = {} }
+    local new = {}
     local ok, stored
-    if docfile == ".reader" then
-        -- we handle reader setting as special case
-        new.history_file = READER_SETTING_FILE
-        ok, stored = pcall(dofile, new.history_file)
-    else
-        new.history_file = self:getHistoryPath(docfile)
+    new.history_file = self:getHistoryPath(docfile)
 
-        local sidecar = self:getSidecarDir(docfile)
-        new.sidecar = sidecar
-        if lfs.attributes(sidecar, "mode") ~= "directory" then
-            lfs.mkdir(sidecar)
-        end
-        -- If there is a file which has a same name as the sidecar directory, or
-        -- the file system is read-only, we should not waste time to read it.
-        if lfs.attributes(sidecar, "mode") == "directory" then
-            -- New sidecar file name is metadata.{file last suffix}.lua. So we
-            -- can handle two files with only different suffixes.
-            new.sidecar_file = sidecar.."/metadata."..
-                               docfile:match(".*%.(.*)")..".lua"
-            if docfile:find("/") then
-                new.legacy_sidecar_file = sidecar.."/"..
-                                          docfile:match(".*%/(.*)")..".lua"
-            else
-                new.legacy_sidecar_file = sidecar.."/"..docfile..".lua"
-            end
-        end
+    local sidecar = self:getSidecarDir(docfile)
+    new.sidecar = sidecar
+    if lfs.attributes(sidecar, "mode") ~= "directory" then
+        lfs.mkdir(sidecar)
+    end
+    -- If there is a file which has a same name as the sidecar directory, or
+    -- the file system is read-only, we should not waste time to read it.
+    if lfs.attributes(sidecar, "mode") == "directory" then
+        -- New sidecar file name is metadata.{file last suffix}.lua. So we
+        -- can handle two files with only different suffixes.
+        new.sidecar_file = sidecar.."/metadata."..
+                           docfile:match(".*%.(.+)")..".lua"
+        new.legacy_sidecar_file = sidecar.."/"..
+                                  docfile:match("([^%/]+%..+)")..".lua"
+    end
 
-        new.candidates = {}
-        -- New sidecar file
-        table.insert(new.candidates, buildCandidate(new.sidecar_file))
-        -- Legacy sidecar file
-        table.insert(new.candidates, buildCandidate(new.legacy_sidecar_file))
-        -- Legacy history folder
-        table.insert(new.candidates, buildCandidate(new.history_file))
-        -- Legacy kpdfview setting
-        table.insert(new.candidates, buildCandidate(docfile..".kpdfview.lua"))
-        table.sort(new.candidates, function(l, r)
-                                       if l == nil then
-                                           return false
-                                       elseif r == nil then
-                                           return true
-                                       else
-                                           return l[2] > r[2]
-                                       end
-                                   end)
-        for _, k in pairs(new.candidates) do
-            ok, stored = pcall(dofile, k[1])
-            if ok then
-                break
-            end
+    local candidates = {}
+    -- New sidecar file
+    table.insert(candidates, buildCandidate(new.sidecar_file))
+    -- Legacy sidecar file
+    table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
+    -- Legacy history folder
+    table.insert(candidates, buildCandidate(new.history_file))
+    -- Legacy kpdfview setting
+    table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"))
+    table.sort(candidates, function(l, r)
+                               if l == nil then
+                                   return false
+                               elseif r == nil then
+                                   return true
+                               else
+                                   return l[2] > r[2]
+                               end
+                           end)
+    for _, k in pairs(candidates) do
+        ok, stored = pcall(dofile, k[1])
+        if ok then
+            break
         end
     end
     if ok and stored then
         new.data = stored
+        new.candidates = candidates
+    else
+        new.data = {}
     end
 
     return setmetatable(new, {__index = DocSettings})

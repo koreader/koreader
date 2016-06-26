@@ -73,23 +73,33 @@ end
 
 function InputText:initTextBox(text)
     self.text = text
-    self.charlist = util.splitToChars(text)
-    if self.charpos == nil then
-        self.charpos = #self.charlist + 1
-    end
-    local fgcolor = Blitbuffer.gray(self.text == "" and 0.5 or 1.0)
-
-    local show_text = self.text
-    if self.text_type == "password" and show_text ~= "" then
-        show_text = self.text:gsub("(.-).", function() return "*" end)
-        show_text = show_text:gsub("(.)$", function() return self.text:sub(-1) end)
-    elseif show_text == "" then
+    local fgcolor
+    local show_charlist
+    local show_text = text
+    if show_text == "" or show_text == nil then
+        -- no preset value, use hint text if set
         show_text = self.hint
+        fgcolor = Blitbuffer.COLOR_GREY
+        self.charlist = {}
+        self.charpos = 1
+    else
+        fgcolor = Blitbuffer.COLOR_BLACK
+        if self.text_type == "password" then
+            show_text = self.text:gsub(
+                "(.-).", function() return "*" end)
+            show_text = show_text:gsub(
+                "(.)$", function() return self.text:sub(-1) end)
+        end
+        self.charlist = util.splitToChars(text)
+        if self.charpos == nil then
+            self.charpos = #self.charlist + 1
+        end
     end
+    show_charlist = util.splitToChars(show_text)
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
             text = show_text,
-            charlist = self.charlist,
+            charlist = show_charlist,
             charpos = self.charpos,
             editable = self.focused,
             face = self.face,
@@ -100,7 +110,7 @@ function InputText:initTextBox(text)
     else
         self.text_widget = TextBoxWidget:new{
             text = show_text,
-            charlist = self.charlist,
+            charlist = show_charlist,
             charpos = self.charpos,
             editable = self.focused,
             face = self.face,

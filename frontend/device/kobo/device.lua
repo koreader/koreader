@@ -2,19 +2,19 @@ local Generic = require("device/generic/device")
 local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
 local dbg = require("dbg")
+local sleep = require("ffi/util").sleep
+local _ = require("gettext")
 
 local function yes() return true end
 
 local function koboEnableWifi(toggle)
     if toggle == 1 then
-        os.execute("lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko")
-        os.execute("lsmod | grep -q dhd || insmod /drivers/$PLATFORM/wifi/dhd.ko")
-        os.execute("sleep 2")
-        os.execute("ifconfig eth0 up")
+        os.execute("/sbin/lsmod | grep -q sdio_wifi_pwr || /sbin/insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko")
+        os.execute("/sbin/lsmod | grep -q dhd || /sbin/insmod /drivers/$PLATFORM/wifi/dhd.ko")
+        sleep(1)
+        os.execute("/sbin/ifconfig eth0 up")
         os.execute("wlarm_le -i eth0 up")
-        os.execute("pidof wpa_supplicant >/dev/null || cd / && env -u LD_LIBRARY_PATH wpa_supplicant -s -i eth0 -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B")
-        os.execute("sleep 1")
-        os.execute("cd / && env -u LD_LIBRARY_PATH /sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 &")
+        os.execute("pidof wpa_supplicant >/dev/null || env -u LD_LIBRARY_PATH wpa_supplicant -s -ieth0 -O /var/run/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf -B")
     else
         os.execute("killall udhcpc default.script wpa_supplicant 2>/dev/null")
         os.execute("wlarm_le -i eth0 down")
@@ -159,12 +159,28 @@ function Kobo:init()
 end
 
 function Kobo:initNetworkManager(NetworkMgr)
-    NetworkMgr.turnOffWifi = function()
+    function NetworkMgr:turnOffWifi(complete_callback)
         koboEnableWifi(0)
+        if complete_callback then
+            complete_callback()
+        end
     end
 
-    NetworkMgr.turnOnWifi = function()
+    function NetworkMgr:turnOnWifi(complete_callback)
         koboEnableWifi(1)
+        self:showNetworkMenu(complete_callback)
+    end
+
+    NetworkMgr:setWirelessBackend(
+        "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/eth0"})
+
+    function NetworkMgr:obtainIP()
+        os.execute("env -u LD_LIBRARY_PATH /sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q")
+    end
+
+    function NetworkMgr:releaseIP()
+        os.execute("pkill -9 -f '/bin/sh /etc/udhcpc.d/default.script';")
+        os.execute("/sbin/ifconfig eth0 0.0.0.0")
     end
 end
 

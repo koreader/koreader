@@ -1,3 +1,18 @@
+--[[--
+Widget that shows a message and OK/Cancel buttons
+
+Example:
+
+    UIManager:show(ConfirmBox:new{
+        text = _("Save the document?"),
+        ok_text = _("Save"),  -- ok_text defaults to _("OK")
+        ok_callback = function()
+            -- save document
+        end,
+    })
+
+]]
+
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -15,11 +30,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 
--- screen
 
---[[
-Widget that shows a message and OK/Cancel buttons
-]]
 local ConfirmBox = InputContainer:new{
     modal = true,
     text = _("no text"),
