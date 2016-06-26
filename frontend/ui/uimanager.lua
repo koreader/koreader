@@ -185,8 +185,6 @@ function UIManager:close(widget, refreshtype, refreshregion)
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
     -- then remove all reference to that widget on stack and update
-    -- disable_double_tap accordingly
-    Input.disable_double_tap = false
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
             table.remove(self._window_stack, i)
