@@ -452,7 +452,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     end -- end for all saved highlight
 end
 
-function ReaderView:drawHighlightRect(bb, x, y, rect, drawer)
+function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
 
     if drawer == "underscore" then

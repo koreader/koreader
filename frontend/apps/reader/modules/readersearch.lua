@@ -27,9 +27,9 @@ function ReaderSearch:addToMainMenu(tab_item_table)
 end
 
 function ReaderSearch:onShowSearchDialog(text)
-    local do_search = function(search_func, text, param)
+    local do_search = function(search_func, _text, param)
         return function()
-            local res = search_func(self, text, param)
+            local res = search_func(self, _text, param)
             if res then
                 if self.ui.document.info.has_pages then
                     self.ui.link:onGotoLink({page = res.page - 1})

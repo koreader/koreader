@@ -605,7 +605,7 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
             if self.current_page == self.number_of_pages then break end
             self:_gotoPage(current_page + 1, "scrolling")
             current_page = current_page + 1
-            local state = self:getNextPageState(blank_area, Geom:new{})
+            state = self:getNextPageState(blank_area, Geom:new{})
             table.insert(page_states, state)
         end
     end
@@ -627,7 +627,7 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
             if self.current_page == 1 then break end
             self:_gotoPage(current_page - 1, "scrolling")
             current_page = current_page - 1
-            local state = self:getPrevPageState(blank_area, Geom:new{})
+            state = self:getPrevPageState(blank_area, Geom:new{})
             table.insert(page_states, 1, state)
         end
     end

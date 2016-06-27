@@ -420,14 +420,14 @@ function UIManager:broadcastEvent(event)
     -- the widget's event handler might close widgets in which case
     -- a simple iterator like ipairs would skip over some entries
     local i = 1
-    while (i <= #self._window_stack) do
+    while i <= #self._window_stack do
         local prev_widget = self._window_stack[i].widget
         self._window_stack[i].widget:handleEvent(event)
         local top_widget = self._window_stack[i]
         if top_widget == nil then
             -- top widget closed itself
             break
-        elseif (top_window.widget == prev_widget) then
+        elseif top_widget.widget == prev_widget then
             i = i + 1
         end
     end
