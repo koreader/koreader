@@ -121,6 +121,7 @@ function TextBoxWidget:_splitCharWidthList()
                 local adjusted_width = cur_line_width
                 repeat
                     adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                    if adjusted_idx == 1 then break end
                     adjusted_idx = adjusted_idx - 1
                     c = self.char_width_list[adjusted_idx].char
                 until adjusted_idx > offset and util.isSplitable(c)
@@ -134,6 +135,7 @@ function TextBoxWidget:_splitCharWidthList()
                 end
             end -- endif util.isSplitable(c)
         end -- endif cur_line_width > self.width
+        if cur_line_width < 0 then break end
         self.vertical_string_list[ln] = {
             text = cur_line_text,
             offset = offset,
