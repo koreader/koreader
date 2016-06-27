@@ -844,7 +844,10 @@ function Menu:onGotoPage(page)
 end
 
 function Menu:onSelect()
-    self:onMenuSelect(self.item_table[(self.page-1)*self.perpage+self.selected.y])
+    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
+    if item then
+        self:onMenuSelect(item)
+    end
     return true
 end
 
