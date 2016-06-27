@@ -168,7 +168,9 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
-    if widget.disable_double_tap then
+    if widget.disable_double_tap == false then
+        Input.disable_double_tap = false
+    else
         Input.disable_double_tap = true
     end
 end
@@ -184,6 +186,8 @@ function UIManager:close(widget, refreshtype, refreshregion)
     local dirty = false
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
+    -- make it enabled by default and check any widget that disable it
+    Input.disable_double_tap = false
     -- then remove all reference to that widget on stack and update
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
