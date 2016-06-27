@@ -284,6 +284,7 @@ function ReaderUI:init()
             view = self.view,
             ui = self
         })
+        self.disable_double_tap = G_reader_settings:readSetting("disable_double_tap") ~= false
     end
     -- fulltext search
     self:registerModule("search", ReaderSearch:new{

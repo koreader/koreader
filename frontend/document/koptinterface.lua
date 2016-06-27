@@ -322,12 +322,12 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     local cached = Cache:check(renderpg_hash, TileCacheItem)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
-        local bbox = {
+        local full_page_bbox = {
             x0 = 0, y0 = 0,
             x1 = page_size.w,
             y1 = page_size.h,
         }
-        local kc = self:createContext(doc, pageno, bbox)
+        local kc = self:createContext(doc, pageno, full_page_bbox)
         local page = doc._document:openPage(pageno)
         kc:setZoom(zoom)
         page:getPagePix(kc)
@@ -444,7 +444,7 @@ function KoptInterface:getReflowedTextBoxes(doc, pageno)
     local cached = Cache:check(hash)
     if not cached then
         local kctx_hash = "kctx|"..context_hash
-        local cached = Cache:check(kctx_hash)
+        cached = Cache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
             --kc:setDebug()
@@ -468,7 +468,7 @@ function KoptInterface:getNativeTextBoxes(doc, pageno)
     local cached = Cache:check(hash)
     if not cached then
         local kctx_hash = "kctx|"..context_hash
-        local cached = Cache:check(kctx_hash)
+        cached = Cache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
             --kc:setDebug()
@@ -493,7 +493,7 @@ function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
     local cached = Cache:check(hash)
     if not cached then
         local kctx_hash = "kctx|"..context_hash
-        local cached = Cache:check(kctx_hash)
+        cached = Cache:check(kctx_hash)
         if cached then
             local reflowed_kc = self:waitForContext(cached.kctx)
             local fullwidth, fullheight = reflowed_kc:getPageDim()
@@ -541,19 +541,19 @@ end
 get page regions in native page via optical method,
 --]]
 function KoptInterface:getPageBlock(doc, pageno, x, y)
-    local kctx = nil
+    local kctx
     local bbox = doc:getPageBBox(pageno)
     local context_hash = self:getContextHash(doc, pageno, bbox)
     local hash = "pageblocks|"..context_hash
     local cached = Cache:check(hash)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
-        local bbox = {
+        local full_page_bbox = {
             x0 = 0, y0 = 0,
             x1 = page_size.w,
             y1 = page_size.h,
         }
-        local kc = self:createContext(doc, pageno, bbox)
+        local kc = self:createContext(doc, pageno, full_page_bbox)
         local screen_size = Screen:getSize()
         -- leptonica needs a source image of at least 300dpi
         kc:setZoom(screen_size.w / page_size.w * 300 / self.screen_dpi)
@@ -594,7 +594,7 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
     local cached = Cache:check(hash)
     if not cached then
         local kctx_hash = "kctx|"..context_hash
-        local cached = Cache:check(kctx_hash)
+        cached = Cache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
             local _, word = pcall(
@@ -665,8 +665,8 @@ function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
             x = box.x, y = box.y,
             w = box.w, h = box.h,
         }
-        for _, box in ipairs(pboxes) do
-            rect = rect:combine(Geom:new(box))
+        for _, _box in ipairs(pboxes) do
+            rect = rect:combine(Geom:new(_box))
         end
     else
         local zoom = pos0.zoom or 1
@@ -910,9 +910,9 @@ end
 get link from position in screen page
 ]]--
 function KoptInterface:getLinkFromPosition(doc, pageno, pos)
-    local function inside_box(pos, box)
-        if pos then
-            local x, y = pos.x, pos.y
+    local function _inside_box(_pos, box)
+        if _pos then
+            local x, y = _pos.x, _pos.y
             if box.x <= x and box.y <= y
                 and box.x + box.w >= x
                 and box.y + box.h >= y then
@@ -934,7 +934,7 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
                 w = link.x1 - link.x0 + Screen:scaleBySize(10),
                 h = link.y1 - link.y0 + Screen:scaleBySize(10)
             }
-            if inside_box(pos, lbox) and link.page then
+            if _inside_box(pos, lbox) and link.page then
                 return link, lbox
             end
         end

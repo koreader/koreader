@@ -6,14 +6,6 @@ local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
 end
 
-local function enable_if_greater_than(configurable, option, value)
-    return configurable[option] > value
-end
-
-local function enable_if_less_than(configurable, option, value)
-    return configurable[option] < value
-end
-
 local KoptOptions = {
     prefix = 'kopt',
     {
