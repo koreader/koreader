@@ -88,7 +88,7 @@ function DictQuickLookup:init()
                 -- callback function when HoldWord is handled as args
                 args = function(word)
                     self.ui:handleEvent(
-                        Event:new("LookupWord", word, self.word_box))
+                        Event:new("LookupWord", word, self.word_box, self.highlight))
                 end
             },
         }
@@ -384,8 +384,24 @@ end
 
 function DictQuickLookup:onClose()
     UIManager:close(self)
+    for i = #self.window_list, 1, -1 do
+        local window = self.window_list[i]
+        if window == self then
+            table.remove(self.window_list, i)
+        end
+    end
     if self.highlight then
-        self.highlight:handleEvent(Event:new("Tap"))
+        self.highlight:clear()
+    end
+    return true
+end
+
+function DictQuickLookup:onHoldClose()
+    self:onClose()
+    for i = #self.window_list, 1, -1 do
+        local window = self.window_list[i]
+        UIManager:close(window)
+        table.remove(self.window_list, i)
     end
     return true
 end

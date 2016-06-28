@@ -12,6 +12,7 @@ local T = require("ffi/util").template
 
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
+    dict_window_list = {},
 }
 
 function ReaderDictionary:init()
@@ -104,6 +105,7 @@ function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
         DEBUG("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
+            window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
             dialog = self.dialog,
@@ -116,6 +118,7 @@ function ReaderDictionary:showDict(word, results, box)
             -- differentiate between dict and wiki
             wiki = self.wiki,
         }
+        table.insert(self.dict_window_list, self.dict_window)
         UIManager:show(self.dict_window)
     end
 end
