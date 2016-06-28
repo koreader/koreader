@@ -19,6 +19,7 @@ local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
+local DEBUG= require("dbg")
 
 local TextBoxWidget = Widget:new{
     text = nil,
@@ -282,7 +283,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
     local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
     local line_num = math.ceil(y / self.line_height_px)
     local line = self.vertical_string_list[line_num]
-
+    DEBUG("holding on line", line)
     if line then
         local char_start = line.offset
         local char_end  -- char_end is non-inclusive
@@ -304,10 +305,10 @@ function TextBoxWidget:onHoldWord(callback, ges)
                 -- now find which word the character is in
                 local words = util.splitToWords(line.text)
                 local probe_idx = char_start
-                for _,w in ipairs(words) do
+                for _, w in ipairs(words) do
                     -- +1 for word separtor
-                    probe_idx = probe_idx + string.len(w)
-                    if idx <= probe_idx then
+                    probe_idx = probe_idx + #util.splitToChars(w)
+                    if idx <= probe_idx - 1 then
                         callback(w)
                         return
                     end

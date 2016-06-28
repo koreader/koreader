@@ -121,10 +121,15 @@ end
 ---- @string text text to split
 ---- @treturn table list of words, spaces and punctuations
 function util.splitToWords(text)
-    -- TODO: write test
     local wlist = {}
-    for words in text:gmatch("[\32-\127\192-\255]+[\128-\191]*") do
-        for word in util.gsplit(words, "[%s%p]+", true) do
+    for word in util.gsplit(text, "[%s%p]+", true) do
+        -- if space splitted word contains CJK characters
+        if word:match("[\228-\234][\128-\191]+") then
+            -- split with CJK characters
+            for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
+                table.insert(wlist, char)
+            end
+        else
             table.insert(wlist, word)
         end
     end

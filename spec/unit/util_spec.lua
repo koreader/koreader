@@ -52,4 +52,28 @@ describe("util module", function()
             "five",
         })
     end)
+
+    it("should split ancient greek words", function()
+        local words = util.splitToWords("Λαρισαῖος Λευκοθέα Λιγυαστάδης.")
+        assert.are_same(words, {
+            "Λαρισαῖος",
+            " ",
+            "Λευκοθέα",
+            " ",
+            "Λιγυαστάδης",
+            "."
+        })
+    end)
+
+    it("should split Chinese words", function()
+        local words = util.splitToWords("彩虹是通过太阳光的折射引起的。")
+        assert.are_same(words, {
+            "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
+        })
+    end)
+
+    it("should split words of multilingual text", function()
+        local words = util.splitToWords("BBC纪录片")
+        assert.are_same(words, {"BBC", "纪", "录", "片"})
+    end)
 end)

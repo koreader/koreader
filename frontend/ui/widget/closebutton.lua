@@ -52,10 +52,27 @@ function CloseButton:init()
         },
         doc = "Tap on close button",
     }
+
+    self.ges_events.HoldClose = {
+        GestureRange:new{
+            ges = "hold_release",
+            range = function() return self.dimen end,
+        },
+        doc = "Hold on close button",
+    }
 end
 
 function CloseButton:onClose()
-    self.window:onClose()
+    if self.window.onClose then
+        self.window:onClose()
+    end
+    return true
+end
+
+function CloseButton:onHoldClose()
+    if self.window.onHoldClose then
+        self.window:onHoldClose()
+    end
     return true
 end
 
