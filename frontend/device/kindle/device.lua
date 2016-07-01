@@ -234,6 +234,35 @@ function KindleVoyage:init()
             [109] = "LPgFwd",
         },
     }
+    -- touch gestures fall into these cold spots defined by (x, y, r)
+    -- will be rewritten to 'none' ges thus being ignored
+    -- x, y is the absolute position disregard of screen mode, r is spot radius
+    self.cold_spots = {
+        {
+            x = 1080 + 50, y = 485, r = 80
+        },
+        {
+            x = 1080 + 70, y = 910, r = 120
+        },
+        {
+            x = -50, y = 485, r = 80
+        },
+        {
+            x = -70, y = 910, r = 120
+        },
+    }
+
+    self.input:registerGestureAdjustHook(function(_, ges)
+        if ges then
+            local pos = ges.pos
+            for _, spot in ipairs(self.cold_spots) do
+                if (spot.x - pos.x) * (spot.x - pos.x) +
+                   (spot.y - pos.y) * (spot.y - pos.y) < spot.r * spot.r then
+                   ges.ges = "none"
+                end
+            end
+        end
+    end)
 
     Kindle.init(self)
 
