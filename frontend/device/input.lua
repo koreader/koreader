@@ -159,7 +159,19 @@ function Input:registerEventAdjustHook(hook, hook_params)
     end
 end
 
+function Input:registerGestureAdjustHook(hook, hook_params)
+    local old = self.gestureAdjustHook
+    self.gestureAdjustHook = function(this, ges)
+        old(this, ges)
+        hook(this, ges, hook_params)
+    end
+end
+
 function Input:eventAdjustHook(ev)
+    -- do nothing by default
+end
+
+function Input:gestureAdjustHook(ges)
     -- do nothing by default
 end
 
@@ -363,6 +375,7 @@ function Input:handleTouchEv(ev)
             self.MTSlots = {}
             if touch_ges then
                 --DEBUG("ges", touch_ges)
+                self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
                     self.gesture_detector:adjustGesCoordinate(touch_ges)
                 )
@@ -427,6 +440,7 @@ function Input:handleTouchEvPhoenix(ev)
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
             if touch_ges then
+                self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
                     self.gesture_detector:adjustGesCoordinate(touch_ges)
                 )
@@ -495,6 +509,7 @@ function Input:waitEvent(timeout_us)
                             -- Do we really need to clear all setTimeout after
                             -- decided a gesture? FIXME
                             self.timer_callbacks = {}
+                            self:gestureAdjustHook(touch_ges)
                             return Event:new("Gesture",
                                 self.gesture_detector:adjustGesCoordinate(touch_ges)
                             )
