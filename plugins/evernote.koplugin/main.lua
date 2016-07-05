@@ -7,6 +7,8 @@ local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Event = require("ui/event")
+local util = require("ffi/util")
+local Device = require("device")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -40,7 +42,17 @@ function EvernoteExporter:init()
         history_dir = "./history",
     }
     self.template = slt2.loadfile(self.path.."/note.tpl")
-    self.config = DocSettings:open(self.path)
+    self:migrateClippings()
+    self.config = DocSettings:open(util.joinPath(self.clipping_dir, "evernote.sdr"))
+end
+
+function EvernoteExporter:migrateClippings()
+    local old_dir = util.joinPath(util.realpath(util.joinPath(self.path, "..")),
+        "evernote.sdr")
+    if lfs.attributes(old_dir, "mode") == "directory" then
+        local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
+        return util.execute(mv_bin, old_dir, self.clipping_dir) == 0
+    end
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
