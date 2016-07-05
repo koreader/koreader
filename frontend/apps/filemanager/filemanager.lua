@@ -1,6 +1,7 @@
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local DocumentRegistry = require("document/documentregistry")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -58,10 +59,19 @@ local FileManager = InputContainer:extend{
 function FileManager:init()
     self.show_parent = self.show_parent or self
 
+    self.path_text = TextWidget:new{
+        face = Font:getFace("infofont", 18),
+        text = self.root_path,
+    }
+
     self.banner = VerticalGroup:new{
         TextWidget:new{
             face = Font:getFace("tfont", 24),
             text = self.title,
+        },
+        CenterContainer:new{
+            dimen = { w = Screen:getWidth(), h = nil },
+            self.path_text,
         },
         VerticalSpan:new{ width = Screen:scaleBySize(10) }
     }
@@ -87,6 +97,11 @@ function FileManager:init()
         close_callback = function() return self:onClose() end,
     }
     self.file_chooser = file_chooser
+
+    function file_chooser:onPathChanged(path)  -- luacheck: ignore
+        FileManager.instance.path_text:setText(path)
+        return true
+    end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
         FileManager.instance:onClose()

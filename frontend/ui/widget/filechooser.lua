@@ -20,7 +20,6 @@ local FileChooser = Menu:extend{
     path = lfs.currentdir(),
     parent = nil,
     show_hidden = nil,
-    filter = function(filename) return true end,
     exclude_dirs = {"%.sdr$"},
     strcoll = strcoll,
     collate = "strcoll", -- or collate = "access",
@@ -33,7 +32,7 @@ function FileChooser:init()
     -- common dir filter
     self.dir_filter = function(dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
-            if dirname:match(pattern) then return end
+            if dirname:match(pattern) then return false end
         end
         return true
     end
@@ -161,6 +160,7 @@ function FileChooser:changeToPath(path)
     path = util.realpath(path)
     self.path = path
     self:refreshPath()
+    self:onPathChanged(path)
 end
 
 function FileChooser:toggleHiddenFiles()
@@ -200,6 +200,10 @@ function FileChooser:onFileSelect(file)
 end
 
 function FileChooser:onFileHold(file)
+    return true
+end
+
+function FileChooser:onPathChanged(path)
     return true
 end
 
