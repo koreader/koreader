@@ -63,6 +63,10 @@ function FileManager:init()
             face = Font:getFace("tfont", 24),
             text = self.title,
         },
+        TextWidget:new{
+            face = Font:getFace("infofont", 18),
+            text = self.root_path,
+        },
         VerticalSpan:new{ width = Screen:scaleBySize(10) }
     }
 
@@ -87,6 +91,11 @@ function FileManager:init()
         close_callback = function() return self:onClose() end,
     }
     self.file_chooser = file_chooser
+
+    function file_chooser:onPathChanged(path)  -- luacheck: ignore
+        FileManager.instance.banner[2].text = path
+        return true
+    end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
         FileManager.instance:onClose()
