@@ -465,18 +465,23 @@ end
 function ReaderUI:notifyCloseDocument()
     self:handleEvent(Event:new("CloseDocument"))
     if self.document:isEdited() then
-        UIManager:show(ConfirmBox:new{
-            text = _("Do you want to save this document?"),
-            ok_text = _("Yes"),
-            cancel_text = _("No"),
-            ok_callback = function()
-                self:closeDocument()
-            end,
-            cancel_callback = function()
-                self.document:discardChange()
-                self:closeDocument()
-            end,
-        })
+        if G_reader_settings:readSetting("disable_save_document") then
+            self.document:discardChange()
+            self:closeDocument()
+        else
+            UIManager:show(ConfirmBox:new{
+                text = _("Do you want to save this document?"),
+                ok_text = _("Yes"),
+                cancel_text = _("No"),
+                ok_callback = function()
+                    self:closeDocument()
+                end,
+                cancel_callback = function()
+                    self.document:discardChange()
+                    self:closeDocument()
+                end,
+            })
+        end
     else
         self:closeDocument()
     end
