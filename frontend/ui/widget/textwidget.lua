@@ -51,7 +51,9 @@ end
 function TextWidget:setText(text)
     self.text = text
     self:updateSize()
-    UIManager:setDirty(self, "partial")
+    UIManager:setDirty(self.parent, function()
+        return "partial", self.dimen
+    end)
 end
 
 function TextWidget:paintTo(bb, x, y)
