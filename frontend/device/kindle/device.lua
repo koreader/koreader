@@ -82,6 +82,21 @@ local KindlePaperWhite3 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
+local KindleOasis = Kindle:new{
+    model = "KindleOasis",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/event3",
+}
+
+-- FIXME: To be confirmed!
+local KindleBasic2 = Kindle:new{
+    model = "KindleBasic2",
+    isTouchDevice = yes,
+    touch_dev = "/dev/input/event1",
+}
+
 function Kindle2:init()
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kindle/powerd"):new{
@@ -286,6 +301,37 @@ function KindlePaperWhite3:init()
     self.input.open("fake_events")
 end
 
+function KindleOasis:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        -- NOTE: Probably points to the embedded battery. The one in the cover is codenamed "soda".
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open("/dev/input/event3")
+    self.input.open("fake_events")
+end
+
+-- TODO: Confirm that this is accurate!
+function KindleBasic2:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
+        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
+end
+
 --[[
 Test if a kindle device has Special Offers
 --]]
@@ -328,6 +374,8 @@ KindlePaperWhite2.exit = KindleTouch.exit
 KindleBasic.exit = KindleTouch.exit
 KindleVoyage.exit = KindleTouch.exit
 KindlePaperWhite3.exit = KindleTouch.exit
+KindleOasis.exit = KindleTouch.exit
+KindleBasic2.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -367,7 +415,10 @@ local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
                   "60", "F4", "F9", "62", "61", "5F" }
 local kt2_set = Set { "C6", "DD" }
 local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
-local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7" }
+local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7",
+                  "0KB", "0KC", "0KD", "0KE", "0KF", "0KG" }
+local koa_set = Set { "0GC", "0GD", "0GP", "0GQ", "0GR", "0GS" }
+local kt3_set = Set { "0DT", "0K9", "0KA" }
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -391,6 +442,10 @@ elseif kv_set[kindle_devcode] then
     return KindleVoyage
 elseif pw3_set[kindle_devcode_v2] then
     return KindlePaperWhite3
+elseif koa_set[kindle_devcode_v2] then
+    return KindleOasis
+elseif kt3_set[kindle_devcode_v2] then
+    return KindleBasic2
 end
 
 error("unknown Kindle model "..kindle_devcode)
