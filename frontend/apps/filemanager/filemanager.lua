@@ -100,6 +100,9 @@ function FileManager:init()
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(path)
+        UIManager.setDirty(FileManager.instance, function()
+            return "ui", FileManager.instance.banner.dimen
+        end)
         return true
     end
 

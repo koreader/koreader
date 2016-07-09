@@ -363,10 +363,10 @@ function Search:find(option)
             end
         end
         if not self.use_own_metadata_file then
-            f = io.open(self.metafile_1)
-            g = io.open(koreaderfile,"w")
+            local g = io.open(koreaderfile, "w")
             g:write("#metadata.koreader Version 1.1\n")
 
+            f = io.open(self.metafile_1)
             line = f:read()
             while line do
                 if line == "  }, " or line == "  }" then
@@ -546,7 +546,7 @@ function Search:showresults()
     UIManager:show(menu_container)
 end
 
-function Search:browse(option,run,chosen)
+function Search:browse(option, run, chosen)
     local ReaderUI = require("apps/reader/readerui")
     local restart_me = false
     local menu_container = CenterContainer:new{
@@ -648,17 +648,17 @@ function Search:browse(option,run,chosen)
             i = i + 1
         end
     end
-    local dummy = ""
 
+    local menu_title
     if run == 1 then
-        dummy = _("Browse") .. " " .. option
+        menu_title = _("Browse") .. " " .. option
     else
-        dummy = chosen
+        menu_title = chosen
     end
 
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
 
-    self.search_menu:swithItemTable(dummy, self.results)
+    self.search_menu:swithItemTable(menu_title, self.results)
     UIManager:show(menu_container)
 end
 
