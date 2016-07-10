@@ -109,7 +109,7 @@ ${SUPPORTED_TARGETS}"
         *)
             check_submodules
             make
-            assert_ret_zero $? "Failed to build emulator!"
+            assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
             setup_env
             ;;
     esac
