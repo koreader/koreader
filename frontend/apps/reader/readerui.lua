@@ -465,7 +465,10 @@ end
 function ReaderUI:notifyCloseDocument()
     self:handleEvent(Event:new("CloseDocument"))
     if self.document:isEdited() then
-        if G_reader_settings:readSetting("disable_save_document") then
+        local setting = G_reader_settings:readSetting("save_document")
+        if setting == "always" then
+            self:closeDocument()
+        elseif setting == "disable" then
             self.document:discardChange()
             self:closeDocument()
         else
