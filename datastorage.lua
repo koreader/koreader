@@ -4,8 +4,10 @@ local lfs = require("libs/libkoreader-lfs")
 
 local DataStorage = {}
 
+local data_dir
 function DataStorage:getDataDir()
-    local data_dir
+    if data_dir then return data_dir end
+
     if isAndroid then
         data_dir = "/sdcard/koreader"
     elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
@@ -19,6 +21,7 @@ function DataStorage:getDataDir()
     if lfs.attributes(data_dir, "mode") ~= "directory" then
         lfs.mkdir(data_dir)
     end
+
     return data_dir
 end
 
@@ -26,9 +29,16 @@ function DataStorage:getHistoryDir()
     return self:getDataDir() .. "/history"
 end
 
+function DataStorage:getSettingsDir()
+    return self:getDataDir() .. "/settings"
+end
+
 local function initDataDir()
     local data_dir = DataStorage:getDataDir()
-    local sub_data_dirs = {"cache", "clipboard", "data", "history", "ota", "screenshots"}
+    local sub_data_dirs = {
+        "cache", "clipboard", "data", "history",
+        "ota", "screenshots", "settings",
+    }
     for _, dir in ipairs(sub_data_dirs) do
         local sub_data_dir = data_dir .. "/" .. dir
         if lfs.attributes(sub_data_dir, "mode") ~= "directory" then

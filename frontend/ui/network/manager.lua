@@ -1,80 +1,46 @@
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
+local LuaSettings = require("luasettings")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local T = require("ffi/util").template
 local _ = require("gettext")
+
+
 local NetworkMgr = {}
 
-local function kindleEnableWifi(toggle)
-    local haslipc, lipc = pcall(require, "liblipclua")
-    local lipc_handle = nil
-    if haslipc and lipc then
-        lipc_handle = lipc.init("com.github.koreader.networkmgr")
-    end
-    if lipc_handle then
-        lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", toggle)
-        lipc_handle:close()
-    end
+function NetworkMgr:init()
+    self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
 
-local function koboEnableWifi(toggle)
-    if toggle == 1 then
-        os.execute("lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko")
-        os.execute("lsmod | grep -q dhd || insmod /drivers/$PLATFORM/wifi/dhd.ko")
-        os.execute("sleep 2")
-        os.execute("ifconfig eth0 up")
-        os.execute("wlarm_le -i eth0 up")
-        os.execute("pidof wpa_supplicant >/dev/null || cd / && env -u LD_LIBRARY_PATH wpa_supplicant -s -i eth0 -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B")
-        os.execute("sleep 1")
-        os.execute("cd / && env -u LD_LIBRARY_PATH /sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 &")
-    else
-        os.execute("killall udhcpc default.script wpa_supplicant 2>/dev/null")
-        os.execute("wlarm_le -i eth0 down")
-        os.execute("ifconfig eth0 down")
-        os.execute("rmmod -r dhd")
-        os.execute("rmmod -r sdio_wifi_pwr")
-    end
-end
+-- Following methods are Device specific which need to be initialized in
+-- Device:initNetworkManager. Some of them can be set by calling
+-- NetworkMgr:setWirelessBackend
+function NetworkMgr:turnOnWifi() end
+function NetworkMgr:turnOffWifi() end
+function NetworkMgr:getNetworkList() end
+function NetworkMgr:getCurrentNetwork() end
+function NetworkMgr:authenticateNetwork() end
+function NetworkMgr:disconnectNetwork() end
+function NetworkMgr:obtainIP() end
+function NetworkMgr:releaseIP() end
+-- End of device specific methods
 
-local function pocketbookEnableWifi(toggle)
-    os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
-end
-
-function NetworkMgr:turnOnWifi()
-    if Device:isKindle() then
-        kindleEnableWifi(1)
-    elseif Device:isKobo() then
-        koboEnableWifi(1)
-    elseif Device:isPocketBook() then
-        pocketbookEnableWifi(1)
-    end
-end
-
-function NetworkMgr:turnOffWifi()
-    if Device:isKindle() then
-        kindleEnableWifi(0)
-    elseif Device:isKobo() then
-        koboEnableWifi(0)
-    elseif Device:isPocketBook() then
-        pocketbookEnableWifi(0)
-    end
-end
-
-function NetworkMgr:promptWifiOn()
+function NetworkMgr:promptWifiOn(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_callback = function()
-            self:turnOnWifi()
+            self:turnOnWifi(complete_callback)
         end,
     })
 end
 
-function NetworkMgr:promptWifiOff()
+function NetworkMgr:promptWifiOff(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn off Wi-Fi?"),
         ok_callback = function()
-            self:turnOffWifi()
+            self:turnOffWifi(complete_callback)
         end,
     })
 end
@@ -100,11 +66,15 @@ function NetworkMgr:getWifiMenuTable()
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:getWifiStatus() end,
-        callback = function()
+        callback = function(menu)
+            local complete_callback = function()
+                -- notify touch menu to update item check state
+                menu:updateItems()
+            end
             if NetworkMgr:getWifiStatus() then
-                NetworkMgr:promptWifiOff()
+                NetworkMgr:promptWifiOff(complete_callback)
             else
-                NetworkMgr:promptWifiOn()
+                NetworkMgr:promptWifiOn(complete_callback)
             end
         end
     }
@@ -147,9 +117,49 @@ function NetworkMgr:getProxyMenuTable()
     }
 end
 
+function NetworkMgr:showNetworkMenu(complete_callback)
+    local info = InfoMessage:new{text = _("Scanning…")}
+    UIManager:show(info)
+    UIManager:nextTick(function()
+        local network_list = self:getNetworkList()
+        UIManager:close(info)
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+            connect_callback = complete_callback,
+        })
+    end)
+end
+
+function NetworkMgr:saveNetwork(setting)
+    if not self.nw_settings then self:init() end
+    self.nw_settings:saveSetting(setting.ssid, {
+        ssid = setting.ssid,
+        password = setting.password,
+        flags = setting.flags,
+    })
+    self.nw_settings:flush()
+end
+
+function NetworkMgr:deleteNetwork(setting)
+    if not self.nw_settings then self:init() end
+    self.nw_settings:delSetting(setting.ssid)
+    self.nw_settings:flush()
+end
+
+function NetworkMgr:getAllSavedNetworks()
+    if not self.nw_settings then self:init() end
+    return self.nw_settings
+end
+
+function NetworkMgr:setWirelessBackend(name, options)
+    require("ui/network/"..name).init(self, options)
+end
+
 -- set network proxy if global variable NETWORK_PROXY is defined
 if NETWORK_PROXY then
     NetworkMgr:setHTTPProxy(NETWORK_PROXY)
 end
+
+Device:initNetworkManager(NetworkMgr)
 
 return NetworkMgr

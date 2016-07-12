@@ -87,9 +87,7 @@ end
 
 -- Split the text into logical lines to fit into the text box.
 function TextBoxWidget:_splitCharWidthList()
-    self.vertical_string_list = {
-        {text = self.text, offset = 1, width = 0} -- hint for empty string
-    }
+    self.vertical_string_list = {}
 
     local idx = 1
     local size = #self.char_width_list
@@ -178,10 +176,17 @@ end
 -- Return the position of the cursor corresponding to `self.charpos`,
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:_findCharPos()
+    if self.text == nil or string.len(self.text) == 0 then
+        return 0, 0
+    end
     -- Find the line number.
     local ln = self.height == nil and 1 or self.virtual_line_num
     while ln + 1 <= #self.vertical_string_list do
-        if self.vertical_string_list[ln + 1].offset > self.charpos then break else ln = ln + 1 end
+        if self.vertical_string_list[ln + 1].offset > self.charpos then
+            break
+        else
+            ln = ln + 1
+        end
     end
     -- Find the offset at the current line.
     local x = 0
@@ -191,6 +196,12 @@ function TextBoxWidget:_findCharPos()
         offset = offset + 1
     end
     return x + 1, (ln - 1) * self.line_height_px -- offset `x` by 1 to avoid overlap
+end
+
+function TextBoxWidget:moveCursorToCharpos(charpos)
+    self.charpos = charpos
+    local x, y = self:_findCharPos()
+    self.cursor_line:paintTo(self._bb, x, y)
 end
 
 -- Click event: Move the cursor to a new location with (x, y), in pixels.

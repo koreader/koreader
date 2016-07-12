@@ -1,6 +1,6 @@
 local Device = require("device")
 local Language = require("ui/language")
-local NetworkMgr = require("ui/networkmgr")
+local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local _ = require("gettext")

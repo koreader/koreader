@@ -20,7 +20,7 @@ local function LvDEBUG(lv, ...)
     if isAndroid then
         android.LOGI("#"..line)
     else
-        print("#"..line)
+        print(string.format("# %s %s", os.date("%x-%X"), line))
         io.stdout:flush()
     end
 end

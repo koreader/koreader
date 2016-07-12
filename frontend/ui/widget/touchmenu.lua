@@ -79,7 +79,7 @@ function TouchMenuItem:init()
             },
             TextWidget:new{
                 text = self.item.text or self.item.text_func(),
-                fgcolor = Blitbuffer.gray(item_enabled ~= false and 1.0 or 0.5),
+                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
                 face = self.face,
             },
         },
@@ -564,7 +564,7 @@ function TouchMenu:onMenuSelect(item)
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
                 UIManager:scheduleIn(0.1, function()
-                    callback()
+                    callback(self)
                     if refresh then
                         self:updateItems()
                     else

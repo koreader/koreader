@@ -212,7 +212,6 @@ function DictQuickLookup:update()
         show_parent = self,
     }
     local title_bar = LineWidget:new{
-        --background = Blitbuffer.gray(0.5),
         dimen = Geom:new{
             w = button_table:getSize().w + self.button_padding,
             h = Screen:scaleBySize(2),

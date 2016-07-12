@@ -4,10 +4,33 @@ local DEBUG = require("dbg")
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
+local function kindleEnableWifi(toggle)
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", toggle)
+        lipc_handle:close()
+    end
+end
+
+
 local Kindle = Generic:new{
     model = "Kindle",
     isKindle = yes,
 }
+
+function Kindle:initNetworkManager(NetworkMgr)
+    NetworkMgr.turnOnWifi = function()
+        kindleEnableWifi(1)
+    end
+
+    NetworkMgr.turnOffWifi = function()
+        kindleEnableWifi(0)
+    end
+end
 
 local Kindle2 = Kindle:new{
     model = "Kindle2",

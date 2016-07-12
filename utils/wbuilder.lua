@@ -6,13 +6,14 @@ print(package.path)
 package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
 package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
-local DocSettings = require("docsettings")
+local DataStorage = require("datastorage")
 local _ = require("gettext")
 
 -- read settings and check for language override
 -- has to be done before requiring other files because
 -- they might call gettext on load
-G_reader_settings = DocSettings:open(".reader")
+G_reader_settings = require("luasettings"):open(
+    DataStorage:getDataDir().."/settings.reader.lua")
 local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
@@ -397,6 +398,49 @@ function testTouchProbe()
     UIManager:show(TouchProbe:new{})
 end
 
+function testNetworkSetting()
+    local list = {
+        {
+            ssid = "CMU-SECURE",
+            signal_level = -58,
+            flags = "[WPA2-PSK-CCMP][ESS]",
+            signal_quality = 84,
+        },
+        {
+            ssid = "CMU-SECURE 2",
+            signal_level = -258,
+            signal_quality = 44,
+            flags = "[WPA2-PSK-CCMP][ESS]",
+            password = "okgo",
+        },
+        {
+            ssid = "218",
+            signal_level = 58,
+            signal_quality = 100,
+            flags = "[WEP][ESS]",
+        },
+        {
+            ssid = "318",
+            signal_level = 100,
+            signal_quality = 100,
+            flags = "[WPA2-PSK-CCMP][ESS]",
+        },
+    }
+
+    for i=1,10 do
+        table.insert(list, {
+            ssid = "918-"..tostring(i),
+            signal_level = -58-i*2,
+            signal_quality = 84-i*2,
+            flags = "[WPA2-PSK-CCMP][ESS]",
+        })
+    end
+
+    local nw = require("ui/widget/networksetting"):new{network_list = list}
+    UIManager:show(nw)
+end
+
+
 -----------------------------------------------------------------------
 -- you may want to uncomment following show calls to see the changes
 -----------------------------------------------------------------------
@@ -413,5 +457,6 @@ UIManager:show(Clock:new())
 --TestInputText:onShowKeyboard()
 -- testKeyValuePage()
 -- testTouchProbe()
-testBookStatus()
+-- testBookStatus()
+testNetworkSetting()
 UIManager:run()

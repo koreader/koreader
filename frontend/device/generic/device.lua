@@ -184,6 +184,10 @@ function Device:usbPlugOut()
     self.charging_mode = false
 end
 
+-- Hardware specific method to initialize network manager module
+function Device:initNetworkManager()
+end
+
 --[[
 prepare for application shutdown
 --]]

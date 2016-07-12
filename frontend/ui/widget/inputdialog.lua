@@ -11,6 +11,7 @@ Example:
         input = "default value",
         input_hint = "hint text",
         input_type = "text",
+        -- text_type = "password",
         buttons = {
             {
                 {
