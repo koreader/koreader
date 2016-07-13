@@ -1,4 +1,3 @@
-local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 local RenderText = require("ui/rendertext")
@@ -51,9 +50,6 @@ end
 function TextWidget:setText(text)
     self.text = text
     self:updateSize()
-    UIManager:setDirty(self.parent, function()
-        return "partial", self.dimen
-    end)
 end
 
 function TextWidget:paintTo(bb, x, y)

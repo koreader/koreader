@@ -64,16 +64,20 @@ function FileManager:init()
         text = self.root_path,
     }
 
-    self.banner = VerticalGroup:new{
-        TextWidget:new{
-            face = Font:getFace("tfont", 24),
-            text = self.title,
-        },
-        CenterContainer:new{
-            dimen = { w = Screen:getWidth(), h = nil },
-            self.path_text,
-        },
-        VerticalSpan:new{ width = Screen:scaleBySize(10) }
+    self.banner = FrameContainer:new{
+        padding = 0,
+        bordersize = 0,
+        VerticalGroup:new{
+            TextWidget:new{
+                face = Font:getFace("tfont", 24),
+                text = self.title,
+            },
+            CenterContainer:new{
+                dimen = { w = Screen:getWidth(), h = nil },
+                self.path_text,
+            },
+            VerticalSpan:new{ width = Screen:scaleBySize(10) }
+        }
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
@@ -100,6 +104,9 @@ function FileManager:init()
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(path)
+        UIManager:setDirty(FileManager.instance, function()
+            return "ui", FileManager.instance.banner.dimen
+        end)
         return true
     end
 
