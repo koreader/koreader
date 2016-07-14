@@ -43,6 +43,41 @@ table.insert(common_settings, {
         require("ui/elements/refresh_menu_table"),
     },
 })
+table.insert(common_settings, {
+    text = _("Save Document"),
+    sub_item_table = {
+        {
+            text = _("Prompt"),
+            checked_func = function()
+                local setting = G_reader_settings:readSetting("save_document")
+                return setting == "prompt" or setting == nil
+            end,
+            callback = function()
+                G_reader_settings:delSetting("save_document")
+            end,
+        },
+        {
+            text = _("Always"),
+            checked_func = function()
+                return G_reader_settings:readSetting("save_document")
+                           == "always"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("save_document", "always")
+            end,
+        },
+        {
+            text = _("Disable"),
+            checked_func = function()
+                return G_reader_settings:readSetting("save_document")
+                           == "disable"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("save_document", "disable")
+            end,
+        },
+    },
+})
 table.insert(common_settings, Language:getLangMenuTable())
 table.insert(common_settings, {
     text = _("Show advanced options"),
