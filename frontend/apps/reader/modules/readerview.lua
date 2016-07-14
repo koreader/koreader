@@ -66,6 +66,7 @@ local ReaderView = OverlapGroup:new{
 
     -- auto save settings after turning pages
     auto_save_paging_count = 0,
+    autoSaveSettings = function()end
 }
 
 function ReaderView:init()
@@ -657,14 +658,14 @@ function ReaderView:onPageUpdate(new_page_no)
     self.state.page = new_page_no
     self:recalculate()
     self.highlight.temp = {}
-    self:autoSaveSettings()
+    UIManager:nextTick(self.autoSaveSettings)
 end
 
 function ReaderView:onPosUpdate(new_pos)
     self.state.pos = new_pos
     self:recalculate()
     self.highlight.temp = {}
-    self:autoSaveSettings()
+    UIManager:nextTick(self.autoSaveSettings)
 end
 
 function ReaderView:onZoomUpdate(zoom)
@@ -721,17 +722,6 @@ function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
 
-function ReaderView:autoSaveSettings()
-    if DAUTO_SAVE_PAGING_COUNT then
-        if self.auto_save_paging_count == DAUTO_SAVE_PAGING_COUNT then
-            self.ui:saveSettings()
-            self.auto_save_paging_count = 0
-        else
-            self.auto_save_paging_count = self.auto_save_paging_count + 1
-        end
-    end
-end
-
 function ReaderView:getRenderModeMenuTable()
     local view = self
     local function make_mode(text, mode)
@@ -782,6 +772,25 @@ function ReaderView:onCloseDocument()
     self.hinting = false
     -- stop any in fly HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
+end
+
+function ReaderView:onReaderReady()
+    if DAUTO_SAVE_PAGING_COUNT ~= nil then
+        if DAUTO_SAVE_PAGING_COUNT <= 0 then
+            self.autoSaveSettings = function()
+                self.ui:saveSettings()
+            end
+        else
+            self.autoSaveSettings = function()
+                if self.auto_save_paging_count == DAUTO_SAVE_PAGING_COUNT then
+                    self.ui:saveSettings()
+                    self.auto_save_paging_count = 0
+                else
+                    self.auto_save_paging_count = self.auto_save_paging_count + 1
+                end
+            end
+        end
+    end
 end
 
 return ReaderView
