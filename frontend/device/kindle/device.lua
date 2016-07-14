@@ -440,8 +440,8 @@ local kt2_set = Set { "C6", "DD" }
 local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7",
                   "0KB", "0KC", "0KD", "0KE", "0KF", "0KG" }
-local koa_set = Set { "0GC", "0GD", "0GP", "0GQ", "0GR", "0GS" }
-local kt3_set = Set { "0DT", "0K9", "0KA" }
+local koa_set = Set { "0GC", "0GD", "0GR", "0GS", "0GT", "0GU" }
+local kt3_set = Set { "0DU", "0K9", "0KA" }
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -471,4 +471,4 @@ elseif kt3_set[kindle_devcode_v2] then
     return KindleBasic2
 end
 
-error("unknown Kindle model "..kindle_devcode)
+error("unknown Kindle model "..kindle_devcode.." ("..kindle_devcode_v2..")")
