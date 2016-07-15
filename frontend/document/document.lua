@@ -144,6 +144,10 @@ function Document:getNativePageDimensions(pageno)
     return page_size
 end
 
+function Document:getProps()
+    return self._document:getDocumentProps()
+end
+
 function Document:_readMetadata()
     self.mod_time = lfs.attributes(self.file, "modification")
     self.info.number_of_pages = self._document:getPages()

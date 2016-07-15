@@ -38,7 +38,7 @@ local ReaderStatistics = InputContainer:new {
 }
 
 function ReaderStatistics:init()
-    if self.ui.document.is_djvu or self.ui.document.is_pic then
+    if self.ui.document.is_pic then
         return
     end
 

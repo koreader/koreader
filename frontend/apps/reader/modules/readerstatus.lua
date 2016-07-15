@@ -17,7 +17,7 @@ local ReaderStatus = InputContainer:new {
 }
 
 function ReaderStatus:init()
-    if self.ui.document.is_djvu or self.ui.document.is_pic then
+    if self.ui.document.is_pic then
         self.enabled = false
         return
     else
