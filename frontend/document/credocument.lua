@@ -155,10 +155,6 @@ function CreDocument:getCoverPageImage()
     end
 end
 
-function Document:getProps()
-        return self._document:getDocumentProps()
-end
-
 function CreDocument:getWordFromPosition(pos)
     local word_box = self._document:getWordFromPosition(pos.x, pos.y)
     DEBUG("CreDocument: get word box", word_box)

@@ -41,6 +41,14 @@ function DjvuDocument:init()
     self:_readMetadata()
 end
 
+function DjvuDocument:getProps()
+    local _, _, docname = self.file:find(".*/(.*)")
+    docname = docname or self.file
+    return {
+        title = docname:match("(.*)%.")
+    }
+end
+
 function DjvuDocument:getPageTextBoxes(pageno)
     return self._document:getPageText(pageno)
 end
