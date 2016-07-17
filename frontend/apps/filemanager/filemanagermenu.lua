@@ -40,7 +40,7 @@ function FileManagerMenu:init()
                     UIManager:show(ConfirmBox:new{
                         text = _("You have unsaved default settings. Save them now?"),
                         ok_callback = function()
-                            SetDefaults:SaveSettings()
+                            SetDefaults:saveSettings()
                         end,
                     })
                 else
