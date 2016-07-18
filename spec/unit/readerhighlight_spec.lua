@@ -1,5 +1,5 @@
 describe("Readerhighlight module", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg
+    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg, Event
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
@@ -8,6 +8,7 @@ describe("Readerhighlight module", function()
         Screen = require("device").screen
         Geom = require("ui/geometry")
         dbg = require("dbg")
+        Event = require("ui/event")
     end)
 
     local function highlight_single_word(readerui, pos0)
@@ -23,12 +24,24 @@ describe("Readerhighlight module", function()
     local function highlight_text(readerui, pos0, pos1)
         readerui.highlight:onHold(nil, { pos = pos0 })
         readerui.highlight:onHoldPan(nil, { pos = pos1 })
+        local next_slot
+        for i = #UIManager._window_stack, 0, -1 do
+            local top_window = UIManager._window_stack[i]
+            -- skip modal window
+            if not top_window or not top_window.widget.modal then
+                next_slot = i + 1
+                break
+            end
+        end
         readerui.highlight:onHoldRelease()
         assert.truthy(readerui.highlight.highlight_dialog)
+        assert.truthy(UIManager._window_stack[next_slot].widget
+                      == readerui.highlight.highlight_dialog)
         readerui.highlight:onHighlight()
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.highlight.highlight_dialog)
             UIManager:close(readerui)
+            UIManager:quit()
         end)
         UIManager:run()
     end
@@ -90,13 +103,14 @@ describe("Readerhighlight module", function()
         end)
     end)
 
-    describe("highlight for PDF documents", function()
+    describe("highlight for PDF documents in page mode", function()
         local readerui
         setup(function()
             local sample_pdf = "spec/front/unit/data/sample.pdf"
             readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
+            readerui:handleEvent(Event:new("SetScrollMode", false))
         end)
         describe("for scanned page with text layer", function()
             before_each(function()
@@ -170,4 +184,89 @@ describe("Readerhighlight module", function()
             end)
         end)
     end)
+
+    describe("highlight for PDF documents in scroll mode", function()
+        local readerui
+        setup(function()
+            local sample_pdf = "spec/front/unit/data/sample.pdf"
+            readerui = ReaderUI:new{
+                document = DocumentRegistry:openDocument(sample_pdf),
+            }
+            readerui:handleEvent(Event:new("SetScrollMode", true))
+        end)
+        describe("for scanned page with text layer", function()
+            before_each(function()
+                UIManager:quit()
+                UIManager:show(readerui)
+                readerui.paging:onGotoPage(10)
+                readerui.zooming:setZoomMode("contentwidth")
+            end)
+            after_each(function()
+                readerui.highlight:clear()
+            end)
+            it("should highlight single word", function()
+                highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
+                Screen:shot("screenshots/reader_highlight_single_word_pdf_scroll.png")
+            end)
+            it("should highlight text", function()
+                highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 })
+                Screen:shot("screenshots/reader_highlight_text_pdf_scroll.png")
+            end)
+            it("should response on tap gesture", function()
+                tap_highlight_text(readerui,
+                                   Geom:new{ x = 260, y = 70 },
+                                   Geom:new{ x = 260, y = 150 },
+                                   Geom:new{ x = 280, y = 110 })
+                Screen:shot("screenshots/reader_tap_highlight_text_pdf_scroll.png")
+            end)
+        end)
+        describe("for scanned page without text layer", function()
+            before_each(function()
+                UIManager:quit()
+                UIManager:show(readerui)
+                readerui.paging:onGotoPage(28)
+                readerui.zooming:setZoomMode("contentwidth")
+            end)
+            after_each(function()
+                readerui.highlight:clear()
+            end)
+            it("should highlight single word", function()
+                highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
+                Screen:shot("screenshots/reader_highlight_single_word_pdf_scanned_scroll.png")
+            end)
+            it("should highlight text", function()
+                highlight_text(readerui, Geom:new{x = 192, y = 186}, Geom:new{x = 280, y = 186})
+                Screen:shot("screenshots/reader_highlight_text_pdf_scanned_scroll.png")
+            end)
+            it("should response on tap gesture", function()
+                tap_highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 }, Geom:new{ x = 280, y = 110 })
+                Screen:shot("screenshots/reader_tap_highlight_text_pdf_scanned_scroll.png")
+            end)
+        end)
+        describe("for reflowed page", function()
+            before_each(function()
+                UIManager:quit()
+                readerui.document.configurable.text_wrap = 1
+                UIManager:show(readerui)
+                readerui.paging:onGotoPage(31)
+            end)
+            after_each(function()
+                readerui.highlight:clear()
+                readerui.document.configurable.text_wrap = 0
+            end)
+            it("should highlight single word", function()
+                highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
+                Screen:shot("screenshots/reader_highlight_single_word_pdf_reflowed_scroll.png")
+            end)
+            it("should highlight text", function()
+                highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 })
+                Screen:shot("screenshots/reader_highlight_text_pdf_reflowed_scroll.png")
+            end)
+            it("should response on tap gesture", function()
+                tap_highlight_text(readerui, Geom:new{ x = 260, y = 70 }, Geom:new{ x = 260, y = 150 }, Geom:new{ x = 280, y = 110 })
+                Screen:shot("screenshots/reader_tap_highlight_text_pdf_reflowed_scroll.png")
+            end)
+        end)
+    end)
+
 end)

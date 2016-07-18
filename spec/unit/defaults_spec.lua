@@ -22,7 +22,7 @@ describe("defaults module", function()
         Defaults.changed[28] = true
         Defaults.changed[63] = true
         Defaults.changed[77] = true
-        Defaults:SaveSettings()
+        Defaults:saveSettings()
         assert.is_same(#Defaults.defaults_name, 77)
         assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
         assert.is_same(Defaults.defaults_name[77], 'SEARCH_TITLE')
@@ -63,7 +63,7 @@ DTAP_ZONE_MENU = {
             h = 20.25,
             w = 20.75
         }
-        Defaults:SaveSettings()
+        Defaults:saveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(
 [[-- For configuration changes that persists between updates
@@ -109,7 +109,7 @@ DHINTCOUNT = 2
         Defaults:init()
         Defaults.changed[28] = true
         Defaults.defaults_value[28] = 1
-        Defaults:SaveSettings()
+        Defaults:saveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(
 [[-- For configuration changes that persists between updates

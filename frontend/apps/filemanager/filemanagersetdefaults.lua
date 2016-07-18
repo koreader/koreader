@@ -64,9 +64,9 @@ function SetDefaults:init()
         dimen = Screen:getSize(),
     }
     -- FIXME:
-    -- in this use case (an input dialog is closed and the menu container is opened
-    -- immediately) we need to set the full screen dirty because otherwise only
-    -- the input dialog part of the screen is refreshed.
+    -- in this use case (an input dialog is closed and the menu container is
+    -- opened immediately) we need to set the full screen dirty because
+    -- otherwise only the input dialog part of the screen is refreshed.
     menu_container.onShow = function()
         UIManager:setDirty(nil, "partial")
     end
@@ -256,7 +256,7 @@ function SetDefaults:ConfirmSave()
     UIManager:show(ConfirmBox:new{
         text = _('Are you sure you want to save the settings to "defaults.persistent.lua"?'),
         ok_callback = function()
-            self:SaveSettings()
+            self:saveSettings()
         end,
     })
 end
@@ -275,7 +275,7 @@ function SetDefaults:build_setting(j)
     end
 end
 
-function SetDefaults:SaveSettings()
+function SetDefaults:saveSettings()
     self.results = {}
     local persisted_defaults = {}
     local file = io.open(persistent_filename, "r")

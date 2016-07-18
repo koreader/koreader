@@ -428,8 +428,7 @@ end
 function ReaderPaging:onRestoreBookLocation(saved_location)
     if self.view.page_scroll then
         self.view:restoreViewContext(saved_location)
-        self:_gotoPage(self.view.page_states[#self.view.page_states].page,
-                       "scrolling")
+        self:_gotoPage(self.view.page_states[1].page, "scrolling")
     else
         -- gotoPage will emit PageUpdate event, which will trigger recalculate
         -- in ReaderView and resets the view context. So we need to call

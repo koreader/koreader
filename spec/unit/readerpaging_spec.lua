@@ -6,16 +6,33 @@ describe("Readerpaging module", function()
     setup(function() require("commonrequire") end)
 
     describe("Page mode", function()
+        local Event
+
         setup(function()
+            Event = require("ui/event")
             readerui = require("apps/reader/readerui"):new{
                 document = require("document/documentregistry"):openDocument(sample_pdf),
             }
             paging = readerui.paging
         end)
 
-        it("should emit EndOfBook event at the end", function()
+        it("should emit EndOfBook event at the end in page mode", function()
+            readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui.zooming:setZoomMode("pageheight")
             paging:onGotoPage(readerui.document:getPageCount())
+            local called = false
+            readerui.onEndOfBook = function()
+                called = true
+            end
+            paging:onPagingRel(1)
+            assert.is.truthy(called)
+            readerui.onEndOfBook = nil
+        end)
+
+        it("should emit EndOfBook event at the end in scroll mode", function()
+            readerui:handleEvent(Event:new("SetScrollMode", true))
+            paging:onGotoPage(readerui.document:getPageCount())
+            readerui.zooming:setZoomMode("pageheight")
             local called = false
             readerui.onEndOfBook = function()
                 called = true
