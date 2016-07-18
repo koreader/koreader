@@ -1,9 +1,10 @@
 describe("ReaderLink module", function()
-    local DocumentRegistry, ReaderUI, UIManager, sample_epub, sample_pdf
+    local DocumentRegistry, ReaderUI, UIManager, sample_epub, sample_pdf, Event
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
+        Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         sample_epub = "spec/front/unit/data/leaves.epub"
@@ -19,11 +20,12 @@ describe("ReaderLink module", function()
         assert.is.same(36, readerui.rolling.current_page)
     end)
 
-    it("should jump to links in pdf", function()
+    it("should jump to links in pdf page mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
+        readerui:handleEvent(Event:new("SetScrollMode", false))
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 363, y = 585}})
         UIManager:run()
@@ -41,11 +43,12 @@ describe("ReaderLink module", function()
         assert.is.same(4, readerui.rolling.current_page)
     end)
 
-    it("should be able to go back after link jump in pdf", function()
+    it("should be able to go back after link jump in pdf page mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
+        readerui:handleEvent(Event:new("SetScrollMode", false))
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 363, y = 585}})
         UIManager:run()
