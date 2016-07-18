@@ -329,7 +329,7 @@ function KindleOasis:init()
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        -- NOTE: Probably points to the embedded battery. The one in the cover is codenamed "soda".
+        -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda".
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
@@ -345,8 +345,8 @@ function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd7181x_bat/charging",
     }
 
     Kindle.init(self)
