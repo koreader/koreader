@@ -84,10 +84,16 @@ function ReadHistory:_readLegacyHistory()
     for f in lfs.dir(history_dir) do
         local path = joinPath(history_dir, f)
         if lfs.attributes(path, "mode") == "file" then
-            local file = joinPath(DocSettings:getPathFromHistory(f),
-                                  DocSettings:getNameFromHistory(f))
-            table.insert(self.hist,
-                         buildEntry(lfs.attributes(path, "modification"), file))
+            path = DocSettings:getPathFromHistory(f)
+            if path ~= nil and path ~= "" then
+                local file = DocSettings:getNameFromHistory(f)
+                if file ~= nil and file ~= "" then
+                    table.insert(
+                        self.hist,
+                        buildEntry(lfs.attributes(path, "modification"),
+                                   joinPath(path, file)))
+                end
+            end
         end
     end
 end

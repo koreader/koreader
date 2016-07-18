@@ -25,16 +25,21 @@ function DocSettings:getHistoryPath(fullpath)
 end
 
 function DocSettings:getPathFromHistory(hist_name)
+    if hist_name == nil or hist_name == '' then return nil end
     -- 1. select everything included in brackets
     local s = string.match(hist_name,"%b[]")
+    if s == nil or s == '' then return nil end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
     return string.gsub(string.sub(s,2,-3),"#","/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
+    if hist_name == nil or hist_name == '' then return nil end
+    hist_name = string.match(hist_name, "%b[]")
+    if hist_name == nil or hist_name == '' then return nil end
     -- at first, search for path length
-    local s = string.len(string.match(hist_name,"%b[]"))
+    local s = string.len(hist_name)
     -- and return the rest of string without 4 last characters (".lua")
     return string.sub(hist_name, s+2, -5)
 end
