@@ -32,6 +32,18 @@ describe("ReaderLink module", function()
         assert.is.same(22, readerui.paging.current_page)
     end)
 
+    it("should jump to links in pdf scroll mode", function()
+        UIManager:quit()
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        readerui:handleEvent(Event:new("SetScrollMode", true))
+        readerui.paging:onGotoPage(1)
+        readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
+        UIManager:run()
+        assert.is.same(21, readerui.paging.current_page)
+    end)
+
     it("should be able to go back after link jump in epub", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
@@ -53,6 +65,20 @@ describe("ReaderLink module", function()
         readerui.link:onTap(nil, {pos = {x = 363, y = 585}})
         UIManager:run()
         assert.is.same(22, readerui.paging.current_page)
+        readerui.link:onGoBackLink()
+        assert.is.same(1, readerui.paging.current_page)
+    end)
+
+    it("should be able to go back after link jump in pdf scroll mode", function()
+        UIManager:quit()
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_pdf),
+        }
+        readerui:handleEvent(Event:new("SetScrollMode", true))
+        readerui.paging:onGotoPage(1)
+        readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
+        UIManager:run()
+        assert.is.same(21, readerui.paging.current_page)
         readerui.link:onGoBackLink()
         assert.is.same(1, readerui.paging.current_page)
     end)
@@ -109,7 +135,7 @@ describe("ReaderLink module", function()
         UIManager:run()
         assert.is.same(22, readerui.paging.current_page)
         readerui.link:onGoBackLink()
-        assert.is.same(4, readerui.paging.current_page)
+        assert.is.same(3, readerui.paging.current_page)
         assert.are.same(expected_page_states, readerui.view.page_states)
     end)
 end)
