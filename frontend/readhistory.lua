@@ -22,6 +22,13 @@ local function buildEntry(input_time, input_file)
     }
 end
 
+function ReadHistory:_indexing(start)
+    -- TODO(Hzj_jie): Use binary search to find an item when deleting it.
+    for i = start, #self.hist, 1 do
+        self.hist[i].index = i
+    end
+end
+
 function ReadHistory:_sort()
     for i = #self.hist, 1, -1 do
         if lfs.attributes(self.hist[i].file, "mode") ~= "file" then
@@ -40,10 +47,7 @@ function ReadHistory:_sort()
         end
     end
     table.sort(self.hist, function(v1, v2) return v1.time > v2.time end)
-    -- TODO(zijiehe): Use binary search to find an item when deleting it.
-    for i = 1, #self.hist, 1 do
-        self.hist[i].index = i
-    end
+    self:_indexing(1)
 end
 
 -- Reduces total count in hist list to a reasonable number by removing last
@@ -108,6 +112,7 @@ end
 function ReadHistory:removeItem(item)
     table.remove(self.hist, item.index)
     os.remove(DocSettings:getHistoryPath(item.file))
+    self:_indexing(item.index)
     self:_flush()
 end
 
