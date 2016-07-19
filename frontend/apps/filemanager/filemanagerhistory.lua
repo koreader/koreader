@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
+local util = require("ffi/util")
 local _ = require("gettext")
 
 local FileManagerHistory = InputContainer:extend{
@@ -38,7 +39,8 @@ function FileManagerHistory:onMenuHold(item)
         buttons = {
             {
                 {
-                    text = _("Remove this item from history"),
+                    text = util.template(_("Remove \"%1\" from history"),
+                                         item.text),
                     callback = function()
                         require("readhistory"):removeItem(item)
                         self._manager:updateItemTable()

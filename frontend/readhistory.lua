@@ -22,6 +22,13 @@ local function buildEntry(input_time, input_file)
     }
 end
 
+function ReadHistory:_indexing(start)
+    -- TODO(Hzj_jie): Use binary search to find an item when deleting it.
+    for i = start, #self.hist, 1 do
+        self.hist[i].index = i
+    end
+end
+
 function ReadHistory:_sort()
     for i = #self.hist, 1, -1 do
         if lfs.attributes(self.hist[i].file, "mode") ~= "file" then
@@ -40,10 +47,7 @@ function ReadHistory:_sort()
         end
     end
     table.sort(self.hist, function(v1, v2) return v1.time > v2.time end)
-    -- TODO(zijiehe): Use binary search to find an item when deleting it.
-    for i = 1, #self.hist, 1 do
-        self.hist[i].index = i
-    end
+    self:_indexing(1)
 end
 
 -- Reduces total count in hist list to a reasonable number by removing last
@@ -84,10 +88,16 @@ function ReadHistory:_readLegacyHistory()
     for f in lfs.dir(history_dir) do
         local path = joinPath(history_dir, f)
         if lfs.attributes(path, "mode") == "file" then
-            local file = joinPath(DocSettings:getPathFromHistory(f),
-                                  DocSettings:getNameFromHistory(f))
-            table.insert(self.hist,
-                         buildEntry(lfs.attributes(path, "modification"), file))
+            path = DocSettings:getPathFromHistory(f)
+            if path ~= nil and path ~= "" then
+                local file = DocSettings:getNameFromHistory(f)
+                if file ~= nil and file ~= "" then
+                    table.insert(
+                        self.hist,
+                        buildEntry(lfs.attributes(path, "modification"),
+                                   joinPath(path, file)))
+                end
+            end
         end
     end
 end
@@ -102,6 +112,7 @@ end
 function ReadHistory:removeItem(item)
     table.remove(self.hist, item.index)
     os.remove(DocSettings:getHistoryPath(item.file))
+    self:_indexing(item.index)
     self:_flush()
 end
 
