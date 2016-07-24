@@ -643,8 +643,7 @@ function ReaderView:onReadSettings(config)
     end
     self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
-    local status_line = config:readSetting("copt_status_line") or self.document.configurable.status_line
-    if full_screen == 0 or status_line == 0 then
+    if full_screen == 0 then
         self.footer_visible = false
     end
     self:resetLayout()

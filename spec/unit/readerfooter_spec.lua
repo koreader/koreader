@@ -315,4 +315,28 @@ describe("Readerfooter module", function()
         end
         assert.is.same(0, found)
     end)
+
+    it("should toggle between full and min progress bar for cre documents", function()
+        local sample_txt = "spec/front/unit/data/sample.txt"
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_txt),
+        }
+        local footer = readerui.view.footer
+
+        footer:applyFooterMode(0)
+        assert.is.same(0, footer.mode)
+        assert.falsy(readerui.view.footer_visible)
+        readerui.view.footer:onSetStatusLine(1)
+        assert.is.same(0, footer.mode)
+        assert.falsy(readerui.view.footer_visible)
+
+        footer.mode = 1
+        readerui.view.footer:onSetStatusLine(1)
+        assert.is.same(1, footer.mode)
+        assert.truthy(readerui.view.footer_visible)
+
+        readerui.view.footer:onSetStatusLine(0)
+        assert.is.same(0, footer.mode)
+        assert.falsy(readerui.view.footer_visible)
+    end)
 end)

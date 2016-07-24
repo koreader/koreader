@@ -314,7 +314,7 @@ function ReaderFooter:updateFooterPos()
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
--- received, it will initialized as _updateFooterText
+-- received, it will initialized as _updateFooterText below
 function ReaderFooter:updateFooterText()
 end
 
@@ -484,7 +484,12 @@ function ReaderFooter:onHoldFooter(arg, ges)
 end
 
 function ReaderFooter:onSetStatusLine(status_line)
-    self.view.footer_visible = (status_line == 1)
+    -- 1 is min progress bar while 0 is full cre header progress bar
+    if status_line == 1 then
+        self.view.footer_visible = (self.mode ~= MODE.off)
+    else
+        self:applyFooterMode(MODE.off)
+    end
     self.ui.document:setStatusLineProp(status_line)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
