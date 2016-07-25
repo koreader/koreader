@@ -32,6 +32,7 @@ table.insert(common_settings, {
     sub_item_table = {
         NetworkMgr:getWifiMenuTable(),
         NetworkMgr:getProxyMenuTable(),
+        NetworkMgr:getInfoMenuTable(),
     }
 })
 table.insert(common_settings, {

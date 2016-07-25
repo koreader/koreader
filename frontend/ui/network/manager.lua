@@ -1,4 +1,5 @@
 local InfoMessage = require("ui/widget/infomessage")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local LuaSettings = require("luasettings")
@@ -114,6 +115,25 @@ function NetworkMgr:getProxyMenuTable()
                 end
             end,
         }
+    }
+end
+
+function NetworkMgr:getInfoMenuTable()
+    return {
+        text = _("Retrieve network info"),
+        callback = function(menu)
+            if Device.retrieveNetworkInfo then
+                UIManager:show(KeyValuePage:new{
+                    title = _("Network Info"),
+                    kv_pairs = Device:retrieveNetworkInfo(),
+                })
+            else
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot retrieve network info"),
+                    timeout = 3,
+                })
+            end
+        end
     }
 end
 
