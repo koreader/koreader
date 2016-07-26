@@ -110,6 +110,12 @@ local KindleOasis = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     display_dpi = 300,
+    --[[
+    -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
+    --       3G devices apparently have an extra SX9500 Proximity/Capacitive controller for mysterious purposes...
+    --       This evidently screws with the ordering, so, use the udev by-path path instead to avoid hackier workarounds.
+    --       cf. #2181
+    --]]
     touch_dev = "/dev/input/by-path/platform-imx-i2c.1-event",
 }
 
@@ -208,7 +214,7 @@ function KindleTouch:init()
     -- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
     -- event1 in KindleTouch is "imx-yoshi Headset" (useless)
     self.input.open("/dev/input/event2") -- Home button
-    self.input.open("/dev/input/event3") -- touchscreen
+    self.input.open(self.touch_dev) -- touchscreen
     self.input.open("fake_events")
     Kindle.init(self)
 end
@@ -224,7 +230,7 @@ function KindlePaperWhite:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event0")
+    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
@@ -239,7 +245,7 @@ function KindlePaperWhite2:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event1")
+    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
@@ -253,7 +259,7 @@ function KindleBasic:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event1")
+    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
@@ -304,8 +310,8 @@ function KindleVoyage:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event1")
-    self.input.open("/dev/input/event2")
+    self.input.open(self.touch_dev)
+    self.input.open("/dev/input/event2") -- WhisperTouch
     self.input.open("fake_events")
 end
 
@@ -320,7 +326,7 @@ function KindlePaperWhite3:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event1")
+    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
@@ -336,13 +342,8 @@ function KindleOasis:init()
 
     Kindle.init(self)
 
-    --[[
-    -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
-    --       3G devices apparently have an extra SX9500 Proximity/Capacitive controller for mysterious purposes...
-    --       This evidently screws the ordering, so, use the by-path path instead to avoid hackier workarounds.
-    --       cf. #2181
-    --]]
-    self.input.open("/dev/input/by-path/platform-imx-i2c.1-event")
+    self.input.open(self.touch_dev)
+    -- TODO: Physical buttons?
     self.input.open("fake_events")
 end
 
@@ -357,7 +358,7 @@ function KindleBasic2:init()
 
     Kindle.init(self)
 
-    self.input.open("/dev/input/event1")
+    self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
 
