@@ -117,6 +117,24 @@ function NetworkMgr:getProxyMenuTable()
     }
 end
 
+function NetworkMgr:getInfoMenuTable()
+    return {
+        text = _("Network info"),
+        callback = function(menu)
+            if Device.retrieveNetworkInfo then
+                UIManager:show(InfoMessage:new{
+                    text = Device:retrieveNetworkInfo(),
+                })
+            else
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot retrieve network info"),
+                    timeout = 3,
+                })
+            end
+        end
+    }
+end
+
 function NetworkMgr:showNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning…")}
     UIManager:show(info)

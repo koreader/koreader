@@ -196,4 +196,19 @@ function Device:exit()
     self.screen:close()
 end
 
+function Device:retrieveNetworkInfo()
+    local std_out = io.popen("ifconfig | " ..
+                             "sed -n " ..
+                             "-e 's/ \\+$//g' " ..
+                             "-e 's/ \\+/ /g' " ..
+                             "-e 's/inet6\\? addr: \\?\\([^ ]\\+\\) .*$/\\1/p' " ..
+                             "-e 's/Link encap:\\(.*\\)/\\1/p'",
+                             "r")
+    if std_out then
+        local result = std_out:read("*all")
+        std_out:close()
+        return result
+    end
+end
+
 return Device
