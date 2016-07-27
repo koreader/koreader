@@ -198,23 +198,15 @@ end
 
 function Device:retrieveNetworkInfo()
     local std_out = io.popen("ifconfig | " ..
-                             "grep -P 'Link|addr' | " ..
-                             "sed 's/ \\+/ /g' | " ..
-                             "sed 's/^ \\+//g' | " ..
-                             "sed 's/\\:/\\t/'",
+                             "sed -n " ..
+                             "-e 's/ \\+$//g' " ..
+                             "-e 's/ \\+/ /g' " ..
+                             "-e 's/inet6\\? addr: \\?\\([^ ]\\+\\) .*$/\\1/p' " ..
+                             "-e 's/Link encap:\\(.*\\)/\\1/p'",
                              "r")
     if std_out then
-        local out = std_out:read("*all")
+        local result = std_out:read("*all")
         std_out:close()
-        local result = {}
-        for line in string.gmatch(out, "[^\r\n]+") do
-            local words = {}
-            for word in string.gmatch(line, "[^\t]+") do
-                table.insert(words, word)
-                if #words == 2 then break end
-            end
-            table.insert(result, words)
-        end
         return result
     end
 end

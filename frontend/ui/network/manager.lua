@@ -1,5 +1,4 @@
 local InfoMessage = require("ui/widget/infomessage")
-local KeyValuePage = require("ui/widget/keyvaluepage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local LuaSettings = require("luasettings")
@@ -120,12 +119,11 @@ end
 
 function NetworkMgr:getInfoMenuTable()
     return {
-        text = _("Retrieve network info"),
+        text = _("Network info"),
         callback = function(menu)
             if Device.retrieveNetworkInfo then
-                UIManager:show(KeyValuePage:new{
-                    title = _("Network Info"),
-                    kv_pairs = Device:retrieveNetworkInfo(),
+                UIManager:show(InfoMessage:new{
+                    text = Device:retrieveNetworkInfo(),
                 })
             else
                 UIManager:show(InfoMessage:new{
