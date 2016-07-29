@@ -119,11 +119,10 @@ local KindleOasis = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-imx-i2c.1-event",
 }
 
--- FIXME: To be confirmed!
 local KindleBasic2 = Kindle:new{
     model = "KindleBasic2",
     isTouchDevice = yes,
-    touch_dev = "/dev/input/event1",
+    touch_dev = "/dev/input/event0",
 }
 
 function Kindle2:init()
@@ -347,7 +346,6 @@ function KindleOasis:init()
     self.input.open("fake_events")
 end
 
--- TODO: Confirm that this is accurate!
 function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
     self.powerd = require("device/kindle/powerd"):new{
