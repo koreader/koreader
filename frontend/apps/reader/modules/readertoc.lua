@@ -333,7 +333,7 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuSelect(item, pos)
         -- if toc item has expand/collapse state and tap select on the left side
         -- the state switch action is triggered, otherwise goto the linked page
-        if item.state and pos.x < 0.3 then
+        if item.state and pos and pos.x < 0.3 then
             item.state.callback()
         else
             toc_menu:close_callback()
