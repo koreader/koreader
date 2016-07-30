@@ -93,8 +93,15 @@ function KOSyncClient:authorize(username, password)
     end
 end
 
-function KOSyncClient:update_progress(username, password,
-        document, progress, percentage, device, callback)
+function KOSyncClient:update_progress(
+        username,
+        password,
+        document,
+        progress,
+        percentage,
+        device,
+        device_id,
+        callback)
     self.client:reset_middlewares()
     self.client:enable('Format.JSON')
     self.client:enable("GinClient")
@@ -109,6 +116,7 @@ function KOSyncClient:update_progress(username, password,
                 progress = progress,
                 percentage = percentage,
                 device = device,
+                device_id = device_id,
             })
         end)
         if ok then
@@ -123,8 +131,11 @@ function KOSyncClient:update_progress(username, password,
     if UIManager.looper then UIManager:setInputTimeout() end
 end
 
-function KOSyncClient:get_progress(username, password,
-        document, callback)
+function KOSyncClient:get_progress(
+        username,
+        password,
+        document,
+        callback)
     self.client:reset_middlewares()
     self.client:enable('Format.JSON')
     self.client:enable("GinClient")
