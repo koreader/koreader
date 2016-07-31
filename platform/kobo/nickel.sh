@@ -80,6 +80,12 @@ else
 	/usr/local/Kobo/nickel -platform kobo -skipFontLoad > /dev/null 2>&1 &
 fi
 
+# Ahoy, annoying sickel!
+if [ -x /usr/local/Kobo/sickel ] ; then
+    /usr/local/Kobo/sickel -platform kobo:noscreen > /dev/null 2>&1 &
+fi
+
+
 # Rotation weirdness, part II
 echo "${cur_rotate}" > "/sys/class/graphics/fb0/rotate"
 cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
