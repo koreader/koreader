@@ -109,6 +109,7 @@ local KindleOasis = Kindle:new{
     model = "KindleOasis",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasKeys = yes,
     display_dpi = 300,
     --[[
     -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
