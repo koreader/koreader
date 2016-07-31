@@ -268,6 +268,7 @@ function Kobo:suspend()
 end
 
 function Kobo:resume()
+    -- Unflag subsystems for suspend
     os.execute("echo 0 > /sys/power/state-extended")
     -- HACK: wait a bit for the kernel to catch up
     os.execute("sleep 0.1")
