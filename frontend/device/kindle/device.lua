@@ -339,10 +339,20 @@ function KindleOasis:init()
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
     }
 
+    self.input = require("device/input"):new{
+        device = self,
+        
+        -- TODO: Physical buttons handle orientation?
+        event_map = {
+            [104] = "RPgFwd",
+            [109] = "RPgBack",
+        }
+    }
+
     Kindle.init(self)
 
     self.input.open(self.touch_dev)
-    -- TODO: Physical buttons?
+    self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
     self.input.open("fake_events")
 end
 
