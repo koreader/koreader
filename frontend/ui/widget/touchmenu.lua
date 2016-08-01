@@ -575,6 +575,7 @@ function TouchMenu:onMenuSelect(item)
         else
             table.insert(self.item_table_stack, self.item_table)
             self.item_table = sub_item_table
+            self.page = 1
             self:updateItems()
         end
     end
