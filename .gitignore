@@ -36,7 +36,7 @@ koreader-android-arm-linux-androideabi
 koreader-kindle-legacy-arm-kindle-linux-gnueabi
 koreader-kindle-arm-linux-gnueabi
 koreader-kobo-arm-linux-gnueabihf*
-koreader-kobo-arm-kobo-linux-gnueabi
+koreader-kobo-arm-kobo-linux-gnueabi*
 koreader-emulator-i686-w64-mingw32
 koreader-emulator-x86_64-linux-gnu
 koreader-emulator-x86_64-pc-linux-gnu

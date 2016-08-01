@@ -6,6 +6,7 @@ local GestureRange = require("ui/gesturerange")
 local InputDialog = require("ui/widget/inputdialog")
 local Geom = require("ui/geometry")
 local Device = require("device")
+local Screensaver = require("ui/screensaver")
 local Screen = Device.screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
@@ -105,6 +106,61 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("open_last", not open_last)
         end
     })
+    if Device.isKobo() then
+        table.insert(self.tab_item_table.setting, {
+            text = _("Screensaver"),
+            sub_item_table = {
+                {
+                    text = _("Use last book's cover as screensaver"),
+                    checked_func = Screensaver.isUsingBookCover,
+                    callback = function()
+                        if Screensaver:isUsingBookCover() then
+                            G_reader_settings:saveSetting(
+                                "use_lastfile_as_screensaver", false)
+                        else
+                            G_reader_settings:delSetting(
+                                "use_lastfile_as_screensaver")
+                        end
+                    end
+                },
+                {
+                    text = _("Screensaver folder"),
+                    callback = function()
+                        local ss_folder_path_input
+                        local function save_folder_path()
+                            G_reader_settings:saveSetting(
+                                "screensaver_folder", ss_folder_path_input:getInputText())
+                            UIManager:close(ss_folder_path_input)
+                        end
+                        local curr_path = G_reader_settings:readSetting("screensaver_folder")
+                        ss_folder_path_input = InputDialog:new{
+                            title = _("Screensaver folder"),
+                            input = curr_path,
+                            input_hint = "/mnt/onboard/screensaver",
+                            input_type = "text",
+                            buttons = {
+                                {
+                                    {
+                                        text = _("Cancel"),
+                                        callback = function()
+                                            UIManager:close(ss_folder_path_input)
+                                        end,
+                                    },
+                                    {
+                                        text = _("Save"),
+                                        is_enter_default = true,
+                                        callback = save_folder_path,
+                                    },
+                                }
+                            },
+                        }
+                        ss_folder_path_input:onShowKeyboard()
+                        UIManager:show(ss_folder_path_input)
+                    end,
+                },
+            }
+        })
+    end
     -- insert common settings
     for i, common_setting in ipairs(require("ui/elements/common_settings_menu_table")) do
         table.insert(self.tab_item_table.setting, common_setting)
@@ -117,43 +173,6 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- tools tab
-    if Device.isKobo() then
-        table.insert(self.tab_item_table.tools, {
-            text = _("Screensaver folder"),
-            callback = function()
-                local ss_folder_path_input
-                local function save_folder_path()
-                    G_reader_settings:saveSetting(
-                        "screensaver_folder", ss_folder_path_input:getInputText())
-                    UIManager:close(ss_folder_path_input)
-                end
-                local curr_path = G_reader_settings:readSetting("screensaver_folder")
-                ss_folder_path_input = InputDialog:new{
-                    title = _("Screensaver folder"),
-                    input = curr_path,
-                    input_hint = "/mnt/onboard/screensaver",
-                    input_type = "text",
-                    buttons = {
-                        {
-                            {
-                                text = _("Cancel"),
-                                callback = function()
-                                    UIManager:close(ss_folder_path_input)
-                                end,
-                            },
-                            {
-                                text = _("Save"),
-                                is_enter_default = true,
-                                callback = save_folder_path,
-                            },
-                        }
-                    },
-                }
-                ss_folder_path_input:onShowKeyboard()
-                UIManager:show(ss_folder_path_input)
-            end,
-        })
-    end
     table.insert(self.tab_item_table.tools, {
         text = _("Advanced settings"),
         callback = function()
