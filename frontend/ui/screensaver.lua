@@ -60,38 +60,42 @@ local function getRandomImage(dir)
     return createWidgetFromFile(dir .. pics[math.random(i)])
 end
 
+function Screensaver:isUsingBookCover()
+    -- this setting is on by default
+    return G_reader_settings:readSetting('use_lastfile_as_screensaver') ~= false
+end
+
 function Screensaver:getCoverImage(file)
     local ImageWidget = require("ui/widget/imagewidget")
     local doc = DocumentRegistry:openDocument(file)
-    if doc then
-        local image = doc:getCoverPageImage()
-        doc:close()
-        local lastfile = G_reader_settings:readSetting("lastfile")
-        local data = DocSettings:open(lastfile)
-        local proportional_cover = data:readSetting("proportional_screensaver")
-        if image then
-            return createWidgetFromImage(
-                       ImageWidget:new{
-                           image = image,
-                           height = Screen:getHeight(),
-                           width = Screen:getWidth(),
-                           autostretch = proportional_cover,
-                       })
-        end
+    if not doc then return end
+
+    local image = doc:getCoverPageImage()
+    doc:close()
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    local doc_settings = DocSettings:open(lastfile)
+    if image then
+        local img_widget = ImageWidget:new{
+            image = image,
+            height = Screen:getHeight(),
+            width = Screen:getWidth(),
+            autostretch = doc_settings:readSetting("proportional_screensaver"),
+        }
+        return createWidgetFromImage(img_widget)
     end
 end
 
 function Screensaver:show()
     DEBUG("show screensaver")
     local InfoMessage = require("ui/widget/infomessage")
-    -- first check book cover image
+    -- first check book cover image, on by default
     local screen_saver_last_book =
         G_reader_settings:readSetting("use_lastfile_as_screensaver")
     if screen_saver_last_book == nil or screen_saver_last_book then
         local lastfile = G_reader_settings:readSetting("lastfile")
         if lastfile then
-            local data = DocSettings:open(lastfile)
-            local exclude = data:readSetting("exclude_screensaver")
+            local doc_settings = DocSettings:open(lastfile)
+            local exclude = doc_settings:readSetting("exclude_screensaver")
             if not exclude then
                 self.suspend_msg = self:getCoverImage(lastfile)
             end
@@ -99,6 +103,7 @@ function Screensaver:show()
     end
     -- then screensaver directory or file image
     if not self.suspend_msg then
+        -- FIXME: rename this config to screen_saver_path
         local screen_saver_folder =
             G_reader_settings:readSetting("screensaver_folder")
         if screen_saver_folder == nil

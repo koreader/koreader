@@ -4,6 +4,7 @@ local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Geom = require("ui/geometry")
+local Screensaver = require("ui/screensaver")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local DEBUG = require("dbg")
@@ -114,29 +115,38 @@ function ReaderMenu:setUpdateItemTable()
         table.insert(self.tab_item_table.info, common_setting)
     end
 
-    if Device:isKobo() and KOBO_SCREEN_SAVER_LAST_BOOK then
+    if Device:isKobo() and Screensaver:isUsingBookCover() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
         local proportional = function()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
-        table.insert(self.tab_item_table.typeset, {
+        table.insert(self.tab_item_table.setting, {
             text = _("Screensaver"),
             sub_item_table = {
                 {
-                    text = _("Use this book's cover as screensaver"),
-                    checked_func = function() return not excluded() end,
+                    text = _("Exclude this book's cover from screensaver"),
+                    checked_func = excluded,
                     callback = function()
-                        self.ui.doc_settings:saveSetting("exclude_screensaver", not excluded())
+                        if excluded() then
+                            self.ui.doc_settings:delSetting("exclude_screensaver")
+                        else
+                            self.ui.doc_settings:saveSetting("exclude_screensaver", true)
+                        end
                         self.ui:saveSettings()
                     end
                 },
                 {
-                    text = _("Display proportional cover image in screensaver"),
-                    checked_func = function() return proportional() end,
+                    text = _("Auto stretch this book's cover image in screensaver"),
+                    checked_func = proportional,
                     callback = function()
-                        self.ui.doc_settings:saveSetting("proportional_screensaver", not proportional())
+                        if proportional() then
+                            self.ui.doc_settings:delSetting("proportional_screensaver")
+                        else
+                            self.ui.doc_settings:saveSetting(
+                                "proportional_screensaver", not proportional())
+                        end
                         self.ui:saveSettings()
                     end
                 }
