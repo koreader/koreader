@@ -87,8 +87,6 @@ read_globals = {
     "SEARCH_SERIES",
     "SEARCH_PATH",
     "KOBO_LIGHT_ON_START",
-    "KOBO_SCREEN_SAVER",
-    "KOBO_SCREEN_SAVER_LAST_BOOK",
     "NETWORK_PROXY",
     "DUSE_TURBO_LIB",
     "cre",
