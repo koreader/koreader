@@ -672,6 +672,12 @@ function UIManager:handleInput()
     end
 end
 
+
+function UIManager:onRotation()
+    self:setDirty('all', 'full')
+    self:forceRePaint()
+end
+
 function UIManager:initLooper()
     if DUSE_TURBO_LIB and not self.looper then
         TURBO_SSL = true -- luacheck: ignore
