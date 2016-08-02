@@ -674,6 +674,44 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
+
+    elseif self.screen.cur_rotation_mode == 2 then
+        -- in portrait mode rotated 180
+        if ges.pos then
+            ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.x), (self.screen:getHeight() - ges.pos.y)
+        end
+        if ges.ges == "swipe" or ges.ges == "pan"
+                or ges.ges == "two_finger_swipe"
+                or ges.ges == "two_finger_pan" then
+            if ges.direction == "north" then
+                ges.direction = "south"
+            elseif ges.direction == "south" then
+                ges.direction = "north"
+            elseif ges.direction == "east" then
+                ges.direction = "west"
+            elseif ges.direction == "west" then
+                ges.direction = "east"
+            elseif ges.direction == "northeast" then
+                ges.direction = "southwest"
+            elseif ges.direction == "northwest" then
+                ges.direction = "southeast"
+            elseif ges.direction == "southeast" then
+                ges.direction = "northwest"
+            elseif ges.direction == "southwest" then
+                ges.direction = "northeast"
+            end
+            if ges.relative then
+                ges.relative.x, ges.relative.y = -ges.relative.x, -ges.relative.y
+            end
+        elseif ges.ges == "pinch" or ges.ges == "spread"
+                or ges.ges == "inward_pan"
+                or ges.ges == "outward_pan" then
+            if ges.direction == "horizontal" then
+                ges.direction = "horizontal"
+            elseif ges.direction == "vertical" then
+                ges.direction = "vertical"
+            end
+        end
     end
     return ges
 end

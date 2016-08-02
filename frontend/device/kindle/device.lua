@@ -342,8 +342,7 @@ function KindleOasis:init()
 
     self.input = require("device/input"):new{
         device = self,
-        
-        -- TODO: Physical buttons handle orientation?
+
         event_map = {
             [104] = "RPgFwd",
             [109] = "RPgBack",
@@ -354,6 +353,17 @@ function KindleOasis:init()
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
+
+    -- get rotate dev by EV=d
+    local std_out = io.popen("cat /proc/bus/input/devices | grep -e 'Handlers\\|EV=' | grep -B1 'EV=d'| grep -o 'event[0-9]'", "r")
+    if std_out then
+        local rotation_dev = std_out:read()
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
+
     self.input.open("fake_events")
 end
 
