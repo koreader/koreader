@@ -38,6 +38,15 @@ local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 local ABS_MT_TRACKING_ID = 57
 local ABS_MT_PRESSURE = 58
+
+-- For device orientation events (ABS.code)
+
+local ABS_PRESSURE = 24
+local DEVICE_ORIENTATION_PORTRAIT = 19
+local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
+local DEVICE_ORIENTATION_LANDSCAPE = 21
+local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 21
+
 -- luacheck: pop
 
 --[[
@@ -83,7 +92,7 @@ local Input = {
     rotation_map = {
         [0] = {},
         [1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
-        [2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right" },
+        [2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
         [3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
     },
 
@@ -449,6 +458,29 @@ function Input:handleTouchEvPhoenix(ev)
     end
 end
 
+function Input:handleOrientationEv(ev)
+
+    if ev.type == EV_ABS then
+        if ev.code == ABS_PRESSURE and self.device.screen:getScreenMode() == 'portrait' then
+            local refreshUI = false
+            local rotation_mode = 0
+            if ev.value == DEVICE_ORIENTATION_PORTRAIT then
+                refreshUI = true
+            elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED then
+                refreshUI = true
+                rotation_mode = 2
+            end
+
+            local oldRotation = self.device.screen:getRotationMode()
+            if refreshUI and rotation_mode ~= oldRotation then
+                self.device.screen:setRotationMode(rotation_mode)
+                local UIManager = require("ui/uimanager")
+                UIManager:onRotation()
+            end
+        end
+    end
+end
+
 
 -- helpers for touch event data management:
 
@@ -550,6 +582,8 @@ function Input:waitEvent(timeout_us)
         if ev.type == EV_KEY then
             DEBUG("key ev", ev)
             return self:handleKeyBoardEv(ev)
+        elseif ev.type == EV_ABS and ev.code == ABS_PRESSURE then
+            return self:handleOrientationEv(ev)
         elseif ev.type == EV_ABS or ev.type == EV_SYN then
             return self:handleTouchEv(ev)
         elseif ev.type == EV_MSC then
