@@ -12,6 +12,7 @@ local NetworkMgr = {}
 
 function NetworkMgr:init()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
+    self.wifi_was_on = G_reader_settings:True("wifi_was_on")
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -25,12 +26,16 @@ function NetworkMgr:authenticateNetwork() end
 function NetworkMgr:disconnectNetwork() end
 function NetworkMgr:obtainIP() end
 function NetworkMgr:releaseIP() end
+-- This function should unblockly call both turnOnWifi() and obtainIP().
+function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
 function NetworkMgr:promptWifiOn(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_callback = function()
+            self.wifi_was_on = true
+            G_reader_settings:saveSetting("wifi_was_on", true)
             self:turnOnWifi(complete_callback)
         end,
     })
@@ -40,6 +45,8 @@ function NetworkMgr:promptWifiOff(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn off Wi-Fi?"),
         ok_callback = function()
+            self.wifi_was_on = false
+            G_reader_settings:saveSetting("wifi_was_on", false)
             self:turnOffWifi(complete_callback)
         end,
     })
@@ -117,6 +124,15 @@ function NetworkMgr:getProxyMenuTable()
     }
 end
 
+function NetworkMgr:getRestoreMenuTable()
+    return {
+        text = _("Automatically restore Wi-Fi connection after resume"),
+        checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
+        enabled_func = function() return Device:isKobo() end,
+        callback = function(menu) G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
+    }
+end
+
 function NetworkMgr:getInfoMenuTable()
     return {
         text = _("Network info"),
@@ -132,6 +148,15 @@ function NetworkMgr:getInfoMenuTable()
                 })
             end
         end
+    }
+end
+
+function NetworkMgr:getMenuTable()
+    return {
+        self:getWifiMenuTable(),
+        self:getProxyMenuTable(),
+        self:getRestoreMenuTable(),
+        self:getInfoMenuTable(),
     }
 end
 
