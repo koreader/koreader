@@ -5,6 +5,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
+local framebuffer = require("ffi/framebuffer")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -42,10 +43,14 @@ local ABS_MT_PRESSURE = 58
 -- For device orientation events (ABS.code)
 
 local ABS_PRESSURE = 24
+local DEVICE_ORIENTATION_PORTRAIT_LEFT = 15
+local DEVICE_ORIENTATION_PORTRAIT_RIGHT = 17
 local DEVICE_ORIENTATION_PORTRAIT = 19
+local DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT = 16
+local DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT = 18
 local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
 local DEVICE_ORIENTATION_LANDSCAPE = 21
-local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 21
+local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
 
 -- luacheck: pop
 
@@ -90,10 +95,10 @@ local Input = {
     },
 
     rotation_map = {
-        [0] = {},
-        [1] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
-        [2] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
-        [3] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
+        [framebuffer.ORIENTATION_PORTRAIT] = {},
+        [framebuffer.ORIENTATION_LANDSCAPE] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
+        [framebuffer.ORIENTATION_PORTRAIT_ROTATED] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
+        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" , LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" }
     },
 
     timer_callbacks = {},
@@ -459,20 +464,31 @@ function Input:handleTouchEvPhoenix(ev)
 end
 
 function Input:handleOrientationEv(ev)
-
     if ev.type == EV_ABS then
-        if ev.code == ABS_PRESSURE and self.device.screen:getScreenMode() == 'portrait' then
-            local refreshUI = false
-            local rotation_mode = 0
-            if ev.value == DEVICE_ORIENTATION_PORTRAIT then
-                refreshUI = true
-            elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED then
-                refreshUI = true
-                rotation_mode = 2
+        if ev.code == ABS_PRESSURE then
+
+            local rotation_mode, screen_mode
+            if ev.value == DEVICE_ORIENTATION_PORTRAIT or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
+                rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+                screen_mode = 'portrait'
+            elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
+                rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+                screen_mode = 'landscape'
+            elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
+                rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+                screen_mode = 'portrait'
+            elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
+                rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+                screen_mode = 'landscape'
             end
 
-            local oldRotation = self.device.screen:getRotationMode()
-            if refreshUI and rotation_mode ~= oldRotation then
+            local old_rotation_mode = self.device.screen:getRotationMode()
+            local old_screen_mode = self.device.screen:getScreenMode();
+            DEBUG("old_rotation_mode: ", old_rotation_mode)
+            DEBUG("new_rotation_mode: ", rotation_mode)
+            DEBUG("old_screen_mode: ", old_screen_mode)
+            DEBUG("new_screen_mode: ", screen_mode)
+            if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
                 self.device.screen:setRotationMode(rotation_mode)
                 local UIManager = require("ui/uimanager")
                 UIManager:onRotation()
