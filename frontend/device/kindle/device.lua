@@ -349,6 +349,34 @@ function KindleOasis:init()
         }
     }
 
+    local lipc = require("liblipclua")
+    if lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property("com.lab126.winmgr", "accelerometer")
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "V" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                end
+            end
+
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+
+            lipc_handle:close()
+        end
+    end
+
+
     Kindle.init(self)
 
     self.input.open(self.touch_dev)
