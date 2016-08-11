@@ -194,8 +194,8 @@ describe("device module", function()
         end)
     end)
 
-    describe("kindle", function()
-        it("should initialize voyager without error", function()
+    describe("kindle #notest #nocov", function()
+        it("should initialize voyage without error", function()
             package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
             stub(io, "open")
             io.open.returns({

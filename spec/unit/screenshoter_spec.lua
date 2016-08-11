@@ -16,6 +16,10 @@ describe("ReaderScreenshot module", function()
         }
     end)
 
+    teardown(function()
+        readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+    end)
+
     it("should get screenshot in portrait", function()
         local name = "screenshots/reader_screenshot_portrait.png"
         readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
