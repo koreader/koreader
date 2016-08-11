@@ -1,5 +1,5 @@
 -- trace package loading flow with require call
--- usage: ./luajit -lutils/trace_require reader.lua ../../test
+-- usage: ./luajit -ltools/trace_require reader.lua ../../test
 
 local math = require("math")
 local _require = require

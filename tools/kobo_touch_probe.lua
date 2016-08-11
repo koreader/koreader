@@ -1,19 +1,18 @@
 -- touch probe utility
--- usage: ./luajit util/kobo_touch_probe.lua
+-- usage: ./luajit tools/kobo_touch_probe.lua
 
 require "defaults"
 package.path = "common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
 package.cpath = "common/?.so;common/?.dll;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
-local DocSettings = require("docsettings")
+local DataStorage = require("datastorage")
 local _ = require("gettext")
 
 -- read settings and check for language override
 -- has to be done before requiring other files because
 -- they might call gettext on load
-if G_reader_settings == nil then
-    G_reader_settings = DocSettings:open(".reader")
-end
+G_reader_settings = require("luasettings"):open(
+    DataStorage:getDataDir().."/settings.reader.lua")
 local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)

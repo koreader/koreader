@@ -144,7 +144,7 @@ function Kobo:init()
                 local switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
                 -- and has no probe before
                 if switch_xy == nil then
-                    local TouchProbe = require("utils/kobo_touch_probe")
+                    local TouchProbe = require("tools/kobo_touch_probe")
                     local UIManager = require("ui/uimanager")
                     UIManager:show(TouchProbe:new{})
                     UIManager:run()
