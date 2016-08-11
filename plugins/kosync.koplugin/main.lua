@@ -13,6 +13,11 @@ local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local md5 = require("ffi/MD5")
+local random = require("random")
+
+if not G_reader_settings:readSetting("device_id") then
+    G_reader_settings:saveSetting("device_id", random.uuid())
+end
 
 local KOSync = InputContainer:new{
     name = "kosync",
@@ -26,7 +31,7 @@ function KOSync:init()
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = not (settings.auto_sync == false)
     self.kosync_device_id = G_reader_settings:readSetting("device_id")
-    assert(self.kosync_device_id)
+    --assert(self.kosync_device_id)
     self.ui:registerPostInitCallback(function()
         if self.kosync_auto_sync then
             UIManager:scheduleIn(1, function() self:getProgress() end)

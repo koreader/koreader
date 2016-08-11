@@ -156,6 +156,9 @@ describe("Readerrolling module", function()
     end)
 
     describe("switching screen mode should not change current page number", function()
+        teardown(function()
+            readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+        end)
         it("for portrait-landscape-portrait switching", function()
             for i = 80, 100, 10 do
                 readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))

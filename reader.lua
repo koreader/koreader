@@ -96,11 +96,6 @@ local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Font = require("ui/font")
-local random = require("random")
-
-if not G_reader_settings:readSetting("device_id") then
-    G_reader_settings:saveSetting("device_id", random.uuid())
-end
 
 -- read some global reader setting here:
 -- font
