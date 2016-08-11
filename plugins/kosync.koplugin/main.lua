@@ -6,19 +6,13 @@ local DocSettings = require("docsettings")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local Device = require("device")
+local DeviceModel = require("device").model
 local Event = require("ui/event")
 local Math = require("optmath")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local md5 = require("ffi/MD5")
-
-local l10n = {
-    _("Unknown server error."),
-    _("Unauthorized"),
-    _("Username is already registered."),
-}
 
 local KOSync = InputContainer:new{
     name = "kosync",
@@ -31,12 +25,18 @@ function KOSync:init()
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = not (settings.auto_sync == false)
+    self.kosync_device_id = G_reader_settings:readSetting("device_id")
+    assert(self.kosync_device_id)
     self.ui:registerPostInitCallback(function()
         if self.kosync_auto_sync then
             UIManager:scheduleIn(1, function() self:getProgress() end)
         end
     end)
     self.ui.menu:registerToMainMenu(self)
+    -- Make sure checksum has been calculated at the very first time a document has been opened, to
+    -- avoid document saving feature to impact the checksum, and eventually impact the document
+    -- identity in the progress sync feature.
+    self.view.document:fastDigest()
 end
 
 function KOSync:addToMainMenu(tab_item_table)
@@ -55,19 +55,36 @@ function KOSync:addToMainMenu(tab_item_table)
                 end,
             },
             {
-                text = _("Auto sync"),
+                text = _("Auto sync now and future"),
                 checked_func = function() return self.kosync_auto_sync end,
                 callback = function()
                     self.kosync_auto_sync = not self.kosync_auto_sync
+                    if self.kosync_auto_sync then
+                        -- since we will update the progress when closing document, we should pull
+                        -- current progress now to avoid to overwrite it silently.
+                        self:getProgress(true)
+                    else
+                        -- since we won't update the progress when closing document, we should push
+                        -- current progress now to avoid to lose it silently.
+                        self:updateProgress(true)
+                    end
                 end,
             },
             {
-                text = _("Sync now"),
+                text = _("Push progress from this device"),
                 enabled_func = function()
                     return self.kosync_userkey ~= nil
                 end,
                 callback = function()
-                    self:updateProgress()
+                    self:updateProgress(true)
+                end,
+            },
+            {
+                text = _("Pull progress from other devices"),
+                enabled_func = function()
+                    return self.kosync_userkey ~= nil
+                end,
+                callback = function()
                     self:getProgress(true)
                 end,
             },
@@ -225,11 +242,15 @@ function KOSync:logout()
     self:onSaveSettings()
 end
 
+local function roundPercent(percent)
+    return math.floor(percent * 10000) / 10000
+end
+
 function KOSync:getLastPercent()
     if self.ui.document.info.has_pages then
-        return self.ui.paging:getLastPercent()
+        return roundPercent(self.ui.paging:getLastPercent())
     else
-        return self.ui.rolling:getLastPercent()
+        return roundPercent(self.ui.rolling:getLastPercent())
     end
 end
 
@@ -250,7 +271,21 @@ function KOSync:syncToProgress(progress)
     end
 end
 
-function KOSync:updateProgress()
+local function promptLogin()
+    UIManager:show(InfoMessage:new{
+        text = _("Please register / login before using progress synchronization feature."),
+        timeout = 3,
+    })
+end
+
+local function showSyncError()
+    UIManager:show(InfoMessage:new{
+        text = _("Something went wrong when syncing progress, please check your network connection and try again later."),
+        timeout = 3,
+    })
+end
+
+function KOSync:updateProgress(manual)
     if self.kosync_username and self.kosync_userkey then
         local KOSyncClient = require("KOSyncClient")
         local client = KOSyncClient:new{
@@ -260,15 +295,34 @@ function KOSync:updateProgress()
         local doc_digest = self.view.document:fastDigest()
         local progress = self:getLastProgress()
         local percentage = self:getLastPercent()
-        local ok, err = pcall(client.update_progress, client,
-            self.kosync_username, self.kosync_userkey,
-            doc_digest, progress, percentage, Device.model,
+        local ok, err = pcall(client.update_progress,
+            client,
+            self.kosync_username,
+            self.kosync_userkey,
+            doc_digest,
+            progress,
+            percentage,
+            DeviceModel,
+            self.kosync_device_id,
             function(ok, body)
                 DEBUG("update progress for", self.view.document.file, ok)
+                if manual then
+                    if ok then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Progress has been pushed."),
+                            timeout = 3,
+                        })
+                    else
+                        showSyncError()
+                    end
+                end
             end)
-        if not ok and err then
-            DEBUG("err:", err)
+        if not ok then
+            if manual then showSyncError() end
+            if err then DEBUG("err:", err) end
         end
+    elseif manual then
+        promptLogin()
     end
 end
 
@@ -280,34 +334,57 @@ function KOSync:getProgress(manual)
             service_spec = self.path .. "/api.json"
         }
         local doc_digest = self.view.document:fastDigest()
-        local ok, err = pcall(client.get_progress, client,
-            self.kosync_username, self.kosync_userkey,
-            doc_digest, function(ok, body)
+        local ok, err = pcall(client.get_progress,
+            client,
+            self.kosync_username,
+            self.kosync_userkey,
+            doc_digest,
+            function(ok, body)
                 DEBUG("get progress for", self.view.document.file, ok, body)
-                if body and body.percentage then
-                    local progress = self:getLastProgress()
-                    local percentage = self:getLastPercent()
-                    DEBUG("current progress", percentage)
-                    if body.percentage > percentage
-                        and tostring(body.progress) ~= tostring(progress) then
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Sync to furthest location %1% from device '%2'?"),
-                                Math.round(body.percentage*100), body.device),
-                            ok_callback = function()
-                                self:syncToProgress(body.progress)
-                            end,
-                        })
-                    elseif manual and body.progress == progress then
+                if body then
+                    if body.percentage then
+                        if body.device ~= DeviceModel
+                        or body.device_id ~= self.kosync_device_id then
+                            body.percentage = roundPercent(body.percentage)
+                            local progress = self:getLastProgress()
+                            local percentage = self:getLastPercent()
+                            DEBUG("current progress", percentage)
+                            if body.percentage > percentage and body.progress ~= progress then
+                                UIManager:show(ConfirmBox:new{
+                                    text = T(_("Sync to furthest location %1% from device '%2'?"),
+                                        Math.round(body.percentage*100), body.device),
+                                    ok_callback = function()
+                                        self:syncToProgress(body.progress)
+                                    end,
+                                })
+                            elseif manual then
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Already synchronized."),
+                                    timeout = 3,
+                                })
+                            end
+                        elseif manual then
+                            UIManager:show(InfoMessage:new{
+                                text = _("Latest progress is coming from this device."),
+                                timeout = 3,
+                            })
+                        end
+                    elseif manual then
                         UIManager:show(InfoMessage:new{
-                            text = _("Already synchronized."),
+                            text = _("No progress found for this document."),
                             timeout = 3,
                         })
                     end
+                elseif manual then
+                    showSyncError()
                 end
             end)
-        if not ok and err then
-            DEBUG("err:", err)
+        if not ok then
+            if manual then showSyncError() end
+            if err then DEBUG("err:", err) end
         end
+    elseif manual then
+        promptLogin()
     end
 end
 

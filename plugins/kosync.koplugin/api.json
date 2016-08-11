@@ -28,12 +28,14 @@
                 "progress",
                 "percentage",
                 "device",
+                "device_id",
             ],
             "payload" : [
                 "document",
                 "progress",
                 "percentage",
                 "device",
+                "device_id",
             ],
             "expected_status" : [200, 202, 401]
         },
