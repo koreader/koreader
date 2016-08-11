@@ -5,7 +5,7 @@ describe("touch probe module", function()
 
     it("should probe properly for kobo touch", function()
         local Device = require("device")
-        local TouchProbe = require("utils/kobo_touch_probe"):new{}
+        local TouchProbe = require("tools/kobo_touch_probe"):new{}
         local need_to_switch_xy
         TouchProbe.saveSwitchXYSetting = function(_, new_need_to_switch_xy)
             need_to_switch_xy = new_need_to_switch_xy

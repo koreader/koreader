@@ -1,5 +1,5 @@
 -- widget test utility
--- usage: ./luajit util/wtest.lua
+-- usage: ./luajit tools/wtest.lua
 
 require "defaults"
 print(package.path)
