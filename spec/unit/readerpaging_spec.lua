@@ -1,22 +1,27 @@
 describe("Readerpaging module", function()
     local sample_pdf = "spec/front/unit/data/sample.pdf"
-    local readerui
+    local readerui, UIManager, Event
     local paging
 
-    setup(function() require("commonrequire") end)
+    setup(function()
+        require("commonrequire")
+        UIManager = require("ui/uimanager")
+        Event = require("ui/event")
+    end)
 
     describe("Page mode", function()
-        local Event
-
         setup(function()
-            Event = require("ui/event")
             readerui = require("apps/reader/readerui"):new{
                 document = require("document/documentregistry"):openDocument(sample_pdf),
             }
             paging = readerui.paging
         end)
 
-        it("should emit EndOfBook event at the end in page mode", function()
+        it("should emit EndOfBook event at the end", function()
+            UIManager:quit()
+            UIManager:show(readerui)
+            UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
+            UIManager:run()
             readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui.zooming:setZoomMode("pageheight")
             paging:onGotoPage(readerui.document:getPageCount())
@@ -27,19 +32,7 @@ describe("Readerpaging module", function()
             paging:onPagingRel(1)
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
-        end)
-
-        it("should emit EndOfBook event at the end in scroll mode", function()
-            readerui:handleEvent(Event:new("SetScrollMode", true))
-            paging:onGotoPage(readerui.document:getPageCount())
-            readerui.zooming:setZoomMode("pageheight")
-            local called = false
-            readerui.onEndOfBook = function()
-                called = true
-            end
-            paging:onPagingRel(1)
-            assert.is.truthy(called)
-            readerui.onEndOfBook = nil
+            UIManager:quit()
         end)
     end)
 
@@ -57,16 +50,23 @@ describe("Readerpaging module", function()
         end)
 
         it("should emit EndOfBook event at the end", function()
+            UIManager:quit()
+            UIManager:show(readerui)
+            UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
+            UIManager:run()
+            paging.page_positions = {}
+            readerui:handleEvent(Event:new("SetScrollMode", true))
             paging:onGotoPage(readerui.document:getPageCount())
             readerui.zooming:setZoomMode("pageheight")
-            readerui.view:onSetScrollMode(true)
             local called = false
             readerui.onEndOfBook = function()
                 called = true
             end
             paging:onPagingRel(1)
+            paging:onPagingRel(1)
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
+            UIManager:quit()
         end)
     end)
 end)

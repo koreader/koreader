@@ -17,9 +17,7 @@ echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
 travis_retry luarocks --local install luafilesystem
 # for verbose_print module
 travis_retry luarocks --local install ansicolors
-travis_retry luarocks --local install busted 2.0.rc11-0
-travis_retry luarocks --local remove lua_cliargs --force
-travis_retry luarocks --local install lua_cliargs 2.5-5 --force
+travis_retry luarocks --local install busted 2.0.rc12-1
 #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
 travis_retry luarocks --local install luacov
 # luasec doesn't automatically detect 64-bit libs

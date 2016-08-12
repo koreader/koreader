@@ -41,7 +41,10 @@ describe("ReaderLink module", function()
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
         UIManager:run()
-        assert.is.same(21, readerui.paging.current_page)
+        -- its really hard to get the exact page number in scroll mode
+        -- page positions may have unexpected impact on page number
+        assert.truthy(readerui.paging.current_page == 21
+            or readerui.paging.current_page == 20)
     end)
 
     it("should be able to go back after link jump in epub", function()
@@ -78,7 +81,8 @@ describe("ReaderLink module", function()
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
         UIManager:run()
-        assert.is.same(21, readerui.paging.current_page)
+        assert.truthy(readerui.paging.current_page == 21
+            or readerui.paging.current_page == 20)
         readerui.link:onGoBackLink()
         assert.is.same(1, readerui.paging.current_page)
     end)

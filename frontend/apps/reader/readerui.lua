@@ -52,6 +52,8 @@ it works using data gathered from a document interface
 ]]--
 
 local ReaderUI = InputContainer:new{
+    name = "ReaderUI",
+
     key_events = {
         Close = { { "Home" },
             doc = "close document", event = "Close" },
@@ -74,6 +76,7 @@ local ReaderUI = InputContainer:new{
 
 function ReaderUI:registerModule(name, ui_module, always_active)
     if name then self[name] = ui_module end
+    ui_module.name = "reader" .. name
     table.insert(always_active and self.active_widgets or self, ui_module)
 end
 

@@ -3,6 +3,7 @@ local isAndroid, android = pcall(require, "android")
 
 local Dbg = {
     is_on = nil,
+    is_verbose = nil,
     ev_log = nil,
 }
 
@@ -56,6 +57,16 @@ function Dbg:turnOff()
     if self.ev_log then
         io.close(self.ev_log)
         self.ev_log = nil
+    end
+end
+
+function Dbg:setVerbose(verbose)
+    self.is_verbose = verbose
+end
+
+function Dbg:v(...)
+    if self.is_verbose then
+        LvDEBUG(math.huge, ...)
     end
 end
 
