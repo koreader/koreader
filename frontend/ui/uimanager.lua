@@ -586,7 +586,7 @@ function UIManager:_repaint()
 
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
-        dbg("triggering refresh", refresh)
+        dbg:v("triggering refresh", refresh)
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)

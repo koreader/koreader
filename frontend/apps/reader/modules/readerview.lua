@@ -118,7 +118,7 @@ function ReaderView:resetLayout()
 end
 
 function ReaderView:paintTo(bb, x, y)
-    dbg("painting", self.visible_area, "to", x, y)
+    dbg:v("readerview painting", self.visible_area, "to", x, y)
     if self.page_scroll then
         self:drawPageBackground(bb, x, y)
     else
