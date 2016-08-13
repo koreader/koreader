@@ -143,8 +143,8 @@ function ReaderLink:onGoBackLink()
     local saved_location = table.remove(self.location_stack)
     if saved_location then
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
+        return true
     end
-    return true
 end
 
 function ReaderLink:onSwipe(_, ges)

@@ -152,6 +152,12 @@ end
 -- modal widget should be always on the top
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:show(widget, refreshtype, refreshregion, x, y)
+    if not widget then
+        dbg("widget not exist to be closed")
+        return
+    end
+    dbg("show widget", widget.id or widget.name or "unknown")
+
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
     -- put this window on top of the toppest non-modal window
@@ -182,7 +188,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
         dbg("widget not exist to be closed")
         return
     end
-    dbg("close widget", widget.id)
+    dbg("close widget", widget.id or widget.name)
     local dirty = false
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
@@ -328,7 +334,7 @@ dbg:guard(UIManager, 'setDirty',
             if self._window_stack[i].widget == widget then found = true end
         end
         if not found then
-            dbg("INFO: invalid widget for setDirty()", debug.traceback())
+            dbg:v("INFO: invalid widget for setDirty()", debug.traceback())
         end
     end)
 
@@ -382,6 +388,7 @@ end
 
 -- transmit an event to an active widget
 function UIManager:sendEvent(event)
+    --dbg:v("send event", event)
     if #self._window_stack == 0 then return end
 
     local top_widget = self._window_stack[#self._window_stack]
@@ -395,22 +402,25 @@ function UIManager:sendEvent(event)
         end
     end
 
-    -- if the event is not consumed, active widgets (from top to bottom) can
+    -- if the event is not consumed, widgets (from top to bottom) can
     -- access it. NOTE: _window_stack can shrink on close event
     local checked_widgets = {top_widget}
     for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i]
         if checked_widgets[widget] == nil then
-            if widget.widget.is_always_active then
-                checked_widgets[widget] = true
-                if widget.widget:handleEvent(event) then return end
-            end
+            -- active widgets has precedence to handle this event
+            -- Note: ReaderUI currently only has one active_widget: readerscreenshot
             if widget.widget.active_widgets then
                 checked_widgets[widget] = true
                 for _, active_widget in ipairs(widget.widget.active_widgets) do
                     if active_widget:handleEvent(event) then return end
                 end
             end
+            -- ordinary widgets will handle this event
+            -- Note: is_always_active widgets currently are vitualkeyboard and
+            -- readerconfig
+            checked_widgets[widget] = true
+            if widget.widget:handleEvent(event) then return end
         end
     end
 end
@@ -576,7 +586,7 @@ function UIManager:_repaint()
 
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
-        dbg("triggering refresh", refresh)
+        dbg:v("triggering refresh", refresh)
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)

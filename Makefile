@@ -98,7 +98,10 @@ $(INSTALL_DIR)/koreader/.luacov:
 		ln -sf ../../.luacov $(INSTALL_DIR)/koreader
 
 testfront: $(INSTALL_DIR)/koreader/.busted
+	# sdr files may have unexpected impact on unit testing
+	rm -rf spec/unit/data/*.sdr
 	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
+		--sort-files \
 		--no-auto-insulate \
 		-o verbose_print --exclude-tags=notest
 

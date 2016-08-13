@@ -353,7 +353,7 @@ Draw page content to blitbuffer.
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    DEBUG("now painting", tile, rect)
+    DEBUG:v("document drawing", tile, rect)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,

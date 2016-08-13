@@ -1,17 +1,26 @@
 describe("Dbg module", function()
-    local dbg
+    local dbg, dbg_on
     setup(function()
         package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
         dbg = require("dbg")
+        dbg_on = dbg.is_on
+    end)
+
+    after_each(function()
+        if dbg_on then
+            dbg:turnOn()
+        else
+            dbg:turnOff()
+        end
     end)
 
     it("setup mt.__call and guard after tunrnOn is called", function()
+        dbg:turnOff()
         local old_call = getmetatable(dbg).__call
         local old_guard = dbg.guard
         dbg:turnOn()
         assert.is_not.same(old_call, getmetatable(dbg).__call)
         assert.is_not.same(old_guard, dbg.guard)
-        dbg:turnOff()
     end)
 
     it("should call pre_gard callback", function()
@@ -27,7 +36,6 @@ describe("Dbg module", function()
         dbg:guard(foo, 'bar', function() called = true end)
         foo:bar()
         assert.is.truthy(called)
-        dbg:turnOff()
     end)
 
     it("should call post_gard callback", function()
@@ -43,7 +51,6 @@ describe("Dbg module", function()
         dbg:guard(foo, 'bar', nil, function() called = true end)
         foo:bar()
         assert.is.truthy(called)
-        dbg:turnOff()
     end)
 
     it("should return all values returned by the guarded function", function()
@@ -64,6 +71,5 @@ describe("Dbg module", function()
         assert.is.falsy(called)
         re = {foo:bar()}
         assert.is.same(re, {1, 2, 3})
-        dbg:turnOff()
     end)
 end)

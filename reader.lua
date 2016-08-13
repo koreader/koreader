@@ -48,6 +48,7 @@ local function showusage()
     print("Read all the books on your E-Ink reader")
     print("")
     print("-d               start in debug mode")
+    print("-v               debug in verbose mode")
     print("-p               enable Lua code profiling")
     print("-h               show this usage help")
     print("")
@@ -82,6 +83,8 @@ while argidx <= #ARGV do
         return showusage()
     elseif arg == "-d" then
         DEBUG:turnOn()
+    elseif arg == "-v" then
+        DEBUG:setVerbose(true)
     elseif arg == "-p" then
         Profiler = require("jit.p")
         Profiler.start("la")

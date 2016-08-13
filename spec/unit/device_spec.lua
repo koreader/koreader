@@ -187,6 +187,7 @@ describe("device module", function()
             Device.isKobo:revert()
             NickelConf.frontLightLevel.get:revert()
             NickelConf.frontLightState.get:revert()
+            readerui.onFlushSettings:revert()
             UIManager._startAutoSuspend = nil
             UIManager._stopAutoSuspend = nil
             UIManager._resetAutoSuspendTimer = saved_noop
