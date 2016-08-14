@@ -99,7 +99,7 @@ $(INSTALL_DIR)/koreader/.luacov:
 
 testfront: $(INSTALL_DIR)/koreader/.busted
 	# sdr files may have unexpected impact on unit testing
-	rm -rf spec/unit/data/*.sdr
+	-rm -rf spec/unit/data/*.sdr
 	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
 		--sort-files \
 		--no-auto-insulate \
@@ -110,8 +110,10 @@ test:
 	$(MAKE) testfront
 
 coverage: $(INSTALL_DIR)/koreader/.luacov
+	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
 	cd $(INSTALL_DIR)/koreader && \
 		./luajit $(shell which busted) -o verbose_print \
+			--sort-files \
 			--no-auto-insulate \
 			--coverage --exclude-tags=nocov
 	# coverage report summary

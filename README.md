@@ -78,9 +78,8 @@ Users of Debian and Ubuntu can install the required packages using:
 ```
 sudo apt-get install build-essential git patch wget unzip \
 gettext autoconf cmake libtool nasm luarocks \
-libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 linux-libc-dev:i386
+libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 linux-libc-dev:i386 zlib1g:i386
 ```
-Note that the `linux-libc-dev:i386` package is only necessary for x86_64 machines.
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 ```
@@ -280,8 +279,8 @@ http://ccache.samba.org
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
-[coverage-badge]:https://coveralls.io/repos/koreader/koreader/badge.svg
-[coverage-link]:https://coveralls.io/r/koreader/koreader
+[coverage-badge]:https://coveralls.io/repos/github/koreader/koreader/badge.svg?branch=master
+[coverage-link]:https://coveralls.io/github/koreader/koreader?branch=master
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
 [gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
 [gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
