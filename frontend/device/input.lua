@@ -40,9 +40,10 @@ local ABS_MT_POSITION_Y = 54
 local ABS_MT_TRACKING_ID = 57
 local ABS_MT_PRESSURE = 58
 
--- For device orientation events (ABS.code)
-
-local ABS_PRESSURE = 24
+-- For Kindle Oasis orientation events (ABS.code)
+-- the ABS code of orientation event will be adjusted to -24 from 24(ABS_PRESSURE)
+-- as ABS_PRESSURE is also used to detect touch input in KOBO devices.
+local ABS_OASIS_ORIENTATION = -24
 local DEVICE_ORIENTATION_PORTRAIT_LEFT = 15
 local DEVICE_ORIENTATION_PORTRAIT_RIGHT = 17
 local DEVICE_ORIENTATION_PORTRAIT = 19
@@ -237,6 +238,12 @@ function Input:adjustTouchTranslate(ev, by)
         if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
             ev.value = by.y + ev.value
         end
+    end
+end
+
+function Input:adjustKindleOasisOrientation(ev)
+    if ev.type == EV_ABS and ev.code == ABS_PRESSURE then
+        ev.code = ABS_OASIS_ORIENTATION
     end
 end
 
@@ -463,37 +470,36 @@ function Input:handleTouchEvPhoenix(ev)
     end
 end
 
-function Input:handleOrientationEv(ev)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_PRESSURE then
+function Input:handleOasisOrientationEv(ev)
+    local rotation_mode, screen_mode
+    if ev.value == DEVICE_ORIENTATION_PORTRAIT
+        or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
+        or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
+        rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+        screen_mode = 'portrait'
+    elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
+        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+        screen_mode = 'landscape'
+    elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
+        or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
+        or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
+        rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+        screen_mode = 'portrait'
+    elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
+        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+        screen_mode = 'landscape'
+    end
 
-            local rotation_mode, screen_mode
-            if ev.value == DEVICE_ORIENTATION_PORTRAIT or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
-                rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-                screen_mode = 'portrait'
-            elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
-                rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-                screen_mode = 'landscape'
-            elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
-                rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-                screen_mode = 'portrait'
-            elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
-                rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-                screen_mode = 'landscape'
-            end
-
-            local old_rotation_mode = self.device.screen:getRotationMode()
-            local old_screen_mode = self.device.screen:getScreenMode();
-            DEBUG("old_rotation_mode: ", old_rotation_mode)
-            DEBUG("new_rotation_mode: ", rotation_mode)
-            DEBUG("old_screen_mode: ", old_screen_mode)
-            DEBUG("new_screen_mode: ", screen_mode)
-            if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
-                self.device.screen:setRotationMode(rotation_mode)
-                local UIManager = require("ui/uimanager")
-                UIManager:onRotation()
-            end
-        end
+    local old_rotation_mode = self.device.screen:getRotationMode()
+    local old_screen_mode = self.device.screen:getScreenMode()
+    DEBUG:v("old_rotation_mode: ", old_rotation_mode)
+    DEBUG:v("new_rotation_mode: ", rotation_mode)
+    DEBUG:v("old_screen_mode: ", old_screen_mode)
+    DEBUG:v("new_screen_mode: ", screen_mode)
+    if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+        self.device.screen:setRotationMode(rotation_mode)
+        local UIManager = require("ui/uimanager")
+        UIManager:onRotation()
     end
 end
 
@@ -593,13 +599,14 @@ function Input:waitEvent(timeout_us)
     if ok and ev then
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
+            DEBUG:v("ev", ev)
         end
         self:eventAdjustHook(ev)
         if ev.type == EV_KEY then
             DEBUG("key ev", ev)
             return self:handleKeyBoardEv(ev)
-        elseif ev.type == EV_ABS and ev.code == ABS_PRESSURE then
-            return self:handleOrientationEv(ev)
+        elseif ev.type == EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
+            return self:handleOasisOrientationEv(ev)
         elseif ev.type == EV_ABS or ev.type == EV_SYN then
             return self:handleTouchEv(ev)
         elseif ev.type == EV_MSC then

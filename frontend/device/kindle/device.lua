@@ -349,11 +349,12 @@ function KindleOasis:init()
         }
     }
 
-    local lipc = require("liblipclua")
-    if lipc then
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
         if lipc_handle then
-            local orientation_code = lipc_handle:get_string_property("com.lab126.winmgr", "accelerometer")
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "V" then
@@ -376,8 +377,9 @@ function KindleOasis:init()
         end
     end
 
-
     Kindle.init(self)
+
+    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpiokey.0-event")

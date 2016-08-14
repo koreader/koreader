@@ -1,5 +1,8 @@
 describe("device module", function()
     local mock_fb, mock_input
+    local iopen = io.open
+    local osgetenv = os.getenv
+
     setup(function()
         mock_fb = {
             new = function()
@@ -7,48 +10,51 @@ describe("device module", function()
                     getSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
                     getDPI = function() return 72 end,
-                    setViewport = function() end
+                    setViewport = function() end,
+                    getRotationMode = function() return 0 end,
+                    getScreenMode = function() return "portrait" end,
+                    setRotationMode = function() end,
                 }
             end
         }
         require("commonrequire")
     end)
 
+    before_each(function()
+        package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
+        package.loaded['device/kindle/device'] = nil
+        package.loaded['device/kobo/device'] = nil
+        mock_input = require('device/input')
+        stub(mock_input, "open")
+        stub(os, "getenv")
+        stub(os, "execute")
+    end)
+
+    after_each(function()
+        mock_input.open:revert()
+        os.getenv:revert()
+        os.execute:revert()
+
+        os.getenv = osgetenv
+        io.open = iopen
+    end)
+
     describe("kobo", function()
         local TimeVal
         setup(function()
             TimeVal = require("ui/timeval")
-            mock_fb = {
-                new = function()
-                    return {
-                        getSize = function() return {w = 600, h = 800} end,
-                        getWidth = function() return 600 end,
-                        getDPI = function() return 72 end,
-                        setViewport = function() end
-                    }
-                end
-            }
         end)
 
         it("should initialize properly on Kobo dahlia", function()
-            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-            stub(os, "getenv")
             os.getenv.returns("dahlia")
             local kobo_dev = require("device/kobo/device")
 
-            mock_input = require('device/input')
-            stub(mock_input, "open")
             kobo_dev:init()
             assert.is.same("Kobo_dahlia", kobo_dev.model)
 
-            package.loaded['ffi/framebuffer_mxcfb'] = nil
-            os.getenv:revert()
-            mock_input.open:revert()
         end)
 
         it("should setup eventAdjustHooks properly for input in trilogy", function()
-            local saved_getenv = os.getenv
-            stub(os, "getenv")
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
@@ -56,11 +62,8 @@ describe("device module", function()
                     return saved_getenv(key)
                 end
             end)
-            package.loaded['device/kobo/device'] = nil
-            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-            mock_input = require('device/input')
-            stub(mock_input, "open")
 
+            package.loaded['device/kobo/device'] = nil
             local kobo_dev = require("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
@@ -93,17 +96,12 @@ describe("device module", function()
             assert.is.same(y, ev_x.value)
             assert.is.same(ABS_Y, ev_x.code)
 
-            package.loaded['ffi/framebuffer_mxcfb'] = nil
-            os.getenv:revert()
-            mock_input.open:revert()
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
             kobo_dev.touch_probe_ev_epoch_time = true
         end)
 
         it("should setup eventAdjustHooks properly for trilogy with non-epoch ev time", function()
-            local saved_getenv = os.getenv
-            stub(os, "getenv")
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
@@ -111,11 +109,6 @@ describe("device module", function()
                     return saved_getenv(key)
                 end
             end)
-            package.loaded['device/kobo/device'] = nil
-            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-            mock_input = require('device/input')
-            stub(mock_input, "open")
-
             local kobo_dev = require("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
@@ -149,9 +142,6 @@ describe("device module", function()
             assert.truthy(cur_sec - ev_x.time.sec < 10)
             assert.truthy(cur_sec - ev_y.time.sec < 10)
 
-            package.loaded['ffi/framebuffer_mxcfb'] = nil
-            os.getenv:revert()
-            mock_input.open:revert()
             kobo_dev.input.eventAdjustHook = function() end
         end)
 
@@ -195,44 +185,44 @@ describe("device module", function()
         end)
     end)
 
-    describe("kindle #notest #nocov", function()
+    describe("kindle", function()
         it("should initialize voyage without error", function()
-            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-            stub(io, "open")
-            io.open.returns({
-                read = function()
-                    return "XX13XX"
-                end,
-                close = function() end
-            })
-            mock_input = require('device/input')
-            stub(mock_input, "open")
+            io.open = function(filename, mode)
+                if filename == "/proc/usid" then
+                    return {
+                        read = function() return "XX13XX" end,
+                        close = function() end
+                    }
+                else
+                    return iopen(filename, mode)
+                end
+            end
 
-            local kindle_dev = require("device/kindle/device")
+            local kindle_dev = require('device/kindle/device')
             assert.is.same(kindle_dev.model, "KindleVoyage")
             kindle_dev:init()
             assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
             assert.is.same(kindle_dev.input.event_map[109], "LPgFwd")
             assert.is.same(kindle_dev.powerd.fl_min, 0)
             assert.is.same(kindle_dev.powerd.fl_max, 24)
-
-            io.open:revert()
-            package.loaded['ffi/framebuffer_mxcfb'] = nil
-            mock_input.open:revert()
         end)
 
         it("should toggle frontlight", function()
-            package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-            stub(io, "open")
-            io.open.returns({
-                read = function()
-                    return "12"
-                end,
-                close = function() end
-            })
-            mock_input = require('device/input')
-            stub(mock_input, "open")
-            stub(os, "execute")
+            io.open = function(filename, mode)
+                if filename == "/proc/usid" then
+                    return {
+                        read = function() return "XX13XX" end,
+                        close = function() end
+                    }
+                elseif filename == "/sys/class/backlight/max77696-bl/brightness" then
+                    return {
+                        read = function() return "12" end,
+                        close = function() end
+                    }
+                else
+                    return iopen(filename, mode)
+                end
+            end
 
             local kindle_dev = require("device/kindle/device")
             kindle_dev:init()
@@ -251,11 +241,46 @@ describe("device module", function()
             kindle_dev.powerd:toggleFrontlight()
             assert.stub(os.execute).was_called_with(
                 "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+        end)
 
-            io.open:revert()
-            package.loaded['ffi/framebuffer_mxcfb'] = nil
-            mock_input.open:revert()
-            os.execute:revert()
+        it("oasis should interpret orientation event", function()
+            io.open = function(filename, mode)
+                if filename == "/proc/usid" then
+                    return {
+                        read = function()
+                            return "XXX0GCXXX"
+                        end,
+                        close = function() end
+                    }
+                else
+                    return iopen(filename, mode)
+                end
+            end
+
+            mock_ffi_input = require('ffi/input')
+            stub(mock_ffi_input, "waitForEvent")
+            mock_ffi_input.waitForEvent.returns({
+                type = 3,
+                time = {
+                    usec = 450565,
+                    sec = 1471081881
+                },
+                code = 24,
+                value = 16
+            })
+
+            local UIManager = require("ui/uimanager")
+            stub(UIManager, "onRotation")
+
+            local kindle_dev = require('device/kindle/device')
+            assert.is.same("KindleOasis", kindle_dev.model)
+            kindle_dev:init()
+
+            kindle_dev.input:waitEvent()
+            assert.stub(UIManager.onRotation).was_called()
+
+            mock_ffi_input.waitForEvent:revert()
+            UIManager.onRotation:revert()
         end)
     end)
 end)
