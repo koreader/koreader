@@ -8,7 +8,7 @@ describe("ReaderLink module", function()
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         sample_epub = "spec/front/unit/data/leaves.epub"
-        sample_pdf = "spec/front/unit/data/Adaptively.Scaling.The.Metropolis.Algorithm.Using.Expected.Squared.Jumped.Distance.pdf"
+        sample_pdf = "spec/front/unit/data/paper.pdf"
     end)
 
     it("should jump to links in epub", function()
