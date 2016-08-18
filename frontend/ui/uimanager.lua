@@ -402,7 +402,7 @@ function UIManager:sendEvent(event)
         end
     end
 
-    -- if the event is not consumed, widgets (from top to bottom) can
+    -- if the event is not consumed, active widgets (from top to bottom) can
     -- access it. NOTE: _window_stack can shrink on close event
     local checked_widgets = {top_widget}
     for i = #self._window_stack, 1, -1 do
@@ -416,11 +416,13 @@ function UIManager:sendEvent(event)
                     if active_widget:handleEvent(event) then return end
                 end
             end
-            -- ordinary widgets will handle this event
-            -- Note: is_always_active widgets currently are vitualkeyboard and
-            -- readerconfig
-            checked_widgets[widget] = true
-            if widget.widget:handleEvent(event) then return end
+            if widget.widget.is_always_active then
+                -- active widgets will handle this event
+                -- Note: is_always_active widgets currently are vitualkeyboard and
+                -- readerconfig
+                checked_widgets[widget] = true
+                if widget.widget:handleEvent(event) then return end
+            end
         end
     end
 end

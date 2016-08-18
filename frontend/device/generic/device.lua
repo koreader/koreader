@@ -90,7 +90,7 @@ function Device:intoScreenSaver()
             os.execute("killall -cont awesome")
         end
     end
-    UIManager:sendEvent(Event:new("FlushSettings"))
+    UIManager:broadcastEvent(Event:new("FlushSettings"))
 end
 
 -- ONLY used for Kindle devices
@@ -121,7 +121,7 @@ function Device:onPowerEvent(ev)
         local UIManager = require("ui/uimanager")
         -- flushing settings first in case the screensaver takes too long time
         -- that flushing has no chance to run
-        UIManager:sendEvent(Event:new("FlushSettings"))
+        UIManager:broadcastEvent(Event:new("FlushSettings"))
         DEBUG("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
