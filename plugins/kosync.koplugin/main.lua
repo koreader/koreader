@@ -278,7 +278,7 @@ end
 
 local function promptLogin()
     UIManager:show(InfoMessage:new{
-        text = _("Please register / login before using progress synchronization feature."),
+        text = _("Please register or login before using the progress synchronization feature."),
         timeout = 3,
     })
 end
@@ -356,7 +356,7 @@ function KOSync:getProgress(manual)
                             DEBUG("current progress", percentage)
                             if body.percentage > percentage and body.progress ~= progress then
                                 UIManager:show(ConfirmBox:new{
-                                    text = T(_("Sync to furthest location %1% from device '%2'?"),
+                                    text = T(_("Sync to furthest location read (%1%) from device '%2'?"),
                                         Math.round(body.percentage*100), body.device),
                                     ok_callback = function()
                                         self:syncToProgress(body.progress)
