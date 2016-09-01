@@ -4,15 +4,6 @@ export PATH="${PATH}:/sbin:/usr/sbin"
 echo "[$(date +'%x @ %X')] Kobo Suspend: Going to sleep . . ."
 # NOTE: Sleep as little as possible here, sleeping has a tendency to make everything mysteriously hang...
 
-# Disable wifi
-if lsmod | grep -q sdio_wifi_pwr ; then
-	wlarm_le -i eth0 down
-	ifconfig eth0 down
-	rmmod -r dhd
-	rmmod -r sdio_wifi_pwr
-	echo "[$(date +'%x @ %X')] Kobo Suspend: Killed WiFi"
-fi
-
 # Depending on device/FW version, some kernels do not support wakeup_count, account for that
 if [ -e "/sys/power/wakeup_count" ] ; then
 	#HAS_WAKEUP_COUNT="true"

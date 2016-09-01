@@ -29,11 +29,7 @@ table.insert(common_settings, {
 })
 table.insert(common_settings, {
     text = _("Network"),
-    sub_item_table = {
-        NetworkMgr:getWifiMenuTable(),
-        NetworkMgr:getProxyMenuTable(),
-        NetworkMgr:getInfoMenuTable(),
-    }
+    sub_item_table = NetworkMgr:getMenuTable()
 })
 table.insert(common_settings, {
     text = _("Screen"),

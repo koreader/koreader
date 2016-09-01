@@ -186,9 +186,7 @@ koboupdate: all
 	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
-	cp $(KOBO_DIR)/koreader.sh $(INSTALL_DIR)/koreader
-	cp $(KOBO_DIR)/suspend.sh $(INSTALL_DIR)/koreader
-	cp $(KOBO_DIR)/nickel.sh $(INSTALL_DIR)/koreader
+	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \

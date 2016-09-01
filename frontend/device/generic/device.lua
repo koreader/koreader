@@ -116,8 +116,13 @@ end
 -- ONLY used for Kobo and PocketBook devices
 function Device:onPowerEvent(ev)
     local Screensaver = require("ui/screensaver")
+    local network_manager = require("ui/network/manager")
     if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
         self.powerd:beforeSuspend()
+        if network_manager.wifi_was_on then
+            network_manager:releaseIP()
+            network_manager:turnOffWifi()
+        end
         local UIManager = require("ui/uimanager")
         -- flushing settings first in case the screensaver takes too long time
         -- that flushing has no chance to run
@@ -134,6 +139,9 @@ function Device:onPowerEvent(ev)
         DEBUG("Resuming...")
         local UIManager = require("ui/uimanager")
         UIManager:unschedule(self.suspend)
+        if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+            network_manager.restoreWifiAsync()
+        end
         self:resume()
         Screensaver:close()
         -- restore to previous rotation mode
