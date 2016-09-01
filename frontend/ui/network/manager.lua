@@ -12,7 +12,7 @@ local NetworkMgr = {}
 
 function NetworkMgr:init()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
-    self.wifi_was_on = G_reader_settings:True("wifi_was_on")
+    self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
 end
 
 -- Following methods are Device specific which need to be initialized in
