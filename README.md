@@ -78,7 +78,7 @@ Users of Debian and Ubuntu can install the required packages using:
 ```
 sudo apt-get install build-essential git patch wget unzip \
 gettext autoconf cmake libtool nasm luarocks \
-libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 linux-libc-dev:i386 zlib1g:i386
+libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
 
 Cross compile toolchains are available for Ubuntu users through these commands:
@@ -101,10 +101,21 @@ Mac OSX users may need to install these tools:
 brew install nasm binutils libtool autoconf automake sdl2
 ```
 
-A recent version of Android SDK/NDK and `ant` are needed in order to build
-KOReader for Android devices.
+A recent version of Android SDK (including platform support for API version 19)/NDK, `ant` and `openjdk-8-jdk` are needed
+in order to build KOReader for Android devices.
+
+Users of Debian first need to configure the `backports` repository:
 ```
-sudo apt-get install ant
+sudo echo "deb http://ftp.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/backports.list
+sudo apt-get update
+```
+For both Ubuntu and Debian, install the packages:
+```
+sudo apt-get install ant openjdk-8-jdk
+```
+Users on Debian finally need to remove JRE version 7:
+```
+sudo apt-get remove openjdk-7-jre-headless
 ```
 
 In order to build KOReader package for Ubuntu Touch, the `click` package management
