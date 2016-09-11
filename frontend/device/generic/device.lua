@@ -115,10 +115,38 @@ end
 
 -- ONLY used for Kobo and PocketBook devices
 function Device:onPowerEvent(ev)
-    local Screensaver = require("ui/screensaver")
-    local network_manager = require("ui/network/manager")
-    if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
+    if self.screen_saver_mode then
+        if ev == "Power" or ev == "Resume" then
+            DEBUG("Resuming...")
+            require("ui/uimanager"):unschedule(self.suspend)
+            local network_manager = require("ui/network/manager")
+            if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+                network_manager.restoreWifiAsync()
+            end
+            self:resume()
+            require("ui/screensaver"):close()
+            -- restore to previous rotation mode
+            self.screen:setRotationMode(self.orig_rotation_mode)
+            if self:needsScreenRefreshAfterResume() then
+                self.screen:refreshFull()
+            end
+            self.screen_saver_mode = false
+            self.powerd:refreshCapacity()
+            self.powerd:afterResume()
+        elseif ev == "Suspend" then
+            -- Already in screen saver mode, no need to update UI/state before
+            -- suspending the hardware. This usually happens when sleep cover
+            -- is closed after the device was sent to suspend state.
+            DEBUG("Already in screen saver mode, suspending...")
+            local UIManager = require("ui/uimanager")
+            if not UIManager:hasScheduled(self.suspend) then
+                UIManager:nextTick(self.suspend)
+            end
+        end
+    -- else we we not in screensaver mode
+    elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
+        local network_manager = require("ui/network/manager")
         if network_manager.wifi_was_on then
             network_manager:releaseIP()
             network_manager:turnOffWifi()
@@ -131,27 +159,10 @@ function Device:onPowerEvent(ev)
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
-        Screensaver:show()
+        require("ui/screensaver"):show()
         self.screen:refreshFull()
         self.screen_saver_mode = true
         UIManager:scheduleIn(10, self.suspend)
-    elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
-        DEBUG("Resuming...")
-        local UIManager = require("ui/uimanager")
-        UIManager:unschedule(self.suspend)
-        if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
-            network_manager.restoreWifiAsync()
-        end
-        self:resume()
-        Screensaver:close()
-        -- restore to previous rotation mode
-        self.screen:setRotationMode(self.orig_rotation_mode)
-        if self:needsScreenRefreshAfterResume() then
-            self.screen:refreshFull()
-        end
-        self.screen_saver_mode = false
-        self.powerd:refreshCapacity()
-        self.powerd:afterResume()
     end
 end
 

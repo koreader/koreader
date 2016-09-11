@@ -259,6 +259,16 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
+-- Check to see if a task is already scheduled
+function UIManager:hasScheduled(action)
+    for i = #self._task_queue, 1, -1 do
+        if self._task_queue[i].action == action then
+            return true
+        end
+    end
+    return false
+end
+
 --[[
 register a widget to be repainted and enqueue a refresh
 
