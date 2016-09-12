@@ -160,8 +160,7 @@ function GestureDetector:getPath(slot)
     local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
     local direction = nil
     local distance = math.sqrt(x_diff*x_diff + y_diff*y_diff)
-    if x_diff == 0 and y_diff == 0 then
-    else
+    if x_diff ~= 0 or y_diff ~= 0 then
         local v_direction = y_diff < 0 and "north" or "south"
         local h_direction = x_diff < 0 and "west" or "east"
         if math.abs(y_diff) > 0.577*math.abs(x_diff)
