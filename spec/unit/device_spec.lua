@@ -41,8 +41,21 @@ describe("device module", function()
 
     describe("kobo", function()
         local TimeVal
+        local NickelConf
         setup(function()
             TimeVal = require("ui/timeval")
+            NickelConf = require("device/kobo/nickel_conf")
+        end)
+
+        before_each(function()
+            stub(NickelConf.frontLightLevel, "get")
+            NickelConf.frontLightLevel.get.returns(0)
+            stub(NickelConf.frontLightState, "get")
+        end)
+
+        after_each(function()
+            NickelConf.frontLightLevel.get:revert()
+            NickelConf.frontLightState.get:revert()
         end)
 
         it("should initialize properly on Kobo dahlia", function()
@@ -51,7 +64,6 @@ describe("device module", function()
 
             kobo_dev:init()
             assert.is.same("Kobo_dahlia", kobo_dev.model)
-
         end)
 
         it("should setup eventAdjustHooks properly for input in trilogy", function()
@@ -149,10 +161,7 @@ describe("device module", function()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
             local Device = require("device")
-            local NickelConf = require("device/kobo/nickel_conf")
 
-            stub(NickelConf.frontLightLevel, "get")
-            stub(NickelConf.frontLightState, "get")
             NickelConf.frontLightLevel.get.returns(1)
             NickelConf.frontLightState.get.returns(0)
 
@@ -175,8 +184,6 @@ describe("device module", function()
             Device.suspend:revert()
             Device.powerd.beforeSuspend:revert()
             Device.isKobo:revert()
-            NickelConf.frontLightLevel.get:revert()
-            NickelConf.frontLightState.get:revert()
             readerui.onFlushSettings:revert()
             UIManager._startAutoSuspend = nil
             UIManager._stopAutoSuspend = nil
