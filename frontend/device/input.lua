@@ -275,12 +275,12 @@ function Input:handleKeyBoardEv(ev)
         return keycode
     end
 
-    -- Kobo sleep
+    -- Kobo sleep cover
     if keycode == "Power_SleepCover" then
         if ev.value == EVENT_VALUE_KEY_PRESS then
-            return "Suspend"
+            return "SleepCoverClosed"
         else
-            return "Resume"
+            return "SleepCoverOpened"
         end
     end
 
