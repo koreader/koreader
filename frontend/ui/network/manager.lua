@@ -10,9 +10,15 @@ local _ = require("gettext")
 
 local NetworkMgr = {}
 
-function NetworkMgr:init()
+function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
+end
+
+function NetworkMgr:init()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
+    if self.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+        self:restoreWifiAsync()
+    end
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -174,7 +180,7 @@ function NetworkMgr:showNetworkMenu(complete_callback)
 end
 
 function NetworkMgr:saveNetwork(setting)
-    if not self.nw_settings then self:init() end
+    if not self.nw_settings then self:readNWSettings() end
     self.nw_settings:saveSetting(setting.ssid, {
         ssid = setting.ssid,
         password = setting.password,
@@ -184,13 +190,13 @@ function NetworkMgr:saveNetwork(setting)
 end
 
 function NetworkMgr:deleteNetwork(setting)
-    if not self.nw_settings then self:init() end
+    if not self.nw_settings then self:readNWSettings() end
     self.nw_settings:delSetting(setting.ssid)
     self.nw_settings:flush()
 end
 
 function NetworkMgr:getAllSavedNetworks()
-    if not self.nw_settings then self:init() end
+    if not self.nw_settings then self:readNWSettings() end
     return self.nw_settings
 end
 
@@ -204,5 +210,6 @@ if NETWORK_PROXY then
 end
 
 Device:initNetworkManager(NetworkMgr)
+NetworkMgr:init()
 
 return NetworkMgr
