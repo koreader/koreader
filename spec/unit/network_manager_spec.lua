@@ -48,6 +48,7 @@ describe("network_manager module", function()
     end)
 
     it("should restore wifi in init if wifi was on", function()
+        package.loaded["ui/network/manager"] = nil
         clearState()
         G_reader_settings:saveSetting("wifi_was_on", true)
         local network_manager = require("ui/network/manager")
@@ -58,6 +59,7 @@ describe("network_manager module", function()
     end)
 
     it("should not restore wifi in init if wifi was off", function()
+        package.loaded["ui/network/manager"] = nil
         clearState()
         G_reader_settings:saveSetting("wifi_was_on", false)
         local network_manager = require("ui/network/manager")
@@ -65,5 +67,10 @@ describe("network_manager module", function()
         assert.is.same(turn_off_wifi_called, 0)
         assert.is.same(obtain_ip_called, 0)
         assert.is.same(release_ip_called, 0)
+    end)
+
+    teardown(function()
+        function Device:initNetworkManager() end
+        package.loaded["ui/network/manager"] = nil
     end)
 end)
