@@ -52,6 +52,16 @@ local KoboPixie = Kobo:new{
     viewport = Geom:new{x=0, y=2, w=596, h=794},
 }
 
+-- Kobo Aura One:
+local KoboDaylight = Kobo:new{
+    model = "Kobo_daylight",
+    hasFrontlight = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
+    display_dpi = 300,
+    viewport = Geom:new{x=4, y=3, w=1396, h=1866},
+}
+
 -- Kobo Aura H2O:
 local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
@@ -298,6 +308,8 @@ elseif codename == "alyssum" then
     return KoboAlyssum
 elseif codename == "pika" then
     return KoboPika
+elseif codename == "daylight" then
+    return KoboDaylight   
 else
     error("unrecognized Kobo model "..codename)
 end
