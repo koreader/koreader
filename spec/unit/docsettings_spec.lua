@@ -1,11 +1,13 @@
 describe("docsettings module", function()
-    local docsettings, lfs
+    local docsettings, lfs, util
 
     setup(function()
         require("commonrequire")
         docsettings = require("docsettings")
         lfs = require("libs/libkoreader-lfs")
+        util = require("ffi/util")
     end)
+
     it("should generate sidecar directory path", function()
         assert.Equals("../../foo.sdr", docsettings:getSidecarDir("../../foo.pdf"))
         assert.Equals("/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
@@ -72,5 +74,13 @@ describe("docsettings module", function()
         assert.Equals(d:readSetting("a"), #legacy_files)
         d:close()
         d:purge()
+    end)
+
+    it("should build correct legacy history path", function()
+        local file = "/a/b/c--d/c.txt"
+        local history_path = util.basename(docsettings:getHistoryPath(file))
+        local path_from_history = docsettings:getPathFromHistory(history_path)
+        local name_from_history = docsettings:getNameFromHistory(history_path)
+        assert.is.same(file, path_from_history .. "/" .. name_from_history)
     end)
 end)
