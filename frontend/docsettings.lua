@@ -36,12 +36,11 @@ end
 
 function DocSettings:getNameFromHistory(hist_name)
     if hist_name == nil or hist_name == '' then return nil end
-    hist_name = string.match(hist_name, "%b[]")
-    if hist_name == nil or hist_name == '' then return nil end
+    local s = string.match(hist_name, "%b[]")
+    if s == nil or s == '' then return nil end
     -- at first, search for path length
-    local s = string.len(hist_name)
     -- and return the rest of string without 4 last characters (".lua")
-    return string.sub(hist_name, s+2, -5)
+    return string.sub(hist_name, string.len(s)+2, -5)
 end
 
 function DocSettings:open(docfile)

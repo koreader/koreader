@@ -1,6 +1,7 @@
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
+local realpath = require("ffi/util").realpath
 local joinPath = require("ffi/util").joinPath
 local dump = require("dump")
 
@@ -14,12 +15,28 @@ local function buildEntry(input_time, input_file)
     return {
         time = input_time,
         text = input_file:gsub(".*/", ""),
-        file = input_file,
+        file = realpath(input_file),
         callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(input_file)
         end
     }
+end
+
+local function fileFirstOrdering(l, r)
+    if l.file == r.file then
+        return l.time > r.time
+    else
+        return l.file < r.file
+    end
+end
+
+local function timeFirstOrdering(l, r)
+    if l.time == r.time then
+        return l.file < r.file
+    else
+        return l.time > r.time
+    end
 end
 
 function ReadHistory:_indexing(start)
@@ -31,22 +48,18 @@ end
 
 function ReadHistory:_sort()
     for i = #self.hist, 1, -1 do
-        if lfs.attributes(self.hist[i].file, "mode") ~= "file" then
+        if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
             table.remove(self.hist, i)
         end
     end
-    table.sort(self.hist, function(l, r) return l.file < r.file end)
+    table.sort(self.hist, fileFirstOrdering)
     -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
     for i = #self.hist, 2, -1 do
         if self.hist[i].file == self.hist[i - 1].file then
-            if self.hist[i].time < self.hist[i - 1].time then
-                table.remove(self.hist, i)
-            else
-                table.remove(self.hist,i - 1)
-            end
+            table.remove(self.hist, i)
         end
     end
-    table.sort(self.hist, function(v1, v2) return v1.time > v2.time end)
+    table.sort(self.hist, timeFirstOrdering)
     self:_indexing(1)
 end
 
@@ -75,7 +88,7 @@ end
 -- Reads history table from file
 function ReadHistory:_read()
     local ok, data = pcall(dofile, history_file)
-    if ok then
+    if ok and data then
         for k, v in pairs(data) do
             table.insert(self.hist, buildEntry(v.time, v.file))
         end
@@ -94,7 +107,7 @@ function ReadHistory:_readLegacyHistory()
                 if file ~= nil and file ~= "" then
                     table.insert(
                         self.hist,
-                        buildEntry(lfs.attributes(path, "modification"),
+                        buildEntry(lfs.attributes(joinPath(history_dir, f), "modification"),
                                    joinPath(path, file)))
                 end
             end
