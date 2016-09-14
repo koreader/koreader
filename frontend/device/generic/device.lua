@@ -9,6 +9,7 @@ local Device = {
     screen_saver_mode = false,
     charging_mode = false,
     survive_screen_saver = false,
+    is_cover_closed = false,
     model = nil,
     powerd = nil,
     screen = nil,
@@ -113,35 +114,44 @@ function Device:outofScreenSaver()
     self.screen_saver_mode = false
 end
 
+function Device:scheduleSuspendIfNeeded()
+    local UIManager = require("ui/uimanager")
+    if not UIManager:hasScheduled(self.suspend) then
+        UIManager:nextTick(self.suspend)
+    end
+end
+
 -- ONLY used for Kobo and PocketBook devices
 function Device:onPowerEvent(ev)
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
-            DEBUG("Resuming...")
-            require("ui/uimanager"):unschedule(self.suspend)
-            local network_manager = require("ui/network/manager")
-            if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
-                network_manager.restoreWifiAsync()
+            if self.is_cover_closed then
+                -- don't let power key press wake up device when the cover is in closed state
+                self:scheduleSuspendIfNeeded()
+            else
+                DEBUG("Resuming...")
+                require("ui/uimanager"):unschedule(self.suspend)
+                local network_manager = require("ui/network/manager")
+                if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+                    network_manager.restoreWifiAsync()
+                end
+                self:resume()
+                require("ui/screensaver"):close()
+                -- restore to previous rotation mode
+                self.screen:setRotationMode(self.orig_rotation_mode)
+                if self:needsScreenRefreshAfterResume() then
+                    self.screen:refreshFull()
+                end
+                self.screen_saver_mode = false
+                self.powerd:refreshCapacity()
+                self.powerd:afterResume()
             end
-            self:resume()
-            require("ui/screensaver"):close()
-            -- restore to previous rotation mode
-            self.screen:setRotationMode(self.orig_rotation_mode)
-            if self:needsScreenRefreshAfterResume() then
-                self.screen:refreshFull()
-            end
-            self.screen_saver_mode = false
-            self.powerd:refreshCapacity()
-            self.powerd:afterResume()
         elseif ev == "Suspend" then
             -- Already in screen saver mode, no need to update UI/state before
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
             DEBUG("Already in screen saver mode, suspending...")
-            local UIManager = require("ui/uimanager")
-            if not UIManager:hasScheduled(self.suspend) then
-                UIManager:nextTick(self.suspend)
-            end
+            self:scheduleSuspendIfNeeded()
         end
     -- else we we not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then

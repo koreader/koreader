@@ -87,8 +87,14 @@ function UIManager:init()
             end
         end
         if not G_reader_settings:readSetting("ignore_power_sleepcover") then
-            self.event_handlers["SleepCoverClosed"] = self.event_handlers["Suspend"]
-            self.event_handlers["SleepCoverOpened"] = self.event_handlers["Resume"]
+            self.event_handlers["SleepCoverClosed"] = function()
+                Device.is_cover_closed = true
+                self.event_handlers["Suspend"]()
+            end
+            self.event_handlers["SleepCoverOpened"] = function()
+                Device.is_cover_closed = false
+                self.event_handlers["Resume"]()
+            end
         else
             -- Closing/opening the cover will still wake up the device, so we
             -- need to put it back to sleep if we are in screen saver mode
