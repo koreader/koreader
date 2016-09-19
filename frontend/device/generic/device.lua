@@ -14,6 +14,9 @@ local Device = {
     powerd = nil,
     screen = nil,
     input = nil,
+    -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
+    -- fail and the battery will be drained while we are in screensaver mode
+    suspend_wait_timeout = 15,
 
     -- hardware feature tests: (these are functions!)
     hasKeyboard = no,
@@ -114,11 +117,10 @@ function Device:outofScreenSaver()
     self.screen_saver_mode = false
 end
 
-function Device:scheduleSuspendIfNeeded()
+function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
-    if not UIManager:hasScheduled(self.suspend) then
-        UIManager:nextTick(self.suspend)
-    end
+    UIManager:unschedule(self.suspend)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
 end
 
 -- ONLY used for Kobo and PocketBook devices
@@ -127,7 +129,7 @@ function Device:onPowerEvent(ev)
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
                 -- don't let power key press wake up device when the cover is in closed state
-                self:scheduleSuspendIfNeeded()
+                self:rescheduleSuspend()
             else
                 DEBUG("Resuming...")
                 require("ui/uimanager"):unschedule(self.suspend)
@@ -151,7 +153,7 @@ function Device:onPowerEvent(ev)
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
             DEBUG("Already in screen saver mode, suspending...")
-            self:scheduleSuspendIfNeeded()
+            self:rescheduleSuspend()
         end
     -- else we we not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then
@@ -172,7 +174,7 @@ function Device:onPowerEvent(ev)
         require("ui/screensaver"):show()
         self.screen:refreshFull()
         self.screen_saver_mode = true
-        UIManager:scheduleIn(10, self.suspend)
+        UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
     end
 end
 
