@@ -118,8 +118,25 @@ function Kobo:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = {
-            [59] = "Power_SleepCover",
-            [90] = "Light",
+            [59] = function(ev)
+                if self.input:isEvKeyPress(ev) then
+                    return "SleepCoverClosed"
+                else
+                    return "SleepCoverOpened"
+                end
+            end,
+            [90] = function(ev)
+                if self.input:isEvKeyRelease(ev) then
+                    return "Light"
+                end
+            end,
+            [330] = function(ev)
+                if self.input:isEvKeyPress(ev) then
+                    return "USBPlugIn"
+                else
+                    return "USBPlugOut"
+                end
+            end,
             [102] = "Home",
             [116] = "Power",
         }
@@ -338,7 +355,7 @@ elseif codename == "alyssum" then
 elseif codename == "pika" then
     return KoboPika
 elseif codename == "daylight" then
-    return KoboDaylight   
+    return KoboDaylight
 else
     error("unrecognized Kobo model "..codename)
 end

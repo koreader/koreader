@@ -265,6 +265,10 @@ function Input:handleKeyBoardEv(ev)
         return
     end
 
+    if type(keycode) == "function" then
+        return keycode(ev)
+    end
+
     -- take device rotation into account
     if self.rotation_map[self.device.screen:getRotationMode()][keycode] then
         keycode = self.rotation_map[self.device.screen:getRotationMode()][keycode]
@@ -273,15 +277,6 @@ function Input:handleKeyBoardEv(ev)
     if keycode == "IntoSS" or keycode == "OutOfSS"
     or keycode == "Charging" or keycode == "NotCharging" then
         return keycode
-    end
-
-    -- Kobo sleep cover
-    if keycode == "Power_SleepCover" then
-        if ev.value == EVENT_VALUE_KEY_PRESS then
-            return "SleepCoverClosed"
-        else
-            return "SleepCoverOpened"
-        end
     end
 
     if keycode == "Power" then
@@ -298,10 +293,6 @@ function Input:handleKeyBoardEv(ev)
                 return "PowerRelease"
             end
         end
-    end
-
-    if ev.value == EVENT_VALUE_KEY_RELEASE and keycode == "Light" then
-        return keycode
     end
 
     -- handle modifier keys
@@ -536,6 +527,14 @@ end
 function Input:cleanAbsxy()
     self:setCurrentMtSlot("abs_x", nil)
     self:setCurrentMtSlot("abs_y", nil)
+end
+
+function Input:isEvKeyPress(ev)
+    return ev.value == EVENT_VALUE_KEY_PRESS
+end
+
+function Input:isEvKeyRelease(ev)
+    return ev.value == EVENT_VALUE_KEY_RELEASE
 end
 
 
