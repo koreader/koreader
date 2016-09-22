@@ -24,7 +24,8 @@ local SetDefaults = InputContainer:new{
     results = {},
     defaults_menu = {},
     initialized = false,
-    changed = {}
+    changed = {},
+    settings_changed = false,
 }
 
 function SetDefaults:ConfirmEdit()
@@ -118,7 +119,7 @@ function SetDefaults:init()
                                 callback = function()
                                     self.defaults_value[i] = true
                                     _G[setting_name] = true
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
                                     self:close()
@@ -132,7 +133,7 @@ function SetDefaults:init()
                                 callback = function()
                                     self.defaults_value[i] = false
                                     _G[setting_name] = false
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
                                     self.defaults_menu:swithItemTable("Defaults", self.results, i)
@@ -180,7 +181,7 @@ function SetDefaults:init()
                                     _G[setting_name] = new_table
 
                                     self.defaults_value[i] = _G[setting_name]
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
 
                                     self.results[i].text = self:build_setting(i)
@@ -221,7 +222,7 @@ function SetDefaults:init()
                                     if _G[setting_name] ~= new_value then
                                         _G[setting_name] = new_value
                                         self.defaults_value[i] = new_value
-                                        settings_changed = true
+                                        self.settings_changed = true
                                         self.changed[i] = true
                                         self.results[i].text = self:build_setting(i)
                                     end
@@ -338,7 +339,7 @@ function SetDefaults:saveSettings()
             text = _("Default settings saved."),
         })
     end
-    settings_changed = false
+    self.settings_changed = false
 end
 
 return SetDefaults
