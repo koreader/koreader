@@ -15,7 +15,7 @@ local dump = require("dump")
 
 
 local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
-local persistent_filename = DataStorage:getDataDir() .. "/defaults.persistent.lua"
+local persistent_defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
 
 
 local SetDefaults = InputContainer:new{
@@ -49,6 +49,14 @@ function SetDefaults:init()
         local load_defaults = loadfile(defaults_path)
         setfenv(load_defaults, defaults)
         load_defaults()
+
+        local file = io.open(persistent_defaults_path, "r")
+        if file ~= nil then
+            file:close()
+            load_defaults = loadfile(persistent_defaults_path)
+            setfenv(load_defaults, defaults)
+            load_defaults()
+        end
 
         local i = 1
         for n, v in util.orderedPairs(defaults) do
@@ -271,10 +279,10 @@ end
 function SetDefaults:saveSettings()
     self.results = {}
     local persisted_defaults = {}
-    local file = io.open(persistent_filename, "r")
+    local file = io.open(persistent_defaults_path, "r")
     if file ~= nil then
         file:close()
-        local load_defaults = loadfile(persistent_filename)
+        local load_defaults = loadfile(persistent_defaults_path)
         setfenv(load_defaults, persisted_defaults)
         load_defaults()
     end
@@ -314,7 +322,7 @@ function SetDefaults:saveSettings()
         end
     end
 
-    file = io.open(persistent_filename, "w")
+    file = io.open(persistent_defaults_path, "w")
     if file then
         file:write("-- For configuration changes that persists between updates\n")
         for k, v in pairs(persisted_defaults) do
