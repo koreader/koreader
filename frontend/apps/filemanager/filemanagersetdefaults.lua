@@ -209,14 +209,7 @@ function SetDefaults:init()
                                 is_enter_default = true,
                                 enabled = true,
                                 callback = function()
-                                    local new_value = self.set_dialog:getInputText()
-                                    if setting_type == "boolean" then
-                                        if new_value == "true" then
-                                            new_value = true
-                                        else
-                                            new_value = false
-                                        end
-                                    end
+                                    local new_value = self.set_dialog:getInputValue()
                                     if _G[setting_name] ~= new_value then
                                         _G[setting_name] = new_value
                                         self.defaults_value[i] = new_value

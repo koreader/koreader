@@ -10,7 +10,7 @@ Example:
         title = _("Dialog title"),
         input = "default value",
         input_hint = "hint text",
-        input_type = "text",
+        input_type = "string",
         -- text_type = "password",
         buttons = {
             {
@@ -26,7 +26,8 @@ Example:
                     -- triggered after user press the enter key from keyboard
                     is_enter_default = true,
                     callback = function()
-                        print('Got user input:', sample_input:getInputText())
+                        print('Got user input as raw text:', sample_input:getInputText())
+                        print('Got user input as value:', sample_input:getInputValue())
                     end,
                 },
             }
@@ -175,6 +176,15 @@ end
 
 function InputDialog:getInputText()
     return self._input_widget:getText()
+end
+
+function InputDialog:getInputValue()
+    local text = self:getInputText()
+    if self.input_type == "number" then
+        return tonumber(text)
+    else
+        return text
+    end
 end
 
 function InputDialog:setInputText(text)
