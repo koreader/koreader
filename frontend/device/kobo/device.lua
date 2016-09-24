@@ -118,15 +118,29 @@ function Kobo:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = {
-            [90] = "Light",
+            [59] = function(ev)
+                if self.input:isEvKeyPress(ev) then
+                    return "SleepCoverClosed"
+                else
+                    return "SleepCoverOpened"
+                end
+            end,
+            [90] = function(ev)
+                if self.input:isEvKeyRelease(ev) then
+                    return "Light"
+                end
+            end,
+            [330] = function(ev)
+                if self.input:isEvKeyPress(ev) then
+                    return "USBPlugIn"
+                else
+                    return "USBPlugOut"
+                end
+            end,
             [102] = "Home",
             [116] = "Power",
         }
     }
-
-    if not G_reader_settings:readSetting("ignore_power_sleepcover") then
-        self.input.event_map[59] = "Power_SleepCover"
-    end
 
     Generic.init(self)
 
@@ -155,6 +169,38 @@ function Kobo:init()
             end
             self:initEventAdjustHooks()
         end
+    end
+
+    -- TODO: get rid of KOBO_LIGHT_ON_START
+    local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
+    if kobo_light_on_start then
+        local new_intensity
+        local is_frontlight_on
+        if kobo_light_on_start > 0 then
+            new_intensity = math.min(kobo_light_on_start, 100)
+            is_frontlight_on = true
+        elseif kobo_light_on_start == 0 then
+            is_frontlight_on = false
+        elseif kobo_light_on_start == -2 then
+            local NickelConf = require("device/kobo/nickel_conf")
+            new_intensity = NickelConf.frontLightLevel.get()
+            is_frontlight_on = NickelConf.frontLightState:get()
+            if is_frontlight_on == nil then
+                -- this device does not support frontlight toggle,
+                -- we set the value based on frontlight intensity.
+                if new_intensity > 0 then
+                    is_frontlight_on = true
+                else
+                    is_frontlight_on = false
+                end
+            end
+        end
+        -- Since this is kobo-specific, we save all values in settings here
+        -- and let the code (reader.lua) pick it up later during bootstrap.
+        if new_intensity then
+            G_reader_settings:saveSetting("frontlight_intensity", new_intensity)
+        end
+        G_reader_settings:saveSetting("is_frontlight_on", is_frontlight_on)
     end
 end
 
@@ -309,7 +355,7 @@ elseif codename == "alyssum" then
 elseif codename == "pika" then
     return KoboPika
 elseif codename == "daylight" then
-    return KoboDaylight   
+    return KoboDaylight
 else
     error("unrecognized Kobo model "..codename)
 end

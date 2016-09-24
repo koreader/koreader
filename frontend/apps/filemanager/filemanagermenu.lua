@@ -36,8 +36,8 @@ function FileManagerMenu:init()
         home = {
             icon = "resources/icons/appbar.home.png",
             callback = function()
-                if settings_changed then
-                    settings_changed = false
+                if SetDefaults.settings_changed then
+                    SetDefaults.settings_changed = false
                     UIManager:show(ConfirmBox:new{
                         text = _("You have unsaved default settings. Save them now?"),
                         ok_callback = function()

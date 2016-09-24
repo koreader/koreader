@@ -9,10 +9,14 @@ local Device = {
     screen_saver_mode = false,
     charging_mode = false,
     survive_screen_saver = false,
+    is_cover_closed = false,
     model = nil,
     powerd = nil,
     screen = nil,
     input = nil,
+    -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
+    -- fail and the battery will be drained while we are in screensaver mode
+    suspend_wait_timeout = 15,
 
     -- hardware feature tests: (these are functions!)
     hasKeyboard = no,
@@ -113,12 +117,48 @@ function Device:outofScreenSaver()
     self.screen_saver_mode = false
 end
 
+function Device:rescheduleSuspend()
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.suspend)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+end
+
 -- ONLY used for Kobo and PocketBook devices
 function Device:onPowerEvent(ev)
-    local Screensaver = require("ui/screensaver")
-    local network_manager = require("ui/network/manager")
-    if (ev == "Power" or ev == "Suspend") and not self.screen_saver_mode then
+    if self.screen_saver_mode then
+        if ev == "Power" or ev == "Resume" then
+            if self.is_cover_closed then
+                -- don't let power key press wake up device when the cover is in closed state
+                self:rescheduleSuspend()
+            else
+                DEBUG("Resuming...")
+                require("ui/uimanager"):unschedule(self.suspend)
+                local network_manager = require("ui/network/manager")
+                if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+                    network_manager.restoreWifiAsync()
+                end
+                self:resume()
+                require("ui/screensaver"):close()
+                -- restore to previous rotation mode
+                self.screen:setRotationMode(self.orig_rotation_mode)
+                if self:needsScreenRefreshAfterResume() then
+                    self.screen:refreshFull()
+                end
+                self.screen_saver_mode = false
+                self.powerd:refreshCapacity()
+                self.powerd:afterResume()
+            end
+        elseif ev == "Suspend" then
+            -- Already in screen saver mode, no need to update UI/state before
+            -- suspending the hardware. This usually happens when sleep cover
+            -- is closed after the device was sent to suspend state.
+            DEBUG("Already in screen saver mode, suspending...")
+            self:rescheduleSuspend()
+        end
+    -- else we we not in screensaver mode
+    elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
+        local network_manager = require("ui/network/manager")
         if network_manager.wifi_was_on then
             network_manager:releaseIP()
             network_manager:turnOffWifi()
@@ -131,27 +171,10 @@ function Device:onPowerEvent(ev)
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
-        Screensaver:show()
+        require("ui/screensaver"):show()
         self.screen:refreshFull()
         self.screen_saver_mode = true
-        UIManager:scheduleIn(10, self.suspend)
-    elseif (ev == "Power" or ev == "Resume") and self.screen_saver_mode then
-        DEBUG("Resuming...")
-        local UIManager = require("ui/uimanager")
-        UIManager:unschedule(self.suspend)
-        if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
-            network_manager.restoreWifiAsync()
-        end
-        self:resume()
-        Screensaver:close()
-        -- restore to previous rotation mode
-        self.screen:setRotationMode(self.orig_rotation_mode)
-        if self:needsScreenRefreshAfterResume() then
-            self.screen:refreshFull()
-        end
-        self.screen_saver_mode = false
-        self.powerd:refreshCapacity()
-        self.powerd:afterResume()
+        UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
     end
 end
 

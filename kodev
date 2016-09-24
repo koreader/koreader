@@ -329,6 +329,7 @@ OPTIONS:
         test_path="${test_path}/$2"
     fi
 
+    echo "Runing tests in" ${test_path}
     busted --lua="./luajit" ${opts} \
         --no-auto-insulate \
         --lazy \

@@ -707,15 +707,13 @@ function ReaderPaging:onGotoPageRel(diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
 
-    if self.zoom_mode == "free" then
-        -- do nothing in free zoom mode
-    elseif self.zoom_mode:find("width") then
+    if self.zoom_mode:find("width") then
         y_pan_off = self.visible_area.h * diff
     elseif self.zoom_mode:find("height") then
         -- negative x panning if writing direction is right to left
         local direction = self.ui.document.configurable.writing_direction
         x_pan_off = self.visible_area.w * diff * (direction == 1 and -1 or 1)
-    else
+    elseif self.zoom_mode ~= "free" then  -- do nothing in "free" zoom mode
         -- must be fit content or page zoom mode
         if self.visible_area.w == self.page_area.w then
             y_pan_off = self.visible_area.h * diff

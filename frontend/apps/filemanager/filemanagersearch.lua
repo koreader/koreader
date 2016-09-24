@@ -12,6 +12,7 @@ local Font = require("ui/font")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -75,11 +76,11 @@ function Search:getCalibre()
         if not self.metafile_1 then
           self.error = _("SEARCH_LIBRARY_PATH should be defined in DEFAULTS.LUA.")
         else
-          settings_changed = true
+          SetDefaults.settings_changed = true
         end
     else
         if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
-            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"
+            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"  -- luacheck: ignore
         end
         if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
             if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
@@ -98,7 +99,7 @@ function Search:getCalibre()
         elseif self.metafile_1 == nil then
             self.metafile_1 = findcalibre("/mnt")
             if self.metafile_1 then
-                settings_changed = true
+                SetDefaults.settings_changed = true
             end
         end
     end
@@ -106,7 +107,7 @@ function Search:getCalibre()
     local dummy
 
     if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
-        SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"
+        SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"  -- luacheck: ignore
     end
     if io.open(SEARCH_LIBRARY_PATH2 .. calibre,"r") == nil then
         if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre,"r") ~= nil then
@@ -152,7 +153,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not settings_changed and self.search_value == dummy and self.lastsearch == "series" then
+                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "series" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -166,7 +167,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not settings_changed and self.search_value == dummy and self.lastsearch == "tags" then
+                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "tags" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -190,7 +191,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not settings_changed and self.search_value == dummy and self.lastsearch == "find" then
+                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "find" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -235,7 +236,6 @@ function Search:find(option)
     local line
     local i = 1
     local upsearch
-    local dummy
     local firstrun
 
     -- removes leading and closing characters and converts hex-unicodes
@@ -269,10 +269,10 @@ function Search:find(option)
                 if s == self.authors then
                     self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
                 elseif s == self.tags then
-                    local dummy = ReplaceHexChars(line,8,3)
-                    self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. dummy
-                    self.data[i][self.tags3] = self.data[i][self.tags3] .. "\t" .. dummy
-                    self.browse_tags[dummy] = (self.browse_tags[dummy] or 0) + 1
+                    local tags_line = ReplaceHexChars(line,8,3)
+                    self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. tags_line
+                    self.data[i][self.tags3] = self.data[i][self.tags3] .. "\t" .. tags_line
+                    self.browse_tags[tags_line] = (self.browse_tags[tags_line] or 0) + 1
                 end
             end
         end
@@ -318,16 +318,24 @@ function Search:find(option)
                         line = g:read()
                     end
 
-                    local dummy = ""
-                    if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
-                    if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
-                    if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
+                    local search_content = ""
+                    if option == "find" and SEARCH_AUTHORS then
+                        search_content = search_content .. self.data[i][self.authors] .. "\n"
+                    end
+                    if option == "find" and SEARCH_TITLE then
+                        search_content = search_content .. self.data[i][self.title] .. "\n"
+                    end
+                    if option == "find" and SEARCH_PATH then
+                        search_content = search_content .. self.data[i][self.path] .. "\n"
+                    end
                     if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
-                        dummy = dummy .. self.data[i][self.series] .. "\n"
+                        search_content = search_content .. self.data[i][self.series] .. "\n"
                         self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                     end
-                    if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
-                    if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
+                    if option == "tags" or SEARCH_TAGS then
+                        search_content = search_content .. self.data[i][self.tags] .. "\n"
+                    end
+                    if not SEARCH_CASESENSITIVE then search_content = string.upper(search_content) end
 
                     for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
                         if j~="\t" then
@@ -336,7 +344,7 @@ function Search:find(option)
                     end
                     if DocumentRegistry:getProvider(self.data[i][self.path]) then
                         if upsearch ~= "" then
-                            if string.find(dummy,upsearch,nil,true) then
+                            if string.find(search_content,upsearch,nil,true) then
                                 i = i + 1
                             end
                         else
@@ -372,23 +380,23 @@ function Search:find(option)
                 if line == "  }, " or line == "  }" then
                     -- new calibre data set
 
-                    dummy = ""
-                    if option == "find" and SEARCH_AUTHORS then dummy = dummy .. self.data[i][self.authors] .. "\n" end
-                    if option == "find" and SEARCH_TITLE then dummy = dummy .. self.data[i][self.title] .. "\n"  end
-                    if option == "find" and SEARCH_PATH then dummy = dummy .. self.data[i][self.path] .. "\n"  end
+                    local search_content = ""
+                    if option == "find" and SEARCH_AUTHORS then search_content = search_content .. self.data[i][self.authors] .. "\n" end
+                    if option == "find" and SEARCH_TITLE then search_content = search_content .. self.data[i][self.title] .. "\n"  end
+                    if option == "find" and SEARCH_PATH then search_content = search_content .. self.data[i][self.path] .. "\n"  end
                     if (option == "series" or SEARCH_SERIES) and self.data[i][self.series] ~= "-" then
-                        dummy = dummy .. self.data[i][self.series] .. "\n"
+                        search_content = search_content .. self.data[i][self.series] .. "\n"
                         self.browse_series[self.data[i][self.series]] = (self.browse_series[self.data[i][self.series]] or 0) + 1
                     end
-                    if option == "tags" or SEARCH_TAGS then dummy = dummy .. self.data[i][self.tags] .. "\n" end
-                    if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
+                    if option == "tags" or SEARCH_TAGS then search_content = search_content .. self.data[i][self.tags] .. "\n" end
+                    if not SEARCH_CASESENSITIVE then search_content = string.upper(search_content) end
 
                     for j = 1,9 do
                         g:write(self.data[i][j] .. "\n")
                     end
 
                     if upsearch ~= "" then
-                        if string.find(dummy,upsearch,nil,true) then
+                        if string.find(search_content,upsearch,nil,true) then
                             i = i + 1
                         end
                     else
@@ -464,8 +472,7 @@ function Search:find(option)
             self:browse(option,1)
         end
     else
-        dummy = _("No match for") .. " " .. self.search_value
-        UIManager:show(InfoMessage:new{text = dummy})
+        UIManager:show(InfoMessage:new{text = T(_("No match for %1."), self.search_value)})
     end
 end
 
@@ -616,14 +623,14 @@ function Search:browse(option, run, chosen)
         local i = 1
         while i <= self.count do
             if (option == "tags" and self.data[i][self.tags3]:find("\t" .. chosen .. "\t",nil,true)) or (option == "series" and chosen == self.data[i][self.series]) then
-                local dummy = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
+                local entry = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
                               _("Author(s):") .. " " .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
                               _("Tags:") .. " " .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
                               _("Series:") .. " " .. (self.data[i][self.series] or "-")
                 if self.data[i][self.series] ~= "-" then
-                    dummy = dummy .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
+                    entry = entry .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
                 end
-                dummy = dummy .. "\n \n" .. _("Path: ")
+                entry = entry .. "\n \n" .. _("Path: ")
                 local book = self.data[i][self.path]
                 local text
                 if option == "series" then
@@ -637,7 +644,7 @@ function Search:browse(option, run, chosen)
                 end
                 table.insert(self.results, {
                    text = text,
-                   info = dummy,
+                   info = entry,
                    notchecked = true,
                    path = self.data[i][self.path],
                    callback = function()

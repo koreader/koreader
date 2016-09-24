@@ -15,7 +15,7 @@ local dump = require("dump")
 
 
 local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
-local persistent_filename = DataStorage:getDataDir() .. "/defaults.persistent.lua"
+local persistent_defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
 
 
 local SetDefaults = InputContainer:new{
@@ -24,7 +24,8 @@ local SetDefaults = InputContainer:new{
     results = {},
     defaults_menu = {},
     initialized = false,
-    changed = {}
+    changed = {},
+    settings_changed = false,
 }
 
 function SetDefaults:ConfirmEdit()
@@ -49,6 +50,14 @@ function SetDefaults:init()
         local load_defaults = loadfile(defaults_path)
         setfenv(load_defaults, defaults)
         load_defaults()
+
+        local file = io.open(persistent_defaults_path, "r")
+        if file ~= nil then
+            file:close()
+            load_defaults = loadfile(persistent_defaults_path)
+            setfenv(load_defaults, defaults)
+            load_defaults()
+        end
 
         local i = 1
         for n, v in util.orderedPairs(defaults) do
@@ -110,7 +119,7 @@ function SetDefaults:init()
                                 callback = function()
                                     self.defaults_value[i] = true
                                     _G[setting_name] = true
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
                                     self:close()
@@ -124,7 +133,7 @@ function SetDefaults:init()
                                 callback = function()
                                     self.defaults_value[i] = false
                                     _G[setting_name] = false
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
                                     self.defaults_menu:swithItemTable("Defaults", self.results, i)
@@ -172,7 +181,7 @@ function SetDefaults:init()
                                     _G[setting_name] = new_table
 
                                     self.defaults_value[i] = _G[setting_name]
-                                    settings_changed = true
+                                    self.settings_changed = true
                                     self.changed[i] = true
 
                                     self.results[i].text = self:build_setting(i)
@@ -209,18 +218,11 @@ function SetDefaults:init()
                                 is_enter_default = true,
                                 enabled = true,
                                 callback = function()
-                                    local new_value = self.set_dialog:getInputText()
-                                    if setting_type == "boolean" then
-                                        if new_value == "true" then
-                                            new_value = true
-                                        else
-                                            new_value = false
-                                        end
-                                    end
+                                    local new_value = self.set_dialog:getInputValue()
                                     if _G[setting_name] ~= new_value then
                                         _G[setting_name] = new_value
                                         self.defaults_value[i] = new_value
-                                        settings_changed = true
+                                        self.settings_changed = true
                                         self.changed[i] = true
                                         self.results[i].text = self:build_setting(i)
                                     end
@@ -278,10 +280,10 @@ end
 function SetDefaults:saveSettings()
     self.results = {}
     local persisted_defaults = {}
-    local file = io.open(persistent_filename, "r")
+    local file = io.open(persistent_defaults_path, "r")
     if file ~= nil then
         file:close()
-        local load_defaults = loadfile(persistent_filename)
+        local load_defaults = loadfile(persistent_defaults_path)
         setfenv(load_defaults, persisted_defaults)
         load_defaults()
     end
@@ -321,7 +323,7 @@ function SetDefaults:saveSettings()
         end
     end
 
-    file = io.open(persistent_filename, "w")
+    file = io.open(persistent_defaults_path, "w")
     if file then
         file:write("-- For configuration changes that persists between updates\n")
         for k, v in pairs(persisted_defaults) do
@@ -337,7 +339,7 @@ function SetDefaults:saveSettings()
             text = _("Default settings saved."),
         })
     end
-    settings_changed = false
+    self.settings_changed = false
 end
 
 return SetDefaults
