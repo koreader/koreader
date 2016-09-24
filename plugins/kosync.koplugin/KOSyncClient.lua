@@ -15,6 +15,7 @@ function KOSyncClient:new(o)
 end
 
 function KOSyncClient:init()
+    require("socket.http").TIMEOUT = 1
     local Spore = require("Spore")
     self.client = Spore.new_from_spec(self.service_spec, {
         base_url = self.custom_url,
@@ -89,7 +90,7 @@ function KOSyncClient:authorize(username, password)
         return res.status == 200, res.body
     else
         DEBUG("err:", res)
-        return false, res
+        return false, res.body
     end
 end
 
@@ -123,7 +124,7 @@ function KOSyncClient:update_progress(
             callback(res.status == 200, res.body)
         else
             DEBUG("err:", res)
-            callback(false, res)
+            callback(false, res.body)
         end
     end)
     self.client:enable("AsyncHTTP", {thread = co})
@@ -153,7 +154,7 @@ function KOSyncClient:get_progress(
             callback(res.status == 200, res.body)
         else
             DEBUG("err:", res)
-            callback(false, res)
+            callback(false, res.body)
         end
     end)
     self.client:enable("AsyncHTTP", {thread = co})

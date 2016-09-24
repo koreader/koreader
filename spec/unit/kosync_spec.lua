@@ -173,4 +173,40 @@ describe("KOSync modules #notest #nocov", function()
             DEBUG("Please retry later", res)
         end
     end)
+
+    -- The response of mockKOSyncClient
+    local res = {
+        result = false,
+        body = {}
+    }
+
+    -- TODO: Test kosync module
+    local function mockKOSyncClient()
+        package.loaded["KOSyncClient"] = nil
+        local c = require("KOSyncClient")
+        c.new = function(o)
+            local o = o or {}
+            setmetatable(o, self)
+            self.__index = self
+            return o
+        end
+
+        c.init = function() end
+
+        c.register = function(name, passwd)
+            return res.result, res.body
+        end
+
+        c.authorize = function(name, passwd)
+            return res.result, res.body
+        end
+
+        c.update_progress = function(name, passwd, doc, prog, percent, device, device_id, cb)
+            cb(res.result, res.body)
+        end
+
+        c.get_progress = function(name, passwd, doc, cb)
+            cb(res.result, res.body)
+        end
+    end
 end)
