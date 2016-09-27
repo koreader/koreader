@@ -130,13 +130,6 @@ function Kobo:init()
                     return "Light"
                 end
             end,
-            [330] = function(ev)
-                if self.input:isEvKeyPress(ev) then
-                    return "USBPlugIn"
-                else
-                    return "USBPlugOut"
-                end
-            end,
             [102] = "Home",
             [116] = "Power",
         }
@@ -144,6 +137,7 @@ function Kobo:init()
 
     Generic.init(self)
 
+    -- event2 is for MMA7660 sensor (3-Axis Orientation/Motion Detection)
     self.input.open("/dev/input/event0") -- Light button and sleep slider
     self.input.open("/dev/input/event1")
 
