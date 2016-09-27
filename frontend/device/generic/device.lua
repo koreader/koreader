@@ -132,7 +132,8 @@ function Device:onPowerEvent(ev)
                 self:rescheduleSuspend()
             else
                 DEBUG("Resuming...")
-                require("ui/uimanager"):unschedule(self.suspend)
+                local UIManager = require("ui/uimanager")
+                UIManager:unschedule(self.suspend)
                 local network_manager = require("ui/network/manager")
                 if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
                     network_manager.restoreWifiAsync()
@@ -142,7 +143,7 @@ function Device:onPowerEvent(ev)
                 -- restore to previous rotation mode
                 self.screen:setRotationMode(self.orig_rotation_mode)
                 if self:needsScreenRefreshAfterResume() then
-                    self.screen:refreshFull()
+                    UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
                 self.screen_saver_mode = false
                 self.powerd:refreshCapacity()
