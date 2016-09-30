@@ -136,7 +136,7 @@ function Device:onPowerEvent(ev)
                 UIManager:unschedule(self.suspend)
                 local network_manager = require("ui/network/manager")
                 if network_manager.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
-                    network_manager.restoreWifiAsync()
+                    network_manager:restoreWifiAsync()
                 end
                 self:resume()
                 require("ui/screensaver"):close()
