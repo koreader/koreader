@@ -319,6 +319,8 @@ OPTIONS:
         exit 1
     fi
 
+    check_submodules
+    make
     setup_env
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}"
