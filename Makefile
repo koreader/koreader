@@ -77,6 +77,7 @@ ifdef WIN32
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
 	@echo "[*] Install plugins"
+	@# TODO: link istead of cp?
 	$(RCP) plugins/* $(INSTALL_DIR)/koreader/plugins/
 	@echo "[*] Installresources"
 	$(RCP) -pL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
@@ -105,7 +106,7 @@ testfront: $(INSTALL_DIR)/koreader/.busted
 		--no-auto-insulate \
 		-o verbose_print --exclude-tags=notest
 
-test:
+test: $(INSTALL_DIR)/koreader/.busted
 	$(MAKE) -C $(KOR_BASE) test
 	$(MAKE) testfront
 
