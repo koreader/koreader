@@ -69,12 +69,15 @@ function ProgressWidget:paintTo(bb, x, y)
                  math.ceil((my_size.w-2*self.margin_h)*self.percentage),
                  my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
     if self.ticks and self.last then
+        local bar_width = (my_size.w-2*self.margin_h)
+        local y_pos = y + self.margin_v + self.bordersize
+        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i=1, #self.ticks do
             bb:paintRect(
-                x + (my_size.w-2*self.margin_h)*(self.ticks[i]/self.last),
-                y + self.margin_v + self.bordersize,
+                x + bar_width*(self.ticks[i]/self.last),
+                y_pos,
                 self.tick_width,
-                my_size.h-2*(self.margin_v+self.bordersize),
+                bar_height,
                 self.bordercolor)
         end
     end
