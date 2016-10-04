@@ -39,6 +39,7 @@ describe("ReaderLink module", function()
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
         readerui.paging:onGotoPage(1)
+        assert.is.same(1, readerui.paging.current_page)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
         UIManager:run()
         -- its really hard to get the exact page number in scroll mode
@@ -79,6 +80,7 @@ describe("ReaderLink module", function()
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
         readerui.paging:onGotoPage(1)
+        assert.is.same(1, readerui.paging.current_page)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
         UIManager:run()
         assert.truthy(readerui.paging.current_page == 21
@@ -87,7 +89,7 @@ describe("ReaderLink module", function()
         assert.is.same(1, readerui.paging.current_page)
     end)
 
-    it("should be able to go back after link jump in pdf in scroll mode", function()
+    it("should be able to go back to the same position after link jump in pdf scroll mode", function()
         UIManager:quit()
         local expected_page_states = {
             {
@@ -123,6 +125,7 @@ describe("ReaderLink module", function()
         }
         -- disable footer
         G_reader_settings:saveSetting("reader_footer_mode", 0)
+        require("docsettings"):open(sample_pdf):purge()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
