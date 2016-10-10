@@ -11,9 +11,9 @@ REVISION=$(shell git rev-parse --short HEAD)
 
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
-	PATH:=$(CURDIR)/$(KOR_BASE)/$(ANDROID_TOOLCHAIN)/bin:$(PATH)
+	PATH:=$(ANDROID_TOOLCHAIN)/bin:$(PATH)
 else ifeq ($(TARGET), pocketbook)
-	PATH:=$(CURDIR)/$(KOR_BASE)/$(POCKETBOOK_TOOLCHAIN)/bin:$(PATH)
+	PATH:=$(POCKETBOOK_TOOLCHAIN)/bin:$(PATH)
 endif
 
 MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
