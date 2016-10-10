@@ -134,6 +134,9 @@ clean:
 	rm -rf $(INSTALL_DIR)
 	$(Q:@=@echo 'MAKE -C base clean'; &> /dev/null) \
 		$(MAKE) -C $(KOR_BASE) clean
+ifeq ($(TARGET), android)
+	$(MAKE) -C $(CURDIR)/platform/android/luajit-launcher clean
+endif
 
 dist-clean: clean
 	rm -rf $(INSTALL_DIR)
