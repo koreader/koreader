@@ -1,5 +1,6 @@
 *.swp
 *.swo
+*.un~
 cscope.*
 *.orig
 lua
