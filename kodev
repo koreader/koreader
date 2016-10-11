@@ -78,7 +78,7 @@ ${SUPPORTED_TARGETS}"
         kindle-legacy)
             make TARGET=kindle-legacy; assert_ret_zero $? ;;
         android)
-            [[ -v NDK ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
+            [[ -n ${NDK+x} ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
             [ -e ${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc ] || { \
                 { [ -e ${NDK} ] || make -C ${CURDIR}/base/toolchain android-ndk; }; \
                 make android-toolchain; assert_ret_zero $?; \
