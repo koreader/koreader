@@ -11,6 +11,8 @@ local Event = require("ui/event")
 local dbg = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
+local Device = require("device")
+local ReaderKoboLight = require("apps/reader/modules/readerkobolight")
 
 local ReaderView = OverlapGroup:new{
     document = nil,
@@ -109,6 +111,13 @@ function ReaderView:addWidgets()
     self[1] = self.dogear
     self[2] = self.footer
     self[3] = self.flipping
+    if (Device:isKobo() and Device:hasFrontlight()) then
+        self.kobolight = ReaderKoboLight:new{
+            view = self,
+            ui = self.ui,
+        }
+        self[4] = self.kobolight
+    end
 end
 
 function ReaderView:resetLayout()
