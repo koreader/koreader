@@ -12,6 +12,10 @@ local Event = require("ui/event")
 local dbg = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
+<<<<<<< HEAD
+=======
+local Device = require("device")
+>>>>>>> ca1111385bfb67b7d85d1e281ffd0314fcfb2da4
 local ReaderKoboLight = require("apps/reader/modules/readerkobolight")
 
 local ReaderView = OverlapGroup:new{
