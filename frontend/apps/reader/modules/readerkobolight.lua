@@ -20,7 +20,7 @@ local ReaderKoboLight = InputContainer:new{
 
 function ReaderKoboLight:init()
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = Screen:getHeight()},
+        dimen = Geom:new{w = nil, h = nil},
     }
     self:resetLayout()
 end
