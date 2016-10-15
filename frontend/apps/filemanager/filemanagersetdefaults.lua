@@ -176,7 +176,8 @@ function SetDefaults:init()
                                 callback = function()
                                     local new_table = {}
                                     for _, field in ipairs(MultiInputDialog:getFields()) do
-                                        new_table[field:match("^[^= ]+")] = field:match("[^= ]+$")
+                                        local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
+                                        new_table[tonumber(key) or key] = tonumber(value) or value
                                     end
                                     _G[setting_name] = new_table
 
@@ -193,7 +194,6 @@ function SetDefaults:init()
                             },
                         },
                     },
-                    input_type = "number",
                     width = Screen:getWidth() * 0.95,
                     height = Screen:getHeight() * 0.2,
                 }
