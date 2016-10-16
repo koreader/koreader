@@ -245,7 +245,7 @@ if [ "${FROM_KUAL}" == "yes" ] ; then
 fi
 
 # we keep maximum 100K worth of crash log
-cat crash.log &> /dev/null | tail -c 100000000 > crash.log.new
+cat crash.log 2> /dev/null | tail -c 100000000 > crash.log.new
 mv -f crash.log.new crash.log
 ./reader.lua "$@" >> crash.log 2>&1
 
