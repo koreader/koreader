@@ -90,6 +90,9 @@ end
 function ReaderKoboLight:onTap()
     Device:getPowerDevice():toggleFrontlight()
     self:onShowOnOff()
+    if self.view.footer_visible and self.view.footer.settings.frontlight then
+        self.view.footer:updateFooter()
+    end
     return true
 end
 
@@ -118,6 +121,9 @@ function ReaderKoboLight:onSwipe(arg, ges)
         else    -- general case
             powerd:setIntensity(new_intensity)
             self:onShowIntensity()
+        end
+        if self.view.footer_visible and self.view.footer.settings.frontlight then
+            self.view.footer:updateFooter()
         end
     end
     return true
