@@ -111,7 +111,10 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
 	mount -o remount,rw /mnt/sd
 fi
 
-./reader.lua "${args}" > crash.log 2>&1
+# we keep maximum 100K worth of crash log
+cat crash.log &> /dev/null | tail -c 100000000 > crash.log.new
+mv -f crash.log.new crash.log
+./reader.lua "${args}" >> crash.log 2>&1
 
 if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
