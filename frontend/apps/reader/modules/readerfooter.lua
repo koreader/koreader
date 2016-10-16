@@ -27,6 +27,7 @@ local MODE = {
     percentage = 5,
     book_time_to_read = 6,
     chapter_time_to_read = 7,
+    frontlight = 8,
 }
 local MODE_INDEX = {}
 for k,v in pairs(MODE) do
@@ -64,6 +65,7 @@ function ReaderFooter:init()
         percentage = true,
         book_time_to_read = true,
         chapter_time_to_read = true,
+        frontlight = false,
     }
     if self.settings.disabled then
         self.resetLayout = function() end
@@ -181,6 +183,7 @@ local options = {
     percentage = _("Progress percentage"),
     book_time_to_read = _("Book time to read"),
     chapter_time_to_read = _("Chapter time to read"),
+    frontlight = _("Frontlight level"),
 }
 
 function ReaderFooter:addToMainMenu(tab_item_table)
@@ -232,6 +235,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
         get_minibar_option("percentage"),
         get_minibar_option("book_time_to_read"),
         get_minibar_option("chapter_time_to_read"),
+        get_minibar_option("frontlight"),
     }) do
         table.insert(sub_items, v)
     end
@@ -239,6 +243,17 @@ function ReaderFooter:addToMainMenu(tab_item_table)
         text = _("Status bar"),
         sub_item_table = sub_items,
     })
+end
+
+function ReaderFooter:getFrontlightInfo()
+    local powerd = Device:getPowerDevice()
+    if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
+        if powerd.fl_intensity ~= nil then
+            return string.format("L: %d%%", powerd.fl_intensity)
+        end
+    else
+        return "L: Off"
+    end
 end
 
 function ReaderFooter:getBatteryInfo()
@@ -344,6 +359,9 @@ function ReaderFooter:_updateFooterText()
 
     if self.settings.all_at_once then
         local info = {}
+        if self.settings.frontlight and Device:hasFrontlight() then
+            table.insert(info, self:getFrontlightInfo())
+        end
         if self.settings.battery then
             table.insert(info, self:getBatteryInfo())
         end
@@ -382,6 +400,8 @@ function ReaderFooter:_updateFooterText()
             info = self:getBookTimeToRead()
         elseif self.mode == MODE.chapter_time_to_read then
             info = self:getChapterTimeToRead()
+        elseif self.mode == MODE.frontlight and Device:hasFrontlight() then
+            info = self:getFrontlightInfo()
         else
             info = ""
         end
@@ -428,6 +448,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 5 for progress percentage
     -- 6 for from statistics book time to read
     -- 7 for from statistics chapter time to read
+    -- 8 for front light level
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= MODE.off)
 end
@@ -458,14 +479,14 @@ function ReaderFooter:onTapFooter(arg, ges)
                 self.mode = MODE.page_progress
             end
         else
-            self.mode = (self.mode + 1) % 8
+            self.mode = (self.mode + 1) % 9
             for i, m in ipairs(MODE_INDEX) do
                 if self.mode == MODE.off then break end
                 if self.mode == i then
                     if self.settings[m] then
                         break
                     else
-                        self.mode = (self.mode + 1) % 8
+                        self.mode = (self.mode + 1) % 9
                     end
                 end
             end
