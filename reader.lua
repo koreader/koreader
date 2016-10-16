@@ -206,6 +206,7 @@ local function exitReader()
 
     -- shutdown hardware abstraction
     Device:exit()
+    require("ui/network/manager"):turnOffWifi()
 
     if Profiler then Profiler.stop() end
     os.exit(0)
