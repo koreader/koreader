@@ -145,9 +145,24 @@ TARGET:
 ${SUPPORTED_RELEASE_TARGETS}"
     [ $# -lt 1 ] && { echo "${RELEASE_HELP_MSG}"; exit 1; }
 
+    while [[ $1 == '-'* ]]; do
+        PARAM=$(echo "$1" | awk -F= '{print $1}')
+        VALUE=$(echo "$1" | awk -F= '{print $2}')
+        case $PARAM in
+            -v | --verbose)
+                export VERBOSE=1 ;;
+            -h | --help)
+                echo "${RELEASE_HELP_MSG}"; exit 0 ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${RELEASE_HELP_MSG}"; exit 1 ;;
+        esac
+        shift 1
+    done
+
+    which tx>/dev/null && make po || echo "WARN: Transifex client not found, no translation pulled."
+
     case $1 in
-        -h | --help)
-            echo "${RELEASE_HELP_MSG}"; exit 0 ;;
         kindle)
             kodev-build kindle
             make TARGET=kindle update ;;
