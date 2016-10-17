@@ -522,7 +522,7 @@ function KOSync:getProgress(manual)
                     showSyncedMessage()
                 elseif self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Sync to the latest record %1% from device '%2'?"),
+                        text = T(_("Sync to latest location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
                                  body.device),
                         ok_callback = function()
@@ -536,7 +536,7 @@ function KOSync:getProgress(manual)
                     showSyncedMessage()
                 elseif self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Sync to a previous record %1% from device '%2'?"),
+                        text = T(_("Sync to previous location %1% from device '%2'?"),
                                  Math.round(body.percentage * 100),
                                  body.device),
                         ok_callback = function()
