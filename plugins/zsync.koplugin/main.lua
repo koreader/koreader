@@ -41,8 +41,8 @@ function ZSync:addToMainMenu(tab_item_table)
             {
                 text_func = function()
                     return not self.filemq_server
-                        and _("Publish this document")
-                        or _("Stop publisher")
+                        and _("Share this document")
+                        or _("Stop sharing books")
                 end,
                 enabled_func = function()
                     return self.filemq_client == nil
@@ -58,8 +58,8 @@ function ZSync:addToMainMenu(tab_item_table)
             {
                 text_func = function()
                     return not self.filemq_client
-                        and _("Subscribe documents")
-                        or _("Stop subscriber")
+                        and _("Subscribe to book share")
+                        or _("Stop book share subscription")
                 end,
                 enabled_func = function()
                     return self.filemq_server == nil
