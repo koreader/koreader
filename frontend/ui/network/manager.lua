@@ -170,8 +170,12 @@ function NetworkMgr:showNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning…")}
     UIManager:show(info)
     UIManager:nextTick(function()
-        local network_list = self:getNetworkList()
+        local network_list, err = self:getNetworkList()
         UIManager:close(info)
+        if network_list == nil then
+            UIManager:show(InfoMessage:new{text = err})
+            return
+        end
         UIManager:show(require("ui/widget/networksetting"):new{
             network_list = network_list,
             connect_callback = complete_callback,
