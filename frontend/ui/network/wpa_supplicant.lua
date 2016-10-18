@@ -2,12 +2,19 @@ local UIManager = require("ui/uimanager")
 local WpaClient = require('lj-wpaclient/wpaclient')
 local InfoMessage = require("ui/widget/infomessage")
 local sleep = require("ffi/util").sleep
+local T = require("ffi/util").template
 local _ = require("gettext")
+
+local CLIENT_INIT_ERR_MSG = _("Failed to initialize network control client: %1.")
 
 local WpaSupplicant = {}
 
 function WpaSupplicant:getNetworkList()
-    local wcli, _ = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    if wcli == nil then
+        return nil, T(CLIENT_INIT_ERR_MSG, err)
+    end
+
     local list = wcli:scanThenGetResults()
     wcli:close()
 
@@ -33,9 +40,8 @@ function WpaSupplicant:authenticateNetwork(network)
     -- TODO: support passwordless network
     local err, wcli, nw_id
     wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
-
     if not wcli then
-        return false, _("Failed to initialize network control client: ")..err
+        return false, T(CLIENT_INIT_ERR_MSG, err)
     end
 
     nw_id, err = wcli:addNetwork()
@@ -90,13 +96,19 @@ end
 
 function WpaSupplicant:disconnectNetwork(network)
     if not network.wpa_supplicant_id then return end
-    local wcli, _ = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    if wcli == nil then
+        return nil, T(CLIENT_INIT_ERR_MSG, err)
+    end
     wcli:removeNetwork(network.wpa_supplicant_id)
     wcli:close()
 end
 
 function WpaSupplicant:getCurrentNetwork()
-    local wcli, _ = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
+    if wcli == nil then
+        return nil, T(CLIENT_INIT_ERR_MSG, err)
+    end
     local nw = wcli:getCurrentNetwork()
     wcli:close()
     return nw
