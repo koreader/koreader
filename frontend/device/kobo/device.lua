@@ -130,6 +130,7 @@ function Kobo:init()
                     return "Light"
                 end
             end,
+            -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
             [102] = "Home",
             [116] = "Power",
         }
