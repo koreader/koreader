@@ -19,7 +19,7 @@ local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local history_dir = DataStorage:getHistoryDir()
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
-local ReadHistoryStat = { 
+local ReadHistoryStat = {
     hist_stat = {},
 }
 
@@ -293,12 +293,12 @@ function getDatesFromAll(sdays, ptype)
     now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
-    local one_day = 24 * 3600 -- one day in seconds  
-        for k, v in pairs(result_history) do    
+    local one_day = 24 * 3600 -- one day in seconds
+        for k, v in pairs(result_history) do
             path_h,file_h,extension_h = string.match(v.file, "(.-)([^/]-([^/%.]+))$")
             local file_without_ext = string.match(file_h, "(.+)%..+")
-            local path_sdr = path_h .. file_without_ext .. ".sdr"       
-            if isDir(path_sdr) then  
+            local path_sdr = path_h .. file_without_ext .. ".sdr"
+            if isDir(path_sdr) then
                 for file_lua in lfs.dir(path_sdr) do
                     path = path_sdr .. "/" .. file_lua
                     if lfs.attributes(path, "mode") == "file" then
@@ -314,7 +314,7 @@ function getDatesFromAll(sdays, ptype)
                             end --  for book_performance
                             -- sort table by time (unix timestamp)
                             local date_text
-                            table.sort(sorted_tbl) 
+                            table.sort(sorted_tbl)
                             for i, n in pairs(sorted_tbl) do
                                 if ptype == "daily_weekday" then
                                     date_text = os.date("%Y-%m-%d (%a)", n)
@@ -325,7 +325,7 @@ function getDatesFromAll(sdays, ptype)
                                 elseif ptype == "monthly" then
                                     date_text = os.date("%B %Y" , n)
                                 else
-                                    date_text = os.date("%Y-%m-%d" , n)               
+                                    date_text = os.date("%Y-%m-%d" , n)
                                 end  --if ptype
                                 if not dates[date_text] then
                                     dates[date_text] = {
@@ -334,12 +334,12 @@ function getDatesFromAll(sdays, ptype)
                                     date = n,
                                     count = 1
                                     }
-                                   
+
                                 else
                                     local entry = dates[date_text]
                                     diff = n - entry.date
                                     -- page_max_time
-                                    if (diff <= 90 and diff > 0) then
+                                    if (diff <= page_max_time and diff > 0) then
                                         entry.read = entry.read + n - entry.date
                                     else
                                     --add average time if time > page_max_time
@@ -347,17 +347,17 @@ function getDatesFromAll(sdays, ptype)
                                     end  --if diff
                                     if diff < 0 then
                                         entry.read = book.total_time_in_sec / book.pages + entry.read
-                                    end  
+                                    end
                                     entry.date = n
                                     entry.count = entry.count + 1
                                 end  --if not dates[]
                             end  -- for sorted_tbl
                         end  -- if book_result
                     end  -- if lfs.attributes
-                end  --for file_lua  
-            end  --if isDir   
-        end  --for result_history 
-    return generateReadBooksTable("Week1", dates)
+                end  --for file_lua
+            end  --if isDir
+        end  --for result_history
+    return generateReadBooksTable("", dates)
 end
 
 
@@ -429,7 +429,7 @@ function ReaderStatistics:getAdvStats()
             T(_"Last Week"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Week Statistics"),
+                    title = T(_"Last Week Statistics"),
                     kv_pairs = getDatesFromAll(7,"daily_weekday"),
                 })
             end,
@@ -438,7 +438,7 @@ function ReaderStatistics:getAdvStats()
             T(_"Last Month"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Month Statistics"),
+                    title = T(_"Last Month Statistics"),
                     kv_pairs = getDatesFromAll(30,"daily_weekday"),
                 })
             end,
@@ -447,7 +447,7 @@ function ReaderStatistics:getAdvStats()
             T(_"Last Year"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Year Statistics"),
+                    title = T(_"Last Year Statistics"),
                     kv_pairs = getDatesFromAll(365,"daily"),
                 })
             end,
@@ -456,7 +456,7 @@ function ReaderStatistics:getAdvStats()
             T(_"Weekly (Last Year)"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Weekly statistics from last year"),
+                    title = T(_"Weekly Statistics"),
                     kv_pairs = getDatesFromAll(365,"weekly"),
                 })
             end,
@@ -466,7 +466,7 @@ function ReaderStatistics:getAdvStats()
             callback = function()
                 UIManager:show(KeyValuePage:new{
                     title = T(_"Monthly Statistics"),
-                    kv_pairs = getDatesFromAll(3650,"monthly"),
+                    kv_pairs = getDatesFromAll(3650,"monthly"), -- last 10 years
                 })
             end,
         },
@@ -480,7 +480,7 @@ function ReaderStatistics:getStatisticsFromHistory(total_stats)
     local titles = {}
     local total_books_time = 0
     local result_history = ReaderStatistics:readHistoryFile()
-    for k, v in pairs(result_history) do    
+    for k, v in pairs(result_history) do
         path_h,file_h,extension_h = string.match(v.file, "(.-)([^/]-([^/%.]+))$")
         local file_without_ext = string.match(file_h, "(.+)%..+")
         local path_sdr = path_h .. file_without_ext .. ".sdr"
@@ -495,7 +495,7 @@ function ReaderStatistics:getStatisticsFromHistory(total_stats)
                               and book_stats.title ~= self.data.title then
                             titles[book_stats.title] = true
                             table.insert(total_stats, {
-                            book_stats.title, 
+                            book_stats.title,
                             util.secondsToClock(book_stats.total_time_in_sec, false),
                             callback = function()
                                 UIManager:show(KeyValuePage:new{
