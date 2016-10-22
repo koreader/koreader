@@ -130,7 +130,6 @@ function Kobo:init()
                     return "Light"
                 end
             end,
-            -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
             [102] = "Home",
             [116] = "Power",
         }
@@ -141,6 +140,9 @@ function Kobo:init()
     -- event2 is for MMA7660 sensor (3-Axis Orientation/Motion Detection)
     self.input.open("/dev/input/event0") -- Light button and sleep slider
     self.input.open("/dev/input/event1")
+    -- fake_events is only used for usb plug event so far
+    -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
+    self.input.open("fake_events")
 
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()

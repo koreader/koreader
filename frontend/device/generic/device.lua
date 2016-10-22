@@ -1,5 +1,4 @@
 local Event = require("ui/event")
-local util = require("ffi/util")
 local DEBUG = require("dbg")
 
 local function yes() return true end
@@ -83,40 +82,6 @@ function Device:getPowerDevice()
     return self.powerd
 end
 
--- ONLY used for Kindle devices
-function Device:intoScreenSaver()
-    local UIManager = require("ui/uimanager")
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen:saveCurrentBB()
-        self.screen_saver_mode = true
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
-        end
-    end
-    UIManager:broadcastEvent(Event:new("FlushSettings"))
-end
-
--- ONLY used for Kindle devices
-function Device:outofScreenSaver()
-    if self.screen_saver_mode == true and self.charging_mode == false then
-        -- On FW >= 5.7.2, put awesome to sleep again...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
-        -- wait for native system update screen before we recover saved
-        -- Blitbuffer.
-        util.usleep(1500000)
-        self.screen:restoreFromSavedBB()
-        self:resume()
-        if self:needsScreenRefreshAfterResume() then
-            self.screen:refreshFull()
-        end
-        self.powerd:refreshCapacity()
-    end
-    self.screen_saver_mode = false
-end
-
 function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
@@ -179,6 +144,12 @@ function Device:onPowerEvent(ev)
     end
 end
 
+-- Hardware specific method to handle usb plug in event
+function Device:usbPlugIn() end
+
+-- Hardware specific method to handle usb plug out event
+function Device:usbPlugOut() end
+
 -- Hardware specific method to suspend the device
 function Device:suspend() end
 
@@ -188,37 +159,8 @@ function Device:resume() end
 -- Hardware specific method to power off the device
 function Device:powerOff() end
 
-function Device:usbPlugIn()
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen:saveCurrentBB()
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
-        end
-    end
-    self.charging_mode = true
-end
-
-function Device:usbPlugOut()
-    if self.charging_mode == true and self.screen_saver_mode == false then
-        -- On FW >= 5.7.2, put awesome to sleep again...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
-        -- Same as when going out of screensaver, wait for the native system
-        util.usleep(1500000)
-        self.screen:restoreFromSavedBB()
-        self.screen:refreshFull()
-        self.powerd:refreshCapacity()
-    end
-
-    --@TODO signal filemanager for file changes  13.06 2012 (houqp)
-    self.charging_mode = false
-end
-
 -- Hardware specific method to initialize network manager module
-function Device:initNetworkManager()
-end
+function Device:initNetworkManager() end
 
 --[[
 prepare for application shutdown
