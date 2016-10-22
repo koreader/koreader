@@ -24,7 +24,9 @@ function WpaSupplicant:getNetworkList()
     for _,network in ipairs(list) do
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
-        if saved_nw and saved_nw.flags == network.flags then
+        if saved_nw then
+            -- TODO: verify saved_nw.flags == network.flags? This will break if user changed the
+            -- network setting from [WPA-PSK-TKIP+CCMP][WPS][ESS] to [WPA-PSK-TKIP+CCMP][ESS]
             network.password = saved_nw.password
         end
         -- TODO: also verify bssid if it is not set to any
