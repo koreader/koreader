@@ -1,5 +1,5 @@
 #!./luajit
-print(string.format([[
+io.stdout:write(string.format([[
 ---------------------------------------------
                 launching...
   _  _____  ____                _
@@ -10,6 +10,7 @@ print(string.format([[
 
  [*] Current time: %s
 ]], os.date("%x-%X")))
+io.stdout:flush()
 
 
 -- load default settings
