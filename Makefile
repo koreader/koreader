@@ -143,6 +143,7 @@ dist-clean: clean
 	$(MAKE) -C $(KOR_BASE) dist-clean
 	$(MAKE) -C doc clean
 
+ZIP_EXCLUDE=-x "*.swp" -x "*.swo" -x "*.orig" -x "*.un~"
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
 KINDLE_LEGACY_LAUNCHER:=launchpad
@@ -164,7 +165,8 @@ kindleupdate: all
 			../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip \
 			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \
 			-x "koreader/resources/fonts/*" "koreader/ota/*" \
-			"koreader/resources/icons/src/*" "koreader/spec/*"
+			"koreader/resources/icons/src/*" "koreader/spec/*" \
+			$(ZIP_EXCLUDE)
 	# generate kindleupdate package index file
 	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip > \
 		$(INSTALL_DIR)/koreader/ota/package.index
@@ -196,7 +198,8 @@ koboupdate: all
 		zip -9 -r \
 			../koreader-kobo-$(MACHINE)-$(VERSION).zip \
 			koreader -x "koreader/resources/fonts/*" \
-			"koreader/resources/icons/src/*" "koreader/spec/*"
+			"koreader/resources/icons/src/*" "koreader/spec/*" \
+			$(ZIP_EXCLUDE)
 	# generate koboupdate package index file
 	zipinfo -1 koreader-kobo-$(MACHINE)-$(VERSION).zip > \
 		$(INSTALL_DIR)/koreader/ota/package.index
@@ -228,7 +231,8 @@ pbupdate: all
 		zip -9 -r \
 			../koreader-pocketbook-$(MACHINE)-$(VERSION).zip \
 			applications -x "applications/koreader/resources/fonts/*" \
-			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*"
+			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*" \
+			$(ZIP_EXCLUDE)
 	# generate koboupdate package index file
 	zipinfo -1 koreader-pocketbook-$(MACHINE)-$(VERSION).zip > \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
@@ -264,7 +268,8 @@ utupdate: all
 		zip -9 -r \
 			../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip \
 			koreader -x "koreader/resources/fonts/*" "koreader/ota/*" \
-			"koreader/resources/icons/src/*" "koreader/spec/*"
+			"koreader/resources/icons/src/*" "koreader/spec/*" \
+			$(ZIP_EXCLUDE)
 
 	# generate update package index file
 	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip > \
@@ -293,7 +298,8 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && \
 		zip -9 -r \
 			../../koreader-android-$(MACHINE)-$(VERSION).zip \
-			* -x "resources/fonts/*" "resources/icons/src/*" "spec/*"
+			* -x "resources/fonts/*" "resources/icons/src/*" "spec/*" \
+			$(ZIP_EXCLUDE)
 	# generate android update package index file
 	zipinfo -1 koreader-android-$(MACHINE)-$(VERSION).zip > \
 		$(INSTALL_DIR)/koreader/ota/package.index
