@@ -14,15 +14,10 @@ local joinPath = require("ffi/util").joinPath
 local _ = require("gettext")
 local util = require("util")
 local tableutil = require("tableutil")
+local ReadHistory = require("readhistory")
+local DocSettings = require("docsettings")
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
-local history_dir = DataStorage:getHistoryDir()
-local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
-
-local ReadHistoryStat = {
-    hist_stat = {},
-}
-
 -- a copy of page_max_read_sec
 local page_max_time
 
@@ -58,22 +53,9 @@ function ReaderStatistics:init()
     self.page_max_read_sec = tonumber(settings.max_sec)
     -- use later in getDatesFromBook
     page_max_time = self.page_max_read_sec
-    ReaderStatistics:readHistoryFile()
     self.is_enabled = not (settings.is_enabled == false)
     self.last_time = TimeVal:now()
 end
-
-
-function ReaderStatistics:readHistoryFile()
-    local ok, data = pcall(dofile, history_file)
-    if ok and data then
-        for k, v in pairs(data) do
-            table.insert(ReadHistoryStat.hist_stat, v)
-        end
-    end
-    return data
-end
-
 
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
@@ -196,7 +178,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                 end
             },
             {
-                text = _("Reading Statistics"),
+                text = _("Time range"),
                 callback = function()
                     total_msg, kv_pairs = self:getAdvStats()
                     UIManager:show(KeyValuePage:new{
@@ -266,17 +248,6 @@ function getDatesForBookOldFormat(book)
     return generateReadBooksTable(book.title, dates)
 end
 
--- Use from here:
--- http://stackoverflow.com/questions/1340230/check-if-directory-exists-in-lua/21637668#21637668
-function isDir(name)
-    if type(name)~="string" then return false end
-    local cd = lfs.currentdir()
-    local is = lfs.chdir(name) and true or false
-    lfs.chdir(cd)
-    return is
-end
-
-
 -- sdays -> number of days to show
 -- ptype -> daily - show daily without weekday name
 --          daily_weekday - show daily with weekday name
@@ -287,79 +258,64 @@ function getDatesFromAll(sdays, ptype)
     local sorted_tbl = {}
     local diff
     local book = {}
-    -- read from history file
-    local result_history = ReaderStatistics:readHistoryFile()
-    -- now timestamp
     now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
     local one_day = 24 * 3600 -- one day in seconds
-        for k, v in pairs(result_history) do
-            path_h,file_h,extension_h = string.match(v.file, "(.-)([^/]-([^/%.]+))$")
-            local file_without_ext = string.match(file_h, "(.+)%..+")
-            local path_sdr = path_h .. file_without_ext .. ".sdr"
-            if isDir(path_sdr) then
-                for file_lua in lfs.dir(path_sdr) do
-                    path = path_sdr .. "/" .. file_lua
-                    if lfs.attributes(path, "mode") == "file" then
-                        local book_result = ReaderStatistics:importFromFileRS(path)
-                        if book_result.stats ~=nil then
-                            book = book_result.stats
-                            sorted_tbl = {}
-                            local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
-                            for k1, v1 in pairs(book.performance_in_pages) do
-                                if k1 >= period then
-                                    table.insert(sorted_tbl,k1)
-                                end  --if period
-                            end --  for book_performance
-                            -- sort table by time (unix timestamp)
-                            local date_text
-                            table.sort(sorted_tbl)
-                            for i, n in pairs(sorted_tbl) do
-                                if ptype == "daily_weekday" then
-                                    date_text = os.date("%Y-%m-%d (%a)", n)
-                                elseif ptype == "daily" then
-                                    date_text = os.date("%Y-%m-%d" , n)
-                                elseif ptype == "weekly" then
-                                    date_text = os.date("%Y Week %W" , n)
-                                elseif ptype == "monthly" then
-                                    date_text = os.date("%B %Y" , n)
-                                else
-                                    date_text = os.date("%Y-%m-%d" , n)
-                                end  --if ptype
-                                if not dates[date_text] then
-                                    dates[date_text] = {
-                                    -- first pages of day is set to average of all pages
-                                    read = book.total_time_in_sec / book.pages,
-                                    date = n,
-                                    count = 1
-                                    }
-
-                                else
-                                    local entry = dates[date_text]
-                                    diff = n - entry.date
-                                    -- page_max_time
-                                    if (diff <= page_max_time and diff > 0) then
-                                        entry.read = entry.read + n - entry.date
-                                    else
-                                    --add average time if time > page_max_time
-                                        entry.read = book.total_time_in_sec / book.pages + entry.read
-                                    end  --if diff
-                                    if diff < 0 then
-                                        entry.read = book.total_time_in_sec / book.pages + entry.read
-                                    end
-                                    entry.date = n
-                                    entry.count = entry.count + 1
-                                end  --if not dates[]
-                            end  -- for sorted_tbl
-                        end  -- if book_result
-                    end  -- if lfs.attributes
-                end  --for file_lua
-            end  --if isDir
-        end  --for result_history
+        for _, v in pairs(ReadHistory.hist) do
+            local book_result = DocSettings:open(v.file)
+            if book_result.data.stats ~=nil then
+                book = book_result.data.stats
+                sorted_tbl = {}
+                local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
+                for k1, v1 in pairs(book.performance_in_pages) do
+                    if k1 >= period then
+                        table.insert(sorted_tbl,k1)
+                    end  --if period
+                end --  for book_performance
+                -- sort table by time (unix timestamp)
+                local date_text
+                table.sort(sorted_tbl)
+                for i, n in pairs(sorted_tbl) do
+                    if ptype == "daily_weekday" then
+                        date_text = os.date("%Y-%m-%d (%a)", n)
+                    elseif ptype == "daily" then
+                        date_text = os.date("%Y-%m-%d" , n)
+                    elseif ptype == "weekly" then
+                        date_text = os.date("%Y Week %W" , n)
+                    elseif ptype == "monthly" then
+                        date_text = os.date("%B %Y" , n)
+                    else
+                        date_text = os.date("%Y-%m-%d" , n)
+                    end  --if ptype
+                    if not dates[date_text] then
+                        dates[date_text] = {
+                            -- first pages of day is set to average of all pages
+                            read = book.total_time_in_sec / book.pages,
+                            date = n,
+                            count = 1
+                        }
+                    else
+                        local entry = dates[date_text]
+                        diff = n - entry.date
+                        -- page_max_time
+                        if (diff <= page_max_time and diff > 0) then
+                            entry.read = entry.read + n - entry.date
+                        else
+                            --add average time if time > page_max_time
+                            entry.read = book.total_time_in_sec / book.pages + entry.read
+                        end  --if diff
+                        if diff < 0 then
+                            entry.read = book.total_time_in_sec / book.pages + entry.read
+                        end
+                        entry.date = n
+                        entry.count = entry.count + 1
+                    end  --if not dates[]
+                end  -- for sorted_tbl
+            end  -- if book_result
+        end  --for pairs(ReadHistory.hist)
     return generateReadBooksTable("", dates)
 end
-
 
 function getDatesForBook(book)
     local dates = {}
@@ -426,91 +382,79 @@ end
 function ReaderStatistics:getAdvStats()
     local total_stats = {
         {
-            T(_"Last Week"),"",
+            _("Last week"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Last Week Statistics"),
+                    title = _("Last week"),
                     kv_pairs = getDatesFromAll(7,"daily_weekday"),
                 })
             end,
         },
         {
-            T(_"Last Month"),"",
+            T(_"Last month by day"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Last Month Statistics"),
+                    title = _("Last month by day"),
                     kv_pairs = getDatesFromAll(30,"daily_weekday"),
                 })
             end,
         },
         {
-            T(_"Last Year"),"",
+            T(_"Last year by day"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Last Year Statistics"),
+                    title = _("Last year by day"),
                     kv_pairs = getDatesFromAll(365,"daily"),
                 })
             end,
         },
         {
-            T(_"Weekly (Last Year)"),"",
+            T(_"Last year by week"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Weekly Statistics"),
+                    title = _("Last year by week"),
                     kv_pairs = getDatesFromAll(365,"weekly"),
                 })
             end,
         },
         {
-            T(_"Monthly"),"",
+            T(_"Last 10 years by month"),"",
             callback = function()
                 UIManager:show(KeyValuePage:new{
-                    title = T(_"Monthly Statistics"),
+                    title = _("Last 10 years by month"),
                     kv_pairs = getDatesFromAll(3650,"monthly"), -- last 10 years
                 })
             end,
         },
     }
 
-    return T(_"Reading Statistics"), total_stats
+    return T(_"Time range"), total_stats
 end
-
 
 function ReaderStatistics:getStatisticsFromHistory(total_stats)
     local titles = {}
     local total_books_time = 0
-    local result_history = ReaderStatistics:readHistoryFile()
-    for k, v in pairs(result_history) do
-        path_h,file_h,extension_h = string.match(v.file, "(.-)([^/]-([^/%.]+))$")
-        local file_without_ext = string.match(file_h, "(.+)%..+")
-        local path_sdr = path_h .. file_without_ext .. ".sdr"
-        if isDir(path_sdr) then
-            for file_lua in lfs.dir(path_sdr) do
-                path = path_sdr .. "/" ..file_lua
-                if lfs.attributes(path, "mode") == "file" then
-                    local book_result = self:importFromFileRS(path)
-                    if book_result ~=nil then
-                        local book_stats = book_result.stats
-                        if book_stats and book_stats.total_time_in_sec > 0
-                              and book_stats.title ~= self.data.title then
-                            titles[book_stats.title] = true
-                            table.insert(total_stats, {
-                            book_stats.title,
-                            util.secondsToClock(book_stats.total_time_in_sec, false),
-                            callback = function()
-                                UIManager:show(KeyValuePage:new{
-                                title = book_stats.title,
-                                kv_pairs = getDatesForBook(book_stats),
-                                })
-                            end,
-                            })
-                            total_books_time = total_books_time + tonumber(book_stats.total_time_in_sec)
-                        end  --if book_stats
-                    end  --if book_result
-                end  --if lfs.attributes
-            end  --for file_lua
-        end  --if isDir
-    end  --for result_history
+    for _, v in pairs(ReadHistory.hist) do
+        local book_result = DocSettings:open(v.file)
+        if book_result.data.stats ~=nil then
+            local book_stats = book_result.data.stats
+            if book_stats and book_stats.total_time_in_sec > 0
+                and book_stats.title ~= self.data.title then
+                titles[book_stats.title] = true
+                table.insert(total_stats, {
+                    book_stats.title,
+                    util.secondsToClock(book_stats.total_time_in_sec, false),
+                    callback = function()
+                        UIManager:show(KeyValuePage:new{
+                            title = book_stats.title,
+                            kv_pairs = getDatesForBook(book_stats),
+                        })
+                    end,
+                })
+                total_books_time = total_books_time + tonumber(book_stats.total_time_in_sec)
+            end  --if book_stats
+        end  --if book_result
+    end  --for pairs(ReadHistory.hist)
     return titles, total_books_time
 end
 
