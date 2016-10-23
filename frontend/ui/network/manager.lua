@@ -80,11 +80,20 @@ function NetworkMgr:getWifiMenuTable()
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:getWifiStatus() end,
         callback = function(menu)
+            local wifi_status = NetworkMgr:getWifiStatus()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 menu:updateItems()
+                local Event = require("ui/event")
+                -- if wifi was on, this callback will only be executed when the network has been
+                -- disconnected.
+                if wifi_status then
+                    UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+                else
+                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                end
             end
-            if NetworkMgr:getWifiStatus() then
+            if wifi_status then
                 NetworkMgr:promptWifiOff(complete_callback)
             else
                 NetworkMgr:promptWifiOn(complete_callback)

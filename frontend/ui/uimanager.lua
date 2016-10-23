@@ -36,7 +36,7 @@ function UIManager:init()
             self:sendEvent(input_event)
         end,
         SaveState = function()
-            self:sendEvent(Event:new("FlushSettings"))
+            self:broadcastEvent(Event:new("FlushSettings"))
         end,
         Power = function(input_event)
             Device:onPowerEvent(input_event)

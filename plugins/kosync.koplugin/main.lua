@@ -601,13 +601,25 @@ function KOSync:_onResume()
     UIManager:scheduleIn(1, function() self:getProgress() end)
 end
 
+function KOSync:_onFlushSettings()
+    self:updateProgress()
+end
+
+function KOSync:_onNetworkConnected()
+    self:_onResume()
+end
+
 function KOSync:registerEvents()
     if self.kosync_auto_sync then
         self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
+        self.onFlushSettings = self._onFlushSettings
+        self.onNetworkConnected = self._onNetworkConnected
     else
         self.onPageUpdate = nil
         self.onResume = nil
+        self.onFlushSettings = nil
+        self.onNetworkConnected = nil
     end
 end
 
