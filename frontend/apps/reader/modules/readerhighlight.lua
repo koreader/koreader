@@ -8,6 +8,7 @@ local UIManager = require("ui/uimanager")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local ConfirmBox = require("ui/widget/confirmbox")
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -99,7 +100,8 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
-            end
+            end,
+            hold_callback = function() self:makeDefault(not self.view.highlight.disabled) end,
         },
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),
@@ -520,7 +522,11 @@ end
 
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
-    self.view.highlight.disabled = config:readSetting("highlight_disabled") or false
+    local disable_highlight = config:readSetting("highlight_disabled")
+    if disable_highlight == nil then
+        disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
+    end
+    self.view.highlight.disabled = disable_highlight
 end
 
 function ReaderHighlight:onSaveSettings()
@@ -532,6 +538,22 @@ function ReaderHighlight:onClose()
     UIManager:close(self.highlight_dialog)
     -- clear highlighted text
     self:clear()
+end
+
+function ReaderHighlight:makeDefault(highlight_disabled)
+    local new_text
+    if highlight_disabled then
+        new_text = _("Disable highlight by default.")
+    else
+        new_text = _("Enable highlight by default.")
+    end
+    UIManager:show(ConfirmBox:new{
+        text = new_text,
+        ok_callback = function()
+            G_reader_settings:saveSetting("highlight_disabled", highlight_disabled)
+        end,
+    })
+    self.view.highlight.disabled = highlight_disabled
 end
 
 return ReaderHighlight
