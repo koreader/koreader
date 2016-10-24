@@ -177,7 +177,6 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                     })
                 end
             },
-
             {
                 text = _("Time range"),
                 sub_item_table = {
@@ -186,7 +185,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last week"),
-                                kv_pairs = getDatesFromAll(7, "daily_weekday"),
+                                kv_pairs = self:getDatesFromAll(7, "daily_weekday"),
                             })
                         end,
                     },
@@ -195,7 +194,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last month by day"),
-                                kv_pairs = getDatesFromAll(30, "daily_weekday"),
+                                kv_pairs = self:getDatesFromAll(30, "daily_weekday"),
                             })
                         end,
                     },
@@ -204,7 +203,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last year by day"),
-                                kv_pairs = getDatesFromAll(365, "daily"),
+                                kv_pairs = self:getDatesFromAll(365, "daily"),
                             })
                         end,
                     },
@@ -213,7 +212,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last year by week"),
-                                kv_pairs = getDatesFromAll(365, "weekly"),
+                                kv_pairs = self:getDatesFromAll(365, "weekly"),
                             })
                         end,
                     },
@@ -222,14 +221,12 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last 10 years by month"),
-                                kv_pairs = getDatesFromAll(3650, "monthly"), -- last 10 years
+                                kv_pairs = self:getDatesFromAll(3650, "monthly"), -- last 10 years
                             })
                         end,
                     },
                 }
             },
-
-
         },
     })
 end
@@ -296,7 +293,7 @@ end
 --          daily_weekday - show daily with weekday name
 --          weekly - show weekly
 --          monthly - show monthly
-function getDatesFromAll(sdays, ptype)
+function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local dates = {}
     local sorted_performance_in_pages
     local diff
@@ -307,14 +304,17 @@ function getDatesFromAll(sdays, ptype)
     local one_day = 24 * 3600 -- one day in seconds
     local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
     for _, v in pairs(ReadHistory.hist) do
-        local book_settings = DocSettings:open(v.file)
-        if book_settings.data.stats ~=nil then
-            book = book_settings.data.stats
+        local book_stats = DocSettings:open(v.file):readSetting('stats')
+        if book_stats ~= nil then
+            -- if current reading book
+            if book_stats.title == self.data.title then
+                book_stats = self.data
+            end
             --zeros table sorted_performance_in_pages
             sorted_performance_in_pages = {}
-            for k1, v1 in pairs(book.performance_in_pages) do
+            for k1, v1 in pairs(book_stats.performance_in_pages) do
                 if k1 >= period then
-                    table.insert(sorted_performance_in_pages,k1)
+                    table.insert(sorted_performance_in_pages, k1)
                 end  --if period
             end --  for book_performance
             -- sort table by time (unix timestamp)
@@ -335,7 +335,7 @@ function getDatesFromAll(sdays, ptype)
                 if not dates[date_text] then
                     dates[date_text] = {
                         -- first pages of day is set to average of all pages
-                        read = book.total_time_in_sec / book.pages,
+                        read = book_stats.total_time_in_sec / book_stats.pages,
                         date = n,
                         count = 1
                     }
@@ -347,16 +347,16 @@ function getDatesFromAll(sdays, ptype)
                         entry.read = entry.read + n - entry.date
                     else
                         --add average time if time > page_max_time
-                        entry.read = book.total_time_in_sec / book.pages + entry.read
+                        entry.read = book_stats.total_time_in_sec / book_stats.pages + entry.read
                     end  --if diff
                     if diff < 0 then
-                        entry.read = book.total_time_in_sec / book.pages + entry.read
+                        entry.read = book_stats.total_time_in_sec / book_stats.pages + entry.read
                     end
                     entry.date = n
                     entry.count = entry.count + 1
                 end  --if not dates[]
             end  -- for sorted_performance_in_pages
-        end  -- if book_settings
+        end  -- if book_status
     end  --for pairs(ReadHistory.hist)
     return generateReadBooksTable("", dates)
 end
@@ -366,7 +366,7 @@ function getDatesForBook(book)
     local sorted_performance_in_pages = {}
     local diff
     for k, v in pairs(book.performance_in_pages) do
-        table.insert(sorted_performance_in_pages,k)
+        table.insert(sorted_performance_in_pages, k)
     end
     -- sort table by time (unix timestamp)
     table.sort(sorted_performance_in_pages)
@@ -395,8 +395,6 @@ function getDatesForBook(book)
     return generateReadBooksTable(book.title, dates)
 end
 
-
-
 function ReaderStatistics:getTotalStats()
     local total_stats = {
         {
@@ -410,7 +408,6 @@ function ReaderStatistics:getTotalStats()
             end,
         }
     }
-
     -- find stats for all other books in history
     local proceded_titles, total_books_time = self:getStatisticsFromHistory(total_stats)
     total_books_time = total_books_time + self:getOldStatisticsFromDirectory(proceded_titles, total_stats)
@@ -421,16 +418,13 @@ function ReaderStatistics:getTotalStats()
            total_stats
 end
 
-
 function ReaderStatistics:getStatisticsFromHistory(total_stats)
     local titles = {}
     local total_books_time = 0
     for _, v in pairs(ReadHistory.hist) do
-        local book_settings = DocSettings:open(v.file)
-        local book_stats = book_settings.data.stats
+        local book_stats = DocSettings:open(v.file):readSetting('stats')
         if book_stats and book_stats.total_time_in_sec > 0
-            and book_stats.title ~= self.data.title
-            and book_settings.data.stats ~=nil then
+            and book_stats.title ~= self.data.title then
             titles[book_stats.title] = true
             table.insert(total_stats, {
                 book_stats.title,
