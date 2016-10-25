@@ -33,9 +33,24 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     local http = require('socket.http')
     local https = require('ssl.https')
     local ltn12 = require('ltn12')
-
+    local _ = require("gettext")
+    local DataStorage = require("datastorage")
+    local DocSettings = require("docsettings")
+    --read language from current book
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    local book_stats = DocSettings:open(lastfile):readSetting('stats')
+    G_reader_settings = require("luasettings"):open(
+        DataStorage:getDataDir().."/settings.reader.lua")
+    local lang_locale = G_reader_settings:readSetting("language")
     local request, sink = {}, {}
     local query = ""
+    -- set language from book properties
+    if book_stats.language ~= nil then
+        lang = book_stats.language
+        -- or set laguage from KOReader settings
+    elseif lang_locale ~= nil then
+        lang = lang_locale
+    end
     self.wiki_params.exintro = intro and "" or nil
     self.wiki_params.explaintext = plain and "" or nil
     for k,v in pairs(self.wiki_params) do
