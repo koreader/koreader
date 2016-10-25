@@ -2,6 +2,7 @@ local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
 
 local Dbg = {
+    -- set to nil so first debug:turnOff call won't be skipped
     is_on = nil,
     is_verbose = nil,
     ev_log = nil,
