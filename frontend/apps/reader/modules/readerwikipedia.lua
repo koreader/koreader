@@ -17,9 +17,17 @@ function ReaderWikipedia:init()
 end
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
-    -- detect language of the text
-    local ok, lang = pcall(Translator.detect, Translator, word)
-    if not ok then return end
+    local lang_reader = G_reader_settings:readSetting("language")
+    -- set language from book properties
+    if self.view.document:getProps().language ~= nil then
+        lang = self.view.document:getProps().language
+        -- or set laguage from KOReader settings
+    elseif lang_reader ~= nil then
+        lang = lang_reader
+    else  --use detect language of the text
+        local ok, lang = pcall(Translator.detect, Translator, word)
+        if not ok then return end
+    end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
     -- strip punctuation characters around selected word
