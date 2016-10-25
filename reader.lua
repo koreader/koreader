@@ -77,7 +77,8 @@ end
 
 -- should check DEBUG option in arg and turn on DEBUG before loading other
 -- modules, otherwise DEBUG in some modules may not be printed.
-local DEBUG = require("dbg")
+local dbg = require("dbg")
+if G_reader_settings:readSetting("debug") then dbg:turnOn() end
 
 local Profiler = nil
 local ARGV = arg
@@ -95,9 +96,9 @@ while argidx <= #ARGV do
     if arg == "-h" then
         return showusage()
     elseif arg == "-d" then
-        DEBUG:turnOn()
+        dbg:turnOn()
     elseif arg == "-v" then
-        DEBUG:setVerbose(true)
+        dbg:setVerbose(true)
     elseif arg == "-p" then
         Profiler = require("jit.p")
         Profiler.start("la")
