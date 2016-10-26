@@ -17,9 +17,18 @@ function ReaderWikipedia:init()
 end
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
-    -- detect language of the text
-    local ok, lang = pcall(Translator.detect, Translator, word)
-    if not ok then return end
+    -- set language from book properties
+    local lang = self.view.document:getProps().language
+    if lang == nil then
+        -- or set laguage from KOReader settings
+        lang = G_reader_settings:readSetting("language")
+        if lang == nil then
+            -- or detect language
+            local ok_translator
+            ok_translator, lang = pcall(Translator.detect, Translator, word)
+            if not ok_translator then return end
+        end
+    end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
     -- strip punctuation characters around selected word
@@ -28,8 +37,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box)
     -- seems lower case phrase has higher hit rate
     word = string.lower(word)
     local results = {}
-    local pages
-    ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
+    local ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
     if ok and pages then
         for pageid, page in pairs(pages) do
             local result = {
