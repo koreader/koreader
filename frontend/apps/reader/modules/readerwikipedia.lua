@@ -5,7 +5,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 -- Wikipedia as a special dictionary
-local ReaderWikipedia = ReaderDictionary:extend{
+local ReaderWikipedia = ReaderDictionary:extend {
     -- identify itself
     wiki = true,
     no_page = _("No wiki page found."),
@@ -17,16 +17,16 @@ function ReaderWikipedia:init()
 end
 
 function ReaderWikipedia:onLookupWikipedia(word, box)
-    local lang_reader = G_reader_settings:readSetting("language")
     -- set language from book properties
-    if self.view.document:getProps().language ~= nil then
-        lang = self.view.document:getProps().language
+    lang = self.view.document:getProps().language
+    if lang == nil then
         -- or set laguage from KOReader settings
-    elseif lang_reader ~= nil then
-        lang = lang_reader
-    else  --use detect language of the text
-        local ok, lang = pcall(Translator.detect, Translator, word)
-        if not ok then return end
+        lang_reader = G_reader_settings:readSetting("language")
+        if lang == nil then
+            -- or detect language
+            local ok, lang = pcall(Translator.detect, Translator, word)
+            if not ok then return end
+        end
     end
     -- convert "zh-CN" and "zh-TW" to "zh"
     lang = lang:match("(.*)-") or lang
