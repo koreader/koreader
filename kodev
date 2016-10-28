@@ -294,6 +294,11 @@ OPTIONS:
     done
 
     [ $# -lt 1 ] && { echo "${TEST_HELP_MSG}"; exit 1; }
+    [[ $1 != "front" && $1 != "base" ]] && {
+        echo "Invalid test suite: $1!"
+        echo "${TEST_HELP_MSG}"
+        exit 1
+    }
 
     check_submodules && make
     setup_env
