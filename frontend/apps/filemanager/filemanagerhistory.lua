@@ -6,6 +6,10 @@ local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local util = require("ffi/util")
 local _ = require("gettext")
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local DocSettings = require("docsettings")
+
+
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -34,6 +38,50 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
+function FileManagerHistory:printFileInformation(book_props)
+    if book_props.authors == "" then
+        book_props.authors = _("N/A")
+    end
+
+    if book_props.title == "" then
+        book_props.title = _("N/A")
+    end
+
+    if book_props.series == "" then
+        book_props.series = _("N/A")
+    end
+
+    if book_props.pages == "" then
+        book_props.pages = _("N/A")
+    end
+
+    if book_props.language == "" then
+        book_props.language = _("N/A")
+    end
+
+    return {
+        { _("Title") .. " : " .. book_props.title, "" },
+        { _("Authors") .. " : " .. book_props.authors, "" },
+        { _("Series") .. " : " .. book_props.series, "" },
+        { _("Pages") .. " : " .. book_props.pages, "" },
+        { _("Language") .. " : " .. string.upper(book_props.language), "" },
+    }
+end
+
+function FileManagerHistory:fileInformation(file)
+    local file_mode = lfs.attributes(file, "mode")
+    if file_mode == "file" then
+        local book_stats = DocSettings:open(file):readSetting('stats')
+        if book_stats ~= nil then
+            return self:printFileInformation(book_stats)
+        else
+            return false
+        end
+    else
+        return false
+    end  --if file_mode
+end
+
 function FileManagerHistory:onMenuHold(item)
     self.histfile_dialog = ButtonDialog:new{
         buttons = {
@@ -47,6 +95,21 @@ function FileManagerHistory:onMenuHold(item)
                         UIManager:close(self.histfile_dialog)
                     end,
                 },
+            },
+            {
+                {
+                    text = _("File information"),
+                    enabled = FileManagerHistory:fileInformation(item.file) and true or false,
+                    callback = function()
+                        UIManager:show(KeyValuePage:new{
+                            title = _("File information"),
+                            kv_pairs = FileManagerHistory:fileInformation(item.file),
+                        })
+                        --UIManager:close(self.file_dialog)
+                        UIManager:close(self.histfile_dialog)
+                    end,
+                },
+
             },
         },
     }

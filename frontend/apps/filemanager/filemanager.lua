@@ -23,7 +23,8 @@ local util = require("ffi/util")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local ReaderUI = require("apps/reader/readerui")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -112,7 +113,6 @@ function FileManager:init()
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
         FileManager.instance:onClose()
-        local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
         return true
     end
@@ -197,6 +197,19 @@ function FileManager:init()
                     end,
                 }
             },
+            {
+                {
+                    text = _("File information"),
+                    enabled = FileManager:fileInformation(file) and true or false,
+                    callback = function()
+                        UIManager:show(KeyValuePage:new{
+                            title = _("File information"),
+                            kv_pairs = FileManager:fileInformation(file),
+                        })
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            },
         }
         if lfs.attributes(file, "mode") == "directory" then
             local realpath = util.realpath(file)
@@ -246,6 +259,28 @@ function FileManager:init()
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+end
+
+function FileManager:fileInformation(file)
+    --local book_stats = {}
+    local file_mode = lfs.attributes(file, "mode")
+    if file_mode == "file" then
+        local book_stats = DocSettings:open(file):readSetting('stats')
+        if book_stats ~= nil then
+            return FileManagerHistory:printFileInformation(book_stats)
+        else
+            local document = DocumentRegistry:openDocument(file)
+            ReaderUI:new{
+                dimen = Screen:getSize(),
+                document = document,
+            }
+            book_stats = document:getProps()
+            book_stats.pages = document:getPageCount()
+            return FileManagerHistory:printFileInformation(book_stats)
+        end
+    else
+        return false
+    end  --if file_mode
 end
 
 function FileManager:reinit(path)
