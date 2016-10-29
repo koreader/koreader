@@ -8,7 +8,8 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local DocSettings = require("docsettings")
-
+local InfoMessage = require("ui/widget/infomessage")
+local T = require("ffi/util").template
 
 
 local FileManagerHistory = InputContainer:extend{
@@ -38,48 +39,46 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerHistory:printFileInformation(book_props)
-    if book_props.authors == "" then
+function FileManagerHistory:buildBookInformationTable(book_props)
+    if book_props == nil then
+        return false
+    end
+
+    if book_props.authors == "" or book_props.authors == nil then
         book_props.authors = _("N/A")
     end
 
-    if book_props.title == "" then
+    if book_props.title == "" or book_props.title == nil then
         book_props.title = _("N/A")
     end
 
-    if book_props.series == "" then
+    if book_props.series == "" or book_props.series == nil then
         book_props.series = _("N/A")
     end
 
-    if book_props.pages == "" then
+    if book_props.pages == "" or book_props.pages == nil then
         book_props.pages = _("N/A")
     end
 
-    if book_props.language == "" then
+    if book_props.language == "" or book_props.language == nil then
         book_props.language = _("N/A")
     end
 
     return {
-        { _("Title") .. " : " .. book_props.title, "" },
-        { _("Authors") .. " : " .. book_props.authors, "" },
-        { _("Series") .. " : " .. book_props.series, "" },
-        { _("Pages") .. " : " .. book_props.pages, "" },
-        { _("Language") .. " : " .. string.upper(book_props.language), "" },
+        { T(_("Title: %1"), book_props.title), "" },
+        { T(_("Authors: %1"), book_props.authors), "" },
+        { T(_("Series: %1"), book_props.series), "" },
+        { T(_("Pages: %1"), book_props.pages), "" },
+        { T(_("Language: %1"), string.upper(book_props.language)), "" },
     }
 end
 
-function FileManagerHistory:fileInformation(file)
+function FileManagerHistory:bookInformation(file)
     local file_mode = lfs.attributes(file, "mode")
-    if file_mode == "file" then
-        local book_stats = DocSettings:open(file):readSetting('stats')
-        if book_stats ~= nil then
-            return self:printFileInformation(book_stats)
-        else
-            return false
-        end
-    else
-        return false
-    end  --if file_mode
+    if file_mode ~= "file" then return false end
+    local book_stats = DocSettings:open(file):readSetting('stats')
+    if book_stats == nil then return false end
+    return self:buildBookInformationTable(book_stats)
 end
 
 function FileManagerHistory:onMenuHold(item)
@@ -98,18 +97,21 @@ function FileManagerHistory:onMenuHold(item)
             },
             {
                 {
-                    text = _("File information"),
-                    enabled = FileManagerHistory:fileInformation(item.file) and true or false,
+                    text = _("Book information"),
                     callback = function()
-                        UIManager:show(KeyValuePage:new{
-                            title = _("File information"),
-                            kv_pairs = FileManagerHistory:fileInformation(item.file),
-                        })
-                        --UIManager:close(self.file_dialog)
+                        if FileManagerHistory:bookInformation(item.file) then
+                            UIManager:show(KeyValuePage:new{
+                                title = _("Book information"),
+                                kv_pairs = FileManagerHistory:bookInformation(item.file),
+                            })
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = _("Cannot fetch information for a selected book"),
+                            })
+                        end
                         UIManager:close(self.histfile_dialog)
                     end,
-                },
-
+                 },
             },
         },
     }
