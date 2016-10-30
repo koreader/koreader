@@ -23,7 +23,9 @@ local util = require("ffi/util")
 local Font = require("ui/font")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local ReaderUI = require("apps/reader/readerui")
+local InfoMessage = require("ui/widget/infomessage")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -112,7 +114,6 @@ function FileManager:init()
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
         FileManager.instance:onClose()
-        local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
         return true
     end
@@ -197,6 +198,26 @@ function FileManager:init()
                     end,
                 }
             },
+            {
+                {
+                    text = _("Book information"),
+                    enabled = lfs.attributes(file, "mode") == "file" and true or false,
+                    callback = function()
+                        local book_info_metadata = FileManager:bookInformation(file)
+                        if  book_info_metadata then
+                            UIManager:show(KeyValuePage:new{
+                                title = _("Book information"),
+                                kv_pairs = book_info_metadata,
+                            })
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = _("Cannot fetch information for a selected book"),
+                            })
+                        end
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            },
         }
         if lfs.attributes(file, "mode") == "directory" then
             local realpath = util.realpath(file)
@@ -246,6 +267,23 @@ function FileManager:init()
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+end
+
+function FileManager:bookInformation(file)
+    local file_mode = lfs.attributes(file, "mode")
+    if file_mode ~= "file" then return false end
+    local book_stats = DocSettings:open(file):readSetting('stats')
+    if book_stats ~= nil then
+        return FileManagerHistory:buildBookInformationTable(book_stats)
+    end
+    local document = DocumentRegistry:openDocument(file)
+    if document.loadDocument then
+        document:loadDocument()
+        document:render()
+    end
+    book_stats = document:getProps()
+    book_stats.pages = document:getPageCount()
+    return FileManagerHistory:buildBookInformationTable(book_stats)
 end
 
 function FileManager:reinit(path)
@@ -318,7 +356,6 @@ end
 
 function FileManager:deleteFile(file)
     local ok, err
-    local InfoMessage = require("ui/widget/infomessage")
     local file_abs_path = util.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
@@ -345,7 +382,6 @@ function FileManager:deleteFile(file)
 end
 
 function FileManager:renameFile(file)
-    local InfoMessage = require("ui/widget/infomessage")
     if util.basename(file) ~= self.rename_dialog:getInputText() then
         local dest = util.joinPath(util.dirname(file), self.rename_dialog:getInputText())
         if self:moveFile(file, dest) then
