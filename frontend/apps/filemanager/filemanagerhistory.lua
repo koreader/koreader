@@ -99,10 +99,11 @@ function FileManagerHistory:onMenuHold(item)
                 {
                     text = _("Book information"),
                     callback = function()
-                        if FileManagerHistory:bookInformation(item.file) then
+                        local book_info_metadata = FileManagerHistory:bookInformation(item.file)
+                        if  book_info_metadata then
                             UIManager:show(KeyValuePage:new{
                                 title = _("Book information"),
-                                kv_pairs = FileManagerHistory:bookInformation(item.file),
+                                kv_pairs = book_info_metadata,
                             })
                         else
                             UIManager:show(InfoMessage:new{

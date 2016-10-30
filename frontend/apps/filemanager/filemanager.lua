@@ -203,10 +203,11 @@ function FileManager:init()
                     text = _("Book information"),
                     enabled = lfs.attributes(file, "mode") == "file" and true or false,
                     callback = function()
-                        if FileManager:bookInformation(file) then
+                        local book_info_metadata = FileManager:bookInformation(file)
+                        if  book_info_metadata then
                             UIManager:show(KeyValuePage:new{
                                 title = _("Book information"),
-                                kv_pairs = FileManager:bookInformation(file),
+                                kv_pairs = book_info_metadata,
                             })
                         else
                             UIManager:show(InfoMessage:new{
