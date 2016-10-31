@@ -16,7 +16,6 @@ local util = require("util")
 local tableutil = require("tableutil")
 local ReadHistory = require("readhistory")
 local DocSettings = require("docsettings")
-
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 -- a copy of page_max_read_sec
 local page_max_time
@@ -26,6 +25,7 @@ local ReaderStatistics = InputContainer:new {
     page_min_read_sec = 5,
     page_max_read_sec = 90,
     current_period = 0,
+    pages_current_period = 0,
     is_enabled = nil,
     data = {
         title = "",
@@ -47,6 +47,7 @@ function ReaderStatistics:init()
 
     self.ui.menu:registerToMainMenu(self)
     self.current_period = 0
+    self.pages_current_period = 0
 
     local settings = G_reader_settings:readSetting("statistics") or {}
     self.page_min_read_sec = tonumber(settings.min_sec)
@@ -170,7 +171,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
             {
                 text = _("All books"),
                 callback = function()
-                    total_msg, kv_pairs = self:getTotalStats()
+                    local total_msg, kv_pairs = self:getTotalStats()
                     UIManager:show(KeyValuePage:new{
                         title = total_msg,
                         kv_pairs = kv_pairs,
@@ -233,16 +234,48 @@ end
 
 function ReaderStatistics:getCurrentStat()
     local dates = {}
+    local now_stamp = os.time()
+    local now_t = os.date("*t")
+    local from_begin_day = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
+    local start_today_time = now_stamp - from_begin_day
+    local pages_today_period = 0
+    local time_today_period = 0
+    local last_period = 0
+    local sorted_today_performance = {}
+    local diff
     for k, v in pairs(self.data.performance_in_pages) do
         dates[os.date("%Y-%m-%d", k)] = true
+        if k >= start_today_time then
+            pages_today_period = pages_today_period + 1
+            table.insert(sorted_today_performance, k)
+        end
     end
     local total_days = util.tableSize(dates)
     local read_pages = util.tableSize(self.data.performance_in_pages)
     local current_page = self.view.state.page -- get current page from the view
     local avg_time_per_page = self.data.total_time_in_sec / read_pages
 
+    table.sort(sorted_today_performance)
+    for _, n in pairs(sorted_today_performance) do
+        if last_period == 0 then
+            last_period = n
+            time_today_period = avg_time_per_page
+        else
+            diff = n - last_period
+            if (diff <= page_max_time and diff > 0) then
+                time_today_period = time_today_period + diff
+            else
+                time_today_period = time_today_period + avg_time_per_page
+            end
+            last_period = n
+        end
+
+    end
     return {
         { _("Current period"), util.secondsToClock(self.current_period, false) },
+        { _("Current pages"), self.pages_current_period },
+        { _("Today period"), util.secondsToClock(time_today_period, false) },
+        { _("Today pages"), pages_today_period },
         { _("Time to read"), util.secondsToClock((self.data.pages - current_page) * avg_time_per_page, false) },
         { _("Total time"), util.secondsToClock(self.data.total_time_in_sec, false) },
         { _("Total highlights"), self.data.highlights },
@@ -298,10 +331,11 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local sorted_performance_in_pages
     local diff
     local book = {}
-    now_t = os.date("*t")
+    local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
     local one_day = 24 * 3600 -- one day in seconds
+    local avg_time_per_page
     local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
     for _, v in pairs(ReadHistory.hist) do
         local book_stats = DocSettings:open(v.file):readSetting('stats')
@@ -309,6 +343,10 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
             -- if current reading book
             if book_stats.title == self.data.title then
                 book_stats = self.data
+                local read_pages = util.tableSize(self.data.performance_in_pages)
+                avg_time_per_page = self.data.total_time_in_sec / read_pages
+            else
+                avg_time_per_page = book_stats.total_time_in_sec / book_stats.pages
             end
             --zeros table sorted_performance_in_pages
             sorted_performance_in_pages = {}
@@ -335,7 +373,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                 if not dates[date_text] then
                     dates[date_text] = {
                         -- first pages of day is set to average of all pages
-                        read = book_stats.total_time_in_sec / book_stats.pages,
+                        read = avg_time_per_page,
                         date = n,
                         count = 1
                     }
@@ -347,10 +385,10 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                         entry.read = entry.read + n - entry.date
                     else
                         --add average time if time > page_max_time
-                        entry.read = book_stats.total_time_in_sec / book_stats.pages + entry.read
+                        entry.read = avg_time_per_page + entry.read
                     end  --if diff
                     if diff < 0 then
-                        entry.read = book_stats.total_time_in_sec / book_stats.pages + entry.read
+                        entry.read = avg_time_per_page + entry.read
                     end
                     entry.date = n
                     entry.count = entry.count + 1
@@ -365,6 +403,7 @@ function getDatesForBook(book)
     local dates = {}
     local sorted_performance_in_pages = {}
     local diff
+    local read_pages = util.tableSize(book.performance_in_pages)
     for k, v in pairs(book.performance_in_pages) do
         table.insert(sorted_performance_in_pages, k)
     end
@@ -375,7 +414,7 @@ function getDatesForBook(book)
         if not dates[date_text] then
             dates[date_text] = {
                 -- first pages of day is set to average of all pages
-                read = book.total_time_in_sec / book.pages,
+                read = book.total_time_in_sec / read_pages,
                 date = n,
                 count = 1
             }
@@ -386,7 +425,7 @@ function getDatesForBook(book)
                 entry.read = entry.read + n - entry.date
             else
                 --add average time if time > page_max_time e.g longer break while reading
-                entry.read = book.total_time_in_sec / book.pages + entry.read
+                entry.read = book.total_time_in_sec / read_pages + entry.read
             end
             entry.date = n
             entry.count = entry.count + 1
@@ -480,10 +519,12 @@ function ReaderStatistics:onPageUpdate(pageno)
         -- if last update was more then 10 minutes then current period set to 0
         if (diff_time > 600) then
             self.current_period = 0
+            self.pages_current_period = 0
         end
 
         if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
             self.current_period = self.current_period + diff_time
+            self.pages_current_period = self.pages_current_period + 1
             self.data.total_time_in_sec = self.data.total_time_in_sec + diff_time
             self.data.performance_in_pages[curr_time.sec] = pageno
             -- we cannot save stats each time this is a page update event,
@@ -543,11 +584,15 @@ function ReaderStatistics:onSaveSettings()
     self:saveSettings()
     self.ui.doc_settings:saveSetting("stats", self.data)
     self.current_period = 0
+    self.pages_current_period = 0
+
 end
 
 -- screensaver off
 function ReaderStatistics:onResume()
     self.current_period = 0
+    self.pages_current_period = 0
+
 end
 
 function ReaderStatistics:saveSettings(fields)
