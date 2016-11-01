@@ -1,10 +1,8 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local Font = require("ui/font")
 local TimeVal = require("ui/timeval")
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
@@ -286,7 +284,7 @@ function ReaderStatistics:getCurrentStat()
     }
 end
 
-function generateReadBooksTable(title, dates)
+local function generateReadBooksTable(title, dates)
     local result = {}
     for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
         table.insert(result, {
@@ -298,7 +296,7 @@ function generateReadBooksTable(title, dates)
 end
 
 -- For backward compatibility
-function getDatesForBookOldFormat(book)
+local function getDatesForBookOldFormat(book)
     local dates = {}
 
     for k, v in pairs(book.details) do
@@ -330,7 +328,6 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local dates = {}
     local sorted_performance_in_pages
     local diff
-    local book = {}
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
@@ -399,7 +396,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     return generateReadBooksTable("", dates)
 end
 
-function getDatesForBook(book)
+local function getDatesForBook(book)
     local dates = {}
     local sorted_performance_in_pages = {}
     local diff

@@ -1,8 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
-local DEBUG = require("dbg")
 local md5 = require("ffi/MD5")
--- lfs
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -10,7 +8,7 @@ local MyClipping = {
 }
 
 function MyClipping:new(o)
-    o = o or {}
+    if o == nil then o = {} end
     setmetatable(o, self)
     self.__index = self
     return o
@@ -48,7 +46,6 @@ function MyClipping:parseMyClippings()
     local clippings = {}
     if file then
         local index = 1
-        local corrupted = false
         local title, author, info, text
         for line in file:lines() do
             line = line:match("^%s*(.-)%s*$") or ""
@@ -264,10 +261,10 @@ function MyClipping:parseHistory()
             if ok and stored.highlight then
                 local _, _, docname = path:find("%[.*%](.*)%.lua$")
                 local title, author = self:getTitle(docname)
-                local path = DocSettings:getPathFromHistory(f)
+                local docpath = DocSettings:getPathFromHistory(f)
                 local name = DocSettings:getNameFromHistory(f)
                 clippings[title] = {
-                    file = path .. "/" .. name,
+                    file = docpath .. "/" .. name,
                     title = title,
                     author = author,
                 }

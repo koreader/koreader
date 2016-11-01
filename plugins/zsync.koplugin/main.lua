@@ -1,20 +1,9 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
-local TextWidget = require("ui/widget/textwidget")
-local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Event = require("ui/event")
-local Font = require("ui/font")
 local ltn12 = require("ltn12")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local util = require("ffi/util")
--- lfs
 
 local ffi = require("ffi")
 ffi.cdef[[
@@ -22,7 +11,7 @@ int remove(const char *);
 int rmdir(const char *);
 ]]
 
-local dummy = require("ffi/zeromq_h")
+require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
 }
