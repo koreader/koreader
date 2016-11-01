@@ -19,7 +19,7 @@ local function include_fold(template, start_tag, end_tag, fold_func, init_func)
     local start_tag_inc = start_tag..'include:'
 
     local start1, end1 = string.find(template, start_tag_inc, 1, true)
-    local start2 = nil
+    local start2
     local end2 = 0
 
     while start1 ~= nil do
@@ -101,7 +101,7 @@ function slt2.loadstring(template, start_tag, end_tag, tmpl_name)
     template = slt2.precompile(template, start_tag, end_tag)
 
     local start1, end1 = string.find(template, start_tag, 1, true)
-    local start2 = nil
+    local start2
     local end2 = 0
 
     local cEqual = string.byte('=', 1)

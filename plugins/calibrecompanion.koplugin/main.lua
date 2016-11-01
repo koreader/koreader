@@ -1,12 +1,11 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local util = require("ffi/util")
 local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
-local dummy = require("ffi/zeromq_h")
+require("ffi/zeromq_h")
 
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
@@ -66,14 +65,14 @@ function CalibreCompanion:find_calibre_server()
     udp:settimeout(3)
     for _, port in ipairs(self.broadcast_ports) do
         -- broadcast anything to calibre ports and listen to the reply
-        local sent, err = udp:sendto("hello", "255.255.255.255", port)
+        local _, err = udp:sendto("hello", "255.255.255.255", port)
         if not err then
             local dgram, host = udp:receivefrom()
             if dgram and host then
                 -- replied diagram has greet message from calibre and calibre hostname
                 -- calibre opds port and calibre socket port we will later connect to
-                local _, hostname, _, port = dgram:match("(.-)%(on (.-)%);(.-),(.-)$")
-                return host, port
+                local _, _, _, replied_port = dgram:match("(.-)%(on (.-)%);(.-),(.-)$")
+                return host, replied_port
             end
         end
     end
@@ -123,7 +122,6 @@ end
 
 -- will callback initCalibreMQ if inbox is confirmed to be set
 function CalibreCompanion:setInboxDir(host, port)
-    local lastdir = G_reader_settings:readSetting("lastdir") or "."
     local calibre_device = self
     require("ui/downloadmgr"):new{
         title = _("Choose inbox"),
@@ -173,7 +171,7 @@ function CalibreCompanion:onReceiveJSON(data)
         --DEBUG("buffer", self.buffer)
         local index = self.buffer:find('%[') or 1
         local size = tonumber(self.buffer:sub(1, index - 1))
-        local json_data = nil
+        local json_data
         if size and #self.buffer >= index - 1 + size then
             json_data = self.buffer:sub(index, index - 1 + size)
             --DEBUG("json_data", json_data)
@@ -295,7 +293,6 @@ end
 
 function CalibreCompanion:getBookCount(arg)
     DEBUG("GET_BOOK_COUNT", arg)
-    local option = arg
     local books = {
         willStream = true,
         willScan = true,
@@ -340,8 +337,8 @@ function CalibreCompanion:sendBook(arg)
                 timeout = 1,
             })
             -- switch to JSON data receiving mode
-            calibre_socket.receiveCallback = function(data)
-                calibre_device:onReceiveJSON(data)
+            calibre_socket.receiveCallback = function(json_data)
+                calibre_device:onReceiveJSON(json_data)
             end
             -- if calibre sends multiple files there may be left JSON data
             calibre_device.buffer = data:sub(#to_write_data + 1) or ""

@@ -7,7 +7,7 @@ local KOSyncClient = {
 }
 
 function KOSyncClient:new(o)
-    local o = o or {}
+    if o == nil then o = {} end
     setmetatable(o, self)
     self.__index = self
     if o.init then o:init() end
@@ -21,7 +21,7 @@ function KOSyncClient:init()
         base_url = self.custom_url,
     })
     package.loaded['Spore.Middleware.GinClient'] = {}
-    require('Spore.Middleware.GinClient').call = function(self, req)
+    require('Spore.Middleware.GinClient').call = function(_, req)
         req.headers['accept'] = "application/vnd.koreader.v1+json"
     end
     package.loaded['Spore.Middleware.KOSyncAuth'] = {}

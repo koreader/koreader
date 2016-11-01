@@ -72,7 +72,6 @@ local function showusage()
     print("")
     print("This software is licensed under the AGPLv3.")
     print("See http://github.com/koreader/koreader for more info.")
-    return
 end
 
 -- should check DEBUG option in arg and turn on DEBUG before loading other

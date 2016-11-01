@@ -6,7 +6,6 @@ local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local Event = require("ui/event")
 local util = require("ffi/util")
 local Device = require("device")
 local DEBUG = require("dbg")
@@ -23,8 +22,8 @@ local EvernoteExporter = InputContainer:new{
     notemarks = _("Note: "),
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
 
-    evernote_token,
-    notebook_guid,
+    evernote_token = nil,
+    notebook_guid = nil,
 }
 
 function EvernoteExporter:init()
@@ -61,7 +60,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text_func = function()
-                    local domain = nil
+                    local domain
                     if self.evernote_domain == "sandbox" then
                         domain = "Sandbox"
                     elseif self.evernote_domain == "yinxiang" then
@@ -212,7 +211,8 @@ function EvernoteExporter:doLogin(username, password)
         domain = self.evernote_domain,
         authToken = token,
     }
-    local ok, guid = pcall(self.getExportNotebook, self, client)
+    local guid
+    ok, guid = pcall(self.getExportNotebook, self, client)
     if not ok and guid and guid:find("Transport not open") then
         NetworkMgr:promptWifiOn()
         return
