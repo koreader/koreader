@@ -129,9 +129,9 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
         fgcolor = LINE_COLOR,
     }
     local padding_span = HorizontalSpan:new{ width = self.padding }
-    local line_width = (Screen:getWidth() - header_title_left:getSize().w - header_title_right:getSize().w - self.padding * 7) / 4
+    local line_width = (self.screen_width - header_title_left:getSize().w - header_title_right:getSize().w - self.padding * 7) / 4
     local line_container = LeftContainer:new{
-        dimen = Geom:new{ w = line_width, h = Screen:getHeight() / 25 },
+        dimen = Geom:new{ w = line_width, h = self.screen_height / 25 },
         LineWidget:new{
             background = BG_COLOR,
             dimen = Geom:new{
@@ -142,7 +142,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(25), height = Screen:getHeight() / 25 },
+        VerticalSpan:new{ width = Screen:scaleBySize(25), height = self.screen_height / 25 },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -159,7 +159,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5), height = Screen:getHeight() / 25 },
+        VerticalSpan:new{ width = Screen:scaleBySize(5), height = self.screen_height / 25 },
     }
 end
 

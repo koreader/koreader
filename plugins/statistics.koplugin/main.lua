@@ -328,7 +328,7 @@ local function getDatesForBookOldFormat(book)
         end
     end
 
-    return ReaderStatistics:generateReadBooksTable(book.title, dates)
+    return generateReadBooksTable(book.title, dates)
 end
 
 -- sdays -> number of days to show
