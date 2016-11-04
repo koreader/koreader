@@ -14,8 +14,9 @@ local util = require("util")
 local tableutil = require("tableutil")
 local ReadHistory = require("readhistory")
 local DocSettings = require("docsettings")
-local ReaderProgress = require("/ui/widget/readerprogress")
+local ReaderProgress = require("readerprogress")
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
+
 -- a copy of page_max_read_sec
 local page_max_time
 
@@ -83,6 +84,17 @@ function ReaderStatistics:initData(config)
         self.data.pages = self.view.document:getPageCount()
         return
     end
+end
+
+local function generateReadBooksTable(title, dates)
+    local result = {}
+    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
+        table.insert(result, {
+            k,
+            T(_("Pages (%1) Time: %2"), v.count, util.secondsToClock(v.read, false))
+        })
+    end
+    return result
 end
 
 function ReaderStatistics:getStatisticEnabledMenuItem()
@@ -180,12 +192,11 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
             {
                 text = _("Reading progress"),
                 callback = function()
-                    UIManager:setDirty(nil, "full")
                     UIManager:show(ReaderProgress:new{
                         dates = self:getDatesFromAll(7, "daily_weekday"),
                         current_period = self.current_period,
                         current_pages = self.pages_current_period,
-                })
+                    })
                 end
             },
             {
@@ -196,7 +207,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last week"),
-                                kv_pairs = self:generateReadBooksTable("", self:getDatesFromAll(7, "daily_weekday")),
+                                kv_pairs = generateReadBooksTable("", self:getDatesFromAll(7, "daily_weekday")),
                             })
                         end,
                     },
@@ -205,7 +216,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last month by day"),
-                                kv_pairs = self:generateReadBooksTable("", self:getDatesFromAll(30, "daily_weekday")),
+                                kv_pairs = generateReadBooksTable("", self:getDatesFromAll(30, "daily_weekday")),
                             })
                         end,
                     },
@@ -214,7 +225,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last year by day"),
-                                kv_pairs = self:generateReadBooksTable("", self:getDatesFromAll(365, "daily")),
+                                kv_pairs = generateReadBooksTable("", self:getDatesFromAll(365, "daily")),
                             })
                         end,
                     },
@@ -223,7 +234,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last year by week"),
-                                kv_pairs = self:generateReadBooksTable("", self:getDatesFromAll(365, "weekly")),
+                                kv_pairs = generateReadBooksTable("", self:getDatesFromAll(365, "weekly")),
                             })
                         end,
                     },
@@ -232,7 +243,7 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         callback = function()
                             UIManager:show(KeyValuePage:new{
                                 title = _("Last 10 years by month"),
-                                kv_pairs = self:generateReadBooksTable("", self:getDatesFromAll(3650, "monthly")),
+                                kv_pairs = generateReadBooksTable("", self:getDatesFromAll(3650, "monthly")),
                             })
                         end,
                     },
@@ -294,17 +305,6 @@ function ReaderStatistics:getCurrentStat()
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
         { _("Read pages/Total pages"), read_pages .. "/" .. self.data.pages },
     }
-end
-
-function ReaderStatistics:generateReadBooksTable(title, dates)
-    local result = {}
-    for k, v in tableutil.spairs(dates, function(t, a, b) return t[b].date < t[a].date end) do
-        table.insert(result, {
-            k,
-            T(_("Pages (%1) Time: %2"), v.count, util.secondsToClock(v.read, false))
-        })
-    end
-    return result
 end
 
 -- For backward compatibility
@@ -440,7 +440,7 @@ local function getDatesForBook(book)
             entry.count = entry.count + 1
         end
     end
-    return ReaderStatistics:generateReadBooksTable(book.title, dates)
+    return generateReadBooksTable(book.title, dates)
 end
 
 function ReaderStatistics:getTotalStats()
