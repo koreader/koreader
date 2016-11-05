@@ -147,18 +147,14 @@ local VirtualKeyboard = InputContainer:new{
     key_padding = Screen:scaleBySize(6),
 }
 
--- international keyboard
-local keyboard_layout = require("ui/data/keyboardlayouts/std")
--- polish keyboard
-local keyboard_layout_pl = require("ui/data/keyboardlayouts/pl_keyboard")
+local lang_to_keyboard_layout = {
+    pl = "pl_keyboard",
+}
 
 function VirtualKeyboard:init()
     local lang = G_reader_settings:readSetting("language")
-    if lang == "pl" then  --polish keyboard
-        self.KEYS = keyboard_layout_pl
-    else -- international
-        self.KEYS = keyboard_layout
-    end
+    local keyboard_layout = lang_to_keyboard_layout[lang] or "std"
+    self.KEYS = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self:initLayout(self.layout)
 end
 
