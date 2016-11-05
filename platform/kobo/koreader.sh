@@ -115,6 +115,7 @@ fi
 cat crash.log 2> /dev/null | tail -c 100000000 > crash.log.new
 mv -f crash.log.new crash.log
 ./reader.lua "${args}" >> crash.log 2>&1
+RESULT=$?
 
 if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
@@ -139,4 +140,4 @@ else
 	fi
 fi
 
-return 0
+return ${RESULT}
