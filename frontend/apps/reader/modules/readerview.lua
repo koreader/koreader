@@ -42,10 +42,14 @@ local ReaderView = OverlapGroup:new{
     page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR/15),
     page_states = {},
     scroll_mode = "vertical",
+    -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
-        width = Screen:scaleBySize(8),
-        height = Screen:scaleBySize(8),
-        color = Blitbuffer.COLOR_GREY,
+        -- width in pixels (when scrolling horizontally)
+        width = Screen:scaleBySize(G_reader_settings:readSetting("page_gap_width") or 8),
+        -- height in pixels (when scrolling vertically)
+        height = Screen:scaleBySize(G_reader_settings:readSetting("page_gap_height") or 8),
+        -- color (0 = white, 8 = gray, 15 = black)
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8)/15),
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = DRENDER_MODE, -- default to COLOR
