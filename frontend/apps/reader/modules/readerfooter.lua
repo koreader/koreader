@@ -29,10 +29,64 @@ local MODE = {
     chapter_time_to_read = 7,
     frontlight = 8,
 }
+
 local MODE_INDEX = {}
 for k,v in pairs(MODE) do
     MODE_INDEX[v] = k
 end
+
+-- functions that generates footer text for each mode
+local footerTextGeneratorMap = {
+    empty = function() return "" end,
+    frontlight = function()
+        if not Device:hasFrontlight() then return "L: NA" end
+        local powerd = Device:getPowerDevice()
+        if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
+            if powerd.fl_intensity ~= nil then
+                return string.format("L: %d%%", powerd.fl_intensity)
+            end
+        else
+            return "L: Off"
+        end
+    end,
+    battery = function()
+        local powerd = Device:getPowerDevice()
+        return "B:" .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+    end,
+    time = function()
+        return os.date("%H:%M")
+    end,
+    page_progress = function(footer)
+        if footer.pageno then
+            return string.format("%d / %d", footer.pageno, footer.pages)
+        else
+            return string.format("%d / %d", footer.position, footer.doc_height)
+        end
+    end,
+    pages_left = function(footer)
+        local left = footer.ui.toc:getChapterPagesLeft(
+            footer.pageno, footer.toc_level)
+        return "=> " .. (left and left or footer.pages - footer.pageno)
+    end,
+    percentage = function(footer)
+        return string.format("R:%1.f%%", footer.progress_bar.percentage * 100)
+    end,
+    book_time_to_read = function(footer)
+        local current_page
+        if footer.view.document.info.has_pages then
+            current_page = footer.ui.paging.current_page
+        else
+            current_page = footer.view.document:getCurrentPage()
+        end
+        return footer:getDataFromStatistics("TB: ", footer.pages - current_page)
+    end,
+    chapter_time_to_read = function(footer)
+        local left = footer.ui.toc:getChapterPagesLeft(
+            footer.pageno, footer.toc_level)
+        return footer:getDataFromStatistics(
+            "TC: ", (left and left or footer.pages - footer.pageno))
+    end,
+}
 
 local ReaderFooter = InputContainer:new{
     mode = MODE.page_progress,
@@ -40,7 +94,7 @@ local ReaderFooter = InputContainer:new{
     pages = nil,
     toc_level = 0,
     progress_percentage = 0.0,
-    progress_text = nil,
+    footer_text = nil,
     text_font_face = "ffont",
     text_font_size = DMINIBAR_FONT_SIZE,
     bar_height = Screen:scaleBySize(DMINIBAR_HEIGHT),
@@ -48,6 +102,8 @@ local ReaderFooter = InputContainer:new{
     horizontal_margin = Screen:scaleBySize(10),
     text_left_margin = Screen:scaleBySize(10),
     settings = {},
+    -- added to expose them to unit tests
+    textGeneratorMap = footerTextGeneratorMap,
 }
 
 function ReaderFooter:init()
@@ -56,7 +112,6 @@ function ReaderFooter:init()
     self.settings = G_reader_settings:readSetting("footer") or {
         disabled = false,
         all_at_once = false,
-        progress_bar = true,
         toc_markers = true,
         battery = true,
         time = true,
@@ -67,45 +122,49 @@ function ReaderFooter:init()
         chapter_time_to_read = true,
         frontlight = false,
     }
+
     if self.settings.disabled then
-        self.resetLayout = function() end
-        self.onCloseDocument = function() end
-        self.onPageUpdate = function() end
-        self.onPosUpdate = function() end
-        self.onUpdatePos = function() end
-        self.onSetStatusLine = function() end
+        -- footer featuren disabled completely, stop initialization now
+        self:disableFooter()
         return
     end
 
-    self.progress_text = TextWidget:new{
+    self.has_no_mode = true
+    for _, m in ipairs(MODE_INDEX) do
+        if self.settings[m] then
+            self.has_no_mode = false
+            break
+        end
+    end
+
+    self.footer_text = TextWidget:new{
         text = '',
         face = Font:getFace(self.text_font_face, self.text_font_size),
     }
-    self.text_width = self.progress_text:getSize().w + self.text_left_margin
+    -- all width related values will be initialized in self:resetLayout()
+    self.text_width = 0
     self.progress_bar = ProgressWidget:new{
-        width = nil,  -- width will be updated in self:resetLayout()
+        width = nil,
         height = self.bar_height,
         percentage = self.progress_percentage,
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
-    local margin_span = HorizontalSpan:new{width=self.horizontal_margin}
-    local screen_width = Screen:getWidth()
+
+    local margin_span = HorizontalSpan:new{width = self.horizontal_margin}
     self.horizontal_group = HorizontalGroup:new{margin_span}
     self.text_container = RightContainer:new{
-        dimen = Geom:new{w = self.text_width, h = self.height},
-        self.progress_text,
+        dimen = Geom:new{w = 0, h = self.height},
+        self.footer_text,
     }
-    if self.settings.progress_bar then
-        table.insert(self.horizontal_group, self.progress_bar)
-    end
+    table.insert(self.horizontal_group, self.progress_bar)
     table.insert(self.horizontal_group, self.text_container)
     table.insert(self.horizontal_group, margin_span)
     self[1] = BottomContainer:new{
-        dimen = Screen:getSize(),
+        dimen = Geom:new{},
         BottomContainer:new{
-            dimen = Geom:new{w = screen_width, h = self.height*2},
+            dimen = Geom:new{w = 0, h = self.height*2},
             FrameContainer:new{
                 self.horizontal_group,
                 background = Blitbuffer.COLOR_WHITE,
@@ -115,22 +174,31 @@ function ReaderFooter:init()
         }
     }
 
-    self:applyFooterMode(
-        G_reader_settings:readSetting("reader_footer_mode") or self.mode)
+    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    if self.settings.all_at_once then
+        self.view.footer_visible = (self.mode ~= MODE.off)
+        self:updateFooterTextGenerator()
+    else
+        self:applyFooterMode()
+    end
     self:resetLayout()
 
     if self.settings.auto_refresh_time then
-        if not self.autoRefreshTime then
-            self.autoRefreshTime = function()
-                self:updateFooter()
-                UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
-            end
-        end
-        self.onCloseDocument = function()
-            UIManager:unschedule(self.autoRefreshTime)
-        end
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+        self:setupAutoRefreshTime()
     end
+end
+
+function ReaderFooter:setupAutoRefreshTime()
+    if not self.autoRefreshTime then
+        self.autoRefreshTime = function()
+            self:updateFooter()
+            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+        end
+    end
+    self.onCloseDocument = function()
+        UIManager:unschedule(self.autoRefreshTime)
+    end
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
 end
 
 -- call this method whenever the screen size changed
@@ -171,15 +239,57 @@ function ReaderFooter:resetLayout()
     end
 end
 
-local options = {
+function ReaderFooter:getHeight()
+    return self.footer_text:getSize().h
+end
+
+function ReaderFooter:disableFooter()
+    self.onReaderReady = function() end
+    self.resetLayout = function() end
+    self.onCloseDocument = nil
+    self.onPageUpdate = function() end
+    self.onPosUpdate = function() end
+    self.onUpdatePos = function() end
+    self.onSetStatusLine = function() end
+    self.mode = MODE.off
+    self.view.footer_visible = false
+end
+
+function ReaderFooter:updateFooterTextGenerator()
+    local footerTextGenerators = {}
+    for _, m in pairs(MODE_INDEX) do
+        if self.settings[m] then
+            table.insert(footerTextGenerators,
+                         footerTextGeneratorMap[m])
+            if not self.settings.all_at_once then
+                -- if not show all at once, then one is enough
+                break
+            end
+        end
+    end
+    if #footerTextGenerators == 0 then
+        -- all modes are disabled
+        self.genFooterText = footerTextGeneratorMap.empty
+    elseif #footerTextGenerators == 1 then
+        -- there is only one mode enabled, simplify the generator
+        -- function to that one
+        self.genFooterText = footerTextGenerators[1]
+    else
+        self.footerTextGenerators = footerTextGenerators
+        self.genFooterText = self.genAllFooterText
+    end
+    -- notify caller that UI needs update
+    return true
+end
+
+local option_titles = {
     all_at_once = _("Show all at once"),
+    toc_markers = _("Show table of content markers"),
     auto_refresh_time = _("Auto refresh time"),
-    progress_bar = _("Progress bar"),
-    toc_markers = _("Chapter markers"),
-    battery = _("Battery status"),
-    time = _("Current time"),
     page_progress = _("Current page"),
+    time = _("Current time"),
     pages_left = _("Pages left in this chapter"),
+    battery = _("Battery status"),
     percentage = _("Progress percentage"),
     book_time_to_read = _("Book time to read"),
     chapter_time_to_read = _("Chapter time to read"),
@@ -187,24 +297,13 @@ local options = {
 }
 
 function ReaderFooter:addToMainMenu(tab_item_table)
-    local get_minibar_option = function(option)
-        return {
-            text = options[option],
-            checked_func = function()
-                return self.settings[option] == true
-            end,
-            enabled_func = function()
-                return not self.settings.disabled
-            end,
-            callback = function()
-                self.settings[option] = not self.settings[option]
-                G_reader_settings:saveSetting("footer", self.settings)
-                self:updateFooter()
-                UIManager:setDirty("all", "partial")
-            end,
-        }
-    end
     local sub_items = {}
+    table.insert(tab_item_table.setting, {
+        text = _("Status bar"),
+        sub_item_table = sub_items,
+    })
+
+    -- menu item to fake footer tapping when touch area is disabled
     if Geom:new{
            x = DTAP_ZONE_MINIBAR.x,
            y = DTAP_ZONE_MINIBAR.y,
@@ -212,89 +311,124 @@ function ReaderFooter:addToMainMenu(tab_item_table)
            h = DTAP_ZONE_MINIBAR.h
        }:sizeof() == 0 then
         table.insert(sub_items, {
-            text = _("Toggle"),
+            text = _("Toggle mode"),
             enabled_func = function()
                 return not self.view.flipping_visible
             end,
-            callback = function()
-                if not self.view.flipping_visible then
-                    self:onTapFooter(nil, nil)
-                end
-            end,
+            callback = function() self:onTapFooter() end,
         })
     end
-    for i, v in ipairs({
-        get_minibar_option("all_at_once"),
-        get_minibar_option("auto_refresh_time"),
-        get_minibar_option("progress_bar"),
-        get_minibar_option("toc_markers"),
-        get_minibar_option("battery"),
-        get_minibar_option("time"),
-        get_minibar_option("page_progress"),
-        get_minibar_option("pages_left"),
-        get_minibar_option("percentage"),
-        get_minibar_option("book_time_to_read"),
-        get_minibar_option("chapter_time_to_read"),
-        get_minibar_option("frontlight"),
-    }) do
-        table.insert(sub_items, v)
+
+    -- footer is enabled, build the full status bar menu
+    local isEnabled = function()
+        return not self.settings.disabled
     end
-    table.insert(tab_item_table.setting, {
-        text = _("Status bar"),
-        sub_item_table = sub_items,
-    })
+
+    local getMinibarOption = function(option, callback)
+        return {
+            text = option_titles[option],
+            checked_func = function()
+                return self.settings[option] == true
+            end,
+            enabled_func = isEnabled,
+            callback = function()
+                self.settings[option] = not self.settings[option]
+                G_reader_settings:saveSetting("footer", self.settings)
+                -- only case that we don't need a UI update is enable/disable
+                -- non-current mode when all_at_once is disabled.
+                local should_update = false
+                local first_enabled_mode_num
+                local prev_has_no_mode = self.has_no_mode
+                self.has_no_mode = true
+                for mode_num, m in pairs(MODE_INDEX) do
+                    if self.settings[m] then
+                        first_enabled_mode_num = mode_num
+                        self.has_no_mode = false
+                        break
+                    end
+                end
+                if callback then
+                    should_update = callback(self)
+                elseif self.settings.all_at_once then
+                    should_update = self:updateFooterTextGenerator()
+                elseif (MODE[option] == self.mode and self.settings[option] == false)
+                        or (prev_has_no_mode ~= self.has_no_mode) then
+                    -- current mode got disabled, redraw footer with other
+                    -- enabled modes. if all modes are disabled, then only show
+                    -- progress bar
+                    if not self.has_no_mode then
+                        self.mode = first_enabled_mode_num
+                    end
+                    should_update = true
+                    self:applyFooterMode()
+                end
+                if should_update then
+                    self:updateFooter()
+                    UIManager:setDirty("all", "partial")
+                end
+            end,
+        }
+    end
+
+    table.insert(sub_items,
+                 getMinibarOption("all_at_once", self.updateFooterTextGenerator))
+    table.insert(sub_items, getMinibarOption("toc_markers", self.setTocMarkers))
+    -- TODO: only enable auto refresh when time is shown
+    table.insert(sub_items, getMinibarOption("auto_refresh_time", function()
+        if self.settings.auto_refresh_time then
+            self:setupAutoRefreshTime()
+        else
+            UIManager:unschedule(self.autoRefreshTime)
+            self.onCloseDocument = nil
+        end
+    end))
+    table.insert(sub_items, getMinibarOption("page_progress"))
+    table.insert(sub_items, getMinibarOption("time"))
+    table.insert(sub_items, getMinibarOption("pages_left"))
+    table.insert(sub_items, getMinibarOption("battery"))
+    table.insert(sub_items, getMinibarOption("percentage"))
+    table.insert(sub_items, getMinibarOption("book_time_to_read"))
+    table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
+    table.insert(sub_items, getMinibarOption("frontlight"))
 end
 
-function ReaderFooter:getFrontlightInfo()
-    local powerd = Device:getPowerDevice()
-    if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
-        if powerd.fl_intensity ~= nil then
-            return string.format("L: %d%%", powerd.fl_intensity)
+-- this method will be updated at runtime based on user setting
+function ReaderFooter:genFooterText() end
+
+function ReaderFooter:genAllFooterText()
+    local info = {}
+    for _, gen in ipairs(self.footerTextGenerators) do
+        table.insert(info, gen(self))
+    end
+    return table.concat(info, " | ")
+end
+
+-- this function should never be called with footer is disabled
+function ReaderFooter:setTocMarkers()
+    if self.settings.toc_markers then
+        if self.progress_bar.ticks ~= nil then return end
+        local ticks_candidates = {}
+        if self.ui.toc then
+            local max_level = self.ui.toc:getMaxDepth()
+            for i = 0, -max_level, -1 do
+                local ticks = self.ui.toc:getTocTicks(i)
+                table.insert(ticks_candidates, ticks)
+            end
+            -- find the finest toc ticks by sorting out the largest one
+            table.sort(ticks_candidates, function(a, b) return #a > #b end)
+        end
+
+        if #ticks_candidates > 0 then
+            self.progress_bar.ticks = ticks_candidates[1]
+            self.progress_bar.last = self.pages or self.view.document:getPageCount()
+        else
+            -- we still set ticks here so self.progress_bar.ticks will not be
+            -- initialized again if ticks_candidates is empty
+            self.progress_bar.ticks = {}
         end
     else
-        return "L: Off"
+        self.progress_bar.ticks = nil
     end
-end
-
-function ReaderFooter:getBatteryInfo()
-    local powerd = Device:getPowerDevice()
-    return "B:" .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
-end
-
-function ReaderFooter:getTimeInfo()
-    return os.date("%H:%M")
-end
-
-function ReaderFooter:getProgressInfo()
-    if self.pageno then
-        return string.format("%d / %d", self.pageno, self.pages)
-    else
-        return string.format("%d / %d", self.position, self.doc_height)
-    end
-end
-
-function ReaderFooter:getNextChapterInfo()
-    local left = self.ui.toc:getChapterPagesLeft(self.pageno, self.toc_level)
-    return "=> " .. (left and left or self.pages - self.pageno)
-end
-
-function ReaderFooter:getProgressPercentage()
-    return string.format("R:%1.f%%", self.progress_bar.percentage * 100)
-end
-
-function ReaderFooter:getBookTimeToRead()
-    local current_page
-    if self.view.document.info.has_pages then
-        current_page = self.ui.paging.current_page
-    else
-        current_page = self.view.document:getCurrentPage()
-    end
-    return self:getDataFromStatistics("TB: ", self.pages - current_page)
-end
-
-function ReaderFooter:getChapterTimeToRead()
-    local left = self.ui.toc:getChapterPagesLeft(self.pageno, self.toc_level)
-    return self:getDataFromStatistics("TC: ", (left and left or self.pages - self.pageno))
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
@@ -335,79 +469,12 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText()
-    if self.settings.toc_markers and self.progress_bar.ticks == nil then
-        local ticks_candidates = {}
-        if self.ui.toc then
-            local max_level = self.ui.toc:getMaxDepth()
-            for i = 0, -max_level, -1 do
-                local ticks = self.ui.toc:getTocTicks(i)
-                table.insert(ticks_candidates, ticks)
-            end
-            -- find the finest toc ticks by sorting out the largest one
-            table.sort(ticks_candidates, function(a, b) return #a > #b end)
-        end
-
-        if #ticks_candidates > 0 then
-            self.progress_bar.ticks = ticks_candidates[1]
-            self.progress_bar.last = self.pages or self.view.document:getPageCount()
-        else
-            -- we still set ticks here so self.progress_bar.ticks will not be
-            -- initialized again if ticks_candidates is empty
-            self.progress_bar.ticks = {}
-        end
-    end
-
-    if self.settings.all_at_once then
-        local info = {}
-        if self.settings.frontlight and Device:hasFrontlight() then
-            table.insert(info, self:getFrontlightInfo())
-        end
-        if self.settings.battery then
-            table.insert(info, self:getBatteryInfo())
-        end
-        if self.settings.time then
-            table.insert(info, self:getTimeInfo())
-        end
-        if self.settings.page_progress then
-            table.insert(info, self:getProgressInfo())
-        end
-        if self.settings.pages_left then
-            table.insert(info, self:getNextChapterInfo())
-        end
-        if self.settings.percentage then
-            table.insert(info, self:getProgressPercentage())
-        end
-        if self.settings.book_time_to_read then
-            table.insert(info, self:getBookTimeToRead())
-        end
-        if self.settings.chapter_time_to_read then
-            table.insert(info, self:getChapterTimeToRead())
-        end
-        self.progress_text:setText(table.concat(info, " | "))
+    self.footer_text:setText(self:genFooterText())
+    if self.has_no_mode then
+        self.text_width = 0
     else
-        local info
-        if self.mode == MODE.page_progress then
-            info = self:getProgressInfo()
-        elseif self.mode == MODE.time then
-            info = self:getTimeInfo()
-        elseif self.mode == MODE.pages_left then
-            info = self:getNextChapterInfo()
-        elseif self.mode == MODE.battery then
-            info = self:getBatteryInfo()
-        elseif self.mode == MODE.percentage then
-            info = self:getProgressPercentage()
-        elseif self.mode == MODE.book_time_to_read then
-            info = self:getBookTimeToRead()
-        elseif self.mode == MODE.chapter_time_to_read then
-            info = self:getChapterTimeToRead()
-        elseif self.mode == MODE.frontlight and Device:hasFrontlight() then
-            info = self:getFrontlightInfo()
-        else
-            info = ""
-        end
-        self.progress_text:setText(info)
+        self.text_width = self.footer_text:getSize().w + self.text_left_margin
     end
-    self.text_width = self.progress_text:getSize().w + self.text_left_margin
     self.progress_bar.width = math.floor(
         self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     self.text_container.dimen.w = self.text_width
@@ -429,11 +496,10 @@ end
 
 -- recalculate footer sizes when document page count is updated
 -- see documentation for more info about this event.
-function ReaderFooter:onUpdatePos()
-    self:updateFooter()
-end
+ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 
 function ReaderFooter:onReaderReady()
+    self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:updateFooter()
 end
@@ -451,6 +517,14 @@ function ReaderFooter:applyFooterMode(mode)
     -- 8 for front light level
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= MODE.off)
+    if not self.view.footer_visible or self.settings.all_at_once then return end
+
+    local mode_name = MODE_INDEX[self.mode]
+    if not self.settings[mode_name] or self.has_no_mode then
+        -- all modes disabled, only show progress bar
+        mode_name = "empty"
+    end
+    self.genFooterText = footerTextGeneratorMap[mode_name]
 end
 
 function ReaderFooter:onEnterFlippingMode()
@@ -472,7 +546,7 @@ function ReaderFooter:onTapFooter(arg, ges)
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
     else
-        if self.settings.all_at_once then
+        if self.settings.all_at_once or self.has_no_mode then
             if self.mode >= 1 then
                 self.mode = MODE.off
             else
