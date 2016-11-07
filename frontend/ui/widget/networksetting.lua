@@ -53,7 +53,19 @@ local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = Device.screen
 local Font = require("ui/font")
+local T = require("ffi/util").template
 local _ = require("gettext")
+
+
+
+local function obtainIP()
+    -- TODO: check for DHCP result
+    local info = InfoMessage:new{text = _("Obtaining IP address…")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    NetworkMgr:obtainIP()
+    UIManager:close(info)
+end
 
 
 local MinimalPaginator = Widget:new{
@@ -147,6 +159,7 @@ function NetworkItem:init()
                 horizontal_space,
             }
         })
+        self.setting_ui:setConnectedItem(self)
     elseif self.info.password then
         self.btn_edit_nw = FrameContainer:new{
             bordersize = 0,
@@ -193,18 +206,14 @@ function NetworkItem:refresh()
 end
 
 function NetworkItem:connect()
-    local connected_item = self.setting_ui:getConnectedItem(self)
+    local connected_item = self.setting_ui:getConnectedItem()
     if connected_item then connected_item:disconnect() end
 
     local success, err_msg = NetworkMgr:authenticateNetwork(self.info)
 
     local text
     if success then
-        local info = InfoMessage:new{text = _("Obtaining IP address…")}
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        NetworkMgr:obtainIP()
-        UIManager:close(info)
+        obtainIP()
         self.info.connected = true
         self.setting_ui:setConnectedItem(self)
         text = _("Connected.")
@@ -215,6 +224,8 @@ function NetworkItem:connect()
     if self.setting_ui.connect_callback then
         self.setting_ui.connect_callback()
     end
+
+    self:refresh()
     UIManager:show(InfoMessage:new{text = text})
 end
 
@@ -229,6 +240,7 @@ function NetworkItem:disconnect()
     UIManager:close(info)
     self.info.connected = nil
     self:refresh()
+    self.setting_ui:setConnectedItem(nil)
     if self.setting_ui.connect_callback then
         self.setting_ui.connect_callback()
     end
@@ -246,7 +258,6 @@ function NetworkItem:saveAndConnectToNetwork(password_input)
             NetworkMgr:saveNetwork(self.info)
         end
         self:connect()
-        self:refresh()
     end
 
     UIManager:close(password_input)
@@ -342,7 +353,6 @@ function NetworkItem:onTapSelect(arg, ges_ev)
             self:onEditNetwork()
         else
             self:connect()
-            self:refresh()
         end
     else
         self:onAddNetwork()
@@ -446,6 +456,19 @@ function NetworkSetting:init()
             }
         }
     end
+
+    UIManager:nextTick(function()
+        local connected_item = self:getConnectedItem()
+        if connected_item ~= nil then
+            obtainIP()
+            UIManager:show(InfoMessage:new{
+                text = T(_("Connected to network %1"), connected_item.info.ssid)
+            })
+            if self.connect_callback then
+                self.connect_callback()
+            end
+        end
+    end)
 end
 
 function NetworkSetting:setConnectedItem(item)

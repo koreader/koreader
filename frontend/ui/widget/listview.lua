@@ -54,6 +54,8 @@ local ListView = InputContainer:new{
 }
 
 function ListView:init()
+    if #self.items <= 0 then return end
+
     self.show_page = 1
     self.dimen = Geom:new{w = self.width, h = self.height}
 
