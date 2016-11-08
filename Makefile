@@ -359,7 +359,7 @@ po:
 
 static-check:
 	@if which luacheck > /dev/null; then \
-			luacheck -q frontend; \
+			luacheck -q frontend plugins; \
 		else \
 			echo "[!] luacheck not found. "\
 			"you can install it with 'luarocks install luacheck'"; \
