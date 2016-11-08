@@ -16,24 +16,6 @@ local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
 }
 
-local ellipsis, space = "…", " "
-local ellipsis_width, space_width
-local function truncateTextByWidth(text, face, max_width, prepend_space)
-    if not ellipsis_width then
-        ellipsis_width = RenderText:sizeUtf8Text(0, max_width, face, ellipsis).x
-    end
-    if not space_width then
-        space_width = RenderText:sizeUtf8Text(0, max_width, face, space).x
-    end
-    local new_txt_width = max_width - ellipsis_width - space_width
-    local sub_txt = RenderText:getSubTextByWidth(text, face, new_txt_width)
-    if prepend_space then
-        return space.. sub_txt .. ellipsis
-    else
-        return sub_txt .. ellipsis .. space
-    end
-end
-
 function FileManagerHistory:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -101,7 +83,7 @@ end
 
 function FileManagerHistory:onMenuHold(item)
     local font_size = Font:getFace("tfont")
-    local text_remove_hist = T(_("Remove \"%1\" from history"))
+    local text_remove_hist = _("Remove \"%1\" from history")
     local text_remove_without_item = util.template(text_remove_hist, "")
     local text_remove_hist_width = (RenderText:sizeUtf8Text(
         0, self.width, font_size, text_remove_without_item).x )
@@ -110,11 +92,11 @@ function FileManagerHistory:onMenuHold(item)
 
     local item_trun
     if self.width < text_remove_hist_width + text_item_width then
-        item_trun = truncateTextByWidth(item.text, font_size, 1.2 * self.width - text_remove_hist_width)
+        item_trun = RenderText:truncateTextByWidth(item.text, font_size, 1.2 * self.width - text_remove_hist_width)
     else
         item_trun = item.text
     end
-    local text_remove = util.template(text_remove_hist, item_trun)
+    local text_remove = T(text_remove_hist, item_trun)
 
     self.histfile_dialog = ButtonDialog:new{
         buttons = {

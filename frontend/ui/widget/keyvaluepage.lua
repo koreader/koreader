@@ -38,26 +38,6 @@ local Font = require("ui/font")
 local Device = require("device")
 local Screen = Device.screen
 
-
-local ellipsis, space = "…", "  "
-local ellipsis_width, space_width
-local function truncateTextByWidth(text, face, max_width, prepend_space)
-    if not ellipsis_width then
-        ellipsis_width = RenderText:sizeUtf8Text(0, max_width, face, ellipsis).x
-    end
-    if not space_width then
-        space_width = RenderText:sizeUtf8Text(0, max_width, face, space).x
-    end
-    local new_txt_width = max_width - ellipsis_width - space_width
-    local sub_txt = RenderText:getSubTextByWidth(text, face, new_txt_width)
-    if prepend_space then
-        return space.. sub_txt .. ellipsis
-    else
-        return sub_txt .. ellipsis .. space
-    end
-end
-
-
 local KeyValueTitle = VerticalGroup:new{
     kv_page = nil,
     title = "",
@@ -72,7 +52,7 @@ function KeyValueTitle:init()
                                 0, self.width, self.tface, self.title).x
     local show_title_txt
     if self.width < (title_txt_width + btn_width) then
-        show_title_txt = truncateTextByWidth(
+        show_title_txt = RenderText:truncateTextByWidth(
                             self.title, self.tface, self.width-btn_width)
     else
         show_title_txt = self.title
@@ -155,10 +135,10 @@ function KeyValueItem:init()
     if key_w + value_w > self.width then
         -- truncate key or value so they fits in one row
         if key_w >= value_w then
-            self.show_key = truncateTextByWidth(self.key, self.cface, self.width-value_w)
+            self.show_key = RenderText:truncateTextByWidth(self.key, self.cface, self.width-value_w)
             self.show_value = self.value
         else
-            self.show_value = truncateTextByWidth(self.value, self.cface, self.width-key_w, true)
+            self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, self.width-key_w, true)
             self.show_key = self.key
         end
     else
