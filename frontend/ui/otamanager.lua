@@ -38,7 +38,11 @@ local ota_channels = {
 
 function OTAManager:getOTAModel()
     if Device:isKindle() then
-        return "kindle"
+        if Device:isTouchDevice() then
+            return "kindle"
+        else
+            return "kindle-legacy"
+        end
     elseif Device:isKobo() then
         return "kobo"
     elseif Device:isPocketBook() then
