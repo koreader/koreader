@@ -84,7 +84,7 @@ end
 function FileManagerHistory:onMenuHold(item)
     local font_size = Font:getFace("tfont")
     local text_remove_hist = _("Remove \"%1\" from history")
-    local text_remove_without_item = util.template(text_remove_hist, "")
+    local text_remove_without_item = T(text_remove_hist, "")
     local text_remove_hist_width = (RenderText:sizeUtf8Text(
         0, self.width, font_size, text_remove_without_item).x )
     local text_item_width = (RenderText:sizeUtf8Text(
