@@ -4,14 +4,13 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local util = require("ffi/util")
 local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local T = require("ffi/util").template
-
-
+local RenderText = require("ui/rendertext")
+local Font = require("ui/font")
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
 }
@@ -82,12 +81,27 @@ function FileManagerHistory:bookInformation(file)
 end
 
 function FileManagerHistory:onMenuHold(item)
+    local font_size = Font:getFace("tfont")
+    local text_remove_hist = _("Remove \"%1\" from history")
+    local text_remove_without_item = T(text_remove_hist, "")
+    local text_remove_hist_width = (RenderText:sizeUtf8Text(
+        0, self.width, font_size, text_remove_without_item).x )
+    local text_item_width = (RenderText:sizeUtf8Text(
+        0, self.width , font_size, item.text).x )
+
+    local item_trun
+    if self.width < text_remove_hist_width + text_item_width then
+        item_trun = RenderText:truncateTextByWidth(item.text, font_size, 1.2 * self.width - text_remove_hist_width)
+    else
+        item_trun = item.text
+    end
+    local text_remove = T(text_remove_hist, item_trun)
+
     self.histfile_dialog = ButtonDialog:new{
         buttons = {
             {
                 {
-                    text = util.template(_("Remove \"%1\" from history"),
-                                         item.text),
+                    text = text_remove,
                     callback = function()
                         require("readhistory"):removeItem(item)
                         self._manager:updateItemTable()

@@ -233,4 +233,22 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
     return pen_x
 end
 
+local ellipsis, space = "…", " "
+local ellipsis_width, space_width
+function RenderText:truncateTextByWidth(text, face, max_width, prepend_space)
+    if not ellipsis_width then
+        ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis).x
+    end
+    if not space_width then
+        space_width = self:sizeUtf8Text(0, max_width, face, space).x
+    end
+    local new_txt_width = max_width - ellipsis_width - space_width
+    local sub_txt = self:getSubTextByWidth(text, face, new_txt_width)
+    if prepend_space then
+        return space.. sub_txt .. ellipsis
+    else
+        return sub_txt .. ellipsis .. space
+    end
+end
+
 return RenderText
