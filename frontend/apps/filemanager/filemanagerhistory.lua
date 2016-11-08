@@ -4,7 +4,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local util = require("ffi/util")
 local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local DocSettings = require("docsettings")
