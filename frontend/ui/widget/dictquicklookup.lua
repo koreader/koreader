@@ -27,6 +27,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 Display quick lookup word definition
 ]]
 local DictQuickLookup = InputContainer:new{
+    wikipedia_button = true,
     results = nil,
     lookupword = nil,
     dictionary = nil,
@@ -186,6 +187,7 @@ function DictQuickLookup:update()
             {
                 {
                     text = _("Wikipedia"),
+                    enabled = self:isWikipediaActive(),
                     callback = function()
                         UIManager:scheduleIn(0.1, function()
                             self:lookupWikipedia()
@@ -271,7 +273,7 @@ function DictQuickLookup:update()
             self.dict_frame,
         }
     }
-
+    self:nextWikipediaStatus()
     UIManager:setDirty("all", function()
         local update_region = self.dict_frame.dimen:combine(orig_dimen)
         DEBUG("update dict region", update_region)
@@ -307,6 +309,18 @@ function DictQuickLookup:getHighlightText()
     else
         return _("Highlight"), true
     end
+end
+
+function DictQuickLookup:nextWikipediaStatus()
+    if self.wikipedia_button then
+        DictQuickLookup.wikipedia_button = false
+    else
+        DictQuickLookup.wikipedia_button = true
+    end
+end
+
+function DictQuickLookup:isWikipediaActive()
+    return self.wikipedia_button
 end
 
 function DictQuickLookup:isPrevDictAvaiable()
@@ -382,6 +396,7 @@ function DictQuickLookup:onTapCloseDict(arg, ges_ev)
 end
 
 function DictQuickLookup:onClose()
+    self:nextWikipediaStatus()
     UIManager:close(self)
     for i = #self.window_list, 1, -1 do
         local window = self.window_list[i]
