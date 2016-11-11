@@ -13,6 +13,7 @@ local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
 local OTAManager = {
     ota_servers = {
+        "http://ota.koreader.rocks:80/",
         "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
         "http://koreader-eu.ak-team.com:80/",
         "http://koreader-af.ak-team.com:80/",
@@ -37,7 +38,11 @@ local ota_channels = {
 
 function OTAManager:getOTAModel()
     if Device:isKindle() then
-        return "kindle"
+        if Device:isTouchDevice() then
+            return "kindle"
+        else
+            return "kindle-legacy"
+        end
     elseif Device:isKobo() then
         return "kobo"
     elseif Device:isPocketBook() then

@@ -74,6 +74,7 @@ end
 function slt2.get_dependency(template, start_tag, end_tag)
     return stable_uniq(include_fold(template, start_tag, end_tag, function(acc, v, name)
         if type(v) == 'string' then
+            return acc
         elseif type(v) == 'table' then
             if name ~= nil then
                 table.insert(acc, name)

@@ -57,7 +57,7 @@ function MyClipping:parseMyClippings()
                 }
             elseif index == 2 then
                 info = self:getInfo(line)
-            elseif index == 3 then
+            -- elseif index == 3 then
             -- should be a blank line, we skip this line
             elseif index == 4 then
                 text = self:getText(line)
@@ -168,8 +168,10 @@ function MyClipping:getTime(line)
     local _, _, hour, minute, second = line:find("(%d+):(%d+):(%d+)")
     if year and month and day and hour and minute and second then
         for k, v in pairs(pms) do
-            if line:find(k) then hour = hour + v end
-            break
+            if line:find(k) then
+                hour = hour + v
+                break
+            end
         end
         local time = os.time({
             year = year, month = month, day = day,
