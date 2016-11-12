@@ -47,7 +47,7 @@ local function restoreScreenMode()
 end
 
 local FileManager = InputContainer:extend{
-    title = _("FileManager"),
+    title = _("File Manager"),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
@@ -263,7 +263,7 @@ function FileManager:init()
     })
 
     if Device:hasKeys() then
-        self.key_events.Close = { {"Home"}, doc = "close filemanager" }
+        self.key_events.Close = { {"Home"}, doc = "Close file manager" }
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
