@@ -39,6 +39,10 @@ local function getDefaultDir()
     end
 end
 
+local function tildify(path)
+    return path:gsub(G_reader_settings:readSetting("home_dir") or getDefaultDir(), "~", 1)
+end
+
 local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
     if Screen:getScreenMode() ~= screen_mode then
@@ -63,7 +67,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("infofont", 18),
-        text = self.root_path,
+        text = tildify(self.root_path),
     }
 
     self.banner = FrameContainer:new{
@@ -105,7 +109,7 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(path)
+        FileManager.instance.path_text:setText(tildify(path))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.banner.dimen
         end)
