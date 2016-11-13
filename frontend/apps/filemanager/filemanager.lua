@@ -40,7 +40,7 @@ local function getDefaultDir()
 end
 
 local function abbreviate(path)
-    local home_dir_name = G_reader_settings:readSetting("home_dir_name")
+    local home_dir_name = G_reader_settings:readSetting("home_dir_display_name")
     if home_dir_name ~= nil then
         local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
         local len = home_dir:len()
