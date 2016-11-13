@@ -40,7 +40,12 @@ local function getDefaultDir()
 end
 
 local function tildify(path)
-    return path:gsub(G_reader_settings:readSetting("home_dir") or getDefaultDir(), "~", 1)
+    local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
+    if home_dir ~= "." then
+        return path:gsub(home_dir, "~", 1)
+    else
+        return path
+    end
 end
 
 local function restoreScreenMode()
