@@ -38,8 +38,8 @@ UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # files to link from main directory
-INSTALL_FILES=reader.lua frontend resources defaults.lua datastorage.lua l10n tools \
-		README.md COPYING
+INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
+		l10n tools README.md COPYING
 
 # for gettext
 DOMAIN=koreader
@@ -359,7 +359,7 @@ po:
 
 static-check:
 	@if which luacheck > /dev/null; then \
-			luacheck -q frontend plugins; \
+			luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins; \
 		else \
 			echo "[!] luacheck not found. "\
 			"you can install it with 'luarocks install luacheck'"; \
