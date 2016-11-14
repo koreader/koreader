@@ -39,13 +39,17 @@ local function getDefaultDir()
     end
 end
 
-local function tildify(path)
-    local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
-    if home_dir ~= "." then
-        return path:gsub(home_dir, "~", 1)
-    else
-        return path
+local function abbreviate(path)
+    local home_dir_name = G_reader_settings:readSetting("home_dir_name")
+    if home_dir_name ~= nil then
+        local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
+        local len = home_dir:len()
+        local start = path:sub(1, len)
+        if start == home_dir then
+            return home_dir_name .. path:sub(len+1)
+        end
     end
+    return path
 end
 
 local function restoreScreenMode()
@@ -72,7 +76,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("infofont", 18),
-        text = tildify(self.root_path),
+        text = abbreviate(self.root_path),
     }
 
     self.banner = FrameContainer:new{
@@ -114,7 +118,7 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(tildify(path))
+        FileManager.instance.path_text:setText(abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.banner.dimen
         end)
