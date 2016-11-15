@@ -330,7 +330,6 @@ end
 
 function FileManager:onClose()
     DEBUG("close filemanager")
-    G_reader_settings:saveSetting("fm_screen_mode", Screen:getScreenMode())
     UIManager:close(self)
     if self.onExit then
         self:onExit()
