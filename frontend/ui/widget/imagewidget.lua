@@ -1,12 +1,21 @@
 --[[--
-ImageWidget shows an image from a file
+ImageWidget shows an image from a file or memory
 
-Example:
+Show image from file example:
 
         UIManager:show(ImageWidget:new{
             file = "resources/info-i.png",
             -- Make sure alpha is set to true if png has transparent background
             -- alpha = true,
+        })
+
+
+Show image from memory example:
+
+        UIManager:show(ImageWidget:new{
+            -- bitmap_buffer should be a block of memory that holds the raw
+            -- uncompressed bitmap.
+            image = bitmap_buffer,
         })
 
 ]]
