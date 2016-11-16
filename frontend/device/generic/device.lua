@@ -1,5 +1,6 @@
 local Event = require("ui/event")
 local DEBUG = require("dbg")
+local _ = require("gettext")
 
 local function yes() return true end
 local function no() return false end
@@ -137,7 +138,7 @@ function Device:onPowerEvent(ev)
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
-        require("ui/screensaver"):show()
+        require("ui/screensaver"):show("suspend", _("Sleeping"))
         self.screen:refreshFull()
         self.screen_saver_mode = true
         UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)

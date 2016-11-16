@@ -4,7 +4,6 @@ local Device = require("device")
 local Screen = Device.screen
 local DocSettings = require("docsettings")
 local DEBUG = require("dbg")
-local _ = require("gettext")
 
 local Screensaver = {
 }
@@ -88,56 +87,60 @@ function Screensaver:getCoverImage(file)
     end
 end
 
-function Screensaver:show()
+function Screensaver:show(kind, default_msg)
     DEBUG("show screensaver")
     local InfoMessage = require("ui/widget/infomessage")
+    local screensaver_settings = G_reader_settings:readSetting(kind .. "_screensaver") or {}
     -- first check book cover image, on by default
-    local screen_saver_last_book =
+    local screensaver_last_book =
         G_reader_settings:readSetting("use_lastfile_as_screensaver")
-    if screen_saver_last_book == nil or screen_saver_last_book then
+    if screensaver_last_book == nil or screensaver_last_book then
         local lastfile = G_reader_settings:readSetting("lastfile")
         if lastfile then
             local doc_settings = DocSettings:open(lastfile)
             local exclude = doc_settings:readSetting("exclude_screensaver")
             if not exclude then
-                self.suspend_msg = self:getCoverImage(lastfile)
+                self.left_msg = self:getCoverImage(lastfile)
             end
         end
     end
     -- then screensaver directory or file image
-    if not self.suspend_msg then
-        -- FIXME: rename this config to screen_saver_path
-        local screen_saver_folder =
+    if not self.left_msg then
+        -- FIXME: rename screensaver_folder to screensaver_path
+        local screensaver_path = screensaver_settings.path or
             G_reader_settings:readSetting("screensaver_folder")
-        if screen_saver_folder == nil
+        if screensaver_path == nil
         and Device.internal_storage_mount_point ~= nil then
-            screen_saver_folder =
+            screensaver_path =
                 Device.internal_storage_mount_point .. "screensaver"
         end
-        if screen_saver_folder then
-            local file = screen_saver_folder
-            if lfs.attributes(file, "mode") == "directory" then
-                self.suspend_msg = getRandomImage(file)
-            else
-                self.suspend_msg = createWidgetFromFile(file)
+        if screensaver_path then
+            local mode = lfs.attributes(screensaver_path, "mode")
+            if mode ~= nil then
+                if mode == "directory" then
+                    self.left_msg = getRandomImage(screensaver_path)
+                else
+                    self.left_msg = createWidgetFromFile(screensaver_path)
+                end
             end
         end
     end
-    -- fallback to suspended message
-    if not self.suspend_msg then
-        self.suspend_msg = InfoMessage:new{ text = _("Suspended") }
-        UIManager:show(self.suspend_msg)
+    -- fallback to message box
+    if not self.left_msg then
+        local msg = screensaver_settings.message or default_msg
+        self.left_msg = InfoMessage:new{ text = msg }
+        UIManager:show(self.left_msg)
     else
         -- refresh whole screen for other types
-        UIManager:show(self.suspend_msg, "full")
+        UIManager:show(self.left_msg, "full")
     end
 end
 
 function Screensaver:close()
     DEBUG("close screensaver")
-    if self.suspend_msg then
-        UIManager:close(self.suspend_msg)
-        self.suspend_msg = nil
+    if self.left_msg then
+        UIManager:close(self.left_msg)
+        self.left_msg = nil
     end
 end
 
