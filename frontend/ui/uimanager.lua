@@ -27,7 +27,7 @@ local UIManager = {
     _zeromqs = {},
     _refresh_stack = {},
     _refresh_func_stack = {},
-    _power_ev_handled = false,
+    _entered_poweroff_stage = false,
 }
 
 function UIManager:init()
@@ -42,6 +42,16 @@ function UIManager:init()
             Device:onPowerEvent(input_event)
         end,
     }
+    self.poweroff_action = function()
+        self._entered_poweroff_stage = true;
+        Screen:setRotationMode(0)
+        require("ui/screensaver"):show("poweroff", _("Powered off"))
+        Screen:refreshFull()
+        UIManager:nextTick(function()
+            self:broadcastEvent(Event:new("Close"))
+            Device:powerOff()
+        end)
+    end
     if Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
@@ -57,33 +67,12 @@ function UIManager:init()
             self:_startAutoSuspend()
         end
         self.event_handlers["PowerPress"] = function()
-            self._power_ev_handled = false
-            local showPowerOffDialog = function()
-                if self._power_ev_handled then return end
-                self._power_ev_handled = true
-                local ConfirmBox = require("ui/widget/confirmbox")
-                UIManager:show(ConfirmBox:new{
-                    text = _("Power off?"),
-                    ok_callback = function()
-                        local InfoMessage = require("ui/widget/infomessage")
-
-                        UIManager:show(InfoMessage:new{
-                            text = _("Powered off."),
-                        })
-                        -- The message can fail to render if this is executed directly
-                        UIManager:scheduleIn(0.1, function()
-                            self:broadcastEvent(Event:new("Close"))
-                            Device:powerOff()
-                        end)
-                    end,
-                })
-            end
-            UIManager:scheduleIn(3, showPowerOffDialog)
+            UIManager:scheduleIn(2, self.poweroff_action)
         end
         self.event_handlers["PowerRelease"] = function()
-            if not self._power_ev_handled then
-              self._power_ev_handled = true
-              self.event_handlers["Suspend"]()
+            if not self._entered_poweroff_stage then
+                UIManager:unschedule(self.poweroff_action)
+                self.event_handlers["Suspend"]()
             end
         end
         if not G_reader_settings:readSetting("ignore_power_sleepcover") then
