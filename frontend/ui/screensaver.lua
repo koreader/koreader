@@ -57,6 +57,9 @@ local function getRandomImage(dir)
             end
         end
     end
+    if i == 0 then
+        return nil
+    end
     return createWidgetFromFile(dir .. pics[math.random(i)])
 end
 
