@@ -17,6 +17,10 @@ local Font = require("ui/font")
 local Device = require("device")
 local Screen = Device.screen
 local GoodReadersApi = require("goodreadsapi")
+local LuaSettings = require("luasettings")
+local DataStorage = require("datastorage")
+local _ = require("gettext")
+local InfoMessage = require("ui/widget/infomessage")
 
 local DoubleKeyValueTitle = VerticalGroup:new{
     kv_page = nil,
@@ -157,7 +161,11 @@ function DoubleKeyValueItem:init()
 end
 
 function DoubleKeyValueItem:onTap()
+    local info = InfoMessage:new{text = _("Please wait...")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
     self.callback()
+    UIManager:close(info)
     return true
 end
 
@@ -171,17 +179,31 @@ local DoubleKeyValuePage = InputContainer:new{
     goodreadersKey = "",
 }
 
+function DoubleKeyValuePage:readGRSettings()
+    self.gr_settings = LuaSettings:open(DataStorage:getSettingsDir().."/goodreadssettings.lua")
+    return self.gr_settings
+end
+
+function DoubleKeyValuePage:saveGRSettings(setting)
+    if not self.gr_settings then self:readGRSettings() end
+    self.gr_settings:saveSetting("goodreads", setting)
+    self.gr_settings:flush()
+end
+
 function DoubleKeyValuePage:init()
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
-    local settings = G_reader_settings:readSetting("goodreads") or {}
-    self.goodreadersKey = settings.key
-    self.goodreadersSecret = settings.secret
-    self.kv_pairs = GoodReadersApi:showData(self.text_input, self.search_type, 1, self.goodreadersKey)
-    local total_res = GoodReadersApi:getTotalResults()
-    if total_res == nil then
-        total_res = 0
+    local gr_sett = self:readGRSettings().data
+    if gr_sett.goodreads then
+        self.goodreadersKey = gr_sett.goodreads.key
+        self.goodreadersSecret = gr_sett.goodreads.secret
     end
+    self.kv_pairs = GoodReadersApi:showData(self.text_input, self.search_type, 1, self.goodreadersKey)
+    self.total_res = GoodReadersApi:getTotalResults()
+    if self.total_res == nil then
+        self.total_res = 0
+    end
+    self.total_res = tonumber(self.total_res)
     if self.kv_pairs == nil then
         self.kv_pairs = {}
     end
@@ -213,7 +235,7 @@ function DoubleKeyValuePage:init()
     local content_height = self.dimen.h - self.title_bar:getSize().h
     self.max_loaded_pages = 1
     self.items_per_page = math.floor(content_height / line_height)
-    self.pages = math.ceil( total_res / self.items_per_page)
+    self.pages = math.ceil(self.total_res / self.items_per_page)
     self.main_content = VerticalGroup:new{}
     self:_populateItems()
     -- assemble page
@@ -231,7 +253,8 @@ end
 
 function DoubleKeyValuePage:nextPage()
     local new_page = math.min(self.show_page + 1, self.pages)
-    if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)  then
+    if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)
+        and #self.kv_pairs < self.total_res then
         local api_page = math.floor(new_page * self.items_per_page / 20 ) + 1
         -- load new portion of data
         local new_pair = GoodReadersApi:showData(self.text_input, self.search_type, api_page, self.goodreadersKey )
@@ -239,6 +262,7 @@ function DoubleKeyValuePage:nextPage()
         for _, v in pairs(new_pair) do
             table.insert(self.kv_pairs, v)
         end
+        self.refresh = true
     end
     if new_page > self.show_page then
         if self.max_loaded_pages == self.show_page then
@@ -302,7 +326,17 @@ end
 
 function DoubleKeyValuePage:onSwipe(arg, ges_ev)
     if ges_ev.direction == "west" then
-        self:nextPage()
+        local new_page = math.min(self.show_page + 1, self.pages)
+        if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)
+            and #self.kv_pairs < self.total_res  then
+            local info = InfoMessage:new{text = _("Please wait...")}
+            UIManager:show(info)
+            UIManager:forceRePaint()
+            self:nextPage()
+            UIManager:close(info)
+        else
+            self:nextPage()
+        end
         return true
     elseif ges_ev.direction == "east" then
         self:prevPage()

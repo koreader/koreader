@@ -10,8 +10,8 @@ local ltn12 = require('ltn12')
 local _ = require("gettext")
 
 local GoodReadsApi = InputContainer:new {
-    goodreadersKey = "",
-    goodreadersSecret = "",
+    goodreaders_key = "",
+    goodreaders_secret = "",
     total_result = 0,
 }
 
@@ -65,14 +65,14 @@ function GoodReadsApi:showSearchTable(data)
     local books = {}
     if data == nil then
         UIManager:show(InfoMessage:new{text =_("Network problem.\nCheck connection.")})
-        return {}
+        return books
     end
     self.total_result = data:match("<total[-]results>(.*)</total[-]results>")
 
     for work in data:gmatch("<work>(.-)</work>") do
         local book = work:match("<best_book[^>]+>(.*)</best_book>")
         local id = book:match("<id[^>]+>([^<]+)</id>")
-        local title = book:match("<title>([^<]+)</title>"):gsub(" %(.*, #%d+%)$", "")
+        local title = book:match("<title>([^<]+)</title>"):gsub(" %(.*#%d+%)$", "")
         local author = book:match("<name>([^<]+)</name>")
         table.insert(books, {
             author = author,
@@ -90,6 +90,28 @@ function GoodReadsApi:getTotalResults()
     return self.total_result
 end
 
+local function cleanHTMLTags(str_html)
+    local cleaner = {
+        { "&amp;", "&" },
+        { "&#151;", "-" },
+        { "&#146;", "'" },
+        { "&#160;", " " },
+        { "<!%[CDATA%[(.*)%]%]>", "%1" },
+        { "<br%s/>", "\n" },
+        { "%-%-", "%-" },
+        { "</p>", "\n" },
+        { "(%b<>)", "" },
+        { "\n\n*", "\n" },
+        { "\n*$", "" },
+        { "^\n*", "" },
+    }
+    for i=1, #cleaner do
+        local cleans = cleaner[i]
+        str_html = string.gsub(str_html, cleans[1], cleans[2])
+    end
+    return str_html
+end
+
 local function showIdTable(data)
     if data == nil then
         UIManager:show(InfoMessage:new{text =_("Network problem.\nCheck connection.")})
@@ -97,9 +119,9 @@ local function showIdTable(data)
     end
     local data1 = data:match("<book>(.*)</reviews_widget>")
     local title_all = data1:match("<title>(.*)</title>"):gsub("<![[]CDATA[[]", ""):gsub("]]>$", "")
-    local title = title_all:gsub(" %(.*, #%d+%)$", "")
+    local title = title_all:gsub(" %(.*#%d+%)$", "")
     local average_rating = data1:match("<average_rating>([^<]+)</average_rating>")
-    local series = title_all:match("%(.*, #%d+%)$")
+    local series = title_all:match("%(.*#%d+%)$")
     if series ~= nil then
         series = series:match("[(](.*)[)]")
     else
@@ -112,7 +134,7 @@ local function showIdTable(data)
     local id = data1:match("<id>([^<]+)</id>"):gsub("<![[]CDATA[[]", ""):gsub("]]>$", "")
     local author = data1:match("<name>([^<]+)</name>")
     local description = data1:match("<description>(.*)</description>")
-    description = description:gsub("<![[]CDATA[[]", ""):gsub("]]>$", ""):gsub("<br>", "")
+    description = cleanHTMLTags(description)
     --change format from medium to large
     local image = data1:match("<image_url>([^<]+)</image_url>"):gsub("([0-9]+)m/", "%1l/")
     local day = data1:match("<original_publication_day[^>]+>([^<]+)</original_publication_day>")
@@ -120,17 +142,17 @@ local function showIdTable(data)
     local year = data1:match("<original_publication_year[^>]+>([^<]+)</original_publication_year>")
 
     local release = {}
-    if(year) then
+    if (year) then
         table.insert(release, year)
     end
-    if(month) then
+    if (month) then
         table.insert(release, string.format("%02d", month))
     end
-    if(day) then
+    if (day) then
         table.insert(release, string.format("%02d", day))
     end
     release = table.concat(release, "-")
-    if release == {} or release == nil or release == "" then
+    if release == "" then
         release = _("N/A")
     end
     local book_info = {
@@ -145,7 +167,7 @@ local function showIdTable(data)
         id = id,
     }
     if id == nil then
-        UIManager:show(InfoMessage:new{text =_("Search not found!")})
+        UIManager:show(InfoMessage:new{text = _("Search not found!")})
     end
     return book_info
 end
@@ -153,9 +175,9 @@ end
 -- search_type = all - search all
 -- search_type = author - serch book by author
 -- search_type = title - search book by title
-function GoodReadsApi:showData(search_text, search_type, page, goodreadersKey)
+function GoodReadsApi:showData(search_text, search_type, page, goodreaders_key)
     local stats = {}
-    local gen_url = genSearchURL(search_text, goodreadersKey, search_type, page)
+    local gen_url = genSearchURL(search_text, goodreaders_key, search_type, page)
     local gen_xml = self:fetchXml(gen_url)
     local tbl = self:showSearchTable(gen_xml)
     if #tbl == 0 then
@@ -168,7 +190,7 @@ function GoodReadsApi:showData(search_text, search_type, page, goodreadersKey)
         table.insert(stats, { author,
             title,
             callback = function()
-                local dates = self:showIdData(id, goodreadersKey)
+                local dates = self:showIdData(id, goodreaders_key)
                 if dates.id ~= nil then
                     UIManager:show(GoodReaderBook:new{
                         dates = dates,
@@ -180,8 +202,8 @@ function GoodReadsApi:showData(search_text, search_type, page, goodreadersKey)
     return stats
 end
 
-function GoodReadsApi:showIdData(id, goodreadersKey)
-    local gen_url = genIdUrl(id, goodreadersKey)
+function GoodReadsApi:showIdData(id, goodreaders_key)
+    local gen_url = genIdUrl(id, goodreaders_key)
     local gen_xml = self:fetchXml(gen_url)
     local tbl = showIdTable(gen_xml)
     return tbl

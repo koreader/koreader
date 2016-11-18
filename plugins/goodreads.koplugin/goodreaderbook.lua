@@ -20,6 +20,7 @@ local Screen = require("device").screen
 local Font = require("ui/font")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local Pic = require("ffi/pic")
 
 local GoodReaderBook = InputContainer:new{
     padding = Screen:scaleBySize(15),
@@ -192,18 +193,24 @@ function GoodReaderBook:genBookInfoGroup()
     --thumbnail
     local http = require("socket.http")
     local body = http.request(self.dates.image)
-    if body then
-        local file = io.open("goodreaders.jpg", "w+")
-        file:write(body)
-        file:close()
+    local image = false
+    if body then image = Pic.openJPGDocumentFromMem(body) end
+    if image then
         table.insert(book_info_group, ImageWidget:new{
-            file =  "goodreaders.jpg",
-            nocache = true,
+            image = image.image_bb,
+            width = img_width,
+            height = img_height,
+            autoscale = false,
+        })
+    else
+        table.insert(book_info_group, ImageWidget:new{
+            file = "resources/goodreadsnophoto.png",
             width = img_width,
             height = img_height,
             autoscale = false,
         })
     end
+
     local book_info_group_span = HorizontalGroup:new{
         align = "top",
         HorizontalSpan:new{ width =  split_span_width / 2 }
@@ -220,7 +227,7 @@ function GoodReaderBook:genBookInfoGroup()
 end
 
 function GoodReaderBook:bookReview()
-local book_meta_info_group = VerticalGroup:new{
+    local book_meta_info_group = VerticalGroup:new{
         align = "center",
         padding = 0,
         bordersize = 0,
@@ -231,7 +238,6 @@ local book_meta_info_group = VerticalGroup:new{
             width = self.screen_width * 0.9,
             height = self.screen_height * 0.48,
             dialog = self,
-
         }
     }
     return CenterContainer:new{

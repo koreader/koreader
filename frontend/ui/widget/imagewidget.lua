@@ -57,7 +57,6 @@ local ImageWidget = Widget:new{
     -- size vertically and horizontally, without impact original aspect ratio.
     -- But overflow part will be ignored.
     overflow = false,
-    nocache = false,
     _bb = nil
 }
 
@@ -71,7 +70,7 @@ function ImageWidget:_loadfile()
             or itype == "tiff" then
         local hash = "image|"..self.file.."|"..(self.width or "").."|"..(self.height or "")
         local cache = ImageCache:check(hash)
-        if cache and not self.nocache then
+        if cache then
             -- hit cache
             self._bb = cache.bb
         else

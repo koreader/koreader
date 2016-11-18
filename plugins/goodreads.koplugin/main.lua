@@ -5,18 +5,19 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local GoodReads = InputContainer:new {
-    goodreadersKey = "",
-    goodreadersSecret = "",
+    goodreaders_key = "",
+    goodreaders_secret = "",
 }
 
 function GoodReads:init()
-    local settings = G_reader_settings:readSetting("goodreads") or {}
-    self.goodreadersKey = settings.key
-    self.goodreadersSecret = settings.secret
+    local gr_sett = DoubleKeyValuePage:readGRSettings().data
+    if gr_sett.goodreads then
+        self.goodreaders_key = gr_sett.goodreads.key
+        self.goodreaders_secret = gr_sett.goodreads.secret
+    end
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -31,7 +32,7 @@ function GoodReads:addToMainMenu(tab_item_table)
             {
                 text = _("Search book all"),
                 callback = function()
-                    if self.goodreadersKey ~= ""  then
+                    if self.goodreaders_key ~= ""  then
                         self:search("all")
                     else
                         UIManager:show(InfoMessage:new{
@@ -43,9 +44,8 @@ function GoodReads:addToMainMenu(tab_item_table)
             {
                 text = _("Search book by title"),
                 callback = function()
-                    if self.goodreadersKey ~= ""  then
+                    if self.goodreaders_key ~= ""  then
                         self:search("title")
-
                     else
                         UIManager:show(InfoMessage:new{
                             text = _("Please set up GoodReads key in settings"),
@@ -56,7 +56,7 @@ function GoodReads:addToMainMenu(tab_item_table)
             {
                 text = _("Search book by author"),
                 callback = function()
-                    if self.goodreadersKey ~= ""  then
+                    if self.goodreaders_key ~= ""  then
                         self:search("author")
 
                     else
@@ -80,20 +80,20 @@ function GoodReads:updateSettings()
     "2. Register development key on page: https://www.goodreads.com/user/sign_in?rd=true\n" ..
     "3. Your key and secret key are on https://www.goodreads.com/api/keys\n" ..
     "4. Enter your generated key and secret key in settings (Login to GoodReads window)"
-    if self.goodreadersKey == "" then
+    if self.goodreaders_key == "" then
         hint_top = _("GoodReaders Key Not Set")
         text_top = ""
     else
         hint_top = ""
-        text_top = self.goodreadersKey
+        text_top = self.goodreaders_key
     end
 
-    if self.goodreadersSecret == "" then
+    if self.goodreaders_secret == "" then
         hint_bottom = _("GoodReaders Secret Key Not Set (optional)")
         text_bottom = ""
     else
         hint_bottom = ""
-        text_bottom = self.goodreadersKey
+        text_bottom = self.goodreaders_key
     end
     self.settings_dialog = MultiInputDialog:new {
         title = _("Login to GoodReads"),
@@ -144,16 +144,14 @@ end
 
 function GoodReads:saveSettings(fields)
     if fields then
-        self.goodreadersKey = fields[1]
-        self.goodreadersSecret = fields[2]
+        self.goodreaders_key = fields[1]
+        self.goodreaders_secret = fields[2]
     end
     local settings = {
-        key = self.goodreadersKey,
-        secret = self.goodreadersSecret,
+        key = self.goodreaders_key,
+        secret = self.goodreaders_secret,
     }
-    DEBUG(settings)
-    G_reader_settings:saveSetting("goodreads", settings)
-    DEBUG(self.goodreadersKey)
+    DoubleKeyValuePage:saveGRSettings(settings)
 end
 
 -- search_type = all - search all
@@ -196,7 +194,7 @@ function GoodReads:search(search_type)
                     callback = function()
                         text_input = search_input:getInputText()
                         if text_input ~= nil and text_input ~= "" then
-                            info = InfoMessage:new{text =_("Please wait..."), timeout = 0.0 }
+                            info = InfoMessage:new{text = _("Please wait..."), timeout = 0.0}
                             UIManager:show(info)
                             UIManager:nextTick(function()
                                 result = DoubleKeyValuePage:new{
