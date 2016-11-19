@@ -1,5 +1,5 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local GoodReaderBook = require("goodreaderbook")
+local GoodreadsBook = require("goodreadsbook")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local url = require('socket.url')
@@ -9,13 +9,13 @@ local https = require('ssl.https')
 local ltn12 = require('ltn12')
 local _ = require("gettext")
 
-local GoodReadsApi = InputContainer:new {
-    goodreaders_key = "",
-    goodreaders_secret = "",
+local GoodreadsApi = InputContainer:new {
+    goodreads_key = "",
+    goodreads_secret = "",
     total_result = 0,
 }
 
-function GoodReadsApi:init()
+function GoodreadsApi:init()
 end
 
 local function genSearchURL(text_search, userApi, search_type, npage)
@@ -42,7 +42,7 @@ local function genIdUrl(id, userApi)
     ))
 end
 
-function GoodReadsApi:fetchXml(s_url)
+function GoodreadsApi:fetchXml(s_url)
     local request, sink = {}, {}
     local parsed = url.parse(s_url)
     request['url'] = s_url
@@ -61,7 +61,7 @@ function GoodReadsApi:fetchXml(s_url)
     end
 end
 
-function GoodReadsApi:showSearchTable(data)
+function GoodreadsApi:showSearchTable(data)
     local books = {}
     if data == nil then
         UIManager:show(InfoMessage:new{text =_("Network problem.\nCheck connection.")})
@@ -86,7 +86,7 @@ function GoodReadsApi:showSearchTable(data)
     return books
 end
 
-function GoodReadsApi:getTotalResults()
+function GoodreadsApi:getTotalResults()
     return self.total_result
 end
 
@@ -175,9 +175,9 @@ end
 -- search_type = all - search all
 -- search_type = author - serch book by author
 -- search_type = title - search book by title
-function GoodReadsApi:showData(search_text, search_type, page, goodreaders_key)
+function GoodreadsApi:showData(search_text, search_type, page, goodreads_key)
     local stats = {}
-    local gen_url = genSearchURL(search_text, goodreaders_key, search_type, page)
+    local gen_url = genSearchURL(search_text, goodreads_key, search_type, page)
     local gen_xml = self:fetchXml(gen_url)
     local tbl = self:showSearchTable(gen_xml)
     if #tbl == 0 then
@@ -190,9 +190,9 @@ function GoodReadsApi:showData(search_text, search_type, page, goodreaders_key)
         table.insert(stats, { author,
             title,
             callback = function()
-                local dates = self:showIdData(id, goodreaders_key)
+                local dates = self:showIdData(id, goodreads_key)
                 if dates.id ~= nil then
-                    UIManager:show(GoodReaderBook:new{
+                    UIManager:show(GoodreadsBook:new{
                         dates = dates,
                     })
                 end
@@ -202,11 +202,11 @@ function GoodReadsApi:showData(search_text, search_type, page, goodreaders_key)
     return stats
 end
 
-function GoodReadsApi:showIdData(id, goodreaders_key)
-    local gen_url = genIdUrl(id, goodreaders_key)
+function GoodreadsApi:showIdData(id, goodreads_key)
+    local gen_url = genIdUrl(id, goodreads_key)
     local gen_xml = self:fetchXml(gen_url)
     local tbl = showIdTable(gen_xml)
     return tbl
 end
 
-return GoodReadsApi
+return GoodreadsApi
