@@ -16,7 +16,7 @@ local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local Device = require("device")
 local Screen = Device.screen
-local GoodReadersApi = require("goodreadsapi")
+local GoodreadsApi = require("goodreadsapi")
 local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
@@ -176,7 +176,7 @@ local DoubleKeyValuePage = InputContainer:new{
     show_page = 1,
     text_input = "",
     pages = 1,
-    goodreadersKey = "",
+    goodreads_key = "",
 }
 
 function DoubleKeyValuePage:readGRSettings()
@@ -195,11 +195,11 @@ function DoubleKeyValuePage:init()
     self.screen_height = Screen:getSize().h
     local gr_sett = self:readGRSettings().data
     if gr_sett.goodreads then
-        self.goodreadersKey = gr_sett.goodreads.key
-        self.goodreadersSecret = gr_sett.goodreads.secret
+        self.goodreads_key = gr_sett.goodreads.key
+        self.goodreads_secret = gr_sett.goodreads.secret
     end
-    self.kv_pairs = GoodReadersApi:showData(self.text_input, self.search_type, 1, self.goodreadersKey)
-    self.total_res = GoodReadersApi:getTotalResults()
+    self.kv_pairs = GoodReadsApi:showData(self.text_input, self.search_type, 1, self.goodreads_key)
+    self.total_res = GoodReadsApi:getTotalResults()
     if self.total_res == nil then
         self.total_res = 0
     end
@@ -257,7 +257,7 @@ function DoubleKeyValuePage:nextPage()
         and #self.kv_pairs < self.total_res then
         local api_page = math.floor(new_page * self.items_per_page / 20 ) + 1
         -- load new portion of data
-        local new_pair = GoodReadersApi:showData(self.text_input, self.search_type, api_page, self.goodreadersKey )
+        local new_pair = GoodReadsApi:showData(self.text_input, self.search_type, api_page, self.goodreads_key )
         if new_pair == nil then return end
         for _, v in pairs(new_pair) do
             table.insert(self.kv_pairs, v)

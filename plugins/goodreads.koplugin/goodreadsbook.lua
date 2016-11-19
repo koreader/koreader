@@ -22,11 +22,11 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local Pic = require("ffi/pic")
 
-local GoodReaderBook = InputContainer:new{
+local GoodreadsBook = InputContainer:new{
     padding = Screen:scaleBySize(15),
 }
 
-function GoodReaderBook:init()
+function GoodreadsBook:init()
     self.small_font_face = Font:getFace("ffont", 16)
     self.medium_font_face = Font:getFace("ffont", 18)
     self.large_font_face = Font:getFace("ffont", 22)
@@ -45,7 +45,7 @@ function GoodReaderBook:init()
     }
 end
 
-function GoodReaderBook:getStatusContent(width)
+function GoodreadsBook:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
@@ -59,7 +59,7 @@ function GoodReaderBook:getStatusContent(width)
     }
 end
 
-function GoodReaderBook:genHeader(title)
+function GoodreadsBook:genHeader(title)
     local header_title = TextWidget:new{
         text = title,
         face = self.medium_font_face,
@@ -94,7 +94,7 @@ function GoodReaderBook:genHeader(title)
     }
 end
 
-function GoodReaderBook:genBookInfoGroup()
+function GoodreadsBook:genBookInfoGroup()
     local split_span_width = self.screen_width * 0.05
     local img_width, img_height
     if Screen:getScreenMode() == "landscape" then
@@ -226,7 +226,7 @@ function GoodReaderBook:genBookInfoGroup()
     }
 end
 
-function GoodReaderBook:bookReview()
+function GoodreadsBook:bookReview()
     local book_meta_info_group = VerticalGroup:new{
         align = "center",
         padding = 0,
@@ -246,14 +246,14 @@ function GoodReaderBook:bookReview()
     }
 end
 
-function GoodReaderBook:onAnyKeyPressed()
+function GoodreadsBook:onAnyKeyPressed()
     return self:onClose()
 end
 
-function GoodReaderBook:onClose()
+function GoodreadsBook:onClose()
     UIManager:setDirty("all")
     UIManager:close(self)
     return true
 end
 
-return GoodReaderBook
+return GoodreadsBook
