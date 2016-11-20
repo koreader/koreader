@@ -6,7 +6,6 @@ local VerticalScrollBar = Widget:new{
     enable = true,
     low = 0,
     high = 1,
-    
     width = 6,
     height = 50,
     bordersize = 1,

@@ -283,7 +283,7 @@ http://ccache.samba.org
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
-[nb-script]:https://github.com/koreader/koreader-misc/blob/master/koreader-nightlybuild/koreader-nightlybuild.sh
+[nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
 [travis-badge]:https://travis-ci.org/koreader/koreader.svg?branch=master
 [travis-link]:https://travis-ci.org/koreader/koreader
 [travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
