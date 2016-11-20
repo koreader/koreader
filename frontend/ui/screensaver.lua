@@ -92,7 +92,7 @@ function Screensaver:show(kind, default_msg)
     local InfoMessage = require("ui/widget/infomessage")
     local screensaver_settings = G_reader_settings:readSetting(kind .. "_screensaver") or {}
     -- first check book cover image, on by default
-    local screensaver_last_book =
+    local screensaver_last_book = screensaver_settings.use_last_file or
         G_reader_settings:readSetting("use_lastfile_as_screensaver")
     if screensaver_last_book == nil or screensaver_last_book then
         local lastfile = G_reader_settings:readSetting("lastfile")
