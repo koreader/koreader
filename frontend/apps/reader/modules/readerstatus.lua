@@ -24,8 +24,10 @@ function ReaderStatus:init()
         self.total_pages = self.document:getPageCount()
         self.ui.menu:registerToMainMenu(self)
         -- register event listener if enabled
-        self.onEndOfBook = function()
-            self:showStatus()
+        if G_reader_settings:nilOrTrue("auto_book_status") then
+            self.onEndOfBook = function()
+                self:showStatus()
+            end
         end
     end
 end
