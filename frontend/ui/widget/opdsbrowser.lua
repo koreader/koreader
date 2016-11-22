@@ -464,11 +464,11 @@ function OPDSBrowser:appendCatalog(item_table_url)
     return true
 end
 
-function OPDSBrowser:openBook(file_downloaded)
+function OPDSBrowser:openBook(path_file_downloaded)
     UIManager:show(ConfirmBox:new{
-        text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"), file_downloaded),
+        text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"), path_file_downloaded),
         ok_callback = function()
-            ReaderUI:showReader(file_downloaded)
+            ReaderUI:showReader(path_file_downloaded)
         end
     })
 end
