@@ -198,8 +198,8 @@ function DoubleKeyValuePage:init()
         self.goodreads_key = gr_sett.goodreads.key
         self.goodreads_secret = gr_sett.goodreads.secret
     end
-    self.kv_pairs = GoodReadsApi:showData(self.text_input, self.search_type, 1, self.goodreads_key)
-    self.total_res = GoodReadsApi:getTotalResults()
+    self.kv_pairs = GoodreadsApi:showData(self.text_input, self.search_type, 1, self.goodreads_key)
+    self.total_res = GoodreadsApi:getTotalResults()
     if self.total_res == nil then
         self.total_res = 0
     end
@@ -257,12 +257,11 @@ function DoubleKeyValuePage:nextPage()
         and #self.kv_pairs < self.total_res then
         local api_page = math.floor(new_page * self.items_per_page / 20 ) + 1
         -- load new portion of data
-        local new_pair = GoodReadsApi:showData(self.text_input, self.search_type, api_page, self.goodreads_key )
+        local new_pair = GoodreadsApi:showData(self.text_input, self.search_type, api_page, self.goodreads_key )
         if new_pair == nil then return end
         for _, v in pairs(new_pair) do
             table.insert(self.kv_pairs, v)
         end
-        self.refresh = true
     end
     if new_page > self.show_page then
         if self.max_loaded_pages == self.show_page then
