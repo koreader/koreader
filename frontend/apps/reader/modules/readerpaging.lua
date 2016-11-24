@@ -10,6 +10,20 @@ local Math = require("optmath")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 
+
+local function copyPageState(page_state)
+    return {
+        page = page_state.page,
+        zoom = page_state.zoom,
+        rotation = page_state.rotation,
+        gamma = page_state.gamma,
+        offset = page_state.offset:copy(),
+        visible_area = page_state.visible_area:copy(),
+        page_area = page_state.page_area:copy(),
+    }
+end
+
+
 local ReaderPaging = InputContainer:new{
     current_page = 0,
     number_of_pages = 0,
@@ -555,9 +569,12 @@ function ReaderPaging:getPrevPageState(blank_area, offset)
 end
 
 function ReaderPaging:updateTopPageState(state, blank_area, offset)
-    local visible_area = Geom:new{x = 0, y = 0}
-    visible_area.w, visible_area.h = blank_area.w, blank_area.h
-    visible_area.x, visible_area.y = state.visible_area.x, state.visible_area.y
+    local visible_area = Geom:new{
+        x = state.visible_area.x,
+        y = state.visible_area.y,
+        w = blank_area.w,
+        h = blank_area.h,
+    }
     if state.page == self.number_of_pages then
         visible_area:offsetWithin(state.page_area, offset.x, offset.y)
     else
@@ -566,14 +583,15 @@ function ReaderPaging:updateTopPageState(state, blank_area, offset)
     -- shrink blank area by the height of visible area
     blank_area.h = blank_area.h - visible_area.h
     state.visible_area = visible_area
-    return state
 end
 
 function ReaderPaging:updateBottomPageState(state, blank_area, offset)
-    local visible_area = Geom:new{x = 0, y = 0}
-    visible_area.w, visible_area.h = blank_area.w, blank_area.h
-    visible_area.x = state.page_area.x
-    visible_area.y = state.visible_area.y + state.visible_area.h - visible_area.h
+    local visible_area = Geom:new{
+        x = state.page_area.x,
+        y = state.visible_area.y + state.visible_area.h - blank_area.h,
+        w = blank_area.w,
+        h = blank_area.h,
+    }
     if state.page == 1 then
         visible_area:offsetWithin(state.page_area, offset.x, offset.y)
     else
@@ -582,7 +600,6 @@ function ReaderPaging:updateBottomPageState(state, blank_area, offset)
     -- shrink blank area by the height of visible area
     blank_area.h = blank_area.h - visible_area.h
     state.visible_area = visible_area
-    return state
 end
 
 function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
@@ -592,16 +609,18 @@ function ReaderPaging:genPageStatesFromTop(top_page_state, blank_area, offset)
     -- which will trigger the drawing of next page leaving part of current
     -- page undrawn. This should also be true for generating from bottom.
     if offset.y < 0 then offset.y = 0 end
-    local state = self:updateTopPageState(top_page_state, blank_area, offset)
+    self:updateTopPageState(top_page_state, blank_area, offset)
     local page_states = {}
-    if state.visible_area.h > 0 then
-        table.insert(page_states, state)
+    if top_page_state.visible_area.h > 0 then
+        -- offset does not scroll pass top_page_state
+        table.insert(page_states, top_page_state)
     end
-    local current_page = state.page
+    local state
+    local current_page = top_page_state.page
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
-            if self.current_page == self.number_of_pages then break end
+            if current_page == self.number_of_pages then break end
             self:_gotoPage(current_page + 1, "scrolling")
             current_page = current_page + 1
             state = self:getNextPageState(blank_area, Geom:new{})
@@ -614,16 +633,19 @@ end
 function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, offset)
     -- scroll up offset should always be less than 0
     if offset.y > 0 then offset.y = 0 end
-    local state = self:updateBottomPageState(bottom_page_state, blank_area, offset)
+    -- find out number of pages need to be removed from current view
+    self:updateBottomPageState(bottom_page_state, blank_area, offset)
     local page_states = {}
-    if state.visible_area.h > 0 then
-        table.insert(page_states, state)
+    if bottom_page_state.visible_area.h > 0 then
+        table.insert(page_states, bottom_page_state)
     end
-    local current_page = state.page
+    -- fill up current view from bottom to top
+    local state
+    local current_page = bottom_page_state.page
     while blank_area.h > 0 do
         blank_area.h = blank_area.h - self.view.page_gap.height
         if blank_area.h > 0 then
-            if self.current_page == 1 then break end
+            if current_page == 1 then break end
             self:_gotoPage(current_page - 1, "scrolling")
             current_page = current_page - 1
             state = self:getPrevPageState(blank_area, Geom:new{})
@@ -634,29 +656,34 @@ function ReaderPaging:genPageStatesFromBottom(bottom_page_state, blank_area, off
 end
 
 function ReaderPaging:onScrollPanRel(diff)
+    if diff == 0 then return true end
     DEBUG("pan relative height:", diff)
+    local offset = Geom:new{x = 0, y = diff}
     local blank_area = Geom:new{}
     blank_area:setSizeTo(self.view.dimen)
+    local new_page_states
     if diff > 0 then
-        local first_page_state = table.remove(self.view.page_states, 1)
-        local offset = Geom:new{
-            x = 0,
-            y = diff,
-        }
-        self.view.page_states = self:genPageStatesFromTop(first_page_state, blank_area, offset)
+        -- pan to scroll down
+        local first_page_state = copyPageState(self.view.page_states[1])
+        new_page_states = self:genPageStatesFromTop(
+            first_page_state, blank_area, offset)
+    elseif diff < 0 then
+        local last_page_state = copyPageState(
+            self.view.page_states[#self.view.page_states])
+        new_page_states = self:genPageStatesFromBottom(
+            last_page_state, blank_area, offset)
     end
-    if diff < 0 then
-        local last_page_state = table.remove(self.view.page_states)
-        local offset = Geom:new{
-            x = 0,
-            y = diff
-        }
-        self.view.page_states = self:genPageStatesFromBottom(last_page_state, blank_area, offset)
+    if #new_page_states == 0 then
+        -- if we are already at the top of first page or bottom of the last
+        -- page, new_page_states will be empty, in this case, nothing to update
+        return true
     end
+    self.view.page_states = new_page_states
     -- update current pageno to the very last part in current view
-    self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
-
+    self:_gotoPage(self.view.page_states[#self.view.page_states].page,
+                   "scrolling")
     UIManager:setDirty(self.view.dialog, "fast")
+    return true
 end
 
 function ReaderPaging:calculateOverlap()
@@ -664,8 +691,10 @@ function ReaderPaging:calculateOverlap()
     return self.overlap + footer_height
 end
 
-function ReaderPaging:onScrollPageRel(diff)
-    if diff > 0 then
+function ReaderPaging:onScrollPageRel(page_diff)
+    if page_diff == 0 then return true end
+    if page_diff > 0 then
+        -- page down, last page should be moved to top
         local last_page_state = table.remove(self.view.page_states)
         local last_visible_area = last_page_state.visible_area
         if last_page_state.page == self.number_of_pages and
@@ -683,7 +712,8 @@ function ReaderPaging:onScrollPageRel(diff)
             y = last_visible_area.h - overlap
         }
         self.view.page_states = self:genPageStatesFromTop(last_page_state, blank_area, offset)
-    elseif diff < 0 then
+    elseif page_diff < 0 then
+        -- page up, first page should be moved to bottom
         local blank_area = Geom:new{}
         blank_area:setSizeTo(self.view.dimen)
         local overlap = self:calculateOverlap()
@@ -692,9 +722,8 @@ function ReaderPaging:onScrollPageRel(diff)
             x = 0,
             y = -first_page_state.visible_area.h + overlap
         }
-        self.view.page_states = self:genPageStatesFromBottom(first_page_state, blank_area, offset)
-    else
-        return true
+        self.view.page_states = self:genPageStatesFromBottom(
+            first_page_state, blank_area, offset)
     end
     -- update current pageno to the very last part in current view
     self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
@@ -842,15 +871,16 @@ function ReaderPaging:onGotoPercentage(percentage)
 end
 
 function ReaderPaging:updateReadOrder()
+    local width, height = Screen:getWidth(), Screen:getHeight()
     if self.inverse_reading_order then
         self.ges_events.TapForward = {
             GestureRange:new{
                 ges = "tap",
                 range = Geom:new{
-                    x = Screen:getWidth()*(1-DTAP_ZONE_FORWARD.x-DTAP_ZONE_FORWARD.w),
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                    x = width * (1-DTAP_ZONE_FORWARD.x - DTAP_ZONE_FORWARD.w),
+                    y = height * DTAP_ZONE_FORWARD.y,
+                    w = width * DTAP_ZONE_FORWARD.w,
+                    h = height * DTAP_ZONE_FORWARD.h,
                 }
             }
         }
@@ -858,22 +888,22 @@ function ReaderPaging:updateReadOrder()
             GestureRange:new{
                 ges = "tap",
                 range = Geom:new{
-                    x = Screen:getWidth()*(1-DTAP_ZONE_BACKWARD.x-DTAP_ZONE_BACKWARD.w),
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                    x = width * (1-DTAP_ZONE_BACKWARD.x - DTAP_ZONE_BACKWARD.w),
+                    y = height * DTAP_ZONE_BACKWARD.y,
+                    w = width * DTAP_ZONE_BACKWARD.w,
+                    h = height * DTAP_ZONE_BACKWARD.h,
                 }
             }
         }
     else
-                self.ges_events.TapForward = {
+        self.ges_events.TapForward = {
             GestureRange:new{
                 ges = "tap",
                 range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
+                    x = width * DTAP_ZONE_FORWARD.x,
+                    y = height * DTAP_ZONE_FORWARD.y,
+                    w = width * DTAP_ZONE_FORWARD.w,
+                    h = height * DTAP_ZONE_FORWARD.h,
                 }
             }
         }
@@ -881,10 +911,10 @@ function ReaderPaging:updateReadOrder()
             GestureRange:new{
                 ges = "tap",
                 range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
+                    x = width * DTAP_ZONE_BACKWARD.x,
+                    y = height * DTAP_ZONE_BACKWARD.y,
+                    w = width * DTAP_ZONE_BACKWARD.w,
+                    h = height * DTAP_ZONE_BACKWARD.h,
                 }
             }
         }
