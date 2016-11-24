@@ -98,7 +98,7 @@ ld: cannot find -lglib-2.0`
 
 Mac OSX users may need to install these tools:
 ```
-brew install nasm binutils libtool autoconf automake sdl2
+brew install nasm binutils libtool autoconf automake sdl2 lua51
 ```
 
 A recent version of Android SDK (including platform support for API version 19)/NDK, `ant` and `openjdk-8-jdk` are needed
