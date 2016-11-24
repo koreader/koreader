@@ -429,6 +429,8 @@ function ReaderFooter:setTocMarkers()
     else
         self.progress_bar.ticks = nil
     end
+    -- notify caller that UI needs update
+    return true
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
