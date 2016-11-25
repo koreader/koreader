@@ -6,6 +6,7 @@ local Screen = require("device").screen
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
+local ReaderUI = require("apps/reader/readerui")
 
 local OPDSCatalog = InputContainer:extend{
     title = _("OPDS Catalog"),
@@ -42,6 +43,7 @@ function OPDSCatalog:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
+        downloaded_file = nil,
         close_callback = function() return self:onClose() end,
     }
 
@@ -79,6 +81,10 @@ function OPDSCatalog:onClose()
     DEBUG("close OPDS catalog")
     UIManager:close(self)
     if self.onExit then
+        if self[1][1].downloaded_file ~= nil then
+            ReaderUI:showReader(self[1][1].downloaded_file)
+            self[1][1].filePath = nil
+        end
         self:onExit()
     end
     return true

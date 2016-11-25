@@ -21,7 +21,7 @@ local https = require('ssl.https')
 local ltn12 = require('ltn12')
 local mime = require('mime')
 local ConfirmBox = require("ui/widget/confirmbox")
-local ReaderUI = require("apps/reader/readerui")
+
 
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
@@ -468,7 +468,8 @@ function OPDSBrowser:openBook(path_file_downloaded)
     UIManager:show(ConfirmBox:new{
         text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"), path_file_downloaded),
         ok_callback = function()
-            ReaderUI:showReader(path_file_downloaded)
+            self.downloaded_file = path_file_downloaded
+            self.show_parent:onClose()
         end
     })
 end
