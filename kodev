@@ -204,7 +204,7 @@ function kodev-wbuilder {
     kodev-build
     echo "[*] Running wbuilder.lua..."
     pushd "${EMU_DIR}"
-        EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./utils/wbuilder.lua
+        EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./tools/wbuilder.lua
     popd
 }
 

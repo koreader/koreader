@@ -394,7 +394,7 @@ function testBookStatus()
 end
 
 function testTouchProbe()
-    local TouchProbe = require("utils/kobo_touch_probe")
+    local TouchProbe = require("tools/kobo_touch_probe")
     UIManager:show(TouchProbe:new{})
 end
 
