@@ -138,7 +138,7 @@ end
 
 -- Test whether a string could be separated by a char for multi-line rendering
 function util.isSplitable(c)
-    return #c > 1 or c == " " or string.match(c, "%p") ~= nil
+    return c == " " or string.match(c, "%p") ~= nil
 end
 
 return util

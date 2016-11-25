@@ -379,6 +379,12 @@ case $1 in
         shift 1; kodev-run "$@" ;;
     test)
         shift 1; kodev-test "$@" ;;
+    prompt)
+        kodev-build
+        pushd "${EMU_DIR}"
+            ./luajit -i setupkoenv.lua
+        popd
+        ;;
     log)
         shift 1; kodev-log "$@" ;;
     --help | -h)

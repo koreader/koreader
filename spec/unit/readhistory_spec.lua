@@ -272,7 +272,7 @@ describe("ReadHistory module", function()
         for i = 1, 500 do  -- at most 500 items are stored
             assert_item_is(h, i, string.format("%04d", i))
         end
-        
+
         for i = 1, 1000 do
             rm(to_file(i))
         end

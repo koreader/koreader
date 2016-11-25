@@ -76,4 +76,34 @@ describe("util module", function()
         local words = util.splitToWords("BBC纪录片")
         assert.are_same(words, {"BBC", "纪", "录", "片"})
     end)
+
+    it("should split text to line - unicode", function()
+        local text = "Pójdźże, chmurność glück schließen Štěstí neštěstí. Uñas gavilán"
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            word = word .. c
+            if util.isSplitable(c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "Pójdźże,",
+            " ",
+            "chmurność ",
+            "glück ",
+            "schließen ",
+            "Štěstí ",
+            "neštěstí.",
+            " ",
+            "Uñas ",
+            "gavilán",
+        })
+    end)
+
 end)

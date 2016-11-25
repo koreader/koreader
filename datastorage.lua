@@ -34,13 +34,12 @@ function DataStorage:getSettingsDir()
 end
 
 local function initDataDir()
-    local data_dir = DataStorage:getDataDir()
     local sub_data_dirs = {
         "cache", "clipboard", "data", "history",
         "ota", "screenshots", "settings",
     }
     for _, dir in ipairs(sub_data_dirs) do
-        local sub_data_dir = data_dir .. "/" .. dir
+        local sub_data_dir = DataStorage:getDataDir() .. "/" .. dir
         if lfs.attributes(sub_data_dir, "mode") ~= "directory" then
             lfs.mkdir(sub_data_dir)
         end

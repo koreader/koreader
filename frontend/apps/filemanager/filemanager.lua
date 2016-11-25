@@ -39,6 +39,19 @@ local function getDefaultDir()
     end
 end
 
+local function abbreviate(path)
+    local home_dir_name = G_reader_settings:readSetting("home_dir_display_name")
+    if home_dir_name ~= nil then
+        local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
+        local len = home_dir:len()
+        local start = path:sub(1, len)
+        if start == home_dir then
+            return home_dir_name .. path:sub(len+1)
+        end
+    end
+    return path
+end
+
 local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
     if Screen:getScreenMode() ~= screen_mode then
@@ -47,7 +60,7 @@ local function restoreScreenMode()
 end
 
 local FileManager = InputContainer:extend{
-    title = _("FileManager"),
+    title = _("File Manager"),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
@@ -63,7 +76,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("infofont", 18),
-        text = self.root_path,
+        text = abbreviate(self.root_path),
     }
 
     self.banner = FrameContainer:new{
@@ -105,7 +118,7 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(path)
+        FileManager.instance.path_text:setText(abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.banner.dimen
         end)
@@ -263,7 +276,7 @@ function FileManager:init()
     })
 
     if Device:hasKeys() then
-        self.key_events.Close = { {"Home"}, doc = "close filemanager" }
+        self.key_events.Close = { {"Home"}, doc = "Close file manager" }
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
@@ -317,7 +330,6 @@ end
 
 function FileManager:onClose()
     DEBUG("close filemanager")
-    G_reader_settings:saveSetting("fm_screen_mode", Screen:getScreenMode())
     UIManager:close(self)
     if self.onExit then
         self:onExit()
