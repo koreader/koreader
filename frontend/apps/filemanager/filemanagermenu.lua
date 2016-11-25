@@ -104,6 +104,7 @@ function FileManagerMenu:setUpdateItemTable()
         callback = function()
             local open_last = G_reader_settings:readSetting("open_last") or false
             G_reader_settings:saveSetting("open_last", not open_last)
+            G_reader_settings:flush()
         end
     })
     if Device.isKobo() then
@@ -121,6 +122,7 @@ function FileManagerMenu:setUpdateItemTable()
                             G_reader_settings:delSetting(
                                 "use_lastfile_as_screensaver")
                         end
+                        G_reader_settings:flush()
                     end
                 },
                 {
@@ -130,6 +132,7 @@ function FileManagerMenu:setUpdateItemTable()
                         local function save_folder_path()
                             G_reader_settings:saveSetting(
                                 "screensaver_folder", ss_folder_path_input:getInputText())
+                            G_reader_settings:flush()
                             UIManager:close(ss_folder_path_input)
                         end
                         local curr_path = G_reader_settings:readSetting("screensaver_folder")

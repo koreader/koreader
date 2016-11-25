@@ -5,11 +5,6 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-travis_retry make coverage
-pushd koreader-*/koreader
-    luajit $(which luacov-coveralls) -v
-popd
-
 if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
     travis_retry luarocks --local install ldoc
     # get deploy key for doc repo
@@ -36,7 +31,12 @@ if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
     git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
         commit -a --amend -m 'Automated documentation build from travis-ci.'
     git push -f --quiet origin gh-pages > /dev/null
-    echo -e "\n${ANSI_GREEN}Document update pushed."
+    echo -e "\n${ANSI_GREEN}Documentation update pushed."
 else
-    echo -e "\n${ANSI_GREEN}Not on official master branch, skip document update."
+    echo -e "\n${ANSI_GREEN}Not on official master branch, skip documentation update."
 fi
+
+travis_retry make coverage
+pushd koreader-*/koreader
+    luajit $(which luacov-coveralls)
+popd
