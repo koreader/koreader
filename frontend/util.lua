@@ -117,6 +117,16 @@ function util.splitToChars(text)
     return tab
 end
 
+-- Test whether c is a CJK character
+function util.isCJKChar(c)
+    return string.match(c, "[\228-\234][\128-\191].") == c
+end
+
+-- Test whether str contains CJK characters
+function util.hasCJKChar(str)
+    return string.match(str, "[\228-\234][\128-\191].") ~= nil
+end
+
 --- Split text into a list of words, spaces and punctuations.
 ---- @string text text to split
 ---- @treturn table list of words, spaces and punctuations
@@ -124,7 +134,7 @@ function util.splitToWords(text)
     local wlist = {}
     for word in util.gsplit(text, "[%s%p]+", true) do
         -- if space splitted word contains CJK characters
-        if word:match("[\228-\234][\128-\191]+") then
+        if util.hasCJKChar(word) then
             -- split with CJK characters
             for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
                 table.insert(wlist, char)
@@ -138,7 +148,7 @@ end
 
 -- Test whether a string could be separated by a char for multi-line rendering
 function util.isSplitable(c)
-    return c == " " or string.match(c, "%p") ~= nil
+    return util.isCJKChar(c) or c == " " or string.match(c, "%p") ~= nil
 end
 
 return util

@@ -106,4 +106,24 @@ describe("util module", function()
         })
     end)
 
+    it("should split text to line - CJK", function()
+        local text = "彩虹是通过太阳光的折射引起的。"
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            word = word .. c
+            if util.isSplitable(c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
+        })
+    end)
+
 end)
