@@ -7,6 +7,8 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 local ReaderUI = require("apps/reader/readerui")
+local ConfirmBox = require("ui/widget/confirmbox")
+local T = require("ffi/util").template
 
 local OPDSCatalog = InputContainer:extend{
     title = _("OPDS Catalog"),
@@ -45,6 +47,16 @@ function OPDSCatalog:init()
         has_close_button = true,
         downloaded_file = nil,
         close_callback = function() return self:onClose() end,
+        file_downloaded_callback = function(downloaded_file)
+            UIManager:show(ConfirmBox:new{
+                text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
+                    downloaded_file),
+                ok_callback = function()
+                    self:onClose()
+                    ReaderUI:showReader(downloaded_file)
+                end
+            })
+        end,
     }
 
     self[1] = FrameContainer:new{
@@ -81,10 +93,6 @@ function OPDSCatalog:onClose()
     DEBUG("close OPDS catalog")
     UIManager:close(self)
     if self.onExit then
-        if self[1][1].downloaded_file ~= nil then
-            ReaderUI:showReader(self[1][1].downloaded_file)
-            self[1][1].filePath = nil
-        end
         self:onExit()
     end
     return true

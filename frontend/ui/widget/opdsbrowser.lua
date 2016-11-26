@@ -13,15 +13,12 @@ local util = require("ffi/util")
 local Cache = require("cache")
 local DEBUG = require("dbg")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local socket = require('socket')
 local http = require('socket.http')
 local https = require('ssl.https')
 local ltn12 = require('ltn12')
 local mime = require('mime')
-local ConfirmBox = require("ui/widget/confirmbox")
-
 
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
@@ -464,16 +461,6 @@ function OPDSBrowser:appendCatalog(item_table_url)
     return true
 end
 
-function OPDSBrowser:openBook(path_file_downloaded)
-    UIManager:show(ConfirmBox:new{
-        text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"), path_file_downloaded),
-        ok_callback = function()
-            self.downloaded_file = path_file_downloaded
-            self.show_parent:onClose()
-        end
-    })
-end
-
 function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
     local lastdir = G_reader_settings:readSetting("lastdir")
@@ -492,7 +479,9 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
 
     if c == 200 then
         DEBUG("file downloaded to", local_path)
-        self:openBook(local_path)
+        if self.file_downloaded_callback then
+            self.file_downloaded_callback(local_path)
+        end
     else
         DEBUG("response", {r, c, h})
         UIManager:show(InfoMessage:new{
