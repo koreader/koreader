@@ -479,10 +479,9 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
 
     if c == 200 then
         DEBUG("file downloaded to", local_path)
-        UIManager:show(InfoMessage:new{
-            text = _("File saved to:\n") .. local_path,
-            timeout = 3,
-        })
+        if self.file_downloaded_callback then
+            self.file_downloaded_callback(local_path)
+        end
     else
         DEBUG("response", {r, c, h})
         UIManager:show(InfoMessage:new{
@@ -514,7 +513,7 @@ function OPDSBrowser:showDownloads(item)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
                             text = _("Downloading may take several minutes…"),
-                            timeout = 3,
+                            timeout = 1,
                         })
                     end
                     table.insert(line, button)
