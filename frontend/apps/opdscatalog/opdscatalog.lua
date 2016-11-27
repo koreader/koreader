@@ -45,7 +45,6 @@ function OPDSCatalog:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
-        downloaded_file = nil,
         close_callback = function() return self:onClose() end,
         file_downloaded_callback = function(downloaded_file)
             UIManager:show(ConfirmBox:new{
