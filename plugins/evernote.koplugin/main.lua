@@ -138,7 +138,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
 end
 
 function EvernoteExporter:login()
-    if NetworkMgr:getWifiStatus() == false then
+    if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
     end
     self.login_dialog = LoginDialog:new{
