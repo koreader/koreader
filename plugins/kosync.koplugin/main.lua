@@ -224,7 +224,7 @@ function KOSync:setCustomServer(server)
 end
 
 function KOSync:login()
-    if NetworkMgr:getWifiStatus() == false then
+    if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
     end
     self.login_dialog = LoginDialog:new{

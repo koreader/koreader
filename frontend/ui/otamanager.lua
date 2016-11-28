@@ -229,7 +229,7 @@ function OTAManager:getOTAMenuTable()
             {
                 text = _("Check for update"),
                 callback = function()
-                    if NetworkMgr:getWifiStatus() == false then
+                    if not NetworkMgr:isOnline() then
                         NetworkMgr:promptWifiOn()
                     else
                         OTAManager:fetchAndProcessUpdate()

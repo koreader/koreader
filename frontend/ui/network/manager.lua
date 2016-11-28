@@ -58,7 +58,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
     })
 end
 
-function NetworkMgr:getWifiStatus()
+function NetworkMgr:isOnline()
     local socket = require("socket")
     return socket.dns.toip("www.example.com") ~= nil
 end
@@ -78,9 +78,9 @@ function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:isKindle() or Device:isKobo() end,
-        checked_func = function() return NetworkMgr:getWifiStatus() end,
+        checked_func = function() return NetworkMgr:isOnline() end,
         callback = function(menu)
-            local wifi_status = NetworkMgr:getWifiStatus()
+            local wifi_status = NetworkMgr:isOnline()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 menu:updateItems()
@@ -151,6 +151,8 @@ end
 function NetworkMgr:getInfoMenuTable()
     return {
         text = _("Network info"),
+        -- TODO: also show network info when device is authenticated to router but offline
+        enabled_func = function() return self:isOnline() end,
         callback = function(menu)
             if Device.retrieveNetworkInfo then
                 UIManager:show(InfoMessage:new{
