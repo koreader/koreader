@@ -59,7 +59,6 @@ local KoboDaylight = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 300,
-    viewport = Geom:new{x=4, y=3, w=1396, h=1866},
 }
 
 -- Kobo Aura H2O:
