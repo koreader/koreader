@@ -292,7 +292,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
     if not callback then return end
 
     local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
-    local line_num = math.ceil(y / self.line_height_px)
+    local line_num = math.ceil(y / self.line_height_px) + self.virtual_line_num-1
     local line = self.vertical_string_list[line_num]
     DEBUG("holding on line", line)
     if line then
