@@ -82,8 +82,8 @@ function ReaderFrontLight:onPanRelease(arg, ges)
 end
 
 function ReaderFrontLight:onShowFlDialog()
-    local FrontLight = require("apps/reader/modules/frontlight")
-    local fl = FrontLight:new{
+    local FrontLightWidget = require("ui/widget/frontlightwidget")
+    local fl = FrontLightWidget:new{
     }
     UIManager:show(fl)
 end
@@ -91,13 +91,6 @@ end
 function ReaderFrontLight:close()
     self.fl_dialog:onClose()
     UIManager:close(self.fl_dialog)
-end
-
-function ReaderFrontLight:fldialIntensity()
-    local number = tonumber(self.fl_dialog:getInputText())
-    if number ~= nil then
-        Device:getPowerDevice():setIntensity(number)
-    end
 end
 
 return ReaderFrontLight

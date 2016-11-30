@@ -18,8 +18,9 @@ local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local VerticalSpan = require("ui/widget/verticalspan")
 
-local ReaderFrontLight = InputContainer:new{
+local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("tfont", 22),
     width = nil,
     height = nil,
@@ -28,11 +29,12 @@ local ReaderFrontLight = InputContainer:new{
     fl_max = 10,
 }
 
-function ReaderFrontLight:init()
+function FrontLightWidget:init()
     self.medium_font_face = Font:getFace("ffont", 20)
     self.light_bar = {}
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
+    self.span = math.ceil(self.screen_height * 0.01)
     self.width = self.screen_width * 0.95
     local powerd = Device:getPowerDevice()
     self.fl_cur = powerd.fl_intensity
@@ -45,7 +47,6 @@ function ReaderFrontLight:init()
         self.steps = self.steps + 1
     end
     self.steps = math.min(self.steps , steps_fl)
-    self.fl_cur = math.floor(self.fl_cur / self.one_step)
     -- button width to fit screen size
     self.button_width = math.floor(self.screen_width * 0.9 / self.steps) - 12
 
@@ -80,86 +81,144 @@ function ReaderFrontLight:init()
     self:update()
 end
 
-function ReaderFrontLight:generateProgressGroup(width, height, fl_level)
+function FrontLightWidget:generateProgressGroup(width, height, fl_level, step)
     self.fl_container = CenterContainer:new{
         dimen = Geom:new{ w = width, h = height },
     }
-    self:setProgress(fl_level)
+    self:setProgress(fl_level, step)
     return self.fl_container
 end
 
-function ReaderFrontLight:setProgress(num)
+function FrontLightWidget:setProgress(num, step)
     --clear previous data
     self.fl_container:clear()
-    local button_group = HorizontalGroup:new{ align = "center" }
+    local padding_span = VerticalSpan:new{ width = self.span }
+    local button_group_down = HorizontalGroup:new{ align = "center" }
+    local button_group_up = HorizontalGroup:new{ align = "center" }
     local fl_group = HorizontalGroup:new{ align = "center" }
     local vertical_group = VerticalGroup:new{ align = "center" }
     local set_fl
+    local enable_button_plus = true
+    local enable_button_minus = true
+    local step_num = math.floor(num / step)
     if num then
-        self.fl_cur = num * self.one_step + self.fl_min
+        self.fl_cur = num
         set_fl = math.min(self.fl_cur, self.fl_max)
         Device:getPowerDevice():setIntensity(set_fl)
+        if set_fl == self.fl_max then enable_button_plus = false end
+        if set_fl == self.fl_min then enable_button_minus = false end
 
-        for i = 0, num do
+        for i = 0, step_num do
             table.insert(fl_group, self.fl_prog_button:new{
                 text= "",
                 margin = 1,
                 preselect = true,
                 width = self.button_width,
-                callback = function() self:setProgress(i) end
+                callback = function() self:setProgress(i * step, step) end
             })
         end
     else
         num = 0
     end
 
-    for i = num + 1, self.steps -1 do
+    for i = step_num + 1, self.steps -1 do
         table.insert(fl_group, self.fl_prog_button:new{
-            callback = function() self:setProgress(i) end
+            callback = function() self:setProgress(i * step, step) end
         })
     end
-    local button_min = Button:new{
-        text = "Min",
+    local button_minus = Button:new{
+        text = "-1",
         bordersize = 2,
         margin = 2,
         radius = 0,
-        enabled = true,
+        enabled = enable_button_minus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(0) end,
+        callback = function()  self:setProgress(num - 1, step) end,
     }
-    local button_max = Button:new{
-        text = "Max",
+    local button_plus = Button:new{
+        text = "+1",
         bordersize = 2,
         margin = 2,
         radius = 0,
-        enabled = true,
+        enabled = enable_button_plus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(math.floor(self.fl_max / self.one_step)) end,
+        callback = function() self:setProgress(num + 1, step) end,
     }
     local item_level = TextBoxWidget:new{
         text = set_fl,
-        width = self.screen_width * 0.95 - 1.25 * button_max.width - 1.25 * button_min.width,
+        face = self.medium_font_face,
+        alignment = "center",
+        width = self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width,
+    }
+    local button_min = Button:new{
+        text = _("Min"),
+        bordersize = 2,
+        margin = 2,
+        radius = 0,
+        enabled = true,
+        width = self.screen_width * 0.20,
+        show_parent = self,
+        callback = function() self:setProgress(self.fl_min, step) end,
+    }
+    local button_max = Button:new{
+        text = _("Max"),
+        bordersize = 2,
+        margin = 2,
+        radius = 0,
+        enabled = true,
+        width = self.screen_width * 0.20,
+        show_parent = self,
+        callback = function() self:setProgress(self.fl_max, step) end,
+    }
+    local button_toggle = Button:new{
+        text = _("Toggle"),
+        bordersize = 2,
+        margin = 2,
+        radius = 0,
+        enabled = true,
+        width = self.screen_width * 0.20,
+        show_parent = self,
+        callback = function()
+            local powerd = Device:getPowerDevice()
+            powerd:toggleFrontlight()
+        end,
+    }
+    local empty_space = TextBoxWidget:new{
+        text = "",
+        width = (self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width - 1.2 * button_toggle.width) / 2,
         face = self.medium_font_face,
         alignment = "center",
     }
-    local button_table = HorizontalGroup:new{
+     local button_table_up = HorizontalGroup:new{
+        align = "center",
+        button_minus,
+        item_level,
+        button_plus,
+    }
+    local button_table_down = HorizontalGroup:new{
         align = "center",
         button_min,
-        item_level,
+        empty_space,
+        button_toggle,
+        empty_space,
         button_max,
     }
-    table.insert(button_group, button_table)
+    table.insert(button_group_up, button_table_up)
+    table.insert(button_group_down, button_table_down)
+    table.insert(vertical_group,button_group_up)
+    table.insert(vertical_group,padding_span)
     table.insert(vertical_group,fl_group)
-    table.insert(vertical_group,button_group)
+    table.insert(vertical_group,padding_span)
+    table.insert(vertical_group,button_group_down)
     table.insert(self.fl_container, vertical_group)
 
     UIManager:setDirty("all", "ui")
     return true
 end
 
-function ReaderFrontLight:update()
+function FrontLightWidget:update()
     -- header
     self.light_title = FrameContainer:new{
         padding = Screen:scaleBySize(5),
@@ -176,7 +235,8 @@ function ReaderFrontLight:update()
         padding = Screen:scaleBySize(2),
         margin = Screen:scaleBySize(2),
         bordersize = 0,
-        self:generateProgressGroup(self.screen_width * 0.95, self.screen_height * 0.15, self.fl_cur)
+        self:generateProgressGroup(self.screen_width * 0.95, self.screen_height * 0.20,
+            self.fl_cur, self.one_step)
     }
     local light_line = LineWidget:new{
         dimen = Geom:new{
@@ -226,35 +286,35 @@ function ReaderFrontLight:update()
     }
 end
 
-function ReaderFrontLight:onCloseWidget()
+function FrontLightWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "partial", self.light_frame.dimen
     end)
     return true
 end
 
-function ReaderFrontLight:onShow()
+function FrontLightWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.light_frame.dimen
     end)
     return true
 end
 
-function ReaderFrontLight:onAnyKeyPressed()
+function FrontLightWidget:onAnyKeyPressed()
     UIManager:close(self)
     return true
 end
 
-function ReaderFrontLight:onTapCloseFL(arg, ges_ev)
+function FrontLightWidget:onTapCloseFL(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.light_frame.dimen) then
         self:onClose()
     end
     return true
 end
 
-function ReaderFrontLight:onClose()
+function FrontLightWidget:onClose()
     UIManager:close(self)
     return true
 end
 
-return ReaderFrontLight
+return FrontLightWidget
