@@ -57,6 +57,8 @@ local function tidy_markup(results)
         end
         -- ignore all markup tags
         def = def:gsub("%b<>", "")
+        -- strip all leading empty lines/spaces
+        def = def:gsub("^%s+", "")
         result.definition = def
     end
     return results
