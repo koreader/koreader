@@ -19,6 +19,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalSpan = require("ui/widget/verticalspan")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 
 local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("tfont", 22),
@@ -185,13 +186,10 @@ function FrontLightWidget:setProgress(num, step)
             powerd:toggleFrontlight()
         end,
     }
-    local empty_space = TextBoxWidget:new{
-        text = "",
+    local empty_space = HorizontalSpan:new{
         width = (self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width - 1.2 * button_toggle.width) / 2,
-        face = self.medium_font_face,
-        alignment = "center",
     }
-     local button_table_up = HorizontalGroup:new{
+    local button_table_up = HorizontalGroup:new{
         align = "center",
         button_minus,
         item_level,
