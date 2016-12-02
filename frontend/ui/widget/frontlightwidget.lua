@@ -25,7 +25,7 @@ local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("tfont", 22),
     width = nil,
     height = nil,
-    fl_cur = 0,
+    fl_cur = 1,
     fl_min = 0,
     fl_max = 10,
 }
@@ -102,6 +102,7 @@ function FrontLightWidget:setProgress(num, step)
     local enable_button_plus = true
     local enable_button_minus = true
     local step_num = math.floor(num / step)
+    local step_min = math.floor(self.fl_min / step)
     if num then
         self.fl_cur = num
         set_fl = math.min(self.fl_cur, self.fl_max)
@@ -109,7 +110,7 @@ function FrontLightWidget:setProgress(num, step)
         if set_fl == self.fl_max then enable_button_plus = false end
         if set_fl == self.fl_min then enable_button_minus = false end
 
-        for i = 0, step_num do
+        for i = step_min, step_num do
             table.insert(fl_group, self.fl_prog_button:new{
                 text= "",
                 margin = 1,
@@ -122,7 +123,7 @@ function FrontLightWidget:setProgress(num, step)
         num = 0
     end
 
-    for i = step_num + 1, self.steps -1 do
+    for i = step_num + 1, self.steps -1 + step_min do
         table.insert(fl_group, self.fl_prog_button:new{
             callback = function() self:setProgress(i * step, step) end
         })
