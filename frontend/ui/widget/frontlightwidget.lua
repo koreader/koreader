@@ -123,7 +123,7 @@ function FrontLightWidget:setProgress(num, step)
         num = 0
     end
 
-    for i = step_num + 1, self.steps -1 + step_min do
+    for i = step_num + 1, step_min + self.steps -1 do
         table.insert(fl_group, self.fl_prog_button:new{
             callback = function() self:setProgress(i * step, step) end
         })
