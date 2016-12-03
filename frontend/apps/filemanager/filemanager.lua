@@ -157,6 +157,24 @@ function FileManager:init()
                         UIManager:close(self.file_dialog)
                     end,
                 },
+                {
+                    text = _("Purge .sdr"),
+                    enabled = DocSettings:hasSidecarDir(util.realpath(file)),
+                    callback = function()
+                        local full_path = util.realpath(file)
+                        util.purgeDir(DocSettings:getSidecarDir(full_path))
+                        self:refreshPath()
+                        -- also remove from history if present
+                        local readhistory = require("readhistory")
+                        for _, hist_item in ipairs(readhistory.hist) do
+                            if hist_item.file == full_path then
+                                readhistory:removeItem(hist_item)
+                                break
+                            end
+                        end
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
             },
             {
                 {
@@ -359,6 +377,10 @@ function FileManager:pasteHere(file)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
         if self.cutfile then
+            -- if we move a file, also move its sidecar directory
+            if DocSettings:hasSidecarDir(orig) then
+                self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
+            end
             self:moveFile(orig, dest)
         else
             util.execute(self.cp_bin, "-r", orig, dest)
