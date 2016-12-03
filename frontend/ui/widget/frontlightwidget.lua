@@ -25,9 +25,6 @@ local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("tfont", 22),
     width = nil,
     height = nil,
-    fl_cur = 1,
-    fl_min = 0,
-    fl_max = 10,
 }
 
 function FrontLightWidget:init()
@@ -38,9 +35,12 @@ function FrontLightWidget:init()
     self.span = math.ceil(self.screen_height * 0.01)
     self.width = self.screen_width * 0.95
     local powerd = Device:getPowerDevice()
-    self.fl_cur = powerd.fl_intensity
     self.fl_min = powerd.fl_min
     self.fl_max = powerd.fl_max
+    self.fl_cur = powerd.fl_intensity
+    if self.fl_cur == nil then
+        self.fl_cur = self.fl_min
+    end
     local steps_fl = self.fl_max - self.fl_min + 1
     self.one_step = math.ceil(steps_fl  / 25 )
     self.steps = math.ceil(steps_fl / self.one_step)
