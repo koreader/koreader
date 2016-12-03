@@ -648,7 +648,7 @@ function Menu:updateItems(select_number)
                 state_size = self.state_size or {},
                 text = self.item_table[i].text,
                 mandatory = self.item_table[i].mandatory,
-                bold = self.item_table.current == i,
+                bold = self.item_table.current == i or self.item_table[i].bold == true,
                 face = self.cface,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,

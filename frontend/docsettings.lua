@@ -17,7 +17,21 @@ end
 
 -- Sidecar directory is the file without _last_ suffix.
 function DocSettings:getSidecarDir(doc_path)
-    return doc_path:match("(.*)%.")..".sdr"
+    local file_without_suffix = doc_path:match("(.*)%.")
+    if file_without_suffix then
+        return file_without_suffix..".sdr"
+    end
+    -- We shouldn't be called with anything but files with registered
+    -- extensions, but in case we are, return something useful
+    return doc_path..".sdr"
+end
+
+function DocSettings:hasSidecarDir(doc_path)
+    -- We may be called with items from FileManager, which may not be a document
+    if lfs.attributes(doc_path, "mode") == "directory" then
+        return false
+    end
+    return lfs.attributes(self:getSidecarDir(doc_path), "mode") == "directory"
 end
 
 function DocSettings:getHistoryPath(fullpath)
