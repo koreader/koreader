@@ -196,6 +196,28 @@ function FileManagerMenu:setUpdateItemTable()
             OPDSCatalog:showCatalog()
         end,
     })
+    table.insert(self.tab_item_table.tools, {
+        text = _("Developer options"),
+        sub_item_table = {
+            {
+                text = _("Clear readers' caches"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clear cache/ and cr3cache/ ?"),
+                        ok_callback = function()
+                            local purgeDir = require("ffi/util").purgeDir
+                            local DataStorage = require("datastorage")
+                            local cachedir = DataStorage:getDataDir() .. "/cache"
+                            if lfs.attributes(cachedir, "mode") == "directory" then
+                                purgeDir(cachedir)
+                            end
+                            lfs.mkdir(cachedir)
+                        end,
+                    })
+                end,
+            },
+        }
+    })
 
     -- search tab
     table.insert(self.tab_item_table.search, {
