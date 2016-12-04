@@ -129,15 +129,11 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
-        -- show files with a .sdr in bold
-        local bold = nil
-        if DocSettings:hasSidecarDir(full_path) then
-            bold = true
-        end
         table.insert(item_table, {
             text = file.name,
             mandatory = sstr,
-            bold = bold,
+            -- show new books in bold
+            bold = not DocSettings:hasSidecarDir(full_path),
             path = full_path
         })
     end
