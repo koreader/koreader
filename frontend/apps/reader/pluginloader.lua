@@ -23,9 +23,9 @@ function PluginLoader:loadPlugins()
             if not ok then
                 DEBUG("Error when loading", mainfile, plugin_module)
             end
-            package.path = package_path
-            package.cpath = package_cpath
-            if ok then
+            if not plugin_module.disabled and ok then
+                package.path = package_path
+                package.cpath = package_cpath
                 plugin_module.path = path
                 plugin_module.name = plugin_module.name or path:match("/(.-)%.koplugin")
                 table.insert(self.plugins, plugin_module)
