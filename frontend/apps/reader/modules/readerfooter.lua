@@ -309,7 +309,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
            y = DTAP_ZONE_MINIBAR.y,
            w = DTAP_ZONE_MINIBAR.w,
            h = DTAP_ZONE_MINIBAR.h
-       }:sizeof() == 0 then
+       }:area() == 0 then
         table.insert(sub_items, {
             text = _("Toggle mode"),
             enabled_func = function()
