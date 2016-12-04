@@ -237,7 +237,13 @@ function ReaderBookmark:onShowBookmark()
 end
 
 function ReaderBookmark:isBookmarkMatch(item, pn_or_xp)
-    return item.page == pn_or_xp
+    -- this is not correct, but previous commit temporarily
+    -- reverted, see #2395 & #2394
+    if self.ui.document.info.has_pages then
+        return item.page == pn_or_xp
+    else
+        return self.ui.document:isXPointerInCurrentPage(item.page)
+    end
 end
 
 function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
