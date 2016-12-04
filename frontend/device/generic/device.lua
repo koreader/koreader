@@ -176,12 +176,28 @@ function Device:retrieveNetworkInfo()
                              "sed -n " ..
                              "-e 's/ \\+$//g' " ..
                              "-e 's/ \\+/ /g' " ..
-                             "-e 's/inet6\\? addr: \\?\\([^ ]\\+\\) .*$/\\1/p' " ..
-                             "-e 's/Link encap:\\(.*\\)/\\1/p'",
+                             "-e 's/ \\?inet6\\? addr: \\?\\([^ ]\\+\\) .*$/IP: \\1/p' " ..
+                             "-e 's/Link encap:Ethernet\\(.*\\)/\\1/p'",
                              "r")
     if std_out then
         local result = std_out:read("*all")
         std_out:close()
+        std_out = io.popen('iwconfig eth0 | grep ESSID | cut -d\\" -f2')
+        if std_out then
+            local ssid = std_out:read("*all")
+            result = result .. "SSID: " .. ssid:gsub("(.-)%s*$", "%1") .. "\n"
+            std_out:close()
+        end
+        if os.execute("ip r | grep -q default") == 0 then
+            local pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
+            if pingok == 0 then
+                result = result .. "Gateway ping successfull"
+            else
+                result = result .. "Gateway ping FAILED"
+            end
+        else
+            result = result .. "No default gateway to ping"
+        end
         return result
     end
 end
