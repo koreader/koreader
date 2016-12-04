@@ -100,6 +100,7 @@ function ReaderUI:init()
     self.doc_settings = DocSettings:open(self.document.file)
 
     -- a view container (so it must be child #1!)
+    -- all paintable widgets need to be a child of reader view
     self:registerModule("view", ReaderView:new{
         dialog = self.dialog,
         dimen = self.dimen,
@@ -314,15 +315,6 @@ function ReaderUI:init()
             view = self.view,
             ui = self,
             document = self.document,
-        })
-    end
-
-    local ReaderKoboLight = require("apps/reader/modules/readerkobolight")
-    if (Device:isKobo() and Device:hasFrontlight()) then
-        self:registerModule('kobolight', ReaderKoboLight:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self,
         })
     end
 

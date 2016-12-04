@@ -1,7 +1,8 @@
 describe("NetworkSetting module", function()
-    local NetworkSetting, NetworkMgr
+    local NetworkSetting, NetworkMgr, UIManager
     setup(function()
         require("commonrequire")
+        UIManager = require("ui/uimanager")
         NetworkSetting = require("ui/widget/networksetting")
         NetworkMgr = require("ui/network/manager")
     end)
@@ -15,6 +16,7 @@ describe("NetworkSetting module", function()
         stub(NetworkMgr, "disconnectNetwork")
         stub(NetworkMgr, "releaseIP")
 
+        UIManager:quit()
         local called = false
         local network_list = {
             {
@@ -41,6 +43,7 @@ describe("NetworkSetting module", function()
         stub(NetworkMgr, "disconnectNetwork")
         stub(NetworkMgr, "releaseIP")
 
+        UIManager:quit()
         local network_list = {
             {
                 ssid = "foo",
