@@ -1,7 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Geom = require("ui/geometry")
 local Input = require("device").input
-local GestureRange = require("ui/gesturerange")
 local Device = require("device")
 local Screen = Device.screen
 local Event = require("ui/event")
@@ -9,6 +8,9 @@ local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+
+
+local pan_rate = Screen.eink and 4.0 or 10.0
 
 
 local function copyPageState(page_state)
@@ -75,64 +77,77 @@ function ReaderPaging:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- This method will  be called in onSetDimensions handler
-function ReaderPaging:initGesListener()
-    self.ges_events = {
-        TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
-                }
-            }
-        },
-        TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        },
-        Swipe = {
-            GestureRange:new{
-                ges = "swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                }
-            }
-        },
-        Pan = {
-            GestureRange:new{
-                ges = "pan",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                rate = Screen.eink and 4.0 or 10.0,
-            }
-        },
-        PanRelease = {
-            GestureRange:new{
-                ges = "pan_release",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-            }
-        },
+function ReaderPaging:onReaderReady()
+    self:setupTouchZones()
+end
+
+function ReaderPaging:setupTapTouchZones()
+    local forward_zone = {
+        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
+        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
     }
-    self:updateReadOrder()
+    local backward_zone = {
+        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
+        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
+    }
+
+    if self.inverse_reading_order then
+        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
+        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
+    end
+
+    self.ui:registerTouchZones({
+        {
+            id = "tap_forward",
+            ges = "tap",
+            screen_zone = forward_zone,
+            handler = function() return self:onTapForward() end
+        },
+        {
+            id = "tap_backward",
+            ges = "tap",
+            screen_zone = backward_zone,
+            handler = function() return self:onTapBackward() end
+        },
+    })
+end
+
+-- This method will be called in onSetDimensions handler
+function ReaderPaging:setupTouchZones()
+    -- deligate gesture listener to readerui
+    self.ges_events = {}
+    self.onGesture = nil
+
+    if not Device:isTouchDevice() then return end
+
+    self:setupTapTouchZones()
+    self.ui:registerTouchZones({
+        {
+            id = "paging_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onSwipe(nil, ges) end
+        },
+        {
+            id = "paging_pan",
+            ges = "pan",
+            rate = pan_rate,
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onPan(nil, ges) end
+        },
+        {
+            id = "paging_pan_release",
+            ges = "pan_release",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onPanRelease(nil, ges) end
+        },
+    })
 end
 
 function ReaderPaging:onReadSettings(config)
@@ -145,7 +160,6 @@ function ReaderPaging:onReadSettings(config)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
-    self:updateReadOrder()
 end
 
 function ReaderPaging:onSaveSettings()
@@ -197,12 +211,12 @@ function ReaderPaging:addToMainMenu(tab_item_table)
         end,
         sub_item_table = page_overlap_menu,
     })
-    table.insert(tab_item_table.typeset, {
+    table.insert(tab_item_table.setting, {
         text = _("Read from right to left"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
             self.inverse_reading_order = not self.inverse_reading_order
-            self:updateReadOrder()
+            self:setupTapTouchZones()
         end,
     })
 end
@@ -335,7 +349,7 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
-function ReaderPaging:onSwipe(arg, ges)
+function ReaderPaging:onSwipe(_, ges)
     if self.bookmark_flipping_mode then
         self:bookmarkFlipping(self.current_page, ges)
     elseif self.page_flipping_mode and self.original_page then
@@ -358,7 +372,7 @@ function ReaderPaging:onSwipe(arg, ges)
     end
 end
 
-function ReaderPaging:onPan(arg, ges)
+function ReaderPaging:onPan(_, ges)
     if self.bookmark_flipping_mode then
         return true
     elseif self.page_flipping_mode then
@@ -374,7 +388,7 @@ function ReaderPaging:onPan(arg, ges)
     return true
 end
 
-function ReaderPaging:onPanRelease(arg, ges)
+function ReaderPaging:onPanRelease(_, ges)
     if self.page_flipping_mode then
         if self.view.zoom_mode == "page" then
             self:updateFlippingPage(self.current_page)
@@ -832,13 +846,6 @@ function ReaderPaging:onRedrawCurrentPage()
     return true
 end
 
-function ReaderPaging:onSetDimensions()
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
-end
-
 -- wrapper for bounds checking
 function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
@@ -868,57 +875,6 @@ function ReaderPaging:onGotoPercentage(percentage)
     if percentage > 1 then percentage = 1 end
     self:_gotoPage(math.floor(percentage*self.number_of_pages))
     return true
-end
-
-function ReaderPaging:updateReadOrder()
-    local width, height = Screen:getWidth(), Screen:getHeight()
-    if self.inverse_reading_order then
-        self.ges_events.TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = width * (1-DTAP_ZONE_FORWARD.x - DTAP_ZONE_FORWARD.w),
-                    y = height * DTAP_ZONE_FORWARD.y,
-                    w = width * DTAP_ZONE_FORWARD.w,
-                    h = height * DTAP_ZONE_FORWARD.h,
-                }
-            }
-        }
-        self.ges_events.TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = width * (1-DTAP_ZONE_BACKWARD.x - DTAP_ZONE_BACKWARD.w),
-                    y = height * DTAP_ZONE_BACKWARD.y,
-                    w = width * DTAP_ZONE_BACKWARD.w,
-                    h = height * DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        }
-    else
-        self.ges_events.TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = width * DTAP_ZONE_FORWARD.x,
-                    y = height * DTAP_ZONE_FORWARD.y,
-                    w = width * DTAP_ZONE_FORWARD.w,
-                    h = height * DTAP_ZONE_FORWARD.h,
-                }
-            }
-        }
-        self.ges_events.TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = width * DTAP_ZONE_BACKWARD.x,
-                    y = height * DTAP_ZONE_BACKWARD.y,
-                    w = width * DTAP_ZONE_BACKWARD.w,
-                    h = height * DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        }
-    end
 end
 
 return ReaderPaging
