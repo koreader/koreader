@@ -73,6 +73,9 @@ local FileManager = InputContainer:extend{
 
 function FileManager:init()
     self.show_parent = self.show_parent or self
+    self.callback_refresh = function()
+        self:onRefresh()
+    end
 
     self.path_text = TextWidget:new{
         face = Font:getFace("infofont", 18),
