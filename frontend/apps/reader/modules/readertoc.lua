@@ -60,6 +60,7 @@ function ReaderToc:resetToc()
     self.toc = nil
     self.ticks = {}
     self.collapsed_toc = {}
+    self.expanded_nodes = {}
 end
 
 function ReaderToc:onUpdateToc()
