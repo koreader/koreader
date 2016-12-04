@@ -265,9 +265,7 @@ Check size of dimension/rectangle for equality
 @tparam Geom rect_b
 ]]
 function Geom:equalSize(rect_b)
-    if self.w == rect_b.w
-    and self.h == rect_b.h
-    then
+    if self.w == rect_b.w and self.h == rect_b.h then
         return true
     end
     return false
@@ -279,12 +277,9 @@ Check if our size is smaller than the size of the given dimension/rectangle
 @tparam Geom rect_b
 ]]
 function Geom:__lt(rect_b)
-    DEBUG("lt:",self,rect_b)
     if self.w < rect_b.w and self.h < rect_b.h then
-DEBUG("lt+")
         return true
     end
-DEBUG("lt-")
     return false
 end
 

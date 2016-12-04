@@ -317,7 +317,15 @@ function ReaderUI:init()
         })
     end
 
-    --dbg(self.doc_settings)
+    local ReaderKoboLight = require("apps/reader/modules/readerkobolight")
+    if (Device:isKobo() and Device:hasFrontlight()) then
+        self:registerModule('kobolight', ReaderKoboLight:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self,
+        })
+    end
+
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
@@ -445,8 +453,9 @@ function ReaderUI:closeDialog()
     UIManager:close(self.password_dialog)
 end
 
-function ReaderUI:onSetDimensions(dimen)
+function ReaderUI:onScreenResize(dimen)
     self.dimen = dimen
+    self:updateTouchZonesOnScreenResize(dimen)
 end
 
 function ReaderUI:saveSettings()

@@ -77,6 +77,7 @@ function PageCropDialog:onShow()
     return true
 end
 
+
 local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
