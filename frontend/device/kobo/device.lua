@@ -309,7 +309,9 @@ function Kobo:getFirmwareVersion()
 end
 
 function Kobo:suspend()
+    dbg("Executing kobo suspend script...")
     os.execute("./suspend.sh")
+    dbg("Returned from kobo suspend script.")
 end
 
 function Kobo:resume()
