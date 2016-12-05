@@ -189,13 +189,13 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("OPDS catalog"),
         callback = function()
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
-            local callback_filemanager_refresh = function() self.ui.callback_refresh() end
-                function OPDSCatalog:onClose()
-                    callback_filemanager_refresh()
-                    UIManager:close(self)
-                end
-                OPDSCatalog:showCatalog()
-            end,
+            local filemanagerRefresh = function() self.ui:onRefresh() end
+            function OPDSCatalog:onClose()
+                filemanagerRefresh()
+                UIManager:close(self)
+            end
+            OPDSCatalog:showCatalog()
+        end,
     })
 
     -- search tab
