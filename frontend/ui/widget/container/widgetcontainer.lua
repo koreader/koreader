@@ -1,3 +1,9 @@
+--[[--
+WidgetContainer is a container for another Widget. Base class for all the widget containers.
+
+It handles event propagation and paiting (with different alignments) for its children.
+]]
+
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 
@@ -5,9 +11,6 @@ if require("device"):isAndroid() then
     require("jit").off(true, true)
 end
 
---[[
-WidgetContainer is a container for another Widget
---]]
 local WidgetContainer = Widget:new()
 
 function WidgetContainer:init()
@@ -37,9 +40,9 @@ function WidgetContainer:getSize()
     end
 end
 
---[[
-delete all child widgets
---]]
+--[[--
+Delete all child widgets
+]]
 function WidgetContainer:clear()
     while table.remove(self) do end
 end
@@ -80,9 +83,15 @@ function WidgetContainer:propagateEvent(event)
     return false
 end
 
---[[
-Containers will pass events to children or react on them themselves
---]]
+--[[--
+WidgetContainer will pass event to its children by calling their handleEvent
+methods. If no child responded to the event (by returning true), it will call its own
+handleEvent method.
+
+@tparam ui.event.Event event
+@treturn bool true if event is consumed, othewise false. A consumed event will
+not be sent to other widgets.
+]]
 function WidgetContainer:handleEvent(event)
     if not self:propagateEvent(event) then
         -- call our own standard event handler
