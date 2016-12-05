@@ -33,8 +33,8 @@ else
     args="$@"
 fi
 
-# we keep maximum 100K worth of crash log
-cat crash.log 2> /dev/null | tail -c 100000000 > crash.log.new
+# we keep maximum 500K worth of crash log
+cat crash.log 2> /dev/null | tail -c 500000 > crash.log.new
 mv -f crash.log.new crash.log
 ./reader.lua "$args" >> crash.log 2>&1
 
