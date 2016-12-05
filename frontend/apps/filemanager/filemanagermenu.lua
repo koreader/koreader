@@ -188,10 +188,11 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.tools, {
         text = _("OPDS catalog"),
         callback = function()
-            local FileManager = require("apps/filemanager/filemanager")
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
-            function OPDSCatalog:onExit()
-                FileManager:onRefresh()
+            local filemanagerRefresh = function() self.ui:onRefresh() end
+            function OPDSCatalog:onClose()
+                filemanagerRefresh()
+                UIManager:close(self)
             end
             OPDSCatalog:showCatalog()
         end,
