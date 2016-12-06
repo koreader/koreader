@@ -116,7 +116,13 @@ function FrontLightWidget:setProgress(num, step)
                 margin = 1,
                 preselect = true,
                 width = self.button_width,
-                callback = function() self:setProgress(i * step, step) end
+                callback = function()
+                    if i == step_min then
+                        self:setProgress(self.fl_min, step)
+                    else
+                        self:setProgress(i * step, step)
+                    end
+                end
             })
         end
     else
