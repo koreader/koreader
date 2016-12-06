@@ -3,7 +3,8 @@ local DEBUG = require("dbg")
 
 --[[
 -- Query wikipedia using Wikimedia Web API.
--- http://en.wikipedia.org/w/api.php?action=query&prop=extracts&format=json&exintro=&explaintext=&redirects=&titles=hello
+-- https://en.wikipedia.org/w/api.php?format=jsonfm&action=query&generator=search&gsrnamespace=0&gsrsearch=ereader&gsrlimit=10&prop=extracts&exintro&explaintext&exlimit=max
+-- https://en.wikipedia.org/w/api.php?action=query&prop=extracts&format=jsonfm&explaintext=&redirects=&titles=E-reader
 --]]
 
 local Wikipedia = {
@@ -13,11 +14,29 @@ local Wikipedia = {
        action = "query",
        prop = "extracts",
        format = "json",
-       exintro = "",
+       -- exintro = nil, -- get more than only the intro
        explaintext = "",
        redirects = "",
+       -- title = nil, -- text to lookup, will be added below
    },
    default_lang = "en",
+   -- Search query for better results
+   -- see https://www.mediawiki.org/wiki/API:Main_page
+   wiki_search_params = {
+       action = "query",
+       generator = "search",
+       gsrnamespace = "0",
+       -- gsrsearch = nil, -- text to lookup, will be added below
+       gsrlimit = 20, -- max nb of results to get
+       exlimit = "max",
+       prop = "extracts|info", -- 'extracts' to get text, 'info' to get full page length
+       format = "json",
+       explaintext = "",
+       exintro = "",
+       -- We have to use 'exintro=' to get extracts for ALL results
+       -- (otherwise, we get the full text for only the first result, and
+       -- no text at all for the others
+   },
 }
 
 function Wikipedia:getWikiServer(lang)
@@ -36,14 +55,22 @@ function Wikipedia:loadPage(text, lang, intro, plain)
 
     local request, sink = {}, {}
     local query = ""
-    self.wiki_params.exintro = intro and "" or nil
-    self.wiki_params.explaintext = plain and "" or nil
-    for k,v in pairs(self.wiki_params) do
-        query = query .. k .. '=' .. v .. '&'
-    end
+
     local parsed = url.parse(self:getWikiServer(lang))
     parsed.path = self.wiki_path
-    parsed.query = query .. "titles=" .. url.escape(text)
+    if intro == true then -- search query
+        self.wiki_search_params.explaintext = plain and "" or nil
+        for k,v in pairs(self.wiki_search_params) do
+            query = query .. k .. '=' .. v .. '&'
+        end
+        parsed.query = query .. "gsrsearch=" .. url.escape(text)
+    else -- full page content
+        self.wiki_params.explaintext = plain and "" or nil
+        for k,v in pairs(self.wiki_params) do
+            query = query .. k .. '=' .. v .. '&'
+        end
+        parsed.query = query .. "titles=" .. url.escape(text)
+    end
 
     -- HTTP request
     request['url'] = url.build(parsed)
@@ -79,7 +106,7 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     end
 end
 
--- extract intro passage in wiki page
+-- search wikipedia and get intros for results
 function Wikipedia:wikintro(text, lang)
     local result = self:loadPage(text, lang, true, true)
     if result then
@@ -89,5 +116,17 @@ function Wikipedia:wikintro(text, lang)
         end
     end
 end
+
+-- get full content of a wiki page
+function Wikipedia:wikifull(text, lang)
+    local result = self:loadPage(text, lang, false, true)
+    if result then
+        local query = result.query
+        if query then
+            return query.pages
+        end
+    end
+end
+
 
 return Wikipedia

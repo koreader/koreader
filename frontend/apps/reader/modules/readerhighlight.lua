@@ -494,8 +494,7 @@ function ReaderHighlight:onHighlightDictLookup()
     DEBUG("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = require("util").stripePunctuations(self.selected_text.text)
-        self.ui:handleEvent(Event:new("LookupWord", text))
+        self.ui:handleEvent(Event:new("LookupWord", self.selected_text.text))
     end
 end
 
