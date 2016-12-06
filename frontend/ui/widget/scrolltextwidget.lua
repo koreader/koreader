@@ -50,7 +50,7 @@ function ScrollTextWidget:init()
     }
     local horizontal_group = HorizontalGroup:new{}
     table.insert(horizontal_group, self.text_widget)
-    table.insert(horizontal_group, HorizontalSpan:new{self.text_scroll_span})
+    table.insert(horizontal_group, HorizontalSpan:new{width=self.text_scroll_span})
     table.insert(horizontal_group, self.v_scroll_bar)
     self[1] = horizontal_group
     self.dimen = Geom:new(self[1]:getSize())
@@ -59,6 +59,12 @@ function ScrollTextWidget:init()
             ScrollText = {
                 GestureRange:new{
                     ges = "swipe",
+                    range = function() return self.dimen end,
+                },
+            },
+            TapScrollText = { -- allow scrolling with tap
+                GestureRange:new{
+                    ges = "tap",
                     range = function() return self.dimen end,
                 },
             },
@@ -101,10 +107,30 @@ end
 function ScrollTextWidget:onScrollText(arg, ges)
     if ges.direction == "north" then
         self:scrollText(1)
+        return true
     elseif ges.direction == "south" then
         self:scrollText(-1)
+        return true
     end
-    return true
+    -- if swipe west/east, let it propagate up (e.g. for quickdictlookup to
+    -- go to next/prev result)
+end
+
+function ScrollTextWidget:onTapScrollText(arg, ges)
+    -- same tests as done in TextBoxWidget:scrollUp/Down
+    if ges.pos.x < Screen:getWidth()/2 then
+        if self.text_widget.virtual_line_num > 1 then
+            self:scrollText(-1)
+            return true
+        end
+    else
+        if self.text_widget.virtual_line_num + self.text_widget:getVisLineCount() <= #self.text_widget.vertical_string_list then
+            self:scrollText(1)
+            return true
+        end
+    end
+    -- if we couldn't scroll (because we're already at top or bottom),
+    -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
 function ScrollTextWidget:onScrollDown()
