@@ -6,7 +6,7 @@ local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local DocumentRegistry = require("document/documentregistry")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Screenshoter = require("ui/widget/screenshoter")
-local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local InputDialog = require("ui/widget/inputdialog")
 local VerticalSpan = require("ui/widget/verticalspan")
 local FileChooser = require("ui/widget/filechooser")
@@ -262,7 +262,10 @@ function FileManager:init()
                 }
             })
         end
-        self.file_dialog = ButtonDialog:new{
+
+        self.file_dialog = ButtonDialogTitle:new{
+            title = file:match("([^/]+)$"),
+            title_align = "center",
             buttons = buttons,
         }
         UIManager:show(self.file_dialog)
