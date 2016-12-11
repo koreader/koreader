@@ -8,7 +8,7 @@ widgets event-aware see the implementation in @{ui.widget.container.widgetcontai
 ]]
 
 --[[--
-@field handler name for the handler method
+@field handler name for the handler method: `"on"..Event.name`
 @field args array of arguments for the event
 @table Event
 ]]

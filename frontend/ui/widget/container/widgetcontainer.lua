@@ -1,7 +1,16 @@
 --[[--
-WidgetContainer is a container for another Widget. Base class for all the widget containers.
+WidgetContainer is a container for one or multiple Widgets. It is the base
+class for all the container widgets.
 
-It handles event propagation and paiting (with different alignments) for its children.
+Child widgets are stored in WidgetContainer as conventional array items:
+
+    WidgetContainer:new{
+        ChildWidgetFoo:new{},
+        ChildWidgetBar:new{},
+        ...
+    }
+
+It handles event propagation and painting (with different alignments) for its children.
 ]]
 
 local Geom = require("ui/geometry")
@@ -85,8 +94,8 @@ end
 
 --[[--
 WidgetContainer will pass event to its children by calling their handleEvent
-methods. If no child responded to the event (by returning true), it will call its own
-handleEvent method.
+methods. If no child consumes the event (by returning true), it will try
+to react to the event by itself.
 
 @tparam ui.event.Event event
 @treturn bool true if event is consumed, othewise false. A consumed event will

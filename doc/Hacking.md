@@ -1,8 +1,7 @@
 Hacking
 =======
 
-Developing UI Widgets
----------------------
+## Developing UI widgets ##
 
 `tools/wbuilder.lua` is your friend, if you need to create new UI widgets. It
 sets up a minimal environment to bootstrap KOReader's UI framework to avoid
