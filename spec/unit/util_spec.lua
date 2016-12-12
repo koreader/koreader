@@ -157,5 +157,38 @@ describe("util module", function()
         })
     end)
 
+    it("should split text to line with next_c and prev_c - unicode", function()
+        local text = "Ce test : 1) est « très simple » ; 2 ) simple comme ( 2/2 ) > 50 % ? ok."
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            next_c = i < #table_chars and table_chars[i+1] or nil
+            prev_c = i > 1 and table_chars[i-1] or nil
+            word = word .. c
+            if util.isSplitable(c, next_c, prev_c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "Ce ",
+            "test : ",
+            "1) ",
+            "est ",
+            "« très ",
+            "simple » ; ",
+            "2 ) ",
+            "simple ",
+            "comme ",
+            "( 2/2 ) > 50 % ? ",
+            "ok."
+        })
+    end)
+
+
 
 end)
