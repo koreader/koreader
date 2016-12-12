@@ -150,22 +150,24 @@ end
 -- specific punctuation : e.g. "word :" or "word )"
 -- (In french, there is a space before a colon, and it better
 -- not be wrapped there.)
--- Includes U+00BB >> (right double angle quotation mark) and
--- U+201D '' (right double quotation mark)
-local non_splitable_space_tailers = ":;,.!?)]}$%-=/<>»”"
+local non_splitable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
+-- Same if a space has some specific other punctuation before it
+local non_splitable_space_leaders = "([{$=-+*/|<>«“"
 
 -- Test whether a string could be separated by this char for multi-line rendering
--- Optional next char may be provided to help make the decision
-function util.isSplitable(c, next_c)
+-- Optional next or prev chars may be provided to help make the decision
+function util.isSplitable(c, next_c, prev_c)
     if util.isCJKChar(c) then
         -- a CJKChar is a word in itself, and so is splitable
         return true
     elseif c == " " then
         -- we only split on a space (so punctuation sticks to prev word)
-        -- if next_c is provided, we can make a better decision
+        -- if next_c or prev_c is provided, we can make a better decision
         if next_c and non_splitable_space_tailers:find(next_c, 1, true) then
-            -- this space is followed by some punctuation that is better
-            -- kept with us along previous word
+            -- this space is followed by some punctuation that is better kept with us
+            return false
+        elseif prev_c and non_splitable_space_leaders:find(prev_c, 1, true) then
+            -- this space is lead by some punctuation that is better kept with us
             return false
         else
             -- we can split on this space

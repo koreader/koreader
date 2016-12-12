@@ -118,31 +118,32 @@ function TextBoxWidget:_splitCharWidthList()
             cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
         else
             -- Backtrack the string until the length fit into one line.
+            -- We'll give next and prev chars to isSplitable() for a wiser decision
             local c = self.char_width_list[idx].char
-            -- We give next char to isSplitable() for a wiser decision
-            local next_c = idx+1 <= size and self.char_width_list[idx+1].char or nil
-            if util.isSplitable(c, next_c) then
+            local next_c = idx+1 <= size and self.char_width_list[idx+1].char or false
+            local prev_c = idx-1 >= 1 and self.char_width_list[idx-1].char or false
+            local adjusted_idx = idx
+            local adjusted_width = cur_line_width
+            while adjusted_idx > offset and not util.isSplitable(c, next_c, prev_c) do
+                adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                adjusted_idx = adjusted_idx - 1
+                next_c = c
+                c = prev_c
+                prev_c = adjusted_idx-1 >= 1 and self.char_width_list[adjusted_idx-1].char or false
+            end
+            if adjusted_idx == offset or adjusted_idx == idx then
+                -- either a very long english word ocuppying more than one line,
+                -- or the excessive char is itself splitable:
+                -- we let that excessive char for next line
                 cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
                 cur_line_width = cur_line_width - self.char_width_list[idx].width
             else
-                local adjusted_idx = idx
-                local adjusted_width = cur_line_width
-                repeat
-                    adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
-                    if adjusted_idx == 1 then break end
-                    adjusted_idx = adjusted_idx - 1
-                    next_c = c
-                    c = self.char_width_list[adjusted_idx].char
-                until adjusted_idx == offset or util.isSplitable(c, next_c)
-                if adjusted_idx == offset then -- a very long english word ocuppying more than one line
-                    cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
-                    cur_line_width = cur_line_width - self.char_width_list[idx].width
-                else
-                    cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
-                    cur_line_width = adjusted_width
-                    idx = adjusted_idx + 1
-                end
-            end -- endif util.isSplitable(c)
+                -- we backtracked and we're below max width, we can let the
+                -- splitable char on this line
+                cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
+                cur_line_width = adjusted_width
+                idx = adjusted_idx + 1
+            end
         end -- endif cur_line_width > self.width
         if cur_line_width < 0 then break end
         self.vertical_string_list[ln] = {
