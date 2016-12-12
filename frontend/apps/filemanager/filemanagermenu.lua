@@ -213,6 +213,14 @@ function FileManagerMenu:setUpdateItemTable()
                                 purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
+                            -- Also remove from Cache objet references to
+                            -- the cache files we just deleted
+                            local Cache = require("cache")
+                            Cache.cached = {}
+                            local InfoMessage = require("ui/widget/infomessage")
+                            UIManager:show(InfoMessage:new{
+                                text = _("Caches cleared. Please exit and restart KOReader."),
+                            })
                         end,
                     })
                 end,
