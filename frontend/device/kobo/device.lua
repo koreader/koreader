@@ -95,6 +95,16 @@ local KoboPhoenix = Kobo:new{
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
 }
 
+-- Kobo Aura second edition:
+local KoboStar = Kobo:new{
+    model = "Kobo_star",
+    hasFrontlight = yes,
+    touch_alyssum_protocol = true,
+    display_dpi = 212,
+    -- the bezel covers 12 pixels at the bottom:
+    viewport = Geom:new{x=0, y=0, w=758, h=1012},
+}
+
 -- Kobo Glo HD:
 local KoboAlyssum = Kobo:new{
     model = "Kobo_alyssum",
@@ -352,6 +362,8 @@ elseif codename == "alyssum" then
     return KoboAlyssum
 elseif codename == "pika" then
     return KoboPika
+elseif codename == "star" then
+    return KoboStar
 elseif codename == "daylight" then
     return KoboDaylight
 else
