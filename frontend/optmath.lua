@@ -45,17 +45,23 @@ local function tmin_max(tab, func, op)
     return index, value
 end
 
---[[
-Return the minimum element of a table.
+--[[--
+Returns the minimum element of a table.
 The optional argument func specifies a one-argument ordering function.
+
+@tparam tab
+@tparam func
 ]]--
 function Math.tmin(tab, func)
     return tmin_max(tab, func, "min")
 end
 
---[[
-Return the maximum element of a table.
+--[[--
+Returns the maximum element of a table.
 The optional argument func specifies a one-argument ordering function.
+
+@tparam tab
+@tparam func
 ]]--
 function Math.tmax(tab, func)
     return tmin_max(tab, func, "max")

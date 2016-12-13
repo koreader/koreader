@@ -1,11 +1,11 @@
 --[[--
-Miscellaneous helper functions for KOReader frontend.
+This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local BaseUtil = require("ffi/util")
 local util = {}
 
---- Strip all punctuations and spaces in a string.
+--- Strips all punctuation and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
 function util.stripePunctuations(text)
@@ -99,8 +99,8 @@ function util.lastIndexOf(string, ch)
 end
 
 
---- Split string into a list of UTF-8 chars.
----- @string text the string to be splitted.
+--- Splits string into a list of UTF-8 characters.
+---- @string text the string to be split.
 ---- @treturn table list of UTF-8 chars
 function util.splitToChars(text)
     local tab = {}
@@ -117,7 +117,7 @@ function util.splitToChars(text)
     return tab
 end
 
--- Test whether c is a CJK character
+-- Tests whether c is a CJK character
 function util.isCJKChar(c)
     return string.match(c, "[\228-\234][\128-\191].") == c
 end
@@ -127,9 +127,9 @@ function util.hasCJKChar(str)
     return string.match(str, "[\228-\234][\128-\191].") ~= nil
 end
 
---- Split text into a list of words, spaces and punctuations.
+--- Split texts into a list of words, spaces and punctuation.
 ---- @string text text to split
----- @treturn table list of words, spaces and punctuations
+---- @treturn table list of words, spaces and punctuation
 function util.splitToWords(text)
     local wlist = {}
     for word in util.gsplit(text, "[%s%p]+", true) do

@@ -39,7 +39,7 @@ function Geom:new(o)
 end
 
 --[[--
-Make a deep copy of itself.
+Makes a deep copy of itself.
 @treturn Geom
 ]]
 function Geom:copy()
@@ -56,7 +56,7 @@ function Geom:__tostring()
 end
 
 --[[--
-Offset rectangle or point by relative values
+Offsets rectangle or point by relative values
 @int dx x delta
 @int dy y delta
 ]]
@@ -190,7 +190,7 @@ function Geom:intersect(rect_b)
 end
 
 --[[--
-Return true if self does not share any area with rect_b
+Returns true if self does not share any area with rect_b
 
 @tparam Geom rect_b
 ]]
@@ -205,7 +205,7 @@ function Geom:notIntersectWith(rect_b)
 end
 
 --[[--
-Return true if self geom shares area with rect_b
+Returns true if self geom shares area with rect_b.
 
 @tparam Geom rect_b
 ]]
@@ -214,7 +214,7 @@ function Geom:intersectWith(rect_b)
 end
 
 --[[--
-Set size of dimension or rectangle to size of given dimension/rectangle
+Set size of dimension or rectangle to size of given dimension/rectangle.
 
 @tparam Geom rect_b
 ]]
@@ -225,9 +225,9 @@ function Geom:setSizeTo(rect_b)
 end
 
 --[[--
-Check whether rect_b is within current rectangle
+Checks whether rect_b is within current rectangle
 
-Works for dimensions, too. For points, it is basically an equality check
+Works for dimensions, too. For points, it is basically an equality check.
 
 @tparam Geom rect_b
 ]]
@@ -243,9 +243,9 @@ function Geom:contains(rect_b)
 end
 
 --[[--
-Check for equality
+Checks for equality.
 
-Works for rectangles, points, dimensions
+Works for rectangles, points, and dimensions.
 
 @tparam Geom rect_b
 ]]
@@ -260,7 +260,7 @@ function Geom:__eq(rect_b)
 end
 
 --[[--
-Check size of dimension/rectangle for equality
+Checks the size of a dimension/rectangle for equality.
 
 @tparam Geom rect_b
 ]]
@@ -272,7 +272,7 @@ function Geom:equalSize(rect_b)
 end
 
 --[[--
-Check if our size is smaller than the size of the given dimension/rectangle
+Checks if our size is smaller than the size of the given dimension/rectangle.
 
 @tparam Geom rect_b
 ]]
@@ -284,7 +284,7 @@ function Geom:__lt(rect_b)
 end
 
 --[[--
-Check if our size is smaller or equal the size of the given dimension/rectangle
+Checks if our size is smaller or equal to the size of the given dimension/rectangle.
 @tparam Geom rect_b
 ]]
 function Geom:__le(rect_b)
@@ -295,11 +295,11 @@ function Geom:__le(rect_b)
 end
 
 --[[--
-Offset the current rectangle by dx, dy while fitting it into the space
-of a given rectangle
+Offsets the current rectangle by dx, dy while fitting it into the space
+of a given rectangle.
 
 This can also be called with dx=0 and dy=0, which will fit the current
-rectangle into the given rectangle
+rectangle into the given rectangle.
 
 @tparam Geom rect_b
 @int dx
@@ -332,7 +332,7 @@ function Geom:offsetWithin(rect_b, dx, dy)
 end
 
 --[[--
-Center the current rectangle at position x and y of a given rectangle
+Centers the current rectangle at position x and y of a given rectangle.
 
 @tparam Geom rect_b
 @int dx
@@ -370,7 +370,7 @@ function Geom:shrinkInside(rect_b, dx, dy)
 end
 
 --[[--
-Return the Euclidean distance between two geoms
+Returns the Euclidean distance between two geoms.
 
 @tparam Geom rect_b
 ]]
@@ -379,7 +379,7 @@ function Geom:distance(geom)
 end
 
 --[[--
-Return the midpoint of two geoms
+Returns the midpoint of two geoms.
 
 @tparam Geom geom
 @treturn Geom
@@ -393,7 +393,7 @@ function Geom:midpoint(geom)
 end
 
 --[[--
-Return center point in this geom
+Returns the center point of this geom.
 @treturn Geom
 ]]
 function Geom:center()

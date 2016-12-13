@@ -1,10 +1,10 @@
 --[[--
-An InputContainer is an WidgetContainer that handles user input events including multi touches
+An InputContainer is a WidgetContainer that handles user input events including multi touches
 and key presses.
 
-See @{InputContainer:registerTouchZones} for example on how to listen for multi touch inputs.
+See @{InputContainer:registerTouchZones} for examples of how to listen for multi touch input.
 
-An example for listening on key press input event is this:
+This example illustrates how to listen for a key press input event:
 
     PanBy20 = {
         { "Shift", Input.group.Cursor },
@@ -19,8 +19,8 @@ An example for listening on key press input event is this:
     },
     Quit = { {"Home"} },
 
-It is suggested to reference configurable sequences from another table
-and store that table as configuration setting
+It is recommended to reference configurable sequences from another table
+and to store that table as a configuration setting.
 
 ]]
 
@@ -84,10 +84,10 @@ end
 
 Register touch zones into this InputContainer.
 
-See gesturedetector for list of supported gestures.
+See gesturedetector for a list of supported gestures.
 
 NOTE: You are responsible for calling self:@{updateTouchZonesOnScreenResize} with the new
-screen dimension whenever the screen is rotated or resized.
+screen dimensions whenever the screen is rotated or resized.
 
 @tparam table zones list of touch zones to register
 
@@ -98,7 +98,7 @@ test_widget:registerTouchZones({
     {
         id = "foo_tap",
         ges = "tap",
-        -- This binds handler to the full screen
+        -- This binds the handler to the full screen
         screen_zone = {
             ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
         },
@@ -110,7 +110,7 @@ test_widget:registerTouchZones({
     {
         id = "foo_swipe",
         ges = "swipe",
-        -- This binds handler to bottom half of the screen
+        -- This binds the handler to bottom half of the screen
         screen_zone = {
             ratio_x = 0, ratio_y = 0.5, ratio_w = 1, ratio_h = 0.5,
         },
@@ -168,9 +168,9 @@ function InputContainer:registerTouchZones(zones)
 end
 
 --[[--
-Update touch zones based on new screen dimension.
+Updates touch zones based on new screen dimensions.
 
-@tparam ui.geometry.Geom new_screen_dimen new screen dimension
+@tparam ui.geometry.Geom new_screen_dimen new screen dimensions
 ]]
 function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
     for _, tzone in ipairs(self._touch_zones) do
@@ -183,8 +183,8 @@ function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
 end
 
 --[[
-the following handler handles keypresses and checks if they lead to a command.
-if this is the case, we retransmit another event within ourselves
+Handles keypresses and checks if they lead to a command.
+If this is the case, we retransmit another event within ourselves.
 --]]
 function InputContainer:onKeyPress(key)
     for name, seq in pairs(self.key_events) do
