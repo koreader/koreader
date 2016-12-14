@@ -32,8 +32,8 @@ local OTAManager = {
 }
 
 local ota_channels = {
-    stable = _("stable"),
-    nightly = _("develop"),
+    stable = _("Stable"),
+    nightly = _("Development"),
 }
 
 function OTAManager:getOTAModel()

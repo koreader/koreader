@@ -683,7 +683,7 @@ function Menu:updateItems(select_number)
         self.page_info_last_chev:enableDisable(self.page < self.page_num)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
-        self.page_info_text:setText(_("no choices available"))
+        self.page_info_text:setText(_("No choices available"))
     end
 
     UIManager:setDirty("all", function()
