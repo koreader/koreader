@@ -13,6 +13,7 @@ local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local PluginLoader = require("apps/reader/pluginloader")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -227,6 +228,16 @@ function FileManagerMenu:setUpdateItemTable()
             },
         }
     })
+
+    -- koreader plugins
+    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        dbg("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        if (plugin_module.docless) {
+            self:registerModule(plugin_module.name, plugin_module:new{
+                ui = self.ui,
+            })
+        }
+    end
 
     -- search tab
     table.insert(self.tab_item_table.search, {
