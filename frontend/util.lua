@@ -154,12 +154,55 @@ local non_splitable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
 -- Same if a space has some specific other punctuation before it
 local non_splitable_space_leaders = "([{$=-+*/|<>«“"
 
+
+-- Similar rules exist for CJK text. Taken from :
+-- https://en.wikipedia.org/wiki/Line_breaking_rules_in_East_Asian_languages
+
+local cjk_non_splitable_tailers = table.concat( {
+    -- Simplified Chinese
+    "!%),.:;?]}¢°·’\"†‡›℃∶、。〃〆〕〗〞﹚﹜！＂％＇），．：；？！］｝～",
+    -- Traditional Chinese
+    "!),.:;?]}¢·–—’\"•、。〆〞〕〉》」︰︱︲︳﹐﹑﹒﹓﹔﹕﹖﹘﹚﹜！），．：；？︶︸︺︼︾﹀﹂﹗］｜｝､",
+    -- Japanese
+    ")]｝〕〉》」』】〙〗〟’\"｠»ヽヾーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ々〻‐゠–〜?!‼⁇⁈⁉・、:;,。.",
+    -- Korean
+    "!%),.:;?]}¢°’\"†‡℃〆〈《「『〕！％），．：；？］｝",
+})
+
+local cjk_non_splitable_leaders = table.concat( {
+    -- Simplified Chinese
+    "$(£¥·‘\"〈《「『【〔〖〝﹙﹛＄（．［｛￡￥",
+    -- Traditional Chinese
+    "([{£¥‘\"‵〈《「『〔〝︴﹙﹛（｛︵︷︹︻︽︿﹁﹃﹏",
+    -- Japanese
+    "([｛〔〈《「『【〘〖〝‘\"｟«",
+    -- Korean
+    "$([{£¥‘\"々〇〉》」〔＄（［｛｠￥￦#",
+})
+
+local cjk_non_splitable = table.concat( {
+    -- Japanese
+    "—…‥〳〴〵",
+})
+
 -- Test whether a string could be separated by this char for multi-line rendering
 -- Optional next or prev chars may be provided to help make the decision
 function util.isSplitable(c, next_c, prev_c)
     if util.isCJKChar(c) then
         -- a CJKChar is a word in itself, and so is splitable
-        return true
+        if cjk_non_splitable:find(c, 1, true) then
+            -- except a few of them
+            return false
+        elseif next_c and cjk_non_splitable_tailers:find(next_c, 1, true) then
+            -- but followed by a char that is not permitted at start of line
+            return false
+        elseif prev_c and cjk_non_splitable_leaders:find(prev_c, 1, true) then
+            -- but preceded by a char that is not permitted at end of line
+            return false
+        else
+            -- we can split on this CJKchar
+            return true
+        end
     elseif c == " " then
         -- we only split on a space (so punctuation sticks to prev word)
         -- if next_c or prev_c is provided, we can make a better decision
