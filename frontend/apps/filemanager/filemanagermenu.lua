@@ -13,6 +13,7 @@ local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local CloudStorage = require("apps/cloudstorage/cloudstorage")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -226,6 +227,18 @@ function FileManagerMenu:setUpdateItemTable()
                 end,
             },
         }
+    })
+    table.insert(self.tab_item_table.tools, {
+        text = _("Cloud storage"),
+        callback = function()
+            local cloud_storage = CloudStorage:new{}
+            UIManager:show(cloud_storage)
+            local filemanagerRefresh = function() self.ui:onRefresh() end
+            function cloud_storage:onClose()
+                filemanagerRefresh()
+                UIManager:close(cloud_storage)
+            end
+        end,
     })
 
     -- search tab
