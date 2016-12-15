@@ -51,6 +51,9 @@ function FileManagerMenu:init()
             end,
         },
     }
+    -- For backward compatibility, plugins look for plugins tab, which should be tools tab in file
+    -- manager.
+    self.tab_item_table.plugins = self.tab_item_table.tools
     self.registered_widgets = {}
 
     if Device:hasKeys() then

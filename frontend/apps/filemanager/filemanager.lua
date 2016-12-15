@@ -26,6 +26,7 @@ local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
 local InfoMessage = require("ui/widget/infomessage")
+local PluginLoader = require("apps/reader/pluginloader")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -293,8 +294,15 @@ function FileManager:init()
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,
-        menu = self.menu
     })
+
+    -- koreader plugins
+    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        if plugin_module.docless then
+            plugin_module:new{ ui = self, }
+        end
+    end
 
     if Device:hasKeys() then
         self.key_events.Close = { {"Home"}, doc = "Close file manager" }

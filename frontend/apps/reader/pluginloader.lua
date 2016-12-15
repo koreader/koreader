@@ -5,6 +5,7 @@ local PluginLoader = {
     plugin_path = "plugins"
 }
 
+-- TODO(Hzj_jie): Move to frontend/ ?
 function PluginLoader:loadPlugins()
     if self.plugins then return self.plugins end
 
