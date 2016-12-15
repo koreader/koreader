@@ -1,5 +1,5 @@
 --[[--
-Widget compoent that handles pagination for a list of items.
+Widget component that handles pagination for a list of items.
 
 Example:
 
@@ -7,9 +7,9 @@ Example:
         height = 400,
         width = 200,
         page_update_cb = function(curr_page_num, total_pages)
-            -- This callback function will be called whenever there is a
-            -- page turn event triggered. You can use it to update information
-            -- on parent widget.
+            -- This callback function will be called whenever a page
+            -- turn event is triggered. You can use it to update
+            -- information on the parent widget.
         end,
         items = {
             FrameContainer:new{
@@ -33,7 +33,7 @@ Example:
     }
 
 Note that ListView is created mainly to be used as a building block for other
-widgets like NetworkSetting so they can share the same pagination code.
+widgets like NetworkSetting, so they can share the same pagination code.
 ]]
 
 local InputContainer = require("ui/widget/container/inputcontainer")

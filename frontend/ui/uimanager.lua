@@ -500,6 +500,9 @@ region: Rect() that specifies the region to be updated
 --]]
 function UIManager:_refresh(mode, region)
     if not mode then return end
+    if not region and mode == "full" then
+        self.refresh_count = 0 -- reset counter on explicit full refresh
+    end
     -- special case: full screen partial update
     -- will get promoted every self.FULL_REFRESH_COUNT updates
     -- since _refresh can be called mutiple times via setDirty called in

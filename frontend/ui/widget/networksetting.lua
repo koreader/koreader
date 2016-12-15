@@ -412,6 +412,7 @@ function NetworkSetting:init()
         width = self.width,
         height = Screen:scaleBySize(8),
         percentage = 0,
+        progress = 0,
     }
 
     self.height = self.height or math.min(Screen:getHeight()*3/4,

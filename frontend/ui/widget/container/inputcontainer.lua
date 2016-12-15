@@ -1,17 +1,10 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Event = require("ui/event")
-local _ = require("gettext")
+--[[--
+An InputContainer is a WidgetContainer that handles user input events including multi touches
+and key presses.
 
-if require("device"):isAndroid() then
-    require("jit").off(true, true)
-end
+See @{InputContainer:registerTouchZones} for examples of how to listen for multi touch input.
 
---[[
-an InputContainer is an WidgetContainer that handles input events
-
-an example for a key_event is this:
+This example illustrates how to listen for a key press input event:
 
     PanBy20 = {
         { "Shift", Input.group.Cursor },
@@ -26,9 +19,23 @@ an example for a key_event is this:
     },
     Quit = { {"Home"} },
 
-it is suggested to reference configurable sequences from another table
-and store that table as configuration setting
---]]
+It is recommended to reference configurable sequences from another table
+and to store that table as a configuration setting.
+
+]]
+
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local GestureRange = require("ui/gesturerange")
+local UIManager = require("ui/uimanager")
+local Screen = require("device").screen
+local Geom = require("ui/geometry")
+local Event = require("ui/event")
+local _ = require("gettext")
+
+if require("device"):isAndroid() then
+    require("jit").off(true, true)
+end
+
 local InputContainer = WidgetContainer:new{
     vertical_align = "top",
 }
@@ -50,6 +57,8 @@ function InputContainer:_init()
         end
     end
     self.ges_events = new_ges_events
+    self._touch_zones = {}
+    self._touch_zone_pos_idx = {}
 end
 
 function InputContainer:paintTo(bb, x, y)
@@ -71,9 +80,111 @@ function InputContainer:paintTo(bb, x, y)
     end
 end
 
+--[[--
+
+Register touch zones into this InputContainer.
+
+See gesturedetector for a list of supported gestures.
+
+NOTE: You are responsible for calling self:@{updateTouchZonesOnScreenResize} with the new
+screen dimensions whenever the screen is rotated or resized.
+
+@tparam table zones list of touch zones to register
+
+@usage
+local InputContainer = require("ui/widget/container/inputcontainer")
+local test_widget = InputContainer:new{}
+test_widget:registerTouchZones({
+    {
+        id = "foo_tap",
+        ges = "tap",
+        -- This binds the handler to the full screen
+        screen_zone = {
+            ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+        },
+        handler = function(ges)
+            print('User tapped on screen!')
+            return true
+        end
+    },
+    {
+        id = "foo_swipe",
+        ges = "swipe",
+        -- This binds the handler to bottom half of the screen
+        screen_zone = {
+            ratio_x = 0, ratio_y = 0.5, ratio_w = 1, ratio_h = 0.5,
+        },
+        handler = function(ges)
+            print("User swiped at the bottom with direction:", ges.direction)
+            return true
+        end
+    },
+})
+require("ui/uimanager"):show(test_widget)
+
+]]
+function InputContainer:registerTouchZones(zones)
+    local screen_width, screen_height = Screen:getWidth(), Screen:getHeight()
+    for _, zone in ipairs(zones) do
+        if self._touch_zone_pos_idx[zone.id] then
+            table.remove(self._touch_zones, self._touch_zone_pos_idx[zone.id])
+            self._touch_zone_pos_idx[zone.id] = nil
+        end
+        local tzone = {
+            def = zone,
+            handler = zone.handler,
+            gs_range = GestureRange:new{
+                ges = zone.ges,
+                rate = zone.rate,
+                range = Geom:new{
+                    x = screen_width * zone.screen_zone.ratio_x,
+                    y = screen_height * zone.screen_zone.ratio_y,
+                    w = screen_width * zone.screen_zone.ratio_w,
+                    h = screen_height * zone.screen_zone.ratio_h,
+                },
+            },
+        }
+        local insert_pos = #self._touch_zones
+        if insert_pos ~= 0 then
+            if zone.overrides then
+                for _, override_id in ipairs(zone.overrides) do
+                    local zone_idx = self._touch_zone_pos_idx[override_id]
+                    if zone_idx and zone_idx < insert_pos then
+                        insert_pos = zone_idx
+                    end
+                end
+            else
+                insert_pos = 0
+            end
+        end
+        if insert_pos == 0 then
+            table.insert(self._touch_zones, tzone)
+            self._touch_zone_pos_idx[zone.id] = 1
+        else
+            table.insert(self._touch_zones, insert_pos, tzone)
+            self._touch_zone_pos_idx[zone.id] = insert_pos
+        end
+    end
+end
+
+--[[--
+Updates touch zones based on new screen dimensions.
+
+@tparam ui.geometry.Geom new_screen_dimen new screen dimensions
+]]
+function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
+    for _, tzone in ipairs(self._touch_zones) do
+        local range = tzone.gs_range
+        range.x = new_screen_dimen.w * tzone.def.screen_zone.ratio_x
+        range.y = new_screen_dimen.h * tzone.def.screen_zone.ratio_y
+        range.w = new_screen_dimen.w * tzone.def.screen_zone.ratio_w
+        range.h = new_screen_dimen.h * tzone.def.screen_zone.ratio_h
+    end
+end
+
 --[[
-the following handler handles keypresses and checks if they lead to a command.
-if this is the case, we retransmit another event within ourselves
+Handles keypresses and checks if they lead to a command.
+If this is the case, we retransmit another event within ourselves.
 --]]
 function InputContainer:onKeyPress(key)
     for name, seq in pairs(self.key_events) do
@@ -89,6 +200,11 @@ function InputContainer:onKeyPress(key)
 end
 
 function InputContainer:onGesture(ev)
+    for _, tzone in ipairs(self._touch_zones) do
+        if tzone.gs_range:match(ev) then
+            return tzone.handler(ev)
+        end
+    end
     for name, gsseq in pairs(self.ges_events) do
         for _, gs_range in ipairs(gsseq) do
             if gs_range:match(ev) then

@@ -1,5 +1,4 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
@@ -83,54 +82,15 @@ function ReaderFrontLight:onPanRelease(arg, ges)
 end
 
 function ReaderFrontLight:onShowFlDialog()
-    local powerd = Device:getPowerDevice()
-    self.fl_dialog = InputDialog:new{
-        title = _("Frontlight level"),
-        input_hint = ("(%d - %d)"):format(powerd.fl_min, powerd.fl_max),
-        buttons = {
-            {
-                {
-                    text = _("Toggle"),
-                    enabled = true,
-                    callback = function()
-                        self.fl_dialog:setInputText("")
-                        powerd:toggleFrontlight()
-                    end,
-                },
-                {
-                    text = _("Apply"),
-                    enabled = true,
-                    callback = function()
-                        self:fldialIntensity()
-                    end,
-                },
-                {
-                    text = _("OK"),
-                    enabled = true,
-                    callback = function()
-                        self:fldialIntensity()
-                        self:close()
-                    end,
-                },
-
-            },
-        },
-        input_type = "number",
+    local FrontLightWidget = require("ui/widget/frontlightwidget")
+    local fl = FrontLightWidget:new{
     }
-    self.fl_dialog:onShowKeyboard()
-    UIManager:show(self.fl_dialog)
+    UIManager:show(fl)
 end
 
 function ReaderFrontLight:close()
     self.fl_dialog:onClose()
     UIManager:close(self.fl_dialog)
-end
-
-function ReaderFrontLight:fldialIntensity()
-    local number = tonumber(self.fl_dialog:getInputText())
-    if number ~= nil then
-        Device:getPowerDevice():setIntensity(number)
-    end
 end
 
 return ReaderFrontLight

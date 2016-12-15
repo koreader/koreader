@@ -1,11 +1,11 @@
 --[[--
-Miscellaneous helper functions for KOReader frontend.
+This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local BaseUtil = require("ffi/util")
 local util = {}
 
---- Strip all punctuations and spaces in a string.
+--- Strips all punctuation and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
 function util.stripePunctuations(text)
@@ -99,8 +99,8 @@ function util.lastIndexOf(string, ch)
 end
 
 
---- Split string into a list of UTF-8 chars.
----- @string text the string to be splitted.
+--- Splits string into a list of UTF-8 characters.
+---- @string text the string to be split.
 ---- @treturn table list of UTF-8 chars
 function util.splitToChars(text)
     local tab = {}
@@ -117,14 +117,24 @@ function util.splitToChars(text)
     return tab
 end
 
---- Split text into a list of words, spaces and punctuations.
+-- Tests whether c is a CJK character
+function util.isCJKChar(c)
+    return string.match(c, "[\228-\234][\128-\191].") == c
+end
+
+-- Test whether str contains CJK characters
+function util.hasCJKChar(str)
+    return string.match(str, "[\228-\234][\128-\191].") ~= nil
+end
+
+--- Split texts into a list of words, spaces and punctuation.
 ---- @string text text to split
----- @treturn table list of words, spaces and punctuations
+---- @treturn table list of words, spaces and punctuation
 function util.splitToWords(text)
     local wlist = {}
     for word in util.gsplit(text, "[%s%p]+", true) do
         -- if space splitted word contains CJK characters
-        if word:match("[\228-\234][\128-\191]+") then
+        if util.hasCJKChar(word) then
             -- split with CJK characters
             for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
                 table.insert(wlist, char)
@@ -136,9 +146,36 @@ function util.splitToWords(text)
     return wlist
 end
 
--- Test whether a string could be separated by a char for multi-line rendering
-function util.isSplitable(c)
-    return c == " " or string.match(c, "%p") ~= nil
+-- We don't want to split on a space if it is followed by some
+-- specific punctuation : e.g. "word :" or "word )"
+-- (In french, there is a space before a colon, and it better
+-- not be wrapped there.)
+local non_splitable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
+-- Same if a space has some specific other punctuation before it
+local non_splitable_space_leaders = "([{$=-+*/|<>«“"
+
+-- Test whether a string could be separated by this char for multi-line rendering
+-- Optional next or prev chars may be provided to help make the decision
+function util.isSplitable(c, next_c, prev_c)
+    if util.isCJKChar(c) then
+        -- a CJKChar is a word in itself, and so is splitable
+        return true
+    elseif c == " " then
+        -- we only split on a space (so punctuation sticks to prev word)
+        -- if next_c or prev_c is provided, we can make a better decision
+        if next_c and non_splitable_space_tailers:find(next_c, 1, true) then
+            -- this space is followed by some punctuation that is better kept with us
+            return false
+        elseif prev_c and non_splitable_space_leaders:find(prev_c, 1, true) then
+            -- this space is lead by some punctuation that is better kept with us
+            return false
+        else
+            -- we can split on this space
+            return true
+        end
+    end
+    -- otherwise, non splitable
+    return false
 end
 
 return util

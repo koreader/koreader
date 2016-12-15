@@ -3,6 +3,7 @@ local UIManager = require("ui/uimanager")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local Device = require("device")
+local DocSettings = require("docsettings")
 local util = require("ffi/util")
 local _ = require("gettext")
 local ffi = require("ffi")
@@ -131,6 +132,8 @@ function FileChooser:genItemTableFromPath(path)
         table.insert(item_table, {
             text = file.name,
             mandatory = sstr,
+            -- show new books in bold
+            bold = not DocSettings:hasSidecarDir(full_path),
             path = full_path
         })
     end

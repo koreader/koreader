@@ -53,12 +53,16 @@ function ReaderLink:initGesListener()
     end
 end
 
-local function is_follow_links_on()
+local function isFollowLinksOn()
     return G_reader_settings:readSetting("follow_links") ~= false
 end
 
-local function swipe_to_go_back()
+local function isSwipeToGoBackEnabled()
     return G_reader_settings:readSetting("swipe_to_go_back") == true
+end
+
+local function isSwipeToFollowFirstLinkEnabled()
+    return G_reader_settings:readSetting("swipe_to_follow_first_link") == true
 end
 
 function ReaderLink:addToMainMenu(tab_item_table)
@@ -68,11 +72,11 @@ function ReaderLink:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text_func = function()
-                    return is_follow_links_on() and _("Disable") or _("Enable")
+                    return isFollowLinksOn() and _("Disable") or _("Enable")
                 end,
                 callback = function()
                     G_reader_settings:saveSetting("follow_links",
-                        not is_follow_links_on())
+                        not isFollowLinksOn())
                 end
             },
             {
@@ -82,10 +86,18 @@ function ReaderLink:addToMainMenu(tab_item_table)
             },
             {
                 text = _("Swipe to go back"),
-                checked_func = function() return swipe_to_go_back() end,
+                checked_func = isSwipeToGoBackEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_go_back",
-                        not swipe_to_go_back())
+                        not isSwipeToGoBackEnabled())
+                end,
+            },
+            {
+                text = _("Swipe to follow first link"),
+                checked_func = isSwipeToFollowFirstLinkEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("swipe_to_follow_first_link",
+                        not isSwipeToFollowFirstLinkEnabled())
                 end,
             },
         }
@@ -100,7 +112,7 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(_, ges)
-    if not is_follow_links_on() then return end
+    if not isFollowLinksOn() then return end
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if pos then
@@ -148,8 +160,97 @@ function ReaderLink:onGoBackLink()
 end
 
 function ReaderLink:onSwipe(_, ges)
-    if ges.direction == "east" and swipe_to_go_back() then
-        return self:onGoBackLink()
+    if ges.direction == "east" then
+        if isSwipeToGoBackEnabled() then
+            return self:onGoBackLink()
+        end
+    elseif ges.direction == "west" then
+        if isSwipeToFollowFirstLinkEnabled() then
+            return self:onGoToFirstLink(ges)
+        end
+    end
+end
+
+function ReaderLink:onGoToFirstLink(ges)
+    if not isFollowLinksOn() then return end
+    local firstlink = nil
+    if self.ui.document.info.has_pages then
+        local pos = self.view:screenToPageTransform(ges.pos)
+        if not pos then
+            return
+        end
+        local links = self.ui.document:getPageLinks(pos.page)
+        if #links == 0 then
+            return
+        end
+        -- DEBUG("PDF Page links : ", links)
+        -- We may get multiple links: internal ones (with "page" key)
+        -- that we're interested in, but also external links (no "page", but
+        -- a "uri" key) that we don't care about.
+        --     [2] = {
+        --         ["y1"] = 107.88977050781,
+        --         ["x1"] = 176.60360717773,
+        --         ["y0"] = 97.944396972656,
+        --         ["x0"] = 97,
+        --         ["page"] = 347
+        --     },
+        -- Links may not be in the order they are in the page, so let's
+        -- find the one with the smallest y0.
+        local first_y0 = nil
+        for _, link in ipairs(links) do
+            if link["page"] then
+                if first_y0 == nil or link["y0"] < first_y0 then
+                    -- onGotoLink()'s GotoPage event needs the link
+                    -- itself, and will use its "page" value
+                    firstlink = link
+                    first_y0 = link["y0"]
+                end
+            end
+        end
+    else
+        local links = self.ui.document:getPageLinks()
+        if #links == 0 then
+            return
+        end
+        -- DEBUG("CRE Page links : ", links)
+        -- We may get multiple links: internal ones (they have a "section" key)
+        -- that we're interested in, but also external links (no "section", but
+        -- a "uri" key) that we don't care about.
+        --     [1] = {
+        --         ["end_x"] = 825,
+        --         ["uri"] = "",
+        --         ["end_y"] = 333511,
+        --         ["start_x"] = 90,
+        --         ["start_y"] = 333511
+        --     },
+        --     [2] = {
+        --         ["end_x"] = 366,
+        --         ["section"] = "#_doc_fragment_19_ftn_fn6",
+        --         ["end_y"] = 1201,
+        --         ["start_x"] = 352,
+        --         ["start_y"] = 1201
+        --     },
+        -- links may not be in the order they are in the page, so let's
+        -- find the one with the smallest start_y.
+        local first_start_y = nil
+        for _, link in ipairs(links) do
+            if link["section"] then
+                if first_start_y == nil or link["start_y"] < first_start_y then
+                    -- onGotoLink()'s GotoXPointer event needs
+                    -- the "section" value
+                    firstlink = link["section"]
+                    first_start_y = link["start_y"]
+                end
+            end
+        end
+        -- cre.cpp getPageLinks() does highlight found links :
+        --   sel.add( new ldomXRange(*links[i]) ); // highlight
+        -- and we'll find them highlighted when back from link.
+        -- So let's clear them now.
+        self.ui.document:clearSelection()
+    end
+    if firstlink then
+        return self:onGotoLink(firstlink)
     end
 end
 

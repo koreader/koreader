@@ -188,13 +188,44 @@ function FileManagerMenu:setUpdateItemTable()
     table.insert(self.tab_item_table.tools, {
         text = _("OPDS catalog"),
         callback = function()
-            local FileManager = require("apps/filemanager/filemanager")
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
-            function OPDSCatalog:onExit()
-                FileManager:onRefresh()
+            local filemanagerRefresh = function() self.ui:onRefresh() end
+            function OPDSCatalog:onClose()
+                filemanagerRefresh()
+                UIManager:close(self)
             end
             OPDSCatalog:showCatalog()
         end,
+    })
+    table.insert(self.tab_item_table.tools, {
+        text = _("Developer options"),
+        sub_item_table = {
+            {
+                text = _("Clear readers' caches"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clear cache/ and cr3cache/ ?"),
+                        ok_callback = function()
+                            local purgeDir = require("ffi/util").purgeDir
+                            local DataStorage = require("datastorage")
+                            local cachedir = DataStorage:getDataDir() .. "/cache"
+                            if lfs.attributes(cachedir, "mode") == "directory" then
+                                purgeDir(cachedir)
+                            end
+                            lfs.mkdir(cachedir)
+                            -- Also remove from Cache objet references to
+                            -- the cache files we just deleted
+                            local Cache = require("cache")
+                            Cache.cached = {}
+                            local InfoMessage = require("ui/widget/infomessage")
+                            UIManager:show(InfoMessage:new{
+                                text = _("Caches cleared. Please exit and restart KOReader."),
+                            })
+                        end,
+                    })
+                end,
+            },
+        }
     })
 
     -- search tab

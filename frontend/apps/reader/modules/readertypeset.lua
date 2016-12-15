@@ -67,7 +67,7 @@ function ReaderTypeset:genStyleSheetMenu()
     local style_table = {}
     local file_list = {
         {
-            text = _("clear all external styles"),
+            text = _("Clear all external styles"),
             css = ""
         },
         {

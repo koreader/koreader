@@ -59,7 +59,6 @@ local KoboDaylight = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 300,
-    viewport = Geom:new{x=4, y=3, w=1396, h=1866},
 }
 
 -- Kobo Aura H2O:
@@ -91,6 +90,16 @@ local KoboPhoenix = Kobo:new{
     model = "Kobo_phoenix",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
+    display_dpi = 212,
+    -- the bezel covers 12 pixels at the bottom:
+    viewport = Geom:new{x=0, y=0, w=758, h=1012},
+}
+
+-- Kobo Aura second edition:
+local KoboStar = Kobo:new{
+    model = "Kobo_star",
+    hasFrontlight = yes,
+    touch_alyssum_protocol = true,
     display_dpi = 212,
     -- the bezel covers 12 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
@@ -310,7 +319,9 @@ function Kobo:getFirmwareVersion()
 end
 
 function Kobo:suspend()
+    dbg("Executing kobo suspend script...")
     os.execute("./suspend.sh")
+    dbg("Returned from kobo suspend script.")
 end
 
 function Kobo:resume()
@@ -351,6 +362,8 @@ elseif codename == "alyssum" then
     return KoboAlyssum
 elseif codename == "pika" then
     return KoboPika
+elseif codename == "star" then
+    return KoboStar
 elseif codename == "daylight" then
     return KoboDaylight
 else

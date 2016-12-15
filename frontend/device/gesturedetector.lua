@@ -4,7 +4,8 @@ local DEBUG = require("dbg")
 
 --[[
 Current detectable gestures:
-    * tap
+    * touch (user touched screen)
+    * tap (touch action detected as single tap)
     * pan
     * hold
     * swipe

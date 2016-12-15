@@ -20,6 +20,7 @@ local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
 local DEBUG= require("dbg")
+local TimeVal = require("ui/timeval")
 
 local TextBoxWidget = Widget:new{
     text = nil,
@@ -79,8 +80,14 @@ function TextBoxWidget:_evalCharWidthList()
         self.charpos = #self.charlist + 1
     end
     self.char_width_list = {}
+    -- use a cache to avoid many calls to RenderText:sizeUtf8Text()
+    local char_width_cache = {}
     for _, v in ipairs(self.charlist) do
-        local w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
+        local w = char_width_cache[v]
+        if w == nil then
+            w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
+            char_width_cache[v] = w
+        end
         table.insert(self.char_width_list, {char = v, width = w})
     end
 end
@@ -111,28 +118,32 @@ function TextBoxWidget:_splitCharWidthList()
             cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
         else
             -- Backtrack the string until the length fit into one line.
+            -- We'll give next and prev chars to isSplitable() for a wiser decision
             local c = self.char_width_list[idx].char
-            if util.isSplitable(c) then
+            local next_c = idx+1 <= size and self.char_width_list[idx+1].char or false
+            local prev_c = idx-1 >= 1 and self.char_width_list[idx-1].char or false
+            local adjusted_idx = idx
+            local adjusted_width = cur_line_width
+            while adjusted_idx > offset and not util.isSplitable(c, next_c, prev_c) do
+                adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                adjusted_idx = adjusted_idx - 1
+                next_c = c
+                c = prev_c
+                prev_c = adjusted_idx-1 >= 1 and self.char_width_list[adjusted_idx-1].char or false
+            end
+            if adjusted_idx == offset or adjusted_idx == idx then
+                -- either a very long english word ocuppying more than one line,
+                -- or the excessive char is itself splitable:
+                -- we let that excessive char for next line
                 cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
                 cur_line_width = cur_line_width - self.char_width_list[idx].width
             else
-                local adjusted_idx = idx
-                local adjusted_width = cur_line_width
-                repeat
-                    adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
-                    if adjusted_idx == 1 then break end
-                    adjusted_idx = adjusted_idx - 1
-                    c = self.char_width_list[adjusted_idx].char
-                until adjusted_idx > offset and util.isSplitable(c)
-                if adjusted_idx == offset then -- a very long english word ocuppying more than one line
-                    cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
-                    cur_line_width = cur_line_width - self.char_width_list[idx].width
-                else
-                    cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
-                    cur_line_width = adjusted_width
-                    idx = adjusted_idx + 1
-                end
-            end -- endif util.isSplitable(c)
+                -- we backtracked and we're below max width, we can let the
+                -- splitable char on this line
+                cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
+                cur_line_width = adjusted_width
+                idx = adjusted_idx + 1
+            end
         end -- endif cur_line_width > self.width
         if cur_line_width < 0 then break end
         self.vertical_string_list[ln] = {
@@ -144,6 +155,12 @@ function TextBoxWidget:_splitCharWidthList()
             idx = idx + 1
             -- FIXME: reuse newline entry
             self.vertical_string_list[ln+1] = {text = "", offset = idx, width = 0}
+        else
+            -- If next char is a space, discard it so it does not become
+            -- an ugly leading space on the next line
+            if idx <= size and self.char_width_list[idx].char == " " then
+                idx = idx + 1
+            end
         end
         ln = ln + 1
         -- Make sure `idx` point to the next char to be processed in the next loop.
@@ -288,11 +305,12 @@ function TextBoxWidget:free()
     end
 end
 
+-- Allow selection of a single word at hold position
 function TextBoxWidget:onHoldWord(callback, ges)
     if not callback then return end
 
     local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
-    local line_num = math.ceil(y / self.line_height_px)
+    local line_num = math.ceil(y / self.line_height_px) + self.virtual_line_num-1
     local line = self.vertical_string_list[line_num]
     DEBUG("holding on line", line)
     if line then
@@ -331,6 +349,119 @@ function TextBoxWidget:onHoldWord(callback, ges)
     end
 
     return
+end
+
+
+-- Allow selection of one or more words (with no visual feedback)
+-- Gestures should be declared in widget using us (e.g dictquicklookup.lua)
+
+-- Constants for which side of a word to find
+local FIND_START = 1
+local FIND_END = 2
+
+function TextBoxWidget:onHoldStartText(_, ges)
+    -- just store hold start position and timestamp, will be used on release
+    self.hold_start_x = ges.pos.x - self.dimen.x
+    self.hold_start_y = ges.pos.y - self.dimen.y
+    self.hold_start_tv = TimeVal.now()
+    return true
+end
+
+function TextBoxWidget:onHoldReleaseText(callback, ges)
+    if not callback then return end
+
+    local hold_end_x = ges.pos.x - self.dimen.x
+    local hold_end_y = ges.pos.y - self.dimen.y
+    local hold_duration = TimeVal.now() - self.hold_start_tv
+    hold_duration = hold_duration.sec + hold_duration.usec/1000000
+
+    -- Swap start and end if needed
+    local x0, y0, x1, y1
+    -- first, sort by y/line_num
+    local start_line_num = math.ceil(self.hold_start_y / self.line_height_px)
+    local end_line_num = math.ceil(hold_end_y / self.line_height_px)
+    if start_line_num < end_line_num then
+        x0, y0 = self.hold_start_x, self.hold_start_y
+        x1, y1 = hold_end_x, hold_end_y
+    elseif start_line_num > end_line_num then
+        x0, y0 = hold_end_x, hold_end_y
+        x1, y1 = self.hold_start_x, self.hold_start_y
+    else -- same line_num : sort by x
+        if self.hold_start_x <= hold_end_x then
+            x0, y0 = self.hold_start_x, self.hold_start_y
+            x1, y1 = hold_end_x, hold_end_y
+        else
+            x0, y0 = hold_end_x, hold_end_y
+            x1, y1 = self.hold_start_x, self.hold_start_y
+        end
+    end
+
+    -- similar code to find start or end is in _findWordEdge() helper
+    local sel_start_idx = self:_findWordEdge(x0, y0, FIND_START)
+    local sel_end_idx = self:_findWordEdge(x1, y1, FIND_END)
+
+    if not sel_start_idx or not sel_end_idx then
+        -- one or both hold points were out of text
+        return true
+    end
+
+    local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
+    DEBUG("onHoldReleaseText (duration:", hold_duration, ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    callback(selected_text, hold_duration)
+    return true
+end
+
+function TextBoxWidget:_findWordEdge(x, y, side)
+    if side ~= FIND_START and side ~= FIND_END then
+        return
+    end
+    local line_num = math.ceil(y / self.line_height_px) + self.virtual_line_num-1
+    local line = self.vertical_string_list[line_num]
+    if not line then
+        return -- below last line : no selection
+    end
+    local char_start = line.offset
+    local char_end  -- char_end is non-inclusive
+    if line_num >= #self.vertical_string_list then
+        char_end = #self.char_width_list + 1
+    else
+        char_end = self.vertical_string_list[line_num+1].offset
+    end
+    local char_probe_x = 0
+    local idx = char_start
+    local edge_idx = nil
+    -- find which character the touch is holding
+    while idx < char_end do
+        local c = self.char_width_list[idx]
+        char_probe_x = char_probe_x + c.width
+        if char_probe_x > x then
+            -- character found, find which word the character is in, and
+            -- get its start/end idx
+            local words = util.splitToWords(line.text)
+            -- words may contain separators (space, punctuation) : we don't
+            -- discriminate here, it's the caller job to clean what was
+            -- selected
+            local probe_idx = char_start
+            local next_probe_idx
+            for _, w in ipairs(words) do
+                next_probe_idx = probe_idx + #util.splitToChars(w)
+                if idx < next_probe_idx then
+                    if side == FIND_START then
+                        edge_idx = probe_idx
+                    elseif side == FIND_END then
+                        edge_idx = next_probe_idx - 1
+                    end
+                    break
+                end
+                probe_idx = next_probe_idx
+            end
+            if edge_idx then
+                break
+            end
+        end
+        idx = idx + 1
+    end
+    return edge_idx
 end
 
 return TextBoxWidget

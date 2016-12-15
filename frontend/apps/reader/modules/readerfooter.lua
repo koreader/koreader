@@ -1,4 +1,4 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -6,7 +6,6 @@ local ProgressWidget = require("ui/widget/progresswidget")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
 local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
@@ -88,7 +87,7 @@ local footerTextGeneratorMap = {
     end,
 }
 
-local ReaderFooter = InputContainer:new{
+local ReaderFooter = WidgetContainer:new{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
@@ -152,27 +151,31 @@ function ReaderFooter:init()
         last = nil, -- last will be initialized in self:updateFooterText
     }
 
-    local margin_span = HorizontalSpan:new{width = self.horizontal_margin}
-    self.horizontal_group = HorizontalGroup:new{margin_span}
+    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
+    self.horizontal_group = HorizontalGroup:new{ margin_span }
     self.text_container = RightContainer:new{
-        dimen = Geom:new{w = 0, h = self.height},
+        dimen = Geom:new{ w = 0, h = self.height },
         self.footer_text,
     }
     table.insert(self.horizontal_group, self.progress_bar)
     table.insert(self.horizontal_group, self.text_container)
     table.insert(self.horizontal_group, margin_span)
-    self[1] = BottomContainer:new{
-        dimen = Geom:new{},
-        BottomContainer:new{
-            dimen = Geom:new{w = 0, h = self.height*2},
-            FrameContainer:new{
-                self.horizontal_group,
-                background = Blitbuffer.COLOR_WHITE,
-                bordersize = 0,
-                padding = 0,
-            }
-        }
+
+    self.footer_content = FrameContainer:new{
+        self.horizontal_group,
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        padding = 0,
     }
+    self.footer_container = BottomContainer:new{
+        dimen = Geom:new{ w = 0, h = self.height*2 },
+        self.footer_content,
+    }
+    self.footer_positioner = BottomContainer:new{
+        dimen = Geom:new{},
+        self.footer_container,
+    }
+    self[1] = self.footer_positioner
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     if self.settings.all_at_once then
@@ -181,7 +184,6 @@ function ReaderFooter:init()
     else
         self:applyFooterMode()
     end
-    self:resetLayout()
 
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
@@ -201,7 +203,30 @@ function ReaderFooter:setupAutoRefreshTime()
     UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
 end
 
--- call this method whenever the screen size changed
+function ReaderFooter:setupTouchZones()
+    if not Device:isTouchDevice() then return end
+    local footer_screen_zone = {
+        ratio_x = DTAP_ZONE_MINIBAR.x, ratio_y = DTAP_ZONE_MINIBAR.y,
+        ratio_w = DTAP_ZONE_MINIBAR.w, ratio_h = DTAP_ZONE_MINIBAR.h,
+    }
+    self.ui:registerTouchZones({
+        {
+            id = "footer_tap",
+            ges = "tap",
+            screen_zone = footer_screen_zone,
+            handler = function() return self:onTapFooter() end,
+            overrides = { 'tap_forward', 'tap_backward', },
+        },
+        {
+            id = "footer_hold",
+            ges = "hold",
+            screen_zone = footer_screen_zone,
+            handler = function() return self:onHoldFooter() end,
+        },
+    })
+end
+
+-- call this method whenever the screen size changes
 function ReaderFooter:resetLayout()
     local new_screen_width = Screen:getWidth()
     if new_screen_width == self._saved_screen_width then return end
@@ -209,34 +234,12 @@ function ReaderFooter:resetLayout()
 
     self.progress_bar.width = math.floor(new_screen_width - self.text_width - self.horizontal_margin*2)
     self.horizontal_group:resetLayout()
-    self[1].dimen.w = new_screen_width
-    self[1].dimen.h = new_screen_height
-    self[1][1].dimen.w = new_screen_width
-    self.dimen = self[1]:getSize()
+    self.footer_positioner.dimen.w = new_screen_width
+    self.footer_positioner.dimen.h = new_screen_height
+    self.footer_container.dimen.w = new_screen_width
+    self.dimen = self.footer_positioner:getSize()
 
     self._saved_screen_width = new_screen_width
-    if Device:isTouchDevice() then
-        local range = Geom:new{
-            x = new_screen_width*DTAP_ZONE_MINIBAR.x,
-            y = new_screen_height*DTAP_ZONE_MINIBAR.y,
-            w = new_screen_width*DTAP_ZONE_MINIBAR.w,
-            h = new_screen_height*DTAP_ZONE_MINIBAR.h
-        }
-        self.ges_events = {
-            TapFooter = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = range,
-                },
-            },
-            HoldFooter = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = range,
-                },
-            },
-        }
-    end
 end
 
 function ReaderFooter:getHeight()
@@ -309,7 +312,7 @@ function ReaderFooter:addToMainMenu(tab_item_table)
            y = DTAP_ZONE_MINIBAR.y,
            w = DTAP_ZONE_MINIBAR.w,
            h = DTAP_ZONE_MINIBAR.h
-       }:sizeof() == 0 then
+       }:area() == 0 then
         table.insert(sub_items, {
             text = _("Toggle mode"),
             enabled_func = function()
@@ -481,7 +484,7 @@ function ReaderFooter:_updateFooterText()
         self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
-    UIManager:setDirty(self.view.dialog, "ui", self[1][1][1].dimen)
+    UIManager:setDirty(self.view.dialog, "ui", self.footer_content.dimen)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
@@ -501,6 +504,8 @@ end
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 
 function ReaderFooter:onReaderReady()
+    self:setupTouchZones()
+    self:resetLayout()  -- set widget dimen
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:updateFooter()
@@ -574,7 +579,7 @@ function ReaderFooter:onTapFooter(arg, ges)
     return true
 end
 
-function ReaderFooter:onHoldFooter(arg, ges)
+function ReaderFooter:onHoldFooter()
     if self.mode == MODE.off then return end
     self.ui:handleEvent(Event:new("ShowGotoDialog"))
     return true

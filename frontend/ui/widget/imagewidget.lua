@@ -83,14 +83,18 @@ function ImageWidget:_loadfile()
             -- hit cache
             self._bb = cache.bb
         else
-            -- cache this image
-            DEBUG("cache", hash)
-            cache = ImageCacheItem:new{
-                bb = Mupdf.renderImageFile(self.file, self.width, self.height),
-            }
-            cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8
-            ImageCache:insert(hash, cache)
-            self._bb = cache.bb
+            if self.height and self.height > 200 then -- don't cache big images
+                self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
+            else
+                -- cache this image
+                DEBUG("cache", hash)
+                cache = ImageCacheItem:new{
+                    bb = Mupdf.renderImageFile(self.file, self.width, self.height),
+                }
+                cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8
+                ImageCache:insert(hash, cache)
+                self._bb = cache.bb
+            end
         end
     else
         error("Image file type not supported.")
@@ -98,6 +102,9 @@ function ImageWidget:_loadfile()
 end
 
 function ImageWidget:_render()
+    if self._bb then -- already rendered
+        return
+    end
     if self.image then
         self:_loadimage()
     elseif self.file then

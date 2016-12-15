@@ -93,17 +93,102 @@ describe("util module", function()
             if i == #table_chars then table.insert(table_of_words, word) end
         end
         assert.are_same(table_of_words, {
-            "Pójdźże,",
-            " ",
+            "Pójdźże, ",
             "chmurność ",
             "glück ",
             "schließen ",
             "Štěstí ",
-            "neštěstí.",
-            " ",
+            "neštěstí. ",
             "Uñas ",
             "gavilán",
         })
     end)
+
+    it("should split text to line - CJK", function()
+        local text = "彩虹是通过太阳光的折射引起的。"
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            word = word .. c
+            if util.isSplitable(c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
+        })
+    end)
+
+    it("should split text to line with next_c - unicode", function()
+        local text = "Ce test : 1) est très simple ; 2 ) simple comme ( 2/2 ) > 50 % ? ok."
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            next_c = i < #table_chars and table_chars[i+1] or nil
+            word = word .. c
+            if util.isSplitable(c, next_c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "Ce ",
+            "test : ",
+            "1) ",
+            "est ",
+            "très ",
+            "simple ; ",
+            "2 ) ",
+            "simple ",
+            "comme ",
+            "( ",
+            "2/2 ) > ",
+            "50 % ? ",
+            "ok."
+        })
+    end)
+
+    it("should split text to line with next_c and prev_c - unicode", function()
+        local text = "Ce test : 1) est « très simple » ; 2 ) simple comme ( 2/2 ) > 50 % ? ok."
+        local word = ""
+        local table_of_words = {}
+        local c
+        local table_chars = util.splitToChars(text)
+        for i = 1, #table_chars  do
+            c = table_chars[i]
+            next_c = i < #table_chars and table_chars[i+1] or nil
+            prev_c = i > 1 and table_chars[i-1] or nil
+            word = word .. c
+            if util.isSplitable(c, next_c, prev_c) then
+                table.insert(table_of_words, word)
+                word = ""
+            end
+            if i == #table_chars then table.insert(table_of_words, word) end
+        end
+        assert.are_same(table_of_words, {
+            "Ce ",
+            "test : ",
+            "1) ",
+            "est ",
+            "« très ",
+            "simple » ; ",
+            "2 ) ",
+            "simple ",
+            "comme ",
+            "( 2/2 ) > 50 % ? ",
+            "ok."
+        })
+    end)
+
+
 
 end)

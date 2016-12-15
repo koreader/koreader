@@ -100,6 +100,7 @@ function ReaderUI:init()
     self.doc_settings = DocSettings:open(self.document.file)
 
     -- a view container (so it must be child #1!)
+    -- all paintable widgets need to be a child of reader view
     self:registerModule("view", ReaderView:new{
         dialog = self.dialog,
         dimen = self.dimen,
@@ -317,7 +318,6 @@ function ReaderUI:init()
         })
     end
 
-    --dbg(self.doc_settings)
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
@@ -445,8 +445,9 @@ function ReaderUI:closeDialog()
     UIManager:close(self.password_dialog)
 end
 
-function ReaderUI:onSetDimensions(dimen)
+function ReaderUI:onScreenResize(dimen)
     self.dimen = dimen
+    self:updateTouchZonesOnScreenResize(dimen)
 end
 
 function ReaderUI:saveSettings()

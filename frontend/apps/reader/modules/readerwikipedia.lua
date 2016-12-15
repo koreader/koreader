@@ -3,65 +3,147 @@ local Translator = require("ui/translator")
 local Wikipedia = require("ui/wikipedia")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 -- Wikipedia as a special dictionary
 local ReaderWikipedia = ReaderDictionary:extend{
     -- identify itself
-    wiki = true,
+    is_wiki = true,
+    wiki_languages = {},
     no_page = _("No wiki page found."),
+    lookup_msg = _("Searching Wikipedia for:\n%1")
 }
 
--- the super "class" ReaderDictionary has already registers a menu entry
--- we should override the init function in ReaderWikipedia
 function ReaderWikipedia:init()
+    self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderWikipedia:onLookupWikipedia(word, box)
-    -- set language from book properties
-    local lang = self.view.document:getProps().language
-    if lang == nil then
-        -- or set laguage from KOReader settings
-        lang = G_reader_settings:readSetting("language")
-        if lang == nil then
-            -- or detect language
-            local ok_translator
-            ok_translator, lang = pcall(Translator.detect, Translator, word)
-            if not ok_translator then return end
-        end
+function ReaderWikipedia:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.plugins, {
+        text = _("Wikipedia lookup"),
+        tap_input = {
+            title = _("Enter words to look up on Wikipedia"),
+            type = "text",
+            callback = function(input)
+                self:onLookupWikipedia(input)
+            end,
+        },
+    })
+end
+
+function ReaderWikipedia:initLanguages(word)
+    if #self.wiki_languages > 0 then -- already done
+        return
     end
-    -- convert "zh-CN" and "zh-TW" to "zh"
-    lang = lang:match("(.*)-") or lang
-    -- strip punctuation characters around selected word
-    word = string.gsub(word, "^%p+", '')
-    word = string.gsub(word, "%p+$", '')
-    -- seems lower case phrase has higher hit rate
-    word = string.lower(word)
+    -- Fill self.wiki_languages with languages to propose
+    local wikipedia_languages = G_reader_settings:readSetting("wikipedia_languages")
+    if type(wikipedia_languages) == "table" and #wikipedia_languages > 0 then
+        -- use this setting, no need to guess
+        self.wiki_languages = wikipedia_languages
+    else
+        -- guess some languages
+        self.seen_lang = {}
+        local addLanguage = function(lang)
+            if lang and lang ~= "" then
+                -- convert "zh-CN" and "zh-TW" to "zh"
+                lang = lang:match("(.*)-") or lang
+                if lang == "C" then lang="en" end
+                lang = lang:lower()
+                if not self.seen_lang[lang] then
+                    table.insert(self.wiki_languages, lang)
+                    self.seen_lang[lang] = true
+                end
+            end
+        end
+        -- use book and UI languages
+        addLanguage(self.view.document:getProps().language)
+        addLanguage(G_reader_settings:readSetting("language"))
+        if #self.wiki_languages == 0 and word then
+            -- if no language at all, do a translation of selected word
+            local ok_translator, lang
+            ok_translator, lang = pcall(Translator.detect, Translator, word)
+            if ok_translator then
+                addLanguage(lang)
+            end
+        end
+        -- add english anyway, so we have at least one language
+        addLanguage("en")
+    end
+end
+
+function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
+    -- word is the text to query. If get_fullpage is true, it is the
+    -- exact wikipedia page title we want the full page of.
+    self:initLanguages(word)
+    -- use first lang from self.wiki_languages, which may have been rotated by DictQuickLookup
+    local lang = self.wiki_languages[1]
+    DEBUG("lookup word:", word, box, get_fullpage)
+    -- no need to clean word if get_fullpage, as it is the exact wikipetia page title
+    if word and not get_fullpage then
+        -- escape quotes and other funny characters in word
+        word = self:cleanSelection(word)
+        -- no need to lower() word with wikipedia search
+    end
+    DEBUG("stripped word:", word)
+    if word == "" then
+        return
+    end
+    self:onLookupStarted(word)
     local results = {}
-    local ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
+    local ok, pages
+    if get_fullpage then
+        ok, pages = pcall(Wikipedia.wikifull, Wikipedia, word, lang)
+    else
+        ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
+    end
     if ok and pages then
+        -- sort pages according to 'index' attribute if present (not present
+        -- in fullpage results)
+        local sorted_pages = {}
+        local has_indexes = false
         for pageid, page in pairs(pages) do
+            if page.index ~= nil then
+                sorted_pages[page.index+1] = page
+                has_indexes = true
+            end
+        end
+        if has_indexes then
+            pages = sorted_pages
+        end
+        for pageid, page in pairs(pages) do
+            local definition = page.extract or self.no_page
+            if page.length then
+                -- we get 'length' only for intro results
+                -- let's append it to definition so we know
+                -- how big/valuable the full page is
+                local fullkb = math.ceil(page.length/1024)
+                local more_factor = math.ceil( page.length / (1+definition:len()) ) -- +1 just in case len()=0
+                definition = definition .. "\n" .. T(_("(full page : %1 kB, = %2 x this intro length)"), fullkb, more_factor)
+            end
             local result = {
-                dict = _("Wikipedia"),
+                dict = T(_("Wikipedia %1"), lang:upper()),
                 word = page.title,
-                definition = page.extract or self.no_page,
+                definition = definition,
+                is_fullpage = get_fullpage,
             }
             table.insert(results, result)
         end
         DEBUG("lookup result:", word, results)
-        self:showDict(word, results, box)
     else
         DEBUG("error:", pages)
         -- dummy results
         results = {
             {
-                dict = _("Wikipedia"),
+                dict = T(_("Wikipedia %1"), lang:upper()),
                 word = word,
                 definition = self.no_page,
+                is_fullpage = get_fullpage,
             }
         }
         DEBUG("dummy result table:", word, results)
-        self:showDict(word, results, box)
     end
+    self:onLookupDone()
+    self:showDict(word, results, box)
 end
 
 -- override onSaveSettings in ReaderDictionary

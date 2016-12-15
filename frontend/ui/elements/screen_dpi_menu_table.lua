@@ -60,11 +60,11 @@ return {
             hold_input = {
                 title = _("Input screen DPI"),
                 type = "number",
-                hint = "(90 - 330)",
+                hint = "(90 - 600)",
                 callback = function(input)
                     local _dpi = tonumber(input)
                     _dpi = _dpi < 90 and 90 or _dpi
-                    _dpi = _dpi > 330 and 330 or _dpi
+                    _dpi = _dpi > 600 and 600 or _dpi
                     G_reader_settings:saveSetting("custom_screen_dpi", _dpi)
                     setDPI(_dpi)
                 end,

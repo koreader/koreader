@@ -1,20 +1,17 @@
 Data Store
 ==========
 
-LuaSettings
------------
+## LuaSettings ##
 
 TODO
 
 
-DocSettings
------------
+## DocSettings ##
 
 TODO
 
 
-SQLite3
--------
+## SQLite3 ##
 
 KOReader ships with the SQLite3 library, which is a great embedded database for
 desktop and mobile applications.

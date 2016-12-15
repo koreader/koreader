@@ -6,7 +6,7 @@ local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local DocumentRegistry = require("document/documentregistry")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Screenshoter = require("ui/widget/screenshoter")
-local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local InputDialog = require("ui/widget/inputdialog")
 local VerticalSpan = require("ui/widget/verticalspan")
 local FileChooser = require("ui/widget/filechooser")
@@ -157,6 +157,24 @@ function FileManager:init()
                         UIManager:close(self.file_dialog)
                     end,
                 },
+                {
+                    text = _("Purge .sdr"),
+                    enabled = DocSettings:hasSidecarDir(util.realpath(file)),
+                    callback = function()
+                        local full_path = util.realpath(file)
+                        util.purgeDir(DocSettings:getSidecarDir(full_path))
+                        self:refreshPath()
+                        -- also remove from history if present
+                        local readhistory = require("readhistory")
+                        for _, hist_item in ipairs(readhistory.hist) do
+                            if hist_item.file == full_path then
+                                readhistory:removeItem(hist_item)
+                                break
+                            end
+                        end
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
             },
             {
                 {
@@ -244,7 +262,10 @@ function FileManager:init()
                 }
             })
         end
-        self.file_dialog = ButtonDialog:new{
+
+        self.file_dialog = ButtonDialogTitle:new{
+            title = file:match("([^/]+)$"),
+            title_align = "center",
             buttons = buttons,
         }
         UIManager:show(self.file_dialog)
@@ -359,6 +380,10 @@ function FileManager:pasteHere(file)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
         if self.cutfile then
+            -- if we move a file, also move its sidecar directory
+            if DocSettings:hasSidecarDir(orig) then
+                self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
+            end
             self:moveFile(orig, dest)
         else
             util.execute(self.cp_bin, "-r", orig, dest)
