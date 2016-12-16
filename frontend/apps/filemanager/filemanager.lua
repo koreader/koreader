@@ -296,11 +296,13 @@ function FileManager:init()
         ui = self,
     })
 
+    self.loaded_modules = {}
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
         DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
         if plugin_module.docless then
-            plugin_module:new{ ui = self, }
+            -- Keep references to the modules which do not register into menu.
+            table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
         end
     end
 
