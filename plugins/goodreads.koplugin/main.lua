@@ -81,7 +81,7 @@ function Goodreads:updateSettings()
     "3. Your key and secret key will now be available on https://www.goodreads.com/api/keys\n" ..
     "4. Enter your generated key and your secret key in the settings dialog (Login to Goodreads window)"
     if self.goodreads_key == "" then
-        hint_top = _("Goodreads Key Not Set")
+        hint_top = _("Goodreads key left empty")
         text_top = ""
     else
         hint_top = ""
@@ -89,7 +89,7 @@ function Goodreads:updateSettings()
     end
 
     if self.goodreads_secret == "" then
-        hint_bottom = _("Goodreads Secret Key Not Set (optional)")
+        hint_bottom = _("Goodreads secret left empty (optional)")
         text_bottom = ""
     else
         hint_bottom = ""
@@ -194,7 +194,7 @@ function Goodreads:search(search_type)
                     callback = function()
                         text_input = search_input:getInputText()
                         if text_input ~= nil and text_input ~= "" then
-                            info = InfoMessage:new{text = _("Please wait..."), timeout = 0.0}
+                            info = InfoMessage:new{text = _("Please wait…"), timeout = 0.0}
                             UIManager:show(info)
                             UIManager:nextTick(function()
                                 result = DoubleKeyValuePage:new{
