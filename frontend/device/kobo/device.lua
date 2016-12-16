@@ -99,7 +99,8 @@ local KoboPhoenix = Kobo:new{
 local KoboStar = Kobo:new{
     model = "Kobo_star",
     hasFrontlight = yes,
-    touch_alyssum_protocol = true,
+    touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
     display_dpi = 212,
     -- the bezel covers 12 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
