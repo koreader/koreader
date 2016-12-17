@@ -224,6 +224,10 @@ end
 -- Click event: Move the cursor to a new location with (x, y), in pixels.
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:moveCursor(x, y)
+    if #self.vertical_string_list == 0 then
+        -- if there's no text at all, nothing to do
+        return 1
+    end
     local w = 0
     local ln = self.height == nil and 1 or self.virtual_line_num
     ln = ln + math.ceil(y / self.line_height_px) - 1
@@ -372,6 +376,19 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
 
     local hold_end_x = ges.pos.x - self.dimen.x
     local hold_end_y = ges.pos.y - self.dimen.y
+
+    -- check we have seen a HoldStart event
+    if not self.hold_start_tv then
+        return false
+    end
+    -- check start and end coordinates are actually inside our area
+    if self.hold_start_x < 0 or hold_end_x < 0 or
+        self.hold_start_x > self.dimen.w or hold_end_x > self.dimen.w or
+        self.hold_start_y < 0 or hold_end_y < 0 or
+        self.hold_start_y > self.dimen.h or hold_end_y > self.dimen.h then
+        return false
+    end
+
     local hold_duration = TimeVal.now() - self.hold_start_tv
     hold_duration = hold_duration.sec + hold_duration.usec/1000000
 
@@ -395,6 +412,12 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
             x1, y1 = self.hold_start_x, self.hold_start_y
         end
     end
+
+    -- Reset start infos, so we do not reuse them and can catch
+    -- a missed start event
+    self.hold_start_x = nil
+    self.hold_start_y = nil
+    self.hold_start_tv = nil
 
     -- similar code to find start or end is in _findWordEdge() helper
     local sel_start_idx = self:_findWordEdge(x0, y0, FIND_START)
