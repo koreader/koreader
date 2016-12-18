@@ -30,18 +30,6 @@ local CloudStorage = Menu:extend{
 }
 
 function CloudStorage:init()
-    self:initial()
-    self.callback_refresh = function()
-        self.cs_settings = self:readSettings()
-        self.menu_select = nil
-        self.title = "Cloud Storage"
-        self.show_parent = self
-        self.item_table = self:genItemTableFromRoot()
-        Menu.init(self)
-    end
-end
-
-function CloudStorage:initial()
     self.cs_settings = self:readSettings()
     self.menu_select = nil
     self.title = "Cloud Storage"
@@ -293,7 +281,7 @@ function CloudStorage:configCloud(type)
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
-        self.callback_refresh()
+        self:init()
     end
     if type == "dropbox" then
         DropBox:config(nil, callbackAdd)
@@ -330,7 +318,7 @@ function CloudStorage:editCloudServer(item)
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
-        self.callback_refresh()
+        self:init()
     end
     if item.type == "dropbox" then
         DropBox:config(item, callbackEdit)
@@ -359,7 +347,7 @@ function CloudStorage:deleteCloudServer(item)
     end
     cs_settings:saveSetting("cs_servers", cs_servers)
     cs_settings:flush()
-    self:initial()
+    self:init()
 end
 
 function CloudStorage:infoServer(item)
