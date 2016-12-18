@@ -73,7 +73,7 @@ function CloudStorage:genItemTableFromRoot()
                 self.password = server.password
                 self.address = server.address
                 self.username = server.username
-                self:openCloudServer(self.type, server.url)
+                self:openCloudServer(server.url)
             end,
         })
     end
@@ -111,22 +111,12 @@ function CloudStorage:selectCloudType()
     return true
 end
 
-function CloudStorage:configCloud(type)
-    if type == "dropbox" then
-        DropBox:configDropbox(nil, self.callback_refresh)
-    end
-    if type == "ftp" then
-        Ftp:configFtp(nil, self.callback_refresh)
-    end
-end
-
-function CloudStorage:openCloudServer(type, url)
+function CloudStorage:openCloudServer(url)
     local tbl
-    if type == "dropbox" then
-        tbl = DropBox:runDropbox(url, self.password)
-    end
-    if type == "ftp" then
-        tbl = Ftp:runFtp(self.address, self.username, self.password, url)
+    if self.type == "dropbox" then
+        tbl = DropBox:run(url, self.password)
+    elseif self.type == "ftp" then
+        tbl = Ftp:run(self.address, self.username, self.password, url)
     end
     if tbl and #tbl > 0 then
         self:swithItemTable(url, tbl)
@@ -140,7 +130,7 @@ function CloudStorage:openCloudServer(type, url)
         return false
     else
         UIManager:show(InfoMessage:new{text = _("Empty folder") })
-            return false
+        return false
     end
 end
 
@@ -158,7 +148,7 @@ function CloudStorage:onMenuSelect(item)
         table.insert(self.paths, {
             url = item.url,
         })
-        if not self:openCloudServer(self.type, item.url) then
+        if not self:openCloudServer(item.url) then
             table.remove(self.paths)
         end
     end
@@ -168,21 +158,22 @@ end
 function CloudStorage:downloadFile(item)
     local lastdir = G_reader_settings:readSetting("lastdir")
     local cs_settings = self:readSettings()
-    local download_dir = cs_settings:readSetting("download_file") or lastdir
+    local download_dir = cs_settings:readSetting("download_dir") or lastdir
     local path = download_dir .. '/' .. item.text
     if lfs.attributes(path) then
         UIManager:show(ConfirmBox:new{
             text = _("File exist! Would you like to override it?"),
             ok_callback = function()
-                self:cloudFile(item)
+                self:cloudFile(item, path)
             end
         })
     else
-        self:cloudFile(item)
+        self:cloudFile(item, path)
     end
 end
 
-function CloudStorage:cloudFile(item)
+function CloudStorage:cloudFile(item, path)
+    local path_dir = path
     local buttons = {
         {
             {
@@ -194,21 +185,20 @@ function CloudStorage:cloudFile(item)
                             self:onClose()
                         end
                         UIManager:scheduleIn(1, function()
-                            DropBox:downloadDropboxFile(item, self.password, callback_close)
+                            DropBox:downloadFile(item, self.password, path_dir, callback_close)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
                             text = _("Downloading may take several minutes..."),
                             timeout = 1,
                         })
-                    end
                     -- FTP
-                    if self.type == "ftp" then
+                    elseif self.type == "ftp" then
                         local callback_close = function()
                             self:onClose()
                         end
                         UIManager:scheduleIn(1, function()
-                            Ftp:downloadFtpFile(item, self.address, self.username, self.password, callback_close)
+                            Ftp:downloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
@@ -225,9 +215,10 @@ function CloudStorage:cloudFile(item)
                 callback = function()
                     require("ui/downloadmgr"):new{
                         title = _("Choose download directory"),
-                        onConfirm = function(path)
-                            self.cs_settings:saveSetting("download_file", path)
+                        onConfirm = function(path_download)
+                            self.cs_settings:saveSetting("download_dir", path_download)
                             self.cs_settings:flush()
+                            path_dir = path_download .. '/' .. item.text
                         end,
                     }:chooseDir()
                 end,
@@ -279,37 +270,108 @@ function CloudStorage:onMenuHold(item)
     end
 end
 
-function CloudStorage:editCloudServer(item)
-    item.callback_refresh = self.callback_refresh
-    if item.type == "dropbox" then
-        DropBox:configDropbox(item, self.callback_refresh)
+function CloudStorage:configCloud(type)
+    local callbackAdd = function(fields)
+        local cs_settings = self:readSettings()
+        local cs_servers = cs_settings:readSetting("cs_servers") or {}
+        if type == "dropbox" then
+            table.insert(cs_servers,{
+                name = fields[1],
+                password = fields[2],
+                type = "dropbox",
+                url = "/"
+            })
+        elseif type == "ftp" then
+            table.insert(cs_servers,{
+                name = fields[1],
+                address = fields[2],
+                username = fields[3],
+                password = fields[4],
+                type = "ftp",
+                url = "/"
+            })
+        end
+        cs_settings:saveSetting("cs_servers", cs_servers)
+        cs_settings:flush()
+        self.callback_refresh()
     end
-    if item.type == "ftp" then
-        Ftp:configFtp(item, self.callback_refresh)
+    if type == "dropbox" then
+        DropBox:config(nil, callbackAdd)
+    end
+    if type == "ftp" then
+        Ftp:config(nil, callbackAdd)
+    end
+end
+
+function CloudStorage:editCloudServer(item)
+    local callbackEdit = function(updated_config, fields)
+        local cs_settings = self:readSettings()
+        local cs_servers = cs_settings:readSetting("cs_servers") or {}
+        if item.type == "dropbox" then
+            for i, server in ipairs(cs_servers) do
+                if server.name == updated_config.text and server.password == updated_config.password then
+                    server.name = fields[1]
+                    server.password = fields[2]
+                    cs_servers[i] = server
+                    break
+                end
+            end
+        elseif item.type == "ftp" then
+            for i, server in ipairs(cs_servers) do
+                if server.name == updated_config.text and server.address == updated_config.address then
+                    server.name = fields[1]
+                    server.address = fields[2]
+                    server.username = fields[3]
+                    server.password = fields[4]
+                    cs_servers[i] = server
+                    break
+                end
+            end
+        end
+        cs_settings:saveSetting("cs_servers", cs_servers)
+        cs_settings:flush()
+        self.callback_refresh()
+    end
+    if item.type == "dropbox" then
+        DropBox:config(item, callbackEdit)
+    elseif item.type == "ftp" then
+        Ftp:config(item, callbackEdit)
     end
 end
 
 function CloudStorage:deleteCloudServer(item)
+    local cs_settings = self:readSettings()
+    local cs_servers = cs_settings:readSetting("cs_servers") or {}
     if item.type == "dropbox" then
-        DropBox:deleteDropboxServer(item)
+        for i, server in ipairs(cs_servers) do
+            if server.name == item.text and server.password == item.password then
+                table.remove(cs_servers, i)
+                break
+            end
+        end
+    elseif item.type == "ftp" then
+        for i, server in ipairs(cs_servers) do
+            if server.name == item.text and server.password == item.password then
+                table.remove(cs_servers, i)
+                break
+            end
+        end
     end
-    if item.type == "ftp" then
-        Ftp:deleteFtpServer(item)
-    end
+    cs_settings:saveSetting("cs_servers", cs_servers)
+    cs_settings:flush()
     self:initial()
 end
 
 function CloudStorage:infoServer(item)
     if item.type == "dropbox" then
-        DropBox:infoDropbox(item.password)
-    end
-    if item.type == "ftp" then
-        Ftp:infoFtp(item)
+        DropBox:info(item.password)
+    elseif item.type == "ftp" then
+        Ftp:info(item)
     end
 end
 
 function CloudStorage:readSettings()
-    self.cs_settings = LuaSettings:open(DataStorage:getSettingsDir().."/cssettings.lua")
+    self.cs_settings = LuaSettings:open(DataStorage:getSettingsDir().."/cloudstorage.lua")
     return self.cs_settings
 end
 
@@ -319,7 +381,7 @@ function CloudStorage:onReturn()
         local path = self.paths[#self.paths]
         if path then
             -- return to last path
-            self:openCloudServer(self.type, path.url)
+            self:openCloudServer(path.url)
         else
             -- return to root path
             self:init()

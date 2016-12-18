@@ -1,4 +1,3 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local url = require('socket.url')
 local socket = require('socket')
 local http = require('socket.http')
@@ -8,16 +7,17 @@ local _ = require("gettext")
 local JSON = require("json")
 local DocumentRegistry = require("document/documentregistry")
 
-local DropBoxApi = InputContainer:new {
-    url_info = "https://api.dropboxapi.com/2/users/get_current_account",
-    api_list_folder = "https://api.dropboxapi.com/2/files/list_folder",
-    api_download_file = "https://content.dropboxapi.com/2/files/download"
+local DropBoxApi = {
 }
+
+local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
+local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
+local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 
 function DropBoxApi:fetchInfo(token)
     local request, sink = {}, {}
-    local parsed = url.parse(self.url_info)
-    request['url'] = self.url_info
+    local parsed = url.parse(API_URL_INFO)
+    request['url'] = API_URL_INFO
     request['method'] = 'POST'
     local headers = { ["Authorization"] = "Bearer ".. token }
     request['headers'] = headers
@@ -41,8 +41,8 @@ end
 function DropBoxApi:fetchListFolders(path, token)
     local request, sink = {}, {}
     if path == nil or path == "/" then path = "" end
-    local parsed = url.parse(self.api_list_folder)
-    request['url'] = self.api_list_folder
+    local parsed = url.parse(API_LIST_FOLDER)
+    request['url'] = API_LIST_FOLDER
     request['method'] = 'POST'
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
@@ -73,8 +73,8 @@ function DropBoxApi:fetchListFolders(path, token)
 end
 
 function DropBoxApi:downloadFile(path, token, local_path)
-    local parsed = url.parse(self.api_download_file)
-    local url_api = self.api_download_file
+    local parsed = url.parse(API_DOWNLOAD_FILE)
+    local url_api = API_DOWNLOAD_FILE
     local data1 = "{\"path\": \"" .. path .. "\"}"
     local headers = { ["Authorization"] = "Bearer ".. token,
         ["Dropbox-API-Arg"] = data1}

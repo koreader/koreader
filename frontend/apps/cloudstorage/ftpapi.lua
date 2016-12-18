@@ -1,11 +1,11 @@
 local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local url = require("socket.url")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
 
-local FtpApi = InputContainer:new{
+local FtpApi = {
 }
+
 function FtpApi:nlst(u)
     local t = {}
     local p = url.parse(u)

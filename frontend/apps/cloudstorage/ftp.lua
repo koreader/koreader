@@ -1,4 +1,3 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local FtpApi = require("frontend/apps/cloudstorage/ftpapi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
@@ -8,10 +7,8 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
-local LuaSettings = require("luasettings")
-local DataStorage = require("datastorage")
 
-local Ftp = InputContainer:new {
+local Ftp = {
 }
 local function generateUrl(address, user, pass)
     local colon_sign = ""
@@ -27,17 +24,13 @@ local function generateUrl(address, user, pass)
     return url
 end
 
-function Ftp:runFtp(address, user, pass, path)
+function Ftp:run(address, user, pass, path)
     local url = generateUrl(address, user, pass) .. path
     return FtpApi:listFolder(url)
 end
 
-function Ftp:downloadFtpFile(item, address, user, pass, close)
+function Ftp:downloadFile(item, address, user, pass, path, close)
     local url = generateUrl(address, user, pass) .. item.url
-    local lastdir = G_reader_settings:readSetting("lastdir")
-    local cs_settings = self:readSettings()
-    local download_dir = cs_settings:readSetting("download_file") or lastdir
-    local path = download_dir .. '/' .. item.text
     local response = FtpApi:downloadFile(url)
     if response ~= nil then
         local file = io.open(path, "w")
@@ -59,7 +52,7 @@ function Ftp:downloadFtpFile(item, address, user, pass, close)
     end
 end
 
-function Ftp:configFtp(item, callback_refresh)
+function Ftp:config(item, callback)
     local text_info = "FTP address must be in the format ftp://example.domian.com\n"..
         "Also supported is format with IP e.g: ftp://10.10.10.1\n"..
         "Username and password are optional."
@@ -128,9 +121,11 @@ function Ftp:configFtp(item, callback_refresh)
                         local fields = MultiInputDialog:getFields()
                         if fields[1] ~= "" and fields[2] ~= "" then
                             if item then
-                                self:saveEditedSettingsFtp(fields, item, callback_refresh)
+                                -- edit
+                                callback(item, fields)
                             else
-                                self:saveSettingsFtp(fields, callback_refresh)
+                                -- add new
+                                callback(fields)
                             end
                             self.settings_dialog:onClose()
                             UIManager:close(self.settings_dialog)
@@ -149,69 +144,9 @@ function Ftp:configFtp(item, callback_refresh)
     UIManager:show(self.settings_dialog)
 end
 
-function Ftp:saveSettingsFtp(fields, callback_refresh)
-    local ftp_name = fields[1]
-    local ftp_address = fields[2]
-    local ftp_username = fields[3]
-    local ftp_password = fields[4]
-
-    local cs_settings = self:readSettings()
-    local cs_servers = cs_settings:readSetting("cs_servers") or {}
-    table.insert(cs_servers,{
-        name = ftp_name,
-        address = ftp_address,
-        username = ftp_username,
-        password = ftp_password,
-        type = "ftp",
-        url = "/"
-    })
-    cs_settings:saveSetting("cs_servers", cs_servers)
-    cs_settings:flush()
-    if callback_refresh then
-        callback_refresh()
-    end
-end
-
-function Ftp:saveEditedSettingsFtp(fields, item, callback_refresh)
-    local servers = {}
-    local cs_settings = self:readSettings()
-    local cs_servers = cs_settings:readSetting("cs_servers") or {}
-    for _, server in ipairs(cs_servers) do
-        if server.name == item.text and server.address == item.address then
-            server.name = fields[1]
-            server.address = fields[2]
-            server.username = fields[3]
-            server.password = fields[4]
-        end
-        table.insert(servers, server)
-    end
-    cs_settings:saveSetting("cs_servers", servers)
-    cs_settings:flush()
-    if callback_refresh then
-        callback_refresh()
-    end
-end
-
-function Ftp:deleteFtpServer(item)
-    local servers = {}
-    local cs_settings = self:readSettings()
-    local cs_servers = cs_settings:readSetting("cs_servers") or {}
-    for _, server in ipairs(cs_servers) do
-        if server.name ~= item.text and server.password ~= item.password then
-            table.insert(servers, server)
-        end
-    end
-    cs_settings:saveSetting("cs_servers", servers)
-    cs_settings:flush()
-end
-
-function Ftp:infoFtp(item)
+function Ftp:info(item)
     local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "FTP", item.text, item.address)
     UIManager:show(InfoMessage:new{text = info_text})
-end
-
-function Ftp:readSettings()
-    return LuaSettings:open(DataStorage:getSettingsDir().."/cssettings.lua")
 end
 
 return Ftp
