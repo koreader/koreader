@@ -5,7 +5,7 @@ local _ = require("gettext")
 
 local Hello = WidgetContainer:new{
     name = 'Hello',
-    docless = true,
+    is_doc_only = false,
     disabled = true,  -- This is a debug plugin
 }
 

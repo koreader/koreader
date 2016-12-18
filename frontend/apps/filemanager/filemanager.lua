@@ -26,7 +26,7 @@ local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
 local InfoMessage = require("ui/widget/infomessage")
-local PluginLoader = require("apps/reader/pluginloader")
+local PluginLoader = require("pluginloader")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -300,7 +300,7 @@ function FileManager:init()
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
         DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
-        if plugin_module.docless then
+        if not plugin_module.is_doc_only then
             -- Keep references to the modules which do not register into menu.
             table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
         end
