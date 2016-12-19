@@ -167,7 +167,6 @@ function CloudStorage:cloudFile(item, path)
             {
                 text = _("Download file"),
                 callback = function()
-                    --Dropbox
                     if self.type == "dropbox" then
                         local callback_close = function()
                             self:onClose()
@@ -180,7 +179,6 @@ function CloudStorage:cloudFile(item, path)
                             text = _("Downloading may take several minutes..."),
                             timeout = 1,
                         })
-                    -- FTP
                     elseif self.type == "ftp" then
                         local callback_close = function()
                             self:onClose()
@@ -330,19 +328,10 @@ end
 function CloudStorage:deleteCloudServer(item)
     local cs_settings = self:readSettings()
     local cs_servers = cs_settings:readSetting("cs_servers") or {}
-    if item.type == "dropbox" then
-        for i, server in ipairs(cs_servers) do
-            if server.name == item.text and server.password == item.password then
-                table.remove(cs_servers, i)
-                break
-            end
-        end
-    elseif item.type == "ftp" then
-        for i, server in ipairs(cs_servers) do
-            if server.name == item.text and server.password == item.password then
-                table.remove(cs_servers, i)
-                break
-            end
+    for i, server in ipairs(cs_servers) do
+        if server.name == item.text and server.password == item.password and server.type == item.type then
+            table.remove(cs_servers, i)
+            break
         end
     end
     cs_settings:saveSetting("cs_servers", cs_servers)
