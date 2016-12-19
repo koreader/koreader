@@ -16,6 +16,7 @@ local MyClipping = require("clip")
 
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
+    is_doc_only = true,
     login_title = _("Login to Evernote"),
     notebook_name = _("KOReader Notes"),
     evernote_domain = nil,

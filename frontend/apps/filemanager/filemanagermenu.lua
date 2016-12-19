@@ -232,16 +232,6 @@ function FileManagerMenu:setUpdateItemTable()
         }
     })
 
-    -- koreader plugins
-    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        dbg("Loaded plugin", plugin_module.name, "at", plugin_module.path)
-        if (plugin_module.docless) {
-            self:registerModule(plugin_module.name, plugin_module:new{
-                ui = self.ui,
-            })
-        }
-    end
-
     -- search tab
     table.insert(self.tab_item_table.search, {
         text = _("Find a book in calibre catalog"),
