@@ -174,7 +174,7 @@ Updates touch zones based on new screen dimensions.
 ]]
 function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
     for _, tzone in ipairs(self._touch_zones) do
-        local range = tzone.gs_range
+        local range = tzone.gs_range.range
         range.x = new_screen_dimen.w * tzone.def.screen_zone.ratio_x
         range.y = new_screen_dimen.h * tzone.def.screen_zone.ratio_y
         range.w = new_screen_dimen.w * tzone.def.screen_zone.ratio_w
