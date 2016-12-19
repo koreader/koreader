@@ -13,7 +13,6 @@ local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
-local PluginLoader = require("apps/reader/pluginloader")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
