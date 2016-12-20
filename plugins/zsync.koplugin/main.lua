@@ -14,6 +14,7 @@ int rmdir(const char *);
 require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
+    is_doc_only = true,
 }
 
 function ZSync:init()
