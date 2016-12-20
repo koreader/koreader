@@ -21,6 +21,7 @@ local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local page_max_time
 
 local ReaderStatistics = InputContainer:new {
+    is_doc_only = true,
     last_time = nil,
     page_min_read_sec = 5,
     page_max_read_sec = 90,
