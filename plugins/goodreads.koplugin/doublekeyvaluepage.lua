@@ -161,7 +161,7 @@ function DoubleKeyValueItem:init()
 end
 
 function DoubleKeyValueItem:onTap()
-    local info = InfoMessage:new{text = _("Please wait...")}
+    local info = InfoMessage:new{text = _("Please wait…")}
     UIManager:show(info)
     UIManager:forceRePaint()
     self.callback()
@@ -328,7 +328,7 @@ function DoubleKeyValuePage:onSwipe(arg, ges_ev)
         local new_page = math.min(self.show_page + 1, self.pages)
         if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)
             and #self.kv_pairs < self.total_res  then
-            local info = InfoMessage:new{text = _("Please wait...")}
+            local info = InfoMessage:new{text = _("Please wait…")}
             UIManager:show(info)
             UIManager:forceRePaint()
             self:nextPage()
