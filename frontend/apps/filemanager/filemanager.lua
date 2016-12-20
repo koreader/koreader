@@ -233,7 +233,8 @@ function FileManager:init()
             {
                 {
                     text = _("Book information"),
-                    enabled = lfs.attributes(file, "mode") == "file" and true or false,
+                    enabled = lfs.attributes(file, "mode") == "file"
+                        and not DocumentRegistry:getProvider(file).is_pic and true or false,
                     callback = function()
                         local book_info_metadata = FileManager:bookInformation(file)
                         if  book_info_metadata then
