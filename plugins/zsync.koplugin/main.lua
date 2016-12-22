@@ -49,7 +49,7 @@ function ZSync:addToMainMenu(tab_item_table)
                 text_func = function()
                     return not self.filemq_client
                         and _("Subscribe to book share")
-                        or _("Stop book share subscription")
+                        or _("Unsubscribe from book share")
                 end,
                 enabled_func = function()
                     return self.filemq_server == nil
