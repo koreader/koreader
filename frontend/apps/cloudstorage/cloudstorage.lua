@@ -111,7 +111,7 @@ function CloudStorage:openCloudServer(url)
         return true
     elseif not tbl then
         UIManager:show(InfoMessage:new{
-            text = _("Cannot fetch list folder!\nCheck configuration or network connection."),
+            text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
             timeout = 3,
         })
         table.remove(self.paths)
@@ -150,7 +150,7 @@ function CloudStorage:downloadFile(item)
     local path = download_dir .. '/' .. item.text
     if lfs.attributes(path) then
         UIManager:show(ConfirmBox:new{
-            text = _("File exist! Would you like to override it?"),
+            text = _("File already exists. Would you like to overwrite it?"),
             ok_callback = function()
                 self:cloudFile(item, path)
             end
