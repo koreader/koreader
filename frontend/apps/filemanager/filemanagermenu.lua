@@ -176,17 +176,19 @@ function FileManagerMenu:setUpdateItemTable()
     -- info tab
     -- insert common info
     table.insert(self.tab_item_table.info, {
-        text = _("Open last book"),
+        text = _("Open last document"),
         callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
-            if last_file and lfs.attributes(last_file, "mode") ~= "file" then
-                last_file = nil
+            if last_file and lfs.attributes(last_file, "mode") ~= "file" or last_file == nil then
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot open last document"),
+                })
+                return
             end
-            if last_file then
-                local ReaderUI = require("apps/reader/readerui")
-                ReaderUI:showReader(last_file)
-                self:onCloseFileManagerMenu()
-            end
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(last_file)
+            self:onCloseFileManagerMenu()
         end
     })
     for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
