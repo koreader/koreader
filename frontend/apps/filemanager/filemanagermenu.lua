@@ -179,7 +179,7 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Open last document"),
         callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
-            if last_file and lfs.attributes(last_file, "mode") ~= "file" or last_file == nil then
+            if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("Cannot open last document"),
