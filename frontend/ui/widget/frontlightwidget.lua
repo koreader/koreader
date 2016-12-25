@@ -42,7 +42,7 @@ function FrontLightWidget:init()
         self.fl_cur = self.fl_min
     end
     local steps_fl = self.fl_max - self.fl_min + 1
-    self.one_step = math.ceil(steps_fl  / 25 )
+    self.one_step = math.ceil(steps_fl / 25)
     self.steps = math.ceil(steps_fl / self.one_step)
     if (self.steps - 1) * self.one_step < self.fl_max - self.fl_min then
         self.steps = self.steps + 1
@@ -91,7 +91,6 @@ function FrontLightWidget:generateProgressGroup(width, height, fl_level, step)
 end
 
 function FrontLightWidget:setProgress(num, step)
-    --clear previous data
     self.fl_container:clear()
     local padding_span = VerticalSpan:new{ width = self.span }
     local button_group_down = HorizontalGroup:new{ align = "center" }
