@@ -83,9 +83,7 @@ end
 
 function ReaderFrontLight:onShowFlDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
-    local fl = FrontLightWidget:new{
-    }
-    UIManager:show(fl)
+    UIManager:show(FrontLightWidget:new{})
 end
 
 function ReaderFrontLight:close()
