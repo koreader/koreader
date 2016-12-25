@@ -11,6 +11,9 @@ rather than class variables.
 ]]
 
 local EventListener = require("ui/widget/eventlistener")
+
+--- Widget base class
+-- @table Widget
 local Widget = EventListener:new()
 
 --[[--
@@ -61,7 +64,7 @@ end
 --[[--
 Paint widget to a BlitBuffer.
 
-@tparam BlitBuffer BlitBuffer to paint to. If it's the screen BlitBuffer, then
+@tparam BlitBuffer bb BlitBuffer to paint to. If it's the screen BlitBuffer, then
 widget will show up on screen refresh.
 @int x x offset within the BlitBuffer
 @int y y offset within the BlitBuffer
