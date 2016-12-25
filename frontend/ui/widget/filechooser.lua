@@ -118,6 +118,12 @@ function FileChooser:genItemTableFromPath(path)
             path = subdir_path
         })
     end
+
+    local show_new_book_in_bold = true  -- show new books in bold by default
+    if G_reader_settings:isTrue("show_opened_doc_in_bold") then
+        show_new_book_in_bold = false
+    end
+
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
@@ -129,11 +135,16 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
+        local show_in_bold
+        if show_new_book_in_bold then
+            show_in_bold = not DocSettings:hasSidecarDir(full_path)
+        else
+            show_in_bold = DocSettings:hasSidecarDir(full_path)
+        end
         table.insert(item_table, {
             text = file.name,
             mandatory = sstr,
-            -- show new books in bold
-            bold = not DocSettings:hasSidecarDir(full_path),
+            bold = show_in_bold,
             path = full_path
         })
     end
