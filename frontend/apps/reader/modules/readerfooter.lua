@@ -87,7 +87,7 @@ local footerTextGeneratorMap = {
     end,
 }
 
-local ReaderFooter = WidgetContainer:new{
+local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
@@ -510,6 +510,7 @@ end
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 
 function ReaderFooter:onReaderReady()
+    self.ui.menu:registerToMainMenu(self)
     self:setupTouchZones()
     self:resetLayout()  -- set widget dimen
     self:setTocMarkers()
