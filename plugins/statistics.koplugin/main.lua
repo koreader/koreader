@@ -1,4 +1,4 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local Widget = require("ui/widget/widget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
@@ -20,7 +20,7 @@ local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 -- a copy of page_max_read_sec
 local page_max_time
 
-local ReaderStatistics = InputContainer:new {
+local ReaderStatistics = Widget:extend{
     is_doc_only = true,
     last_time = nil,
     page_min_read_sec = 5,

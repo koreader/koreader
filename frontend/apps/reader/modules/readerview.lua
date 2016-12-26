@@ -1,3 +1,7 @@
+--[[--
+ReaderView module handles all the screen painting for document browsing.
+]]
+
 local AlphaContainer = require("ui/widget/container/alphacontainer")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
@@ -13,7 +17,7 @@ local dbg = require("dbg")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
-local ReaderView = OverlapGroup:new{
+local ReaderView = OverlapGroup:extend{
     document = nil,
 
     -- single page state
@@ -75,14 +79,12 @@ local ReaderView = OverlapGroup:new{
 }
 
 function ReaderView:init()
+    self.view_modules = {}
     -- fix recalculate from close document pageno
     self.state.page = nil
     -- fix inherited dim_area for following opened documents
     self:resetDimArea()
     self:addWidgets()
-    self.ui:registerPostInitCallback(function()
-        self.ui.menu:registerToMainMenu(self.footer)
-    end)
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
@@ -116,9 +118,36 @@ function ReaderView:addWidgets()
     self[3] = self.flipping
 end
 
+--[[--
+Register a view UI widget module for document browsing.
+
+@tparam string name module name, registered widget can be accessed by readerui.view.view_modules[name].
+@tparam ui.widget.widget.Widget widget paintable widget, i.e. has a paintTo method.
+
+@usage
+local ImageWidget = require("ui/widget/imagewidget")
+local dummy_image = ImageWidget:new{
+    file = "resources/icons/appbar.control.expand.png",
+}
+-- the image will be painted on all book pages
+readerui.view:registerViewModule('dummy_image', dummy_image)
+]]
+function ReaderView:registerViewModule(name, widget)
+    if not widget.paintTo then
+        print(name .. " view module does not have paintTo method!")
+        return
+    end
+    widget.view = self
+    widget.ui = self.ui
+    self.view_modules[name] = widget
+end
+
 function ReaderView:resetLayout()
-    for i, widget in ipairs(self) do
+    for _, widget in ipairs(self) do
         widget:resetLayout()
+    end
+    for _, m in pairs(self.view_modules) do
+        if m.resetLayout then m:resetLayout() end
     end
 end
 
@@ -176,6 +205,9 @@ function ReaderView:paintTo(bb, x, y)
     -- paint flipping
     if self.flipping_visible then
         self.flipping:paintTo(bb, x, y)
+    end
+    for _, m in pairs(self.view_modules) do
+        m:paintTo(bb, x, y)
     end
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
