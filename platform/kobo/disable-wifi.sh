@@ -5,7 +5,7 @@
 killall udhcpc default.script wpa_supplicant 2>/dev/null
 
 [ "${WIFI_MODULE}" != "8189fs" ] && wlarm_le -i eth0 down
-ifconfig eth0 down
+ifconfig "${INTERFACE}" down
 
 # Some sleep in between may avoid system getting hung
 # (we test if a module is actually loaded to avoid unneeded sleeps)
