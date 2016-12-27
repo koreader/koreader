@@ -5,10 +5,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local KeepAlive = WidgetContainer:new{
-    name = "keepalive",
-}
-
 local function showConfirmBox(disable)
     UIManager:show(ConfirmBox:new{
         text = _("The system won't sleep when this message is showing.\nPress \"Stay Alive\" if you prefer to keep system on even after closing this notification. *It will drain the battery.*\n\nIf for any reasons KOReader died before \"Close\" is pressed, please start and close KeepAlive plugin again to ensure settings are reset."),
@@ -39,11 +35,12 @@ elseif Device:isKindle() then
         showConfirmBox(disable)
     end
 else
-    menuItem = {
-        text = _("KeepAlive plugin does not support your system"),
-        enabled = false,
-    }
+    return { disabled = true, }
 end
+
+local KeepAlive = WidgetContainer:new{
+    name = "keepalive",
+}
 
 function KeepAlive:init()
     self.ui.menu:registerToMainMenu(self)
