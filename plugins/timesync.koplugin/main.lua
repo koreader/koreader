@@ -38,6 +38,7 @@ local function execute()
         text = txt,
         timeout = 3,
     })
+    os.execute("if [ -f \"/sbin/hwclock\" ]; then /sbin/hwclock -w; fi")
 end
 
 local menuItem = {
