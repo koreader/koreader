@@ -122,10 +122,10 @@ function FileChooser:genItemTableFromPath(path)
         })
     end
 
-    local show_new_book_in_bold = true  -- show new books in bold by default
-    if G_reader_settings:isTrue("show_opened_doc_in_bold") then
-        show_new_book_in_bold = false
-    end
+    -- set to false to show all files in regular font
+    -- set to "opened" to show opened files in bold
+    -- otherwise, show new files in bold
+    local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
 
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
@@ -138,18 +138,18 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
-        local show_in_bold
-        if show_new_book_in_bold then
-            show_in_bold = not DocSettings:hasSidecarDir(full_path)
-        else
-            show_in_bold = DocSettings:hasSidecarDir(full_path)
-        end
-        table.insert(item_table, {
+        local file_item = {
             text = file.name,
             mandatory = sstr,
-            bold = show_in_bold,
             path = full_path
-        })
+        }
+        if show_file_in_bold ~= false then
+            file_item.bold = DocSettings:hasSidecarDir(full_path)
+            if show_file_in_bold ~= "opened" then
+                file_item.bold = not file_item.bold
+            end
+        end
+        table.insert(item_table, file_item)
     end
     -- lfs.dir iterated node string may be encoded with some weird codepage on
     -- Windows we need to encode them to utf-8
