@@ -13,6 +13,7 @@ local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local CloudStorage = require("apps/cloudstorage/cloudstorage")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -51,6 +52,9 @@ function FileManagerMenu:init()
             end,
         },
     }
+    -- For backward compatibility, plugins look for plugins tab, which should be tools tab in file
+    -- manager.
+    self.tab_item_table.plugins = self.tab_item_table.tools
     self.registered_widgets = {}
 
     if Device:hasKeys() then
@@ -171,6 +175,22 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- info tab
     -- insert common info
+    table.insert(self.tab_item_table.info, {
+        text = _("Open last document"),
+        callback = function()
+            local last_file = G_reader_settings:readSetting("lastfile")
+            if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot open last document"),
+                })
+                return
+            end
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(last_file)
+            self:onCloseFileManagerMenu()
+        end
+    })
     for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
         table.insert(self.tab_item_table.info, common_setting)
     end
@@ -226,6 +246,18 @@ function FileManagerMenu:setUpdateItemTable()
                 end,
             },
         }
+    })
+    table.insert(self.tab_item_table.tools, {
+        text = _("Cloud storage"),
+        callback = function()
+            local cloud_storage = CloudStorage:new{}
+            UIManager:show(cloud_storage)
+            local filemanagerRefresh = function() self.ui:onRefresh() end
+            function cloud_storage:onClose()
+                filemanagerRefresh()
+                UIManager:close(cloud_storage)
+            end
+        end,
     })
 
     -- search tab

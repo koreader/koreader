@@ -87,7 +87,7 @@ local footerTextGeneratorMap = {
     end,
 }
 
-local ReaderFooter = WidgetContainer:new{
+local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
@@ -211,14 +211,20 @@ function ReaderFooter:setupTouchZones()
     }
     self.ui:registerTouchZones({
         {
-            id = "footer_tap",
+            id = "readerfooter_tap",
             ges = "tap",
             screen_zone = footer_screen_zone,
             handler = function() return self:onTapFooter() end,
-            overrides = { 'tap_forward', 'tap_backward', },
+            overrides = {
+                'tap_forward', 'tap_backward',
+                -- NOTE: readermenu_tap override is needed to keep behavior
+                -- consistent with the old code base in case of overlap between
+                -- footer and menu tap zones
+                'readermenu_tap',
+            },
         },
         {
-            id = "footer_hold",
+            id = "readerfooter_hold",
             ges = "hold",
             screen_zone = footer_screen_zone,
             handler = function() return self:onHoldFooter() end,
@@ -504,6 +510,7 @@ end
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 
 function ReaderFooter:onReaderReady()
+    self.ui.menu:registerToMainMenu(self)
     self:setupTouchZones()
     self:resetLayout()  -- set widget dimen
     self:setTocMarkers()

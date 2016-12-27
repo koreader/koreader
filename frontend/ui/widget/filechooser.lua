@@ -108,16 +108,25 @@ function FileChooser:genItemTableFromPath(path)
         local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files)
-        local items = #sub_dirs + #dir_files
-        local istr = util.template(
-            items == 1 and _("1 item")
-            or _("%1 items"), items)
+        local num_items = #sub_dirs + #dir_files
+        local istr
+        if num_items == 1 then
+            istr = _("1 item")
+        else
+            istr = util.template(_("%1 items"), num_items)
+        end
         table.insert(item_table, {
             text = dir.name.."/",
             mandatory = istr,
             path = subdir_path
         })
     end
+
+    local show_new_book_in_bold = true  -- show new books in bold by default
+    if G_reader_settings:isTrue("show_opened_doc_in_bold") then
+        show_new_book_in_bold = false
+    end
+
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
@@ -129,16 +138,21 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
+        local show_in_bold
+        if show_new_book_in_bold then
+            show_in_bold = not DocSettings:hasSidecarDir(full_path)
+        else
+            show_in_bold = DocSettings:hasSidecarDir(full_path)
+        end
         table.insert(item_table, {
             text = file.name,
             mandatory = sstr,
-            -- show new books in bold
-            bold = not DocSettings:hasSidecarDir(full_path),
+            bold = show_in_bold,
             path = full_path
         })
     end
-    -- lfs.dir iterated node string may be encoded with some weird codepage on Windows
-    -- we need to encode them to utf-8
+    -- lfs.dir iterated node string may be encoded with some weird codepage on
+    -- Windows we need to encode them to utf-8
     if ffi.os == "Windows" then
         for k, v in pairs(item_table) do
             if v.text then

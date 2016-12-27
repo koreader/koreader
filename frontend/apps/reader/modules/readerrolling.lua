@@ -2,13 +2,13 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Screen = require("device").screen
 local Device = require("device")
-local Geom = require("ui/geometry")
 local Input = require("device").input
 local Event = require("ui/event")
-local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+
+local pan_rate = Screen.eink and 4.0 or 10.0
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -98,84 +98,12 @@ function ReaderRolling:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- This method will be called in onSetDimensions handler
-function ReaderRolling:initGesListener()
-    self.ges_events = {
-        TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
-                }
-            }
-        },
-        TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        },
-        Swipe = {
-            GestureRange:new{
-                ges = "swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                }
-            }
-        },
-        Pan = {
-            GestureRange:new{
-                ges = "pan",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                rate = Screen.eink and 4.0 or 10.0,
-            }
-        },
-        DoubleTapForward = {
-            GestureRange:new{
-                ges = "double_tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x,
-                    y = Screen:getHeight()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
-                    w = Screen:getWidth()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w,
-                    h = Screen:getHeight()*DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
-                }
-            }
-        },
-        DoubleTapBackward = {
-            GestureRange:new{
-                ges = "double_tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
-                    y = Screen:getHeight()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
-                    w = Screen:getWidth()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.w,
-                    h = Screen:getHeight()*DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
-                }
-            }
-        },
-    }
-    self:updateReadOrder()
-end
-
 function ReaderRolling:onReadSettings(config)
     local last_xp = config:readSetting("last_xpointer")
     local last_per = config:readSetting("last_percent")
     if last_xp then
         self.xpointer = last_xp
-        self.onReaderReady = function()
+        self.setupXpointer = function()
             self:_gotoXPointer(self.xpointer)
             -- we have to do a real jump in self.ui.document._document to
             -- update status information in CREngine.
@@ -184,7 +112,7 @@ function ReaderRolling:onReadSettings(config)
     -- we read last_percent just for backward compatibility
     -- FIXME: remove this branch with migration script
     elseif last_per then
-        self.onReaderReady = function()
+        self.setupXpointer = function()
             self:_gotoPercent(last_per)
             -- _gotoPercent calls _gotoPos, which only updates self.current_pos
             -- and self.view.
@@ -200,7 +128,7 @@ function ReaderRolling:onReadSettings(config)
             self.xpointer = self.ui.document:getXPointer()
         end
     else
-        self.onReaderReady = function()
+        self.setupXpointer = function()
             self.xpointer = self.ui.document:getXPointer()
             if self.view.view_mode == "page" then
                 self.ui:handleEvent(Event:new("PageUpdate", 1))
@@ -212,7 +140,6 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
-    self:updateReadOrder()
 end
 
 function ReaderRolling:onSaveSettings()
@@ -222,6 +149,89 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+end
+
+function ReaderRolling:onReaderReady()
+    self:setupTouchZones()
+    self.setupXpointer()
+end
+
+function ReaderRolling:setupTouchZones()
+    self.ges_events = {}
+    self.onGesture = nil
+    if not Device:isTouchDevice() then return end
+
+    local forward_zone = {
+        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
+        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
+    }
+    local backward_zone = {
+        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
+        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
+    }
+
+    local forward_double_tap_zone = {
+        ratio_x = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x, ratio_y = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
+        ratio_w = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w, ratio_h = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
+    }
+    local backward_double_tap_zone = {
+        ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x, ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
+        ratio_w = DDOUBLE_TAP_ZONE_PREV_CHAPTER.w, ratio_h = DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
+    }
+
+    if self.inverse_reading_order then
+        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
+        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
+
+        forward_double_tap_zone.ratio_x =
+            1 - forward_double_tap_zone.ratio_x - forward_double_tap_zone.ratio_w
+        backward_double_tap_zone.ratio_x =
+            1 - backward_double_tap_zone.ratio_x - backward_double_tap_zone.ratio_w
+    end
+
+    self.ui:registerTouchZones({
+        {
+            id = "tap_forward",
+            ges = "tap",
+            screen_zone = forward_zone,
+            handler = function() return self:onTapForward() end
+        },
+        {
+            id = "tap_backward",
+            ges = "tap",
+            screen_zone = backward_zone,
+            handler = function() return self:onTapBackward() end
+        },
+        {
+            id = "double_tap_forward",
+            ges = "double_tap",
+            screen_zone = forward_double_tap_zone,
+            handler = function() return self:onDoubleTapForward() end
+        },
+        {
+            id = "double_tap_backward",
+            ges = "double_tap",
+            screen_zone = backward_double_tap_zone,
+            handler = function() return self:onDoubleTapBackward() end
+        },
+        {
+            id = "rolling_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onSwipe(nil, ges) end
+        },
+        {
+            id = "rolling_pan",
+            ges = "pan",
+            rate = pan_rate,
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onPan(nil, ges) end
+        },
+    })
 end
 
 function ReaderRolling:getLastProgress()
@@ -275,7 +285,7 @@ function ReaderRolling:onTapBackward()
     return true
 end
 
-function ReaderRolling:onSwipe(arg, ges)
+function ReaderRolling:onSwipe(_, ges)
     if ges.direction == "north" then
         self:onGotoViewRel(1)
     elseif ges.direction == "south" then
@@ -295,7 +305,7 @@ function ReaderRolling:onSwipe(arg, ges)
     end
 end
 
-function ReaderRolling:onPan(arg, ges)
+function ReaderRolling:onPan(_, ges)
     if self.view.view_mode == "scroll" then
         if ges.direction == "north" then
             self:_gotoPos(self.current_pos + ges.distance)
@@ -469,10 +479,6 @@ function ReaderRolling:onRedrawCurrentView()
 end
 
 function ReaderRolling:onSetDimensions(dimen)
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
     self.ui.document:setViewDimen(Screen:getSize())
 end
 
@@ -541,56 +547,6 @@ function ReaderRolling:updateBatteryState()
         if state then
             self.ui.document:setBatteryState(state)
         end
-    end
-end
-
-function ReaderRolling:updateReadOrder()
-    if self.inverse_reading_order then
-        self.ges_events.TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*(1-DTAP_ZONE_FORWARD.x-DTAP_ZONE_FORWARD.w),
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
-                }
-            }
-        }
-        self.ges_events.TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*(1-DTAP_ZONE_BACKWARD.x-DTAP_ZONE_BACKWARD.w),
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        }
-    else
-                self.ges_events.TapForward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_FORWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_FORWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_FORWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_FORWARD.h,
-                }
-            }
-        }
-        self.ges_events.TapBackward = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_BACKWARD.x,
-                    y = Screen:getHeight()*DTAP_ZONE_BACKWARD.y,
-                    w = Screen:getWidth()*DTAP_ZONE_BACKWARD.w,
-                    h = Screen:getHeight()*DTAP_ZONE_BACKWARD.h,
-                }
-            }
-        }
     end
 end
 
