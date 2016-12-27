@@ -20,6 +20,7 @@ end
 
 local KOSync = InputContainer:new{
     name = "kosync",
+    is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
     page_update_times = 0,

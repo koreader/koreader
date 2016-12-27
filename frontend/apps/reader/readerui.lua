@@ -43,7 +43,7 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
-local PluginLoader = require("apps/reader/pluginloader")
+local PluginLoader = require("pluginloader")
 
 --[[
 This is an abstraction for a reader interface

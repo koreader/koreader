@@ -14,6 +14,7 @@ int rmdir(const char *);
 require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
+    is_doc_only = true,
 }
 
 function ZSync:init()
@@ -48,7 +49,7 @@ function ZSync:addToMainMenu(tab_item_table)
                 text_func = function()
                     return not self.filemq_client
                         and _("Subscribe to book share")
-                        or _("Stop book share subscription")
+                        or _("Unsubscribe from book share")
                 end,
                 enabled_func = function()
                     return self.filemq_server == nil

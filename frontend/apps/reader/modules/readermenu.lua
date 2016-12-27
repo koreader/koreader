@@ -1,9 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Geom = require("ui/geometry")
 local Screensaver = require("ui/screensaver")
 local Event = require("ui/event")
 local Screen = require("device").screen
@@ -74,20 +72,23 @@ function ReaderMenu:init()
     end
 end
 
-function ReaderMenu:initGesListener()
-    self.ges_events = {
-        TapShowMenu = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = Screen:getWidth()*DTAP_ZONE_MENU.x,
-                    y = Screen:getHeight()*DTAP_ZONE_MENU.y,
-                    w = Screen:getWidth()*DTAP_ZONE_MENU.w,
-                    h = Screen:getHeight()*DTAP_ZONE_MENU.h
-                }
-            }
+function ReaderMenu:onReaderReady()
+    -- deligate gesture listener to readerui
+    self.ges_events = {}
+    self.onGesture = nil
+    if not Device:isTouchDevice() then return end
+
+    self.ui:registerTouchZones({
+        {
+            id = "readermenu_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            handler = function() return self:onTapShowMenu() end,
         },
-    }
+    })
 end
 
 function ReaderMenu:setUpdateItemTable()
@@ -225,13 +226,6 @@ end
 function ReaderMenu:onTapCloseMenu()
     self.ui:handleEvent(Event:new("CloseReaderMenu"))
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
-end
-
-function ReaderMenu:onSetDimensions(dimen)
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
 end
 
 function ReaderMenu:onReadSettings(config)

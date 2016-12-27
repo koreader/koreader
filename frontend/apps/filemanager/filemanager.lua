@@ -26,6 +26,7 @@ local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
 local InfoMessage = require("ui/widget/infomessage")
+local PluginLoader = require("pluginloader")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -232,7 +233,8 @@ function FileManager:init()
             {
                 {
                     text = _("Book information"),
-                    enabled = lfs.attributes(file, "mode") == "file" and true or false,
+                    enabled = lfs.attributes(file, "mode") == "file"
+                        and not DocumentRegistry:getProvider(file).is_pic and true or false,
                     callback = function()
                         local book_info_metadata = FileManager:bookInformation(file)
                         if  book_info_metadata then
@@ -293,8 +295,17 @@ function FileManager:init()
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,
-        menu = self.menu
     })
+
+    self.loaded_modules = {}
+    -- koreader plugins
+    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        if not plugin_module.is_doc_only then
+            -- Keep references to the modules which do not register into menu.
+            table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
+        end
+    end
 
     if Device:hasKeys() then
         self.key_events.Close = { {"Home"}, doc = "Close file manager" }
