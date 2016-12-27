@@ -14,8 +14,6 @@ local function showConfirmBox(disable)
     })
 end
 
-local keepAliveText = _("Keep Alive")
-
 local menuItem = {
     text = _("Keep Alive"),
 }
