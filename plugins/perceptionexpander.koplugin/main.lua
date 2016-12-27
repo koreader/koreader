@@ -9,6 +9,8 @@ local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
+local LuaSettings = require("luasettings")
+local DataStorage = require("datastorage")
 local Blitbuffer = require("ffi/blitbuffer")
 
 local PerceptionExpander = Widget:extend{
@@ -20,24 +22,31 @@ local PerceptionExpander = Widget:extend{
     line_thick = 2,
     line_color_intensity = 0.3,
     margin_shift = 0.03,
+    settings = nil,
+    ALMOST_CENTER_OF_THE_SCREEN = 0.37
 }
 
 function PerceptionExpander:init()
-    local settings = G_reader_settings:readSetting("perception_expander") or {}
-    self.is_enabled = not (settings.is_enabled == false)
+    if not self.settings then self:readSettingsFile() end
+
+    self.is_enabled = self.settings:readSetting("is_enabled") or false
     if not self.is_enabled then
         return
     end
-    self:createUI(settings)
+    self:createUI(true)
 end
 
-function PerceptionExpander:createUI(settings)
-    if settings then
-        self.line_thick = tonumber(settings.line_thick)
-        self.margin = tonumber(settings.margin)
-        self.line_color_intensity = tonumber(settings.line_color_intensity)
-        self.shift_each_pages = tonumber(settings.shift_each_pages)
-        self.page_counter = tonumber(settings.page_counter)
+function PerceptionExpander:readSettingsFile()
+    self.settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/perception_expander.lua")
+end
+
+function PerceptionExpander:createUI(readSettings)
+    if readSettings then
+        self.line_thick = tonumber(self.settings:readSetting("line_thick"))
+        self.margin = tonumber(self.settings:readSetting("margin"))
+        self.line_color_intensity = tonumber(self.settings:readSetting("line_color_intensity"))
+        self.shift_each_pages = tonumber(self.settings:readSetting("shift_each_pages"))
+        self.page_counter = tonumber(self.settings:readSetting("page_counter"))
     end
 
     self.screen_width = Screen:getWidth()
@@ -158,6 +167,7 @@ function PerceptionExpander:addToMainMenu(tab_item_table)
                 callback = function()
                     self.is_enabled = not self.is_enabled
                     self:saveSettings()
+                    if self.is_enabled then self:createUI() end
                     return true
                 end,
             },
@@ -189,7 +199,7 @@ function PerceptionExpander:onPageUpdate(pageno)
         return
     end
 
-    if self.page_counter >= self.shift_each_pages and self.margin < 0.37 then
+    if self.page_counter >= self.shift_each_pages and self.margin < self.ALMOST_CENTER_OF_THE_SCREEN then
         self.page_counter = 0
         self.margin = self.margin + self.margin_shift
         self.left_line.dimen.x = self.screen_width * self.margin
@@ -212,15 +222,12 @@ function PerceptionExpander:saveSettings(fields)
         self.shift_each_pages = tonumber(fields[4])
     end
 
-    local settings ={
-        line_thick = self.line_thick,
-        margin = self.margin,
-        line_color_intensity = self.line_color_intensity,
-        shift_each_pages = self.shift_each_pages,
-        is_enabled = self.is_enabled,
-    }
-
-    G_reader_settings:saveSetting("perception_expander", settings)
+    self.settings:saveSetting("line_thick", self.line_thick)
+    self.settings:saveSetting("margin", self.margin)
+    self.settings:saveSetting("line_color_intensity", self.line_color_intensity)
+    self.settings:saveSetting("shift_each_pages", self.shift_each_pages)
+    self.settings:saveSetting("is_enabled", self.is_enabled)
+    self.settings:flush()
 end
 
 function PerceptionExpander:paintTo(bb, x, y)
