@@ -310,12 +310,14 @@ function ReaderUI:init()
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
         dbg("Loaded plugin", plugin_module.name, "at", plugin_module.path)
-        self:registerModule(plugin_module.name, plugin_module:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self,
-            document = self.document,
-        })
+        if not plugin_module.exclusive_in_reader then
+            self:registerModule(plugin_module.name, plugin_module:new{
+                dialog = self.dialog,
+                view = self.view,
+                ui = self,
+                document = self.document,
+            })
+        end
     end
 
     -- we only read settings after all the widgets are initialized

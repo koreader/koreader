@@ -400,6 +400,7 @@ end
 
 function DictQuickLookup:getHighlightedItem()
     if not self.ui then return end
+    if not self.ui.highlight then return end
     return self.ui.highlight:getHighlightBookmarkItem()
 end
 
