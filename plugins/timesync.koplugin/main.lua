@@ -1,0 +1,3 @@
+-- Synchronize time from http://www.timeapi.org/utc/now.
+-- It equals to execute
+-- date +"%Y-%m-%dT%TUTC" -s "`wget -q -O - "http://www.timeapi.org/utc/now"`"
