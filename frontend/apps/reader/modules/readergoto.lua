@@ -3,9 +3,11 @@ local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local _ = require("gettext")
+local SkimToWidget = require("ui/widget/skimtowidget")
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),
+    skim_menu_title = _("Skim to"),
 }
 
 function ReaderGoto:init()
@@ -18,6 +20,12 @@ function ReaderGoto:addToMainMenu(tab_item_table)
         text = self.goto_menu_title,
         callback = function()
             self:onShowGotoDialog()
+        end,
+    })
+    table.insert(tab_item_table.navi, {
+        text = self.skim_menu_title,
+        callback = function()
+            self:onShowSkimtoDialog()
         end,
     })
 end
@@ -55,12 +63,45 @@ function ReaderGoto:onShowGotoDialog()
                     end,
                 },
                 goto_btn,
+                {
+                    text = _("Skim"),
+                    enabled = true,
+                    callback = function()
+                        self:close()
+                        self.skimto = SkimToWidget:new{
+                            document = self.document,
+                            callback_goto_page = function(page)
+                                self.ui:handleEvent(Event:new("GotoPage", page ))
+                            end,
+                            callback_switch_to_goto = function()
+                                UIManager:close(self.skimto)
+                                self:onShowGotoDialog()
+                            end,
+                        }
+                        UIManager:show(self.skimto)
+
+                    end,
+                },
             },
         },
         input_type = "number",
     }
     self.goto_dialog:onShowKeyboard()
     UIManager:show(self.goto_dialog)
+end
+
+function ReaderGoto:onShowSkimtoDialog()
+    self.skimto = SkimToWidget:new{
+        document = self.document,
+        callback_goto_page = function(page)
+            self.ui:handleEvent(Event:new("GotoPage", page ))
+        end,
+        callback_switch_to_goto = function()
+            UIManager:close(self.skimto)
+            self:onShowGotoDialog()
+        end,
+    }
+    UIManager:show(self.skimto)
 end
 
 function ReaderGoto:close()
