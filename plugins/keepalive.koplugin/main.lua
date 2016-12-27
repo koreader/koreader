@@ -18,6 +18,7 @@ local menuItem = {
     text = _("Keep Alive"),
 }
 
+local disable
 if Device:isKobo() then
     disable = function() UIManager:_startAutoSuspend() end
     menuItem.callback = function()
