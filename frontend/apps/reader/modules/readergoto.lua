@@ -3,7 +3,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local _ = require("gettext")
-local SkimToWidget = require("ui/widget/skimtowidget")
+local SkimToWidget = require("frontend/apps/reader/skimtowidget")
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),
@@ -64,15 +64,13 @@ function ReaderGoto:onShowGotoDialog()
                 },
                 goto_btn,
                 {
-                    text = _("Skim"),
+                    text = _("Skim mode"),
                     enabled = true,
                     callback = function()
                         self:close()
                         self.skimto = SkimToWidget:new{
                             document = self.document,
-                            callback_goto_page = function(page)
-                                self.ui:handleEvent(Event:new("GotoPage", page ))
-                            end,
+                            ui = self.ui,
                             callback_switch_to_goto = function()
                                 UIManager:close(self.skimto)
                                 self:onShowGotoDialog()
@@ -93,9 +91,7 @@ end
 function ReaderGoto:onShowSkimtoDialog()
     self.skimto = SkimToWidget:new{
         document = self.document,
-        callback_goto_page = function(page)
-            self.ui:handleEvent(Event:new("GotoPage", page ))
-        end,
+        ui = self.ui,
         callback_switch_to_goto = function()
             UIManager:close(self.skimto)
             self:onShowGotoDialog()
