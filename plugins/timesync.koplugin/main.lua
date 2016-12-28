@@ -1,14 +1,15 @@
 
 local Device = require("device")
+
+if not (Device:isKobo() or Device:isKindle() or Device:isPocketbook()) then
+    return { disabled = true, }
+end
+
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
-
-if not (Device:isKobo() or Device:isKindle() or Device:isPocketbook()) then
-    return { disabled = true, }
-end
 
 local TimeSync = WidgetContainer:new{
     name = "timesync",
