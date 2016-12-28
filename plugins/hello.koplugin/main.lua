@@ -16,7 +16,7 @@ end
 function Hello:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Hello World"),
-        callback_func = function()
+        callback = function()
             UIManager:show(InfoMessage:new{
                 text = _("Hello, docless plugin world"),
             })
