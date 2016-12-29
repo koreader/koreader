@@ -110,7 +110,6 @@ function InputDialog:init()
         enter_callback = self.enter_callback or function()
             for _,btn_row in ipairs(self.buttons) do
                 for _,btn in ipairs(btn_row) do
-                    require('dbg')('looging for btn', btn)
                     if btn.is_enter_default then
                         btn.callback()
                         return

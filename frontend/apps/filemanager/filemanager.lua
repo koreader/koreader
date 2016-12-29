@@ -21,7 +21,7 @@ local Event = require("ui/event")
 local Device = require("device")
 local util = require("ffi/util")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
@@ -302,7 +302,7 @@ function FileManager:init()
     self.loaded_modules = {}
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        DEBUG("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        logger.info("FM loaded plugin", plugin_module.name, "at", plugin_module.path)
         if not plugin_module.is_doc_only then
             -- Keep references to the modules which do not register into menu.
             table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
@@ -363,7 +363,7 @@ function FileManager:toggleReverseCollate()
 end
 
 function FileManager:onClose()
-    DEBUG("close filemanager")
+    logger.dbg("close filemanager")
     UIManager:close(self)
     if self.onExit then
         self:onExit()

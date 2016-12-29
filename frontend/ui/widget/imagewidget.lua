@@ -26,7 +26,7 @@ local CacheItem = require("cacheitem")
 local Mupdf = require("ffi/mupdf")
 local Geom = require("ui/geometry")
 local Cache = require("cache")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local ImageCache = Cache:new{
     max_memsize = 2*1024*1024, -- 2M of image cache
@@ -40,7 +40,7 @@ local ImageCacheItem = CacheItem:new{}
 
 function ImageCacheItem:onFree()
     if self.bb.free then
-        DEBUG("free image blitbuffer", self.bb)
+        logger.dbg("free image blitbuffer", self.bb)
         self.bb:free()
     end
 end
@@ -87,7 +87,7 @@ function ImageWidget:_loadfile()
                 self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
             else
                 -- cache this image
-                DEBUG("cache", hash)
+                logger.dbg("cache", hash)
                 cache = ImageCacheItem:new{
                     bb = Mupdf.renderImageFile(self.file, self.width, self.height),
                 }

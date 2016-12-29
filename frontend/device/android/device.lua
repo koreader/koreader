@@ -1,7 +1,7 @@
 local Generic = require("device/generic/device")
 local _, android = pcall(require, "android")
 local ffi = require("ffi")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
@@ -17,13 +17,13 @@ local Device = Generic:new{
 }
 
 function Device:init()
-    self.screen = require("ffi/framebuffer_android"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
-            DEBUG("Android application event", ev.code)
+            logger.dbg("Android application event", ev.code)
             if ev.code == ffi.C.APP_CMD_SAVE_STATE then
                 return "SaveState"
             elseif ev.code == ffi.C.APP_CMD_GAINED_FOCUS then

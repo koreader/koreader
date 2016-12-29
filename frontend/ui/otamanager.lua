@@ -5,7 +5,7 @@ local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -59,7 +59,7 @@ function OTAManager:getOTAServer()
 end
 
 function OTAManager:setOTAServer(server)
-    DEBUG("Set OTA server:", server)
+    logger.dbg("Set OTA server:", server)
     G_reader_settings:saveSetting("ota_server", server)
 end
 
@@ -68,7 +68,7 @@ function OTAManager:getOTAChannel()
 end
 
 function OTAManager:setOTAChannel(channel)
-    DEBUG("Set OTA channel:", channel)
+    logger.dbg("Set OTA channel:", channel)
     G_reader_settings:saveSetting("ota_channel", channel)
 end
 
@@ -84,12 +84,12 @@ function OTAManager:checkUpdate()
     local ota_zsync_file = self:getOTAServer() .. zsync_file
     local local_zsync_file = ota_dir .. zsync_file
     -- download zsync file from OTA server
-    DEBUG("downloading zsync file", ota_zsync_file)
+    logger.dbg("downloading zsync file", ota_zsync_file)
     local _, c, _ = http.request{
         url = ota_zsync_file,
         sink = ltn12.sink.file(io.open(local_zsync_file, "w"))}
     if c ~= 200 then
-        DEBUG("cannot find zsync file", c)
+        logger.warn("cannot find zsync file", c)
         return
     end
     -- parse OTA package version

@@ -22,7 +22,7 @@ local Screen = require("device").screen
 local Event = require("ui/event")
 local Device = require("device")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -207,7 +207,7 @@ function ConfigOption:init()
             local current_item = nil
             local function value_diff(val1, val2, name)
                 if type(val1) ~= type(val2) then
-                    DEBUG("different data types in option")
+                    logger.dbg("different data types in option")
                 end
                 if type(val1) == "number" then
                     return math.abs(val1 - val2)
@@ -539,20 +539,17 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-    --DEBUG("config option value", option_name, option_value)
     self.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     return true
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg)
-    --DEBUG("config option event", option_event, option_arg)
     self.ui:handleEvent(Event:new(option_event, option_arg))
     return true
 end
 
 function ConfigDialog:onConfigEvents(option_events, arg_index)
-    --DEBUG("config option events", option_events, arg_index)
     for i=1, #option_events do
         option_events[i].args = option_events[i].args or {}
         self.ui:handleEvent(Event:new(option_events[i].event, option_events[i].args[arg_index]))

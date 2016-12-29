@@ -8,7 +8,6 @@ local Geom = require("ui/geometry")
 local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local Screen = Device.screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local Search = require("apps/filemanager/filemanagersearch")
@@ -335,7 +334,6 @@ end
 
 function FileManagerMenu:onCloseFileManagerMenu()
     local last_tab_index = self.menu_container[1].last_index
-    DEBUG("remember menu tab index", last_tab_index)
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
     return true

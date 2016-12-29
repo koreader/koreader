@@ -6,7 +6,7 @@ local Screen = Device.screen
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 
@@ -229,7 +229,7 @@ users change font size, page margin or line spacing or close and reopen the
 book, the page view will be roughly the same.
 --]]
 function ReaderPaging:setPagePosition(page, pos)
-    DEBUG("set page position", pos)
+    logger.dbg("set page position", pos)
     self.page_positions[page] = pos
 end
 
@@ -241,7 +241,7 @@ function ReaderPaging:getPagePosition(page)
     -- fractional page number the reader runs silently well, but the
     -- number won't fit to retrieve page position.
     page = math.floor(page)
-    DEBUG("get page position", self.page_positions[page])
+    logger.dbg("get page position", self.page_positions[page])
     return self.page_positions[page] or 0
 end
 
@@ -298,7 +298,7 @@ function ReaderPaging:enterFlippingMode()
     self.orig_reflow_mode = self.view.document.configurable.text_wrap
     self.orig_scroll_mode = self.view.page_scroll
     self.orig_zoom_mode = self.view.zoom_mode
-    DEBUG("store zoom mode", self.orig_zoom_mode)
+    logger.dbg("store zoom mode", self.orig_zoom_mode)
     self.view.document.configurable.text_wrap = 0
     self.view.page_scroll = self.flipping_scroll_mode
     Input.disable_double_tap = false
@@ -311,7 +311,7 @@ function ReaderPaging:exitFlippingMode()
     Input.disable_double_tap = true
     self.flipping_zoom_mode = self.view.zoom_mode
     self.flipping_scroll_mode = self.view.page_scroll
-    DEBUG("restore zoom mode", self.orig_zoom_mode)
+    logger.dbg("restore zoom mode", self.orig_zoom_mode)
     self.ui:handleEvent(Event:new("ExitFlippingMode", self.orig_zoom_mode))
 end
 
@@ -421,7 +421,7 @@ function ReaderPaging:onViewRecalculate(visible_area, page_area)
 end
 
 function ReaderPaging:onGotoPercent(percent)
-    DEBUG("goto document offset in percent:", percent)
+    logger.dbg("goto document offset in percent:", percent)
     local dest = math.floor(self.number_of_pages * percent / 100)
     if dest < 1 then dest = 1 end
     if dest > self.number_of_pages then
@@ -493,7 +493,7 @@ function ReaderPaging:getTopPage()
 end
 
 function ReaderPaging:onInitScrollPageStates(orig_mode)
-    DEBUG("init scroll page states", orig_mode)
+    logger.dbg("init scroll page states", orig_mode)
     if self.view.page_scroll and self.view.state.page then
         self.orig_page = self.current_page
         self.view.page_states = {}
@@ -671,7 +671,7 @@ end
 
 function ReaderPaging:onScrollPanRel(diff)
     if diff == 0 then return true end
-    DEBUG("pan relative height:", diff)
+    logger.dbg("pan relative height:", diff)
     local offset = Geom:new{x = 0, y = diff}
     local blank_area = Geom:new{}
     blank_area:setSizeTo(self.view.dimen)
@@ -746,7 +746,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
 end
 
 function ReaderPaging:onGotoPageRel(diff)
-    DEBUG("goto relative page:", diff)
+    logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
 
@@ -852,7 +852,7 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         return true
     end
     if number > self.number_of_pages or number < 1 then
-        DEBUG("wrong page number: "..number.."!")
+        logger.warn("wrong page number: "..number.."!")
         return false
     end
     -- this is an event to allow other controllers to be aware of this change

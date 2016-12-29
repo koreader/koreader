@@ -2,6 +2,7 @@ local Event = require("ui/event")
 local TimeVal = require("ui/timeval")
 local input = require("ffi/input")
 local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
@@ -145,10 +146,10 @@ function Input:init()
     -- user custom event map
     local ok, custom_event_map = pcall(dofile, "custom.event.map.lua")
     if ok then
-        DEBUG("custom event map", custom_event_map)
         for key, value in pairs(custom_event_map) do
             self.event_map[key] = value
         end
+        logger.info("loaded custom event map", custom_event_map)
     end
 end
 
@@ -386,7 +387,6 @@ function Input:handleTouchEv(ev)
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
             if touch_ges then
-                --DEBUG("ges", touch_ges)
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
                     self.gesture_detector:adjustGesCoordinate(touch_ges)
@@ -483,10 +483,6 @@ function Input:handleOasisOrientationEv(ev)
 
     local old_rotation_mode = self.device.screen:getRotationMode()
     local old_screen_mode = self.device.screen:getScreenMode()
-    DEBUG:v("old_rotation_mode: ", old_rotation_mode)
-    DEBUG:v("new_rotation_mode: ", rotation_mode)
-    DEBUG:v("old_screen_mode: ", old_screen_mode)
-    DEBUG:v("new_screen_mode: ", screen_mode)
     if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
         self.device.screen:setRotationMode(rotation_mode)
         local UIManager = require("ui/uimanager")
@@ -588,7 +584,7 @@ function Input:waitEvent(timeout_us)
             -- TODO: return an event that can be handled
             os.exit(0)
         end
-        --DEBUG("got error waiting for events:", ev)
+        logger.warn("got error waiting for events:", ev)
         if ev ~= "Waiting for input failed: 4\n" then
             -- we only abort if the error is not EINTR
             break
@@ -598,11 +594,11 @@ function Input:waitEvent(timeout_us)
     if ok and ev then
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
-            DEBUG:v("ev", ev)
+            logger.dbg("ev", ev)
         end
         self:eventAdjustHook(ev)
         if ev.type == EV_KEY then
-            DEBUG("key ev", ev)
+            logger.dbg("key ev", ev)
             return self:handleKeyBoardEv(ev)
         elseif ev.type == EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
             return self:handleOasisOrientationEv(ev)

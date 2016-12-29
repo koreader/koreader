@@ -1,6 +1,6 @@
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 --[[
 Current detectable gestures:
@@ -92,7 +92,6 @@ function GestureDetector:feedEvent(tevs)
     repeat
         local tev = table.remove(tevs)
         if tev then
-            --DEBUG("tev fed|",tev.timev.sec,"|",tev.timev.usec,"|",tev.x,"|",tev.y,"|",tev.id,"| Evt",tev.slot)
             local slot = tev.slot
             if not self.states[slot] then
                 self:clearState(slot) -- initiate state
@@ -241,7 +240,7 @@ end
 this method handles both single and double tap
 --]]
 function GestureDetector:tapState(tev)
-    DEBUG("in tap state...")
+    logger.dbg("in tap state...")
     local slot = tev.slot
     if tev.id == -1 then
         -- end of tap event
@@ -258,7 +257,7 @@ function GestureDetector:tapState(tev)
                     w = 0, h = 0,
                 }
                 local tap_span = pos0:distance(pos1)
-                DEBUG("two-finger tap detected with span", tap_span)
+                logger.dbg("two-finger tap detected with span", tap_span)
                 self:clearStates()
                 return {
                     ges = "two_finger_tap",
@@ -314,27 +313,27 @@ function GestureDetector:handleDoubleTap(tev)
         self:clearState(slot)
         ges_ev.ges = "double_tap"
         self.last_taps[slot] = nil
-        DEBUG("double tap detected in slot", slot)
+        logger.dbg("double tap detected in slot", slot)
         return ges_ev
     end
 
     -- set current tap to last tap
     self.last_taps[slot] = cur_tap
 
-    DEBUG("set up tap timer")
+    logger.dbg("set up tap timer")
     -- deadline should be calculated by adding current tap time and the interval
     local deadline = cur_tap.timev + TimeVal:new{
         sec = 0,
         usec = not self.input.disable_double_tap and self.DOUBLE_TAP_INTERVAL or 0,
     }
     self.input:setTimeout(function()
-        DEBUG("in tap timer", self.last_taps[slot] ~= nil)
+        logger.dbg("in tap timer", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
         -- user must only tapped once
         if self.last_taps[slot] ~= nil then
             self.last_taps[slot] = nil
             -- we are using closure here
-            DEBUG("single tap detected in slot", slot, ges_ev.pos)
+            logger.dbg("single tap detected in slot", slot, ges_ev.pos)
             return ges_ev
         end
     end, deadline)
@@ -349,18 +348,17 @@ function GestureDetector:handleNonTap(tev)
         -- switched from other state, probably from initialState
         -- we return nil in this case
         self.states[slot] = self.tapState
-        DEBUG("set up hold timer")
+        logger.dbg("set up hold timer")
         local deadline = tev.timev + TimeVal:new{
             sec = 0, usec = self.HOLD_INTERVAL
         }
         self.input:setTimeout(function()
             if self.states[slot] == self.tapState then
                 -- timer set in tapState, so we switch to hold
-                DEBUG("hold gesture detected in slot", slot)
+                logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
             end
         end, deadline)
-        --DEBUG("handle non-tap", tev)
         return {
             ges = "touch",
             pos = Geom:new{
@@ -383,7 +381,7 @@ function GestureDetector:handleNonTap(tev)
 end
 
 function GestureDetector:panState(tev)
-    DEBUG("in pan state...")
+    logger.dbg("in pan state...")
     local slot = tev.slot
     if tev.id == -1 then
         -- end of pan, signal swipe gesture if necessary
@@ -399,7 +397,7 @@ function GestureDetector:panState(tev)
                     elseif ges_ev.ges == "outward_pan" then
                         ges_ev.ges = "spread"
                     end
-                    DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+                    logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
                 end
                 return ges_ev
             else
@@ -430,7 +428,7 @@ function GestureDetector:handleSwipe(tev)
     elseif swipe_direction == "east" and DCHANGE_EAST_SWIPE_TO_WEST then
         swipe_direction = "west"
     end
-    DEBUG("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
+    logger.dbg("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
     self:clearState(slot)
     return {
         ges = "swipe",
@@ -467,7 +465,6 @@ function GestureDetector:handlePan(tev)
             y = self.last_tevs[slot].y,
             w = 0, h = 0,
         }
-        --DEBUG(pan_ev.ges, pan_ev, "detected")
         return pan_ev
     end
 end
@@ -518,11 +515,11 @@ function GestureDetector:handleTwoFingerPan(tev)
             end
             ges_ev.direction = self.DIRECTION_TABLE[tpan_dir]
         end
-        DEBUG(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+        logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
     elseif self.states[rslot] == self.holdState then
         local angle = self:getRotate(rstart_pos, tstart_pos, tend_pos)
-        DEBUG("rotate", angle, "detected")
+        logger.dbg("rotate", angle, "detected")
         return {
             ges = "rotate",
             pos = rstart_pos,
@@ -545,18 +542,18 @@ function GestureDetector:handlePanRelease(tev)
         time = tev.timev,
     }
     if self.detectings[0] and self.detectings[1] then
-        DEBUG("two finger pan release detected")
+        logger.dbg("two finger pan release detected")
         pan_ev.ges = "two_finger_pan_release"
         self:clearStates()
     else
-        DEBUG("pan release detected in slot", slot)
+        logger.dbg("pan release detected in slot", slot)
         self:clearState(slot)
     end
     return pan_ev
 end
 
 function GestureDetector:holdState(tev, hold)
-    DEBUG("in hold state...")
+    logger.dbg("in hold state...")
     local slot = tev.slot
     -- when we switch to hold state, we pass additional param "hold"
     if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
@@ -572,7 +569,7 @@ function GestureDetector:holdState(tev, hold)
         }
     elseif tev.id == -1 and self.last_tevs[slot] ~= nil then
         -- end of hold, signal hold release
-        DEBUG("hold_release detected in slot", slot)
+        logger.dbg("hold_release detected in slot", slot)
         local last_x = self.last_tevs[slot].x
         local last_y = self.last_tevs[slot].y
         self:clearState(slot)

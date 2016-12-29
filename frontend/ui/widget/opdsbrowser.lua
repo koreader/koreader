@@ -11,7 +11,7 @@ local Screen = require("device").screen
 local url = require('socket.url')
 local util = require("ffi/util")
 local Cache = require("cache")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local socket = require('socket')
@@ -63,7 +63,7 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
-    DEBUG("input catalog", fields)
+    logger.dbg("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     table.insert(servers, {
         title = fields[1],
@@ -74,7 +74,7 @@ function OPDSBrowser:addServerFromInput(fields)
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
-    DEBUG("input calibre server", fields)
+    logger.dbg("input calibre server", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
@@ -243,7 +243,7 @@ function OPDSBrowser:fetchFeed(feed_url)
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = self:getAuthorizationHeader(parsed.host)
-    DEBUG("request", request)
+    logger.dbg("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local code, headers, status = socket.skip(1, httpRequest(request))
@@ -253,7 +253,6 @@ function OPDSBrowser:fetchFeed(feed_url)
         error(code)
     end
 
-    --DEBUG("response", code, headers, status)
     if code == 401 and status and status:find("Unauthorized") then
         self._coroutine = coroutine.running() or self._coroutine
         self:fetchWithLogin(parsed.host, function()
@@ -266,7 +265,6 @@ function OPDSBrowser:fetchFeed(feed_url)
     else
         local xml = table.concat(sink)
         if xml ~= "" then
-            --DEBUG("xml", xml)
             return xml
         end
     end
@@ -326,7 +324,7 @@ function OPDSBrowser:parseFeed(feed_url)
     if cache then
         feed = cache.feed
     else
-        DEBUG("cache", hash)
+        logger.dbg("cache", hash)
         feed = self:fetchFeed(feed_url)
         if feed then
             CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
@@ -344,7 +342,7 @@ function OPDSBrowser:getCatalog(feed_url)
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
-        DEBUG("cannot get catalog info from", feed_url, catalog)
+        logger.warn("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
             text = util.template(
                 _("Cannot get catalog info from %1"),
@@ -355,7 +353,7 @@ function OPDSBrowser:getCatalog(feed_url)
     end
 
     if ok and catalog then
-        DEBUG("catalog", catalog)
+        logger.dbg("catalog", catalog)
         return catalog
     end
 end
@@ -431,7 +429,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
             end
         end
         if title == "Unknown" then
-            DEBUG("Cannot handle title", entry.title)
+            logger.warn("Cannot handle title", entry.title)
         end
         local author = "Unknown Author"
         if type(entry.author) == "table" and entry.author.name then
@@ -451,7 +449,6 @@ end
 function OPDSBrowser:updateCatalog(item_table_url)
     local menu_table = self:genItemTableFromURL(item_table_url)
     if #menu_table > 0 then
-        --DEBUG("menu table", menu_table)
         self:swithItemTable(nil, menu_table)
         if self.page_num <= 1 then
             self:onNext()
@@ -475,24 +472,23 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     local lastdir = G_reader_settings:readSetting("lastdir")
     local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
-    DEBUG("downloading file", local_path, "from", remote_url)
+    logger.dbg("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local r, c, h = httpRequest{
+    local _, c, _ = httpRequest{
         url = remote_url,
         headers = self:getAuthorizationHeader(parsed.host),
         sink = ltn12.sink.file(io.open(local_path, "w")),
     }
 
     if c == 200 then
-        DEBUG("file downloaded to", local_path)
+        logger.dbg("file downloaded to", local_path)
         if self.file_downloaded_callback then
             self.file_downloaded_callback(local_path)
         end
     else
-        DEBUG("response", {r, c, h})
         UIManager:show(InfoMessage:new{
             text = _("Could not save file to:\n") .. local_path,
             timeout = 3,
@@ -539,7 +535,7 @@ function OPDSBrowser:showDownloads(item)
                 require("ui/downloadmgr"):new{
                     title = _("Choose download directory"),
                     onConfirm = function(path)
-                        DEBUG("set download directory to", path)
+                        logger.dbg("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                     end,
                 }:chooseDir()
@@ -559,7 +555,7 @@ function OPDSBrowser:onMenuSelect(item)
         item.callback()
     -- acquisition
     elseif item.acquisitions and #item.acquisitions > 0 then
-        DEBUG("downloads available", item)
+        logger.dbg("downloads available", item)
         self:showDownloads(item)
     -- navigation
     else
@@ -574,7 +570,7 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    DEBUG("input catalog", fields)
+    logger.dbg("input catalog", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
@@ -588,7 +584,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    DEBUG("edit", item)
+    logger.dbg("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -628,7 +624,7 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
-    DEBUG("delete", item)
+    logger.dbg("delete", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
@@ -673,7 +669,7 @@ function OPDSBrowser:onMenuHold(item)
 end
 
 function OPDSBrowser:onReturn()
-    DEBUG("return to last page catalog")
+    logger.dbg("return to last page catalog")
     if #self.paths > 0 then
         table.remove(self.paths)
         local path = self.paths[#self.paths]
@@ -689,7 +685,7 @@ function OPDSBrowser:onReturn()
 end
 
 function OPDSBrowser:onNext()
-    DEBUG("fetch next page catalog")
+    logger.dbg("fetch next page catalog")
     local hrefs = self.item_table.hrefs
     local page_num = self.page_num
     while page_num == self.page_num and hrefs and hrefs.next do
