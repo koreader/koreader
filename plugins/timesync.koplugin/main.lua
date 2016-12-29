@@ -39,7 +39,7 @@ local function execute()
         text = txt,
         timeout = 3,
     })
-    os.execute("/sbin/hwclock -w")
+    os.execute("hwclock -w")
 end
 
 local menuItem = {
