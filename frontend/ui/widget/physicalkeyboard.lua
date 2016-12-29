@@ -14,7 +14,7 @@ local Font = require("ui/font")
 local Screen = Device.screen
 local Geom = require("ui/geometry")
 local util = require("util")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 
 local PhysicalNumericKey = WidgetContainer:new{
@@ -112,7 +112,7 @@ end
 function PhysicalKeyboard:onKeyPress(ev)
     local key = ev.key
     if key == "Back" then
-        DEBUG("TODO: exit keyboard")
+        logger.warn("TODO: exit keyboard")
     elseif key == "Del" then
         self.inputbox:delChar()
     else

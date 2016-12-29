@@ -5,7 +5,7 @@ local Device = require("device")
 local Input = require("device").input
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local pan_rate = Screen.eink and 4.0 or 10.0
@@ -348,7 +348,7 @@ function ReaderRolling:onNotCharging()
 end
 
 function ReaderRolling:onGotoPercent(percent)
-    DEBUG("goto document offset in percent:", percent)
+    logger.dbg("goto document offset in percent:", percent)
     self:_gotoPercent(percent)
     self.xpointer = self.ui.document:getXPointer()
     return true
@@ -385,7 +385,7 @@ function ReaderRolling:onRestoreBookLocation(saved_location)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
-    DEBUG("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
+    logger.dbg("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
     if self.view.view_mode == "scroll" then
         local pan_diff = diff * self.ui.dimen.h
         if self.show_overlap_enable then
@@ -412,10 +412,9 @@ function ReaderRolling:onGotoViewRel(diff)
     return true
 end
 
-function ReaderRolling:onPanning(args, key)
+function ReaderRolling:onPanning(args, _)
     --@TODO disable panning in page view_mode?  22.12 2012 (houqp)
     local _, dy = unpack(args)
-    DEBUG("key =", key)
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
     return true
@@ -533,13 +532,13 @@ currently we don't need to get page links on each page/pos update
 since we can check link on the fly when tapping on the screen
 --]]
 function ReaderRolling:updatePageLink()
-    DEBUG("update page link")
+    logger.dbg("update page link")
     local links = self.ui.document:getPageLinks()
     self.view.links = links
 end
 
 function ReaderRolling:updateBatteryState()
-    DEBUG("update battery state")
+    logger.dbg("update battery state")
     if self.view.view_mode == "page" then
         local powerd = Device:getPowerDevice()
         -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h

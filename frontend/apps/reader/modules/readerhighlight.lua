@@ -6,7 +6,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ButtonDialog = require("ui/widget/buttondialog")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local ConfirmBox = require("ui/widget/confirmbox")
 
@@ -168,7 +168,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
             if boxes then
                 for index, box in pairs(boxes) do
                     if inside_box(pos, box) then
-                        DEBUG("Tap on hightlight")
+                        logger.dbg("Tap on hightlight")
                         return self:onShowHighlightDialog(page, i)
                     end
                 end
@@ -188,7 +188,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
             if boxes then
                 for index, box in pairs(boxes) do
                     if inside_box(pos, box) then
-                        DEBUG("Tap on hightlight")
+                        logger.dbg("Tap on hightlight")
                         return self:onShowHighlightDialog(page, i)
                     end
                 end
@@ -228,15 +228,15 @@ function ReaderHighlight:onHold(_, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
-    DEBUG("hold position in page", self.hold_pos)
+    logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
-        DEBUG("not inside page area")
+        logger.dbg("not inside page area")
         return true
     end
 
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
-        DEBUG("selected word:", word)
+        logger.dbg("selected word:", word)
         self.selected_word = word
         if self.ui.document.info.has_pages then
             local boxes = {}
@@ -253,24 +253,24 @@ end
 
 function ReaderHighlight:onHoldPan(_, ges)
     if self.hold_pos == nil then
-        DEBUG("no previous hold position")
+        logger.dbg("no previous hold position")
         return true
     end
     local page_area = self.view:getScreenPageArea(self.hold_pos.page)
     if ges.pos:notIntersectWith(page_area) then
-        DEBUG("not inside page area", ges, page_area)
+        logger.dbg("not inside page area", ges, page_area)
         return true
     end
 
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
-    DEBUG("holdpan position in page", self.holdpan_pos)
+    logger.dbg("holdpan position in page", self.holdpan_pos)
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
     if self.selected_text and old_text and old_text == self.selected_text.text then
         -- no modification
         return
     end
-    DEBUG("selected text:", self.selected_text)
+    logger.dbg("selected text:", self.selected_text)
     if self.selected_text then
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
         -- remove selected word if hold moves out of word box
@@ -292,7 +292,7 @@ function ReaderHighlight:lookup(selected_word)
     -- or we will do OCR
     elseif selected_word.sbox and self.hold_pos then
         local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
-        DEBUG("OCRed word:", word)
+        logger.dbg("OCRed word:", word)
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
         self.ui:handleEvent(Event:new("LookupWord", word, word_box, self))
     end
@@ -304,7 +304,7 @@ function ReaderHighlight:translate(selected_text)
     -- or we will do OCR
     else
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
-        DEBUG("OCRed text:", text)
+        logger.dbg("OCRed text:", text)
         self.ui:handleEvent(Event:new("TranslateText", self, text))
     end
 end
@@ -314,7 +314,7 @@ function ReaderHighlight:onHoldRelease()
         self:lookup(self.selected_word)
         self.selected_word = nil
     elseif self.selected_text then
-        DEBUG("show highlight dialog")
+        logger.dbg("show highlight dialog")
         self.highlight_dialog = ButtonDialog:new{
             buttons = {
                 {
@@ -380,7 +380,7 @@ function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
-            DEBUG("selected text:", self.selected_text)
+            logger.dbg("selected text:", self.selected_text)
         end
     end
 end
@@ -410,7 +410,7 @@ end
 
 function ReaderHighlight:saveHighlight()
     self:handleEvent(Event:new("AddHighlight"))
-    DEBUG("save highlight")
+    logger.dbg("save highlight")
     local page = self.hold_pos.page
     if self.hold_pos and self.selected_text and self.selected_text.pos0
         and self.selected_text.pos1 then
@@ -443,12 +443,11 @@ function ReaderHighlight:saveHighlight()
             self:exportToDocument(page, hl_item)
         end
     end
-    --DEBUG("saved hightlights", self.view.highlight.saved[page])
 end
 
 --[[
 function ReaderHighlight:exportToClippings(page, item)
-    DEBUG("export highlight to clippings", item)
+    logger.dbg("export highlight to clippings", item)
     local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
     if clippings and item.text then
         local current_locale = os.setlocale()
@@ -466,13 +465,13 @@ end
 --]]
 
 function ReaderHighlight:exportToDocument(page, item)
-    DEBUG("export highlight to document", item)
+    logger.dbg("export highlight to document", item)
     self.ui.document:saveHighlight(page, item)
 end
 
 function ReaderHighlight:addNote()
     self:handleEvent(Event:new("addNote"))
-    DEBUG("add Note")
+    logger.dbg("add Note")
 end
 
 function ReaderHighlight:lookupWikipedia()
@@ -482,7 +481,7 @@ function ReaderHighlight:lookupWikipedia()
 end
 
 function ReaderHighlight:onHighlightSearch()
-    DEBUG("search highlight")
+    logger.dbg("search highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = require("util").stripePunctuations(self.selected_text.text)
@@ -491,7 +490,7 @@ function ReaderHighlight:onHighlightSearch()
 end
 
 function ReaderHighlight:onHighlightDictLookup()
-    DEBUG("dictionary lookup highlight")
+    logger.dbg("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
         self.ui:handleEvent(Event:new("LookupWord", self.selected_text.text))
@@ -499,15 +498,15 @@ function ReaderHighlight:onHighlightDictLookup()
 end
 
 function ReaderHighlight:shareHighlight()
-    DEBUG("share highlight")
+    logger.info("share highlight")
 end
 
 function ReaderHighlight:moreAction()
-    DEBUG("more action")
+    logger.info("more action")
 end
 
 function ReaderHighlight:deleteHighlight(page, i)
-    DEBUG("delete highlight")
+    logger.dbg("delete highlight")
     local removed = table.remove(self.view.highlight.saved[page], i)
     self.ui.bookmark:removeBookmark({
         page = self.ui.document.info.has_pages and page or removed.pos0,
@@ -516,7 +515,7 @@ function ReaderHighlight:deleteHighlight(page, i)
 end
 
 function ReaderHighlight:editHighlight()
-    DEBUG("edit highlight")
+    logger.info("edit highlight")
 end
 
 function ReaderHighlight:onReadSettings(config)

@@ -1,6 +1,6 @@
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
@@ -33,13 +33,13 @@ function Device:init()
     end
 
     if util.haveSDL2() then
-        self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = DEBUG}
+        self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
         }
     else
-        self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self, debug = DEBUG}
+        self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self, debug = logger.dbg}
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl"),

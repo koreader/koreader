@@ -6,7 +6,7 @@ local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 if require("device"):isAndroid() then
     require("jit").off(true, true)
@@ -87,14 +87,13 @@ function RenderText:getGlyph(face, charcode, bold)
             -- for some characters it cannot find in Fallbacks, it will crash here
                 if fb_face.ftface:checkGlyph(charcode) ~= 0 then
                     rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
-                    --DEBUG("fallback to font", font)
                     break
                 end
             end
         end
     end
     if not rendered_glyph then
-        DEBUG("error rendering glyph (charcode=", charcode, ") for face", face)
+        logger.warn("error rendering glyph (charcode=", charcode, ") for face", face)
         return
     end
     glyph = CacheItem:new{rendered_glyph}
@@ -149,7 +148,7 @@ end
 -- @treturn RenderTextSize
 function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     if not text then
-        DEBUG("sizeUtf8Text called without text");
+        logger.warn("sizeUtf8Text called without text");
         return
     end
 
@@ -196,7 +195,7 @@ end
 -- @return int width of rendered bitmap
 function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bold, fgcolor, width)
     if not text then
-        DEBUG("renderUtf8Text called without text");
+        logger.warn("renderUtf8Text called without text");
         return 0
     end
 

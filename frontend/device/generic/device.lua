@@ -1,5 +1,5 @@
 local Event = require("ui/event")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local function yes() return true end
@@ -60,8 +60,8 @@ function Device:init()
     local is_eink = G_reader_settings:readSetting("eink")
     self.screen.eink = (is_eink == nil) or is_eink
 
-    DEBUG("initializing for device", self.model)
-    DEBUG("framebuffer resolution:", self.screen:getSize())
+    logger.info("initializing for device", self.model)
+    logger.info("framebuffer resolution:", self.screen:getSize())
 
     if not self.input then
         self.input = require("device/input"):new{device = self}
@@ -71,7 +71,7 @@ function Device:init()
     end
 
     if self.viewport then
-        DEBUG("setting a viewport:", self.viewport)
+        logger.dbg("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
@@ -97,7 +97,7 @@ function Device:onPowerEvent(ev)
                 -- don't let power key press wake up device when the cover is in closed state
                 self:rescheduleSuspend()
             else
-                DEBUG("Resuming...")
+                logger.dbg("Resuming...")
                 local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
                 local network_manager = require("ui/network/manager")
@@ -119,7 +119,7 @@ function Device:onPowerEvent(ev)
             -- Already in screen saver mode, no need to update UI/state before
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
-            DEBUG("Already in screen saver mode, suspending...")
+            logger.dbg("Already in screen saver mode, suspending...")
             self:rescheduleSuspend()
         end
     -- else we we not in screensaver mode
@@ -134,7 +134,7 @@ function Device:onPowerEvent(ev)
         -- flushing settings first in case the screensaver takes too long time
         -- that flushing has no chance to run
         UIManager:broadcastEvent(Event:new("FlushSettings"))
-        DEBUG("Suspending...")
+        logger.dbg("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)

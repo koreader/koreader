@@ -1,7 +1,7 @@
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Translator = require("ui/translator")
 local Wikipedia = require("ui/wikipedia")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -77,14 +77,14 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
     self:initLanguages(word)
     -- use first lang from self.wiki_languages, which may have been rotated by DictQuickLookup
     local lang = self.wiki_languages[1]
-    DEBUG("lookup word:", word, box, get_fullpage)
+    logger.dbg("lookup word:", word, box, get_fullpage)
     -- no need to clean word if get_fullpage, as it is the exact wikipetia page title
     if word and not get_fullpage then
         -- escape quotes and other funny characters in word
         word = self:cleanSelection(word)
         -- no need to lower() word with wikipedia search
     end
-    DEBUG("stripped word:", word)
+    logger.dbg("stripped word:", word)
     if word == "" then
         return
     end
@@ -128,9 +128,9 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
             }
             table.insert(results, result)
         end
-        DEBUG("lookup result:", word, results)
+        logger.dbg("lookup result:", word, results)
     else
-        DEBUG("error:", pages)
+        logger.dbg("error:", pages)
         -- dummy results
         results = {
             {
@@ -140,7 +140,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
                 is_fullpage = get_fullpage,
             }
         }
-        DEBUG("dummy result table:", word, results)
+        logger.dbg("dummy result table:", word, results)
     end
     self:onLookupDone()
     self:showDict(word, results, box)

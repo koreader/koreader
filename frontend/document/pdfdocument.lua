@@ -3,7 +3,7 @@ local CacheItem = require("cacheitem")
 local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local util = require("util")
 
 local PdfDocument = Document:new{
@@ -150,7 +150,7 @@ function PdfDocument:saveHighlight(pageno, item)
 end
 
 function PdfDocument:writeDocument()
-    DEBUG("writing document to", self.file)
+    logger.info("writing document to", self.file)
     self._document:writeDocument(self.file)
 end
 

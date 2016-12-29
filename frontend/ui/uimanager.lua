@@ -5,6 +5,7 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local util = require("ffi/util")
 local dbg = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local noop = function() end
@@ -136,10 +137,10 @@ end
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:show(widget, refreshtype, refreshregion, x, y)
     if not widget then
-        dbg("widget not exist to be closed")
+        logger.dbg("widget not exist to be shown")
         return
     end
-    dbg("show widget", widget.id or widget.name or "unknown")
+    logger.dbg("show widget", widget.id or widget.name or "unknown")
 
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
@@ -168,10 +169,10 @@ end
 -- for refreshtype & refreshregion see description of setDirty()
 function UIManager:close(widget, refreshtype, refreshregion)
     if not widget then
-        dbg("widget not exist to be closed")
+        logger.dbg("widget not exist to be closed")
         return
     end
-    dbg("close widget", widget.id or widget.name)
+    logger.dbg("close widget", widget.id or widget.name)
     local dirty = false
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
@@ -337,7 +338,7 @@ end
 -- set full refresh rate for e-ink screen
 -- and make the refresh rate persistant in global reader settings
 function UIManager:setRefreshRate(rate)
-    dbg("set screen full refresh rate", rate)
+    logger.dbg("set screen full refresh rate", rate)
     self.FULL_REFRESH_COUNT = rate
     G_reader_settings:saveSetting("full_refresh_count", rate)
 end
@@ -349,7 +350,7 @@ end
 
 -- signal to quit
 function UIManager:quit()
-    dbg("quiting uimanager")
+    logger.info("quiting uimanager")
     self._task_queue_dirty = false
     self._running = false
     self._run_forever = nil
@@ -371,7 +372,6 @@ end
 
 -- transmit an event to an active widget
 function UIManager:sendEvent(event)
-    --dbg:v("send event", event)
     if #self._window_stack == 0 then return end
 
     local top_widget = self._window_stack[#self._window_stack]
@@ -511,7 +511,7 @@ function UIManager:_refresh(mode, region)
     if not region and mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            dbg("promote refresh to full refresh")
+            logger.dbg("promote refresh to full refresh")
             mode = "full"
         end
         self.refresh_counted = true
@@ -568,7 +568,7 @@ function UIManager:_repaint()
     -- we should have at least one refresh if we did repaint.  If we don't, we
     -- add one now and log a warning if we are debugging
     if dirty and #self._refresh_stack == 0 then
-        dbg("WARNING: no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
+        logger.warn("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
 
@@ -610,7 +610,7 @@ function UIManager:handleInput()
 
         -- stop when we have no window to show
         if #self._window_stack == 0 and not self._run_forever then
-            dbg("no dialog left to show")
+            logger.info("no dialog left to show")
             self:quit()
             return nil
         end
@@ -655,7 +655,7 @@ function UIManager:handleInput()
     end
 
     if self.looper then
-        dbg("handle input in turbo I/O looper")
+        logger.info("handle input in turbo I/O looper")
         self.looper:add_callback(function()
             -- FIXME: force close looper when there is unhandled error,
             -- otherwise the looper will hang. Any better solution?

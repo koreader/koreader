@@ -6,7 +6,7 @@ local lfs = require("libs/libkoreader-lfs")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
 local Device = require("device")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local Font = {
     fontmap = {
@@ -83,7 +83,7 @@ function Font:getFace(font, size)
         realname = self.fontdir.."/"..realname
         local ok, face = pcall(Freetype.newFace, realname, size)
         if not ok then
-            DEBUG("#! Font "..font.." ("..realname..") not supported: "..face)
+            logger.warn("#! Font ", font, " (", realname, ") not supported: ", face)
             return nil
         end
         --- Freetype font face wrapper object

@@ -1,5 +1,5 @@
 local lfs = require("libs/libkoreader-lfs")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local PluginLoader = {
     plugin_path = "plugins"
@@ -21,7 +21,7 @@ function PluginLoader:loadPlugins()
             package.cpath = path.."/lib/?.so;"..package.cpath
             local ok, plugin_module = pcall(dofile, mainfile)
             if not ok or not plugin_module then
-                DEBUG("Error when loading", mainfile, plugin_module)
+                logger.warn("Error when loading", mainfile, plugin_module)
             end
             if ok and plugin_module and not plugin_module.disabled then
                 package.path = package_path

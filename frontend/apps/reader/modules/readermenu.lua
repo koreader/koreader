@@ -5,7 +5,6 @@ local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local Event = require("ui/event")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
@@ -215,7 +214,6 @@ end
 
 function ReaderMenu:onCloseReaderMenu()
     self.last_tab_index = self.menu_container[1].last_index
-    DEBUG("remember menu tab index", self.last_tab_index)
     self:onSaveSettings()
     UIManager:close(self.menu_container)
     return true
