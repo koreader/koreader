@@ -367,74 +367,83 @@ end
 
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
-    if catalog then
-        local feed = catalog.feed or catalog
-        local function build_href(href)
-            --DEBUG("building href", item_url, href)
-            return url.absolute(item_url, href)
-        end
-        local hrefs = {}
-        if feed.link then
-            for _, link in ipairs(feed.link) do
-                if link.type ~= nil then
-                    if link.type:find(self.catalog_type) or
-                        link.type:find(self.search_type) then
-                        if link.rel and link.href then
-                            hrefs[link.rel] = build_href(link.href)
-                        end
+    if not catalog then
+        return item_table
+    end
+
+    local feed = catalog.feed or catalog
+
+    local function build_href(href)
+        return url.absolute(item_url, href)
+    end
+
+    local hrefs = {}
+    if feed.link then
+        for _, link in ipairs(feed.link) do
+            if link.type ~= nil then
+                if link.type:find(self.catalog_type) or
+                    link.type:find(self.search_type) then
+                    if link.rel and link.href then
+                        hrefs[link.rel] = build_href(link.href)
                     end
                 end
             end
         end
-        item_table.hrefs = hrefs
-        if feed.entry then
-            for _, entry in ipairs(feed.entry) do
-                local item = {}
-                item.acquisitions = {}
-                if entry.link then
-                    for _, link in ipairs(entry.link) do
-                        if link.type:find(self.catalog_type) and (not link.rel or link.rel == "subsection" or link.rel == "http://opds-spec.org/sort/popular" or link.rel == "http://opds-spec.org/sort/new") then
-                            item.url = build_href(link.href)
-                        end
-                        if link.rel and link.rel:match(self.acquisition_rel) then
-                            table.insert(item.acquisitions, {
-                                type = link.type,
-                                --DEBUG("building acquisition url", link);
-                                href = build_href(link.href),
-                            })
-                        end
-                        if link.rel == self.thumbnail_rel then
-                            item.thumbnail = build_href(link.href)
-                        end
-                        if link.rel == self.image_rel then
-                            item.image = build_href(link.href)
-                        end
+    end
+    item_table.hrefs = hrefs
+
+    if not feed.entry then
+        return item_table
+    end
+
+    for _, entry in ipairs(feed.entry) do
+        local item = {}
+        item.acquisitions = {}
+        if entry.link then
+            for _, link in ipairs(entry.link) do
+                if link.type:find(self.catalog_type)
+                        and (not link.rel
+                             or link.rel == "subsection"
+                             or link.rel == "http://opds-spec.org/sort/popular"
+                             or link.rel == "http://opds-spec.org/sort/new") then
+                    item.url = build_href(link.href)
+                end
+                if link.rel then
+                    if link.rel:match(self.acquisition_rel) then
+                        table.insert(item.acquisitions, {
+                            type = link.type,
+                            href = build_href(link.href),
+                        })
+                    elseif link.rel == self.thumbnail_rel then
+                        item.thumbnail = build_href(link.href)
+                    elseif link.rel == self.image_rel then
+                        item.image = build_href(link.href)
                     end
                 end
-                local title = "Unknown"
-                if type(entry.title) == "string" then
-                    title = entry.title
-                elseif type(entry.title) == "table" then
-                    if type(entry.title.type) == "string" and entry.title.div ~= "" then
-                        title = entry.title.div
-                    end
-                end
-                if title == "Unknown" then
-                    DEBUG("Cannot handle title", entry.title)
-                end
-                local author = "Unknown Author"
-                if type(entry.author) == "table" and entry.author.name then
-                    author = entry.author.name
-                end
-                item.text = title
-                item.title = title
-                item.author = author
-                item.id = entry.id
-                item.content = entry.content
-                item.updated = entry.updated
-                table.insert(item_table, item)
             end
         end
+        local title = "Unknown"
+        if type(entry.title) == "string" then
+            title = entry.title
+        elseif type(entry.title) == "table" then
+            if type(entry.title.type) == "string" and entry.title.div ~= "" then
+                title = entry.title.div
+            end
+        end
+        if title == "Unknown" then
+            DEBUG("Cannot handle title", entry.title)
+        end
+        local author = "Unknown Author"
+        if type(entry.author) == "table" and entry.author.name then
+            author = entry.author.name
+        end
+        item.text = title
+        item.title = title
+        item.author = author
+        item.id = entry.id
+        item.content = entry.content
+        item.updated = entry.updated
+        table.insert(item_table, item)
     end
     return item_table
 end
