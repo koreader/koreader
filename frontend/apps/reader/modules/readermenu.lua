@@ -65,10 +65,14 @@ function ReaderMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
-        self.key_events = {
-            ShowReaderMenu = { { "Menu" }, doc = "show menu" },
-            Close = { { "Back" }, doc = "close menu" },
-        }
+        self.key_events = { Close = { { "Back" }, doc = "close menu" }, }
+        if Device:isTouchDevice() then
+            self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
+        else
+            -- map menu key to only top menu because bottom menu is only
+            -- designed for touch devices
+            self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
+        end
     end
 end
 

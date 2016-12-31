@@ -20,62 +20,56 @@ local unescape_map  = {
 local gsub = string.gsub
 local function unescape(str)
     return gsub(str, '(&(#?)([%d%a]+);)', function(orig, n, s)
-        return unescape_map[s] or n=="#" and util.unichar(tonumber(s)) or orig
+        if unescape_map[s] then
+            return unescape_map[s]
+        elseif n == "#" then  -- unescape unicode
+            return util.unichar(tonumber(s))
+        else
+            return orig
+        end
     end)
 end
 
-function OPDSParser:createFlatXTable(xlex, currentelement)
-    currentelement = currentelement or {}
+function OPDSParser:createFlatXTable(xlex, curr_element)
+    curr_element = curr_element or {}
 
-    local currentattributename = nil;
-    local attribute_count = 0;
+    local curr_attr_name;
+    local attr_count = 0;
 
     -- start reading the thing
     local txt
     for event, offset, size in xlex:Lexemes() do
         txt = ffi.string(xlex.buf + offset, size)
+        if event == luxl.EVENT_START then
+            if txt ~= "xml" then
+                -- does current element already have something
+                -- with this name?
 
-        if event == luxl.EVENT_START and txt ~= "xml" then
-            -- does current element already have something
-            -- with this name?
-
-            -- if it does, if it's a table, add to it
-            -- if it doesn't, then add a table
-            local tab = self:createFlatXTable(xlex)
-            if txt == "entry" or txt == "link" then
-                if currentelement[txt] == nil then
-                    currentelement[txt] = {}
+                -- if it does, if it's a table, add to it
+                -- if it doesn't, then add a table
+                local tab = self:createFlatXTable(xlex)
+                if txt == "entry" or txt == "link" then
+                    if curr_element[txt] == nil then
+                        curr_element[txt] = {}
+                    end
+                    table.insert(curr_element[txt], tab)
+                elseif type(curr_element) == "table" then
+                    curr_element[txt] = tab
                 end
-                table.insert(currentelement[txt], tab)
-            elseif type(currentelement) == "table" then
-                currentelement[txt] = tab
             end
-        end
-
-        if event == luxl.EVENT_ATTR_NAME then
-            currentattributename = txt
-        end
-
-        if event == luxl.EVENT_ATTR_VAL then
-            currentelement[currentattributename] = txt
-            attribute_count = attribute_count + 1;
-            currentattributename = nil
-        end
-
-        if event == luxl.EVENT_TEXT then
-            --if attribute_count < 1 then
-            --  return txt
-            --end
-
-            currentelement = unescape(txt)
-        end
-
-        if event == luxl.EVENT_END then
-            return currentelement
+        elseif event == luxl.EVENT_ATTR_NAME then
+            curr_attr_name = unescape(txt)
+        elseif event == luxl.EVENT_ATTR_VAL then
+            curr_element[curr_attr_name] = unescape(txt)
+            attr_count = attr_count + 1;
+            curr_attr_name = nil
+        elseif event == luxl.EVENT_TEXT then
+            curr_element = unescape(txt)
+        elseif event == luxl.EVENT_END then
+            return curr_element
         end
     end
-
-    return currentelement
+    return curr_element
 end
 
 function OPDSParser:parse(text)
