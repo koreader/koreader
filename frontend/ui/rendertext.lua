@@ -192,8 +192,9 @@ end
 -- @bool[opt=false] bold whether the text should be measured as bold
 -- @tparam[opt=BlitBuffer.COLOR_BLACK] BlitBuffer.COLOR fgcolor foreground color
 -- @int[opt=nil] width maximum rendering width
+-- @tparam[opt] table char_pads array of integers, nb of pixels to add, one for each utf8 char in text
 -- @return int width of rendered bitmap
-function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bold, fgcolor, width)
+function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bold, fgcolor, width, char_pads)
     if not text then
         logger.warn("renderUtf8Text called without text");
         return 0
@@ -211,6 +212,7 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
     if width and width < text_width then
         text_width = width
     end
+    local char_idx = 0
     for _, charcode, uchar in utf8Chars(text) do
         if pen_x < text_width then
             local glyph = self:getGlyph(face, charcode, bold)
@@ -227,6 +229,11 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
             pen_x = pen_x + glyph.ax
             prevcharcode = charcode
         end -- if pen_x < text_width
+        if char_pads then
+            char_idx = char_idx + 1
+            pen_x = pen_x + char_pads[char_idx] -- or 0
+            -- will fail if we didnt count the same number of chars, we'll see
+        end
     end
 
     return pen_x
