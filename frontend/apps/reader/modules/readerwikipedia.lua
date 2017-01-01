@@ -11,7 +11,6 @@ local ReaderWikipedia = ReaderDictionary:extend{
     is_wiki = true,
     wiki_languages = {},
     no_page = _("No wiki page found."),
-    lookup_msg = _("Searching Wikipedia for:\n%1")
 }
 
 function ReaderWikipedia:init()
@@ -87,6 +86,13 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
     logger.dbg("stripped word:", word)
     if word == "" then
         return
+    end
+
+    -- Fix lookup message to include lang
+    if get_fullpage then
+        self.lookup_msg = T(_("Getting Wikipedia %2 page:\n%1"), "%1", lang:upper())
+    else
+        self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
     end
     self:onLookupStarted(word)
     local results = {}

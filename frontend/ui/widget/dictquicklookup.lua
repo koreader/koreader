@@ -129,6 +129,9 @@ function DictQuickLookup:init()
                         -- but allow switching domain with a long hold
                         lookup_target = self.is_wiki and "LookupWord" or "LookupWikipedia"
                     end
+                    if lookup_target == "LookupWikipedia" then
+                        self:resyncWikiLanguages()
+                    end
                     self.ui:handleEvent(
                         -- don't pass self.highlight to subsequent lookup, we want
                         -- the first to be the only one to unhighlight selection
@@ -199,6 +202,9 @@ function DictQuickLookup:update()
         lookup_word_font_size = 18
         lookup_word_padding = self.wiki_word_padding
         lookup_word_margin = self.wiki_word_margin
+        -- Keep a copy of self.wiki_languages for use
+        -- by DictQuickLookup:resyncWikiLanguages()
+        self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
     else
         -- Usual font size for dictionary
         lookup_word_font_size = 22
@@ -296,9 +302,7 @@ function DictQuickLookup:update()
                     text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or "-",
                     enabled = self.is_wiki and #self.wiki_languages > 1,
                     callback = function()
-                        -- rotate wiki_languages
-                        local current_lang = table.remove(self.wiki_languages, 1)
-                        table.insert(self.wiki_languages, current_lang)
+                        self:resyncWikiLanguages(true) -- rotate & resync them
                         UIManager:close(self)
                         self:lookupWikipedia()
                     end,
@@ -563,6 +567,9 @@ function DictQuickLookup:onSwipe(arg, ges)
         self:changeToNextDict()
     elseif ges.direction == "east" then
         self:changeToPrevDict()
+    else
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
     end
     return true
 end
@@ -600,13 +607,38 @@ end
 function DictQuickLookup:inputLookup()
     local word = self.input_dialog:getInputText()
     if word and word ~= "" then
-        local event = self.is_wiki and "LookupWikipedia" or "LookupWord"
+        local event
+        if self.is_wiki then
+            event = "LookupWikipedia"
+            self:resyncWikiLanguages()
+        else
+            event = "LookupWord"
+        end
         self.ui:handleEvent(Event:new(event, word))
     end
 end
 
 function DictQuickLookup:closeInputDialog()
     UIManager:close(self.input_dialog)
+end
+
+function DictQuickLookup:resyncWikiLanguages(rotate)
+    -- Resync the current language or rotate it from its state when
+    -- this window was created (we may have rotated it later in other
+    -- wikipedia windows that we closed and went back here, and its
+    -- state would not be what the wikipedia language button is showing.
+    if not self.wiki_languages_copy then
+        return
+    end
+    if rotate then
+        -- rotate our saved wiki_languages copy
+        local current_lang = table.remove(self.wiki_languages_copy, 1)
+        table.insert(self.wiki_languages_copy, current_lang)
+    end
+    -- re-set self.wiki_languages with original (possibly rotated) items
+    for i, lang in ipairs(self.wiki_languages_copy) do
+        self.wiki_languages[i] = lang
+    end
 end
 
 function DictQuickLookup:lookupWikipedia(get_fullpage)
@@ -619,6 +651,7 @@ function DictQuickLookup:lookupWikipedia(get_fullpage)
         -- we use the original word that was querried
         word = self.word
     end
+    self:resyncWikiLanguages()
     -- strange : we need to pass false instead of nil if word_box is nil,
     -- otherwise get_fullpage is not passed
     self.ui:handleEvent(Event:new("LookupWikipedia", word, self.word_box and self.word_box or false, get_fullpage))
