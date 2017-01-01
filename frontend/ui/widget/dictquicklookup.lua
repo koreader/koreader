@@ -42,6 +42,8 @@ local DictQuickLookup = InputContainer:new{
     height = nil,
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
+    -- allow for disabling justification
+    dict_justify = G_reader_settings:nilOrTrue("dict_justify"),
 
     title_padding = Screen:scaleBySize(5),
     title_margin = Screen:scaleBySize(2),
@@ -231,6 +233,7 @@ function DictQuickLookup:update()
             -- get a bit more height for definition as wiki has one less button raw
             height = self.is_fullpage and self.height*0.75 or self.height*0.7,
             dialog = self,
+            justified = self.dict_justify,
         },
     }
     -- Different sets of buttons if fullpage or not
