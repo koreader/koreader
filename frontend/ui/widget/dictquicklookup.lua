@@ -139,6 +139,11 @@ function DictQuickLookup:init()
     end
 end
 
+-- Whether currently DictQuickLookup is working without a document.
+function DictQuickLookup:isDocless()
+    return self.ui == nil or self.ui.highlight == nil
+end
+
 function DictQuickLookup:update()
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     -- calculate window dimension
@@ -296,7 +301,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = self.is_wiki and _("Close") or _("Search"),
+                    text = (self.is_wiki or self:isDocless()) and _("Close") or _("Search"),
                     callback = function()
                         if not self.is_wiki then
                             self.ui:handleEvent(Event:new("HighlightSearch"))
@@ -399,7 +404,7 @@ function DictQuickLookup:onShow()
 end
 
 function DictQuickLookup:getHighlightedItem()
-    if not self.ui then return end
+    if self:isDocless() then return end
     return self.ui.highlight:getHighlightBookmarkItem()
 end
 

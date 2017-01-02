@@ -27,6 +27,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
 local InfoMessage = require("ui/widget/infomessage")
 local PluginLoader = require("pluginloader")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -296,6 +297,7 @@ function FileManager:init()
     table.insert(self, FileManagerHistory:new{
         ui = self,
     })
+    table.insert(self, ReaderDictionary:new{ ui = self })
 
     self.loaded_modules = {}
     -- koreader plugins
