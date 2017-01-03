@@ -19,7 +19,7 @@ local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local util = require("util")
-local DEBUG= require("dbg")
+local logger = require("logger")
 local TimeVal = require("ui/timeval")
 
 local TextBoxWidget = Widget:new{
@@ -316,7 +316,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
     local x, y = ges.pos.x - self.dimen.x, ges.pos.y - self.dimen.y
     local line_num = math.ceil(y / self.line_height_px) + self.virtual_line_num-1
     local line = self.vertical_string_list[line_num]
-    DEBUG("holding on line", line)
+    logger.dbg("holding on line", line)
     if line then
         local char_start = line.offset
         local char_end  -- char_end is non-inclusive
@@ -429,7 +429,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
-    DEBUG("onHoldReleaseText (duration:", hold_duration, ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    logger.dbg("onHoldReleaseText (duration:", hold_duration, ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
     callback(selected_text, hold_duration)
     return true
 end

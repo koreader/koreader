@@ -7,7 +7,7 @@ local Input = require("device").input
 local Screen = require("device").screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -143,7 +143,7 @@ function ReaderZooming:onToggleFreeZoom(arg, ges)
         self.orig_zoom = self.zoom
         local xpos, ypos
         self.zoom, xpos, ypos = self:getRegionalZoomCenter(self.current_page, ges.pos)
-        DEBUG("zoom center", self.zoom, xpos, ypos)
+        logger.info("zoom center", self.zoom, xpos, ypos)
         self.ui:handleEvent(Event:new("SetZoomMode", "free"))
         if xpos == nil or ypos == nil then
             xpos = ges.pos.x * self.zoom / self.orig_zoom
@@ -173,13 +173,13 @@ function ReaderZooming:onRotationUpdate(rotation)
 end
 
 function ReaderZooming:onZoom(direction)
-    DEBUG("zoom", direction)
+    logger.info("zoom", direction)
     if direction == "in" then
         self.zoom = self.zoom * 1.333333
     elseif direction == "out" then
         self.zoom = self.zoom * 0.75
     end
-    DEBUG("zoom is now at", self.zoom)
+    logger.info("zoom is now at", self.zoom)
     self:onSetZoomMode("free")
     self.view:onZoomUpdate(self.zoom)
     return true
@@ -188,7 +188,7 @@ end
 function ReaderZooming:onSetZoomMode(new_mode)
     self.view.zoom_mode = new_mode
     if self.zoom_mode ~= new_mode then
-        DEBUG("setting zoom mode to", new_mode)
+        logger.info("setting zoom mode to", new_mode)
         self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
         self.zoom_mode = new_mode
         self:setZoom()

@@ -1,3 +1,4 @@
+local logger = require("logger")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
 
@@ -30,6 +31,7 @@ end
 function Dbg:turnOn()
     if self.is_on == true then return end
     self.is_on = true
+    logger:setLevel(logger.levels.dbg)
 
     Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
@@ -53,6 +55,7 @@ end
 function Dbg:turnOff()
     if self.is_on == false then return end
     self.is_on = false
+    logger:setLevel(logger.levels.info)
     function Dbg_mt.__call() end
     function Dbg.guard() end
     if self.ev_log then

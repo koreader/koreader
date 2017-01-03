@@ -1,5 +1,5 @@
 local JSON = require("json")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 --[[
 -- Query wikipedia using Wikimedia Web API.
@@ -76,7 +76,6 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     request['url'] = url.build(parsed)
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
-    DEBUG("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     -- first argument returned by skip is code
@@ -88,7 +87,7 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     end
 
     if status ~= "HTTP/1.1 200 OK" then
-        DEBUG("HTTP status not okay:", status)
+        logger.warn("HTTP status not okay:", status)
         return
     end
 
@@ -96,13 +95,13 @@ function Wikipedia:loadPage(text, lang, intro, plain)
     if content ~= "" and string.sub(content, 1,1) == "{" then
         local ok, result = pcall(JSON.decode, content)
         if ok and result then
-            DEBUG("wiki result", result)
+            logger.dbg("wiki result", result)
             return result
         else
-            DEBUG("error:", result)
+            logger.warn("wiki error:", result)
         end
     else
-        DEBUG("not JSON:", content)
+        logger.warn("not JSON from wiki response:", content)
     end
 end
 

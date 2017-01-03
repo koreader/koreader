@@ -3,7 +3,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = Device.screen
 local DocSettings = require("docsettings")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local Screensaver = {
 }
@@ -88,7 +88,7 @@ function Screensaver:getCoverImage(file)
 end
 
 function Screensaver:show(kind, default_msg)
-    DEBUG("show screensaver")
+    logger.dbg("show screensaver")
     local InfoMessage = require("ui/widget/infomessage")
     local screensaver_settings = G_reader_settings:readSetting(kind .. "_screensaver") or {}
     -- first check book cover image, on by default
@@ -137,7 +137,7 @@ function Screensaver:show(kind, default_msg)
 end
 
 function Screensaver:close()
-    DEBUG("close screensaver")
+    logger.dbg("close screensaver")
     if self.left_msg then
         UIManager:close(self.left_msg)
         self.left_msg = nil

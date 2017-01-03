@@ -10,7 +10,7 @@ local ButtonTable = require("ui/widget/buttontable")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 
@@ -113,7 +113,7 @@ function MultiConfirmBox:onClose()
 end
 
 function MultiConfirmBox:onSelect()
-    DEBUG("selected:", self.selected.x)
+    logger.dbg("selected:", self.selected.x)
     if self.selected.x == 1 then
         self:choice1_callback()
     elseif self.selected.x == 2 then

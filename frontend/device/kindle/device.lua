@@ -1,7 +1,7 @@
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
@@ -189,7 +189,7 @@ local KindleBasic2 = Kindle:new{
 }
 
 function Kindle2:init()
-    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         is_charging_file = "/sys/devices/platform/charger/charging",
@@ -204,7 +204,7 @@ function Kindle2:init()
 end
 
 function KindleDXG:init()
-    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         is_charging_file = "/sys/devices/platform/charger/charging",
@@ -220,7 +220,7 @@ function KindleDXG:init()
 end
 
 function Kindle3:init()
-    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/luigi_battery/luigi_battery0/battery_capacity",
@@ -237,7 +237,7 @@ function Kindle3:init()
 end
 
 function Kindle4:init()
-    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
@@ -258,7 +258,7 @@ local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 -- luacheck: pop
 function KindleTouch:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
@@ -282,7 +282,7 @@ function KindleTouch:init()
 end
 
 function KindlePaperWhite:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
@@ -297,7 +297,7 @@ function KindlePaperWhite:init()
 end
 
 function KindlePaperWhite2:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
@@ -312,7 +312,7 @@ function KindlePaperWhite2:init()
 end
 
 function KindleBasic:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
@@ -326,7 +326,7 @@ function KindleBasic:init()
 end
 
 function KindleVoyage:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
@@ -378,7 +378,7 @@ function KindleVoyage:init()
 end
 
 function KindlePaperWhite3:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
@@ -393,7 +393,7 @@ function KindlePaperWhite3:init()
 end
 
 function KindleOasis:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
@@ -460,7 +460,7 @@ function KindleOasis:init()
 end
 
 function KindleBasic2:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = DEBUG}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
@@ -480,12 +480,12 @@ local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
     local lipc = require("liblipclua")
     if not lipc then
-        DEBUG("could not load liblibclua")
+        logger.warn("could not load liblibclua")
         return false
     end
     local lipc_handle = lipc.init("com.github.koreader.device")
     if not lipc_handle then
-        DEBUG("could not get lipc handle")
+        logger.warn("could not get lipc handle")
         return false
     end
     local so = false

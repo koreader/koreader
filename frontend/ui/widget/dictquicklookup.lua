@@ -19,7 +19,7 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Blitbuffer = require("ffi/blitbuffer")
@@ -384,7 +384,7 @@ function DictQuickLookup:update()
     }
     UIManager:setDirty("all", function()
         local update_region = self.dict_frame.dimen:combine(orig_dimen)
-        DEBUG("update dict region", update_region)
+        logger.dbg("update dict region", update_region)
         return "partial", update_region
     end)
 end

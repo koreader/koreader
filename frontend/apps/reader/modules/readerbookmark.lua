@@ -9,7 +9,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local ReaderBookmark = InputContainer:new{
@@ -285,7 +285,7 @@ function ReaderBookmark:addBookmark(item)
         _middle = math.floor((_start + _end)/2)
         -- won't add duplicated bookmarks
         if self:isBookmarkSame(item, self.bookmarks[_middle]) then
-            DEBUG("skip adding duplicated bookmark")
+            logger.warn("skip adding duplicated bookmark")
             return
         end
         if self:isBookmarkInPageOrder(item, self.bookmarks[_middle]) then
@@ -351,7 +351,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
 end
 
 function ReaderBookmark:getPreviousBookmarkedPage(pn_or_xp)
-    DEBUG("go to next bookmark from", pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
     for i = 1, #self.bookmarks do
         if self:isBookmarkInPageOrder({page = pn_or_xp}, self.bookmarks[i]) then
             return self.bookmarks[i].page
@@ -360,7 +360,7 @@ function ReaderBookmark:getPreviousBookmarkedPage(pn_or_xp)
 end
 
 function ReaderBookmark:getNextBookmarkedPage(pn_or_xp)
-    DEBUG("go to next bookmark from", pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
     for i = #self.bookmarks, 1, -1 do
         if self:isBookmarkInReversePageOrder({page = pn_or_xp}, self.bookmarks[i]) then
             return self.bookmarks[i].page

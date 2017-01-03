@@ -3,7 +3,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local OPDSBrowser = require("ui/widget/opdsbrowser")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 local ReaderUI = require("apps/reader/readerui")
@@ -79,7 +79,7 @@ function OPDSCatalog:onCloseWidget()
 end
 
 function OPDSCatalog:showCatalog()
-    DEBUG("show OPDS catalog")
+    logger.dbg("show OPDS catalog")
     UIManager:show(OPDSCatalog:new{
         dimen = Screen:getSize(),
         onExit = function()
@@ -89,7 +89,7 @@ function OPDSCatalog:showCatalog()
 end
 
 function OPDSCatalog:onClose()
-    DEBUG("close OPDS catalog")
+    logger.dbg("close OPDS catalog")
     UIManager:close(self)
     if self.onExit then
         self:onExit()

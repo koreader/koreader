@@ -4,7 +4,7 @@ A global LRU cache
 local md5 = require("ffi/MD5")
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 if require("device"):isAndroid() then
     require("jit").off(true, true)
@@ -99,7 +99,7 @@ function Cache:insert(key, object)
     self:drop(key)
     -- guarantee that we have enough memory in cache
     if (object.size > self.max_memsize) then
-        DEBUG("too much memory claimed for", key)
+        logger.warn("too much memory claimed for", key)
         return
     end
     -- delete objects that least recently used
@@ -135,7 +135,7 @@ function Cache:check(key, ItemClass)
                 self:insert(key, item)
                 return item
             else
-                DEBUG("discard cache", msg)
+                logger.warn("discard cache", msg)
             end
         end
     end
@@ -163,7 +163,7 @@ function Cache:serialize()
         local cache_item = self.cache[key]
         -- only dump cache item that requests serialization explicitly
         if cache_item.persistent and cache_item.dump then
-            DEBUG("dump cache item", key)
+            logger.dbg("dump cache item", key)
             cache_size = cache_item:dump(cache_path..md5.sum(key)) or 0
             if cache_size > 0 then break end
         end

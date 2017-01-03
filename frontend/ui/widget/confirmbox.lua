@@ -26,7 +26,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = Device.screen
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 
@@ -115,7 +115,7 @@ function ConfirmBox:onClose()
 end
 
 function ConfirmBox:onSelect()
-    DEBUG("selected:", self.selected.x)
+    logger.dbg("selected:", self.selected.x)
     if self.selected.x == 1 then
         self:ok_callback()
     else

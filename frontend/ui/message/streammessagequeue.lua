@@ -1,5 +1,5 @@
 local ffi = require("ffi")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local MessageQueue = require("ui/message/messagequeue")
 
 local _ = require("ffi/zeromq_h")
@@ -16,7 +16,7 @@ function StreamMessageQueue:start()
     self.socket = czmq.zsocket_new(self.context, ffi.C.ZMQ_STREAM)
     self.poller = czmq.zpoller_new(self.socket, nil)
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)
-    DEBUG("connect to endpoint", endpoint)
+    logger.warn("connect to endpoint", endpoint)
     local rc = czmq.zsocket_connect(self.socket, endpoint)
     if rc ~= 0 then
         error("cannot connect to " .. endpoint)
@@ -26,7 +26,7 @@ function StreamMessageQueue:start()
     -- @todo: check return of zmq_getsockopt
     zmq.zmq_getsockopt(self.socket, ffi.C.ZMQ_IDENTITY, buffer, id_size)
     self.id = ffi.string(buffer, id_size[0])
-    DEBUG("id", #self.id, self.id)
+    logger.dbg("id", #self.id, self.id)
 end
 
 function StreamMessageQueue:stop()
@@ -79,7 +79,6 @@ function StreamMessageQueue:waitEvent()
 end
 
 function StreamMessageQueue:send(data)
-    --DEBUG("send", data)
     local msg = czmq.zmsg_new()
     czmq.zmsg_addmem(msg, self.id, #self.id)
     czmq.zmsg_addmem(msg, data, #data)

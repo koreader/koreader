@@ -14,6 +14,7 @@ local Screen = Device.screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local dbg = require("dbg")
+local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
 
@@ -176,7 +177,6 @@ function ReaderView:paintTo(bb, x, y)
 
     -- dim last read area
     if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
-        --dbg("dim area", self.dim_area)
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
@@ -226,7 +226,7 @@ function ReaderView:screenToPageTransform(pos)
     else
         pos.page = self.ui.document:getCurrentPage()
         -- local last_y = self.ui.document:getCurrentPos()
-        dbg("document has no pages at", pos)
+        logger.dbg("document has no pages at", pos)
         return pos
     end
 end
@@ -556,14 +556,14 @@ function ReaderView:recalculate()
 end
 
 function ReaderView:PanningUpdate(dx, dy)
-    dbg("pan by", dx, dy)
+    logger.dbg("pan by", dx, dy)
     local old = self.visible_area:copy()
     self.visible_area:offsetWithin(self.page_area, dx, dy)
     if self.visible_area ~= old then
         -- flag a repaint
         UIManager:setDirty(self.dialog, "partial")
-        dbg("on pan: page_area", self.page_area)
-        dbg("on pan: visible_area", self.visible_area)
+        logger.dbg("on pan: page_area", self.page_area)
+        logger.dbg("on pan: visible_area", self.visible_area)
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     end
@@ -571,7 +571,7 @@ function ReaderView:PanningUpdate(dx, dy)
 end
 
 function ReaderView:PanningStart(x, y)
-    dbg("panning start", x, y)
+    logger.dbg("panning start", x, y)
     if not self.panning_visible_area then
         self.panning_visible_area = self.visible_area:copy()
     end
@@ -650,7 +650,6 @@ function ReaderView:onSetDimensions(dimensions)
 end
 
 function ReaderView:onRestoreDimensions(dimensions)
-    --dbg("restore dimen", dimensions)
     self:resetLayout()
     self.dimen = dimensions
     -- recalculate view

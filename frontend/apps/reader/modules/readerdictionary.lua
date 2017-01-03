@@ -6,7 +6,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Device = require("device")
 local JSON = require("json")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -127,10 +127,10 @@ function ReaderDictionary:onLookupDone()
 end
 
 function ReaderDictionary:stardictLookup(word, box)
-    DEBUG("lookup word:", word, box)
+    logger.dbg("lookup word:", word, box)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word)
-    DEBUG("stripped word:", word)
+    logger.dbg("stripped word:", word)
     if word == "" then
         return
     end
@@ -162,7 +162,6 @@ function ReaderDictionary:stardictLookup(word, box)
                 std_out:close()
             end
         end
-        --DEBUG("result str:", word, results_str)
         local ok, results = pcall(JSON.decode, results_str)
         if ok and results then
             -- we may get duplicates (sdcv may do multiple queries,
@@ -176,7 +175,7 @@ function ReaderDictionary:stardictLookup(word, box)
                 end
             end
         else
-            DEBUG("JSON data cannot be decoded", results)
+            logger.warn("JSON data cannot be decoded", results)
         end
     end
     if #final_results == 0 then
@@ -190,13 +189,12 @@ function ReaderDictionary:stardictLookup(word, box)
         }
     end
     self:onLookupDone()
-    --DEBUG("lookup result table:", word, final_results)
     self:showDict(word, tidyMarkup(final_results), box)
 end
 
 function ReaderDictionary:showDict(word, results, box)
     if results and results[1] then
-        DEBUG("showing quick lookup window", word, results)
+        logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
@@ -218,7 +216,7 @@ function ReaderDictionary:showDict(word, results, box)
 end
 
 function ReaderDictionary:onUpdateDefaultDict(dict)
-    DEBUG("make default dictionary:", dict)
+    logger.dbg("make default dictionary:", dict)
     self.default_dictionary = dict
     UIManager:show(InfoMessage:new{
         text = T(_("%1 is now the default dictionary for this document."), dict),
@@ -232,7 +230,7 @@ function ReaderDictionary:onReadSettings(config)
 end
 
 function ReaderDictionary:onSaveSettings()
-    DEBUG("save default dictionary", self.default_dictionary)
+    logger.dbg("save default dictionary", self.default_dictionary)
     self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
 end
 
