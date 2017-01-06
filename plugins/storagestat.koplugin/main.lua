@@ -1,9 +1,6 @@
 
 local Device = require("device")
 
-if not (Device:isKobo() or Device:isKindle() or Device:isPocketBook()) then
-end
-
 local filter
 
 -- TODO(Hzj_jie): Find the right filter for PocketBook
