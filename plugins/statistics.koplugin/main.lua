@@ -21,7 +21,6 @@ local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local page_max_time
 
 local ReaderStatistics = Widget:extend{
-    is_doc_only = true,
     last_time = nil,
     page_min_read_sec = 5,
     page_max_read_sec = 90,
@@ -41,8 +40,12 @@ local ReaderStatistics = Widget:extend{
     },
 }
 
+function ReaderStatistics:isDocless()
+    return self.ui == nil or self.ui.document == nil
+end
+
 function ReaderStatistics:init()
-    if self.ui.document.is_pic then
+    if not self:isDocless() and self.ui.document.is_pic then
         return
     end
 
@@ -69,22 +72,23 @@ function ReaderStatistics:getBookProperties()
 end
 
 function ReaderStatistics:initData(config)
-    -- first execution
-    if self.is_enabled then
-        if not self.data then
-            self.data = { performance_in_pages= {} }
-            self:inplaceMigration();  -- first time merge data
-        end
-
-        local book_properties = self:getBookProperties()
-        self.data.title = book_properties.title
-        self.data.authors = book_properties.authors
-        self.data.language = book_properties.language
-        self.data.series = book_properties.series
-
-        self.data.pages = self.view.document:getPageCount()
+    if self:isDocless() or not self.is_enabled then
         return
     end
+    -- first execution
+    if not self.data then
+        self.data = { performance_in_pages= {} }
+        self:inplaceMigration();  -- first time merge data
+    end
+
+    local book_properties = self:getBookProperties()
+    self.data.title = book_properties.title
+    self.data.authors = book_properties.authors
+    self.data.language = book_properties.language
+    self.data.series = book_properties.series
+
+    self.data.pages = self.view.document:getPageCount()
+    return
 end
 
 local function generateReadBooksTable(title, dates)
@@ -104,13 +108,13 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
         checked_func = function() return self.is_enabled end,
         callback = function()
             -- if was enabled, have to save data to file
-            if self.last_time and self.is_enabled then
+            if self.last_time and self.is_enabled and not self:isDocless() then
                 self.ui.doc_settings:saveSetting("stats", self.data)
             end
 
             self.is_enabled = not self.is_enabled
             -- if was disabled have to get data from file
-            if self.is_enabled then
+            if self.is_enabled and not self:isDocless() then
                 self:initData(self.ui.doc_settings)
             end
             self:saveSettings()
@@ -178,7 +182,8 @@ function ReaderStatistics:addToMainMenu(tab_item_table)
                         title = _("Statistics"),
                         kv_pairs = self:getCurrentStat(),
                     })
-                end
+                end,
+                enabled = not self:isDocless()
             },
             {
                 text = _("All books"),
@@ -445,18 +450,21 @@ local function getDatesForBook(book)
 end
 
 function ReaderStatistics:getTotalStats()
-    local total_stats = {
-        {
-            self.data.title,
-            util.secondsToClock(self.data.total_time_in_sec, false),
-            callback = function()
-                UIManager:show(KeyValuePage:new{
-                    title = self.data.title,
-                    kv_pairs = getDatesForBook(self.data),
-                })
-            end,
+    local total_stats = {}
+    if not self:isDocless() then
+        total_stats = {
+            {
+                self.data.title,
+                util.secondsToClock(self.data.total_time_in_sec, false),
+                callback = function()
+                    UIManager:show(KeyValuePage:new{
+                        title = self.data.title,
+                        kv_pairs = getDatesForBook(self.data),
+                    })
+                end,
+            }
         }
-    }
+    end
     -- find stats for all other books in history
     local proceded_titles, total_books_time = self:getStatisticsFromHistory(total_stats)
     total_books_time = total_books_time + self:getOldStatisticsFromDirectory(proceded_titles, total_stats)
@@ -522,30 +530,31 @@ function ReaderStatistics:getOldStatisticsFromDirectory(exlude_titles, total_sta
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if self.is_enabled then
-        local curr_time = TimeVal:now()
-        local diff_time = curr_time.sec - self.last_time.sec
-
-        -- if last update was more then 10 minutes then current period set to 0
-        if (diff_time > 600) then
-            self.current_period = 0
-            self.pages_current_period = 0
-        end
-
-        if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
-            self.current_period = self.current_period + diff_time
-            self.pages_current_period = self.pages_current_period + 1
-            self.data.total_time_in_sec = self.data.total_time_in_sec + diff_time
-            self.data.performance_in_pages[curr_time.sec] = pageno
-            -- we cannot save stats each time this is a page update event,
-            -- because the self.data may not even be initialized when such a event
-            -- comes, which will render a blank stats written into doc settings
-            -- and all previous stats are totally wiped out.
-            self.ui.doc_settings:saveSetting("stats", self.data)
-        end
-
-        self.last_time = curr_time
+    if self:isDocless() or not self.is_enabled then
+        return
     end
+    local curr_time = TimeVal:now()
+    local diff_time = curr_time.sec - self.last_time.sec
+
+    -- if last update was more then 10 minutes then current period set to 0
+    if (diff_time > 600) then
+        self.current_period = 0
+        self.pages_current_period = 0
+    end
+
+    if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
+        self.current_period = self.current_period + diff_time
+        self.pages_current_period = self.pages_current_period + 1
+        self.data.total_time_in_sec = self.data.total_time_in_sec + diff_time
+        self.data.performance_in_pages[curr_time.sec] = pageno
+        -- we cannot save stats each time this is a page update event,
+        -- because the self.data may not even be initialized when such a event
+        -- comes, which will render a blank stats written into doc settings
+        -- and all previous stats are totally wiped out.
+        self.ui.doc_settings:saveSetting("stats", self.data)
+    end
+
+    self.last_time = curr_time
 end
 
 -- For backward compatibility
@@ -576,7 +585,7 @@ function ReaderStatistics:importFromFile(base_path, item)
 end
 
 function ReaderStatistics:onCloseDocument()
-    if self.last_time and self.is_enabled then
+    if not self:isDocless() and self.last_time and self.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
     end
 end
@@ -592,10 +601,11 @@ end
 -- in case when screensaver starts
 function ReaderStatistics:onSaveSettings()
     self:saveSettings()
-    self.ui.doc_settings:saveSetting("stats", self.data)
-    self.current_period = 0
-    self.pages_current_period = 0
-
+    if not self:isDocless() then
+        self.ui.doc_settings:saveSetting("stats", self.data)
+        self.current_period = 0
+        self.pages_current_period = 0
+    end
 end
 
 -- screensaver off
