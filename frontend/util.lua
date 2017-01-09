@@ -232,10 +232,12 @@ function util.getFilesystemType(path)
         if line == nil then
             break
         end
-        for param in line:gmatch("%w+") do table.insert(mount, param) end
+        for param in line:gmatch("%S+") do table.insert(mount, param) end
         if string.match(path, mount[2]) then
             type = mount[3]
-            break
+            if mount[2] ~= '/' then
+                break
+            end
         end
     end
     mounts:close()

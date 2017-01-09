@@ -475,7 +475,8 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     local lastdir = G_reader_settings:readSetting("lastdir")
     local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
     local utl = require("frontend/util")
-    if utl.getFilesystemType(download_dir) ~= nil then
+    local file_system = utl.getFilesystemType(download_dir)
+    if file_system == "vfat" or file_system == "fuse.fsp" then
         item.author = utl.replaceInvalidChars(item.author)
         item.title = utl.replaceInvalidChars(item.title)
     else
