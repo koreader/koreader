@@ -16,7 +16,6 @@ local MyClipping = require("clip")
 
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
-    is_doc_only = true,
     login_title = _("Login to Evernote"),
     notebook_name = _("KOReader Notes"),
     evernote_domain = nil,
@@ -44,6 +43,14 @@ function EvernoteExporter:init()
     self.template = slt2.loadfile(self.path.."/note.tpl")
     self:migrateClippings()
     self.config = DocSettings:open(util.joinPath(self.clipping_dir, "evernote.sdr"))
+end
+
+function EvernoteExporter:isDocless()
+    return self.ui == nil or self.ui.document == nil or self.view == nil
+end
+
+function EvernoteExporter:readyToExport()
+    return self.evernote_token ~= nil or self.html_export ~= false
 end
 
 function EvernoteExporter:migrateClippings()
@@ -98,7 +105,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
             {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
-                    return self.evernote_token ~= nil or self.html_export ~= false
+                    return not self:isDocless() and self:readyToExport()
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
@@ -114,7 +121,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
             {
                 text = _("Export all notes in your library"),
                 enabled_func = function()
-                    return self.evernote_token ~= nil or self.html_export ~= false
+                    return self:readyToExport()
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
@@ -132,6 +139,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 checked_func = function() return self.html_export end,
                 callback = function()
                     self.html_export = not self.html_export
+                    self:onSaveSettings()
                 end
             },
         }
