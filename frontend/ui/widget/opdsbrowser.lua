@@ -471,6 +471,15 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
     local lastdir = G_reader_settings:readSetting("lastdir")
     local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
+    local utl = require("frontend/util")
+    local file_system = utl.getFilesystemType(download_dir)
+    if file_system == "vfat" or file_system == "fuse.fsp" then
+        item.author = utl.replaceInvalidChars(item.author)
+        item.title = utl.replaceInvalidChars(item.title)
+    else
+        item.author = utl.replaceSlashChar(item.author)
+        item.title = utl.replaceSlashChar(item.title)
+    end
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     logger.dbg("downloading file", local_path, "from", remote_url)
 
