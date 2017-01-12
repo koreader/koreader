@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local JSON = require("json")
 local InfoMessage = require("ui/widget/infomessage")
+local ConfirmBox = require("ui/widget/confirmbox")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local util = require("util")
@@ -30,6 +31,14 @@ function ReaderHyphenation:init()
                     })
                     self.ui.document:setHyphDictionary(v.filename)
                     self.ui.toc:onUpdateToc()
+                end,
+                hold_callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = T( _("Set fallback hyphenation to %1?"), v.name),
+                        ok_callback = function()
+                            G_reader_settings:saveSetting("hyph_alg_fallback", v.filename)
+                        end,
+                    })
                 end,
                 checked_func = function()
                     return v.filename == self.hyph_alg
@@ -94,6 +103,9 @@ function ReaderHyphenation:onPreRenderDocument(config)
     local hyph_alg = config:readSetting("hyph_alg")
     if not hyph_alg then
         hyph_alg = self:getDictForLanguage(self.ui.document:getProps().language)
+    end
+    if not hyph_alg then
+        hyph_alg = G_reader_settings:readSetting("hyph_alg_fallback")
     end
     if hyph_alg then
         self.ui.document:setHyphDictionary(hyph_alg)
