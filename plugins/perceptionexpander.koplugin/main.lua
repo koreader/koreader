@@ -189,11 +189,6 @@ function PerceptionExpander:addToMainMenu(tab_item_table)
     })
 end
 
--- in case when screensaver starts
-function PerceptionExpander:onSaveSettings()
-    self:saveSettings()
-end
-
 function PerceptionExpander:onPageUpdate(pageno)
     if not self.is_enabled then
         return
