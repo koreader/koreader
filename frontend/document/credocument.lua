@@ -148,8 +148,23 @@ function CreDocument:getCoverPageImage()
     if data and size then
         local Mupdf = require("ffi/mupdf")
         local ok, image = pcall(Mupdf.renderImage, data, size)
+        ffi.C.free(data)
         if ok then
-            ffi.C.free(data)
+            return image
+        end
+    end
+end
+
+function CreDocument:getImageFromPosition(pos)
+    local data, size = self._document:getImageDataFromPosition(pos.x, pos.y)
+    if data and size then
+        logger.dbg("CreDocument: got image data from position", data, size)
+        local Mupdf = require("ffi/mupdf")
+        -- wrapped with pcall so we always free(data)
+        local ok, image = pcall(Mupdf.renderImage, data, size)
+        ffi.C.free(data) -- need that explicite clean
+        logger.dbg("Mupdf.renderImage", ok, image)
+        if ok then
             return image
         end
     end
@@ -248,6 +263,10 @@ end
 
 function CreDocument:getXPointer()
     return self._document:getXPointer()
+end
+
+function CreDocument:isXPointerInDocument(xp)
+    return self._document:isXPointerInDocument(xp)
 end
 
 function CreDocument:getPosFromXPointer(xp)
