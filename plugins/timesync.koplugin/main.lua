@@ -1,7 +1,7 @@
 
 local Device = require("device")
 
-if not (Device:isKobo() or Device:isKindle() or Device:isPocketbook()) then
+if not (Device:isKobo() or Device:isKindle() or Device:isPocketBook()) then
     return { disabled = true, }
 end
 

@@ -19,12 +19,13 @@ local ScrollTextWidget = InputContainer:new{
     charlist = nil,
     charpos = nil,
     editable = false,
+    justified = false,
     face = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = 400,
     height = 20,
     scroll_bar_width = Screen:scaleBySize(6),
-    text_scroll_span = Screen:scaleBySize(6),
+    text_scroll_span = Screen:scaleBySize(12),
     dialog = nil,
 }
 
@@ -34,6 +35,7 @@ function ScrollTextWidget:init()
         charlist = self.charlist,
         charpos = self.charpos,
         editable = self.editable,
+        justified = self.justified,
         face = self.face,
         fgcolor = self.fgcolor,
         width = self.width - self.scroll_bar_width - self.text_scroll_span,

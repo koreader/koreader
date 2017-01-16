@@ -4,6 +4,7 @@ local UIManager = require("ui/uimanager")
 local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
+local NetworkMgr = require("ui/network/manager")
 
 require("ffi/zeromq_h")
 
@@ -142,6 +143,8 @@ function CalibreCompanion:connect()
         else
             self:setInboxDir(host, port)
         end
+    elseif not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
     else
         DEBUG("cannot connect to calibre server")
         UIManager:show(InfoMessage:new{

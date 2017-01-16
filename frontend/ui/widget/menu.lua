@@ -596,7 +596,11 @@ function Menu:init()
         -- must be done manually:
         self.page = math.ceil((self.item_table.current or 1) / self.perpage)
     end
-    self:updateItems(1)
+    if self.path_items then
+        self:refreshPath()
+    else
+        self:updateItems(1)
+    end
 end
 
 function Menu:onCloseWidget()
