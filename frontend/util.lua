@@ -221,4 +221,35 @@ function util.isSplitable(c, next_c, prev_c)
     return false
 end
 
+function util.getFilesystemType(path)
+    local mounts = io.open("/proc/mounts", "r")
+    if not mounts then return nil end
+    local type
+    while true do
+        local line
+        local mount = {}
+        line = mounts:read()
+        if line == nil then
+            break
+        end
+        for param in line:gmatch("%S+") do table.insert(mount, param) end
+        if string.match(path, mount[2]) then
+            type = mount[3]
+            if mount[2] ~= '/' then
+                break
+            end
+        end
+    end
+    mounts:close()
+    return type
+end
+
+function util.replaceInvalidChars(str)
+    return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+end
+
+function util.replaceSlashChar(str)
+    return str:gsub('%/','_')
+end
+
 return util

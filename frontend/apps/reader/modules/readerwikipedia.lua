@@ -4,6 +4,9 @@ local Wikipedia = require("ui/wikipedia")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local NetworkMgr = require("ui/network/manager")
+local InputDialog = require("ui/widget/inputdialog")
+local UIManager = require("ui/uimanager")
 
 -- Wikipedia as a special dictionary
 local ReaderWikipedia = ReaderDictionary:extend{
@@ -11,23 +14,50 @@ local ReaderWikipedia = ReaderDictionary:extend{
     is_wiki = true,
     wiki_languages = {},
     no_page = _("No wiki page found."),
-    lookup_msg = _("Searching Wikipedia for:\n%1")
 }
 
 function ReaderWikipedia:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function ReaderWikipedia:lookupInput()
+    self.input_dialog = InputDialog:new{
+        title = _("Enter words to look up on Wikipedia"),
+        input = "",
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.input_dialog)
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    is_enter_default = true,
+                    callback = function()
+                        UIManager:close(self.input_dialog)
+                        self:onLookupWikipedia(self.input_dialog:getInputText())
+                    end,
+                },
+            }
+        },
+    }
+    self.input_dialog:onShowKeyboard()
+    UIManager:show(self.input_dialog)
+end
+
 function ReaderWikipedia:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Wikipedia lookup"),
-        tap_input = {
-            title = _("Enter words to look up on Wikipedia"),
-            type = "text",
-            callback = function(input)
-                self:onLookupWikipedia(input)
-            end,
-        },
+        callback = function()
+            if NetworkMgr:isOnline() then
+                self:lookupInput()
+            else
+                NetworkMgr:promptWifiOn()
+            end
+        end
     })
 end
 
@@ -72,6 +102,10 @@ function ReaderWikipedia:initLanguages(word)
 end
 
 function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     -- word is the text to query. If get_fullpage is true, it is the
     -- exact wikipedia page title we want the full page of.
     self:initLanguages(word)
@@ -87,6 +121,13 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
     logger.dbg("stripped word:", word)
     if word == "" then
         return
+    end
+
+    -- Fix lookup message to include lang
+    if get_fullpage then
+        self.lookup_msg = T(_("Getting Wikipedia %2 page:\n%1"), "%1", lang:upper())
+    else
+        self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
     end
     self:onLookupStarted(word)
     local results = {}

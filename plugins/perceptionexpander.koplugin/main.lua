@@ -19,7 +19,7 @@ local PerceptionExpander = Widget:extend{
     page_counter = 0,
     shift_each_pages = 100,
     margin = 0.1,
-    line_thick = 2,
+    line_thickness = 2,
     line_color_intensity = 0.3,
     margin_shift = 0.03,
     settings = nil,
@@ -42,7 +42,7 @@ end
 
 function PerceptionExpander:createUI(readSettings)
     if readSettings then
-        self.line_thick = tonumber(self.settings:readSetting("line_thick"))
+        self.line_thickness = tonumber(self.settings:readSetting("line_thick"))
         self.margin = tonumber(self.settings:readSetting("margin"))
         self.line_color_intensity = tonumber(self.settings:readSetting("line_color_intensity"))
         self.shift_each_pages = tonumber(self.settings:readSetting("shift_each_pages"))
@@ -61,7 +61,7 @@ function PerceptionExpander:createUI(readSettings)
     local line_widget = LineWidget:new{
         background = Blitbuffer.gray(self.line_color_intensity),
         dimen = Geom:new{
-            w = self.line_thick,
+            w = self.line_thickness,
             h = line_height,
         },
     }
@@ -70,7 +70,7 @@ function PerceptionExpander:createUI(readSettings)
         dimen = Geom:new{
             x = self.screen_width * self.margin,
             y = line_top_position,
-            w = self.line_thick,
+            w = self.line_thickness,
             h = line_height,
         },
         line_widget
@@ -80,7 +80,7 @@ function PerceptionExpander:createUI(readSettings)
         dimen = Geom:new{
             x = self.screen_width - (self.screen_width * self.margin),
             y = line_top_position,
-            w = self.line_thick,
+            w = self.line_thickness,
             h = line_height,
         },
         line_widget
@@ -108,8 +108,8 @@ function PerceptionExpander:showSettingsDialog()
             {
                 text = "",
                 input_type = "number",
-                hint = T(_("Line thick. Current value: %1"),
-                    self.line_thick),
+                hint = T(_("Line thickness. Current value: %1"),
+                    self.line_thickness),
             },
             {
                 text = "",
@@ -189,11 +189,6 @@ function PerceptionExpander:addToMainMenu(tab_item_table)
     })
 end
 
--- in case when screensaver starts
-function PerceptionExpander:onSaveSettings()
-    self:saveSettings()
-end
-
 function PerceptionExpander:onPageUpdate(pageno)
     if not self.is_enabled then
         return
@@ -212,7 +207,7 @@ end
 
 function PerceptionExpander:saveSettings(fields)
     if fields then
-        self.line_thick = tonumber(fields[1])
+        self.line_thickness = tonumber(fields[1])
         self.margin = tonumber(fields[2])
 
         local line_intensity = tonumber(fields[3])
@@ -222,7 +217,7 @@ function PerceptionExpander:saveSettings(fields)
         self.shift_each_pages = tonumber(fields[4])
     end
 
-    self.settings:saveSetting("line_thick", self.line_thick)
+    self.settings:saveSetting("line_thick", self.line_thickness)
     self.settings:saveSetting("margin", self.margin)
     self.settings:saveSetting("line_color_intensity", self.line_color_intensity)
     self.settings:saveSetting("shift_each_pages", self.shift_each_pages)
