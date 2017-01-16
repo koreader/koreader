@@ -189,6 +189,20 @@ describe("util module", function()
         })
     end)
 
-
-
+    it("should split file path and name", function()
+        local test = function(full, path, name)
+            local p, n = util.splitFilePathName(full)
+            assert.are_same(p, path)
+            assert.are_same(n, name)
+        end
+        test("/a/b/c.txt", "/a/b/", "c.txt")
+        test("/a/b////c.txt", "/a/b////", "c.txt")
+        test("/a/b/", "/a/b/", "")
+        test("c.txt", "", "c.txt")
+        test("", "", "")
+        test(nil, "", "")
+        test("a/b", "a/", "b")
+        test("/b", "/", "b")
+        assert.are_same(util.splitFilePathName("/a/b/c.txt"), "/a/b/")
+    end)
 end)

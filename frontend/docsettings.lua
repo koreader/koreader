@@ -17,6 +17,7 @@ end
 
 -- Sidecar directory is the file without _last_ suffix.
 function DocSettings:getSidecarDir(doc_path)
+    if doc_path == nil or doc_path == '' then return '' end
     local file_without_suffix = doc_path:match("(.*)%.")
     if file_without_suffix then
         return file_without_suffix..".sdr"
@@ -24,6 +25,11 @@ function DocSettings:getSidecarDir(doc_path)
     -- We shouldn't be called with anything but files with registered
     -- extensions, but in case we are, return something useful
     return doc_path..".sdr"
+end
+
+function DocSettings:getSidecarFile(doc_path)
+    if doc_path == nil or doc_path == '' then return '' end
+    return self:getSidecarDir(doc_path) .. "/" .. doc_path:match(".*%.(.+)") .. ".lua"
 end
 
 function DocSettings:hasSidecarDir(doc_path)
@@ -73,8 +79,7 @@ function DocSettings:open(docfile)
     if lfs.attributes(sidecar, "mode") == "directory" then
         -- New sidecar file name is metadata.{file last suffix}.lua. So we
         -- can handle two files with only different suffixes.
-        new.sidecar_file = sidecar.."/metadata."..
-                           docfile:match(".*%.(.+)")..".lua"
+        new.sidecar_file = self:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
                                   docfile:match("([^%/]+%..+)")..".lua"
     end
