@@ -13,6 +13,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local slt2 = require('slt2')
 local MyClipping = require("clip")
+local realpath = require("ffi/util").realpath
 
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
@@ -35,6 +36,11 @@ function EvernoteExporter:init()
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
     self.html_export = settings.html_export or false
+    if self.html_export then
+        self.txt_export = false
+    else
+        self.txt_export = settings.txt_export or false
+    end
 
     self.parser = MyClipping:new{
         my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -50,7 +56,7 @@ function EvernoteExporter:isDocless()
 end
 
 function EvernoteExporter:readyToExport()
-    return self.evernote_token ~= nil or self.html_export ~= false
+    return self.evernote_token ~= nil or self.html_export ~= false or self.txt_export ~= false
 end
 
 function EvernoteExporter:migrateClippings()
@@ -139,9 +145,32 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 checked_func = function() return self.html_export end,
                 callback = function()
                     self.html_export = not self.html_export
+                    if self.html_export then self.txt_export = false end
                     self:onSaveSettings()
                 end
             },
+            {
+                text = _("Export to local clipping text file"),
+                checked_func = function() return self.txt_export end,
+                callback = function()
+                    self.txt_export = not self.txt_export
+                    if self.txt_export then self.html_export = false end
+                    self:onSaveSettings()
+                end
+            },
+            {
+                text = _("Purge history records"),
+                callback = function()
+                    self.config:purge()
+                    UIManager:show(InfoMessage:new{
+                        text = _("History records are purged.\nAll notes will be exported again next time.\nSuggest to remove existing KOReaderClipping.txt to avoid a duplication."),
+                    })
+                end
+            },
+            {
+                text = _("  - All notes will be exported again next time"),
+                enabled = false,
+            }
         }
     })
 end
@@ -254,6 +283,7 @@ function EvernoteExporter:onSaveSettings()
         token = self.evernote_token,
         notebook = self.notebook_guid,
         html_export = self.html_export,
+        txt_export = self.txt_export,
     }
     G_reader_settings:saveSetting("evernote", settings)
 end
@@ -319,13 +349,19 @@ end
 
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
-    local exported_stamp = "html"
-    if not self.html_export then
+    local exported_stamp
+    if not self.html_export and not self.txt_export then
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
             authToken = self.evernote_token,
         }
         exported_stamp = self.notebook_guid
+    elseif self.html_export then
+        exported_stamp= "html"
+    elseif self.txt_export then
+        exported_stamp = "txt"
+    else
+        assert("an exported_stamp is expected for a new export type")
     end
 
     local export_count, error_count = 0, 0
@@ -339,11 +375,11 @@ function EvernoteExporter:exportClippings(clippings)
         if booknotes.exported[exported_stamp] ~= true then
             local ok, err
             if self.html_export then
-                ok, err = pcall(self.exportBooknotesToHTML, self,
-                        title, booknotes)
+                ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
+            elseif self.txt_export then
+                ok, err = pcall(self.exportBooknotesToTXT, self, title, booknotes)
             else
-                ok, err = pcall(self.exportBooknotesToEvernote, self,
-                        client, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
             end
             -- error reporting
             if not ok and err and err:find("Transport not open") then
@@ -385,6 +421,9 @@ function EvernoteExporter:exportClippings(clippings)
             )
         end
     end
+    if self.html_export or self.txt_export then
+        msg = msg .. T(_("\nNotes can be found in %1/."), realpath(self.clipping_dir))
+    end
     UIManager:show(InfoMessage:new{ text = msg })
 end
 
@@ -424,6 +463,32 @@ function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
     if html then
         html:write(content)
         html:close()
+    end
+end
+
+function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
+    local file = io.open(self.clipping_dir .. "/KOReaderClipping.txt", "a")
+    if file then
+        file:write(title .. "\n")
+        for _ignore1, chapter in ipairs(booknotes) do
+            if chapter.title then
+                file:write(" - " .. chapter.title .. "\n\n")
+            end
+            for _ignore2, clipping in ipairs(chapter) do
+                file:write(T(_("   -- Page: %1, added on %2\n\n"),
+                             clipping.page, os.date("%c", clipping.time)))
+                if clipping.text then
+                    file:write(clipping.text)
+                end
+                if clipping.image then
+                    file:write(_("<An image>"))
+                end
+                file:write("\n==========\n")
+            end
+        end
+
+        file:write("\n")
+        file:close()
     end
 end
 
