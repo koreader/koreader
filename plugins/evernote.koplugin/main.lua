@@ -139,7 +139,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 checked_func = function() return self.html_export end,
                 callback = function()
                     self.html_export = not self.html_export
-                    self:onSaveSettings()
+                    self:saveSettings()
                 end
             },
         }
@@ -237,17 +237,17 @@ function EvernoteExporter:doLogin(username, password)
         })
     end
 
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
 function EvernoteExporter:logout()
     self.evernote_token = nil
     self.notebook_guid = nil
     self.evernote_domain = nil
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
-function EvernoteExporter:onSaveSettings()
+function EvernoteExporter:saveSettings()
     local settings = {
         domain = self.evernote_domain,
         username = self.evernote_username,

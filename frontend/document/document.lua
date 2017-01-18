@@ -244,6 +244,10 @@ function Document:getLinkFromPosition(pageno, pos)
     return nil
 end
 
+function Document:getImageFromPosition(pos)
+    return nil
+end
+
 function Document:getTextBoxes(pageno)
     return nil
 end

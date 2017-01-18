@@ -5,36 +5,58 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local function showConfirmBox(disable)
-    UIManager:show(ConfirmBox:new{
-        text = _("The system won't sleep when this message is showing.\nPress \"Stay Alive\" if you prefer to keep system on even after closing this notification. *It will drain the battery.*\n\nIf for any reasons KOReader died before \"Close\" is pressed, please start and close KeepAlive plugin again to ensure settings are reset."),
-        ok_text = _("Close"),
-        ok_callback = disable,
-        cancel_text = _("Stay Alive"),
-    })
-end
-
 local menuItem = {
-    text = _("Keep Alive"),
+    text = _("Keep alive"),
+    checked = false,
 }
 
 local disable
+local enable
+
+local function showConfirmBox()
+    UIManager:show(ConfirmBox:new{
+        text = _("The system won't sleep when this message is showing.\nPress \"Stay alive\" if you prefer to keep system on even after closing this notification. *It will drain the battery.*\n\nIf for any reasons KOReader died before \"Close\" is pressed, please start and close KeepAlive plugin again to ensure settings are reset."),
+        ok_text = _("Close"),
+        ok_callback = function()
+            disable()
+            menuItem.checked =false
+        end,
+        cancel_text = _("Stay alive"),
+        cancel_callback = function()
+            menuItem.checked = true
+        end,
+    })
+end
+
 if Device:isKobo() then
     disable = function() UIManager:_startAutoSuspend() end
-    menuItem.callback = function()
-        UIManager:_stopAutoSuspend()
-        showConfirmBox(disable)
-    end
+    enable = function() UIManager:_stopAutoSuspend() end
 elseif Device:isKindle() then
     disable = function()
         os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0")
     end
-    menuItem.callback = function()
+    enable = function()
         os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 1")
-        showConfirmBox(disable)
+    end
+elseif Device:isSDL() then
+    local InfoMessage = require("ui/widget/infomessage")
+    disable = function()
+        UIManager:show(InfoMessage:new{
+            text = _("This is a dummy implementation of 'disable' function.")
+        })
+    end
+    enable = function()
+        UIManager:show(InfoMessage:new{
+            text = _("This is a dummy implementation of 'enable' function.")
+        })
     end
 else
     return { disabled = true, }
+end
+
+menuItem.callback = function()
+    enable()
+    showConfirmBox()
 end
 
 local KeepAlive = WidgetContainer:new{
