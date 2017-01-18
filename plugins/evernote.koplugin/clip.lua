@@ -2,6 +2,7 @@ local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local ReadHistory = require("readhistory")
 local md5 = require("ffi/MD5")
+local util = require("util")
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -264,7 +265,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
     local ok, stored = pcall(dofile, history_file)
     if ok and stored.highlight then
         local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:getTitle(string.sub(docname, 0, -5))
+        local title, author = self:getTitle(util.splitFileNameSuffix(docname))
         clippings[title] = {
             file = doc_file,
             title = title,
@@ -282,9 +283,9 @@ function MyClipping:parseHistory()
                               DocSettings:getPathFromHistory(f) .. "/" ..
                               DocSettings:getNameFromHistory(f))
     end
-    for item in readhistory.hist do
+    for _, item in ipairs(ReadHistory.hist) do
         self:parseHistoryFile(clippings,
-                              DocSettings:getSidebarFile(item.file),
+                              DocSettings:getSidecarFile(item.file),
                               item.file)
     end
 
