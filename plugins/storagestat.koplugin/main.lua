@@ -20,7 +20,7 @@ local _ = require("gettext")
 local StorageStat = WidgetContainer:new{
     name = "storagestat",
     menuItem = {
-        text = _("Storage Statistics"),
+        text = _("Storage statistics"),
         callback = function()
             local std_out = io.popen(
                 "df -h | sed -r 's/ +/ /g' | grep " .. filter ..

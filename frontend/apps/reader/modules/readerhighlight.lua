@@ -224,7 +224,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     return true
 end
 
-function ReaderHighlight:onHold(_, ges)
+function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
@@ -234,6 +234,23 @@ function ReaderHighlight:onHold(_, ges)
         return true
     end
 
+    -- check if we were holding on an image
+    local image = self.ui.document:getImageFromPosition(self.hold_pos)
+    if image then
+        logger.dbg("hold on image")
+        local ImageViewer = require("ui/widget/imageviewer")
+        local imgviewer = ImageViewer:new{
+            image = image,
+            -- title_text = _("Document embedded image"),
+            -- No title, more room for image
+            with_title_bar = false,
+            fullscreen = true,
+        }
+        UIManager:show(imgviewer)
+        return true
+    end
+
+    -- otherwise, we must be holding on text
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)

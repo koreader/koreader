@@ -41,7 +41,7 @@ table.insert(common_settings, {
     },
 })
 table.insert(common_settings, {
-    text = _("Save Document"),
+    text = _("Save document"),
     sub_item_table = {
         {
             text = _("Prompt"),

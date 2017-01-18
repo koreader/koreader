@@ -30,6 +30,7 @@ local function createWidgetFromFile(file)
         return createWidgetFromImage(
                    ImageWidget:new{
                        file = file,
+                       file_do_cache = false,
                        height = Screen:getHeight(),
                        width = Screen:getWidth(),
                        autostretch = true,
