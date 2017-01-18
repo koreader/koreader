@@ -310,6 +310,7 @@ function ReaderStatistics:getCurrentStat()
         { _("Total days"), total_days },
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
         { _("Read pages/Total pages"), read_pages .. "/" .. self.data.pages },
+        { _("Percentage completed"), math.floor(read_pages / self.data.pages * 100 + 0.5) .. "%" }, -- adding 0.5 rounds to nearest integer with math.floor
     }
 end
 
