@@ -166,10 +166,6 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                         text = _("History records are purged.\nAll notes will be exported again next time.\nSuggest to remove existing KOReaderClipping.txt to avoid a duplication."),
                     })
                 end
-            },
-            {
-                text = _("  - All notes will be exported again next time"),
-                enabled = false,
             }
         }
     })
