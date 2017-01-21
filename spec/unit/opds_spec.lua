@@ -1,4 +1,3 @@
-
 local navigation_sample = [[
 <?xml version="1.0" encoding="utf-8"?>
 <!--
@@ -227,11 +226,15 @@ local facet_sample = [[
 </feed>
 ]]
 
-require("commonrequire")
-local OPDSParser = require("ui/opdsparser")
-local DEBUG = require("dbg")
-
 describe("OPDS module #nocov", function()
+    local OPDSParser, OPDSBrowser
+
+    setup(function()
+        require("commonrequire")
+        OPDSParser = require("ui/opdsparser")
+        OPDSBrowser = require("ui/widget/opdsbrowser")
+    end)
+
     describe("OPDS parser module", function()
         it("should parse OPDS navigation catalog", function()
             local catalog = OPDSParser:parse(navigation_sample)
@@ -260,14 +263,12 @@ describe("OPDS module #nocov", function()
             assert.are.same(entry.link[1].href, "//www.gutenberg.org/ebooks/42474.epub.images")
         end)
     end)
-    describe("OPDS browser module", function()
-        local OPDSBrowser = require("ui/widget/opdsbrowser")
 
+    describe("OPDS browser module", function()
         describe("URL generation", function()
             it("should generate URL on rel=subsection", function()
                 local catalog = OPDSParser:parse(navigation_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://m.gutenberg.org/ebooks.opds/?format=opds")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].title, "Popular")
@@ -276,7 +277,6 @@ describe("OPDS module #nocov", function()
             it("should generate URL on rel=popular and rel=new", function()
                 local catalog = OPDSParser:parse(popular_new_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].title, "Most Popular")
@@ -287,7 +287,6 @@ describe("OPDS module #nocov", function()
             it("should use the main URL for faceted links as long as faceted links aren't properly supported", function()
                 local catalog = OPDSParser:parse(facet_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].url, "http://flibusta.net/opds/author/75357")
@@ -297,7 +296,6 @@ describe("OPDS module #nocov", function()
         it("should not fill item table incorrectly with thumbnail or image URL", function()
             local catalog = OPDSParser:parse(facet_sample)
             local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
-            --DEBUG(item_table)
 
             assert.truthy(item_table)
             assert.are_not.same(item_table[1].image, "http://flibusta.net/opds/author/75357")

@@ -1,9 +1,3 @@
-require("commonrequire")
-local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
-local md5 = require("ffi/MD5")
---DEBUG:turnOn()
-
 local service = [[
 {
     "base_url" : "https://vislab.bjmu.edu.cn:7200",
@@ -57,26 +51,36 @@ local service = [[
 ]]
 
 describe("KOSync modules #notest #nocov", function()
-    local HTTPClient = require("httpclient")
-    local Spore = require("Spore")
-    local client = Spore.new_from_string(service)
-    package.loaded['Spore.Middleware.GinClient'] = {}
-    require('Spore.Middleware.GinClient').call = function(self, req)
-        req.headers['accept'] = "application/vnd.koreader.v1+json"
-    end
-    package.loaded['Spore.Middleware.KOSyncAuth'] = {}
-    require('Spore.Middleware.KOSyncAuth').call = function(args, req)
-        req.headers['x-auth-user'] = args.username
-        req.headers['x-auth-key'] = args.userkey
-    end
-    -- password should be hashed before submitting to server
-    local username, password = "koreader", md5.sum("koreader")
-    -- fake progress data
-    local doc, percentage, progress, device =
-        "41cce710f34e5ec21315e19c99821415", -- fast digest of the document
-        0.356, -- percentage of the progress
-        "69", -- page number or xpointer
-        "my kpw" -- device name
+    local UIManager, logger, md5, client
+    local username, password, doc, percentage, progress, device
+
+    setup(function()
+        require("commonrequire")
+        UIManager = require("ui/uimanager")
+        logger = require("logger")
+        md5 = require("ffi/MD5")
+        local HTTPClient = require("httpclient")
+        local Spore = require("Spore")
+        client = Spore.new_from_string(service)
+        package.loaded['Spore.Middleware.GinClient'] = {}
+        require('Spore.Middleware.GinClient').call = function(self, req)
+            req.headers['accept'] = "application/vnd.koreader.v1+json"
+        end
+        package.loaded['Spore.Middleware.KOSyncAuth'] = {}
+        require('Spore.Middleware.KOSyncAuth').call = function(args, req)
+            req.headers['x-auth-user'] = args.username
+            req.headers['x-auth-key'] = args.userkey
+        end
+        -- password should be hashed before submitting to server
+        username, password = "koreader", md5.sum("koreader")
+        -- fake progress data
+        doc, percentage, progress, device =
+            "41cce710f34e5ec21315e19c99821415", -- fast digest of the document
+            0.356, -- percentage of the progress
+            "69", -- page number or xpointer
+            "my kpw" -- device name
+    end)
+
     it("should create new user", function()
         client:reset_middlewares()
         client:enable('Format.JSON')
@@ -89,14 +93,15 @@ describe("KOSync modules #notest #nocov", function()
         end)
         if ok then
             if res.status == 200 then
-                DEBUG("register successful to ", res.body.username)
+                logger.dbg("register successful to ", res.body.username)
             elseif res.status == 402 then
-                DEBUG("register unsuccessful: ", res.body.message)
+                logger.dbg("register unsuccessful: ", res.body.message)
             end
         else
-            DEBUG("Please retry later", res)
+            logger.dbg("Please retry later", res)
         end
     end)
+
     it("should authorize user", function()
         client:reset_middlewares()
         client:enable('Format.JSON')
@@ -112,12 +117,13 @@ describe("KOSync modules #notest #nocov", function()
             if res.status == 200 then
                 assert.are.same("OK", res.body.authorized)
             else
-                DEBUG(res.body)
+                logger.dbg(res.body)
             end
         else
-            DEBUG("Please retry later", res)
+            logger.dbg("Please retry later", res)
         end
     end)
+
     it("should update progress", function()
         client:reset_middlewares()
         client:enable('Format.JSON')
@@ -141,12 +147,13 @@ describe("KOSync modules #notest #nocov", function()
                 assert.are.same(percentage, result.percentage)
                 assert.are.same(device, result.device)
             else
-                DEBUG(res.body.message)
+                logger.dbg(res.body.message)
             end
         else
-            DEBUG("Please retry later", res)
+            logger.dbg("Please retry later", res)
         end
     end)
+
     it("should get progress", function()
         client:reset_middlewares()
         client:enable('Format.JSON')
@@ -167,10 +174,10 @@ describe("KOSync modules #notest #nocov", function()
                 assert.are.same(percentage, result.percentage)
                 assert.are.same(device, result.device)
             else
-                DEBUG(res.body.message)
+                logger.dbg(res.body.message)
             end
         else
-            DEBUG("Please retry later", res)
+            logger.dbg("Please retry later", res)
         end
     end)
 
