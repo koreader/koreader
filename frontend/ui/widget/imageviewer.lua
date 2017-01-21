@@ -38,7 +38,7 @@ local ImageViewer = InputContainer:new{
 
     width = nil,
     height = nil,
-    stretched = true, -- start with image stretched (Best fit)
+    stretched = true, -- start with image scaled for best fit
     rotated = false,
     -- we use this global setting for rotation angle to have the same angle as reader
     rotation_angle = DLANDSCAPE_CLOCKWISE_ROTATION and 90 or 270,
@@ -116,7 +116,7 @@ function ImageViewer:update()
     local buttons = {
         {
             {
-                text = self.stretched and _("Original size") or _("Best fit"),
+                text = self.stretched and _("Original size") or _("Scale"),
                 callback = function()
                     self.stretched = not self.stretched and true or false
                     self:update()
