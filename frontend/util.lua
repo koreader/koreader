@@ -252,4 +252,18 @@ function util.replaceSlashChar(str)
     return str:gsub('%/','_')
 end
 
+-- Split a file into its path and name
+function util.splitFilePathName(file)
+    if file == nil or file == "" then return "", "" end
+    if string.find(file, "/") == nil then return "", file end
+    return string.gsub(file, "(.*/)(.*)", "%1"), string.gsub(file, ".*/", "")
+end
+
+-- Split a file name into its pure file name and suffix
+function util.splitFileNameSuffix(file)
+    if file == nil or file == "" then return "", "" end
+    if string.find(file, "%.") == nil then return file, "" end
+    return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
+end
+
 return util

@@ -1,6 +1,8 @@
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
+local ReadHistory = require("readhistory")
 local md5 = require("ffi/MD5")
+local util = require("util")
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -254,25 +256,37 @@ function MyClipping:parseHighlight(highlights, book)
     table.sort(book, function(v1, v2) return v1[1].page < v2[1].page end)
 end
 
+function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
+    if lfs.attributes(history_file, "mode") ~= "file"
+    or not history_file:find(".+%.lua$") then
+        return
+    end
+    if lfs.attributes(doc_file, "mode") ~= "file" then return end
+    local ok, stored = pcall(dofile, history_file)
+    if ok and stored.highlight then
+        local _, docname = util.splitFilePathName(doc_file)
+        local title, author = self:getTitle(util.splitFileNameSuffix(docname))
+        clippings[title] = {
+            file = doc_file,
+            title = title,
+            author = author,
+        }
+        self:parseHighlight(stored.highlight, clippings[title])
+    end
+end
+
 function MyClipping:parseHistory()
     local clippings = {}
     for f in lfs.dir(self.history_dir) do
-        local path = self.history_dir.."/"..f
-        if lfs.attributes(path, "mode") == "file" and path:find(".+%.lua$") then
-            local ok, stored = pcall(dofile, path)
-            if ok and stored.highlight then
-                local _, _, docname = path:find("%[.*%](.*)%.lua$")
-                local title, author = self:getTitle(docname)
-                local docpath = DocSettings:getPathFromHistory(f)
-                local name = DocSettings:getNameFromHistory(f)
-                clippings[title] = {
-                    file = docpath .. "/" .. name,
-                    title = title,
-                    author = author,
-                }
-                self:parseHighlight(stored.highlight, clippings[title])
-            end
-        end
+        self:parseHistoryFile(clippings,
+                              self.history_dir .. "/" .. f,
+                              DocSettings:getPathFromHistory(f) .. "/" ..
+                              DocSettings:getNameFromHistory(f))
+    end
+    for _, item in ipairs(ReadHistory.hist) do
+        self:parseHistoryFile(clippings,
+                              DocSettings:getSidecarFile(item.file),
+                              item.file)
     end
 
     return clippings
