@@ -19,6 +19,7 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local util = require("util")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -245,10 +246,67 @@ function DictQuickLookup:update()
     -- Different sets of buttons if fullpage or not
     local buttons
     if self.is_fullpage then
-        -- Only a single wide close button, get a little more room for
-        -- closing by taping at bottom (on footer or on this button)
+        -- A save and a close button
         buttons = {
             {
+                {
+                    text = "Save as epub",
+                    callback = function()
+                        local InfoMessage = require("ui/widget/infomessage")
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        -- if forced_lang was specified, it may not be in our wiki_languages,
+                        -- but ReaderWikipedia will have put it in result.lang
+                        local lang = self.lang or self.wiki_languages_copy[1]
+                        -- Just to be safe (none of the invalid chars, except ':' for uninteresting
+                        -- Portal: or File: wikipedia pages, should be in lookup_word)
+                        local cleaned_lookupword = util.replaceInvalidChars(self.lookupword)
+                        local filename = cleaned_lookupword .. "."..string.upper(lang)..".epub"
+                        -- Find a directory to save file into
+                        local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                        if not dir then dir = G_reader_settings:readSetting("download_dir") end -- OPDS dir
+                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
+                        if not dir then dir = G_reader_settings:readSetting("lastdir") end
+                        if not dir then
+                            UIManager:show(InfoMessage:new{
+                                text = _("No directory to save page to !"),
+                            })
+                            return
+                        end
+                        local epub_path = dir .. "/" .. filename
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Save as %1 ?"), filename),
+                            ok_callback = function()
+                                UIManager:scheduleIn(0.1, function()
+                                    local Wikipedia = require("ui/wikipedia")
+                                    Wikipedia:createEpubWithUI(epub_path, self.lookupword, lang, function(success)
+                                        if success then
+                                            UIManager:show(ConfirmBox:new{
+                                                text = T(_("Page saved to:\n%1\n\nWould you like to read the downloaded page now?"), epub_path),
+                                                ok_callback = function()
+                                                    -- close all dict/wiki windows, without scheduleIn(highlight.clear())
+                                                    self:onHoldClose(true)
+                                                    -- close current ReaderUI in 1 sec, and create a new one
+                                                    UIManager:scheduleIn(1.0, function()
+                                                        local ReaderUI = require("apps/reader/readerui")
+                                                        local reader = ReaderUI:_getRunningInstance()
+                                                        if reader then
+                                                            reader:onClose()
+                                                        end
+                                                        ReaderUI:showReader(epub_path)
+                                                    end)
+                                                end,
+                                            })
+                                        else
+                                            UIManager:show(InfoMessage:new{
+                                                text = _("Failed saving Wikipedia page."),
+                                            })
+                                        end
+                                    end)
+                                end)
+                            end
+                        })
+                    end,
+                },
                 {
                     text = "Close",
                     callback = function()
@@ -457,6 +515,7 @@ function DictQuickLookup:changeDictionary(index)
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
     self.is_fullpage = self.results[index].is_fullpage
+    self.lang = self.results[index].lang
     if self.is_fullpage then
         self.displayword = self.lookupword
     else
@@ -546,12 +605,12 @@ function DictQuickLookup:onClose()
     return true
 end
 
-function DictQuickLookup:onHoldClose()
+function DictQuickLookup:onHoldClose(no_clear)
     self:onClose()
     for i = #self.window_list, 1, -1 do
         local window = self.window_list[i]
         -- if one holds a highlight, let's clear it like in onClose()
-        if window.highlight then
+        if window.highlight and not no_clear then
             UIManager:scheduleIn(1, function()
                 window.highlight:clear()
             end)
