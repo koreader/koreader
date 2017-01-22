@@ -58,7 +58,29 @@ local OPDSBrowser = Menu:extend{
 }
 
 function OPDSBrowser:init()
-    self.item_table = self:genItemTableFromRoot(self.opds_servers)
+    local servers = G_reader_settings:readSetting("opds_servers")
+    if not servers then -- If there are no saved servers, add some defaults
+        servers = {
+          {
+            title = "Project Gutenberg",
+            url = "http://m.gutenberg.org/ebooks.opds/?format=opds",
+          },
+          {
+             title = "Feedbooks",
+             url = "http://www.feedbooks.com/publicdomain/catalog.atom",
+          },
+          {
+             title = "ManyBooks",
+             url = "http://manybooks.net/opds/index.php",
+          },
+          {
+             title = "Internet Archive",
+             url = "http://bookserver.archive.org/catalog/",
+          },
+        }
+        G_reader_settings:saveSetting("opds_servers", servers)
+    end
+    self.item_table = self:genItemTableFromRoot()
     Menu.init(self) -- call parent's init()
 end
 
@@ -168,13 +190,6 @@ end
 
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
-    for _, server in ipairs(self.opds_servers) do
-        table.insert(item_table, {
-            text = server.title,
-            content = server.subtitle,
-            url = server.url,
-        })
-    end
     local added_servers = G_reader_settings:readSetting("opds_servers") or {}
     for _, server in ipairs(added_servers) do
         table.insert(item_table, {
