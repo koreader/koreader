@@ -29,7 +29,7 @@ end
 
 function DocSettings:getSidecarFile(doc_path)
     if doc_path == nil or doc_path == '' then return '' end
-    return self:getSidecarDir(doc_path) .. "/" .. doc_path:match(".*%.(.+)") .. ".lua"
+    return self:getSidecarDir(doc_path) .. "/metadata." .. doc_path:match(".*%.(.+)") .. ".lua"
 end
 
 function DocSettings:hasSidecarDir(doc_path)
