@@ -355,21 +355,20 @@ function Kobo:suspend()
 
     -]]
 
+    -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
+    -- kernel to suspend/resume various subsystems
+    -- cf. kernel/power/main.c @ L#207
     f = io.open("/sys/power/state-extended", "w")
     if not f then
         logger.err("Cannot open /sys/power/state-extended for writing!")
         return false
     end
-    -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
-    -- kernel to suspend/resume various subsystems
-    -- cf. kernel/power/main.c @ L#207
     re, err_msg, err_code = f:write("1\n")
-    logger.info("Write syscall returned: ", re)
+    io.close(f)
+    logger.info("Kobo Suspend: Asked the kernel to put subsystems to sleep, ret:", re)
     if not re then
         logger.err('write error: ', err_msg, err_code)
     end
-    io.close(f)
-    logger.info("Kobo Suspend: Asked the kernel to put subsystems to sleep")
 
     util.sleep(2)
     logger.info("Kobo Suspend: Waited for 2s because of reasons...")
@@ -400,7 +399,14 @@ function Kobo:suspend()
     logger.info("Kobo Suspend: Asking for a suspend to RAM . . .")
     f = io.open("/sys/power/state", "w")
     if not f then
-        -- TODO: update state-extended?
+        -- reset state-extend back to 0 since we are giving up
+        local ext_fd = io.open("/sys/power/state-extended", "w")
+        if not ext_fd then
+            logger.err("Cannot open /sys/power/state-extended for writing!")
+        else
+            ext_fd:write("0\n")
+            io.close(ext_fd)
+        end
         return false
     end
     re, err_msg, err_code = f:write("mem\n")
@@ -441,17 +447,29 @@ end
 
 function Kobo:resume()
     -- Now that we're up, unflag subsystems for suspend...
-    os.execute("echo 0 > /sys/power/state-extended")
-    logger.info("Kobo Suspend: Unflagged kernel subsystems for suspend")
+    -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
+    -- kernel to suspend/resume various subsystems
+    -- cf. kernel/power/main.c @ L#207
+    local f = io.open("/sys/power/state-extended", "w")
+    if not f then
+        logger.err("Cannot open /sys/power/state-extended for writing!")
+        return false
+    end
+    local re, err_msg, err_code = f:write("0\n")
+    io.close(f)
+    logger.info("Kobo Suspend: Unflagged kernel subsystems for suspend, ret:", re)
+    if not re then
+        logger.err('write error: ', err_msg, err_code)
+    end
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    local f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
+    f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
     if f ~= nil then
+        f:write("a\n")
         io.close(f)
-        os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
     end
 end
 
