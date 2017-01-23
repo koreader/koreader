@@ -28,6 +28,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
+local DepGraph = require("depgraph")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local _ = require("gettext")
@@ -57,8 +58,9 @@ function InputContainer:_init()
         end
     end
     self.ges_events = new_ges_events
-    self._touch_zones = {}
-    self._touch_zone_pos_idx = {}
+    self.touch_zone_dg = nil
+    self._zones = {}
+    self._ordered_touch_zones = {}
 end
 
 function InputContainer:paintTo(bb, x, y)
@@ -125,12 +127,13 @@ require("ui/uimanager"):show(test_widget)
 ]]
 function InputContainer:registerTouchZones(zones)
     local screen_width, screen_height = Screen:getWidth(), Screen:getHeight()
+    if not self.touch_zone_dg then self.touch_zone_dg = DepGraph:new{} end
     for _, zone in ipairs(zones) do
-        if self._touch_zone_pos_idx[zone.id] then
-            table.remove(self._touch_zones, self._touch_zone_pos_idx[zone.id])
-            self._touch_zone_pos_idx[zone.id] = nil
+        -- override touch zone with the same id to support reregistration
+        if self._zones[zone.id] then
+            self.touch_zone_dg:removeNode(zone.id)
         end
-        local tzone = {
+        self._zones[zone.id]= {
             def = zone,
             handler = zone.handler,
             gs_range = GestureRange:new{
@@ -144,26 +147,16 @@ function InputContainer:registerTouchZones(zones)
                 },
             },
         }
-        local insert_pos = #self._touch_zones
-        if insert_pos ~= 0 then
-            if zone.overrides then
-                for _, override_id in ipairs(zone.overrides) do
-                    local zone_idx = self._touch_zone_pos_idx[override_id]
-                    if zone_idx and zone_idx < insert_pos then
-                        insert_pos = zone_idx
-                    end
-                end
-            else
-                insert_pos = 0
+        self.touch_zone_dg:addNode(zone.id)
+        if zone.overrides then
+            for _, override_zone_id in ipairs(zone.overrides) do
+                self.touch_zone_dg:addNodeDep(override_zone_id, zone.id)
             end
         end
-        if insert_pos == 0 then
-            table.insert(self._touch_zones, tzone)
-            self._touch_zone_pos_idx[zone.id] = 1
-        else
-            table.insert(self._touch_zones, insert_pos, tzone)
-            self._touch_zone_pos_idx[zone.id] = insert_pos
-        end
+    end
+    self._ordered_touch_zones = {}
+    for _, zone_id in ipairs(self.touch_zone_dg:serialize()) do
+        table.insert(self._ordered_touch_zones, self._zones[zone_id])
     end
 end
 
@@ -173,7 +166,7 @@ Updates touch zones based on new screen dimensions.
 @tparam ui.geometry.Geom new_screen_dimen new screen dimensions
 ]]
 function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
-    for _, tzone in ipairs(self._touch_zones) do
+    for _, tzone in ipairs(self._ordered_touch_zones) do
         local range = tzone.gs_range.range
         range.x = new_screen_dimen.w * tzone.def.screen_zone.ratio_x
         range.y = new_screen_dimen.h * tzone.def.screen_zone.ratio_y
@@ -200,16 +193,18 @@ function InputContainer:onKeyPress(key)
 end
 
 function InputContainer:onGesture(ev)
-    for _, tzone in ipairs(self._touch_zones) do
-        if tzone.gs_range:match(ev) then
-            return tzone.handler(ev)
+    for _, tzone in ipairs(self._ordered_touch_zones) do
+        if tzone.gs_range:match(ev) and tzone.handler(ev) then
+            return true
         end
     end
     for name, gsseq in pairs(self.ges_events) do
         for _, gs_range in ipairs(gsseq) do
             if gs_range:match(ev) then
                 local eventname = gsseq.event or name
-                return self:handleEvent(Event:new(eventname, gsseq.args, ev))
+                if self:handleEvent(Event:new(eventname, gsseq.args, ev)) then
+                    return true
+                end
             end
         end
     end
