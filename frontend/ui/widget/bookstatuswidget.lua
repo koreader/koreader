@@ -298,7 +298,6 @@ function BookStatusWidget:genBookInfoGroup()
             image = self.thumbnail,
             width = img_width,
             height = img_height,
-            autoscale = false,
         })
     end
 

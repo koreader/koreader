@@ -33,7 +33,7 @@ local function createWidgetFromFile(file)
                        file_do_cache = false,
                        height = Screen:getHeight(),
                        width = Screen:getWidth(),
-                       autostretch = true,
+                       scale_factor = 0, -- scale to fit height/width
                    })
     end
 end
@@ -82,7 +82,7 @@ function Screensaver:getCoverImage(file)
             image = image,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            autostretch = doc_settings:readSetting("proportional_screensaver"),
+            scale_factor = doc_settings:readSetting("proportional_screensaver") and 0 or nil,
         }
         return createWidgetFromImage(img_widget)
     end
