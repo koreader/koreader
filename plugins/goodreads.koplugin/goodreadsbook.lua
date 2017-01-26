@@ -200,14 +200,12 @@ function GoodreadsBook:genBookInfoGroup()
             image = image.image_bb,
             width = img_width,
             height = img_height,
-            autoscale = false,
         })
     else
         table.insert(book_info_group, ImageWidget:new{
             file = "resources/goodreadsnophoto.png",
             width = img_width,
             height = img_height,
-            autoscale = false,
         })
     end
 
