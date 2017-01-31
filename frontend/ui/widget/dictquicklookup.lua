@@ -268,13 +268,13 @@ function DictQuickLookup:update()
                         if not dir then dir = G_reader_settings:readSetting("lastdir") end
                         if not dir then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save page to !"),
+                                text = _("No directory to save the page to could be found."),
                             })
                             return
                         end
                         local epub_path = dir .. "/" .. filename
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Save as %1 ?"), filename),
+                            text = T(_("Save as %1?"), filename),
                             ok_callback = function()
                                 UIManager:scheduleIn(0.1, function()
                                     local Wikipedia = require("ui/wikipedia")
@@ -298,7 +298,7 @@ function DictQuickLookup:update()
                                             })
                                         else
                                             UIManager:show(InfoMessage:new{
-                                                text = _("Failed saving Wikipedia page."),
+                                                text = _("Saving Wikipedia page failed."),
                                             })
                                         end
                                     end)
