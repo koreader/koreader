@@ -152,7 +152,7 @@ function FileSearcher:showSearchResults()
         UIManager:close(menu_container)
     end
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:swithItemTable(_("Search Results"), self.results)
+    self.search_menu:switchItemTable(_("Search Results"), self.results)
     UIManager:show(menu_container)
 end
 

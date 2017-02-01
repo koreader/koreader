@@ -123,7 +123,7 @@ function SetDefaults:init()
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
                                     self:close()
-                                    self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     UIManager:show(menu_container)
                                 end
                             },
@@ -136,7 +136,7 @@ function SetDefaults:init()
                                     self.settings_changed = true
                                     self.changed[i] = true
                                     self.results[i].text = self:build_setting(i)
-                                    self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     self:close()
                                     UIManager:show(menu_container)
                                 end
@@ -188,7 +188,7 @@ function SetDefaults:init()
                                     self.results[i].text = self:build_setting(i)
 
                                     self:close()
-                                    self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     UIManager:show(menu_container)
                                 end,
                             },
@@ -227,7 +227,7 @@ function SetDefaults:init()
                                         self.results[i].text = self:build_setting(i)
                                     end
                                     self:close()
-                                    self.defaults_menu:swithItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     UIManager:show(menu_container)
                                 end,
                             },
@@ -246,7 +246,7 @@ function SetDefaults:init()
             })
         end
     end
-    self.defaults_menu:swithItemTable("Defaults", self.results)
+    self.defaults_menu:switchItemTable("Defaults", self.results)
     UIManager:show(menu_container)
 end
 

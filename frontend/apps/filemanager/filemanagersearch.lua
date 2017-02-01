@@ -549,7 +549,7 @@ function Search:showresults()
         end
     end
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:swithItemTable(_("Search Results"), self.results)
+    self.search_menu:switchItemTable(_("Search Results"), self.results)
     UIManager:show(menu_container)
 end
 
@@ -665,7 +665,7 @@ function Search:browse(option, run, chosen)
 
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
 
-    self.search_menu:swithItemTable(menu_title, self.results)
+    self.search_menu:switchItemTable(menu_title, self.results)
     UIManager:show(menu_container)
 end
 

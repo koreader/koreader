@@ -464,7 +464,7 @@ end
 function OPDSBrowser:updateCatalog(item_table_url)
     local menu_table = self:genItemTableFromURL(item_table_url)
     if #menu_table > 0 then
-        self:swithItemTable(nil, menu_table)
+        self:switchItemTable(nil, menu_table)
         if self.page_num <= 1 then
             self:onNext()
         end
@@ -478,7 +478,7 @@ function OPDSBrowser:appendCatalog(item_table_url)
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
-    self:swithItemTable(nil, self.item_table, -1)
+    self:switchItemTable(nil, self.item_table, -1)
     return true
 end
 
