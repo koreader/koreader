@@ -1,7 +1,4 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
 local Device = require("device")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
@@ -18,50 +15,53 @@ function ReaderHighlight:init()
     end)
 end
 
-function ReaderHighlight:initGesListener()
-    self.ges_events = {
-        Tap = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight()
-                }
-            }
+function ReaderHighlight:setupTouchZones()
+    -- deligate gesture listener to readerui
+    self.ges_events = {}
+    self.onGesture = nil
+
+    if not Device:isTouchDevice() then return end
+
+    self.ui:registerTouchZones({
+        {
+            id = "readerhighlight_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            overrides = { 'tap_forward', 'tap_backward', },
+            handler = function(ges) return self:onTap(nil, ges) end
         },
-        Hold = {
-            GestureRange:new{
-                ges = "hold",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight()
-                }
-            }
+        {
+            id = "readerhighlight_hold",
+            ges = "hold",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onHold(nil, ges) end
         },
-        HoldRelease = {
-            GestureRange:new{
-                ges = "hold_release",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight()
-                }
-            }
+        {
+            id = "readerhighlight_hold_release",
+            ges = "hold_release",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function() return self:onHoldRelease() end
         },
-        HoldPan = {
-            GestureRange:new{
-                ges = "hold_pan",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight()
-                },
-                rate = 2.0,
-            }
+        {
+            id = "readerhighlight_hold_pan",
+            ges = "hold_pan",
+            rate = 2.0,
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onHoldPan(nil, ges) end
         },
-    }
+    })
+end
+
+function ReaderHighlight:onReaderReady()
+    self:setupTouchZones()
 end
 
 function ReaderHighlight:addToMainMenu(tab_item_table)
@@ -109,13 +109,6 @@ function ReaderHighlight:genHighlightDrawerMenu()
     }
 end
 
-function ReaderHighlight:onSetDimensions(dimen)
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
-end
-
 function ReaderHighlight:clear()
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
@@ -161,15 +154,16 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
     local pos = self.view:screenToPageTransform(ges.pos)
     for key, page in pairs(pages) do
         local items = self.view.highlight.saved[page]
-        if not items then items = {} end
-        for i = 1, #items do
-            local pos0, pos1 = items[i].pos0, items[i].pos1
-            local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
-            if boxes then
-                for index, box in pairs(boxes) do
-                    if inside_box(pos, box) then
-                        logger.dbg("Tap on hightlight")
-                        return self:onShowHighlightDialog(page, i)
+        if items then
+            for i = 1, #items do
+                local pos0, pos1 = items[i].pos0, items[i].pos1
+                local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
+                if boxes then
+                    for index, box in pairs(boxes) do
+                        if inside_box(pos, box) then
+                            logger.dbg("Tap on hightlight")
+                            return self:onShowHighlightDialog(page, i)
+                        end
                     end
                 end
             end
@@ -181,15 +175,16 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     local pos = self.view:screenToPageTransform(ges.pos)
     for page, _ in pairs(self.view.highlight.saved) do
         local items = self.view.highlight.saved[page]
-        if not items then items = {} end
-        for i = 1, #items do
-            local pos0, pos1 = items[i].pos0, items[i].pos1
-            local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
-            if boxes then
-                for index, box in pairs(boxes) do
-                    if inside_box(pos, box) then
-                        logger.dbg("Tap on hightlight")
-                        return self:onShowHighlightDialog(page, i)
+        if items then
+            for i = 1, #items do
+                local pos0, pos1 = items[i].pos0, items[i].pos1
+                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                if boxes then
+                    for index, box in pairs(boxes) do
+                        if inside_box(pos, box) then
+                            logger.dbg("Tap on hightlight")
+                            return self:onShowHighlightDialog(page, i)
+                        end
                     end
                 end
             end
@@ -357,6 +352,7 @@ function ReaderHighlight:onHoldRelease()
                         callback = function()
                             UIManager:scheduleIn(0.1, function()
                                 self:lookupWikipedia()
+                                self:onClose()
                             end)
                         end,
                     },

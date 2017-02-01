@@ -310,6 +310,7 @@ function ReaderStatistics:getCurrentStat()
         { _("Total days"), total_days },
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
         { _("Read pages/Total pages"), read_pages .. "/" .. self.data.pages },
+        { _("Percentage completed"), math.floor(read_pages / self.data.pages * 100 + 0.5) .. "%" }, -- adding 0.5 rounds to nearest integer with math.floor
     }
 end
 
@@ -452,6 +453,10 @@ end
 function ReaderStatistics:getTotalStats()
     local total_stats = {}
     if not self:isDocless() then
+        -- empty title
+        if self.data.title == "" then
+            self.data.title = self.document.file:match("^.+/(.+)$")
+        end
         total_stats = {
             {
                 self.data.title,
@@ -480,6 +485,10 @@ function ReaderStatistics:getStatisticsFromHistory(total_stats)
     local total_books_time = 0
     for _, v in pairs(ReadHistory.hist) do
         local book_stats = DocSettings:open(v.file):readSetting('stats')
+        -- empty title
+        if book_stats and book_stats.title == "" then
+            book_stats.title = v.file:match("^.+/(.+)$")
+        end
         if book_stats and book_stats.total_time_in_sec > 0
             and book_stats.title ~= self.data.title then
             titles[book_stats.title] = true

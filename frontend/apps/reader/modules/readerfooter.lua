@@ -228,6 +228,7 @@ function ReaderFooter:setupTouchZones()
             ges = "hold",
             screen_zone = footer_screen_zone,
             handler = function() return self:onHoldFooter() end,
+            overrides = {'readerhighlight_hold'},
         },
     })
 end

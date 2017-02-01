@@ -101,7 +101,7 @@ function ReaderWikipedia:initLanguages(word)
     end
 end
 
-function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
+function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
         return
@@ -109,8 +109,14 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
     -- word is the text to query. If get_fullpage is true, it is the
     -- exact wikipedia page title we want the full page of.
     self:initLanguages(word)
-    -- use first lang from self.wiki_languages, which may have been rotated by DictQuickLookup
-    local lang = self.wiki_languages[1]
+    local lang
+    if forced_lang then
+        -- use provided lang (from readerlink when noticing that an external link is a wikipedia url)
+        lang = forced_lang
+    else
+        -- use first lang from self.wiki_languages, which may have been rotated by DictQuickLookup
+        lang = self.wiki_languages[1]
+    end
     logger.dbg("lookup word:", word, box, get_fullpage)
     -- no need to clean word if get_fullpage, as it is the exact wikipetia page title
     if word and not get_fullpage then
@@ -166,6 +172,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
                 word = page.title,
                 definition = definition,
                 is_fullpage = get_fullpage,
+                lang = lang,
             }
             table.insert(results, result)
         end
@@ -179,6 +186,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage)
                 word = word,
                 definition = self.no_page,
                 is_fullpage = get_fullpage,
+                lang = lang,
             }
         }
         logger.dbg("dummy result table:", word, results)

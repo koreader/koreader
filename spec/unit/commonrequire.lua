@@ -2,6 +2,11 @@ require "defaults"
 package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
 package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
+-- turn off debug by default and set log level to warning
+require("dbg"):turnOff()
+local logger = require("logger")
+logger:setLevel(logger.levels.warn)
+
 -- global reader settings
 local DataStorage = require("datastorage")
 os.remove(DataStorage:getDataDir().."/settings.reader.lua")
@@ -19,9 +24,6 @@ Screen:init()
 -- init input device (do not show SDL window)
 local Input = require("device").input
 Input.dummy = true
-
--- turn on debug
---require("dbg"):turnOn()
 
 function assertAlmostEquals(expected, actual, margin)
     if type(actual) ~= 'number' or type(expected) ~= 'number'

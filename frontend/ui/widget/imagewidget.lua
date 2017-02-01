@@ -22,6 +22,7 @@ Show image from memory example:
 
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
+local UIManager = require("ui/uimanager")
 local CacheItem = require("cacheitem")
 local Mupdf = require("ffi/mupdf")
 local Geom = require("ui/geometry")
@@ -57,27 +58,56 @@ local ImageWidget = Widget:new{
     -- normally true unless our caller wants to reuse it's provided image
     image_disposable = true,
 
-    invert = nil,
-    dim = nil,
-    hide = nil,
-    -- if width or height is given, image will rescale to the given size
+    -- Width and height of container, to limit rendering to this area
+    -- (if provided, and scale_factor is nil, image will be resized to
+    -- these width and height without regards to original aspect ratio)
     width = nil,
     height = nil,
-    -- if autoscale is true image will be rescaled according to screen dpi
-    autoscale = false,
-    -- when alpha is set to true, alpha values from the image will be honored
-    alpha = false,
-    -- when autostretch is set to true, image will be stretched to best fit the
-    -- widget size. i.e. either fit the width or fit the height according to the
-    -- original image size.
-    autostretch = false,
-    -- when pre_rotate is not 0, native image is rotated by this angle
-    -- before applying the other autostretch/autoscale settings
-    pre_rotate = 0,
-    -- former 'overflow' setting removed, as logic was wrong
+
+    hide = nil, -- to not be painted
+
+    -- Settings that apply at paintTo() time
+    invert = nil,
+    dim = nil,
+    alpha = false, -- honors alpha values from the image
+
+    -- When rotation_angle is not 0, native image is rotated by this angle
+    -- before scaling.
+    rotation_angle = 0,
+
+    -- If scale_for_dpi is true image will be rescaled according to screen dpi
+    -- (x2 if DPI > 332) - (formerly known as 'autoscale')
+    scale_for_dpi = false,
+
+    -- When scale_factor is not nil, native image is scaled by this factor
+    -- (if scale_factor == 1, native image size is kept)
+    -- Special case : scale_factor == 0 : image will be scaled to best fit provided
+    -- width and height, keeping aspect ratio (scale_factor will be updated
+    -- from 0 to the factor used at _render() time)
+    -- (former 'autostrech' setting removed, use "scale_factor=0" instead)
+    scale_factor = nil,
+
+    -- For initial positionning, if (possibly scaled) image overflows width/height
+    center_x_ratio = 0.5, -- default is centered on image's center
+    center_y_ratio = 0.5,
+
+    -- For pan & zoom management:
+    -- offsets to use in blitFrom()
+    _offset_x = 0,
+    _offset_y = 0,
+    -- limits to center_x_ratio variation around 0.5 (0.5 +/- these values)
+    -- to keep image centered (0 means center_x_ratio will be forced to 0.5)
+    _max_off_center_x_ratio = 0,
+    _max_off_center_y_ratio = 0,
+
+    -- So we can reset self.scale_factor to its initial value in free(), in
+    -- case this same object is free'd but re-used and and re-render'ed
+    _initial_scale_factor = nil,
 
     _bb = nil,
-    _bb_disposable = true -- whether we should free() our _bb
+    _bb_disposable = true, -- whether we should free() our _bb
+    _bb_w = nil,
+    _bb_h = nil,
 }
 
 function ImageWidget:_loadimage()
@@ -121,6 +151,7 @@ function ImageWidget:_render()
     if self._bb then -- already rendered
         return
     end
+    logger.dbg("ImageWidget: _render'ing")
     if self.image then
         self:_loadimage()
     elseif self.file then
@@ -128,68 +159,169 @@ function ImageWidget:_render()
     else
         error("cannot render image")
     end
-    if self.pre_rotate ~= 0 then
+
+    -- Store initial scale factor
+    self._initial_scale_factor = self.scale_factor
+
+    -- First, rotation
+    if self.rotation_angle ~= 0 then
         if not self._bb_disposable then
             -- we can't modify _bb, make a copy
             self._bb = self._bb:copy()
             self._bb_disposable = true -- new object will have to be freed
         end
-        self._bb:rotate(self.pre_rotate) -- rotate in-place
+        self._bb:rotate(self.rotation_angle) -- rotate in-place
     end
-    local native_w, native_h = self._bb:getWidth(), self._bb:getHeight()
-    local w, h = self.width, self.height
-    if self.autoscale then
+
+    local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+
+    -- scale_for_dpi setting: update scale_factor (even if not set) with it
+    if self.scale_for_dpi then
         local dpi_scale = Screen:getDPI() / 167
         -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))
-        local scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
-        w, h = scale * native_w, scale * native_h
-    elseif self.width and self.height then
-        if self.autostretch then
-            local ratio = native_w / self.width / native_h * self.height
-            if ratio < 1 then
-                h = self.height
-                w = self.width * ratio
-            else
-                h = self.height / ratio
-                w = self.width
-            end
+        dpi_scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
+        if self.scale_factor == nil then
+            self.scale_factor = 1
+        end
+        self.scale_factor = self.scale_factor * dpi_scale
+    end
+
+    -- scale to best fit container : compute scale_factor for that
+    if self.scale_factor == 0 then
+        if self.width and self.height then
+            self.scale_factor = math.min(self.width / bb_w, self.height / bb_h)
+            logger.dbg("ImageWidget: scale to fit, setting scale_factor to", self.scale_factor)
+        else
+            -- no width and height provided (inconsistencies from caller),
+            self.scale_factor = 1 -- native image size
         end
     end
-    if (w and w ~= native_w) or (h and h ~= native_h) then
-        -- We're making a new blitbuffer, we need to explicitely free
+
+    -- replace blitbuffer with a resizd one if needed
+    local new_bb = nil
+    if self.scale_factor == nil then
+        -- no scaling, but strech to width and height, only if provided
+        if self.width and self.height then
+            logger.dbg("ImageWidget: stretching")
+            new_bb = self._bb:scale(self.width, self.height)
+        end
+    elseif self.scale_factor ~= 1 then
+        -- scale by scale_factor (not needed if scale_factor == 1)
+        logger.dbg("ImageWidget: scaling by", self.scale_factor)
+        new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
+    end
+    if new_bb then
+        -- We made a new blitbuffer, we need to explicitely free
         -- the old one to not leak memory
-        local new_bb = self._bb:scale(w or native_w, h or native_h)
         if self._bb_disposable then
             self._bb:free()
         end
         self._bb = new_bb
         self._bb_disposable = true -- new object will have to be freed
+        bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
     end
+
+    -- deal with positionning
+    if self.width and self.height then
+        -- if image is bigger than paint area, allow center_ratio variation
+        -- around 0.5 so we can pan till image border
+        if bb_w > self.width then
+            self._max_off_center_x_ratio = 0.5 - self.width/2 / bb_w
+        end
+        if bb_h > self.height then
+            self._max_off_center_y_ratio = 0.5 - self.height/2 / bb_h
+        end
+        -- correct provided center ratio if out limits
+        if self.center_x_ratio < 0.5 - self._max_off_center_x_ratio then
+            self.center_x_ratio = 0.5 - self._max_off_center_x_ratio
+        elseif self.center_x_ratio > 0.5 + self._max_off_center_x_ratio then
+            self.center_x_ratio = 0.5 + self._max_off_center_x_ratio
+        end
+        if self.center_y_ratio < 0.5 - self._max_off_center_y_ratio then
+            self.center_y_ratio = 0.5 - self._max_off_center_y_ratio
+        elseif self.center_y_ratio > 0.5 + self._max_off_center_y_ratio then
+            self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
+        end
+        -- set offsets to reflect center ratio, whether oversized or not
+        self._offset_x = self.center_x_ratio * bb_w - self.width/2
+        self._offset_y = self.center_y_ratio * bb_h - self.height/2
+        logger.dbg("ImageWidget: initial offsets", self._offset_x, self._offset_y)
+    end
+
+    -- store final bb's width and height
+    self._bb_w = bb_w
+    self._bb_h = bb_h
 end
 
 function ImageWidget:getSize()
     self:_render()
-    return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
+    -- getSize will be used by the widget stack for centering/padding
+    if not self.width or not self.height then
+        -- no width/height provided, return bb size to let widget stack do the centering
+        return Geom:new{ w = self._bb:getWidth(), h = self._bb:getHeight() }
+    end
+    -- if width or height provided, return them as is, even if image is smaller
+    -- and would be centered: we'll do the centering ourselves with offsets
+    return Geom:new{ w = self.width, h = self.height }
 end
 
-function ImageWidget:rotate(degree)
-    self:_render()
-    self._bb:rotate(degree)
+function ImageWidget:getScaleFactor()
+    -- return computed scale_factor, useful if 0 (scale to fit) was used
+    return self.scale_factor
+end
+
+function ImageWidget:getPanByCenterRatio(x, y)
+    -- returns center ratio (without limits check) we would get with this panBy
+    local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
+    local center_y_ratio = (y + self._offset_y + self.height/2) / self._bb_h
+    return center_x_ratio, center_y_ratio
+end
+
+function ImageWidget:panBy(x, y)
+    -- update center ratio from new offset
+    self.center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
+    self.center_y_ratio = (y + self._offset_y + self.height/2) / self._bb_h
+    -- correct new center ratio if out limits
+    if self.center_x_ratio < 0.5 - self._max_off_center_x_ratio then
+        self.center_x_ratio = 0.5 - self._max_off_center_x_ratio
+    elseif self.center_x_ratio > 0.5 + self._max_off_center_x_ratio then
+        self.center_x_ratio = 0.5 + self._max_off_center_x_ratio
+    end
+    if self.center_y_ratio < 0.5 - self._max_off_center_y_ratio then
+        self.center_y_ratio = 0.5 - self._max_off_center_y_ratio
+    elseif self.center_y_ratio > 0.5 + self._max_off_center_y_ratio then
+        self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
+    end
+    -- new offsets that reflect this new center ratio
+    local new_offset_x = self.center_x_ratio * self._bb_w - self.width/2
+    local new_offset_y = self.center_y_ratio * self._bb_h - self.height/2
+    -- only trigger screen refresh it we actually pan
+    if new_offset_x ~= self._offset_x or new_offset_y ~= self._offset_y then
+        self._offset_x = new_offset_x
+        self._offset_y = new_offset_y
+        UIManager:setDirty("all", function()
+            return "partial", self.dimen
+        end)
+    end
+    -- return new center ratio, so caller can use them later to create a new
+    -- ImageWidget with a different scale_factor, while keeping center point
+    return self.center_x_ratio, self.center_y_ratio
 end
 
 function ImageWidget:paintTo(bb, x, y)
     if self.hide then return end
-    -- self:_reader is called in getSize method
+    -- self:_render is called in getSize method
     local size = self:getSize()
     self.dimen = Geom:new{
         x = x, y = y,
         w = size.w,
         h = size.h
     }
+    logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
     if self.alpha == true then
-        bb:alphablitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+        bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
     else
-        bb:blitFrom(self._bb, x, y, 0, 0, size.w, size.h)
+        bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
     end
     if self.invert then
         bb:invertRect(x, y, size.w, size.h)
@@ -208,6 +340,10 @@ function ImageWidget:free()
         self._bb:free()
         self._bb = nil
     end
+    -- reset self.scale_factor to its initial value, in case
+    -- self._render() is called again (happens with iconbutton,
+    -- avoids x2 x2 x2 if high dpi and icon scaled x8 after 3 calls)
+    self.scale_factor = self._initial_scale_factor
 end
 
 function ImageWidget:onCloseWidget()
