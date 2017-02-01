@@ -649,7 +649,7 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
                 state_size = self.state_size or {},
-                text = ((self.item_table[i].sub_item_table ~= nil) and "+ " or "") .. self.item_table[i].text,
+                text = self.item_table[i].text .. ((self.item_table[i].sub_item_table ~= nil) and " >" or ""),
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 face = self.cface,
