@@ -214,7 +214,7 @@ function ReaderBookmark:onShowBookmark()
                         text = _("Remove this bookmark"),
                         callback = function()
                             bookmark:removeBookmark(item)
-                            bm_menu:swithItemTable(nil, bookmark.bookmarks, -1)
+                            bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
                             UIManager:close(self.remove_bookmark_dialog)
                         end,
                     },

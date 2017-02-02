@@ -699,7 +699,6 @@ function Menu:updateItems(select_number)
 end
 
 --[[
-    May be a typo of switchItemTable?
     the itemnumber paramter determines menu page number after switching item table
     1. itemnumber >= 0
         the page number is calculated with items per page
@@ -709,7 +708,7 @@ end
         the page number is not changed, used when item_table is appended with
         new entries
 --]]
-function Menu:swithItemTable(new_title, new_item_table, itemnumber)
+function Menu:switchItemTable(new_title, new_item_table, itemnumber)
     if self.menu_title and new_title then
         self.menu_title.text = new_title
     end
@@ -774,7 +773,7 @@ function Menu:onMenuSelect(item)
         -- save menu title for later resume
         self.item_table.title = self.title
         table.insert(self.item_table_stack, self.item_table)
-        self:swithItemTable(item.text, item.sub_item_table)
+        self:switchItemTable(item.text, item.sub_item_table)
     end
     return true
 end
@@ -862,7 +861,7 @@ function Menu:onClose()
     else
         -- back to parent menu
         local parent_item_table = table.remove(self.item_table_stack, table_length)
-        self:swithItemTable(parent_item_table.title, parent_item_table)
+        self:switchItemTable(parent_item_table.title, parent_item_table)
     end
     return true
 end

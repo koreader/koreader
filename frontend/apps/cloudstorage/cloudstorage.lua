@@ -107,7 +107,7 @@ function CloudStorage:openCloudServer(url)
         tbl = Ftp:run(self.address, self.username, self.password, url)
     end
     if tbl and #tbl > 0 then
-        self:swithItemTable(url, tbl)
+        self:switchItemTable(url, tbl)
         return true
     elseif not tbl then
         UIManager:show(InfoMessage:new{
