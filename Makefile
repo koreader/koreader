@@ -119,7 +119,7 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 			--coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
-		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
+		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
 fetchthirdparty:

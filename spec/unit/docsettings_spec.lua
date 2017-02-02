@@ -14,6 +14,15 @@ describe("docsettings module", function()
         assert.Equals("baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
 
+    it("should generate sidecar metadata file", function()
+        assert.Equals("../../foo.sdr/metadata.pdf.lua",
+                      docsettings:getSidecarFile("../../foo.pdf"))
+        assert.Equals("/foo/bar.sdr/metadata.pdf.lua",
+                      docsettings:getSidecarFile("/foo/bar.pdf"))
+        assert.Equals("baz.sdr/metadata.epub.lua",
+                      docsettings:getSidecarFile("baz.epub"))
+    end)
+
     it("should read legacy history file", function()
         local file = "file.pdf"
         local d = docsettings:open(file)
