@@ -178,7 +178,6 @@ function ReaderLink:onGotoLink(link)
         local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
             text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
-            cancel_on_tap_outside = true,
             ok_callback = function()
                 UIManager:nextTick(function()
                     self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
