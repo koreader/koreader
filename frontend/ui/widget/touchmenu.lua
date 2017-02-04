@@ -20,6 +20,7 @@ local Font = require("ui/font")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
+local getMenuText = require("util").getMenuText
 
 --[[
 TouchMenuItem widget
@@ -78,7 +79,7 @@ function TouchMenuItem:init()
                 item_checked and checked_widget or unchecked_widget
             },
             TextWidget:new{
-                text = (self.item.text or self.item.text_func()) .. ((self.item.sub_item_table == nil) and "" or " \226\150\185"),
+                text = getMenuText(self.item),
                 fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
                 face = self.face,
             },

@@ -27,6 +27,7 @@ local util = require("ffi/util")
 local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
+local getMenuText = require("util").getMenuText
 
 --[[
 Widget that displays a shortcut icon for menu item
@@ -649,7 +650,7 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
                 state_size = self.state_size or {},
-                text = self.item_table[i].text .. ((self.item_table[i].sub_item_table ~= nil) and " \226\150\185" or ""),
+                text = getMenuText(self.item_table[i]),
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 face = self.cface,
