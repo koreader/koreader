@@ -138,7 +138,7 @@ function FileChooser:genItemTableFromPath(path)
 
     if self.reverse_collate then
         local sorting_unreversed = sorting
-        sorting = function(a, b) return not sorting_unreversed(a, b) end
+        sorting = function(a, b) return sorting_unreversed(b, a) end
     end
 
     table.sort(dirs, sorting)
