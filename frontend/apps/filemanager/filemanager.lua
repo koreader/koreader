@@ -471,8 +471,12 @@ end
 function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
-        strcoll = {_("by title"), _("Sort by title")},
-        access = {_("by date"), _("Sort by date")},
+        strcoll = {_("title"), _("Sort by title")},
+        access = {_("date read"), _("Sort by date of last read")},
+        add = {_("date added"), _("Sort by date of adding")},
+        modification = {_("date modified"), _("Sort by date of modification")},
+        size = {_("size"), _("Sort by size")},
+        type = {_("type"), _("Sort by type")},
     }
     local set_collate_table = function(collate)
         return {
@@ -486,13 +490,17 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort order: %1"),
+                _("Sort by %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
             set_collate_table("access"),
+            set_collate_table("add"),
+            set_collate_table("modification"),
+            set_collate_table("size"),
+            set_collate_table("type"),
         }
     }
 end

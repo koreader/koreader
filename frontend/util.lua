@@ -266,6 +266,11 @@ function util.splitFileNameSuffix(file)
     return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
 end
 
+function util.getFileNameSuffix(file)
+    local name, suffix = util.splitFileNameSuffix(file)
+    return suffix
+end
+
 function util.getMenuText(item)
     local text
     if item.text_func then
