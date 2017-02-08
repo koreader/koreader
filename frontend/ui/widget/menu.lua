@@ -27,6 +27,7 @@ local util = require("ffi/util")
 local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
+local getMenuText = require("util").getMenuText
 
 --[[
 Widget that displays a shortcut icon for menu item
@@ -169,8 +170,7 @@ function MenuItem:init()
 
     local state_button_width = self.state_size.w or 0
     local my_text = self.text and ""..self.text or ""
-    local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                    ""..my_text, true, self.bold).x
+    local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
     if w + mandatory_w + state_button_width >= self.content_width then
         if Device:hasKeyboard() then
             self.active_key_events.ShowItemDetail = {
@@ -599,7 +599,7 @@ function Menu:init()
     if self.path_items then
         self:refreshPath()
     else
-        self:updateItems(1)
+        self:updateItems()
     end
 end
 
@@ -650,7 +650,7 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
                 state_size = self.state_size or {},
-                text = self.item_table[i].text,
+                text = getMenuText(self.item_table[i]),
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 face = self.cface,
@@ -726,7 +726,7 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber)
     end
 
     self.item_table = new_item_table
-    self:updateItems(1)
+    self:updateItems()
 end
 
 function Menu:onSelectByShortCut(_, keyevent)
@@ -802,7 +802,7 @@ function Menu:onNextPage()
     end
     if self.page < self.page_num then
         self.page = self.page + 1
-        self:updateItems(1)
+        self:updateItems()
     elseif self.page == self.page_num then
         -- on the last page, we check if we're on the last item
         local end_position = #self.item_table % self.perpage
@@ -813,7 +813,7 @@ function Menu:onNextPage()
             self:updateItems(end_position)
         end
         self.page = 1
-        self:updateItems(1)
+        self:updateItems()
     end
     return true
 end
@@ -824,25 +824,25 @@ function Menu:onPrevPage()
     elseif self.page == 1 then
         self.page = self.page_num
     end
-    self:updateItems(1)
+    self:updateItems()
     return true
 end
 
 function Menu:onFirstPage()
     self.page = 1
-    self:updateItems(1)
+    self:updateItems()
     return true
 end
 
 function Menu:onLastPage()
     self.page = self.page_num
-    self:updateItems(1)
+    self:updateItems()
     return true
 end
 
 function Menu:onGotoPage(page)
     self.page = page
-    self:updateItems(1)
+    self:updateItems()
     return true
 end
 
