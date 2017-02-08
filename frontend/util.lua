@@ -267,7 +267,7 @@ function util.splitFileNameSuffix(file)
 end
 
 function util.getFileNameSuffix(file)
-    local name, suffix = util.splitFileNameSuffix(file)
+    local _, suffix = util.splitFileNameSuffix(file)
     return suffix
 end
 

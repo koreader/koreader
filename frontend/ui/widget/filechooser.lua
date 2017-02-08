@@ -99,7 +99,7 @@ function FileChooser:genItemTableFromPath(path)
 
     self.list(path, dirs, files)
 
-    local sorting = nil
+    local sorting
     if self.collate == "strcoll" then
         sorting = function(a, b)
             return self.strcoll(a.name, b.name)
