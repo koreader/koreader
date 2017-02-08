@@ -170,7 +170,7 @@ function FileChooser:updateItems(select_number)
 end
 
 function FileChooser:refreshPath()
-    self:swithItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
+    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
 end
 
 function FileChooser:changeToPath(path)

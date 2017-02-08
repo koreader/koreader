@@ -392,12 +392,12 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
     if with_images then
         -- if no progress_callback (non UI), our fake one will return true
         if #images > 0 then
-            include_images = progress_callback(T(_("Page contains %1 images.\nWould you like to download and include them in epub ?"), #images), true)
+            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true)
             if include_images then
-                use_img_2x = progress_callback(_("Would you like to get slightly higher quality images (but bigger file size) ?"), true)
+                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true)
             end
         else
-            progress_callback(_("Page contains no image."))
+            progress_callback(_("The page does not contain any images."))
             util.sleep(1) -- Let the user see that
         end
     end
@@ -669,7 +669,7 @@ time, abbr, sup {
     --
     -- Also, crengine deals strangely with percent encoded utf8 :
     -- if the link in the html is : <a href="http://fr.wikipedia.org/wiki/Fran%C3%A7oix">
-    -- we get from credocument:getLinkFromPosition() : http://fr.wikipedia.org/wiki/FranÃÂ§oix
+    -- we get from credocument:getLinkFromPosition() : http://fr.wikipedia.org/wiki/Fran____oix
     -- These are bytes "\xc3\x83\xc2\xa7", that is U+C3 and U+A7 encoded as UTF8,
     -- when we should have get "\xc3\xa7" ...
     -- We can avoid that by putting in the url plain unencoded UTF8
@@ -681,7 +681,7 @@ time, abbr, sup {
     html = html:gsub([[href="/wiki/([^"]*)"]], fixEncodedWikiPageTitle)
 
     -- Remove href from links to non existant wiki page so they are not clickable :
-    -- <a href="/w/index.php?title=PageTitle&amp;action=edit&amp;redlink=1" class="new" title="PageTitle">PageTitle©on</a>
+    -- <a href="/w/index.php?title=PageTitle&amp;action=edit&amp;redlink=1" class="new" title="PageTitle">PageTitle____on</a>
     -- (removal of the href="" will make them non clickable)
     html = html:gsub([[<a[^>]* class="new"[^>]*>]], [[<a class="newwikinonexistent">]])
 
@@ -757,7 +757,7 @@ time, abbr, sup {
             if success then
                 epub:add("OEBPS/"..img.imgpath, content)
             else
-                local go_on = progress_callback(T(_("Failed getting image %1, continue anyway ?"), inum), true)
+                local go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true)
                 if not go_on then
                     cancelled = true
                     break
@@ -768,9 +768,9 @@ time, abbr, sup {
 
     -- Done with adding files
     if cancelled then
-        progress_callback(_("Cleaning up..."))
+        progress_callback(_("Cleaning upâ€¦"))
     else
-        progress_callback(_("Packing epub..."))
+        progress_callback(_("Packing EPUBâ€¦"))
     end
     epub:close()
     -- This was nearly a no-op, so sleep a bit to make that progress step seen

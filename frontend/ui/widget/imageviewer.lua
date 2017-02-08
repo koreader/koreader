@@ -297,9 +297,22 @@ function ImageViewer:onSwipe(_, ges)
     local distance = ges.distance
     local sq_distance = math.sqrt(distance*distance/2)
     if direction == "north" then
-        self:panBy(0, distance)
+        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+            -- allow for zooming with vertical swipe on screen sides
+            -- (for devices without multi touch where pinch and spread don't work)
+            local inc = ges.distance / Screen:getHeight()
+            self:onZoomIn(inc)
+        else
+            self:panBy(0, distance)
+        end
     elseif direction == "south" then
-        self:panBy(0, -distance)
+        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+            -- allow for zooming with vertical swipe on screen sides
+            local dec = ges.distance / Screen:getHeight()
+            self:onZoomOut(dec)
+        else
+            self:panBy(0, -distance)
+        end
     elseif direction == "east" then
         self:panBy(-distance, 0)
     elseif direction == "west" then

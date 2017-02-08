@@ -266,4 +266,17 @@ function util.splitFileNameSuffix(file)
     return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
 end
 
+function util.getMenuText(item)
+    local text
+    if item.text_func then
+        text = item.text_func()
+    else
+        text = item.text
+    end
+    if item.sub_item_table ~= nil then
+        text = text .. " \226\150\184"
+    end
+    return text
+end
+
 return util

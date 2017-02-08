@@ -163,7 +163,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 callback = function()
                     self.config:purge()
                     UIManager:show(InfoMessage:new{
-                        text = _("History records are purged.\nAll notes will be exported again next time.\nSuggest to remove existing KOReaderClipping.txt to avoid a duplication."),
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\nIt is recommended to remove the existing KOReaderClipping.txt file to avoid duplication."),
                     })
                 end
             }

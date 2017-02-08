@@ -30,7 +30,7 @@ function FileManagerHistory:addToMainMenu(tab_item_table)
 end
 
 function FileManagerHistory:updateItemTable()
-    self.hist_menu:swithItemTable(self.hist_menu_title,
+    self.hist_menu:switchItemTable(self.hist_menu_title,
                                   require("readhistory").hist)
 end
 
