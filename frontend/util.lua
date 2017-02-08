@@ -274,7 +274,7 @@ function util.getMenuText(item)
         text = item.text
     end
     if item.sub_item_table ~= nil then
-        text = text .. " \226\150\182"
+        text = text .. " \226\150\184"
     end
     return text
 end
