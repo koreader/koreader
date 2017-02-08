@@ -165,6 +165,10 @@ function FileManager:init()
                     callback = function()
                         local full_path = util.realpath(file)
                         os.remove(DocSettings:getSidecarFile(full_path))
+                        -- If the sidecar folder is empty, os.remove() can
+                        -- delete it. Otherwise, the following statement has no
+                        -- effect.
+                        os.remove(DocSettings:getSidecarDir(full_path))
                         self:refreshPath()
                         -- also remove from history if present
                         local readhistory = require("readhistory")
