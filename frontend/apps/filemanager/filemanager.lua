@@ -473,7 +473,7 @@ function FileManager:getSortingMenuTable()
     local collates = {
         strcoll = {_("title"), _("Sort by title")},
         access = {_("date read"), _("Sort by date of last read")},
-        add = {_("date added"), _("Sort by date of adding")},
+        change = {_("date added"), _("Sort by date of adding")},
         modification = {_("date modified"), _("Sort by date of modification")},
         size = {_("size"), _("Sort by size")},
         type = {_("type"), _("Sort by type")},
@@ -497,7 +497,7 @@ function FileManager:getSortingMenuTable()
         sub_item_table = {
             set_collate_table("strcoll"),
             set_collate_table("access"),
-            set_collate_table("add"),
+            set_collate_table("change"),
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),

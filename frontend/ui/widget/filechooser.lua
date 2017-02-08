@@ -54,12 +54,14 @@ function FileChooser:init()
                             if self.dir_filter(filename) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
+                                                    fullpath = filename,
                                                     attr = attributes})
                             end
                         elseif attributes.mode == "file" then
                             if self.file_filter == nil or self.file_filter(filename) then
                                 table.insert(files, {name = f,
                                                      suffix = getFileNameSuffix(f),
+                                                     fullpath = filename,
                                                      attr = attributes})
                             end
                         end
@@ -104,8 +106,12 @@ function FileChooser:genItemTableFromPath(path)
         end
     elseif self.collate == "access" then
         sorting = function(a, b)
-            -- Place files without metadata after ones with metadata.
-            -- Waiting for change #2534.
+            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                return true
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
+                return false
+            end
             return a.attr.access > b.attr.access
         end
     elseif self.collate == "modification" then
@@ -114,8 +120,12 @@ function FileChooser:genItemTableFromPath(path)
         end
     elseif self.collate == "change" then
         sorting = function(a, b)
-            -- Place files without metadata before ones with metadata.
-            -- Waiting for change #2534.
+            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                return false
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
+                return true
+            end
             return a.attr.change > b.attr.change
         end
     elseif self.collate == "size" then
