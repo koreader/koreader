@@ -29,13 +29,17 @@ end
 
 function DocSettings:getSidecarFile(doc_path)
     if doc_path == nil or doc_path == '' then return '' end
-    return self:getSidecarDir(doc_path) .. "/metadata." .. doc_path:match(".*%.(.+)") .. ".lua"
+    -- If the file does not have a suffix or we are working on a directory, we
+    -- should ignore the suffix part in metadata file path.
+    local suffix = doc_path:match(".*%.(.+)")
+    if suffix == nil then
+        suffix = ''
+    end
+    return self:getSidecarDir(doc_path) .. "/metadata." .. suffix .. ".lua"
 end
 
 function DocSettings:hasSidecarFile(doc_path)
-    local file = self:getSidecarFile(doc_path)
-    if file == nil or file == '' then return false end
-    return lfs.attributes(file, "mode") == "file"
+    return lfs.attributes(self:getSidecarFile(doc_path), "mode") == "file"
 end
 
 function DocSettings:getHistoryPath(fullpath)
