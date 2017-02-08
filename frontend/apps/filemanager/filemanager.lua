@@ -161,10 +161,10 @@ function FileManager:init()
                 },
                 {
                     text = _("Purge .sdr"),
-                    enabled = DocSettings:hasSidecarDir(util.realpath(file)),
+                    enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
                         local full_path = util.realpath(file)
-                        util.purgeDir(DocSettings:getSidecarDir(full_path))
+                        os.remove(DocSettings:getSidecarFile(full_path))
                         self:refreshPath()
                         -- also remove from history if present
                         local readhistory = require("readhistory")

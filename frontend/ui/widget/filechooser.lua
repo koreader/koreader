@@ -188,7 +188,7 @@ function FileChooser:genItemTableFromPath(path)
             path = full_path
         }
         if show_file_in_bold ~= false then
-            file_item.bold = DocSettings:hasSidecarDir(full_path)
+            file_item.bold = DocSettings:hasSidecarFile(full_path)
             if show_file_in_bold ~= "opened" then
                 file_item.bold = not file_item.bold
             end
