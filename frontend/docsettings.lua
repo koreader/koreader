@@ -32,12 +32,10 @@ function DocSettings:getSidecarFile(doc_path)
     return self:getSidecarDir(doc_path) .. "/metadata." .. doc_path:match(".*%.(.+)") .. ".lua"
 end
 
-function DocSettings:hasSidecarDir(doc_path)
-    -- We may be called with items from FileManager, which may not be a document
-    if lfs.attributes(doc_path, "mode") == "directory" then
-        return false
-    end
-    return lfs.attributes(self:getSidecarDir(doc_path), "mode") == "directory"
+function DocSettings:hasSidecarFile(doc_path)
+    local file = self:getSidecarFile(doc_path)
+    if file == nil or file == '' then return false end
+    return lfs.attributes(file, "mode") == "file"
 end
 
 function DocSettings:getHistoryPath(fullpath)
