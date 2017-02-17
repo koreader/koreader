@@ -167,6 +167,7 @@ function ReaderProgress:genWeekStats(stats_day)
     local second_in_day = 86400
     local date_format
     local date_format_show
+    local day_of_week
     local select_day_time
     local now_time = os.time()
     local height = Screen:scaleBySize(60)
@@ -205,7 +206,9 @@ function ReaderProgress:genWeekStats(stats_day)
         else
             select_day_time = 0
         end
-        date_format_show = os.date("%A (%d.%m)" , now_time - second_in_day * (i - 1))
+        day_of_week = os.date("%A" , now_time - second_in_day * (i - 1))
+        date_format_show = os.date(" (%d.%m)" , now_time - second_in_day * (i - 1))
+        date_format_show = util.translateDayOfWeek(day_of_week) .. date_format_show
         local total_group = HorizontalGroup:new{
             align = "center",
             padding = 2,

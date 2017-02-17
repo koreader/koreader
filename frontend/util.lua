@@ -284,4 +284,49 @@ function util.getMenuText(item)
     return text
 end
 
+function util.translateDayOfWeek(day_of_week)
+    local _ = require("gettext")
+    if day_of_week == "Monday" then return _("Monday")
+        elseif day_of_week == "Tuesday" then return _("Tuesday")
+        elseif day_of_week == "Wednesday" then return _("Wednesday")
+        elseif day_of_week == "Thursday" then return _("Thursday")
+        elseif day_of_week == "Friday" then return _("Friday")
+        elseif day_of_week == "Saturday" then return _("Saturday")
+        elseif day_of_week == "Sunday" then return _("Sunday")
+    end
+    return
+end
+
+function util.translateShortDayOfWeek(day_of_week)
+    local _ = require("gettext")
+    if day_of_week == "Mon" then return _("Monday")
+    elseif day_of_week == "Tue" then return _("Tue")
+    elseif day_of_week == "Wed" then return _("Wed")
+    elseif day_of_week == "Thu" then return _("Thu")
+    elseif day_of_week == "Fri" then return _("Fri")
+    elseif day_of_week == "Sat" then return _("Sat")
+    elseif day_of_week == "Sun" then return _("Sun")
+    end
+    return
+end
+
+
+function util.translateMonth(month)
+    local _ = require("gettext")
+    if month == "January" then return _("January")
+        elseif month == "February" then return _("February")
+        elseif month == "March" then return _("March")
+        elseif month == "April" then return _("April")
+        elseif month == "May" then return _("May")
+        elseif month == "June" then return _("June")
+        elseif month == "July" then return _("July")
+        elseif month == "August" then return _("August")
+        elseif month == "September" then return _("September")
+        elseif month == "October" then return _("October")
+        elseif month == "November" then return _("November")
+        elseif month == "December" then return _("December")
+    end
+    return
+end
+
 return util

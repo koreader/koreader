@@ -353,6 +353,9 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local one_day = 24 * 3600 -- one day in seconds
     local avg_time_per_page
     local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
+    local week_translate = _("Week")
+    local month_translate
+    local short_day_of_week
     for _, v in pairs(ReadHistory.hist) do
         local book_stats = DocSettings:open(v.file):readSetting('stats')
         if book_stats ~= nil then
@@ -376,13 +379,16 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
             table.sort(sorted_performance_in_pages)
             for i, n in pairs(sorted_performance_in_pages) do
                 if ptype == "daily_weekday" then
-                    date_text = os.date("%Y-%m-%d (%a)", n)
+                    short_day_of_week = util.translateShortDayOfWeek(os.date("%a", n))
+                    date_text = os.date("%Y-%m-%d ", n) .. "(" .. short_day_of_week .. ")"
                 elseif ptype == "daily" then
                     date_text = os.date("%Y-%m-%d" , n)
                 elseif ptype == "weekly" then
-                    date_text = os.date("%Y Week %W" , n)
+                    date_text = os.date("%Y ".. week_translate .. " %W" , n)
                 elseif ptype == "monthly" then
-                    date_text = os.date("%B %Y" , n)
+                    month_translate = util.translateMonth(os.date("%B" , n))
+                    date_text = os.date(" %Y" , n)
+                    date_text = month_translate .. date_text
                 else
                     date_text = os.date("%Y-%m-%d" , n)
                 end  --if ptype
