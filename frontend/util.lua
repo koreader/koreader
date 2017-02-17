@@ -299,7 +299,7 @@ end
 
 function util.translateShortDayOfWeek(day_of_week)
     local _ = require("gettext")
-    if day_of_week == "Mon" then return _("Monday")
+    if day_of_week == "Mon" then return _("Mon")
     elseif day_of_week == "Tue" then return _("Tue")
     elseif day_of_week == "Wed" then return _("Wed")
     elseif day_of_week == "Thu" then return _("Thu")
