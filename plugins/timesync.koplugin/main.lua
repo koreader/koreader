@@ -28,15 +28,15 @@ local function currentTime()
         std_out:close()
         if result ~= nil then
             result = result:gsub("\n", "")
-            return T(_("New time is %1"), result)
+            return T(_("New time is %1."), result)
         end
     end
-    return _("Time synchronized")
+    return _("Time synchronized.")
 end
 
 local function execute()
     local info = InfoMessage:new{
-        text = _("Synchronizing time, this may take several seconds.")
+        text = _("Synchronizing time. This may take several seconds.")
     }
     UIManager:show(info)
     UIManager:forceRePaint()
