@@ -1,7 +1,13 @@
 
 local Device = require("device")
 
-if not (Device:isKobo() or Device:isKindle() or Device:isPocketBook()) then
+local command
+-- TODO(hzj-jie): Does pocketbook provide ntpdate?
+if Device:isKobo() then
+    command = "ntpd -q -n -p pool.ntp.org"
+elseif Device:isKindle() or Device:isPocketBook() then
+    command = "ntpdate pool.ntp.org"
+else
     return { disabled = true, }
 end
 
@@ -20,26 +26,32 @@ local function currentTime()
     if std_out then
         local result = std_out:read("*all")
         std_out:close()
-        return T(_("New Time is %1"), result)
-    else
-        return _("Time synchronized")
+        if result ~= nil then
+            result = result:gsub("\n", "")
+            return T(_("New time is %1."), result)
+        end
     end
+    return _("Time synchronized.")
 end
 
 local function execute()
+    local info = InfoMessage:new{
+        text = _("Synchronizing time. This may take several seconds.")
+    }
+    UIManager:show(info)
+    UIManager:forceRePaint()
     local txt
-    if os.execute("date -u +\"YYYY-MM-DD hh:mm:ss\" \"" ..
-                  "`wget -q -O - \"http://www.timeapi.org/utc/now\" | " ..
-                  "sed 's/T/ /g' | sed 's/+00:00//g'`\"") ~= 0 then
-        txt = _("Failed to retrieve time")
+    if os.execute(command) ~= 0 then
+        txt = _("Failed to retrieve time, please check your network configuration.")
     else
         txt = currentTime()
     end
+    os.execute("hwclock -u -w")
+    UIManager:close(info)
     UIManager:show(InfoMessage:new{
         text = txt,
         timeout = 3,
     })
-    os.execute("hwclock -u -w")
 end
 
 local menuItem = {
