@@ -44,7 +44,7 @@ INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastor
 # for gettext
 DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
-KOREADER_MISC_TOOL=../misc
+KOREADER_MISC_TOOL=../koreader-misc
 XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 
