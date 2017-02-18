@@ -164,11 +164,20 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
 end
 
 function ReaderProgress:genWeekStats(stats_day)
+    local dayOfWeekTranslation = {
+        ["Monday"] = _("Monday"),
+        ["Tuesday"] = _("Tuesday"),
+        ["Wednesday"] = _("Wednesday"),
+        ["Thursday"] = _("Thursday"),
+        ["Friday"] = _("Fri"),
+        ["Saturday"] = _("Saturday"),
+        ["Sunday"] = _("Sunday"),
+    }
     local second_in_day = 86400
     local date_format
     local date_format_show
-    local day_of_week
     local select_day_time
+    local diff_time
     local now_time = os.time()
     local height = Screen:scaleBySize(60)
     local statistics_container = CenterContainer:new{
@@ -206,9 +215,8 @@ function ReaderProgress:genWeekStats(stats_day)
         else
             select_day_time = 0
         end
-        day_of_week = os.date("%A" , now_time - second_in_day * (i - 1))
-        date_format_show = os.date(" (%d.%m)" , now_time - second_in_day * (i - 1))
-        date_format_show = util.translateDayOfWeek(day_of_week) .. date_format_show
+        diff_time = now_time - second_in_day * (i - 1)
+        date_format_show = dayOfWeekTranslation[os.date("%A" , diff_time)] .. os.date(" (%d.%m)" , diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
             padding = 2,
