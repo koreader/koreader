@@ -161,10 +161,14 @@ function FileManager:init()
                 },
                 {
                     text = _("Purge .sdr"),
-                    enabled = DocSettings:hasSidecarDir(util.realpath(file)),
+                    enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
                         local full_path = util.realpath(file)
-                        util.purgeDir(DocSettings:getSidecarDir(full_path))
+                        os.remove(DocSettings:getSidecarFile(full_path))
+                        -- If the sidecar folder is empty, os.remove() can
+                        -- delete it. Otherwise, the following statement has no
+                        -- effect.
+                        os.remove(DocSettings:getSidecarDir(full_path))
                         self:refreshPath()
                         -- also remove from history if present
                         local readhistory = require("readhistory")
@@ -394,7 +398,7 @@ function FileManager:pasteHere(file)
             file or file:match("(.*/)")
         if self.cutfile then
             -- if we move a file, also move its sidecar directory
-            if DocSettings:hasSidecarDir(orig) then
+            if DocSettings:hasSidecarFile(orig) then
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             self:moveFile(orig, dest)
@@ -471,8 +475,12 @@ end
 function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
-        strcoll = {_("by title"), _("Sort by title")},
-        access = {_("by date"), _("Sort by date")},
+        strcoll = {_("title"), _("Sort by title")},
+        access = {_("date read"), _("Sort by last read date")},
+        change = {_("date added"), _("Sort by date added")},
+        modification = {_("date modified"), _("Sort by date modified")},
+        size = {_("size"), _("Sort by size")},
+        type = {_("type"), _("Sort by type")},
     }
     local set_collate_table = function(collate)
         return {
@@ -486,13 +494,17 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort order: %1"),
+                _("Sort by %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
             set_collate_table("access"),
+            set_collate_table("change"),
+            set_collate_table("modification"),
+            set_collate_table("size"),
+            set_collate_table("type"),
         }
     }
 end

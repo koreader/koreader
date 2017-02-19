@@ -40,6 +40,31 @@ local ReaderStatistics = Widget:extend{
     },
 }
 
+local shortDayOfWeekTranslation = {
+    ["Mon"] = _("Mon"),
+    ["Tue"] = _("Tue"),
+    ["Wed"] = _("Wed"),
+    ["Thu"] = _("Thu"),
+    ["Fri"] = _("Fri"),
+    ["Sat"] = _("Sat"),
+    ["Sun"] = _("Sun"),
+}
+
+local monthTranslation = {
+    ["January"] = _("January"),
+    ["February"] = _("February"),
+    ["March"] = _("March"),
+    ["April"] = _("April"),
+    ["May"] = _("May"),
+    ["June"] = _("June"),
+    ["July"] = _("July"),
+    ["August"] = _("August"),
+    ["September"] = _("September"),
+    ["October"] = _("October"),
+    ["November"] = _("November"),
+    ["December"] = _("December"),
+}
+
 function ReaderStatistics:isDocless()
     return self.ui == nil or self.ui.document == nil
 end
@@ -353,7 +378,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local one_day = 24 * 3600 -- one day in seconds
     local avg_time_per_page
     local period = now_stamp - ((sdays -1) * one_day) - from_begin_day
-    for _, v in pairs(ReadHistory.hist) do
+    for __, v in pairs(ReadHistory.hist) do
         local book_stats = DocSettings:open(v.file):readSetting('stats')
         if book_stats ~= nil then
             -- if current reading book
@@ -376,15 +401,17 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
             table.sort(sorted_performance_in_pages)
             for i, n in pairs(sorted_performance_in_pages) do
                 if ptype == "daily_weekday" then
-                    date_text = os.date("%Y-%m-%d (%a)", n)
+                    date_text = string.format("%s (%s)",
+                        os.date("%Y-%m-%d", n),
+                        shortDayOfWeekTranslation[os.date("%a", n)])
                 elseif ptype == "daily" then
-                    date_text = os.date("%Y-%m-%d" , n)
+                    date_text = os.date("%Y-%m-%d", n)
                 elseif ptype == "weekly" then
-                    date_text = os.date("%Y Week %W" , n)
+                    date_text = T(_("%1 Week %2"), os.date("%Y "), os.date(" %W", n))
                 elseif ptype == "monthly" then
-                    date_text = os.date("%B %Y" , n)
+                    date_text = monthTranslation[os.date("%B", n)] .. os.date(" %Y", n)
                 else
-                    date_text = os.date("%Y-%m-%d" , n)
+                    date_text = os.date("%Y-%m-%d", n)
                 end  --if ptype
                 if not dates[date_text] then
                     dates[date_text] = {

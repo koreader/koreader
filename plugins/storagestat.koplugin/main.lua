@@ -8,6 +8,8 @@ if Device:isKobo() or Device:isPocketBook() then
     filter = "mmcblk"
 elseif Device:isKindle() then
     filter = "' /mnt/us$'"
+elseif Device:isSDL() then
+    filter = "/dev/sd"
 else
     return { disabled = true, }
 end
@@ -24,8 +26,8 @@ local StorageStat = WidgetContainer:new{
         callback = function()
             local std_out = io.popen(
                 "df -h | sed -r 's/ +/ /g' | grep " .. filter ..
-                " | cut -d ' ' -f 2,3,4,5 | " ..
-                "awk '{print \"Internal Storage: \\n Available: \" $3\"/\" $1 \"\\n Used: \" $4}'"
+                " | cut -d ' ' -f 2,3,4,5,6 | " ..
+                "awk '{print $5\": \\n Available: \" $3\"/\" $1 \"\\n Used: \" $4}'"
             )
             local msg
             if std_out then
