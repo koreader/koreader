@@ -398,7 +398,7 @@ function FileManager:pasteHere(file)
             file or file:match("(.*/)")
         if self.cutfile then
             -- if we move a file, also move its sidecar directory
-            if DocSettings:hasSidecarDir(orig) then
+            if DocSettings:hasSidecarFile(orig) then
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             self:moveFile(orig, dest)
