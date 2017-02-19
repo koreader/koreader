@@ -26,6 +26,26 @@ local ReaderProgress = InputContainer:new{
     padding = Screen:scaleBySize(15),
 }
 
+local dayOfWeekTranslation = {
+    ["Monday"] = _("Monday"),
+    ["Tuesday"] = _("Tuesday"),
+    ["Wednesday"] = _("Wednesday"),
+    ["Thursday"] = _("Thursday"),
+    ["Friday"] = _("Friday"),
+    ["Saturday"] = _("Saturday"),
+    ["Sunday"] = _("Sunday"),
+}
+
+local shortDayOfWeekTranslation = {
+    ["Mon"] = _("Mon"),
+    ["Tue"] = _("Tue"),
+    ["Wed"] = _("Wed"),
+    ["Thu"] = _("Thu"),
+    ["Fri"] = _("Fri"),
+    ["Sat"] = _("Sat"),
+    ["Sun"] = _("Sun"),
+}
+
 function ReaderProgress:init()
     self.small_font_face = Font:getFace("ffont", 15)
     self.medium_font_face = Font:getFace("ffont", 20)
@@ -58,7 +78,10 @@ end
 function ReaderProgress:getTodayStats(dates)
     local today_time = 0
     local today_pages = 0
-    local today = os.date("%Y-%m-%d (%a)" , os.time())
+    local now_time = os.time()
+    local today = string.format("%s (%s)",
+        os.date("%Y-%m-%d", now_time),
+        shortDayOfWeekTranslation[os.date("%a", now_time)])
     if dates[today] ~= nil then
         today_time = dates[today].read
         today_pages = dates[today].count
@@ -168,6 +191,7 @@ function ReaderProgress:genWeekStats(stats_day)
     local date_format
     local date_format_show
     local select_day_time
+    local diff_time
     local now_time = os.time()
     local height = Screen:scaleBySize(60)
     local statistics_container = CenterContainer:new{
@@ -199,13 +223,16 @@ function ReaderProgress:genWeekStats(stats_day)
     }
 
     for i = 1, stats_day , 1 do
-        date_format = os.date("%Y-%m-%d (%a)" , now_time - second_in_day * (i -1))
+        diff_time = now_time - second_in_day * (i - 1)
+        date_format = string.format("%s (%s)",
+            os.date("%Y-%m-%d", diff_time),
+            shortDayOfWeekTranslation[os.date("%a", diff_time)])
         if self.dates[date_format] ~= nil then
             select_day_time = self.dates[date_format].read
         else
             select_day_time = 0
         end
-        date_format_show = os.date("%A (%d.%m)" , now_time - second_in_day * (i - 1))
+        date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
             padding = 2,
