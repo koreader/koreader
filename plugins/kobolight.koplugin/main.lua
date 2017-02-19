@@ -41,7 +41,7 @@ function KoboLight:setupTouchZones()
                 ratio_w = tap_touch_zone_ratio.w, ratio_h = tap_touch_zone_ratio.h,
             },
             handler = function() return self:onTap() end,
-            overrides = { 'footer_tap' },
+            overrides = { 'readerfooter_tap' },
         },
         {
             id = "plugin_kobolight_swipe",
