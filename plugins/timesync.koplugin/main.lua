@@ -42,7 +42,7 @@ local function execute()
     UIManager:forceRePaint()
     local txt
     if os.execute(command) ~= 0 then
-        txt = _("Failed to retrieve time, please check your network configuration.")
+        txt = _("Failed to retrieve time from server. Please check your network configuration.")
     else
         txt = currentTime()
     end
