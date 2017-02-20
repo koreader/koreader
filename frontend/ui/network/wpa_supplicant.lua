@@ -49,8 +49,16 @@ function WpaSupplicant:authenticateNetwork(network)
     nw_id, err = wcli:addNetwork()
     if err then return false, err end
 
-    wcli:setNetwork(nw_id, "ssid", network.ssid)
-    wcli:setNetwork(nw_id, "psk", network.password)
+    local re = wcli:setNetwork(nw_id, "ssid", network.ssid)
+    if re == 'FAIL' then
+        wcli:removeNetwork(nw_id)
+        return false, _("Failed to set network SSID.")
+    end
+    re = wcli:setNetwork(nw_id, "psk", network.password)
+    if re == 'FAIL' then
+        wcli:removeNetwork(nw_id)
+        return false, _("Failed to set network password.")
+    end
     wcli:enableNetworkByID(nw_id)
 
     wcli:attach()
@@ -58,7 +66,7 @@ function WpaSupplicant:authenticateNetwork(network)
     local failure_cnt = 0
     local max_retry = 30
     local info = InfoMessage:new{text = _("Authenticating…")}
-    local re, msg
+    local msg
     UIManager:show(info)
     UIManager:forceRePaint()
     while cnt < max_retry do
