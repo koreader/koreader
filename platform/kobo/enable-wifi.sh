@@ -3,7 +3,8 @@
 # Load wifi modules and enable wifi.
 
 lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko
-lsmod | grep -q dhd || insmod /drivers/$PLATFORM/wifi/dhd.ko
+# WIFI_MODULE_PATH = /drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
+lsmod | grep -q $WIFI_MODULE || insmod $WIFI_MODULE_PATH
 sleep 1
 
 ifconfig eth0 up
