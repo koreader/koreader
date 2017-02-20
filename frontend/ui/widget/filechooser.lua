@@ -163,15 +163,9 @@ function FileChooser:genItemTableFromPath(path)
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files)
         local num_items = #sub_dirs + #dir_files
-        local istr
-        if num_items == 1 then
-            istr = _("1 item")
-        else
-            istr = util.template(_("%1 items"), num_items)
-        end
         table.insert(item_table, {
             text = dir.name.."/",
-            mandatory = istr,
+            mandatory = num_items,
             path = subdir_path
         })
     end
