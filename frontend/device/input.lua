@@ -594,7 +594,8 @@ function Input:waitEvent(timeout_us)
     if ok and ev then
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
-            logger.dbg("ev", ev)
+            logger.dbg(string.format("input event => type: %d, code: %d, value: %d, time: %d.%d",
+                                     ev.type, ev.code, ev.value, ev.time.sec, ev.time.usec))
         end
         self:eventAdjustHook(ev)
         if ev.type == EV_KEY then
