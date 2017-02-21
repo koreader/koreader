@@ -80,7 +80,7 @@ fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ ! -n "${PRODUCT}" ] ; then
-	PRODUCT="$(/bin/kobo_config.sh)"
+	PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
 	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
 	export PRODUCT
 fi
@@ -89,7 +89,7 @@ fi
 if [ ! -n "${PLATFORM}" ] ; then
 	PLATFORM="freescale"
 	if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG" ; then
-		CPU="$(ntx_hwconfig -s -p /dev/mmcblk0 CPU)"
+		CPU="$(ntx_hwconfig -s -p /dev/mmcblk0 CPU 2>/dev/null)"
 		PLATFORM="${CPU}-ntx"
 	fi
 
