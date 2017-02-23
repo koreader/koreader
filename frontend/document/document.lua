@@ -7,7 +7,7 @@ local CacheItem = require("cacheitem")
 local Geom = require("ui/geometry")
 local Math = require("optmath")
 local Cache = require("cache")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 --[[
 This is an abstract interface to a document
@@ -177,36 +177,30 @@ function Document:getPageDimensions(pageno, zoom, rotation)
         native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
     end
     native_dimen:scaleBy(zoom)
-    --DEBUG("dimen for pageno", pageno, "zoom", zoom, "rotation", rotation, "is", native_dimen)
     return native_dimen
 end
 
 function Document:getPageBBox(pageno)
     local bbox = self.bbox[pageno] -- exact
     if bbox ~= nil then
-        --DEBUG("bbox from", pageno)
         return bbox
     else
         local oddEven = Math.oddEven(pageno)
         bbox = self.bbox[oddEven] -- odd/even
     end
     if bbox ~= nil then -- last used up to this page
-        --DEBUG("bbox from", oddEven)
         return bbox
     else
         for i = 0,pageno do
             bbox = self.bbox[ pageno - i ]
             if bbox ~= nil then
-                --DEBUG("bbox from", pageno - i)
                 return bbox
             end
         end
     end
     if bbox == nil then -- fallback bbox
         bbox = self:getUsedBBox(pageno)
-        --DEBUG("bbox from ORIGINAL page")
     end
-    --DEBUG("final bbox", bbox)
     return bbox
 end
 
@@ -250,6 +244,10 @@ function Document:getLinkFromPosition(pageno, pos)
     return nil
 end
 
+function Document:getImageFromPosition(pos)
+    return nil
+end
+
 function Document:getTextBoxes(pageno)
     return nil
 end
@@ -287,10 +285,10 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- we prefer to render the full page, if it fits into cache
     if not Cache:willAccept(size.w * size.h + 64) then
         -- whole page won't fit into cache
-        DEBUG("rendering only part of the page")
+        logger.dbg("rendering only part of the page")
         -- TODO: figure out how to better segment the page
         if not rect then
-            DEBUG("aborting, since we do not have a specification for that part")
+            logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
             return
         end
@@ -323,7 +321,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     dc:setZoom(zoom)
 
     if gamma ~= self.GAMMA_NO_GAMMA then
-        --DEBUG("gamma correction: ", gamma)
         dc:setGamma(gamma)
     end
 
@@ -339,7 +336,7 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 -- TODO: this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
-    DEBUG("hinting page", pageno)
+    logger.dbg("hinting page", pageno)
     self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
 end
 
@@ -353,7 +350,6 @@ Draw page content to blitbuffer.
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    DEBUG:v("document drawing", tile, rect)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,

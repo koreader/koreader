@@ -9,7 +9,7 @@ local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local util = require("ffi/util")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
@@ -71,7 +71,7 @@ function Search:getCalibre()
     -- check if we find the calibre file
     -- check 1st file
     if SEARCH_LIBRARY_PATH == nil then
-        DEBUG("search Calibre database")
+        logger.dbg("search Calibre database")
         self.metafile_1 = findcalibre("/mnt")
         if not self.metafile_1 then
           self.error = _("SEARCH_LIBRARY_PATH should be defined in DEFAULTS.LUA.")
@@ -85,7 +85,7 @@ function Search:getCalibre()
         if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
             if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
                 self.error = SEARCH_LIBRARY_PATH .. calibre .. " " .. _("not found.")
-                DEBUG(self.error)
+                logger.err(self.error)
             else
                 self.metafile_1 = SEARCH_LIBRARY_PATH .. "." .. calibre
             end
@@ -549,7 +549,7 @@ function Search:showresults()
         end
     end
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:swithItemTable(_("Search Results"), self.results)
+    self.search_menu:switchItemTable(_("Search Results"), self.results)
     UIManager:show(menu_container)
 end
 
@@ -665,7 +665,7 @@ function Search:browse(option, run, chosen)
 
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
 
-    self.search_menu:swithItemTable(menu_title, self.results)
+    self.search_menu:switchItemTable(menu_title, self.results)
     UIManager:show(menu_container)
 end
 

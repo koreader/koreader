@@ -1,5 +1,5 @@
 #!./luajit
-io.stdout:write(string.format([[
+io.stdout:write([[
 ---------------------------------------------
                 launching...
   _  _____  ____                _
@@ -8,8 +8,7 @@ io.stdout:write(string.format([[
  | . \ |_| |  _ <  __/ (_| | (_| |  __/ |
  |_|\_\___/|_| \_\___|\__,_|\__,_|\___|_|
 
- [*] Current time: %s
-]], os.date("%x-%X")))
+ [*] Current time: ]], os.date("%x-%X"), "\n\n")
 io.stdout:flush()
 
 

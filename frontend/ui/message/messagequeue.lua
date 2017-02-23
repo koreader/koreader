@@ -1,6 +1,6 @@
 local ffi = require("ffi")
 local Event = require("ui/event")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local _ = require("ffi/zeromq_h")
 local czmq = ffi.load("libs/libczmq.so.1")
@@ -62,18 +62,16 @@ function MessageQueue:handleZMsgs(messages)
     end
     if #messages == 0 then return end
     local command = pop_string()
-    DEBUG("ØMQ message", command)
+    logger.dbg("ØMQ message", command)
     if command == "ENTER" then
         local id = pop_string()
         local name = pop_string()
         local header = pop_header()
         local endpoint = pop_string()
-        --DEBUG(id, name, header, endpoint)
         return Event:new("ZyreEnter", id, name, header, endpoint)
     elseif command == "DELIVER" then
         local filename = pop_string()
         local fullname = pop_string()
-        --DEBUG("received", filename)
         return Event:new("FileDeliver", filename, fullname)
     end
 end

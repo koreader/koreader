@@ -6,4 +6,4 @@ source "${CI_DIR}/common.sh"
 travis_retry make fetchthirdparty
 make all
 make testfront
-luajit $(which luacheck) --no-color -q frontend
+luajit $(which luacheck) --no-color -q {reader,setupkoenv,datastorage}.lua frontend plugins

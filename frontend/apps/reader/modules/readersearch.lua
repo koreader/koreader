@@ -1,7 +1,7 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local ReaderSearch = InputContainer:new{
@@ -63,7 +63,7 @@ function ReaderSearch:onShowSearchDialog(text)
             }
         },
         tap_close_callback = function()
-            DEBUG("highlight clear")
+            logger.dbg("highlight clear")
             self.ui.highlight:clear()
         end,
     }
@@ -75,7 +75,7 @@ function ReaderSearch:onShowSearchDialog(text)
 end
 
 function ReaderSearch:search(pattern, origin)
-    DEBUG("search pattern", pattern)
+    logger.dbg("search pattern", pattern)
     if pattern == nil or pattern == '' then return end
     local direction = self.direction
     local case = self.case_insensitive

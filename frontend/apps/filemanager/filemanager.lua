@@ -21,11 +21,13 @@ local Event = require("ui/event")
 local Device = require("device")
 local util = require("ffi/util")
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local ReaderUI = require("apps/reader/readerui")
 local InfoMessage = require("ui/widget/infomessage")
+local PluginLoader = require("pluginloader")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -159,10 +161,14 @@ function FileManager:init()
                 },
                 {
                     text = _("Purge .sdr"),
-                    enabled = DocSettings:hasSidecarDir(util.realpath(file)),
+                    enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
                         local full_path = util.realpath(file)
-                        util.purgeDir(DocSettings:getSidecarDir(full_path))
+                        os.remove(DocSettings:getSidecarFile(full_path))
+                        -- If the sidecar folder is empty, os.remove() can
+                        -- delete it. Otherwise, the following statement has no
+                        -- effect.
+                        os.remove(DocSettings:getSidecarDir(full_path))
                         self:refreshPath()
                         -- also remove from history if present
                         local readhistory = require("readhistory")
@@ -232,7 +238,8 @@ function FileManager:init()
             {
                 {
                     text = _("Book information"),
-                    enabled = lfs.attributes(file, "mode") == "file" and true or false,
+                    enabled = lfs.attributes(file, "mode") == "file"
+                        and not DocumentRegistry:getProvider(file).is_pic and true or false,
                     callback = function()
                         local book_info_metadata = FileManager:bookInformation(file)
                         if  book_info_metadata then
@@ -293,8 +300,18 @@ function FileManager:init()
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,
-        menu = self.menu
     })
+    table.insert(self, ReaderDictionary:new{ ui = self })
+
+    self.loaded_modules = {}
+    -- koreader plugins
+    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        logger.info("FM loaded plugin", plugin_module.name, "at", plugin_module.path)
+        if not plugin_module.is_doc_only then
+            -- Keep references to the modules which do not register into menu.
+            table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
+        end
+    end
 
     if Device:hasKeys() then
         self.key_events.Close = { {"Home"}, doc = "Close file manager" }
@@ -350,7 +367,7 @@ function FileManager:toggleReverseCollate()
 end
 
 function FileManager:onClose()
-    DEBUG("close filemanager")
+    logger.dbg("close filemanager")
     UIManager:close(self)
     if self.onExit then
         self:onExit()
@@ -458,8 +475,12 @@ end
 function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
-        strcoll = {_("by title"), _("Sort by title")},
-        access = {_("by date"), _("Sort by date")},
+        strcoll = {_("title"), _("Sort by title")},
+        access = {_("date read"), _("Sort by last read date")},
+        change = {_("date added"), _("Sort by date added")},
+        modification = {_("date modified"), _("Sort by date modified")},
+        size = {_("size"), _("Sort by size")},
+        type = {_("type"), _("Sort by type")},
     }
     local set_collate_table = function(collate)
         return {
@@ -473,13 +494,17 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort order: %1"),
+                _("Sort by %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
             set_collate_table("access"),
+            set_collate_table("change"),
+            set_collate_table("modification"),
+            set_collate_table("size"),
+            set_collate_table("type"),
         }
     }
 end

@@ -3,7 +3,7 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = Device.screen
 local DocSettings = require("docsettings")
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 local Screensaver = {
 }
@@ -30,9 +30,10 @@ local function createWidgetFromFile(file)
         return createWidgetFromImage(
                    ImageWidget:new{
                        file = file,
+                       file_do_cache = false,
                        height = Screen:getHeight(),
                        width = Screen:getWidth(),
-                       autostretch = true,
+                       scale_factor = 0, -- scale to fit height/width
                    })
     end
 end
@@ -81,14 +82,14 @@ function Screensaver:getCoverImage(file)
             image = image,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            autostretch = doc_settings:readSetting("proportional_screensaver"),
+            scale_factor = doc_settings:readSetting("proportional_screensaver") and 0 or nil,
         }
         return createWidgetFromImage(img_widget)
     end
 end
 
 function Screensaver:show(kind, default_msg)
-    DEBUG("show screensaver")
+    logger.dbg("show screensaver")
     local InfoMessage = require("ui/widget/infomessage")
     local screensaver_settings = G_reader_settings:readSetting(kind .. "_screensaver") or {}
     -- first check book cover image, on by default
@@ -137,7 +138,7 @@ function Screensaver:show(kind, default_msg)
 end
 
 function Screensaver:close()
-    DEBUG("close screensaver")
+    logger.dbg("close screensaver")
     if self.left_msg then
         UIManager:close(self.left_msg)
         self.left_msg = nil

@@ -2,6 +2,7 @@ local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local dump = require("dump")
 local purgeDir = require("ffi/util").purgeDir
+local logger = require("logger")
 
 local DocSettings = {}
 
@@ -17,21 +18,30 @@ end
 
 -- Sidecar directory is the file without _last_ suffix.
 function DocSettings:getSidecarDir(doc_path)
+    if doc_path == nil or doc_path == '' then return '' end
     local file_without_suffix = doc_path:match("(.*)%.")
     if file_without_suffix then
         return file_without_suffix..".sdr"
     end
     -- We shouldn't be called with anything but files with registered
     -- extensions, but in case we are, return something useful
+    logger.err("getSidecarFile called with unexpected path:", doc_path)
     return doc_path..".sdr"
 end
 
-function DocSettings:hasSidecarDir(doc_path)
-    -- We may be called with items from FileManager, which may not be a document
-    if lfs.attributes(doc_path, "mode") == "directory" then
-        return false
+function DocSettings:getSidecarFile(doc_path)
+    if doc_path == nil or doc_path == '' then return '' end
+    -- If the file does not have a suffix or we are working on a directory, we
+    -- should ignore the suffix part in metadata file path.
+    local suffix = doc_path:match(".*%.(.+)")
+    if suffix == nil then
+        suffix = ''
     end
-    return lfs.attributes(self:getSidecarDir(doc_path), "mode") == "directory"
+    return self:getSidecarDir(doc_path) .. "/metadata." .. suffix .. ".lua"
+end
+
+function DocSettings:hasSidecarFile(doc_path)
+    return lfs.attributes(self:getSidecarFile(doc_path), "mode") == "file"
 end
 
 function DocSettings:getHistoryPath(fullpath)
@@ -39,22 +49,28 @@ function DocSettings:getHistoryPath(fullpath)
 end
 
 function DocSettings:getPathFromHistory(hist_name)
-    if hist_name == nil or hist_name == '' then return nil end
+    if hist_name == nil or hist_name == '' then return '' end
     -- 1. select everything included in brackets
     local s = string.match(hist_name,"%b[]")
-    if s == nil or s == '' then return nil end
+    if s == nil or s == '' then return '' end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
     return string.gsub(string.sub(s,2,-3),"#","/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
-    if hist_name == nil or hist_name == '' then return nil end
+    if hist_name == nil or hist_name == '' then return '' end
     local s = string.match(hist_name, "%b[]")
-    if s == nil or s == '' then return nil end
+    if s == nil or s == '' then return '' end
     -- at first, search for path length
     -- and return the rest of string without 4 last characters (".lua")
     return string.sub(hist_name, string.len(s)+2, -5)
+end
+
+function DocSettings:ensureSidecar(sidecar)
+    if lfs.attributes(sidecar, "mode") ~= "directory" then
+        lfs.mkdir(sidecar)
+    end
 end
 
 function DocSettings:open(docfile)
@@ -65,16 +81,13 @@ function DocSettings:open(docfile)
 
     local sidecar = self:getSidecarDir(docfile)
     new.sidecar = sidecar
-    if lfs.attributes(sidecar, "mode") ~= "directory" then
-        lfs.mkdir(sidecar)
-    end
+    DocSettings:ensureSidecar(sidecar)
     -- If there is a file which has a same name as the sidecar directory, or
     -- the file system is read-only, we should not waste time to read it.
     if lfs.attributes(sidecar, "mode") == "directory" then
         -- New sidecar file name is metadata.{file last suffix}.lua. So we
         -- can handle two files with only different suffixes.
-        new.sidecar_file = sidecar.."/metadata."..
-                           docfile:match(".*%.(.+)")..".lua"
+        new.sidecar_file = self:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
                                   docfile:match("([^%/]+%..+)")..".lua"
     end
@@ -136,6 +149,7 @@ function DocSettings:flush()
     -- If we can write to sidecar_file, we do not need to write to history_file
     -- anymore.
     local serials = { self.sidecar_file, self.history_file }
+    self:ensureSidecar(self.sidecar)
     local s_out = dump(self.data)
     os.setlocale('C', 'numeric')
     for _, f in pairs(serials) do
@@ -174,6 +188,7 @@ function DocSettings:purge()
     if lfs.attributes(self.sidecar, "mode") == "directory" then
         purgeDir(self.sidecar)
     end
+    self.data = {}
 end
 
 return DocSettings

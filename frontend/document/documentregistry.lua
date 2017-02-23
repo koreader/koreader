@@ -1,4 +1,4 @@
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 --[[
 This is a registry for document providers
@@ -34,7 +34,7 @@ function DocumentRegistry:openDocument(file)
                     refs = 1,
                 }
             else
-                DEBUG("cannot open document", file, doc)
+                logger.warn("cannot open document", file, doc)
             end
         end
     else

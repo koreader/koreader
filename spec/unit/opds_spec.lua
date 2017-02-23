@@ -1,4 +1,3 @@
-
 local navigation_sample = [[
 <?xml version="1.0" encoding="utf-8"?>
 <!--
@@ -48,7 +47,7 @@ which contains *all* Project Gutenberg metadata in one RDF/XML file.
 <id>http://m.gutenberg.org/ebooks/search.opds/?sort_order=random</id>
 <title>Random</title>
 <content type="text">Random books.</content>
-<link type="application/atom+xml;profile=opds-catalog" rel="subsection" href="/ebooks/search.opds/?sort_order=random"/>
+<link type="application/atom+xml;profile=opds-catalog" rel="subsection" href="/ebooks/search.opds/?sort_order=random&amp;limit=5"/>
 <link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="data:image/png;base64,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"/>
 </entry>
 </feed>
@@ -227,16 +226,19 @@ local facet_sample = [[
 </feed>
 ]]
 
-require("commonrequire")
-local OPDSParser = require("ui/opdsparser")
-local DEBUG = require("dbg")
-
 describe("OPDS module #nocov", function()
+    local OPDSParser, OPDSBrowser
+
+    setup(function()
+        require("commonrequire")
+        OPDSParser = require("ui/opdsparser")
+        OPDSBrowser = require("ui/widget/opdsbrowser")
+    end)
+
     describe("OPDS parser module", function()
         it("should parse OPDS navigation catalog", function()
             local catalog = OPDSParser:parse(navigation_sample)
             local feed = catalog.feed
-            --DEBUG(feed)
             assert.truthy(feed)
             assert.are.same(feed.title, "Project Gutenberg")
             local entries = feed.entry
@@ -245,29 +247,28 @@ describe("OPDS module #nocov", function()
             local entry = entries[3]
             assert.are.same(entry.title, "Random")
             assert.are.same(entry.id, "http://m.gutenberg.org/ebooks/search.opds/?sort_order=random")
+            assert.are.same(
+                "/ebooks/search.opds/?sort_order=random&limit=5",
+                entry.link[1].href)
         end)
         it("should parse OPDS acquisition catalog", function()
             local catalog = OPDSParser:parse(acquisition_sample)
             local feed = catalog.feed
-            --DEBUG(feed)
             assert.truthy(feed)
             local entries = feed.entry
             assert.truthy(entries)
             assert.are.same(#entries, 2)
             local entry = entries[2]
-            --DEBUG(entry)
             assert.are.same(entry.title, "1000 Mythological Characters Briefly Described")
             assert.are.same(entry.link[1].href, "//www.gutenberg.org/ebooks/42474.epub.images")
         end)
     end)
-    describe("OPDS browser module", function()
-        local OPDSBrowser = require("ui/widget/opdsbrowser")
 
+    describe("OPDS browser module", function()
         describe("URL generation", function()
             it("should generate URL on rel=subsection", function()
                 local catalog = OPDSParser:parse(navigation_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://m.gutenberg.org/ebooks.opds/?format=opds")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].title, "Popular")
@@ -276,7 +277,6 @@ describe("OPDS module #nocov", function()
             it("should generate URL on rel=popular and rel=new", function()
                 local catalog = OPDSParser:parse(popular_new_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].title, "Most Popular")
@@ -287,7 +287,6 @@ describe("OPDS module #nocov", function()
             it("should use the main URL for faceted links as long as faceted links aren't properly supported", function()
                 local catalog = OPDSParser:parse(facet_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
-                --DEBUG(item_table)
 
                 assert.truthy(item_table)
                 assert.are.same(item_table[1].url, "http://flibusta.net/opds/author/75357")
@@ -297,7 +296,6 @@ describe("OPDS module #nocov", function()
         it("should not fill item table incorrectly with thumbnail or image URL", function()
             local catalog = OPDSParser:parse(facet_sample)
             local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.net/opds")
-            --DEBUG(item_table)
 
             assert.truthy(item_table)
             assert.are_not.same(item_table[1].image, "http://flibusta.net/opds/author/75357")

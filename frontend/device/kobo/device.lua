@@ -1,8 +1,9 @@
 local Generic = require("device/generic/device")
 local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
-local dbg = require("dbg")
+local util = require("ffi/util")
 local _ = require("gettext")
+local logger = require("logger")
 
 local function yes() return true end
 
@@ -123,7 +124,7 @@ local KoboPika = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
@@ -319,23 +320,183 @@ function Kobo:getFirmwareVersion()
     version_file:close()
 end
 
+local unexpected_wakeup_count = 0
+local function check_unexpected_wakeup()
+    logger.dbg("Kobo suspend: checking unexpected wakeup:",
+               unexpected_wakeup_count)
+    if unexpected_wakeup_count == 0 or unexpected_wakeup_count > 20 then
+        -- Don't put device back to sleep under the following two cases:
+        --   1. a resume event triggered Kobo:resume() function
+        --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
+        return
+    end
+
+    logger.err("Kobo suspend: putting device back to sleep, unexpected wakeups:",
+               unexpected_wakeup_count)
+    Kobo.suspend()
+end
+
+function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
+
 function Kobo:suspend()
-    dbg("Executing kobo suspend script...")
-    os.execute("./suspend.sh")
-    dbg("Returned from kobo suspend script.")
+    logger.info("Kobo suspend: going to sleep . . .")
+    local f, re, err_msg, err_code
+    -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
+    -- everything mysteriously hang...
+
+    -- Depending on device/FW version, some kernels do not support
+    -- wakeup_count, account for that
+    --
+    -- NOTE: ... and of course, it appears to be broken, which probably
+    -- explains why nickel doesn't use this facility...
+    -- (By broken, I mean that the system wakes up right away).
+    -- So, unless that changes, unconditionally disable it.
+
+    --[[
+
+    local has_wakeup_count = false
+    f = io.open("/sys/power/wakeup_count", "r")
+    if f ~= nil then
+        io.close(f)
+        has_wakeup_count = true
+    end
+
+    -- Clear the kernel ring buffer... (we're missing a proper -C flag...)
+    --dmesg -c >/dev/null
+
+    -- Go to sleep
+    local curr_wakeup_count
+    if has_wakeup_count then
+        curr_wakeup_count = "$(cat /sys/power/wakeup_count)"
+        logger.info("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
+    end
+
+    -]]
+
+    -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
+    -- kernel to suspend/resume various subsystems
+    -- cf. kernel/power/main.c @ L#207
+    f = io.open("/sys/power/state-extended", "w")
+    if not f then
+        logger.err("Cannot open /sys/power/state-extended for writing!")
+        return false
+    end
+    re, err_msg, err_code = f:write("1\n")
+    io.close(f)
+    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
+    if not re then
+        logger.err('write error: ', err_msg, err_code)
+    end
+
+    util.sleep(2)
+    logger.info("Kobo suspend: waited for 2s because of reasons...")
+
+    os.execute("sync")
+    logger.info("Kobo suspend: synced FS")
+
+    --[[
+
+    if has_wakeup_count then
+        f = io.open("/sys/power/wakeup_count", "w")
+        if not f then
+            logger.err("cannot open /sys/power/wakeup_count")
+            return false
+        end
+        re, err_msg, err_code = f:write(tostring(curr_wakeup_count), "\n")
+        logger.info("Kobo suspend: wrote WakeUp count:", curr_wakeup_count)
+        if not re then
+            logger.err("Kobo suspend: failed to write WakeUp count:",
+                       err_msg,
+                       err_code)
+        end
+        io.close(f)
+    end
+
+    --]]
+
+    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
+    f = io.open("/sys/power/state", "w")
+    if not f then
+        -- reset state-extend back to 0 since we are giving up
+        local ext_fd = io.open("/sys/power/state-extended", "w")
+        if not ext_fd then
+            logger.err("cannot open /sys/power/state-extended for writing!")
+        else
+            ext_fd:write("0\n")
+            io.close(ext_fd)
+        end
+        return false
+    end
+    re, err_msg, err_code = f:write("mem\n")
+    -- NOTE: At this point, we *should* be in suspend to RAM, as such,
+    -- execution should only resume on wakeup...
+
+    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
+    if not re then
+        logger.err('write error: ', err_msg, err_code)
+    end
+    io.close(f)
+    -- NOTE: Ideally, we'd need a way to warn the user that suspending
+    -- gloriously failed at this point...
+    -- We can safely assume that just from a non-zero return code, without
+    -- looking at the detailed stderr message
+    -- (most of the failures we'll see are -EBUSY anyway)
+    -- For reference, when that happens to nickel, it appears to keep retrying
+    -- to wakeup & sleep ad nauseam,
+    -- which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
+    -- cf. nickel_suspend_strace.txt for more details.
+
+    logger.info("Kobo suspend: woke up!")
+
+    --[[
+
+    if has_wakeup_count then
+        logger.info("wakeup count: $(cat /sys/power/wakeup_count)")
+    end
+
+    -- Print tke kernel log since our attempt to sleep...
+    --dmesg -c
+
+    --]]
+
+    -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
+    -- things tidy and easier to follow
+
+    -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
+    -- expected wakeup, which gets checked in check_unexpected_wakeup().
+    unexpected_wakeup_count = unexpected_wakeup_count + 1
+    -- assuming Kobo:resume() will be called in 15 seconds
+    require("ui/uimanager"):scheduleIn(15, check_unexpected_wakeup)
 end
 
 function Kobo:resume()
-    -- Unflag subsystems for suspend
-    os.execute("echo 0 > /sys/power/state-extended")
-    -- HACK: wait a bit for the kernel to catch up
-    os.execute("sleep 0.1")
+    -- reset unexpected_wakeup_count ASAP
+    unexpected_wakeup_count = 0
+
+    -- Now that we're up, unflag subsystems for suspend...
+    -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
+    -- kernel to suspend/resume various subsystems
+    -- cf. kernel/power/main.c @ L#207
+    local f = io.open("/sys/power/state-extended", "w")
+    if not f then
+        logger.err("cannot open /sys/power/state-extended for writing!")
+        return false
+    end
+    local re, err_msg, err_code = f:write("0\n")
+    io.close(f)
+    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
+    if not re then
+        logger.err('write error: ', err_msg, err_code)
+    end
+
+    -- HACK: wait a bit (0.1 sec) for the kernel to catch up
+    util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    local f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
+    f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
     if f ~= nil then
+        f:write("a\n")
         io.close(f)
-        os.execute("echo 'a' > /sys/devices/virtual/input/input1/neocmd")
     end
 end
 

@@ -5,8 +5,10 @@ local UIManager = require("ui/uimanager")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
 local Device = require("device")
+local logger = require("logger")
 local Event = require("ui/event")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderLink = InputContainer:new{
     location_stack = {}
@@ -141,13 +143,56 @@ function ReaderLink:onTap(_, ges)
 end
 
 function ReaderLink:onGotoLink(link)
+    logger.dbg("onGotoLink:", link)
     if self.ui.document.info.has_pages then
-        table.insert(self.location_stack, self.ui.paging:getBookLocation())
-        self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
+        -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
+        if link.page then -- Internal link
+            logger.dbg("Internal link:", link)
+            table.insert(self.location_stack, self.ui.paging:getBookLocation())
+            self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
+            return true
+        end
+        link = link.uri -- external link
     else
-        table.insert(self.location_stack, self.ui.rolling:getBookLocation())
-        self.ui:handleEvent(Event:new("GotoXPointer", link))
+        -- For crengine, internal links may look like :
+        --   #_doc_fragment_0_Organisation (link from anchor)
+        --   /body/DocFragment/body/ul[2]/li[5]/text()[3].16 (xpointer from full-text search)
+        -- If the XPointer does not exist (or is a full url), we will jump to page 1
+        -- Best to check that this link exists in document with the following,
+        -- which accepts both of the above legitimate xpointer as input.
+        if self.ui.document:isXPointerInDocument(link) then
+            logger.dbg("Internal link:", link)
+            table.insert(self.location_stack, self.ui.rolling:getBookLocation())
+            self.ui:handleEvent(Event:new("GotoXPointer", link))
+            return true
+        end
     end
+    logger.dbg("External link:", link)
+    -- Check if it is a wikipedia link
+    local wiki_lang, wiki_page = link:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+    if wiki_lang and wiki_page then
+        logger.dbg("Wikipedia link:", wiki_lang, wiki_page)
+        -- Ask for user confirmation before launching lookup (on a
+        -- wikipedia page saved as epub, full of wikipedia links, it's
+        -- too easy to click on links when wanting to change page...)
+        local ConfirmBox = require("ui/widget/confirmbox")
+        UIManager:show(ConfirmBox:new{
+            text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
+            ok_callback = function()
+                UIManager:nextTick(function()
+                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
+                end)
+            end
+        })
+    else
+        -- local Notification = require("ui/widget/notification")
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = T(_("Invalid or external link:\n%1"), link),
+            timeout = 1.0,
+        })
+    end
+    -- don't propagate, user will notice and tap elsewhere if he wants to change page
     return true
 end
 

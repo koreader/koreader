@@ -4,7 +4,7 @@ local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local Device = require("device")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -40,11 +40,11 @@ end
 function ReaderFrontLight:onAdjust(arg, ges)
     local powerd = Device:getPowerDevice()
     if powerd.fl_intensity ~= nil then
-        DEBUG("frontlight intensity", powerd.fl_intensity)
+        logger.dbg("frontlight intensity", powerd.fl_intensity)
         local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
-        DEBUG("step = ", step)
+        logger.dbg("step = ", step)
         local delta_int = self.steps[step] or self.steps[#self.steps]
-        DEBUG("delta_int = ", delta_int)
+        logger.dbg("delta_int = ", delta_int)
         local new_intensity
         if ges.direction == "north" then
             new_intensity = powerd.fl_intensity + delta_int
@@ -71,21 +71,19 @@ end
 
 function ReaderFrontLight:onSwipe(arg, ges)
     if ges.direction == "north" or ges.direction == "south" then
-        DEBUG("onSwipe activated")
+        logger.dbg("onSwipe activated")
         return self:onShowIntensity()
     end
 end
 
 function ReaderFrontLight:onPanRelease(arg, ges)
-    DEBUG("onPanRelease activated")
+    logger.dbg("onPanRelease activated")
     return self:onShowIntensity()
 end
 
 function ReaderFrontLight:onShowFlDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
-    local fl = FrontLightWidget:new{
-    }
-    UIManager:show(fl)
+    UIManager:show(FrontLightWidget:new{})
 end
 
 function ReaderFrontLight:close()

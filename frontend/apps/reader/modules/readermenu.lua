@@ -5,7 +5,6 @@ local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local Event = require("ui/event")
 local Screen = require("device").screen
-local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
@@ -65,10 +64,14 @@ function ReaderMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
-        self.key_events = {
-            ShowReaderMenu = { { "Menu" }, doc = "show menu" },
-            Close = { { "Back" }, doc = "close menu" },
-        }
+        self.key_events = { Close = { { "Back" }, doc = "close menu" }, }
+        if Device:isTouchDevice() then
+            self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
+        else
+            -- map menu key to only top menu because bottom menu is only
+            -- designed for touch devices
+            self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
+        end
     end
 end
 
@@ -86,6 +89,7 @@ function ReaderMenu:onReaderReady()
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
+            overrides = { "tap_forward", "tap_backward", },
             handler = function() return self:onTapShowMenu() end,
         },
     })
@@ -211,7 +215,6 @@ end
 
 function ReaderMenu:onCloseReaderMenu()
     self.last_tab_index = self.menu_container[1].last_index
-    DEBUG("remember menu tab index", self.last_tab_index)
     self:onSaveSettings()
     UIManager:close(self.menu_container)
     return true

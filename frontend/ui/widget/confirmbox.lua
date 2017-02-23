@@ -22,11 +22,13 @@ local ImageWidget = require("ui/widget/imagewidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ButtonTable = require("ui/widget/buttontable")
+local GestureRange = require("ui/gesturerange")
+local Geom = require("ui/geometry")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Screen = Device.screen
 local Font = require("ui/font")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 
@@ -44,6 +46,23 @@ local ConfirmBox = InputContainer:new{
 }
 
 function ConfirmBox:init()
+    if Device:isTouchDevice() then
+        self.ges_events.TapClose = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                }
+            }
+        }
+    end
+    if Device:hasKeys() then
+        self.key_events = {
+            Close = { {"Back"}, doc = "cancel" }
+        }
+    end
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
@@ -110,12 +129,22 @@ function ConfirmBox:onCloseWidget()
 end
 
 function ConfirmBox:onClose()
+    -- Call cancel_callback, parent may expect a choice
+    self.cancel_callback()
     UIManager:close(self)
     return true
 end
 
+function ConfirmBox:onTapClose(arg, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        self:onClose()
+        return true
+    end
+    return false
+end
+
 function ConfirmBox:onSelect()
-    DEBUG("selected:", self.selected.x)
+    logger.dbg("selected:", self.selected.x)
     if self.selected.x == 1 then
         self:ok_callback()
     else

@@ -1,9 +1,11 @@
-require("commonrequire")
-
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-
 describe("gesturerange module", function()
+    local GestureRange, Geom
+    setup(function()
+        require("commonrequire")
+        GestureRange = require("ui/gesturerange")
+        Geom = require("ui/geometry")
+    end)
+
     it("should match tap event within range", function()
         local g = GestureRange:new{
             ges = "tap",

@@ -12,7 +12,7 @@ local Device = require("device")
 local Screen = require("device").screen
 local Event = require("ui/event")
 local Cache = require("cache")
-local dbg = require("dbg")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -43,7 +43,7 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
-local PluginLoader = require("apps/reader/pluginloader")
+local PluginLoader = require("pluginloader")
 
 --[[
 This is an abstraction for a reader interface
@@ -309,7 +309,7 @@ function ReaderUI:init()
     })
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        dbg("Loaded plugin", plugin_module.name, "at", plugin_module.path)
+        logger.info("RD loaded plugin", plugin_module.name, "at", plugin_module.path)
         self:registerModule(plugin_module.name, plugin_module:new{
             dialog = self.dialog,
             view = self.view,
@@ -332,7 +332,7 @@ function ReaderUI:init()
 end
 
 function ReaderUI:showReader(file)
-    dbg("show reader ui")
+    logger.dbg("show reader ui")
     require("readhistory"):addItem(file)
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
@@ -347,7 +347,7 @@ function ReaderUI:showReader(file)
     -- doShowReader might block for a long time, so force repaint here
     UIManager:forceRePaint()
     UIManager:nextTick(function()
-        dbg("creating coroutine for showing reader")
+        logger.dbg("creating coroutine for showing reader")
         local co = coroutine.create(function()
             self:doShowReader(file)
         end)
@@ -362,7 +362,7 @@ end
 
 local _running_instance = nil
 function ReaderUI:doShowReader(file)
-    dbg("opening file", file)
+    logger.info("opening file", file)
     -- keep only one instance running
     if _running_instance then
         _running_instance:onClose()
@@ -375,7 +375,7 @@ function ReaderUI:doShowReader(file)
         return
     end
     if document.is_locked then
-        dbg("document is locked")
+        logger.info("document is locked")
         self._coroutine = coroutine.running() or self._coroutine
         self:unlockDocumentWithPassword(document)
         if coroutine.running() then
@@ -400,7 +400,7 @@ function ReaderUI:_getRunningInstance()
 end
 
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
-    dbg("show input password dialog")
+    logger.dbg("show input password dialog")
     self.password_dialog = InputDialog:new{
         title = try_again and _("Password is incorrect, try again?")
             or _("Input document password"),
@@ -495,10 +495,10 @@ function ReaderUI:notifyCloseDocument()
 end
 
 function ReaderUI:onClose()
-    dbg("closing reader")
+    logger.dbg("closing reader")
     self:saveSettings()
     if self.document ~= nil then
-        dbg("closing document")
+        logger.dbg("closing document")
         self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, "full")

@@ -221,4 +221,67 @@ function util.isSplitable(c, next_c, prev_c)
     return false
 end
 
+function util.getFilesystemType(path)
+    local mounts = io.open("/proc/mounts", "r")
+    if not mounts then return nil end
+    local type
+    while true do
+        local line
+        local mount = {}
+        line = mounts:read()
+        if line == nil then
+            break
+        end
+        for param in line:gmatch("%S+") do table.insert(mount, param) end
+        if string.match(path, mount[2]) then
+            type = mount[3]
+            if mount[2] ~= '/' then
+                break
+            end
+        end
+    end
+    mounts:close()
+    return type
+end
+
+function util.replaceInvalidChars(str)
+    return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+end
+
+function util.replaceSlashChar(str)
+    return str:gsub('%/','_')
+end
+
+-- Split a file into its path and name
+function util.splitFilePathName(file)
+    if file == nil or file == "" then return "", "" end
+    if string.find(file, "/") == nil then return "", file end
+    return string.gsub(file, "(.*/)(.*)", "%1"), string.gsub(file, ".*/", "")
+end
+
+-- Split a file name into its pure file name and suffix
+function util.splitFileNameSuffix(file)
+    if file == nil or file == "" then return "", "" end
+    if string.find(file, "%.") == nil then return file, "" end
+    return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
+end
+
+function util.getFileNameSuffix(file)
+    local _, suffix = util.splitFileNameSuffix(file)
+    return suffix
+end
+
+function util.getMenuText(item)
+    local text
+    if item.text_func then
+        text = item.text_func()
+    else
+        text = item.text
+    end
+    if item.sub_item_table ~= nil then
+        text = text .. " \226\150\184"
+    end
+    return text
+end
+
 return util

@@ -354,7 +354,7 @@ function ReaderToc:onShowToc()
     -- auto expand the parent node of current page
     self:expandParentNode(self:getTocIndexByPage(self.pageno))
     -- auto goto page of the current toc entry
-    self.toc_menu:swithItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
+    self.toc_menu:switchItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
     UIManager:show(menu_container)
 
@@ -395,7 +395,7 @@ function ReaderToc:expandToc(index)
         indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
-    self.toc_menu:swithItemTable(nil, self.collapsed_toc, -1)
+    self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
 -- collapse TOC node of index in raw toc table
@@ -431,7 +431,7 @@ function ReaderToc:collapseToc(index)
         indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
-    self.toc_menu:swithItemTable(nil, self.collapsed_toc, -1)
+    self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
 function ReaderToc:addToMainMenu(tab_item_table)

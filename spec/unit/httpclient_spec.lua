@@ -1,12 +1,13 @@
-require("commonrequire")
-local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
---DEBUG:turnOn()
-
 -- set true to test httpclient
 DUSE_TURBO_LIB = false
 
 describe("HTTP client module #notest #nocov", function()
+    local UIManager
+    setup(function()
+        require("commonrequire")
+        UIManager = require("ui/uimanager")
+    end)
+
     local requests = 0
     local function response_callback(res)
         requests = requests - 1
@@ -14,6 +15,7 @@ describe("HTTP client module #notest #nocov", function()
         assert(not res.error, "error occurs")
         assert(res.body)
     end
+
     it("should get response from async GET request", function()
         local HTTPClient = require("httpclient")
         local async_client = HTTPClient:new()

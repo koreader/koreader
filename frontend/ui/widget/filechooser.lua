@@ -7,6 +7,7 @@ local DocSettings = require("docsettings")
 local util = require("ffi/util")
 local _ = require("gettext")
 local ffi = require("ffi")
+local getFileNameSuffix = require("util").getFileNameSuffix
 ffi.cdef[[
 int strcoll (const char *str1, const char *str2);
 ]]
@@ -16,13 +17,16 @@ local function strcoll(str1, str2)
     return ffi.C.strcoll(str1, str2) < 0
 end
 
+local function kobostrcoll(str1, str2)
+    return str1 < str2
+end
+
 local FileChooser = Menu:extend{
     no_title = true,
     path = lfs.currentdir(),
     parent = nil,
     show_hidden = nil,
     exclude_dirs = {"%.sdr$"},
-    strcoll = strcoll,
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
     path_items = {}, -- store last browsed location(item index) for each path
@@ -48,11 +52,17 @@ function FileChooser:init()
                     if attributes ~= nil then
                         if attributes.mode == "directory" and f ~= "." and f~=".." then
                             if self.dir_filter(filename) then
-                                table.insert(dirs, {name = f, attr = attributes})
+                                table.insert(dirs, {name = f,
+                                                    suffix = getFileNameSuffix(f),
+                                                    fullpath = filename,
+                                                    attr = attributes})
                             end
                         elseif attributes.mode == "file" then
                             if self.file_filter == nil or self.file_filter(filename) then
-                                table.insert(files, {name = f, attr = attributes})
+                                table.insert(files, {name = f,
+                                                     suffix = getFileNameSuffix(f),
+                                                     fullpath = filename,
+                                                     attr = attributes})
                             end
                         end
                     end
@@ -61,9 +71,23 @@ function FileChooser:init()
         end
     end
 
+    local strcoll_func = strcoll
     -- circumvent string collating in Kobo devices. See issue koreader/koreader#686
     if Device:isKobo() then
-        self.strcoll = function(a, b) return a < b end
+        strcoll_func = kobostrcoll
+    end
+    self.strcoll = function(a, b)
+        if a == nil and b == nil then
+            return false
+        elseif a == nil then
+            return true
+        elseif b == nil then
+            return false
+        elseif DALPHA_SORT_CASE_INSENSITIVE then
+            return strcoll_func(string.lower(a), string.lower(b))
+        else
+            return strcoll_func(a, b)
+        end
     end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
@@ -75,26 +99,56 @@ function FileChooser:genItemTableFromPath(path)
 
     self.list(path, dirs, files)
 
-    local sorting = nil
-    local reverse = self.reverse_collate
+    local sorting
     if self.collate == "strcoll" then
-        if DALPHA_SORT_CASE_INSENSITIVE then
-            sorting = function(a, b)
-                return self.strcoll(string.lower(a.name), string.lower(b.name)) == not reverse
-            end
-        else
-            sorting = function(a, b)
-                return self.strcoll(a.name, b.name) == not reverse
-            end
+        sorting = function(a, b)
+            return self.strcoll(a.name, b.name)
         end
     elseif self.collate == "access" then
         sorting = function(a, b)
-            if reverse then
-                return a.attr.access < b.attr.access
+            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                return true
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
+                return false
+            end
+            return a.attr.access > b.attr.access
+        end
+    elseif self.collate == "modification" then
+        sorting = function(a, b)
+            return a.attr.modification > b.attr.modification
+        end
+    elseif self.collate == "change" then
+        sorting = function(a, b)
+            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                return false
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
+                return true
+            end
+            return a.attr.change > b.attr.change
+        end
+    elseif self.collate == "size" then
+        sorting = function(a, b)
+            return a.attr.size < b.attr.size
+        end
+    elseif self.collate == "type" then
+        sorting = function(a, b)
+            if a.suffix == nil and b.suffix == nil then
+                return self.strcoll(a.name, b.name)
             else
-                return a.attr.access > b.attr.access
+                return self.strcoll(a.suffix, b.suffix)
             end
         end
+    else
+        sorting = function(a, b)
+            return a.name < b.name
+        end
+    end
+
+    if self.reverse_collate then
+        local sorting_unreversed = sorting
+        sorting = function(a, b) return sorting_unreversed(b, a) end
     end
 
     table.sort(dirs, sorting)
@@ -108,16 +162,25 @@ function FileChooser:genItemTableFromPath(path)
         local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files)
-        local items = #sub_dirs + #dir_files
-        local istr = util.template(
-            items == 1 and _("1 item")
-            or _("%1 items"), items)
+        local num_items = #sub_dirs + #dir_files
+        local istr
+        if num_items == 1 then
+            istr = _("1 item")
+        else
+            istr = util.template(_("%1 items"), num_items)
+        end
         table.insert(item_table, {
             text = dir.name.."/",
             mandatory = istr,
             path = subdir_path
         })
     end
+
+    -- set to false to show all files in regular font
+    -- set to "opened" to show opened files in bold
+    -- otherwise, show new files in bold
+    local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
+
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
@@ -129,16 +192,21 @@ function FileChooser:genItemTableFromPath(path)
         else
             sstr = string.format("%d B", file_size)
         end
-        table.insert(item_table, {
+        local file_item = {
             text = file.name,
             mandatory = sstr,
-            -- show new books in bold
-            bold = not DocSettings:hasSidecarDir(full_path),
             path = full_path
-        })
+        }
+        if show_file_in_bold ~= false then
+            file_item.bold = DocSettings:hasSidecarFile(full_path)
+            if show_file_in_bold ~= "opened" then
+                file_item.bold = not file_item.bold
+            end
+        end
+        table.insert(item_table, file_item)
     end
-    -- lfs.dir iterated node string may be encoded with some weird codepage on Windows
-    -- we need to encode them to utf-8
+    -- lfs.dir iterated node string may be encoded with some weird codepage on
+    -- Windows we need to encode them to utf-8
     if ffi.os == "Windows" then
         for k, v in pairs(item_table) do
             if v.text then
@@ -156,7 +224,7 @@ function FileChooser:updateItems(select_number)
 end
 
 function FileChooser:refreshPath()
-    self:swithItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
+    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
 end
 
 function FileChooser:changeToPath(path)

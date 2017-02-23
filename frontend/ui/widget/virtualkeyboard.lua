@@ -14,7 +14,7 @@ local Device = require("device")
 local Screen = Device.screen
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
 
 local VirtualKey = InputContainer:new{
@@ -97,7 +97,7 @@ end
 
 function VirtualKey:update_keyboard()
     UIManager:setDirty(self.keyboard, function()
-        DEBUG("update key region", self[1].dimen)
+        logger.dbg("update key region", self[1].dimen)
         return "ui", self[1].dimen
     end)
 end
@@ -149,6 +149,7 @@ local VirtualKeyboard = InputContainer:new{
 
 local lang_to_keyboard_layout = {
     pl = "pl_keyboard",
+    pt_BR = "pt_keyboard",
 }
 
 function VirtualKeyboard:init()
@@ -270,17 +271,17 @@ function VirtualKeyboard:setLayout(key)
 end
 
 function VirtualKeyboard:addChar(key)
-    DEBUG("add char", key)
+    logger.dbg("add char", key)
     self.inputbox:addChar(key)
 end
 
 function VirtualKeyboard:delChar()
-    DEBUG("delete char")
+    logger.dbg("delete char")
     self.inputbox:delChar()
 end
 
 function VirtualKeyboard:clear()
-    DEBUG("clear input")
+    logger.dbg("clear input")
     self.inputbox:clear()
 end
 

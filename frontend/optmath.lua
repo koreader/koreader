@@ -1,6 +1,6 @@
 --[[--
 Simple math helper functions
-]]--
+]]
 
 local Math = {}
 
@@ -49,9 +49,10 @@ end
 Returns the minimum element of a table.
 The optional argument func specifies a one-argument ordering function.
 
-@tparam tab
-@tparam func
-]]--
+@tparam table tab
+@tparam func func
+@treturn dynamic minimum element of a table
+]]
 function Math.tmin(tab, func)
     return tmin_max(tab, func, "min")
 end
@@ -60,9 +61,10 @@ end
 Returns the maximum element of a table.
 The optional argument func specifies a one-argument ordering function.
 
-@tparam tab
-@tparam func
-]]--
+@tparam table tab
+@tparam func func
+@treturn dynamic maximum element of a table
+]]
 function Math.tmax(tab, func)
     return tmin_max(tab, func, "max")
 end
