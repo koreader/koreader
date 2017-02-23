@@ -62,7 +62,7 @@ local function restoreScreenMode()
 end
 
 local FileManager = InputContainer:extend{
-    title = _("File Manager"),
+    title = _("KOReader File Browser"),
     root_path = lfs.currentdir(),
     -- our own size
     dimen = Geom:new{ w = 400, h = 600 },
