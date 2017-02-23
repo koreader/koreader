@@ -1,5 +1,6 @@
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local InfoMessage = require("ui/widget/infomessage")
 local LoginDialog = require("ui/widget/logindialog")
 local OPDSParser = require("ui/opdsparser")
@@ -11,7 +12,7 @@ local Screen = require("device").screen
 local url = require('socket.url')
 local util = require("ffi/util")
 local Cache = require("cache")
-local DEBUG = require("dbg")
+local logger = require("logger")
 local _ = require("gettext")
 
 local socket = require('socket')
@@ -58,12 +59,34 @@ local OPDSBrowser = Menu:extend{
 }
 
 function OPDSBrowser:init()
-    self.item_table = self:genItemTableFromRoot(self.opds_servers)
+    local servers = G_reader_settings:readSetting("opds_servers")
+    if not servers then -- If there are no saved servers, add some defaults
+        servers = {
+          {
+            title = "Project Gutenberg",
+            url = "http://m.gutenberg.org/ebooks.opds/?format=opds",
+          },
+          {
+             title = "Feedbooks",
+             url = "http://www.feedbooks.com/publicdomain/catalog.atom",
+          },
+          {
+             title = "ManyBooks",
+             url = "http://manybooks.net/opds/index.php",
+          },
+          {
+             title = "Internet Archive",
+             url = "http://bookserver.archive.org/catalog/",
+          },
+        }
+        G_reader_settings:saveSetting("opds_servers", servers)
+    end
+    self.item_table = self:genItemTableFromRoot()
     Menu.init(self) -- call parent's init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
-    DEBUG("input catalog", fields)
+    logger.dbg("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     table.insert(servers, {
         title = fields[1],
@@ -74,7 +97,7 @@ function OPDSBrowser:addServerFromInput(fields)
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
-    DEBUG("input calibre server", fields)
+    logger.dbg("input calibre server", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
@@ -168,13 +191,6 @@ end
 
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
-    for _, server in ipairs(self.opds_servers) do
-        table.insert(item_table, {
-            text = server.title,
-            content = server.subtitle,
-            url = server.url,
-        })
-    end
     local added_servers = G_reader_settings:readSetting("opds_servers") or {}
     for _, server in ipairs(added_servers) do
         table.insert(item_table, {
@@ -243,7 +259,7 @@ function OPDSBrowser:fetchFeed(feed_url)
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = self:getAuthorizationHeader(parsed.host)
-    DEBUG("request", request)
+    logger.dbg("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local code, headers, status = socket.skip(1, httpRequest(request))
@@ -253,7 +269,6 @@ function OPDSBrowser:fetchFeed(feed_url)
         error(code)
     end
 
-    --DEBUG("response", code, headers, status)
     if code == 401 and status and status:find("Unauthorized") then
         self._coroutine = coroutine.running() or self._coroutine
         self:fetchWithLogin(parsed.host, function()
@@ -266,7 +281,6 @@ function OPDSBrowser:fetchFeed(feed_url)
     else
         local xml = table.concat(sink)
         if xml ~= "" then
-            --DEBUG("xml", xml)
             return xml
         end
     end
@@ -326,7 +340,7 @@ function OPDSBrowser:parseFeed(feed_url)
     if cache then
         feed = cache.feed
     else
-        DEBUG("cache", hash)
+        logger.dbg("cache", hash)
         feed = self:fetchFeed(feed_url)
         if feed then
             CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
@@ -340,11 +354,11 @@ end
 function OPDSBrowser:getCatalog(feed_url)
     local ok, catalog = pcall(self.parseFeed, self, feed_url)
     -- prompt users to turn on Wifi if network is unreachable
-    if not ok and catalog and catalog:find("Network is unreachable") then
+    if not ok and catalog and (catalog:find("Network is unreachable") or catalog:find("host or service not provided")) then
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
-        DEBUG("cannot get catalog info from", feed_url, catalog)
+        logger.warn("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
             text = util.template(
                 _("Cannot get catalog info from %1"),
@@ -355,7 +369,7 @@ function OPDSBrowser:getCatalog(feed_url)
     end
 
     if ok and catalog then
-        DEBUG("catalog", catalog)
+        logger.dbg("catalog", catalog)
         return catalog
     end
 end
@@ -367,74 +381,83 @@ end
 
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
-    if catalog then
-        local feed = catalog.feed or catalog
-        local function build_href(href)
-            --DEBUG("building href", item_url, href)
-            return url.absolute(item_url, href)
-        end
-        local hrefs = {}
-        if feed.link then
-            for _, link in ipairs(feed.link) do
-                if link.type ~= nil then
-                    if link.type:find(self.catalog_type) or
-                        link.type:find(self.search_type) then
-                        if link.rel and link.href then
-                            hrefs[link.rel] = build_href(link.href)
-                        end
+    if not catalog then
+        return item_table
+    end
+
+    local feed = catalog.feed or catalog
+
+    local function build_href(href)
+        return url.absolute(item_url, href)
+    end
+
+    local hrefs = {}
+    if feed.link then
+        for _, link in ipairs(feed.link) do
+            if link.type ~= nil then
+                if link.type:find(self.catalog_type) or
+                    link.type:find(self.search_type) then
+                    if link.rel and link.href then
+                        hrefs[link.rel] = build_href(link.href)
                     end
                 end
             end
         end
-        item_table.hrefs = hrefs
-        if feed.entry then
-            for _, entry in ipairs(feed.entry) do
-                local item = {}
-                item.acquisitions = {}
-                if entry.link then
-                    for _, link in ipairs(entry.link) do
-                        if link.type:find(self.catalog_type) and (not link.rel or link.rel == "subsection" or link.rel == "http://opds-spec.org/sort/popular" or link.rel == "http://opds-spec.org/sort/new") then
-                            item.url = build_href(link.href)
-                        end
-                        if link.rel and link.rel:match(self.acquisition_rel) then
-                            table.insert(item.acquisitions, {
-                                type = link.type,
-                                --DEBUG("building acquisition url", link);
-                                href = build_href(link.href),
-                            })
-                        end
-                        if link.rel == self.thumbnail_rel then
-                            item.thumbnail = build_href(link.href)
-                        end
-                        if link.rel == self.image_rel then
-                            item.image = build_href(link.href)
-                        end
+    end
+    item_table.hrefs = hrefs
+
+    if not feed.entry then
+        return item_table
+    end
+
+    for _, entry in ipairs(feed.entry) do
+        local item = {}
+        item.acquisitions = {}
+        if entry.link then
+            for _, link in ipairs(entry.link) do
+                if link.type:find(self.catalog_type)
+                        and (not link.rel
+                             or link.rel == "subsection"
+                             or link.rel == "http://opds-spec.org/sort/popular"
+                             or link.rel == "http://opds-spec.org/sort/new") then
+                    item.url = build_href(link.href)
+                end
+                if link.rel then
+                    if link.rel:match(self.acquisition_rel) then
+                        table.insert(item.acquisitions, {
+                            type = link.type,
+                            href = build_href(link.href),
+                        })
+                    elseif link.rel == self.thumbnail_rel then
+                        item.thumbnail = build_href(link.href)
+                    elseif link.rel == self.image_rel then
+                        item.image = build_href(link.href)
                     end
                 end
-                local title = "Unknown"
-                if type(entry.title) == "string" then
-                    title = entry.title
-                elseif type(entry.title) == "table" then
-                    if type(entry.title.type) == "string" and entry.title.div ~= "" then
-                        title = entry.title.div
-                    end
-                end
-                if title == "Unknown" then
-                    DEBUG("Cannot handle title", entry.title)
-                end
-                local author = "Unknown Author"
-                if type(entry.author) == "table" and entry.author.name then
-                    author = entry.author.name
-                end
-                item.text = title
-                item.title = title
-                item.author = author
-                item.id = entry.id
-                item.content = entry.content
-                item.updated = entry.updated
-                table.insert(item_table, item)
             end
         end
+        local title = "Unknown"
+        if type(entry.title) == "string" then
+            title = entry.title
+        elseif type(entry.title) == "table" then
+            if type(entry.title.type) == "string" and entry.title.div ~= "" then
+                title = entry.title.div
+            end
+        end
+        if title == "Unknown" then
+            logger.warn("Cannot handle title", entry.title)
+        end
+        local author = "Unknown Author"
+        if type(entry.author) == "table" and entry.author.name then
+            author = entry.author.name
+        end
+        item.text = title
+        item.title = title
+        item.author = author
+        item.id = entry.id
+        item.content = entry.content
+        item.updated = entry.updated
+        table.insert(item_table, item)
     end
     return item_table
 end
@@ -442,8 +465,7 @@ end
 function OPDSBrowser:updateCatalog(item_table_url)
     local menu_table = self:genItemTableFromURL(item_table_url)
     if #menu_table > 0 then
-        --DEBUG("menu table", menu_table)
-        self:swithItemTable(nil, menu_table)
+        self:switchItemTable(nil, menu_table)
         if self.page_num <= 1 then
             self:onNext()
         end
@@ -457,38 +479,57 @@ function OPDSBrowser:appendCatalog(item_table_url)
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
-    self:swithItemTable(nil, self.item_table, -1)
+    self:switchItemTable(nil, self.item_table, -1)
     return true
+end
+
+function OPDSBrowser.getCurrentDownloadDir()
+    local lastdir = G_reader_settings:readSetting("lastdir")
+    return G_reader_settings:readSetting("download_dir") or lastdir
 end
 
 function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
-    local lastdir = G_reader_settings:readSetting("lastdir")
-    local download_dir = G_reader_settings:readSetting("download_dir") or lastdir
+    local download_dir = self.getCurrentDownloadDir()
+    local utl = require("frontend/util")
+    local file_system = utl.getFilesystemType(download_dir)
+    if file_system == "vfat" or file_system == "fuse.fsp" then
+        item.author = utl.replaceInvalidChars(item.author)
+        item.title = utl.replaceInvalidChars(item.title)
+    else
+        item.author = utl.replaceSlashChar(item.author)
+        item.title = utl.replaceSlashChar(item.title)
+    end
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
-    DEBUG("downloading file", local_path, "from", remote_url)
+    logger.dbg("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local r, c, h = httpRequest{
+    local _, c, _ = httpRequest{
         url = remote_url,
         headers = self:getAuthorizationHeader(parsed.host),
         sink = ltn12.sink.file(io.open(local_path, "w")),
     }
 
     if c == 200 then
-        DEBUG("file downloaded to", local_path)
+        logger.dbg("file downloaded to", local_path)
         if self.file_downloaded_callback then
             self.file_downloaded_callback(local_path)
         end
     else
-        DEBUG("response", {r, c, h})
         UIManager:show(InfoMessage:new{
             text = _("Could not save file to:\n") .. local_path,
             timeout = 3,
         })
     end
+end
+
+function OPDSBrowser:createNewDownloadDialog(path, buttons)
+    self.download_dialog = ButtonDialogTitle:new{
+        title = _("Choose format to download into:") .. "\n" .. path,
+        buttons = buttons
+    }
 end
 
 function OPDSBrowser:showDownloads(item)
@@ -505,7 +546,7 @@ function OPDSBrowser:showDownloads(item)
             if acquisition then
                 local format = self.formats[acquisition.type]
                 if format then
-                    button.text = "Download " .. format
+                    button.text = format
                     button.callback = function()
                         UIManager:scheduleIn(1, function()
                             self:downloadFile(item, format, acquisition.href)
@@ -530,17 +571,20 @@ function OPDSBrowser:showDownloads(item)
                 require("ui/downloadmgr"):new{
                     title = _("Choose download directory"),
                     onConfirm = function(path)
-                        DEBUG("set download directory to", path)
+                        logger.dbg("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
+                        UIManager:nextTick(function()
+                            UIManager:close(self.download_dialog)
+                            self:createNewDownloadDialog(path, buttons)
+                            UIManager:show(self.download_dialog)
+                        end)
                     end,
                 }:chooseDir()
             end,
         }
     })
 
-    self.download_dialog = ButtonDialog:new{
-        buttons = buttons
-    }
+    self:createNewDownloadDialog(self.getCurrentDownloadDir(), buttons)
     UIManager:show(self.download_dialog)
 end
 
@@ -550,7 +594,7 @@ function OPDSBrowser:onMenuSelect(item)
         item.callback()
     -- acquisition
     elseif item.acquisitions and #item.acquisitions > 0 then
-        DEBUG("downloads available", item)
+        logger.dbg("downloads available", item)
         self:showDownloads(item)
     -- navigation
     else
@@ -565,7 +609,7 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    DEBUG("input catalog", fields)
+    logger.dbg("input catalog", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
@@ -579,7 +623,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    DEBUG("edit", item)
+    logger.dbg("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -619,7 +663,7 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
-    DEBUG("delete", item)
+    logger.dbg("delete", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
@@ -664,7 +708,7 @@ function OPDSBrowser:onMenuHold(item)
 end
 
 function OPDSBrowser:onReturn()
-    DEBUG("return to last page catalog")
+    logger.dbg("return to last page catalog")
     if #self.paths > 0 then
         table.remove(self.paths)
         local path = self.paths[#self.paths]
@@ -680,7 +724,7 @@ function OPDSBrowser:onReturn()
 end
 
 function OPDSBrowser:onNext()
-    DEBUG("fetch next page catalog")
+    logger.dbg("fetch next page catalog")
     local hrefs = self.item_table.hrefs
     local page_num = self.page_num
     while page_num == self.page_num and hrefs and hrefs.next do
