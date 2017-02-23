@@ -165,6 +165,10 @@ function FileManager:init()
                     callback = function()
                         local full_path = util.realpath(file)
                         os.remove(DocSettings:getSidecarFile(full_path))
+                        -- If the sidecar folder is empty, os.remove() can
+                        -- delete it. Otherwise, the following statement has no
+                        -- effect.
+                        os.remove(DocSettings:getSidecarDir(full_path))
                         self:refreshPath()
                         -- also remove from history if present
                         local readhistory = require("readhistory")
@@ -472,9 +476,9 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("title"), _("Sort by title")},
-        access = {_("date read"), _("Sort by date of last read")},
-        change = {_("date added"), _("Sort by date of adding")},
-        modification = {_("date modified"), _("Sort by date of modification")},
+        access = {_("date read"), _("Sort by last read date")},
+        change = {_("date added"), _("Sort by date added")},
+        modification = {_("date modified"), _("Sort by date modified")},
         size = {_("size"), _("Sort by size")},
         type = {_("type"), _("Sort by type")},
     }
