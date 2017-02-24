@@ -4,6 +4,7 @@ local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local Device = require("device")
 local DocSettings = require("docsettings")
+local Font = require("ui/font")
 local util = require("ffi/util")
 local _ = require("gettext")
 local ffi = require("ffi")
@@ -22,6 +23,7 @@ local function kobostrcoll(str1, str2)
 end
 
 local FileChooser = Menu:extend{
+    cface = Font:getFace("cfont", 21),
     no_title = true,
     path = lfs.currentdir(),
     parent = nil,
@@ -152,7 +154,7 @@ function FileChooser:genItemTableFromPath(path)
     end
 
     table.sort(dirs, sorting)
-    if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
+    if path ~= "/" then table.insert(dirs, 1, {name = "⬆ .."}) end
     table.sort(files, sorting)
 
     local item_table = {}
