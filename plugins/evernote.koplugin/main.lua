@@ -5,6 +5,7 @@ local NetworkMgr = require("ui/network/manager")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Screen = require("device").screen
 local util = require("ffi/util")
 local Device = require("device")
@@ -28,8 +29,7 @@ local EvernoteExporter = InputContainer:new{
 }
 
 function EvernoteExporter:init()
-    self.ui.menu:registerToMainMenu(self)
-
+    self.text_clipping_file = self.clipping_dir .. "/KOReaderClipping.txt"
     local settings = G_reader_settings:readSetting("evernote") or {}
     self.evernote_domain = settings.domain
     self.evernote_username = settings.username or ""
@@ -49,6 +49,8 @@ function EvernoteExporter:init()
     self.template = slt2.loadfile(self.path.."/note.tpl")
     self:migrateClippings()
     self.config = DocSettings:open(util.joinPath(self.clipping_dir, "evernote.sdr"))
+
+    self.ui.menu:registerToMainMenu(self)
 end
 
 function EvernoteExporter:isDocless()
@@ -111,7 +113,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
             {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
-                    return not self:isDocless() and self:readyToExport()
+                    return not self:isDocless() and self:readyToExport() and not self.txt_export
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
@@ -162,8 +164,13 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 text = _("Purge history records"),
                 callback = function()
                     self.config:purge()
-                    UIManager:show(InfoMessage:new{
-                        text = _("History records have been purged.\nAll notes will be exported again next time.\nIt is recommended to remove the existing KOReaderClipping.txt file to avoid duplication."),
+                    UIManager:show(ConfirmBox:new{
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\nWould you like to remove existing KOReaderClipping.txt file to avoid duplication?\nRecords will be appended to KOReaderClipping.txt instead of being overwritten."),
+                        ok_text = _("Yes, remove it"),
+                        ok_callback = function()
+                            os.remove(self.text_clipping_file)
+                        end,
+                        cancel_text = _("No, keep it"),
                     })
                 end
             }
@@ -327,6 +334,10 @@ function EvernoteExporter:updateMyClippings(clippings, new_clippings)
 end
 
 function EvernoteExporter:exportAllNotes()
+    -- Flush highlights of current document.
+    if not self:isDocless() then
+        self.ui:saveSettings()
+    end
     local clippings = self.config:readSetting("clippings") or {}
     clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
     clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
@@ -417,7 +428,7 @@ function EvernoteExporter:exportClippings(clippings)
             )
         end
     end
-    if self.html_export or self.txt_export then
+    if (self.html_export or self.txt_export) and export_count > 0 then
         msg = msg .. T(_("\nNotes can be found in %1/."), realpath(self.clipping_dir))
     end
     UIManager:show(InfoMessage:new{ text = msg })
@@ -463,23 +474,29 @@ function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
 end
 
 function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
-    local file = io.open(self.clipping_dir .. "/KOReaderClipping.txt", "a")
+    -- Use wide_space to avoid crengine to treat it specially.
+    local wide_space = "\227\128\128"
+    local file_modification = lfs.attributes(self.text_clipping_file, "modification") or 0
+    local file = io.open(self.text_clipping_file, "a")
     if file then
-        file:write(title .. "\n")
+        file:write(title .. "\n" .. wide_space .. "\n")
         for _ignore1, chapter in ipairs(booknotes) do
             if chapter.title then
-                file:write(" - " .. chapter.title .. "\n\n")
+                file:write(wide_space .. chapter.title .. "\n" .. wide_space .. "\n")
             end
             for _ignore2, clipping in ipairs(chapter) do
-                file:write(T(_("   -- Page: %1, added on %2\n\n"),
-                             clipping.page, os.date("%c", clipping.time)))
-                if clipping.text then
-                    file:write(clipping.text)
+                -- If this clipping has already been exported, we ignore it.
+                if clipping.time >= file_modification then
+                    file:write(T(_(wide_space .. wide_space .. "-- Page: %1, added on %2\n"),
+                                 clipping.page, os.date("%c", clipping.time)))
+                    if clipping.text then
+                        file:write(clipping.text)
+                    end
+                    if clipping.image then
+                        file:write(_("<An image>"))
+                    end
+                    file:write("\n-=-=-=-=-=-\n")
                 end
-                if clipping.image then
-                    file:write(_("<An image>"))
-                end
-                file:write("\n==========\n")
             end
         end
 
