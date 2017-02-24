@@ -1,0 +1,3 @@
+1) Make it optional to show bottom line menu when tapping to the bottom part of the screen. It is not used often and it is shown when tapping to the top part anyway, but the bottom part is usually used for listing back/forward and this menu often shows up unwantedly when just trying to go to the next page. Leave the bottop part for navigation purposes only.
+
+2) Need a setting to specify after how many pages full screen refresh should take place, with values from 1 to 14+ pages like in other readers.
