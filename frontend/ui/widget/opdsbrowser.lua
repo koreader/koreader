@@ -527,7 +527,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = _("Choose format to download into:") .. "\n" .. path,
+        title = _("Download directory:") .. "\n" .. path .. "\n\n" .. "Download file type:",
         buttons = buttons
     }
 end
@@ -546,7 +546,7 @@ function OPDSBrowser:showDownloads(item)
             if acquisition then
                 local format = self.formats[acquisition.type]
                 if format then
-                    button.text = format
+                    button.text = format .. "\xE2\xAC\x87"
                     button.callback = function()
                         UIManager:scheduleIn(1, function()
                             self:downloadFile(item, format, acquisition.href)
@@ -559,10 +559,13 @@ function OPDSBrowser:showDownloads(item)
                     end
                     table.insert(line, button)
                 end
+            elseif #acquisitions > downloadsperline then
+                table.insert(line, {text=""})
             end
         end
         table.insert(buttons, line)
     end
+    table.insert(buttons, {})
     -- set download directory button
     table.insert(buttons, {
         {
