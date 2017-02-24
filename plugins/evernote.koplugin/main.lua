@@ -165,7 +165,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 callback = function()
                     self.config:purge()
                     UIManager:show(ConfirmBox:new{
-                        text = _("History records have been purged.\nAll notes will be exported again next time.\nWould you like to remove existing KOReaderClipping.txt file to avoid duplication?\nRecords will be appended to KOReaderClipping.txt instead of being overwritten."),
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\nWould you like to remove the existing KOReaderClipping.txt file to avoid duplication?\nRecords will be appended to KOReaderClipping.txt instead of being overwritten."),
                         ok_text = _("Yes, remove it"),
                         ok_callback = function()
                             os.remove(self.text_clipping_file)
