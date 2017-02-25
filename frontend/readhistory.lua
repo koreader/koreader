@@ -47,11 +47,6 @@ function ReadHistory:_indexing(start)
 end
 
 function ReadHistory:_sort()
-    for i = #self.hist, 1, -1 do
-        if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
-            table.remove(self.hist, i)
-        end
-    end
     table.sort(self.hist, fileFirstOrdering)
     -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
     for i = #self.hist, 2, -1 do
@@ -120,6 +115,14 @@ function ReadHistory:_init()
     self:_readLegacyHistory()
     self:_sort()
     self:_reduce()
+end
+
+function ReadHistory:clearMissing()
+    for i = #self.hist, 1, -1 do
+        if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
+            table.remove(self.hist, i)
+        end
+    end
 end
 
 function ReadHistory:removeItem(item)

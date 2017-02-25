@@ -128,6 +128,17 @@ function FileManagerHistory:onMenuHold(item)
                     end,
                  },
             },
+            {},
+            {
+                {
+                    text = _("Clear history of deleted files"),
+                    callback = function()
+                        require("readhistory"):clearMissing()
+                        self._manager:updateItemTable()
+                        UIManager:close(self.histfile_dialog)
+                    end,
+                 },
+            },
         },
     }
     UIManager:show(self.histfile_dialog)
