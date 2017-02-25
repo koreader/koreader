@@ -16,6 +16,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local NetworkMgr = require("ui/network/manager")
 
 local TimeSync = WidgetContainer:new{
     name = "timesync",
@@ -56,7 +57,13 @@ end
 
 local menuItem = {
     text = _("Synchronize time"),
-    callback = execute,
+    callback = function()
+        if NetworkMgr:isOnline() then
+            execute()
+        else
+            NetworkMgr:promptWifiOn()
+        end
+    end
 }
 
 function TimeSync:init()
