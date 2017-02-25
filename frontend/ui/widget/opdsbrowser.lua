@@ -10,7 +10,7 @@ local CacheItem = require("cacheitem")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local url = require('socket.url')
-local util = require("ffi/util")
+local T = require("ffi/util").template
 local Cache = require("cache")
 local logger = require("logger")
 local _ = require("gettext")
@@ -360,7 +360,7 @@ function OPDSBrowser:getCatalog(feed_url)
     elseif not ok and catalog then
         logger.warn("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = util.template(
+            text = T(
                 _("Cannot get catalog info from %1"),
                 (feed_url or "")
             ),
@@ -527,7 +527,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = _("Download directory:") .. "\n" .. path .. "\n\n" .. "Download file type:",
+        title = T(_("Download directory:\n%1\n\nDownload file type:"), path),
         buttons = buttons
     }
 end
@@ -546,7 +546,8 @@ function OPDSBrowser:showDownloads(item)
             if acquisition then
                 local format = self.formats[acquisition.type]
                 if format then
-                    button.text = format .. "\xE2\xAC\x87"
+                    -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
+                    button.text = format .. "\xE2\xAC\x87" 
                     button.callback = function()
                         UIManager:scheduleIn(1, function()
                             self:downloadFile(item, format, acquisition.href)
