@@ -24,31 +24,14 @@ function FileManagerMenu:init()
         setting = {
             icon = "resources/icons/appbar.settings.png",
         },
-        info = {
-            icon = "resources/icons/appbar.pokeball.png",
-        },
         tools = {
             icon = "resources/icons/appbar.tools.png",
         },
         search = {
             icon = "resources/icons/appbar.magnify.browse.png",
         },
-        home = {
-            icon = "resources/icons/appbar.home.png",
-            callback = function()
-                if SetDefaults.settings_changed then
-                    SetDefaults.settings_changed = false
-                    UIManager:show(ConfirmBox:new{
-                        text = _("You have unsaved default settings. Save them now?"),
-                        ok_callback = function()
-                            SetDefaults:saveSettings()
-                        end,
-                    })
-                else
-                    UIManager:close(self.menu_container)
-                    self.ui:onClose()
-                end
-            end,
+        main = {
+            icon = "resources/icons/menu-icon.png",
         },
     }
     -- For backward compatibility, plugins look for plugins tab, which should be tools tab in file
@@ -172,28 +155,6 @@ function FileManagerMenu:setUpdateItemTable()
         table.insert(self.tab_item_table.setting, common_setting)
     end
 
-    -- info tab
-    -- insert common info
-    table.insert(self.tab_item_table.info, {
-        text = _("Open last document"),
-        callback = function()
-            local last_file = G_reader_settings:readSetting("lastfile")
-            if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("Cannot open last document"),
-                })
-                return
-            end
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(last_file)
-            self:onCloseFileManagerMenu()
-        end
-    })
-    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
-        table.insert(self.tab_item_table.info, common_setting)
-    end
-
     -- tools tab
     table.insert(self.tab_item_table.tools, {
         text = _("Advanced settings"),
@@ -274,13 +235,43 @@ function FileManagerMenu:setUpdateItemTable()
         end
     })
 
-    -- home tab
-    table.insert(self.tab_item_table.home, {
+    -- main menu tab
+    -- insert common info
+    table.insert(self.tab_item_table.main, {
+        text = _("Open last document"),
+        callback = function()
+            local last_file = G_reader_settings:readSetting("lastfile")
+            if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot open last document"),
+                })
+                return
+            end
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(last_file)
+            self:onCloseFileManagerMenu()
+        end
+    })
+    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
+        table.insert(self.tab_item_table.main, common_setting)
+    end
+    table.insert(self.tab_item_table.main, {
         text = _("Exit"),
         callback = function()
-            UIManager:close(self.menu_container)
-            self.ui:onClose()
-        end
+            if SetDefaults.settings_changed then
+                SetDefaults.settings_changed = false
+                UIManager:show(ConfirmBox:new{
+                    text = _("You have unsaved default settings. Save them now?"),
+                    ok_callback = function()
+                        SetDefaults:saveSettings()
+                    end,
+                })
+            else
+                UIManager:close(self.menu_container)
+                self.ui:onClose()
+            end
+        end,
     })
 end
 
@@ -303,10 +294,9 @@ function FileManagerMenu:onShowMenu()
             last_index = tab_index,
             tab_item_table = {
                 self.tab_item_table.setting,
-                self.tab_item_table.info,
                 self.tab_item_table.tools,
                 self.tab_item_table.search,
-                self.tab_item_table.home,
+                self.tab_item_table.main,
             },
             show_parent = menu_container,
         }

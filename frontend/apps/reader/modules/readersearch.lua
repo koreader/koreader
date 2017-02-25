@@ -14,7 +14,7 @@ function ReaderSearch:init()
 end
 
 function ReaderSearch:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+    table.insert(tab_item_table.search, {
         text = _("Fulltext search"),
         tap_input = {
             title = _("Input text to search for"),

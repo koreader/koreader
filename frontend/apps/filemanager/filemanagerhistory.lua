@@ -20,8 +20,8 @@ function FileManagerHistory:init()
 end
 
 function FileManagerHistory:addToMainMenu(tab_item_table)
-    -- insert table to info tab of filemanager menu
-    table.insert(tab_item_table.info, {
+    -- insert table to main tab of filemanager menu
+    table.insert(tab_item_table.main, {
         text = self.hist_menu_title,
         callback = function()
             self:onShowHist()
