@@ -163,19 +163,18 @@ function FileManager:init()
                     text = _("Purge .sdr"),
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
-                        local full_path = util.realpath(file)
-                        os.remove(DocSettings:getSidecarFile(full_path))
-                        -- If the sidecar folder is empty, os.remove() can
-                        -- delete it. Otherwise, the following statement has no
-                        -- effect.
-                        os.remove(DocSettings:getSidecarDir(full_path))
-                        self:refreshPath()
-                        -- also remove from history if present
-                        local readhistory = require("readhistory")
-                        for _, hist_item in ipairs(readhistory.hist) do
-                            if hist_item.file == full_path then
-                                readhistory:removeItem(hist_item)
-                                break
+                        local file_abs_path = util.realpath(file)
+                        if file_abs_path then
+                            local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+                            os.remove(DocSettings:getSidecarFile(file_abs_path))
+                            -- If the sidecar folder is empty, os.remove() can
+                            -- delete it. Otherwise, the following statement has no
+                            -- effect.
+                            os.remove(DocSettings:getSidecarDir(file_abs_path))
+                            self:refreshPath()
+                            -- also delete from history if autoremove_deleted_items_from_history is enabled
+                            if autoremove_deleted_items_from_history then
+                                require("readhistory"):removeItemByPath(file_abs_path)
                             end
                         end
                         UIManager:close(self.file_dialog)
@@ -198,7 +197,15 @@ function FileManager:init()
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_callback = function()
+                                local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+                                local file_abs_path = util.realpath(file)
                                 deleteFile(file)
+                                -- also delete from history if autoremove_deleted_items_from_history is enabled
+                                if autoremove_deleted_items_from_history then
+                                    if file_abs_path then
+                                        require("readhistory"):removeItemByPath(file_abs_path)
+                                    end
+                                end
                                 self:refreshPath()
                             end,
                         })
