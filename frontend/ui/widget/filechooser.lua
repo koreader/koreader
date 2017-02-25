@@ -154,7 +154,7 @@ function FileChooser:genItemTableFromPath(path)
     end
 
     table.sort(dirs, sorting)
-    if path ~= "/" then table.insert(dirs, 1, {name = "⬆ .."}) end
+    if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
     table.sort(files, sorting)
 
     local item_table = {}
@@ -172,7 +172,7 @@ function FileChooser:genItemTableFromPath(path)
             istr = util.template(_("%1 items"), num_items)
         end
         table.insert(item_table, {
-            text = dir.name.."/",
+            text = dir.name == ".." and  "⬆ ../" or dir.name.."/",
             mandatory = istr,
             path = subdir_path
         })
