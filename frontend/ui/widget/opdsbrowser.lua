@@ -547,8 +547,8 @@ function OPDSBrowser:showDownloads(item)
                 local format = self.formats[acquisition.type]
                 if format then
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
-                    button.text = format .. "\xE2\xAC\x87" 
-                    button.callback = function()
+                    button.text = format .. "\xE2\xAC\x87"
+                        button.callback = function()
                         UIManager:scheduleIn(1, function()
                             self:downloadFile(item, format, acquisition.href)
                         end)
