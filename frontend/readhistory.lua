@@ -47,6 +47,11 @@ function ReadHistory:_indexing(start)
 end
 
 function ReadHistory:_sort()
+    for i = #self.hist, 1, -1 do
+        if self.hist[i].file == nil then
+            table.remove(self.hist, i)
+        end
+    end
     table.sort(self.hist, fileFirstOrdering)
     -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
     for i = #self.hist, 2, -1 do
