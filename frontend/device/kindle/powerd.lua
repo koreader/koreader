@@ -18,34 +18,33 @@ function KindlePowerD:init()
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
     if self.device.hasFrontlight() then
-        if self.lipc_handle ~= nil then
-            self.fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-        else
-            self.fl_intensity = self:read_int_file(self.fl_intensity_file)
-        end
-        self.is_fl_on = (self.fl_intensity > 0)
+        self.fl_intensity = self:_readFLIntensity()
+        self:_set_fl_on()
     end
 end
 
 function KindlePowerD:toggleFrontlight()
-    local sysint = self:read_int_file(self.fl_intensity_file)
-    if sysint == 0 then
-        -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
+    if not self.device.hasFrontlight() then
+        return
+    end
+
+    if self:_readFLIntensity() == 0 then
         self:setIntensityHW()
-        self.is_fl_on = true
     else
-        -- NOTE: We want to really kill the light, so do it manually (asking lipc to set it to 0 would in fact set it to 1)...
-        os.execute("echo -n 0 > " .. self.fl_intensity_file)
-        self.is_fl_on = false
+        self:_turnOffFL()
     end
 end
 
 function KindlePowerD:setIntensityHW()
-    if self.lipc_handle ~= nil then
+    if self.lipc_handle ~= nil and self.fl_intensity > 0 then
+        -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
         self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", self.fl_intensity)
     else
+        -- NOTE: when fl_intensity is 0, We want to really kill the light, so do it manually
+        -- (asking lipc to set it to 0 would in fact set it to 1)...
         os.execute("echo -n ".. self.fl_intensity .." > " .. self.fl_intensity_file)
     end
+    self:_set_fl_on()
 end
 
 function KindlePowerD:getCapacityHW()
@@ -70,6 +69,36 @@ function KindlePowerD:__gc()
     if self.lipc_handle then
         self.lipc_handle:close()
         self.lipc_handle = nil
+    end
+end
+
+function KindlePowerD:_turnOffFL()
+    os.execute("echo -n 0 > " .. self.fl_intensity_file)
+    self.is_fl_on = false
+end
+
+function KindlePowerD:_readFLIntensity()
+    if self.lipc_handle ~= nil then
+        return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+    else
+        return self:read_int_file(self.fl_intensity_file)
+    end
+end
+
+function KindlePowerD:_set_fl_on()
+    self.is_fl_on = (self.fl_intensity > 0)
+end
+
+function KindlePowerD:afterResume()
+    if not self.device.hasFrontlight() then
+        return
+    end
+    if self.is_fl_on then
+        -- Kindle stock software should turn on the front light automatically. The follow statement
+        -- ensure the consistency of intensity.
+        self:setIntensityHW()
+    else
+        self:_turnOffFL()
     end
 end
 

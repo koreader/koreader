@@ -46,6 +46,7 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
+    self.powerd:beforeSuspend()
     if self.charging_mode == false and self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
         self.screen_saver_mode = true
@@ -74,6 +75,7 @@ function Kindle:outofScreenSaver()
         self.powerd:refreshCapacity()
     end
     self.screen_saver_mode = false
+    self.powerd:afterResume()
 end
 
 function Kindle:usbPlugOut()
