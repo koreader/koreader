@@ -42,6 +42,7 @@ function FileSearcher:readDir()
                 local attributes = lfs.attributes(fullpath)
                 if attributes.mode == "directory" and f ~= "." and f~=".." then
                     table.insert(new_dirs, fullpath)
+                    table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 elseif attributes.mode == "file" and DocumentRegistry:getProvider(fullpath) then
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 end
@@ -52,6 +53,7 @@ function FileSearcher:readDir()
 end
 
 function FileSearcher:setSearchResults()
+    local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
     local keywords = self.search_value
     --DEBUG("self.files", self.files)
@@ -62,12 +64,21 @@ function FileSearcher:setSearchResults()
         for __,f in pairs(self.files) do
         DEBUG("f", f)
             if string.find(string.lower(f.name), string.lower(keywords)) then
-                f.text = f.name
-                f.name = nil
-                f.callback = function()
-                    ReaderUI:showReader(f.path)
+                if f.attr.mode == "directory" then
+                    f.text = f.name.."/"
+                    f.name = nil
+                    f.callback = function()
+                        FileManager:showFiles(f.path)
+                    end
+                    table.insert(self.results, f)
+                else
+                    f.text = f.name
+                    f.name = nil
+                    f.callback = function()
+                        ReaderUI:showReader(f.path)
+                    end
+                    table.insert(self.results, f)
                 end
-                table.insert(self.results, f)
             end
         end
     end
