@@ -177,7 +177,7 @@ function MenuItem:init()
                 {"Right"}, doc = "show item detail"
             }
         end
-        local indicator = "  >> "
+        local indicator = "\226\128\166 " -- an ellipsis
         local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                         indicator, true, self.bold).x
         self.text = RenderText:getSubTextByWidth(my_text, self.face,
