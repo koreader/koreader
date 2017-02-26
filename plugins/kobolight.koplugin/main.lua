@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not (Device:isKobo() and Device:hasFrontlight()) then
+if not ((Device:isKindle() or Device:isKobo()) and Device:hasFrontlight()) then
     return { disabled = true, }
 end
 
@@ -72,6 +72,12 @@ end
 function KoboLight:resetLayout()
     local new_screen_height = Screen:getHeight()
     self.gestureScale = new_screen_height * swipe_touch_zone_ratio.h * 0.8
+    local powerd = Device:getPowerDevice()
+    local scale = (powerd.fl_max - powerd.fl_min) / 20
+    for i = 1, #self.steps, 1
+    do
+        self.steps[i] = math.floor(self.steps[i] * scale)
+    end
 end
 
 function KoboLight:onShowIntensity()

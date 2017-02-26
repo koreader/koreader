@@ -8,6 +8,8 @@ local KindlePowerD = BasePowerD:new{
     battCapacity = nil,
     is_charging = nil,
     lipc_handle = nil,
+
+    is_fl_on = false,
 }
 
 function KindlePowerD:init()
@@ -21,6 +23,7 @@ function KindlePowerD:init()
         else
             self.fl_intensity = self:read_int_file(self.fl_intensity_file)
         end
+        self.is_fl_on = (self.fl_intensity > 0)
     end
 end
 
@@ -29,9 +32,11 @@ function KindlePowerD:toggleFrontlight()
     if sysint == 0 then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
         self:setIntensityHW()
+        self.is_fl_on = true
     else
         -- NOTE: We want to really kill the light, so do it manually (asking lipc to set it to 0 would in fact set it to 1)...
         os.execute("echo -n 0 > " .. self.fl_intensity_file)
+        self.is_fl_on = false
     end
 end
 
