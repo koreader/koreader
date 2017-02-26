@@ -73,16 +73,13 @@ function KindlePowerD:__gc()
 end
 
 function KindlePowerD:_turnOffFL()
+    -- NOTE: We want to really kill the light, so do it manually (asking lipc to set it to 0 would in fact set it to 1)...
     os.execute("echo -n 0 > " .. self.fl_intensity_file)
     self.is_fl_on = false
 end
 
 function KindlePowerD:_readFLIntensity()
-    if self.lipc_handle ~= nil then
-        return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
-    else
-        return self:read_int_file(self.fl_intensity_file)
-    end
+    return self:read_int_file(self.fl_intensity_file)
 end
 
 function KindlePowerD:_set_fl_on()
