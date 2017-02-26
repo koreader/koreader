@@ -487,7 +487,8 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
             for _ignore2, clipping in ipairs(chapter) do
                 -- If this clipping has already been exported, we ignore it.
                 if clipping.time >= file_modification then
-                    file:write(T(_(wide_space .. wide_space .. "-- Page: %1, added on %2\n"),
+                    file:write(wide_space .. wide_space ..
+                               T(_("-- Page: %1, added on %2\n"),
                                  clipping.page, os.date("%c", clipping.time)))
                     if clipping.text then
                         file:write(clipping.text)
