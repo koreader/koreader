@@ -18,7 +18,13 @@ function KindlePowerD:init()
         self.lipc_handle = lipc.init("com.github.koreader.kindlepowerd")
     end
     if self.device.hasFrontlight() then
-        self.fl_intensity = self:_readFLIntensity()
+        -- Kindle stock software does not use intensity file directly, so we need to read from its
+        -- lipc property first.
+        if self.lipc_handle ~= nil then
+            self.fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+        else
+            self.fl_intensity = self:_readFLIntensity()
+        end
         self:_set_fl_on()
     end
 end

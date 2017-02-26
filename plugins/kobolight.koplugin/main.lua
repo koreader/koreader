@@ -17,21 +17,16 @@ local swipe_touch_zone_ratio = { x = 0, y = 1/8, w = 1/10, h = 7/8, }
 
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
-    steps = { 0, 0.01, 0.01, 0.01, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, },
+    steps = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, },
     gestureScale = nil,  -- initialized in self:resetLayout()
 }
 
 function KoboLight:init()
     local powerd = Device:getPowerDevice()
-    local scale = (powerd.fl_max - powerd.fl_min) / 20
+    local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
     for i = 1, #self.steps, 1
     do
-        self.steps[i] = self.steps[i] * scale
-        if self.steps[i] > 0 and self.steps[i] < 1 then
-            self.steps[i] = 1
-        else
-            self.steps[i] = math.floor(self.steps[i])
-        end
+        self.steps[i] = math.ceil(self.steps[i] * scale)
     end
 end
 
