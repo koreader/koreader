@@ -196,9 +196,11 @@ end
 
 function NetworkMgr:saveNetwork(setting)
     if not self.nw_settings then self:readNWSettings() end
+
     self.nw_settings:saveSetting(setting.ssid, {
         ssid = setting.ssid,
         password = setting.password,
+        psk = setting.psk,
         flags = setting.flags,
     })
     self.nw_settings:flush()

@@ -28,6 +28,7 @@ function WpaSupplicant:getNetworkList()
             -- TODO: verify saved_nw.flags == network.flags? This will break if user changed the
             -- network setting from [WPA-PSK-TKIP+CCMP][WPS][ESS] to [WPA-PSK-TKIP+CCMP][ESS]
             network.password = saved_nw.password
+            network.psk = saved_nw.psk
         end
         -- TODO: also verify bssid if it is not set to any
         if curr_network and curr_network.ssid == network.ssid then
@@ -36,6 +37,18 @@ function WpaSupplicant:getNetworkList()
         end
     end
     return list
+end
+
+local function calculatePsk(ssid, pwd)
+    -- TODO: calculate PSK with native function instead of shelling out
+    -- hostap's reference implementation is available at:
+    --   * /wpa_supplicant/wpa_passphrase.c
+    --   * /src/crypto/sha1-pbkdf2.c
+    -- see: http://docs.ros.org/diamondback/api/wpa_supplicant/html/sha1-pbkdf2_8c_source.html
+    local fp = io.popen(string.format("wpa_passphrase %s %s", ssid, pwd))
+    local out = fp:read("*a")
+    fp:close()
+    return string.match(out, 'psk=([a-f0-9]+)')
 end
 
 function WpaSupplicant:authenticateNetwork(network)
@@ -49,12 +62,16 @@ function WpaSupplicant:authenticateNetwork(network)
     nw_id, err = wcli:addNetwork()
     if err then return false, err end
 
-    local re = wcli:setNetwork(nw_id, "ssid", network.ssid)
+    local re = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
     if re == 'FAIL' then
         wcli:removeNetwork(nw_id)
         return false, _("Failed to set network SSID.")
     end
-    re = wcli:setNetwork(nw_id, "psk", network.password)
+    if not network.psk then
+        network.psk = calculatePsk(network.ssid, network.password)
+        self:saveNetwork(network)
+    end
+    re = wcli:setNetwork(nw_id, "psk", network.psk)
     if re == 'FAIL' then
         wcli:removeNetwork(nw_id)
         return false, _("Failed to set network password.")
