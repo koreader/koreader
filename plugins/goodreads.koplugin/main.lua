@@ -23,7 +23,7 @@ function Goodreads:init()
 end
 
 function Goodreads:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+    self.ui.menu.menu_items["goodreads"] = {
         text = _("Goodreads"),
         sub_item_table = {
             {
@@ -68,7 +68,7 @@ function Goodreads:addToMainMenu(tab_item_table)
                 end,
             },
         },
-    })
+    }
 end
 
 function Goodreads:updateSettings()

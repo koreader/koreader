@@ -50,7 +50,7 @@ function StorageStat:init()
 end
 
 function StorageStat:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, self.menuItem)
+    self.ui.menu.menu_items["storagestat"] = self.menuItem
 end
 
 return StorageStat

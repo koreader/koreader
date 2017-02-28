@@ -201,22 +201,22 @@ function ReaderPaging:addToMainMenu(tab_item_table)
     for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
         table.insert(page_overlap_menu, menu_entry)
     end
-    table.insert(tab_item_table.typeset, {
+    self.ui.menu.menu_items["page_overlap"] = {
         text = _("Page overlap"),
         enabled_func = function()
             return not self.view.page_scroll and self.zoom_mode ~= "page"
                     and not self.zoom_mode:find("height")
         end,
         sub_item_table = page_overlap_menu,
-    })
-    table.insert(tab_item_table.setting, {
+    }
+    self.ui.menu.menu_items["read_from_right_to_left"] = {
         text = _("Read from right to left"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
             self.inverse_reading_order = not self.inverse_reading_order
             self:setupTapTouchZones()
         end,
-    })
+    }
 end
 
 --[[

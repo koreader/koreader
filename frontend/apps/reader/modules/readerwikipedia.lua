@@ -49,7 +49,7 @@ function ReaderWikipedia:lookupInput()
 end
 
 function ReaderWikipedia:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.search, {
+    self.ui.menu.menu_items["wikipedia_lookup"] =  {
         text = _("Wikipedia lookup"),
         callback = function()
             if NetworkMgr:isOnline() then
@@ -58,7 +58,7 @@ function ReaderWikipedia:addToMainMenu(tab_item_table)
                 NetworkMgr:promptWifiOn()
             end
         end
-    })
+    }
 end
 
 function ReaderWikipedia:initLanguages(word)

@@ -14,7 +14,7 @@ function ReaderSearch:init()
 end
 
 function ReaderSearch:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.search, {
+    self.ui.menu.menu_items["fulltext_search"] = {
         text = _("Fulltext search"),
         tap_input = {
             title = _("Input text to search for"),
@@ -23,7 +23,7 @@ function ReaderSearch:addToMainMenu(tab_item_table)
                 self:onShowSearchDialog(input)
             end,
         },
-    })
+    }
 end
 
 function ReaderSearch:onShowSearchDialog(text)

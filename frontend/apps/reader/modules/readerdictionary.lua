@@ -24,7 +24,7 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.search, {
+    self.ui.menu.menu_items["dictionary_lookup"] = {
         text = _("Dictionary lookup"),
         tap_input = {
             title = _("Enter a word to look up"),
@@ -33,7 +33,7 @@ function ReaderDictionary:addToMainMenu(tab_item_table)
                 self:onLookupWord(input)
             end,
         },
-    })
+    }
 end
 
 function ReaderDictionary:onLookupWord(word, box, highlight)

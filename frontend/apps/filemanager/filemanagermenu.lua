@@ -16,27 +16,28 @@ local CloudStorage = require("apps/cloudstorage/cloudstorage")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
+    menu_items = {},
     registered_widgets = nil,
 }
 
 function FileManagerMenu:init()
-    self.tab_item_table = {
-        setting = {
-            icon = "resources/icons/appbar.settings.png",
-        },
-        tools = {
-            icon = "resources/icons/appbar.tools.png",
-        },
-        search = {
-            icon = "resources/icons/appbar.magnify.browse.png",
-        },
-        main = {
-            icon = "resources/icons/menu-icon.png",
-        },
+    self.menu_items["KOMenu:menu_buttons"] = {
+        -- top menu
     }
-    -- For backward compatibility, plugins look for plugins tab, which should be tools tab in file
-    -- manager.
-    self.tab_item_table.plugins = self.tab_item_table.tools
+    -- items in top menu
+    self.menu_items["setting"] = {
+        icon = "resources/icons/appbar.settings.png",
+    }
+    self.menu_items["tools"] = {
+        icon = "resources/icons/appbar.tools.png",
+    }
+    self.menu_items["search"] = {
+        icon = "resources/icons/appbar.magnify.browse.png",
+    }
+    self.menu_items["main"] = {
+        icon = "resources/icons/menu-icon.png",
+    }
+
     self.registered_widgets = {}
 
     if Device:hasKeys() then
@@ -68,18 +69,18 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- setting tab
-    table.insert(self.tab_item_table.setting, {
+    self.menu_items["show_hidden_files"] = {
         text = _("Show hidden files"),
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
-    })
-    table.insert(self.tab_item_table.setting, self.ui:getSortingMenuTable())
-    table.insert(self.tab_item_table.setting, {
+    }
+    self.menu_items["sort_by"] = self.ui:getSortingMenuTable()
+    self.menu_items["reverse_sorting"] = {
         text = _("Reverse sorting"),
         checked_func = function() return self.ui.file_chooser.reverse_collate end,
         callback = function() self.ui:toggleReverseCollate() end
-    })
-    table.insert(self.tab_item_table.setting, {
+    }
+    self.menu_items["start_with_last_opened_file"] = {
         text = _("Start with last opened file"),
         checked_func = function() return
             G_reader_settings:readSetting("open_last")
@@ -92,9 +93,9 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:saveSetting("open_last", not open_last)
             G_reader_settings:flush()
         end
-    })
+    }
     if Device.isKobo() then
-        table.insert(self.tab_item_table.setting, {
+        self.menu_items["screensaver"] = {
             text = _("Screensaver"),
             sub_item_table = {
                 {
@@ -148,15 +149,15 @@ function FileManagerMenu:setUpdateItemTable()
                     end,
                 },
             }
-        })
+        }
     end
     -- insert common settings
-    for i, common_setting in ipairs(require("ui/elements/common_settings_menu_table")) do
-        table.insert(self.tab_item_table.setting, common_setting)
+    for id, common_setting in pairs(require("ui/elements/common_settings_menu_table")) do
+        self.menu_items[id] = common_setting
     end
 
     -- tools tab
-    table.insert(self.tab_item_table.tools, {
+    self.menu_items["advanced_settings"] = {
         text = _("Advanced settings"),
         callback = function()
             SetDefaults:ConfirmEdit()
@@ -164,8 +165,8 @@ function FileManagerMenu:setUpdateItemTable()
         hold_callback = function()
             SetDefaults:ConfirmSave()
         end,
-    })
-    table.insert(self.tab_item_table.tools, {
+    }
+    self.menu_items["opds_catalog"] = {
         text = _("OPDS catalog"),
         callback = function()
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
@@ -176,8 +177,8 @@ function FileManagerMenu:setUpdateItemTable()
             end
             OPDSCatalog:showCatalog()
         end,
-    })
-    table.insert(self.tab_item_table.tools, {
+    }
+    self.menu_items["developer_options"] = {
         text = _("Developer options"),
         sub_item_table = {
             {
@@ -206,8 +207,8 @@ function FileManagerMenu:setUpdateItemTable()
                 end,
             },
         }
-    })
-    table.insert(self.tab_item_table.tools, {
+    }
+    self.menu_items["cloud_storage"] = {
         text = _("Cloud storage"),
         callback = function()
             local cloud_storage = CloudStorage:new{}
@@ -218,26 +219,25 @@ function FileManagerMenu:setUpdateItemTable()
                 UIManager:close(cloud_storage)
             end
         end,
-    })
+    }
 
     -- search tab
-    table.insert(self.tab_item_table.search, {
+    self.menu_items["find_book_in_calibre_catalog"] = {
         text = _("Find a book in calibre catalog"),
         callback = function()
             Search:getCalibre()
             Search:ShowSearch()
         end
-    })
-    table.insert(self.tab_item_table.search, {
+    }
+    self.menu_items["find_file"] = {
         text = _("Find a file"),
         callback = function()
             FileSearcher:init(self.ui.file_chooser.path)
         end
-    })
+    }
 
     -- main menu tab
-    -- insert common info
-    table.insert(self.tab_item_table.main, {
+    self.menu_items["open_last_document"] = {
         text = _("Open last document"),
         enabled_func = function()
             return G_reader_settings:readSetting("lastfile") ~= nil
@@ -255,11 +255,12 @@ function FileManagerMenu:setUpdateItemTable()
             ReaderUI:showReader(last_file)
             self:onCloseFileManagerMenu()
         end
-    })
-    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
-        table.insert(self.tab_item_table.main, common_setting)
+    }
+    -- insert common info
+    for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
+        self.menu_items[id] = common_setting
     end
-    table.insert(self.tab_item_table.main, {
+    self.menu_items["exit"] = {
         text = _("Exit"),
         callback = function()
             if SetDefaults.settings_changed then
@@ -275,12 +276,76 @@ function FileManagerMenu:setUpdateItemTable()
                 self.ui:onClose()
             end
         end,
-    })
+    }
+
+    local order = {
+        ["KOMenu:menu_buttons"] = {
+            "setting",
+            "tools",
+            "search",
+            "main",
+        },
+        ["setting"] = {
+            "show_hidden_files",
+            "----------------------------",
+            "sort_by",
+            "reverse_sorting",
+            "----------------------------",
+            "start_with_last_opened_file",
+            "screensaver",
+            "----------------------------",
+            -- common settings
+            -- those that don't exist will simply be skipped during menu gen
+            "frontlight", -- if Device:hasFrontlight()
+            "night_mode",
+            "----------------------------",
+            "network",
+            "screen",
+            "save_document",
+            "----------------------------",
+            "language",
+            "----------------------------",
+            "show_advanced_options",
+            -- end common settings
+        },
+        ["tools"] = {
+            "calibre_wireless_connection",
+            "evernote",
+            "goodreads",
+            "keep_alive",
+            "statistics",
+            "storage_stat",
+            "cloud_storage",
+            "----------------------------",
+            "advanced_settings",
+            "developer_options",
+        },
+        ["search"] = {
+            "dictionary_lookup",
+            "find_book_in_calibre_catalog",
+            "find_file",
+            "----------------------------",
+            "opds_catalog",
+        },
+        ["main"] = {
+            "history",
+            "open_last_document",
+            "----------------------------",
+            "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
+            "version",
+            "help",
+            "----------------------------",
+            "exit",
+        },
+    }
+
+    local MenuSorter = require("frontend/ui/menusorter")
+    self.tab_item_table = MenuSorter:sort(self.menu_items, order)
 end
 
 function FileManagerMenu:onShowMenu()
     local tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
-    if #self.tab_item_table.setting == 0 then
+    if #self.menu_items.setting == 0 then
         self:setUpdateItemTable()
     end
 
@@ -295,12 +360,7 @@ function FileManagerMenu:onShowMenu()
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
             last_index = tab_index,
-            tab_item_table = {
-                self.tab_item_table.setting,
-                self.tab_item_table.tools,
-                self.tab_item_table.search,
-                self.tab_item_table.main,
-            },
+            tab_item_table = self.tab_item_table,
             show_parent = menu_container,
         }
     else

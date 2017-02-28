@@ -158,7 +158,7 @@ function PerceptionExpander:showSettingsDialog()
 end
 
 function PerceptionExpander:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins,{
+    self.ui.menu.menu_items["speed_reading_module_perception_expander"] = {
         text = _("Speed reading module - perception expander"),
         sub_item_table ={
             {
@@ -186,7 +186,7 @@ function PerceptionExpander:addToMainMenu(tab_item_table)
                 end,
             },
         },
-    })
+    }
 end
 
 function PerceptionExpander:onPageUpdate(pageno)

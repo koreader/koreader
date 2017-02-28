@@ -86,7 +86,7 @@ function KOSync:onReaderReady()
 end
 
 function KOSync:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+    self.ui.menu.menu_items["progress_sync"] = {
         text = _("Progress sync"),
         sub_item_table = {
             {
@@ -215,7 +215,7 @@ function KOSync:addToMainMenu(tab_item_table)
                 },
             },
         }
-    })
+    }
 end
 
 function KOSync:setCustomServer(server)

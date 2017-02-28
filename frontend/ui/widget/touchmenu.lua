@@ -203,7 +203,7 @@ function TouchMenuBar:init()
         local icon_sep = LineWidget:new{
             style = k == 1 and "solid" or "none",
             dimen = Geom:new{
-                w = Screen:scaleBySize(2),
+                w = icon_sep_width,
                 h = self.height,
             }
         }
@@ -437,19 +437,26 @@ function TouchMenu:updateItems()
         -- calculate index in item_table
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
-            local item_tmp = TouchMenuItem:new{
-                item = self.item_table[i],
-                menu = self,
-                dimen = Geom:new{
-                    w = self.item_width,
-                    h = self.item_height,
-                },
-                show_parent = self.show_parent,
-            }
-            table.insert(self.item_group, item_tmp)
-            -- insert split line
-            if c ~= self.perpage then
-                table.insert(self.item_group, self.split_line)
+            local item = self.item_table[i]
+            -- due to the menu ordering system index can be missing
+            if item then
+                if item.text == "KOMenu:separator" then
+                    if c ~= self.perpage then
+                        -- insert split line
+                        table.insert(self.item_group, self.split_line)
+                    end
+                else
+                    local item_tmp = TouchMenuItem:new{
+                        item = item,
+                        menu = self,
+                        dimen = Geom:new{
+                            w = self.item_width,
+                            h = self.item_height,
+                        },
+                        show_parent = self.show_parent,
+                    }
+                    table.insert(self.item_group, item_tmp)
+                end
             end
         else
             -- item not enough to fill the whole page, break out of loop

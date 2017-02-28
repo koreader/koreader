@@ -25,7 +25,7 @@ function ZSync:init()
 end
 
 function ZSync:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+    self.ui.menu.menu_items["zsync"] = {
         text = _("ZSync"),
         sub_item_table = {
             {
@@ -63,7 +63,7 @@ function ZSync:addToMainMenu(tab_item_table)
                 end
             }
         }
-    })
+    }
 end
 
 function ZSync:initServerZyreMQ()
