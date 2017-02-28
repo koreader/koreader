@@ -71,7 +71,7 @@ function TimeSync:init()
 end
 
 function TimeSync:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, menuItem)
+    self.ui.menu.menu_items["synchronize_time"] = menuItem
 end
 
 return TimeSync

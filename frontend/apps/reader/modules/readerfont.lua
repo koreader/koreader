@@ -225,10 +225,10 @@ end
 
 function ReaderFont:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    table.insert(tab_item_table.typeset, {
+    self.ui.menu.menu_items["change_font"] = {
         text = self.font_menu_title,
         sub_item_table = self.face_table,
-    })
+    }
 end
 
 return ReaderFont

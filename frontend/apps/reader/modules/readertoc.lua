@@ -436,12 +436,12 @@ end
 
 function ReaderToc:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    table.insert(tab_item_table.navi, 1, {
+    self.ui.menu.menu_items["table_of_contents"] = {
         text = self.toc_menu_title,
         callback = function()
             self:onShowToc()
         end,
-    })
+    }
 end
 
 return ReaderToc

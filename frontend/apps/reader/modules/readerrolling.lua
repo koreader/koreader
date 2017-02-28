@@ -258,11 +258,11 @@ function ReaderRolling:addToMainMenu(tab_item_table)
     for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
         table.insert(page_overlap_menu, menu_entry)
     end
-    table.insert(tab_item_table.typeset, {
+    self.ui.menu.menu_items["page_overlap"] = {
         text = _("Page overlap"),
         enabled_func = function() return self.view.view_mode ~= "page" end,
         sub_item_table = page_overlap_menu,
-    })
+    }
 end
 
 function ReaderRolling:getLastPercent()

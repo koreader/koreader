@@ -308,10 +308,10 @@ local option_titles = {
 
 function ReaderFooter:addToMainMenu(tab_item_table)
     local sub_items = {}
-    table.insert(tab_item_table.setting, {
+    self.ui.menu.menu_items["status_bar"] = {
         text = _("Status bar"),
         sub_item_table = sub_items,
-    })
+    }
 
     -- menu item to fake footer tapping when touch area is disabled
     if Geom:new{

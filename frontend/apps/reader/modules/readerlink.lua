@@ -69,7 +69,7 @@ end
 
 function ReaderLink:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    table.insert(tab_item_table.navi, {
+    self.ui.menu.menu_items["follow_links"] = {
         text = _("Follow links"),
         sub_item_table = {
             {
@@ -103,7 +103,7 @@ function ReaderLink:addToMainMenu(tab_item_table)
                 end,
             },
         }
-    })
+    }
 end
 
 function ReaderLink:onSetDimensions(dimen)

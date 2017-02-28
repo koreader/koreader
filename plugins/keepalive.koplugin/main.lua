@@ -68,7 +68,7 @@ function KeepAlive:init()
 end
 
 function KeepAlive:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, menuItem)
+    self.ui.menu.menu_items["keep_alive"] = menuItem
 end
 
 return KeepAlive
