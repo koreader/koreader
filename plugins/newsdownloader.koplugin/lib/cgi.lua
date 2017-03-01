@@ -2,7 +2,7 @@
 --  Overview:
 --  =========
 --      This module provide a CGI request parser library for Lua
---  
+--
 --  Features:
 --  =========
 --      * Handles both 'application/x-www-form-urlencoded' and 'multipart/form-data' content-types
@@ -16,20 +16,20 @@
 --          self.files      - File Uploads
 --          self.xml        - Parsed XML Data
 --          self.cookies    - NOT IMPLEMENTED (yet)
---  
---      As Lua by default cant iterate through env (can only 
+--
+--      As Lua by default cant iterate through env (can only
 --      read specific values) it is not possible to pass through
 --      non-standard env variables (eg HTTP_xxxx) other than those
 --      predefined below (_HTTP_ENV)
 --
 --  NOTE:
---      I wasnt able to find a complete CGI library for Lua & also 
---      wanted to be able to handle file uploads and xml payloads so 
+--      I wasnt able to find a complete CGI library for Lua & also
+--      wanted to be able to handle file uploads and xml payloads so
 --      wrote this (LuaCGI only seemed to be available in binary and
 --      wasnt available for MacOSX). This was my first attempt at Lua
 --      so the code is pretty ugly (particularly the multipart mime
 --      handling) and needs to be refactored.
---      
+--
 --  Limitations/Todo:
 --  =================
 --      * Restucture to meet LTN7 & refactor code
@@ -62,7 +62,7 @@
 --  Initial Import
 --@author Paul Chakravarti (paulc@passtheaardvark.com)<p/>
 
-_CGI_ENV = {  "AUTH_TYPE", 
+_CGI_ENV = {  "AUTH_TYPE",
               "CONTENT_LENGTH",
               "CONTENT_TYPE",
               "GATEWAY_INTERFACE",
@@ -81,7 +81,7 @@ _CGI_ENV = {  "AUTH_TYPE",
               "SERVER_SOFTWARE",
             }
 
-_HTTP_ENV = { 
+_HTTP_ENV = {
               "HTTP_ACCEPT",
               "HTTP_ACCEPT_CHARSET",
               "HTTP_ACCEPT_ENCODING",
@@ -98,7 +98,7 @@ _HTTP_ENV = {
 }
 
 
-function CGI() 
+function CGI()
     return {
         env = {},
         headers = {},
@@ -111,7 +111,7 @@ function CGI()
         rfile = _INPUT,
         wfile = _OUTPUT,
 
-        options = { 
+        options = {
             parse_qs = 1,
             max_post = 2000,
             error_handler = function (x) _ALERT("CGI Error:"..x.."\n") end,
@@ -121,7 +121,7 @@ function CGI()
             xml_handler_options = nil,
         },
 
-        parse = function(self) 
+        parse = function(self)
             self:parse_env()
             self.env.content_length = tonumber(self.env.content_length) or 0
             if self.env.request_method == 'GET' or self.options.parse_qs then
@@ -141,7 +141,7 @@ function CGI()
                 else
                     self.options.error_handler("Invalid Content-Type:"..self.env.content_type)
                 end
-            else 
+            else
             end
         end,
 
@@ -168,7 +168,7 @@ function CGI()
             local len = self.env.content_length or 0
             if self.options.max_post and len > self.options.max_post then
                 self.options.error_handler("Max Post Length Exceeded")
-            else 
+            else
                 local qs = read(self.rfile,len)
                 self:parse_qs(qs)
             end
@@ -186,7 +186,7 @@ function CGI()
             local len = self.env.content_length or 0
             if self.options.max_post and len > self.options.max_post then
                 self.options.error_handler("Max Post Length Exceeded")
-            else 
+            else
                 local xml = read(self.rfile,len)
                 parser:parse(xml)
                 self.xml = handler.root
@@ -199,7 +199,7 @@ function CGI()
             local len = self.env.content_length or 0
             if self.options.max_post and len > self.options.max_post then
                 self.options.error_handler("Max Post Length Exceeded")
-            else 
+            else
                 self.buf = read(self.rfile,len)
                 while self:read_part() do end
                 self.buf = nil
@@ -209,7 +209,7 @@ function CGI()
         read_part = function(self)
             local start,ends,data,name,filename,key,val,_
             -- Get multipart header
-            starts,ends = strfind(self.buf,self.multipart.boundary.."\r\n",self.multipart.offset,1) 
+            starts,ends = strfind(self.buf,self.multipart.boundary.."\r\n",self.multipart.offset,1)
             if starts ~= self.multipart.offset then
                 self.options.error_handler("Invalid Multipart Data: Boundary Not Found")
                 return nil
@@ -229,7 +229,7 @@ function CGI()
                     if strlower(strsub(data,1,19)) == 'content-disposition' then
                         _,_,name = strfind(data,[[[Nn]ame="?([^";,]+)"?]])
                         _,_,filename = strfind(data,[[[Ff]ilename="?([^";,]+)"?]])
-                        if filename then 
+                        if filename then
                             self.files[name] = {}
                             self.files[name].filename = filename
                         end

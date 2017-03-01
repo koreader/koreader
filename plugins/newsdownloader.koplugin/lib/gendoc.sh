@@ -1,2 +1,2 @@
 #!/bin/bash
-luadoc *.lua -d doc 
+luadoc *.lua -d doc

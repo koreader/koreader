@@ -25,7 +25,7 @@ xmlrpclib = function()
                      ['nil'] = function(x) return nil end,
                    }
 
-    obj._TOXML = { table = function(self,x) 
+    obj._TOXML = { table = function(self,x)
                                 local res = ""
                                 if tag(x) == self._BOOL then
                                     return "<value><boolean>"..x[1].."</boolean></value>"
@@ -46,7 +46,7 @@ xmlrpclib = function()
                                 end
                                 return res
                             end,
-                   number = function(self,x) 
+                   number = function(self,x)
                                 if x==ceil(x) then
                                     return "<value><int>"..tostring(x).."</int></value>"
                                 else
@@ -66,7 +66,7 @@ xmlrpclib = function()
         if x then
             res[1] = 1
         else
-            res[1] = 0 
+            res[1] = 0
         end
         return res
     end
@@ -124,7 +124,7 @@ xmlrpclib = function()
             if not self._FROMXML[dtype] then
                 error("Unknown Datatype:")
             end
-            return self._FROMXML[dtype](dval)    
+            return self._FROMXML[dtype](dval)
         else
             error("Unknown Datatype:")
         end
@@ -138,7 +138,7 @@ xmlrpclib = function()
         local methodName = methodCall.methodName
         local params = {}
         if methodCall.params then
-            for i=1,table.getn(methodCall.params.param) do 
+            for i=1,table.getn(methodCall.params.param) do
                 table.insert(params,self:parseParam(methodCall.params.param[i]))
             end
         end

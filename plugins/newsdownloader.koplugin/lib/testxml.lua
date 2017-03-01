@@ -17,7 +17,7 @@ dofile('xmlrpclib.lua')
 -- Defaults
 _print = nil
 _simpletree = nil
-_dom = nil 
+_dom = nil
 _file = nil
 _xmlrpc = nil
 _debug = nil
@@ -25,7 +25,7 @@ _ws = nil
 _noentity = nil
 
 _usage = [[
-textxml.lua [-print] [-simpletree] [-dom] [-xmlrpc] [-debug] 
+textxml.lua [-print] [-simpletree] [-dom] [-xmlrpc] [-debug]
             [-ws] [-noentity] [-help] [file]
 ]]
 
@@ -76,16 +76,16 @@ while arg[index] do
         elseif arg[index] == "-help" then
             print(_usage)
             exit()
-        else 
+        else
             print(_usage)
             exit()
         end
-    else 
+    else
         -- Filename is last argument if present
         if arg[index+1] then
             print(_usage)
             exit()
-        else 
+        else
             _file = arg[index]
         end
     end
@@ -102,7 +102,7 @@ if _file then
     local f, e = io.open(_file, "r")
     if f then
       xml = f:read("*a")
-    else 
+    else
       error(e)
     end
 

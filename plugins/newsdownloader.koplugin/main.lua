@@ -52,7 +52,7 @@ function NewsDownloader:loadNewsSources()
           timeout = 2,
     })
     local feedfileName = self:getFeedXmlPath();
-    
+
     local feedSources = self:deserializeXML(feedfileName);
 
     for index, url in pairs(feedSources.feeds.feed) do
@@ -61,12 +61,12 @@ function NewsDownloader:loadNewsSources()
               timeout = 3,
           })
         local nameSuffix = config.FEED_SOURCE_SUFFIX;
-        local dirprefix = config.NEWS_DOWNLOAD_DIR 
+        local dirprefix = config.NEWS_DOWNLOAD_DIR
         local filename = dirprefix .. index .. nameSuffix;
-        
+
         self:processFeedSource(url, filename)
-    end 
-    
+    end
+
     UIManager:show(InfoMessage:new{
       text = _("Downloading News Finished"),
       timeout = 2,
@@ -75,7 +75,7 @@ function NewsDownloader:loadNewsSources()
 end
 
 function NewsDownloader:getFeedXmlPath()
-    
+
     local feedfileName = config.FEED_FILE_NAME;
     return self:script_path() .. feedfileName;
 end
@@ -95,10 +95,10 @@ function NewsDownloader:deserializeXML(filename)
   else
     error(e)
   end
-  
+
   --Instantiate the object the states the XML file as a Lua table
   local xmlhandler = simpleTreeHandler()
-  
+
   --Instantiate the object that parses the XML to a Lua table
   local xmlparser = xmlParser(xmlhandler)
   xmlparser:parse(xmltext)
@@ -109,29 +109,29 @@ end
 
 
 function NewsDownloader:processFeedSource(url,filename)
-   
+
    self:download(url,filename)
    local feeds = self:deserializeXML(filename);
-   
+
    for index, feed in pairs(feeds.rss.channel.item) do
         local util = require("frontend/util")
         local title = util.replaceInvalidChars(feed.title)
-    
-        title = config.NEWS_DOWNLOAD_DIR ..title .. config.FILE_EXTENSION; 
+
+        title = config.NEWS_DOWNLOAD_DIR ..title .. config.FILE_EXTENSION;
         DEBUG(title)
         self:download(feed.link, title)
-    end 
+    end
 end
 
 
 function NewsDownloader:download(url,outputFilename)
     local http = require("socket.http")
-    local ltn12 = require("ltn12") 
+    local ltn12 = require("ltn12")
     local file = ltn12.sink.file(io.open(outputFilename, 'w'))
     http.request {
         url = url,
         sink = file,
-    } 
+    }
 end
 
 
