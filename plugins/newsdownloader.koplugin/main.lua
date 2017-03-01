@@ -49,7 +49,7 @@ end
 function NewsDownloader:loadNewsSources()
     UIManager:show(InfoMessage:new{
           text = _("Loading data.") ,
-          timeout = 1,
+          timeout = 2,
     })
     local feedfileName = self:getFeedXmlPath();
     
@@ -58,7 +58,7 @@ function NewsDownloader:loadNewsSources()
     for index, url in pairs(feedSources.feeds.feed) do
         UIManager:show(InfoMessage:new{
               text = _("Processing: ") .. url,
-              timeout = 1,
+              timeout = 3,
           })
         local nameSuffix = config.FEED_SOURCE_SUFFIX;
         local dirprefix = config.NEWS_DOWNLOAD_DIR 
@@ -69,7 +69,7 @@ function NewsDownloader:loadNewsSources()
     
     UIManager:show(InfoMessage:new{
       text = _("Downloading News Finished"),
-      timeout = 1,
+      timeout = 2,
     })
 
 end
@@ -114,18 +114,13 @@ function NewsDownloader:processFeedSource(url,filename)
    local feeds = self:deserializeXML(filename);
    
    for index, feed in pairs(feeds.rss.channel.item) do
-        local title = self:createValidFilename(feed.title)
+        local util = require("frontend/util")
+        local title = util.replaceInvalidChars(feed.title)
+    
         title = config.NEWS_DOWNLOAD_DIR ..title .. config.FILE_EXTENSION; 
         DEBUG(title)
         self:download(feed.link, title)
     end 
-end
-
-
-function NewsDownloader:createValidFilename(name)
-  name = name:gsub(":", "-"):gsub("'", ""):gsub("?", ""):gsub("/", ""):gsub("\\",""):gsub("|","")
-  name = name:gsub(",",""):gsub("!", ""):gsub("\"", " ")
-  return name;
 end
 
 
