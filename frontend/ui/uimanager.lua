@@ -60,6 +60,7 @@ function UIManager:init()
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
             self:_stopAutoSuspend()
+            self:sendEvent(Event:new("Suspend"))
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
@@ -116,6 +117,7 @@ function UIManager:init()
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
+            self:sendEvent(Event:new("Suspend"))
             Device:intoScreenSaver()
         end
         self.event_handlers["OutOfSS"] = function()
