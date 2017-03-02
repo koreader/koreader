@@ -93,6 +93,24 @@ local lfs = require("libs/libkoreader-lfs")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Font = require("ui/font")
+local ConfirmBox = require("ui/widget/confirmbox")
+
+local function retryLastFile()
+    return ConfirmBox:new{
+        text = _("Cannot open last file.\nDo you want to retry?"),
+        ok_callback = function()
+            local last_file = G_reader_settings:readSetting("lastfile")
+            if lfs.attributes(last_file, "mode") == "file" then
+                local ReaderUI = require("apps/reader/readerui")
+                UIManager:nextTick(function()
+                    ReaderUI:showReader(last_file)
+                end)
+            else
+                UIManager:show(retryLastFile())
+            end
+        end,
+    }
+end
 
 -- read some global reader setting here:
 -- font
@@ -105,6 +123,7 @@ end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
 if last_file and lfs.attributes(last_file, "mode") ~= "file" then
+    UIManager:show(retryLastFile())
     last_file = nil
 end
 -- load last opened file
