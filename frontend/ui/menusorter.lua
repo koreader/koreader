@@ -17,8 +17,9 @@ local function file_exists(name)
    if f~=nil then io.close(f) return true else return false end
 end
 
-function MenuSorter:readMSSettings(table)
-    local menu_order = DataStorage:getSettingsDir().."/menu_order"
+function MenuSorter:readMSSettings(table, config_prefix)
+    local config_prefix = config_prefix.."_" or ""
+    local menu_order = DataStorage:getSettingsDir().."/"..config_prefix.."menu_order"
 
     if file_exists(menu_order..".lua") then
         return require(menu_order) or {}
@@ -27,7 +28,7 @@ function MenuSorter:readMSSettings(table)
     end
 end
 
-function MenuSorter:sort(item_table, order)
+function MenuSorter:sort(item_table, order, config_prefix)
 DEBUG(item_table, order)
     --local menu_table = {}
     --local separator = {
@@ -35,7 +36,7 @@ DEBUG(item_table, order)
     --}
     DEBUG("menu before user order", order)
     -- take care of user customizations
-    local user_order = self:readMSSettings(item_table_name)
+    local user_order = self:readMSSettings(item_table_name, config_prefix)
     if user_order then
         for user_order_id,user_order_item in pairs(user_order) do
             for order_id, order_item in pairs (order) do
