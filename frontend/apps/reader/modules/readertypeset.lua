@@ -142,11 +142,11 @@ end
 
 function ReaderTypeset:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    self.ui.menu.menu_items["set_render_style"] = {
+    self.ui.menu.menu_items.set_render_style = {
         text = self.css_menu_title,
         sub_item_table = self:genStyleSheetMenu(),
     }
-    self.ui.menu.menu_items["floating_punctuation"] = {
+    self.ui.menu.menu_items.floating_punctuation = {
         text = _("Floating punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()

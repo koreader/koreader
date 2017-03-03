@@ -9,7 +9,7 @@ local common_settings = {}
 
 if Device:hasFrontlight() then
     local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-    common_settings["frontlight"] = {
+    common_settings.frontlight = {
         text = _("Frontlight"),
         callback = function()
             ReaderFrontLight:onShowFlDialog()
@@ -17,7 +17,7 @@ if Device:hasFrontlight() then
     }
 end
 
-common_settings["night_mode"] = {
+common_settings.night_mode = {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:readSetting("night_mode") end,
     callback = function()
@@ -27,11 +27,11 @@ common_settings["night_mode"] = {
         G_reader_settings:saveSetting("night_mode", not night_mode)
     end
 }
-common_settings["network"] = {
+common_settings.network = {
     text = _("Network"),
     sub_item_table = NetworkMgr:getMenuTable()
 }
-common_settings["screen"] = {
+common_settings.screen = {
     text = _("Screen"),
     sub_item_table = {
         require("ui/elements/screen_dpi_menu_table"),
@@ -40,7 +40,7 @@ common_settings["screen"] = {
         require("ui/elements/refresh_menu_table"),
     },
 }
-common_settings["save_document"] = {
+common_settings.save_document = {
     text = _("Save document"),
     sub_item_table = {
         {
@@ -75,8 +75,8 @@ common_settings["save_document"] = {
         },
     },
 }
-common_settings["language"] = Language:getLangMenuTable()
-common_settings["show_advanced_options"] = {
+common_settings.language = Language:getLangMenuTable()
+common_settings.show_advanced_options = {
     text = _("Show advanced options"),
     checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
     callback = function()

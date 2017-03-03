@@ -325,7 +325,7 @@ local option_titles = {
 
 function ReaderFooter:addToMainMenu(tab_item_table)
     local sub_items = {}
-    self.ui.menu.menu_items["status_bar"] = {
+    self.ui.menu.menu_items.status_bar = {
         text = _("Status bar"),
         sub_item_table = sub_items,
     }

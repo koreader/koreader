@@ -66,7 +66,7 @@ end
 
 function ReaderHighlight:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    self.ui.menu.menu_items["highlight_options"] = {
+    self.ui.menu.menu_items.highlight_options = {
         text = _("Highlight options"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
