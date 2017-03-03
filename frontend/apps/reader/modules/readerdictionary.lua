@@ -24,7 +24,7 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["dictionary_lookup"] = {
+    self.ui.menu.menu_items.dictionary_lookup = {
         text = _("Dictionary lookup"),
         tap_input = {
             title = _("Enter a word to look up"),

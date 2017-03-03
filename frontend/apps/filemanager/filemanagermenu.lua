@@ -21,21 +21,23 @@ local FileManagerMenu = InputContainer:extend{
 }
 
 function FileManagerMenu:init()
-    self.menu_items["KOMenu:menu_buttons"] = {
-        -- top menu
-    }
-    -- items in top menu
-    self.menu_items["setting"] = {
-        icon = "resources/icons/appbar.settings.png",
-    }
-    self.menu_items["tools"] = {
-        icon = "resources/icons/appbar.tools.png",
-    }
-    self.menu_items["search"] = {
-        icon = "resources/icons/appbar.magnify.browse.png",
-    }
-    self.menu_items["main"] = {
-        icon = "resources/icons/menu-icon.png",
+    self.menu_items = {
+        ["KOMenu:menu_buttons"] = {
+            -- top menu
+        },
+        -- items in top menu
+        setting = {
+            icon = "resources/icons/appbar.settings.png",
+        },
+        tools = {
+            icon = "resources/icons/appbar.tools.png",
+        },
+        search = {
+            icon = "resources/icons/appbar.magnify.browse.png",
+        },
+        main = {
+            icon = "resources/icons/menu-icon.png",
+        },
     }
 
     self.registered_widgets = {}
@@ -69,18 +71,18 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- setting tab
-    self.menu_items["show_hidden_files"] = {
+    self.menu_items.show_hidden_files = {
         text = _("Show hidden files"),
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
     }
-    self.menu_items["sort_by"] = self.ui:getSortingMenuTable()
-    self.menu_items["reverse_sorting"] = {
+    self.menu_items.sort_by = self.ui:getSortingMenuTable()
+    self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),
         checked_func = function() return self.ui.file_chooser.reverse_collate end,
         callback = function() self.ui:toggleReverseCollate() end
     }
-    self.menu_items["start_with_last_opened_file"] = {
+    self.menu_items.start_with_last_opened_file = {
         text = _("Start with last opened file"),
         checked_func = function() return
             G_reader_settings:readSetting("open_last")
@@ -95,7 +97,7 @@ function FileManagerMenu:setUpdateItemTable()
         end
     }
     if Device.isKobo() then
-        self.menu_items["screensaver"] = {
+        self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
                 {
@@ -157,7 +159,7 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- tools tab
-    self.menu_items["advanced_settings"] = {
+    self.menu_items.advanced_settings = {
         text = _("Advanced settings"),
         callback = function()
             SetDefaults:ConfirmEdit()
@@ -166,7 +168,7 @@ function FileManagerMenu:setUpdateItemTable()
             SetDefaults:ConfirmSave()
         end,
     }
-    self.menu_items["opds_catalog"] = {
+    self.menu_items.opds_catalog = {
         text = _("OPDS catalog"),
         callback = function()
             local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
@@ -178,7 +180,7 @@ function FileManagerMenu:setUpdateItemTable()
             OPDSCatalog:showCatalog()
         end,
     }
-    self.menu_items["developer_options"] = {
+    self.menu_items.developer_options = {
         text = _("Developer options"),
         sub_item_table = {
             {
@@ -208,7 +210,7 @@ function FileManagerMenu:setUpdateItemTable()
             },
         }
     }
-    self.menu_items["cloud_storage"] = {
+    self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
             local cloud_storage = CloudStorage:new{}
@@ -222,14 +224,14 @@ function FileManagerMenu:setUpdateItemTable()
     }
 
     -- search tab
-    self.menu_items["find_book_in_calibre_catalog"] = {
+    self.menu_items.find_book_in_calibre_catalog = {
         text = _("Find a book in calibre catalog"),
         callback = function()
             Search:getCalibre()
             Search:ShowSearch()
         end
     }
-    self.menu_items["find_file"] = {
+    self.menu_items.find_file = {
         text = _("Find a file"),
         callback = function()
             FileSearcher:init(self.ui.file_chooser.path)
@@ -237,7 +239,7 @@ function FileManagerMenu:setUpdateItemTable()
     }
 
     -- main menu tab
-    self.menu_items["open_last_document"] = {
+    self.menu_items.open_last_document = {
         text = _("Open last document"),
         callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
@@ -257,7 +259,7 @@ function FileManagerMenu:setUpdateItemTable()
     for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
         self.menu_items[id] = common_setting
     end
-    self.menu_items["exit"] = {
+    self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
             if SetDefaults.settings_changed then

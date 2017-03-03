@@ -310,7 +310,7 @@ end
 
 function ReaderZooming:addToMainMenu(tab_item_table)
     if self.ui.document.info.has_pages then
-        self.ui.menu.menu_items["switch_zoom_mode"] = {
+        self.ui.menu.menu_items.switch_zoom_mode = {
             text = _("Switch zoom mode"),
             enabled_func = function()
                 return self.ui.document.configurable.text_wrap ~= 1

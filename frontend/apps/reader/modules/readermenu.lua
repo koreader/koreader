@@ -14,46 +14,48 @@ local ReaderMenu = InputContainer:new{
 }
 
 function ReaderMenu:init()
-    self.menu_items["KOMenu:menu_buttons"] = {
-        -- top menu
-    }
-    -- items in top menu
-    self.menu_items["navi"] = {
-        icon = "resources/icons/appbar.page.corner.bookmark.png",
-    }
-    self.menu_items["typeset"] = {
-        icon = "resources/icons/appbar.page.text.png",
-    }
-    self.menu_items["setting"] = {
-        icon = "resources/icons/appbar.settings.png",
-    }
-    self.menu_items["tools"] = {
-        icon = "resources/icons/appbar.tools.png",
-    }
-    self.menu_items["search"] = {
-        icon = "resources/icons/appbar.magnify.browse.png",
-    }
-    self.menu_items["filemanager"] = {
-        icon = "resources/icons/appbar.cabinet.files.png",
-        remember = false,
-        callback = function()
-            self:onTapCloseMenu()
-            self.ui:onClose()
-            local FileManager = require("apps/filemanager/filemanager")
-            local lastdir = nil
-            local last_file = G_reader_settings:readSetting("lastfile")
-            if last_file then
-                lastdir = last_file:match("(.*)/")
-            end
-            if FileManager.instance then
-                FileManager.instance:reinit(lastdir)
-            else
-                FileManager:showFiles(lastdir)
-            end
-        end,
-    }
-    self.menu_items["main"] = {
-        icon = "resources/icons/menu-icon.png",
+    self.menu_items = {
+        ["KOMenu:menu_buttons"] = {
+            -- top menu
+        },
+        -- items in top menu
+        navi = {
+            icon = "resources/icons/appbar.page.corner.bookmark.png",
+        },
+        typeset = {
+            icon = "resources/icons/appbar.page.text.png",
+        },
+        setting = {
+            icon = "resources/icons/appbar.settings.png",
+        },
+        tools = {
+            icon = "resources/icons/appbar.tools.png",
+        },
+        search = {
+            icon = "resources/icons/appbar.magnify.browse.png",
+        },
+        filemanager = {
+            icon = "resources/icons/appbar.cabinet.files.png",
+            remember = false,
+            callback = function()
+                self:onTapCloseMenu()
+                self.ui:onClose()
+                local FileManager = require("apps/filemanager/filemanager")
+                local lastdir = nil
+                local last_file = G_reader_settings:readSetting("lastfile")
+                if last_file then
+                    lastdir = last_file:match("(.*)/")
+                end
+                if FileManager.instance then
+                    FileManager.instance:reinit(lastdir)
+                else
+                    FileManager:showFiles(lastdir)
+                end
+            end,
+        },
+        main = {
+            icon = "resources/icons/menu-icon.png",
+        }
     }
 
     self.registered_widgets = {}
@@ -103,7 +105,7 @@ function ReaderMenu:setUpdateItemTable()
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
     if self.ui.document.is_djvu then
-        self.menu_items["djvu_render_mode"] = self.view:getRenderModeMenuTable()
+        self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
     if Device:isKobo() and Screensaver:isUsingBookCover() then
@@ -113,7 +115,7 @@ function ReaderMenu:setUpdateItemTable()
         local proportional = function()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
-        self.menu_items["screensaver"] {
+        self.menu_items.screensaver {
             text = _("Screensaver"),
             sub_item_table = {
                 {
@@ -151,7 +153,7 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items[id] = common_setting
     end
 
-    self.menu_items["exit"] = {
+    self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
             self:onTapCloseMenu()

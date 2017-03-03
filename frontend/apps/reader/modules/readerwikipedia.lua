@@ -49,7 +49,7 @@ function ReaderWikipedia:lookupInput()
 end
 
 function ReaderWikipedia:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["wikipedia_lookup"] =  {
+    self.ui.menu.menu_items.wikipedia_lookup =  {
         text = _("Wikipedia lookup"),
         callback = function()
             if NetworkMgr:isOnline() then

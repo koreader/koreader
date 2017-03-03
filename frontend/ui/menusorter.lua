@@ -3,7 +3,6 @@ local DEBUG = require("dbg")
 
 local MenuSorter = {
     menu_table = {},
-    sub_menus = {},
     separator = {
         text = "KOMenu:separator",
     },
@@ -60,7 +59,7 @@ DEBUG(item_table, order)
 end
 
 function MenuSorter:magic(item_table, order)
-    local tmp_menu_table = {}
+    local sub_menus = {}
     -- the actual sorting of menu items
     for order_id, order_item in pairs (order) do
         DEBUG("order_id",order_id)
@@ -79,15 +78,13 @@ function MenuSorter:magic(item_table, order)
 
                 -- this is a submenu, mark it for later
                 if order[order_number_id] then
-                    table.insert(self.sub_menus, order_number_id)
+                    table.insert(sub_menus, order_number_id)
                     self.menu_table[order_id][order_number] = {
                         id = order_number_id,
                         --sub = true,
                     }
                 -- regular, just insert a menu action
                 else
-                    --self.menu_table[order_id] = tmp_menu_table[order_id]
-
                     if order_number_id == "----------------------------" then
                         -- it's a separator
                         self.menu_table[order_id][order_number] = self.separator
@@ -107,8 +104,8 @@ function MenuSorter:magic(item_table, order)
     
     -- now do the submenus
     DEBUG("SUBMENUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUS")
-    DEBUG("self.sub_menus", self.sub_menus)
-    for i,sub_menu in ipairs(self.sub_menus) do
+    DEBUG("self.sub_menus", sub_menus)
+    for i,sub_menu in ipairs(sub_menus) do
         self.sub_menu_position = {}
         self:findById(self.menu_table["KOMenu:menu_buttons"], sub_menu)
         if self.sub_menu_position and self.sub_menu_position.id then
@@ -122,16 +119,19 @@ function MenuSorter:magic(item_table, order)
         self.menu_table["KOMenu:menu_buttons"][i] = self.menu_table["KOMenu:menu_buttons"][i].sub_item_table
     end
     
-    
 end
 
-function MenuSorter:findById(tbl, needle_id, result)
+function MenuSorter:findById(tbl, needle_id)
 
 
 --DEBUG("TBL given",tbl)
     for k,v in pairs(tbl) do
         if #self.sub_menu_position == 1 then
-            break
+            if self.sub_menu_position.id == needle_id then
+                return self.sub_menu_position
+            else
+                self.sub_menu_position = nil
+            end
         end
         --DEBUG("FINDBYID:", needle_id, "current:", k,v)
 
@@ -139,7 +139,7 @@ function MenuSorter:findById(tbl, needle_id, result)
             if v.id == needle_id then
                 DEBUG("FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT ", v.id)
                 self.sub_menu_position = v
-                break
+                return self.sub_menu_position
             elseif type(v) == "table" and v.id then
                 DEBUG("GOING DEEPER", v.id)
                 self:findById(v, needle_id)

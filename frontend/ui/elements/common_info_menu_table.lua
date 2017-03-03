@@ -8,9 +8,9 @@ local common_info = {}
 if Device:isKindle() or Device:isKobo() or Device:isPocketBook()
     or Device:isAndroid() then
     local OTAManager = require("ui/otamanager")
-    common_info["ota_update"] = OTAManager:getOTAMenuTable()
+    common_info.ota_update = OTAManager:getOTAMenuTable()
 end
-common_info["version"] = {
+common_info.version = {
     text = _("Version"),
     callback = function()
         UIManager:show(InfoMessage:new{
@@ -18,7 +18,7 @@ common_info["version"] = {
         })
     end
 }
-common_info["help"] = {
+common_info.help = {
     text = _("Help"),
     callback = function()
         UIManager:show(InfoMessage:new{

@@ -119,7 +119,7 @@ end
 
 function ReaderHyphenation:addToMainMenu(tab_item_table)
     -- insert table to main reader menu
-    self.ui.menu.menu_items["hyphenation"] = {
+    self.ui.menu.menu_items.hyphenation = {
         text = self.hyph_menu_title,
         sub_item_table = self.hyph_table,
     }
