@@ -71,7 +71,7 @@ function EvernoteExporter:migrateClippings()
 end
 
 function EvernoteExporter:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["evernote"] = {
+    self.ui.menu.menu_items.evernote = {
         text = _("Evernote"),
         sub_item_table = {
             {

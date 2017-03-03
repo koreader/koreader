@@ -25,7 +25,7 @@ function ZSync:init()
 end
 
 function ZSync:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["zsync"] = {
+    self.ui.menu.menu_items.zsync = {
         text = _("ZSync"),
         sub_item_table = {
             {

@@ -440,22 +440,19 @@ function TouchMenu:updateItems()
             local item = self.item_table[i]
             -- due to the menu ordering system index can be missing
             if item then
-                if item.text == "KOMenu:separator" then
-                    if c ~= self.perpage then
-                        -- insert split line
-                        table.insert(self.item_group, self.split_line)
-                    end
-                else
-                    local item_tmp = TouchMenuItem:new{
-                        item = item,
-                        menu = self,
-                        dimen = Geom:new{
-                            w = self.item_width,
-                            h = self.item_height,
-                        },
-                        show_parent = self.show_parent,
-                    }
-                    table.insert(self.item_group, item_tmp)
+                local item_tmp = TouchMenuItem:new{
+                    item = item,
+                    menu = self,
+                    dimen = Geom:new{
+                        w = self.item_width,
+                        h = self.item_height,
+                    },
+                    show_parent = self.show_parent,
+                }
+                table.insert(self.item_group, item_tmp)
+                if item.separator and c ~= self.perpage then
+                    -- insert split line
+                    table.insert(self.item_group, self.split_line)
                 end
             end
         else

@@ -80,7 +80,7 @@ function CalibreCompanion:find_calibre_server()
 end
 
 function CalibreCompanion:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["calibre_wireless_connection"] = {
+    self.ui.menu.menu_items.calibre_wireless_connection = {
         text = _("Calibre wireless connection"),
         sub_item_table = {
             {

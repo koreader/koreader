@@ -323,9 +323,9 @@ local option_titles = {
     mem_usage = _("KOReader memory usage"),
 }
 
-function ReaderFooter:addToMainMenu(tab_item_table)
+function ReaderFooter:addToMainMenu(menu_items)
     local sub_items = {}
-    self.ui.menu.menu_items.status_bar = {
+    menu_items.status_bar = {
         text = _("Status bar"),
         sub_item_table = sub_items,
     }
