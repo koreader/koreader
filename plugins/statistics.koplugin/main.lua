@@ -192,7 +192,7 @@ function ReaderStatistics:updateSettings()
 end
 
 function ReaderStatistics:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items["statistics"] = {
+    self.ui.menu.menu_items.statistics = {
         text = _("Statistics"),
         sub_item_table = {
             self:getStatisticEnabledMenuItem(),

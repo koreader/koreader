@@ -16,8 +16,9 @@ describe("Readerfooter module", function()
 
         function tapFooterMenu(menu_tab_items, menu_title)
             local status_bar = MenuSorter:findById(menu_tab_items, "status_bar") or nil
+
             if status_bar then
-                for _, subitem in ipairs(status_bar) do
+                for _, subitem in ipairs(status_bar.sub_item_table) do
                     if subitem.text == menu_title then
                         subitem.callback()
                         return
@@ -171,9 +172,17 @@ describe("Readerfooter module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
-        local fake_menu = {setting = {}}
+        local fake_menu = {
+            ["KOMenu:menu_buttons"] = {},
+            setting = {}
+        }
         local footer = readerui.view.footer
         footer:addToMainMenu(fake_menu)
+        local fake_order = {
+            ["KOMenu:menu_buttons"] = {"setting"},
+            ["setting"] = {"status_bar"},
+        }
+        fake_menu = MenuSorter:sort(fake_menu, fake_order)
         footer:resetLayout()
         footer:updateFooter()
         local timeinfo = footer.textGeneratorMap.time()

@@ -67,7 +67,7 @@ end
 
 function FileManagerMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.tab_item_table)
+        widget:addToMainMenu(self.menu_items)
     end
 
     -- setting tab
