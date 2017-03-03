@@ -47,8 +47,12 @@ function ReadHistory:_indexing(start)
 end
 
 function ReadHistory:_sort()
+    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+    if autoremove_deleted_items_from_history then
+        self:clearMissing()
+    end
     for i = #self.hist, 1, -1 do
-        if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
+        if self.hist[i].file == nil then
             table.remove(self.hist, i)
         end
     end
@@ -120,6 +124,23 @@ function ReadHistory:_init()
     self:_readLegacyHistory()
     self:_sort()
     self:_reduce()
+end
+
+function ReadHistory:clearMissing()
+    for i = #self.hist, 1, -1 do
+        if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
+            table.remove(self.hist, i)
+        end
+    end
+end
+
+function ReadHistory:removeItemByPath(path)
+    for i = #self.hist, 1, -1 do
+        if self.hist[i].file == path then
+            self:removeItem(self.hist[i])
+            break
+        end
+    end
 end
 
 function ReadHistory:removeItem(item)

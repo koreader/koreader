@@ -61,7 +61,12 @@ function BookStatusWidget:init()
     }
     self:getStatisticsSettings()
     if self.settings then
-        self.summary = self.settings:readSetting("summary")
+        self.summary = self.settings:readSetting("summary") or {
+            rating = nil,
+            note = nil,
+            status = "",
+            modified = "",
+        }
     end
 
     self.small_font_face = Font:getFace("ffont", 15)

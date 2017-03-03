@@ -23,11 +23,11 @@ function ReaderMenu:init()
         setting = {
             icon = "resources/icons/appbar.settings.png",
         },
-        info = {
-            icon = "resources/icons/appbar.pokeball.png",
-        },
         plugins = {
             icon = "resources/icons/appbar.tools.png",
+        },
+        search = {
+            icon = "resources/icons/appbar.magnify.browse.png",
         },
         filemanager = {
             icon = "resources/icons/appbar.cabinet.files.png",
@@ -48,17 +48,8 @@ function ReaderMenu:init()
                 end
             end,
         },
-        home = {
-            icon = "resources/icons/appbar.home.png",
-            remember = false,
-            callback = function()
-                self:onTapCloseMenu()
-                UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
-                local FileManager = require("apps/filemanager/filemanager")
-                if FileManager.instance then
-                    FileManager.instance:onClose()
-                end
-            end,
+        main = {
+            icon = "resources/icons/menu-icon.png",
         },
     }
     self.registered_widgets = {}
@@ -114,12 +105,6 @@ function ReaderMenu:setUpdateItemTable()
             self.view:getRenderModeMenuTable())
     end
 
-    -- info tab
-    -- insert common info
-    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
-        table.insert(self.tab_item_table.info, common_setting)
-    end
-
     if Device:isKobo() and Screensaver:isUsingBookCover() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
@@ -158,6 +143,25 @@ function ReaderMenu:setUpdateItemTable()
             }
         })
     end
+
+    -- main menu tab
+    -- insert common info
+    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
+        table.insert(self.tab_item_table.main, common_setting)
+    end
+
+    table.insert(self.tab_item_table.main, {
+        text = _("Exit"),
+        callback = function()
+            self:onTapCloseMenu()
+            UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
+            local FileManager = require("apps/filemanager/filemanager")
+            if FileManager.instance then
+                FileManager.instance:onClose()
+            end
+        end,
+    })
+
 end
 
 function ReaderMenu:onShowReaderMenu()
@@ -180,10 +184,10 @@ function ReaderMenu:onShowReaderMenu()
                 self.tab_item_table.navi,
                 self.tab_item_table.typeset,
                 self.tab_item_table.setting,
-                self.tab_item_table.info,
                 self.tab_item_table.plugins,
+                self.tab_item_table.search,
                 self.tab_item_table.filemanager,
-                self.tab_item_table.home,
+                self.tab_item_table.main,
             },
             show_parent = menu_container,
         }

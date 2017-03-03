@@ -15,7 +15,8 @@ function util.stripePunctuations(text)
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
---[[
+--- Splits a string by a pattern
+--[[--
 Lua doesn't have a string.split() function and most of the time
 you don't really need it because string.gmatch() is enough.
 However string.gmatch() has one significant disadvantage for me:
@@ -26,7 +27,10 @@ this problem.
 Author: Peter Odding
 License: MIT/X11
 Source: http://snippets.luacode.org/snippets/String_splitting_130
---]]
+]]
+----@string str string to split
+----@param pattern the pattern to split against
+----@bool capture
 function util.gsplit(str, pattern, capture)
     pattern = pattern and tostring(pattern) or '%s+'
     if (''):find(pattern) then
@@ -54,7 +58,11 @@ function util.gsplit(str, pattern, capture)
     end)
 end
 
--- https://gist.github.com/jesseadams/791673
+--- Converts seconds to a clock string.
+-- Source: https://gist.github.com/jesseadams/791673
+---- @int seconds number of seconds
+---- @bool withoutSeconds if true 00:00, if false 00:00:00
+---- @treturn string clock string in the form of 00:00 or 00:00:00
 function util.secondsToClock(seconds, withoutSeconds)
     seconds = tonumber(seconds)
     if seconds == 0 or seconds ~= seconds then
@@ -221,6 +229,9 @@ function util.isSplitable(c, next_c, prev_c)
     return false
 end
 
+--- Gets filesystem type of a path
+-- Checks if the path occurs in /proc/mounts
+----@string path an absolute path
 function util.getFilesystemType(path)
     local mounts = io.open("/proc/mounts", "r")
     if not mounts then return nil end

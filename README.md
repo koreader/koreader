@@ -77,9 +77,10 @@ and cross compiling.
 Users of Debian and Ubuntu can install the required packages using:
 ```
 sudo apt-get install build-essential git patch wget unzip \
-gettext autoconf cmake libtool nasm luarocks \
+gettext autoconf automake cmake libtool nasm luarocks \
 libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
+That's all you need to get the emulator up and running with `./kodev build` and `./kodev run`.
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 ```
@@ -139,43 +140,6 @@ cd koreader && ./kodev fetch-thirdparty
 Building, Running and Testing
 =============================
 
-For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
----------------------
-
-To build installable package for Kindle:
-```
-./kodev release kindle
-```
-
-To build installable package for Kobo:
-```
-./kodev release kobo
-```
-
-To build installable package for PocketBook:
-```
-./kodev release pocketbook
-```
-
-To build installable package for Ubuntu Touch
-```
-./kodev release ubuntu-touch
-```
-
-You may checkout our [nightlybuild script][nb-script] to see how to build a
-package from scratch.
-
-For Android devices
--------------------
-
-Make sure the "android" and "ndk-build" tools are in your PATH environment
-variable and the NDK variable points to the root directory of the Android NDK.
-
-Then, run this command to build installable package for Android:
-```
-./kodev release android
-```
-
 For emulating KOReader on Linux, Windows and Mac OSX
 -------------
 
@@ -227,6 +191,42 @@ make KOR_BASE=../koreader-base
 This will be handy if you are developing koreader-base and want to test your
 modifications with kroeader frontend. NOTE: only support relative path for now.
 
+For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
+---------------------
+
+To build installable package for Kindle:
+```
+./kodev release kindle
+```
+
+To build installable package for Kobo:
+```
+./kodev release kobo
+```
+
+To build installable package for PocketBook:
+```
+./kodev release pocketbook
+```
+
+To build installable package for Ubuntu Touch
+```
+./kodev release ubuntu-touch
+```
+
+You may checkout our [nightlybuild script][nb-script] to see how to build a
+package from scratch.
+
+For Android devices
+-------------------
+
+Make sure the "android" and "ndk-build" tools are in your PATH environment
+variable and the NDK variable points to the root directory of the Android NDK.
+
+Then, run this command to build installable package for Android:
+```
+./kodev release android
+```
 
 Translation
 ===========
