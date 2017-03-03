@@ -97,7 +97,8 @@ local ConfirmBox = require("ui/widget/confirmbox")
 
 local function retryLastFile()
     return ConfirmBox:new{
-        text = _("Cannot open last file.\nDo you want to retry?"),
+        text = _("Cannot open last file.\nThis could be because it was deleted or because external " ..
+            "storage is still being mounted.\nDo you want to retry?"),
         ok_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
             if lfs.attributes(last_file, "mode") == "file" then
