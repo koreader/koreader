@@ -6,7 +6,6 @@ local MenuSorter = {
     separator = {
         text = "KOMenu:separator",
     },
-    sub_menu_position,
 }
 
 -- thanks to http://stackoverflow.com/a/4991602/2470572
@@ -106,10 +105,9 @@ function MenuSorter:magic(item_table, order)
     DEBUG("SUBMENUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUS")
     DEBUG("self.sub_menus", sub_menus)
     for i,sub_menu in ipairs(sub_menus) do
-        self.sub_menu_position = {}
-        self:findById(self.menu_table["KOMenu:menu_buttons"], sub_menu)
-        if self.sub_menu_position and self.sub_menu_position.id then
-            self.sub_menu_position.sub_item_table = self.menu_table[sub_menu]
+        local sub_menu_position = self:findById(self.menu_table["KOMenu:menu_buttons"], sub_menu) or nil
+        if sub_menu_position and sub_menu_position.id then
+            sub_menu_position.sub_item_table = self.menu_table[sub_menu]
             self.menu_table[sub_menu] = nil
         end
     end
@@ -122,29 +120,25 @@ function MenuSorter:magic(item_table, order)
 end
 
 function MenuSorter:findById(tbl, needle_id)
+    local items = {}
 
+    for _,item in pairs(tbl) do
+        table.insert(items, item)
+    end
 
---DEBUG("TBL given",tbl)
-    for k,v in pairs(tbl) do
-        if #self.sub_menu_position == 1 then
-            if self.sub_menu_position.id == needle_id then
-                return self.sub_menu_position
-            else
-                self.sub_menu_position = nil
-            end
-        end
-        --DEBUG("FINDBYID:", needle_id, "current:", k,v)
-
+    local k, v
+    k, v = next(items, nil)
+    while k do
         if type(k) == "number" or k == "sub_item_table" then
             if v.id == needle_id then
                 DEBUG("FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT FOUND IT ", v.id)
-                self.sub_menu_position = v
-                return self.sub_menu_position
+                return v
             elseif type(v) == "table" and v.id then
                 DEBUG("GOING DEEPER", v.id)
-                self:findById(v, needle_id)
+                table.insert(items, v)
             end
         end
+        k, v = next(items, k)
     end
 end
 
