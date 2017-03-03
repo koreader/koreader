@@ -77,7 +77,7 @@ table.insert(common_settings, {
 })
 table.insert(common_settings, Language:getLangMenuTable())
 table.insert(common_settings, {
-    text = _("Show advanced options"),
+    text = _("Show advanced options for PDFs"),
     checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
     callback = function()
         local show_advanced = G_reader_settings:readSetting("show_advanced") or false
