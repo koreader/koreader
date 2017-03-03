@@ -271,8 +271,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
                         "has been found. The book associated is ",
                         doc_file)
             return
-        end
-        if not stored.highlight then
+        elseif not stored.highlight then
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
