@@ -203,7 +203,7 @@ function TouchMenuBar:init()
         local icon_sep = LineWidget:new{
             style = k == 1 and "solid" or "none",
             dimen = Geom:new{
-                w = icon_sep_width,
+                w = Screen:scaleBySize(2),
                 h = self.height,
             }
         }
@@ -219,18 +219,6 @@ function TouchMenuBar:init()
             for i, sep in ipairs(self.icon_seps) do
                 local current_icon = i == k - 1 or i == k
                 self.icon_seps[i].style = current_icon and "solid" or "none"
-
-                -- if this is the before last seperator then extend it to put the last icon on the right
-                if i == #self.icon_seps - 1 then
-                    self.icon_seps[i].dimen = Geom:new{
-                        -- self.width is the screen width
-                        -- content_width is the width of the icons
-                        -- (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons *2) is the combined width of spacing/separators
-                        -- icon_sep_width is the standard icon separator width
-                        w = self.width - content_width - (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons *2) + icon_sep_width,
-                        h = self.height,
-                    }
-                end
             end
             self.menu:switchMenuTab(k)
         end
