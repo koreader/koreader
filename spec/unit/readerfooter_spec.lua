@@ -14,8 +14,8 @@ describe("Readerfooter module", function()
         purgeDir = require("ffi/util").purgeDir
         Screen = require("device").screen
 
-        function tapFooterMenu(menu_tab_items, menu_title)
-            local status_bar = MenuSorter:findById(menu_tab_items, "status_bar") or nil
+        function tapFooterMenu(menu_items, menu_title)
+            local status_bar = menu_items.status_bar
 
             if status_bar then
                 for _, subitem in ipairs(status_bar.sub_item_table) do
@@ -172,17 +172,9 @@ describe("Readerfooter module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
-        local fake_menu = {
-            ["KOMenu:menu_buttons"] = {},
-            setting = {}
-        }
+        local fake_menu = {setting = {}}
         local footer = readerui.view.footer
         footer:addToMainMenu(fake_menu)
-        local fake_order = {
-            ["KOMenu:menu_buttons"] = {"setting"},
-            ["setting"] = {"status_bar"},
-        }
-        fake_menu = MenuSorter:sort(fake_menu, fake_order)
         footer:resetLayout()
         footer:updateFooter()
         local timeinfo = footer.textGeneratorMap.time()
@@ -462,17 +454,16 @@ describe("Readerfooter module", function()
         footer:addToMainMenu(fake_menu)
 
         local has_toggle_menu = false
-        for _, item in ipairs(fake_menu.setting) do
-            if item.text == "Status bar" then
-                for _, subitem in ipairs(item.sub_item_table) do
-                    if subitem.text == 'Toggle mode' then
-                        has_toggle_menu = true
-                        break
-                    end
+
+        if fake_menu.status_bar then
+            for _, subitem in ipairs(fake_menu.status_bar.sub_item_table) do
+                if subitem.text == 'Toggle mode' then
+                    has_toggle_menu = true
+                    break
                 end
-                break
             end
         end
+
         assert.is.truthy(has_toggle_menu)
 
         assert.is.same(1, footer.mode)
