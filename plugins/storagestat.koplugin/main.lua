@@ -50,7 +50,7 @@ function StorageStat:init()
 end
 
 function StorageStat:addToMainMenu(menu_items)
-    menu_items.storagestat = self.menuItem
+    menu_items.storage_stat = self.menuItem
 end
 
 return StorageStat
