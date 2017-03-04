@@ -10,6 +10,7 @@ local _ = require("gettext")
 
 local MenuSorter = {
     menu_table = {},
+    orphaned_prefix = _("NEW: "),
     separator = {
         id = "----------------------------",
         text = "KOMenu:separator",
@@ -171,7 +172,8 @@ function MenuSorter:magic(item_table, order)
     DEBUG(k)
         -- normally there should be menu text but check to be sure
         if v.text and v.new ~= true then
-            v.text = _("NEW: ") .. v.text
+            v.id = k
+            v.text = self.orphaned_prefix .. v.text
             -- prevent text being prepended to item on menu reload, i.e., on switching between reader and filemanager
             v.new = true
         end
