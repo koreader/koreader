@@ -49,8 +49,8 @@ function StorageStat:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function StorageStat:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.storagestat = self.menuItem
+function StorageStat:addToMainMenu(menu_items)
+    menu_items.storagestat = self.menuItem
 end
 
 return StorageStat

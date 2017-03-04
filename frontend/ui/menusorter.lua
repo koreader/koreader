@@ -170,8 +170,10 @@ function MenuSorter:magic(item_table, order)
     for k,v in pairs(item_table) do
     DEBUG(k)
         -- normally there should be menu text but check to be sure
-        if v.text then
+        if v.text and v.new ~= true then
             v.text = _("NEW: ") .. v.text
+            -- prevent text being prepended to item on menu reload, i.e., on switching between reader and filemanager
+            v.new = true
         end
         table.insert(self.menu_table["KOMenu:menu_buttons"][1], v)
     end

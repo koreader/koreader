@@ -191,8 +191,8 @@ function ReaderStatistics:updateSettings()
     UIManager:show(self.settings_dialog)
 end
 
-function ReaderStatistics:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.statistics = {
+function ReaderStatistics:addToMainMenu(menu_items)
+    menu_items.statistics = {
         text = _("Statistics"),
         sub_item_table = {
             self:getStatisticEnabledMenuItem(),

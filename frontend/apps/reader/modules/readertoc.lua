@@ -434,9 +434,9 @@ function ReaderToc:collapseToc(index)
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
-function ReaderToc:addToMainMenu(tab_item_table)
+function ReaderToc:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    self.ui.menu.menu_items.table_of_contents = {
+    menu_items.table_of_contents = {
         text = self.toc_menu_title,
         callback = function()
             self:onShowToc()

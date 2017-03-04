@@ -13,8 +13,8 @@ function ReaderSearch:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderSearch:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.fulltext_search = {
+function ReaderSearch:addToMainMenu(menu_items)
+    menu_items.fulltext_search = {
         text = _("Fulltext search"),
         tap_input = {
             title = _("Input text to search for"),

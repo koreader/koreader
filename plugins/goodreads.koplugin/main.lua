@@ -22,8 +22,8 @@ function Goodreads:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function Goodreads:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.goodreads = {
+function Goodreads:addToMainMenu(menu_items)
+    menu_items.goodreads = {
         text = _("Goodreads"),
         sub_item_table = {
             {

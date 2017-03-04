@@ -43,9 +43,9 @@ function ReaderBookmark:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderBookmark:addToMainMenu(tab_item_table)
+function ReaderBookmark:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    self.ui.menu.menu_items.bookmarks = {
+    menu_items.bookmarks = {
         text = self.bm_menu_title,
         callback = function()
             self:onShowBookmark()

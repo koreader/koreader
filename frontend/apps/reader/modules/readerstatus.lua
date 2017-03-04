@@ -32,8 +32,8 @@ function ReaderStatus:init()
     end
 end
 
-function ReaderStatus:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.book_status = {
+function ReaderStatus:addToMainMenu(menu_items)
+    menu_items.book_status = {
         text = _("Book status"),
         callback = function()
             self:showStatus()

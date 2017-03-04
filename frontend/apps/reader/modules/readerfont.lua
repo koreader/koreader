@@ -223,9 +223,9 @@ function ReaderFont:makeDefault(face)
     end
 end
 
-function ReaderFont:addToMainMenu(tab_item_table)
+function ReaderFont:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    self.ui.menu.menu_items.change_font = {
+    menu_items.change_font = {
         text = self.font_menu_title,
         sub_item_table = self.face_table,
     }
