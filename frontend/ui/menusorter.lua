@@ -151,7 +151,18 @@ function MenuSorter:magic(item_table, order)
     for i,top_menu in ipairs(self.menu_table["KOMenu:menu_buttons"]) do
         self.menu_table["KOMenu:menu_buttons"][i] = self.menu_table["KOMenu:menu_buttons"][i].sub_item_table
     end
-    
+
+    -- handle disabled
+    DEBUG("MenuSorter: order.KOMenu_disabled", order.KOMenu_disabled)
+    if order.KOMenu__disabled then
+        for _,item in ipairs(order.KOMenu_disabled) do
+            if item_table[item] then
+                -- remove reference from input so it won't show up as orphaned
+                item_table[item] = nil
+            end
+        end
+    end
+
     -- remove top level reference before orphan handling
     item_table["KOMenu:menu_buttons"] = nil
         --attach orphans based on menu_hint
