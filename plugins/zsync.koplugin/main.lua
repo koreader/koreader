@@ -24,8 +24,8 @@ function ZSync:init()
     self.client_config = self.path.."/client.cfg"
 end
 
-function ZSync:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.zsync = {
+function ZSync:addToMainMenu(menu_items)
+    menu_items.zsync = {
         text = _("ZSync"),
         sub_item_table = {
             {

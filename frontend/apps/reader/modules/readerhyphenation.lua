@@ -117,9 +117,9 @@ function ReaderHyphenation:onSaveSettings()
     self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
 end
 
-function ReaderHyphenation:addToMainMenu(tab_item_table)
+function ReaderHyphenation:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    self.ui.menu.menu_items.hyphenation = {
+    menu_items.hyphenation = {
         text = self.hyph_menu_title,
         sub_item_table = self.hyph_table,
     }

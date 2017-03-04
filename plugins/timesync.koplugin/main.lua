@@ -70,8 +70,8 @@ function TimeSync:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function TimeSync:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.synchronize_time = menuItem
+function TimeSync:addToMainMenu(menu_items)
+    menu_items.synchronize_time = menuItem
 end
 
 return TimeSync

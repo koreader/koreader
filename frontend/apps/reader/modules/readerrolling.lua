@@ -238,7 +238,7 @@ function ReaderRolling:getLastProgress()
     return self.xpointer
 end
 
-function ReaderRolling:addToMainMenu(tab_item_table)
+function ReaderRolling:addToMainMenu(menu_items)
     -- FIXME: repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
@@ -258,7 +258,7 @@ function ReaderRolling:addToMainMenu(tab_item_table)
     for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
         table.insert(page_overlap_menu, menu_entry)
     end
-    self.ui.menu.menu_items.page_overlap = {
+    menu_items.page_overlap = {
         text = _("Page overlap"),
         enabled_func = function() return self.view.view_mode ~= "page" end,
         sub_item_table = page_overlap_menu,

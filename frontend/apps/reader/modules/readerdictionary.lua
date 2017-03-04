@@ -23,8 +23,8 @@ function ReaderDictionary:init()
         DataStorage:getDataDir() .. "/data/dict"
 end
 
-function ReaderDictionary:addToMainMenu(tab_item_table)
-    self.ui.menu.menu_items.dictionary_lookup = {
+function ReaderDictionary:addToMainMenu(menu_items)
+    menu_items.dictionary_lookup = {
         text = _("Dictionary lookup"),
         tap_input = {
             title = _("Enter a word to look up"),
