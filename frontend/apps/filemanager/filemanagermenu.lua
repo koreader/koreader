@@ -239,6 +239,9 @@ function FileManagerMenu:setUpdateItemTable()
     -- insert common info
     table.insert(self.tab_item_table.main, {
         text = _("Open last document"),
+        enabled_func = function()
+            return G_reader_settings:readSetting("lastfile") ~= nil
+        end,
         callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
             if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
