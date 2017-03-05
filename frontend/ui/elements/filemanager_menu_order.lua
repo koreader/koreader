@@ -24,8 +24,6 @@ local order = {
         "save_document",
         "----------------------------",
         "language",
-        "----------------------------",
-        "show_advanced_options",
         -- end common settings
     },
     tools = {

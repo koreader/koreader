@@ -40,7 +40,6 @@ local order = {
         "----------------------------",
         "djvu_render_mode",
         "status_bar",
-        "show_advanced_options",
     },
     tools = {
         "calibre_wireless_connection",
