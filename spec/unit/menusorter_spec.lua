@@ -86,4 +86,7 @@ describe("MenuSorter module", function()
     it("should compress menus when items from order are missing", function()
 
     end)
+    it("should allow for attaching menu items multiple times", function()
+
+    end)
 end)
