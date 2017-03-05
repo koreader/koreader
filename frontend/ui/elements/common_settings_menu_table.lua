@@ -76,15 +76,5 @@ common_settings.save_document = {
     },
 }
 common_settings.language = Language:getLangMenuTable()
-common_settings.show_advanced_options = {
-    text = _("Show advanced options"),
-    checked_func = function() return G_reader_settings:readSetting("show_advanced") end,
-    callback = function()
-        local show_advanced = G_reader_settings:readSetting("show_advanced") or false
-        G_reader_settings:saveSetting("show_advanced", not show_advanced)
-    end
-}
-
-
 
 return common_settings

@@ -163,7 +163,9 @@ function ConfigOption:init()
     table.insert(vertical_group, VerticalSpan:new{
         width = Screen:scaleBySize(default_option_padding),
     })
-    local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+    -- @TODO restore setting when there are more advanced settings
+    --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+    local show_advanced = true
     for c = 1, #self.options do
         local show_default = not self.options[c].advanced or show_advanced
         if self.options[c].show ~= false and show_default then
