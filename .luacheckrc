@@ -98,3 +98,6 @@ read_globals = {
 exclude_files = {
     "frontend/luxl.lua",
 }
+
+-- TODO: clean up and enforce max line width (631)
+ignore = {"631"}
