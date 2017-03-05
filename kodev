@@ -12,7 +12,7 @@ function assert_ret_zero {
 }
 
 function check_submodules {
-    [ -n "`git submodule status | grep -E '^\-'`" ] && kodev-fetch-thirdparty
+    [ -n "$(git submodule status | grep -E '^\-')" ] && kodev-fetch-thirdparty
 }
 
 function setup_env {
@@ -79,8 +79,8 @@ ${SUPPORTED_TARGETS}"
             make TARGET=kindle-legacy; assert_ret_zero $? ;;
         android)
             [[ -n ${NDK+x} ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
-            [ -e ${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc ] || { \
-                { [ -e ${NDK} ] || make -C ${CURDIR}/base/toolchain android-ndk; }; \
+            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || { \
+                { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }; \
                 make android-toolchain; assert_ret_zero $?; \
             }
             echo "Using NDK: ${NDK}..."
@@ -182,9 +182,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
             kodev-build android
             export PATH=$PATH:${CURDIR}/base/toolchain/android-sdk-linux/tools
             which android &> /dev/null || { \
-                make -C ${CURDIR}/base/toolchain android-sdk; \
+                make -C "${CURDIR}/base/toolchain" android-sdk; \
             }
-            export ANDROID_HOME=`dirname $(dirname $(which android))`
+            ANDROID_HOME=$(dirname "$(dirname "$(which android)")")
+            export ANDROID_HOME
             export PATH=$PATH:${NDK}
             make TARGET=android update ;;
         pocketbook)
@@ -310,8 +311,8 @@ OPTIONS:
             test_path="${test_path}/$2"
         fi
 
-        echo "Runing tests in" ${test_path}
-        busted --lua="./luajit" ${opts} \
+        echo "Running tests in" "${test_path}"
+        busted --lua="./luajit" "${opts}" \
             --no-auto-insulate \
             --lazy \
             -o "./spec/$1/unit/verbose_print" \
@@ -363,7 +364,7 @@ case $1 in
     activate)
         echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"
-        eval "$(luarocks path bin)"
+        eval "$(luarocks path --bin)"
         exec "${SHELL}" ;;
     fetch-thirdparty)
         kodev-fetch-thirdparty ;;
