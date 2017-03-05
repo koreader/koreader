@@ -438,22 +438,19 @@ function TouchMenu:updateItems()
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
             local item = self.item_table[i]
-            -- due to the menu ordering system index can be missing
-            if item then
-                local item_tmp = TouchMenuItem:new{
-                    item = item,
-                    menu = self,
-                    dimen = Geom:new{
-                        w = self.item_width,
-                        h = self.item_height,
-                    },
-                    show_parent = self.show_parent,
-                }
-                table.insert(self.item_group, item_tmp)
-                if item.separator and c ~= self.perpage then
-                    -- insert split line
-                    table.insert(self.item_group, self.split_line)
-                end
+            local item_tmp = TouchMenuItem:new{
+                item = item,
+                menu = self,
+                dimen = Geom:new{
+                    w = self.item_width,
+                    h = self.item_height,
+                },
+                show_parent = self.show_parent,
+            }
+            table.insert(self.item_group, item_tmp)
+            if item.separator and c ~= self.perpage then
+                -- insert split line
+                table.insert(self.item_group, self.split_line)
             end
         else
             -- item not enough to fill the whole page, break out of loop
