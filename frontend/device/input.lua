@@ -62,6 +62,8 @@ an interface to get input events
 local Input = {
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
+    -- adapters are post processing functions that transform a given event to another event
+    event_map_adapter = {},
 
     group = {
         Cursor = { "Up", "Down", "Left", "Right" },
@@ -266,8 +268,8 @@ function Input:handleKeyBoardEv(ev)
         return
     end
 
-    if type(keycode) == "function" then
-        return keycode(ev)
+    if self.event_map_adapter[keycode] then
+        return self.event_map_adapter[keycode](ev)
     end
 
     -- take device rotation into account
