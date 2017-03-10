@@ -506,7 +506,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     local parsed = url.parse(remote_url)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local _, c, _ = httpRequest{
+    local __, c, __ = httpRequest{
         url = remote_url,
         headers = self:getAuthorizationHeader(parsed.host),
         sink = ltn12.sink.file(io.open(local_path, "w")),
