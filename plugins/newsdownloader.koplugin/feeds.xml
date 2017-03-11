@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feeds>
-	<feed>http://www.pcworld.com/index.rss</feed>
-	<feed>http://rss.cnn.com/rss/edition_world.rss</feed>
+	<feed limit="0">http://www.pcworld.com/index.rss</feed>
+	<feed limit="5">http://rss.cnn.com/rss/edition_world.rss</feed>
 </feeds>

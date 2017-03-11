@@ -4,11 +4,7 @@ local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
-
-
-require("lib/xml")
-require("lib/handler")
-
+  
 local config = require('newsConfig');
 
 
@@ -41,7 +37,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 text = _("Help"),
                 callback = function()
                         UIManager:show(InfoMessage:new{
-                            text = _("Script uses config from feed.xml to download feeds to Koreader/News directory"),
+                            text = _("Script uses config from " .. self:getNewsDirPath() .. config.FEED_FILE_NAME .. " to download feeds to " .. self:getNewsDirPath() .. " directory"),
                         })
                 end,
             },
@@ -52,22 +48,31 @@ end
 function NewsDownloader:loadNewsSources()
     UIManager:show(InfoMessage:new{
           text = _("Loading data.") ,
-          timeout = 2,
+          timeout = 1,
     })
     local feedfileName = self:getFeedXmlPath();
 
     local feedSources = self:deserializeXML(feedfileName);
 
-    for index, url in pairs(feedSources.feeds.feed) do
-        UIManager:show(InfoMessage:new{
+    for index, data in pairs(feedSources.feeds.feed) do
+    	local url = data[1];
+    	UIManager:show(InfoMessage:new{
               text = _("Processing: ") .. url,
               timeout = 3,
-          })
+        });
+        
+    	local limitString = data._attr.limit;
+    	local limit;
+    	if limitString then
+    		limit = tonumber(limitString);
+    	end 
+    	
+        
         local nameSuffix = config.FEED_SOURCE_SUFFIX;
         local newsDirPath = self:getNewsDirPath();
         local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
 
-        self:processFeedSource(url, newsSourceFilePath);
+        self:processFeedSource(url, newsSourceFilePath, limit);
     end
 
     UIManager:show(InfoMessage:new{
@@ -88,11 +93,16 @@ function NewsDownloader:getNewsDirPath()
 	local baseDirPath = DataStorage:getDataDir() 
 	local newsDirName = config.NEWS_DOWNLOAD_DIR;
 	local newsDirPath = baseDirPath .. newsDirName;
-	DEBUG(newsDirPath);
 	return newsDirPath;
 end
 
 function NewsDownloader:deserializeXML(filename)
+  -- uses LuaXML https://github.com/manoelcampos/LuaXML
+  -- The MIT License (MIT)
+  -- Copyright (c) 2016 Manoel Campos da Silva Filho
+  require("lib/xml")
+  require("lib/handler")
+
   DEBUG("filename to deserialize: ", filename)
   local xmltext = ""
   local f, e = io.open(filename, "r")
@@ -109,18 +119,21 @@ function NewsDownloader:deserializeXML(filename)
   --Instantiate the object that parses the XML to a Lua table
   local xmlparser = xmlParser(xmlhandler)
   xmlparser:parse(xmltext)
-
+  
   return xmlhandler.root;
 end
 
 
 
-function NewsDownloader:processFeedSource(url,feedSource)
+function NewsDownloader:processFeedSource(url,feedSource, limit)
 
    self:download(url,feedSource)
    local feeds = self:deserializeXML(feedSource);
 
    for index, feed in pairs(feeds.rss.channel.item) do
+   		if limit > 0 and limit < index then
+   			break;
+   		end 
         local util = require("frontend/util");
         local title = util.replaceInvalidChars(feed.title);
 		local newsFilePath = self:getNewsDirPath() .. title .. config.FILE_EXTENSION;
