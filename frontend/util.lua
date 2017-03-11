@@ -260,7 +260,7 @@ function util.replaceInvalidChars(str)
 end
 
 function util.replaceSlashChar(str)
-    return str:gsub('%/','_')
+    return str:gsub('%/','_'):gsub("([\224-\244]+)",'_')
 end
 
 -- Split a file into its path and name

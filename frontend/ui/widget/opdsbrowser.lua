@@ -504,9 +504,9 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     logger.dbg("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
-    http.TIMEOUT, https.TIMEOUT = 10, 10
+    http.TIMEOUT, https.TIMEOUT = 20, 20
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local __, c, __ = httpRequest{
+    local _, c, _ = httpRequest{
         url = remote_url,
         headers = self:getAuthorizationHeader(parsed.host),
         sink = ltn12.sink.file(io.open(local_path, "w")),
@@ -518,6 +518,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             self.file_downloaded_callback(local_path)
         end
     else
+        local _ = require("gettext")
         UIManager:show(InfoMessage:new{
             text = _("Could not save file to:\n") .. local_path,
             timeout = 3,
