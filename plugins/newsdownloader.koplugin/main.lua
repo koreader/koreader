@@ -31,8 +31,9 @@ function NewsDownloader:addToMainMenu(tab_item_table)
             {
                 text = _("Clean news folder"),
                 callback = function()
+                		self:clearNewsDir();
                         UIManager:show(InfoMessage:new{
-                            text = _("Not implemented yet."),
+                            text = _("Cleared news directory.")
                         })
                 end,
             },
@@ -138,8 +139,31 @@ function NewsDownloader:download(url,outputFilename)
         sink = file,
     }
 end
+                
+function NewsDownloader:clearNewsDir() 
+	local newsDir = self:getNewsDirPath();
+	self:removeAllExceptFeedConfig(newsDir);
+end
 
 
-
+function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
+	local ffi = require("ffi");
+	
+	require("ffi/zeromq_h")
+	    for f in lfs.dir(dir) do
+			local feedConfigFile = config.FEED_FILE_NAME;
+			
+	        local path = dir.."/"..f
+	        local mode = lfs.attributes(path, "mode")
+	        if mode == "file" and f ~= feedConfigFile then
+	            ffi.C.remove(path)
+	        elseif mode == "directory" and f ~= "." and f ~= ".." then
+	            self:removeAllExceptFeedConfig(path, true)
+	        end
+	    end
+    if rmdir then
+        ffi.C.rmdir(dir)
+    end
+end
 
 return NewsDownloader
