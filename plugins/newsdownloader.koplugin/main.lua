@@ -2,7 +2,9 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
+local DataStorage = require("datastorage")
 local _ = require("gettext")
+
 
 require("lib/xml")
 require("lib/handler")
@@ -61,28 +63,32 @@ function NewsDownloader:loadNewsSources()
               timeout = 3,
           })
         local nameSuffix = config.FEED_SOURCE_SUFFIX;
-        local dirprefix = config.NEWS_DOWNLOAD_DIR
-        local filename = dirprefix .. index .. nameSuffix;
+        local newsDirPath = self:getNewsDirPath();
+        local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
 
-        self:processFeedSource(url, filename)
+        self:processFeedSource(url, newsSourceFilePath);
     end
 
     UIManager:show(InfoMessage:new{
-      text = _("Downloading News Finished"),
-      timeout = 2,
+      text = _("Downloading News Finished")
     })
 
 end
 
 function NewsDownloader:getFeedXmlPath()
-
+	local newsDirPath = self:getNewsDirPath();
     local feedfileName = config.FEED_FILE_NAME;
-    return self:script_path() .. feedfileName;
+    local feedXmlPath = newsDirPath.. feedfileName;
+    DEBUG(feedXmlPath);
+    return feedXmlPath;
 end
 
-function NewsDownloader:script_path()
-   local str = debug.getinfo(2, "S").source:sub(2)
-   return str:match("(.*/)")
+function NewsDownloader:getNewsDirPath() 
+	local baseDirPath = DataStorage:getDataDir() 
+	local newsDirName = config.NEWS_DOWNLOAD_DIR;
+	local newsDirPath = baseDirPath .. newsDirName;
+	DEBUG(newsDirPath);
+	return newsDirPath;
 end
 
 function NewsDownloader:deserializeXML(filename)
@@ -108,18 +114,17 @@ end
 
 
 
-function NewsDownloader:processFeedSource(url,filename)
+function NewsDownloader:processFeedSource(url,feedSource)
 
-   self:download(url,filename)
-   local feeds = self:deserializeXML(filename);
+   self:download(url,feedSource)
+   local feeds = self:deserializeXML(feedSource);
 
    for index, feed in pairs(feeds.rss.channel.item) do
-        local util = require("frontend/util")
-        local title = util.replaceInvalidChars(feed.title)
-
-        title = config.NEWS_DOWNLOAD_DIR ..title .. config.FILE_EXTENSION;
-        DEBUG(title)
-        self:download(feed.link, title)
+        local util = require("frontend/util");
+        local title = util.replaceInvalidChars(feed.title);
+		local newsFilePath = self:getNewsDirPath() .. title .. config.FILE_EXTENSION;
+        DEBUG(newsFilePath)
+        self:download(feed.link, newsFilePath)
     end
 end
 
@@ -133,6 +138,8 @@ function NewsDownloader:download(url,outputFilename)
         sink = file,
     }
 end
+
+
 
 
 return NewsDownloader
