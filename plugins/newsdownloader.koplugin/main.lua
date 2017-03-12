@@ -4,6 +4,7 @@ local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
+local FileManager = require("apps/filemanager/filemanager")
   
 local config = require('newsConfig');
 
@@ -12,6 +13,7 @@ local NewsDownloader = InputContainer:new{}
 
 
 function NewsDownloader:init()
+	lfs.mkdir(self:getNewsDirPath());
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -22,7 +24,13 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadNewsSources() end,
+                callback = function() self:loadNewsSources(); end,
+            },
+                        {
+                text = _("Go to news folder"),
+                callback = function()
+                		 FileManager:showFiles(self:getNewsDirPath());
+                end,
             },
             {
                 text = _("Clean news folder"),
