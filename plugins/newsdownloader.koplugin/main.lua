@@ -17,6 +17,7 @@ function NewsDownloader:init()
     
     local util = require("turbo.util");
     local feedXmlFilePath = self:getFeedXmlPath();
+    
     if not util.file_exists(feedXmlFilePath) then
       DEBUG("Creating init configuration");
       local newsDir = self:getNewsDirPath();
@@ -44,11 +45,11 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 end,
             },
             {
-                text = _("Clean news folder"),
+                text = _("Remove news"),
                 callback = function()
                 		self:clearNewsDir();
                         UIManager:show(InfoMessage:new{
-                            text = _("Cleared news directory.")
+                            text = _("News removed.")
                         })
                 end,
             },
@@ -56,7 +57,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 text = _("Help"),
                 callback = function()
                         UIManager:show(InfoMessage:new{
-                            text = _("Script uses config from " .. self:getNewsDirPath() .. config.FEED_FILE_NAME .. " to download feeds to " .. self:getNewsDirPath() .. " directory"),
+                            text = _("Script uses config from " .. self:getNewsDirPath() .. config.FEED_FILE_NAME .. " to download feeds to " .. self:getNewsDirPath() .. " directory."),
                         })
                 end,
             },
@@ -70,7 +71,6 @@ function NewsDownloader:loadNewsSources()
           timeout = 1,
     })
     local feedfileName = self:getFeedXmlPath();
-
     local feedSources = self:deserializeXML(feedfileName);
 
     for index, data in pairs(feedSources.feeds.feed) do
@@ -91,11 +91,12 @@ function NewsDownloader:loadNewsSources()
       local newsDirPath = self:getNewsDirPath();
       local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
 
+
       self:processFeedSource(url, newsSourceFilePath, limit);
     end
 
     UIManager:show(InfoMessage:new{
-      text = _("Downloading News Finished")
+      text = _("Downloading News Finished.")
     })
 
 end
@@ -148,15 +149,20 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
 
    self:download(url,feedSource)
    local feeds = self:deserializeXML(feedSource);
-
+   
+   local util = require("frontend/util");
+   local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/";
+   local feedDirPath = self:getNewsDirPath() .. feedDir;
+   lfs.mkdir(feedDirPath);
+      
    for index, feed in pairs(feeds.rss.channel.item) do
    		if limit > 0 and limit < index then
    			break;
    		end 
-      
-      local util = require("frontend/util");
+   		
       local title = util.replaceInvalidChars(feed.title);
-		  local newsFilePath = self:getNewsDirPath() .. title .. config.FILE_EXTENSION;
+      
+		  local newsFilePath = feedDirPath .. title .. config.FILE_EXTENSION;
       DEBUG(newsFilePath)
       self:download(feed.link, newsFilePath)
     end
