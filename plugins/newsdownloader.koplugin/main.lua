@@ -5,7 +5,7 @@ local DEBUG = require("dbg")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
 local FileManager = require("apps/filemanager/filemanager")
-  
+
 local config = require('newsConfig');
 
 
@@ -36,7 +36,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadNewsSources(); end,
+                callback = function() self:loadSourcesAndProcess(); end,
             },
                         {
                 text = _("Go to news folder"),
@@ -65,7 +65,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
     })
 end
 
-function NewsDownloader:loadNewsSources()
+function NewsDownloader:loadSourcesAndProcess()
     UIManager:show(InfoMessage:new{
           text = _("Loading data.") ,
           timeout = 1,
@@ -73,24 +73,18 @@ function NewsDownloader:loadNewsSources()
     local feedfileName = self:getFeedXmlPath();
     local feedSources = self:deserializeXML(feedfileName);
 
-    for index, data in pairs(feedSources.feeds.feed) do
-    	local url = data[1];
+    for index, feed in pairs(feedSources.feeds.feed) do
+    	local url = feed[1];
     	UIManager:show(InfoMessage:new{
               text = _("Processing: ") .. url,
-              timeout = 3,
+              timeout = 2,
         });
-        
-    	local limitString = data._attr.limit;
-    	local limit;
-    	if limitString then
-    		limit = tonumber(limitString);
-    	end 
-    	
         
       local nameSuffix = config.FEED_SOURCE_SUFFIX;
       local newsDirPath = self:getNewsDirPath();
       local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
-
+      
+      local limit = tonumber(feed._attr.limit);
 
       self:processFeedSource(url, newsSourceFilePath, limit);
     end
@@ -110,7 +104,7 @@ function NewsDownloader:getFeedXmlPath()
 end
 
 function NewsDownloader:getNewsDirPath() 
-	local baseDirPath = DataStorage:getDataDir() 
+	local baseDirPath = DataStorage:getDataDir();
 	local newsDirName = config.NEWS_DOWNLOAD_DIR;
 	local newsDirPath = baseDirPath .. newsDirName;
 	return newsDirPath;
@@ -139,7 +133,7 @@ function NewsDownloader:deserializeXML(filename) -- luacheck: ignore
   --Instantiate the object that parses the XML to a Lua table
   local xmlparser = xmlParser(xmlhandler)
   xmlparser:parse(xmltext)
-  
+
   return xmlhandler.root;
 end
 
@@ -154,14 +148,14 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
    local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/";
    local feedDirPath = self:getNewsDirPath() .. feedDir;
    lfs.mkdir(feedDirPath);
-      
+
    for index, feed in pairs(feeds.rss.channel.item) do
-   		if limit > 0 and limit < index then
+   		if index -1 == limit then
    			break;
-   		end 
-   		
+   		end
+
       local title = util.replaceInvalidChars(feed.title);
-      
+
 		  local newsFilePath = feedDirPath .. title .. config.FILE_EXTENSION;
       DEBUG(newsFilePath)
       self:download(feed.link, newsFilePath)
@@ -179,7 +173,7 @@ function NewsDownloader:download(url,outputFilename)
     }
 end
                 
-function NewsDownloader:clearNewsDir() 
+function NewsDownloader:clearNewsDir()
 	local newsDir = self:getNewsDirPath();
 	self:removeAllExceptFeedConfig(newsDir);
 end
@@ -187,7 +181,7 @@ end
 
 function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
 	local ffi = require("ffi");
-	
+
 	require("ffi/zeromq_h")
 	    for f in lfs.dir(dir) do
 			local feedConfigFile = config.FEED_FILE_NAME;
