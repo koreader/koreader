@@ -116,7 +116,7 @@ function NewsDownloader:getNewsDirPath()
 	return newsDirPath;
 end
 
-function NewsDownloader:deserializeXML(filename)
+function NewsDownloader:deserializeXML(filename) -- luacheck: ignore
   -- uses LuaXML https://github.com/manoelcampos/LuaXML
   -- The MIT License (MIT)
   -- Copyright (c) 2016 Manoel Campos da Silva Filho
