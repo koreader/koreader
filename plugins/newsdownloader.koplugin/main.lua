@@ -13,8 +13,19 @@ local NewsDownloader = InputContainer:new{}
 
 
 function NewsDownloader:init()
-	lfs.mkdir(self:getNewsDirPath());
-    self.ui.menu:registerToMainMenu(self)
+    self.ui.menu:registerToMainMenu(self);
+    
+    local util = require("turbo.util");
+    local feedXmlFilePath = self:getFeedXmlPath();
+    if not util.file_exists(feedXmlFilePath) then
+      DEBUG("Creating init configuration");
+      local newsDir = self:getNewsDirPath();
+      lfs.mkdir(newsDir);
+       
+      local ffiUtil = require("ffi/util");
+      local exampleFeedPath = self:getExampleFeedPath()
+      ffiUtil.copyFile(exampleFeedPath, feedXmlFilePath);
+    end
 end
 
 
@@ -76,11 +87,11 @@ function NewsDownloader:loadNewsSources()
     	end 
     	
         
-        local nameSuffix = config.FEED_SOURCE_SUFFIX;
-        local newsDirPath = self:getNewsDirPath();
-        local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
+      local nameSuffix = config.FEED_SOURCE_SUFFIX;
+      local newsDirPath = self:getNewsDirPath();
+      local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
 
-        self:processFeedSource(url, newsSourceFilePath, limit);
+      self:processFeedSource(url, newsSourceFilePath, limit);
     end
 
     UIManager:show(InfoMessage:new{
@@ -90,7 +101,7 @@ function NewsDownloader:loadNewsSources()
 end
 
 function NewsDownloader:getFeedXmlPath()
-	local newsDirPath = self:getNewsDirPath();
+	  local newsDirPath = self:getNewsDirPath();
     local feedfileName = config.FEED_FILE_NAME;
     local feedXmlPath = newsDirPath.. feedfileName;
     DEBUG(feedXmlPath);
@@ -142,11 +153,12 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
    		if limit > 0 and limit < index then
    			break;
    		end 
-        local util = require("frontend/util");
-        local title = util.replaceInvalidChars(feed.title);
-		local newsFilePath = self:getNewsDirPath() .. title .. config.FILE_EXTENSION;
-        DEBUG(newsFilePath)
-        self:download(feed.link, newsFilePath)
+      
+      local util = require("frontend/util");
+      local title = util.replaceInvalidChars(feed.title);
+		  local newsFilePath = self:getNewsDirPath() .. title .. config.FILE_EXTENSION;
+      DEBUG(newsFilePath)
+      self:download(feed.link, newsFilePath)
     end
 end
 
@@ -186,5 +198,14 @@ function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
         ffi.C.rmdir(dir)
     end
 end
+
+function NewsDownloader:getExampleFeedPath()
+   local str = debug.getinfo(2, "S").source:sub(2)
+   local dir = str:match("(.*/)");
+   local exampleFeedsPath = dir .. config.FEED_FILE_NAME;
+   DEBUG(exampleFeedsPath);
+   return exampleFeedsPath;
+end
+
 
 return NewsDownloader
