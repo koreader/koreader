@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local logger = require("logger")
+local util = require("ffi/util")
 local _ = require("gettext")
 
 local State = {}
@@ -88,7 +89,7 @@ end
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
-    dump_file = DataStorage:getDataDir() .. "/battery_stat.txt",
+    dump_file = util.realpath(DataStorage:getDataDir() .. "/battery_stat.txt"),
 }
 
 function BatteryStat:init()
@@ -211,8 +212,8 @@ function BatteryStat:addToMainMenu(tab_item_table)
             self.was_charging = PowerD:isCharging()
             self:accumulate()
             local kv_pairs = self:dump()
-            table.insert(kv_pairs,
-                         {T(_("Historical records are dumped to %1."), self.dump_file), ""})
+            table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
+            table.insert(kv_pairs, {self.dump_file, ""})
             UIManager:show(KeyValuePage:new{
                 title = _("Battery statistics"),
                 kv_pairs = kv_pairs,
