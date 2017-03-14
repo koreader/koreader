@@ -1,6 +1,7 @@
 
 local DataStorage = require("datastorage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local LuaSettings = require("luasettings")
 local PowerD = require("device"):getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -94,19 +95,19 @@ end
 
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
+    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua")
 }
 
 function BatteryStat:init()
-    local records = G_reader_settings:readSetting("batterystat") or {}
-    self.charging = Usage:new(records.charging)
-    self.decharging = Usage:new(records.decharging)
-    self.awake = Usage:new(records.awake)
-    self.sleeping = Usage:new(records.sleeping)
+    self.charging = Usage:new(self.settings.charging)
+    self.decharging = Usage:new(self.settings.decharging)
+    self.awake = Usage:new(self.settings.awake)
+    self.sleeping = Usage:new(self.settings.sleeping)
 
     -- Note: these fields are not the "real" timestamp and battery usage, but
     -- the unaccumulated values.
-    self.charging_state = State:new(records.charging_state)
-    self.awake_state = State:new(records.awake_state)
+    self.charging_state = State:new(self.settings.charging_state)
+    self.awake_state = State:new(self.settings.awake_state)
     -- Whether the device was suspending before current timestamp.
     self.was_suspending = false
     -- Whether the device was charging before current timestamp.
@@ -116,15 +117,15 @@ function BatteryStat:init()
 end
 
 function BatteryStat:onFlushSettings()
-    local records = {
+    self.settings:replace({
         charging = self.charging,
         decharging = self.decharging,
         awake = self.awake,
         sleeping = self.sleeping,
         charging_state = self.charging_state,
         awake_state = self.awake_state,
-    }
-    G_reader_settings:saveSetting("batterystat", records)
+    })
+    self.settings:flush()
 end
 
 function BatteryStat:accumulate()
@@ -155,7 +156,7 @@ function BatteryStat:onResume()
     self:accumulate()
 end
 
-function BatteryStat:onStartCharging()
+function BatteryStat:onCharging()
     self.was_charging = false
     self:dumpToText()
     self.charging = Usage:new()
@@ -164,7 +165,7 @@ function BatteryStat:onStartCharging()
     self:accumulate()
 end
 
-function BatteryStat:onStopCharging()
+function BatteryStat:onNotCharging()
     self.was_charging = true
     self:dumpToText()
     self.decharging = Usage:new()

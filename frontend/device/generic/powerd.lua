@@ -9,8 +9,6 @@ local BasePowerD = {
 
     capacity_pulled_count = 0,
     capacity_cached_count = 10,
-
-    last_charging_state = false,
 }
 
 function BasePowerD:new(o)
@@ -84,19 +82,7 @@ function BasePowerD:refreshCapacity()
 end
 
 function BasePowerD:isCharging()
-    local charging = self:isChargingHW()
-    -- This is not accurate, but it looks like the only solution what we can achieve now.
-    if self.last_charging_state ~= charging then
-        local UIManager = require("ui/uimanager")
-        local Event = require("ui/event")
-        if charging then
-            UIManager:broadcastEvent(Event:new("StartCharging"))
-        else
-            UIManager:broadcastEvent(Event:new("StopCharging"))
-        end
-        self.last_charging_state = charging
-    end
-    return charging
+    return self:isChargingHW()
 end
 
 return BasePowerD

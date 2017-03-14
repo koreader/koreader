@@ -171,7 +171,7 @@ function KoboLight:addToMainMenu(tab_item_table)
             }
             UIManager:show(image)
             UIManager:show(ConfirmBox:new{
-                text = T(_("Frontlight gesture controller can:\n- Turn on or off frontlight by tapping left-bottom of the screen.\n- Change frontlight intensity by swiping up or down on the left of the screen.\n\nDo you want to %1 it?"),
+                text = T(_("Frontlight gesture controller can:\n- Turn on or off frontlight by tapping bottom left of the screen.\n- Change frontlight intensity by swiping up or down on the left of the screen.\n\nDo you want to %1 it?"),
                          self:disabled() and _("enable") or _("disable")),
                 ok_text = self:disabled() and _("Enable") or _("Disable"),
                 ok_callback = function()

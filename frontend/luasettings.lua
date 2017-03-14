@@ -60,6 +60,10 @@ function LuaSettings:flipTrue(key)
     end
 end
 
+function LuaSettings:replace(table)
+    self.data = table
+end
+
 function LuaSettings:flush()
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
