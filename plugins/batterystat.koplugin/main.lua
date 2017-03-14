@@ -215,7 +215,7 @@ function BatteryStat:addToMainMenu(tab_item_table)
                          {T(_("Historical records are dumped to %1."), self.dump_file), ""})
             UIManager:show(KeyValuePage:new{
                 title = _("Battery statistics"),
-                kv_pairs = self:dump(),
+                kv_pairs = kv_pairs,
             })
         end,
     })
