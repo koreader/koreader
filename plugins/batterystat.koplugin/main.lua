@@ -89,7 +89,7 @@ end
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
-    dump_file = util.realpath(DataStorage:getDataDir() .. "/battery_stat.txt"),
+    dump_file = util.realpath(DataStorage:getDataDir()) .. "/battery_stat.txt",
 }
 
 function BatteryStat:init()
