@@ -25,22 +25,25 @@ end
 
 function Terminal:start()
     local input = InputDialog:new{
-        title =  _("Enter a command and press Execute"),
+        title =  _("Enter a command and press \"Execute\""),
         text_height = Screen:getHeight() * 0.6,
         input_type = "string",
         buttons = {{{
             text = _("Cancel"),
+            enabled = true,
             callback = function()
                 UIManager:close(input)
-            end
+            end,
         }, {
             text = _("Execute"),
+            enabled = true,
             callback = function()
                 UIManager:close(input)
                 self:execute(input:getInputText())
-            end
-        }}},
+            end,
+        },},},
     }
+    input:onShowKeyboard()
     UIManager:show(input)
 end
 
@@ -63,7 +66,8 @@ function Terminal:execute(command)
         table.insert(entries, _("Failed to execute command."))
     end
     self:dump(entries)
-    table.insert(entries, T(_("Output will also be dumped to %1.", self.dump_file)))
+    table.insert(entries, _("Output will also be dumped to %1."))
+    table.insert(entries, self.dump_file)
     UIManager:show(KeyValuePage:new{
         title = _("Command output"),
         cface = Font:getFace("ffont", 18),
