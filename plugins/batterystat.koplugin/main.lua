@@ -87,7 +87,8 @@ end
 
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
-    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua")
+    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
+    dump_file = DataStorage:getDataDir() .. "/battery_stat.txt",
 }
 
 function BatteryStat:init()
@@ -176,7 +177,7 @@ function BatteryStat:dumpToText()
         end
     end
     content = content .. "\n-=-=-=-=-=-\n"
-    local file = io.open(DataStorage:getDataDir() .. "/battery_stat.txt", "a")
+    local file = io.open(self.dump_file, "a")
     if file then
         file:write(content)
         file:close()
@@ -209,6 +210,9 @@ function BatteryStat:addToMainMenu(tab_item_table)
             self.was_suspending = false
             self.was_charging = PowerD:isCharging()
             self:accumulate()
+            local kv_pairs = self:dump()
+            table.insert(kv_pairs,
+                         {T(_("Historical records are dumped to %1."), self.dump_file), ""})
             UIManager:show(KeyValuePage:new{
                 title = _("Battery statistics"),
                 kv_pairs = self:dump(),
