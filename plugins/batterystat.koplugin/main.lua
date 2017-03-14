@@ -44,7 +44,7 @@ end
 
 function Usage:append(state)
     local state2 = State:new()
-    self.percentage = self.percentage + (state2.percentage - state.percentage)
+    self.percentage = self.percentage + (state.percentage - state2.percentage)
     self.time = self.time + os.difftime(state2.timestamp - state.timestamp)
 end
 
@@ -99,14 +99,14 @@ end
 
 function BatteryStat:onFlushSettings()
     local records = {
-      self.charging,
-      self.decharging,
-      self.awake,
-      self.sleeping,
-      self.charging_state,
-      self.awake_state,
+        charging = self.charging,
+        decharging = self.decharging,
+        awake = self.awake,
+        sleeping = self.sleeping,
+        charging_state = self.charging_state,
+        awake_state = self.awake_state,
     }
-    G_reader_settings:saveSetting("batterystat", records);
+    G_reader_settings:saveSetting("batterystat", records)
 end
 
 function BatteryStat:accumulate()
