@@ -25,10 +25,6 @@ function State:validate()
     end
 end
 
-function State:lt(right)
-    return self.timestamp < right.timestamp
-end
-
 local Usage = {}
 
 function Usage:new(o)
