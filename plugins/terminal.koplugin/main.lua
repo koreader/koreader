@@ -24,30 +24,29 @@ function Terminal:init()
 end
 
 function Terminal:start()
-    local input = InputDialog:new{
+    self.input = InputDialog:new{
         title =  _("Enter a command and press \"Execute\""),
-        text_height = Screen:getHeight() * 0.6,
+        text_height = Screen:getHeight() * 0.4,
         input_type = "string",
         buttons = {{{
             text = _("Cancel"),
-            enabled = true,
             callback = function()
-                UIManager:close(input)
+                UIManager:close(self.input)
             end,
         }, {
             text = _("Execute"),
-            enabled = true,
             callback = function()
-                UIManager:close(input)
-                self:execute(input:getInputText())
+                UIManager:close(self.input)
+                self:execute()
             end,
-        },},},
+        }}},
     }
-    input:onShowKeyboard()
-    UIManager:show(input)
+    self.input:onShowKeyboard()
+    UIManager:show(self.input)
 end
 
-function Terminal:execute(command)
+function Terminal:execute()
+    local command = self.input:getInputText()
     UIManager:show(InfoMessage:new{
         text = _("Executing ..."),
         timeout = 0.1,
