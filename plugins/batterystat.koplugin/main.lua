@@ -1,5 +1,14 @@
 
+local DataStorage = require("datastorage")
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local PowerD = require("device"):getPowerDevice()
+local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local T = require("ffi/util").template
+local logger = require("logger")
+local _ = require("gettext")
+
+local State = {}
 
 function State:new(o)
     o = o or {}
@@ -11,10 +20,16 @@ end
 
 function State:validate()
     if self.percentage == nil or self.timestamp == nil then
-        self.percentage = 0
+        self.percentage = PowerD:getCapacity()
         self.timestamp = os.time()
     end
 end
+
+function State:lt(right)
+    return self.timestamp < right.timestamp
+end
+
+local Usage = {}
 
 function Usage:new(o)
     o = o or {}
@@ -31,29 +46,164 @@ function Usage:validate()
     end
 end
 
-function Usage:append(state1, state2)
-    self.percentage = self.percentage + (state2.percentage - state1.percentage)
-    self.time = self.time + (state2.timestamp - state1.timestamp)
+function Usage:append(state)
+    local state2 = State:new()
+    self.percentage = self.percentage + (state2.percentage - state.percentage)
+    self.time = self.time + os.difftime(state2.timestamp - state.timestamp)
+end
+
+function Usage:minutes()
+    return self.time / 60
+end
+
+function Usage:hours()
+    return self:minutes() / 60
+end
+
+function Usage:percentagePerHour()
+    if self.time == 0 then
+        return math.huge
+    else
+        return self.percentage / self:hours()
+    end
+end
+
+local function shorten(number)
+    return string.format("%.2f", number);
+end
+
+function Usage:dump(kv_pairs)
+    table.insert(kv_pairs, {_("    Consumed %"), shorten(self.percentage)})
+    table.insert(kv_pairs, {_("    Total minutes"), shorten(self:minutes())})
+    table.insert(kv_pairs, {_("    % per hour"), shorten(self:percentagePerHour())})
 end
 
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
-    last_charging = Usage:new(),
-    last_decharging = Usage:new(),
-    last_charging_start = State:new(),
-    last_charging_end = State:new(),
-    last_resume_start = State:new(),
-    last_sleep_start = State:new(),
 }
 
-function BatteryState:init()
+function BatteryStat:init()
     local records = G_reader_settings:readSetting("batterystat") or {}
-    self.last_charging = records.last_charging
-    self.last_decharing = records.last_decharging
-    self.last_charging_start = records.last_charging_start
-    self.last_charging_end = records.last_charging_end
-    self.last_resume_start = records.last_resume_start
-    self.last_sleep_start = records.last_sleep_start
+    self.charging = Usage:new(records.charging)
+    self.decharging = Usage:new(records.decharging)
+    self.awake = Usage:new(records.awake)
+    self.sleeping = Usage:new(records.sleeping)
+
+    -- Note: these fields are not the "real" timestamp and battery usage, but
+    -- the unaccumulated values.
+    self.charging_state = State:new(records.charging_state)
+    self.awake_state = State:new(records.awake_state)
+    -- Whether the device was suspending before current timestamp.
+    self.was_suspending = false
+    -- Whether the device was charging before current timestamp.
+    self.was_charging = PowerD:isCharging()
+
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function BatteryStat:onFlushSettings()
+    local records = {
+      self.charging,
+      self.decharging,
+      self.awake,
+      self.sleeping,
+      self.charging_state,
+      self.awake_state,
+    }
+    G_reader_settings:saveSetting("batterystat", records);
+end
+
+function BatteryStat:accumulate()
+    if self.was_suspending then
+        -- Suspending to awake.
+        self.sleeping:append(self.awake_state)
+    else
+        -- Awake to suspending, time between self.awake_state and now should belong to awake.
+        self.awake:append(self.awake_state)
+    end
+    if self.was_charging then
+        -- Decharging to charging.
+        self.charging:append(self.charging_state)
+    else
+        self.decharging:append(self.charging_state)
+    end
+    self.awake_state = State:new()
+    self.charging_state = State:new()
+end
+
+function BatteryStat:onSuspend()
+    self.was_suspending = false
+    self:accumulate()
+end
+
+function BatteryStat:onResume()
+    self.was_suspending = true
+    self:accumulate()
+end
+
+function BatteryStat:onStartCharging()
+    self.was_charging = false
+    self:dumpToText()
+    self.charging = Usage:new()
+    self.awake = Usage:new()
+    self.sleeping = Usage:new()
+    self:accumulate()
+end
+
+function BatteryStat:onStopCharging()
+    self.was_charging = true
+    self:dumpToText()
+    self.decharging = Usage:new()
+    self.awake = Usage:new()
+    self.sleeping = Usage:new()
+    self:accumulate()
+end
+
+function BatteryStat:dumpToText()
+    local kv_pairs = self:dump()
+    local content = T(_("Dump at %1"), os.date("%c", os.time()))
+    for _, pair in kv_pairs do
+        content = content .. "\n" .. pair[0]
+        if pair[1] ~= nil and pair[1] ~= "" then
+            content = content .. "\t" .. pair[1]
+        end
+    end
+    content = content .. "\n-=-=-=-=-=-\n"
+    local file = io.open(DataStorage:getDataDir() .. "/battery_stat.txt", "a")
+    if file then
+        file:write(content)
+        file:close()
+    else
+        logger.info(content)
+    end
+end
+
+function BatteryStat:dump()
+    local kv_pairs = {}
+    table.insert(kv_pairs, {_("Since last charge"), ""})
+    self.decharging:dump(kv_pairs)
+    table.insert(kv_pairs, {_("During last charge"), ""})
+    self.charging:dump(kv_pairs)
+    table.insert(kv_pairs, {_("Awake since last charge"), ""})
+    self.awake:dump(kv_pairs)
+    table.insert(kv_pairs, {_("Sleeping since last charge"), ""})
+    self.sleeping:dump(kv_pairs)
+    return kv_pairs
+end
+
+function BatteryStat:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.plugins, {
+        text = _("Battery statistics"),
+        callback = function()
+            self.was_suspending = false
+            self.was_charging = PowerD:isCharging()
+            self:accumulate()
+            UIManager:show(KeyValuePage:new{
+                title = _("Battery statistics"),
+                kv_pairs = self:dump(),
+            })
+        end,
+    })
 end
 
 return BatteryStat
