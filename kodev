@@ -412,9 +412,18 @@ Example: ./kodev copy /media/hzj_jie/HZJ-VOYAGE/koreader
         -h | --help)
             echo "${LOG_HELP_MSG}" ;;
         *)
-            for i in $(git diff upstream/master --stat | grep '|' | sed 's/ /\t/g' | cut -f 2 | grep -v "^kodev$")
+            for i in $(git diff upstream/master --stat |
+                       grep '|' |
+                       sed 's/ /\t/g' |
+                       cut -f 2 |
+                       grep -v "^kodev$")
             do
-                cp $i $1/$i && exit 1
+                cp $i $1/$i
+                if [ $? -ne 0 ]
+                then
+                    echo "Failed to copy file ${i}."
+                    exit 1
+                fi
             done ;;
     esac
     exit 0
