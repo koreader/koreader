@@ -182,6 +182,7 @@ local KeyValuePage = InputContainer:new{
     -- index for the first item to show
     show_page = 1,
     cface = Font:getFace("cfont"),
+    item_height = Screen:scaleBySize(30),
 }
 
 function KeyValuePage:init()
@@ -201,7 +202,6 @@ function KeyValuePage:init()
 
     local padding = Screen:scaleBySize(10)
     self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Screen:scaleBySize(30)
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,

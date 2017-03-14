@@ -71,6 +71,7 @@ function Terminal:execute()
     UIManager:show(KeyValuePage:new{
         title = _("Command output"),
         cface = Font:getFace("ffont", 18),
+        item_height = Screen:scaleBySize(20),
         kv_pairs = entries,
     })
 end
