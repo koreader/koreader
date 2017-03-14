@@ -14,15 +14,11 @@ function State:new(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
-    o:validate()
-    return o
-end
-
-function State:validate()
-    if self.percentage == nil or self.timestamp == nil then
-        self.percentage = PowerD:getCapacity()
-        self.timestamp = os.time()
+    if o.percentage == nil or o.timestamp == nil then
+        o.percentage = PowerD:getCapacity()
+        o.timestamp = os.time()
     end
+    return o
 end
 
 local Usage = {}
@@ -31,21 +27,17 @@ function Usage:new(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
-    o:validate()
+    if o.percentage == nil or o.time == nil then
+        o.percentage = 0
+        o.time = 0
+    end
     return o
 end
 
-function Usage:validate()
-    if self.percentage == nil or self.time == nil then
-        self.percentage = 0
-        self.time = 0
-    end
-end
-
 function Usage:append(state)
-    local state2 = State:new()
-    self.percentage = self.percentage + (state.percentage - state2.percentage)
-    self.time = self.time + os.difftime(state2.timestamp - state.timestamp)
+    local curr = State:new()
+    self.percentage = self.percentage + (state.percentage - curr.percentage)
+    self.time = self.time + os.difftime(curr.timestamp - state.timestamp)
 end
 
 function Usage:minutes()
@@ -56,12 +48,30 @@ function Usage:hours()
     return self:minutes() / 60
 end
 
+function Usage:percentagePerMinute()
+    if self.time == 0 then
+        return 0
+    else
+        return self.percentage / self:minutes()
+    end
+end
+
 function Usage:percentagePerHour()
     if self.time == 0 then
-        return math.huge
+        return 0
     else
         return self.percentage / self:hours()
     end
+end
+
+function Usage:remainingMinutes()
+    local curr = State:new()
+    return curr.percentage / self:percentagePerMinute()
+end
+
+function Usage:chargingMinutes()
+    local curr = State:new()
+    return (100 - curr.percentage) / self:percentagePerMinute()
 end
 
 local function shorten(number)
@@ -72,6 +82,14 @@ function Usage:dump(kv_pairs)
     table.insert(kv_pairs, {_("    Consumed %"), shorten(self.percentage)})
     table.insert(kv_pairs, {_("    Total minutes"), shorten(self:minutes())})
     table.insert(kv_pairs, {_("    % per hour"), shorten(self:percentagePerHour())})
+end
+
+function Usage:dumpRemaining(kv_pairs)
+    table.insert(kv_pairs, {_("    Estimated remaining minutes"), shorten(self:remainingMinutes())})
+end
+
+function Usage:dumpCharging(kv_pairs)
+    table.insert(kv_pairs, {_("    Estimated minutes for charging"), shorten(self:chargingMinutes())})
 end
 
 local BatteryStat = WidgetContainer:new{
@@ -176,14 +194,18 @@ end
 
 function BatteryStat:dump()
     local kv_pairs = {}
-    table.insert(kv_pairs, {_("Since last charge"), ""})
-    self.decharging:dump(kv_pairs)
-    table.insert(kv_pairs, {_("During last charge"), ""})
-    self.charging:dump(kv_pairs)
     table.insert(kv_pairs, {_("Awake since last charge"), ""})
     self.awake:dump(kv_pairs)
+    self.awake:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("Sleeping since last charge"), ""})
     self.sleeping:dump(kv_pairs)
+    self.sleeping:dumpRemaining(kv_pairs)
+    table.insert(kv_pairs, {_("During last charge"), ""})
+    self.charging:dump(kv_pairs)
+    self.charging:dumpCharging(kv_pairs)
+    table.insert(kv_pairs, {_("Since last charge"), ""})
+    self.decharging:dump(kv_pairs)
+    self.decharging:dumpRemaining(kv_pairs)
     return kv_pairs
 end
 
