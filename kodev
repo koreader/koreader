@@ -412,7 +412,7 @@ Example: ./kodev copy /media/hzj_jie/HZJ-VOYAGE/koreader
         -h | --help)
             echo "${LOG_HELP_MSG}" ;;
         *)
-            for i in $(git diff upstream/master --stat | grep '|' | sed 's/ /\t/g' | cut -f 2)
+            for i in $(git diff upstream/master --stat | grep '|' | sed 's/ /\t/g' | cut -f 2 | grep -v "^kodev$")
             do
                 cp $i $1/$i && exit 1
             done ;;
