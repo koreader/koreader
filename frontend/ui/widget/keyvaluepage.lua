@@ -42,7 +42,6 @@ local KeyValueTitle = VerticalGroup:new{
     kv_page = nil,
     title = "",
     tface = Font:getFace("tfont"),
-    cface = Font:getFace("cfont"),
     align = "left",
 }
 
@@ -182,6 +181,7 @@ local KeyValuePage = InputContainer:new{
     height = nil,
     -- index for the first item to show
     show_page = 1,
+    cface = Font:getFace("cfont"),
 }
 
 function KeyValuePage:init()
@@ -271,15 +271,11 @@ function KeyValuePage:_populateItems()
                 entry1 = entry[1]
                 entry2 = entry[2]
             else
-                entry1 = entry
+                entry1 = tostring(entry)
                 entry2 = ""
             end
-            if entry1 == nil then
-                entry1 = ""
-            end
-            if entry2 == nil then
-                entry2 = ""
-            end
+            entry1 = entry1 or ""
+            entry2 = entry2 or ""
             table.insert(
                 self.main_content,
                 KeyValueItem:new{
