@@ -16,7 +16,7 @@ local _ = require("gettext")
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
-    dump_file = util.realpath(DataStorage:getDataDir() .. "/terminal_output.txt"),
+    dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
 }
 
 function Terminal:init()
