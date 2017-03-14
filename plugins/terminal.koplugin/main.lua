@@ -66,7 +66,7 @@ function Terminal:execute()
         table.insert(entries, _("Failed to execute command."))
     end
     self:dump(entries)
-    table.insert(entries, _("Output will also be dumped to %1."))
+    table.insert(entries, _("Output will also be dumped to."))
     table.insert(entries, self.dump_file)
     UIManager:show(KeyValuePage:new{
         title = _("Command output"),
