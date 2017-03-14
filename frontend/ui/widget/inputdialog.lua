@@ -43,7 +43,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local ButtonTable = require("ui/widget/buttontable")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local LineWidget = require("ui/widget/linewidget")
 local InputText = require("ui/widget/inputtext")
 local RenderText = require("ui/rendertext")
@@ -92,7 +92,7 @@ function InputDialog:init()
         padding = self.title_padding,
         margin = self.title_margin,
         bordersize = 0,
-        TextWidget:new{
+        TextBoxWidget:new{
             text = self.title,
             face = self.title_face,
             width = self.width,
