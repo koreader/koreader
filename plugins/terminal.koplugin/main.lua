@@ -11,11 +11,12 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local logger = require("logger")
+local util = require("ffi/util")
 local _ = require("gettext")
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
-    dump_file = DataStorage:getDataDir() .. "/terminal_output.txt",
+    dump_file = util.realpath(DataStorage:getDataDir() .. "/terminal_output.txt"),
 }
 
 function Terminal:init()
