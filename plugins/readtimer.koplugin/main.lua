@@ -86,3 +86,5 @@ function ReadTimer:addToMainMenu(tab_item_table)
         end,
     })
 end
+
+return ReadTimer
