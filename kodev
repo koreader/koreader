@@ -399,6 +399,27 @@ TARGET:
 }
 
 
+function kodev-copy {
+    LOG_HELP_MSG="
+usage: copy <Root folder of KOReader on target device>
+
+Example: ./kodev copy /media/hzj_jie/HZJ-VOYAGE/koreader
+    "
+
+    [ $# -lt 1 ] && { echo "${LOG_HELP_MSG}"; exit 1; }
+    
+    case $1 in
+        -h | --help)
+            echo "${LOG_HELP_MSG}" ;;
+        *)
+            for i in $(git diff upstream/master --stat | grep '|' | sed 's/ /\t/g' | cut -f 2)
+            do
+                cp $i $1/$i && exit 1
+            done ;;
+    esac
+    exit 0
+}
+
 
 HELP_MSG="
 usage: $0 COMMAND <ARGS>
@@ -414,6 +435,7 @@ Supported commands:
     run                 Run KOReader
     test                Run tests
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
+    copy                Copy local changes to a device
 "
 [ $# -lt 1 ] && { echo "Missing command."; echo "${HELP_MSG}"; exit 1; }
 
@@ -447,6 +469,8 @@ case $1 in
         ;;
     log)
         shift 1; kodev-log "$@" ;;
+    copy)
+        shift 1; kodev-copy "$@" ;;
     --help | -h)
         echo "${HELP_MSG}"; exit 0 ;;
     *)
