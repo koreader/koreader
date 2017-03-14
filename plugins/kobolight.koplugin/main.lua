@@ -19,8 +19,6 @@ local _ = require("gettext")
 local tap_touch_zone_ratio = { x = 0, y = 15/16, w = 1/10, h = 1/16, }
 local swipe_touch_zone_ratio = { x = 0, y = 1/8, w = 1/10, h = 7/8, }
 
-
-print(";asjdflkajdlfjaslkdfja;lsdjf;askjdf;")
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
     gestureScale = nil,  -- initialized in self:resetLayout()
