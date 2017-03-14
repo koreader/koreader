@@ -170,7 +170,7 @@ end
 
 function BatteryStat:dumpToText()
     local kv_pairs = self:dump()
-    local content = T(_("Dump at %1"), os.date("%c", os.time()))
+    local content = T(_("Dump at %1"), os.date("%c"))
     for _, pair in ipairs(kv_pairs) do
         content = content .. "\n" .. pair[1]
         if pair[2] ~= nil and pair[2] ~= "" then
