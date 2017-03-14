@@ -49,14 +49,6 @@ function Usage:hours()
     return self:minutes() / 60
 end
 
-function Usage:percentagePerMinute()
-    if self.time == 0 then
-        return 0
-    else
-        return self.percentage / self:minutes()
-    end
-end
-
 function Usage:percentagePerHour()
     if self.time == 0 then
         return 0
@@ -65,14 +57,14 @@ function Usage:percentagePerHour()
     end
 end
 
-function Usage:remainingMinutes()
+function Usage:remainingHours()
     local curr = State:new()
-    return curr.percentage / self:percentagePerMinute()
+    return curr.percentage / self:percentagePerHour()
 end
 
-function Usage:chargingMinutes()
+function Usage:chargingHours()
     local curr = State:new()
-    return (100 - curr.percentage) / self:percentagePerMinute()
+    return (100 - curr.percentage) / self:percentagePerHour()
 end
 
 local function shorten(number)
@@ -86,11 +78,11 @@ function Usage:dump(kv_pairs)
 end
 
 function Usage:dumpRemaining(kv_pairs)
-    table.insert(kv_pairs, {_("    Estimated remaining minutes"), shorten(self:remainingMinutes())})
+    table.insert(kv_pairs, {_("    Estimated remaining hours"), shorten(self:remainingHours())})
 end
 
 function Usage:dumpCharging(kv_pairs)
-    table.insert(kv_pairs, {_("    Estimated minutes for charging"), shorten(self:chargingMinutes())})
+    table.insert(kv_pairs, {_("    Estimated hours for charging"), shorten(self:chargingHours())})
 end
 
 local BatteryStat = WidgetContainer:new{
