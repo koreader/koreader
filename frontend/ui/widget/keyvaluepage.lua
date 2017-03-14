@@ -42,6 +42,7 @@ local KeyValueTitle = VerticalGroup:new{
     kv_page = nil,
     title = "",
     tface = Font:getFace("tfont"),
+    cface = Font:getFace("cfont"),
     align = "left",
 }
 
@@ -113,7 +114,7 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface = Font:getFace("cfont"),
+    cface = nil,
     width = nil,
     height = nil,
 }
@@ -255,29 +256,41 @@ function KeyValuePage:_populateItems()
 
         table.insert(self.main_content,
                      VerticalSpan:new{ width = self.item_margin })
-        if type(entry) == "table" then
+        if type(entry) == "string" and string.match(entry, "-+") == entry then
+            table.insert(self.main_content, LineWidget:new{
+                background = Blitbuffer.COLOR_LIGHT_GREY,
+                dimen = Geom:new{
+                    w = self.item_width,
+                    h = Screen:scaleBySize(2)
+                },
+                style = "solid",
+            })
+        else
+            local entry1, entry2
+            if type(entry) == "table" then
+                entry1 = entry[1]
+                entry2 = entry[2]
+            else
+                entry1 = entry
+                entry2 = ""
+            end
+            if entry1 == nil then
+                entry1 = ""
+            end
+            if entry2 == nil then
+                entry2 = ""
+            end
             table.insert(
                 self.main_content,
                 KeyValueItem:new{
                     height = self.item_height,
                     width = self.item_width,
-                    key = entry[1],
-                    value = entry[2],
+                    key = entry1,
+                    value = entry2,
                     callback = entry.callback,
+                    cface = self.cface,
                 }
             )
-        elseif type(entry) == "string" then
-            local c = string.sub(entry, 1, 1)
-            if c == "-" then
-                table.insert(self.main_content, LineWidget:new{
-                    background = Blitbuffer.COLOR_LIGHT_GREY,
-                    dimen = Geom:new{
-                        w = self.item_width,
-                        h = Screen:scaleBySize(2)
-                    },
-                    style = "solid",
-                })
-            end
         end
         table.insert(self.main_content,
                      VerticalSpan:new{ width = self.item_margin })

@@ -1,11 +1,11 @@
 
-local ButtonTable = require("ui/widget/buttontable")
 local Font = require("ui/font")
-local InputText = require("ui/widget/inputtext")
+local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputtext")
+local ListView = require("ui/widget/listview")
 local Screen = require("device").screen
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -74,8 +74,40 @@ function Terminal:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function Terminal:start()
+    local input = InputDialog:new{
+        title =  _("Enter a command and press Execute"),
+        text_height = Screen:getHeight() * 0.6,
+        input_type = "string",
+        buttons = {{{
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(input)
+            end
+        }, {
+            text = _("Execute"),
+            callback = function()
+                UIManager:close(input)
+                UIManager:show(InfoMessage:new{
+                    text = _("Executing ..."),
+                    timeout = 0.1,
+                })
+                UIManager:forceRePaint()
+                local std_out = io.popen(input:getInputText())
+
+            end
+        }}},
+    }
+    UIManager:show(input)
+end
+
 function Terminal:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, self.menuItem)
+    table.insert(tab_item_table.plugins, {
+        text = _("Terminal emulator"),
+        callback = function()
+            self:start()
+        end,
+    })
 end
 
 return Terminal
