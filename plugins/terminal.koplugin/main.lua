@@ -35,6 +35,7 @@ function Terminal:start()
             end,
         }, {
             text = _("Execute"),
+            is_enter_default = true,
             callback = function()
                 UIManager:close(self.input)
                 self:execute()
