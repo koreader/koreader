@@ -145,26 +145,36 @@ function BatteryStat:accumulate()
     self.charging_state = State:new()
 end
 
-function BatteryStat:onSuspend()
-    if self.debugging then
-        logger.warn("onSuspend @ ", State:new():toString())
+function BatteryState:dumpOrLog(content)
+    local file = io.open(self.dump_file, "a")
+    if file then
+        file:write(content)
+        file:close()
+    else
+        logger.warn("Failed to dump output ", content, " into ", self.dump_file )
     end
+end
+
+function BatteryState:debugOutput(event)
+    if self.debugging then
+        self:dumpOrLog(event .. " @ " .. State:new():toString())
+    end
+end
+
+function BatteryStat:onSuspend()
+    self:debugOutput("onSuspend")
     self.was_suspending = false
     self:accumulate()
 end
 
 function BatteryStat:onResume()
-    if self.debugging then
-        logger.warn("onResume @ ", State:new():toString())
-    end
+    self:debugOutput("onResume")
     self.was_suspending = true
     self:accumulate()
 end
 
 function BatteryStat:onCharging()
-    if self.debugging then
-        logger.warn("onCharging @ ", State:new():toString())
-    end
+    self:debugOutput("onCharging")
     self.was_charging = false
     self:dumpToText()
     self.charging = Usage:new()
@@ -174,9 +184,7 @@ function BatteryStat:onCharging()
 end
 
 function BatteryStat:onNotCharging()
-    if self.debugging then
-        logger.warn("onNotCharging @ ", State:new():toString())
-    end
+    self:debugOutput("onNotCharging")
     self.was_charging = true
     self:dumpToText()
     self.decharging = Usage:new()
@@ -194,14 +202,7 @@ function BatteryStat:dumpToText()
             content = content .. "\t" .. pair[2]
         end
     end
-    content = content .. "\n-=-=-=-=-=-\n"
-    local file = io.open(self.dump_file, "a")
-    if file then
-        file:write(content)
-        file:close()
-    else
-        logger.warn("Failed to write BatteryStat historical log ", content, " into ", self.dump_file)
-    end
+    self:dumpOrLog(content .. "\n-=-=-=-=-=-\n\n")
 end
 
 function BatteryStat:dump()
