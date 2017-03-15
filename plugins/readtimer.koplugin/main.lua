@@ -84,6 +84,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
                 input_hint = _("in minutes"),
                 buttons = { buttons },
             }
+            self.input:onShowKeyboard()
             UIManager:show(self.input)
         end,
     })
