@@ -23,6 +23,10 @@ function State:new(o)
     return o
 end
 
+function State:toString()
+    return "{ " .. self.percentage .. " @ " .. os.date("%c", self.timestamp) .. "}"
+end
+
 local Usage = {}
 
 function Usage:new(o)
@@ -90,6 +94,7 @@ local BatteryStat = WidgetContainer:new{
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/batterystat_log.txt",
+    debugging = true,
 }
 
 function BatteryStat:init()
@@ -141,16 +146,25 @@ function BatteryStat:accumulate()
 end
 
 function BatteryStat:onSuspend()
+    if self.debugging then
+        logger.info("onSuspend @ ", State:new():toString())
+    end
     self.was_suspending = false
     self:accumulate()
 end
 
 function BatteryStat:onResume()
+    if self.debugging then
+        logger.info("onResume @ ", State:new():toString())
+    end
     self.was_suspending = true
     self:accumulate()
 end
 
 function BatteryStat:onCharging()
+    if self.debugging then
+        logger.info("onCharging @ ", State:new():toString())
+    end
     self.was_charging = false
     self:dumpToText()
     self.charging = Usage:new()
@@ -160,6 +174,9 @@ function BatteryStat:onCharging()
 end
 
 function BatteryStat:onNotCharging()
+    if self.debugging then
+        logger.info("onNotCharging @ ", State:new():toString())
+    end
     self.was_charging = true
     self:dumpToText()
     self.decharging = Usage:new()
