@@ -148,7 +148,7 @@ end
 function BatteryStat:dumpOrLog(content)
     local file = io.open(self.dump_file, "a")
     if file then
-        file:write(content)
+        file:write(content .. "\n")
         file:close()
     else
         logger.warn("Failed to dump output ", content, " into ", self.dump_file )
@@ -202,7 +202,7 @@ function BatteryStat:dumpToText()
             content = content .. "\t" .. pair[2]
         end
     end
-    self:dumpOrLog(content .. "\n-=-=-=-=-=-\n\n")
+    self:dumpOrLog(content .. "\n-=-=-=-=-=-\n")
 end
 
 function BatteryStat:dump()
