@@ -730,6 +730,7 @@ function UIManager:_initAutoSuspend()
             local now = util.gettime()
             -- Do not repeat auto suspend procedure after suspend.
             if self.last_action_sec + self.auto_suspend_sec <= now then
+                self:sendEvent(Event:new("Suspend"))
                 Device:onPowerEvent("Suspend")
             else
                 self:scheduleIn(
