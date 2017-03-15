@@ -100,11 +100,17 @@ function UIManager:init()
             Device:getPowerDevice():toggleFrontlight()
         end
         self.event_handlers["Charging"] = function()
+            self:sendEvent(Event:new("Charging"))
             if Device.screen_saver_mode then
                 self.event_handlers["Suspend"]()
             end
         end
-        self.event_handlers["NotCharging"] = self.event_handlers["Charging"]
+        self.event_handlers["NotCharging"] = function()
+            if Device.screen_saver_mode then
+                self.event_handlers["Suspend"]()
+            end
+            self:sendEvent(Event:new("NotCharging"))
+        end
         self.event_handlers["__default__"] = function(input_event)
             if Device.screen_saver_mode then
                 -- Suspension in Kobo can be interrupted by screen updates. We
@@ -125,6 +131,7 @@ function UIManager:init()
             self:sendEvent(Event:new("Resume"))
         end
         self.event_handlers["Charging"] = function()
+            self:sendEvent(Event:new("Charging"))
             Device:usbPlugIn()
         end
         self.event_handlers["NotCharging"] = function()
