@@ -17,7 +17,7 @@ function ReadTimer:init()
         if self.time == 0 then return end -- How could this happen?
         self.time = 0
         UIManager:show(InfoMessage:new{
-            text = T(_("Time's up\nIt's %1 now."), os.date("%c")),
+            text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
             timeout = 10,
         })
     end
