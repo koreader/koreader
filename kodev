@@ -407,7 +407,7 @@ Example: ./kodev copy /media/hzj_jie/HZJ-VOYAGE/koreader
     "
 
     [ $# -lt 1 ] && { echo "${LOG_HELP_MSG}"; exit 1; }
-    
+
     case $1 in
         -h | --help)
             echo "${LOG_HELP_MSG}" ;;
