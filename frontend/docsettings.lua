@@ -2,7 +2,6 @@ local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local dump = require("dump")
 local purgeDir = require("ffi/util").purgeDir
-local logger = require("logger")
 
 local DocSettings = {}
 
