@@ -79,6 +79,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             self.input = InputDialog:new{
                 title_face = Font:getFace("cfont", 20),
                 title = title,
+                full_title = true,
                 input_type = "number",
                 input_hint = _("in minutes"),
                 buttons = { buttons },

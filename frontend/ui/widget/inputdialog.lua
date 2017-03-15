@@ -44,6 +44,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local ButtonTable = require("ui/widget/buttontable")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local LineWidget = require("ui/widget/linewidget")
 local InputText = require("ui/widget/inputtext")
 local RenderText = require("ui/rendertext")
@@ -62,10 +63,11 @@ local InputDialog = InputContainer:new{
     enter_callback = nil,
 
     width = nil,
-    height = nil,
 
     text_width = nil,
     text_height = nil,
+
+    full_title = false,  -- Whether the title should not be truncated.
 
     title_face = Font:getFace("tfont", 22),
     input_face = Font:getFace("cfont", 20),
@@ -79,24 +81,33 @@ local InputDialog = InputContainer:new{
 
 function InputDialog:init()
     self.width = self.width or Screen:getWidth() * 0.8
-    local title_width = RenderText:sizeUtf8Text(0, self.width,
-            self.title_face, self.title, true).x
-    if title_width > self.width then
-        local indicator = "  >> "
-        local indicator_w = RenderText:sizeUtf8Text(0, self.width,
-                self.title_face, indicator, true).x
-        self.title = RenderText:getSubTextByWidth(self.title, self.title_face,
-                self.width - indicator_w, true) .. indicator
+    if self.full_title then
+        self.title = TextBoxWidget:new{
+            text = self.title,
+            face = self.title_face,
+            width = self.width,
+        }
+    else
+        local title_width = RenderText:sizeUtf8Text(0, self.width,
+                self.title_face, self.title, true).x
+        if title_width > self.width then
+            local indicator = "  >> "
+            local indicator_w = RenderText:sizeUtf8Text(0, self.width,
+                    self.title_face, indicator, true).x
+            self.title = RenderText:getSubTextByWidth(self.title, self.title_face,
+                    self.width - indicator_w, true) .. indicator
+        end
+        self.title = TextWidget:new{
+            text = self.title,
+            face = self.title_face,
+            width = self.width,
+        }
     end
     self.title = FrameContainer:new{
         padding = self.title_padding,
         margin = self.title_margin,
         bordersize = 0,
-        TextBoxWidget:new{
-            text = self.title,
-            face = self.title_face,
-            width = self.width,
-        }
+        self.title,
     }
 
     self._input_widget = InputText:new{
