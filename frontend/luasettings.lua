@@ -16,6 +16,16 @@ function LuaSettings:open(file_path)
     return setmetatable(new, {__index = LuaSettings})
 end
 
+-- TODO: DocSettings can return a LuaSettings to use following awesome features.
+function LuaSettings:wrap(data)
+    local new = {data = type(data) == "table" and data or {}}
+    return setmetatable(new, {__index = LuaSettings})
+end
+
+function LuaSettings:child(key)
+    return LuaSettings:wrap(self:readSetting(key))
+end
+
 function LuaSettings:readSetting(key)
     return self.data[key]
 end
@@ -65,6 +75,7 @@ function LuaSettings:reset(table)
 end
 
 function LuaSettings:flush()
+    if not self.file then return end
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
