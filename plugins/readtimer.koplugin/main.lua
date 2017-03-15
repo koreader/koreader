@@ -15,6 +15,7 @@ local ReadTimer = WidgetContainer:new{
 function ReadTimer:init()
     self.alarm_callback = function()
         if self.time == 0 then return end -- How could this happen?
+        self.time = 0
         UIManager:show(InfoMessage:new{
             text = T(_("Time's up\nIt's %1 now."), os.date("%c")),
             timeout = 10,
@@ -29,7 +30,7 @@ end
 
 function ReadTimer:remainingMinutes()
     if self:scheduled() then
-        return os.difftime(os.time(), self.time) / 60
+        return os.difftime(self.time, os.time()) / 60
     else
         return math.huge
     end
@@ -38,6 +39,7 @@ end
 function ReadTimer:unschedule()
     if self:scheduled() then
         UIManager:unschedule(self.alarm_callback)
+        self.time = 0
     end
 end
 
@@ -48,7 +50,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             local title = _("When will the countdown timer alarm?\nThe unit is \"minute\", and only positive number is accepted.")
             if self:scheduled() then
                 title = title .. T(_("\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
-                                   self:remainingMinutes())
+                                   string.format("%.2f", self:remainingMinutes()))
             end
             local buttons = {{
                 text = _("Close"),
