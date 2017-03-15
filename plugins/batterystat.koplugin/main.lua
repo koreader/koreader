@@ -145,7 +145,7 @@ function BatteryStat:accumulate()
     self.charging_state = State:new()
 end
 
-function BatteryState:dumpOrLog(content)
+function BatteryStat:dumpOrLog(content)
     local file = io.open(self.dump_file, "a")
     if file then
         file:write(content)
@@ -155,7 +155,7 @@ function BatteryState:dumpOrLog(content)
     end
 end
 
-function BatteryState:debugOutput(event)
+function BatteryStat:debugOutput(event)
     if self.debugging then
         self:dumpOrLog(event .. " @ " .. State:new():toString())
     end
