@@ -353,9 +353,7 @@ end
 
 function OPDSBrowser:getCatalog(feed_url)
     local ok, catalog = pcall(self.parseFeed, self, feed_url)
-    -- prompt users to turn on Wifi if network is unreachable
-    if not ok and catalog and (catalog:find("Network is unreachable") or catalog:find("host or service not provided")) then
-        NetworkMgr:promptWifiOn()
+    if not ok and catalog and not NetworkMgr:isOnline() then
         return
     elseif not ok and catalog then
         logger.warn("cannot get catalog info from", feed_url, catalog)
