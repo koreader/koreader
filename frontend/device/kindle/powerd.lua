@@ -60,7 +60,7 @@ function KindlePowerD:getCapacityHW()
 end
 
 function KindlePowerD:isChargingHW()
-    local is_charging = 0
+    local is_charging
     if self.lipc_handle ~= nil then
         is_charging = self.lipc_handle:get_int_property("com.lab126.powerd", "isCharging")
     else
