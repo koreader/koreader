@@ -56,13 +56,15 @@ function PluginLoader:addToMenu(registered_widgets, tab_item_table)
                     text = _("More plugins"),
                     sub_item_table = {},
                 }
-                table.insert(tab_item_table.plugins, more_plugins)
             end
             local original_plugins = tab_item_table.plugins
             tab_item_table.plugins = more_plugins.sub_item_table
             widget:addToMainMenu(tab_item_table)
             tab_item_table.plugins = original_plugins
         end
+    end
+    if more_plugins ~= nil then
+        table.insert(tab_item_table.plugins, more_plugins)
     end
 end
 
