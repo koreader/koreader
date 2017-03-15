@@ -89,7 +89,7 @@ end
 local BatteryStat = WidgetContainer:new{
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
-    dump_file = util.realpath(DataStorage:getDataDir()) .. "/battery_stat.txt",
+    dump_file = util.realpath(DataStorage:getDataDir()) .. "/batterystat_log.txt",
 }
 
 function BatteryStat:init()
@@ -183,7 +183,7 @@ function BatteryStat:dumpToText()
         file:write(content)
         file:close()
     else
-        logger.warn(content)
+        logger.warn("Failed to write BatteryStat historical log ", content, " into ", self.dump_file)
     end
 end
 
