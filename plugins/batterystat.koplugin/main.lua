@@ -69,7 +69,7 @@ end
 
 function Usage:chargingHours()
     local curr = State:new()
-    return (100 - curr.percentage) / self:percentagePerHour()
+    return (curr.percentage - 100) / self:percentagePerHour()
 end
 
 local function shorten(number)

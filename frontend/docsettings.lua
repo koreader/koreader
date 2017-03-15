@@ -23,9 +23,6 @@ function DocSettings:getSidecarDir(doc_path)
     if file_without_suffix then
         return file_without_suffix..".sdr"
     end
-    -- We shouldn't be called with anything but files with registered
-    -- extensions, but in case we are, return something useful
-    logger.err("getSidecarFile called with unexpected path:", doc_path)
     return doc_path..".sdr"
 end
 
