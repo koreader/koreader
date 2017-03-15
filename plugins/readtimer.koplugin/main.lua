@@ -45,7 +45,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Read timer"),
         callback = function()
-            local title = _("When will the countdown timer alarm?\n(The unit is \"minute\", and only positive number is accepted.)")
+            local title = _("When will the countdown timer alarm?\nThe unit is \"minute\", and only positive number is accepted.")
             if self:scheduled() then
                 title = title .. T(_("\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
                                    self:remainingMinutes())
