@@ -98,15 +98,15 @@ local BatteryStat = {
 }
 
 function BatteryStat:init()
-    self.charging = Usage:new(self.settings.charging)
-    self.decharging = Usage:new(self.settings.decharging)
-    self.awake = Usage:new(self.settings.awake)
-    self.sleeping = Usage:new(self.settings.sleeping)
+    self.charging = Usage:new(self.settings:readSetting("charging"))
+    self.decharging = Usage:new(self.settings:readSetting("decharging"))
+    self.awake = Usage:new(self.settings:readSetting("awake"))
+    self.sleeping = Usage:new(self.settings:readSetting("sleeping"))
 
     -- Note: these fields are not the "real" timestamp and battery usage, but
     -- the unaccumulated values.
-    self.charging_state = State:new(self.settings.charging_state)
-    self.awake_state = State:new(self.settings.awake_state)
+    self.charging_state = State:new(self.settings:readSetting("charging_state"))
+    self.awake_state = State:new(self.settings:readSetting("awake_state"))
     -- Whether the device was suspending before current timestamp.
     self.was_suspending = false
     -- Whether the device was charging before current timestamp.
