@@ -94,7 +94,7 @@ local BatteryStat = {
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/batterystat.log",
-    debugging = true,
+    debugging = false,
 }
 
 function BatteryStat:init()
