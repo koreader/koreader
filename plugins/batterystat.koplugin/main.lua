@@ -156,7 +156,7 @@ end
 function BatteryStat:debugOutput(event)
     if self.debugging then
         self:dumpOrLog(event .. " @ " .. State:new():toString() ..
-                       ", awake_state " .. self.awake:toString() ..
+                       ", awake_state " .. self.awake_state:toString() ..
                        ", charging_state " .. self.charging_state:toString())
     end
 end
