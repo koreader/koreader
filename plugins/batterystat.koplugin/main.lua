@@ -194,8 +194,6 @@ function BatteryStat:onNotCharging()
 end
 
 function BatteryStat:onCallback()
-    self.was_suspending = false
-    self.was_charging = PowerD:isCharging()
     self:accumulate()
     local kv_pairs = self:dump()
     table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
