@@ -97,7 +97,7 @@ local BatteryStat = WidgetContainer:new{
     debugging = true,
 }
 
-function BatteryStat:init()
+function BatteryStat:__init()
     self.charging = Usage:new(self.settings.charging)
     self.decharging = Usage:new(self.settings.decharging)
     self.awake = Usage:new(self.settings.awake)
@@ -111,7 +111,9 @@ function BatteryStat:init()
     self.was_suspending = false
     -- Whether the device was charging before current timestamp.
     self.was_charging = PowerD:isCharging()
+end
 
+function BatteryStat:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -239,5 +241,7 @@ function BatteryStat:addToMainMenu(tab_item_table)
         end,
     })
 end
+
+BatteryStat:__init()
 
 return BatteryStat
