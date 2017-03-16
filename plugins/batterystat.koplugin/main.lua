@@ -97,7 +97,7 @@ local BatteryStat = WidgetContainer:new{
     debugging = true,
 }
 
-function BatteryStat:__init()
+function BatteryStat:init()
     self.charging = Usage:new(self.settings.charging)
     self.decharging = Usage:new(self.settings.decharging)
     self.awake = Usage:new(self.settings.awake)
@@ -111,10 +111,6 @@ function BatteryStat:__init()
     self.was_suspending = false
     -- Whether the device was charging before current timestamp.
     self.was_charging = PowerD:isCharging()
-end
-
-function BatteryStat:init()
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function BatteryStat:onFlushSettings()
@@ -195,6 +191,19 @@ function BatteryStat:onNotCharging()
     self:accumulate()
 end
 
+function BatteryStat:onCallback()
+    self.was_suspending = false
+    self.was_charging = PowerD:isCharging()
+    self:accumulate()
+    local kv_pairs = self:dump()
+    table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
+    table.insert(kv_pairs, {self.dump_file, ""})
+    UIManager:show(KeyValuePage:new{
+        title = _("Battery statistics"),
+        kv_pairs = kv_pairs,
+    })
+end
+
 function BatteryStat:dumpToText()
     local kv_pairs = self:dump()
     local content = T(_("Dump at %1"), os.date("%c"))
@@ -224,24 +233,39 @@ function BatteryStat:dump()
     return kv_pairs
 end
 
-function BatteryStat:addToMainMenu(tab_item_table)
+local BatteryStatWidget = WidgetContainer:new()
+
+function BatteryStatWidget:init()
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function BatteryStatWidget:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Battery statistics"),
         callback = function()
-            self.was_suspending = false
-            self.was_charging = PowerD:isCharging()
-            self:accumulate()
-            local kv_pairs = self:dump()
-            table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
-            table.insert(kv_pairs, {self.dump_file, ""})
-            UIManager:show(KeyValuePage:new{
-                title = _("Battery statistics"),
-                kv_pairs = kv_pairs,
-            })
+            BatteryStat:onCallback()
         end,
     })
 end
 
-BatteryStat:__init()
+function BatteryStatWidget:onFlushSettings()
+    BatteryStat:onFlushSettings()
+end
 
-return BatteryStat
+function BatteryStatWidget:onSuspend()
+    BatteryStat:onSuspend()
+end
+
+function BatteryStatWidget:onResume()
+    BatteryStat:onResume()
+end
+
+function BatteryStatWidget:onCharging()
+    BatteryStat:onCharging()
+end
+
+function BatteryStatWidget:onNotCharging()
+    BatteryStat:onNotCharging()
+end
+
+return BatteryStatWidget
