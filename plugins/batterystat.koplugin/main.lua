@@ -233,6 +233,8 @@ function BatteryStat:dump()
     return kv_pairs
 end
 
+BatteryStat:init()
+
 local BatteryStatWidget = WidgetContainer:new()
 
 function BatteryStatWidget:init()
