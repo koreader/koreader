@@ -90,11 +90,11 @@ function Usage:dumpCharging(kv_pairs)
     table.insert(kv_pairs, {_("    Estimated hours for charging"), shorten(self:chargingHours())})
 end
 
-local BatteryStat = WidgetContainer:new{
+local BatteryStat = {
     name = "batterstat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/batterystat.log",
-    debugging = true,
+    debugging = false,
 }
 
 function BatteryStat:init()
