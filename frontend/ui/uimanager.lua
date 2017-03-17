@@ -111,10 +111,10 @@ function UIManager:init()
             end
         end
         self.event_handlers["NotCharging"] = function()
+            self:broadcastEvent("NotCharging")
             if Device.screen_saver_mode then
                 self.event_handlers["Suspend"]()
             end
-            self:broadcastEvent("NotCharging")
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
