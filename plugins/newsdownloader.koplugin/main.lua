@@ -14,15 +14,15 @@ local NewsDownloader = InputContainer:new{}
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self);
-    
+
     local util = require("turbo.util");
     local feedXmlFilePath = self:getFeedXmlPath();
-    
+
     if not util.file_exists(feedXmlFilePath) then
       DEBUG("Creating init configuration");
       local newsDir = self:getNewsDirPath();
       lfs.mkdir(newsDir);
-       
+
       local ffiUtil = require("ffi/util");
       local exampleFeedPath = self:getExampleFeedPath()
       ffiUtil.copyFile(exampleFeedPath, feedXmlFilePath);
@@ -41,13 +41,13 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                         {
                 text = _("Go to news folder"),
                 callback = function()
-                		 FileManager:showFiles(self:getNewsDirPath());
+					FileManager:showFiles(self:getNewsDirPath());
                 end,
             },
             {
                 text = _("Remove news"),
                 callback = function()
-                		self:clearNewsDir();
+						self:clearNewsDir();
                         UIManager:show(InfoMessage:new{
                             text = _("News removed.")
                         })
@@ -74,16 +74,16 @@ function NewsDownloader:loadSourcesAndProcess()
     local feedSources = self:deserializeXML(feedfileName);
 
     for index, feed in pairs(feedSources.feeds.feed) do
-    	local url = feed[1];
+		local url = feed[1];
     	UIManager:show(InfoMessage:new{
-              text = _("Processing: ") .. url,
-              timeout = 2,
+			text = _("Processing: ") .. url,
+			timeout = 2,
         });
-        
+
       local nameSuffix = config.FEED_SOURCE_SUFFIX;
       local newsDirPath = self:getNewsDirPath();
       local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
-      
+
       local limit = tonumber(feed._attr.limit);
 
       self:processFeedSource(url, newsSourceFilePath, limit);
@@ -103,14 +103,14 @@ function NewsDownloader:getFeedXmlPath()
     return feedXmlPath;
 end
 
-function NewsDownloader:getNewsDirPath() 
+function NewsDownloader:getNewsDirPath()
 	local baseDirPath = DataStorage:getDataDir();
 	local newsDirName = config.NEWS_DOWNLOAD_DIR;
 	local newsDirPath = baseDirPath .. newsDirName;
 	return newsDirPath;
 end
 
-function NewsDownloader:deserializeXML(filename) -- luacheck: ignore
+function NewsDownloader:deserializeXML(filename)
   -- uses LuaXML https://github.com/manoelcampos/LuaXML
   -- The MIT License (MIT)
   -- Copyright (c) 2016 Manoel Campos da Silva Filho
@@ -128,10 +128,10 @@ function NewsDownloader:deserializeXML(filename) -- luacheck: ignore
   end
 
   --Instantiate the object the states the XML file as a Lua table
-  local xmlhandler = simpleTreeHandler()
+  local xmlhandler = simpleTreeHandler() -- luacheck: ignore
 
   --Instantiate the object that parses the XML to a Lua table
-  local xmlparser = xmlParser(xmlhandler)
+  local xmlparser = xmlParser(xmlhandler) -- luacheck: ignore
   xmlparser:parse(xmltext)
 
   return xmlhandler.root;
@@ -143,16 +143,16 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
 
    self:download(url,feedSource)
    local feeds = self:deserializeXML(feedSource);
-   
+
    local util = require("frontend/util");
    local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/";
    local feedDirPath = self:getNewsDirPath() .. feedDir;
    lfs.mkdir(feedDirPath);
 
    for index, feed in pairs(feeds.rss.channel.item) do
-   		if index -1 == limit then
-   			break;
-   		end
+		if index -1 == limit then
+			break;
+		end
 
       local title = util.replaceInvalidChars(feed.title);
 
@@ -172,7 +172,7 @@ function NewsDownloader:download(url,outputFilename)
         sink = file,
     }
 end
-                
+
 function NewsDownloader:clearNewsDir()
 	local newsDir = self:getNewsDirPath();
 	self:removeAllExceptFeedConfig(newsDir);
@@ -182,10 +182,9 @@ end
 function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
 	local ffi = require("ffi");
 
-	require("ffi/zeromq_h")
 	    for f in lfs.dir(dir) do
 			local feedConfigFile = config.FEED_FILE_NAME;
-			
+
 	        local path = dir.."/"..f
 	        local mode = lfs.attributes(path, "mode")
 	        if mode == "file" and f ~= feedConfigFile then
