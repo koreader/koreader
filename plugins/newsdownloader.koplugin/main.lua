@@ -75,7 +75,7 @@ function NewsDownloader:loadSourcesAndProcess()
 
     for index, feed in pairs(feedSources.feeds.feed) do
 		local url = feed[1];
-    	UIManager:show(InfoMessage:new{
+		UIManager:show(InfoMessage:new{
 			text = _("Processing: ") .. url,
 			timeout = 2,
         });
