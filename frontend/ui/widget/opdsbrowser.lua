@@ -354,6 +354,7 @@ end
 function OPDSBrowser:getCatalog(feed_url)
     local ok, catalog = pcall(self.parseFeed, self, feed_url)
     if not ok and catalog and not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
         logger.warn("cannot get catalog info from", feed_url, catalog)
