@@ -627,6 +627,8 @@ function DictQuickLookup:onSwipe(arg, ges)
     elseif ges.direction == "east" then
         self:changeToPrevDict()
     else
+        -- update footer (time & battery)
+        UIManager:broadcastEvent(Event:new("UpdateFooter"))
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
