@@ -13,7 +13,7 @@ local url = require('socket.url')
 local T = require("ffi/util").template
 local Cache = require("cache")
 local logger = require("logger")
-local _ = require("gettext")
+local gettext = require("gettext")
 
 local socket = require('socket')
 local http = require('socket.http')
@@ -35,7 +35,7 @@ local CatalogCache = Cache:new{
 
 local OPDSBrowser = Menu:extend{
     opds_servers = {},
-    calibre_name = _("Local calibre catalog"),
+    calibre_name = gettext("Local calibre catalog"),
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
@@ -111,28 +111,28 @@ end
 
 function OPDSBrowser:addNewCatalog()
     self.add_server_dialog = MultiInputDialog:new{
-        title = _("Add OPDS catalog"),
+        title = gettext("Add OPDS catalog"),
         fields = {
             {
                 text = "",
-                hint = _("Catalog name"),
+                hint = gettext("Catalog name"),
             },
             {
                 text = "",
-                hint = _("Catalog URL"),
+                hint = gettext("Catalog URL"),
             },
         },
         buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text = gettext("Cancel"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
                     end
                 },
                 {
-                    text = _("Add"),
+                    text = gettext("Add"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -151,29 +151,29 @@ end
 function OPDSBrowser:editCalibreServer()
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     self.add_server_dialog = MultiInputDialog:new{
-        title = _("Edit local calibre host and port"),
+        title = gettext("Edit local calibre host and port"),
         fields = {
             {
                 -- TODO: get IP address of current device
                 text = calibre.host or "192.168.1.1",
-                hint = _("calibre host"),
+                hint = gettext("calibre host"),
             },
             {
                 text = calibre.port and tostring(calibre.port) or "8080",
-                hint = _("calibre port"),
+                hint = gettext("calibre port"),
             },
         },
         buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text = gettext("Cancel"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
                     end
                 },
                 {
-                    text = _("Apply"),
+                    text = gettext("Apply"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -220,7 +220,7 @@ function OPDSBrowser:genItemTableFromRoot()
         })
     end
     table.insert(item_table, {
-        text = _("Add new OPDS catalog"),
+        text = gettext("Add new OPDS catalog"),
         callback = function()
             self:addNewCatalog()
         end,
@@ -288,19 +288,19 @@ end
 
 function OPDSBrowser:fetchWithLogin(host, callback)
     self.login_dialog = LoginDialog:new{
-        title = _("Login to OPDS server"),
+        title = gettext("Login to OPDS server"),
         username = "",
         buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text = gettext("Cancel"),
                     enabled = true,
                     callback = function()
                         self:closeDialog()
                     end,
                 },
                 {
-                    text = _("Login"),
+                    text = gettext("Login"),
                     enabled = true,
                     callback = function()
                         local username, password = self:getCredential()
@@ -353,15 +353,14 @@ end
 
 function OPDSBrowser:getCatalog(feed_url)
     local ok, catalog = pcall(self.parseFeed, self, feed_url)
-    -- prompt users to turn on Wifi if network is unreachable
-    if not ok and catalog and (catalog:find("Network is unreachable") or catalog:find("host or service not provided")) then
+    if not ok and catalog and not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
         logger.warn("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
             text = T(
-                _("Cannot get catalog info from %1"),
+                gettext("Cannot get catalog info from %1"),
                 (feed_url or "")
             ),
         })
@@ -475,6 +474,8 @@ end
 
 function OPDSBrowser:appendCatalog(item_table_url)
     local new_table = self:genItemTableFromURL(item_table_url)
+    if #new_table == 0 then return false end
+
     for _, item in ipairs(new_table) do
         table.insert(self.item_table, item)
     end
@@ -504,7 +505,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     logger.dbg("downloading file", local_path, "from", remote_url)
 
     local parsed = url.parse(remote_url)
-    http.TIMEOUT, https.TIMEOUT = 10, 10
+    http.TIMEOUT, https.TIMEOUT = 20, 20
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local _, c, _ = httpRequest{
         url = remote_url,
@@ -519,7 +520,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
         end
     else
         UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. local_path,
+            text = gettext("Could not save file to:\n") .. local_path,
             timeout = 3,
         })
     end
@@ -527,7 +528,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download directory:\n%1\n\nDownload file type:"), path),
+        title = T(gettext("Download directory:\n%1\n\nDownload file type:"), path),
         buttons = buttons
     }
 end
@@ -554,7 +555,7 @@ function OPDSBrowser:showDownloads(item)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = gettext("Downloading may take several minutes…"),
                             timeout = 1,
                         })
                     end
@@ -570,10 +571,10 @@ function OPDSBrowser:showDownloads(item)
     -- set download directory button
     table.insert(buttons, {
         {
-            text = _("Set download directory"),
+            text = gettext("Set download directory"),
             callback = function()
                 require("ui/downloadmgr"):new{
-                    title = _("Choose download directory"),
+                    title = gettext("Choose download directory"),
                     onConfirm = function(path)
                         logger.dbg("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
@@ -629,28 +630,28 @@ end
 function OPDSBrowser:editOPDSServer(item)
     logger.dbg("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
-        title = _("Edit OPDS catalog"),
+        title = gettext("Edit OPDS catalog"),
         fields = {
             {
                 text = item.text or "",
-                hint = _("Catalog Name"),
+                hint = gettext("Catalog Name"),
             },
             {
                 text = item.url or "",
-                hint = _("Catalog URL"),
+                hint = gettext("Catalog URL"),
             },
         },
         buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text = gettext("Cancel"),
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
                     end
                 },
                 {
-                    text = _("Apply"),
+                    text = gettext("Apply"),
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
@@ -684,7 +685,7 @@ function OPDSBrowser:onMenuHold(item)
             buttons = {
                 {
                     {
-                        text = _("Edit"),
+                        text = gettext("Edit"),
                         enabled = item.editable,
                         callback = function()
                             UIManager:close(self.opds_server_dialog)
@@ -696,7 +697,7 @@ function OPDSBrowser:onMenuHold(item)
                         end
                     },
                     {
-                        text = _("Delete"),
+                        text = gettext("Delete"),
                         enabled = item.deletable,
                         callback = function()
                             UIManager:close(self.opds_server_dialog)
@@ -729,11 +730,20 @@ end
 
 function OPDSBrowser:onNext()
     logger.dbg("fetch next page catalog")
-    local hrefs = self.item_table.hrefs
+    -- self.page_num comes from menu.lua
     local page_num = self.page_num
-    while page_num == self.page_num and hrefs and hrefs.next do
-        self:appendCatalog(hrefs.next)
+    -- fetch more entries until we fill out one page or reach the end
+    while page_num == self.page_num do
+        local hrefs = self.item_table.hrefs
+        if hrefs and hrefs.next then
+            if not self:appendCatalog(hrefs.next) then
+                break  -- reach end of paging
+            end
+        else
+            break
+        end
     end
+
     return true
 end
 
