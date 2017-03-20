@@ -100,7 +100,9 @@ local KeyValuePage = ListPage:new{}
 
 function KeyValuePage:init()
     if self.kv_pairs then
-        self = self.kv_pairs
+        for _, item in pairs(self.kv_pairs) do
+            table.insert(self, item)
+        end
     end
 end
 
