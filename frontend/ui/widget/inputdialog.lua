@@ -114,7 +114,7 @@ function InputDialog:init()
             }
         }
     else
-        self.description = widget:new()
+        self.description = Widget:new()
     end
 
     self._input_widget = InputText:new{
