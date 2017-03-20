@@ -47,11 +47,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
     table.insert(tab_item_table.plugins, {
         text = _("Read timer"),
         callback = function()
-            local title = _("When will the countdown timer alarm?\nThe unit is \"minute\", and only positive number is accepted.")
-            if self:scheduled() then
-                title = title .. T(_("\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
-                                   string.format("%.2f", self:remainingMinutes()))
-            end
+            local description = _("When will the countdown timer alarm?")
             local buttons = {{
                 text = _("Close"),
                 callback = function()
@@ -70,6 +66,9 @@ function ReadTimer:addToMainMenu(tab_item_table)
                 end,
             }}
             if self:scheduled() then
+                description = description ..
+                    T(_("\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
+                      string.format("%.2f", self:remainingMinutes()))
                 table.insert(buttons, {
                     text = _("Stop"),
                     callback = function()
@@ -78,12 +77,13 @@ function ReadTimer:addToMainMenu(tab_item_table)
                     end,
                 })
             end
+            description = description .. _("\nPositive number is required.")
+
             self.input = InputDialog:new{
-                title_face = Font:getFace("cfont", 20),
-                title = title,
-                full_title = true,
+                title = _("Set countdown for timer alarm"),
+                description = description,
                 input_type = "number",
-                input_hint = _("in minutes"),
+                input_hint = _("unit in minutes"),
                 buttons = { buttons },
             }
             self.input:onShowKeyboard()
