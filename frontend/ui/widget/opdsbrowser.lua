@@ -353,8 +353,7 @@ end
 
 function OPDSBrowser:getCatalog(feed_url)
     local ok, catalog = pcall(self.parseFeed, self, feed_url)
-    -- prompt users to turn on Wifi if network is unreachable
-    if not ok and catalog and (catalog:find("Network is unreachable") or catalog:find("host or service not provided")) then
+    if not ok and catalog and not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
@@ -475,6 +474,8 @@ end
 
 function OPDSBrowser:appendCatalog(item_table_url)
     local new_table = self:genItemTableFromURL(item_table_url)
+    if #new_table == 0 then return false end
+
     for _, item in ipairs(new_table) do
         table.insert(self.item_table, item)
     end
@@ -729,11 +730,20 @@ end
 
 function OPDSBrowser:onNext()
     logger.dbg("fetch next page catalog")
-    local hrefs = self.item_table.hrefs
+    -- self.page_num comes from menu.lua
     local page_num = self.page_num
-    while page_num == self.page_num and hrefs and hrefs.next do
-        self:appendCatalog(hrefs.next)
+    -- fetch more entries until we fill out one page or reach the end
+    while page_num == self.page_num do
+        local hrefs = self.item_table.hrefs
+        if hrefs and hrefs.next then
+            if not self:appendCatalog(hrefs.next) then
+                break  -- reach end of paging
+            end
+        else
+            break
+        end
     end
+
     return true
 end
 

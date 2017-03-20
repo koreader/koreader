@@ -101,6 +101,11 @@ end
 
 function CloudStorage:openCloudServer(url)
     local tbl
+    local NetworkMgr = require("ui/network/manager")
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     if self.type == "dropbox" then
         tbl = DropBox:run(url, self.password)
     elseif self.type == "ftp" then
