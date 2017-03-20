@@ -47,9 +47,10 @@ end
 
 -- TODO: Do not use registerToMainMenu() in plugins.
 function PluginLoader:addToMenu(registered_widgets, tab_item_table)
+    local preferred_settings = G_reader_settings:child("plugins")
     local more_plugins = nil
     for __, widget in pairs(registered_widgets) do
-        if type(widget.name) ~= "string" or G_reader_settings:nilOrTrue("preferred_" .. widget.name) then
+        if type(widget.name) ~= "string" or preferred_settings:nilOrTrue("preferred_" .. widget.name) then
             widget:addToMainMenu(tab_item_table)
         else
             if more_plugins == nil then
