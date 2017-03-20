@@ -99,9 +99,7 @@ end
 local KeyValuePage = ListPage:new{}
 
 function KeyValuePage:createItemWidget(item)
-    if type(item) == "string" then
-        return ListPage.createItemWidget(self, item)
-    else
+    if type(item) == "table" then
         return KeyValueItem:new{
             height = self.item_height,
             width = self.item_width,
@@ -111,6 +109,8 @@ function KeyValuePage:createItemWidget(item)
             cface = self.cface,
         }
     end
+
+    return ListPage.createItemWidget(self, item)
 end
 
 return KeyValuePage

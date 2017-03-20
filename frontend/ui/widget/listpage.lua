@@ -166,25 +166,26 @@ function ListPage:init()
 end
 
 function ListPage:createItemWidget(item)
-    if type(item) == "string" then
-        if string.match(item, "-+") == item then
-            return LineWidget:new{
-                background = Blitbuffer.COLOR_LIGHT_GREY,
-                dimen = Geom:new{
-                    w = self.item_width,
-                    h = Screen:scaleBySize(2)
-                },
-                style = "solid",
-            }
-        else
-            return TextWidget:new{
-                text = RenderText:truncateTextByWidth(item, self.cfase, self.width),
-                face = self.cface,
-            }
-        end
+    if type(item) ~= "string" then
+        assert(false, "No Listpage:createItemWidget() of the input item " .. type(item) .. " provided")
+        return nil
     end
 
-    assert(false, "No Listpage:createItemWidget() of the input item " .. type(item) .. " provided")
+    if string.match(item, "-+") == item then
+        return LineWidget:new{
+            background = Blitbuffer.COLOR_LIGHT_GREY,
+            dimen = Geom:new{
+                w = self.item_width,
+                h = Screen:scaleBySize(2)
+            },
+            style = "solid",
+        }
+    end
+
+    return TextWidget:new{
+        text = RenderText:truncateTextByWidth(item, self.cfase, self.width),
+        face = self.cface,
+    }
 end
 
 function ListPage:nextPage()
