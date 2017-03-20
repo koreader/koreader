@@ -149,7 +149,7 @@ function ListPage:init()
     local line_height = self.item_height + 2 * self.item_margin
     local content_height = self.dimen.h - self.title_bar:getSize().h
     self.items_per_page = math.floor(content_height / line_height)
-    self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
+    self.pages = math.ceil(#self / self.items_per_page)
     self.main_content = VerticalGroup:new{}
     self:_populateItems()
     -- assemble page
@@ -209,7 +209,7 @@ function ListPage:_populateItems()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
-        local entry = self.kv_pairs[idx_offset + idx]
+        local entry = self[idx_offset + idx]
         if entry == nil then break end
 
         table.insert(self.main_content,
