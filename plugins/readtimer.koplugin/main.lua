@@ -67,7 +67,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             }}
             if self:scheduled() then
                 description = description ..
-                    T(_("\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
+                    T(_("\n\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
                       string.format("%.2f", self:remainingMinutes()))
                 table.insert(buttons, {
                     text = _("Stop"),
@@ -77,7 +77,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
                     end,
                 })
             end
-            description = description .. _("\nPositive number is required.")
+            description = description .. _("\n\n  - Positive number is required.")
 
             self.input = InputDialog:new{
                 title = _("Set countdown for timer alarm"),
