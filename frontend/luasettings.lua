@@ -60,7 +60,7 @@ function LuaSettings:flipTrue(key)
     end
 end
 
-function LuaSettings:replace(table)
+function LuaSettings:reset(table)
     self.data = table
 end
 

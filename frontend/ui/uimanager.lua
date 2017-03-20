@@ -34,15 +34,10 @@ local UIManager = {
 function UIManager:init()
     self.event_handlers = {
         __default__ = function(input_event)
-            -- Suspension in Kobo can be interrupted by screen updates. We
-            -- ignore user touch input here so screen udpate won't be
-            -- triggered in suspend mode
-            if not Device.screen_saver_mode then
-                self:sendEvent(input_event)
-            end
+            self:sendEvent(input_event)
         end,
         SaveState = function()
-            self:broadcastEvent("FlushSettings")
+            self:broadcastEvent(Event:new("FlushSettings"))
         end,
         Power = function(input_event)
             Device:onPowerEvent(input_event)
@@ -54,7 +49,7 @@ function UIManager:init()
         require("ui/screensaver"):show("poweroff", _("Powered off"))
         Screen:refreshFull()
         UIManager:nextTick(function()
-            self:broadcastEvent("Close")
+            self:broadcastEvent(Event:new("Close"))
             Device:powerOff()
         end)
     end
@@ -65,12 +60,12 @@ function UIManager:init()
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
             self:_stopAutoSuspend()
-            self:broadcastEvent("Suspend")
+            self:broadcastEvent(Event:new("Suspend"))
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
-            self:broadcastEvent("Resume")
+            self:broadcastEvent(Event:new("Resume"))
             self:_startAutoSuspend()
         end
         self.event_handlers["PowerPress"] = function()
@@ -105,33 +100,43 @@ function UIManager:init()
             Device:getPowerDevice():toggleFrontlight()
         end
         self.event_handlers["Charging"] = function()
-            self:broadcastEvent("Charging")
+            self:broadcastEvent(Event:new("Charging"))
             if Device.screen_saver_mode then
                 self.event_handlers["Suspend"]()
             end
         end
         self.event_handlers["NotCharging"] = function()
-            self:broadcastEvent("NotCharging")
+            self:broadcastEvent(Event:new("NotCharging"))
             if Device.screen_saver_mode then
                 self.event_handlers["Suspend"]()
+            end
+        end
+        self.event_handlers["__default__"] = function(input_event)
+            if Device.screen_saver_mode then
+                -- Suspension in Kobo can be interrupted by screen updates. We
+                -- ignore user touch input here so screen udpate won't be
+                -- triggered in suspend mode
+                return
+            else
+                self:sendEvent(input_event)
             end
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
-            self:broadcastEvent("Suspend")
+            self:broadcastEvent(Event:new("Suspend"))
             Device:intoScreenSaver()
         end
         self.event_handlers["OutOfSS"] = function()
             Device:outofScreenSaver()
-            self:broadcastEvent("Resume")
+            self:broadcastEvent(Event:new("Resume"))
         end
         self.event_handlers["Charging"] = function()
-            self:broadcastEvent("Charging")
+            self:broadcastEvent(Event:new("Charging"))
             Device:usbPlugIn()
         end
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
-            self:broadcastEvent("NotCharging")
+            self:broadcastEvent(Event:new("NotCharging"))
         end
     end
 end
@@ -378,10 +383,6 @@ end
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
-    if type(event) == "string" then
-        event = Event:new(event)
-    end
-
     local top_widget = self._window_stack[#self._window_stack]
     -- top level widget has first access to the event
     if top_widget.widget:handleEvent(event) then
@@ -420,9 +421,6 @@ end
 
 -- transmit an event to all registered widgets
 function UIManager:broadcastEvent(event)
-    if type(event) == "string" then
-        event = Event:new(event)
-    end
     -- the widget's event handler might close widgets in which case
     -- a simple iterator like ipairs would skip over some entries
     local i = 1

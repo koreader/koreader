@@ -24,7 +24,7 @@ function State:new(o)
 end
 
 function State:toString()
-    return "{ " .. self.percentage .. " @ " .. os.date("%c", self.timestamp) .. "}"
+    return string.format("{%d @ %s}", self.percentage, os.date("%c", self.timestamp))
 end
 
 local Usage = {}
@@ -111,10 +111,16 @@ function BatteryStat:init()
     self.was_suspending = false
     -- Whether the device was charging before current timestamp.
     self.was_charging = PowerD:isCharging()
+
+    if self.debugging then
+        self.debugOutput = self._debugOutput
+    else
+        self.debugOutput = function() end
+    end
 end
 
 function BatteryStat:onFlushSettings()
-    self.settings:replace({
+    self.settings:reset({
         charging = self.charging,
         decharging = self.decharging,
         awake = self.awake,
@@ -153,12 +159,10 @@ function BatteryStat:dumpOrLog(content)
     end
 end
 
-function BatteryStat:debugOutput(event)
-    if self.debugging then
-        self:dumpOrLog(event .. " @ " .. State:new():toString() ..
-                       ", awake_state " .. self.awake_state:toString() ..
-                       ", charging_state " .. self.charging_state:toString())
-    end
+function BatteryStat:_debugOutput(event)
+    self:dumpOrLog(event .. " @ " .. State:new():toString() ..
+                   ", awake_state " .. self.awake_state:toString() ..
+                   ", charging_state " .. self.charging_state:toString())
 end
 
 function BatteryStat:onSuspend()
@@ -196,6 +200,7 @@ end
 function BatteryStat:onCallback()
     self:accumulate()
     local kv_pairs = self:dump()
+    table.insert(kv_pairs, "----------")
     table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
     table.insert(kv_pairs, {self.dump_file, ""})
     UIManager:show(KeyValuePage:new{
