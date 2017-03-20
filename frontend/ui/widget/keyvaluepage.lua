@@ -98,6 +98,12 @@ end
 
 local KeyValuePage = ListPage:new{}
 
+function KeyValuePage:init()
+    if self.kv_pairs then
+        self = self.kv_pairs
+    end
+end
+
 function KeyValuePage:createItemWidget(item)
     if type(item) == "table" then
         return KeyValueItem:new{
