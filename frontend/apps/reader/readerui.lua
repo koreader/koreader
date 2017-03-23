@@ -85,6 +85,9 @@ function ReaderUI:registerPostInitCallback(callback)
 end
 
 function ReaderUI:init()
+    -- cap screen refresh on pan to 2 refreshes per second
+    local pan_rate = Screen.eink and 2.0 or 30.0
+
     self.postInitCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
     if not self.dialog then
@@ -229,6 +232,7 @@ function ReaderUI:init()
         })
         -- paging controller
         self:registerModule("paging", ReaderPaging:new{
+            pan_rate = pan_rate,
             dialog = self.dialog,
             view = self.view,
             ui = self
@@ -284,6 +288,7 @@ function ReaderUI:init()
         })
         -- rolling controller
         self:registerModule("rolling", ReaderRolling:new{
+            pan_rate = pan_rate,
             dialog = self.dialog,
             view = self.view,
             ui = self

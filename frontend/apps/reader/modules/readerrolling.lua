@@ -8,7 +8,6 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 
-local pan_rate = Screen.eink and 4.0 or 10.0
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -31,6 +30,7 @@ local pan_rate = Screen.eink and 4.0 or 10.0
     rendering.
 --]]
 local ReaderRolling = InputContainer:new{
+    pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     old_doc_height = nil,
     old_page = nil,
     current_pos = 0,
@@ -225,7 +225,7 @@ function ReaderRolling:setupTouchZones()
         {
             id = "rolling_pan",
             ges = "pan",
-            rate = pan_rate,
+            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
