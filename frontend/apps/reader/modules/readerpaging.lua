@@ -10,9 +10,6 @@ local logger = require("logger")
 local _ = require("gettext")
 
 
-local pan_rate = Screen.eink and 4.0 or 10.0
-
-
 local function copyPageState(page_state)
     return {
         page = page_state.page,
@@ -27,6 +24,7 @@ end
 
 
 local ReaderPaging = InputContainer:new{
+    pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
     number_of_pages = 0,
     last_pan_relative_y = 0,
@@ -133,7 +131,7 @@ function ReaderPaging:setupTouchZones()
         {
             id = "paging_pan",
             ges = "pan",
-            rate = pan_rate,
+            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
