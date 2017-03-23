@@ -880,4 +880,8 @@ function ReaderPaging:onGotoPercentage(percentage)
     return true
 end
 
+function ReaderPaging:onResume()
+    self.view.footer:updateFooter()
+end
+
 return ReaderPaging
