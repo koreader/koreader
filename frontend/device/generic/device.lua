@@ -112,6 +112,7 @@ function Device:onPowerEvent(ev)
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
                 self.screen_saver_mode = false
+                self.powerd:refreshCapacity()
                 self.powerd:afterResume()
             end
         elseif ev == "Suspend" then

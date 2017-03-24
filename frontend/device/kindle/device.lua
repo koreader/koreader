@@ -72,6 +72,7 @@ function Kindle:outofScreenSaver()
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
+        self.powerd:refreshCapacity()
     end
     self.screen_saver_mode = false
     self.powerd:afterResume()
@@ -87,6 +88,7 @@ function Kindle:usbPlugOut()
         util.usleep(1500000)
         self.screen:restoreFromSavedBB()
         self.screen:refreshFull()
+        self.powerd:refreshCapacity()
     end
 
     --@TODO signal filemanager for file changes  13.06 2012 (houqp)

@@ -394,6 +394,8 @@ function TouchMenu:init()
         }
     }
     self.footer_top_margin = VerticalSpan:new{width = Screen:scaleBySize(2)}
+    -- Make sure we always show an up to date battery status when first opening the menu...
+    Device:getPowerDevice():refreshCapacity()
     self.bar:switchToTab(self.last_index or 1)
 end
 
