@@ -623,4 +623,8 @@ function ReaderFooter:onSetStatusLine(status_line)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
+function ReaderFooter:onResume()
+    self:updateFooter()
+end
+
 return ReaderFooter

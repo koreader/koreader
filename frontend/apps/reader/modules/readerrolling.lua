@@ -332,7 +332,7 @@ function ReaderRolling:onPageUpdate(new_page)
 end
 
 function ReaderRolling:onResume()
-    self.view.footer:updateFooter()
+    self:updateBatteryState()
 end
 
 function ReaderRolling:onDoubleTapForward()
