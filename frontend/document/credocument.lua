@@ -162,8 +162,15 @@ function CreDocument:getImageFromPosition(pos)
         local Mupdf = require("ffi/mupdf")
         -- wrapped with pcall so we always free(data)
         local ok, image = pcall(Mupdf.renderImage, data, size)
-        ffi.C.free(data) -- need that explicite clean
         logger.dbg("Mupdf.renderImage", ok, image)
+        if not ok and string.find(image, "could not load image data: unknown image file format") then
+            -- in that case, mupdf seems to have already freed data (see mupdf/source/fitz/image.c:494),
+            -- as doing outselves ffi.C.free(data) would result in a crash with :
+            -- *** Error in `./luajit': double free or corruption (!prev): 0x0000000000e48a40 ***
+            logger.warn("Mupdf says 'unknown image file format', assuming mupdf has already freed image data")
+        else
+            ffi.C.free(data) -- need that explicite clean
+        end
         if ok then
             return image
         end
@@ -452,7 +459,9 @@ end
 
 function CreDocument:register(registry)
     registry:addProvider("txt", "application/txt", self)
+    registry:addProvider("log", "application/txt", self)
     registry:addProvider("txt.zip", "application/zip", self)
+    registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("epub", "application/epub", self)
     registry:addProvider("fb2", "application/fb2", self)
     registry:addProvider("fb2.zip", "application/zip", self)

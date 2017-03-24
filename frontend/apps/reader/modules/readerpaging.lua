@@ -367,6 +367,8 @@ function ReaderPaging:onSwipe(_, ges)
             self:onPagingRel(-1)
         end
     else
+        -- update footer (time & battery)
+        self.view.footer:updateFooter()
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
@@ -849,6 +851,9 @@ end
 -- wrapper for bounds checking
 function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
+        -- update footer even if we stay on the same page (like when
+        -- viewing the bottom part of a page from a top part view)
+        self.view.footer:updateFooter()
         return true
     end
     if number > self.number_of_pages or number < 1 then
