@@ -524,10 +524,6 @@ function ReaderFooter:onPosUpdate(pos)
     self:updateFooterPos()
 end
 
-function ReaderFooter:onUpdateFooter()
-    self:updateFooter()
-end
-
 -- recalculate footer sizes when document page count is updated
 -- see documentation for more info about this event.
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter

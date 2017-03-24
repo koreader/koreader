@@ -65,7 +65,7 @@ function WpaSupplicant:authenticateNetwork(network)
     local re = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
     if re == 'FAIL' then
         wcli:removeNetwork(nw_id)
-        return false, _("Failed to set network SSID.")
+        return false, _("An error occurred while selecting network.")
     end
     if not network.psk then
         network.psk = calculatePsk(network.ssid, network.password)
@@ -74,7 +74,7 @@ function WpaSupplicant:authenticateNetwork(network)
     re = wcli:setNetwork(nw_id, "psk", network.psk)
     if re == 'FAIL' then
         wcli:removeNetwork(nw_id)
-        return false, _("Failed to set network password.")
+        return false, _("An error occurred while setting password.")
     end
     wcli:enableNetworkByID(nw_id)
 
