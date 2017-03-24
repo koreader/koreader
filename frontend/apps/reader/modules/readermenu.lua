@@ -168,7 +168,7 @@ function ReaderMenu:setUpdateItemTable()
     local order = require("frontend/ui/elements/reader_menu_order")
 
     local MenuSorter = require("frontend/ui/menusorter")
-    self.tab_item_table = MenuSorter:sort(self.menu_items, order, "reader")
+    self.tab_item_table = MenuSorter:mergeAndSort("reader", self.menu_items, order)
 end
 
 function ReaderMenu:onShowReaderMenu()
