@@ -72,6 +72,7 @@ local ReaderUI = InputContainer:new{
     password = nil,
 
     postInitCallback = nil,
+    postReaderCallback = nil,
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)
@@ -84,8 +85,13 @@ function ReaderUI:registerPostInitCallback(callback)
     table.insert(self.postInitCallback, callback)
 end
 
+function ReaderUI:registerPostReadyCallback(callback)
+    table.insert(self.postReaderCallback, callback)
+end
+
 function ReaderUI:init()
     self.postInitCallback = {}
+    self.postReaderCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
     if not self.dialog then
         self.dialog = self
@@ -324,11 +330,17 @@ function ReaderUI:init()
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
+    self.postInitCallback = nil
 
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
+
+    for _,v in ipairs(self.postReaderCallback) do
+        v()
+    end
+    self.postReaderCallback = nil
 end
 
 function ReaderUI:showReader(file)
