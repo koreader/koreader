@@ -1,19 +1,23 @@
 local Device = require("device")
 
-if not ((Device:isKindle() or Device:isKobo()) and Device:hasFrontlight()) then
+local with_frontlight = (Device:isKindle() or Device:isKobo()) and Device:hasFrontlight()
+if not (with_frontlight or Device:isSDL()) then
     return { disabled = true, }
 end
 
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = Device.screen
-local UIManager = require("ui/uimanager")
+local ConfirmBox = require("ui/widget/confirmbox")
+local ImageWidget = require("ui/widget/imagewidget")
+local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
+local PluginLoader = require("pluginloader")
+local Screen = require("device").screen
+local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
 local tap_touch_zone_ratio = { x = 0, y = 15/16, w = 1/10, h = 1/16, }
 local swipe_touch_zone_ratio = { x = 0, y = 1/8, w = 1/10, h = 7/8, }
-
 
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
@@ -28,6 +32,8 @@ function KoboLight:init()
     do
         self.steps[i] = math.ceil(self.steps[i] * scale)
     end
+
+    self.ui.menu:registerToMainMenu(self)
 end
 
 function KoboLight:onReaderReady()
@@ -35,8 +41,13 @@ function KoboLight:onReaderReady()
     self:resetLayout()
 end
 
+function KoboLight:disabled()
+    return G_reader_settings:isTrue("disable_kobolight")
+end
+
 function KoboLight:setupTouchZones()
     if not Device:isTouchDevice() then return end
+    if self:disabled() then return end
     local swipe_zone = {
         ratio_x = swipe_touch_zone_ratio.x, ratio_y = swipe_touch_zone_ratio.y,
         ratio_w = swipe_touch_zone_ratio.w, ratio_h = swipe_touch_zone_ratio.h,
@@ -146,6 +157,41 @@ function KoboLight:onSwipe(_, ges)
         end
     end
     return true
+end
+
+function KoboLight:addToMainMenu(tab_item_table)
+    table.insert(tab_item_table.plugins, {
+        text = _("Frontlight gesture controller"),
+        callback = function()
+            local image = ImageWidget:new{
+                file = PluginLoader.plugin_path .. "/kobolight.koplugin/demo.png",
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = 0,
+            }
+            UIManager:show(image)
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Frontlight gesture controller can:\n- Turn on or off frontlight by tapping bottom left of the screen.\n- Change frontlight intensity by swiping up or down on the left of the screen.\n\nDo you want to %1 it?"),
+                         self:disabled() and _("enable") or _("disable")),
+                ok_text = self:disabled() and _("Enable") or _("Disable"),
+                ok_callback = function()
+                    UIManager:close(image)
+                    UIManager:setDirty("all", "full")
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("You have %1 the frontlight gesture controller. It will take effect on next restart."),
+                                 self:disabled() and _("enabled") or _("disabled"))
+                    })
+                    G_reader_settings:flipTrue("disable_kobolight")
+                end,
+                cancel_text = _("Close"),
+                cancel_callback = function()
+                    UIManager:close(image)
+                    UIManager:setDirty("all", "full")
+                end,
+            })
+            UIManager:setDirty("all", "full")
+        end,
+    })
 end
 
 return KoboLight

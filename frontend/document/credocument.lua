@@ -459,7 +459,9 @@ end
 
 function CreDocument:register(registry)
     registry:addProvider("txt", "application/txt", self)
+    registry:addProvider("log", "application/txt", self)
     registry:addProvider("txt.zip", "application/zip", self)
+    registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("epub", "application/epub", self)
     registry:addProvider("fb2", "application/fb2", self)
     registry:addProvider("fb2.zip", "application/zip", self)

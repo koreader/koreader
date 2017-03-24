@@ -5,8 +5,6 @@ local KindlePowerD = BasePowerD:new{
     fl_min = 0, fl_max = 24,
 
     fl_intensity = nil,
-    battCapacity = nil,
-    is_charging = nil,
     lipc_handle = nil,
 
     is_fl_on = false,
@@ -55,20 +53,20 @@ end
 
 function KindlePowerD:getCapacityHW()
     if self.lipc_handle ~= nil then
-        self.battCapacity = self.lipc_handle:get_int_property("com.lab126.powerd", "battLevel")
+        return self.lipc_handle:get_int_property("com.lab126.powerd", "battLevel")
     else
-        self.battCapacity = self:read_int_file(self.batt_capacity_file)
+        return self:read_int_file(self.batt_capacity_file)
     end
-    return self.battCapacity
 end
 
 function KindlePowerD:isChargingHW()
+    local is_charging
     if self.lipc_handle ~= nil then
-        self.is_charging = self.lipc_handle:get_int_property("com.lab126.powerd", "isCharging")
+        is_charging = self.lipc_handle:get_int_property("com.lab126.powerd", "isCharging")
     else
-        self.is_charging = self:read_int_file(self.is_charging_file)
+        is_charging = self:read_int_file(self.is_charging_file)
     end
-    return self.is_charging == 1
+    return is_charging == 1
 end
 
 function KindlePowerD:__gc()
