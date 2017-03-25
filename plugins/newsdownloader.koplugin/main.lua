@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local _ = require("gettext")
 local FileManager = require("apps/filemanager/filemanager")
 local T = require("ffi/util").template
+local util = require("frontend/util");
 
 local config = require('newsConfig');
 
@@ -16,17 +17,16 @@ local NewsDownloader = InputContainer:new{}
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self);
 
-    local util = require("turbo.util");
-    local feedXmlFilePath = self:getFeedXmlPath();
-
-    if not util.file_exists(feedXmlFilePath) then
+    local turboUtil = require("turbo.util");
+    local feedConfigFilePath = self:getFeedConfigPath();
+    if not turboUtil.file_exists(feedConfigFilePath) then
       DEBUG("NewsDownloader: Creating init configuration");
       local newsDir = self:getNewsDirPath();
       lfs.mkdir(newsDir);
 
       local ffiUtil = require("ffi/util");
-      local exampleFeedPath = self:getExampleFeedPath()
-      ffiUtil.copyFile(exampleFeedPath, feedXmlFilePath);
+      local exampleFeedConfigPath = self:getExampleFeedConfigPath()
+      ffiUtil.copyFile(exampleFeedConfigPath, feedConfigFilePath);
     end
 end
 
@@ -37,12 +37,12 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadSourcesAndProcess(); end,
+                callback = function() self:loadConfigAndProcessFeeds(); end,
             },
                         {
                 text = _("Go to news folder"),
                 callback = function()
-					FileManager:showFiles(self:getNewsDirPath());
+	                    FileManager:showFiles(self:getNewsDirPath())
                 end,
             },
             {
@@ -58,7 +58,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 text = _("Help"),
                 callback = function()
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."), self:getFeedXmlPath(), self:getNewsDirPath())
+                            text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."), self:getFeedConfigPath(), self:getNewsDirPath())
                         })
                 end,
             },
@@ -66,28 +66,29 @@ function NewsDownloader:addToMainMenu(tab_item_table)
     })
 end
 
-function NewsDownloader:loadSourcesAndProcess()
+function NewsDownloader:loadConfigAndProcessFeeds()
     UIManager:show(InfoMessage:new{
           text = _("Loading data.") ,
           timeout = 1,
     })
-    local feedfileName = self:getFeedXmlPath();
-    local feedSources = self:deserializeXML(feedfileName);
+    
+    local feedConfigFilePath = self:getFeedConfigPath();
+    DEBUG("NewsDownloader: Configuration file: ", feedConfigFilePath);
+    
+    local feedConfig = self:deserializeXML(feedConfigFilePath);
 
-    for index, feed in pairs(feedSources.feeds.feed) do
+    for index, feed in pairs(feedConfig.feeds.feed) do
 		local url = feed[1];
 		UIManager:show(InfoMessage:new{
 			text = T(_("Processing: %1"), url),
 			timeout = 2,
         });
 
-      local nameSuffix = config.FEED_SOURCE_SUFFIX;
-      local newsDirPath = self:getNewsDirPath();
-      local newsSourceFilePath = newsDirPath .. index .. nameSuffix;
+    local feedSourceTmpFilePath = self:createFeedSourceTmpFilePath(index);
 
-      local limit = tonumber(feed._attr.limit);
+      local downloadLimit = tonumber(feed._attr.limit);
 
-      self:processFeedSource(url, newsSourceFilePath, limit);
+      self:processFeedSource(url, feedSourceTmpFilePath, downloadLimit);
     end
 
     UIManager:show(InfoMessage:new{
@@ -96,11 +97,18 @@ function NewsDownloader:loadSourcesAndProcess()
 
 end
 
-function NewsDownloader:getFeedXmlPath()
+function NewsDownloader:getFeedConfigPath()
 	  local newsDirPath = self:getNewsDirPath();
     local feedfileName = config.FEED_FILE_NAME;
     local feedXmlPath = newsDirPath.. feedfileName;
     return feedXmlPath;
+end
+
+function NewsDownloader:createFeedSourceTmpFilePath(index)
+      local nameSuffix = config.FEED_SOURCE_SUFFIX;
+      local newsDirPath = self:getNewsDirPath();
+      local feedSourceTmpFilePath = newsDirPath .. index .. nameSuffix;
+    return feedSourceTmpFilePath;
 end
 
 function NewsDownloader:getNewsDirPath()
@@ -144,21 +152,19 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
    self:download(url,feedSource)
    local feeds = self:deserializeXML(feedSource);
 
-   local util = require("frontend/util");
-   local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/";
-   local feedDirPath = self:getNewsDirPath() .. feedDir;
-   lfs.mkdir(feedDirPath);
-
+    local feedOutputDirPath = self:createValidFeedOutputDirPath(feeds);
+    lfs.mkdir(feedOutputDirPath);
+    
    for index, feed in pairs(feeds.rss.channel.item) do
 		if index -1 == limit then
 			break;
 		end
 
-      local title = util.replaceInvalidChars(feed.title);
+		local newsTitle = util.replaceInvalidChars(feed.title);
 
-		  local newsFilePath = feedDirPath .. title .. config.FILE_EXTENSION;
-      DEBUG("NewsDownloader: News file will be stored to :", newsFilePath)
-      self:download(feed.link, newsFilePath)
+		local newsFilePath = feedOutputDirPath .. newsTitle .. config.FILE_EXTENSION;
+		DEBUG("NewsDownloader: News file will be stored to :", newsFilePath)
+		self:download(feed.link, newsFilePath)
     end
 end
 
@@ -171,6 +177,13 @@ function NewsDownloader:download(url,outputFilename)
         url = url,
         sink = file,
     }
+end
+
+function NewsDownloader:createValidFeedOutputDirPath(feeds)
+
+   local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/";
+   local feedOutputDirPath = self:getNewsDirPath() .. feedDir;
+   return feedOutputDirPath;
 end
 
 function NewsDownloader:clearNewsDir()
@@ -198,11 +211,11 @@ function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
     end
 end
 
-function NewsDownloader:getExampleFeedPath()
+function NewsDownloader:getExampleFeedConfigPath()
    local str = debug.getinfo(2, "S").source:sub(2)
    local dir = str:match("(.*/)");
    local exampleFeedsPath = dir .. config.FEED_FILE_NAME;
-   DEBUG("NewsDownloader: News file will be stored to :", exampleFeedsPath)
+   DEBUG("NewsDownloader: Example feed config file: ", exampleFeedsPath);
    return exampleFeedsPath;
 end
 
