@@ -437,19 +437,26 @@ function TouchMenu:updateItems()
         -- calculate index in item_table
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
-            local item_tmp = TouchMenuItem:new{
-                item = self.item_table[i],
-                menu = self,
-                dimen = Geom:new{
-                    w = self.item_width,
-                    h = self.item_height,
-                },
-                show_parent = self.show_parent,
-            }
-            table.insert(self.item_group, item_tmp)
-            -- insert split line
-            if c ~= self.perpage then
+            local item = self.item_table[i]
+            if item.text == "KOMenu:separator" and c ~= self.perpage then
+                -- insert split line
                 table.insert(self.item_group, self.split_line)
+            else
+                local item_tmp = TouchMenuItem:new{
+                    item = item,
+                    menu = self,
+                    dimen = Geom:new{
+                        w = self.item_width,
+                        h = self.item_height,
+                    },
+                    show_parent = self.show_parent,
+                }
+                table.insert(self.item_group, item_tmp)
+                -- @TODO remove after new menu sorting has been implemented
+                -- insert split line
+                if c ~= self.perpage then
+                    table.insert(self.item_group, self.split_line)
+                end
             end
         else
             -- item not enough to fill the whole page, break out of loop
