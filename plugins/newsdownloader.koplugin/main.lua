@@ -42,7 +42,11 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                         {
                 text = _("Go to news folder"),
                 callback = function()
-	                    FileManager:showFiles(self:getNewsDirPath())
+						if FileManager.instance then
+							FileManager.instance:reinit(self:getNewsDirPath())
+						else
+							FileManager:showFiles(self:getNewsDirPath())
+						end
                 end,
             },
             {
