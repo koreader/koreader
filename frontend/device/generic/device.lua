@@ -190,7 +190,7 @@ function Device:retrieveNetworkInfo()
         if os.execute("ip r | grep -q default") == 0 then
             local pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
             if pingok == 0 then
-                result = result .. "Gateway ping successfull"
+                result = result .. "Gateway ping successful"
             else
                 result = result .. "Gateway ping FAILED"
             end
