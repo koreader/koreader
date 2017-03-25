@@ -5,6 +5,7 @@ local DEBUG = require("dbg")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
 local FileManager = require("apps/filemanager/filemanager")
+local T = require("ffi/util").template
 
 local config = require('newsConfig');
 
@@ -19,7 +20,7 @@ function NewsDownloader:init()
     local feedXmlFilePath = self:getFeedXmlPath();
 
     if not util.file_exists(feedXmlFilePath) then
-      DEBUG("Creating init configuration");
+      DEBUG("NewsDownloader: Creating init configuration");
       local newsDir = self:getNewsDirPath();
       lfs.mkdir(newsDir);
 
@@ -57,7 +58,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 text = _("Help"),
                 callback = function()
                         UIManager:show(InfoMessage:new{
-                            text = _("Script uses config from " .. self:getNewsDirPath() .. config.FEED_FILE_NAME .. " to download feeds to " .. self:getNewsDirPath() .. " directory."),
+                            text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."), self:getFeedXmlPath(), self:getNewsDirPath())
                         })
                 end,
             },
@@ -76,7 +77,7 @@ function NewsDownloader:loadSourcesAndProcess()
     for index, feed in pairs(feedSources.feeds.feed) do
 		local url = feed[1];
 		UIManager:show(InfoMessage:new{
-			text = _("Processing: ") .. url,
+			text = T(_("Processing: %1"), url),
 			timeout = 2,
         });
 
@@ -90,7 +91,7 @@ function NewsDownloader:loadSourcesAndProcess()
     end
 
     UIManager:show(InfoMessage:new{
-      text = _("Downloading News Finished.")
+      text = _("Downloading news finished.")
     })
 
 end
@@ -99,7 +100,6 @@ function NewsDownloader:getFeedXmlPath()
 	  local newsDirPath = self:getNewsDirPath();
     local feedfileName = config.FEED_FILE_NAME;
     local feedXmlPath = newsDirPath.. feedfileName;
-    DEBUG(feedXmlPath);
     return feedXmlPath;
 end
 
@@ -117,7 +117,7 @@ function NewsDownloader:deserializeXML(filename)
   require("lib/xml")
   require("lib/handler")
 
-  DEBUG("filename to deserialize: ", filename)
+  DEBUG("NewsDownloader: Filename to deserialize: ", filename)
   local xmltext = ""
   local f, e = io.open(filename, "r")
   if f then
@@ -157,7 +157,7 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
       local title = util.replaceInvalidChars(feed.title);
 
 		  local newsFilePath = feedDirPath .. title .. config.FILE_EXTENSION;
-      DEBUG(newsFilePath)
+      DEBUG("NewsDownloader: News file will be stored to :", newsFilePath)
       self:download(feed.link, newsFilePath)
     end
 end
@@ -202,7 +202,7 @@ function NewsDownloader:getExampleFeedPath()
    local str = debug.getinfo(2, "S").source:sub(2)
    local dir = str:match("(.*/)");
    local exampleFeedsPath = dir .. config.FEED_FILE_NAME;
-   DEBUG(exampleFeedsPath);
+   DEBUG("NewsDownloader: News file will be stored to :", exampleFeedsPath)
    return exampleFeedsPath;
 end
 
