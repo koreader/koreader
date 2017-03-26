@@ -159,8 +159,8 @@ function KoboLight:onSwipe(_, ges)
     return true
 end
 
-function KoboLight:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function KoboLight:addToMainMenu(menu_items)
+    menu_items.frontlight_gesture_controller = {
         text = _("Frontlight gesture controller"),
         callback = function()
             local image = ImageWidget:new{

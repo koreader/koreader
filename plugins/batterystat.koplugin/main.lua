@@ -251,8 +251,8 @@ function BatteryStatWidget:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function BatteryStatWidget:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function BatteryStatWidget:addToMainMenu(menu_items)
+    menu_items.battery_statistics = {
         text = _("Battery statistics"),
         callback = function()
             BatteryStat:onCallback()
