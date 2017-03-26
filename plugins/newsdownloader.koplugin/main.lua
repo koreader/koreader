@@ -75,10 +75,10 @@ function NewsDownloader:loadConfigAndProcessFeeds()
           text = _("Loading data.") ,
           timeout = 1,
     })
-    
+
     local feedConfigFilePath = self:getFeedConfigPath();
     DEBUG("NewsDownloader: Configuration file: ", feedConfigFilePath);
-    
+
     local feedConfig = self:deserializeXML(feedConfigFilePath);
 
     for index, feed in pairs(feedConfig.feeds.feed) do
@@ -158,7 +158,7 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
 
     local feedOutputDirPath = self:createValidFeedOutputDirPath(feeds);
     lfs.mkdir(feedOutputDirPath);
-    
+
    for index, feed in pairs(feeds.rss.channel.item) do
 		if index -1 == limit then
 			break;
