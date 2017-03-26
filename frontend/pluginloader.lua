@@ -1,5 +1,6 @@
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local _ = require("gettext")
 
 local PluginLoader = {
     plugin_path = "plugins"
@@ -42,6 +43,31 @@ function PluginLoader:loadPlugins()
     table.sort(self.plugins, function(v1,v2) return v1.path < v2.path end)
 
     return self.plugins
+end
+
+-- TODO: Do not use registerToMainMenu() in plugins.
+function PluginLoader:addToMenu(registered_widgets, tab_item_table)
+    local preferred_settings = G_reader_settings:child("plugins")
+    local more_plugins = nil
+    for __, widget in pairs(registered_widgets) do
+        if type(widget.name) ~= "string" or preferred_settings:nilOrTrue("preferred_" .. widget.name) then
+            widget:addToMainMenu(tab_item_table)
+        else
+            if more_plugins == nil then
+                more_plugins = {
+                    text = _("More plugins"),
+                    sub_item_table = {},
+                }
+            end
+            local original_plugins = tab_item_table.plugins
+            tab_item_table.plugins = more_plugins.sub_item_table
+            widget:addToMainMenu(tab_item_table)
+            tab_item_table.plugins = original_plugins
+        end
+    end
+    if more_plugins ~= nil then
+        table.insert(tab_item_table.plugins, more_plugins)
+    end
 end
 
 return PluginLoader
