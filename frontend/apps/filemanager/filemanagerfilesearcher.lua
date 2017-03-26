@@ -62,8 +62,8 @@ function FileSearcher:setSearchResults()
         self.results = self.files
     else
         for __,f in pairs(self.files) do
-        DEBUG("f", f)
-            if string.find(string.lower(f.name), string.lower(keywords)) then
+        --DEBUG("f", f)
+            if string.find(string.lower(f.name), string.lower(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
                 if f.attr.mode == "directory" then
                     f.text = f.name.."/"
                     f.name = nil
