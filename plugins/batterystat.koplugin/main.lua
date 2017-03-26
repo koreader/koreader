@@ -257,7 +257,7 @@ function BatteryStatWidget:addToMainMenu(menu_items)
         callback = function()
             BatteryStat:onCallback()
         end,
-    })
+    }
 end
 
 function BatteryStatWidget:onFlushSettings()

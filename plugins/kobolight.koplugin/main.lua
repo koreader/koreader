@@ -191,7 +191,7 @@ function KoboLight:addToMainMenu(menu_items)
             })
             UIManager:setDirty("all", "full")
         end,
-    })
+    }
 end
 
 return KoboLight
