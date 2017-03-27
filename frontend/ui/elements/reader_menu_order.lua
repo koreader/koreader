@@ -23,6 +23,7 @@ local order = {
         "highlight_options",
         "change_font",
         "hyphenation",
+        "read_timer",
     },
     setting = {
         "read_from_right_to_left",

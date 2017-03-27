@@ -1,5 +1,4 @@
 
-local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -43,11 +42,15 @@ function ReadTimer:unschedule()
     end
 end
 
-function ReadTimer:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function ReadTimer:addToMainMenu(menu_items)
+    menu_items.read_timer = {
         text = _("Read timer"),
+        checked_func = function()
+            -- TODO (hzj-jie): Find a way to refresh the menu items after the buttons callbacks.
+            return self:scheduled()
+        end,
         callback = function()
-            local description = _("When will the countdown timer alarm?")
+            local description = _("When will the countdown timer notify you?")
             local buttons = {{
                 text = _("Close"),
                 callback = function()
@@ -67,7 +70,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             }}
             if self:scheduled() then
                 description = description ..
-                    T(_("\n\nYou have already set up a timer in %1 minutes. Setting a new one will overwrite it."),
+                    T(_("\n\nYou have already set up a timer for %1 minutes from now. Setting a new one will overwrite it."),
                       string.format("%.2f", self:remainingMinutes()))
                 table.insert(buttons, {
                     text = _("Stop"),
@@ -80,16 +83,16 @@ function ReadTimer:addToMainMenu(tab_item_table)
             description = description .. _("\n\n  - Positive number is required.")
 
             self.input = InputDialog:new{
-                title = _("Set countdown for timer alarm"),
+                title = _("Read timer"),
                 description = description,
                 input_type = "number",
-                input_hint = _("unit in minutes"),
+                input_hint = _("time in minutes"),
                 buttons = { buttons },
             }
             self.input:onShowKeyboard()
             UIManager:show(self.input)
         end,
-    })
+    }
 end
 
 return ReadTimer
