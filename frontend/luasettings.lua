@@ -50,8 +50,16 @@ function LuaSettings:isTrue(key)
     return string.lower(tostring(self:readSetting(key))) == "true"
 end
 
+function LuaSettings:isFalse(key)
+    return string.lower(tostring(self:readSetting(key))) == "false"
+end
+
 function LuaSettings:nilOrTrue(key)
     return self:hasNot(key) or self:isTrue(key)
+end
+
+function LuaSettings:nilOrFalse(key)
+    return self:hasNot(key) or self:isFalse(key)
 end
 
 function LuaSettings:flipNilOrTrue(key)
@@ -62,8 +70,24 @@ function LuaSettings:flipNilOrTrue(key)
     end
 end
 
+function LuaSettings:flipNilOrFalse(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:delSetting(key)
+    end
+end
+
 function LuaSettings:flipTrue(key)
     if self:isTrue(key) then
+        self:delSetting(key)
+    else
+        self:saveSetting(key, true)
+    end
+end
+
+function LuaSettings:flipFalse(key)
+    if self:isFalse(key) then
         self:delSetting(key)
     else
         self:saveSetting(key, true)
