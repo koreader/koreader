@@ -70,7 +70,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             }}
             if self:scheduled() then
                 description = description ..
-                    T(_("\n\nYou have already set up a timer for %1 minutes. Setting a new one will overwrite it."),
+                    T(_("\n\nYou have already set up a timer for %1 minutes from now. Setting a new one will overwrite it."),
                       string.format("%.2f", self:remainingMinutes()))
                 table.insert(buttons, {
                     text = _("Stop"),
