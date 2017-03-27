@@ -203,7 +203,7 @@ function TouchMenuBar:init()
         local icon_sep = LineWidget:new{
             style = k == 1 and "solid" or "none",
             dimen = Geom:new{
-                w = Screen:scaleBySize(2),
+                w = icon_sep_width,
                 h = self.height,
             }
         }
@@ -394,8 +394,6 @@ function TouchMenu:init()
         }
     }
     self.footer_top_margin = VerticalSpan:new{width = Screen:scaleBySize(2)}
-    -- Make sure we always show an up to date battery status when first opening the menu...
-    Device:getPowerDevice():refreshCapacity()
     self.bar:switchToTab(self.last_index or 1)
 end
 
@@ -439,8 +437,9 @@ function TouchMenu:updateItems()
         -- calculate index in item_table
         local i = (self.page - 1) * self.perpage + c
         if i <= #self.item_table then
+            local item = self.item_table[i]
             local item_tmp = TouchMenuItem:new{
-                item = self.item_table[i],
+                item = item,
                 menu = self,
                 dimen = Geom:new{
                     w = self.item_width,
@@ -449,8 +448,8 @@ function TouchMenu:updateItems()
                 show_parent = self.show_parent,
             }
             table.insert(self.item_group, item_tmp)
-            -- insert split line
-            if c ~= self.perpage then
+            if item.separator and c ~= self.perpage then
+                -- insert split line
                 table.insert(self.item_group, self.split_line)
             end
         else

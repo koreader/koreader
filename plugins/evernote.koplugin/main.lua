@@ -70,8 +70,8 @@ function EvernoteExporter:migrateClippings()
     end
 end
 
-function EvernoteExporter:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function EvernoteExporter:addToMainMenu(menu_items)
+    menu_items.evernote = {
         text = _("Evernote"),
         sub_item_table = {
             {
@@ -175,7 +175,7 @@ function EvernoteExporter:addToMainMenu(tab_item_table)
                 end
             }
         }
-    })
+    }
 end
 
 function EvernoteExporter:login()

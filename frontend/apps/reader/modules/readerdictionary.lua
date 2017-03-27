@@ -23,8 +23,8 @@ function ReaderDictionary:init()
         DataStorage:getDataDir() .. "/data/dict"
 end
 
-function ReaderDictionary:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.search, {
+function ReaderDictionary:addToMainMenu(menu_items)
+    menu_items.dictionary_lookup = {
         text = _("Dictionary lookup"),
         tap_input = {
             title = _("Enter a word to look up"),
@@ -33,7 +33,7 @@ function ReaderDictionary:addToMainMenu(tab_item_table)
                 self:onLookupWord(input)
             end,
         },
-    })
+    }
 end
 
 function ReaderDictionary:onLookupWord(word, box, highlight)
@@ -209,6 +209,10 @@ function ReaderDictionary:showDict(word, results, box)
             -- differentiate between dict and wiki
             is_wiki = self.is_wiki,
             wiki_languages = self.wiki_languages,
+            refresh_callback = function()
+                -- update info in footer (time, battery, etc)
+                self.view.footer:updateFooter()
+            end,
         }
         table.insert(self.dict_window_list, self.dict_window)
         UIManager:show(self.dict_window)

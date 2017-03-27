@@ -8,7 +8,6 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 
-local pan_rate = Screen.eink and 4.0 or 10.0
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -31,6 +30,7 @@ local pan_rate = Screen.eink and 4.0 or 10.0
     rendering.
 --]]
 local ReaderRolling = InputContainer:new{
+    pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     old_doc_height = nil,
     old_page = nil,
     current_pos = 0,
@@ -225,7 +225,7 @@ function ReaderRolling:setupTouchZones()
         {
             id = "rolling_pan",
             ges = "pan",
-            rate = pan_rate,
+            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
@@ -238,7 +238,7 @@ function ReaderRolling:getLastProgress()
     return self.xpointer
 end
 
-function ReaderRolling:addToMainMenu(tab_item_table)
+function ReaderRolling:addToMainMenu(menu_items)
     -- FIXME: repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
@@ -258,11 +258,11 @@ function ReaderRolling:addToMainMenu(tab_item_table)
     for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
         table.insert(page_overlap_menu, menu_entry)
     end
-    table.insert(tab_item_table.typeset, {
+    menu_items.page_overlap = {
         text = _("Page overlap"),
         enabled_func = function() return self.view.view_mode ~= "page" end,
         sub_item_table = page_overlap_menu,
-    })
+    }
 end
 
 function ReaderRolling:getLastPercent()

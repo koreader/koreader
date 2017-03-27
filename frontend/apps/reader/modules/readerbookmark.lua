@@ -43,14 +43,14 @@ function ReaderBookmark:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderBookmark:addToMainMenu(tab_item_table)
+function ReaderBookmark:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    table.insert(tab_item_table.navi, {
+    menu_items.bookmarks = {
         text = self.bm_menu_title,
         callback = function()
             self:onShowBookmark()
         end,
-    })
+    }
 end
 
 function ReaderBookmark:isBookmarkInTimeOrder(a, b)
