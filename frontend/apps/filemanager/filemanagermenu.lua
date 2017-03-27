@@ -69,7 +69,7 @@ end
 function FileManagerMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
         widget:addToMainMenu(self.menu_items)
-      end
+    end
 
     -- setting tab
     self.menu_items.show_hidden_files = {
