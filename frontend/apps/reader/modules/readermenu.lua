@@ -9,11 +9,16 @@ local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
+    menu_items = {},
     registered_widgets = {},
 }
 
 function ReaderMenu:init()
-    self.tab_item_table = {
+    self.menu_items = {
+        ["KOMenu:menu_buttons"] = {
+            -- top menu
+        },
+        -- items in top menu
         navi = {
             icon = "resources/icons/appbar.page.corner.bookmark.png",
         },
@@ -23,7 +28,7 @@ function ReaderMenu:init()
         setting = {
             icon = "resources/icons/appbar.settings.png",
         },
-        plugins = {
+        tools = {
             icon = "resources/icons/appbar.tools.png",
         },
         search = {
@@ -50,8 +55,9 @@ function ReaderMenu:init()
         },
         main = {
             icon = "resources/icons/menu-icon.png",
-        },
+        }
     }
+
     self.registered_widgets = {}
 
     if Device:hasKeys() then
@@ -88,21 +94,18 @@ end
 
 function ReaderMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.tab_item_table)
+        widget:addToMainMenu(self.menu_items)
     end
 
     -- settings tab
     -- insert common settings
-    for i, common_setting in ipairs(require("ui/elements/common_settings_menu_table")) do
-        table.insert(self.tab_item_table.setting, common_setting)
+    for id, common_setting in pairs(require("ui/elements/common_settings_menu_table")) do
+        self.menu_items[id] = common_setting
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
     if self.ui.document.is_djvu then
-        table.insert(
-            self.tab_item_table.setting,
-            #self.tab_item_table.setting,
-            self.view:getRenderModeMenuTable())
+        self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
     if Device:isKobo() and Screensaver:isUsingBookCover() then
@@ -112,7 +115,7 @@ function ReaderMenu:setUpdateItemTable()
         local proportional = function()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
-        table.insert(self.tab_item_table.setting, {
+        self.menu_items.screensaver {
             text = _("Screensaver"),
             sub_item_table = {
                 {
@@ -141,16 +144,16 @@ function ReaderMenu:setUpdateItemTable()
                     end
                 }
             }
-        })
+        }
     end
 
     -- main menu tab
     -- insert common info
-    for i, common_setting in ipairs(require("ui/elements/common_info_menu_table")) do
-        table.insert(self.tab_item_table.main, common_setting)
+    for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
+        self.menu_items[id] = common_setting
     end
 
-    table.insert(self.tab_item_table.main, {
+    self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
             self:onTapCloseMenu()
@@ -160,12 +163,16 @@ function ReaderMenu:setUpdateItemTable()
                 FileManager.instance:onClose()
             end
         end,
-    })
+    }
 
+    local order = require("frontend/ui/elements/reader_menu_order")
+
+    local MenuSorter = require("frontend/ui/menusorter")
+    self.tab_item_table = MenuSorter:mergeAndSort("reader", self.menu_items, order)
 end
 
 function ReaderMenu:onShowReaderMenu()
-    if #self.tab_item_table.setting == 0 then
+    if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
 
@@ -180,15 +187,7 @@ function ReaderMenu:onShowReaderMenu()
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
             last_index = self.last_tab_index,
-            tab_item_table = {
-                self.tab_item_table.navi,
-                self.tab_item_table.typeset,
-                self.tab_item_table.setting,
-                self.tab_item_table.plugins,
-                self.tab_item_table.search,
-                self.tab_item_table.filemanager,
-                self.tab_item_table.main,
-            },
+            tab_item_table = self.tab_item_table,
             show_parent = menu_container,
         }
     else

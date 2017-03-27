@@ -323,12 +323,12 @@ local option_titles = {
     mem_usage = _("KOReader memory usage"),
 }
 
-function ReaderFooter:addToMainMenu(tab_item_table)
+function ReaderFooter:addToMainMenu(menu_items)
     local sub_items = {}
-    table.insert(tab_item_table.setting, {
+    menu_items.status_bar = {
         text = _("Status bar"),
         sub_item_table = sub_items,
-    })
+    }
 
     -- menu item to fake footer tapping when touch area is disabled
     if Geom:new{
@@ -524,10 +524,6 @@ function ReaderFooter:onPosUpdate(pos)
     self:updateFooterPos()
 end
 
-function ReaderFooter:onUpdateFooter()
-    self:updateFooter()
-end
-
 -- recalculate footer sizes when document page count is updated
 -- see documentation for more info about this event.
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
@@ -625,6 +621,10 @@ function ReaderFooter:onSetStatusLine(status_line)
     end
     self.ui.document:setStatusLineProp(status_line)
     self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderFooter:onResume()
+    self:updateFooter()
 end
 
 return ReaderFooter

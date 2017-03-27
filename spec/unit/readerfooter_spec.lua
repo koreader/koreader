@@ -1,11 +1,24 @@
 describe("Readerfooter module", function()
-    local DocumentRegistry, ReaderUI, DocSettings, UIManager, DEBUG
+    local DocumentRegistry, ReaderUI, MenuSorter, DocSettings, UIManager, DEBUG
     local purgeDir, Screen
 
-    local function tapFooterMenu(menu_tab_items, menu_title)
-        for _, item in ipairs(menu_tab_items.setting) do
-            if item.text == "Status bar" then
-                for _, subitem in ipairs(item.sub_item_table) do
+    setup(function()
+        require("commonrequire")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        ReaderUI = require("apps/reader/readerui")
+        DocSettings = require("docsettings")
+        UIManager = require("ui/uimanager")
+        MenuSorter = require("ui/menusorter")
+        DEBUG = require("dbg")
+        purgeDir = require("ffi/util").purgeDir
+        Screen = require("device").screen
+
+        function tapFooterMenu(menu_items, menu_title)
+            local status_bar = menu_items.status_bar
+
+            if status_bar then
+                for _, subitem in ipairs(status_bar.sub_item_table) do
                     if subitem.text == menu_title then
                         subitem.callback()
                         return
@@ -13,19 +26,8 @@ describe("Readerfooter module", function()
                 end
                 error('Menu item not found: "' .. menu_title .. '"!')
             end
+            error('Menu item not found: "Status bar"!')
         end
-        error('Menu item not found: "Status bar"!')
-    end
-
-    setup(function()
-        require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        DocSettings = require("docsettings")
-        UIManager = require("ui/uimanager")
-        DEBUG = require("dbg")
-        purgeDir = require("ffi/util").purgeDir
-        Screen = require("device").screen
     end)
 
     before_each(function()
@@ -452,17 +454,16 @@ describe("Readerfooter module", function()
         footer:addToMainMenu(fake_menu)
 
         local has_toggle_menu = false
-        for _, item in ipairs(fake_menu.setting) do
-            if item.text == "Status bar" then
-                for _, subitem in ipairs(item.sub_item_table) do
-                    if subitem.text == 'Toggle mode' then
-                        has_toggle_menu = true
-                        break
-                    end
+
+        if fake_menu.status_bar then
+            for _, subitem in ipairs(fake_menu.status_bar.sub_item_table) do
+                if subitem.text == 'Toggle mode' then
+                    has_toggle_menu = true
+                    break
                 end
-                break
             end
         end
+
         assert.is.truthy(has_toggle_menu)
 
         assert.is.same(1, footer.mode)

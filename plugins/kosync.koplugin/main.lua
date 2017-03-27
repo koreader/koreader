@@ -85,8 +85,8 @@ function KOSync:onReaderReady()
     self.view.document:fastDigest()
 end
 
-function KOSync:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function KOSync:addToMainMenu(menu_items)
+    menu_items.progress_sync = {
         text = _("Progress sync"),
         sub_item_table = {
             {
@@ -215,7 +215,7 @@ function KOSync:addToMainMenu(tab_item_table)
                 },
             },
         }
-    })
+    }
 end
 
 function KOSync:setCustomServer(server)

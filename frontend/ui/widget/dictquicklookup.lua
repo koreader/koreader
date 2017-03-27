@@ -56,6 +56,8 @@ local DictQuickLookup = InputContainer:new{
     definition_padding = Screen:scaleBySize(2),
     definition_margin = Screen:scaleBySize(2),
     button_padding = Screen:scaleBySize(14),
+    -- refresh_callback will be called before we trigger full refresh in onSwipe
+    refresh_callback = nil,
 }
 
 function DictQuickLookup:init()
@@ -627,8 +629,7 @@ function DictQuickLookup:onSwipe(arg, ges)
     elseif ges.direction == "east" then
         self:changeToPrevDict()
     else
-        -- update footer (time & battery)
-        UIManager:broadcastEvent(Event:new("UpdateFooter"))
+        if self.refresh_callback then self.refresh_callback() end
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end

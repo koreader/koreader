@@ -19,14 +19,14 @@ function FileManagerHistory:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function FileManagerHistory:addToMainMenu(tab_item_table)
+function FileManagerHistory:addToMainMenu(menu_items)
     -- insert table to main tab of filemanager menu
-    table.insert(tab_item_table.main, {
+    menu_items.history = {
         text = self.hist_menu_title,
         callback = function()
             self:onShowHist()
         end,
-    })
+    }
 end
 
 function FileManagerHistory:updateItemTable()
