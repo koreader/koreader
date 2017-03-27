@@ -166,7 +166,6 @@ function InputDialog:init()
             align = "left",
             self.title,
             self.title_bar,
-            -- description,
             self.description,
             -- input
             CenterContainer:new{

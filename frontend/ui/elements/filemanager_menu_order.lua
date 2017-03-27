@@ -36,6 +36,7 @@ local order = {
         "battery_statistics",
         "storage_stat",
         "cloud_storage",
+        "read_timer",
         "----------------------------",
         "advanced_settings",
         "developer_options",

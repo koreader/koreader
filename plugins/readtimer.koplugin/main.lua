@@ -42,8 +42,8 @@ function ReadTimer:unschedule()
     end
 end
 
-function ReadTimer:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function ReadTimer:addToMainMenu(menu_items)
+    menu_items.read_timer = {
         text = _("Read timer"),
         checked_func = function()
             -- TODO (hzj-jie): Find a way to refresh the menu items after the buttons callbacks.
@@ -92,7 +92,7 @@ function ReadTimer:addToMainMenu(tab_item_table)
             self.input:onShowKeyboard()
             UIManager:show(self.input)
         end,
-    })
+    }
 end
 
 return ReadTimer
