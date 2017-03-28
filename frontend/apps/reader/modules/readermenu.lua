@@ -115,7 +115,7 @@ function ReaderMenu:setUpdateItemTable()
         local proportional = function()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
-        self.menu_items.screensaver {
+        self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
                 {
