@@ -8,6 +8,7 @@ local util = require("frontend/util")
 local T = FFIUtil.template
 local _ = require("gettext")
 local logger = require("logger")
+local ffi = require("ffi")
 
 local config = require('newsConfig')
 
@@ -29,7 +30,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         local feedConfigFilePath = self:getFeedConfigPath()
         if not lfs.attributes(feedConfigFilePath, "mode") then
             logger.dbg("NewsDownloader: Creating init configuration")
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_CONFIG_FILE),
                              feedConfigFilePath)
         end
         initialized = true
@@ -55,9 +56,22 @@ function NewsDownloader:addToMainMenu(tab_item_table)
             {
                 text = _("Remove news"),
                 callback = function()
-                    self:clearNewsDir()
+                    local news_dl_dir = self:getNewsDirPath()
+                    local feed_config_file = config.FEED_CONFIG_FILE
+                    -- puerge all downloaded news files, but keep the feed config
+                    for entry in lfs.dir(news_dl_dir) do
+                        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+                            local entry_path = news_dl_dir .. "/" .. entry
+                            local entry_mode = lfs.attributes(entry_path, "mode")
+                            if entry_mode == "file" then
+                                ffi.C.remove(entry_path)
+                            elseif entry_mode == "directory" then
+                                FFIUtil.purgeDir(entry_path)
+                            end
+                        end
+                    end
                     UIManager:show(InfoMessage:new{
-                        text = _("News removed.")
+                        text = _("All news removed.")
                     })
                 end,
             },
@@ -107,7 +121,7 @@ end
 
 function NewsDownloader:getFeedConfigPath()
     local newsDirPath = self:getNewsDirPath()
-    local feedfileName = config.FEED_FILE_NAME
+    local feedfileName = config.FEED_CONFIG_FILE
     local feedXmlPath = newsDirPath.. feedfileName
     return feedXmlPath
 end
@@ -188,28 +202,6 @@ function NewsDownloader:createValidFeedOutputDirPath(feeds)
    local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/"
    local feedOutputDirPath = self:getNewsDirPath() .. feedDir
    return feedOutputDirPath
-end
-
-function NewsDownloader:clearNewsDir()
-    local newsDir = self:getNewsDirPath()
-    self:removeAllExceptFeedConfig(newsDir)
-end
-
-function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
-    local ffi = require("ffi")
-    for f in lfs.dir(dir) do
-        local feedConfigFile = config.FEED_FILE_NAME
-        local path = dir.."/"..f
-        local mode = lfs.attributes(path, "mode")
-        if mode == "file" and f ~= feedConfigFile then
-            ffi.C.remove(path)
-        elseif mode == "directory" and f ~= "." and f ~= ".." then
-            self:removeAllExceptFeedConfig(path, true)
-        end
-    end
-    if rmdir then
-        ffi.C.rmdir(dir)
-    end
 end
 
 return NewsDownloader
