@@ -210,11 +210,11 @@ function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
 end
 
 function NewsDownloader:getExampleFeedConfigPath()
-   local str = debug.getinfo(2, "S").source:sub(2)
-   local dir = str:match("(.*/)")
-   local exampleFeedsPath = dir .. config.FEED_FILE_NAME
-   logger.dbg("NewsDownloader: Example feed config file: ", exampleFeedsPath)
-   return exampleFeedsPath
+    local str = debug.getinfo(2, "S").source:sub(2)
+    local dir = str:match("(.*/)")
+    local exampleFeedsPath = dir .. config.FEED_FILE_NAME
+    logger.dbg("NewsDownloader: Example feed config file: ", exampleFeedsPath)
+    return exampleFeedsPath
 end
 
 return NewsDownloader
