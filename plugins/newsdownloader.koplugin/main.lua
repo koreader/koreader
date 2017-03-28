@@ -1,4 +1,4 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
@@ -12,7 +12,7 @@ local logger = require("logger")
 local config = require('newsConfig')
 
 
-local NewsDownloader = InputContainer:new{}
+local NewsDownloader = WidgetContainer:new{}
 
 
 function NewsDownloader:init()
