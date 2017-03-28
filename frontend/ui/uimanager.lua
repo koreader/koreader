@@ -116,7 +116,7 @@ function UIManager:init()
                 -- Suspension in Kobo can be interrupted by screen updates. We
                 -- ignore user touch input here so screen udpate won't be
                 -- triggered in suspend mode
-                return
+                self.event_handlers["Suspend"]()
             else
                 self:sendEvent(input_event)
             end
