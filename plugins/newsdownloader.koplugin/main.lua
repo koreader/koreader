@@ -3,9 +3,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local FileManager = require("apps/filemanager/filemanager")
-local ffiUtil = require("ffi/util")
+local FFIUtil = require("ffi/util")
 local util = require("frontend/util")
-local T = ffiUtil.template
+local T = FFIUtil.template
 local _ = require("gettext")
 local logger = require("logger")
 
@@ -17,17 +17,13 @@ local NewsDownloader = InputContainer:new{}
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
-
-    -- TODO: don't use turbo
-    local turboUtil = require("turbo.util")
     local feedConfigFilePath = self:getFeedConfigPath()
-    if not turboUtil.file_exists(feedConfigFilePath) then
+    if not lfs.attributes(feedConfigFilePath, "mode") ~= "file" then
       logger.dbg("NewsDownloader: Creating init configuration")
       local newsDir = self:getNewsDirPath()
       lfs.mkdir(newsDir)
-
-      local exampleFeedConfigPath = self:getExampleFeedConfigPath()
-      ffiUtil.copyFile(exampleFeedConfigPath, feedConfigFilePath)
+      FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
+                       feedConfigFilePath)
     end
 end
 
@@ -207,14 +203,6 @@ function NewsDownloader:removeAllExceptFeedConfig(dir, rmdir)
     if rmdir then
         ffi.C.rmdir(dir)
     end
-end
-
-function NewsDownloader:getExampleFeedConfigPath()
-    local str = debug.getinfo(2, "S").source:sub(2)
-    local dir = str:match("(.*/)")
-    local exampleFeedsPath = dir .. config.FEED_FILE_NAME
-    logger.dbg("NewsDownloader: Example feed config file: ", exampleFeedsPath)
-    return exampleFeedsPath
 end
 
 return NewsDownloader
