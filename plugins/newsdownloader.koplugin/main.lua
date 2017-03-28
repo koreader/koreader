@@ -13,21 +13,25 @@ local config = require('newsConfig')
 
 
 local NewsDownloader = WidgetContainer:new{}
-
+local initialized = false  -- for only once lazy initialization
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
-    local feedConfigFilePath = self:getFeedConfigPath()
-    if not lfs.attributes(feedConfigFilePath, "mode") ~= "file" then
-      logger.dbg("NewsDownloader: Creating init configuration")
-      local newsDir = self:getNewsDirPath()
-      lfs.mkdir(newsDir)
-      FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
-                       feedConfigFilePath)
-    end
 end
 
 function NewsDownloader:addToMainMenu(tab_item_table)
+    if not initialized then
+        local feedConfigFilePath = self:getFeedConfigPath()
+        if not lfs.attributes(feedConfigFilePath, "mode") ~= "file" then
+          logger.dbg("NewsDownloader: Creating init configuration")
+          local newsDir = self:getNewsDirPath()
+          lfs.mkdir(newsDir)
+          FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
+                           feedConfigFilePath)
+        end
+        initialized = true
+    end
+
     table.insert(tab_item_table.plugins, {
         text = _("Simple News(RSS/Atom) Downloader"),
         sub_item_table = {
