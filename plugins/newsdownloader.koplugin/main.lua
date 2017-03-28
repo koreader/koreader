@@ -21,13 +21,16 @@ end
 
 function NewsDownloader:addToMainMenu(tab_item_table)
     if not initialized then
+        local news_dl_dir = self:getNewsDirPath()
+        if not lfs.attributes(news_dl_dir, "mode") then
+            lfs.mkdir(news_dl_dir)
+        end
+
         local feedConfigFilePath = self:getFeedConfigPath()
-        if not lfs.attributes(feedConfigFilePath, "mode") ~= "file" then
-          logger.dbg("NewsDownloader: Creating init configuration")
-          local newsDir = self:getNewsDirPath()
-          lfs.mkdir(newsDir)
-          FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
-                           feedConfigFilePath)
+        if not lfs.attributes(feedConfigFilePath, "mode") then
+            logger.dbg("NewsDownloader: Creating init configuration")
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_FILE_NAME),
+                             feedConfigFilePath)
         end
         initialized = true
     end
