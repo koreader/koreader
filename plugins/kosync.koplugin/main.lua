@@ -205,14 +205,16 @@ function KOSync:addToMainMenu(menu_items)
             },
             {
                 text = _("Custom sync server"),
-                tap_input = {
-                    title = _("Custom progress sync server address"),
-                    input = self.kosync_custom_server or "https://",
-                    type = "text",
-                    callback = function(input)
-                        self:setCustomServer(input)
-                    end,
-                },
+                tap_input_func = function()
+                    return {
+                        title = _("Custom progress sync server address"),
+                        input = self.kosync_custom_server or "https://",
+                        type = "text",
+                        callback = function(input)
+                            self:setCustomServer(input)
+                        end,
+                    }
+                end,
             },
         }
     }
