@@ -185,6 +185,8 @@ function Button:onTapSelectButton()
         end)
     elseif self.tap_input then
         self:onInput(self.tap_input)
+    elseif type(self.tap_input_func) == "function" then
+        self:onInput(self.tap_input_func())
     end
     return true
 end
@@ -194,6 +196,8 @@ function Button:onHoldSelectButton()
         self.hold_callback()
     elseif self.hold_input then
         self:onInput(self.hold_input)
+    elseif type(self.hold_input_func) == "function" then
+        self:onInput(self.hold_input_func())
     end
     return true
 end
