@@ -1,13 +1,13 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local DEBUG = require("dbg")
 local DataStorage = require("datastorage")
 local FileManager = require("apps/filemanager/filemanager")
 local ffiUtil = require("ffi/util")
 local util = require("frontend/util")
 local T = ffiUtil.template
 local _ = require("gettext")
+local logger = require("logger")
 
 local config = require('newsConfig')
 
@@ -18,10 +18,11 @@ local NewsDownloader = InputContainer:new{}
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 
+    -- TODO: don't use turbo
     local turboUtil = require("turbo.util")
     local feedConfigFilePath = self:getFeedConfigPath()
     if not turboUtil.file_exists(feedConfigFilePath) then
-      DEBUG("NewsDownloader: Creating init configuration")
+      logger.dbg("NewsDownloader: Creating init configuration")
       local newsDir = self:getNewsDirPath()
       lfs.mkdir(newsDir)
 
@@ -78,7 +79,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     })
 
     local feedConfigFilePath = self:getFeedConfigPath()
-    DEBUG("NewsDownloader: Configuration file: ", feedConfigFilePath)
+    logger.dbg("NewsDownloader: Configuration file: ", feedConfigFilePath)
 
     local feedConfig = self:deserializeXML(feedConfigFilePath)
 
@@ -129,7 +130,7 @@ function NewsDownloader:deserializeXML(filename)
     require("lib/xml")
     require("lib/handler")
 
-    DEBUG("NewsDownloader: Filename to deserialize: ", filename)
+    logger.dbg("NewsDownloader: Filename to deserialize: ", filename)
     local xmltext = ""
     local f, e = io.open(filename, "r")
     if f then
@@ -164,7 +165,7 @@ function NewsDownloader:processFeedSource(url,feedSource, limit)
         local newsTitle = util.replaceInvalidChars(feed.title)
 
         local newsFilePath = feedOutputDirPath .. newsTitle .. config.FILE_EXTENSION
-        DEBUG("NewsDownloader: News file will be stored to :", newsFilePath)
+        logger.dbg("NewsDownloader: News file will be stored to :", newsFilePath)
         self:download(feed.link, newsFilePath)
     end
 end
@@ -212,7 +213,7 @@ function NewsDownloader:getExampleFeedConfigPath()
    local str = debug.getinfo(2, "S").source:sub(2)
    local dir = str:match("(.*/)")
    local exampleFeedsPath = dir .. config.FEED_FILE_NAME
-   DEBUG("NewsDownloader: Example feed config file: ", exampleFeedsPath)
+   logger.dbg("NewsDownloader: Example feed config file: ", exampleFeedsPath)
    return exampleFeedsPath
 end
 
