@@ -2,13 +2,14 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
-local FileManager = require("apps/filemanager/filemanager")
 local FFIUtil = require("ffi/util")
 local util = require("frontend/util")
 local T = FFIUtil.template
 local _ = require("gettext")
 local logger = require("logger")
 local ffi = require("ffi")
+local http = require("socket.http")
+local ltn12 = require("ltn12")
 
 local config = require('newsConfig')
 
@@ -27,11 +28,11 @@ function NewsDownloader:addToMainMenu(tab_item_table)
             lfs.mkdir(news_dl_dir)
         end
 
-        local feedConfigFilePath = self:getFeedConfigPath()
-        if not lfs.attributes(feedConfigFilePath, "mode") then
+        local feed_config_path = self:getFeedConfigPath()
+        if not lfs.attributes(feed_config_path, "mode") then
             logger.dbg("NewsDownloader: Creating init configuration")
             FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_CONFIG_FILE),
-                             feedConfigFilePath)
+                             feed_config_path)
         end
         initialized = true
     end
@@ -41,11 +42,12 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadConfigAndProcessFeeds(); end,
+                callback = function() self:loadConfigAndProcessFeeds() end,
             },
             {
                 text = _("Go to news folder"),
                 callback = function()
+                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
                         FileManager.instance:reinit(self:getNewsDirPath())
                     else
@@ -78,11 +80,11 @@ function NewsDownloader:addToMainMenu(tab_item_table)
             {
                 text = _("Help"),
                 callback = function()
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."),
-                                     self:getFeedConfigPath(),
-                                     self:getNewsDirPath())
-                        })
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."),
+                                 self:getFeedConfigPath(),
+                                 self:getNewsDirPath())
+                    })
                 end,
             },
         },
@@ -95,23 +97,19 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         timeout = 1,
     })
 
-    local feedConfigFilePath = self:getFeedConfigPath()
-    logger.dbg("NewsDownloader: Configuration file: ", feedConfigFilePath)
+    local feed_config = self:deserializeXML(self:getFeedConfigPath())
 
-    local feedConfig = self:deserializeXML(feedConfigFilePath)
-
-    for index, feed in pairs(feedConfig.feeds.feed) do
+    for index, feed in pairs(feed_config.feeds.feed) do
+        -- FIXME: validation
         local url = feed[1]
+        -- TODO: blocking UI loop?
         UIManager:show(InfoMessage:new{
             text = T(_("Processing: %1"), url),
             timeout = 2,
         })
-
-        local feedSourceTmpFilePath = self:createFeedSourceTmpFilePath(index)
-
-        local downloadLimit = tonumber(feed._attr.limit)
-
-        self:processFeedSource(url, feedSourceTmpFilePath, downloadLimit)
+        self:processFeedSource(url,
+                               self:createFeedSourceTmpFilePath(index),
+                               tonumber(feed._attr.limit))
     end
 
     UIManager:show(InfoMessage:new{
@@ -120,24 +118,17 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 end
 
 function NewsDownloader:getFeedConfigPath()
-    local newsDirPath = self:getNewsDirPath()
-    local feedfileName = config.FEED_CONFIG_FILE
-    local feedXmlPath = newsDirPath.. feedfileName
-    return feedXmlPath
+    -- TODO: cache value
+    return self:getNewsDirPath() .. config.FEED_CONFIG_FILE
 end
 
 function NewsDownloader:createFeedSourceTmpFilePath(index)
-    local nameSuffix = config.FEED_SOURCE_SUFFIX
-    local newsDirPath = self:getNewsDirPath()
-    local feedSourceTmpFilePath = newsDirPath .. index .. nameSuffix
-    return feedSourceTmpFilePath
+    return self:getNewsDirPath() .. index .. config.FEED_SOURCE_SUFFIX
 end
 
 function NewsDownloader:getNewsDirPath()
-    local baseDirPath = DataStorage:getDataDir()
-    local newsDirName = config.NEWS_DOWNLOAD_DIR
-    local newsDirPath = baseDirPath .. newsDirName
-    return newsDirPath
+    -- TODO: cache value
+    return DataStorage:getDataDir() .. config.NEWS_DOWNLOAD_DIR
 end
 
 function NewsDownloader:deserializeXML(filename)
@@ -148,12 +139,13 @@ function NewsDownloader:deserializeXML(filename)
     require("lib/handler")
 
     logger.dbg("NewsDownloader: Filename to deserialize: ", filename)
-    local xmltext = ""
+    local xmltext
     local f, e = io.open(filename, "r")
     if f then
         --Gets the entire file content and stores into a string
         xmltext = f:read("*a")
     else
+        -- FIXME: don't crash the whole reader
         error(e)
     end
 
@@ -167,41 +159,36 @@ function NewsDownloader:deserializeXML(filename)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeedSource(url,feedSource, limit)
-    self:download(url,feedSource)
-    local feeds = self:deserializeXML(feedSource)
-
-    local feedOutputDirPath = self:createValidFeedOutputDirPath(feeds)
-    lfs.mkdir(feedOutputDirPath)
+function NewsDownloader:processFeedSource(url, feed_source, limit)
+    -- FIXME: this is very inefficient
+    self:download(url, feed_source)
+    local feeds = self:deserializeXML(feed_source)
+    -- TODO: validate feeds
+    local feed_output_dir = string.format("%s%s/",
+                                          self:getNewsDirPath(),
+                                          util.replaceInvalidChars(feeds.rss.channel.title))
+    if not lfs.attributes(feed_output_dir, "mode") then
+        lfs.mkdir(feed_output_dir)
+    end
 
     for index, feed in pairs(feeds.rss.channel.item) do
         if index -1 == limit then
             break
         end
-
-        local newsTitle = util.replaceInvalidChars(feed.title)
-
-        local newsFilePath = feedOutputDirPath .. newsTitle .. config.FILE_EXTENSION
-        logger.dbg("NewsDownloader: News file will be stored to :", newsFilePath)
-        self:download(feed.link, newsFilePath)
+        local news_dl_path = string.format("%s%s%s",
+                                           feed_output_dir,
+                                           util.replaceInvalidChars(feed.title),
+                                           config.FILE_EXTENSION)
+        logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
+        self:download(feed.link, news_dl_path)
     end
 end
 
-
-function NewsDownloader:download(url,outputFilename)
-    local http = require("socket.http")
-    local ltn12 = require("ltn12")
-    local file = ltn12.sink.file(io.open(outputFilename, 'w'))
-    http.request {
+function NewsDownloader:download(url, output_file_name)
+    http.request({
         url = url,
-        sink = file,
-    }
-end
-
-function NewsDownloader:createValidFeedOutputDirPath(feeds)
-   local feedDir = util.replaceInvalidChars(feeds.rss.channel.title) .. "/"
-   local feedOutputDirPath = self:getNewsDirPath() .. feedDir
-   return feedOutputDirPath
+        sink = ltn12.sink.file(io.open(output_file_name, 'w')),
+    })
 end
 
 return NewsDownloader
