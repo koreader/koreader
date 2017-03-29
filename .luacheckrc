@@ -97,4 +97,10 @@ read_globals = {
 
 exclude_files = {
     "frontend/luxl.lua",
+    "plugins/newsdownloader.koplugin/lib/handler.lua",
+    "plugins/newsdownloader.koplugin/lib/LICENSE",
+    "plugins/newsdownloader.koplugin/lib/xml.lua",
 }
+
+-- TODO: clean up and enforce max line width (631)
+ignore = {"631"}

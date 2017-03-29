@@ -62,6 +62,8 @@ an interface to get input events
 local Input = {
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
+    -- adapters are post processing functions that transform a given event to another event
+    event_map_adapter = {},
 
     group = {
         Cursor = { "Up", "Down", "Left", "Right" },
@@ -266,8 +268,8 @@ function Input:handleKeyBoardEv(ev)
         return
     end
 
-    if type(keycode) == "function" then
-        return keycode(ev)
+    if self.event_map_adapter[keycode] then
+        return self.event_map_adapter[keycode](ev)
     end
 
     -- take device rotation into account
@@ -594,12 +596,14 @@ function Input:waitEvent(timeout_us)
     if ok and ev then
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
-            logger.dbg(string.format("input event => type: %d, code: %d, value: %d, time: %d.%d",
-                                     ev.type, ev.code, ev.value, ev.time.sec, ev.time.usec))
+            logger.dbg(string.format(
+                "%s event => type: %d, code: %d(%s), value: %d, time: %d.%d",
+                ev.type == EV_KEY and "key" or "input",
+                ev.type, ev.code, self.event_map[ev.code], ev.value,
+                ev.time.sec, ev.time.usec))
         end
         self:eventAdjustHook(ev)
         if ev.type == EV_KEY then
-            logger.dbg("key ev", ev)
             return self:handleKeyBoardEv(ev)
         elseif ev.type == EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
             return self:handleOasisOrientationEv(ev)

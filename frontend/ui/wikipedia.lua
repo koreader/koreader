@@ -298,7 +298,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         end
     end
 
-    progress_callback(_("Fetching Wikipedia page..."))
+    progress_callback(_("Fetching Wikipedia page…"))
     local ok, phtml = pcall(self.wikiphtml, self, page, lang)
     if not ok then
         progress_callback(phtml)
@@ -741,7 +741,7 @@ time, abbr, sup {
     if include_images then
         local nb_images = #images
         for inum, img in ipairs(images) do
-            progress_callback(T(_("Fetching image %1 / %2 ..."), inum, nb_images))
+            progress_callback(T(_("Fetching image %1 / %2 …"), inum, nb_images))
             local src = img.src
             if use_img_2x and img.src2x then
                 src = img.src2x

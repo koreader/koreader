@@ -44,7 +44,7 @@ INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastor
 # for gettext
 DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
-KOREADER_MISC_TOOL=../misc
+KOREADER_MISC_TOOL=../koreader-misc
 XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 
@@ -119,7 +119,7 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 			--coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \
-		+$$(($$(grep -nm1 Summary luacov.report.out|cut -d: -f1)-1)) \
+		+$$(($$(grep -nm1 -e "^Summary$$" luacov.report.out|cut -d: -f1)-1)) \
 		luacov.report.out
 
 fetchthirdparty:

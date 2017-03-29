@@ -4,10 +4,6 @@ local _, android = pcall(require, "android")
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 25,
     fl_intensity = 10,
-    batt_capacity_file = "/sys/class/power_supply/battery/capacity",
-    is_charging_file = "/sys/class/power_supply/battery/charging_enabled",
-    battCapacity = nil,
-    is_charging = nil,
 }
 
 function AndroidPowerD:init()
@@ -18,13 +14,11 @@ function AndroidPowerD:setIntensityHW()
 end
 
 function AndroidPowerD:getCapacityHW()
-    self.battCapacity = android.getBatteryLevel()
-    return self.battCapacity
+    return android.getBatteryLevel()
 end
 
 function AndroidPowerD:isChargingHW()
-    self.is_charging = android.isCharging()
-    return self.is_charging
+    return android.isCharging()
 end
 
 return AndroidPowerD

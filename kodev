@@ -12,7 +12,7 @@ function assert_ret_zero {
 }
 
 function check_submodules {
-    [ -n "`git submodule status | grep -E '^\-'`" ] && kodev-fetch-thirdparty
+    [ -n "$(git submodule status | grep -E '^\-')" ] && kodev-fetch-thirdparty
 }
 
 function setup_env {
@@ -79,8 +79,8 @@ ${SUPPORTED_TARGETS}"
             make TARGET=kindle-legacy; assert_ret_zero $? ;;
         android)
             [[ -n ${NDK+x} ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
-            [ -e ${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc ] || { \
-                { [ -e ${NDK} ] || make -C ${CURDIR}/base/toolchain android-ndk; }; \
+            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || { \
+                { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }; \
                 make android-toolchain; assert_ret_zero $?; \
             }
             echo "Using NDK: ${NDK}..."
@@ -182,9 +182,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
             kodev-build android
             export PATH=$PATH:${CURDIR}/base/toolchain/android-sdk-linux/tools
             which android &> /dev/null || { \
-                make -C ${CURDIR}/base/toolchain android-sdk; \
+                make -C "${CURDIR}/base/toolchain" android-sdk; \
             }
-            export ANDROID_HOME=`dirname $(dirname $(which android))`
+            ANDROID_HOME=$(dirname "$(dirname "$(which android)")")
+            export ANDROID_HOME
             export PATH=$PATH:${NDK}
             make TARGET=android update ;;
         pocketbook)
@@ -310,14 +311,71 @@ OPTIONS:
             test_path="${test_path}/$2"
         fi
 
-        echo "Runing tests in" ${test_path}
-        busted --lua="./luajit" ${opts} \
+        echo "Running tests in" "${test_path}"
+        busted --lua="./luajit" "${opts}" \
             --no-auto-insulate \
             --lazy \
             -o "./spec/$1/unit/verbose_print" \
             --exclude-tags=notest "${test_path}"
     popd
 }
+
+function kodev-cov {
+    COV_HELP_MSG="
+usage: cov <OPTIONS>
+
+OPTIONS:
+
+    --show-previous     show coverage stats from previous run
+    --full              show full coverage report (down to each line)
+    "
+    show_full=0
+    show_previous=0
+    while [[ $1 == '-'* ]]; do
+        PARAM=$(echo "$1" | awk -F= '{print $1}')
+        VALUE=$(echo "$1" | awk -F= '{print $2}')
+        case $PARAM in
+            --full)
+                show_full=1 ;;
+            --show-previous)
+                show_previous=1 ;;
+            -h | --help)
+                echo "${COV_HELP_MSG}"; exit 0 ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${COV_HELP_MSG}"; exit 1 ;;
+        esac
+        shift
+    done
+
+    check_submodules && make
+    setup_env
+    make "${EMU_DIR}/.busted"
+    pushd "${EMU_DIR}"
+        target=front
+        test_path="./spec/${target}/unit"
+        if [ ${show_previous} -eq 0 ]; then
+            echo "Running tests in" ${test_path}
+            busted --lua="./luajit" \
+                --sort-files \
+                --no-auto-insulate \
+                --lazy \
+                -o "./spec/${target}/unit/verbose_print" \
+                --coverage \
+                --exclude-tags=nocov "${test_path}" || {
+                    echo "Failed to run tests!" && exit 1;
+                }
+        fi
+        if [ ${show_full} -eq 1 ]; then
+            cat luacov.report.out
+        else
+            tail -n \
+                +$(($(grep -nm1 -e '^Summary$' luacov.report.out|cut -d: -f1)-1)) \
+                luacov.report.out
+        fi
+    popd
+}
+
 
 function kodev-log {
     LOG_HELP_MSG="
@@ -363,7 +421,7 @@ case $1 in
     activate)
         echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"
-        eval "$(luarocks path bin)"
+        eval "$(luarocks path --bin)"
         exec "${SHELL}" ;;
     fetch-thirdparty)
         kodev-fetch-thirdparty ;;
@@ -379,6 +437,8 @@ case $1 in
         shift 1; kodev-run "$@" ;;
     test)
         shift 1; kodev-test "$@" ;;
+    cov)
+        shift 1; kodev-cov "$@" ;;
     prompt)
         kodev-build
         pushd "${EMU_DIR}"

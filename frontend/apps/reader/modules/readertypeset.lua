@@ -140,13 +140,13 @@ function ReaderTypeset:toggleFloatingPunctuation(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
-function ReaderTypeset:addToMainMenu(tab_item_table)
+function ReaderTypeset:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    table.insert(tab_item_table.typeset, {
+    menu_items.set_render_style = {
         text = self.css_menu_title,
         sub_item_table = self:genStyleSheetMenu(),
-    })
-    table.insert(tab_item_table.typeset, {
+    }
+    menu_items.floating_punctuation = {
         text = _("Floating punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()
@@ -154,7 +154,7 @@ function ReaderTypeset:addToMainMenu(tab_item_table)
             self:toggleFloatingPunctuation(self.floating_punctuation)
     end,
         hold_callback = function() self:makeDefaultFloatingPunctuation() end,
-    })
+    }
 end
 
 function ReaderTypeset:makeDefaultFloatingPunctuation()

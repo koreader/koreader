@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local _ = require("gettext")
+local NetworkMgr = require("ui/network/manager")
 
 local Goodreads = InputContainer:new {
     goodreads_key = "",
@@ -21,8 +22,8 @@ function Goodreads:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function Goodreads:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function Goodreads:addToMainMenu(menu_items)
+    menu_items.goodreads = {
         text = _("Goodreads"),
         sub_item_table = {
             {
@@ -67,7 +68,7 @@ function Goodreads:addToMainMenu(tab_item_table)
                 end,
             },
         },
-    })
+    }
 end
 
 function Goodreads:updateSettings()
@@ -164,6 +165,10 @@ function Goodreads:search(search_type)
     local text_input
     local info
     local result
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     if search_type == "all" then
         title_header = _("Search all books in Goodreads")
         hint = _("Title, author or ISBN")

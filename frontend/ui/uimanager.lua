@@ -60,11 +60,12 @@ function UIManager:init()
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
             self:_stopAutoSuspend()
+            self:broadcastEvent(Event:new("Suspend"))
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
-            self:sendEvent(Event:new("Resume"))
+            self:broadcastEvent(Event:new("Resume"))
             self:_startAutoSuspend()
         end
         self.event_handlers["PowerPress"] = function()
@@ -99,11 +100,17 @@ function UIManager:init()
             Device:getPowerDevice():toggleFrontlight()
         end
         self.event_handlers["Charging"] = function()
+            self:broadcastEvent(Event:new("Charging"))
             if Device.screen_saver_mode then
                 self.event_handlers["Suspend"]()
             end
         end
-        self.event_handlers["NotCharging"] = self.event_handlers["Charging"]
+        self.event_handlers["NotCharging"] = function()
+            self:broadcastEvent(Event:new("NotCharging"))
+            if Device.screen_saver_mode then
+                self.event_handlers["Suspend"]()
+            end
+        end
         self.event_handlers["__default__"] = function(input_event)
             if Device.screen_saver_mode then
                 -- Suspension in Kobo can be interrupted by screen updates. We
@@ -116,18 +123,20 @@ function UIManager:init()
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
+            self:broadcastEvent(Event:new("Suspend"))
             Device:intoScreenSaver()
         end
         self.event_handlers["OutOfSS"] = function()
             Device:outofScreenSaver()
-            self:sendEvent(Event:new("Resume"))
+            self:broadcastEvent(Event:new("Resume"))
         end
         self.event_handlers["Charging"] = function()
+            self:broadcastEvent(Event:new("Charging"))
             Device:usbPlugIn()
         end
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
-            self:sendEvent(Event:new("NotCharging"))
+            self:broadcastEvent(Event:new("NotCharging"))
         end
     end
 end
@@ -728,7 +737,7 @@ function UIManager:_initAutoSuspend()
             local now = util.gettime()
             -- Do not repeat auto suspend procedure after suspend.
             if self.last_action_sec + self.auto_suspend_sec <= now then
-                Device:onPowerEvent("Suspend")
+                self.event_handlers["Suspend"]()
             else
                 self:scheduleIn(
                     self.last_action_sec + self.auto_suspend_sec - now,
