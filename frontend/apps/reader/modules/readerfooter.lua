@@ -121,8 +121,6 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.pageno = self.view.state.page
-
     self.settings = G_reader_settings:readSetting("footer") or {
         disabled = false,
         all_at_once = false,
@@ -144,6 +142,7 @@ function ReaderFooter:init()
         return
     end
 
+    self.pageno = self.view.state.page
     self.has_no_mode = true
     for _, m in ipairs(MODE_INDEX) do
         if self.settings[m] then
@@ -346,18 +345,12 @@ function ReaderFooter:addToMainMenu(menu_items)
         })
     end
 
-    -- footer is enabled, build the full status bar menu
-    local isEnabled = function()
-        return not self.settings.disabled
-    end
-
     local getMinibarOption = function(option, callback)
         return {
             text = option_titles[option],
             checked_func = function()
                 return self.settings[option] == true
             end,
-            enabled_func = isEnabled,
             callback = function()
                 self.settings[option] = not self.settings[option]
                 G_reader_settings:saveSetting("footer", self.settings)
@@ -431,7 +424,7 @@ function ReaderFooter:genAllFooterText()
     return table.concat(info, " | ")
 end
 
--- this function should never be called with footer is disabled
+-- this method should never get called when footer is disabled
 function ReaderFooter:setTocMarkers()
     if self.settings.toc_markers then
         if self.progress_bar.ticks ~= nil then return end
