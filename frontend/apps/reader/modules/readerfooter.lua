@@ -310,7 +310,6 @@ end
 local option_titles = {
     all_at_once = _("Show all at once"),
     toc_markers = _("Show chapter markers"),
-    auto_refresh_time = _("Auto refresh time"),
     page_progress = _("Current page"),
     time = _("Current time"),
     pages_left = _("Pages left in chapter"),
@@ -393,15 +392,24 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items,
                  getMinibarOption("all_at_once", self.updateFooterTextGenerator))
     table.insert(sub_items, getMinibarOption("toc_markers", self.setTocMarkers))
-    -- TODO: only enable auto refresh when time is shown
-    table.insert(sub_items, getMinibarOption("auto_refresh_time", function()
-        if self.settings.auto_refresh_time then
-            self:setupAutoRefreshTime()
-        else
-            UIManager:unschedule(self.autoRefreshTime)
-            self.onCloseDocument = nil
+    table.insert(sub_items, {
+        text = _("Auto refresh time"),
+        checked_func = function()
+            return self.settings.auto_refresh_time == true
+        end,
+        -- only enable auto refresh when time is shown
+        enabled_func = function() return self.settings.time end,
+        callback = function()
+            self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+            G_reader_settings:saveSetting("footer", self.settings)
+            if self.settings.auto_refresh_time then
+                self:setupAutoRefreshTime()
+            else
+                UIManager:unschedule(self.autoRefreshTime)
+                self.onCloseDocument = nil
+            end
         end
-    end))
+    })
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
