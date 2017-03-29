@@ -24,7 +24,7 @@ function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function NewsDownloader:addToMainMenu(tab_item_table)
+function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
         NEWS_DL_DIR = DataStorage:getDataDir() .. "/news/"
         if not lfs.attributes(NEWS_DL_DIR, "mode") then
@@ -40,7 +40,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
         initialized = true
     end
 
-    table.insert(tab_item_table.plugins, {
+    menu_items.rss_news_downloader = {
         text = _("Simple News(RSS/Atom) Downloader"),
         sub_item_table = {
             {
@@ -89,7 +89,7 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 end,
             },
         },
-    })
+    }
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
