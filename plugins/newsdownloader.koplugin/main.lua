@@ -94,26 +94,34 @@ end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
     UIManager:show(InfoMessage:new{
-        text = _("Loading data.") ,
+        text = _("Loading data."),
         timeout = 1,
     })
 
     local feed_config = self:deserializeXML(FEED_CONFIG_PATH)
     if not feed_config then return end
+    if not feed_config.feeds then
+        logger.warn('NewsDownloader: missing feeds from feed config', FEED_CONFIG_PATH)
+        return
+    end
 
     for index, feed in pairs(feed_config.feeds.feed) do
-        -- FIXME: validation
         local url = feed[1]
-        -- TODO: blocking UI loop?
-        UIManager:show(InfoMessage:new{
-            text = T(_("Processing: %1"), url),
-            timeout = 2,
-        })
-        -- FIXME: delete tmp_source_file?
-        local tmp_source_file = NEWS_DL_DIR .. index .. FEED_SOURCE_SUFFIX
-        self:processFeedSource(url,
-                               tmp_source_file,
-                               tonumber(feed._attr.limit))
+        local limit = feed._attr.limit
+        if url and limit then
+            -- TODO: blocking UI loop?
+            UIManager:show(InfoMessage:new{
+                text = T(_("Processing: %1"), url),
+                timeout = 2,
+            })
+            -- FIXME: delete tmp_source_file?
+            local tmp_source_file = NEWS_DL_DIR .. index .. FEED_SOURCE_SUFFIX
+            self:processFeedSource(url,
+                                   tmp_source_file,
+                                   tonumber(limit))
+        else
+            logger.warn('NewsDownloader: invalid feed config entry', feed)
+        end
     end
 
     UIManager:show(InfoMessage:new{
@@ -154,7 +162,12 @@ function NewsDownloader:processFeedSource(url, feed_source, limit)
     self:download(url, feed_source)
     local feeds = self:deserializeXML(feed_source)
     if not feeds then return end
-    -- TODO: validate feeds
+    if not feeds.rss or not feeds.rss.channel
+            or not feeds.rss.channel.title or not feeds.rss.channel.item then
+        logger.info('NewsDownloader: Got invalid feeds', feeds)
+        return
+    end
+
     local feed_output_dir = string.format("%s%s/",
                                           NEWS_DL_DIR,
                                           util.replaceInvalidChars(feeds.rss.channel.title))
