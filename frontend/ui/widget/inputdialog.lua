@@ -52,7 +52,7 @@ local RenderText = require("ui/rendertext")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local Widget = require("ui/widget/widget")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 
@@ -115,7 +115,7 @@ function InputDialog:init()
             }
         }
     else
-        self.description = Widget:new()
+        self.description = WidgetContainer:new()
     end
 
     self._input_widget = InputText:new{

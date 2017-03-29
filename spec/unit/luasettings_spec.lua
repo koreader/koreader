@@ -39,4 +39,28 @@ describe("luasettings module", function()
         assert.False(Settings:isTrue("abc"))
         assert.True(Settings:nilOrTrue("abc"))
     end)
+
+    it("should create child settings", function()
+        Settings:saveSetting("key", {
+            a = "b",
+            c = "true",
+            d = false,
+        })
+
+        local child = Settings:child("key")
+
+        assert.is_not_nil(child)
+        assert.True(child:has("a"))
+        assert.are.equal(child:readSetting("a"), "b")
+        assert.True(child:has("c"))
+        assert.True(child:isTrue("c"))
+        assert.True(child:has("d"))
+        assert.True(child:isFalse("d"))
+        assert.False(child:isTrue("e"))
+        child:flipTrue("e")
+        child:close()
+
+        child = Settings:child("key")
+        assert.True(child:isTrue("e"))
+    end)
 end)

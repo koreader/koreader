@@ -1,11 +1,11 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Screensaver = require("ui/screensaver")
 local Event = require("ui/event")
-local Screen = require("device").screen
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screensaver = require("ui/screensaver")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -115,7 +115,7 @@ function ReaderMenu:setUpdateItemTable()
         local proportional = function()
             return self.ui.doc_settings:readSetting("proportional_screensaver") or false
         end
-        self.menu_items.screensaver {
+        self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
                 {

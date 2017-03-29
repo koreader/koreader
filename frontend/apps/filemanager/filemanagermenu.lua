@@ -1,18 +1,18 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
+local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
-local UIManager = require("ui/uimanager")
-local GestureRange = require("ui/gesturerange")
-local InputDialog = require("ui/widget/inputdialog")
-local Geom = require("ui/geometry")
 local Device = require("device")
-local Screensaver = require("ui/screensaver")
-local Screen = Device.screen
-local _ = require("gettext")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local Screensaver = require("ui/screensaver")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
-local CloudStorage = require("apps/cloudstorage/cloudstorage")
+local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+local Screen = Device.screen
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,

@@ -551,9 +551,13 @@ function TouchMenu:onMenuSelect(item)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
-    if item.tap_input then
+    if item.tap_input or type(item.tap_input_func) == "function" then
         self:closeMenu()
-        self:onInput(item.tap_input)
+        if item.tap_input then
+            self:onInput(item.tap_input)
+        else
+            self:onInput(item.tap_input_func())
+        end
     else
         local sub_item_table = item.sub_item_table
         if item.sub_item_table_func then
@@ -591,9 +595,13 @@ function TouchMenu:onMenuHold(item)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
-    if item.hold_input then
+    if item.hold_input or type(item.hold_input_func) == "function" then
         self:closeMenu()
-        self:onInput(item.hold_input)
+        if item.hold_input then
+            self:onInput(item.hold_input)
+        else
+            self:onInput(item.hold_input_func())
+        end
     else
         local callback = item.hold_callback
         if item.hold_callback_func then
