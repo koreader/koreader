@@ -99,6 +99,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     })
 
     local feed_config = self:deserializeXML(FEED_CONFIG_PATH)
+    if not feed_config then return end
 
     for index, feed in pairs(feed_config.feeds.feed) do
         -- FIXME: validation
@@ -127,15 +128,15 @@ function NewsDownloader:deserializeXML(filename)
     require("lib/xml")
     require("lib/handler")
 
-    logger.dbg("NewsDownloader: Filename to deserialize: ", filename)
+    logger.dbg("NewsDownloader: File to deserialize: ", filename)
     local xmltext
     local f, e = io.open(filename, "r")
     if f then
         xmltext = f:read("*a")
         f:close()
     else
-        -- FIXME: don't crash the whole reader
-        error(e)
+        logger.warn("NewsDownloader: XML file not found", filename, e)
+        return nil
     end
 
     --Instantiate the object the states the XML file as a Lua table
@@ -152,6 +153,7 @@ function NewsDownloader:processFeedSource(url, feed_source, limit)
     -- FIXME: this is very inefficient
     self:download(url, feed_source)
     local feeds = self:deserializeXML(feed_source)
+    if not feeds then return end
     -- TODO: validate feeds
     local feed_output_dir = string.format("%s%s/",
                                           NEWS_DL_DIR,
