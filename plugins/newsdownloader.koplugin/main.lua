@@ -11,12 +11,14 @@ local ffi = require("ffi")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 
-local config = require('newsConfig')
-
 
 local NewsDownloader = WidgetContainer:new{}
+
 local initialized = false  -- for only once lazy initialization
-local news_dl_dir, feed_config_path
+local FEED_CONFIG_FILE = "feeds.xml"
+local FILE_EXTENSION = ".html"
+local FEED_SOURCE_SUFFIX = "_rss_tmp.xml"
+local NEWS_DL_DIR, FEED_CONFIG_PATH
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
@@ -24,16 +26,16 @@ end
 
 function NewsDownloader:addToMainMenu(tab_item_table)
     if not initialized then
-        news_dl_dir = DataStorage:getDataDir() .. config.NEWS_DOWNLOAD_DIR
-        if not lfs.attributes(news_dl_dir, "mode") then
-            lfs.mkdir(news_dl_dir)
+        NEWS_DL_DIR = DataStorage:getDataDir() .. "/news/"
+        if not lfs.attributes(NEWS_DL_DIR, "mode") then
+            lfs.mkdir(NEWS_DL_DIR)
         end
 
-        feed_config_path = news_dl_dir .. config.FEED_CONFIG_FILE
-        if not lfs.attributes(feed_config_path, "mode") then
+        FEED_CONFIG_PATH = NEWS_DL_DIR .. FEED_CONFIG_FILE
+        if not lfs.attributes(FEED_CONFIG_PATH, "mode") then
             logger.dbg("NewsDownloader: Creating init configuration")
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, config.FEED_CONFIG_FILE),
-                             feed_config_path)
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, FEED_CONFIG_FILE),
+                             FEED_CONFIG_PATH)
         end
         initialized = true
     end
@@ -50,20 +52,19 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 callback = function()
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
-                        FileManager.instance:reinit(news_dl_dir)
+                        FileManager.instance:reinit(NEWS_DL_DIR)
                     else
-                        FileManager:showFiles(news_dl_dir)
+                        FileManager:showFiles(NEWS_DL_DIR)
                     end
                 end,
             },
             {
                 text = _("Remove news"),
                 callback = function()
-                    local feed_config_file = config.FEED_CONFIG_FILE
                     -- puerge all downloaded news files, but keep the feed config
-                    for entry in lfs.dir(news_dl_dir) do
-                        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
-                            local entry_path = news_dl_dir .. "/" .. entry
+                    for entry in lfs.dir(NEWS_DL_DIR) do
+                        if entry ~= "." and entry ~= ".." and entry ~= FEED_CONFIG_FILE then
+                            local entry_path = NEWS_DL_DIR .. "/" .. entry
                             local entry_mode = lfs.attributes(entry_path, "mode")
                             if entry_mode == "file" then
                                 ffi.C.remove(entry_path)
@@ -82,8 +83,8 @@ function NewsDownloader:addToMainMenu(tab_item_table)
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."),
-                                 feed_config_path,
-                                 news_dl_dir)
+                                 FEED_CONFIG_PATH,
+                                 NEWS_DL_DIR)
                     })
                 end,
             },
@@ -97,7 +98,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         timeout = 1,
     })
 
-    local feed_config = self:deserializeXML(feed_config_path)
+    local feed_config = self:deserializeXML(FEED_CONFIG_PATH)
 
     for index, feed in pairs(feed_config.feeds.feed) do
         -- FIXME: validation
@@ -108,7 +109,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             timeout = 2,
         })
         -- FIXME: delete tmp_source_file?
-        local tmp_source_file = news_dl_dir .. index .. config.FEED_SOURCE_SUFFIX
+        local tmp_source_file = NEWS_DL_DIR .. index .. FEED_SOURCE_SUFFIX
         self:processFeedSource(url,
                                tmp_source_file,
                                tonumber(feed._attr.limit))
@@ -153,7 +154,7 @@ function NewsDownloader:processFeedSource(url, feed_source, limit)
     local feeds = self:deserializeXML(feed_source)
     -- TODO: validate feeds
     local feed_output_dir = string.format("%s%s/",
-                                          news_dl_dir,
+                                          NEWS_DL_DIR,
                                           util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
@@ -166,7 +167,7 @@ function NewsDownloader:processFeedSource(url, feed_source, limit)
         local news_dl_path = string.format("%s%s%s",
                                            feed_output_dir,
                                            util.replaceInvalidChars(feed.title),
-                                           config.FILE_EXTENSION)
+                                           FILE_EXTENSION)
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
         self:download(feed.link, news_dl_path)
     end
