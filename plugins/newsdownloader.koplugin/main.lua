@@ -131,18 +131,18 @@ function NewsDownloader:deserializeXML(filename)
     local xmltext
     local f, e = io.open(filename, "r")
     if f then
-        --Gets the entire file content and stores into a string
         xmltext = f:read("*a")
+        f:close()
     else
         -- FIXME: don't crash the whole reader
         error(e)
     end
 
     --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = simpleTreeHandler() -- luacheck: ignore
+    local xmlhandler = simpleTreeHandler()
 
     --Instantiate the object that parses the XML to a Lua table
-    local xmlparser = xmlParser(xmlhandler) -- luacheck: ignore
+    local xmlparser = xmlParser(xmlhandler)
     xmlparser:parse(xmltext)
 
     return xmlhandler.root
