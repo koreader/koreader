@@ -62,7 +62,7 @@ function Terminal:execute()
         table.insert(entries, _("Failed to execute command."))
     end
     self:dump(entries)
-    table.insert(entries, _("Output will also be dumped to."))
+    table.insert(entries, _("Output will also be dumped to"))
     table.insert(entries, self.dump_file)
     UIManager:show(InfoMessage:new{
         cface = Font:getFace("ffont", 18),

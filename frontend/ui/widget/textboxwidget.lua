@@ -239,7 +239,6 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line.text, true, self.bold, self.fgcolor, nil, line.char_pads)
         y = y + self.line_height_px
     end
-    UIManager:setDirty(nil, function() return "ui", self.dimen end)
 --    -- if text is shorter than one line, shrink to text's width
 --    if #v_list == 1 then
 --        self.width = pen_x

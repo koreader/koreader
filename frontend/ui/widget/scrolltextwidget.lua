@@ -46,7 +46,7 @@ function ScrollTextWidget:init()
     self.v_scroll_bar = VerticalScrollBar:new{
         enable = visible_line_count < total_line_count,
         low = 0,
-        high = visible_line_count/total_line_count,
+        high = visible_line_count / total_line_count,
         width = self.scroll_bar_width,
         height = self.height,
     }

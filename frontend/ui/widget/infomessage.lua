@@ -89,6 +89,7 @@ function InfoMessage:init()
             face = self.face,
             width = text_width,
             height = self.height,
+            dialog = self,
         }
     else
         text_widget = TextBoxWidget:new{
