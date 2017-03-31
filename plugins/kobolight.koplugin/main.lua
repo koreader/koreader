@@ -131,7 +131,7 @@ end
 
 function KoboLight:onSwipe(_, ges)
     local powerd = Device:getPowerDevice()
-    if powerd.fl_intensity == nil then return true end
+    if powerd.fl_intensity == nil then return false end
 
     local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
@@ -140,21 +140,22 @@ function KoboLight:onSwipe(_, ges)
         new_intensity = powerd.fl_intensity + delta_int
     elseif ges.direction == "south" then
         new_intensity = powerd.fl_intensity - delta_int
+    else
+        return false  -- don't consume swipe event if it's not matched
     end
-    if new_intensity ~= nil then
-        -- when new_intensity <=0, toggle light off
-        if new_intensity <=0 then
-            if powerd.is_fl_on then
-                powerd:toggleFrontlight()
-            end
-            self:onShowOnOff()
-        else -- general case
-            powerd:setIntensity(new_intensity)
-            self:onShowIntensity()
+
+    -- when new_intensity <=0, toggle light off
+    if new_intensity <=0 then
+        if powerd.is_fl_on then
+            powerd:toggleFrontlight()
         end
-        if self.view.footer_visible and self.view.footer.settings.frontlight then
-            self.view.footer:updateFooter()
-        end
+        self:onShowOnOff()
+    else -- general case
+        powerd:setIntensity(new_intensity)
+        self:onShowIntensity()
+    end
+    if self.view.footer_visible and self.view.footer.settings.frontlight then
+        self.view.footer:updateFooter()
     end
     return true
 end
