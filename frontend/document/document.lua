@@ -37,7 +37,7 @@ function Document:new(from_o)
     local o = from_o or {}
     setmetatable(o, self)
     self.__index = self
-    if o._init then o:_init() end
+    o:_init()
     if o.init then o:init() end
     return o
 end

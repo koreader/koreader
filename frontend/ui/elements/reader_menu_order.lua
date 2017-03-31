@@ -55,6 +55,7 @@ local order = {
         "synchronize_time",
         "progress_sync",
         "zsync",
+        "terminal",
     },
     search = {
         "dictionary_lookup",

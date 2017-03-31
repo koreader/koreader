@@ -13,14 +13,15 @@ Example:
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local Widget = require("ui/widget/widget")
+local Geom = require("ui/geometry")
 local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local util = require("util")
-local logger = require("logger")
 local TimeVal = require("ui/timeval")
+local UIManager = require("ui/uimanager")
+local Widget = require("ui/widget/widget")
+local logger = require("logger")
+local util = require("util")
 
 local TextBoxWidget = Widget:new{
     text = nil,
@@ -225,7 +226,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
     local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
-    local h = self.line_height_px *  row_count
+    local h = self.line_height_px * row_count
+    if self._bb then self._bb:free() end
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height
@@ -237,6 +239,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line.text, true, self.bold, self.fgcolor, nil, line.char_pads)
         y = y + self.line_height_px
     end
+    UIManager:setDirty(nil, function() return "ui", self.dimen end)
 --    -- if text is shorter than one line, shrink to text's width
 --    if #v_list == 1 then
 --        self.width = pen_x

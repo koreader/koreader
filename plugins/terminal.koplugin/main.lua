@@ -3,13 +3,12 @@ local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local KeyValuePage = require("ui/widget/keyvaluepage")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
@@ -65,11 +64,12 @@ function Terminal:execute()
     self:dump(entries)
     table.insert(entries, _("Output will also be dumped to."))
     table.insert(entries, self.dump_file)
-    UIManager:show(KeyValuePage:new{
-        title = _("Command output"),
+    UIManager:show(InfoMessage:new{
         cface = Font:getFace("ffont", 18),
-        item_height = Screen:scaleBySize(20),
-        kv_pairs = entries,
+        text = _("Command output\n") .. table.concat(entries, "\n"),
+        default_image = false,
+        width = Screen:getWidth() * 0.8,
+        height = Screen:getHeight() * 0.8,
     })
 end
 
@@ -84,13 +84,13 @@ function Terminal:dump(entries)
     end
 end
 
-function Terminal:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function Terminal:addToMainMenu(menu_items)
+    menu_items.terminal = {
         text = _("Terminal emulator"),
         callback = function()
             self:start()
         end,
-    })
+    }
 end
 
 return Terminal
