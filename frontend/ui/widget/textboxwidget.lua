@@ -18,7 +18,6 @@ local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local TimeVal = require("ui/timeval")
-local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
 local util = require("util")
