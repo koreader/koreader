@@ -91,7 +91,6 @@ function Usage:dumpCharging(kv_pairs)
 end
 
 local BatteryStat = {
-    name = "batterystat",
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/batterystat.log",
     debugging = false,
@@ -245,7 +244,9 @@ end
 
 BatteryStat:init()
 
-local BatteryStatWidget = WidgetContainer:new()
+local BatteryStatWidget = WidgetContainer:new{
+    name = "batterystat",
+}
 
 function BatteryStatWidget:init()
     self.ui.menu:registerToMainMenu(self)

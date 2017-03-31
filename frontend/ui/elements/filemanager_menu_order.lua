@@ -56,6 +56,7 @@ local order = {
         "version",
         "help",
         "----------------------------",
+        "system_statistics",
         "exit",
     },
 }
