@@ -2,7 +2,6 @@
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local T = require("ffi/util").template
 local _ = require("gettext")
 
 local SystemStat = {
