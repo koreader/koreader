@@ -59,7 +59,20 @@ function UIManager:init()
         -- resume.
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
-            self:_stopAutoSuspend()
+            if self._stopAutoSuspend then
+                -- TODO(Hzj-jie): Why _stopAutoSuspend could be nil in test cases.
+                --[[
+                frontend/ui/uimanager.lua:62: attempt to call method _stopAutoSuspend (a nil value)
+
+                stack traceback:
+                frontend/ui/uimanager.lua:62: in function Suspend
+                frontend/ui/uimanager.lua:119: in function __default__
+                frontend/ui/uimanager.lua:662: in function handleInput
+                frontend/ui/uimanager.lua:707: in function run
+                spec/front/unit/readerui_spec.lua:32: in function <spec/front/unit/readerui_spec.lua:28>
+                --]]
+                self:_stopAutoSuspend()
+            end
             self:broadcastEvent(Event:new("Suspend"))
             Device:onPowerEvent("Suspend")
         end
@@ -116,7 +129,7 @@ function UIManager:init()
                 -- Suspension in Kobo can be interrupted by screen updates. We
                 -- ignore user touch input here so screen udpate won't be
                 -- triggered in suspend mode
-                return
+                self.event_handlers["Suspend"]()
             else
                 self:sendEvent(input_event)
             end
