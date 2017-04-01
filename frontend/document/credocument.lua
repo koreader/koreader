@@ -1,13 +1,13 @@
-local CreOptions = require("ui/data/creoptions")
-local Document = require("document/document")
 local Blitbuffer = require("ffi/blitbuffer")
-local lfs = require("libs/libkoreader-lfs")
+local CreOptions = require("ui/data/creoptions")
 local DataStorage = require("datastorage")
+local Document = require("document/document")
+local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local Font = require("ui/font")
-local logger = require("logger")
 local ffi = require("ffi")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 
 local CreDocument = Document:new{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
@@ -430,8 +430,6 @@ end
 function CreDocument:setTxtPreFormatted(enabled)
     logger.dbg("CreDocument: set txt preformatted", enabled)
     self._document:setIntProperty("crengine.file.txt.preformatted", enabled)
-    -- monospace is really kind of ugly for this...
-    self._document:setStringProperty("styles.pre.font-face", "font-family: \"" .. self.default_font .. "\"")
 end
 
 function CreDocument:getVisiblePageCount()
