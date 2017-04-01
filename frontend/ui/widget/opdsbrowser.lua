@@ -20,6 +20,7 @@ local http = require('socket.http')
 local https = require('ssl.https')
 local ltn12 = require('ltn12')
 local mime = require('mime')
+local util = require("util")
 
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
@@ -504,6 +505,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     logger.dbg("downloading file", local_path, "from", remote_url)
 
+    local_path = util.fixUtf8(local_path, "_")
     local parsed = url.parse(remote_url)
     http.TIMEOUT, https.TIMEOUT = 20, 20
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
