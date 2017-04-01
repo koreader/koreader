@@ -427,6 +427,13 @@ function CreDocument:setFloatingPunctuation(enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end
 
+function CreDocument:setTxtPreFormatted(enabled)
+    logger.dbg("CreDocument: set txt preformatted", enabled)
+    self._document:setIntProperty("crengine.file.txt.preformatted", enabled)
+    -- monospace is really kind of ugly for this...
+    self._document:setStringProperty("styles.pre.font-face", "font-family: \"" .. self.default_font .. "\"")
+end
+
 function CreDocument:getVisiblePageCount()
     return self._document:getVisiblePageCount()
 end
@@ -458,8 +465,8 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
 end
 
 function CreDocument:register(registry)
-    registry:addProvider("txt", "application/txt", self)
-    registry:addProvider("log", "application/txt", self)
+    registry:addProvider("txt", "text/plain", self)
+    registry:addProvider("log", "text/plain", self)
     registry:addProvider("txt.zip", "application/zip", self)
     registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("epub", "application/epub", self)
