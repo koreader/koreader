@@ -9,7 +9,7 @@ local SystemStat = {
     wakeup_count = 0,
     sleep_count = 0,
     charging_count = 0,
-    decharging_count = 0,
+    discharging_count = 0,
 }
 
 function SystemStat:onSuspend()
@@ -25,18 +25,17 @@ function SystemStat:onCharging()
 end
 
 function SystemStat:onNotCharging()
-    self.decharging_count = self.decharging_count + 1
+    self.discharging_count = self.discharging_count + 1
 end
 
 function SystemStat:onCallback()
     local kv_pairs = {
-        {_("Startup at"), os.date("%c", self.start_sec)},
-        {_("Running hours"),
-         string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)},
-        {_("Wakeup times"), self.wakeup_count},
-        {_("Sleep times"), self.sleep_count},
-        {_("Charging times"), self.charging_count},
-        {_("Decharging times"), self.decharging_count},
+        {_("KOReader Started at"), os.date("%c", self.start_sec)},
+        {_("Up hours"), string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)},
+        {_("Number of wake-ups"), self.wakeup_count},
+        {_("Number of sleeps"), self.sleep_count},
+        {_("Number of chargings"), self.charging_count},
+        {_("Number of dischargings"), self.discharging_count},
     }
     UIManager:show(KeyValuePage:new{
         title = _("System statistics"),
