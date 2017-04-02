@@ -1,20 +1,20 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local ProgressWidget = require("ui/widget/progresswidget")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local TextWidget = require("ui/widget/textwidget")
 local Blitbuffer = require("ffi/blitbuffer")
-local UIManager = require("ui/uimanager")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ProgressWidget = require("ui/widget/progresswidget")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
-local util  = require("util")
+local Screen = Device.screen
 
 
 local MODE = {
@@ -230,7 +230,7 @@ function ReaderFooter:setupTouchZones()
             id = "readerfooter_tap",
             ges = "tap",
             screen_zone = footer_screen_zone,
-            handler = function() return self:onTapFooter() end,
+            handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
                 'tap_forward', 'tap_backward',
                 -- NOTE: readermenu_tap override is needed to keep behavior
@@ -570,7 +570,7 @@ function ReaderFooter:onExitFlippingMode()
     self:applyFooterMode(self.orig_mode)
 end
 
-function ReaderFooter:onTapFooter(arg, ges)
+function ReaderFooter:onTapFooter(ges)
     if self.view.flipping_visible then
         local pos = ges.pos
         local dimen = self.progress_bar.dimen
