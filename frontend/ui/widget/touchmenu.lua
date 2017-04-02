@@ -1,26 +1,26 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalSpan = require("ui/widget/verticalspan")
-local TextWidget = require("ui/widget/textwidget")
-local LineWidget = require("ui/widget/linewidget")
-local IconButton = require("ui/widget/iconbutton")
-local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
-local UIManager = require("ui/uimanager")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("ffi/util")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
-local getMenuText = require("util").getMenuText
+local Screen = require("device").screen
 
 --[[
 TouchMenuItem widget
@@ -68,6 +68,15 @@ function TouchMenuItem:init()
         text = "",
         face = self.face,
     }
+    local submenu_widget_indicator = TextWidget:new{
+        text = "\226\150\184",
+        face = self.face,
+    }
+    local submenu_widget_empty = WidgetContainer:new{}
+    local width = self.dimen.w
+    local checked_widget_width = checked_widget:getSize().w
+    local menu_text_widget_width = width * 0.90 - checked_widget_width
+    local submenu_widget_width = width * 0.10 - checked_widget_width
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -75,13 +84,20 @@ function TouchMenuItem:init()
         HorizontalGroup:new {
             align = "center",
             CenterContainer:new{
-                dimen = Geom:new{ w = checked_widget:getSize().w },
+                dimen = Geom:new{ w = checked_widget_width },
                 item_checked and checked_widget or unchecked_widget
             },
-            TextWidget:new{
-                text = getMenuText(self.item),
-                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
-                face = self.face,
+            LeftContainer:new{
+                dimen = Geom:new{ w = menu_text_widget_width},
+                TextWidget:new{
+                    text = self.item.text or self.item.text_func(),
+                    fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+                    face = self.face,
+                },
+            },
+            RightContainer:new{
+                dimen = Geom:new{ w = submenu_widget_width},
+                self.item.sub_item_table ~= nil and submenu_widget_indicator or submenu_widget_empty
             },
         },
     }
