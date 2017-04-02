@@ -67,7 +67,7 @@ function Terminal:execute()
     UIManager:show(InfoMessage:new{
         cface = Font:getFace("ffont", 18),
         text = _("Command output\n") .. table.concat(entries, "\n"),
-        default_image = false,
+        show_icon = false,
         width = Screen:getWidth() * 0.8,
         height = Screen:getHeight() * 0.8,
     })
@@ -80,7 +80,7 @@ function Terminal:dump(entries)
         file:write(content)
         file:close()
     else
-        logger.warn(content)
+        logger.warn("Failed to dump terminal output " .. content .. " to " .. self.dump_file)
     end
 end
 

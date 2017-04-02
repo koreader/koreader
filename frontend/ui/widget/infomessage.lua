@@ -21,6 +21,23 @@ local Screen = require("device").screen
 Widget that displays an informational message
 
 it vanishes on key press or after a given timeout
+
+Example:
+    local _ = require("gettext")
+    local UIManager = require("ui/uimanager")
+    local sample
+    sample = InfoMessage:new{
+        text = _("Some message"),
+        -- Usually the hight of a InfoMessage is self-adaptive. If this field is actively set, a
+        -- scrollbar may be shown. This variable is usually helpful to display a large chunk of text
+        -- which may exceed the height of the screen.
+        height = 400,
+        -- Set to false to hide the icon, and also the span between the icon and text.
+        show_icon = false,
+        timeout = 5,  -- This widget will vanish in 5 seconds.
+    }
+    sample_input:onShowKeyboard()
+    UIManager:show(sample_input)
 ]]
 local InfoMessage = InputContainer:new{
     modal = true,
@@ -32,9 +49,8 @@ local InfoMessage = InputContainer:new{
     image = nil,  -- The image shows at the left of the InfoMessage.
     image_width = nil,  -- The image width if image is used. Keep it nil to use original width.
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
-    -- Whether the default image should be shown. If it is false, and image is nil, there will be no
-    -- image.
-    default_image = true,
+    -- Whether the icon should be shown. If it is false, self.image will be ignored.
+    show_icon = true,
 }
 
 function InfoMessage:init()
@@ -58,16 +74,18 @@ function InfoMessage:init()
     end
 
     local image_widget
-    if self.image then
-        image_widget = ImageWidget:new{
-            image = self.image,
-            width = self.image_width,
-            height = self.image_height,
-        }
-    elseif self.default_image then
-        image_widget = ImageWidget:new{
-            file = "resources/info-i.png",
-        }
+    if self.show_icon then
+        if self.image then
+            image_widget = ImageWidget:new{
+                image = self.image,
+                width = self.image_width,
+                height = self.image_height,
+            }
+        else
+            image_widget = ImageWidget:new{
+                file = "resources/info-i.png",
+            }
+        end
     else
         image_widget = WidgetContainer:new()
     end
@@ -107,7 +125,7 @@ function InfoMessage:init()
             HorizontalGroup:new{
                 align = "center",
                 image_widget,
-                HorizontalSpan:new{ width = 10 },
+                HorizontalSpan:new{ width = (self.show_icon and 10 or 0) },
                 text_widget,
             }
         }
