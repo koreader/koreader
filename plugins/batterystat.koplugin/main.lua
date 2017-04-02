@@ -200,7 +200,7 @@ function BatteryStat:onNotCharging()
     self:accumulate()
 end
 
-function BatteryStat:onCallback()
+function BatteryStat:showStatistics()
     self:initCurrentState()
     self:accumulate()
     local kv_pairs = self:dump()
@@ -256,7 +256,7 @@ function BatteryStatWidget:addToMainMenu(menu_items)
     menu_items.battery_statistics = {
         text = _("Battery statistics"),
         callback = function()
-            BatteryStat:onCallback()
+            BatteryStat:showStatistics()
         end,
     }
 end
