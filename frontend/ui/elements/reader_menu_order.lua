@@ -69,8 +69,8 @@ local order = {
         "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
         "version",
         "help",
-        "----------------------------",
         "system_statistics",
+        "----------------------------",
         "exit",
     },
 }
