@@ -108,6 +108,7 @@ function InputText:initTextBox(text, char_added)
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,
+            dialog = self.parent,
         }
     else
         self.text_widget = TextBoxWidget:new{

@@ -1,6 +1,6 @@
-local Widget = require("ui/widget/widget")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local Widget = require("ui/widget/widget")
 
 local VerticalScrollBar = Widget:new{
     enable = true,
@@ -29,10 +29,10 @@ end
 function VerticalScrollBar:paintTo(bb, x, y)
     if not self.enable then return end
     bb:paintBorder(x, y, self.width, self.height,
-                self.bordersize, self.bordercolor, self.radius)
-    bb:paintRect(x + self.bordersize, y + self.bordersize + self.low*self.height,
-                self.width - 2*self.bordersize,
-                self.height * (self.high - self.low), self.rectcolor)
+                   self.bordersize, self.bordercolor, self.radius)
+    bb:paintRect(x + self.bordersize, y + self.bordersize + self.low * self.height,
+                 self.width - 2 * self.bordersize,
+                 (self.height - 2 * self.bordersize) * (self.high - self.low), self.rectcolor)
 end
 
 return VerticalScrollBar
