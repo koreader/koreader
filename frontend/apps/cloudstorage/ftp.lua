@@ -1,12 +1,13 @@
-local FtpApi = require("frontend/apps/cloudstorage/ftpapi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local FtpApi = require("frontend/apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local UIManager = require("ui/uimanager")
-local _ = require("gettext")
-local T = require("ffi/util").template
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
+local UIManager = require("ui/uimanager")
+local util = require("util")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local Ftp = {
 }
@@ -33,6 +34,7 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
     local url = generateUrl(address, user, pass) .. item.url
     local response = FtpApi:downloadFile(url)
     if response ~= nil then
+        path = util.fixUtf8(path, "_")
         local file = io.open(path, "w")
         file:write(response)
         file:close()
