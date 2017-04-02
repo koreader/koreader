@@ -300,6 +300,10 @@ function util.getMenuText(item)
 end
 
 -- from http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua with modification
+--- Replaces invalid UTF-8 characters with a replacement string.
+---- @string str the string to be checked for invalid characters
+---- @string replacement the string to replace invalid characters with
+---- @treturn string valid UTF-8
 function util.fixUtf8(str, replacement)
     local pos = 1
     local len = #str
@@ -315,7 +319,8 @@ function util.fixUtf8(str, replacement)
             or pos == str:find(       "\244[\128-\143][\128-\191][\128-\191]", pos) then pos = pos + 4
         else
             str = str:sub(1, pos - 1) .. replacement .. str:sub(pos + 1)
-            pos = pos + 1
+            pos = pos + #replacement
+            len = len + #replacement - 1
         end
     end
     return str
