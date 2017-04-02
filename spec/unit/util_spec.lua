@@ -222,4 +222,33 @@ describe("util module", function()
         test("", "", "")
         assert.are_same(util.splitFileNameSuffix("a.txt"), "a")
     end)
+
+    it("should replace invalid UTF-8 characters with an underscore", function()
+        assert.is_equal(util.fixUtf8("\127 \128 \194\127 ", "_"), "\127 _ _\127 ")
+    end)
+
+    it("should replace invalid UTF-8 characters with multiple characters", function()
+        assert.is_equal(util.fixUtf8("\127 \128 \194\127 ", "__"), "\127 __ __\127 ")
+    end)
+
+    it("should replace invalid UTF-8 characters with empty char", function()
+        assert.is_equal(util.fixUtf8("\127 \128 \194\127 ", ""), "\127  \127 ")
+    end)
+
+    it("should not replace valid UTF-8 � character", function()
+        assert.is_equal(util.fixUtf8("�valid � char �", "__"), "�valid � char �")
+    end)
+
+    it("should not replace valid UTF-8 characters", function()
+        assert.is_equal(util.fixUtf8("\99 \244\129\130\190", "_"), "\99 \244\129\130\190")
+    end)
+
+    it("should not replace valid UTF-8 characters Polish chars", function()
+        assert.is_equal(util.fixUtf8("Pójdźże źółć", "_"), "Pójdźże źółć")
+    end)
+
+    it("should not replace valid UTF-8 characters German chars", function()
+        assert.is_equal(util.fixUtf8("glück schließen", "_"), "glück schließen")
+    end)
+
 end)
