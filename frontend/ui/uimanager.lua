@@ -747,7 +747,7 @@ function UIManager:_initAutoSuspend()
 
     if isAutoSuspendEnabled() then
         self.auto_suspend_action = function()
-            local now = util.gettime()
+            local now = os.time()
             -- Do not repeat auto suspend procedure after suspend.
             if self.last_action_sec + self.auto_suspend_sec <= now then
                 self.event_handlers["Suspend"]()
@@ -759,7 +759,7 @@ function UIManager:_initAutoSuspend()
         end
 
         function UIManager:_startAutoSuspend()
-            self.last_action_sec = util.gettime()
+            self.last_action_sec = os.time()
             self:nextTick(self.auto_suspend_action)
         end
         dbg:guard(UIManager, '_startAutoSuspend',
@@ -772,7 +772,7 @@ function UIManager:_initAutoSuspend()
         end
 
         function UIManager:_resetAutoSuspendTimer()
-            self.last_action_sec = util.gettime()
+            self.last_action_sec = os.time()
         end
 
         self:_startAutoSuspend()
