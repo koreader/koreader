@@ -9,7 +9,8 @@ KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
-	source "${KOREADER_DIR}/libkohelper.sh"
+	# shellcheck source=/dev/null
+	. "${KOREADER_DIR}/libkohelper.sh"
 else
 	echo "Can't source helper functions, aborting!"
 	exit 1
@@ -19,9 +20,9 @@ fi
 logmsg()
 {
 	# Use the right tools for the platform
-	if [ "${INIT_TYPE}" == "sysv" ] ; then
+	if [ "${INIT_TYPE}" = "sysv" ] ; then
 		msg "koreader: ${1}" "I"
-	elif [ "${INIT_TYPE}" == "upstart" ] ; then
+	elif [ "${INIT_TYPE}" = "upstart" ] ; then
 		f_log I koreader kual "" "${1}"
 	fi
 
@@ -35,7 +36,7 @@ logmsg()
 update_koreader()
 {
 	# Check if we were called by install_koreader...
-	if [ "${1}" == "clean" ] ; then
+	if [ "${1}" = "clean" ] ; then
 		do_clean_install="true"
 	else
 		do_clean_install="false"
@@ -56,19 +57,19 @@ update_koreader()
 		fi
 	done
 
-	if [ "${found_koreader_package}" == "false" ] ; then
+	if [ "${found_koreader_package}" = "false" ] ; then
 		# Go away
 		logmsg "No KOReader package found"
 	else
 		# Do we want to do a clean install?
-		if [ "${do_clean_install}" == "true" ] ; then
+		if [ "${do_clean_install}" = "true" ] ; then
 			logmsg "Removing current KOReader directory . . ."
 			rm -rf /mnt/us/koreader
 			logmsg "Uninstall finished."
 		fi
 
 		# Get the version of the package...
-		if [ "${koreader_pkg_type}" == "tgz" ] ; then
+		if [ "${koreader_pkg_type}" = "tgz" ] ; then
 			koreader_pkg_ver="${found_koreader_package%.*.*}"
 		else
 			koreader_pkg_ver="${found_koreader_package%.*}"
@@ -76,12 +77,14 @@ update_koreader()
 		koreader_pkg_ver="${koreader_pkg_ver#*-v}"
 		# Install it!
 		logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
-		if [ "${koreader_pkg_type}" == "tgz" ] ; then
+		if [ "${koreader_pkg_type}" = "tgz" ] ; then
 			tar -C "/mnt/us" -xzf "${found_koreader_package}"
+			fail=$?
 		else
 			unzip -q -o "${found_koreader_package}" -d "/mnt/us"
+			fail=$?
 		fi
-		if [ $? -eq 0 ] ; then
+		if [ $fail -eq 0 ] ; then
 			logmsg "Update to v${koreader_pkg_ver} successful :)"
 			# Cleanup behind us...
 			rm -f "${found_koreader_package}"
@@ -115,11 +118,11 @@ set_cre_prop()
 	# Check that the config exists...
 	if [ -f "${cre_config}" ] ; then
 		# dos2unix
-		sed -e "s/$(echo -ne '\r')$//g" -i "${cre_config}"
+		sed -e "s/$(printf '\r')$//g" -i "${cre_config}"
 
 		# And finally set the prop
-		sed -re "s/^(${cre_prop_key})(=)(.*?)$/\1\2${cre_prop_value}/" -i "${cre_config}"
-		if [ $? -eq 0 ] ; then
+		if sed -re "s/^(${cre_prop_key})(=)(.*?)$/\1\2${cre_prop_value}/" -i "${cre_config}"
+		then
 			logmsg "Set ${cre_prop_key} to ${cre_prop_value}"
 		else
 			logmsg "Failed to set ${cre_prop_key}"

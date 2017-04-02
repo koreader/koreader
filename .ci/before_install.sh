@@ -6,7 +6,7 @@ if [ "$CXX" = "g++" ];
 fi
 # in case anything ignores the environment variables, override through PATH
 mkdir bin
-ln -s $(which gcc-4.8) bin/cc
-ln -s $(which gcc-4.8) bin/gcc
-ln -s $(which c++-4.8) bin/c++
-ln -s $(which g++-4.8) bin/g++
+ln -s "$(which gcc-4.8)" bin/cc
+ln -s "$(which gcc-4.8)" bin/gcc
+ln -s "$(which c++-4.8)" bin/c++
+ln -s "$(which g++-4.8)" bin/g++

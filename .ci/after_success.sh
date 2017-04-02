@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
 CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
 source "${CI_DIR}/common.sh"
 
 set +e
 
-if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
+if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; then
     travis_retry luarocks --local install ldoc
     # get deploy key for doc repo
-    openssl aes-256-cbc -k $doc_build_secret -in .ci/koreader_doc.enc -out ~/.ssh/koreader_doc -d
+    openssl aes-256-cbc -k "${doc_build_secret:?}" -in .ci/koreader_doc.enc -out ~/.ssh/koreader_doc -d
     chmod 600 ~/.ssh/koreader_doc  # make agent happy
     eval "$(ssh-agent)" > /dev/null
     ssh-add ~/.ssh/koreader_doc > /dev/null
@@ -17,7 +18,7 @@ if [ ${TRAVIS_PULL_REQUEST} = false ] && [ ${TRAVIS_BRANCH} = 'master' ]; then
 
     # push doc update
     pushd doc
-        luajit $(which ldoc) . 2> /dev/null
+        luajit "$(which ldoc)" . 2> /dev/null
         if [ ! -d html ]; then
             echo "Failed to generate documents..."
             exit 1
@@ -38,5 +39,5 @@ fi
 
 travis_retry make coverage
 pushd koreader-*/koreader
-    luajit $(which luacov-coveralls)
+    luajit "$(which luacov-coveralls)"
 popd

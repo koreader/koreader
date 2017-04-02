@@ -88,6 +88,7 @@ fi
 
 # Rotation weirdness, part II
 echo "${cur_rotate}" > "/sys/class/graphics/fb0/rotate"
+# shellcheck disable=SC2094
 cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
 
 # Handle sdcard

@@ -13,7 +13,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 fi
 
 # we're always starting from our working directory
-cd "${KOREADER_DIR}"
+cd "${KOREADER_DIR}" || exit
 
 # load our own shared libraries if possible
 export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
@@ -47,12 +47,13 @@ if [ "${FROM_NICKEL}" = "true" ] ; then
 
 	if [ "${FROM_KFMON}" = "true" ] ; then
 		# Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
-		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
-			export ${env}
+		for env in $(xargs -n 1 -0 < "/proc/$(pidof nickel)/environ") ; do
+			# shellcheck disable=SC2163
+			export "${env}"
 		done
 	else
 		# Siphon a few things from nickel's env...
-		eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
+		eval "$(xargs -n 1 -0 < "/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
 		export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
 	fi
 
@@ -82,7 +83,7 @@ fi
 if [ ! -n "${PRODUCT}" ] ; then
 	PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
 	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
-	export PRODUCT
+	export PREFIX PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers
@@ -112,8 +113,10 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
 fi
 
 # we keep maximum 500K worth of crash log
-cat crash.log 2> /dev/null | tail -c 500000 > crash.log.new
-mv -f crash.log.new crash.log
+if [ -e crash.log ]; then
+	tail -c 500000 crash.log > crash.log.new
+	mv -f crash.log.new crash.log
+fi
 ./reader.lua "${args}" >> crash.log 2>&1
 RESULT=$?
 
