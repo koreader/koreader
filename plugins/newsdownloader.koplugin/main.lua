@@ -20,6 +20,35 @@ local FILE_EXTENSION = ".html"
 local FEED_SOURCE_SUFFIX = "_rss_tmp.xml"
 local NEWS_DL_DIR, FEED_CONFIG_PATH
 
+
+local function deserializeXML(filename)
+    logger.dbg("NewsDownloader: File to deserialize: ", filename)
+    local f, e = io.open(filename, "r")
+    if f then
+        local xmltext = f:read("*a")
+        f:close()
+        return deserializeXMLString(xmltext)
+    else
+        logger.warn("NewsDownloader: XML file not found", filename, e)
+    end
+end
+
+local function deserializeXMLString(xml_str)
+    -- uses LuaXML https://github.com/manoelcampos/LuaXML
+    -- The MIT License (MIT)
+    -- Copyright (c) 2016 Manoel Campos da Silva Filho
+    require("lib/xml")
+    require("lib/handler")
+
+    --Instantiate the object the states the XML file as a Lua table
+    local xmlhandler = simpleTreeHandler()
+    --Instantiate the object that parses the XML to a Lua table
+    local xmlparser = xmlParser(xmlhandler)
+    xmlparser:parse(xml_str)
+    return xmlhandler.root
+end
+
+
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -98,7 +127,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         timeout = 1,
     })
 
-    local feed_config = self:deserializeXML(FEED_CONFIG_PATH)
+    local feed_config = deserializeXML(FEED_CONFIG_PATH)
     if not feed_config then return end
     if not feed_config.feeds then
         logger.warn('NewsDownloader: missing feeds from feed config', FEED_CONFIG_PATH)
@@ -114,11 +143,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
                 text = T(_("Processing: %1"), url),
                 timeout = 2,
             })
-            -- FIXME: delete tmp_source_file?
-            local tmp_source_file = NEWS_DL_DIR .. index .. FEED_SOURCE_SUFFIX
-            self:processFeedSource(url,
-                                   tmp_source_file,
-                                   tonumber(limit))
+            self:processFeedSource(url, tonumber(limit))
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
@@ -129,38 +154,10 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     })
 end
 
-function NewsDownloader:deserializeXML(filename)
-    -- uses LuaXML https://github.com/manoelcampos/LuaXML
-    -- The MIT License (MIT)
-    -- Copyright (c) 2016 Manoel Campos da Silva Filho
-    require("lib/xml")
-    require("lib/handler")
-
-    logger.dbg("NewsDownloader: File to deserialize: ", filename)
-    local xmltext
-    local f, e = io.open(filename, "r")
-    if f then
-        xmltext = f:read("*a")
-        f:close()
-    else
-        logger.warn("NewsDownloader: XML file not found", filename, e)
-        return nil
-    end
-
-    --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = simpleTreeHandler()
-
-    --Instantiate the object that parses the XML to a Lua table
-    local xmlparser = xmlParser(xmlhandler)
-    xmlparser:parse(xmltext)
-
-    return xmlhandler.root
-end
-
-function NewsDownloader:processFeedSource(url, feed_source, limit)
-    -- FIXME: this is very inefficient
-    self:download(url, feed_source)
-    local feeds = self:deserializeXML(feed_source)
+function NewsDownloader:processFeedSource(url, limit)
+    local resp_lines = {}
+    http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
+    local feeds = deserializeXMLString(table.concat(resp_lines))
     if not feeds then return end
     if not feeds.rss or not feeds.rss.channel
             or not feeds.rss.channel.title or not feeds.rss.channel.item then
@@ -183,16 +180,11 @@ function NewsDownloader:processFeedSource(url, feed_source, limit)
                                            feed_output_dir,
                                            util.replaceInvalidChars(feed.title),
                                            FILE_EXTENSION)
+        local news_dl_fd = io.open(news_dl_path, 'w')
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-        self:download(feed.link, news_dl_path)
+        http.request({ url = url, sink = ltn12.sink.file(news_dl_fd), })
+        news_dl_fd:close()
     end
-end
-
-function NewsDownloader:download(url, output_file_name)
-    http.request({
-        url = url,
-        sink = ltn12.sink.file(io.open(output_file_name, 'w')),
-    })
 end
 
 return NewsDownloader
