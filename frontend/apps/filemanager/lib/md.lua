@@ -1,4 +1,4 @@
--- From https://github.com/bakpakin/luamd revision daf7cc71f5de9a2fe66a60f452172e9597724d5d
+-- From https://github.com/bakpakin/luamd revision 644c1731f0972b71c9244004f78fb6616d6c99e8
 
 --[[
 Copyright (c) 2016 Calvin Rose <calsrose@gmail.com>
@@ -304,6 +304,7 @@ local function readSimple(pop, peek, tree, links)
         p[#p + 1] = '\r\n'
         nextLine = pop()
     end
+    p[#p] = nil
     return peek()
 
 end

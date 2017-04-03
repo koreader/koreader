@@ -62,6 +62,8 @@ local order = {
         "exit",
     },
     help = {
+        "quickstart_guide",
+        "----------------------------",
         "report_bug",
         "----------------------------",
         "about",

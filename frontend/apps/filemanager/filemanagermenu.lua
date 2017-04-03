@@ -53,7 +53,7 @@ function FileManagerMenu:initGesListener()
     self.ges_events = {
         TapShowMenu = {
             GestureRange:new{
-                ges = "tap",
+                ges = "swipe",
                 range = Geom:new{
                     x = 0,
                     y = 0,
@@ -335,9 +335,11 @@ function FileManagerMenu:onCloseFileManagerMenu()
     return true
 end
 
-function FileManagerMenu:onTapShowMenu()
-    self:onShowMenu()
-    return true
+function FileManagerMenu:onTapShowMenu(arg, ges)
+    if ges.direction == "south" then
+        self:onShowMenu()
+        return true
+    end
 end
 
 function FileManagerMenu:onSetDimensions(dimen)
