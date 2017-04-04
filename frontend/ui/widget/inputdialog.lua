@@ -37,6 +37,14 @@ Example:
     sample_input:onShowKeyboard()
     UIManager:show(sample_input)
 
+If it would take the user more than half a minute to recover from a mistake,
+a "Cancel" button <em>must</em> be added to the dialog. The cancellation button
+should be kept on the left and the button executing the action on the right.
+
+It is strongly recommended to use a text describing the action to be
+executed, as demonstrated in the example above. If the resulting phrase would be
+longer than three words it should just read "OK".
+
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
