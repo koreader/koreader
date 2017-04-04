@@ -107,7 +107,7 @@ function MenuSorter:sort(item_table, order)
             sub_menu_position.text = sub_menu_content.text
             sub_menu_position.sub_item_table = sub_menu_content
             -- remove reference from top level output
-            sub_menu_content = nil
+            menu_table[sub_menu] = nil
             -- remove reference from input so it won't show up as orphaned
             item_table[sub_menu] = nil
         end
