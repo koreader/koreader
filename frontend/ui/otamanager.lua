@@ -145,6 +145,7 @@ function OTAManager:fetchAndProcessUpdate()
                 local_version,
                 ota_version
             ),
+            ok_text = _("Update"),
             ok_callback = function()
                 UIManager:show(InfoMessage:new{
                     text = _("Downloading may take several minutes…"),
