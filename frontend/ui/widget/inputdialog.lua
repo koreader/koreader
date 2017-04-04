@@ -3,8 +3,8 @@ Widget for taking user input.
 
 Example:
 
-    local _ = require("gettext")
     local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
     local sample_input
     sample_input = InputDialog:new{
         title = _("Dialog title"),

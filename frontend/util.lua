@@ -15,8 +15,9 @@ function util.stripePunctuations(text)
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
---- Splits a string by a pattern
 --[[--
+Splits a string by a pattern
+
 Lua doesn't have a string.split() function and most of the time
 you don't really need it because string.gmatch() is enough.
 However string.gmatch() has one significant disadvantage for me:
@@ -24,9 +25,12 @@ You can't split a string while matching both the delimited
 strings and the delimiters themselves without tracking positions
 and substrings. The gsplit function below takes care of
 this problem.
+
 Author: Peter Odding
+
 License: MIT/X11
-Source: http://snippets.luacode.org/snippets/String_splitting_130
+
+Source: <a href="http://snippets.luacode.org/snippets/String_splitting_130">http://snippets.luacode.org/snippets/String_splitting_130</a>
 ]]
 ----@string str string to split
 ----@param pattern the pattern to split against
@@ -58,8 +62,11 @@ function util.gsplit(str, pattern, capture)
     end)
 end
 
---- Converts seconds to a clock string.
--- Source: https://gist.github.com/jesseadams/791673
+--[[--
+Converts seconds to a clock string.
+
+Source: <a href="https://gist.github.com/jesseadams/791673">https://gist.github.com/jesseadams/791673</a>
+]]
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 00:00, if false 00:00:00
 ---- @treturn string clock string in the form of 00:00 or 00:00:00
@@ -91,16 +98,26 @@ function util.tableSize(T)
     return count
 end
 
--- append all elements from t2 into t1
+--- Append all elements from t2 into t1.
+---- @param t1 Lua table
+---- @param t2 Lua table
 function util.arrayAppend(t1, t2)
     for _, v in ipairs(t2) do
         table.insert(t1, v)
     end
 end
 
--- Returns the index within this string of the last occurrence of the specified character
--- or -1 if the character does not occur.
--- To find . you need to escape it.
+--[[--
+Gets last index of string in character
+
+Returns the index within this string of the last occurrence of the specified character
+or -1 if the character does not occur.
+
+To find . you need to escape it.
+]]
+---- @string string
+---- @string ch
+---- @treturn int last occurrence or -1 if not found
 function util.lastIndexOf(string, ch)
     local i = string:match(".*" .. ch .. "()")
     if i == nil then return -1 else return i - 1 end
@@ -125,12 +142,16 @@ function util.splitToChars(text)
     return tab
 end
 
--- Tests whether c is a CJK character
+--- Tests whether c is a CJK character
+---- @string c
+---- @treturn boolean true if CJK
 function util.isCJKChar(c)
     return string.match(c, "[\228-\234][\128-\191].") == c
 end
 
--- Test whether str contains CJK characters
+--- Tests whether str contains CJK characters
+---- @string str
+---- @treturn boolean true if CJK
 function util.hasCJKChar(str)
     return string.match(str, "[\228-\234][\128-\191].") ~= nil
 end
@@ -158,15 +179,15 @@ end
 -- specific punctuation : e.g. "word :" or "word )"
 -- (In french, there is a space before a colon, and it better
 -- not be wrapped there.)
-local non_splitable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
+local non_splittable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
 -- Same if a space has some specific other punctuation before it
-local non_splitable_space_leaders = "([{$=-+*/|<>«“"
+local non_splittable_space_leaders = "([{$=-+*/|<>«“"
 
 
 -- Similar rules exist for CJK text. Taken from :
 -- https://en.wikipedia.org/wiki/Line_breaking_rules_in_East_Asian_languages
 
-local cjk_non_splitable_tailers = table.concat( {
+local cjk_non_splittable_tailers = table.concat( {
     -- Simplified Chinese
     "!%),.:;?]}¢°·’\"†‡›℃∶、。〃〆〕〗〞﹚﹜！＂％＇），．：；？！］｝～",
     -- Traditional Chinese
@@ -177,7 +198,7 @@ local cjk_non_splitable_tailers = table.concat( {
     "!%),.:;?]}¢°’\"†‡℃〆〈《「『〕！％），．：；？］｝",
 })
 
-local cjk_non_splitable_leaders = table.concat( {
+local cjk_non_splittable_leaders = table.concat( {
     -- Simplified Chinese
     "$(£¥·‘\"〈《「『【〔〖〝﹙﹛＄（．［｛￡￥",
     -- Traditional Chinese
@@ -188,23 +209,27 @@ local cjk_non_splitable_leaders = table.concat( {
     "$([{£¥‘\"々〇〉》」〔＄（［｛｠￥￦#",
 })
 
-local cjk_non_splitable = table.concat( {
+local cjk_non_splittable = table.concat( {
     -- Japanese
     "—…‥〳〴〵",
 })
 
--- Test whether a string could be separated by this char for multi-line rendering
+--- Test whether a string can be separated by this char for multi-line rendering.
 -- Optional next or prev chars may be provided to help make the decision
-function util.isSplitable(c, next_c, prev_c)
+---- @string c
+---- @string next_c
+---- @string prev_c
+---- @treturn boolean true if splittable, false if not
+function util.isSplittable(c, next_c, prev_c)
     if util.isCJKChar(c) then
-        -- a CJKChar is a word in itself, and so is splitable
-        if cjk_non_splitable:find(c, 1, true) then
+        -- a CJKChar is a word in itself, and so is splittable
+        if cjk_non_splittable:find(c, 1, true) then
             -- except a few of them
             return false
-        elseif next_c and cjk_non_splitable_tailers:find(next_c, 1, true) then
+        elseif next_c and cjk_non_splittable_tailers:find(next_c, 1, true) then
             -- but followed by a char that is not permitted at start of line
             return false
-        elseif prev_c and cjk_non_splitable_leaders:find(prev_c, 1, true) then
+        elseif prev_c and cjk_non_splittable_leaders:find(prev_c, 1, true) then
             -- but preceded by a char that is not permitted at end of line
             return false
         else
@@ -214,10 +239,10 @@ function util.isSplitable(c, next_c, prev_c)
     elseif c == " " then
         -- we only split on a space (so punctuation sticks to prev word)
         -- if next_c or prev_c is provided, we can make a better decision
-        if next_c and non_splitable_space_tailers:find(next_c, 1, true) then
+        if next_c and non_splittable_space_tailers:find(next_c, 1, true) then
             -- this space is followed by some punctuation that is better kept with us
             return false
-        elseif prev_c and non_splitable_space_leaders:find(prev_c, 1, true) then
+        elseif prev_c and non_splittable_space_leaders:find(prev_c, 1, true) then
             -- this space is lead by some punctuation that is better kept with us
             return false
         else
@@ -225,13 +250,15 @@ function util.isSplitable(c, next_c, prev_c)
             return true
         end
     end
-    -- otherwise, non splitable
+    -- otherwise, non splittable
     return false
 end
 
---- Gets filesystem type of a path
--- Checks if the path occurs in /proc/mounts
-----@string path an absolute path
+--- Gets filesystem type of a path.
+--
+-- Checks if the path occurs in <code>/proc/mounts</code>
+---- @string path an absolute path
+---- @treturn string filesystem type
 function util.getFilesystemType(path)
     local mounts = io.open("/proc/mounts", "r")
     if not mounts then return nil end
@@ -255,37 +282,55 @@ function util.getFilesystemType(path)
     return type
 end
 
+--- Replaces characters that are invalid filenames.
+--
+-- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
+-- These characters are problematic on Windows filesystems. On Linux only
+-- <code>/</code> poses a problem.
+---- @string str filename
+---- @treturn string sanitized filename
 function util.replaceInvalidChars(str)
     if str then
         return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
     end
 end
 
+--- Replaces slash with an underscore.
+---- @string str
+---- @treturn string
 function util.replaceSlashChar(str)
     if str then
         return str:gsub('%/','_')
     end
 end
 
--- Split a file into its path and name
+--- Splits a file into its path and name
+---- @string file
+---- @treturn string path, filename
 function util.splitFilePathName(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "/") == nil then return "", file end
     return string.gsub(file, "(.*/)(.*)", "%1"), string.gsub(file, ".*/", "")
 end
 
--- Split a file name into its pure file name and suffix
+--- Splits a file name into its pure file name and suffix
+---- @string file
+---- @treturn string path, extension
 function util.splitFileNameSuffix(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "%.") == nil then return file, "" end
     return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
 end
 
+--- Gets file extension
+---- @string filename
+---- @treturn string extension
 function util.getFileNameSuffix(file)
     local _, suffix = util.splitFileNameSuffix(file)
     return suffix
 end
 
+--- Adds > to touch menu items with a submenu
 function util.getMenuText(item)
     local text
     if item.text_func then
@@ -299,8 +344,9 @@ function util.getMenuText(item)
     return text
 end
 
--- from http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua with modification
 --- Replaces invalid UTF-8 characters with a replacement string.
+--
+-- Based on <a href="http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua">http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua</a>
 ---- @string str the string to be checked for invalid characters
 ---- @string replacement the string to replace invalid characters with
 ---- @treturn string valid UTF-8
