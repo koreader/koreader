@@ -37,6 +37,7 @@ local order = {
         "storage_stat",
         "cloud_storage",
         "read_timer",
+        "synchronize_time",
         "terminal",
         "----------------------------",
         "advanced_settings",
