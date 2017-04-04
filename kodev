@@ -12,7 +12,10 @@ function assert_ret_zero {
 }
 
 function check_submodules {
-    [ -n "$(git submodule status | grep -E '^\-')" ] && kodev-fetch-thirdparty
+    if git submodule status | grep -qE '^\-'
+    then
+        kodev-fetch-thirdparty
+    fi
 }
 
 function setup_env {
