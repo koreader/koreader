@@ -625,6 +625,16 @@ end
 
 function ReaderFooter:onResume()
     self:updateFooter()
+    if self.settings.auto_refresh_time then
+        self:setupAutoRefreshTime()
+    end
+end
+
+function ReaderFooter:onSuspend()
+    if self.settings.auto_refresh_time then
+        UIManager:unschedule(self.autoRefreshTime)
+        self.onCloseDocument = nil
+    end
 end
 
 return ReaderFooter
