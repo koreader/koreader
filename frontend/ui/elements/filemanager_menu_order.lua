@@ -29,7 +29,6 @@ local order = {
     tools = {
         "calibre_wireless_connection",
         "evernote",
-        "goodreads",
         "keep_alive",
         "frontlight_gesture_controller",
         "statistics",
@@ -48,6 +47,7 @@ local order = {
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
+        "goodreads",
         "opds_catalog",
     },
     main = {
