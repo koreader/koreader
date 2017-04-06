@@ -23,7 +23,6 @@ local order = {
         "highlight_options",
         "change_font",
         "hyphenation",
-        "read_timer",
     },
     setting = {
         "read_from_right_to_left",
@@ -43,6 +42,7 @@ local order = {
         "status_bar",
     },
     tools = {
+        "read_timer",
         "calibre_wireless_connection",
         "evernote",
         "goodreads",

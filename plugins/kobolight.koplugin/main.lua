@@ -9,7 +9,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
-local PluginLoader = require("pluginloader")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -165,7 +164,7 @@ function KoboLight:addToMainMenu(menu_items)
         text = _("Frontlight gesture controller"),
         callback = function()
             local image = ImageWidget:new{
-                file = PluginLoader.plugin_path .. "/kobolight.koplugin/demo.png",
+                file = self.path .. "/demo.png",
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
                 scale_factor = 0,
