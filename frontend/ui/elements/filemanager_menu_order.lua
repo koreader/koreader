@@ -27,7 +27,6 @@ local order = {
         -- end common settings
     },
     tools = {
-        "read_timer",
         "calibre_wireless_connection",
         "evernote",
         "goodreads",
@@ -37,6 +36,8 @@ local order = {
         "battery_statistics",
         "storage_stat",
         "cloud_storage",
+        "read_timer",
+        "synchronize_time",
         "terminal",
         "----------------------------",
         "advanced_settings",
@@ -59,6 +60,11 @@ local order = {
         "system_statistics",
         "----------------------------",
         "exit",
+    },
+    help = {
+        "report_bug",
+        "----------------------------",
+        "about",
     },
 }
 

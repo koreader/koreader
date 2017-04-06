@@ -196,6 +196,7 @@ function FileManager:init()
                         UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                            ok_text = _("Delete"),
                             ok_callback = function()
                                 local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
                                 local file_abs_path = util.realpath(file)
@@ -220,18 +221,18 @@ function FileManager:init()
                             input = util.basename(file),
                             buttons = {{
                                 {
-                                    text = _("OK"),
+                                    text = _("Cancel"),
                                     enabled = true,
                                     callback = function()
-                                        renameFile(file)
-                                        self:refreshPath()
                                         UIManager:close(fileManager.rename_dialog)
                                     end,
                                 },
                                 {
-                                    text = _("Cancel"),
+                                    text = _("Rename"),
                                     enabled = true,
                                     callback = function()
+                                        renameFile(file)
+                                        self:refreshPath()
                                         UIManager:close(fileManager.rename_dialog)
                                     end,
                                 },

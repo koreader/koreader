@@ -45,7 +45,7 @@ end
 function Terminal:execute()
     local command = self.input:getInputText()
     UIManager:show(InfoMessage:new{
-        text = _("Executing ..."),
+        text = _("Executing…"),
         timeout = 0.1,
     })
     UIManager:forceRePaint()
@@ -62,7 +62,7 @@ function Terminal:execute()
         table.insert(entries, _("Failed to execute command."))
     end
     self:dump(entries)
-    table.insert(entries, _("Output will also be dumped to"))
+    table.insert(entries, _("Output will also be written to"))
     table.insert(entries, self.dump_file)
     UIManager:show(InfoMessage:new{
         cface = Font:getFace("ffont", 18),
