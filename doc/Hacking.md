@@ -13,6 +13,11 @@ logger.dbg("table a: ", a)
 
 Anything printed by `logger.dbg` starts with a `#` sign.
 
+## Bug hunting in kpv
+
+A real example for hunting bug in KPV's cache system: https://github.com/koreader/kindlepdfviewer/pull/475
+
+
 ## Developing UI widgets ##
 
 `tools/wbuilder.lua` is your friend, if you need to create new UI widgets. It
