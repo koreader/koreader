@@ -1,4 +1,3 @@
-
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local UIManager = require("ui/uimanager")
@@ -15,14 +14,14 @@ local enable
 
 local function showConfirmBox()
     UIManager:show(ConfirmBox:new{
-        text = _("The system won't sleep when this message is showing.\nPress \"Stay alive\" if you prefer to keep system on even after closing this notification. *It will drain the battery.*\n\nIf for any reasons KOReader died before \"Close\" is pressed, please start and close KeepAlive plugin again to ensure settings are reset."),
-        ok_text = _("Close"),
-        ok_callback = function()
+        text = _("The system won't sleep while this message is showing.\n\nPress \"Stay alive\" if you prefer to keep the system on even after closing this notification. *This will drain the battery*.\n\nIf KOReader terminates before \"Close\" is pressed, please start and close the KeepAlive plugin again to ensure settings are reset."),
+        cancel_text = _("Close"),
+        cancel_callback = function()
             disable()
             menuItem.checked =false
         end,
-        cancel_text = _("Stay alive"),
-        cancel_callback = function()
+        ok_text = _("Stay alive"),
+        ok_callback = function()
             menuItem.checked = true
         end,
     })

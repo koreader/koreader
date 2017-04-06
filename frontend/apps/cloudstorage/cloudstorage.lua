@@ -1,16 +1,16 @@
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local _ = require("gettext")
-local Menu = require("ui/widget/menu")
-local InfoMessage = require("ui/widget/infomessage")
 local ButtonDialog = require("ui/widget/buttondialog")
-local DropBox = require("frontend/apps/cloudstorage/dropbox")
-local LuaSettings = require("luasettings")
-local DataStorage = require("datastorage")
-local Ftp = require("frontend/apps/cloudstorage/ftp")
-local ConfirmBox = require("ui/widget/confirmbox")
-local lfs = require("libs/libkoreader-lfs")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
+local DropBox = require("frontend/apps/cloudstorage/dropbox")
+local InfoMessage = require("ui/widget/infomessage")
+local Ftp = require("frontend/apps/cloudstorage/ftp")
+local Menu = require("ui/widget/menu")
+local LuaSettings = require("luasettings")
+local Screen = require("device").screen
+local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+local lfs = require("libs/libkoreader-lfs")
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -181,7 +181,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes..."),
+                            text = _("Downloading may take several minutes…"),
                             timeout = 1,
                         })
                     elseif self.type == "ftp" then
@@ -193,7 +193,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes..."),
+                            text = _("Downloading may take several minutes…"),
                             timeout = 1,
                         })
                     end

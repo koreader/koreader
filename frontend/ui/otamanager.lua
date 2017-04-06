@@ -1,13 +1,13 @@
-local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
-local NetworkMgr = require("ui/network/manager")
-local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
-local UIManager = require("ui/uimanager")
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
+local NetworkMgr = require("ui/network/manager")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
@@ -131,7 +131,7 @@ function OTAManager:fetchAndProcessUpdate()
     local ota_version, local_version = OTAManager:checkUpdate()
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
-            text = _("Your KOReader is up to date."),
+            text = _("KOReader is up to date."),
         })
     elseif ota_version == nil then
         local channel = ota_channels[OTAManager:getOTAChannel()]
