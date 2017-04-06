@@ -139,7 +139,7 @@ if [ "${FROM_NICKEL}" = "true" ] ; then
 		else
 			# By default, if we were called from KFMon, just reboot, because there might be a chance Nickel will get its panties in a serious twist on restore for one reason or another...
 			# And at best, we'd still restart with slightly broken suspend behavior anyway...
-			reboot
+			/sbin/reboot
 		fi
 	fi
 else
@@ -147,7 +147,7 @@ else
 	# NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
 	#       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
 	if ! pgrep -f kbmenu > /dev/null 2>&1 ; then
-		reboot
+		/sbin/reboot
 	fi
 fi
 
