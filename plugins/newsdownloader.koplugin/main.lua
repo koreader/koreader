@@ -178,10 +178,8 @@ function NewsDownloader:processFeedSource(url, limit)
                                            feed_output_dir,
                                            util.replaceInvalidChars(feed.title),
                                            FILE_EXTENSION)
-        local news_dl_fd = io.open(news_dl_path, 'w')
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-        http.request({ url = url, sink = ltn12.sink.file(news_dl_fd), })
-        news_dl_fd:close()
+        http.request({ url = url, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
     end
 end
 
