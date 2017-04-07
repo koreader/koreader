@@ -17,7 +17,7 @@ local NewsDownloader = WidgetContainer:new{}
 local initialized = false  -- for only once lazy initialization
 local FEED_CONFIG_FILE = "feeds.xml"
 local FILE_EXTENSION = ".html"
-local FEED_SOURCE_SUFFIX = "_rss_tmp.xml"
+local NEWS_DL_DIR_NAME = "news"
 local NEWS_DL_DIR, FEED_CONFIG_PATH
 
 
@@ -55,7 +55,7 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        NEWS_DL_DIR = DataStorage:getDataDir() .. "/news/"
+        NEWS_DL_DIR = string.format("%s/%s/", DataStorage:getDataDir(), NEWS_DL_DIR_NAME)
         if not lfs.attributes(NEWS_DL_DIR, "mode") then
             lfs.mkdir(NEWS_DL_DIR)
         end
