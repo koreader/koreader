@@ -310,11 +310,11 @@ end
 
 local option_titles = {
     all_at_once = _("Show all at once"),
-    toc_markers = _("Show table of content markers"),
+    toc_markers = _("Show chapter markers"),
     auto_refresh_time = _("Auto refresh time"),
     page_progress = _("Current page"),
     time = _("Current time"),
-    pages_left = _("Pages left in this chapter"),
+    pages_left = _("Pages left in chapter"),
     battery = _("Battery status"),
     percentage = _("Progress percentage"),
     book_time_to_read = _("Book time to read"),
