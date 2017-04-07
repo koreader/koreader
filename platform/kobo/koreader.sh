@@ -117,8 +117,20 @@ if [ -e crash.log ]; then
 	tail -c 500000 crash.log > crash.log.new
 	mv -f crash.log.new crash.log
 fi
+
+# TODO: add support for 32bit framebuffer in koreader. This is a workaround
+# to run koreader in 16bpp. Useful since FW 4.0
+FB_BPP=$(cat /sys/class/graphics/fb0/bits_per_pixel)
+[ "$FB_BPP" -gt 16 ] && /usr/sbin/fbset -depth 16
+# fix rotation issues on Kobo Aura HD (dragon) and Kobo Aura H2O (dahlia)
+# shellcheck disable=SC2094
+case "$PRODUCT" in "dragon" | "dahlia" ) cat /sys/class/graphics/fb0/rotate > /sys/class/graphics/fb0/rotate ;; esac
+
 ./reader.lua "${args}" >> crash.log 2>&1
 RESULT=$?
+
+# back to default depth in framebuffer.
+[ "$FB_BPP" -gt 16 ] && /usr/sbin/fbset -depth "$FB_BPP"
 
 if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
@@ -131,7 +143,7 @@ if [ "${FROM_NICKEL}" = "true" ] ; then
 		else
 			# By default, if we were called from KFMon, just reboot, because there might be a chance Nickel will get its panties in a serious twist on restore for one reason or another...
 			# And at best, we'd still restart with slightly broken suspend behavior anyway...
-			reboot
+			/sbin/reboot
 		fi
 	fi
 else
@@ -139,7 +151,7 @@ else
 	# NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
 	#       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
 	if ! pgrep -f kbmenu > /dev/null 2>&1 ; then
-		reboot
+		/sbin/reboot
 	fi
 fi
 

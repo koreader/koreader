@@ -29,7 +29,6 @@ local order = {
     tools = {
         "calibre_wireless_connection",
         "evernote",
-        "goodreads",
         "keep_alive",
         "frontlight_gesture_controller",
         "statistics",
@@ -37,6 +36,7 @@ local order = {
         "storage_stat",
         "cloud_storage",
         "read_timer",
+        "synchronize_time",
         "terminal",
         "----------------------------",
         "advanced_settings",
@@ -47,6 +47,7 @@ local order = {
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
+        "goodreads",
         "opds_catalog",
     },
     main = {
@@ -59,6 +60,11 @@ local order = {
         "system_statistics",
         "----------------------------",
         "exit",
+    },
+    help = {
+        "report_bug",
+        "----------------------------",
+        "about",
     },
 }
 

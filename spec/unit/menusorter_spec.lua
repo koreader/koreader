@@ -38,16 +38,21 @@ describe("MenuSorter module", function()
             ["KOMenu:menu_buttons"] = {},
             first = {},
             second = {},
+            third1 = {},
+            third2 = {},
         }
         local order = {
             ["KOMenu:menu_buttons"] = {"first",},
-            first = {"second",},
+            first = {"second"},
+            second = {"third1", "third2"},
         }
 
         local test_menu = MenuSorter:sort(menu_items, order)
 
         assert.is_true(test_menu[1].id == "first")
         assert.is_true(test_menu[1][1].id == "second")
+        assert.is_true(test_menu[1][1].sub_item_table[1].id == "third1")
+        assert.is_true(test_menu[1][1].sub_item_table[2].id == "third2")
     end)
     it("should put orphans in the first menu", function()
         local menu_items = {

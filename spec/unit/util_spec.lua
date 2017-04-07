@@ -86,7 +86,7 @@ describe("util module", function()
         for i = 1, #table_chars  do
             c = table_chars[i]
             word = word .. c
-            if util.isSplitable(c) then
+            if util.isSplittable(c) then
                 table.insert(table_of_words, word)
                 word = ""
             end
@@ -113,7 +113,7 @@ describe("util module", function()
         for i = 1, #table_chars  do
             c = table_chars[i]
             word = word .. c
-            if util.isSplitable(c) then
+            if util.isSplittable(c) then
                 table.insert(table_of_words, word)
                 word = ""
             end
@@ -134,7 +134,7 @@ describe("util module", function()
             c = table_chars[i]
             next_c = i < #table_chars and table_chars[i+1] or nil
             word = word .. c
-            if util.isSplitable(c, next_c) then
+            if util.isSplittable(c, next_c) then
                 table.insert(table_of_words, word)
                 word = ""
             end
@@ -168,7 +168,7 @@ describe("util module", function()
             next_c = i < #table_chars and table_chars[i+1] or nil
             prev_c = i > 1 and table_chars[i-1] or nil
             word = word .. c
-            if util.isSplitable(c, next_c, prev_c) then
+            if util.isSplittable(c, next_c, prev_c) then
                 table.insert(table_of_words, word)
                 word = ""
             end

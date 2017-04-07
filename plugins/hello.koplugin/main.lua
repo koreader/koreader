@@ -1,4 +1,9 @@
-local InfoMessage = require("ui/widget/infomessage")
+-- This is a debug plugin, remove the following if block to enable it
+if true then
+    return { disabled = true, }
+end
+
+local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
@@ -6,22 +11,21 @@ local _ = require("gettext")
 local Hello = WidgetContainer:new{
     name = 'Hello',
     is_doc_only = false,
-    disabled = true,  -- This is a debug plugin
 }
 
 function Hello:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function Hello:addToMainMenu(tab_item_table)
-    table.insert(tab_item_table.plugins, {
+function Hello:addToMainMenu(menu_items)
+    menu_items.hello_world = {
         text = _("Hello World"),
         callback = function()
             UIManager:show(InfoMessage:new{
-                text = _("Hello, docless plugin world"),
+                text = _("Hello, plugin world"),
             })
         end,
-    })
+    }
 end
 
 return Hello

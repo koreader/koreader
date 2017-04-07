@@ -103,7 +103,9 @@ function MenuSorter:sort(item_table, order)
     for i,sub_menu in ipairs(sub_menus) do
         local sub_menu_position = self:findById(menu_table["KOMenu:menu_buttons"], sub_menu)
         if sub_menu_position then
-            sub_menu_position.sub_item_table = menu_table[sub_menu]
+            local sub_menu_content = menu_table[sub_menu]
+            sub_menu_position.text = sub_menu_content.text
+            sub_menu_position.sub_item_table = sub_menu_content
             -- remove reference from top level output
             menu_table[sub_menu] = nil
             -- remove reference from input so it won't show up as orphaned
@@ -150,17 +152,21 @@ function MenuSorter:findById(tbl, needle_id)
     local items = {}
 
     for _,item in pairs(tbl) do
-        table.insert(items, item)
+        if item ~= "KOMenu:menu_buttons" then
+            table.insert(items, item)
+        end
     end
 
     local k, v
     k, v = next(items, nil)
     while k do
-        if type(k) == "number" or k == "sub_item_table" then
-            if v.id == needle_id then
-                return v
-            elseif type(v) == "table" and v.id then
-                table.insert(items, v)
+        if v.id == needle_id then
+            return v
+        elseif v.sub_item_table then
+            for _,item in pairs(v.sub_item_table) do
+                if type(item) == "table" and item.id then
+                    table.insert(items, item)
+                end
             end
         end
         k, v = next(items, k)
