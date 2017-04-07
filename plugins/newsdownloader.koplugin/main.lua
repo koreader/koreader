@@ -24,14 +24,13 @@ local function deserializeXMLString(xml_str)
     -- uses LuaXML https://github.com/manoelcampos/LuaXML
     -- The MIT License (MIT)
     -- Copyright (c) 2016 Manoel Campos da Silva Filho
-    require("lib/xml")
-    require("lib/handler")
+    local treehdl = require("lib/handler")
+    local libxml = require("lib/xml")
 
     --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = simpleTreeHandler()
+    local xmlhandler = treehdl.simpleTreeHandler()
     --Instantiate the object that parses the XML to a Lua table
-    local xmlparser = xmlParser(xmlhandler)
-    xmlparser:parse(xml_str)
+    libxml.xmlParser(xmlhandler):parse(xml_str)
     return xmlhandler.root
 end
 
