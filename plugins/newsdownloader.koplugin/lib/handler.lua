@@ -108,7 +108,7 @@
 --Convenience function for printHandler (Does not support recursive tables).
 --@param t Table to be parsed
 --@returns Returns a string representation of table
-function showTable(t)
+local function showTable(t)
     local sep = ''
     local res = ''
     if type(t) ~= 'table' then
@@ -126,7 +126,7 @@ function showTable(t)
 end
 
 ---Handler to generate a simple event trace
-printHandler = function()
+local printHandler = function()
     local obj = {}
     obj.starttag = function(self,t,a,s,e)
         io.write("Start    : "..t.."\n")
@@ -194,7 +194,7 @@ local function getFirstKey(tb)
 end
 
 ---Handler to generate a lua table from a XML content string
-function simpleTreeHandler()
+local function simpleTreeHandler()
     local obj = {}
 
     obj.root = {}
@@ -278,7 +278,7 @@ function simpleTreeHandler()
 end
 
 --- domHandler
-function domHandler()
+local function domHandler()
     local obj = {}
     obj.options = {commentNode=1,piNode=1,dtdNode=1,declNode=1}
     obj.root = { _children = {n=0}, _type = "ROOT" }
@@ -343,4 +343,4 @@ function domHandler()
     return obj
 end
 
-
+return { simpleTreeHandler = simpleTreeHandler }

@@ -17,9 +17,22 @@ local NewsDownloader = WidgetContainer:new{}
 local initialized = false  -- for only once lazy initialization
 local FEED_CONFIG_FILE = "feeds.xml"
 local FILE_EXTENSION = ".html"
-local FEED_SOURCE_SUFFIX = "_rss_tmp.xml"
+local NEWS_DL_DIR_NAME = "news"
 local NEWS_DL_DIR, FEED_CONFIG_PATH
 
+local function deserializeXMLString(xml_str)
+    -- uses LuaXML https://github.com/manoelcampos/LuaXML
+    -- The MIT License (MIT)
+    -- Copyright (c) 2016 Manoel Campos da Silva Filho
+    local treehdl = require("lib/handler")
+    local libxml = require("lib/xml")
+
+    --Instantiate the object the states the XML file as a Lua table
+    local xmlhandler = treehdl.simpleTreeHandler()
+    --Instantiate the object that parses the XML to a Lua table
+    libxml.xmlParser(xmlhandler):parse(xml_str)
+    return xmlhandler.root
+end
 
 local function deserializeXML(filename)
     logger.dbg("NewsDownloader: File to deserialize: ", filename)
@@ -33,29 +46,13 @@ local function deserializeXML(filename)
     end
 end
 
-local function deserializeXMLString(xml_str)
-    -- uses LuaXML https://github.com/manoelcampos/LuaXML
-    -- The MIT License (MIT)
-    -- Copyright (c) 2016 Manoel Campos da Silva Filho
-    require("lib/xml")
-    require("lib/handler")
-
-    --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = simpleTreeHandler()
-    --Instantiate the object that parses the XML to a Lua table
-    local xmlparser = xmlParser(xmlhandler)
-    xmlparser:parse(xml_str)
-    return xmlhandler.root
-end
-
-
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        NEWS_DL_DIR = DataStorage:getDataDir() .. "/news/"
+        NEWS_DL_DIR = string.format("%s/%s/", DataStorage:getDataDir(), NEWS_DL_DIR_NAME)
         if not lfs.attributes(NEWS_DL_DIR, "mode") then
             lfs.mkdir(NEWS_DL_DIR)
         end
@@ -180,10 +177,8 @@ function NewsDownloader:processFeedSource(url, limit)
                                            feed_output_dir,
                                            util.replaceInvalidChars(feed.title),
                                            FILE_EXTENSION)
-        local news_dl_fd = io.open(news_dl_path, 'w')
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-        http.request({ url = url, sink = ltn12.sink.file(news_dl_fd), })
-        news_dl_fd:close()
+        http.request({ url = url, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
     end
 end
 
