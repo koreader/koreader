@@ -152,6 +152,20 @@ function FileManagerMenu:setUpdateItemTable()
                 },
             }
         }
+    elseif Device.isKindle() then
+        self.menu_items.screensaver = {
+            text = _("Screensaver"),
+            sub_item_table = {
+                {
+                    text = _("Enable cover screensaver"),
+                    checked_func = function() return G_reader_settings:readSetting("kindle_screensaver") end,
+                    callback = function()
+                        local show_advanced = G_reader_settings:readSetting("kindle_screensaver") or false
+                        G_reader_settings:saveSetting("kindle_screensaver", not show_advanced)
+                    end
+                }
+            }
+        }
     end
     -- insert common settings
     for id, common_setting in pairs(require("ui/elements/common_settings_menu_table")) do

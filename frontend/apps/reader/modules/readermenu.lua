@@ -145,6 +145,23 @@ function ReaderMenu:setUpdateItemTable()
                 }
             }
         }
+    elseif Device:isKindle() and Screensaver:isUsingBookCover() then
+        local kindle_screensaver = function()
+            return  not (G_reader_settings:readSetting("kindle_screensaver") or false)
+        end
+        self.menu_items.screensaver = {
+            text = _("Screensaver"),
+            sub_item_table = {
+                {
+                    text = _("Enable cover screensaver"),
+                    checked_func = function() return G_reader_settings:readSetting("kindle_screensaver") end,
+                    callback = function()
+                        local show_advanced = G_reader_settings:readSetting("kindle_screensaver") or false
+                        G_reader_settings:saveSetting("kindle_screensaver", not show_advanced)
+                    end
+                }
+            }
+        }
     end
 
     -- main menu tab
