@@ -11,7 +11,11 @@ a = {"1", "2", "3"}
 logger.dbg("table a: ", a)
 ```
 
-Anything printed by `logger.dbg` starts with a `#` sign.
+Anything printed by `logger.dbg` starts with `DEBUG`.
+
+```
+04/06/17-21:44:53 DEBUG foo
+```
 
 ## Bug hunting in kpv
 
