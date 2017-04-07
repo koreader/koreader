@@ -1,30 +1,30 @@
-local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local FixedTextWidget = require("ui/widget/fixedtextwidget")
-local ToggleSwitch = require("ui/widget/toggleswitch")
-local ConfirmBox = require("ui/widget/confirmbox")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextWidget = require("ui/widget/textwidget")
-local IconButton = require("ui/widget/iconbutton")
-local GestureRange = require("ui/gesturerange")
 local Blitbuffer = require("ffi/blitbuffer")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
-local Event = require("ui/event")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Event = require("ui/event")
+local FixedTextWidget = require("ui/widget/fixedtextwidget")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local ToggleSwitch = require("ui/widget/toggleswitch")
+local UIManager = require("ui/uimanager")
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local Screen = Device.screen
+local T = require("ffi/util").template
 
 local OptionTextItem = InputContainer:new{}
 function OptionTextItem:init()
@@ -583,6 +583,7 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
             (name_text or ""),
             labels[position]
         ),
+        ok_text = T(_("Set default")),
         ok_callback = function()
             name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])

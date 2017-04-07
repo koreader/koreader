@@ -24,14 +24,14 @@ and to store that table as a configuration setting.
 
 ]]
 
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local DepGraph = require("depgraph")
+local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local DepGraph = require("depgraph")
-local Geom = require("ui/geometry")
-local Event = require("ui/event")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 if require("device"):isAndroid() then
     require("jit").off(true, true)
@@ -220,13 +220,13 @@ function InputContainer:onInput(input)
         buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text = input.cancel_text or _("Cancel"),
                     callback = function()
                         self:closeInputDialog()
                     end,
                 },
                 {
-                    text = _("OK"),
+                    text = input.ok_text or _("OK"),
                     is_enter_default = true,
                     callback = function()
                         input.callback(self.input_dialog:getInputText())

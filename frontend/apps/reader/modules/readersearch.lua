@@ -1,5 +1,5 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -18,6 +18,7 @@ function ReaderSearch:addToMainMenu(menu_items)
         text = _("Fulltext search"),
         tap_input = {
             title = _("Input text to search for"),
+            ok_text = _("Search all text"),
             type = "text",
             callback = function(input)
                 self:onShowSearchDialog(input)
