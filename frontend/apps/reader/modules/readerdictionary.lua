@@ -1,14 +1,14 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local DictQuickLookup = require("ui/widget/dictquicklookup")
-local InfoMessage = require("ui/widget/infomessage")
 local DataStorage = require("datastorage")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
 local Device = require("device")
+local DictQuickLookup = require("ui/widget/dictquicklookup")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InfoMessage = require("ui/widget/infomessage")
 local JSON = require("json")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderDictionary = InputContainer:new{
@@ -28,6 +28,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary lookup"),
         tap_input = {
             title = _("Enter a word to look up"),
+            ok_text = _("Search dictionary"),
             type = "text",
             callback = function(input)
                 self:onLookupWord(input)
