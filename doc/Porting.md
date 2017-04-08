@@ -10,11 +10,9 @@ platform. Feel free to open issues in our issue tracker if you need further help
 ## Output Module
 
 KOReader uses framebuffer to control EInk devices, so the output module here is
-[einkfb.c][einkfb-c]. You can find this file in koreader-base framework. The
-koreader-base framework used to be part of KOReader, but we later factored it
-out and use it in KOReader as submodule.
+[base/ffi/framebuffer_einkfb.lua](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_einkfb.lua).
 
-Following are the framebuffers that `einkfb.c` currently supports:
+Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
   * 4BPP inverted framebuffer
   * 16 scale 8BPP inverted framebuffer
   * 16 scale 8BPP framebuffer
@@ -32,9 +30,9 @@ significant one. For example, pixel with grey scale 15 will be represented as
 flipped in the same way as 4BPP inverted framebuffer does.
 
 If your device's framebuffer does not fit into any of the categories above,
-then you need to add a new transformation function in `einkfb.c`.
+then you need to add a new transformation function in `framebuffer_einkfb.lua`.
 
-The `einkfb.c` module works in following ways for non 4BPP framebuffers;
+The `framebuffer_einkfb.lua` module works in following ways for non 4BPP framebuffers;
   * a shadow buffer is created and structured as 4BPP inverted framebuffer.
   * all updates on screen bitmap are temporally written into the shadow buffer.
   * each time we want to reflect the updated bitmap on screen, we translate
@@ -43,20 +41,8 @@ The `einkfb.c` module works in following ways for non 4BPP framebuffers;
   * call ioctl system call to refresh EInk screen. (varies on devices)
 
 KOReader will handle the 4BPP shadow buffer for you, all you need to do is to
-teach `einkfb.c` how to control the EInk screen and translate the 4BPP inverted
+teach `framebuffer_einkfb.lua` how to control the EInk screen and translate the 4BPP inverted
 bitmap into the format that your framebuffer understands.
-
-In `openFrameBuffer()` function, the value for a function pointer
-`einkUpdateFunc` is assigned according to devices' model. This function is
-called on every screen refresh. It transforms the shadow buffer and write the
-result into framebuffer. Then it calls ioctl to refresh the screen.
-
-So you need to write a einkUpdateFunction for your device's framebuffer and
-assigned it to `einkUpdateFunc` on eink open. You may want to refer to
-`kindle51einkUpdate()`, `kindle4einkUpdate()` and `kindle3einkUpdate()`
-functions for real examples.
-
-
 
 ## Input Module
 
