@@ -39,6 +39,7 @@ function NetworkMgr:restoreWifiAsync() end
 function NetworkMgr:promptWifiOn(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
+        ok_text = _("Turn on"),
         ok_callback = function()
             self.wifi_was_on = true
             G_reader_settings:saveSetting("wifi_was_on", true)
@@ -50,6 +51,7 @@ end
 function NetworkMgr:promptWifiOff(complete_callback)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn off Wi-Fi?"),
+        ok_text = _("Turn off"),
         ok_callback = function()
             self.wifi_was_on = false
             G_reader_settings:saveSetting("wifi_was_on", false)
@@ -160,7 +162,7 @@ function NetworkMgr:getInfoMenuTable()
                 })
             else
                 UIManager:show(InfoMessage:new{
-                    text = _("Cannot retrieve network info"),
+                    text = _("Could not retrieve network info."),
                     timeout = 3,
                 })
             end

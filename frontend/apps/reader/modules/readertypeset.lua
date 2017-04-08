@@ -50,6 +50,11 @@ function ReaderTypeset:onReadSettings(config)
     self.floating_punctuation = config:readSetting("floating_punctuation") or
         G_reader_settings:readSetting("floating_punctuation") or 1
     self:toggleFloatingPunctuation(self.floating_punctuation)
+
+    -- default to disable txt formatting as it does more harm than good
+    self.txt_preformatted = config:readSetting("txt_preformatted") or
+        G_reader_settings:readSetting("txt_preformatted") or 1
+    self:toggleTxtPreFormatted(self.txt_preformatted)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -137,6 +142,11 @@ function ReaderTypeset:toggleFloatingPunctuation(toggle)
         toggle = 0
     end
     self.ui.document:setFloatingPunctuation(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypeset:toggleTxtPreFormatted(toggle)
+    self.ui.document:setTxtPreFormatted(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 

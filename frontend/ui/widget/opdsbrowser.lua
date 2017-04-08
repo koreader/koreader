@@ -1,25 +1,25 @@
-local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
 local InfoMessage = require("ui/widget/infomessage")
 local LoginDialog = require("ui/widget/logindialog")
-local OPDSParser = require("ui/opdsparser")
-local NetworkMgr = require("ui/network/manager")
-local UIManager = require("ui/uimanager")
-local CacheItem = require("cacheitem")
 local Menu = require("ui/widget/menu")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
+local NetworkMgr = require("ui/network/manager")
+local OPDSParser = require("ui/opdsparser")
 local Screen = require("device").screen
-local url = require('socket.url')
-local T = require("ffi/util").template
-local Cache = require("cache")
-local logger = require("logger")
+local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
-
-local socket = require('socket')
 local http = require('socket.http')
 local https = require('ssl.https')
+local logger = require("logger")
 local ltn12 = require('ltn12')
 local mime = require('mime')
+local socket = require('socket')
+local url = require('socket.url')
+local util = require("util")
+local T = require("ffi/util").template
 
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
@@ -504,6 +504,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     logger.dbg("downloading file", local_path, "from", remote_url)
 
+    local_path = util.fixUtf8(local_path, "_")
     local parsed = url.parse(remote_url)
     http.TIMEOUT, https.TIMEOUT = 20, 20
     local httpRequest = parsed.scheme == 'http' and http.request or https.request

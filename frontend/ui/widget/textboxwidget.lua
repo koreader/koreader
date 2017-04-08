@@ -13,14 +13,14 @@ Example:
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local Widget = require("ui/widget/widget")
+local Geom = require("ui/geometry")
 local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local util = require("util")
-local logger = require("logger")
 local TimeVal = require("ui/timeval")
+local Widget = require("ui/widget/widget")
+local logger = require("logger")
+local util = require("util")
 
 local TextBoxWidget = Widget:new{
     text = nil,
@@ -121,13 +121,13 @@ function TextBoxWidget:_splitCharWidthList()
             cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
         else
             -- Backtrack the string until the length fit into one line.
-            -- We'll give next and prev chars to isSplitable() for a wiser decision
+            -- We'll give next and prev chars to isSplittable() for a wiser decision
             local c = self.char_width_list[idx].char
             local next_c = idx+1 <= size and self.char_width_list[idx+1].char or false
             local prev_c = idx-1 >= 1 and self.char_width_list[idx-1].char or false
             local adjusted_idx = idx
             local adjusted_width = cur_line_width
-            while adjusted_idx > offset and not util.isSplitable(c, next_c, prev_c) do
+            while adjusted_idx > offset and not util.isSplittable(c, next_c, prev_c) do
                 adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
                 adjusted_idx = adjusted_idx - 1
                 next_c = c
@@ -136,7 +136,7 @@ function TextBoxWidget:_splitCharWidthList()
             end
             if adjusted_idx == offset or adjusted_idx == idx then
                 -- either a very long english word ocuppying more than one line,
-                -- or the excessive char is itself splitable:
+                -- or the excessive char is itself splittable:
                 -- we let that excessive char for next line
                 cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
                 cur_line_width = cur_line_width - self.char_width_list[idx].width
@@ -147,8 +147,8 @@ function TextBoxWidget:_splitCharWidthList()
                 cur_line_width = adjusted_width - self.char_width_list[adjusted_idx].width
                 idx = adjusted_idx + 1
             else
-                -- we backtracked and we're below max width, we can let the
-                -- splitable char on this line
+                -- we backtracked and we're below max width, we can leave the
+                -- splittable char on this line
                 cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
                 cur_line_width = adjusted_width
                 idx = adjusted_idx + 1
@@ -225,7 +225,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
     local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
-    local h = self.line_height_px *  row_count
+    local h = self.line_height_px * row_count
+    if self._bb then self._bb:free() end
     self._bb = Blitbuffer.new(self.width, h)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local y = font_height

@@ -1,4 +1,3 @@
-
 local Device = require("device")
 
 local command

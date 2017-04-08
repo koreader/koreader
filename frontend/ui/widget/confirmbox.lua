@@ -1,5 +1,5 @@
 --[[--
-Widget that shows a message and OK/Cancel buttons
+Widget that shows a confirmation alert with a message and Cancel/OK buttons
 
 Example:
 
@@ -10,6 +10,10 @@ Example:
             -- save document
         end,
     })
+
+It is strongly recommended to set a custom `ok_text` describing the action to be
+confirmed, as demonstrated in the example above. No ok_text should be specified
+if the resulting phrase would be longer than three words.
 
 ]]
 

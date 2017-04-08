@@ -1,13 +1,13 @@
-local CreOptions = require("ui/data/creoptions")
-local Document = require("document/document")
 local Blitbuffer = require("ffi/blitbuffer")
-local lfs = require("libs/libkoreader-lfs")
+local CreOptions = require("ui/data/creoptions")
 local DataStorage = require("datastorage")
+local Document = require("document/document")
+local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local Font = require("ui/font")
-local logger = require("logger")
 local ffi = require("ffi")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 
 local CreDocument = Document:new{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
@@ -427,6 +427,11 @@ function CreDocument:setFloatingPunctuation(enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end
 
+function CreDocument:setTxtPreFormatted(enabled)
+    logger.dbg("CreDocument: set txt preformatted", enabled)
+    self._document:setIntProperty("crengine.file.txt.preformatted", enabled)
+end
+
 function CreDocument:getVisiblePageCount()
     return self._document:getVisiblePageCount()
 end
@@ -458,25 +463,27 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
 end
 
 function CreDocument:register(registry)
-    registry:addProvider("txt", "application/txt", self)
-    registry:addProvider("log", "application/txt", self)
-    registry:addProvider("txt.zip", "application/zip", self)
-    registry:addProvider("log.zip", "application/zip", self)
+    registry:addProvider("azw", "application/azw", self)
     registry:addProvider("epub", "application/epub", self)
+    registry:addProvider("chm", "application/chm", self)
+    registry:addProvider("doc", "application/doc", self)
     registry:addProvider("fb2", "application/fb2", self)
     registry:addProvider("fb2.zip", "application/zip", self)
     registry:addProvider("html", "application/html", self)
     registry:addProvider("html.zip", "application/zip", self)
     registry:addProvider("htm", "application/htm", self)
     registry:addProvider("htm.zip", "application/zip", self)
-    registry:addProvider("rtf", "application/rtf", self)
+    registry:addProvider("log", "text/plain", self)
+    registry:addProvider("log.zip", "application/zip", self)
+    registry:addProvider("md", "text/plain", self)
+    registry:addProvider("md.zip", "application/zip", self)
     registry:addProvider("mobi", "application/mobi", self)
-    registry:addProvider("prc", "application/prc", self)
-    registry:addProvider("azw", "application/azw", self)
-    registry:addProvider("chm", "application/chm", self)
     registry:addProvider("pdb", "application/pdb", self)
-    registry:addProvider("doc", "application/doc", self)
+    registry:addProvider("prc", "application/prc", self)
     registry:addProvider("tcr", "application/tcr", self)
+    registry:addProvider("txt", "text/plain", self)
+    registry:addProvider("txt.zip", "application/zip", self)
+    registry:addProvider("rtf", "application/rtf", self)
 end
 
 return CreDocument

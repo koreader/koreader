@@ -122,12 +122,13 @@ if fontmap ~= nil then
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
-if last_file and lfs.attributes(last_file, "mode") ~= "file" then
+-- load last opened file
+local open_last = G_reader_settings:readSetting("open_last")
+
+if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
     UIManager:show(retryLastFile())
     last_file = nil
 end
--- load last opened file
-local open_last = G_reader_settings:readSetting("open_last")
 -- night mode
 if G_reader_settings:readSetting("night_mode") then
     Device.screen:toggleNightMode()

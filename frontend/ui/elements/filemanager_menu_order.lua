@@ -29,7 +29,6 @@ local order = {
     tools = {
         "calibre_wireless_connection",
         "evernote",
-        "goodreads",
         "keep_alive",
         "frontlight_gesture_controller",
         "statistics",
@@ -38,6 +37,8 @@ local order = {
         "cloud_storage",
         "read_timer",
         "rss_news_downloader",
+        "synchronize_time",
+        "terminal",
         "----------------------------",
         "advanced_settings",
         "developer_options",
@@ -47,6 +48,7 @@ local order = {
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
+        "goodreads",
         "opds_catalog",
     },
     main = {
@@ -56,8 +58,14 @@ local order = {
         "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
         "version",
         "help",
+        "system_statistics",
         "----------------------------",
         "exit",
+    },
+    help = {
+        "report_bug",
+        "----------------------------",
+        "about",
     },
 }
 

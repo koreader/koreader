@@ -9,7 +9,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
-local PluginLoader = require("pluginloader")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -131,7 +130,7 @@ end
 
 function KoboLight:onSwipe(_, ges)
     local powerd = Device:getPowerDevice()
-    if powerd.fl_intensity == nil then return true end
+    if powerd.fl_intensity == nil then return false end
 
     local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
@@ -140,21 +139,22 @@ function KoboLight:onSwipe(_, ges)
         new_intensity = powerd.fl_intensity + delta_int
     elseif ges.direction == "south" then
         new_intensity = powerd.fl_intensity - delta_int
+    else
+        return false  -- don't consume swipe event if it's not matched
     end
-    if new_intensity ~= nil then
-        -- when new_intensity <=0, toggle light off
-        if new_intensity <=0 then
-            if powerd.is_fl_on then
-                powerd:toggleFrontlight()
-            end
-            self:onShowOnOff()
-        else -- general case
-            powerd:setIntensity(new_intensity)
-            self:onShowIntensity()
+
+    -- when new_intensity <=0, toggle light off
+    if new_intensity <=0 then
+        if powerd.is_fl_on then
+            powerd:toggleFrontlight()
         end
-        if self.view.footer_visible and self.view.footer.settings.frontlight then
-            self.view.footer:updateFooter()
-        end
+        self:onShowOnOff()
+    else -- general case
+        powerd:setIntensity(new_intensity)
+        self:onShowIntensity()
+    end
+    if self.view.footer_visible and self.view.footer.settings.frontlight then
+        self.view.footer:updateFooter()
     end
     return true
 end
@@ -164,7 +164,7 @@ function KoboLight:addToMainMenu(menu_items)
         text = _("Frontlight gesture controller"),
         callback = function()
             local image = ImageWidget:new{
-                file = PluginLoader.plugin_path .. "/kobolight.koplugin/demo.png",
+                file = self.path .. "/demo.png",
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
                 scale_factor = 0,

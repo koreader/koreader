@@ -71,7 +71,7 @@ function InputText:init()
     self:initEventListener()
 end
 
-function InputText:initTextBox(text)
+function InputText:initTextBox(text, char_added)
     self.text = text
     local fgcolor
     local show_charlist
@@ -87,8 +87,10 @@ function InputText:initTextBox(text)
         if self.text_type == "password" then
             show_text = self.text:gsub(
                 "(.-).", function() return "*" end)
-            show_text = show_text:gsub(
-                "(.)$", function() return self.text:sub(-1) end)
+            if char_added then
+                show_text = show_text:gsub(
+                    "(.)$", function() return self.text:sub(-1) end)
+            end
         end
         self.charlist = util.splitToChars(text)
         if self.charpos == nil then
@@ -106,6 +108,7 @@ function InputText:initTextBox(text)
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,
+            dialog = self.parent,
         }
     else
         self.text_widget = TextBoxWidget:new{
@@ -176,7 +179,7 @@ function InputText:addChar(char)
     end
     table.insert(self.charlist, self.charpos, char)
     self.charpos = self.charpos + 1
-    self:initTextBox(table.concat(self.charlist))
+    self:initTextBox(table.concat(self.charlist), true)
 end
 
 function InputText:delChar()

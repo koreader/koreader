@@ -124,11 +124,6 @@ function Device:onPowerEvent(ev)
     -- else we we not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
-        local network_manager = require("ui/network/manager")
-        if network_manager.wifi_was_on then
-            network_manager:releaseIP()
-            network_manager:turnOffWifi()
-        end
         local UIManager = require("ui/uimanager")
         -- flushing settings first in case the screensaver takes too long time
         -- that flushing has no chance to run
@@ -140,7 +135,14 @@ function Device:onPowerEvent(ev)
         require("ui/screensaver"):show("suspend", _("Sleeping"))
         self.screen:refreshFull()
         self.screen_saver_mode = true
-        UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+        UIManager:scheduleIn(0.1, function()
+          local network_manager = require("ui/network/manager")
+          if network_manager.wifi_was_on then
+              network_manager:releaseIP()
+              network_manager:turnOffWifi()
+          end
+          UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+        end)
     end
 end
 
@@ -190,7 +192,7 @@ function Device:retrieveNetworkInfo()
         if os.execute("ip r | grep -q default") == 0 then
             local pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
             if pingok == 0 then
-                result = result .. "Gateway ping successfull"
+                result = result .. "Gateway ping successful"
             else
                 result = result .. "Gateway ping FAILED"
             end

@@ -79,6 +79,9 @@ endif
 	@echo "[*] Install plugins"
 	@# TODO: link istead of cp?
 	$(RCP) plugins/* $(INSTALL_DIR)/koreader/plugins/
+	@# purge deleted plugins
+	for d in $$(ls $(INSTALL_DIR)/koreader/plugins); do \
+		test -d plugins/$$d || rm -rf $(INSTALL_DIR)/koreader/plugins/$$d ; done
 	@echo "[*] Installresources"
 	$(RCP) -pL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}

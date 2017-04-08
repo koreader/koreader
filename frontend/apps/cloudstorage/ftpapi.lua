@@ -1,7 +1,7 @@
+local DocumentRegistry = require("document/documentregistry")
 local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local url = require("socket.url")
-local DocumentRegistry = require("document/documentregistry")
 
 local FtpApi = {
 }
