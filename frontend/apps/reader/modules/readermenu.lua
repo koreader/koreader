@@ -145,22 +145,27 @@ function ReaderMenu:setUpdateItemTable()
                 }
             }
         }
-    elseif Device:isKindle() and Screensaver:isUsingBookCover() then
+    elseif Device:isKindle() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
                 {
-                    text = _("Enable cover screensaver"),
-                    checked_func = function() return G_reader_settings:readSetting("kindle_screensaver") end,
+                    text = _("Use book's cover as screensaver"),
+                    checked_func = Screensaver.isUsingBookCover,
                     callback = function()
-                        local show_advanced = G_reader_settings:readSetting("kindle_screensaver") or false
-                        G_reader_settings:saveSetting("kindle_screensaver", not show_advanced)
+                        if Screensaver:isUsingBookCover() then
+                            G_reader_settings:saveSetting(
+                                "use_lastfile_as_screensaver", false)
+                        else
+                            G_reader_settings:delSetting(
+                                "use_lastfile_as_screensaver")
+                        end
+                        G_reader_settings:flush()
                     end
                 }
             }
         }
     end
-
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do

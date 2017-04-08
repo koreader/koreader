@@ -129,8 +129,10 @@ function Screensaver:show(kind, default_msg)
     -- fallback to message box
     if not self.left_msg then
         local msg = screensaver_settings.message or default_msg
-        self.left_msg = InfoMessage:new{ text = msg }
-        UIManager:show(self.left_msg)
+        if msg then
+            self.left_msg = InfoMessage:new{ text = msg }
+            UIManager:show(self.left_msg)
+        end
     else
         -- refresh whole screen for other types
         UIManager:show(self.left_msg, "full")

@@ -96,7 +96,7 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:flush()
         end
     }
-    if Device.isKobo() then
+    if Device.isKobo() or Device.isKindle() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
@@ -150,20 +150,6 @@ function FileManagerMenu:setUpdateItemTable()
                         UIManager:show(ss_folder_path_input)
                     end,
                 },
-            }
-        }
-    elseif Device.isKindle() then
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Enable cover screensaver"),
-                    checked_func = function() return G_reader_settings:readSetting("kindle_screensaver") end,
-                    callback = function()
-                        local show_advanced = G_reader_settings:readSetting("kindle_screensaver") or false
-                        G_reader_settings:saveSetting("kindle_screensaver", not show_advanced)
-                    end
-                }
             }
         }
     end
