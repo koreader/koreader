@@ -5,7 +5,16 @@ title = 'KOReader Documentation'
 dir = 'html'
 style = '!fixed'
 use_markdown_titles = true
-topics = {'../README.md', './Hacking.md', './Events.md', './DataStore.md'}
+topics = {
+    '../README.md',
+    './Collaborating with Git.md',
+    './DataStore.md',
+    './Development guide.md',
+    './Events.md',
+    './Hacking.md',
+    './Porting.md',
+    './Unit tests.md',
+}
 package = ''
 format = 'markdown'
 sort_modules = true
