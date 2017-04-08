@@ -67,7 +67,7 @@ function NewsDownloader:addToMainMenu(menu_items)
     end
 
     menu_items.rss_news_downloader = {
-        text = _("Simple News(RSS/Atom) Downloader"),
+        text = _("News (RSS/Atom) downloader"),
         sub_item_table = {
             {
                 text = _("Download news"),
@@ -108,7 +108,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Plugin reads feeds config file: %1, and downloads their news to: %2. News limit can be set. To set you own news sources edit feeds config file. Only RSS, Atom is currently not supported."),
+                        text = T(_("News downloader can be configured in the feeds config file:\n%1\n\nIt downloads news items to:\n%2.\n\nTo set you own news sources edit foregoing feeds config file. Items download limit can be set there."),
                                  FEED_CONFIG_PATH,
                                  NEWS_DL_DIR)
                     })
