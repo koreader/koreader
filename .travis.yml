@@ -9,15 +9,17 @@ compiler:
 
 env:
   global:
-    - "PATH=$HOME/bin:$PATH"
+    - "PATH=${HOME}/bin:${PATH}"
   matrix:
     - EMULATE_READER=1
 
 cache:
   apt: true
   directories:
-    - "$HOME/bin"
-    - "$HOME/.ccache"
+    - "${HOME}/bin"
+    # compiled luarocks binaries
+    - "${HOME}/build/koreader/koreader/install"
+    - "${HOME}/.ccache"
 
 addons:
   apt:

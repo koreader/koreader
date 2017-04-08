@@ -5,14 +5,16 @@ CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${CI_DIR}/common.sh"
 
 # install our own updated luarocks
-git clone https://github.com/torch/luajit-rocks.git
-pushd luajit-rocks
-    git checkout 6529891
-    cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX="${TRAVIS_BUILD_DIR}/install"
-    make install
-popd
+if [ ! -f "${TRAVIS_BUILD_DIR}/install/bin/luarocks" ]; then
+    git clone https://github.com/torch/luajit-rocks.git
+    pushd luajit-rocks
+        git checkout 6529891
+        cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX="${TRAVIS_BUILD_DIR}/install"
+        make install
+    popd
+fi
 
-mkdir "$HOME/.luarocks"
+mkdir "${HOME}/.luarocks"
 cp "${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua" "$HOME/.luarocks/config.lua"
 echo "wrap_bin_scripts = false" >> "$HOME/.luarocks/config.lua"
 travis_retry luarocks --local install luafilesystem
