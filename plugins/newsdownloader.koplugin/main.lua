@@ -49,6 +49,11 @@ function NewsDownloader:addToMainMenu(menu_items)
         end
 
         FEED_CONFIG_PATH = NEWS_DL_DIR .. FEED_CONFIG_FILE
+        if not lfs.attributes(FEED_CONFIG_PATH, "mode") then
+            logger.dbg("NewsDownloader: Creating init configuration")
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, FEED_CONFIG_FILE),
+                             FEED_CONFIG_PATH)
+        end
         initialized = true
     end
 
@@ -153,12 +158,40 @@ function NewsDownloader:processFeedSource(url, limit)
     http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
     local feeds = deserializeXMLString(table.concat(resp_lines))
     if not feeds then return end
-    if not feeds.rss or not feeds.rss.channel
-            or not feeds.rss.channel.title or not feeds.rss.channel.item then
+    
+    local is_valid_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item;
+    local is_valid_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link;
+    
+    if not is_valid_rss and not is_valid_atom then
         logger.info('NewsDownloader: Got invalid feeds', feeds)
         return
     end
+    
+    if is_valid_atom then
+        self:processAtom(feeds);
+    else
+        self:processRSS(feeds);
+    end
+    
+end
 
+function NewsDownloader:processAtom(feeds)
+    local feed_output_dir = string.format("%s%s/",
+                                          NEWS_DL_DIR,
+                                          util.replaceInvalidChars(feeds.feed.title))
+    if not lfs.attributes(feed_output_dir, "mode") then
+        lfs.mkdir(feed_output_dir)
+    end
+
+    for index, feed in pairs(feeds.feed.entry) do
+        if index -1 == limit then
+            break
+        end
+        self:commonFeedProcess(index, feed);
+    end
+end
+
+function NewsDownloader:processRSS(feeds)
     local feed_output_dir = ("%s%s/"):format(
         NEWS_DL_DIR, util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
@@ -169,12 +202,17 @@ function NewsDownloader:processFeedSource(url, limit)
         if index -1 == limit then
             break
         end
+        self:commonFeedProcess(index, feed);
+    end
+end
+
+function NewsDownloader:commonFeedProcess(index, feed)
+
         local news_dl_path = ("%s%s%s"):format(feed_output_dir,
                                                util.replaceInvalidChars(feed.title),
                                                FILE_EXTENSION)
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
         http.request({ url = url, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
-    end
 end
 
 return NewsDownloader
