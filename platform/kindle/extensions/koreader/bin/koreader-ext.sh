@@ -118,7 +118,8 @@ set_cre_prop()
 	# Check that the config exists...
 	if [ -f "${cre_config}" ] ; then
 		# dos2unix
-		sed -e "s/$(printf '\r')$//g" -i "${cre_config}"
+		# shellcheck disable=SC2039
+		sed -e "s/$(echo -ne '\r')$//g" -i "${cre_config}"
 
 		# And finally set the prop
 		if sed -re "s/^(${cre_prop_key})(=)(.*?)$/\1\2${cre_prop_value}/" -i "${cre_config}"

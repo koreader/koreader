@@ -82,8 +82,7 @@ fi
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ ! -n "${PRODUCT}" ] ; then
 	PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
-	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
-	export PREFIX PRODUCT
+	export PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers
