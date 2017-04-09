@@ -18,8 +18,13 @@ cache:
   directories:
     - "${HOME}/bin"
     # compiled luarocks binaries
-    - "${HOME}/build/koreader/koreader/install"
+    - "${TRAVIS_BUILD_DIR}/install"
+    # base build
+    - "${TRAVIS_BUILD_DIR}/base"
     - "${HOME}/.ccache"
+    - "${HOME}/.luarocks"
+before_cache:
+  - rm -fr "${TRAVIS_BUILD_DIR}/base/build/*/cache/*"
 
 addons:
   apt:
@@ -28,7 +33,9 @@ addons:
     packages:
       - g++-4.8
       - libsdl1.2-dev
-      # for luasec
+      # to run luacheck early
+      - lua5.1
+      # luasec dependencies
       - libssl1.0.0
       - nasm
       # OpenSSL likes this (package contains makedepend)
