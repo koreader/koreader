@@ -11,7 +11,8 @@ KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ] ; then
-	source "${KOREADER_DIR}/libkohelper.sh"
+	# shellcheck source=/dev/null
+	. "${KOREADER_DIR}/libkohelper.sh"
 else
 	echo "Can't source helper functions, aborting!"
 	exit 1
@@ -21,9 +22,9 @@ fi
 logmsg()
 {
 	# Use the right tools for the platform
-	if [ "${INIT_TYPE}" == "sysv" ] ; then
+	if [ "${INIT_TYPE}" = "sysv" ] ; then
 		msg "koreader: ${1}" "I"
-	elif [ "${INIT_TYPE}" == "upstart" ] ; then
+	elif [ "${INIT_TYPE}" = "upstart" ] ; then
 		f_log I koreader wrapper "" "${1}"
 	fi
 
@@ -32,7 +33,7 @@ logmsg()
 }
 
 # Go away if we're on FW 5.0, it's not supported
-if [ "${INIT_TYPE}" == "upstart" ] ; then
+if [ "${INIT_TYPE}" = "upstart" ] ; then
 	if grep '^Kindle 5\.0' /etc/prettyversion.txt > /dev/null 2>&1 ; then
 		logmsg "FW 5.0 is not supported. Update to 5.1!"
 		# And... scene!
@@ -50,11 +51,11 @@ PASSCODE_DISABLED="no"
 FROM_KUAL="no"
 
 # By default, don't stop the framework.
-if [ "$1" == "--framework_stop" ] ; then
+if [ "$1" = "--framework_stop" ] ; then
 	shift 1
 	STOP_FRAMEWORK="yes"
 	NO_SLEEP="no"
-elif [ "$1" == "--asap" ] ; then
+elif [ "$1" = "--asap" ] ; then
 	# Start as soon as possible, without sleeping to workaround UI quirks
 	shift 1
 	NO_SLEEP="yes"
@@ -67,9 +68,9 @@ else
 fi
 
 # Detect if we were started by KUAL by checking our nice value...
-if [ "$(nice)" == "5" ] ; then
+if [ "$(nice)" = "5" ] ; then
 	FROM_KUAL="yes"
-	if [ "${NO_SLEEP}" == "no" ] ; then
+	if [ "${NO_SLEEP}" = "no" ] ; then
 		# Yield a bit to let stuff stop properly...
 		logmsg "Hush now . . ."
 		# NOTE: This may or may not be terribly useful...
@@ -82,7 +83,7 @@ if [ "$(nice)" == "5" ] ; then
 fi
 
 # we're always starting from our working directory
-cd "${KOREADER_DIR}"
+cd "${KOREADER_DIR}" || exit
 
 # Handle pending OTA update
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
@@ -94,14 +95,17 @@ if [ -f "${NEWUPDATE}" ] ; then
 	if [ -x "${GNUTAR_BIN}" ] ; then
 		# Let our checkpoint script handle the detailed visual feedback...
 		eips_print_bottom_centered "Updating koreader" 1
+		# shellcheck disable=SC2016
 		${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
+		fail=$?
 	else
 		# Fall back to busybox tar
 		eips_print_bottom_centered "Updating koreader . . ." 1
 		tar -C "/mnt/us" -xf "${NEWUPDATE}"
+		fail=$?
 	fi
 	# Cleanup behind us...
-	if [ $? -eq 0 ] ; then
+	if [ $fail -eq 0 ] ; then
 		mv "${NEWUPDATE}" "${INSTALLED}"
 		logmsg "Update sucessful :)"
 		eips_print_bottom_centered "Update successful :)" 1
@@ -125,7 +129,7 @@ export STARDICT_DATA_DIR="data/dict"
 export EXT_FONT_DIR="/mnt/us/fonts"
 
 # Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
-if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
+if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ] ; then
 	logmsg "Setting up IPTables rules . . ."
 	# accept input ports for zsync plugin
 	iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
@@ -176,36 +180,38 @@ if [ -f "/var/local/system/userpasswdenabled" ] ; then
 fi
 
 # check if we are supposed to shut down the Amazon framework
-if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
+if [ "${STOP_FRAMEWORK}" = "yes" ] ; then
 	logmsg "Stopping the framework . . ."
 	# Upstart or SysV?
-	if [ "${INIT_TYPE}" == "sysv" ] ; then
+	if [ "${INIT_TYPE}" = "sysv" ] ; then
 		/etc/init.d/framework stop
 	else
 		# The framework job sends a SIGTERM on stop, trap it so we don't get killed if we were launched by KUAL
-		trap "" SIGTERM
+		trap "" TERM
 		stop lab126_gui
 		# NOTE: Let the framework teardown finish, so we don't start before the black screen...
 		usleep 1250000
 		# And remove the trap like a ninja now!
-		trap - SIGTERM
+		trap - TERM
 	fi
 fi
 
 # check if kpvbooklet was launched for more than once, if not we will disable pillow
 # there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
-if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
+if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ] ; then
 	count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
-	if [ "$count" == "" -o "$count" == "0" ] ; then
+	if [ "$count" = "" ] || [ "$count" = "0" ] ; then
 		# NOTE: Dump the fb so we can restore something useful on exit...
 		cat /dev/fb0 > /var/tmp/koreader-fb.dump
 		# NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
+		# shellcheck disable=SC2046
 		if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ] ; then
 			PILLOW_HARD_DISABLED="yes"
 			# FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
 			logmsg "Disabling pillow . . ."
 			lipc-set-prop com.lab126.pillow disableEnablePillow disable
 			# NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
+			# shellcheck disable=SC2046
 			if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "572" ] ; then
 				logmsg "Stopping awesome . . ."
 				killall -stop awesome
@@ -218,12 +224,12 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 			PILLOW_SOFT_DISABLED="yes"
 		fi
 		# NOTE: We don't need to sleep at all if we've already SIGSTOPped awesome ;)
-		if [ "${NO_SLEEP}" == "no" -a "${AWESOME_STOPPED}" == "no" ] ; then
+		if [ "${NO_SLEEP}" = "no" ] && [ "${AWESOME_STOPPED}" = "no" ] ; then
 			# NOTE: Leave the framework time to refresh the screen, so we don't start before it has finished redrawing after collapsing the title bar
 			usleep 250000
 			# NOTE: If we were started from KUAL, we risk getting a list item to popup right over us, so, wait some more...
 			# The culprit appears to be a I WindowManager:flashTimeoutExpired:window=Root 0 0 600x30
-			if [ "${FROM_KUAL}" == "yes" ] ; then
+			if [ "${FROM_KUAL}" = "yes" ] ; then
 				logmsg "Playing possum to wait for the window manager . . ."
 				usleep 2500000
 			fi
@@ -232,7 +238,7 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 fi
 
 # stop cvm (sysv & framework up only)
-if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
+if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ] ; then
 	logmsg "Stopping cvm . . ."
 	killall -stop cvm
 fi
@@ -240,13 +246,15 @@ fi
 # finally call reader
 logmsg "Starting KOReader . . ."
 # That's not necessary when using KPVBooklet ;).
-if [ "${FROM_KUAL}" == "yes" ] ; then
+if [ "${FROM_KUAL}" = "yes" ] ; then
 	eips_print_bottom_centered "Starting KOReader . . ." 1
 fi
 
 # we keep maximum 500K worth of crash log
-cat crash.log 2> /dev/null | tail -c 500000 > crash.log.new
-mv -f crash.log.new crash.log
+if [ -e crash.log ]; then
+	tail -c 500000 crash.log > crash.log.new
+	mv -f crash.log.new crash.log
+fi
 ./reader.lua "$@" >> crash.log 2>&1
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
@@ -280,7 +288,7 @@ if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts > /dev/null 2>&1 ; then
 fi
 
 # Resume cvm (only if we stopped it)
-if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
+if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ] ; then
 	logmsg "Resuming cvm . . ."
 	killall -cont cvm
 	# We need to handle the screen refresh ourselves, frontend/device/kindle/device.lua's Kindle3.exit is called before we resume cvm ;).
@@ -289,9 +297,9 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "sysv" ] ; then
 fi
 
 # Restart framework (if need be)
-if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
+if [ "${STOP_FRAMEWORK}" = "yes" ] ; then
 	logmsg "Restarting framework . . ."
-	if [ "${INIT_TYPE}" == "sysv" ] ; then
+	if [ "${INIT_TYPE}" = "sysv" ] ; then
 		cd / && env -u LD_LIBRARY_PATH /etc/init.d/framework start
 	else
 		cd / && env -u LD_LIBRARY_PATH start lab126_gui
@@ -299,13 +307,13 @@ if [ "${STOP_FRAMEWORK}" == "yes" ] ; then
 fi
 
 # Display chrome bar if need be (upstart & framework up only)
-if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
+if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ] ; then
 	# Depending on the FW version, we may have handled things in a few different manners...
-	if [ "${AWESOME_STOPPED}" == "yes" ] ; then
+	if [ "${AWESOME_STOPPED}" = "yes" ] ; then
 		logmsg "Resuming awesome . . ."
 		killall -cont awesome
 	fi
-	if [ "${PILLOW_HARD_DISABLED}" == "yes" ] ; then
+	if [ "${PILLOW_HARD_DISABLED}" = "yes" ] ; then
 		logmsg "Enabling pillow . . ."
 		lipc-set-prop com.lab126.pillow disableEnablePillow enable
 		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
@@ -315,7 +323,7 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 		# NOTE: In case we ever need an extra full flash refresh...
 		#eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
 	fi
-	if [ "${PILLOW_SOFT_DISABLED}" == "yes" ] ; then
+	if [ "${PILLOW_SOFT_DISABLED}" = "yes" ] ; then
 		logmsg "Restoring the status bar . . ."
 		# NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
 		cat /var/tmp/koreader-fb.dump > /dev/fb0
@@ -325,7 +333,7 @@ if [ "${STOP_FRAMEWORK}" == "no" -a "${INIT_TYPE}" == "upstart" ] ; then
 	fi
 fi
 
-if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; then
+if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ] ; then
 	logmsg "Restoring IPTables rules . . ."
 	# restore firewall rules
 	iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
@@ -333,8 +341,7 @@ if [ "${INIT_TYPE}" == "upstart" -o "$(uname -r)" == "2.6.31-rt11-lab126" ] ; th
 	iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
 fi
 
-if [ "${PASSCODE_DISABLED}" == "yes" ] ; then
+if [ "${PASSCODE_DISABLED}" = "yes" ] ; then
 	logmsg "Restoring system passcode . . ."
 	touch "/var/local/system/userpasswdenabled"
 fi
-

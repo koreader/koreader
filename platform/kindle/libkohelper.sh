@@ -3,13 +3,15 @@
 ## A bit of helper functions...
 # Check which type of init system we're running on
 if [ -d /etc/upstart ] ; then
-	INIT_TYPE="upstart"
+	export INIT_TYPE="upstart"
 	# We'll need that for logging
-	[ -f /etc/upstart/functions ] && source /etc/upstart/functions
+	# shellcheck disable=SC1091
+	[ -f /etc/upstart/functions ] && . /etc/upstart/functions
 else
-	INIT_TYPE="sysv"
+	export INIT_TYPE="sysv"
 	# We'll need that for logging
-	[ -f /etc/rc.d/functions ] && source /etc/rc.d/functions
+	# shellcheck disable=SC1091
+	[ -f /etc/rc.d/functions ] && . /etc/rc.d/functions
 fi
 
 # We need to get the proper constants for our model...
@@ -86,8 +88,8 @@ case "${kmodel}" in
 	;;
 esac
 # And now we can do the maths ;)
-EIPS_MAXCHARS="$((${SCREEN_X_RES} / ${EIPS_X_RES}))"
-EIPS_MAXLINES="$((${SCREEN_Y_RES} / ${EIPS_Y_RES}))"
+EIPS_MAXCHARS="$((SCREEN_X_RES / EIPS_X_RES))"
+EIPS_MAXLINES="$((SCREEN_Y_RES / EIPS_Y_RES))"
 
 # Adapted from libkh[5]
 eips_print_bottom_centered()
@@ -106,10 +108,10 @@ eips_print_bottom_centered()
 
 	# Add the right amount of left & right padding, since we're centered, and eips doesn't trigger a full refresh,
 	# so we'll have to padd our string with blank spaces to make sure two consecutive messages don't run into each other
-	kh_padlen="$(((${EIPS_MAXCHARS} - ${kh_eips_strlen}) / 2))"
+	kh_padlen="$(((EIPS_MAXCHARS - kh_eips_strlen) / 2))"
 
 	# Left padding...
-	while [ ${#kh_eips_string} -lt $((${kh_eips_strlen} + ${kh_padlen})) ] ; do
+	while [ ${#kh_eips_string} -lt $((kh_eips_strlen + kh_padlen)) ] ; do
 		kh_eips_string=" ${kh_eips_string}"
 	done
 
@@ -126,5 +128,5 @@ eips_print_bottom_centered()
 	fi
 
 	# And finally, show our formatted message centered on the bottom of the screen (NOTE: Redirect to /dev/null to kill unavailable character & pixel not in range warning messages)
-	eips 0 $((${EIPS_MAXLINES} - 2 - ${kh_eips_y_shift_up})) "${kh_eips_string}" >/dev/null
+	eips 0 $((EIPS_MAXLINES - 2 - kh_eips_y_shift_up)) "${kh_eips_string}" >/dev/null
 }

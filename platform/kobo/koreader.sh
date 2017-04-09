@@ -13,7 +13,7 @@ if [ -f "${NEWUPDATE}" ] ; then
 fi
 
 # we're always starting from our working directory
-cd "${KOREADER_DIR}"
+cd "${KOREADER_DIR}" || exit
 
 # load our own shared libraries if possible
 export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
@@ -47,12 +47,13 @@ if [ "${FROM_NICKEL}" = "true" ] ; then
 
 	if [ "${FROM_KFMON}" = "true" ] ; then
 		# Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
-		for env in $(xargs -n 1 -0 < /proc/$(pidof nickel)/environ) ; do
-			export ${env}
+		for env in $(xargs -n 1 -0 < "/proc/$(pidof nickel)/environ") ; do
+			# shellcheck disable=SC2163
+			export "${env}"
 		done
 	else
 		# Siphon a few things from nickel's env...
-		eval "$(xargs -n 1 -0 < /proc/$(pidof nickel)/environ | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
+		eval "$(xargs -n 1 -0 < "/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
 		export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
 	fi
 
@@ -81,7 +82,6 @@ fi
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ ! -n "${PRODUCT}" ] ; then
 	PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
-	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
 	export PRODUCT
 fi
 
@@ -112,21 +112,35 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd ' ; then
 fi
 
 # we keep maximum 500K worth of crash log
-cat crash.log 2> /dev/null | tail -c 500000 > crash.log.new
-mv -f crash.log.new crash.log
+if [ -e crash.log ]; then
+	tail -c 500000 crash.log > crash.log.new
+	mv -f crash.log.new crash.log
+fi
 
+# workaround 32-bit without KSM (KSM is indicated by ${ksmroot} being set)
+# shellcheck disable=2154
+if [ -z "${ksmroot+x:?}" ]; then
 # TODO: add support for 32bit framebuffer in koreader. This is a workaround
 # to run koreader in 16bpp. Useful since FW 4.0
+CUR_ROTATE="$(cat "/sys/class/graphics/fb0/rotate")"
 FB_BPP=$(cat /sys/class/graphics/fb0/bits_per_pixel)
-[ "$FB_BPP" -gt 16 ] && /usr/sbin/fbset -depth 16
-# fix rotation issues on Kobo Aura HD (dragon) and Kobo Aura H2O (dahlia)
-case "$PRODUCT" in "dragon" | "dahlia" ) cat /sys/class/graphics/fb0/rotate > /sys/class/graphics/fb0/rotate ;; esac
+[ "${FB_BPP}" -gt 16 ] && /usr/sbin/fbset -depth 16
+# this suffices on normal devices, but H2O is stupid and sets the opposite
+echo "${CUR_ROTATE}" > "/sys/class/graphics/fb0/rotate"
+# this therefore turns it around on H2O (and other potential idiots) and merely
+# innocently repeats on sane devices
+# shellcheck disable=SC2094
+cat "/sys/class/graphics/fb0/rotate" > "/sys/class/graphics/fb0/rotate"
+fi
 
 ./reader.lua "${args}" >> crash.log 2>&1
 RESULT=$?
 
-# back to default depth in framebuffer.
-[ "$FB_BPP" -gt 16 ] && /usr/sbin/fbset -depth "$FB_BPP"
+# workaround 32-bit without KSM (KSM is indicated by s${ksmroot} being set)
+if [ -z "${ksmroot+x:?}" ]; then
+	# back to default depth in framebuffer.
+	[ "${FB_BPP}" -gt 16 ] && /usr/sbin/fbset -depth "${FB_BPP}"
+fi
 
 if [ "${FROM_NICKEL}" = "true" ] ; then
 	if [ "${FROM_KFMON}" != "true" ] ; then
