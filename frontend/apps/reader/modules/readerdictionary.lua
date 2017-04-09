@@ -72,43 +72,29 @@ function ReaderDictionary:cleanSelection(text)
     if not text then
         return ""
     end
-    -- We do multiple times the same replacements, which is most of the time overkill,
-    -- but sometimes provices better cleaning
-    -- Some extremes cases to explain the multiples gsub :
+    -- crengine does now a much better job at finding word boundaries, but
+    -- some cleanup is still needed for selection we get from other engines
+    -- (example: pdf selection "qu’autrefois," will be cleaned to "autrefois")
     --
-    -- Sample epub html: mais, qu’« absolument, on ne peut décidément pas » revenir en arrière
-    -- Holding on "qu" or "absolument" will make crengine returns: qu’« absolument,
-    -- We want to only get: absolument
-    --
-    -- Sample epub html: car « l’état, actuel, de notre connaissance » s’y oppose
-    -- Holding on "état" will make crengine returns: « l’état,
-    -- We want to get: état
-    --
-    -- Some of these gsub could be removed when crengine does a better job
-    -- at finding word boundaries
-    --
-    -- Strip some quotations marks
-    text = string.gsub(text, "\xC2\xAB", '') -- U+00AB << (left double angle quotation mark)
-    text = string.gsub(text, "\xC2\xBB", '') -- U+00BB >> (right double angle quotation mark)
-    text = string.gsub(text, "\xE2\x80\x9D", '') -- U+201D '' (right double quotation mark)
-    text = string.gsub(text, "\xE2\x80\x9C", '') -- U+201C `` (left double quotation mark)
-    text = string.gsub(text, "\xE2\x80\x94", '') -- U+2014 - (em dash)
-    text = string.gsub(text, "\xE2\x80\x95", '') -- U+2015 - (horizontal bar)
-    text = string.gsub(text, "\xC2\xA0", '') -- U+00A0 no-break space
-    -- Replace some meaningful quotes with ascii quote
+    -- Replace extended quote (included in the general puncturation range)
+    -- with plain ascii quote (for french words like "aujourd’hui")
     text = string.gsub(text, "\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
     -- Strip punctuation characters around selection
-    -- (this had to be done after the utf8 gsubs above, or it would strip part of these utf8 chars)
     text = util.stripePunctuations(text)
-    -- Strip leading and trailing spaces
-    text = string.gsub(text, "^%s+", '')
-    text = string.gsub(text, "%s+$", '')
-    -- Strip some french grammatical constructs
-    text = string.gsub(text, "^[LSDMNTlsdmnt]'", '') -- french l' s' t'
+    -- Strip some common english grammatical construct
+    text = string.gsub(text, "'s$", '') -- english possessive
+    -- Strip some common french grammatical constructs
+    text = string.gsub(text, "^[LSDMNTlsdmnt]'", '') -- french l' s' t'...
     text = string.gsub(text, "^[Qq][Uu]'", '') -- french qu'
-    -- Strip again leading and trailing spaces
-    text = string.gsub(text, "^%s+", '')
-    text = string.gsub(text, "%s+$", '')
+    -- Replace no-break space with regular space
+    text = string.gsub(text, "\xC2\xA0", ' ') -- U+00A0 no-break space
+    -- There may be a need to remove some (all?) diacritical marks
+    -- https://en.wikipedia.org/wiki/Combining_character#Unicode_ranges
+    -- see discussion at https://github.com/koreader/koreader/issues/1649
+    -- Commented for now, will have to be checked by people who read
+    -- languages and texts that use them.
+    -- text = string.gsub(text, "\204[\128-\191]", '') -- U+0300 to U+033F
+    -- text = string.gsub(text, "\205[\128-\175]", '') -- U+0340 to U+036F
     return text
 end
 
