@@ -1,4 +1,3 @@
-
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -6,6 +5,8 @@ local _ = require("gettext")
 
 local SystemStat = {
     start_sec = os.time(),
+    suspend_sec = nil,
+    resume_sec = nil,
     wakeup_count = 0,
     sleep_count = 0,
     charge_count = 0,
@@ -13,10 +14,12 @@ local SystemStat = {
 }
 
 function SystemStat:onSuspend()
+    self.suspend_sec = os.time()
     self.sleep_count = self.sleep_count + 1
 end
 
 function SystemStat:onResume()
+    self.resume_sec = os.time()
     self.wakeup_count = self.wakeup_count + 1
 end
 
@@ -37,6 +40,14 @@ function SystemStat:showStatistics()
         {_("Number of charge cycles"), self.charge_count},
         {_("Number of discharge cycles"), self.discharge_count},
     }
+    if self.suspend_sec then
+       local kv_pairs_suspend = {_("Last suspend time"), os.date("%c", self.suspend_sec)}
+       table.insert(kv_pairs, kv_pairs_suspend)
+    end
+    if self.resume_sec then
+        local kv_pairs_resume = {_("Last resume time"), os.date("%c", self.resume_sec)}
+        table.insert(kv_pairs, kv_pairs_resume)
+    end
     UIManager:show(KeyValuePage:new{
         title = _("System statistics"),
         kv_pairs = kv_pairs,
