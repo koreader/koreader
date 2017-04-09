@@ -193,7 +193,7 @@ end
 
 function ReaderStatistics:addToMainMenu(menu_items)
     menu_items.statistics = {
-        text = _("Statistics"),
+        text = _("Reading statistics"),
         sub_item_table = {
             self:getStatisticEnabledMenuItem(),
             {
