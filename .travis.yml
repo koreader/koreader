@@ -24,7 +24,7 @@ cache:
     - "${HOME}/.ccache"
     - "${HOME}/.luarocks"
 before_cache:
-  - rm -frv "${TRAVIS_BUILD_DIR}/base/build/*/cache/*"
+  - rm -frv "${TRAVIS_BUILD_DIR}/base/build/x86_64-linux-gnu/cache/*"
 
 addons:
   apt:
