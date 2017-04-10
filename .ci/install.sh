@@ -35,10 +35,11 @@ fi
 MD5SUM_HELPER_LUAROCKS="c0044874d0602ef808a0003c6d4d0f9b  helper_luarocks.sh"
 if [ ! -d "${HOME}/.luarocks" ] || [ "$(md5sum "${CI_DIR}/helper_luarocks.sh")" != "${MD5SUM_HELPER_LUAROCKS}" ] ; then
     echo -e "${ANSI_GREEN}Grabbing new .luarocks."
+    echo -e "$(md5sum "${CI_DIR}/helper_luarocks.sh")"
     # shellcheck source=/dev/null
     "${CI_DIR}/helper_luarocks.sh"
 else
-    echo "${ANSI_GREEN}Using cached .luarocks."
+    echo -e "${ANSI_GREEN}Using cached .luarocks."
 fi
 
 #install our own updated shellcheck
