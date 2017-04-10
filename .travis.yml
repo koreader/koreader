@@ -24,7 +24,9 @@ cache:
     - "${HOME}/.ccache"
     - "${HOME}/.luarocks"
 before_cache:
-  - rm -frv "${TRAVIS_BUILD_DIR}/base/build/x86_64-linux-gnu/cache/*"
+  - echo "${TRAVIS_BUILD_DIR}"
+  - echo "${TRAVIS_BUILD_DIR}/base/build/*/cache/*"
+  - rm -frv "${TRAVIS_BUILD_DIR}/base/build/*/cache/*"
 
 addons:
   apt:
@@ -33,8 +35,6 @@ addons:
     packages:
       - g++-4.8
       - libsdl1.2-dev
-      # to run luacheck early
-      - lua5.1
       # luasec dependencies
       - libssl1.0.0
       - nasm
