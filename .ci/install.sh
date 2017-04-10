@@ -17,7 +17,7 @@ if [ "$(git status --ignore-submodules=dirty --porcelain)" ]; then
     git submodule deinit -f .
     git submodule update --init
 else
-    echo "Using cached submodules."
+    echo "${ANSI_GREEN}Using cached submodules."
 fi
 
 # install our own updated luarocks
@@ -29,26 +29,16 @@ if [ ! -f "${TRAVIS_BUILD_DIR}/install/bin/luarocks" ]; then
         make install
     popd
 else
-    echo "Using cached luarocks."
+    echo "${ANSI_GREEN}Using cached luarocks."
 fi
 
-if [ ! -d "${HOME}/.luarocks" ]; then
-    mkdir "${HOME}/.luarocks"
-    cp "${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua" "${HOME}/.luarocks/config.lua"
-    echo "wrap_bin_scripts = false" >> "$HOME/.luarocks/config.lua"
-    travis_retry luarocks --local install luafilesystem
-    # for verbose_print module
-    travis_retry luarocks --local install ansicolors
-    travis_retry luarocks --local install busted 2.0.rc12-1
-    #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
-    travis_retry luarocks --local install luacov
-    # luasec doesn't automatically detect 64-bit libs
-    travis_retry luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
-    travis_retry luarocks --local install luacov-coveralls --server=http://rocks.moonscript.org/dev
-    travis_retry luarocks --local install luacheck
-    travis_retry luarocks --local install lanes  # for parallel luacheck
+MD5SUM_HELPER_LUAROCKS="c0044874d0602ef808a0003c6d4d0f9b  helper_luarocks.sh"
+if [ ! -d "${HOME}/.luarocks" ] || [ "$(md5sum "${CI_DIR}/helper_luarocks.sh")" != "${MD5SUM_HELPER_LUAROCKS}" ] ; then
+    echo "${ANSI_GREEN}Grabbing new .luarocks."
+    # shellcheck source=/dev/null
+    source "${CI_DIR}/helper_luarocks.sh"
 else
-    echo "Using cached .luarocks."
+    echo "${ANSI_GREEN}Using cached .luarocks."
 fi
 
 #install our own updated shellcheck
@@ -58,7 +48,7 @@ if ! command -v shellcheck ; then
     chmod +x "${HOME}/bin/shellcheck"
     shellcheck --version
 else
-    echo "Using cached shellcheck."
+    echo "${ANSI_GREEN}Using cached shellcheck."
 fi
 
 # install shfmt
@@ -67,5 +57,5 @@ if ! command -v shfmt ; then
     curl -sSL "${SHFMT_URL}" -o "${HOME}/bin/shfmt"
     chmod +x "${HOME}/bin/shfmt"
 else
-    echo "Using cached shfmt."
+    echo "${ANSI_GREEN}Using cached shfmt."
 fi
