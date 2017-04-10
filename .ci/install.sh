@@ -17,7 +17,7 @@ if [ "$(git status --ignore-submodules=dirty --porcelain)" ]; then
     git submodule deinit -f .
     git submodule update --init
 else
-    echo "${ANSI_GREEN}Using cached submodules."
+    echo -e "${ANSI_GREEN}Using cached submodules."
 fi
 
 # install our own updated luarocks
@@ -34,9 +34,9 @@ fi
 
 MD5SUM_HELPER_LUAROCKS="c0044874d0602ef808a0003c6d4d0f9b  helper_luarocks.sh"
 if [ ! -d "${HOME}/.luarocks" ] || [ "$(md5sum "${CI_DIR}/helper_luarocks.sh")" != "${MD5SUM_HELPER_LUAROCKS}" ] ; then
-    echo "${ANSI_GREEN}Grabbing new .luarocks."
+    echo -e "${ANSI_GREEN}Grabbing new .luarocks."
     # shellcheck source=/dev/null
-    source "${CI_DIR}/helper_luarocks.sh"
+    "${CI_DIR}/helper_luarocks.sh"
 else
     echo "${ANSI_GREEN}Using cached .luarocks."
 fi
@@ -48,7 +48,7 @@ if ! command -v shellcheck ; then
     chmod +x "${HOME}/bin/shellcheck"
     shellcheck --version
 else
-    echo "${ANSI_GREEN}Using cached shellcheck."
+    echo -e "${ANSI_GREEN}Using cached shellcheck."
 fi
 
 # install shfmt
@@ -57,5 +57,5 @@ if ! command -v shfmt ; then
     curl -sSL "${SHFMT_URL}" -o "${HOME}/bin/shfmt"
     chmod +x "${HOME}/bin/shfmt"
 else
-    echo "${ANSI_GREEN}Using cached shfmt."
+    echo -e "${ANSI_GREEN}Using cached shfmt."
 fi
