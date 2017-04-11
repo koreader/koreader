@@ -33,11 +33,12 @@ if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; th
         commit -a --amend -m 'Automated documentation build from travis-ci.'
     git push -f --quiet origin gh-pages > /dev/null
     echo -e "\n${ANSI_GREEN}Documentation update pushed."
-else
-    echo -e "\n${ANSI_GREEN}Not on official master branch, skip documentation update."
-fi
+    popd
 
-travis_retry make coverage
-pushd koreader-*/koreader
-    luajit "$(which luacov-coveralls)"
-popd
+    travis_retry make coverage
+    pushd koreader-*/koreader
+        luajit "$(which luacov-coveralls)"
+    popd
+else
+    echo -e "\n${ANSI_GREEN}Not on official master branch, skip documentation update and coverage."
+fi
