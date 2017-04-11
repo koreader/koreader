@@ -58,6 +58,8 @@ function ProgressWidget:paintTo(bb, x, y)
         w = my_size.w,
         h = my_size.h
     }
+    if self.dimen.w == 0 or self.dimen.h == 0 then return end
+
     -- fill background
     bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
     -- paint border

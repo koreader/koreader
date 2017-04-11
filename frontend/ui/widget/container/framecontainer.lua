@@ -38,8 +38,9 @@ function FrameContainer:paintTo(bb, x, y)
 
     --@TODO get rid of margin here?  13.03 2013 (houqp)
     if self.background then
-        bb:paintRoundedRect(x, y, container_width, container_height,
-                        self.background, self.radius)
+        bb:paintRoundedRect(x, y,
+                            container_width, container_height,
+                            self.background, self.radius)
     end
     if self.bordersize > 0 then
         bb:paintBorder(x + self.margin, y + self.margin,
