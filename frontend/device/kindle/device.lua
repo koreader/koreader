@@ -46,9 +46,6 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
-    if require("ui/screensaver").isUsingBookCover then
-        require("ui/screensaver"):show("suspend")
-    end
     self.powerd:beforeSuspend()
     if self.charging_mode == false and self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
@@ -66,9 +63,6 @@ function Kindle:outofScreenSaver()
         -- On FW >= 5.7.2, put awesome to sleep again...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -stop awesome")
-        end
-        if require("ui/screensaver").isUsingBookCover then
-            require("ui/screensaver"):close()
         end
         -- wait for native system update screen before we recover saved
         -- Blitbuffer.

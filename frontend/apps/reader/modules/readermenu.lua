@@ -145,26 +145,6 @@ function ReaderMenu:setUpdateItemTable()
                 }
             }
         }
-    elseif Device:isKindle() then
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                }
-            }
-        }
     end
     -- main menu tab
     -- insert common info
