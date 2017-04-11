@@ -36,12 +36,12 @@ fi
 
 # we keep maximum 500K worth of crash log
 if [ -e crash.log ]; then
-    tail -c 500000 crash.log > crash.log.new
+    tail -c 500000 crash.log >crash.log.new
     mv -f crash.log.new crash.log
 fi
 
-./reader.lua "${args}" >> crash.log 2>&1
+./reader.lua "${args}" >>crash.log 2>&1
 
-if pidof reader.lua > /dev/null 2>&1 ; then
+if pidof reader.lua >/dev/null 2>&1; then
     killall -TERM reader.lua
 fi

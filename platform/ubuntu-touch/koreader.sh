@@ -28,4 +28,3 @@ export EXT_FONT_DIR="${HOME}/fonts"
 export SDL_FULLSCREEN=1
 
 ./reader.lua -d ~/Documents
-
