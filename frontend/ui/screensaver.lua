@@ -147,4 +147,25 @@ function Screensaver:close()
     end
 end
 
+function Screensaver:isKindleSpecialOffers()
+    -- Look at the current blanket modules to see if the SO screensavers are enabled...
+    local lipc = require("liblipclua")
+    if not lipc then
+        logger.warn("could not load liblibclua")
+        return false
+    end
+    local lipc_handle = lipc.init("com.github.koreader.device")
+    if not lipc_handle then
+        logger.warn("could not get lipc handle")
+        return false
+    end
+    local so = false
+    local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
+    if string.find(loaded_blanket_modules, "ad_screensaver") then
+        so = true
+    end
+    lipc_handle:close()
+    return so
+end
+
 return Screensaver
