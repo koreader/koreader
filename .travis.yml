@@ -24,6 +24,7 @@ cache:
     - "${HOME}/.ccache"
     - "${HOME}/.luarocks"
 before_cache:
+  # don't quote like you normally would or it won't expand
   - rm -frv ${TRAVIS_BUILD_DIR}/base/build/*/cache/*
 
 addons:
