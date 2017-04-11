@@ -29,13 +29,13 @@ if [ ! -f "${TRAVIS_BUILD_DIR}/install/bin/luarocks" ]; then
         make install
     popd
 else
-    echo "${ANSI_GREEN}Using cached luarocks."
+    echo -e "${ANSI_GREEN}Using cached luarocks."
 fi
 
-if [ ! -d "${HOME}/.luarocks" ] || [ ! -f ".luarocks/$(md5sum "${CI_DIR}/helper_luarocks.sh")" ] ; then
+if [ ! -d "${HOME}/.luarocks" ] || [ ! -f ".luarocks/$(md5sum < "${CI_DIR}/helper_luarocks.sh")" ] ; then
     echo -e "${ANSI_GREEN}Grabbing new .luarocks."
     "${CI_DIR}/helper_luarocks.sh"
-    touch ".luarocks/$(md5sum "${CI_DIR}/helper_luarocks.sh")"
+    touch ".luarocks/$(md5sum < "${CI_DIR}/helper_luarocks.sh")"
 else
     echo -e "${ANSI_GREEN}Using cached .luarocks."
 fi
