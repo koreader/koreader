@@ -32,10 +32,10 @@ else
     echo "${ANSI_GREEN}Using cached luarocks."
 fi
 
-if [ ! -d "${HOME}/.luarocks" ] || [ ! -f "$(md5sum "${CI_DIR}/helper_luarocks.sh")" ; then
+if [ ! -d "${HOME}/.luarocks" ] || [ ! -f ".luarocks/$(md5sum "${CI_DIR}/helper_luarocks.sh")" ] ; then
     echo -e "${ANSI_GREEN}Grabbing new .luarocks."
     "${CI_DIR}/helper_luarocks.sh"
-    touch "$(md5sum "${CI_DIR}/helper_luarocks.sh")"
+    touch ".luarocks/$(md5sum "${CI_DIR}/helper_luarocks.sh")"
 else
     echo -e "${ANSI_GREEN}Using cached .luarocks."
 fi
