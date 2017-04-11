@@ -7,7 +7,6 @@ source "${CI_DIR}/common.sh"
 echo -e "\n${ANSI_GREEN}make fetchthirdparty"
 travis_retry make fetchthirdparty
 
-# shellcheck source=/dev/null
 "${CI_DIR}/helper_shellchecks.sh"
 
 echo -e "\n${ANSI_GREEN}Luacheck results"
