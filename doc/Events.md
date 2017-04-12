@@ -57,6 +57,7 @@ When you call `UIManager:show` on an widget, this widget will be added to the to
 Events are sent to the first widget in `UIManager._window_stack`. If it is not consumed, then UIManager will try to send it to all active widgets (`widget.is_always_active` equals `true`) in the `_window_stack`.
 
 ## Draw Page Code Path
+
 * **in readerview.lua:** ReaderView widget flag itself dirty in `ReaderView:recalculate`
 * **in ui.lua:** UI main loop calls `ReaderView:paintTo`
 * **in readerview.lua:** `ReaderView:paintTo` calls `document:drawPage`

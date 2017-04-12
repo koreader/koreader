@@ -1,10 +1,11 @@
+--[[--
+This module translates text using Google Translate.
+
+<http://translate.google.com/translate_a/t?client=z&ie=UTF-8&oe=UTF-8&hl=en&tl=en&text=hello>
+--]]
+
 local JSON = require("json")
 local logger = require("logger")
-
---[[
--- Translate text using Google Translate.
--- http://translate.google.com/translate_a/t?client=z&ie=UTF-8&oe=UTF-8&hl=en&tl=en&text=hello
---]]
 
 local Translator = {
    trans_servers = {
@@ -27,8 +28,13 @@ function Translator:getTransServer()
     return G_reader_settings:readSetting("trans_server") or self.trans_servers[1]
 end
 
---[[
---  return decoded JSON table from translate server
+--[[--
+Returns decoded JSON table from translate server.
+
+@string target_lang
+@string source_lang
+@string text
+@treturn string result, or nil
 --]]
 function Translator:loadPage(target_lang, source_lang, text)
     local socket = require('socket')
@@ -80,6 +86,12 @@ function Translator:loadPage(target_lang, source_lang, text)
     end
 end
 
+--[[--
+Tries to automatically detect language of `text`.
+
+@string text
+@treturn string lang (`"en"`, `"fr"`, `…`)
+--]]
 function Translator:detect(text)
     local result = self:loadPage("en", nil, text)
     if result then
