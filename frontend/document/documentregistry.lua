@@ -1,8 +1,9 @@
-local logger = require("logger")
-
---[[
+--[[--
 This is a registry for document providers
 ]]--
+
+local logger = require("logger")
+
 local DocumentRegistry = {
     registry = {},
     providers = {},
@@ -12,6 +13,9 @@ function DocumentRegistry:addProvider(extension, mimetype, provider)
     table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
 end
 
+--- Returns the registered document handler.
+-- @string file
+-- @treturn string provider, or nil
 function DocumentRegistry:getProvider(file)
     -- TODO: some implementation based on mime types?
     for _, provider in ipairs(self.providers) do

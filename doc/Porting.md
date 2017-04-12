@@ -13,6 +13,7 @@ KOReader uses framebuffer to control EInk devices, so the output module here is
 [base/ffi/framebuffer_einkfb.lua](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_einkfb.lua).
 
 Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
+
   * 4BPP inverted framebuffer
   * 16 scale 8BPP inverted framebuffer
   * 16 scale 8BPP framebuffer
@@ -32,12 +33,11 @@ flipped in the same way as 4BPP inverted framebuffer does.
 If your device's framebuffer does not fit into any of the categories above,
 then you need to add a new transformation function in `framebuffer_einkfb.lua`.
 
-The `framebuffer_einkfb.lua` module works in following ways for non 4BPP framebuffers;
+The `framebuffer_einkfb.lua` module works in following ways for non 4BPP framebuffers:
+
   * a shadow buffer is created and structured as 4BPP inverted framebuffer.
   * all updates on screen bitmap are temporally written into the shadow buffer.
-  * each time we want to reflect the updated bitmap on screen, we translate
-    the shadow buffer into a format that the real framebuffer understands and
-    write into the mapped memory region. (varies on devices)
+  * each time we want to reflect the updated bitmap on screen, we translate the shadow buffer into a format that the real framebuffer understands and write into the mapped memory region. (varies on devices)
   * call ioctl system call to refresh EInk screen. (varies on devices)
 
 KOReader will handle the 4BPP shadow buffer for you, all you need to do is to
@@ -62,19 +62,16 @@ format that KOReader understands. You can look at the KindleTouch initialization
 For Kobo devices (Mini, Touch, Glo and Aura HD) the function `Input:eventAdjustHook()` was skipped and the functions `Input:init()` and `Input:handleTypeBTouchEv` were changed to allow the single touch protocol. For Kobo Aura with multitouch support an extra function `Input:handlePhoenixTouchEv` was added.
 
 Linux supports two kinds of Multi-touch protocols:
- * http://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt
+
+ * <http://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt>
 
 Currently, KOReader supports gesture detection of protocol B, so if your device sends out
 protocol A, you need to make a variant of function `Input:handleTouchEv()` (like `Input:handleTypeBTouchEv` and `Input:handlePhoenixTouchEv`) and simulate protocol B.
 Also you are welcome to send a PR that adds protocol A support to KOReader.
 
 More information on Linux's input system:
- * http://www.kernel.org/doc/Documentation/input/event-codes.txt
- * http://www.kernel.org/doc/Documentation/input/input.txt
 
+ * <http://www.kernel.org/doc/Documentation/input/event-codes.txt>
+ * <http://www.kernel.org/doc/Documentation/input/input.txt>
 
-
-[einkfb-c]:https://github.com/koreader/koreader-base/blob/master/einkfb.c
 [kb-framework]:https://github.com/koreader/koreader-base
-[inputev]:https://github.com/koreader/koreader/blob/master/frontend/ui/inputevent.lua
-
