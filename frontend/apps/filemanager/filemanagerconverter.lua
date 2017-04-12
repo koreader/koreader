@@ -55,7 +55,7 @@ function FileConverter:_mdFileToHtml(file, title)
     local f = io.open(file, "rb")
     local content = f:read("*all")
     f:close()
-    local html = FileConverter:mdToHtml(content, title)
+    local html = self:mdToHtml(content, title)
     return html
 end
 
