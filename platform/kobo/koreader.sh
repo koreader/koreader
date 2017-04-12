@@ -12,7 +12,7 @@ NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
     # TODO: any graphic indication for the updating progress?
-    ./tar xf "${NEWUPDATE}" --strip-components=1 -C "${KOREADER_DIR}" && mv "${NEWUPDATE}" "${INSTALLED}"
+    ./tar xf "${NEWUPDATE}" --strip-components=1 && mv "${NEWUPDATE}" "${INSTALLED}"
 fi
 
 # load our own shared libraries if possible
