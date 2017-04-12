@@ -49,7 +49,7 @@ local function isSpecialOffers()
         logger.warn("could not get lipc handle")
         return true
     end
-    local is_so = false
+    local is_so
     local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
     if string.find(loaded_blanket_modules, "ad_screensaver") then
         is_so = true
