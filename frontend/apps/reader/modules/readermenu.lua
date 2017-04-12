@@ -145,7 +145,7 @@ function ReaderMenu:setUpdateItemTable()
                 }
             }
         }
-        elseif Device:isKindle() and not Screensaver:isKindleSpecialOffers() then
+        elseif Device:isKindle() and Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {

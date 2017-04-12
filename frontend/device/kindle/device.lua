@@ -34,6 +34,40 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 end
 
+--[[
+Test if a kindle device has Special Offers
+--]]
+local function isSpecialOffers()
+    -- Look at the current blanket modules to see if the SO screensavers are enabled...
+    local lipc = require("liblipclua")
+    if not lipc then
+        logger.warn("could not load liblibclua")
+        return true
+    end
+    local lipc_handle = lipc.init("com.github.koreader.device")
+    if not lipc_handle then
+        logger.warn("could not get lipc handle")
+        return true
+    end
+    local is_so = false
+    local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
+    if string.find(loaded_blanket_modules, "ad_screensaver") then
+        is_so = true
+    else
+        is_so = false
+    end
+    lipc_handle:close()
+    return is_so
+end
+
+function Kindle:supportsScreensaver()
+    if isSpecialOffers() then
+        return false
+    else
+        return true
+    end
+end
+
 function Kindle:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
         self.screen:saveCurrentBB()
@@ -46,8 +80,9 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
-    if not require("ui/screensaver"):isKindleSpecialOffers() and require("ui/screensaver").isUsingBookCover then
-        require("ui/screensaver"):show("suspend")
+    local Screensaver = require("ui/screensaver")
+    if self:supportsScreensaver() and Screensaver:isUsingBookCover() then
+        Screensaver:show("suspend")
     end
     self.powerd:beforeSuspend()
     if self.charging_mode == false and self.screen_saver_mode == false then
@@ -67,8 +102,9 @@ function Kindle:outofScreenSaver()
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -stop awesome")
         end
-        if not require("ui/screensaver"):isKindleSpecialOffers() and require("ui/screensaver").isUsingBookCover then
-            require("ui/screensaver"):close()
+        local Screensaver = require("ui/screensaver")
+        if self:supportsScreensaver() and Screensaver.isUsingBookCover() then
+            Screensaver:close()
         end
         -- wait for native system update screen before we recover saved
         -- Blitbuffer.
@@ -477,30 +513,6 @@ function KindleBasic2:init()
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
-end
-
---[[
-Test if a kindle device has Special Offers
---]]
-local function isSpecialOffers()
-    -- Look at the current blanket modules to see if the SO screensavers are enabled...
-    local lipc = require("liblipclua")
-    if not lipc then
-        logger.warn("could not load liblibclua")
-        return false
-    end
-    local lipc_handle = lipc.init("com.github.koreader.device")
-    if not lipc_handle then
-        logger.warn("could not get lipc handle")
-        return false
-    end
-    local so = false
-    local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
-    if string.find(loaded_blanket_modules, "ad_screensaver") then
-        so = true
-    end
-    lipc_handle:close()
-    return so
 end
 
 function KindleTouch:exit()

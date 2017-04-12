@@ -96,7 +96,7 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:flush()
         end
     }
-    if Device.isKobo() or (Device.isKindle() and not Screensaver:isKindleSpecialOffers()) then
+    if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
