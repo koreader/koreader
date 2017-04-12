@@ -4,16 +4,16 @@ export LC_ALL="en_US.UTF-8"
 # working directory of koreader
 KOREADER_DIR="${0%/*}"
 
+# we're always starting from our working directory
+cd "${KOREADER_DIR}" || exit
+
 # update to new version from OTA directory
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
     # TODO: any graphic indication for the updating progress?
-    cd "${KOREADER_DIR%/*}" && tar xf "${NEWUPDATE}" && mv "${NEWUPDATE}" "${INSTALLED}"
+    ./tar xf "${NEWUPDATE}" --strip-components=1 -C "${KOREADER_DIR}" && mv "${NEWUPDATE}" "${INSTALLED}"
 fi
-
-# we're always starting from our working directory
-cd "${KOREADER_DIR}" || exit
 
 # load our own shared libraries if possible
 export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
