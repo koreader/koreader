@@ -1,6 +1,12 @@
-local lfs = require("libs/libkoreader-lfs")
+--[[--
+This module is responsible for reading and writing `metadata.lua` files
+in the so-called sidecar directory
+([Wikipedia definition](https://en.wikipedia.org/wiki/Sidecar_file)).
+]]
+
 local DataStorage = require("datastorage")
 local dump = require("dump")
+local lfs = require("libs/libkoreader-lfs")
 local purgeDir = require("ffi/util").purgeDir
 
 local DocSettings = {}
@@ -15,7 +21,11 @@ local function buildCandidate(file_path)
     end
 end
 
+--- Returns path to sidecar directory (`filename.sdr`).
+--
 -- Sidecar directory is the file without _last_ suffix.
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn string path to the sidecar directory (e.g., `/foo/bar.sdr`)
 function DocSettings:getSidecarDir(doc_path)
     if doc_path == nil or doc_path == '' then return '' end
     local file_without_suffix = doc_path:match("(.*)%.")
@@ -25,6 +35,9 @@ function DocSettings:getSidecarDir(doc_path)
     return doc_path..".sdr"
 end
 
+--- Returns path to `metadata.lua` file.
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn string path to `/foo/bar.sdr/metadata.lua` file
 function DocSettings:getSidecarFile(doc_path)
     if doc_path == nil or doc_path == '' then return '' end
     -- If the file does not have a suffix or we are working on a directory, we
@@ -36,6 +49,9 @@ function DocSettings:getSidecarFile(doc_path)
     return self:getSidecarDir(doc_path) .. "/metadata." .. suffix .. ".lua"
 end
 
+--- Returns `true` if there is a `metadata.lua` file.
+-- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn bool
 function DocSettings:hasSidecarFile(doc_path)
     return lfs.attributes(self:getSidecarFile(doc_path), "mode") == "file"
 end
@@ -69,6 +85,9 @@ function DocSettings:ensureSidecar(sidecar)
     end
 end
 
+--- Opens a document's individual settings (font, margin, dictionary, etc.)
+-- @string docfile path to the document (e.g., `/foo/bar.pdf`)
+-- @treturn DocSettings object
 function DocSettings:open(docfile)
     -- TODO(zijiehe): Remove history_path, use only sidecar.
     local new = {}
@@ -122,18 +141,22 @@ function DocSettings:open(docfile)
     return setmetatable(new, {__index = DocSettings})
 end
 
+--- Reads a setting.
 function DocSettings:readSetting(key)
     return self.data[key]
 end
 
+--- Saves a setting.
 function DocSettings:saveSetting(key, value)
     self.data[key] = value
 end
 
+--- Deletes a setting.
 function DocSettings:delSetting(key)
     self.data[key] = nil
 end
 
+--- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush()
     -- write serialized version of the data table into one of
     --  i) sidecar directory in the same directory of the document or
@@ -177,6 +200,7 @@ function DocSettings:close()
     self:flush()
 end
 
+--- Purges (removes) sidecar directory.
 function DocSettings:purge()
     if self.history_file then
         os.remove(self.history_file)
