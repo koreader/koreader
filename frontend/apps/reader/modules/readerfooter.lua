@@ -442,7 +442,9 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("percentage"))
     table.insert(sub_items, getMinibarOption("book_time_to_read"))
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
-    table.insert(sub_items, getMinibarOption("frontlight"))
+    if Device:hasFrontlight() then
+        table.insert(sub_items, getMinibarOption("frontlight"))
+    end
     table.insert(sub_items, getMinibarOption("mem_usage"))
 end
 
