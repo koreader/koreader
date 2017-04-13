@@ -108,7 +108,7 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
-    if Device:isKobo() and Screensaver:isUsingBookCover() then
+    if Device:supportsScreensaver() and Screensaver:isUsingBookCover() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
@@ -118,6 +118,20 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
+                {
+                    text = _("Use last book's cover as screensaver"),
+                    checked_func = Screensaver.isUsingBookCover,
+                    callback = function()
+                        if Screensaver:isUsingBookCover() then
+                            G_reader_settings:saveSetting(
+                                "use_lastfile_as_screensaver", false)
+                        else
+                            G_reader_settings:delSetting(
+                                "use_lastfile_as_screensaver")
+                        end
+                        G_reader_settings:flush()
+                    end
+                },
                 {
                     text = _("Exclude this book's cover from screensaver"),
                     checked_func = excluded,
@@ -141,26 +155,6 @@ function ReaderMenu:setUpdateItemTable()
                                 "proportional_screensaver", not proportional())
                         end
                         self.ui:saveSettings()
-                    end
-                }
-            }
-        }
-        elseif Device:isKindle() and Device:supportsScreensaver() then
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
                     end
                 }
             }
