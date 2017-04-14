@@ -1,15 +1,14 @@
-local DropBoxApi = require("frontend/apps/cloudstorage/dropboxapi")
+local DropBoxApi = require("apps/cloudstorage/dropboxapi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
-local T = require("ffi/util").template
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
+local T = require("ffi/util").template
+local _ = require("gettext")
 
-local DropBox = {
-}
+local DropBox = {}
 
 function DropBox:run(url, password)
     return DropBoxApi:listFolder(url, password)

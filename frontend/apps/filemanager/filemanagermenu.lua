@@ -282,7 +282,7 @@ function FileManagerMenu:setUpdateItemTable()
 
     local order = require("ui/elements/filemanager_menu_order")
 
-    local MenuSorter = require("frontend/ui/menusorter")
+    local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("filemanager", self.menu_items, order)
 end
 
