@@ -97,9 +97,9 @@ function SystemStat:appendProcessInfo()
         if n2 ~= nil then
             n1 = n1 + n2
         end
-        local stat = systemInfo()
-        if stat.total ~= nil then
-            table.insert(self.kv_pairs, {_("  Processor usage %"), string.format("%.2f", n1 / stat.total * 100)})
+        local sys_stat = systemInfo()
+        if sys_stat.total ~= nil then
+            table.insert(self.kv_pairs, {_("  Processor usage %"), string.format("%.2f", n1 / sys_stat.total * 100)})
         end
     end
 
