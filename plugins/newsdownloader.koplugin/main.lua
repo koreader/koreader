@@ -119,10 +119,11 @@ function NewsDownloader:addToMainMenu(menu_items)
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
-    UIManager:show(InfoMessage:new{
-        text = _("Loading data."),
-        timeout = 1,
-    })
+    local info = InfoMessage:new{ text = _("Loading news feed config…") }
+    UIManager:show(info)
+    -- force repaint due to upcoming blocking calls
+    UIManager:forceRePaint()
+    UIManager:close(info)
 
     local feed_config = deserializeXML(FEED_CONFIG_PATH)
     if not feed_config then return end
@@ -135,19 +136,20 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local url = feed[1]
         local limit = feed._attr.limit
         if url and limit then
-            -- TODO: blocking UI loop?
-            UIManager:show(InfoMessage:new{
-                text = T(_("Processing: %1"), url),
-                timeout = 2,
-            })
+            info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
+            UIManager:show(info)
+            -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
+            UIManager:forceRePaint()
             self:processFeedSource(url, tonumber(limit))
+            UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
     end
 
     UIManager:show(InfoMessage:new{
-      text = _("Downloading news finished.")
+        text = _("Downloading news finished."),
+        timeout = 1,
     })
 end
 
