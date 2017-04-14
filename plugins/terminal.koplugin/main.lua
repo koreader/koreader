@@ -13,6 +13,7 @@ local Screen = require("device").screen
 local Terminal = WidgetContainer:new{
     name = "terminal",
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
+    command = "",
 }
 
 function Terminal:init()
@@ -22,6 +23,7 @@ end
 function Terminal:start()
     self.input = InputDialog:new{
         title =  _("Enter a command and press \"Execute\""),
+        input = self.command,
         text_height = Screen:getHeight() * 0.4,
         input_type = "string",
         buttons = {{{
@@ -43,14 +45,14 @@ function Terminal:start()
 end
 
 function Terminal:execute()
-    local command = self.input:getInputText()
+    self.command = self.input:getInputText()
     UIManager:show(InfoMessage:new{
         text = _("Executing…"),
         timeout = 0.1,
     })
     UIManager:forceRePaint()
-    local std_out = io.popen(command)
-    local entries = { command }
+    local std_out = io.popen(self.command)
+    local entries = { self.command }
     if std_out then
         while true do
             local line = std_out:read()
