@@ -27,6 +27,7 @@ local MODE = {
     book_time_to_read = 6,
     chapter_time_to_read = 7,
     frontlight = 8,
+    mem_usage = 9,
 }
 
 local MODE_NB = 0
@@ -87,6 +88,18 @@ local footerTextGeneratorMap = {
         return footer:getDataFromStatistics(
             "TC: ", (left and left or footer.pages - footer.pageno))
     end,
+    mem_usage = function(footer)
+        local statm = io.open("/proc/self/statm", "r")
+        if statm then
+            local infos = statm:read("*all")
+            statm:close()
+            local rss = infos:match("^%S+ (%S+) ")
+            -- we got the nb of 4Kb-pages used, that we convert to Mb
+            rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
+            return ("M:%d"):format(rss)
+        end
+        return ""
+    end,
 }
 
 local ReaderFooter = WidgetContainer:extend{
@@ -122,6 +135,7 @@ function ReaderFooter:init()
         book_time_to_read = true,
         chapter_time_to_read = true,
         frontlight = false,
+        mem_usage = false,
     }
 
     if self.settings.disabled then
@@ -313,6 +327,7 @@ local option_titles = {
     book_time_to_read = _("Book time to read"),
     chapter_time_to_read = _("Chapter time to read"),
     frontlight = _("Frontlight level"),
+    mem_usage = _("KOReader memory usage"),
 }
 
 function ReaderFooter:addToMainMenu(menu_items)
@@ -430,6 +445,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:hasFrontlight() then
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
+    table.insert(sub_items, getMinibarOption("mem_usage"))
 end
 
 -- this method will be updated at runtime based on user setting

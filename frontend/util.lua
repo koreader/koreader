@@ -35,8 +35,8 @@ Source: <a href="http://snippets.luacode.org/snippets/String_splitting_130">http
 ----@string str string to split
 ----@param pattern the pattern to split against
 ----@bool capture
-----@bool captureEmptyEntity
-function util.gsplit(str, pattern, capture, captureEmptyEntity)
+----@bool capture_empty_entity
+function util.gsplit(str, pattern, capture, capture_empty_entity)
     pattern = pattern and tostring(pattern) or '%s+'
     if (''):find(pattern) then
         error('pattern matches empty string!', 2)
@@ -46,7 +46,7 @@ function util.gsplit(str, pattern, capture, captureEmptyEntity)
         repeat
             local first, last = str:find(pattern, index)
             if first and last then
-                if index < first or (index == first and captureEmptyEntity) then
+                if index < first or (index == first and capture_empty_entity) then
                     coroutine.yield(str:sub(index, first - 1))
                 end
                 if capture then
@@ -375,13 +375,13 @@ end
 
 --- Splits input string with the splitter into a table. This function ignores the last empty entity.
 --
---- @string str the string to be splitted
+--- @string str the string to be split
 --- @string splitter
---- @bool captureEmptyEntity
+--- @bool capture_empty_entity
 --- @treturn an array-like table
-function util.splitToArray(str, splitter, captureEmptyEntity)
+function util.splitToArray(str, splitter, capture_empty_entity)
     local result = {}
-    for word in util.gsplit(str, splitter, false, captureEmptyEntity) do
+    for word in util.gsplit(str, splitter, false, capture_empty_entity) do
         table.insert(result, word)
     end
     return result

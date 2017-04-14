@@ -1,4 +1,3 @@
-
 local Device = require("device")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
@@ -26,54 +25,112 @@ function SystemStat:init()
     end
 end
 
+function SystemStat:put(p)
+    table.insert(self.kv_pairs, p)
+end
+
 function SystemStat:appendCounters()
-    table.insert(self.kv_pairs, {_("KOReader Started at"), os.date("%c", self.start_sec)})
+    self:put({_("KOReader Started at"), os.date("%c", self.start_sec)})
     if self.suspend_sec then
-       table.insert(self.kv_pairs, {_("  Last suspend time"), os.date("%c", self.suspend_sec)})
+       self:put({_("  Last suspend time"), os.date("%c", self.suspend_sec)})
     end
     if self.resume_sec then
-        table.insert(self.kv_pairs, {_("  Last resume time"), os.date("%c", self.resume_sec)})
+        self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
     end
-    table.insert(self.kv_pairs, {_("  Up hours"), string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
-    table.insert(self.kv_pairs, {_("Counters"), ""})
-    table.insert(self.kv_pairs, {_("  wake-ups"), self.wakeup_count})
-    table.insert(self.kv_pairs, {_("  sleeps"), self.sleep_count})
-    table.insert(self.kv_pairs, {_("  charge cycles"), self.charge_count})
-    table.insert(self.kv_pairs, {_("  discharge cycles"), self.discharge_count})
+    self:put({_("  Up hours"),
+             string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
+    self:put({_("Counters"), ""})
+    self:put({_("  wake-ups"), self.wakeup_count})
+    self:put({_("  sleeps"), self.sleep_count})
+    self:put({_("  charge cycles"), self.charge_count})
+    self:put({_("  discharge cycles"), self.discharge_count})
 end
 
 local function systemInfo()
-    local stat = io.open("/proc/stat", "r")
-    if stat == nil then return {} end
-    for line in util.gsplit(stat:read("*all"), "\n", false) do
-        local t = util.splitToArray(line, " ")
-        if #t >= 5 and string.lower(t[1]) == "cpu" then
-            local result = {}
-            local n1, n2, n3, n4
-            n1 = tonumber(t[2])
-            n2 = tonumber(t[3])
-            n3 = tonumber(t[4])
-            n4 = tonumber(t[5])
-            if n1 ~= nil and n2 ~= nil and n3 ~= nil and n4 ~= nil then
-              result.user = n1
-              result.nice = n2
-              result.system = n3
-              result.idle = n4
-              result.total = n1 + n2 + n3 + n4
-              return result
+    local result = {}
+    do
+        local stat = io.open("/proc/stat", "r")
+        if stat ~= nil then
+            for line in util.gsplit(stat:read("*all"), "\n", false) do
+                local t = util.splitToArray(line, " ")
+                if #t >= 5 and string.lower(t[1]) == "cpu" then
+                    local n1, n2, n3, n4
+                    n1 = tonumber(t[2])
+                    n2 = tonumber(t[3])
+                    n3 = tonumber(t[4])
+                    n4 = tonumber(t[5])
+                    if n1 ~= nil and n2 ~= nil and n3 ~= nil and n4 ~= nil then
+                      result.cpu = {
+                        user = n1,
+                        nice = n2,
+                        system = n3,
+                        idle = n4,
+                        total = n1 + n2 + n3 + n4
+                      }
+                      break
+                    end
+                end
             end
+            stat:close()
         end
     end
-    return {}
+
+    do
+        local meminfo = io.open("/proc/meminfo", "r")
+        if meminfo ~= nil then
+            result.memory = {}
+            for line in util.gsplit(meminfo:read("*all"), "\n", false) do
+                local t = util.splitToArray(line, " ")
+                if #t >= 2 then
+                    if string.lower(t[1]) == "memtotal:" then
+                        local n = tonumber(t[2])
+                        if n ~= nil then
+                            result.memory.total = n
+                        end
+                    elseif string.lower(t[1]) == "memfree:" then
+                        local n = tonumber(t[2])
+                        if n ~= nil then
+                            result.memory.free = n
+                        end
+                    elseif string.lower(t[1]) == "memavailable:" then
+                        local n = tonumber(t[2])
+                        if n ~= nil then
+                            result.memory.available = n
+                        end
+                    end
+                end
+            end
+            meminfo:close()
+        end
+    end
+    return result
 end
 
 function SystemStat:appendSystemInfo()
     local stat = systemInfo()
-    if next(stat) == nil then return end
-    table.insert(self.kv_pairs, {_("System information"), ""})
-    table.insert(self.kv_pairs, {_("  Total ticks (million)"), string.format("%.2f", stat.total / 1000000)})
-    table.insert(self.kv_pairs, {_("  Idle ticks (million)"), string.format("%.2f", stat.idle / 1000000)})
-    table.insert(self.kv_pairs, {_("  Processor usage %"), string.format("%.2f", (1 - stat.idle / stat.total) * 100)})
+    if stat.cpu ~= nil then
+        self:put({_("System information"), ""})
+        self:put({_("  Total ticks (million)"),
+                 string.format("%.2f", stat.cpu.total / 1000000)})
+        self:put({_("  Idle ticks (million)"),
+                 string.format("%.2f", stat.cpu.idle / 1000000)})
+        self:put({_("  Processor usage %"),
+                 string.format("%.2f", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
+    end
+    if stat.memory ~= nil then
+        if stat.memory.total ~= nil then
+            self:put({_("  Total memory (MB)"),
+                     string.format("%.2f", stat.memory.total / 1024)})
+        end
+        if stat.memory.free ~= nil then
+            self:put({_("  Free memory (MB)"),
+                     string.format("%.2f", stat.memory.free / 1024)})
+        end
+        if stat.memory.available ~= nil then
+            self:put({_("  Available memory (MB)"),
+                     string.format("%.2f", stat.memory.available / 1024)})
+        end
+    end
 end
 
 function SystemStat:appendProcessInfo()
@@ -86,9 +143,9 @@ function SystemStat:appendProcessInfo()
     local n1, n2
 
     if #t == 0 then return end
-    table.insert(self.kv_pairs, {_("Process"), ""})
+    self:put({_("Process"), ""})
 
-    table.insert(self.kv_pairs, {_("  ID"), t[1]})
+    self:put({_("  ID"), t[1]})
 
     if #t < 14 then return end
     n1 = tonumber(t[14])
@@ -98,52 +155,52 @@ function SystemStat:appendProcessInfo()
             n1 = n1 + n2
         end
         local sys_stat = systemInfo()
-        if sys_stat.total ~= nil then
-            table.insert(self.kv_pairs, {_("  Processor usage %"), string.format("%.2f", n1 / sys_stat.total * 100)})
+        if sys_stat.cpu ~= nil and sys_stat.cpu.total ~= nil then
+            self:put({_("  Processor usage %"),
+                     string.format("%.2f", n1 / sys_stat.cpu.total * 100)})
+        else
+            self:put({_("  Processor usage ticks (million)"), n1 / 1000000})
         end
     end
 
     if #t < 20 then return end
     n1 = tonumber(t[20])
     if n1 ~= nil then
-        table.insert(self.kv_pairs, {_("  Threads"), tostring(n1)})
+        self:put({_("  Threads"), tostring(n1)})
     end
 
     if #t < 23 then return end
     n1 = tonumber(t[23])
     if n1 ~= nil then
-        table.insert(self.kv_pairs, {_("  Virtual memory (MB)"), string.format("%.2f", n1 / 1024 / 1024)})
+        self:put({_("  Virtual memory (MB)"), string.format("%.2f", n1 / 1024 / 1024)})
     end
 
     if #t < 24 then return end
     n1 = tonumber(t[24])
     if n1 ~= nil then
-        table.insert(self.kv_pairs, {_("  RAM usage (MB)"), string.format("%.2f", n1 / 256)})
+        self:put({_("  RAM usage (MB)"), string.format("%.2f", n1 / 256)})
     end
 end
 
 function SystemStat:appendStorageInfo()
     if self.storage_filter == nil then return end
 
-    table.insert(self.kv_pairs, {_("Storage information"), ""})
     local std_out = io.popen(
         "df -h | sed -r 's/ +/ /g' | grep " .. self.storage_filter ..
         " | sed 's/ /\\t/g' | cut -f 2,4,5,6"
     )
-    if not std_out then
-        table.insert(self.kv_pairs, {_("  Failed"), _("Nothing retrieved")})
-        return
-    end
+    if not std_out then return end
 
+    self:put({_("Storage information"), ""})
     for line in util.gsplit(std_out:read("*all"), "\n", false) do
         local t = util.splitToArray(line, "\t")
         if #t ~= 4 then
-            table.insert(self.kv_pairs, {_("  Unexpected"), line})
+            self:put({_("  Unexpected"), line})
         else
-            table.insert(self.kv_pairs, {_("  Mount point: ") .. t[4], ""})
-            table.insert(self.kv_pairs, {_("    Available"), t[2]})
-            table.insert(self.kv_pairs, {_("    Total"), t[1]})
-            table.insert(self.kv_pairs, {_("    Used percentage"), t[3]})
+            self:put({_("  Mount point"), t[4]})
+            self:put({_("    Available"), t[2]})
+            self:put({_("    Total"), t[1]})
+            self:put({_("    Used percentage"), t[3]})
         end
     end
     std_out:close()
