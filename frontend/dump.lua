@@ -1,5 +1,5 @@
---[[
-simple serialization function, won't do uservalues, functions, loops
+--[[--
+A simple serialization function which won't do uservalues, functions, or loops.
 ]]
 
 local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
@@ -66,10 +66,12 @@ local function _serialize(what, outt, indent, max_lv, history)
     end
 end
 
---[[
-Serializes whatever is in "data" to a string that is parseable by Lua
+--[[--Serializes whatever is in `data` to a string that is parseable by Lua.
 
-You can optionally specify a maximum recursion depth in "max_lv"
+You can optionally specify a maximum recursion depth in `max_lv`.
+@function dump
+@param data the object you want serialized (table, string, number, boolean, nil)
+@param max_lv optional maximum recursion depth
 --]]
 local function dump(data, max_lv)
     local out = {}
