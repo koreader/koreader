@@ -12,6 +12,8 @@ function Version:getCurrentRevision()
         if rev_file then
             self.rev = rev_file:read()
             rev_file:close()
+        else
+            self.rev = nil
         end
     end
     return self.rev
@@ -25,7 +27,7 @@ function Version:getNormalizedVersion(rev)
     if not rev then return end
     local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
     local commit = rev:match("-%d*-g(.*)")
-    return (year * 100 + month) * 1000 + (revision or 0), commit
+    return ((year or 0) * 100 + (month or 0)) * 1000 + (revision or 0), commit
 end
 
 --- Returns current version of KOReader.
