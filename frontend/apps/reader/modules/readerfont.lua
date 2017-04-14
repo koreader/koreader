@@ -1,12 +1,14 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local Notification = require("ui/widget/notification")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-local Menu = require("ui/widget/menu")
 local Device = require("device")
-local Screen = require("device").screen
-local Input = require("device").input
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local Input = require("device").input
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Menu = require("ui/widget/menu")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
+local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -42,6 +44,17 @@ function ReaderFont:init()
                 { "Alt", Input.group.PgBack },
                 doc = "decrease line space",
                 event = "ChangeLineSpace", args = "decrease" },
+        }
+    end
+    if Device:isTouchDevice() then
+        local range = Geom:new{
+            x = 0, y = 0,
+            w = Screen:getWidth(),
+            h = Screen:getHeight(),
+        }
+        self.ges_events = {
+            Spread = { GestureRange:new{ ges = "spread", range = range } },
+            Pinch = { GestureRange:new{ ges = "pinch", range = range } },
         }
     end
     -- build face_table for menu
@@ -229,6 +242,16 @@ function ReaderFont:addToMainMenu(menu_items)
         text = self.font_menu_title,
         sub_item_table = self.face_table,
     }
+end
+
+function ReaderFont:onPinch()
+    self:onChangeSize("decrease")
+    return true
+end
+
+function ReaderFont:onSpread()
+    self:onChangeSize("increase")
+    return true
 end
 
 return ReaderFont
