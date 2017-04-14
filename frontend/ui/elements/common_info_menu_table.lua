@@ -11,7 +11,7 @@ if Device:isKindle() or Device:isKobo() or Device:isPocketBook()
     local OTAManager = require("ui/otamanager")
     common_info.ota_update = OTAManager:getOTAMenuTable()
 end
-local version = io.open("git-rev", "r"):read()
+local version = require("version"):getCurrentRevision()
 common_info.version = {
     text = _("Version"),
     callback = function()

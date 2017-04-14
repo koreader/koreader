@@ -157,31 +157,4 @@ function LuaSettings:purge()
     end
 end
 
---- Returns normalized version of KOReader git-rev input string.
--- @string rev full KOReader git-rev such `v2015.11-982-g704d4238`
--- @treturn int revision in the form of a number such as `201511982`
--- @treturn string short git commit version hash such as `704d4238`
-function LuaSettings:normalized_version(rev)
-    local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-    local commit = rev:match("-%d*-g(.*)")
-    return tonumber(year .. month .. string.format("%.4d", revision or "0")), commit
-end
-
---- Returns current version of KOReader.
--- @treturn int revision in the form of a number such as `201511982`
--- @treturn string short git commit version hash such as `704d4238`
--- @treturn string full KOReader git-rev such `v2015.11-982-g704d4238`
--- @see normalized_version
-function LuaSettings:current_version()
-    if not self.version or not self.commit then
-        local rev_file = io.open("git-rev", "r")
-        if rev_file then
-            self.rev = rev_file:read()
-            rev_file:close()
-            self.version, self.commit = self:normalized_version(self.rev)
-        end
-    end
-    return self.version, self.commit, self.rev
-end
-
 return LuaSettings
