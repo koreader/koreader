@@ -12,7 +12,9 @@ function Version:getCurrentRevision()
         if rev_file then
             self.rev = rev_file:read()
             rev_file:close()
-        else
+        end
+        -- sanity check in case `git describe` failed
+        if self.rev == "fatal: No names found, cannot describe anything." then
             self.rev = nil
         end
     end

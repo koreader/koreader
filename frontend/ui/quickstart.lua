@@ -68,7 +68,7 @@ used to generate the file.
 ]]
 function QuickStart:getQuickStart()
     local quickstart_dir = string.format("%s%s", DataStorage:getDataDir(), "/help")
-    local quickstart_filename = string.format("%s%s%s%s%s%s", quickstart_dir, "/quickstart-", language, "-", rev, ".html")
+    local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_dir, "mode") ~= "dir" then
         lfs.mkdir(quickstart_dir)
     end
