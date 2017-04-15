@@ -1,9 +1,7 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
-local Input = require("device").input
+local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
@@ -46,17 +44,6 @@ function ReaderFont:init()
                 event = "ChangeLineSpace", args = "decrease" },
         }
     end
-    if Device:isTouchDevice() then
-        local range = Geom:new{
-            x = 0, y = 0,
-            w = Screen:getWidth(),
-            h = Screen:getHeight(),
-        }
-        self.ges_events = {
-            Spread = { GestureRange:new{ ges = "spread", range = range } },
-            Pinch = { GestureRange:new{ ges = "pinch", range = range } },
-        }
-    end
     -- build face_table for menu
     self.face_table = {}
     local face_list = cre.getFontFaces()
@@ -76,6 +63,33 @@ function ReaderFont:init()
         face_list[k] = {text = v}
     end
     self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderFont:onReaderReady()
+    self:setupTapTouchZones()
+end
+
+function ReaderFont:setupTapTouchZones()
+    if Device:isTouchDevice() then
+        self.ui:registerTouchZones({
+            {
+                id = "id_spread",
+                ges = "spread",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function() return self:onSpread() end
+            },
+            {
+                id = "id_pinch",
+                ges = "pinch",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function() return self:onPinch() end
+            },
+        })
+    end
 end
 
 function ReaderFont:onSetDimensions(dimen)
@@ -245,12 +259,24 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:onPinch()
-    self:onChangeSize("decrease")
+    local info = Notification:new{text = _("Changing font size")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:nextTick(function()
+        self:onChangeSize("decrease")
+        UIManager:close(info)
+    end)
     return true
 end
 
 function ReaderFont:onSpread()
-    self:onChangeSize("increase")
+    local info = Notification:new{text = _("Changing font size")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:nextTick(function()
+        self:onChangeSize("increase")
+        UIManager:close(info)
+    end)
     return true
 end
 
