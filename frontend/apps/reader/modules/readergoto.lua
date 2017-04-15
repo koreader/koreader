@@ -2,8 +2,8 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
+local SkimToWidget = require("apps/reader/skimtowidget")
 local _ = require("gettext")
-local SkimToWidget = require("frontend/apps/reader/skimtowidget")
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),

@@ -11,7 +11,7 @@ if Device:isKindle() or Device:isKobo() or Device:isPocketBook()
     local OTAManager = require("ui/otamanager")
     common_info.ota_update = OTAManager:getOTAMenuTable()
 end
-local version = io.open("git-rev", "r"):read()
+local version = require("version"):getCurrentRevision()
 common_info.version = {
     text = _("Version"),
     callback = function()
@@ -22,6 +22,14 @@ common_info.version = {
 }
 common_info.help = {
     text = _("Help"),
+}
+common_info.quickstart_guide = {
+    text = _("Quickstart guide"),
+    callback = function()
+        local QuickStart = require("frontend/ui/quickstart")
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(QuickStart:getQuickStart())
+    end
 }
 common_info.about = {
     text = _("About"),

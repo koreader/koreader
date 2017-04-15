@@ -1,15 +1,15 @@
--- A set of functions to extend math.random and math.randomseed.
+--- A set of functions to extend math.random and math.randomseed.
 
 local random = {}
 
--- Use current time as seed to randomlize.
+--- Uses current time as seed to randomize.
 function random.seed()
     math.randomseed(os.time())
 end
 
 random.seed()
 
--- Return a UUID (v4, random).
+--- Returns a UUID (v4, random).
 function random.uuid(with_dash)
     local array = {}
     for i = 1, 16 do
