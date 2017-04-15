@@ -236,10 +236,6 @@ function ReaderFooter:setupTouchZones()
             handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
                 'tap_forward', 'tap_backward',
-                -- NOTE: readermenu_tap override is needed to keep behavior
-                -- consistent with the old code base in case of overlap between
-                -- footer and menu tap zones
-                'readermenu_tap',
             },
         },
         {

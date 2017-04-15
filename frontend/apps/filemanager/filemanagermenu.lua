@@ -3,8 +3,6 @@ local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Screensaver = require("ui/screensaver")
@@ -50,19 +48,20 @@ function FileManagerMenu:init()
 end
 
 function FileManagerMenu:initGesListener()
-    self.ges_events = {
-        TapShowMenu = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0,
-                    y = 0,
-                    w = Screen:getWidth()*3/4,
-                    h = Screen:getHeight()/4,
-                }
-            }
+    if not Device:isTouchDevice() then return end
+
+    self:registerTouchZones({
+        {
+            id = "filemanager_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            overrides = { "rolling_swipe", "paging_swipe", },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
-    }
+    })
 end
 
 function FileManagerMenu:setUpdateItemTable()
@@ -335,9 +334,11 @@ function FileManagerMenu:onCloseFileManagerMenu()
     return true
 end
 
-function FileManagerMenu:onTapShowMenu()
-    self:onShowMenu()
-    return true
+function FileManagerMenu:onSwipeShowMenu(ges)
+    if ges.direction == "south" then
+        self:onShowMenu()
+        return true
+    end
 end
 
 function FileManagerMenu:onSetDimensions(dimen)
