@@ -66,10 +66,10 @@ function ReaderFont:init()
 end
 
 function ReaderFont:onReaderReady()
-    self:setupTapTouchZones()
+    self:setupTouchZones()
 end
 
-function ReaderFont:setupTapTouchZones()
+function ReaderFont:setupTouchZones()
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
             {
