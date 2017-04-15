@@ -67,7 +67,7 @@ used to generate the file.
 @treturn string path to generated HTML quickstart guide
 ]]
 function QuickStart:getQuickStart()
-    local quickstart_dir = string.format("%s%s", DataStorage:getDataDir(), "/help")
+    local quickstart_dir = ("%s/help"):format(DataStorage:getDataDir())
     local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_dir, "mode") ~= "dir" then
         lfs.mkdir(quickstart_dir)
