@@ -8,7 +8,7 @@ will call a method "onEventName" for an event with name
 ]]
 
 local EventListener = {}
-local DEBUG = require("dbg")
+local logger = require("logger")
 
 function EventListener:new(new_o)
     local o = new_o or {}
@@ -30,7 +30,7 @@ By default, it's `"on"..Event.name`.
 function EventListener:handleEvent(event)
     if self[event.handler] then
         if self.id or self.name then
-            DEBUG:v(self.id or self.name, "handling event", event)
+            logger.dbg(self.id or self.name, "handling event", event)
         end
         return self[event.handler](self, unpack(event.args))
     end

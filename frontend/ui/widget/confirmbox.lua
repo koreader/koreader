@@ -45,6 +45,7 @@ local ConfirmBox = InputContainer:new{
     cancel_text = _("Cancel"),
     ok_callback = function() end,
     cancel_callback = function() end,
+    other_buttons = nil,
     margin = 5,
     padding = 5,
 }
@@ -79,28 +80,42 @@ function ConfirmBox:init()
             width = Screen:getWidth()*2/3,
         }
     }
+
+    local buttons = {{
+        text = self.cancel_text,
+        callback = function()
+            self.cancel_callback()
+            UIManager:close(self)
+        end,
+    }, {
+        text = self.ok_text,
+        callback = function()
+            self.ok_callback()
+            UIManager:close(self)
+        end,
+    },}
+
+    if self.other_buttons ~= nil then
+        for __, button in ipairs(self.other_buttons) do
+            assert(type(button.text) == "string")
+            assert(button.callback == nil or type(button.callback) == "function")
+            table.insert(buttons, {
+                text = button.text,
+                callback = function()
+                    if button.callback ~= nil then
+                        button.callback()
+                    end
+                    UIManager:close(self)
+                end,
+            })
+        end
+    end
+
     local button_table = ButtonTable:new{
         width = content:getSize().w,
         button_font_face = "cfont",
         button_font_size = 20,
-        buttons = {
-            {
-                {
-                    text = self.cancel_text,
-                    callback = function()
-                        self.cancel_callback()
-                        UIManager:close(self)
-                    end,
-                },
-                {
-                    text = self.ok_text,
-                    callback = function()
-                        self.ok_callback()
-                        UIManager:close(self)
-                    end,
-                },
-            },
-        },
+        buttons = { buttons },
         zero_sep = true,
         show_parent = self,
     }

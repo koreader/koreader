@@ -41,7 +41,7 @@ function UIManager:init()
             self:sendEvent(input_event)
         end,
         SaveState = function()
-            self:broadcastEvent(Event:new("FlushSettings"))
+            self:flushSettings()
         end,
         Power = function(input_event)
             Device:onPowerEvent(input_event)
@@ -63,6 +63,7 @@ function UIManager:init()
         -- resume.
         self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
             if self._stopAutoSuspend then
                 -- TODO(Hzj-jie): Why _stopAutoSuspend could be nil in test cases.
                 --[[
@@ -77,13 +78,12 @@ function UIManager:init()
                 --]]
                 self:_stopAutoSuspend()
             end
-            self:broadcastEvent(Event:new("Suspend"))
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
-            self:broadcastEvent(Event:new("Resume"))
             self:_startAutoSuspend()
+            self:_afterResume()
         end
         self.event_handlers["PowerPress"] = function()
             UIManager:scheduleIn(2, self.poweroff_action)
@@ -91,24 +91,24 @@ function UIManager:init()
         self.event_handlers["PowerRelease"] = function()
             if not self._entered_poweroff_stage then
                 UIManager:unschedule(self.poweroff_action)
-                self.event_handlers["Suspend"]()
+                self:suspend()
             end
         end
         if not G_reader_settings:readSetting("ignore_power_sleepcover") then
             self.event_handlers["SleepCoverClosed"] = function()
                 Device.is_cover_closed = true
-                self.event_handlers["Suspend"]()
+                self:suspend()
             end
             self.event_handlers["SleepCoverOpened"] = function()
                 Device.is_cover_closed = false
-                self.event_handlers["Resume"]()
+                self:resume()
             end
         else
             -- Closing/opening the cover will still wake up the device, so we
             -- need to put it back to sleep if we are in screen saver mode
             self.event_handlers["SleepCoverClosed"] = function()
                 if Device.screen_saver_mode then
-                    self.event_handlers["Suspend"]()
+                    self:suspend()
                 end
             end
             self.event_handlers["SleepCoverOpened"] = self.event_handlers["SleepCoverClosed"]
@@ -117,15 +117,16 @@ function UIManager:init()
             Device:getPowerDevice():toggleFrontlight()
         end
         self.event_handlers["Charging"] = function()
-            self:broadcastEvent(Event:new("Charging"))
+            self:_beforeCharging()
             if Device.screen_saver_mode then
-                self.event_handlers["Suspend"]()
+                self:suspend()
             end
         end
         self.event_handlers["NotCharging"] = function()
-            self:broadcastEvent(Event:new("NotCharging"))
+            -- We need to put the device into suspension, other things need to be done before it.
+            self:_afterNotCharging()
             if Device.screen_saver_mode then
-                self.event_handlers["Suspend"]()
+                self:suspend()
             end
         end
         self.event_handlers["__default__"] = function(input_event)
@@ -133,27 +134,27 @@ function UIManager:init()
                 -- Suspension in Kobo can be interrupted by screen updates. We
                 -- ignore user touch input here so screen udpate won't be
                 -- triggered in suspend mode
-                self.event_handlers["Suspend"]()
+                self:suspend()
             else
                 self:sendEvent(input_event)
             end
         end
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"] = function()
-            self:broadcastEvent(Event:new("Suspend"))
+            self:_beforeSuspend()
             Device:intoScreenSaver()
         end
         self.event_handlers["OutOfSS"] = function()
             Device:outofScreenSaver()
-            self:broadcastEvent(Event:new("Resume"))
+            self:_afterResume();
         end
         self.event_handlers["Charging"] = function()
-            self:broadcastEvent(Event:new("Charging"))
+            self:_beforeCharging()
             Device:usbPlugIn()
         end
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
-            self:broadcastEvent(Event:new("NotCharging"))
+            self:_afterNotCharging()
         end
     end
 end
@@ -218,6 +219,8 @@ function UIManager:close(widget, refreshtype, refreshregion)
     local dirty = false
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
+    -- Ensure all the widgets can get onFlushSettings event.
+    widget:handleEvent(Event:new("FlushSettings"))
     -- make it disabled by default and check any widget that enables it
     Input.disable_double_tap = true
     -- then remove all reference to that widget on stack and update
@@ -402,6 +405,7 @@ end
 
 --- Signals to quit.
 function UIManager:quit()
+    if not self._running then return end
     logger.info("quitting uimanager")
     self._task_queue_dirty = false
     self._running = false
@@ -782,7 +786,7 @@ function UIManager:_initAutoSuspend()
             local now = os.time()
             -- Do not repeat auto suspend procedure after suspend.
             if self.last_action_sec + self.auto_suspend_sec <= now then
-                self.event_handlers["Suspend"]()
+                self:suspend()
             else
                 self:scheduleIn(
                     self.last_action_sec + self.auto_suspend_sec - now,
@@ -812,6 +816,54 @@ function UIManager:_initAutoSuspend()
         self._startAutoSuspend = noop
         self._stopAutoSuspend = noop
     end
+end
+
+-- The common operations should be performed before suspending the device. Ditto.
+function UIManager:_beforeSuspend()
+    self:flushSettings()
+    self:broadcastEvent(Event:new("Suspend"))
+end
+
+-- The common operations should be performed after resuming the device. Ditto.
+function UIManager:_afterResume()
+    self:broadcastEvent(Event:new("Resume"))
+end
+
+function UIManager:_beforeCharging()
+    self:broadcastEvent(Event:new("Charging"))
+end
+
+function UIManager:_afterNotCharging()
+    self:broadcastEvent(Event:new("NotCharging"))
+end
+
+-- Executes all the operations of a suspending request. This function usually puts the device into
+-- suspension.
+function UIManager:suspend()
+    if Device:isKobo() then
+        self.event_handlers["Suspend"]()
+    elseif Device:isKindle() then
+        self.event_handlers["IntoSS"]()
+    end
+end
+
+-- Executes all the operations of a resume request. This function usually wakes up the device.
+function UIManager:resume()
+    if Device:isKobo() then
+        self.event_handlers["Resume"]()
+    elseif Device:isKindle() then
+        self.event_handlers["OutOfSS"]()
+    end
+end
+
+function UIManager:flushSettings()
+    self:broadcastEvent(Event:new("FlushSettings"))
+end
+
+function UIManager:restartKOReader()
+    self:quit()
+    -- This is just a magic number to indicate the restart request for shell scripts.
+    KOREADER_EXIT_CODE = 85
 end
 
 UIManager._resetAutoSuspendTimer = noop

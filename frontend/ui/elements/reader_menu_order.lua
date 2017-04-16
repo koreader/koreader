@@ -79,6 +79,7 @@ local order = {
         "help",
         "system_statistics",
         "----------------------------",
+        "restartKOReader",
         "exit",
     },
     help = {

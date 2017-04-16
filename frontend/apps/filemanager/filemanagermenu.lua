@@ -264,18 +264,13 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            if SetDefaults.settings_changed then
-                SetDefaults.settings_changed = false
-                UIManager:show(ConfirmBox:new{
-                    text = _("You have unsaved default settings. Save them now?"),
-                    ok_callback = function()
-                        SetDefaults:saveSettings()
-                    end,
-                })
-            else
-                UIManager:close(self.menu_container)
-                self.ui:onClose()
-            end
+            self:exitOrRestart()
+        end,
+    }
+    self.menu_items.restartKOReader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
 
@@ -283,6 +278,33 @@ function FileManagerMenu:setUpdateItemTable()
 
     local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("filemanager", self.menu_items, order)
+end
+
+function FileManagerMenu:exitOrRestart(callback)
+    if SetDefaults.settings_changed then
+        SetDefaults.settings_changed = false
+        UIManager:show(ConfirmBox:new{
+            text = _("You have unsaved default settings. Save them now?"),
+            ok_text = _("Yes"),
+            ok_callback = function()
+                SetDefaults:saveSettings()
+                self:exitOrRestart(callback)
+            end,
+            cancel_text = _("No"),
+            cancel_callback = function()
+                self:exitOrRestart(callback)
+            end,
+            other_buttons = {{
+              text = _("Cancel"),
+            }}
+        })
+    else
+        UIManager:close(self.menu_container)
+        self.ui:onClose()
+        if callback then
+            callback()
+        end
+    end
 end
 
 function FileManagerMenu:onShowMenu()

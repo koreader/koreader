@@ -323,13 +323,12 @@ function FileManager:init()
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
 
-    self.loaded_modules = {}
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
         logger.info("FM loaded plugin", plugin_module.name, "at", plugin_module.path)
         if not plugin_module.is_doc_only then
             -- Keep references to the modules which do not register into menu.
-            table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
+            table.insert(self, plugin_module:new{ ui = self, })
         end
     end
 

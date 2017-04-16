@@ -11,6 +11,7 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n\n")
 io.stdout:flush()
 
+KOREADER_EXIT_CODE = nil
 
 -- load default settings
 require("defaults")
@@ -213,7 +214,12 @@ local function exitReader()
     Device:exit()
 
     if Profiler then Profiler.stop() end
-    os.exit(0)
+
+    if type(KOREADER_EXIT_CODE) == "number" then
+        os.exit(KOREADER_EXIT_CODE)
+    else
+        os.exit(0)
+    end
 end
 
 exitReader()
