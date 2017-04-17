@@ -1,4 +1,3 @@
-local Event = require("ui/event")
 local logger = require("logger")
 local _ = require("gettext")
 
