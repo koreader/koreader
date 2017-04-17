@@ -71,7 +71,7 @@ describe("Readerpaging module", function()
             UIManager:quit()
         end)
 
-        it("should scroll withtout crash backward on the first page", function()
+        it("should scroll without crash backward on the first page", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_djvu),
@@ -79,7 +79,7 @@ describe("Readerpaging module", function()
             tmp_readerui.paging:onScrollPanRel(-100)
         end)
 
-        it("should scroll withtout crash forward on the last page", function()
+        it("should scroll without crash forward on the last page", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_djvu),
