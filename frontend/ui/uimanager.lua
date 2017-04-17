@@ -218,10 +218,10 @@ function UIManager:close(widget, refreshtype, refreshregion)
     end
     logger.dbg("close widget", widget.id or widget.name)
     local dirty = false
-    -- first send close event to widget
-    widget:handleEvent(Event:new("CloseWidget"))
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
+    -- first send close event to widget
+    widget:handleEvent(Event:new("CloseWidget"))
     -- make it disabled by default and check any widget that enables it
     Input.disable_double_tap = true
     -- then remove all reference to that widget on stack and update
