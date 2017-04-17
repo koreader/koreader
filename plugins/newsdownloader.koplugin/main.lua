@@ -15,7 +15,7 @@ local ltn12 = require("ltn12")
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false  -- for only once lazy initialization
-local FEED_CONFIG_FILE = "feeds.xml"
+local FEED_CONFIG_FILE = "feed_config.lua"
 local FILE_EXTENSION = ".html"
 local NEWS_DL_DIR_NAME = "news"
 local NEWS_DL_DIR, FEED_CONFIG_PATH
@@ -30,7 +30,10 @@ local function deserializeXMLString(xml_str)
     --Instantiate the object the states the XML file as a Lua table
     local xmlhandler = treehdl.simpleTreeHandler()
     --Instantiate the object that parses the XML to a Lua table
-    libxml.xmlParser(xmlhandler):parse(xml_str)
+    local ok = pcall(function()
+        libxml.xmlParser(xmlhandler):parse(xml_str)
+    end)
+    if not ok then return end
     return xmlhandler.root
 end
 
@@ -52,17 +55,12 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        NEWS_DL_DIR = string.format("%s/%s/", DataStorage:getDataDir(), NEWS_DL_DIR_NAME)
+        NEWS_DL_DIR = ("%s/%s/"):format(DataStorage:getDataDir(), NEWS_DL_DIR_NAME)
         if not lfs.attributes(NEWS_DL_DIR, "mode") then
             lfs.mkdir(NEWS_DL_DIR)
         end
 
         FEED_CONFIG_PATH = NEWS_DL_DIR .. FEED_CONFIG_FILE
-        if not lfs.attributes(FEED_CONFIG_PATH, "mode") then
-            logger.dbg("NewsDownloader: Creating init configuration")
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, FEED_CONFIG_FILE),
-                             FEED_CONFIG_PATH)
-        end
         initialized = true
     end
 
@@ -125,16 +123,25 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     UIManager:forceRePaint()
     UIManager:close(info)
 
-    local feed_config = deserializeXML(FEED_CONFIG_PATH)
-    if not feed_config then return end
-    if not feed_config.feeds then
-        logger.warn('NewsDownloader: missing feeds from feed config', FEED_CONFIG_PATH)
+    if not lfs.attributes(FEED_CONFIG_PATH, "mode") then
+        logger.dbg("NewsDownloader: Creating initial feed config.")
+        FFIUtil.copyFile(FFIUtil.joinPath(self.path, FEED_CONFIG_FILE),
+                         FEED_CONFIG_PATH)
+    end
+    local ok, feed_config = pcall(dofile, FEED_CONFIG_PATH)
+    if not ok or not feed_config then
+        logger.info("NewsDownloader: Feed config not found.")
         return
     end
 
-    for index, feed in pairs(feed_config.feeds.feed) do
+    if #feed_config <= 0 then
+        logger.info('NewsDownloader: empty feed list.', FEED_CONFIG_PATH)
+        return
+    end
+
+    for idx, feed in ipairs(feed_config) do
         local url = feed[1]
-        local limit = feed._attr.limit
+        local limit = feed.limit
         if url and limit then
             info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
             UIManager:show(info)
@@ -164,9 +171,8 @@ function NewsDownloader:processFeedSource(url, limit)
         return
     end
 
-    local feed_output_dir = string.format("%s%s/",
-                                          NEWS_DL_DIR,
-                                          util.replaceInvalidChars(feeds.rss.channel.title))
+    local feed_output_dir = ("%s%s/"):format(
+        NEWS_DL_DIR, util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
@@ -175,10 +181,9 @@ function NewsDownloader:processFeedSource(url, limit)
         if index -1 == limit then
             break
         end
-        local news_dl_path = string.format("%s%s%s",
-                                           feed_output_dir,
-                                           util.replaceInvalidChars(feed.title),
-                                           FILE_EXTENSION)
+        local news_dl_path = ("%s%s%s"):format(feed_output_dir,
+                                               util.replaceInvalidChars(feed.title),
+                                               FILE_EXTENSION)
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
         http.request({ url = url, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
     end

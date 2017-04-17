@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<feeds>
-	<!-- List your feeds here: -->
-	<feed limit="2">http://www.pcworld.com/index.rss</feed>
-	<feed limit="3">http://rss.cnn.com/rss/edition_world.rss</feed>
-	<!-- set limit to "0" means no download, "-1" no limit. --> 
-	<feed limit="0">http://feeds.reuters.com/reuters/UKSportsNews?format=xml</feed>
-</feeds>
