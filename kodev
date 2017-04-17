@@ -329,12 +329,11 @@ OPTIONS:
             [[ $args != /* ]] && args="${CURDIR}/${args}"
         fi
 
-        RESULT=85
-        while [ $RESULT -eq 85 ]
-        do
+        RETURN_VALUE=85
+        while [ $RETURN_VALUE -eq 85 ]; do
             EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
                 ./reader.lua -d "$args"
-            RESULT=$?
+            RETURN_VALUE=$?
         done
     } || exit
     popd
