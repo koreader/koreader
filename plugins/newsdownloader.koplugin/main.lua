@@ -37,18 +37,6 @@ local function deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-local function deserializeXML(filename)
-    logger.dbg("NewsDownloader: File to deserialize: ", filename)
-    local f, e = io.open(filename, "r")
-    if f then
-        local xmltext = f:read("*a")
-        f:close()
-        return deserializeXMLString(xmltext)
-    else
-        logger.warn("NewsDownloader: XML file not found", filename, e)
-    end
-end
-
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
