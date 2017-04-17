@@ -6,6 +6,7 @@ local PowerD = require("device"):getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
+local dbg = require("dbg")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
@@ -240,7 +241,7 @@ function BatteryStat:resetAll()
 end
 
 function BatteryStat:restart()
-    assert(self.kv_page ~= nil)
+    dbg.dassert(self.kv_page ~= nil)
     UIManager:close(self.kv_page)
     self:showStatistics()
 end

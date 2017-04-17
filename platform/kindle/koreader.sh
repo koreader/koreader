@@ -256,8 +256,7 @@ if [ -e crash.log ]; then
 fi
 
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]
-do
+while [ $RETURN_VALUE -eq 85 ]; do
     ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
@@ -350,3 +349,5 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     logmsg "Restoring system passcode . . ."
     touch "/var/local/system/userpasswdenabled"
 fi
+
+exit $RETURN_VALUE

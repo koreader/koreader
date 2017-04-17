@@ -11,8 +11,6 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n\n")
 io.stdout:flush()
 
-KOREADER_EXIT_CODE = nil
-
 -- load default settings
 require("defaults")
 local DataStorage = require("datastorage")
@@ -166,6 +164,8 @@ if Device:needsTouchScreenProbe() then
     Device:touchScreenProbe()
 end
 
+local exit_code = nil
+
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local file = nil
     if lfs.attributes(ARGV[argidx], "mode") == "file" then
@@ -190,13 +190,13 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
             FileManager:showFiles(home_dir)
         end)
     end
-    UIManager:run()
+    exit_code = UIManager:run()
 elseif last_file then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
         ReaderUI:showReader(last_file)
     end)
-    UIManager:run()
+    exit_code = UIManager:run()
 else
     return showusage()
 end
@@ -215,8 +215,8 @@ local function exitReader()
 
     if Profiler then Profiler.stop() end
 
-    if type(KOREADER_EXIT_CODE) == "number" then
-        os.exit(KOREADER_EXIT_CODE)
+    if type(exit_code) == "number" then
+        os.exit(exit_code)
     else
         os.exit(0)
     end

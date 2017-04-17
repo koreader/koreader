@@ -173,7 +173,7 @@ function ReaderMenu:setUpdateItemTable()
         end,
     }
 
-    self.menu_items.restartKOReader = {
+    self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
         callback = function()
             self:exitOrRestart(function() UIManager:restartKOReader() end)
@@ -188,7 +188,7 @@ end
 
 function ReaderMenu:exitOrRestart(callback)
     self:onTapCloseMenu()
-    UIManager:scheduleIn(0.1, function()
+    UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
             callback()

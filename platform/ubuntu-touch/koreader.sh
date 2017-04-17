@@ -27,4 +27,11 @@ export EXT_FONT_DIR="${HOME}/fonts"
 # set fullscreen mode
 export SDL_FULLSCREEN=1
 
-./reader.lua -d ~/Documents
+RETURN_VALUE=85
+
+while [ $RETURN_VALUE -eq 85 ]; do
+    ./reader.lua -d ~/Documents
+    RETURN_VALUE=$?
+done
+
+exit $RETURN_VALUE

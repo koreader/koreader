@@ -133,11 +133,10 @@ if [ -z "${ksmroot+x:?}" ]; then
     cat "/sys/class/graphics/fb0/rotate" >"/sys/class/graphics/fb0/rotate"
 fi
 
-RESULT=85
-while [ $RESULT -eq 85 ]
-do
+RETURN_VALUE=85
+while [ $RETURN_VALUE -eq 85 ]; do
     ./reader.lua "${args}" >>crash.log 2>&1
-    RESULT=$?
+    RETURN_VALUE=$?
 done
 
 # workaround 32-bit without KSM (KSM is indicated by s${ksmroot} being set)
@@ -169,4 +168,4 @@ else
     fi
 fi
 
-return ${RESULT}
+exit $RETURN_VALUE

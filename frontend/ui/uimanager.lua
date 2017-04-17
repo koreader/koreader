@@ -33,6 +33,7 @@ local UIManager = {
     _refresh_stack = {},
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
+    _exit_code = nil,
 }
 
 function UIManager:init()
@@ -759,12 +760,14 @@ function UIManager:run()
         self.looper:add_callback(function() self:handleInput() end)
         self.looper:start()
     end
+
+    return self._exit_code
 end
 
 -- run uimanager forever for testing purpose
 function UIManager:runForever()
     self._run_forever = true
-    self:run()
+    return self:run()
 end
 
 -- Kobo does not have an auto suspend function, so we implement it ourselves.
@@ -863,7 +866,7 @@ end
 function UIManager:restartKOReader()
     self:quit()
     -- This is just a magic number to indicate the restart request for shell scripts.
-    KOREADER_EXIT_CODE = 85
+    self._exit_code = 85
 end
 
 UIManager._resetAutoSuspendTimer = noop

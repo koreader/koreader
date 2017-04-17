@@ -267,7 +267,7 @@ function FileManagerMenu:setUpdateItemTable()
             self:exitOrRestart()
         end,
     }
-    self.menu_items.restartKOReader = {
+    self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
         callback = function()
             self:exitOrRestart(function() UIManager:restartKOReader() end)

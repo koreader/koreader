@@ -41,8 +41,7 @@ if [ -e crash.log ]; then
 fi
 
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]
-do
+while [ $RETURN_VALUE -eq 85 ]; do
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
@@ -50,3 +49,5 @@ done
 if pidof reader.lua >/dev/null 2>&1; then
     killall -TERM reader.lua
 fi
+
+exit $RETURN_VALUE
