@@ -194,7 +194,7 @@ describe("Readerfooter module", function()
         assert.are.same('=> 1', footer.footer_text.text)
 
         -- disable page left, battery should follow
-        tapFooterMenu(fake_menu, "Pages left in this chapter")
+        tapFooterMenu(fake_menu, "Pages left in chapter")
         assert.are.same('B:0%', footer.footer_text.text)
 
         -- disable battery, percentage should follow
@@ -495,7 +495,7 @@ describe("Readerfooter module", function()
         assert.are.same('1 / 2 | => 1', footer.footer_text.text)
 
         -- remove mode from footer text
-        tapFooterMenu(fake_menu, "Pages left in this chapter")
+        tapFooterMenu(fake_menu, "Pages left in chapter")
         assert.are.same('1 / 2', footer.footer_text.text)
 
         -- add mode to footer text

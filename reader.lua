@@ -89,11 +89,12 @@ while argidx <= #ARGV do
     end
 end
 
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Font = require("ui/font")
-local ConfirmBox = require("ui/widget/confirmbox")
+local QuickStart = require("ui/quickstart")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 
 local function retryLastFile()
     return ConfirmBox:new{
@@ -124,10 +125,12 @@ end
 local last_file = G_reader_settings:readSetting("lastfile")
 -- load last opened file
 local open_last = G_reader_settings:readSetting("open_last")
-
 if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
     UIManager:show(retryLastFile())
     last_file = nil
+elseif not QuickStart:isShown() then
+    open_last = true
+    last_file = QuickStart:getQuickStart()
 end
 -- night mode
 if G_reader_settings:readSetting("night_mode") then

@@ -1,12 +1,16 @@
+--[[--
+This module manages widgets.
+]]
+
 local Device = require("device")
-local Screen = Device.screen
-local Input = require("device").input
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
-local util = require("ffi/util")
 local dbg = require("dbg")
 local logger = require("logger")
+local util = require("ffi/util")
 local _ = require("gettext")
+local Input = Device.input
+local Screen = Device.screen
 
 local noop = function() end
 local MILLION = 1000000
@@ -154,9 +158,18 @@ function UIManager:init()
     end
 end
 
--- register & show a widget
--- modal widget should be always on the top
--- for refreshtype & refreshregion see description of setDirty()
+--[[--
+Registers and shows a widget.
+
+Modal widget should be always on top.
+For refreshtype & refreshregion see description of setDirty().
+]]
+---- @param widget a widget object
+---- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshregion a Geom object
+---- @int x
+---- @int y
+---- @see setDirty
 function UIManager:show(widget, refreshtype, refreshregion, x, y)
     if not widget then
         logger.dbg("widget not exist to be shown")
@@ -187,8 +200,15 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
     end
 end
 
--- unregister a widget
--- for refreshtype & refreshregion see description of setDirty()
+--[[--
+Unregisters a widget.
+
+For refreshtype & refreshregion see description of setDirty().
+]]
+---- @param widget a widget object
+---- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshregion a Geom object
+---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion)
     if not widget then
         logger.dbg("widget not exist to be closed")
@@ -258,7 +278,7 @@ dbg:guard(UIManager, 'schedule',
         assert(action ~= nil)
     end)
 
--- schedule task in a certain amount of seconds (fractions allowed) from now
+--- Schedules task in a certain amount of seconds (fractions allowed) from now.
 function UIManager:scheduleIn(seconds, action)
     local when = { util.gettime() }
     local s = math.floor(seconds)
@@ -280,12 +300,16 @@ function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
 end
 
--- unschedule an execution task
--- in order to unschedule anonymous functions, store a reference
--- for example:
--- self.anonymousFunction = function() self:regularFunction() end
--- UIManager:scheduleIn(10, self.anonymousFunction)
--- UIManager:unschedule(self.anonymousFunction)
+--[[-- Unschedules an execution task.
+
+In order to unschedule anonymous functions, store a reference.
+
+@usage
+
+self.anonymousFunction = function() self:regularFunction() end
+UIManager:scheduleIn(10, self.anonymousFunction)
+UIManager:unschedule(self.anonymousFunction)
+]]
 function UIManager:unschedule(action)
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
@@ -296,19 +320,24 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
---[[
-register a widget to be repainted and enqueue a refresh
+--[[--
+Registers a widget to be repainted and enqueues a refresh.
 
 the second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested)
 or a function that returns refreshtype AND refreshregion and is called
 after painting the widget.
 
-E.g.:
+@usage
+
 UIManager:setDirty(self.widget, "partial")
 UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
+
 --]]
+---- @param widget a widget object
+---- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshregion a Geom object
 function UIManager:setDirty(widget, refreshtype, refreshregion)
     if widget then
         if widget == "all" then
@@ -357,22 +386,23 @@ function UIManager:removeZMQ(zeromq)
     end
 end
 
--- set full refresh rate for e-ink screen
--- and make the refresh rate persistant in global reader settings
+--- Sets full refresh rate for e-ink screen.
+--
+-- Also makes the refresh rate persistent in global reader settings.
 function UIManager:setRefreshRate(rate)
     logger.dbg("set screen full refresh rate", rate)
     self.FULL_REFRESH_COUNT = rate
     G_reader_settings:saveSetting("full_refresh_count", rate)
 end
 
--- get full refresh rate for e-ink screen
+--- Gets full refresh rate for e-ink screen.
 function UIManager:getRefreshRate(rate)
     return self.FULL_REFRESH_COUNT
 end
 
--- signal to quit
+--- Signals to quit.
 function UIManager:quit()
-    logger.info("quiting uimanager")
+    logger.info("quitting uimanager")
     self._task_queue_dirty = false
     self._running = false
     self._run_forever = nil
@@ -392,7 +422,7 @@ function UIManager:quit()
     end
 end
 
--- transmit an event to an active widget
+--- Transmits an event to an active widget.
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
@@ -432,7 +462,7 @@ function UIManager:sendEvent(event)
     end
 end
 
--- transmit an event to all registered widgets
+--- Transmits an event to all registered widgets.
 function UIManager:broadcastEvent(event)
     -- the widget's event handler might close widgets in which case
     -- a simple iterator like ipairs would skip over some entries
@@ -497,9 +527,9 @@ local refresh_methods = {
 }
 
 --[[
-refresh mode comparision
+Compares refresh mode.
 
-will return the mode that takes precedence
+Will return the mode that takes precedence.
 --]]
 local function update_mode(mode1, mode2)
     if refresh_modes[mode1] > refresh_modes[mode2] then
@@ -509,16 +539,18 @@ local function update_mode(mode1, mode2)
     end
 end
 
---[[
-enqueue a refresh
+--[[--
+Enqueues a refresh.
 
 Widgets call this in their paintTo() method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
-mode:   refresh mode ("full", "partial", "ui", "fast")
-region: Rect() that specifies the region to be updated
-        optional, update will affect whole screen if not specified.
-        Note that this should be the exception.
+@param mode
+    refresh mode ("full", "partial", "ui", "fast")
+@param region
+    Rect() that specifies the region to be updated
+    optional, update will affect whole screen if not specified.
+    Note that this should be the exception.
 --]]
 function UIManager:_refresh(mode, region)
     if not mode then return end
@@ -559,7 +591,7 @@ function UIManager:_refresh(mode, region)
     table.insert(self._refresh_stack, {mode = mode, region = region})
 end
 
--- repaint dirty widgets
+--- Repaints dirty widgets.
 function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
     -- will trigger a refresh if set.

@@ -80,14 +80,14 @@ function ReaderMenu:onReaderReady()
 
     self.ui:registerTouchZones({
         {
-            id = "readermenu_tap",
-            ges = "tap",
+            id = "readermenu_swipe",
+            ges = "swipe",
             screen_zone = {
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
-            overrides = { "tap_forward", "tap_backward", },
-            handler = function() return self:onTapShowMenu() end,
+            overrides = { "rolling_swipe", "paging_swipe", },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
     })
 end
@@ -108,7 +108,7 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
-    if Device:isKobo() and Screensaver:isUsingBookCover() then
+    if Device:supportsScreensaver() and Screensaver:isUsingBookCover() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
@@ -118,6 +118,20 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
+                {
+                    text = _("Use last book's cover as screensaver"),
+                    checked_func = Screensaver.isUsingBookCover,
+                    callback = function()
+                        if Screensaver:isUsingBookCover() then
+                            G_reader_settings:saveSetting(
+                                "use_lastfile_as_screensaver", false)
+                        else
+                            G_reader_settings:delSetting(
+                                "use_lastfile_as_screensaver")
+                        end
+                        G_reader_settings:flush()
+                    end
+                },
                 {
                     text = _("Exclude this book's cover from screensaver"),
                     checked_func = excluded,
@@ -146,7 +160,6 @@ function ReaderMenu:setUpdateItemTable()
             }
         }
     end
-
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
@@ -165,9 +178,9 @@ function ReaderMenu:setUpdateItemTable()
         end,
     }
 
-    local order = require("frontend/ui/elements/reader_menu_order")
+    local order = require("ui/elements/reader_menu_order")
 
-    local MenuSorter = require("frontend/ui/menusorter")
+    local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("reader", self.menu_items, order)
 end
 
@@ -223,10 +236,12 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:onTapShowMenu()
-    self.ui:handleEvent(Event:new("ShowConfigMenu"))
-    self.ui:handleEvent(Event:new("ShowReaderMenu"))
-    return true
+function ReaderMenu:onSwipeShowMenu(ges)
+    if ges.direction == "south" then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        return true
+    end
 end
 
 function ReaderMenu:onTapCloseMenu()

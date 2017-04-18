@@ -164,6 +164,8 @@ function Device:powerOff() end
 -- Hardware specific method to initialize network manager module
 function Device:initNetworkManager() end
 
+function Device:supportsScreensaver() return false end
+
 --[[
 prepare for application shutdown
 --]]

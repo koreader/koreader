@@ -42,6 +42,10 @@ function MenuSorter:mergeAndSort(config_prefix, item_table, order)
     return self:sort(item_table, order)
 end
 
+--- Sorts a flat table of menu items into a hierarchical menu based on supplied order.
+---- @tparam table item_table menu item table
+---- @tparam table order sorting order
+---- @treturn table the sorted menu item table
 function MenuSorter:sort(item_table, order)
     local menu_table = {}
     local sub_menus = {}
@@ -145,8 +149,8 @@ function MenuSorter:sort(item_table, order)
 end
 
 --- Returns a menu item by ID.
----- @param tbl Lua table
----- @param needle_id Menu item ID string
+---- @tparam table tbl Lua table
+---- @tparam string needle_id Menu item ID string
 ---- @treturn table a reference to the table item if found
 function MenuSorter:findById(tbl, needle_id)
     local items = {}

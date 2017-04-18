@@ -4,6 +4,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
@@ -102,20 +103,12 @@ function OTAManager:checkUpdate()
         end
         zsync:close()
     end
-    local normalized_version = function(rev)
-        local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-        return tonumber(year .. month .. string.format("%.4d", revision or "0"))
-    end
     local local_ok, local_version = pcall(function()
-        local rev_file = io.open("git-rev", "r")
-        if rev_file then
-            local rev = rev_file:read()
-            rev_file:close()
-            return normalized_version(rev)
-        end
+        local rev = Version:getCurrentRevision()
+        if rev then return Version:getNormalizedVersion(rev) end
     end)
     local ota_ok, ota_version = pcall(function()
-        return normalized_version(ota_package)
+        return Version:getNormalizedVersion(ota_package)
     end)
     -- return ota package version if package on OTA server has version
     -- larger than the local package version

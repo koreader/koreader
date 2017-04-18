@@ -1,12 +1,12 @@
+local InputDialog = require("ui/widget/inputdialog")
+local NetworkMgr = require("ui/network/manager")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Translator = require("ui/translator")
 local Wikipedia = require("ui/wikipedia")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local NetworkMgr = require("ui/network/manager")
-local InputDialog = require("ui/widget/inputdialog")
-local UIManager = require("ui/uimanager")
 
 -- Wikipedia as a special dictionary
 local ReaderWikipedia = ReaderDictionary:extend{
@@ -34,7 +34,7 @@ function ReaderWikipedia:lookupInput()
                     end,
                 },
                 {
-                    text = _("OK"),
+                    text = _("Search Wikipedia"),
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input_dialog)

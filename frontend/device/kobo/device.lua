@@ -245,6 +245,8 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 end
 
+function Kobo:supportsScreensaver() return true end
+
 local probeEvEpochTime
 -- this function will update itself after the first touch event
 probeEvEpochTime = function(self, ev)

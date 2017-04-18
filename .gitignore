@@ -12,6 +12,8 @@ tags
 test/*
 *.tar
 *.log
+bin/
+install/
 spec/unit/data
 doc/html
 git-rev

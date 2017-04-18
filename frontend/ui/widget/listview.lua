@@ -14,7 +14,7 @@ Example:
         items = {
             FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.COLOR_WHITE
+                background = Blitbuffer.COLOR_WHITE,
                 TextWidget:new{
                     text = "foo",
                     fact = Font:getFace("cfont"),
@@ -22,7 +22,7 @@ Example:
             },
             FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.COLOR_LIGHT_GREY
+                background = Blitbuffer.COLOR_LIGHT_GREY,
                 TextWidget:new{
                     text = "bar",
                     fact = Font:getFace("cfont"),
