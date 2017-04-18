@@ -514,7 +514,12 @@ function Kobo:resume()
 end
 
 function Kobo:powerOff()
-    os.execute("poweroff")
+    local lfs = require("libs/libkoreader-lfs")
+    if lfs.attributes("/sbin/poweroff", "mode") == "file" then
+        os.execute("/sbin/poweroff")
+    else
+        os.execute("poweroff")
+    end
 end
 
 -------------- device probe ------------
