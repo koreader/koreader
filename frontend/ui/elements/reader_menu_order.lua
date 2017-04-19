@@ -59,6 +59,7 @@ local order = {
         "synchronize_time",
         "progress_sync",
         "zsync",
+        "rss_news_downloader",
         "terminal",
     },
     search = {
