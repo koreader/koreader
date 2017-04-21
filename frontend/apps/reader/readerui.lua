@@ -319,14 +319,20 @@ function ReaderUI:init()
         ui = self,
     })
     -- koreader plugins
-    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        logger.info("RD loaded plugin", plugin_module.name, "at", plugin_module.path)
-        self:registerModule(plugin_module.name, plugin_module:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self,
-            document = self.document,
-        })
+    for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        local ok, plugin_or_err = PluginLoader:createPluginInstance(
+            plugin_module,
+            {
+                dialog = self.dialog,
+                view = self.view,
+                ui = self,
+                document = self.document,
+            })
+        if ok then
+            self:registerModule(plugin_module.name, plugin_or_err)
+            logger.info("RD loaded plugin", plugin_module.name,
+                        "at", plugin_module.path)
+        end
     end
 
     -- we only read settings after all the widgets are initialized
