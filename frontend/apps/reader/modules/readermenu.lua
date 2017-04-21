@@ -4,8 +4,10 @@ local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local dbg = require("dbg")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -94,7 +96,10 @@ end
 
 function ReaderMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.menu_items)
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
     end
 
     -- settings tab
@@ -183,6 +188,14 @@ function ReaderMenu:setUpdateItemTable()
     local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("reader", self.menu_items, order)
 end
+dbg:guard(ReaderMenu, 'setUpdateItemTable',
+    function(self)
+        local mock_menu_items = {}
+        for _, widget in pairs(self.registered_widgets) do
+            -- make sure addToMainMenu works in debug mode
+            widget:addToMainMenu(mock_menu_items)
+        end
+    end)
 
 function ReaderMenu:onShowReaderMenu()
     if self.tab_item_table == nil then
