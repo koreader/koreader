@@ -259,7 +259,7 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:onPinch()
-    local info = Notification:new{text = _("Changing font size…")}
+    local info = Notification:new{text = _("Decreasing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
     self:onChangeSize("decrease")
@@ -268,7 +268,7 @@ function ReaderFont:onPinch()
 end
 
 function ReaderFont:onSpread()
-    local info = Notification:new{text = _("Changing font size…")}
+    local info = Notification:new{text = _("Increasing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
     self:onChangeSize("increase")
