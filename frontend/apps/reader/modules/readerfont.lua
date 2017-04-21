@@ -172,12 +172,12 @@ function ReaderFont:onSetFontSize(new_size)
     if new_size < 12 then new_size = 12 end
 
     self.font_size = new_size
+    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+    self.ui:handleEvent(Event:new("UpdatePos"))
     UIManager:show(Notification:new{
         text = T( _("Font size set to %1."), self.font_size),
         timeout = 1,
     })
-    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
-    self.ui:handleEvent(Event:new("UpdatePos"))
 
     return true
 end
@@ -259,24 +259,20 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:onPinch()
-    local info = Notification:new{text = _("Changing font size")}
+    local info = Notification:new{text = _("Changing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
-    UIManager:nextTick(function()
-        self:onChangeSize("decrease")
-        UIManager:close(info)
-    end)
+    self:onChangeSize("decrease")
+    UIManager:close(info)
     return true
 end
 
 function ReaderFont:onSpread()
-    local info = Notification:new{text = _("Changing font size")}
+    local info = Notification:new{text = _("Changing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
-    UIManager:nextTick(function()
-        self:onChangeSize("increase")
-        UIManager:close(info)
-    end)
+    self:onChangeSize("increase")
+    UIManager:close(info)
     return true
 end
 
