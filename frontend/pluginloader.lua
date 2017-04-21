@@ -68,4 +68,14 @@ function PluginLoader:loadPlugins()
     return self.plugins
 end
 
+function PluginLoader:createPluginInstance(plugin, attr)
+    local ok, re = pcall(plugin.new, plugin, attr)
+    if ok then  -- re is a plugin instance
+        return ok, re
+    else  -- re is the error message
+        logger.err('Failed to initialize', plugin.name, 'plugin: ', re)
+        return nil, re
+    end
+end
+
 return PluginLoader
