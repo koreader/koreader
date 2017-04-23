@@ -2,10 +2,12 @@
 ]]
 local DataStorage = require("datastorage")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
+local DocSettings = require("docsettings")
 local Version = require("version")
-local _ = require("gettext")
+local FFIUtil = require("ffi/util")
+local T = FFIUtil.template
 local lfs = require("libs/libkoreader-lfs")
-local T = require("ffi/util").template
+local _ = require("gettext")
 
 local QuickStart = {
     quickstart_force_show_version = 201511982,
@@ -80,8 +82,19 @@ function QuickStart:getQuickStart()
     if lfs.attributes(quickstart_dir, "mode") ~= "dir" then
         lfs.mkdir(quickstart_dir)
     end
+
     local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_filename, "mode") ~= "file" then
+        -- purge old quickstart guides
+        local iter, dir_obj = lfs.dir(quickstart_dir)
+        for f in iter, dir_obj do
+            if f:match("quickstart-.*%.html") then
+                local file_abs_path = FFIUtil.realpath(("%s/%s"):format(quickstart_dir, f))
+                os.remove(file_abs_path)
+                DocSettings:open(file_abs_path):purge()
+            end
+        end
+
         local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"))
         if quickstart_html then
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
