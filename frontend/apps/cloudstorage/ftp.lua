@@ -1,5 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
-local FtpApi = require("frontend/apps/cloudstorage/ftpapi")
+local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")

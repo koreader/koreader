@@ -67,7 +67,7 @@ function QuickStart:isShown()
     return (quickstart_shown_version >= self.quickstart_force_show_version)
 end
 
---[[--Generates the quickstart guide in the user's language and returns its location.
+--[[-- Generates the quickstart guide in the user's language and returns its location.
 
 The fileformat is `quickstart-en-v2015.11-985-g88308992.html`, `en` being the
 language of the generated file and `v2015.11-985-g88308992` the KOReader version
@@ -77,16 +77,18 @@ used to generate the file.
 ]]
 function QuickStart:getQuickStart()
     local quickstart_dir = ("%s/help"):format(DataStorage:getDataDir())
-    local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_dir, "mode") ~= "dir" then
         lfs.mkdir(quickstart_dir)
     end
+    local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_filename, "mode") ~= "file" then
         local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"))
         if quickstart_html then
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
         end
     end
+    -- remember filemaname for file manager
+    self.quickstart_filename = quickstart_filename
     G_reader_settings:saveSetting("quickstart_shown_version", version)
     return quickstart_filename
 end

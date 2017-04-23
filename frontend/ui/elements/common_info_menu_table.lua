@@ -26,7 +26,7 @@ common_info.help = {
 common_info.quickstart_guide = {
     text = _("Quickstart guide"),
     callback = function()
-        local QuickStart = require("frontend/ui/quickstart")
+        local QuickStart = require("ui/quickstart")
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(QuickStart:getQuickStart())
     end
