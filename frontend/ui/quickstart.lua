@@ -27,10 +27,10 @@ Turning pages can be done either by swiping left and right or by single taps on 
 
 ### Contents
 
-* [menu](#menu)
-  * [main menu](#main-menu)
-  * [settings](#settings)
-* [file browser](#file-browser)
+* [Menu](#menu)
+  * [Main menu](#main-menu)
+  * [Settings](#settings)
+* [File browser](#file-browser)
 
 
 ## Menu <a id="menu"></a>
