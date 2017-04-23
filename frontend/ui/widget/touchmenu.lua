@@ -14,13 +14,13 @@ local GestureRange = require("ui/gesturerange")
 local Button = require("ui/widget/button")
 local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Screen = require("device").screen
+local Screen = Device.screen
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
-local util = require("ffi/util")
-local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 local getMenuText = require("util").getMenuText
+local util = require("ffi/util")
+local _ = require("gettext")
 
 --[[
 TouchMenuItem widget
