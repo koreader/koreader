@@ -119,30 +119,8 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
-# workaround 32-bit without KSM (KSM is indicated by ${ksmroot} being set)
-# shellcheck disable=2154
-if [ -z "${ksmroot+x:?}" ]; then
-    # TODO: add support for 32bit framebuffer in koreader. This is a workaround
-    # to run koreader in 16bpp. Useful since FW 4.0
-    CUR_ROTATE="$(cat "/sys/class/graphics/fb0/rotate")"
-    FB_BPP=$(cat /sys/class/graphics/fb0/bits_per_pixel)
-    [ "${FB_BPP}" -gt 16 ] && /usr/sbin/fbset -depth 16
-    # this suffices on normal devices, but H2O is stupid and sets the opposite
-    echo "${CUR_ROTATE}" >"/sys/class/graphics/fb0/rotate"
-    # this therefore turns it around on H2O (and other potential idiots) and merely
-    # innocently repeats on sane devices
-    # shellcheck disable=SC2094
-    cat "/sys/class/graphics/fb0/rotate" >"/sys/class/graphics/fb0/rotate"
-fi
-
 ./reader.lua "${args}" >>crash.log 2>&1
 RESULT=$?
-
-# workaround 32-bit without KSM (KSM is indicated by s${ksmroot} being set)
-if [ -z "${ksmroot+x:?}" ]; then
-    # back to default depth in framebuffer.
-    [ "${FB_BPP}" -gt 16 ] && /usr/sbin/fbset -depth "${FB_BPP}"
-fi
 
 if [ "${FROM_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
