@@ -272,10 +272,12 @@ usage: run <OPTIONS> <ARGS>
 
 OPTIONS:
 
-    -h=X, --screen-height=X set height of the emulator screen (default: 720)
-    -w=X, --screen-width=X  set width of the emulator screen (default: 540)
-    --no-build              run reader without rebuilding
-    --disable-touch         use this if you want to simulate keyboard only devices
+    -h=X, --screen-height=X  set height of the emulator screen (default: 720)
+    -w=X, --screen-width=X   set width of the emulator screen (default: 540)
+    --no-build               run reader without rebuilding
+    --disable-touch          use this if you want to simulate keyboard only devices
+    -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
+                             supported model: kobo-aura-one, kindle3
     "
     screen_width=540
     screen_height=720
@@ -294,6 +296,22 @@ OPTIONS:
                 ;;
             -h | --screen-height)
                 screen_height=${VALUE}
+                ;;
+            -s | --simulate)
+                device_model=${VALUE}
+                case ${device_model} in
+                    kindle3)
+                        screen_width=600
+                        screen_height=800
+                        ;;
+                    kobo-aura-one)
+                        screen_width=1404
+                        screen_height=1872
+                        ;;
+                    *)
+                        echo "ERROR: spec unknown for ${device_model}."
+                        ;;
+                esac
                 ;;
             -h | --help)
                 echo "${RUN_HELP_MSG}"

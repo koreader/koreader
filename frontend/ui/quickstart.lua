@@ -2,16 +2,17 @@
 ]]
 local DataStorage = require("datastorage")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
+local DocSettings = require("docsettings")
 local Version = require("version")
-local _ = require("gettext")
+local FFIUtil = require("ffi/util")
+local T = FFIUtil.template
 local lfs = require("libs/libkoreader-lfs")
-local T = require("ffi/util").template
+local _ = require("gettext")
 
 local QuickStart = {
     quickstart_force_show_version = 201511982,
 }
 
-local quickstart_shown_version = G_reader_settings:readSetting("quickstart_shown_version") or nil
 local language = G_reader_settings:readSetting("language") or "en"
 local version = Version:getNormalizedCurrentVersion()
 local rev = Version:getCurrentRevision()
@@ -27,10 +28,10 @@ Turning pages can be done either by swiping left and right or by single taps on 
 
 ### Contents
 
-* [menu](#menu)
-  * [main menu](#main-menu)
-  * [settings](#settings)
-* [file browser](#file-browser)
+* [Menu](#menu)
+  * [Main menu](#main-menu)
+  * [Settings](#settings)
+* [File browser](#file-browser)
 
 
 ## Menu <a id="menu"></a>
@@ -63,11 +64,11 @@ shown yet or if display is forced through a higher version number than when
 it was first shown.
 ]]
 function QuickStart:isShown()
-    if quickstart_shown_version == nil then return false end
-    return (quickstart_shown_version >= self.quickstart_force_show_version)
+    local shown_version = G_reader_settings:readSetting("quickstart_shown_version")
+    return shown_version ~= nil and (shown_version >= self.quickstart_force_show_version)
 end
 
---[[--Generates the quickstart guide in the user's language and returns its location.
+--[[-- Generates the quickstart guide in the user's language and returns its location.
 
 The fileformat is `quickstart-en-v2015.11-985-g88308992.html`, `en` being the
 language of the generated file and `v2015.11-985-g88308992` the KOReader version
@@ -77,16 +78,29 @@ used to generate the file.
 ]]
 function QuickStart:getQuickStart()
     local quickstart_dir = ("%s/help"):format(DataStorage:getDataDir())
-    local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_dir, "mode") ~= "dir" then
         lfs.mkdir(quickstart_dir)
     end
+
+    local quickstart_filename = ("%s/quickstart-%s-%s.html"):format(quickstart_dir, language, rev)
     if lfs.attributes(quickstart_filename, "mode") ~= "file" then
+        -- purge old quickstart guides
+        local iter, dir_obj = lfs.dir(quickstart_dir)
+        for f in iter, dir_obj do
+            if f:match("quickstart-.*%.html") then
+                local file_abs_path = FFIUtil.realpath(("%s/%s"):format(quickstart_dir, f))
+                os.remove(file_abs_path)
+                DocSettings:open(file_abs_path):purge()
+            end
+        end
+
         local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"))
         if quickstart_html then
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
         end
     end
+    -- remember filemaname for file manager
+    self.quickstart_filename = quickstart_filename
     G_reader_settings:saveSetting("quickstart_shown_version", version)
     return quickstart_filename
 end

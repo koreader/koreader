@@ -9,8 +9,10 @@ local Screensaver = require("ui/screensaver")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local Screen = Device.screen
+local dbg = require("dbg")
+local logger = require("logger")
+local _ = require("gettext")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -66,7 +68,10 @@ end
 
 function FileManagerMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.menu_items)
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
     end
 
     -- setting tab
@@ -279,6 +284,14 @@ function FileManagerMenu:setUpdateItemTable()
     local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("filemanager", self.menu_items, order)
 end
+dbg:guard(FileManagerMenu, 'setUpdateItemTable',
+    function(self)
+        local mock_menu_items = {}
+        for _, widget in pairs(self.registered_widgets) do
+            -- make sure addToMainMenu works in debug mode
+            widget:addToMainMenu(mock_menu_items)
+        end
+    end)
 
 function FileManagerMenu:exitOrRestart(callback)
     if SetDefaults.settings_changed then

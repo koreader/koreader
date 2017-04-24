@@ -8,9 +8,9 @@ local Geom = require("ui/geometry")
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("ffi/util")
-local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local _ = require("gettext")
 
 local noop = function() end
 local MILLION = 1000000

@@ -3,6 +3,25 @@ local logger = require("logger")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
+
+
+local function sandboxPluginEventHandlers(plugin)
+    for key, value in pairs(plugin) do
+        if key:sub(1, 2) == "on" and type(value) == "function" then
+            plugin[key] = function(self, ...)
+                local ok, re = pcall(value, self, ...)
+                if ok then
+                    return re
+                else
+                    logger.err("failed to call event handler", key, re)
+                    return false
+                end
+            end
+        end
+    end
+end
+
+
 local PluginLoader = {}
 
 function PluginLoader:loadPlugins()
@@ -47,6 +66,7 @@ function PluginLoader:loadPlugins()
                 elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
                     plugin_module.path = plugin_root
                     plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
+                    sandboxPluginEventHandlers(plugin_module)
                     table.insert(self.plugins, plugin_module)
                 else
                     logger.info("Plugin ", mainfile, " has been disabled.")
@@ -66,6 +86,16 @@ function PluginLoader:loadPlugins()
     table.sort(self.plugins, function(v1,v2) return v1.path < v2.path end)
 
     return self.plugins
+end
+
+function PluginLoader:createPluginInstance(plugin, attr)
+    local ok, re = pcall(plugin.new, plugin, attr)
+    if ok then  -- re is a plugin instance
+        return ok, re
+    else  -- re is the error message
+        logger.err('Failed to initialize', plugin.name, 'plugin: ', re)
+        return nil, re
+    end
 end
 
 return PluginLoader

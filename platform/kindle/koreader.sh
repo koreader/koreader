@@ -113,6 +113,7 @@ if [ -f "${NEWUPDATE}" ]; then
         logmsg "Update failed :("
         eips_print_bottom_centered "Update failed :(" 1
     fi
+    rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
 
 # load our own shared libraries if possible

@@ -316,7 +316,7 @@ function GestureDetector:handleDoubleTap(tev)
         timev = tev.timev,
     }
 
-    if self.last_taps[slot] ~= nil and
+    if not self.input.disable_double_tap and self.last_taps[slot] ~= nil and
     self:isDoubleTap(self.last_taps[slot], cur_tap) then
         -- it is a double tap
         self:clearState(slot)

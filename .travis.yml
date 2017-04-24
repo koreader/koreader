@@ -26,6 +26,8 @@ cache:
 before_cache:
   # don't quote like you normally would or it won't expand
   - rm -frv ${TRAVIS_BUILD_DIR}/base/build/*/cache/*
+  # don't cache unit tests
+  - rm -frv ${TRAVIS_BUILD_DIR}/base/build/*/spec
 
 addons:
   apt:

@@ -169,6 +169,10 @@ function OTAManager:_buildLocalPackage()
     if lfs.attributes(installed_package, "mode") == "file" then
         return 0
     end
+    if lfs.attributes(self.package_indexfile, "mode") ~= "file" then
+        logger.err("Missing ota metadata:", self.package_indexfile)
+        return nil
+    end
     if Device:isAndroid() then
         return os.execute(string.format(
             "./tar cvf %s -T %s --no-recursion",
@@ -182,11 +186,14 @@ end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
-        return os.execute(string.format(
-        "./zsync -i %s -o %s -u %s %s",
-        self.installed_package, self.updated_package,
-        self:getOTAServer(), ota_dir .. self:getZsyncFilename()
-        ))
+        return os.execute(
+            ("./zsync -i %s -o %s -u %s %s%s"):format(
+                self.installed_package,
+                self.updated_package,
+                self:getOTAServer(),
+                ota_dir,
+                self:getZsyncFilename())
+        )
     end
 end
 

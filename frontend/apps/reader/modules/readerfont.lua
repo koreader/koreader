@@ -1,12 +1,12 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local Notification = require("ui/widget/notification")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-local Menu = require("ui/widget/menu")
 local Device = require("device")
-local Screen = require("device").screen
-local Input = require("device").input
 local Event = require("ui/event")
+local Input = Device.input
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Menu = require("ui/widget/menu")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
+local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -63,6 +63,33 @@ function ReaderFont:init()
         face_list[k] = {text = v}
     end
     self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderFont:onReaderReady()
+    self:setupTouchZones()
+end
+
+function ReaderFont:setupTouchZones()
+    if Device:isTouchDevice() then
+        self.ui:registerTouchZones({
+            {
+                id = "id_spread",
+                ges = "spread",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function() return self:onSpread() end
+            },
+            {
+                id = "id_pinch",
+                ges = "pinch",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function() return self:onPinch() end
+            },
+        })
+    end
 end
 
 function ReaderFont:onSetDimensions(dimen)
@@ -145,12 +172,12 @@ function ReaderFont:onSetFontSize(new_size)
     if new_size < 12 then new_size = 12 end
 
     self.font_size = new_size
+    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+    self.ui:handleEvent(Event:new("UpdatePos"))
     UIManager:show(Notification:new{
         text = T( _("Font size set to %1."), self.font_size),
         timeout = 1,
     })
-    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
-    self.ui:handleEvent(Event:new("UpdatePos"))
 
     return true
 end
@@ -229,6 +256,24 @@ function ReaderFont:addToMainMenu(menu_items)
         text = self.font_menu_title,
         sub_item_table = self.face_table,
     }
+end
+
+function ReaderFont:onPinch()
+    local info = Notification:new{text = _("Decreasing font size…")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    self:onChangeSize("decrease")
+    UIManager:close(info)
+    return true
+end
+
+function ReaderFont:onSpread()
+    local info = Notification:new{text = _("Increasing font size…")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    self:onChangeSize("increase")
+    UIManager:close(info)
+    return true
 end
 
 return ReaderFont
