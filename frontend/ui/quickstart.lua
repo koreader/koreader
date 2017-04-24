@@ -13,7 +13,6 @@ local QuickStart = {
     quickstart_force_show_version = 201511982,
 }
 
-local quickstart_shown_version = G_reader_settings:readSetting("quickstart_shown_version") or nil
 local language = G_reader_settings:readSetting("language") or "en"
 local version = Version:getNormalizedCurrentVersion()
 local rev = Version:getCurrentRevision()
@@ -65,8 +64,8 @@ shown yet or if display is forced through a higher version number than when
 it was first shown.
 ]]
 function QuickStart:isShown()
-    if quickstart_shown_version == nil then return false end
-    return (quickstart_shown_version >= self.quickstart_force_show_version)
+    local shown_version = G_reader_settings:readSetting("quickstart_shown_version")
+    return shown_version ~= nil and (shown_version >= self.quickstart_force_show_version)
 end
 
 --[[-- Generates the quickstart guide in the user's language and returns its location.

@@ -1,6 +1,6 @@
 describe("QuickStart module", function()
     setup(function()
-        require("commonrequire")  
+        require("commonrequire")
     end)
     it("should return false shown_version lower than force_show_version", function()
         G_reader_settings:saveSetting("quickstart_shown_version", 1)
