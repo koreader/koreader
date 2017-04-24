@@ -38,7 +38,7 @@ local FileConverter = {
 ---- @string title an optional title for the HTML document
 ---- @treturn string an HTML document
 function FileConverter:mdToHtml(markdown, title)
-    local MD = require("frontend/apps/filemanager/lib/md")
+    local MD = require("apps/filemanager/lib/md")
     local md_options = {
         prependHead = "<!DOCTYPE html>\n<html>\n<head>\n",
         insertHead = string.format("<title>%s</title>\n</head>\n<body>\n", title),

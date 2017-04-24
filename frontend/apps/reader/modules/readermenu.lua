@@ -3,11 +3,12 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
+local QuickStart = require("ui/quickstart")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
-local _ = require("gettext")
 local Screen = Device.screen
+local _ = require("gettext")
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -42,12 +43,13 @@ function ReaderMenu:init()
             callback = function()
                 self:onTapCloseMenu()
                 self.ui:onClose()
-                local FileManager = require("apps/filemanager/filemanager")
-                local lastdir = nil
+                local lastdir
                 local last_file = G_reader_settings:readSetting("lastfile")
-                if last_file then
+                -- ignore quickstart guide as last_file so we can go back to home dir
+                if last_file and last_file ~= QuickStart.quickstart_filename then
                     lastdir = last_file:match("(.*)/")
                 end
+                local FileManager = require("apps/filemanager/filemanager")
                 if FileManager.instance then
                     FileManager.instance:reinit(lastdir)
                 else

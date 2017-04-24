@@ -81,7 +81,7 @@ end
 
 function CalibreCompanion:addToMainMenu(menu_items)
     menu_items.calibre_wireless_connection = {
-        text = _("Calibre wireless connection"),
+        text = _("calibre wireless connection"),
         sub_item_table = {
             {
                 text_func = function()
