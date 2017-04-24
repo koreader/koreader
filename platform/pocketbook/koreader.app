@@ -9,7 +9,7 @@ NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
     # TODO: any graphic indication for the updating progress?
-    cd /mnt/ext1/ && tar xf "${NEWUPDATE}" --no-same-permissions --no-same-owner \
+    cd /mnt/ext1/ && "${KOREADER_DIR}/tar" xf "${NEWUPDATE}" --no-same-permissions --no-same-owner \
         && mv "${NEWUPDATE}" "${INSTALLED}"
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
