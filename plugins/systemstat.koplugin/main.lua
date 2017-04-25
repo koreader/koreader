@@ -30,7 +30,7 @@ function SystemStat:put(p)
 end
 
 function SystemStat:appendCounters()
-    self:put({_("KOReader Started at"), os.date("%c", self.start_sec)})
+    self:put({_("KOReader started at"), os.date("%c", self.start_sec)})
     if self.suspend_sec then
        self:put({_("  Last suspend time"), os.date("%c", self.suspend_sec)})
     end
