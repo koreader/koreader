@@ -1,11 +1,12 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Geom = require("ui/geometry")
-local Blitbuffer = require("ffi/blitbuffer")
-
---[[
-an UnderlineContainer is a WidgetContainer that is able to paint
-a line under its child node
+--[[--
+An UnderlineContainer is a WidgetContainer that is able to paint
+a line under its child node.
 --]]
+
+
+local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local UnderlineContainer = WidgetContainer:new{
     linesize = 2,
