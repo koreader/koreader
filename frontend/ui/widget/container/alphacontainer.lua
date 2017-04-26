@@ -1,10 +1,25 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local BlitBuffer = require("ffi/blitbuffer")
-
---[[
+--[[--
 AlphaContainer will paint its content (1 widget) onto lower levels using
 a transparency (0..1)
+
+Example:
+
+    local alpha
+    alpha = AlphaContainer:new{
+        alpha = 0.7,
+
+        FrameContainer:new{
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = 1,
+            margin = 0,
+            padding = 1
+        }
+    }
 --]]
+
+local BlitBuffer = require("ffi/blitbuffer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+
 local AlphaContainer = WidgetContainer:new{
     alpha = 1,
     -- we cache a blitbuffer object for re-use here:
