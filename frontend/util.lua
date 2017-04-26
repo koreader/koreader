@@ -283,6 +283,18 @@ function util.getFilesystemType(path)
     return type
 end
 
+--- Checks if directory is empty.
+---- @string path
+---- @treturn bool
+function util.isEmptyDir(path)
+    for filename in require("lfs").dir(path) do
+        if filename ~= '.' and filename ~= '..' then
+            return false
+        end
+    end
+    return true
+end
+
 --- Replaces characters that are invalid filenames.
 --
 -- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
