@@ -113,8 +113,8 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface = Font:getFace("cfont"),
-    tface = Font:getFace("tfont"),
+    cface = Font:getFace("cfont", 22),
+    tface = Font:getFace("tfont", 22),
     width = nil,
     height = nil,
 }
@@ -131,21 +131,23 @@ function KeyValueItem:init()
         }
     end
 
-    local key_w = self.width / 2
-    local value_w = self.width / 2
-    local key_w_rendered = RenderText:sizeUtf8Text(0, self.width, self.tface, self.key).x
-    local value_w_rendered = RenderText:sizeUtf8Text(0, self.width, self.cface, self.value).x
-    local space_w_rendered = RenderText:sizeUtf8Text(0, self.width, self.cface, " ").x
+    local frame_padding = 8
+    local frame_internal_width = self.width - frame_padding * 2
+    local key_w = frame_internal_width / 2
+    local value_w = frame_internal_width / 2
+    local key_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.tface, self.key).x
+    local value_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, self.value).x
+    local space_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, " ").x
     if key_w_rendered > key_w or value_w_rendered > value_w then
         -- truncate key or value so they fit in one row
-        if key_w_rendered + value_w_rendered > self.width then
+        if key_w_rendered + value_w_rendered > frame_internal_width then
             if key_w_rendered >= value_w_rendered then
-                key_w = self.width-value_w_rendered
-                self.show_key = RenderText:truncateTextByWidth(self.key, self.tface, self.width-value_w_rendered)
+                key_w = frame_internal_width - value_w_rendered
+                self.show_key = RenderText:truncateTextByWidth(self.key, self.tface, frame_internal_width - value_w_rendered)
                 self.show_value = self.value
             else
                 key_w = key_w_rendered + space_w_rendered
-                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, self.width-key_w_rendered, true)
+                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered, true)
                 self.show_key = self.key
             end
         -- misalign to fit all info
@@ -160,7 +162,7 @@ function KeyValueItem:init()
     end
 
     self[1] = FrameContainer:new{
-        padding = 0,
+        padding = frame_padding,
         bordersize = 0,
         HorizontalGroup:new{
             dimen = self.dimen:copy(),
