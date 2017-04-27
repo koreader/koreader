@@ -462,14 +462,15 @@ OPTIONS:
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
                 --exclude-tags=nocov "${test_path}" || {
-                echo "Failed to run tests!" && exit 1
-            }
+                    echo "Failed to run tests!" && exit 1
+                }
         fi
         if [ ${show_full} -eq 1 ]; then
             cat luacov.report.out
         else
+            LUACOV_REPORT_SUMMARY=$(grep -nm1 -e '^Summary$' luacov.report.out | cut -d: -f1)
             tail -n \
-                +$(($(grep -nm1 -e '^Summary$' luacov.report.out | cut -d: -f1) - 1)) \
+                +$((LUACOV_REPORT_SUMMARY - 1)) \
                 luacov.report.out
         fi
     } || exit
