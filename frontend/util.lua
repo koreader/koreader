@@ -287,7 +287,8 @@ end
 ---- @string path
 ---- @treturn bool
 function util.isEmptyDir(path)
-    for filename in require("lfs").dir(path) do
+    local lfs = require("libs/libkoreader-lfs")
+    for filename in lfs.dir(path) do
         if filename ~= '.' and filename ~= '..' then
             return false
         end
