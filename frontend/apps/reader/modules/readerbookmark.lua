@@ -1,16 +1,16 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local Menu = require("ui/widget/menu")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
-local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Menu = require("ui/widget/menu")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -181,7 +181,7 @@ function ReaderBookmark:onShowBookmark()
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("cfont", 20),
+        cface = Font:getFace("x_smallinfofont"),
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",

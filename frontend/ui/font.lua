@@ -2,11 +2,11 @@
 Font module.
 ]]
 
-local lfs = require("libs/libkoreader-lfs")
-local Freetype = require("ffi/freetype")
-local Screen = require("device").screen
 local Device = require("device")
+local Freetype = require("ffi/freetype")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local Screen = Device.screen
 
 local Font = {
     fontmap = {
@@ -15,8 +15,12 @@ local Font = {
         -- default font for title
         --tfont = "NimbusSanL-BoldItal.cff",
         tfont = "noto/NotoSans-Bold.ttf",
+        smalltfont = "noto/NotoSans-Bold.ttf",
+        x_smalltfont = "noto/NotoSans-Bold.ttf",
         -- default font for footer
         ffont = "noto/NotoSans-Regular.ttf",
+        smallffont = "noto/NotoSans-Regular.ttf",
+        largeffont = "noto/NotoSans-Regular.ttf",
 
         -- default font for reading position info
         rifont = "noto/NotoSans-Regular.ttf",
@@ -38,11 +42,24 @@ local Font = {
 
         -- font for info messages
         infofont = "noto/NotoSans-Regular.ttf",
+
+        -- small font for info messages
+        smallinfofont = "noto/NotoSans-Regular.ttf",
+        -- small bold font for info messages
+        smallinfofontbold = "noto/NotoSans-Bold.ttf",
+        -- extra small font for info messages
+        x_smallinfofont = "noto/NotoSans-Regular.ttf",
+        -- extra extra small font for info messages
+        xx_smallinfofont = "noto/NotoSans-Regular.ttf",
     },
     sizemap = {
         cfont = 24,
         tfont = 26,
+        smalltfont = 24,
+        x_smalltfont = 22,
         ffont = 20,
+        smallffont = 15,
+        largeffont = 25,
         pgfont = 20,
         scfont = 20,
         rifont = 16,
@@ -50,6 +67,10 @@ local Font = {
         hfont = 24,
         infont = 22,
         infofont = 24,
+        smallinfofont = 22,
+        smallinfofontbold = 22,
+        x_smallinfofont = 20,
+        xx_smallinfofont = 18,
     },
     fallbacks = {
         [1] = "noto/NotoSansCJK-Regular.ttf",
@@ -63,6 +84,10 @@ local Font = {
     faces = {},
 }
 
+--- Gets font face object.
+-- @string font
+-- @int size optional size
+-- @treturn table @{FontFaceObj}
 function Font:getFace(font, size)
     -- default to content font
     if not font then font = self.cfont end

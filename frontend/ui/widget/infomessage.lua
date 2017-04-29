@@ -42,7 +42,7 @@ local Screen = Device.screen
 
 local InfoMessage = InputContainer:new{
     modal = true,
-    face = Font:getFace("infofont", 25),
+    face = Font:getFace("infofont"),
     text = "",
     timeout = nil, -- in seconds
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.

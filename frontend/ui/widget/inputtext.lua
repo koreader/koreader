@@ -1,14 +1,15 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local Blitbuffer = require("ffi/blitbuffer")
+local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Font = require("ui/font")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
-local GestureRange = require("ui/gesturerange")
-local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
 local Screen = Device.screen
-local Font = require("ui/font")
 local util = require("util")
+
 local Keyboard
 
 local InputText = InputContainer:new{
@@ -22,7 +23,7 @@ local InputText = InputContainer:new{
 
     width = nil,
     height = nil,
-    face = Font:getFace("cfont", 22),
+    face = Font:getFace("smallinfofont"),
 
     padding = 5,
     margin = 5,
