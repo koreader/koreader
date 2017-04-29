@@ -1,10 +1,11 @@
 --[[
 A global LRU cache
 ]]--
-local md5 = require("ffi/MD5")
-local lfs = require("libs/libkoreader-lfs")
+
 local DataStorage = require("datastorage")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local md5 = require("ffi/MD5")
 
 if require("device"):isAndroid() then
     require("jit").off(true, true)
