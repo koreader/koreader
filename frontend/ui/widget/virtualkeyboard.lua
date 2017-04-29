@@ -1,21 +1,21 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextWidget = require("ui/widget/textwidget")
-local Font = require("ui/font")
-local Geom = require("ui/geometry")
-local Device = require("device")
-local Screen = Device.screen
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("device")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local logger = require("logger")
+local Screen = Device.screen
 
 local VirtualKey = InputContainer:new{
     key = nil,
@@ -28,7 +28,7 @@ local VirtualKey = InputContainer:new{
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
     bordersize = 2,
-    face = Font:getFace("infont", 22),
+    face = Font:getFace("infont"),
 }
 
 function VirtualKey:init()

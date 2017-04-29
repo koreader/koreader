@@ -1,21 +1,20 @@
-local CenterContainer = require("ui/widget/container/centercontainer")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
-local TopContainer = require("ui/widget/container/topcontainer")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local TextWidget = require("ui/widget/textwidget")
 local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
-local Screen = Device.screen
+local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
-local util = require("util")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local TopContainer = require("ui/widget/container/topcontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-
+local util = require("util")
+local Screen = Device.screen
 
 local PhysicalNumericKey = WidgetContainer:new{
     key = nil,
@@ -29,7 +28,7 @@ local PhysicalNumericKey = WidgetContainer:new{
     width = nil,
     height = nil,
     bordersize = 2,
-    face = Font:getFace("infont", 22),
+    face = Font:getFace("infont"),
     pkey_face = Font:getFace("infont", 14),
 }
 

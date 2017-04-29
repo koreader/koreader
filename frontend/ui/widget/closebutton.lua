@@ -12,14 +12,14 @@ Example:
 
 ]]
 
-local InputContainer = require("ui/widget/container/inputcontainer")
+local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
 local Screen = require("device").screen
-local Font = require("ui/font")
 
 local CloseButton = InputContainer:new{
     overlap_align = "right",

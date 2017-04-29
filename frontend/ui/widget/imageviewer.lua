@@ -19,9 +19,9 @@ local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
-local Screen = Device.screen
 local logger = require("logger")
 local _ = require("gettext")
+local Screen = Device.screen
 
 local ImageViewer = InputContainer:new{
     -- Allow for providing same different input types as ImageWidget :
@@ -44,7 +44,7 @@ local ImageViewer = InputContainer:new{
     -- we use this global setting for rotation angle to have the same angle as reader
     rotation_angle = DLANDSCAPE_CLOCKWISE_ROTATION and 90 or 270,
 
-    title_face = Font:getFace("tfont", 22),
+    title_face = Font:getFace("x_smalltfont"),
     title_padding = Screen:scaleBySize(5),
     title_margin = Screen:scaleBySize(2),
     image_padding = Screen:scaleBySize(2),

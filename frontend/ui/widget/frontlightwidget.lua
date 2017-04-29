@@ -1,34 +1,35 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local CloseButton = require("ui/widget/closebutton")
-local TextWidget = require("ui/widget/textwidget")
-local LineWidget = require("ui/widget/linewidget")
-local GestureRange = require("ui/gesturerange")
-local Button = require("ui/widget/button")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Device = require("device")
-local Geom = require("ui/geometry")
-local Font = require("ui/font")
-local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
+local Device = require("device")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local VerticalSpan = require("ui/widget/verticalspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local _ = require("gettext")
+local Screen = Device.screen
+
 
 local FrontLightWidget = InputContainer:new{
-    title_face = Font:getFace("tfont", 22),
+    title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
 }
 
 function FrontLightWidget:init()
-    self.medium_font_face = Font:getFace("ffont", 20)
+    self.medium_font_face = Font:getFace("ffont")
     self.light_bar = {}
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h

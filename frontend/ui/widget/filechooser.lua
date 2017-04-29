@@ -1,14 +1,15 @@
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
-local Menu = require("ui/widget/menu")
-local Screen = require("device").screen
 local Device = require("device")
 local DocSettings = require("docsettings")
 local Font = require("ui/font")
+local Menu = require("ui/widget/menu")
+local UIManager = require("ui/uimanager")
+local ffi = require("ffi")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
 local _ = require("gettext")
-local ffi = require("ffi")
+local Screen = Device.screen
 local getFileNameSuffix = require("util").getFileNameSuffix
+
 ffi.cdef[[
 int strcoll (const char *str1, const char *str2);
 ]]
@@ -23,7 +24,7 @@ local function kobostrcoll(str1, str2)
 end
 
 local FileChooser = Menu:extend{
-    cface = Font:getFace("cfont", 21),
+    cface = Font:getFace("smallinfofont"),
     no_title = true,
     path = lfs.currentdir(),
     parent = nil,

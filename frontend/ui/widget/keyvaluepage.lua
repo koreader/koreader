@@ -77,7 +77,7 @@ function KeyValueTitle:init()
         TextWidget:new{
             text = "",  -- page count
             fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("ffont", 16),
+            face = Font:getFace("smallffont"),
         },
     }
     self.title_bottom = OverlapGroup:new{
@@ -113,8 +113,8 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface = Font:getFace("cfont", 22),
-    tface = Font:getFace("tfont", 22),
+    cface = Font:getFace("smallinfofont"),
+    tface = Font:getFace("smallinfofontbold"),
     width = nil,
     height = nil,
 }
@@ -131,7 +131,7 @@ function KeyValueItem:init()
         }
     end
 
-    local frame_padding = 8
+    local frame_padding = Screen:scaleBySize(8)
     local frame_internal_width = self.width - frame_padding * 2
     local key_w = frame_internal_width / 2
     local value_w = frame_internal_width / 2

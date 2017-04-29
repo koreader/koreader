@@ -1,32 +1,32 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
-local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local FocusManager = require("ui/widget/focusmanager")
-local TextWidget = require("ui/widget/textwidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local Button = require("ui/widget/button")
-local GestureRange = require("ui/gesturerange")
-local Font = require("ui/font")
-local Geom = require("ui/geometry")
-local Device = require("device")
-local Screen = require("device").screen
-local Input = require("device").input
-local UIManager = require("ui/uimanager")
-local RenderText = require("ui/rendertext")
-local InfoMessage = require("ui/widget/infomessage")
-local util = require("ffi/util")
-local logger = require("logger")
 local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local RenderText = require("ui/rendertext")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
+local util = require("ffi/util")
 local _ = require("gettext")
+local Input = Device.input
+local Screen = Device.screen
 local getMenuText = require("util").getMenuText
 
 --[[
@@ -322,13 +322,13 @@ Widget that displays menu
 local Menu = FocusManager:new{
     show_parent = nil,
     -- face for displaying item contents
-    cface = Font:getFace("cfont", 24),
+    cface = Font:getFace("cfont"),
     -- face for menu title
-    tface = Font:getFace("tfont", 26),
+    tface = Font:getFace("tfont"),
     -- face for paging info display
-    fface = Font:getFace("ffont", 20),
+    fface = Font:getFace("ffont"),
     -- font for item shortcut
-    sface = Font:getFace("scfont", 20),
+    sface = Font:getFace("scfont"),
 
     title = "No Title",
     -- default width and height

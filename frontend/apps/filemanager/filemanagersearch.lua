@@ -1,18 +1,18 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local util = require("ffi/util")
-local Font = require("ui/font")
-local logger = require("logger")
-local T = require("ffi/util").template
-local _ = require("gettext")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
+local util = require("ffi/util")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -516,7 +516,7 @@ function Search:showresults()
         height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("cfont", 22),
+        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -564,7 +564,7 @@ function Search:browse(option, run, chosen)
         height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("cfont", 22),
+        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
