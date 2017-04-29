@@ -1,5 +1,9 @@
-local Widget = require("ui/widget/widget")
+--[[--
+Widget that displays a line.
+]]
+
 local Blitbuffer = require("ffi/blitbuffer")
+local Widget = require("ui/widget/widget")
 
 local LineWidget = Widget:new{
     style = "solid",

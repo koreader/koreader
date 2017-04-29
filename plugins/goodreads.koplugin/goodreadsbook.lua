@@ -27,9 +27,9 @@ local GoodreadsBook = InputContainer:new{
 }
 
 function GoodreadsBook:init()
-    self.small_font_face = Font:getFace("ffont", 16)
-    self.medium_font_face = Font:getFace("ffont", 18)
-    self.large_font_face = Font:getFace("ffont", 22)
+    self.small_font_face = Font:getFace("smallffont")
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
     UIManager:setDirty(self, function()

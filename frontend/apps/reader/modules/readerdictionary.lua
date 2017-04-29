@@ -43,6 +43,15 @@ function ReaderDictionary:onLookupWord(word, box, highlight)
     return true
 end
 
+local function dictDirsEmpty(dict_dirs)
+    for _, dict_dir in ipairs(dict_dirs) do
+        if not util.isEmptyDir(dict_dir) then
+            return false
+        end
+    end
+    return true
+end
+
 local function tidyMarkup(results)
     local cdata_tag = "<!%[CDATA%[(.-)%]%]>"
     local format_escape = "&[29Ib%+]{(.-)}"
@@ -134,6 +143,19 @@ function ReaderDictionary:stardictLookup(word, box)
     local dict_ext = self.data_dir.."_ext"
     if lfs.attributes(dict_ext, "mode") == "directory" then
         table.insert(dict_dirs, dict_ext)
+    end
+    -- early exit if no dictionaries
+    if dictDirsEmpty(dict_dirs) then
+        final_results = {
+            {
+                dict = "",
+                word = word,
+                definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
+            }
+        }
+        self:onLookupDone()
+        self:showDict(word, final_results, box)
+        return
     end
     for _, dict_dir in ipairs(dict_dirs) do
         local results_str = nil

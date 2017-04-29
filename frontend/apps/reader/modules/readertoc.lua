@@ -1,15 +1,15 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local GestureRange = require("ui/gesturerange")
 local Button = require("ui/widget/button")
-local UIManager = require("ui/uimanager")
-local Menu = require("ui/widget/menu")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local GestureRange = require("ui/gesturerange")
+local Geom = require("ui/geometry")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Menu = require("ui/widget/menu")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local Screen = Device.screen
 
 local ReaderToc = InputContainer:new{
     toc = nil,
@@ -312,7 +312,7 @@ function ReaderToc:onShowToc()
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("cfont", 20),
+        cface = Font:getFace("x_smallinfofont"),
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",

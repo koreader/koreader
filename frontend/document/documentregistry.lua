@@ -28,6 +28,11 @@ function DocumentRegistry:getProvider(file)
 end
 
 function DocumentRegistry:openDocument(file)
+    -- force a GC, so that any previous document used memory can be reused
+    -- immediately by this new document without having to wait for the
+    -- next regular gc. The second call may help reclaming more memory.
+    collectgarbage()
+    collectgarbage()
     if not self.registry[file] then
         local provider = self:getProvider(file)
         if provider ~= nil then

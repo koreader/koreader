@@ -1,20 +1,21 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local TextWidget = require("ui/widget/textwidget")
-local Font = require("ui/font")
-local Geom = require("ui/geometry")
-local Device = require("device")
-local UIManager = require("ui/uimanager")
-local Input = require("device").input
-local Screen = require("device").screen
-local Blitbuffer = require("ffi/blitbuffer")
-
---[[
-Widget that displays a tiny notification on top of screen
+--[[--
+Widget that displays a tiny notification at the top of the screen.
 --]]
+
+local Blitbuffer = require("ffi/blitbuffer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("device")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local Input = Device.input
+local Screen = Device.screen
+
 local Notification = InputContainer:new{
-    face = Font:getFace("infofont", 20),
+    face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
     timeout = nil,
     margin = 5,

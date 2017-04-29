@@ -9,6 +9,9 @@ local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
+-- engine can be initialized only once, on first document opened
+local engine_initialized = false
+
 local CreDocument = Document:new{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
     SCROLL_VIEW_MODE = 0,
@@ -16,7 +19,6 @@ local CreDocument = Document:new{
 
     _document = false,
     _loaded = false,
-    engine_initilized = false,
 
     line_space_percent = 100,
     default_font = G_reader_settings:readSetting("cre_font") or "Noto Serif",
@@ -47,7 +49,7 @@ function CreDocument:cacheInit()
 end
 
 function CreDocument:engineInit()
-    if not self.engine_initilized then
+    if not engine_initialized then
         require "libs/libkoreader-cre"
         -- initialize cache
         self:cacheInit()
@@ -66,7 +68,7 @@ function CreDocument:engineInit()
             end
         end
 
-        self.engine_initilized = true
+        engine_initialized = true
     end
 end
 

@@ -1,7 +1,7 @@
 -- high level wrapper module for gettext
 
-local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
 local Language = {}

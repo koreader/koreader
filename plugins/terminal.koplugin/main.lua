@@ -1,4 +1,3 @@
-
 local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
@@ -67,7 +66,7 @@ function Terminal:execute()
     table.insert(entries, _("Output will also be written to"))
     table.insert(entries, self.dump_file)
     UIManager:show(InfoMessage:new{
-        cface = Font:getFace("ffont", 18),
+        cface = Font:getFace("xx_smallinfofont"),
         text = _("Command output\n") .. table.concat(entries, "\n"),
         show_icon = false,
         width = Screen:getWidth() * 0.8,

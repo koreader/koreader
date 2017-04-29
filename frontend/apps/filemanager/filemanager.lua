@@ -78,7 +78,7 @@ function FileManager:init()
     self.show_parent = self.show_parent or self
 
     self.path_text = TextWidget:new{
-        face = Font:getFace("infofont", 18),
+        face = Font:getFace("xx_smallinfofont"),
         text = abbreviate(self.root_path),
     }
 
@@ -87,7 +87,7 @@ function FileManager:init()
         bordersize = 0,
         VerticalGroup:new{
             TextWidget:new{
-                face = Font:getFace("tfont", 24),
+                face = Font:getFace("smalltfont"),
                 text = self.title,
             },
             CenterContainer:new{

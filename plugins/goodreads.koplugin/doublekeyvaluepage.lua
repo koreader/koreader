@@ -1,24 +1,25 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local LeftContainer = require("ui/widget/container/topcontainer")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local LineWidget = require("ui/widget/linewidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local CloseButton = require("ui/widget/closebutton")
-local UIManager = require("ui/uimanager")
-local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
-local RenderText = require("ui/rendertext")
-local Geom = require("ui/geometry")
-local Font = require("ui/font")
-local Device = require("device")
-local Screen = Device.screen
-local GoodreadsApi = require("goodreadsapi")
-local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
+local Device = require("device")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local GoodreadsApi = require("goodreadsapi")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/topcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local LuaSettings = require("luasettings")
+local RenderText = require("ui/rendertext")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local Screen = Device.screen
+
 local _ = require("gettext")
 local InfoMessage = require("ui/widget/infomessage")
 
@@ -61,7 +62,7 @@ function DoubleKeyValueTitle:init()
         TextWidget:new{
             text = "",  -- page count
             fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("ffont", 20),
+            face = Font:getFace("x_smallinfofont"),
         },
     }
     self.title_bottom = OverlapGroup:new{
@@ -96,8 +97,8 @@ end
 local DoubleKeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface_up = Font:getFace("cfont", 22),
-    cface_down = Font:getFace("cfont", 18),
+    cface_up = Font:getFace("smallinfofont"),
+    cface_down = Font:getFace("xx_smallinfofont"),
     width = nil,
     height = nil,
     align = "left",

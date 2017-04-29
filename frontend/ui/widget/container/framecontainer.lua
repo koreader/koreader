@@ -1,11 +1,27 @@
+--[[--
+A FrameContainer is some graphics content (1 widget) that is surrounded by a
+frame
+
+Example:
+
+    local frame
+    frame = FrameContainer:new{
+        radius = 8,
+        bordersize = 3,
+        padding = 0,
+        margin = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        VerticalGroup:new{
+            -- etc
+        }
+    }
+
+--]]
+
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
 
---[[
-A FrameContainer is some graphics content (1 widget) that is surrounded by a
-frame
---]]
 local FrameContainer = WidgetContainer:new{
     background = nil,
     color = Blitbuffer.COLOR_BLACK,

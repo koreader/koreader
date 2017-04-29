@@ -1,23 +1,23 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalSpan = require("ui/widget/verticalspan")
-local ProgressWidget = require("ui/widget/progresswidget")
-local LineWidget = require("ui/widget/linewidget")
-local TextWidget = require("ui/widget/textwidget")
-local CloseButton = require("ui/widget/closebutton")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
-local Screen = require("device").screen
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
 local Font = require("ui/font")
-local _ = require("gettext")
+local Geom = require("ui/geometry")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local ProgressWidget = require("ui/widget/progresswidget")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
+local _ = require("gettext")
+local Screen = require("device").screen
 
 local LINE_COLOR = Blitbuffer.gray(0.4)
 local BG_COLOR = Blitbuffer.gray(0.2)
@@ -47,9 +47,9 @@ local shortDayOfWeekTranslation = {
 }
 
 function ReaderProgress:init()
-    self.small_font_face = Font:getFace("ffont", 15)
-    self.medium_font_face = Font:getFace("ffont", 20)
-    self.large_font_face = Font:getFace("ffont", 25)
+    self.small_font_face = Font:getFace("smallffont")
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
     UIManager:setDirty(self, function()
@@ -241,7 +241,7 @@ function ReaderProgress:genWeekStats(stats_day)
                 TextWidget:new{
                     padding = 2,
                     text = date_format_show .. " - " .. util.secondsToClock(select_day_time, true),
-                    face = Font:getFace("ffont", 16),
+                    face = Font:getFace("smallffont"),
                 },
             },
         }
