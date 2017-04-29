@@ -1,7 +1,7 @@
 --[[--
-Widget that displays an informational message
+Widget that displays an informational message.
 
-it vanishes on key press or after a given timeout
+It vanishes on key press or after a given timeout.
 
 Example:
     local UIManager = require("ui/uimanager")
