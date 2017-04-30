@@ -219,7 +219,14 @@ function UIManager:close(widget, refreshtype, refreshregion)
     logger.dbg("close widget", widget.id or widget.name)
     local dirty = false
     -- Ensure all the widgets can get onFlushSettings event.
-    -- widget:handleEvent(Event:new("FlushSettings"))
+    if widget.name ~= "ReaderUI" then
+      -- Once the ReaderUI is closed, UIManager:quit() and FlushSettings will eventually be called.
+      -- So we do not bother FlushSettings again.
+      -- Meanwhile, calling FlushSettings on ReaderUI also trigger several test failures
+      -- (https://goo.gl/Rkg6k8). Some initial investigations show the in CREngine
+      -- ldomDocument::createXPointer() (https://goo.gl/vz6zrc) may impact its internal states.
+      widget:handleEvent(Event:new("FlushSettings"))
+    end
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
     -- make it disabled by default and check any widget that enables it
