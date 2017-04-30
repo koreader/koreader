@@ -219,7 +219,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
     logger.dbg("close widget", widget.id or widget.name)
     local dirty = false
     -- Ensure all the widgets can get onFlushSettings event.
-    widget:handleEvent(Event:new("FlushSettings"))
+    -- widget:handleEvent(Event:new("FlushSettings"))
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
     -- make it disabled by default and check any widget that enables it
