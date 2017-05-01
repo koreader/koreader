@@ -297,13 +297,13 @@ function FileManagerMenu:exitOrRestart(callback)
     if SetDefaults.settings_changed then
         UIManager:show(ConfirmBox:new{
             text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
-            ok_text = _("Yes"),
+            ok_text = _("Save"),
             ok_callback = function()
-                SetDefaults.settings_changed = false
-                SetDefaults:saveSettings()
-                self:exitOrRestart(callback)
+              SetDefaults.settings_changed = false
+              SetDefaults:saveSettings()
+              self:exitOrRestart(callback)
             end,
-            cancel_text = _("No"),
+            cancel_text = _("Don't save"),
             cancel_callback = function()
                 SetDefaults.settings_changed = false
                 self:exitOrRestart(callback)

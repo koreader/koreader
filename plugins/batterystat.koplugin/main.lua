@@ -204,7 +204,7 @@ function BatteryStat:showStatistics()
     table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
     table.insert(kv_pairs, {self.dump_file, ""})
     table.insert(kv_pairs, "----------")
-    table.insert(kv_pairs, {_("Should you like to reset the data,"), "",
+    table.insert(kv_pairs, {_("If you would like to reset the data,"), "",
                             callback = function()
                                 self:resetAll()
                                 self:restart()
