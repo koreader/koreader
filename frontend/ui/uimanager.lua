@@ -219,12 +219,15 @@ function UIManager:close(widget, refreshtype, refreshregion)
     logger.dbg("close widget", widget.id or widget.name)
     local dirty = false
     -- Ensure all the widgets can get onFlushSettings event.
-    if widget.name ~= "ReaderUI" then
-      -- Once the ReaderUI is closed, UIManager:quit() and FlushSettings will eventually be called.
-      -- So we do not bother FlushSettings again.
+    if #self._window_stack > 1 then
+      -- Once the FileManager / ReaderUI is closed, UIManager:quit() and FlushSettings will
+      -- eventually be called. So we do not bother FlushSettings again.
       -- Meanwhile, calling FlushSettings on ReaderUI also trigger several test failures
       -- (https://goo.gl/Rkg6k8). Some initial investigations show the in CREngine
       -- ldomDocument::createXPointer() (https://goo.gl/vz6zrc) may impact its internal states.
+      -- TODO(hzj-jie): Rename FileManager:onClose() and ReaderUI:onClose() to close() and remove
+      -- FlushSettings from them.
+      -- TODO(hzj-jie): Find out the root cause in CREngine that triggers the issue described above.
       widget:handleEvent(Event:new("FlushSettings"))
     end
     -- first send close event to widget
