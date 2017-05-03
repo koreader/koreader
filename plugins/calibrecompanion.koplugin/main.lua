@@ -330,7 +330,11 @@ function CalibreCompanion:sendBook(arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
     DEBUG("write to file", filename)
-    local outfile = io.open(filename, "wb")
+    local lfs = require("libs/libkoreader-lfs")
+    local dir, name = string.match(filename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+    lfs.mkdir(dir)
+    lfs.chdir(dir)
+    local outfile = io.open(name, "wb")
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
