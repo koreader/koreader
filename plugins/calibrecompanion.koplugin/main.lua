@@ -99,6 +99,12 @@ function CalibreCompanion:addToMainMenu(menu_items)
                     end
                 end
             },
+            {
+              text = _("Set inbox directory"),
+              callback = function()
+                CalibreCompanion:setInboxDir()
+                end
+            }
         }
     }
 end
@@ -131,7 +137,9 @@ function CalibreCompanion:setInboxDir(host, port)
         onConfirm = function(inbox)
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
-            calibre_device:initCalibreMQ(host, port)
+            if host and port then
+              calibre_device:initCalibreMQ(host, port)
+            end
         end,
     }:chooseDir()
 end
