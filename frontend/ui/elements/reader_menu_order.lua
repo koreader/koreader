@@ -49,7 +49,7 @@ local order = {
     },
     tools = {
         "read_timer",
-        "calibre_wireless_connection",
+        "calibre_companion",
         "evernote",
         "keep_alive",
         "frontlight_gesture_controller",
