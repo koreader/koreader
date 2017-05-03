@@ -85,9 +85,11 @@ function CalibreCompanion:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    return not self.calibre_socket
-                        and _("Connect")
-                        or _("Disconnect")
+                  if self.calibre_socket then
+                    return _("Disconnect")
+                  else
+                    return _("Connect")
+                  end
                 end,
                 callback = function()
                     if not self.calibre_socket then
