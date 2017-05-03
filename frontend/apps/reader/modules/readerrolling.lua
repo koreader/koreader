@@ -1,13 +1,12 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local ReaderPanning = require("apps/reader/modules/readerpanning")
-local Screen = require("device").screen
 local Device = require("device")
-local Input = require("device").input
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local ReaderPanning = require("apps/reader/modules/readerpanning")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-
+local Input = require("device").input
+local Screen = require("device").screen
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -447,7 +446,6 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        self:_gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -463,9 +461,7 @@ function ReaderRolling:onChangeViewMode()
     self.old_doc_height = self.ui.document.info.doc_height
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    if self.xpointer then
-        self:_gotoXPointer(self.xpointer)
-    else
+    if self.xpointer == nil then
         table.insert(self.ui.postInitCallback, function()
             self:_gotoXPointer(self.xpointer)
         end)
