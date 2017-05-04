@@ -15,10 +15,10 @@ local ltn12 = require("ltn12")
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false  -- for only once lazy initialization
-local FEED_CONFIG_FILE = "feed_config.lua"
-local FILE_EXTENSION = ".html"
-local NEWS_DL_DIR_NAME = "news"
-local NEWS_DL_DIR, FEED_CONFIG_PATH
+local feed_config_file = "feed_config.lua"
+local file_extension = ".html"
+local news_download_dir_name = "news"
+local news_download_dir_path, feed_config_path
 
 local function deserializeXMLString(xml_str)
     -- uses LuaXML https://github.com/manoelcampos/LuaXML
@@ -43,11 +43,11 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        NEWS_DL_DIR = ("%s/%s/"):format(DataStorage:getDataDir(), NEWS_DL_DIR_NAME)
-        if not lfs.attributes(NEWS_DL_DIR, "mode") then
-            lfs.mkdir(NEWS_DL_DIR)
+        news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+        if not lfs.attributes(news_download_dir_path, "mode") then
+            lfs.mkdir(news_download_dir_path)
         end
-	FEED_CONFIG_PATH = NEWS_DL_DIR .. FEED_CONFIG_FILE
+        feed_config_path = news_download_dir_path .. feed_config_file
         initialized = true
     end
 
@@ -63,9 +63,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
-                        FileManager.instance:reinit(NEWS_DL_DIR)
+                        FileManager.instance:reinit(news_download_dir_path)
                     else
-                        FileManager:showFiles(NEWS_DL_DIR)
+                        FileManager:showFiles(news_download_dir_path)
                     end
                 end,
             },
@@ -73,9 +73,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Remove news"),
                 callback = function()
                     -- puerge all downloaded news files, but keep the feed config
-                    for entry in lfs.dir(NEWS_DL_DIR) do
-                        if entry ~= "." and entry ~= ".." and entry ~= FEED_CONFIG_FILE then
-                            local entry_path = NEWS_DL_DIR .. "/" .. entry
+                    for entry in lfs.dir(news_download_dir_path) do
+                        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+                            local entry_path = news_download_dir_path .. "/" .. entry
                             local entry_mode = lfs.attributes(entry_path, "mode")
                             if entry_mode == "file" then
                                 ffi.C.remove(entry_path)
@@ -94,8 +94,8 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_("News downloader can be configured in the feeds config file:\n%1\n\nIt downloads news items to:\n%2.\n\nTo set you own news sources edit foregoing feeds config file. Items download limit can be set there."),
-                                 FEED_CONFIG_PATH,
-                                 NEWS_DL_DIR)
+                                 feed_config_path,
+                                 news_download_dir_path)
                     })
                 end,
             },
@@ -110,19 +110,19 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     UIManager:forceRePaint()
     UIManager:close(info)
 
-    if not lfs.attributes(FEED_CONFIG_PATH, "mode") then
+    if not lfs.attributes(feed_config_path, "mode") then
         logger.dbg("NewsDownloader: Creating initial feed config.")
-        FFIUtil.copyFile(FFIUtil.joinPath(self.path, FEED_CONFIG_FILE),
-                         FEED_CONFIG_PATH)
+        FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file),
+                         feed_config_path)
     end
-    local ok, feed_config = pcall(dofile, FEED_CONFIG_PATH)
+    local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
         logger.info("NewsDownloader: Feed config not found.")
         return
     end
 
     if #feed_config <= 0 then
-        logger.info('NewsDownloader: empty feed list.', FEED_CONFIG_PATH)
+        logger.info('NewsDownloader: empty feed list.', feed_config_path)
         return
     end
 
@@ -170,7 +170,7 @@ end
 
 function NewsDownloader:processAtom(feeds, limit)
     local feed_output_dir = string.format("%s%s/",
-                                          NEWS_DL_DIR,
+                                          news_download_dir_path,
                                           util.replaceInvalidChars(feeds.feed.title))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
@@ -186,7 +186,7 @@ end
 
 function NewsDownloader:processRSS(feeds, limit)
     local feed_output_dir = ("%s%s/"):format(
-        NEWS_DL_DIR, util.replaceInvalidChars(feeds.rss.channel.title))
+        news_download_dir_path, util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
@@ -203,7 +203,7 @@ function NewsDownloader:commonFeedProcess(feed, feed_output_dir)
 
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
                                                util.replaceInvalidChars(feed.title),
-                                               FILE_EXTENSION)
+                                               file_extension)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
     http.request({ url = feed.link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
 end
