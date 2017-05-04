@@ -165,7 +165,7 @@ function NewsDownloader:processFeedSource(url, limit)
         self:processAtom(feeds, limit);
     else
         self:processRSS(feeds, limit);
-    end    
+    end
 end
 
 function NewsDownloader:processAtom(feeds, limit)
@@ -180,7 +180,7 @@ function NewsDownloader:processAtom(feeds, limit)
         if index -1 == limit then
             break
         end
-        self:commonFeedProcess(index, feed, feed_output_dir);
+        self:commonFeedProcess(feed, feed_output_dir);
     end
 end
 
@@ -195,17 +195,17 @@ function NewsDownloader:processRSS(feeds, limit)
         if index -1 == limit then
             break
         end
-        self:commonFeedProcess(index, feed, feed_output_dir);
+        self:commonFeedProcess(feed, feed_output_dir);
     end
 end
 
-function NewsDownloader:commonFeedProcess(index, feed, feed_output_dir)
+function NewsDownloader:commonFeedProcess(feed, feed_output_dir)
 
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
                                                util.replaceInvalidChars(feed.title),
                                                FILE_EXTENSION)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-    http.request({ url = url, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+    http.request({ url = feed.link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
 end
 
 return NewsDownloader
