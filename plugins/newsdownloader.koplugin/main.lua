@@ -126,6 +126,8 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
+    local unsupported_feeds_urls = {};
+
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
@@ -134,30 +136,46 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
-            self:processFeedSource(url, tonumber(limit))
+            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls)
             UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
     end
 
-    UIManager:show(InfoMessage:new{
-        text = _("Downloading news finished."),
-        timeout = 1,
-    })
+    if #unsupported_feeds_urls <= 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("Downloading news finished."),
+            timeout = 1,
+        })
+    else
+        local unsupported_urls = ""
+        for k,url in pairs(unsupported_feeds_urls) do
+            unsupported_urls = unsupported_urls .. url
+            if k ~= #unsupported_feeds_urls then
+                unsupported_urls = unsupported_urls .. ", "
+            end
+        end
+        UIManager:show(InfoMessage:new{
+            text = T(_("Downloading finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
+        })
+    end
 end
 
-function NewsDownloader:processFeedSource(url, limit)
+function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local resp_lines = {}
     http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
     local feeds = deserializeXMLString(table.concat(resp_lines))
-    if not feeds then return end
+    if not feeds then 
+        table.insert(unsupported_feeds_urls, url)
+        return
+    end
 
     local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item;
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link;
 
     if not is_rss and not is_atom then
-        logger.info('NewsDownloader: Unsupported feeds format.', feeds)
+        table.insert(unsupported_feeds_urls, url)
         return
     end
 
