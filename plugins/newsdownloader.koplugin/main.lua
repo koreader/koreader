@@ -166,7 +166,7 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local resp_lines = {}
     http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
     local feeds = deserializeXMLString(table.concat(resp_lines))
-    if not feeds then 
+    if not feeds then
         table.insert(unsupported_feeds_urls, url)
         return
     end
