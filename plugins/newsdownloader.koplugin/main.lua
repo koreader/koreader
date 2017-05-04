@@ -153,15 +153,15 @@ function NewsDownloader:processFeedSource(url, limit)
     local feeds = deserializeXMLString(table.concat(resp_lines))
     if not feeds then return end
 
-    local is_valid_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item;
-    local is_valid_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link;
+    local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item;
+    local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link;
 
-    if not is_valid_rss and not is_valid_atom then
-        logger.info('NewsDownloader: Got invalid feeds', feeds)
+    if not is_rss and not is_atom then
+        logger.info('NewsDownloader: Unsupported feeds format.', feeds)
         return
     end
 
-    if is_valid_atom then
+    if is_atom then
         self:processAtom(feeds, limit);
     else
         self:processRSS(feeds, limit);
