@@ -92,7 +92,6 @@ function ReaderRolling:init()
     table.insert(self.ui.postInitCallback, function()
         self.doc_height = self.ui.document.info.doc_height
         self.old_doc_height = self.doc_height
-        self.old_page = self.ui.document.info.number_of_pages
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -153,7 +152,6 @@ end
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
     self.setupXpointer()
-    self.old_page = 0
 end
 
 function ReaderRolling:setupTouchZones()
@@ -447,7 +445,7 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        if self.old_page > 0 then
+        if self.old_page then
             self:_gotoXPointer(self.xpointer)
         end
         self.old_doc_height = new_height
@@ -466,7 +464,7 @@ function ReaderRolling:onChangeViewMode()
     local old_page = self.old_page
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    if self.xpointer and old_page > 0 then
+    if self.xpointer and old_page then
         self:_gotoXPointer(self.xpointer)
     elseif self.xpointer == nil then
         table.insert(self.ui.postInitCallback, function()
