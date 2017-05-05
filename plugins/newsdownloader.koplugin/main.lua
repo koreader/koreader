@@ -17,10 +17,8 @@ local NewsDownloader = WidgetContainer:new{}
 local initialized = false  -- for only once lazy initialization
 local feed_config_file = "feed_config.lua"
 local file_extension = ".html"
-local custom_news_path_var_name = "news_path"
-local default_news_dir_name =  "news"
+local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-
 
 local function deserializeXMLString(xml_str)
     -- uses LuaXML https://github.com/manoelcampos/LuaXML
@@ -45,12 +43,7 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        local custom_news_path = G_reader_settings:readSetting(custom_news_path_var_name)
-	if custom_news_path ~= nil then
-            news_download_dir_path = custom_news_path .. "/"
-        else
-            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), default_news_dir_name)
-        end
+        news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
         if not lfs.attributes(news_download_dir_path, "mode") then
             lfs.mkdir(news_download_dir_path)
         end
@@ -93,14 +86,6 @@ function NewsDownloader:addToMainMenu(menu_items)
                     end
                     UIManager:show(InfoMessage:new{
                         text = _("All news removed.")
-                    })
-                end,
-            },
-            {
-                text = _("Set news download path"),
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = _("To set your own news download path edit & add 'news_path' variable to koreader 'settings.reader.lua' file. E.g.  ['news_path'] = '/your_path/your_dir/'"),
                     })
                 end,
             },
