@@ -157,7 +157,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             end
         end
         UIManager:show(InfoMessage:new{
-            text = T(_("Downloading finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
+            text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
 end
