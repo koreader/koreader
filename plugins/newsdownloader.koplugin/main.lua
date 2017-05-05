@@ -58,7 +58,7 @@ function NewsDownloader:addToMainMenu(menu_items)
         initialized = true
     end
 
-    menu_items.rss_news_downloader = {
+    menu_items.news_downloader = {
         text = _("News (RSS/Atom) downloader"),
         sub_item_table = {
             {
