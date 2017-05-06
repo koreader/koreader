@@ -5,8 +5,8 @@ local ReaderPanning = require("apps/reader/modules/readerpanning")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local Input = require("device").input
-local Screen = require("device").screen
+local Input = Device.input
+local Screen = Device.screen
 
 --[[
     Rolling is just like paging in page-based documents except that
