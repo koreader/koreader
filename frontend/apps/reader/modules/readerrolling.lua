@@ -1,13 +1,12 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local ReaderPanning = require("apps/reader/modules/readerpanning")
-local Screen = require("device").screen
 local Device = require("device")
-local Input = require("device").input
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local ReaderPanning = require("apps/reader/modules/readerpanning")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-
+local Input = Device.input
+local Screen = Device.screen
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -93,7 +92,6 @@ function ReaderRolling:init()
     table.insert(self.ui.postInitCallback, function()
         self.doc_height = self.ui.document.info.doc_height
         self.old_doc_height = self.doc_height
-        self.old_page = self.ui.document.info.number_of_pages
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -267,7 +265,11 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        return self.current_page / self.old_page
+        if self.old_page then
+            return self.current_page / self.old_page
+        else
+            return nil
+        end
     else
         -- FIXME: the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
@@ -447,7 +449,9 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        self:_gotoXPointer(self.xpointer)
+        if self.old_page then
+            self:_gotoXPointer(self.xpointer)
+        end
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -461,11 +465,12 @@ end
 function ReaderRolling:onChangeViewMode()
     self.ui.document:_readMetadata()
     self.old_doc_height = self.ui.document.info.doc_height
+    local old_page = self.old_page
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    if self.xpointer then
+    if self.xpointer and old_page then
         self:_gotoXPointer(self.xpointer)
-    else
+    elseif self.xpointer == nil then
         table.insert(self.ui.postInitCallback, function()
             self:_gotoXPointer(self.xpointer)
         end)
