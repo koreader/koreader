@@ -265,7 +265,11 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        return self.current_page / self.old_page
+        if self.old_page then
+            return self.current_page / self.old_page
+        else
+            return nil
+        end
     else
         -- FIXME: the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
