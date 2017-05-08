@@ -178,7 +178,11 @@ function kodev-release() {
     # SUPPORTED_RELEASE_TARGETS=$(echo ${SUPPORTED_TARGETS} | sed 's/win32//')
     SUPPORTED_RELEASE_TARGETS="${SUPPORTED_TARGETS/emu*/""}"
     RELEASE_HELP_MSG="
-usage: release <TARGET>
+usage: release <OPTIONS> <TARGET>
+
+OPTIONS:
+
+    --ignore-translation  do not fetch translation for release
 
 TARGET:
 ${SUPPORTED_RELEASE_TARGETS}"
@@ -187,10 +191,15 @@ ${SUPPORTED_RELEASE_TARGETS}"
         exit 1
     }
 
+    ignore_translation=0
+
     while [[ $1 == '-'* ]]; do
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
+            --ignore-translation)
+                ignore_translation=1
+                ;;
             -v | --verbose)
                 export VERBOSE=1
                 ;;
@@ -207,7 +216,17 @@ ${SUPPORTED_RELEASE_TARGETS}"
         shift 1
     done
 
-    which tx>/dev/null && make po || echo "WARN: Transifex client not found, no translation pulled."
+    if [ "${ignore_translation}" -eq 0 ]; then
+        if which tx>/dev/null; then
+            make po || {
+                echo "ERROR: failed to fetch translation."
+                echo "Tip: Use --ignore-translation OPTION if you want to build a release without translation."
+                exit 1
+            }
+        else
+            echo "WARN: Transifex client not found, no translation pulled."
+        fi
+    fi
 
     case $1 in
         kindle)
