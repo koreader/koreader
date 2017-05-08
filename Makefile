@@ -41,11 +41,6 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
-# for gettext
-DOMAIN=koreader
-TEMPLATE_DIR=l10n/templates
-KOREADER_MISC_TOOL=../koreader-misc
-XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
 
 
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
@@ -348,6 +343,13 @@ android-toolchain:
 pocketbook-toolchain:
 	$(MAKE) -C $(KOR_BASE) pocketbook-toolchain
 
+
+# for gettext
+DOMAIN=koreader
+TEMPLATE_DIR=l10n/templates
+KOREADER_MISC_TOOL=../koreader-misc
+XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
+
 pot:
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
@@ -355,10 +357,13 @@ pot:
 		`find tools -iname "*.lua"` \
 		> $(TEMPLATE_DIR)/$(DOMAIN).pot
 	# push source file to Transifex
-	$(MAKE) -i -C l10n bootstrap push
+	$(MAKE) -i -C l10n bootstrap
+	$(MAKE) -C l10n push
 
 po:
-	$(MAKE) -i -C l10n bootstrap pull
+	$(MAKE) -i -C l10n bootstrap
+	$(MAKE) -C l10n pull
+
 
 static-check:
 	@if which luacheck > /dev/null; then \
