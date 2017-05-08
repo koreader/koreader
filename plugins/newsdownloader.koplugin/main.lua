@@ -126,7 +126,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
-    local unsupported_feeds_urls = {};
+    local unsupported_feeds_urls = {}
 
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
@@ -171,18 +171,16 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
         return
     end
 
-    local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item;
-    local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link;
-
-    if not is_rss and not is_atom then
-        table.insert(unsupported_feeds_urls, url)
-        return
-    end
+    local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item and feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link
+    local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
     if is_atom then
-        self:processAtom(feeds, limit);
+        self:processAtom(feeds, limit)
+    elseif is_rss then
+        self:processRSS(feeds, limit)
     else
-        self:processRSS(feeds, limit);
+        table.insert(unsupported_feeds_urls, url)
+        return
     end
 end
 
@@ -198,7 +196,7 @@ function NewsDownloader:processAtom(feeds, limit)
         if index -1 == limit then
             break
         end
-        self:commonFeedProcess(feed, feed_output_dir);
+        self:downloadFeed(feed, feed_output_dir)
     end
 end
 
@@ -213,11 +211,11 @@ function NewsDownloader:processRSS(feeds, limit)
         if index -1 == limit then
             break
         end
-        self:commonFeedProcess(feed, feed_output_dir);
+        self:downloadFeed(feed, feed_output_dir)
     end
 end
 
-function NewsDownloader:commonFeedProcess(feed, feed_output_dir)
+function NewsDownloader:downloadFeed(feed, feed_output_dir)
 
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
                                                util.replaceInvalidChars(feed.title),

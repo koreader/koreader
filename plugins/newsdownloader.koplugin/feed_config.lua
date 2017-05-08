@@ -4,5 +4,5 @@ return {
     { "http://www.pcworld.com/index.rss", limit = 1 },
     { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2},
 	-- set limit to "0" means no download, "-1" no limit.
-    { "http://www.economist.com/sections/science-technology/rss.xml", limit = 0 },
+    { "http://www.football.co.uk/international/rss.xml", limit = 0 },
 }
