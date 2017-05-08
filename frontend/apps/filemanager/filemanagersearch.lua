@@ -209,7 +209,11 @@ function Search:ShowSearch()
         UIManager:show(self.search_dialog)
     else
         if self.error then
-            UIManager:show(InfoMessage:new{text = self.error .. ("\n") .. _( "Unable to find a calibre metadata file."),})
+            UIManager:show(InfoMessage:new{
+                text = ("%s\n%s"):format(
+                    self.error,
+                    _("Unable to find a calibre metadata file.")),
+            })
         end
     end
 
@@ -472,38 +476,39 @@ function Search:find(option)
             self:browse(option,1)
         end
     else
-        UIManager:show(InfoMessage:new{text = T(_("No match for %1."), self.search_value)})
+        UIManager:show(InfoMessage:new{
+            text = T(_("No match for %1."), self.search_value)
+        })
     end
 end
 
 function Search:onMenuHold(item)
-    if string.len(item.info or "") > 0 then
-        if item.notchecked then
-            item.info = item.info .. item.path
-            local f = io.open(item.path)
-            if f == nil then
-                item.info = item.info .. "\n" .. _("File not found!")
-            else
-                item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
-                f:close()
-            end
-            item.notchecked = false
-        end
-        local thumbnail = nil
-        local doc = DocumentRegistry:openDocument(item.path)
-        if doc then
-            thumbnail = doc:getCoverPageImage()
-            doc:close()
-        end
-        local thumbwidth = math.min(240, Screen:getWidth()/3)
-        UIManager:show(InfoMessage:new{
-            text = item.info,
-            image = thumbnail,
-            image_width = thumbwidth,
-            image_height = thumbwidth/2*3
-        })
+    if not item.info or item.info:len() <= 0 then return end
 
+    if item.notchecked then
+        item.info = item.info .. item.path
+        local f = io.open(item.path)
+        if f == nil then
+            item.info = item.info .. "\n" .. _("File not found!")
+        else
+            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+            f:close()
+        end
+        item.notchecked = false
     end
+    local thumbnail
+    local doc = DocumentRegistry:openDocument(item.path)
+    if doc then
+        thumbnail = doc:getCoverPageImage()
+        doc:close()
+    end
+    local thumbwidth = math.min(240, Screen:getWidth()/3)
+    UIManager:show(InfoMessage:new{
+        text = item.info,
+        image = thumbnail,
+        image_width = thumbwidth,
+        image_height = thumbwidth/2*3
+    })
 end
 
 function Search:showresults()

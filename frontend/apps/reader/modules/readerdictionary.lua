@@ -232,7 +232,8 @@ function ReaderDictionary:onUpdateDefaultDict(dict)
     logger.dbg("make default dictionary:", dict)
     self.default_dictionary = dict
     UIManager:show(InfoMessage:new{
-        text = T(_("%1 is now the default dictionary for this document."), dict),
+        text = T(_("%1 is now the default dictionary for this document."),
+                 dict),
         timeout = 2,
     })
     return true

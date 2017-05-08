@@ -482,16 +482,16 @@ function FileManager:renameFile(file)
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_(
-                            "Failed to move history data of %1 to %2.\n" ..
-                            "The reading history may be lost."), file, dest),
+                        text = util.template(
+                            _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
+                            file, dest),
                     })
                 end
             end
         else
             UIManager:show(InfoMessage:new{
                 text = util.template(
-                           _("Failed to rename from %1 to %2"), file, dest),
+                    _("Failed to rename from %1 to %2"), file, dest),
             })
         end
     end

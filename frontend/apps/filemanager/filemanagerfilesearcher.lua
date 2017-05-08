@@ -98,7 +98,8 @@ function FileSearcher:close()
             else
                 UIManager:show(
                     InfoMessage:new{
-                        text = util.template(_("Found no files matching '%1'."), self.search_value)
+                        text = util.template(_("Found no files matching '%1'."),
+                                             self.search_value)
                     }
                 )
             end

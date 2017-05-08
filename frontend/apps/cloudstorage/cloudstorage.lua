@@ -122,7 +122,7 @@ function CloudStorage:openCloudServer(url)
         table.remove(self.paths)
         return false
     else
-        UIManager:show(InfoMessage:new{text = _("Empty folder") })
+        UIManager:show(InfoMessage:new{ text = _("Empty folder") })
         return false
     end
 end
