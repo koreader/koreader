@@ -197,7 +197,6 @@ function GoodreadsBook:genBookInfoGroup()
     if body then image = Pic.openJPGDocumentFromMem(body) end
     if image then
         table.insert(book_info_group, ImageWidget:new{
-            image_disposable = false,
             image = image.image_bb:copy(),
             width = img_width,
             height = img_height,
