@@ -252,7 +252,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
-                    text = _("Save as epub"),
+                    text = _("Save as EPUB"),
                     callback = function()
                         local InfoMessage = require("ui/widget/infomessage")
                         local ConfirmBox = require("ui/widget/confirmbox")
