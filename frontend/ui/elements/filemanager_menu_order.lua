@@ -36,7 +36,7 @@ local order = {
         "storage_stat",
         "cloud_storage",
         "read_timer",
-        "rss_news_downloader",
+        "news_downloader",
         "synchronize_time",
         "terminal",
         "----------------------------",
