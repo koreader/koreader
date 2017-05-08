@@ -48,7 +48,7 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. path,
+            text = T(_("Could not save file to:\n%1"), path),
             timeout = 3,
         })
     end
@@ -114,7 +114,7 @@ function Ftp:config(item, callback)
                 {
                     text = _("Info"),
                     callback = function()
-                        UIManager:show(InfoMessage:new{text = text_info })
+                        UIManager:show(InfoMessage:new{ text = text_info })
                     end
                 },
                 {
@@ -132,7 +132,9 @@ function Ftp:config(item, callback)
                             self.settings_dialog:onClose()
                             UIManager:close(self.settings_dialog)
                         else
-                            UIManager:show(InfoMessage:new{text = "Please fill in all fields." })
+                            UIManager:show(InfoMessage:new{
+                                text = _("Please fill in all fields.")
+                            })
                         end
                     end
                 },
