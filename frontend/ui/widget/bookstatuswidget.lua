@@ -301,6 +301,8 @@ function BookStatusWidget:genBookInfoGroup()
             width = img_width,
             height = img_height,
         })
+        -- dereference thumbnail since we let imagewidget manages its lifecycle
+        self.thumbnail = nil
     end
 
     table.insert(book_info_group, CenterContainer:new{
