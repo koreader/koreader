@@ -164,8 +164,9 @@ function ReaderDictionary:stardictLookup(word, box)
             results_str = A.stdout("./sdcv", "--utf8-input", "--utf8-output",
                     "-nj", word, "--data-dir", dict_dir)
         else
-            local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "
-                .. ("%q"):format(word) .. " --data-dir " .. dict_dir, "r")
+            local std_out = io.popen(
+                ("./sdcv --utf8-input --utf8-output -nj %q --data-dir %q"):format(word, dict_dir),
+                "r")
             if std_out then
                 results_str = std_out:read("*all")
                 std_out:close()
