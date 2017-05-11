@@ -402,6 +402,7 @@ OPTIONS:
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}" && {
         test_path="./spec/$1/unit"
+        rm -rf "${test_path}"/data/*.sdr
 
         if [ ! -z "$2" ]; then
             test_path="${test_path}/$2"
