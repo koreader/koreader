@@ -12,13 +12,11 @@ describe("ReaderLink module", function()
     end)
 
     it("should jump to links in epub", function()
-        UIManager:quit()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
         readerui.link:onTap(nil, {pos = {x = 336, y = 668}})
-        UIManager:run()
         assert.is.same(36, readerui.rolling.current_page)
     end)
 
@@ -51,13 +49,11 @@ describe("ReaderLink module", function()
     end)
 
     it("should be able to go back after link jump in epub", function()
-        UIManager:quit()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
         readerui.link:onTap(nil, {pos = {x = 336, y = 668}})
-        UIManager:run()
         assert.is.same(36, readerui.rolling.current_page)
         readerui.link:onGoBackLink()
         assert.is.same(4, readerui.rolling.current_page)

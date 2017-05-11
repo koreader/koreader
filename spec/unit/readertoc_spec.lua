@@ -12,6 +12,8 @@ describe("Readertoc module", function()
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
+        -- reset book to first page
+        readerui.rolling:onGotoPage(0)
         toc = readerui.toc
     end)
 
