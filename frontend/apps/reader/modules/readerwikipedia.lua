@@ -2,8 +2,8 @@ local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Translator = require("ui/translator")
-local Wikipedia = require("ui/wikipedia")
 local UIManager = require("ui/uimanager")
+local Wikipedia = require("ui/wikipedia")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -86,7 +86,9 @@ function ReaderWikipedia:initLanguages(word)
             end
         end
         -- use book and UI languages
-        addLanguage(self.view.document:getProps().language)
+        if self.view then
+            addLanguage(self.view.document:getProps().language)
+        end
         addLanguage(G_reader_settings:readSetting("language"))
         if #self.wiki_languages == 0 and word then
             -- if no language at all, do a translation of selected word

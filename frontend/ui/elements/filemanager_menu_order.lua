@@ -45,6 +45,8 @@ local order = {
     },
     search = {
         "dictionary_lookup",
+        "wikipedia_lookup",
+        "----------------------------",
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
