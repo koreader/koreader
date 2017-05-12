@@ -22,28 +22,13 @@ local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
 
-local function deserializeXMLString(xml_str)
-    -- uses LuaXML https://github.com/manoelcampos/LuaXML
-    -- The MIT License (MIT)
-    -- Copyright (c) 2016 Manoel Campos da Silva Filho
-    local treehdl = require("lib/handler")
-    local libxml = require("lib/xml")
-
-    --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = treehdl.simpleTreeHandler()
-    --Instantiate the object that parses the XML to a Lua table
-    local ok = pcall(function()
-        libxml.xmlParser(xmlhandler):parse(xml_str)
-    end)
-    if not ok then return end
-    return xmlhandler.root
-end
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function NewsDownloader:addToMainMenu(menu_items)
+
     if not initialized then
         local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/" .. news_downloader_config_file)
         if news_downloader_settings:has(config_key_custom_dl_dir) then 
@@ -79,42 +64,11 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
             {
                 text = _("Remove news"),
-                callback = function()
-                    -- puerge all downloaded news files, but keep the feed config
-                    for entry in lfs.dir(news_download_dir_path) do
-                        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
-                            local entry_path = news_download_dir_path .. "/" .. entry
-                            local entry_mode = lfs.attributes(entry_path, "mode")
-                            if entry_mode == "file" then
-                                ffi.C.remove(entry_path)
-                            elseif entry_mode == "directory" then
-                                FFIUtil.purgeDir(entry_path)
-                            end
-                        end
-                    end
-                    UIManager:show(InfoMessage:new{
-                        text = _("All news removed.")
-                    })
-                end,
+                callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
                 text = _("Set custom download directory"),
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = _("To select a folder press down and hold it for 1 second. \n\n Please restart Koreader afterwards for the applied changes to take effect.")
-                    })
-                    require("ui/downloadmgr"):new{
-                    title = _("Choose download directory"),
-                    onConfirm = function(path)
-                        logger.dbg("set download directory to", path)
-			local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/"..news_downloader_config_file)
-			news_downloader_settings:saveSetting(config_key_custom_dl_dir, path .. "/")
-			news_downloader_settings:flush()
-			logger.dbg("Coping to new download folder previous feed_config_file from: ", feed_config_path)
-			FFIUtil.copyFile(feed_config_path, path .."/" .. feed_config_file)
-                    end,
-}:chooseDir()
-                end,
+                callback = function() self:setCustomDownloadDirectory() end,
             },
             {
                 text = _("Help"),
@@ -128,6 +82,23 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
         },
     }
+end
+
+local function deserializeXMLString(xml_str)
+    -- uses LuaXML https://github.com/manoelcampos/LuaXML
+    -- The MIT License (MIT)
+    -- Copyright (c) 2016 Manoel Campos da Silva Filho
+    local treehdl = require("lib/handler")
+    local libxml = require("lib/xml")
+
+    --Instantiate the object the states the XML file as a Lua table
+    local xmlhandler = treehdl.simpleTreeHandler()
+    --Instantiate the object that parses the XML to a Lua table
+    local ok = pcall(function()
+        libxml.xmlParser(xmlhandler):parse(xml_str)
+    end)
+    if not ok then return end
+    return xmlhandler.root
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
@@ -249,6 +220,40 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir)
                                                file_extension)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
     http.request({ url = feed.link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+end
+
+function NewsDownloader:removeNewsButKeepFeedConfig()
+    for entry in lfs.dir(news_download_dir_path) do
+        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+            local entry_path = news_download_dir_path .. "/" .. entry
+            local entry_mode = lfs.attributes(entry_path, "mode")
+            if entry_mode == "file" then
+                ffi.C.remove(entry_path)
+            elseif entry_mode == "directory" then
+                FFIUtil.purgeDir(entry_path)
+            end
+        end
+    end
+    UIManager:show(InfoMessage:new{
+       text = _("All news removed.")
+    })
+end
+
+function NewsDownloader:setCustomDownloadDirectory()
+    UIManager:show(InfoMessage:new{
+       text = _("To select a folder press down and hold it for 1 second. \n\n Please restart Koreader afterwards for the applied changes to take effect.")
+    })
+    require("ui/downloadmgr"):new{
+       title = _("Choose download directory"),
+       onConfirm = function(path)
+           logger.dbg("NewsDownloader: set download directory to: ", path)
+           local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/"..news_downloader_config_file)
+           news_downloader_settings:saveSetting(config_key_custom_dl_dir, path .. "/")
+           news_downloader_settings:flush()
+           logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
+           FFIUtil.copyFile(feed_config_path, path .."/" .. feed_config_file)
+       end,
+    }:chooseDir()
 end
 
 return NewsDownloader
