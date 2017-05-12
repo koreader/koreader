@@ -29,9 +29,6 @@ By default, it's `"on"..Event.name`.
 ]]
 function EventListener:handleEvent(event)
     if self[event.handler] then
-        if self.id or self.name then
-            logger.dbg(self.id or self.name, "handling event", event)
-        end
         return self[event.handler](self, unpack(event.args))
     end
 end

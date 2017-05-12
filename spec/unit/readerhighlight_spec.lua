@@ -171,6 +171,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -255,6 +256,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
