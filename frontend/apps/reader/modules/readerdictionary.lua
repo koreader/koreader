@@ -220,8 +220,10 @@ function ReaderDictionary:showDict(word, results, box)
             is_wiki = self.is_wiki,
             wiki_languages = self.wiki_languages,
             refresh_callback = function()
-                -- update info in footer (time, battery, etc)
-                self.view.footer:updateFooter()
+                if self.view then
+                    -- update info in footer (time, battery, etc)
+                    self.view.footer:updateFooter()
+                end
             end,
         }
         table.insert(self.dict_window_list, self.dict_window)

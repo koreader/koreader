@@ -19,6 +19,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
+local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -322,6 +323,7 @@ function FileManager:init()
         ui = self,
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
+    table.insert(self, ReaderWikipedia:new{ ui = self })
 
     self.loaded_modules = {}
     -- koreader plugins
