@@ -31,7 +31,7 @@ function NewsDownloader:addToMainMenu(menu_items)
 
     if not initialized then
         local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/" .. news_downloader_config_file)
-        if news_downloader_settings:has(config_key_custom_dl_dir) then 
+        if news_downloader_settings:has(config_key_custom_dl_dir) then
             news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
 	else
             news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
