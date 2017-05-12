@@ -10,12 +10,14 @@ local logger = require("logger")
 local ffi = require("ffi")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
-
+local LuaSettings = require("frontend/luasettings")
 
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false  -- for only once lazy initialization
 local feed_config_file = "feed_config.lua"
+local news_downloader_config_file = "news_downloader_settings.lua"
+local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
@@ -43,7 +45,13 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     if not initialized then
-        news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+        local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/" .. news_downloader_config_file)
+        if news_downloader_settings:has(config_key_custom_dl_dir) then 
+            news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
+	else
+            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+	end
+
         if not lfs.attributes(news_download_dir_path, "mode") then
             lfs.mkdir(news_download_dir_path)
         end
@@ -87,6 +95,25 @@ function NewsDownloader:addToMainMenu(menu_items)
                     UIManager:show(InfoMessage:new{
                         text = _("All news removed.")
                     })
+                end,
+            },
+            {
+                text = _("Set custom download directory"),
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = _("To select a folder press down and hold it for 1 second. \n\n Please restart Koreader afterwards for the applied changes to take effect.")
+                    })
+                    require("ui/downloadmgr"):new{
+                    title = _("Choose download directory"),
+                    onConfirm = function(path)
+                        logger.dbg("set download directory to", path)
+			local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/"..news_downloader_config_file)
+			news_downloader_settings:saveSetting(config_key_custom_dl_dir, path .. "/")
+			news_downloader_settings:flush()
+			logger.dbg("Coping to new download folder previous feed_config_file from: ", feed_config_path)
+			FFIUtil.copyFile(feed_config_path, path .."/" .. feed_config_file)
+                    end,
+}:chooseDir()
                 end,
             },
             {
