@@ -14,7 +14,7 @@ local LuaSettings = require("frontend/luasettings")
 
 local NewsDownloader = WidgetContainer:new{}
 
-local initialized = false  -- for only once lazy initialization
+local initialized = false
 local feed_config_file = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
@@ -28,21 +28,7 @@ function NewsDownloader:init()
 end
 
 function NewsDownloader:addToMainMenu(menu_items)
-
-    if not initialized then
-        local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/" .. news_downloader_config_file)
-        if news_downloader_settings:has(config_key_custom_dl_dir) then
-            news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
-	else
-            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
-	end
-
-        if not lfs.attributes(news_download_dir_path, "mode") then
-            lfs.mkdir(news_download_dir_path)
-        end
-        feed_config_path = news_download_dir_path .. feed_config_file
-        initialized = true
-    end
+    self:lazyInitialization()
 
     menu_items.news_downloader = {
         text = _("News (RSS/Atom) downloader"),
@@ -84,43 +70,46 @@ function NewsDownloader:addToMainMenu(menu_items)
     }
 end
 
-local function deserializeXMLString(xml_str)
-    -- uses LuaXML https://github.com/manoelcampos/LuaXML
-    -- The MIT License (MIT)
-    -- Copyright (c) 2016 Manoel Campos da Silva Filho
-    local treehdl = require("lib/handler")
-    local libxml = require("lib/xml")
+function NewsDownloader:lazyInitialization()
+   if not initialized then
+        logger.dbg("NewsDownloader: obtaining news folder")
+        local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
+        if news_downloader_settings:has(config_key_custom_dl_dir) then
+            news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
+        else
+            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+        end
 
-    --Instantiate the object the states the XML file as a Lua table
-    local xmlhandler = treehdl.simpleTreeHandler()
-    --Instantiate the object that parses the XML to a Lua table
-    local ok = pcall(function()
-        libxml.xmlParser(xmlhandler):parse(xml_str)
-    end)
-    if not ok then return end
-    return xmlhandler.root
+        if not lfs.attributes(news_download_dir_path, "mode") then
+            logger.dbg("NewsDownloader: Creating initial directory")
+            lfs.mkdir(news_download_dir_path)
+        end
+        feed_config_path = news_download_dir_path .. feed_config_file
+
+        if not lfs.attributes(feed_config_path, "mode") then
+            logger.dbg("NewsDownloader: Creating initial feed config.")
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file),
+                         feed_config_path)
+        end
+        initialized = true
+    end
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
-    -- force repaint due to upcoming blocking calls
+    logger.dbg("force repaint due to upcoming blocking calls")
     UIManager:forceRePaint()
     UIManager:close(info)
 
-    if not lfs.attributes(feed_config_path, "mode") then
-        logger.dbg("NewsDownloader: Creating initial feed config.")
-        FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file),
-                         feed_config_path)
-    end
     local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
-        logger.info("NewsDownloader: Feed config not found.")
+        logger.error("NewsDownloader: Feed config not found.")
         return
     end
 
     if #feed_config <= 0 then
-        logger.info('NewsDownloader: empty feed list.', feed_config_path)
+        logger.error('NewsDownloader: empty feed list.', feed_config_path)
         return
     end
 
@@ -163,7 +152,7 @@ end
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local resp_lines = {}
     http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
-    local feeds = deserializeXMLString(table.concat(resp_lines))
+    local feeds = self:deserializeXMLString(table.concat(resp_lines))
     if not feeds then
         table.insert(unsupported_feeds_urls, url)
         return
@@ -180,6 +169,23 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
         table.insert(unsupported_feeds_urls, url)
         return
     end
+end
+
+function NewsDownloader:deserializeXMLString(xml_str)
+    -- uses LuaXML https://github.com/manoelcampos/LuaXML
+    -- The MIT License (MIT)
+    -- Copyright (c) 2016 Manoel Campos da Silva Filho
+    local treehdl = require("lib/handler")
+    local libxml = require("lib/xml")
+
+    --Instantiate the object the states the XML file as a Lua table
+    local xmlhandler = treehdl.simpleTreeHandler()
+    --Instantiate the object that parses the XML to a Lua table
+    local ok = pcall(function()
+        libxml.xmlParser(xmlhandler):parse(xml_str)
+    end)
+    if not ok then return end
+    return xmlhandler.root
 end
 
 function NewsDownloader:processAtom(feeds, limit)
@@ -223,6 +229,7 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir)
 end
 
 function NewsDownloader:removeNewsButKeepFeedConfig()
+    logger.dbg("NewsDownloader: Removing news from :", news_download_dir_path)
     for entry in lfs.dir(news_download_dir_path) do
         if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
             local entry_path = news_download_dir_path .. "/" .. entry
@@ -247,11 +254,11 @@ function NewsDownloader:setCustomDownloadDirectory()
        title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("NewsDownloader: set download directory to: ", path)
-           local news_downloader_settings = LuaSettings:open(DataStorage:getSettingsDir().."/"..news_downloader_config_file)
-           news_downloader_settings:saveSetting(config_key_custom_dl_dir, path .. "/")
+           local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
+           news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
            logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
-           FFIUtil.copyFile(feed_config_path, path .."/" .. feed_config_file)
+           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
        end,
     }:chooseDir()
 end
