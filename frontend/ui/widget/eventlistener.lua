@@ -8,7 +8,6 @@ will call a method "onEventName" for an event with name
 ]]
 
 local EventListener = {}
-local logger = require("logger")
 
 function EventListener:new(new_o)
     local o = new_o or {}
