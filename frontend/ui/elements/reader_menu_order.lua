@@ -75,10 +75,14 @@ local order = {
         "history",
         "book_status",
         "----------------------------",
-        "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
+        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
+                           Device:isPocketBook() or Device:isAndroid() ]]--
         "version",
         "help",
         "system_statistics",
+        "----------------------------",
+        "poweroff", -- if Device:isKobo()
+        "reboot",   -- if Device:isKobo()
         "----------------------------",
         "exit",
     },

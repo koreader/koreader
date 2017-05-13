@@ -57,6 +57,16 @@ function UIManager:init()
             Device:powerOff()
         end)
     end
+    self.reboot_action = function()
+        self._entered_poweroff_stage = true;
+        Screen:setRotationMode(0)
+        require("ui/screensaver"):show("reboot", _("Rebooting..."))
+        Screen:refreshFull()
+        UIManager:nextTick(function()
+            self:broadcastEvent(Event:new("Close"))
+            Device:reboot()
+        end)
+    end
     if Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
