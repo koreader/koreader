@@ -53,13 +53,13 @@ if Device:isKobo() then
     common_info.reboot = {
         text = _("Reboot the device"),
         callback = function()
-            UIManager:scheduleIn(0, UIManager.reboot_action)
+            UIManager:nextTick(UIManager.reboot_action)
         end
     }
     common_info.poweroff = {
         text = _("Power off"),
         callback = function()
-            UIManager:scheduleIn(0, UIManager.poweroff_action)
+            UIManager:nextTick(UIManager.poweroff_action)
         end
     }
 end
