@@ -19,6 +19,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
+local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -322,6 +323,7 @@ function FileManager:init()
         ui = self,
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
+    table.insert(self, ReaderWikipedia:new{ ui = self })
 
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -481,16 +483,16 @@ function FileManager:renameFile(file)
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_(
-                            "Failed to move history data of %1 to %2.\n" ..
-                            "The reading history may be lost."), file, dest),
+                        text = util.template(
+                            _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
+                            file, dest),
                     })
                 end
             end
         else
             UIManager:show(InfoMessage:new{
                 text = util.template(
-                           _("Failed to rename from %1 to %2"), file, dest),
+                    _("Failed to rename from %1 to %2"), file, dest),
             })
         end
     end

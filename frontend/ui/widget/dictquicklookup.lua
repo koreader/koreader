@@ -252,7 +252,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
-                    text = "Save as epub",
+                    text = _("Save as EPUB"),
                     callback = function()
                         local InfoMessage = require("ui/widget/infomessage")
                         local ConfirmBox = require("ui/widget/confirmbox")
@@ -310,7 +310,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = "Close",
+                    text = _("Close"),
                     callback = function()
                         UIManager:close(self)
                     end,
@@ -632,6 +632,9 @@ function DictQuickLookup:onSwipe(arg, ges)
         if self.refresh_callback then self.refresh_callback() end
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
+        -- a long diagonal swipe may also be used for taking a screenshot,
+        -- so let it propagate
+        return false
     end
     return true
 end

@@ -45,7 +45,7 @@ local function calculatePsk(ssid, pwd)
     --   * /wpa_supplicant/wpa_passphrase.c
     --   * /src/crypto/sha1-pbkdf2.c
     -- see: http://docs.ros.org/diamondback/api/wpa_supplicant/html/sha1-pbkdf2_8c_source.html
-    local fp = io.popen(string.format("wpa_passphrase %s %s", ssid, pwd))
+    local fp = io.popen(("wpa_passphrase %q %q"):format(ssid, pwd))
     local out = fp:read("*a")
     fp:close()
     return string.match(out, 'psk=([a-f0-9]+)')

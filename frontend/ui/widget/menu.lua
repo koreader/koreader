@@ -268,9 +268,7 @@ function MenuItem:onUnfocus()
 end
 
 function MenuItem:onShowItemDetail()
-    UIManager:show(InfoMessage:new{
-        text=self.detail,
-    })
+    UIManager:show(InfoMessage:new{ text = self.detail, })
     return true
 end
 

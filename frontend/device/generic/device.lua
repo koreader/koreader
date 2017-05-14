@@ -157,6 +157,9 @@ function Device:resume() end
 -- Hardware specific method to power off the device
 function Device:powerOff() end
 
+-- Hardware specific method to reboot the device
+function Device:reboot() end
+
 -- Hardware specific method to initialize network manager module
 function Device:initNetworkManager() end
 

@@ -164,8 +164,9 @@ function ReaderDictionary:stardictLookup(word, box)
             results_str = A.stdout("./sdcv", "--utf8-input", "--utf8-output",
                     "-nj", word, "--data-dir", dict_dir)
         else
-            local std_out = io.popen("./sdcv --utf8-input --utf8-output -nj "
-                .. ("%q"):format(word) .. " --data-dir " .. dict_dir, "r")
+            local std_out = io.popen(
+                ("./sdcv --utf8-input --utf8-output -nj %q --data-dir %q"):format(word, dict_dir),
+                "r")
             if std_out then
                 results_str = std_out:read("*all")
                 std_out:close()
@@ -219,8 +220,10 @@ function ReaderDictionary:showDict(word, results, box)
             is_wiki = self.is_wiki,
             wiki_languages = self.wiki_languages,
             refresh_callback = function()
-                -- update info in footer (time, battery, etc)
-                self.view.footer:updateFooter()
+                if self.view then
+                    -- update info in footer (time, battery, etc)
+                    self.view.footer:updateFooter()
+                end
             end,
         }
         table.insert(self.dict_window_list, self.dict_window)
@@ -232,7 +235,8 @@ function ReaderDictionary:onUpdateDefaultDict(dict)
     logger.dbg("make default dictionary:", dict)
     self.default_dictionary = dict
     UIManager:show(InfoMessage:new{
-        text = T(_("%1 is now the default dictionary for this document."), dict),
+        text = T(_("%1 is now the default dictionary for this document."),
+                 dict),
         timeout = 2,
     })
     return true

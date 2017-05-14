@@ -47,7 +47,9 @@ local InfoMessage = InputContainer:new{
     timeout = nil, -- in seconds
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
-    image = nil,  -- The image shows at the left of the InfoMessage.
+    -- The image shows at the left of the InfoMessage. Image data will be freed
+    -- by InfoMessage, caller should not manage its lifecycle
+    image = nil,
     image_width = nil,  -- The image width if image is used. Keep it nil to use original width.
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
@@ -76,6 +78,9 @@ function InfoMessage:init()
 
     local image_widget
     if self.show_icon then
+        -- TODO: remove self.image support, only used in filemanagersearch
+        -- this requires self.image's lifecycle to be managed by ImageWidget
+        -- instead of caller, which is easy to introduce bugs
         if self.image then
             image_widget = ImageWidget:new{
                 image = self.image,

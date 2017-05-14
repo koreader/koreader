@@ -59,7 +59,7 @@ local order = {
         "synchronize_time",
         "progress_sync",
         "zsync",
-        "rss_news_downloader",
+        "news_downloader",
         "terminal",
     },
     search = {
@@ -75,12 +75,16 @@ local order = {
         "history",
         "book_status",
         "----------------------------",
-        "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
+        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
+                           Device:isPocketBook() or Device:isAndroid() ]]--
         "version",
         "help",
         "system_statistics",
         "----------------------------",
         "restart_koreader",
+        "poweroff", -- if Device:isKobo()
+        "reboot",   -- if Device:isKobo()
+        "----------------------------",
         "exit",
     },
     help = {
