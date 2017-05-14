@@ -517,6 +517,10 @@ function Kobo:powerOff()
     os.execute("poweroff")
 end
 
+function Kobo:reboot()
+    os.execute("reboot")
+end
+
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()
