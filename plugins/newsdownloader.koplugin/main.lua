@@ -248,7 +248,7 @@ end
 
 function NewsDownloader:setCustomDownloadDirectory()
     UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second. \n\n Please restart Koreader afterwards for the applied changes to take effect.")
+       text = _("To select a folder press down and hold it for 1 second.\n\nPlease restart KOReader afterwards for the changes to take effect.")
     })
     require("ui/downloadmgr"):new{
        title = _("Choose download directory"),
