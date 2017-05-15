@@ -21,10 +21,11 @@ local T = require("ffi/util").template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/book.sqlite3"
+local PAGE_INSERT = 50
 
 local ReaderStatistics = Widget:extend{
-    page_min_read_sec = 1,
-    page_max_read_sec = 180,
+    page_min_read_sec = 5,
+    page_max_read_sec = 90,
     start_current_period = 0,
     curr_page = 0,
     id_curr_book = nil,
@@ -91,7 +92,41 @@ function ReaderStatistics:init()
     self.is_enabled = not (settings.is_enabled == false)
     self.convert_to_db = settings.convert_to_db
     self.ui.menu:registerToMainMenu(self)
+    self:checkInitDatabase()
+end
 
+function ReaderStatistics:initData()
+    if self:isDocless() or not self.is_enabled then
+        return
+    end
+    -- first execution
+    if not self.data then
+        self.data = { performance_in_pages= {} }
+    end
+    local book_properties = self:getBookProperties()
+    self.data.title = book_properties.title
+    if self.data.title == nil or self.data.title == "" then
+        self.data.title = self.document.file:match("^.+/(.+)$")
+    end
+    self.data.authors = book_properties.authors
+    self.data.language = book_properties.language
+    self.data.series = book_properties.series
+
+    self.data.pages = self.view.document:getPageCount()
+    self.data.md5 = self:md5(self.document.file)
+    self.curr_total_time = 0
+    self.curr_total_pages = 0
+    self.id_curr_book = self:getIdBookDB()
+    self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
+    if self.total_read_pages > 0 then
+        local avg_time = math.ceil(self.total_read_time / self.total_read_pages)
+        self.avg_time = avg_time
+        self.ui:handleEvent(Event:new("UpdateStats", avg_time))
+        self.view.footer:updateFooter()
+    end
+end
+
+function ReaderStatistics:checkInitDatabase()
     if self.convert_to_db then      -- if conversion to sqlite was doing earlier
         local conn = SQ3.open(db_location)
         if not conn:exec("pragma table_info('book');") then
@@ -135,37 +170,6 @@ function ReaderStatistics:init()
             end
         end
         self:saveSettings()
-    end
-end
-
-function ReaderStatistics:initData()
-    if self:isDocless() or not self.is_enabled then
-        return
-    end
-    -- first execution
-    if not self.data then
-        self.data = { performance_in_pages= {} }
-    end
-    local book_properties = self:getBookProperties()
-    self.data.title = book_properties.title
-    if self.data.title == nil or self.data.title == "" then
-        self.data.title = self.document.file:match("^.+/(.+)$")
-    end
-    self.data.authors = book_properties.authors
-    self.data.language = book_properties.language
-    self.data.series = book_properties.series
-
-    self.data.pages = self.view.document:getPageCount()
-    self.data.md5 = self:md5(self.document.file)
-    self.curr_total_time = 0
-    self.curr_total_pages = 0
-    self.id_curr_book = self:getIdBookDB()
-    self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
-    if self.total_read_pages > 0 then
-        local avg_time = math.ceil(self.total_read_time / self.total_read_pages)
-        self.avg_time = avg_time
-        self.ui:handleEvent(Event:new("UpdateStats", avg_time))
-        self.view.footer:updateFooter()
     end
 end
 
@@ -844,7 +848,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         end
     end
     -- every 50 pages we write stats to database
-    if util.tableSize(self.pages_stats) % 50 == 0 then
+    if util.tableSize(self.pages_stats) % PAGE_INSERT == 0 then
         self:insertDB(self.id_curr_book)
         mem_read_pages = 0
         mem_read_time = 0
