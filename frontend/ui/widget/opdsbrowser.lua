@@ -571,7 +571,7 @@ function OPDSBrowser:showDownloads(item)
     -- set download directory button
     table.insert(buttons, {
         {
-            text = gettext("Set download directory"),
+            text = gettext("Choose download directory by long-pressing"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     title = gettext("Choose download directory"),
