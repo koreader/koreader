@@ -1,4 +1,3 @@
-local Event = require("ui/event")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -125,9 +124,6 @@ function Device:onPowerEvent(ev)
     elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
-        -- flushing settings first in case the screensaver takes too long time
-        -- that flushing has no chance to run
-        UIManager:broadcastEvent(Event:new("FlushSettings"))
         logger.dbg("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()

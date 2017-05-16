@@ -172,6 +172,7 @@ describe("UIManager spec", function()
         assert.truthy(old_reset_timer)
         G_reader_settings:saveSetting("auto_suspend_timeout_seconds", 3600)
 
+        UIManager:run()
         UIManager:quit()
         -- should skip on non-kobo devices
         UIManager:_initAutoSuspend()

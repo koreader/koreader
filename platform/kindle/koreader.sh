@@ -255,7 +255,12 @@ if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new
     mv -f crash.log.new crash.log
 fi
-./reader.lua "$@" >>crash.log 2>&1
+
+RETURN_VALUE=85
+while [ $RETURN_VALUE -eq 85 ]; do
+    ./reader.lua "$@" >>crash.log 2>&1
+    RETURN_VALUE=$?
+done
 
 # clean up our own process tree in case the reader crashed (if needed, to avoid flooding KUAL's log)
 if pidof reader.lua >/dev/null 2>&1; then
@@ -345,3 +350,5 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     logmsg "Restoring system passcode . . ."
     touch "/var/local/system/userpasswdenabled"
 fi
+
+exit $RETURN_VALUE

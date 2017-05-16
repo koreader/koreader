@@ -481,7 +481,6 @@ end
 
 function ReaderUI:onFlushSettings()
     self:saveSettings()
-    return true
 end
 
 function ReaderUI:closeDocument()
@@ -530,7 +529,6 @@ function ReaderUI:onClose()
     if _running_instance == self then
         _running_instance = nil
     end
-    return true
 end
 
 return ReaderUI

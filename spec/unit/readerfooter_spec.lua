@@ -43,6 +43,7 @@ describe("Readerfooter module", function()
             book_time_to_read = true,
             chapter_time_to_read = true,
         })
+        UIManager:run()
     end)
 
     it("should setup footer as visible in all_at_once mode", function()

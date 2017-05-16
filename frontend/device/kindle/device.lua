@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
-local Event = require("ui/event")
 local logger = require("logger")
 
 local function yes() return true end
@@ -93,7 +92,6 @@ function Kindle:intoScreenSaver()
             os.execute("killall -cont awesome")
         end
     end
-    require("ui/uimanager"):broadcastEvent(Event:new("FlushSettings"))
 end
 
 function Kindle:outofScreenSaver()

@@ -81,6 +81,7 @@ local order = {
         "help",
         "system_statistics",
         "----------------------------",
+        "restart_koreader",
         "poweroff", -- if Device:isKobo()
         "reboot",   -- if Device:isKobo()
         "----------------------------",

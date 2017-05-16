@@ -22,7 +22,7 @@ describe("Readerpaging module", function()
         it("should emit EndOfBook event at the end", function()
             UIManager:quit()
             UIManager:show(readerui)
-            UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
+            UIManager:nextTick(function() UIManager:close(readerui) end)
             UIManager:run()
             readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui.zooming:setZoomMode("pageheight")
@@ -54,7 +54,7 @@ describe("Readerpaging module", function()
         it("should emit EndOfBook event at the end", function()
             UIManager:quit()
             UIManager:show(readerui)
-            UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
+            UIManager:nextTick(function() UIManager:close(readerui) end)
             UIManager:run()
             paging.page_positions = {}
             readerui:handleEvent(Event:new("SetScrollMode", true))
@@ -71,7 +71,7 @@ describe("Readerpaging module", function()
             UIManager:quit()
         end)
 
-        it("should scroll withtout crash backward on the first page", function()
+        it("should scroll backward on the first page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_djvu),
@@ -79,7 +79,7 @@ describe("Readerpaging module", function()
             tmp_readerui.paging:onScrollPanRel(-100)
         end)
 
-        it("should scroll withtout crash forward on the last page", function()
+        it("should scroll forward on the last page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_djvu),

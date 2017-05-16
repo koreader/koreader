@@ -186,12 +186,14 @@ function ReaderMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            self:onTapCloseMenu()
-            UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
-            local FileManager = require("apps/filemanager/filemanager")
-            if FileManager.instance then
-                FileManager.instance:onClose()
-            end
+            self:exitOrRestart()
+        end,
+    }
+
+    self.menu_items.restart_koreader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
 
@@ -208,6 +210,20 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function ReaderMenu:exitOrRestart(callback)
+    self:onTapCloseMenu()
+    UIManager:nextTick(function()
+        self.ui:onClose()
+        if callback ~= nil then
+            callback()
+        end
+    end)
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
+end
 
 function ReaderMenu:onShowReaderMenu()
     if self.tab_item_table == nil then
