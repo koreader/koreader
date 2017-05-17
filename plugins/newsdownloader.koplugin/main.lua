@@ -248,7 +248,7 @@ end
 
 function NewsDownloader:setCustomDownloadDirectory()
     UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second.\n\nPlease restart KOReader afterwards for the changes to take effect.")
+       text = _("To select a folder press down and hold it for 1 second.")
     })
     require("ui/downloadmgr"):new{
        title = _("Choose download directory"),
@@ -257,8 +257,12 @@ function NewsDownloader:setCustomDownloadDirectory()
            local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
            news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
+
            logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
            FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
+
+           initialized = false
+           self:lazyInitialization()
        end,
     }:chooseDir()
 end
