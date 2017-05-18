@@ -22,10 +22,12 @@ local T = require("ffi/util").template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/book.sqlite3"
 local PAGE_INSERT = 50
+local DEFAULT_MIN_READ_SEC = 5
+local DEFAULT_MAX_READ_SEC = 120
 
 local ReaderStatistics = Widget:extend{
-    page_min_read_sec = 5,
-    page_max_read_sec = 90,
+    page_min_read_sec = DEFAULT_MIN_READ_SEC,
+    page_max_read_sec = DEFAULT_MAX_READ_SEC,
     start_current_period = 0,
     curr_page = 0,
     id_curr_book = nil,
@@ -127,10 +129,9 @@ function ReaderStatistics:initData()
 end
 
 function ReaderStatistics:checkInitDatabase()
+    local conn = SQ3.open(db_location)
     if self.convert_to_db then      -- if conversion to sqlite was doing earlier
-        local conn = SQ3.open(db_location)
         if not conn:exec("pragma table_info('book');") then
-            conn:close()
             UIManager:show(ConfirmBox:new{
                 text = T(_("Cannot open database in %1.\nProbably the database has been deleted or moved.\n " ..
                     "Do you want to create empty database?"), db_location),
@@ -140,30 +141,31 @@ function ReaderStatistics:checkInitDatabase()
                 end,
                 ok_text = _("Create"),
                 ok_callback = function()
-                    self:createDB()
+                    local conn_new = SQ3.open(db_location)
+                    self:createDB(conn_new)
+                    conn_new:close()
                     UIManager:show(InfoMessage:new{text =_("A new empty database has been created."), timeout = 3 })
+                    self:initData()
                 end,
             })
         end
     else  -- first time convertion to sqlite database
         self.convert_to_db = true
-        local conn = SQ3.open(db_location)
         if not conn:exec("pragma table_info('book');") then
             if #ReadHistory.hist > 0 then
-                conn:close()
                 local info = InfoMessage:new{
                     text =_("New version of statistics plugin is detected.\n" ..
                         "You need to convert statistics data to database.\n"..
                         "It make take a few minutes.\nPlease wait...")}
                 UIManager:show(info)
                 UIManager:forceRePaint()
-                local nr_book = self:migrateToDB()
+                local nr_book = self:migrateToDB(conn)
                 UIManager:close(info)
                 UIManager:forceRePaint()
                 UIManager:show(InfoMessage:new{
                     text =T(_("Convertion completed.\nImported %1 books to database."),nr_book), timeout = 4 })
             else
-                self:createDB()
+                self:createDB(conn)
                 UIManager:show(InfoMessage:new{
                     text =_("New version of statistics plugin is detected.\n" ..
                         "A new database has been created.")})
@@ -171,6 +173,7 @@ function ReaderStatistics:checkInitDatabase()
         end
         self:saveSettings()
     end
+    conn:close()
 end
 
 function ReaderStatistics:md5(file)
@@ -194,19 +197,42 @@ function ReaderStatistics:md5(file)
     return m:sum()
 end
 
-function ReaderStatistics:createDB()
-    local conn = SQ3.open(db_location)
-    conn:exec("CREATE TABLE IF NOT EXISTS book(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, authors TEXT," ..
-        "notes INTEGER, last_open INTEGER, highlights INTEGER, pages INTEGER, series TEXT, language TEXT," ..
-        "md5 TEXT, total_read_time INTEGER, total_read_pages INTEGER);" ..
-        "CREATE TABLE IF NOT EXISTS page_stat(id_book INTEGER, page INTEGER NOT NULL, start_time INTEGER NOT NULL, " ..
-        "period INTEGER NOT NULL, UNIQUE (page, start_time), FOREIGN KEY(id_book) REFERENCES book(id));" ..
-        "CREATE TABLE IF NOT EXISTS info(version INTEGER);")
+function ReaderStatistics:createDB(conn)
+    local sql_stmt = [[
+        CREATE TABLE IF NOT EXISTS book
+            (
+                id integer PRIMARY KEY autoincrement,
+                title text,
+                authors text,
+                notes      integer,
+                last_open  integer,
+                highlights integer,
+                pages      integer,
+                series text,
+                language text,
+                md5 text,
+                total_read_time  integer,
+                total_read_pages integer
+            );
+        CREATE TABLE IF NOT EXISTS page_stat
+            (
+                id_book    integer,
+                page       integer NOT NULL,
+                start_time integer NOT NULL,
+                period     integer NOT NULL,
+                UNIQUE (page, start_time),
+                FOREIGN KEY(id_book) REFERENCES book(id)
+             );
+        CREATE TABLE IF NOT EXISTS info
+             (
+                 version integer
+             );
+    ]]
+    conn:exec(sql_stmt)
     --DB structure version - now is version 1
     local stmt = conn:prepare("INSERT INTO info values (?)")
     stmt:reset():bind("1"):step()
     stmt:close()
-    conn:close()
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
@@ -217,23 +243,39 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
     local diff_time
     local total_read_pages = 0
     local total_read_time = 0
+    local sql_stmt
     if book_stats.total_time_in_sec and book_stats.total_time_in_sec > 0
         and util.tableSize(book_stats.performance_in_pages) > 0 then
         local read_pages = util.tableSize(book_stats.performance_in_pages)
         logger.dbg("Insert to database: " .. book_stats.title)
         local book_title = book_stats.title:gsub("'", "''")
         local book_authors = book_stats.authors:gsub("'", "''")
-        res = conn:rowexec(string.format("SELECT COUNT(id) FROM book WHERE title = '%s' AND authors = '%s' AND md5 = '%s';)",
-            book_title, book_authors, self:md5(book_stats.file)))
+        sql_stmt = [[
+            SELECT count(id)
+            FROM   book
+            WHERE  title = '%s'
+                AND    authors = '%s'
+                AND    md5 = '%s';
+        ]]
+        res = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self:md5(book_stats.file)))
         if res == 0 then
             local stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             stmt:reset():bind(book_stats.title, book_stats.authors, book_stats.notes,
                 last_open_book, book_stats.highlights, book_stats.pages,
                 book_stats.series, book_stats.language, self:md5(book_stats.file), total_read_time, total_read_pages) :step()
-            id_book = conn:rowexec("SELECT last_insert_rowid() AS num;")
+            sql_stmt = [[
+                SELECT last_insert_rowid() AS num;
+            ]]
+            id_book = conn:rowexec(sql_stmt)
         else
-            id_book = conn:rowexec(string.format("SELECT id FROM book WHERE title = '%s' AND authors = '%s' AND md5 = '%s';)",
-                book_title, book_authors, self:md5(book_stats.file)))
+            sql_stmt = [[
+                SELECT id
+                FROM   book
+                WHERE  title = '%s'
+                    AND authors = '%s'
+                    AND md5 = '%s'
+            ]]
+            id_book = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self:md5(book_stats.file)))
         end
         local sorted_performance = {}
         for k, _ in pairs(book_stats.performance_in_pages) do
@@ -268,23 +310,29 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         --last open book
         last_open_book = sorted_performance[#sorted_performance] + avg_time
         conn:exec('COMMIT')
-        total_read_pages, total_read_time = conn:rowexec(string.format("SELECT count(DISTINCT page)," ..
-            "sum(period) FROM page_stat WHERE id_book = %s;", tonumber(id_book)))
-        stmt = conn:prepare("UPDATE book SET last_open=?, total_read_time=?, total_read_pages=? WHERE id = ?")
+        sql_stmt = [[
+            SELECT count(DISTINCT page),
+                   sum(period)
+            FROM   page_stat
+            WHERE  id_book = %s;
+        ]]
+        total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, tonumber(id_book)))
+        sql_stmt = [[
+            UPDATE book
+            SET    last_open = ?,
+                   total_read_time = ?,
+                   total_read_pages = ?
+            WHERE  id = ?
+        ]]
+        stmt = conn:prepare(sql_stmt)
         stmt:reset():bind(last_open_book, total_read_time, total_read_pages, id_book):step()
         stmt:close()
         return true
     end
 end
 
-function ReaderStatistics:migrateToDB()
-    local conn = SQ3.open(db_location)
-    conn:exec("CREATE TABLE IF NOT EXISTS book(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, authors TEXT," ..
-        "notes INTEGER, last_open INTEGER, highlights INTEGER, pages INTEGER, series TEXT, language TEXT," ..
-        "md5 TEXT, total_read_time INTEGER, total_read_pages INTEGER);" ..
-        "CREATE TABLE IF NOT EXISTS page_stat(id_book INTEGER, page INTEGER NOT NULL, start_time INTEGER NOT NULL, " ..
-        "period INTEGER NOT NULL, UNIQUE (page, start_time), FOREIGN KEY(id_book) REFERENCES book(id));" ..
-        "CREATE TABLE IF NOT EXISTS info(version INTEGER);")
+function ReaderStatistics:migrateToDB(conn)
+    self:createDB(conn)
     local nr_of_conv_books = 0
     local exclude_titles = {}
     for _, v in pairs(ReadHistory.hist) do
@@ -332,10 +380,6 @@ function ReaderStatistics:migrateToDB()
             end
         end
     end
-    local stmt = conn:prepare("INSERT INTO info values (?)")
-    stmt:reset():bind("1"):step()
-    stmt:close()
-    conn:close()
     return nr_of_conv_books
 end
 
@@ -344,17 +388,32 @@ function ReaderStatistics:getIdBookDB()
     local id_book
     local book_title = self.data.title:gsub("'", "''")
     local book_authors = self.data.authors:gsub("'", "''")
-    local res = conn:rowexec(string.format("SELECT COUNT(id) FROM book WHERE title = '%s' AND authors = '%s' AND md5 = '%s';)",
-        book_title, book_authors, self.data.md5))
+    local sql_stmt = [[
+        SELECT count(id)
+        FROM   book
+        WHERE  title = '%s'
+            AND authors = '%s'
+            AND md5 = '%s'
+    ]]
+    local res = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self.data.md5))
     if res == 0 then
         local stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             TimeVal:now().sec, self.data.highlights, self.data.pages,
             self.data.series, self.data.language, self.data.md5, self.curr_total_time, self.curr_total_pages):step()
-        id_book = conn:rowexec("SELECT last_insert_rowid() AS num;")
+        sql_stmt = [[
+            SELECT last_insert_rowid() AS num;
+        ]]
+        id_book = conn:rowexec(sql_stmt)
     else
-        id_book = conn:rowexec(string.format("SELECT id FROM book WHERE title = '%s' AND authors = '%s' AND md5 = '%s';)",
-            book_title, book_authors, self.data.md5))
+        sql_stmt = [[
+            SELECT id
+            FROM   book
+            WHERE  title = '%s'
+                AND    authors = '%s'
+                AND    md5 = '%s'
+        ]]
+        id_book = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self.data.md5))
     end
     conn:close()
     return tonumber(id_book)
@@ -383,9 +442,23 @@ function ReaderStatistics:insertDB(id_book)
         end
     end
     conn:exec('COMMIT')
-    local total_read_pages, total_read_time = conn:rowexec(string.format("SELECT count(DISTINCT page), sum(period) " ..
-    "FROM page_stat WHERE id_book = '%s';", id_book))
-    stmt = conn:prepare("UPDATE book SET last_open=?, notes=?, highlights=?, total_read_time=?, total_read_pages=? WHERE id = ?")
+    local sql_stmt = [[
+        SELECT count(DISTINCT page),
+               sum(period)
+        FROM   page_stat
+        WHERE  id_book = '%s'
+    ]]
+    local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
+    sql_stmt = [[
+        UPDATE book
+        SET    last_open = ?,
+               notes = ?,
+               highlights = ?,
+               total_read_time = ?,
+               total_read_pages = ?
+        WHERE  id = ?
+    ]]
+    stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(TimeVal:now().sec, self.data.notes, self.data.highlights, total_read_time, total_read_pages, id_book):step()
     if total_read_pages then
         self.total_read_pages = tonumber(total_read_pages)
@@ -408,8 +481,13 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
         return
     end
     local conn = SQ3.open(db_location)
-    local total_pages, total_time = conn:rowexec(string.format("SELECT total_read_pages, total_read_time FROM book " ..
-        "WHERE id = '%s';", id_book))
+    local sql_stmt = [[
+        SELECT total_read_pages,
+               total_read_time
+        FROM   book
+        WHERE  id = '%s'
+    ]]
+    local total_pages, total_time = conn:rowexec(string.format(sql_stmt, id_book))
     if total_pages then
         total_pages = tonumber(total_pages)
     else
@@ -469,14 +547,14 @@ function ReaderStatistics:updateSettings()
             {
                 text = "",
                 input_type = "number",
-                hint = T(_("Min seconds, default is 1. Current value: %1"),
-                         self.page_min_read_sec),
+                hint = T(_("Min seconds, default is %1. Current value: %2"),
+                    DEFAULT_MIN_READ_SEC, self.page_min_read_sec),
             },
             {
                 text = "",
                 input_type = "number",
-                hint = T(_("Max seconds, default is 180. Current value: %1"),
-                         self.page_max_read_sec),
+                hint = T(_("Max seconds, default is %1. Current value: %2"),
+                    DEFAULT_MAX_READ_SEC, self.page_max_read_sec),
             },
         },
         buttons = {
@@ -507,7 +585,7 @@ function ReaderStatistics:updateSettings()
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)
-        menu_items.statistics = {
+    menu_items.statistics = {
         text = _("Reading statistics"),
         sub_item_table = {
             self:getStatisticEnabledMenuItem(),
@@ -610,8 +688,13 @@ function ReaderStatistics:getTodayBookStats()
     local from_begin_day = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
     local start_today_time = now_stamp - from_begin_day
     local conn = SQ3.open(db_location)
-    local today_pages, today_period = conn:rowexec(string.format("SELECT count(DISTINCT page + '*' + id_book), " ..
-        "sum(period) FROM page_stat WHERE start_time >= '%s';", start_today_time))
+    local sql_stmt = [[
+        SELECT count(DISTINCT page + '*' + id_book),
+               sum(period)
+        FROM   page_stat
+        WHERE  start_time >= '%s'
+    ]]
+    local today_pages, today_period = conn:rowexec(string.format(sql_stmt, start_today_time))
     if today_pages == nil then
         today_pages = 0
     end
@@ -626,8 +709,13 @@ end
 
 function ReaderStatistics:getCurrentBookStats()
     local conn = SQ3.open(db_location)
-    local current_pages, current_period = conn:rowexec(string.format("SELECT count(DISTINCT page), sum(period) FROM " ..
-        "page_stat WHERE start_time >= '%s';", self.start_current_period))
+    local sql_stmt = [[
+        SELECT count(DISTINCT page),
+               sum(period)
+        FROM   page_stat
+        WHERE  start_time >= '%s'
+    ]]
+    local current_pages, current_period = conn:rowexec(string.format(sql_stmt, self.start_current_period))
     if current_pages == nil then
         current_pages = 0
     end
@@ -649,12 +737,24 @@ function ReaderStatistics:getCurrentStat(id_book)
 
     local conn = SQ3.open(db_location)
     local notes, highlights = conn:rowexec(string.format("SELECT notes, highlights  FROM book WHERE id = '%s';)", id_book))
-    local modifier = '%Y-%m-%d'
-    local total_days = conn:rowexec(string.format("SELECT count(*) FROM " ..
-        "(SELECT strftime('%s', start_time, 'unixepoch', 'localtime') AS dates " ..
-        "FROM page_stat WHERE id_book ='%s' GROUP BY dates);)", modifier, id_book))
-    local total_time_book, total_read_pages = conn:rowexec(string.format("SELECT sum(period), count(DISTINCT page) " ..
-        "FROM page_stat WHERE id_book = '%s';", id_book))
+    local sql_stmt = [[
+        SELECT count(*)
+        FROM
+            (
+                SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates
+                FROM   page_stat
+                WHERE  id_book = '%s'
+                GROUP  BY dates
+            )
+    ]]
+    local total_days = conn:rowexec(string.format(sql_stmt, id_book))
+    sql_stmt = [[
+        SELECT sum(period),
+               count(DISTINCT page)
+        FROM   page_stat
+        WHERE  id_book = '%s'
+    ]]
+    local total_time_book, total_read_pages = conn:rowexec(string.format(sql_stmt, id_book))
     conn:close()
 
     if total_time_book == nil then
@@ -695,22 +795,82 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local now_stamp = os.time()
     local one_day = 86400 -- one day in seconds
     local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
-    local modifier
+    local sql_stmt_res_book
+    local sql_stmt_res_pages
     if ptype == "daily" or ptype == "daily_weekday" then
-        modifier = '%Y-%m-%d'
+        sql_stmt_res_book = [[
+            SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(DISTINCT page)                                          AS pages,
+                   sum(period)                                                   AS periods,
+                   start_time
+            FROM   page_stat
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
+        sql_stmt_res_pages = [[
+            SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(*)                                                      AS pages
+            FROM   (
+                        SELECT *
+                        FROM   page_stat
+                        GROUP  BY id_book, page
+                   )
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
     elseif ptype == "weekly" then
-        modifier = '%Y-%W'
+        sql_stmt_res_book = [[
+            SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(DISTINCT page)                                      AS pages,
+                   sum(period)                                               AS periods,
+                   start_time
+            FROM   page_stat
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
+        sql_stmt_res_pages = [[
+            SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(*)                                                  AS pages
+            FROM   (
+                        SELECT *
+                        FROM   page_stat
+                        GROUP  BY id_book, page
+                   )
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
     elseif ptype == "monthly" then
-        modifier = '%Y %m'
+        sql_stmt_res_book = [[
+            SELECT strftime('%%Y %%m', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(DISTINCT page)                                      AS pages,
+                   sum(period)                                               AS periods,
+                   start_time
+            FROM   page_stat
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
+        sql_stmt_res_pages = [[
+            SELECT strftime('%%Y %%m', start_time, 'unixepoch', 'localtime') AS dates,
+                   count(*)                                                  AS pages
+            FROM   (
+                        SELECT *
+                        FROM   page_stat
+                        GROUP  BY id_book, page
+                   )
+            WHERE  start_time >= '%s'
+            GROUP  BY dates
+            ORDER  BY dates DESC
+        ]]
     end
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
-    local result_book = conn:exec(string.format("SELECT strftime('%s', start_time, 'unixepoch', 'localtime') AS dates, " ..
-        "count(distinct page) AS pages, sum(period) AS periods, start_time FROM page_stat WHERE start_time >= '%s' " ..
-        "GROUP BY dates ORDER BY dates desc;", modifier, period_begin))
-    local result_pages = conn:exec(string.format("SELECT strftime('%s', start_time, 'unixepoch', 'localtime') AS dates, " ..
-        "COUNT(*) AS pages FROM (SELECT * FROM page_stat GROUP BY id_book, page) WHERE start_time >= '%s' " ..
-        "GROUP BY dates ORDER BY dates desc;", modifier, period_begin))
+    local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin))
+    local result_pages = conn:exec(string.format(sql_stmt_res_pages, period_begin))
     conn:close()
     if result_book == nil then
         return {}
@@ -745,14 +905,31 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     local now_stamp = os.time()
     local one_day = 86400 -- one day in seconds
     local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
-    local modifier = '%Y-%m-%d'
     local conn = SQ3.open(db_location)
-    local result_book = conn:exec(string.format("SELECT strftime('%s', start_time, 'unixepoch', 'localtime') AS dates, " ..
-        "COUNT(distinct page) AS pages, sum(period) AS periods, start_time FROM page_stat WHERE start_time >= '%s' " ..
-        "GROUP BY dates ORDER BY dates desc;", modifier, period_begin))
-    local result_pages = conn:exec(string.format("SELECT strftime('%s', start_time, 'unixepoch', 'localtime') AS dates, " ..
-        "COUNT(*) AS pages FROM (SELECT * FROM page_stat GROUP BY id_book, page) WHERE start_time >= '%s' " ..
-        "GROUP BY dates ORDER BY dates desc;", modifier, period_begin))
+    local sql_stmt = [[
+        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+               count(DISTINCT page)                                          AS pages,
+               sum(period)                                                   AS periods,
+               start_time
+        FROM   page_stat
+        WHERE  start_time >= '%s'
+        GROUP  BY dates
+        ORDER  BY dates DESC
+    ]]
+    local result_book = conn:exec(string.format(sql_stmt, period_begin))
+    sql_stmt = [[
+        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+               count(*)                                                      AS pages
+        FROM   (
+                    SELECT *
+                    FROM   page_stat
+                    GROUP  BY id_book, page
+               )
+        WHERE  start_time >= '%s'
+        GROUP  BY dates
+        ORDER  BY dates DESC
+    ]]
+    local result_pages = conn:exec(string.format(sql_stmt, period_begin))
     for i = 1, sdays do
         local pages = tonumber(result_pages[2][i])
         local period = tonumber(result_book[3][i])
@@ -770,9 +947,16 @@ end
 local function getDatesForBook(id_book)
     local results = {}
     local conn = SQ3.open(db_location)
-    local result_book = conn:exec(string.format("SELECT date(start_time, 'unixepoch', 'localtime') AS dates, " ..
-        "count(distinct page) AS pages, sum(period) AS periods FROM page_stat WHERE id_book = '%s' " ..
-        "GROUP BY date(start_time, 'unixepoch', 'localtime') ORDER BY dates desc;", id_book))
+    local sql_stmt = [[
+        SELECT date(start_time, 'unixepoch', 'localtime') AS dates,
+               count(DISTINCT page)                       AS pages,
+               sum(period)                                AS periods
+        FROM   page_stat
+        WHERE  id_book = '%s'
+        GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+        ORDER  BY dates DESC
+    ]]
+    local result_book = conn:exec(string.format(sql_stmt, id_book))
     conn:close()
     if result_book == nil then
         return {}
@@ -789,12 +973,21 @@ end
 function ReaderStatistics:getTotalStats()
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
-    local total_books_time = conn:rowexec(string.format("SELECT sum(period) FROM page_stat;"))
+    local sql_stmt = [[
+        SELECT sum(period)
+        FROM   page_sta
+    ]]
+    local total_books_time = conn:rowexec(sql_stmt)
     if total_books_time == nil then
         total_books_time = 0
     end
     local total_stats = {}
-    local id_book_tbl = conn:exec(string.format("SELECT id FROM book ORDER BY last_open DESC;"))
+    sql_stmt = [[
+        SELECT id
+        FROM   book
+        ORDER  BY last_open DESC
+    ]]
+    local id_book_tbl = conn:exec(sql_stmt)
     if id_book_tbl == nil then
         id_book_tbl = 0
     end
@@ -802,8 +995,18 @@ function ReaderStatistics:getTotalStats()
     local total_time_book
     for i=1, #id_book_tbl.id do
         local id_book = tonumber(id_book_tbl[1][i])
-        local book_title = conn:rowexec(string.format("SELECT title FROM book WHERE id = '%s';", id_book))
-        total_time_book = conn:rowexec(string.format("SELECT sum(period) FROM page_stat WHERE id_book = '%s';",id_book))
+        sql_stmt = [[
+            SELECT title
+            FROM   book
+            WHERE  id = '%s'
+        ]]
+        local book_title = conn:rowexec(string.format(sql_stmt, id_book))
+        sql_stmt = [[
+            SELECT sum(period)
+            FROM   page_stat
+            WHERE  id_book = '%s'
+        ]]
+        total_time_book = conn:rowexec(string.format(sql_stmt,id_book))
         if total_time_book == nil then
             total_time_book = 0
         end

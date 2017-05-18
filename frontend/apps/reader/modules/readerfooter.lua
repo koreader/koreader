@@ -670,6 +670,7 @@ end
 
 function ReaderFooter:onUpdateStats(avg_time_page)
     self.average_time_per_page = avg_time_page
+    return true
 end
 
 return ReaderFooter
