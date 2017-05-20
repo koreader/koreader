@@ -15,7 +15,7 @@ function FtpApi:nlst(u)
     return r and table.concat(t), e
 end
 
-function FtpApi:listFolder(address_path)
+function FtpApi:listFolder(address_path,folder_path)
     local ftp_list = {}
     local ftp_file = {}
     local type
@@ -23,16 +23,18 @@ function FtpApi:listFolder(address_path)
     local file_name
     local ls_ftp = self:nlst(address_path)
     if ls_ftp == nil then return false end
+    if folder_path == "/" then
+        folder_path = ""
+    end
     for item in (ls_ftp..'\n'):gmatch'(.-)\r?\n' do
         if item ~= '' then
             file_name = item:match("([^/]+)$")
             extension = item:match("^.+(%..+)$")
-            item = "/" .. item
             if not extension then
                 type = "folder"
                 table.insert(ftp_list, {
                     text = file_name .. "/",
-                    url = item,
+                    url = string.format("%s/%s",folder_path, file_name),
                     type = type,
                 })
             --show only file with supported formats
@@ -40,7 +42,7 @@ function FtpApi:listFolder(address_path)
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,
-                    url = item,
+                    url = string.format("%s/%s",folder_path, file_name),
                     type = type,
                 })
             end

@@ -27,7 +27,7 @@ end
 
 function Ftp:run(address, user, pass, path)
     local url = generateUrl(address, user, pass) .. path
-    return FtpApi:listFolder(url)
+    return FtpApi:listFolder(url, path)
 end
 
 function Ftp:downloadFile(item, address, user, pass, path, close)
