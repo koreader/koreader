@@ -1,8 +1,9 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-
---[[
+--[[--
 LeftContainer aligns its content (1 widget) at the left of its own dimensions
 --]]
+
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+
 local LeftContainer = WidgetContainer:new()
 
 function LeftContainer:paintTo(bb, x, y)

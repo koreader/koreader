@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-function assert_ret_zero {
+function assert_ret_zero() {
     if [ "$1" -ne 0 ]; then
         if [ ! -z "$2" ]; then
             echo "$2"
@@ -11,17 +11,19 @@ function assert_ret_zero {
     fi
 }
 
-function check_submodules {
-    [ -n "$(git submodule status | grep -E '^\-')" ] && kodev-fetch-thirdparty
+function check_submodules() {
+    if git submodule status | grep -qE '^\-'; then
+        kodev-fetch-thirdparty
+    fi
 }
 
-function setup_env {
+function setup_env() {
     files=$(ls -d ./koreader-emulator-*/koreader)
     assert_ret_zero $? "Emulator not found, please build it first."
     export EMU_DIR=${files[0]}
 }
 
-function kodev-fetch-thirdparty {
+function kodev-fetch-thirdparty() {
     make fetchthirdparty
 }
 
@@ -38,7 +40,7 @@ SUPPORTED_TARGETS="
     win32
 "
 
-function kodev-build {
+function kodev-build() {
     BUILD_HELP_MSG="
 usage: build <OPTIONS> <TARGET>
 
@@ -54,13 +56,17 @@ ${SUPPORTED_TARGETS}"
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             -v | --verbose)
-                export VERBOSE=1 ;;
+                export VERBOSE=1
+                ;;
             -h | --help)
-                echo "${BUILD_HELP_MSG}"; exit 0 ;;
+                echo "${BUILD_HELP_MSG}"
+                exit 0
+                ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
                 echo "${BUILD_HELP_MSG}"
-                exit 1 ;;
+                exit 1
+                ;;
         esac
         shift 1
     done
@@ -68,40 +74,61 @@ ${SUPPORTED_TARGETS}"
     check_submodules
     case $1 in
         kindle)
-            make TARGET=kindle; assert_ret_zero $? ;;
+            make TARGET=kindle
+            assert_ret_zero $?
+            ;;
         kindle5)
-            make TARGET=kindle5; assert_ret_zero $? ;;
+            make TARGET=kindle5
+            assert_ret_zero $?
+            ;;
         kindlepw2)
-            make TARGET=kindlepw2; assert_ret_zero $? ;;
+            make TARGET=kindlepw2
+            assert_ret_zero $?
+            ;;
         kobo)
-            make TARGET=kobo; assert_ret_zero $? ;;
+            make TARGET=kobo
+            assert_ret_zero $?
+            ;;
         kindle-legacy)
-            make TARGET=kindle-legacy; assert_ret_zero $? ;;
+            make TARGET=kindle-legacy
+            assert_ret_zero $?
+            ;;
         android)
             [[ -n ${NDK+x} ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
-            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || { \
-                { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }; \
-                make android-toolchain; assert_ret_zero $?; \
+            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
+                { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
+                make android-toolchain
+                assert_ret_zero $?
             }
             echo "Using NDK: ${NDK}..."
-            make TARGET=android; assert_ret_zero $? ;;
+            make TARGET=android
+            assert_ret_zero $?
+            ;;
         pocketbook)
             if [ ! -d "${CURDIR}/base/toolchain/pocketbook-toolchain" ]; then
-                make pocketbook-toolchain; assert_ret_zero $?
+                make pocketbook-toolchain
+                assert_ret_zero $?
             fi
-            make TARGET=pocketbook; assert_ret_zero $? ;;
+            make TARGET=pocketbook
+            assert_ret_zero $?
+            ;;
         ubuntu-touch)
-            make TARGET=ubuntu-touch; assert_ret_zero $? ;;
+            make TARGET=ubuntu-touch
+            assert_ret_zero $?
+            ;;
         win32)
-            make TARGET=win32; assert_ret_zero $? ;;
+            make TARGET=win32
+            assert_ret_zero $?
+            ;;
         *)
             make
             assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
-            setup_env ;;
+            setup_env
+            ;;
     esac
 }
 
-function kodev-clean {
+function kodev-clean() {
     CLEAN_HELP_MSG="
 usage: clean <TARGET>
 
@@ -110,115 +137,166 @@ ${SUPPORTED_TARGETS}"
 
     case $1 in
         -h | --help)
-            echo "${CLEAN_HELP_MSG}"; exit 0 ;;
+            echo "${CLEAN_HELP_MSG}"
+            exit 0
+            ;;
         kindle)
-            make TARGET=kindle clean ;;
+            make TARGET=kindle clean
+            ;;
         kindle5)
-            make TARGET=kindle5 clean ;;
+            make TARGET=kindle5 clean
+            ;;
         kindlepw2)
-            make TARGET=kindlepw2 clean ;;
+            make TARGET=kindlepw2 clean
+            ;;
         kobo)
-            make TARGET=kobo clean ;;
+            make TARGET=kobo clean
+            ;;
         kindle-legacy)
-            make TARGET=kindle-legacy clean ;;
+            make TARGET=kindle-legacy clean
+            ;;
         android)
             make TARGET=android clean
-            rm -f ./*.apk ;;
+            rm -f ./*.apk
+            ;;
         pocketbook)
-            make TARGET=pocketbook clean ;;
+            make TARGET=pocketbook clean
+            ;;
         ubuntu-touch)
-            make TARGET=ubuntu-touch clean ;;
+            make TARGET=ubuntu-touch clean
+            ;;
         win32)
-            make TARGET=win32 clean ;;
+            make TARGET=win32 clean
+            ;;
         *)
-            make clean ;;
+            make clean
+            ;;
     esac
 }
 
-function kodev-release {
+function kodev-release() {
     # SUPPORTED_RELEASE_TARGETS=$(echo ${SUPPORTED_TARGETS} | sed 's/win32//')
     SUPPORTED_RELEASE_TARGETS="${SUPPORTED_TARGETS/emu*/""}"
     RELEASE_HELP_MSG="
-usage: release <TARGET>
+usage: release <OPTIONS> <TARGET>
+
+OPTIONS:
+
+    --ignore-translation  do not fetch translation for release
 
 TARGET:
 ${SUPPORTED_RELEASE_TARGETS}"
-    [ $# -lt 1 ] && { echo "${RELEASE_HELP_MSG}"; exit 1; }
+    [ $# -lt 1 ] && {
+        echo "${RELEASE_HELP_MSG}"
+        exit 1
+    }
+
+    ignore_translation=0
 
     while [[ $1 == '-'* ]]; do
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
+            --ignore-translation)
+                ignore_translation=1
+                ;;
             -v | --verbose)
-                export VERBOSE=1 ;;
+                export VERBOSE=1
+                ;;
             -h | --help)
-                echo "${RELEASE_HELP_MSG}"; exit 0 ;;
+                echo "${RELEASE_HELP_MSG}"
+                exit 0
+                ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
-                echo "${RELEASE_HELP_MSG}"; exit 1 ;;
+                echo "${RELEASE_HELP_MSG}"
+                exit 1
+                ;;
         esac
         shift 1
     done
 
-    which tx>/dev/null && make po || echo "WARN: Transifex client not found, no translation pulled."
+    if [ "${ignore_translation}" -eq 0 ]; then
+        if which tx>/dev/null; then
+            make po || {
+                echo "ERROR: failed to fetch translation."
+                echo "Tip: Use --ignore-translation OPTION if you want to build a release without translation."
+                exit 1
+            }
+        else
+            echo "WARN: Transifex client not found, no translation pulled."
+        fi
+    fi
 
     case $1 in
         kindle)
             kodev-build kindle
-            make TARGET=kindle update ;;
+            make TARGET=kindle update
+            ;;
         kindle5)
             kodev-build kindle5
-            make TARGET=kindle5 update ;;
+            make TARGET=kindle5 update
+            ;;
         kindlepw2)
             kodev-build kindlepw2
-            make TARGET=kindlepw2 update ;;
+            make TARGET=kindlepw2 update
+            ;;
         kobo)
             kodev-build kobo
-            make TARGET=kobo update ;;
+            make TARGET=kobo update
+            ;;
         kindle-legacy)
             kodev-build kindle-legacy
-            make TARGET=kindle-legacy update ;;
+            make TARGET=kindle-legacy update
+            ;;
         android)
             kodev-build android
             export PATH=$PATH:${CURDIR}/base/toolchain/android-sdk-linux/tools
-            which android &> /dev/null || { \
-                make -C "${CURDIR}/base/toolchain" android-sdk; \
+            which android &>/dev/null || {
+                make -C "${CURDIR}/base/toolchain" android-sdk
             }
             ANDROID_HOME=$(dirname "$(dirname "$(which android)")")
             export ANDROID_HOME
             export PATH=$PATH:${NDK}
-            make TARGET=android update ;;
+            make TARGET=android update
+            ;;
         pocketbook)
             kodev-build pocketbook
-            make TARGET=pocketbook update ;;
+            make TARGET=pocketbook update
+            ;;
         ubuntu-touch)
             kodev-build pocketbook
-            make TARGET=ubuntu-touch update ;;
+            make TARGET=ubuntu-touch update
+            ;;
         *)
             echo "Unsupported target for release: $1."
-            echo "${RELEASE_HELP_MSG}"; exit 1 ;;
+            echo "${RELEASE_HELP_MSG}"
+            exit 1
+            ;;
     esac
 }
 
-
-function kodev-wbuilder {
+function kodev-wbuilder() {
     kodev-build
     echo "[*] Running wbuilder.lua..."
-    pushd "${EMU_DIR}"
+    pushd "${EMU_DIR}" && {
         EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./tools/wbuilder.lua
+    } || exit
     popd
 }
 
-function kodev-run {
+function kodev-run() {
     RUN_HELP_MSG="
 usage: run <OPTIONS> <ARGS>
 
 OPTIONS:
 
-    -h=X, --screen-height=X set height of the emulator screen (default: 720)
-    -w=X, --screen-width=X  set width of the emulator screen (default: 540)
-    --no-build              run reader without rebuilding
-    --disable-touch         use this if you want to simulate keyboard only devices
+    -h=X, --screen-height=X  set height of the emulator screen (default: 720)
+    -w=X, --screen-width=X   set width of the emulator screen (default: 540)
+    --no-build               run reader without rebuilding
+    --disable-touch          use this if you want to simulate keyboard only devices
+    -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
+                             supported model: kobo-aura-one, kindle3
     "
     screen_width=540
     screen_height=720
@@ -227,18 +305,42 @@ OPTIONS:
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --disable-touch)
-                export DISABLE_TOUCH=1 ;;
+                export DISABLE_TOUCH=1
+                ;;
             --no-build)
-                no_build=true ;;
+                no_build=true
+                ;;
             -w | --screen-width)
-                screen_width=${VALUE} ;;
+                screen_width=${VALUE}
+                ;;
             -h | --screen-height)
-                screen_height=${VALUE} ;;
+                screen_height=${VALUE}
+                ;;
+            -s | --simulate)
+                device_model=${VALUE}
+                case ${device_model} in
+                    kindle3)
+                        screen_width=600
+                        screen_height=800
+                        ;;
+                    kobo-aura-one)
+                        screen_width=1404
+                        screen_height=1872
+                        ;;
+                    *)
+                        echo "ERROR: spec unknown for ${device_model}."
+                        ;;
+                esac
+                ;;
             -h | --help)
-                echo "${RUN_HELP_MSG}"; exit 0 ;;
+                echo "${RUN_HELP_MSG}"
+                exit 0
+                ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
-                echo "${RUN_HELP_MSG}"; exit 1 ;;
+                echo "${RUN_HELP_MSG}"
+                exit 1
+                ;;
         esac
         shift
     done
@@ -256,7 +358,7 @@ OPTIONS:
     fi
 
     echo "[*] Running KOReader with arguments: $*..."
-    pushd "${EMU_DIR}"
+    pushd "${EMU_DIR}" && {
         if [ $# -lt 1 ]; then
             args=${CURDIR}/test
         else
@@ -264,12 +366,17 @@ OPTIONS:
             [[ $args != /* ]] && args="${CURDIR}/${args}"
         fi
 
-        EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
-            ./reader.lua -d "$args"
+        RETURN_VALUE=85
+        while [ $RETURN_VALUE -eq 85 ]; do
+            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
+                ./reader.lua -d "$args"
+            RETURN_VALUE=$?
+        done
+    } || exit
     popd
 }
 
-function kodev-test {
+function kodev-test() {
     TEST_HELP_MSG="
 usage: test <OPTIONS> [front|base] <TEST_NAME>
 
@@ -284,17 +391,25 @@ OPTIONS:
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --tags)
-                opts="--tags=${VALUE}" ;;
+                opts="--tags=${VALUE}"
+                ;;
             -h | --help)
-                echo "${TEST_HELP_MSG}"; exit 0 ;;
+                echo "${TEST_HELP_MSG}"
+                exit 0
+                ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
-                echo "${TEST_HELP_MSG}"; exit 1 ;;
+                echo "${TEST_HELP_MSG}"
+                exit 1
+                ;;
         esac
         shift
     done
 
-    [ $# -lt 1 ] && { echo "${TEST_HELP_MSG}"; exit 1; }
+    [ $# -lt 1 ] && {
+        echo "${TEST_HELP_MSG}"
+        exit 1
+    }
     [[ $1 != "front" && $1 != "base" ]] && {
         echo "Invalid test suite: $1!"
         echo "${TEST_HELP_MSG}"
@@ -304,8 +419,9 @@ OPTIONS:
     check_submodules && make
     setup_env
     make "${EMU_DIR}/.busted"
-    pushd "${EMU_DIR}"
+    pushd "${EMU_DIR}" && {
         test_path="./spec/$1/unit"
+        rm -rf "${test_path}"/data/*.sdr
 
         if [ ! -z "$2" ]; then
             test_path="${test_path}/$2"
@@ -317,10 +433,11 @@ OPTIONS:
             --lazy \
             -o "./spec/$1/unit/verbose_print" \
             --exclude-tags=notest "${test_path}"
+    } || exit
     popd
 }
 
-function kodev-cov {
+function kodev-cov() {
     COV_HELP_MSG="
 usage: cov <OPTIONS>
 
@@ -336,14 +453,20 @@ OPTIONS:
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --full)
-                show_full=1 ;;
+                show_full=1
+                ;;
             --show-previous)
-                show_previous=1 ;;
+                show_previous=1
+                ;;
             -h | --help)
-                echo "${COV_HELP_MSG}"; exit 0 ;;
+                echo "${COV_HELP_MSG}"
+                exit 0
+                ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
-                echo "${COV_HELP_MSG}"; exit 1 ;;
+                echo "${COV_HELP_MSG}"
+                exit 1
+                ;;
         esac
         shift
     done
@@ -351,7 +474,7 @@ OPTIONS:
     check_submodules && make
     setup_env
     make "${EMU_DIR}/.busted"
-    pushd "${EMU_DIR}"
+    pushd "${EMU_DIR}" && {
         target=front
         test_path="./spec/${target}/unit"
         if [ ${show_previous} -eq 0 ]; then
@@ -363,21 +486,22 @@ OPTIONS:
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
                 --exclude-tags=nocov "${test_path}" || {
-                    echo "Failed to run tests!" && exit 1;
+                    echo "Failed to run tests!" && exit 1
                 }
         fi
         if [ ${show_full} -eq 1 ]; then
             cat luacov.report.out
         else
+            LUACOV_REPORT_SUMMARY=$(grep -nm1 -e '^Summary$' luacov.report.out | cut -d: -f1)
             tail -n \
-                +$(($(grep -nm1 -e '^Summary$' luacov.report.out|cut -d: -f1)-1)) \
+                +$((LUACOV_REPORT_SUMMARY - 1)) \
                 luacov.report.out
         fi
+    } || exit
     popd
 }
 
-
-function kodev-log {
+function kodev-log() {
     LOG_HELP_MSG="
 usage: log <TARGET>
 
@@ -385,20 +509,26 @@ TARGET:
 
     android
 "
-    [ $# -lt 1 ] && { echo "${LOG_HELP_MSG}"; exit 1; }
+    [ $# -lt 1 ] && {
+        echo "${LOG_HELP_MSG}"
+        exit 1
+    }
 
     case $1 in
         -h | --help)
-            echo "${LOG_HELP_MSG}"; exit 0 ;;
+            echo "${LOG_HELP_MSG}"
+            exit 0
+            ;;
         android)
-            adb logcat 'luajit-launcher:D KOReader:D *:S' ;;
+            adb logcat 'luajit-launcher:D KOReader:D *:S'
+            ;;
         *)
             echo "Unsupported target: $1."
-            echo "${LOG_HELP_MSG}"; exit 1 ;;
+            echo "${LOG_HELP_MSG}"
+            exit 1
+            ;;
     esac
 }
-
-
 
 HELP_MSG="
 usage: $0 COMMAND <ARGS>
@@ -415,41 +545,67 @@ Supported commands:
     test                Run tests
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
 "
-[ $# -lt 1 ] && { echo "Missing command."; echo "${HELP_MSG}"; exit 1; }
+[ $# -lt 1 ] && {
+    echo "Missing command."
+    echo "${HELP_MSG}"
+    exit 1
+}
 
 case $1 in
     activate)
         echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"
         eval "$(luarocks path --bin)"
-        exec "${SHELL}" ;;
+        exec "${SHELL}"
+        ;;
     fetch-thirdparty)
-        kodev-fetch-thirdparty ;;
+        kodev-fetch-thirdparty
+        ;;
     clean)
-        shift 1; kodev-clean "$@" ;;
+        shift 1
+        kodev-clean "$@"
+        ;;
     build)
-        shift 1; kodev-build "$@" ;;
+        shift 1
+        kodev-build "$@"
+        ;;
     release)
-        shift 1; kodev-release "$@" ;;
+        shift 1
+        kodev-release "$@"
+        ;;
     wbuilder)
-        kodev-wbuilder ;;
+        kodev-wbuilder
+        ;;
     run)
-        shift 1; kodev-run "$@" ;;
+        shift 1
+        kodev-run "$@"
+        ;;
     test)
-        shift 1; kodev-test "$@" ;;
+        shift 1
+        kodev-test "$@"
+        ;;
     cov)
-        shift 1; kodev-cov "$@" ;;
+        shift 1
+        kodev-cov "$@"
+        ;;
     prompt)
         kodev-build
-        pushd "${EMU_DIR}"
+        pushd "${EMU_DIR}" && {
             ./luajit -i setupkoenv.lua
+        } || exit
         popd
         ;;
     log)
-        shift 1; kodev-log "$@" ;;
+        shift 1
+        kodev-log "$@"
+        ;;
     --help | -h)
-        echo "${HELP_MSG}"; exit 0 ;;
+        echo "${HELP_MSG}"
+        exit 0
+        ;;
     *)
         echo "Unknown command: $1."
-        echo "${HELP_MSG}"; exit 1 ;;
+        echo "${HELP_MSG}"
+        exit 1
+        ;;
 esac

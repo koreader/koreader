@@ -1,12 +1,11 @@
-local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
-local UIManager = require("ui/uimanager")
-local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local T = require("ffi/util").template
+local InfoMessage = require("ui/widget/infomessage")
+local LuaSettings = require("luasettings")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-
+local T = require("ffi/util").template
 
 local NetworkMgr = {}
 

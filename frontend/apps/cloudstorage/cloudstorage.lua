@@ -2,15 +2,15 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local DropBox = require("frontend/apps/cloudstorage/dropbox")
+local DropBox = require("apps/cloudstorage/dropbox")
 local InfoMessage = require("ui/widget/infomessage")
-local Ftp = require("frontend/apps/cloudstorage/ftp")
+local Ftp = require("apps/cloudstorage/ftp")
 local Menu = require("ui/widget/menu")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local lfs = require("libs/libkoreader-lfs")
+local _ = require("gettext")
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -122,7 +122,7 @@ function CloudStorage:openCloudServer(url)
         table.remove(self.paths)
         return false
     else
-        UIManager:show(InfoMessage:new{text = _("Empty folder") })
+        UIManager:show(InfoMessage:new{ text = _("Empty folder") })
         return false
     end
 end
@@ -202,7 +202,7 @@ function CloudStorage:cloudFile(item, path)
         },
         {
             {
-                text = _("Set download directory"),
+                text = _("Choose download directory by long-pressing"),
                 callback = function()
                     require("ui/downloadmgr"):new{
                         title = _("Choose download directory"),

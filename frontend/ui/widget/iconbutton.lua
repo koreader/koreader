@@ -1,11 +1,12 @@
+--[[--
+Button with a big icon image! Designed for touch devices.
+--]]
+
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 
---[[
-Button with a big icon image! Designed for touch device
---]]
 local IconButton = InputContainer:new{
     icon_file = "resources/info-confirm.png",
     dimen = nil,

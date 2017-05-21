@@ -245,6 +245,8 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 end
 
+function Kobo:supportsScreensaver() return true end
+
 local probeEvEpochTime
 -- this function will update itself after the first touch event
 probeEvEpochTime = function(self, ev)
@@ -513,6 +515,10 @@ end
 
 function Kobo:powerOff()
     os.execute("poweroff")
+end
+
+function Kobo:reboot()
+    os.execute("reboot")
 end
 
 -------------- device probe ------------

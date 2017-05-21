@@ -1,11 +1,11 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local UIManager = require("ui/uimanager")
-local JSON = require("json")
 local InfoMessage = require("ui/widget/infomessage")
-local ConfirmBox = require("ui/widget/confirmbox")
-local T = require("ffi/util").template
-local _ = require("gettext")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local JSON = require("json")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local UIManager = require("ui/uimanager")
 local util = require("util")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderHyphenation = InputContainer:new{
     hyph_menu_title = _("Hyphenation"),
@@ -26,6 +26,7 @@ function ReaderHyphenation:init()
                 text = v.name,
                 callback = function()
                     self.hyph_alg = v.filename
+                    self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
                     UIManager:show(InfoMessage:new{
                         text = T(_("Changed hyphenation to %1."), v.name),
                     })
@@ -33,10 +34,22 @@ function ReaderHyphenation:init()
                     self.ui.toc:onUpdateToc()
                 end,
                 hold_callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T( _("Set fallback hyphenation to %1?"), v.name),
-                        ok_callback = function()
+                    UIManager:show(MultiConfirmBox:new{
+                        -- No real need for a way to remove default one, we can just
+                        -- toggle between setting a default OR a fallback (if a default
+                        -- one is set, no fallback will ever be used - if a fallback one
+                        -- is set, no default is wanted; so when we set one below, we
+                        -- remove the other).
+                        text = T( _("Set default or fallback hyphenation pattern to %1?\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), v.name),
+                        choice1_text = _("Default"),
+                        choice1_callback = function()
+                            G_reader_settings:saveSetting("hyph_alg_default", v.filename)
+                            G_reader_settings:delSetting("hyph_alg_fallback")
+                        end,
+                        choice2_text = _("Fallback"),
+                        choice2_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_fallback", v.filename)
+                            G_reader_settings:delSetting("hyph_alg_default")
                         end,
                     })
                 end,
@@ -100,21 +113,22 @@ function ReaderHyphenation:onPreRenderDocument(config)
     -- This is called after the document has been loaded
     -- so we can use the document language.
 
+    -- Use the one manually set for this document
     local hyph_alg = config:readSetting("hyph_alg")
-    if not hyph_alg then
+    if not hyph_alg then -- If none, use the one manually set as default (with Hold)
+        hyph_alg = G_reader_settings:readSetting("hyph_alg_default")
+    end
+    if not hyph_alg then -- If none, use the one associated with document's language
         hyph_alg = self:getDictForLanguage(self.ui.document:getProps().language)
     end
-    if not hyph_alg then
+    if not hyph_alg then -- If none, use the one manually set as fallback (with Hold)
         hyph_alg = G_reader_settings:readSetting("hyph_alg_fallback")
     end
     if hyph_alg then
         self.ui.document:setHyphDictionary(hyph_alg)
     end
+    -- If we haven't set any, hardcoded English_US_hyphen_(Alan).pdb (in cre.cpp) will be used
     self.hyph_alg = cre.getSelectedHyphDict()
-end
-
-function ReaderHyphenation:onSaveSettings()
-    self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
 end
 
 function ReaderHyphenation:addToMainMenu(menu_items)

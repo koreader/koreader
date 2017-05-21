@@ -225,7 +225,7 @@ function ReaderLink:onGoToFirstLink(ges)
             return
         end
         local links = self.ui.document:getPageLinks(pos.page)
-        if #links == 0 then
+        if not links or #links == 0 then
             return
         end
         -- DEBUG("PDF Page links : ", links)
@@ -254,7 +254,7 @@ function ReaderLink:onGoToFirstLink(ges)
         end
     else
         local links = self.ui.document:getPageLinks()
-        if #links == 0 then
+        if not links or #links == 0 then
             return
         end
         -- DEBUG("CRE Page links : ", links)

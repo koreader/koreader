@@ -1,28 +1,28 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local CloseButton = require("ui/widget/closebutton")
+--[[--
+ImageViewer displays an image with some simple manipulation options.
+]]
+
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
-local TextWidget = require("ui/widget/textwidget")
-local LineWidget = require("ui/widget/linewidget")
-local ImageWidget = require("ui/widget/imagewidget")
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local TextWidget = require("ui/widget/textwidget")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = Device.screen
 
-
---[[
-Display image with some simple manipulation options
-]]
 local ImageViewer = InputContainer:new{
     -- Allow for providing same different input types as ImageWidget :
     -- a path to a file
@@ -44,7 +44,7 @@ local ImageViewer = InputContainer:new{
     -- we use this global setting for rotation angle to have the same angle as reader
     rotation_angle = DLANDSCAPE_CLOCKWISE_ROTATION and 90 or 270,
 
-    title_face = Font:getFace("tfont", 22),
+    title_face = Font:getFace("x_smalltfont"),
     title_padding = Screen:scaleBySize(5),
     title_margin = Screen:scaleBySize(2),
     image_padding = Screen:scaleBySize(2),

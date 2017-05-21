@@ -19,23 +19,23 @@ Example:
 
 ]]
 
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local CloseButton = require("ui/widget/closebutton")
-local UIManager = require("ui/uimanager")
-local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
-local RenderText = require("ui/rendertext")
-local Geom = require("ui/geometry")
-local Font = require("ui/font")
 local Device = require("device")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local RenderText = require("ui/rendertext")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
 local KeyValueTitle = VerticalGroup:new{
@@ -77,7 +77,7 @@ function KeyValueTitle:init()
         TextWidget:new{
             text = "",  -- page count
             fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("ffont", 16),
+            face = Font:getFace("smallffont"),
         },
     }
     self.title_bottom = OverlapGroup:new{
@@ -113,7 +113,8 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
-    cface = Font:getFace("cfont"),
+    cface = Font:getFace("smallinfofont"),
+    tface = Font:getFace("smallinfofontbold"),
     width = nil,
     height = nil,
 }
@@ -130,16 +131,30 @@ function KeyValueItem:init()
         }
     end
 
-    local key_w = RenderText:sizeUtf8Text(0, self.width, self.cface, self.key).x
-    local value_w = RenderText:sizeUtf8Text(0, self.width, self.cface, self.value).x
-    if key_w + value_w > self.width then
-        -- truncate key or value so they fits in one row
-        if key_w >= value_w then
-            self.show_key = RenderText:truncateTextByWidth(self.key, self.cface, self.width-value_w)
-            self.show_value = self.value
+    local frame_padding = Screen:scaleBySize(8)
+    local frame_internal_width = self.width - frame_padding * 2
+    local key_w = frame_internal_width / 2
+    local value_w = frame_internal_width / 2
+    local key_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.tface, self.key).x
+    local value_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, self.value).x
+    local space_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, " ").x
+    if key_w_rendered > key_w or value_w_rendered > value_w then
+        -- truncate key or value so they fit in one row
+        if key_w_rendered + value_w_rendered > frame_internal_width then
+            if key_w_rendered >= value_w_rendered then
+                key_w = frame_internal_width - value_w_rendered
+                self.show_key = RenderText:truncateTextByWidth(self.key, self.tface, frame_internal_width - value_w_rendered)
+                self.show_value = self.value
+            else
+                key_w = key_w_rendered + space_w_rendered
+                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered, true)
+                self.show_key = self.key
+            end
+        -- misalign to fit all info
         else
-            self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, self.width-key_w, true)
+            key_w = key_w_rendered + space_w_rendered
             self.show_key = self.key
+            self.show_value = self.value
         end
     else
         self.show_key = self.key
@@ -147,19 +162,25 @@ function KeyValueItem:init()
     end
 
     self[1] = FrameContainer:new{
-        padding = 0,
+        padding = frame_padding,
         bordersize = 0,
-        OverlapGroup:new{
+        HorizontalGroup:new{
             dimen = self.dimen:copy(),
             LeftContainer:new{
-                dimen = self.dimen:copy(),
+                dimen = {
+                    w = key_w,
+                    h = self.height
+                },
                 TextWidget:new{
                     text = self.show_key,
-                    face = self.cface,
+                    face = self.tface,
                 }
             },
-            RightContainer:new{
-                dimen = self.dimen:copy(),
+            LeftContainer:new{
+                dimen = {
+                    w = value_w,
+                    h = self.height
+                },
                 TextWidget:new{
                     text = self.show_value,
                     face = self.cface,

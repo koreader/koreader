@@ -1,19 +1,19 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
-local UIManager = require("ui/uimanager")
-local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local Font = require("ui/font")
-local VerticalGroup = require("ui/widget/verticalgroup")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local UIManager = require("ui/uimanager")
 local VerticalSpan = require("ui/widget/verticalspan")
+local _ = require("gettext")
+local Screen = Device.screen
 
 local ButtonDialogTitle = InputContainer:new{
     title = nil,
@@ -23,8 +23,8 @@ local ButtonDialogTitle = InputContainer:new{
 }
 
 function ButtonDialogTitle:init()
-    self.medium_font_face = Font:getFace("ffont", 20)
-    self.large_font_face = Font:getFace("ffont", 25)
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close button dialog" }

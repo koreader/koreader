@@ -3,9 +3,12 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
+local QuickStart = require("ui/quickstart")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local dbg = require("dbg")
+local Screen = Device.screen
 local _ = require("gettext")
-local Screen = require("device").screen
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -40,12 +43,13 @@ function ReaderMenu:init()
             callback = function()
                 self:onTapCloseMenu()
                 self.ui:onClose()
-                local FileManager = require("apps/filemanager/filemanager")
-                local lastdir = nil
+                local lastdir
                 local last_file = G_reader_settings:readSetting("lastfile")
-                if last_file then
+                -- ignore quickstart guide as last_file so we can go back to home dir
+                if last_file and last_file ~= QuickStart.quickstart_filename then
                     lastdir = last_file:match("(.*)/")
                 end
+                local FileManager = require("apps/filemanager/filemanager")
                 if FileManager.instance then
                     FileManager.instance:reinit(lastdir)
                 else
@@ -80,21 +84,34 @@ function ReaderMenu:onReaderReady()
 
     self.ui:registerTouchZones({
         {
-            id = "readermenu_tap",
-            ges = "tap",
+            id = "readermenu_swipe",
+            ges = "swipe",
             screen_zone = {
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
-            overrides = { "tap_forward", "tap_backward", },
-            handler = function() return self:onTapShowMenu() end,
+            overrides = { "rolling_swipe", "paging_swipe", },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+        },
+        {
+            id = "readermenu_pan",
+            ges = "pan",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            overrides = { "rolling_pan", "paging_pan", },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
     })
 end
 
 function ReaderMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.menu_items)
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
     end
 
     -- settings tab
@@ -108,7 +125,7 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
-    if Device:isKobo() and Screensaver:isUsingBookCover() then
+    if Device:supportsScreensaver() and Screensaver:isUsingBookCover() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
@@ -118,6 +135,20 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
+                {
+                    text = _("Use last book's cover as screensaver"),
+                    checked_func = Screensaver.isUsingBookCover,
+                    callback = function()
+                        if Screensaver:isUsingBookCover() then
+                            G_reader_settings:saveSetting(
+                                "use_lastfile_as_screensaver", false)
+                        else
+                            G_reader_settings:delSetting(
+                                "use_lastfile_as_screensaver")
+                        end
+                        G_reader_settings:flush()
+                    end
+                },
                 {
                     text = _("Exclude this book's cover from screensaver"),
                     checked_func = excluded,
@@ -145,26 +176,6 @@ function ReaderMenu:setUpdateItemTable()
                 }
             }
         }
-    elseif Device:isKindle() then
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                }
-            }
-        }
     end
     -- main menu tab
     -- insert common info
@@ -175,19 +186,43 @@ function ReaderMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            self:onTapCloseMenu()
-            UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
-            local FileManager = require("apps/filemanager/filemanager")
-            if FileManager.instance then
-                FileManager.instance:onClose()
-            end
+            self:exitOrRestart()
         end,
     }
 
-    local order = require("frontend/ui/elements/reader_menu_order")
+    self.menu_items.restart_koreader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
+        end,
+    }
 
-    local MenuSorter = require("frontend/ui/menusorter")
+    local order = require("ui/elements/reader_menu_order")
+
+    local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("reader", self.menu_items, order)
+end
+dbg:guard(ReaderMenu, 'setUpdateItemTable',
+    function(self)
+        local mock_menu_items = {}
+        for _, widget in pairs(self.registered_widgets) do
+            -- make sure addToMainMenu works in debug mode
+            widget:addToMainMenu(mock_menu_items)
+        end
+    end)
+
+function ReaderMenu:exitOrRestart(callback)
+    self:onTapCloseMenu()
+    UIManager:nextTick(function()
+        self.ui:onClose()
+        if callback ~= nil then
+            callback()
+        end
+    end)
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
 end
 
 function ReaderMenu:onShowReaderMenu()
@@ -242,10 +277,12 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:onTapShowMenu()
-    self.ui:handleEvent(Event:new("ShowConfigMenu"))
-    self.ui:handleEvent(Event:new("ShowReaderMenu"))
-    return true
+function ReaderMenu:onSwipeShowMenu(ges)
+    if ges.direction == "south" then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        return true
+    end
 end
 
 function ReaderMenu:onTapCloseMenu()

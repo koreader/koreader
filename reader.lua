@@ -11,7 +11,6 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n\n")
 io.stdout:flush()
 
-
 -- load default settings
 require("defaults")
 local DataStorage = require("datastorage")
@@ -89,11 +88,12 @@ while argidx <= #ARGV do
     end
 end
 
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Font = require("ui/font")
-local ConfirmBox = require("ui/widget/confirmbox")
+local QuickStart = require("ui/quickstart")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 
 local function retryLastFile()
     return ConfirmBox:new{
@@ -124,10 +124,12 @@ end
 local last_file = G_reader_settings:readSetting("lastfile")
 -- load last opened file
 local open_last = G_reader_settings:readSetting("open_last")
-
 if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
     UIManager:show(retryLastFile())
     last_file = nil
+elseif not QuickStart:isShown() then
+    open_last = true
+    last_file = QuickStart:getQuickStart()
 end
 -- night mode
 if G_reader_settings:readSetting("night_mode") then
@@ -162,6 +164,8 @@ if Device:needsTouchScreenProbe() then
     Device:touchScreenProbe()
 end
 
+local exit_code = nil
+
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local file = nil
     if lfs.attributes(ARGV[argidx], "mode") == "file" then
@@ -186,13 +190,13 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
             FileManager:showFiles(home_dir)
         end)
     end
-    UIManager:run()
+    exit_code = UIManager:run()
 elseif last_file then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
         ReaderUI:showReader(last_file)
     end)
-    UIManager:run()
+    exit_code = UIManager:run()
 else
     return showusage()
 end
@@ -210,7 +214,12 @@ local function exitReader()
     Device:exit()
 
     if Profiler then Profiler.stop() end
-    os.exit(0)
+
+    if type(exit_code) == "number" then
+        os.exit(exit_code)
+    else
+        os.exit(0)
+    end
 end
 
 exitReader()

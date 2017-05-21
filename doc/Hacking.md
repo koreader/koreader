@@ -19,7 +19,7 @@ Anything printed by `logger.dbg` starts with `DEBUG`.
 
 ## Bug hunting in kpv
 
-A real example for hunting bug in KPV's cache system: https://github.com/koreader/kindlepdfviewer/pull/475
+A real example of bug hunting in KPV's cache system: <https://github.com/koreader/kindlepdfviewer/pull/475>
 
 
 ## Developing UI widgets ##

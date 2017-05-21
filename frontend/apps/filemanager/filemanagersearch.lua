@@ -1,18 +1,18 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local util = require("ffi/util")
-local Font = require("ui/font")
-local logger = require("logger")
-local T = require("ffi/util").template
-local _ = require("gettext")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
+local util = require("ffi/util")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local calibre = "metadata.calibre"
 local koreaderfile = "temp/metadata.koreader"
@@ -209,7 +209,11 @@ function Search:ShowSearch()
         UIManager:show(self.search_dialog)
     else
         if self.error then
-            UIManager:show(InfoMessage:new{text = self.error .. ("\n") .. _( "Unable to find a calibre metadata file."),})
+            UIManager:show(InfoMessage:new{
+                text = ("%s\n%s"):format(
+                    self.error,
+                    _("Unable to find a calibre metadata file.")),
+            })
         end
     end
 
@@ -472,38 +476,39 @@ function Search:find(option)
             self:browse(option,1)
         end
     else
-        UIManager:show(InfoMessage:new{text = T(_("No match for %1."), self.search_value)})
+        UIManager:show(InfoMessage:new{
+            text = T(_("No match for %1."), self.search_value)
+        })
     end
 end
 
 function Search:onMenuHold(item)
-    if string.len(item.info or "") > 0 then
-        if item.notchecked then
-            item.info = item.info .. item.path
-            local f = io.open(item.path)
-            if f == nil then
-                item.info = item.info .. "\n" .. _("File not found!")
-            else
-                item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
-                f:close()
-            end
-            item.notchecked = false
-        end
-        local thumbnail = nil
-        local doc = DocumentRegistry:openDocument(item.path)
-        if doc then
-            thumbnail = doc:getCoverPageImage()
-            doc:close()
-        end
-        local thumbwidth = math.min(240, Screen:getWidth()/3)
-        UIManager:show(InfoMessage:new{
-            text = item.info,
-            image = thumbnail,
-            image_width = thumbwidth,
-            image_height = thumbwidth/2*3
-        })
+    if not item.info or item.info:len() <= 0 then return end
 
+    if item.notchecked then
+        item.info = item.info .. item.path
+        local f = io.open(item.path)
+        if f == nil then
+            item.info = item.info .. "\n" .. _("File not found!")
+        else
+            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+            f:close()
+        end
+        item.notchecked = false
     end
+    local thumbnail
+    local doc = DocumentRegistry:openDocument(item.path)
+    if doc then
+        thumbnail = doc:getCoverPageImage()
+        doc:close()
+    end
+    local thumbwidth = math.min(240, Screen:getWidth()/3)
+    UIManager:show(InfoMessage:new{
+        text = item.info,
+        image = thumbnail,
+        image_width = thumbwidth,
+        image_height = thumbwidth/2*3
+    })
 end
 
 function Search:showresults()
@@ -516,7 +521,7 @@ function Search:showresults()
         height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("cfont", 22),
+        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -564,7 +569,7 @@ function Search:browse(option, run, chosen)
         height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("cfont", 22),
+        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)

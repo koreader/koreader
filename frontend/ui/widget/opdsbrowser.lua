@@ -492,14 +492,13 @@ end
 function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
     local download_dir = self.getCurrentDownloadDir()
-    local utl = require("frontend/util")
-    local file_system = utl.getFilesystemType(download_dir)
+    local file_system = util.getFilesystemType(download_dir)
     if file_system == "vfat" or file_system == "fuse.fsp" then
-        item.author = utl.replaceInvalidChars(item.author)
-        item.title = utl.replaceInvalidChars(item.title)
+        item.author = util.replaceInvalidChars(item.author)
+        item.title = util.replaceInvalidChars(item.title)
     else
-        item.author = utl.replaceSlashChar(item.author)
-        item.title = utl.replaceSlashChar(item.title)
+        item.author = util.replaceSlashChar(item.author)
+        item.title = util.replaceSlashChar(item.title)
     end
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     logger.dbg("downloading file", local_path, "from", remote_url)
@@ -572,7 +571,7 @@ function OPDSBrowser:showDownloads(item)
     -- set download directory button
     table.insert(buttons, {
         {
-            text = gettext("Set download directory"),
+            text = gettext("Choose download directory by long-pressing"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     title = gettext("Choose download directory"),

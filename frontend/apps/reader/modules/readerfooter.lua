@@ -45,7 +45,7 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
             if powerd.fl_intensity ~= nil then
-                return string.format("L: %d%%", powerd.fl_intensity)
+                return ("L: %d%%"):format(powerd.fl_intensity)
             end
         else
             return "L: Off"
@@ -60,9 +60,9 @@ local footerTextGeneratorMap = {
     end,
     page_progress = function(footer)
         if footer.pageno then
-            return string.format("%d / %d", footer.pageno, footer.pages)
+            return ("%d / %d"):format(footer.pageno, footer.pages)
         else
-            return string.format("%d / %d", footer.position, footer.doc_height)
+            return ("%d / %d"):format(footer.position, footer.doc_height)
         end
     end,
     pages_left = function(footer)
@@ -71,7 +71,7 @@ local footerTextGeneratorMap = {
         return "=> " .. (left and left or footer.pages - footer.pageno)
     end,
     percentage = function(footer)
-        return string.format("R:%1.f%%", footer.progress_bar.percentage * 100)
+        return ("R:%1.f%%"):format(footer.progress_bar.percentage * 100)
     end,
     book_time_to_read = function(footer)
         local current_page
@@ -96,7 +96,7 @@ local footerTextGeneratorMap = {
             local rss = infos:match("^%S+ (%S+) ")
             -- we got the nb of 4Kb-pages used, that we convert to Mb
             rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
-            return string.format("M:%d", rss)
+            return ("M:%d"):format(rss)
         end
         return ""
     end,
@@ -121,9 +121,9 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.pageno = self.view.state.page
-
     self.settings = G_reader_settings:readSetting("footer") or {
+        -- enable progress bar by default
+        -- disable_progress_bar = true,
         disabled = false,
         all_at_once = false,
         toc_markers = true,
@@ -144,6 +144,7 @@ function ReaderFooter:init()
         return
     end
 
+    self.pageno = self.view.state.page
     self.has_no_mode = true
     for _, m in ipairs(MODE_INDEX) do
         if self.settings[m] then
@@ -166,16 +167,18 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
-
-    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
-    self.horizontal_group = HorizontalGroup:new{ margin_span }
     self.text_container = RightContainer:new{
         dimen = Geom:new{ w = 0, h = self.height },
         self.footer_text,
     }
-    table.insert(self.horizontal_group, self.progress_bar)
-    table.insert(self.horizontal_group, self.text_container)
-    table.insert(self.horizontal_group, margin_span)
+
+    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
+    self.horizontal_group = HorizontalGroup:new{
+        margin_span,
+        self.progress_bar,
+        self.text_container,
+        margin_span,
+    }
 
     self.footer_content = FrameContainer:new{
         self.horizontal_group,
@@ -233,10 +236,6 @@ function ReaderFooter:setupTouchZones()
             handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
                 'tap_forward', 'tap_backward',
-                -- NOTE: readermenu_tap override is needed to keep behavior
-                -- consistent with the old code base in case of overlap between
-                -- footer and menu tap zones
-                'readermenu_tap',
             },
         },
         {
@@ -255,7 +254,12 @@ function ReaderFooter:resetLayout()
     if new_screen_width == self._saved_screen_width then return end
     local new_screen_height = Screen:getHeight()
 
-    self.progress_bar.width = math.floor(new_screen_width - self.text_width - self.horizontal_margin*2)
+    if self.settings.disable_progress_bar then
+        self.progress_bar.width = 0
+    else
+        self.progress_bar.width = math.floor(
+            new_screen_width - self.text_width - self.horizontal_margin*2)
+    end
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
     self.footer_positioner.dimen.h = new_screen_height
@@ -311,7 +315,6 @@ end
 local option_titles = {
     all_at_once = _("Show all at once"),
     toc_markers = _("Show chapter markers"),
-    auto_refresh_time = _("Auto refresh time"),
     page_progress = _("Current page"),
     time = _("Current time"),
     pages_left = _("Pages left in chapter"),
@@ -346,18 +349,12 @@ function ReaderFooter:addToMainMenu(menu_items)
         })
     end
 
-    -- footer is enabled, build the full status bar menu
-    local isEnabled = function()
-        return not self.settings.disabled
-    end
-
     local getMinibarOption = function(option, callback)
         return {
             text = option_titles[option],
             checked_func = function()
                 return self.settings[option] == true
             end,
-            enabled_func = isEnabled,
             callback = function()
                 self.settings[option] = not self.settings[option]
                 G_reader_settings:saveSetting("footer", self.settings)
@@ -399,16 +396,41 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     table.insert(sub_items,
                  getMinibarOption("all_at_once", self.updateFooterTextGenerator))
-    table.insert(sub_items, getMinibarOption("toc_markers", self.setTocMarkers))
-    -- TODO: only enable auto refresh when time is shown
-    table.insert(sub_items, getMinibarOption("auto_refresh_time", function()
-        if self.settings.auto_refresh_time then
-            self:setupAutoRefreshTime()
-        else
-            UIManager:unschedule(self.autoRefreshTime)
-            self.onCloseDocument = nil
+    table.insert(sub_items, {
+        text = _("Progress bar"),
+        sub_item_table = {
+            {
+                text = _("Show progress bar"),
+                checked_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.disable_progress_bar = not self.settings.disable_progress_bar
+                    self:updateFooter()
+                    UIManager:setDirty("all", "partial")
+                end,
+            },
+            getMinibarOption("toc_markers", self.setTocMarkers),
+        }
+    })
+    table.insert(sub_items, {
+        text = _("Auto refresh time"),
+        checked_func = function()
+            return self.settings.auto_refresh_time == true
+        end,
+        -- only enable auto refresh when time is shown
+        enabled_func = function() return self.settings.time end,
+        callback = function()
+            self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+            G_reader_settings:saveSetting("footer", self.settings)
+            if self.settings.auto_refresh_time then
+                self:setupAutoRefreshTime()
+            else
+                UIManager:unschedule(self.autoRefreshTime)
+                self.onCloseDocument = nil
+            end
         end
-    end))
+    })
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
@@ -416,7 +438,9 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("percentage"))
     table.insert(sub_items, getMinibarOption("book_time_to_read"))
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
-    table.insert(sub_items, getMinibarOption("frontlight"))
+    if Device:hasFrontlight() then
+        table.insert(sub_items, getMinibarOption("frontlight"))
+    end
     table.insert(sub_items, getMinibarOption("mem_usage"))
 end
 
@@ -431,7 +455,7 @@ function ReaderFooter:genAllFooterText()
     return table.concat(info, " | ")
 end
 
--- this function should never be called with footer is disabled
+-- this method should never get called when footer is disabled
 function ReaderFooter:setTocMarkers()
     if self.settings.toc_markers then
         if self.progress_bar.ticks ~= nil then return end
@@ -500,13 +524,22 @@ end
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText()
     self.footer_text:setText(self:genFooterText())
-    if self.has_no_mode then
-        self.text_width = 0
+    if self.settings.disable_progress_bar then
+        if self.has_no_mode then
+            self.text_width = 0
+        else
+            self.text_width = self.footer_text:getSize().w
+        end
+        self.progress_bar.width = 0
     else
-        self.text_width = self.footer_text:getSize().w + self.text_left_margin
+        if self.has_no_mode then
+            self.text_width = 0
+        else
+            self.text_width = self.footer_text:getSize().w + self.text_left_margin
+        end
+        self.progress_bar.width = math.floor(
+            self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     end
-    self.progress_bar.width = math.floor(
-        self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
     UIManager:setDirty(self.view.dialog, "ui", self.footer_content.dimen)

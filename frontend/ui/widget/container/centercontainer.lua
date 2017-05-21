@@ -1,8 +1,9 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-
---[[
+--[[--
 CenterContainer centers its content (1 widget) within its own dimensions
 --]]
+
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+
 local CenterContainer = WidgetContainer:new()
 
 function CenterContainer:paintTo(bb, x, y)

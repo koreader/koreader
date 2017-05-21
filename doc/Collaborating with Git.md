@@ -2,10 +2,11 @@
 
 ## Basic
 If you are new to Git, following are some of the resources you might find useful:
-* [GitHub's blog post][https://github.com/blog/120-new-to-git]
-* http://try.github.com/
-* http://sixrevisions.com/resources/git-tutorials-beginners/
-* http://rogerdudler.github.io/git-guide/
+
+* [GitHub's blog post](https://github.com/blog/120-new-to-git)
+* <http://try.github.com/>
+* <http://sixrevisions.com/resources/git-tutorials-beginners/>
+* <http://rogerdudler.github.io/git-guide/>
 
 ## Get latest code from the KOReader repository
 First you need to add the official repo to your remote repo list:

@@ -74,7 +74,7 @@ end
 
 local highlight_style = {
     lighten = _("Lighten"),
-    underscore = _("Underscore"),
+    underscore = _("Underline"),
     invert = _("Invert"),
 }
 

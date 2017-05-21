@@ -180,6 +180,11 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
         auto_bbox.x1 = auto_bbox.x1 + bbox.x0
         auto_bbox.y1 = auto_bbox.y1 + bbox.y0
         logger.dbg("Semi-auto detected bbox", auto_bbox)
+        local native_size = Document.getNativePageDimensions(doc, pageno)
+        if (auto_bbox.x1 - auto_bbox.x0)/native_size.w < 0.1 and (auto_bbox.y1 - auto_bbox.y0)/native_size.h < 0.1 then
+            logger.dbg("Semi-auto detected bbox too small, using manual bbox")
+            auto_bbox = bbox
+        end
         page:close()
         Cache:insert(hash, CacheItem:new{ semiautobbox = auto_bbox })
         kc:free()
@@ -258,7 +263,7 @@ function KoptInterface:getCoverPageImage(doc)
     local zoom = math.min(screen_size.w / native_size.w, screen_size.h / native_size.h)
     local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1, 0)
     if tile then
-        return tile.bb
+        return tile.bb:copy()
     end
 end
 

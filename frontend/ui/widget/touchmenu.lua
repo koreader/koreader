@@ -1,25 +1,25 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalSpan = require("ui/widget/verticalspan")
-local TextWidget = require("ui/widget/textwidget")
-local LineWidget = require("ui/widget/linewidget")
-local IconButton = require("ui/widget/iconbutton")
-local GestureRange = require("ui/gesturerange")
+local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
-local UIManager = require("ui/uimanager")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("ffi/util")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = Device.screen
 local getMenuText = require("util").getMenuText
 
 --[[
@@ -30,7 +30,7 @@ local TouchMenuItem = InputContainer:new{
     vertical_align = "center",
     item = nil,
     dimen = nil,
-    face = Font:getFace("cfont", 22),
+    face = Font:getFace("smallinfofont"),
     show_parent = nil,
 }
 
@@ -308,7 +308,7 @@ local TouchMenu = InputContainer:new{
     item_height = Screen:scaleBySize(50),
     bordersize = Screen:scaleBySize(2),
     padding = Screen:scaleBySize(5),
-    fface = Font:getFace("ffont", 20),
+    fface = Font:getFace("ffont"),
     width = nil,
     height = nil,
     page = 1,
@@ -585,10 +585,12 @@ function TouchMenu:onPrevPage()
 end
 
 function TouchMenu:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" or ges_ev.direction == "north" then
+    if ges_ev.direction == "west" then
         self:onNextPage()
-    elseif ges_ev.direction == "east" or ges_ev.direction == "south" then
+    elseif ges_ev.direction == "east" then
         self:onPrevPage()
+    elseif ges_ev.direction == "north" then
+        self:closeMenu()
     end
 end
 

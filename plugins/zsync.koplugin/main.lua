@@ -223,7 +223,7 @@ function ZSync:subscribe()
     self.received = {}
     local zsync = self
     require("ui/downloadmgr"):new{
-        title = _("Choose inbox"),
+        title = _("Choose inbox by long-pressing"),
         onConfirm = function(inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             zsync:onChooseInbox(inbox)

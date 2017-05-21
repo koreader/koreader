@@ -1,16 +1,15 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
-local Screen = require("device").screen
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
-local Font = require("ui/font")
-local DEBUG = require("dbg")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
     search_dialog = nil,
@@ -30,7 +29,6 @@ local FileSearcher = InputContainer:new{
 
 function FileSearcher:readDir()
     self.dirs = {self.path}
-    DEBUG("self.path", self.path)
     self.files = {}
     while #self.dirs ~= 0 do
         local new_dirs = {}
@@ -56,13 +54,11 @@ function FileSearcher:setSearchResults()
     local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
     local keywords = self.search_value
-    --DEBUG("self.files", self.files)
     self.results = {}
     if keywords == " " then -- one space to show all files
         self.results = self.files
     else
         for __,f in pairs(self.files) do
-        --DEBUG("f", f)
             if string.find(string.lower(f.name), string.lower(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
                 if f.attr.mode == "directory" then
                     f.text = f.name.."/"
@@ -82,7 +78,6 @@ function FileSearcher:setSearchResults()
             end
         end
     end
-    --DEBUG("self.results", self.results)
     self.keywords = keywords
     self.items = #self.results
 end
@@ -103,7 +98,8 @@ function FileSearcher:close()
             else
                 UIManager:show(
                     InfoMessage:new{
-                        text = util.template(_("Found no files matching '%1'."), self.search_value)
+                        text = util.template(_("Found no files matching '%1'."),
+                                             self.search_value)
                     }
                 )
             end
@@ -155,7 +151,7 @@ function FileSearcher:showSearchResults()
         height = Screen:getHeight()-15,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("cfont", 22),
+        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)

@@ -18,6 +18,7 @@ describe("Readerhighlight module", function()
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.dictionary.dict_window)
             UIManager:close(readerui)
+            UIManager:quit()
         end)
         UIManager:run()
     end
@@ -57,6 +58,7 @@ describe("Readerhighlight module", function()
         UIManager:nextTick(function()
             UIManager:close(readerui.highlight.edit_highlight_dialog)
             UIManager:close(readerui)
+            UIManager:quit()
         end)
         UIManager:run()
     end
@@ -169,6 +171,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -253,6 +256,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })

@@ -1,33 +1,35 @@
-local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local FileManagerMenu = require("apps/filemanager/filemanagermenu")
-local DocumentRegistry = require("document/documentregistry")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local Screenshoter = require("ui/widget/screenshoter")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local InputDialog = require("ui/widget/inputdialog")
-local VerticalSpan = require("ui/widget/verticalspan")
-local FileChooser = require("ui/widget/filechooser")
-local TextWidget = require("ui/widget/textwidget")
 local Blitbuffer = require("ffi/blitbuffer")
-local lfs = require("libs/libkoreader-lfs")
-local DocSettings = require("docsettings")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local Event = require("ui/event")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local util = require("ffi/util")
+local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
+local FileChooser = require("ui/widget/filechooser")
+local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
+local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
-local logger = require("logger")
-local _ = require("gettext")
-local KeyValuePage = require("ui/widget/keyvaluepage")
-local ReaderUI = require("apps/reader/readerui")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local ReaderUI = require("apps/reader/readerui")
+local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+local Screenshoter = require("ui/widget/screenshoter")
+local TextWidget = require("ui/widget/textwidget")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
+local util = require("ffi/util")
+local _ = require("gettext")
+local Screen = Device.screen
 
 local function getDefaultDir()
     if Device:isKindle() then
@@ -77,7 +79,7 @@ function FileManager:init()
     self.show_parent = self.show_parent or self
 
     self.path_text = TextWidget:new{
-        face = Font:getFace("infofont", 18),
+        face = Font:getFace("xx_smallinfofont"),
         text = abbreviate(self.root_path),
     }
 
@@ -86,7 +88,7 @@ function FileManager:init()
         bordersize = 0,
         VerticalGroup:new{
             TextWidget:new{
-                face = Font:getFace("tfont", 24),
+                face = Font:getFace("smalltfont"),
                 text = self.title,
             },
             CenterContainer:new{
@@ -243,7 +245,18 @@ function FileManager:init()
                     end,
                 }
             },
+            -- a little hack to get visual functionality grouping
+            {},
             {
+                {
+                    text = _("Convert"),
+                    enabled = lfs.attributes(file, "mode") == "file"
+                        and FileManagerConverter:isSupported(file),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerConverter:showConvertButtons(file, self)
+                    end,
+                },
                 {
                     text = _("Book information"),
                     enabled = lfs.attributes(file, "mode") == "file"
@@ -310,14 +323,19 @@ function FileManager:init()
         ui = self,
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
+    table.insert(self, ReaderWikipedia:new{ ui = self })
 
-    self.loaded_modules = {}
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        logger.info("FM loaded plugin", plugin_module.name, "at", plugin_module.path)
         if not plugin_module.is_doc_only then
+            local ok, plugin_or_err = PluginLoader:createPluginInstance(
+                plugin_module, { ui = self, })
             -- Keep references to the modules which do not register into menu.
-            table.insert(self.loaded_modules, plugin_module:new{ ui = self, })
+            if ok then
+                table.insert(self, plugin_or_err)
+                logger.info("FM loaded plugin", plugin_module.name,
+                            "at", plugin_module.path)
+            end
         end
     end
 
@@ -465,16 +483,16 @@ function FileManager:renameFile(file)
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_(
-                            "Failed to move history data of %1 to %2.\n" ..
-                            "The reading history may be lost."), file, dest),
+                        text = util.template(
+                            _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
+                            file, dest),
                     })
                 end
             end
         else
             UIManager:show(InfoMessage:new{
                 text = util.template(
-                           _("Failed to rename from %1 to %2"), file, dest),
+                    _("Failed to rename from %1 to %2"), file, dest),
             })
         end
     end

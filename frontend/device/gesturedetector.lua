@@ -1,45 +1,50 @@
+--[[--
+This module detects gestures.
+
+Current detectable gestures:
+
+* `touch` (user touched screen)
+* `tap` (touch action detected as single tap)
+* `pan`
+* `hold`
+* `swipe`
+* `pinch`
+* `spread`
+* `rotate`
+* `hold_pan`
+* `double_tap`
+* `inward_pan`
+* `outward_pan`
+* `pan_release`
+* `hold_release`
+* `two_finger_tap`
+* `two_finger_pan`
+* `two_finger_swipe`
+* `two_finger_pan_release`
+
+You change the state machine by feeding it touch events, i.e. calling
+@{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)}.
+
+
+a touch event should have following format:
+
+    tev = {
+        slot = 1,
+        id = 46,
+        x = 0,
+        y = 1,
+        timev = TimeVal:new{...},
+    }
+
+Don't confuse `tev` with raw evs from kernel, `tev` is build according to ev.
+
+@{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)} will return a
+detection result when you feed a touch release event to it.
+--]]
+
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
-
---[[
-Current detectable gestures:
-    * touch (user touched screen)
-    * tap (touch action detected as single tap)
-    * pan
-    * hold
-    * swipe
-    * pinch
-    * spread
-    * rotate
-    * hold_pan
-    * double_tap
-    * inward_pan
-    * outward_pan
-    * pan_release
-    * hold_release
-    * two_finger_tap
-    * two_finger_pan
-    * two_finger_swipe
-    * two_finger_pan_release
-
-You change the state machine by feeding it touch events, i.e. calling
-GestureDetector:feedEvent(tev).
-
-a touch event should have following format:
-tev = {
-    slot = 1,
-    id = 46,
-    x = 0,
-    y = 1,
-    timev = TimeVal:new{...},
-}
-
-Don't confuse tev with raw evs from kernel, tev is build according to ev.
-
-GestureDetector:feedEvent(tev) will return a detection result when you
-feed a touch release event to it.
---]]
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -88,6 +93,9 @@ function GestureDetector:init()
     self.PAN_THRESHOLD = 50 * self.screen:getDPI() / 167
 end
 
+--[[--
+Feeds touch events to state machine.
+--]]
 function GestureDetector:feedEvent(tevs)
     repeat
         local tev = table.remove(tevs)
@@ -151,9 +159,10 @@ function GestureDetector:isTwoFingerTap()
     )
 end
 
---[[
-compare last_pan with first_tev in this slot
-return pan direction and distance
+--[[--
+Compares `last_pan` with `first_tev` in this slot.
+
+@return (direction, distance) pan direction and distance
 --]]
 function GestureDetector:getPath(slot)
     local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
@@ -236,8 +245,8 @@ function GestureDetector:initialState(tev)
     end
 end
 
---[[
-this method handles both single and double tap
+--[[--
+Handles both single and double tap.
 --]]
 function GestureDetector:tapState(tev)
     logger.dbg("in tap state...")
@@ -307,7 +316,7 @@ function GestureDetector:handleDoubleTap(tev)
         timev = tev.timev,
     }
 
-    if self.last_taps[slot] ~= nil and
+    if not self.input.disable_double_tap and self.last_taps[slot] ~= nil and
     self:isDoubleTap(self.last_taps[slot], cur_tap) then
         -- it is a double tap
         self:clearState(slot)
@@ -590,8 +599,8 @@ function GestureDetector:holdState(tev, hold)
     end
 end
 
---[[
-  @brief change gesture's x and y coordinates according to screen view mode
+--[[--
+  Changes gesture's `x` and `y` coordinates according to screen view mode.
 
   @param ges gesture that you want to adjust
   @return adjusted gesture.

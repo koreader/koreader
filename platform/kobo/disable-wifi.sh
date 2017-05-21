@@ -9,11 +9,11 @@ ifconfig eth0 down
 
 # Some sleep in between may avoid system getting hung
 # (we test if a module is actually loaded to avoid unneeded sleeps)
-if lsmod | grep -q $WIFI_MODULE ; then
+if lsmod | grep -q "${WIFI_MODULE}"; then
     usleep 200000
-    rmmod -r $WIFI_MODULE
+    rmmod -r "${WIFI_MODULE}"
 fi
-if lsmod | grep -q sdio_wifi_pwr ; then
+if lsmod | grep -q sdio_wifi_pwr; then
     usleep 200000
     rmmod -r sdio_wifi_pwr
 fi

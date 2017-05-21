@@ -38,6 +38,22 @@ describe("util module", function()
         assert.are_same(argv, {"./sdcv", "-nj", "words", "a lot", "more or less", "--data-dir=dict"})
     end)
 
+    it("should split with splitter", function()
+        local words = {}
+        for word in util.gsplit("a-b-c-d", "-", false) do
+            table.insert(words, word)
+        end
+        assert.are_same(words, {"a", "b", "c", "d"})
+    end)
+
+    it("should also split with splitter", function()
+        local words = {}
+        for word in util.gsplit("a-b-c-d-", "-", false) do
+            table.insert(words, word)
+        end
+        assert.are_same(words, {"a", "b", "c", "d"})
+    end)
+
     it("should split line into words", function()
         local words = util.splitToWords("one two,three  four . five")
         assert.are_same(words, {
@@ -251,4 +267,18 @@ describe("util module", function()
         assert.is_equal(util.fixUtf8("glück schließen", "_"), "glück schließen")
     end)
 
+    it("should split input to array", function()
+        assert.are_same(util.splitToArray("100\tabc\t\tdef\tghi200\t", "\t", true),
+                        {"100", "abc", "", "def", "ghi200"})
+    end)
+
+    it("should also split input to array", function()
+        assert.are_same(util.splitToArray("abcabcabcabca", "a", true),
+                        {"", "bc", "bc", "bc", "bc"})
+    end)
+
+    it("should split input to array without empty entities", function()
+        assert.are_same(util.splitToArray("100  abc   def ghi200  ", " ", false),
+                        {"100", "abc", "def", "ghi200"})
+    end)
 end)

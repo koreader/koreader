@@ -17,34 +17,34 @@ if the resulting phrase would be longer than three words.
 
 ]]
 
-local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local HorizontalSpan = require("ui/widget/horizontalspan")
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
-local UIManager = require("ui/uimanager")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local Screen = Device.screen
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
-
+local Screen = Device.screen
 
 local ConfirmBox = InputContainer:new{
     modal = true,
     text = _("no text"),
-    face = Font:getFace("infofont", 25),
+    face = Font:getFace("infofont"),
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
     ok_callback = function() end,
     cancel_callback = function() end,
+    other_buttons = nil,
     margin = 5,
     padding = 5,
 }
@@ -79,28 +79,42 @@ function ConfirmBox:init()
             width = Screen:getWidth()*2/3,
         }
     }
+
+    local buttons = {{
+        text = self.cancel_text,
+        callback = function()
+            self.cancel_callback()
+            UIManager:close(self)
+        end,
+    }, {
+        text = self.ok_text,
+        callback = function()
+            self.ok_callback()
+            UIManager:close(self)
+        end,
+    },}
+
+    if self.other_buttons ~= nil then
+        for __, button in ipairs(self.other_buttons) do
+            assert(type(button.text) == "string")
+            assert(button.callback == nil or type(button.callback) == "function")
+            table.insert(buttons, {
+                text = button.text,
+                callback = function()
+                    if button.callback ~= nil then
+                        button.callback()
+                    end
+                    UIManager:close(self)
+                end,
+            })
+        end
+    end
+
     local button_table = ButtonTable:new{
         width = content:getSize().w,
         button_font_face = "cfont",
         button_font_size = 20,
-        buttons = {
-            {
-                {
-                    text = self.cancel_text,
-                    callback = function()
-                        self.cancel_callback()
-                        UIManager:close(self)
-                    end,
-                },
-                {
-                    text = self.ok_text,
-                    callback = function()
-                        self.ok_callback()
-                        UIManager:close(self)
-                    end,
-                },
-            },
-        },
+        buttons = { buttons },
         zero_sep = true,
         show_parent = self,
     }

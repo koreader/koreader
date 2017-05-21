@@ -81,7 +81,7 @@ end
 
 function CalibreCompanion:addToMainMenu(menu_items)
     menu_items.calibre_wireless_connection = {
-        text = _("Calibre wireless connection"),
+        text = _("calibre wireless connection"),
         sub_item_table = {
             {
                 text_func = function()
@@ -125,7 +125,7 @@ end
 function CalibreCompanion:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
-        title = _("Choose inbox"),
+        title = _("Choose inbox by long-pressing"),
         onConfirm = function(inbox)
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)

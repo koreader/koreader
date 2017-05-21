@@ -1,31 +1,28 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalSpan = require("ui/widget/verticalspan")
-local InputText = require("ui/widget/inputtext")
-local ToggleSwitch = require("ui/widget/toggleswitch")
-local Button = require("ui/widget/button")
-local ProgressWidget = require("ui/widget/progresswidget")
-local LineWidget = require("ui/widget/linewidget")
-local TextWidget = require("ui/widget/textwidget")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-
-local CloseButton = require("ui/widget/closebutton")
-local InputDialog = require("ui/widget/inputdialog")
-
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
-local Screen = require("device").screen
+local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local InputText = require("ui/widget/inputtext")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local ProgressWidget = require("ui/widget/progresswidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
-
+local ToggleSwitch = require("ui/widget/toggleswitch")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local Screen = require("device").screen
 local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
@@ -69,9 +66,9 @@ function BookStatusWidget:init()
         }
     end
 
-    self.small_font_face = Font:getFace("ffont", 15)
-    self.medium_font_face = Font:getFace("ffont", 20)
-    self.large_font_face = Font:getFace("ffont", 25)
+    self.small_font_face = Font:getFace("smallffont")
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
 
     self.star = Button:new{
         icon = "resources/icons/stats.star.empty.png",
@@ -304,6 +301,8 @@ function BookStatusWidget:genBookInfoGroup()
             width = img_width,
             height = img_height,
         })
+        -- dereference thumbnail since we let imagewidget manages its lifecycle
+        self.thumbnail = nil
     end
 
     table.insert(book_info_group, CenterContainer:new{

@@ -1,16 +1,17 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
-local UIManager = require("ui/uimanager")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local DocSettings = require("docsettings")
+local Font = require("ui/font")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local Menu = require("ui/widget/menu")
+local UIManager = require("ui/uimanager")
+local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
 local _ = require("gettext")
-local KeyValuePage = require("ui/widget/keyvaluepage")
-local DocSettings = require("docsettings")
-local InfoMessage = require("ui/widget/infomessage")
 local T = require("ffi/util").template
-local RenderText = require("ui/rendertext")
-local Font = require("ui/font")
+
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
 }
@@ -64,11 +65,11 @@ function FileManagerHistory:buildBookInformationTable(book_props)
     end
 
     return {
-        { T(_("Title: %1"), book_props.title), "" },
-        { T(_("Authors: %1"), book_props.authors), "" },
-        { T(_("Series: %1"), book_props.series), "" },
-        { T(_("Pages: %1"), book_props.pages), "" },
-        { T(_("Language: %1"), string.upper(book_props.language)), "" },
+        { _("Title:"), book_props.title },
+        { _("Authors:"), book_props.authors },
+        { _("Series:"), book_props.series },
+        { _("Pages:"), book_props.pages },
+        { _("Language:"), string.upper(book_props.language) },
     }
 end
 

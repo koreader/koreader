@@ -27,9 +27,9 @@ local GoodreadsBook = InputContainer:new{
 }
 
 function GoodreadsBook:init()
-    self.small_font_face = Font:getFace("ffont", 16)
-    self.medium_font_face = Font:getFace("ffont", 18)
-    self.large_font_face = Font:getFace("ffont", 22)
+    self.small_font_face = Font:getFace("smallffont")
+    self.medium_font_face = Font:getFace("ffont")
+    self.large_font_face = Font:getFace("largeffont")
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
     UIManager:setDirty(self, function()
@@ -190,17 +190,18 @@ function GoodreadsBook:genBookInfoGroup()
         align = "top",
         HorizontalSpan:new{ width =  split_span_width }
     }
-    --thumbnail
+    -- thumbnail
     local http = require("socket.http")
     local body = http.request(self.dates.image)
     local image = false
     if body then image = Pic.openJPGDocumentFromMem(body) end
     if image then
         table.insert(book_info_group, ImageWidget:new{
-            image = image.image_bb,
+            image = image.image_bb:copy(),
             width = img_width,
             height = img_height,
         })
+        image:close()
     else
         table.insert(book_info_group, ImageWidget:new{
             file = "resources/goodreadsnophoto.png",

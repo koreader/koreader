@@ -1,28 +1,41 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+--[[--
+Widget that shows a message and choice1/choice2/Cancel buttons
+
+Example:
+
+    UIManager:show(MultiConfirmBox:new{
+        text = T( _("Set %1 as fallback font?"), face),
+        choice1_text = _("Default"),
+        choice1_callback = function()
+            -- set as default font
+        end,
+        choice2_text = _("Fallback"),
+        choice2_callback = function()
+            -- set as fallback font
+        end,
+    })
+]]
+
+local Blitbuffer = require("ffi/blitbuffer")
+local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local ButtonTable = require("ui/widget/buttontable")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Font = require("ui/font")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = require("device").screen
 
--- screen
-
---[[
-Widget that shows a message and choice1/choice2/Cancel buttons
-]]
 local MultiConfirmBox = InputContainer:new{
     modal = true,
     text = _("no text"),
-    face = Font:getFace("infofont", 25),
+    face = Font:getFace("infofont"),
     choice1_text = _("Choice 1"),
     choice2_text = _("Choice 2"),
     cancel_text = _("Cancel"),

@@ -36,6 +36,7 @@ local order = {
         "storage_stat",
         "cloud_storage",
         "read_timer",
+        "news_downloader",
         "synchronize_time",
         "terminal",
         "----------------------------",
@@ -44,6 +45,8 @@ local order = {
     },
     search = {
         "dictionary_lookup",
+        "wikipedia_lookup",
+        "----------------------------",
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
@@ -54,14 +57,21 @@ local order = {
         "history",
         "open_last_document",
         "----------------------------",
-        "ota_update", -- if Device:isKindle() or Device:isKobo() or Device:isPocketBook() or Device:isAndroid()
+        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
+                           Device:isPocketBook() or Device:isAndroid() ]]--
         "version",
         "help",
         "system_statistics",
         "----------------------------",
+        "restart_koreader",
+        "poweroff", -- if Device:isKobo()
+        "reboot",   -- if Device:isKobo()
+        "----------------------------",
         "exit",
     },
     help = {
+        "quickstart_guide",
+        "----------------------------",
         "report_bug",
         "----------------------------",
         "about",

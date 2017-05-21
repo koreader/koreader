@@ -3,16 +3,16 @@ local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Screensaver = require("ui/screensaver")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local Screen = Device.screen
+local dbg = require("dbg")
+local logger = require("logger")
+local _ = require("gettext")
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -50,24 +50,28 @@ function FileManagerMenu:init()
 end
 
 function FileManagerMenu:initGesListener()
-    self.ges_events = {
-        TapShowMenu = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0,
-                    y = 0,
-                    w = Screen:getWidth()*3/4,
-                    h = Screen:getHeight()/4,
-                }
-            }
+    if not Device:isTouchDevice() then return end
+
+    self:registerTouchZones({
+        {
+            id = "filemanager_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            overrides = { "rolling_swipe", "paging_swipe", },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
-    }
+    })
 end
 
 function FileManagerMenu:setUpdateItemTable()
     for _, widget in pairs(self.registered_widgets) do
-        widget:addToMainMenu(self.menu_items)
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
     end
 
     -- setting tab
@@ -96,7 +100,7 @@ function FileManagerMenu:setUpdateItemTable()
             G_reader_settings:flush()
         end
     }
-    if Device.isKobo() or Device.isKindle() then
+    if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
             sub_item_table = {
@@ -265,25 +269,56 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            if SetDefaults.settings_changed then
-                SetDefaults.settings_changed = false
-                UIManager:show(ConfirmBox:new{
-                    text = _("You have unsaved default settings. Save them now?"),
-                    ok_callback = function()
-                        SetDefaults:saveSettings()
-                    end,
-                })
-            else
-                UIManager:close(self.menu_container)
-                self.ui:onClose()
-            end
+            self:exitOrRestart()
+        end,
+    }
+    self.menu_items.restart_koreader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
 
     local order = require("ui/elements/filemanager_menu_order")
 
-    local MenuSorter = require("frontend/ui/menusorter")
+    local MenuSorter = require("ui/menusorter")
     self.tab_item_table = MenuSorter:mergeAndSort("filemanager", self.menu_items, order)
+end
+dbg:guard(FileManagerMenu, 'setUpdateItemTable',
+    function(self)
+        local mock_menu_items = {}
+        for _, widget in pairs(self.registered_widgets) do
+            -- make sure addToMainMenu works in debug mode
+            widget:addToMainMenu(mock_menu_items)
+        end
+    end)
+
+function FileManagerMenu:exitOrRestart(callback)
+    if SetDefaults.settings_changed then
+        UIManager:show(ConfirmBox:new{
+            text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
+            ok_text = _("Save"),
+            ok_callback = function()
+              SetDefaults.settings_changed = false
+              SetDefaults:saveSettings()
+              self:exitOrRestart(callback)
+            end,
+            cancel_text = _("Don't save"),
+            cancel_callback = function()
+                SetDefaults.settings_changed = false
+                self:exitOrRestart(callback)
+            end,
+            other_buttons = {{
+              text = _("Cancel"),
+            }}
+        })
+    else
+        UIManager:close(self.menu_container)
+        self.ui:onClose()
+        if callback then
+            callback()
+        end
+    end
 end
 
 function FileManagerMenu:onShowMenu()
@@ -335,9 +370,11 @@ function FileManagerMenu:onCloseFileManagerMenu()
     return true
 end
 
-function FileManagerMenu:onTapShowMenu()
-    self:onShowMenu()
-    return true
+function FileManagerMenu:onSwipeShowMenu(ges)
+    if ges.direction == "south" then
+        self:onShowMenu()
+        return true
+    end
 end
 
 function FileManagerMenu:onSetDimensions(dimen)

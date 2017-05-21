@@ -1,10 +1,10 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local Device = require("device")
 local Blitbuffer = require("ffi/blitbuffer")
+local Device = require("device")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local UIManager = require("ui/uimanager")
+local Screen = Device.screen
 
 local LinkBox = InputContainer:new{
     box = nil,
