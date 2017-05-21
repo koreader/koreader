@@ -369,6 +369,7 @@ function KOSync:logout()
 end
 
 function KOSync:getLastPercent()
+    if self.ui == nil or self.ui.document == nil then return end
     if self.ui.document.info.has_pages then
         return roundPercent(self.ui.paging:getLastPercent())
     else
@@ -377,6 +378,7 @@ function KOSync:getLastPercent()
 end
 
 function KOSync:getLastProgress()
+    if self.ui == nil or self.ui.document == nil then return end
     if self.ui.document.info.has_pages then
         return self.ui.paging:getLastProgress()
     else
@@ -386,6 +388,7 @@ end
 
 function KOSync:syncToProgress(progress)
     DEBUG("sync to", progress)
+    if self.ui == nil or self.ui.document == nil then return end
     if self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
     else
