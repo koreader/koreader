@@ -192,7 +192,7 @@ end
 function BatteryStat:onNotCharging()
     self:debugOutput("onNotCharging")
     self.was_charging = true
-    self:rest(false, true)
+    self:reset(false, true)
     self:accumulate()
 end
 
