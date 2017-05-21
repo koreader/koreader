@@ -108,20 +108,16 @@ function BatteryStat:init()
     -- the unaccumulated values.
     self.charging_state = State:new(self.settings:readSetting("charging_state"))
     self.awake_state = State:new(self.settings:readSetting("awake_state"))
-    self:initCurrentState()
+    -- Whether the device was suspending before current timestamp.
+    self.was_suspending = false
+    -- Whether the device was charging before current timestamp.
+    self.was_charging = PowerD:isCharging()
 
     if self.debugging then
         self.debugOutput = self._debugOutput
     else
         self.debugOutput = function() end
     end
-end
-
-function BatteryStat:initCurrentState()
-    -- Whether the device was suspending before current timestamp.
-    self.was_suspending = false
-    -- Whether the device was charging before current timestamp.
-    self.was_charging = PowerD:isCharging()
 end
 
 function BatteryStat:onFlushSettings()
@@ -197,19 +193,13 @@ function BatteryStat:onNotCharging()
 end
 
 function BatteryStat:showStatistics()
-    self:initCurrentState()
     self:accumulate()
     local kv_pairs = self:dump()
     table.insert(kv_pairs, "----------")
     table.insert(kv_pairs, {_("Historical records are dumped to"), ""})
     table.insert(kv_pairs, {self.dump_file, ""})
     table.insert(kv_pairs, "----------")
-    table.insert(kv_pairs, {_("If you would like to reset the data,"), "",
-                            callback = function()
-                                self:resetAll()
-                                self:restart()
-                            end})
-    table.insert(kv_pairs, {_("please tap here."), "",
+    table.insert(kv_pairs, {_("Tap here to reset the data manually."), "",
                             callback = function()
                                 self:resetAll()
                                 self:restart()
