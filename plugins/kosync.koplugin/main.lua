@@ -605,6 +605,7 @@ function KOSync:_onResume()
 end
 
 function KOSync:_onFlushSettings()
+    if self.ui == nil or self.ui.document == nil then return end
     self:updateProgress()
 end
 
