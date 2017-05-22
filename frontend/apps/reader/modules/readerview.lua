@@ -3,20 +3,22 @@ ReaderView module handles all the screen painting for document browsing.
 ]]
 
 local AlphaContainer = require("ui/widget/container/alphacontainer")
-local ReaderFlipping = require("apps/reader/modules/readerflipping")
-local ReaderFooter = require("apps/reader/modules/readerfooter")
-local ReaderDogear = require("apps/reader/modules/readerdogear")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local ImageWidget = require("ui/widget/imagewidget")
-local UIManager = require("ui/uimanager")
+local Blitbuffer = require("ffi/blitbuffer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local Screen = Device.screen
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
+local ImageWidget = require("ui/widget/imagewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local ReaderDogear = require("apps/reader/modules/readerdogear")
+local ReaderFlipping = require("apps/reader/modules/readerflipping")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
+local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
-local Blitbuffer = require("ffi/blitbuffer")
 local _ = require("gettext")
+local Screen = Device.screen
+local T = require("ffi/util").template
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
@@ -688,7 +690,7 @@ function ReaderView:onReadSettings(config)
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
-    self.page_overlap_style = config:readSetting("page_overlap_style") or "dim"
+    self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -796,7 +798,19 @@ function ReaderView:genOverlapStyleMenu()
             end,
             callback = function()
                 view.page_overlap_style = style
-            end
+            end,
+            hold_callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = T(
+                        _("Set default overlap style to %1?"),
+                        style
+                    ),
+                    ok_callback = function()
+                        view.page_overlap_style = style
+                        G_reader_settings:saveSetting("page_overlap_style", style)
+                    end,
+                })
+            end,
         }
     end
     return {
