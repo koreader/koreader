@@ -62,7 +62,6 @@ function Language:getLangMenuTable()
                 --self:genLanguageSubItem("Қазақ", "kk"),
                 self:genLanguageSubItem("한글", "ko_KR"),
                 self:genLanguageSubItem("Русский язык", "ru"),
-                self:genLanguageSubItem("Русский", "ru_RU"),
                 self:genLanguageSubItem("Українська", "uk"),
                 --self:genLanguageSubItem("中文", "zh"),
                 self:genLanguageSubItem("简体中文", "zh_CN"),
