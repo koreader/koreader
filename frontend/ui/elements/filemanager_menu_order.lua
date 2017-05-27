@@ -33,7 +33,6 @@ local order = {
         "frontlight_gesture_controller",
         "statistics",
         "battery_statistics",
-        "storage_stat",
         "cloud_storage",
         "read_timer",
         "news_downloader",
