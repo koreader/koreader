@@ -55,6 +55,7 @@ local order = {
         "frontlight_gesture_controller",
         "statistics",
         "battery_statistics",
+        "storage_stat",
         "synchronize_time",
         "progress_sync",
         "zsync",
