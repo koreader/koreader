@@ -53,9 +53,7 @@ function NickelConf.frontLightLevel.get()
         -- FrontLightState config, so don't normalize the value here yet.
         return tonumber(new_intensity)
     else
-        -- In NickelConfSpec, require("device") won't return KoboDevice
-        local powerd = require("device/kobo/powerd")
-        local fallback_fl_level = powerd.fl_intensity or 1
+        local fallback_fl_level = 20
         assert(NickelConf.frontLightLevel.set(fallback_fl_level))
         return fallback_fl_level
     end

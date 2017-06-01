@@ -133,6 +133,20 @@ function Kindle:usbPlugOut()
     self.charging_mode = false
 end
 
+function Kindle:ambientBrightnessLevel()
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if not haslipc or lipc == nil then return 0 end
+    local lipc_handle = lipc.init("com.github.koreader.ambientbrightness")
+    if not lipc_handle then return 0 end
+    local value = lipc_handle:get_int_property("com.lab126.powerd", "alsLux")
+    lipc_handle:close()
+    if type(value) ~= "number" then return 0 end
+    if value < 10 then return 0 end
+    if value < 256 then return 1 end
+    if value < 32768 then return 2 end
+    return 3
+end
+
 
 local Kindle2 = Kindle:new{
     model = "Kindle2",
