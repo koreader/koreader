@@ -54,6 +54,15 @@ function FileManagerMenu:initGesListener()
 
     self:registerTouchZones({
         {
+            id = "filemanager_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            handler = function(ges) return self:onTapShowMenu(ges) end,
+        },
+        {
             id = "filemanager_swipe",
             ges = "swipe",
             screen_zone = {
@@ -367,6 +376,11 @@ function FileManagerMenu:onCloseFileManagerMenu()
     local last_tab_index = self.menu_container[1].last_index
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
+    return true
+end
+
+function FileManagerMenu:onTapShowMenu(ges)
+    self:onShowMenu()
     return true
 end
 
