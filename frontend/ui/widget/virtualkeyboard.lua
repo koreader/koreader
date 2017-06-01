@@ -32,14 +32,14 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    if self.label == "Sym" or self.label == "ABC" then
-        self.callback = function () self.keyboard:setLayout(self.key or self.label) end
+    if self.label == "Sym" or self.label == "ABC" or self.label == "かな" or self.label == "記号" then
+        self.callback = function () self.keyboard:setLayout("Sym") end
     elseif self.label == "Shift" then
-        self.callback = function () self.keyboard:setLayout(self.key or self.label) end
-    elseif self.label == "IM" then
-        self.callback = function () self.keyboard:setLayout(self.key or self.label) end
-    elseif self.label == "Äéß" then
-        self.callback = function () self.keyboard:setLayout(self.key or self.label) end
+        self.callback = function () self.keyboard:setLayout("Shift") end
+    elseif self.label == "IM" or self.label == "゛" then
+        self.callback = function () self.keyboard:setLayout("IM") end
+    elseif self.label == "Äéß" or self.label == "゜" then
+        self.callback = function () self.keyboard:setLayout("Äéß") end
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function () self.keyboard:clear() end
@@ -141,7 +141,7 @@ local VirtualKeyboard = InputContainer:new{
     umlautmode = false,
 
     width = Screen:scaleBySize(600),
-    height = Screen:scaleBySize(256),
+    height = nil,
     bordersize = 2,
     padding = 2,
     key_padding = Screen:scaleBySize(6),
@@ -151,12 +151,14 @@ local lang_to_keyboard_layout = {
     el = "el_keyboard",
     pl = "pl_keyboard",
     pt_BR = "pt_keyboard",
+    ja = "ja_keyboard",
 }
 
 function VirtualKeyboard:init()
     local lang = G_reader_settings:readSetting("language")
     local keyboard_layout = lang_to_keyboard_layout[lang] or "std"
     self.KEYS = require("ui/data/keyboardlayouts/" .. keyboard_layout)
+    self.height = Screen:scaleBySize(64 * #self.KEYS)
     self:initLayout(self.layout)
 end
 
@@ -202,8 +204,8 @@ function VirtualKeyboard:initLayout(layout)
 end
 
 function VirtualKeyboard:addKeys()
-    local base_key_width = math.floor((self.width - 11*self.key_padding - 2*self.padding)/10)
-    local base_key_height = math.floor((self.height - 5*self.key_padding - 2*self.padding)/4)
+    local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
+    local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
     local vertical_group = VerticalGroup:new{}
