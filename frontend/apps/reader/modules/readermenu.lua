@@ -84,6 +84,15 @@ function ReaderMenu:onReaderReady()
 
     self.ui:registerTouchZones({
         {
+            id = "readermenu_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            handler = function(ges) return self:onTapShowMenu(ges) end,
+        },
+        {
             id = "readermenu_swipe",
             ges = "swipe",
             screen_zone = {
@@ -283,6 +292,11 @@ function ReaderMenu:onSwipeShowMenu(ges)
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
     end
+end
+
+function ReaderMenu:onTapShowMenu()
+    self.ui:handleEvent(Event:new("ShowConfigMenu"))
+    self.ui:handleEvent(Event:new("ShowReaderMenu"))
 end
 
 function ReaderMenu:onTapCloseMenu()
