@@ -32,13 +32,13 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    if self.label == "Sym" or self.label == "ABC" or self.label == "かな" or self.label == "記号" then
+    if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Sym") end
-    elseif self.label == "Shift" then
+    elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Shift") end
-    elseif self.label == "IM" or self.label == "゛" then
+    elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("IM") end
-    elseif self.label == "Äéß" or self.label == "゜" then
+    elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Äéß") end
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
@@ -132,6 +132,10 @@ local VirtualKeyboard = InputContainer:new{
     disable_double_tap = true,
     inputbox = nil,
     KEYS = {}, -- table to store layouts
+    shiftmode_keys = {},
+    symbolmode_keys = {},
+    utf8mode_keys = {},
+    umlautmode_keys = {},
     min_layout = 2,
     max_layout = 12,
     layout = 2,
@@ -157,7 +161,12 @@ local lang_to_keyboard_layout = {
 function VirtualKeyboard:init()
     local lang = G_reader_settings:readSetting("language")
     local keyboard_layout = lang_to_keyboard_layout[lang] or "std"
-    self.KEYS = require("ui/data/keyboardlayouts/" .. keyboard_layout)
+    local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
+    self.KEYS = keyboard.keys
+    self.shiftmode_keys = keyboard.shiftmode_keys
+    self.symbolmode_keys = keyboard.symbolmode_keys
+    self.utf8mode_keys = keyboard.utf8mode_keys
+    self.umlautmode_keys = keyboard.umlautmode_keys
     self.height = Screen:scaleBySize(64 * #self.KEYS)
     self:initLayout(self.layout)
 end
