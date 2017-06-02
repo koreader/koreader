@@ -130,7 +130,6 @@ function ReaderDictionary:stardictLookup(word, box)
     if word == "" then
         return
     end
-    self:onLookupStarted(word)
     local final_results = {}
     local seen_results = {}
     -- Allow for two sdcv calls : one in the classic data/dict, and
@@ -153,7 +152,6 @@ function ReaderDictionary:stardictLookup(word, box)
                 definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
             }
         }
-        self:onLookupDone()
         self:showDict(word, final_results, box)
         return
     end
@@ -198,7 +196,6 @@ function ReaderDictionary:stardictLookup(word, box)
             }
         }
     end
-    self:onLookupDone()
     self:showDict(word, tidyMarkup(final_results), box)
 end
 
