@@ -47,7 +47,10 @@ function Dbg:turnOn()
             return unpack(values)
         end
     end
-    Dbg.dassert = function(check, msg) assert(check, msg) end
+    Dbg.dassert = function(check, msg)
+        assert(check, msg)
+        return check
+    end
 
     -- TODO: close ev.log fd for children
     -- create or clear ev log file
@@ -60,7 +63,9 @@ function Dbg:turnOff()
     logger:setLevel(logger.levels.info)
     function Dbg_mt.__call() end
     function Dbg.guard() end
-    function Dbg.dassert() end
+    Dbg.dassert = function(check)
+        return check
+    end
     if self.ev_log then
         io.close(self.ev_log)
         self.ev_log = nil

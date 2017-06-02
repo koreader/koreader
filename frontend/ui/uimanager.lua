@@ -12,7 +12,6 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 
-local noop = function() end
 local MILLION = 1000000
 
 -- there is only one instance of this
