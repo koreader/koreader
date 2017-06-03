@@ -153,9 +153,9 @@ local VirtualKeyboard = InputContainer:new{
 
 local lang_to_keyboard_layout = {
     el = "el_keyboard",
+    ja = "ja_keyboard",
     pl = "pl_keyboard",
     pt_BR = "pt_keyboard",
-    ja = "ja_keyboard",
 }
 
 function VirtualKeyboard:init()
