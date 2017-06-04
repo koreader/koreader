@@ -1,0 +1,22 @@
+describe("AutoSuspend widget tests", function()
+    setup(function()
+        require("commonrequire")
+    end)
+
+    it("should be able to initialize several times", function()
+        G_reader_settings:saveSetting("auto_suspeend_timeout_seconds", 10)
+        local mock_time = require("mock_time")
+        mock_time:install()
+        -- AutoSuspend plugin set the last_action_sec each time it is initialized.
+        local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
+        local widget1 = widget_class:new()
+        -- So if one more initialization happens, it won't sleep after another 5 seconds.
+        mock_time:increase(5)
+        local widget2 = widget_class:new()
+        local UIManager = require("ui/uimanager")
+        stub(UIManager, "suspend")
+        mock_time:increase(6)
+        UIManager:handleInput()
+        assert.stub(UIManager.suspend).was.called(1)
+    end)
+end)
