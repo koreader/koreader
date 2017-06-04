@@ -19,7 +19,9 @@ function MockTime:uninstall()
     assert(self ~= nil)
     local util = require("ffi/util")
     os.time = self.original_os_time
-    util.gettime = self.original_util_time
+    if self.original_util_time ~= nil then
+        util.gettime = self.original_util_time
+    end
 end
 
 function MockTime:set(value)

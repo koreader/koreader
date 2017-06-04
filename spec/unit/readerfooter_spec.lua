@@ -4,15 +4,14 @@ describe("Readerfooter module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        ReaderUI = require("apps/reader/readerui")
-        DocSettings = require("docsettings")
-        UIManager = require("ui/uimanager")
-        MenuSorter = require("ui/menusorter")
-        DEBUG = require("dbg")
+        DEBUG = package.reload("dbg")
+        DocumentRegistry = package.reload("document/documentregistry")
+        DocSettings = package.reload("docsettings")
+        MenuSorter = package.reload("ui/menusorter")
+        ReaderUI = package.reload("apps/reader/readerui")
+        UIManager = package.reload("ui/uimanager")
         purgeDir = require("ffi/util").purgeDir
-        Screen = require("device").screen
+        Screen = package.reload("device").screen
 
         function tapFooterMenu(menu_items, menu_title)
             local status_bar = menu_items.status_bar

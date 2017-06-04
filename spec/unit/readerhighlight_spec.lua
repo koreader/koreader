@@ -2,13 +2,13 @@ describe("Readerhighlight module", function()
     local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg, Event
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        UIManager = require("ui/uimanager")
-        Screen = require("device").screen
-        Geom = require("ui/geometry")
-        dbg = require("dbg")
-        Event = require("ui/event")
+        DocumentRegistry = package.reload("document/documentregistry")
+        Event = package.reload("ui/event")
+        Geom = package.reload("ui/geometry")
+        ReaderUI = package.reload("apps/reader/readerui")
+        Screen = package.reload("device").screen
+        UIManager = package.reload("ui/uimanager")
+        dbg = package.reload("dbg")
     end)
 
     local function highlight_single_word(readerui, pos0)

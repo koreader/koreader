@@ -3,10 +3,10 @@ describe("ReaderLink module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        Event = require("ui/event")
-        ReaderUI = require("apps/reader/readerui")
-        UIManager = require("ui/uimanager")
+        DocumentRegistry = package.reload("document/documentregistry")
+        Event = package.reload("ui/event")
+        ReaderUI = package.reload("apps/reader/readerui")
+        UIManager = package.reload("ui/uimanager")
         sample_epub = "spec/front/unit/data/leaves.epub"
         sample_pdf = "spec/front/unit/data/paper.pdf"
     end)

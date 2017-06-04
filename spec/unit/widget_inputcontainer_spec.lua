@@ -2,8 +2,8 @@ describe("InputContainer widget", function()
     local InputContainer, Screen
     setup(function()
         require("commonrequire")
-        InputContainer = require("ui/widget/container/inputcontainer")
-        Screen = require("device").screen
+        InputContainer = package.reload("ui/widget/container/inputcontainer")
+        Screen = package.reload("device").screen
     end)
 
     it("should register touch zones", function()
