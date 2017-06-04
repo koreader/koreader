@@ -481,6 +481,7 @@ OPTIONS:
             echo "Running tests in" ${test_path}
             busted --lua="./luajit" \
                 --sort-files \
+                --no-auto-insulate \
                 --lazy \
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
