@@ -50,3 +50,17 @@ function assertNotAlmostEquals(expected, actual, margin)
             .. ', received: ' .. actual
     )
 end
+
+package.unload = function(module)
+    if type(module) ~= "string" then return false end
+    package.loaded[module] = nil
+    _G[module] = nil
+    return true
+end
+
+package.replace = function(name, module)
+    if type(name) ~= "string" then return false end
+    assert(package.unload(name))
+    package.loaded[name] = module
+    return true
+end

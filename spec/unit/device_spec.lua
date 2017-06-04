@@ -171,7 +171,6 @@ describe("device module", function()
             stub(Device, "isKobo")
 
             Device.isKobo.returns(true)
-            local saved_noop = UIManager._resetAutoSuspendTimer
             UIManager:init()
 
             ReaderUI:doShowReader(sample_pdf)
@@ -185,9 +184,6 @@ describe("device module", function()
             Device.powerd.beforeSuspend:revert()
             Device.isKobo:revert()
             readerui.onFlushSettings:revert()
-            UIManager._startAutoSuspend = nil
-            UIManager._stopAutoSuspend = nil
-            UIManager._resetAutoSuspendTimer = saved_noop
             readerui:onClose()
         end)
     end)
