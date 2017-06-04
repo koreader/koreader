@@ -50,4 +50,14 @@ function Device:init()
     Generic.init(self)
 end
 
+
+
+function Device:isFullscreen()
+    return android.isFullscreen()
+end
+
+function Device:setFullscreen(fullscreen)
+    return android.setFullscreen(fullscreen)
+end
+
 return Device
