@@ -55,7 +55,7 @@ function HookContainer:registerWidget(name, widget)
         f(widget, args)
     end)
     local original_close_widget = widget.onCloseWidget
-    self:_assertIsValidFunctionOrNil(original_close_wiget)
+    self:_assertIsValidFunctionOrNil(original_close_widget)
     widget.onCloseWidget = function()
         if original_close_widget then original_close_widget(widget) end
         self:unregister(name, widget["on" .. name])
@@ -73,7 +73,7 @@ function HookContainer:unregister(name, func)
         return false
     end
 
-    for i, f in ipairs(self[name]) do 
+    for i, f in ipairs(self[name]) do
         if f == func then
             table.remove(self[name], i)
             return true

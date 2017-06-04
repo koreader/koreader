@@ -21,5 +21,7 @@ describe("AutoSuspend widget tests", function()
         assert.stub(UIManager.suspend).was.called(1)
         mock_time:uninstall()
         assert(package.unload("ui/uimanager"))
+
+        G_reader_settings:delSetting("auto_suspend_timeout_seconds")
     end)
 end)

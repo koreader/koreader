@@ -33,6 +33,8 @@ local UIManager = {
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
     _exit_code = nil,
+
+    event_hook = require("ui/hook_container"):new()
 }
 
 function UIManager:init()
@@ -707,7 +709,7 @@ function UIManager:handleInput()
     -- delegate input_event to handler
     if input_event then
         if input_event.handler ~= "onInputError" then
-            self:broadcastEvent(Event:new("InputEvent"))
+            self.event_hook:execute("InputEvent", input_event)
         end
         local handler = self.event_handlers[input_event]
         if handler then

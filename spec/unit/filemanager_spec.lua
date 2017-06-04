@@ -7,7 +7,7 @@ describe("FileManager module", function()
         docsettings = package.reload("docsettings")
         UIManager = package.reload("ui/uimanager")
         Screen = package.reload("device").screen
-        util = package.reload("ffi/util")
+        util = require("ffi/util")
     end)
     it("should show file manager", function()
         UIManager:quit()

@@ -79,6 +79,7 @@ function AutoSuspend:_start()
 end
 
 function AutoSuspend:init()
+    UIManager.event_hook:registerWidget("InputEvent", self)
     self.auto_suspend_sec = self:_readTimeoutSec()
     self:_deprecateLastTask()
     self:_start()
