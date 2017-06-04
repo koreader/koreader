@@ -5,7 +5,6 @@ local MockTime = {
 }
 
 function MockTime:install()
-    print("MockTime:install() ", debug.traceback())
     assert(self ~= nil)
     local util = require("ffi/util")
     if self.original_util_time == nil then
