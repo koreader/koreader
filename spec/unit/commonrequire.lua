@@ -64,3 +64,9 @@ package.replace = function(name, module)
     package.loaded[name] = module
     return true
 end
+
+package.reload = function(name)
+    if type(name) ~= "string" then return false end
+    assert(package.unload(name))
+    return require(name)
+end

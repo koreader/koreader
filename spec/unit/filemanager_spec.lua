@@ -2,12 +2,12 @@ describe("FileManager module", function()
     local FileManager, lfs, docsettings, UIManager, Screen, util
     setup(function()
         require("commonrequire")
-        FileManager = require("apps/filemanager/filemanager")
-        lfs = require("libs/libkoreader-lfs")
-        docsettings = require("docsettings")
-        UIManager = require("ui/uimanager")
-        Screen = require("device").screen
-        util = require("ffi/util")
+        FileManager = package.reload("apps/filemanager/filemanager")
+        lfs = package.reload("libs/libkoreader-lfs")
+        docsettings = package.reload("docsettings")
+        UIManager = package.reload("ui/uimanager")
+        Screen = package.reload("device").screen
+        util = package.reload("ffi/util")
     end)
     it("should show file manager", function()
         UIManager:quit()
