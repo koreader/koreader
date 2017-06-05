@@ -38,7 +38,7 @@ local BOOKINFO_DB_SCHEMA = [[
         ignore_meta         TEXT,     -- NULL / 'Y' = ignore these metadata
         ignore_cover        TEXT,     -- NULL / 'Y' = ignore this cover
 
-        -- Book infos
+        -- Book info
         pages               INTEGER,
 
         -- Metadata (only these are returned by the engines)
@@ -117,7 +117,7 @@ function BookInfoManager:init()
     self.subprocesses_pids = {}
     self.subprocesses_last_added_ts = nil
     self.subprocesses_killall_timeout_seconds = 300 -- cleanup timeout for stuck subprocesses
-        -- 300 seconds should be enough to open and get info from 9-10 books
+    -- 300 seconds should be enough to open and get info from 9-10 books
 end
 
 function BookInfoManager:getDbSize()
@@ -283,7 +283,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         return -- Last insert done for this book, we're giving up
     end
 
-    -- Proceed with extracting infos
+    -- Proceed with extracting info
     local document = DocumentRegistry:openDocument(filepath)
     if document then
         if document.loadDocument then -- needed for crengine
@@ -489,4 +489,3 @@ end
 BookInfoManager:init()
 
 return BookInfoManager
-

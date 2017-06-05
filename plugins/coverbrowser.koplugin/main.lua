@@ -32,7 +32,6 @@ local DISPLAY_MODES = {
     list_image_filename = true, -- image with filename (no metadata)
 }
 
-
 local CoverBrowser = InputContainer:new{}
 
 function CoverBrowser:init()
@@ -161,7 +160,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                 },
                 {
-                    text = _("Book infos cache maintenance"),
+                    text = _("Book info cache management"),
                     sub_item_table = {
                         {
                             text_func = function() -- add current db size to menu text
@@ -177,7 +176,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 local ConfirmBox = require("ui/widget/confirmbox")
                                 UIManager:close(self.file_dialog)
                                 UIManager:show(ConfirmBox:new{
-                                    text = _("Are you sure that you want to purge cover and metadata cache?\n"),
+                                    text = _("Are you sure that you want to delete cover and metadata cache?\n"),
                                     ok_text = _("Purge"),
                                     ok_callback = function()
                                         local BookInfoManager = require("bookinfomanager")
@@ -186,6 +185,8 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 })
                             end,
                         },
+                        -- XXX Add "Prune obsolete info", to remove entries
+                        -- for no more existing files
                     },
                 },
             },
@@ -320,7 +321,6 @@ local function _FileManagerHistory_updateItemTable(self)
 
     -- We do now the single thing done in FileManagerHistory:updateItemTable():
     hist_menu:switchItemTable(self.hist_menu_title, require("readhistory").hist)
-
 end
 
 function CoverBrowser:setupHistoryDisplayMode(display_mode)
@@ -345,9 +345,6 @@ function CoverBrowser:setupHistoryDisplayMode(display_mode)
         -- And let it know which display_mode we should use
         FileManagerHistory.display_mode = display_mode
     end
-
 end
 
 return CoverBrowser
-
-

@@ -7,7 +7,6 @@ local _ = require("gettext")
 
 local BookInfoManager = require("bookinfomanager")
 
-
 -- This is a kind of "base class" for both MosaicMenu and ListMenu.
 -- It implements the common code shared by these, mostly the non-UI
 -- work : the updating of items and the management of backgrouns jobs.
@@ -25,14 +24,11 @@ local BookInfoManager = require("bookinfomanager")
 -- not found item to self.items_to_update for us to update() them
 -- regularly.
 
-
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local CoverMenu = {}
 
-
 function CoverMenu:updateItems(select_number)
-
     -- As done in Menu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
@@ -218,10 +214,10 @@ function CoverMenu:updateItems(select_number)
             -- on screen, so we won't see it)
             UIManager:close(self.file_dialog)
 
-            -- Add some new buttons to orignal buttons set
+            -- Add some new buttons to original buttons set
             table.insert(orig_buttons, {
                 { -- Allow user to ignore some offending cover image
-                    text = bookinfo.ignore_cover and _("Unignore file cover") or _("Ignore this cover"),
+                    text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
                     enabled = bookinfo.has_cover and true or false,
                     callback = function()
                         BookInfoManager:setBookInfoProperties(file, {
@@ -232,7 +228,7 @@ function CoverMenu:updateItems(select_number)
                     end,
                 },
                 { -- Allow user to ignore some bad metadata (filename will be used instead)
-                    text = bookinfo.ignore_meta and _("Unignore file metadata") or _("Ignore these metadata"),
+                    text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
                     enabled = bookinfo.has_meta and true or false,
                     callback = function()
                         BookInfoManager:setBookInfoProperties(file, {
@@ -269,7 +265,6 @@ function CoverMenu:updateItems(select_number)
         -- Remember our function
         self.onFileHold_ours = self.onFileHold
     end
-
 end
 
 -- Similar to onFileHold setup just above, but for History,
@@ -292,10 +287,10 @@ function CoverMenu:onHistoryMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
 
-    -- Add some new buttons to orignal buttons set
+    -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
         { -- Allow user to ignore some offending cover image
-            text = bookinfo.ignore_cover and _("Unignore file cover") or _("Ignore this cover"),
+            text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
             enabled = bookinfo.has_cover and true or false,
             callback = function()
                 BookInfoManager:setBookInfoProperties(file, {
@@ -306,7 +301,7 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
         { -- Allow user to ignore some bad metadata (filename will be used instead)
-            text = bookinfo.ignore_meta and _("Unignore file metadata") or _("Ignore these metadata"),
+            text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
             enabled = bookinfo.has_meta and true or false,
             callback = function()
                 BookInfoManager:setBookInfoProperties(file, {
@@ -337,8 +332,6 @@ function CoverMenu:onHistoryMenuHold(item)
     UIManager:show(self.histfile_dialog)
     return true
 end
-
-
 
 function CoverMenu:onCloseWidget()
     -- Due to close callback in FileManagerHistory:onShowHist, we may be called

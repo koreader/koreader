@@ -33,14 +33,12 @@ local BookInfoManager = require("bookinfomanager")
 -- Here is the specific UI implementation for "list" display modes
 -- (see covermenu.lua for the generic code)
 
-
 -- We will show a rotated dogear at bottom right corner of cover widget for
 -- opened files (the dogear will make it look like a "used book")
 local corner_mark = ImageWidget:new{
     file = "resources/icons/dogear.png",
     rotation_angle = 270
 }
-
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -283,11 +281,11 @@ function ListMenuItem:update()
                 bookinfo.cover_bb:free()
             end
 
-            -- Gather some infos, mostly for right widget:
+            -- Gather some info, mostly for right widget:
             --   file size (self.mandatory) (not available with History)
             --   file type
             --   pages read / nb of pages (not available for crengine doc not opened)
-            local filename = select(2, util.splitFilePathName(self.filepath))
+            local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
             local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
             local fileinfo_str = filetype
             if self.mandatory then
@@ -577,8 +575,6 @@ function ListMenuItem:onHoldSelect(arg, ges)
 end
 
 
-
-
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local ListMenu = {}
@@ -617,11 +613,9 @@ function ListMenu:_recalculateDimen()
         w = self.item_width,
         h = self.item_height
     }
-
 end
 
 function ListMenu:_updateItemsBuildUI()
-
     -- Build our list
     -- We separate items with a 1px LineWidget (no need for
     -- scaleBySize, thin is fine)

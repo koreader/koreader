@@ -69,20 +69,20 @@ int uncompress(uint8_t *dest, unsigned long *destLen,
 local zlib = ffi.load(ffi.os == "Windows" and "zlib1" or "z")
 
 function xutil.zlib_compress(data)
-  local n = zlib.compressBound(#data)
-  local buf = ffi.new("uint8_t[?]", n)
-  local buflen = ffi.new("unsigned long[1]", n)
-  local res = zlib.compress2(buf, buflen, data, #data, 9)
-  assert(res == 0)
-  return ffi.string(buf, buflen[0])
+    local n = zlib.compressBound(#data)
+    local buf = ffi.new("uint8_t[?]", n)
+    local buflen = ffi.new("unsigned long[1]", n)
+    local res = zlib.compress2(buf, buflen, data, #data, 9)
+    assert(res == 0)
+    return ffi.string(buf, buflen[0])
 end
 
 function xutil.zlib_uncompress(zdata, datalen)
-  local buf = ffi.new("uint8_t[?]", datalen)
-  local buflen = ffi.new("unsigned long[1]", datalen)
-  local res = zlib.uncompress(buf, buflen, zdata, #zdata)
-  assert(res == 0)
-  return ffi.string(buf, buflen[0])
+    local buf = ffi.new("uint8_t[?]", datalen)
+    local buflen = ffi.new("unsigned long[1]", datalen)
+    local res = zlib.uncompress(buf, buflen, zdata, #zdata)
+    assert(res == 0)
+    return ffi.string(buf, buflen[0])
 end
 
 
@@ -100,4 +100,3 @@ end
 -- For reference, SQ3 doc at: http://scilua.org/ljsqlite3.html
 
 return xutil
-
