@@ -1,4 +1,8 @@
 describe("MockTime tests", function()
+    teardown(function()
+        require("mock_time"):uninstall()
+    end)
+
     it("should be able to install and uninstall", function()
         local mock_time = require("mock_time")
         local util = require("ffi/util")

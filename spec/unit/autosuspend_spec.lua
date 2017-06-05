@@ -3,6 +3,10 @@ describe("AutoSuspend widget tests", function()
         require("commonrequire")
     end)
 
+    teardown(function()
+        require("mock_time"):uninstall()
+    end)
+
     it("should be able to initialize several times", function()
         assert(package.unload("ui/uimanager"))
         G_reader_settings:saveSetting("auto_suspeend_timeout_seconds", 10)
