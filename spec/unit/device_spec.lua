@@ -18,6 +18,7 @@ describe("device module", function()
             end
         }
         require("commonrequire")
+        package.unloadAll()
     end)
 
     before_each(function()
