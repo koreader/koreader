@@ -1,6 +1,7 @@
 describe("AutoSuspend widget tests", function()
     setup(function()
         require("commonrequire")
+        package.unloadAll()
     end)
 
     teardown(function()

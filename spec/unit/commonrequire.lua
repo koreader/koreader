@@ -70,3 +70,27 @@ package.reload = function(name)
     assert(package.unload(name))
     return require(name)
 end
+
+package.unloadAll = function()
+    local folders = {
+        "spec/",
+        "frontend/",
+        "plugins/",
+        "ffi/"
+    }
+    local pending = {}
+    for name, _ in pairs(package.loaded) do
+        local path = package.searchpath(name, package.path)
+        if path ~= nil then
+            for _, folder in ipairs(folders) do
+                if path:find(folder) == 0 then
+                    table.insert(pending, name)
+                end
+            end
+        end
+    end
+    for _, name in ipairs(pending) do
+        assert(package.unload(name))
+    end
+    return #pending
+end
